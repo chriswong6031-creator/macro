@@ -2138,7 +2138,7 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
     log.info("wrote %s/vector_allocation.html (%d KB)", site, len(html) // 1024)
 
 
-def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
+def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame, gate_cfg: dict | None = None) -> dict:
     """Compact columnar JSON tape for the cycle time machine (vector_timemachine.js).
     Merges the per-day CAUSAL signals (already point-in-time in signals.parquet) with
     the backtested ladder state/regime (scripts/backtest_ladder_history.py). Starts
@@ -2149,6 +2149,17 @@ def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
     df, lad = sig[keep], lad[keep]
     # cycle_position 0..1 -> stage index 0..3 (Defensive/Fragile/Recovery/Expansion)
     stage = (df["cycle_position"].clip(0, 0.999).fillna(0.0) * 4).astype(int)
+
+    # W5 Time-Machine honesty: mark spans where the proprietary cycle timer overrides allocation.
+    # Spans where override_active is True (post-W0 dual-series column) must not present as organic
+    # engine output. If that column is missing, recompute the gate deterministically from config.
+    if "override_active" in df.columns:
+        g = df["override_active"].fillna(False).astype(bool)
+    else:
+        from engine.btc_signals import midterm_blackout
+        if gate_cfg is None:
+            gate_cfg = (config.load()["vector"].get("allocation") or {}).get("midterm_gate")
+        g = midterm_blackout(df.index, gate_cfg)
 
     def cat(s, default=""):
         return [default if pd.isna(v) else str(v) for v in s]
@@ -2170,6 +2181,7 @@ def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
         "composite": cat(df["composite_state"], "NEUTRAL"),
         "risk": num(df["risk_index"]),
         "alloc": num(df["alloc_optimal"], 100),
+        "gated": [1 if v else 0 for v in g],  # spans where override pins allocation — not organic
     }
 
 
@@ -2245,6 +2257,14 @@ def main() -> int:
     # timing / desync / structure). Reuses the committed cycle config + the PIT 1064/364 status.
     from engine import btc_cycle_thesis
     cycle_thesis = btc_cycle_thesis.monitor(close, cfg=config.load()["vector"], sig=sig)
+
+    # W5 override forward-grading ledger (monitoring only)
+    try:
+        from engine import btc_override_ledger
+        btc_override_ledger.stamp(sig=sig, thesis=cycle_thesis)
+        btc_override_ledger.score()
+    except Exception as _ol:  # noqa: BLE001 — monitoring leaf, never breaks the build
+        log.warning("override ledger skipped (%s)", _ol)
 
     # raw OHLC for scenarios
     raw = store.read("coinbase", "btc_daily")

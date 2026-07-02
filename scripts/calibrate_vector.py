@@ -38,7 +38,8 @@ from lib import config, store  # noqa: E402
 # forex calibrators). Re-exported here so existing importers (and tests) that
 # referenced them on scripts.calibrate_vector keep working.
 from engine.validation import (  # noqa: E402,F401
-    EULER_GAMMA, _norm_cdf, _norm_ppf, _ret_moments, backtest_core, deflated_sharpe,
+    EULER_GAMMA, _norm_cdf, _norm_ppf, _ret_moments, backtest_core, bootstrap_effective_t,
+    deflated_sharpe,
 )
 from engine.validation import (  # noqa: E402 — stability gates (D-vec-GATES)
     block_bootstrap_ci, brier_reliability, dsr_verdict, platt_fit, purged_folds,
@@ -47,6 +48,36 @@ from engine.validation import (  # noqa: E402 — stability gates (D-vec-GATES)
 from engine.trial_ledger import TrialLedger  # noqa: E402
 
 TRADING_YEAR = 365  # BTC trades every day
+
+# Pre-declared DOF for the midterm-blackout override (decision-to-gate + year%4==2
+# selector + window shape) per masterplan §4 N1 and the W0 registry draft.
+# The registry value takes precedence the moment vector.overrides lands in config,
+# so there is no double count — the fallback disappears automatically.
+_W0_MIDTERM_DOF: int = 3
+
+
+def _override_dof(vcfg: dict) -> dict[str, int]:
+    """Count the degrees-of-freedom cost of each entry in the override registry.
+
+    vcfg is the full ``vector`` config block (config.load()["vector"]).
+
+    If ``vcfg["overrides"]`` is a non-empty list, read dof_cost from each entry
+    that has an id.  Otherwise fall back to the legacy pre-registry inference: if
+    the midterm_gate is enabled in the allocation config, charge ``_W0_MIDTERM_DOF``
+    DOF as a declared upper-bound (the registry takes precedence once it lands).
+    Returns {} when no overrides are active and the gate is disabled or absent.
+    """
+    overrides = vcfg.get("overrides")
+    if isinstance(overrides, list) and overrides:
+        return {
+            o["id"]: int(o.get("dof_cost", 0))
+            for o in overrides
+            if isinstance(o, dict) and "id" in o
+        }
+    # Legacy fallback: infer from allocation.midterm_gate (W0 not yet merged)
+    if vcfg.get("allocation", {}).get("midterm_gate", {}).get("enabled"):
+        return {"midterm_blackout": _W0_MIDTERM_DOF}
+    return {}
 
 
 # --------------------------------------------------------------------------- #
@@ -633,15 +664,24 @@ def main() -> int:
         daily_srs = [v["sharpe_daily"] for v in va.values() if v.get("sharpe_daily") is not None]
         sr_var = float(np.var(daily_srs, ddof=1)) if len(daily_srs) >= 2 else None
         m = va[sel]
+        # Block-bootstrap effective sample size (W5/N7): autocorrelated daily returns
+        # make raw sqrt(T-1) overconfident; t_eff is the autocorrelation-honest count.
+        net_series = backtest_core(close, df[f"alloc_{sel}"], cost_bps=cost_bps)["net"]
+        eff = bootstrap_effective_t(net_series)
+        # Override-registry DOF counting (W5): add declared dof_cost of each override
+        # entry to n_trials so the multiple-testing budget accounts for human overrides
+        # that were not itemized as allocation variants.
+        dof = _override_dof(config.load()["vector"])
+        n_declared = n_trials + sum(dof.values())
         # honest-N via the ledger (P3): itemize the allocation variants tried + declare the
-        # config upper-bound as a floor → effective_n = max(itemized, declared) = n_trials.
+        # config upper-bound (including override dof) as a floor.
         _led = TrialLedger()
         _led.log_grid([{"variant": k} for k in va], family="vector", source="alloc_variant")
-        _led.log_declared_budget(n_trials, family="vector",
-                                 reason="cfg.calibration.n_trials — declared upper-bound (calibrate_vector)")
+        _led.log_declared_budget(n_declared, family="vector",
+                                 reason=f"cfg.calibration.n_trials ({n_trials}) + override dof_cost {dof} — declared upper-bound (calibrate_vector W5)")
         dsr = deflated_sharpe(m.get("sharpe_daily"), m.get("skew"), m.get("kurt"),
                               m.get("n_obs"), ledger=_led, family="vector", sr_variance=sr_var,
-                              trading_year=TRADING_YEAR)
+                              trading_year=TRADING_YEAR, t_eff=eff.get("t_eff"))
         if dsr is not None:
             dsr["selected_variant"] = sel
             dsr["sr_variance_source"] = ("max(cross-variant dispersion, null SR-sampling proxy)"
@@ -649,19 +689,32 @@ def main() -> int:
             dsr["verdict"] = ("SURVIVES multiple-testing (DSR≥0.95)" if dsr["dsr"] >= 0.95
                               else "MARGINAL (0.90≤DSR<0.95)" if dsr["dsr"] >= 0.90
                               else "FAILS multiple-testing haircut (DSR<0.90)")
+            dsr["effective_t"] = eff if eff else {"note": "series too short"}
             dsr["note"] = ("DSR = P(true Sharpe>0) after deflating for n_trials independent "
                            "configs, sample length, skew & kurtosis. n_trials is a manual "
                            "UPPER-BOUND of the signal/threshold/window variants explored — "
                            "overestimating is the conservative direction (de Prado). Bump "
-                           "vector.calibration.n_trials as you try more.")
+                           "vector.calibration.n_trials as you try more. "
+                           "The DSR statistic now uses a block-bootstrap effective sample size "
+                           "(T_eff) instead of raw sqrt(T-1), so autocorrelated daily returns "
+                           "no longer overstate confidence.")
         report["multiple_testing"] = dsr or {"dsr": None, "verdict": "insufficient data"}
         report["trial_log"] = {
             "asof": str(df.index.max().date()),
-            "n_trials_declared": n_trials,
+            "n_trials_config": n_trials,
+            "overrides_dof": dof,
+            "n_trials_declared": n_declared,
             "cost_bps_one_way": cost_bps,
             "allocation_variants_tested": list(va),
             "signal_families_screened": sorted(report["signals"]),
             "n_signal_families": len(report["signals"]),
+            "fdr_note": (
+                "The 32-family band-edge screen is a multiple-comparison surface — at screen "
+                "strength expect ~1-2 spuriously CONFIRMED families out of 32 under the null. "
+                "Verdicts are hypothesis-generating only and should be treated as directional "
+                "priors, not causal proofs. Sizing authority flows solely through the DSR-gated "
+                "allocation backtest, whose N these signal families inflate via n_trials."
+            ),
             "note": ("Point-in-time trial ledger (overwritten each run). n_trials_declared is "
                      "an upper-bound count of independent strategy configs explored across the "
                      "hunt, used to deflate the headline Sharpe. Raise it as you try more."),
@@ -956,5 +1009,99 @@ def _write_markdown(report: dict) -> None:
         "\n".join(lines))
 
 
+def refresh_trial_log(root=None) -> dict:
+    """Surgical trial-log refresh (W5) — rebuilds the trial_log dict from the existing
+    calibration.json + current config WITHOUT re-running any backtests.
+
+    Reads:
+      - data/vector/calibration.json  (allocation variant names, signal family list)
+      - data/vector/trial_log.json    (existing asof date — left untouched)
+    Uses:
+      - current config (vector.calibration.{cost_bps, n_trials} + vector.overrides)
+    Writes ONLY data/vector/trial_log.json (calibration.json and signals.parquet are
+    never touched). Also mirrors the declared budget into the persistent TrialLedger.
+
+    Returns the new trial_log dict.
+    """
+    from datetime import date as _date
+    outdir = (Path(root) if root is not None else config.data_dir()) / "vector"
+    cal_path = outdir / "calibration.json"
+    tl_path = outdir / "trial_log.json"
+
+    with cal_path.open(encoding="utf-8") as fh:
+        cal = json.load(fh)
+    with tl_path.open(encoding="utf-8") as fh:
+        old_tl = json.load(fh)
+
+    cfg = config.load()["vector"]["calibration"]
+    cost_bps = float(cfg.get("cost_bps", 10.0))
+    n_trials = int(cfg.get("n_trials", 50))
+    dof = _override_dof(config.load()["vector"])
+    n_declared = n_trials + sum(dof.values())
+
+    alloc_variants = list(cal.get("allocation", {}).keys())
+    sig_families = sorted(cal.get("signals", {}).keys())
+    n_sig = len(sig_families)
+
+    # Mirror declared budget into the persistent ledger (idempotent).
+    _led = TrialLedger()
+    _led.log_declared_budget(
+        n_declared,
+        family="vector",
+        reason=(
+            f"cfg.calibration.n_trials ({n_trials}) + override dof_cost {dof} — "
+            "declared upper-bound (calibrate_vector W5)"
+        ),
+    )
+
+    new_tl = {
+        "asof": old_tl.get("asof"),          # data as-of date: unchanged
+        "n_trials_config": n_trials,
+        "overrides_dof": dof,
+        "n_trials_declared": n_declared,
+        "cost_bps_one_way": cost_bps,
+        "allocation_variants_tested": alloc_variants,
+        "signal_families_screened": sig_families,
+        "n_signal_families": n_sig,
+        "fdr_note": (
+            "The 32-family band-edge screen is a multiple-comparison surface — at screen "
+            "strength expect ~1-2 spuriously CONFIRMED families out of 32 under the null. "
+            "Verdicts are hypothesis-generating only and should be treated as directional "
+            "priors, not causal proofs. Sizing authority flows solely through the DSR-gated "
+            "allocation backtest, whose N these signal families inflate via n_trials."
+        ),
+        "note": old_tl.get(
+            "note",
+            "Point-in-time trial ledger (overwritten each run). n_trials_declared is "
+            "an upper-bound count of independent strategy configs explored across the "
+            "hunt, used to deflate the headline Sharpe. Raise it as you try more.",
+        ),
+        "refreshed_on": _date.today().isoformat(),
+        "refresh_note": (
+            "Surgical refresh (W5): declared trial budget + override dof only; "
+            "backtest-derived numbers untouched — the full dual (raw+final) recompute "
+            "lands in W1."
+        ),
+    }
+    tl_path.write_text(json.dumps(new_tl, indent=2, default=str))
+    return new_tl
+
+
 if __name__ == "__main__":
+    import argparse as _argparse
+
+    _parser = _argparse.ArgumentParser(description="Bitcoin Vector calibration")
+    _parser.add_argument(
+        "--trial-log-only",
+        action="store_true",
+        help=(
+            "Surgical refresh (W5): rebuild data/vector/trial_log.json from the "
+            "existing calibration.json + current config without re-running backtests."
+        ),
+    )
+    _args = _parser.parse_args()
+    if _args.trial_log_only:
+        result = refresh_trial_log()
+        print(json.dumps(result, indent=2, default=str))
+        sys.exit(0)
     sys.exit(main())
