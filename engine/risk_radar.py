@@ -131,7 +131,19 @@ _PROB_BASE = {"h5": 0.036, "h10": 0.086, "h21": 0.178}   # unconditional base ra
 # extra probability when MANY scare-types fire together (independent monotonic effect, measured),
 # applied per hot Tier-A scare beyond the first, scaled by horizon, capped.
 _CONJ_BUMP = {"h5": 0.012, "h10": 0.020, "h21": 0.030}
-_GROSS = {"watch": 0.97, "caution": 0.90, "elevated": 0.78, "risk_off": 0.60, "floor": 0.50}
+# SINGLE SOURCE (P2-B' risk unification, audit #4): the shared-band magnitudes (caution /
+# elevated / risk_off / floor) are DERIVED from engine.regime_one.RISK_STATE_GROSS, the one
+# versioned table, so risk_radar can never emit a competing gross for a shared state. It adds
+# ONLY 'watch'=0.97 above the shared four (its own earliest tier). Byte-identical to the prior
+# literal {watch:0.97, caution:0.90, elevated:0.78, risk_off:0.60, floor:0.50}.
+def _gross_from_source() -> dict:
+    from engine.regime_one import RISK_STATE_GROSS, _GROSS_FLOOR
+    return {"watch": 0.97, "caution": RISK_STATE_GROSS["caution"],
+            "elevated": RISK_STATE_GROSS["elevated"], "risk_off": RISK_STATE_GROSS["risk-off"],
+            "floor": _GROSS_FLOOR}
+
+
+_GROSS = _gross_from_source()
 
 _DISCLAIMER = ("Evidence-gated leading-risk radar (research/RISK_ENGINE_V2_FINDINGS.md). "
                "Edge is MODEST (~1.5-2x conditional lift, not a forecast) and LOUD+EARLY by "

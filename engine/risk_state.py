@@ -67,7 +67,18 @@ _ALERT_FROM = "elevated"   # state at/above which the loud banner + alert fire
 # (Mastermind books, baskets/ladder) apply, mirroring engine.vol_regime.sizing_overlay.
 # Routes the risk state into SIZING, never selection (the validated channel — the edge is
 # the absolute-trend drawdown gate, not selection rank; see narrative-rotation findings).
-_DEFAULT_GROSS = {"caution": 0.90, "elevated": 0.78, "risk_off": 0.60, "floor": 0.50}
+#
+# SINGLE SOURCE (P2-B' risk unification, audit #4): the magnitudes are DERIVED from the one
+# versioned table engine.regime_one.RISK_STATE_GROSS, not a parallel literal, so the two can
+# never drift. This module's keys use 'risk_off' (underscore); regime_one uses 'risk-off'.
+# Byte-identical to the prior literal {caution:0.90, elevated:0.78, risk_off:0.60, floor:0.50}.
+def _default_gross_from_source() -> dict:
+    from engine.regime_one import RISK_STATE_GROSS, _GROSS_FLOOR
+    return {"caution": RISK_STATE_GROSS["caution"], "elevated": RISK_STATE_GROSS["elevated"],
+            "risk_off": RISK_STATE_GROSS["risk-off"], "floor": _GROSS_FLOOR}
+
+
+_DEFAULT_GROSS = _default_gross_from_source()
 
 # Conjunction escalator: the composite's value is the CONJUNCTION of leading legs
 # firing together, not their diluted mean. A plain weighted mean lets two screaming
