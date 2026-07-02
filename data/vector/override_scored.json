@@ -8,7 +8,7 @@
   "window_start": "2026-10-01",
   "window_end": "2026-12-10",
   "frozen_spec_version": "v1",
-  "grading_spec_source": "frozen_v1 (registry pending W0)",
+  "grading_spec_source": "frozen_v1 (grading_spec not yet declared in registry)",
   "subclaims": {
     "drawdown_deepens_into_window": {
       "status": "PENDING",

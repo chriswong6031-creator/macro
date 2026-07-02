@@ -200,7 +200,7 @@ def _grading_spec(vcfg: dict) -> str:
 
     gs = entry.get("grading_spec")
     if gs is None:
-        return "frozen_v1 (registry pending W0)"
+        return "frozen_v1 (grading_spec not yet declared in registry)"
 
     # Accept both list and dict forms
     if isinstance(gs, list):
@@ -275,7 +275,17 @@ def _gate_source(vcfg: dict) -> str:
 
 
 def _gate_cfg_from_vcfg(vcfg: dict) -> dict:
-    """Extract the gate sub-config dict (for buy_lead_days etc)."""
+    """Extract the gate sub-config dict (for buy_lead_days etc).
+
+    The registry entry (W0) declares governance metadata but points at the
+    canonical params via params_ref = vector.allocation.midterm_gate — so the
+    allocation block wins whenever it exists; the registry entry is only a
+    fallback for a hypothetical params-free declaration.
+    """
+    alloc = vcfg.get("allocation") or {}
+    gate = alloc.get("midterm_gate")
+    if gate:
+        return gate
     overrides = vcfg.get("overrides")
     if isinstance(overrides, list):
         entry = next(
@@ -284,8 +294,7 @@ def _gate_cfg_from_vcfg(vcfg: dict) -> dict:
         )
         if entry is not None:
             return entry.get("gate_cfg") or entry
-    alloc = vcfg.get("allocation") or {}
-    return alloc.get("midterm_gate") or {}
+    return {}
 
 
 def _is_gate_active_on(dt: pd.Timestamp, vcfg: dict) -> bool:
