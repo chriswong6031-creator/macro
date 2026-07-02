@@ -7,20 +7,35 @@ increase capacity," supply ~100% concentrated, the market focused elsewhere. Tha
 genuinely LEADING signal — it precedes the estimate revisions by quarters. This engine
 generalizes it: per theme/industry, is the supply side physically full?
 
-Six physical legs, each free:
+Eight physical legs, each free:
   leg1 capacity full    : cap-U high (z of CAPUTLG{naics}S)                [FRED]
   leg2 inventory drained: inventories/sales falling (-z of MNFCTRIRSA)     [FRED]
   leg3 backlog building  : unfilled-orders/shipments rising                 [FRED]
   leg4 pricing power     : industry PPI YoY accelerating                   [FRED]
   leg6 language          : EDGAR "sold out / capacity constrained / on
                            allocation" mention ACCEL for the theme's filers [EDGAR FTS]
+  leg7 member inventory  : per-member XBRL inventory-days YoY trend        [EDGAR XBRL]
+  leg8 member backlog    : per-member XBRL RPO YoY growth                  [EDGAR XBRL]
+  (margin trend feeds pricing_power axis in foresight_score.py, not a band leg)
 
-Weight 0.25 is PROVISIONAL — shadow-calibration pending (§3.2 of the upgrade spec).
-The live cutoff and z-threshold are also PROVISIONAL until the PIT backtest (Wave 3a)
-produces empirically-earned values. Shadow variants are logged to
-data/foresight/shadow_bands_log.jsonl from day one (see _shadow_log_cutoffs;
-band-level rows — the STAGE-level shadow ledger is engine/foresight_shadow.py's
-shadow_log.jsonl; the two schemas never share a file per the W3b review).
+Weights 0.25 (leg6) and provisional XBRL-leg weights are PROVISIONAL — shadow-
+calibration pending (§3.2 of the upgrade spec). The live cutoff and z-threshold are
+also PROVISIONAL until the PIT backtest (Wave 3a) produces empirically-earned values.
+Shadow variants are logged to data/foresight/shadow_bands_log.jsonl from day one
+(see _shadow_log_cutoffs; band-level rows — the STAGE-level shadow ledger is
+engine/foresight_shadow.py's shadow_log.jsonl; the two schemas never share a file
+per the W3b review).
+
+W5a FINGERPRINT INTEGRATION (backtest-redirected Q2):
+The NAICS legs (legs 1-4) use 3 shared industry codes for 7 themes — MU/WDC and
+AMAT/LRCX get the SAME cap-U read despite being different businesses. Legs 7-8 are
+per-theme by construction: they read each theme's OWN members' filed numbers. The 11
+previously unmapped themes now get a real numeric path when ≥3 members report.
+
+ANTI-LAUNDERING: legs 7-8 are numeric (XBRL-filed numbers) and participate in the
+numeric_composite / numeric_band like legs 1-4 — they are not language and do not
+trigger the text-only cap. The anti-laundering discriminator (text cannot tip numeric)
+is unaffected: language_z_gated is still excluded from numeric_avail.
 
 The HBM template fires when legs 1-4 fire TOGETHER (demand outrunning supply). leg6
 can additionally lift a theme to TIGHT (text)/TIGHTENING (text) for unmapped themes.
@@ -36,6 +51,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from engine import theme_fingerprint as fp
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -61,19 +77,30 @@ UNFILLED, SHIPMENTS = "AMTMUO", "AMTMVS"
 DELIVERY = ["DTCISA156MSFRBPHI", "DTMUAMFRBDAL"]    # regional-Fed delivery-time diffusion
 PRICES_RECV = "PFGIUAMFRBDAL"
 
-# Numeric legs (legs 1-4): weights rebalanced to 0.75 total to accommodate leg6_language
-# at 0.25.  Original ratios: 0.28:0.22:0.25:0.25 → scaled to 0.75 → 0.21:0.165:0.1875:0.1875
-# Rounded to sum exactly to 0.75:
+# Numeric legs (legs 1-4): weights rebalanced to 0.65 total to accommodate leg6_language
+# at 0.20 PROVISIONAL and legs 7-8 at 0.075 each PROVISIONAL (total 0.15).
+# Original ratios for legs 1-4: 0.28:0.22:0.25:0.25, now scaled to 0.65 total:
+# 0.28*0.65/1.0≈0.182, 0.22*0.65/1.0≈0.143, 0.25*0.65/1.0≈0.1625 each.
+# Rounded to sum exactly to 1.0:
+#   leg1 0.182 + leg2 0.143 + leg3 0.163 + leg4 0.162 = 0.65
+#   leg6 0.20 + leg7 0.075 + leg8 0.075 = 0.35
+#   total = 1.00
+#
+# ALL WEIGHTS PROVISIONAL — shadow-calibration pending (§3.2 of the upgrade spec).
+# Once the PIT backtest runs and forward grading has ≥30d of flags per leg, the
+# calibration loop will promote/adjust these values. Until then each leg carries a
+# 'provisional' tag in the output and none is used alone to assert conviction.
+#
+# Shadow-grid registration: leg7 + leg8 are candidates for the §3.2 loop.
+# They participate in numeric_composite / numeric_band (XBRL filed numbers, not text).
 WEIGHTS = {
-    "leg1_capacity":  0.21,
-    "leg2_inventory": 0.165,
-    "leg3_backlog":   0.1875,
-    "leg4_pricing":   0.1875,
-    # PROVISIONAL weight — shadow-calibration pending (Wave 3a).
-    # Once the PIT backtest runs and forward grading has ≥30d of text-band flags,
-    # the calibration loop (§3.2) will promote/adjust this value. Until then it
-    # carries a 'provisional' tag in the output and is NOT used alone to assert conviction.
-    "leg6_language":  0.25,    # PROVISIONAL
+    "leg1_capacity":   0.182,   # PROVISIONAL
+    "leg2_inventory":  0.143,   # PROVISIONAL
+    "leg3_backlog":    0.163,   # PROVISIONAL
+    "leg4_pricing":    0.162,   # PROVISIONAL
+    "leg6_language":   0.20,    # PROVISIONAL (down from 0.25 to accommodate legs 7-8)
+    "leg7_member_inventory": 0.075,  # PROVISIONAL — W5a XBRL fingerprint
+    "leg8_member_backlog":   0.075,  # PROVISIONAL — W5a XBRL fingerprint
 }
 
 # Shadow z-cutoff candidates for the language leg (§3.2 shadow-threshold ledger).
@@ -256,43 +283,141 @@ def _shadow_log_cutoffs(theme_key: str, asof: str | None, lang_accel: float | No
 
 
 def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dict,
-                      asof: str | None = None) -> dict | None:
+                      asof: str | None = None,
+                      data_dir=None) -> dict | None:
+    """Compute per-theme bottleneck read including W5a XBRL fingerprint legs.
+
+    data_dir: optional override for the fingerprint engine's parquet path
+    (test fixtures pass tmp_path here; production passes None → config.data_dir()).
+    """
     spec = THEME_MAP.get(theme_key)
     lang_accel, lang_hits, n_filers = _language_accel(tickers)
     lang_z = _language_z(lang_accel)
 
+    # W5a: compute per-theme XBRL fingerprint legs (cache-read only, no network)
+    _fp_data_dir = data_dir if data_dir is not None else config.data_dir()
+    fingerprint = None
+    leg7_inv = None
+    leg8_rpo = None
+    try:
+        fingerprint = fp.compute_theme_fingerprint(theme_key, tickers, _fp_data_dir)
+        if fingerprint is not None:
+            leg7_inv = fingerprint.get("leg7_member_inventory")
+            leg8_rpo = fingerprint.get("leg8_member_backlog")
+    except Exception as e:  # noqa: BLE001 — fingerprint failure never blocks the rest
+        log.debug("theme_fingerprint[%s] failed (non-fatal): %s", theme_key, e)
+
     if spec is None:
-        # Unmapped theme: language-only pass — band capped at TIGHT (text) / TIGHTENING (text)
-        if lang_accel is None:
-            return None   # no data at all for this theme
-        text_composite = lang_z
-        band = _band(text_composite, 0, False,
-                     lang_accel=lang_accel, n_filers=n_filers, text_only=True)
-        # Log shadow cutoffs even for unmapped themes
+        # Unmapped theme: W5a extends this path — fingerprint legs (legs 7-8) provide a
+        # real numeric path when ≥MIN_MEMBERS members report, making text_only=False.
+        # Previously this path was language-only (text_only=True always).
         _shadow_log_cutoffs(theme_key, asof, lang_accel, n_filers)
         leg6_out = {
             "value": lang_z, "accel": lang_accel, "hits": lang_hits,
             "n_filers": n_filers, "provisional": True,
         }
+
+        # Build leg dict: fingerprint legs count as numeric; language is text-gated
+        lang_z_gated_u = lang_z if (lang_z is not None and n_filers >= LANG_MIN_FILERS) else None
+        unmapped_legs: dict[str, float | None] = {"leg6_language": lang_z_gated_u}
+        if leg7_inv is not None:
+            unmapped_legs["leg7_member_inventory"] = leg7_inv
+        if leg8_rpo is not None:
+            unmapped_legs["leg8_member_backlog"] = leg8_rpo
+
+        # Numeric legs for unmapped themes = only the fingerprint legs (no FRED NAICS here)
+        unmapped_numeric: dict[str, float] = {
+            k: v for k, v in unmapped_legs.items()
+            if k in ("leg7_member_inventory", "leg8_member_backlog") and v is not None
+        }
+
+        if not unmapped_legs or all(v is None for v in unmapped_legs.values()):
+            # No data at all for this theme
+            if fingerprint is None and lang_accel is None:
+                return None
+        if lang_accel is None and not unmapped_numeric:
+            return None
+
+        # text_only=False when fingerprint legs are live (they are numeric, not text)
+        has_numeric_fingerprint = bool(unmapped_numeric)
+        text_only_unmapped = not has_numeric_fingerprint
+
+        if unmapped_numeric:
+            # Numeric fingerprint legs available → compute numeric_composite
+            nwsum = sum(WEIGHTS[k] for k in unmapped_numeric if k in WEIGHTS)
+            if nwsum > 0:
+                unmapped_numeric_composite = round(
+                    sum(WEIGHTS[k] * v for k, v in unmapped_numeric.items()
+                        if k in WEIGHTS) / nwsum, 2)
+            else:
+                unmapped_numeric_composite = None
+            unmapped_numeric_band = (
+                _band(unmapped_numeric_composite, len(unmapped_numeric), False)
+                if unmapped_numeric_composite is not None else None
+            )
+        else:
+            unmapped_numeric_composite = None
+            unmapped_numeric_band = None
+
+        # Combined composite (numeric + language if available)
+        avail_u = {k: v for k, v in unmapped_legs.items() if v is not None}
+        if avail_u:
+            wsum = sum(WEIGHTS[k] for k in avail_u if k in WEIGHTS)
+            if wsum > 0:
+                combined_composite = round(
+                    sum(WEIGHTS[k] * v for k, v in avail_u.items()
+                        if k in WEIGHTS) / wsum, 2)
+                n_u = len(avail_u)
+            else:
+                combined_composite = None
+                n_u = 0
+        else:
+            combined_composite = None
+            n_u = 0
+
+        if text_only_unmapped:
+            # Language-only: cap at TIGHT (text) — original behaviour
+            text_composite = lang_z
+            band = _band(text_composite, 0, False,
+                         lang_accel=lang_accel, n_filers=n_filers, text_only=True)
+            tightness_out = None
+        else:
+            # Has numeric fingerprint legs: use full band logic (not text-only)
+            band = _band(combined_composite, n_u, False,
+                         lang_accel=lang_accel, n_filers=n_filers,
+                         text_only=False)
+            tightness_out = combined_composite
+            # Anti-laundering: if numeric-only is not TIGHT, language can't make it TIGHT
+            if band in ("TIGHT", "SOLD_OUT") and (
+                    unmapped_numeric_composite is None
+                    or unmapped_numeric_composite <= 0.75):
+                band = "TIGHT (text)"
+                text_only_unmapped = True
+                tightness_out = None
+
+        n_unmapped_legs = sum(1 for v in unmapped_legs.values() if v is not None)
         return {
             "name": name,
             "naics": None,
             "band": band,
-            "tightness": None,
+            "tightness": tightness_out,
             "regime": False,
-            "n_legs": 1 if lang_z is not None else 0,
-            "legs": {"leg6_language": lang_z},
+            "n_legs": n_unmapped_legs,
+            "legs": unmapped_legs,
             "cap_u_latest": None,
             "ppi_yoy_latest": None,
             "language_accel": lang_accel,
             "language_hits": lang_hits,
             "language_n_filers": n_filers,
             "leg6_detail": leg6_out,
-            "numeric_composite": None,
-            "numeric_band": None,      # language-only pass — no numeric legs exist
-            "weights": {"leg6_language": WEIGHTS["leg6_language"]},
-            "text_only": True,
+            "numeric_composite": unmapped_numeric_composite,
+            "numeric_band": unmapped_numeric_band,
+            "weights": {k: WEIGHTS[k] for k in unmapped_legs if k in WEIGHTS},
+            "text_only": text_only_unmapped,
+            "fingerprint": fingerprint,
         }
+
+    # --- MAPPED THEME (NAICS legs 1-4 available) ---
 
     cap_u = _series(spec["cap_u"])
     leg1 = _z(cap_u)                                     # capacity full
@@ -305,6 +430,8 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
     # must never move the weighted read (the spec's "filers gate carries the noise
     # burden" applies to the composite path, not just the band relabel)
     lang_z_gated = lang_z if (lang_z is not None and n_filers >= LANG_MIN_FILERS) else None
+
+    # W5a: fingerprint legs 7-8 are numeric (XBRL filed) → include in numeric_avail
     legs = {
         "leg1_capacity":  leg1,
         "leg2_inventory": leg2,
@@ -312,7 +439,14 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
         "leg4_pricing":   leg4,
         "leg6_language":  lang_z_gated,
     }
+    if leg7_inv is not None:
+        legs["leg7_member_inventory"] = leg7_inv
+    if leg8_rpo is not None:
+        legs["leg8_member_backlog"] = leg8_rpo
+
     avail = {k: v for k, v in legs.items() if v is not None}
+    # Numeric avail: all legs except language (language is text, not physical XBRL/FRED)
+    # Fingerprint legs 7-8 ARE numeric — they are filed XBRL numbers, not language.
     numeric_avail = {k: v for k, v in avail.items() if k != "leg6_language"}
 
     if not avail:
@@ -320,10 +454,12 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
         regime = False
     else:
         # Re-normalize weights over available legs
-        wsum = sum(WEIGHTS[k] for k in avail)
-        composite = round(sum(WEIGHTS[k] * v for k, v in avail.items()) / wsum, 2)
+        wsum = sum(WEIGHTS[k] for k in avail if k in WEIGHTS)
+        composite = round(sum(WEIGHTS[k] * v for k, v in avail.items()
+                              if k in WEIGHTS) / wsum, 2) if wsum else None
         n = len(avail)
-        # regime requires ALL four numeric legs positive and non-null
+        # regime requires ALL four numeric FRED legs positive and non-null
+        # (fingerprint legs 7-8 do NOT gate the HBM regime — they are supplemental)
         numeric_legs = {k: legs[k] for k in ("leg1_capacity", "leg2_inventory",
                                               "leg3_backlog", "leg4_pricing")}
         regime = all((numeric_legs[k] or 0) > 0 for k in numeric_legs) \
@@ -334,10 +470,12 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
     # a text signal into a numeric band: text_only=False, TEXT_ONLY_CAP bypassed,
     # physical_confirmed=True, hot tone, mislabeled ledger row (review finding:
     # grid_electrification numeric 0.66 → combined 1.07 → shipped plain TIGHT @ 79.4).
+    # W5a: legs 7-8 ARE numeric so they participate in numeric_composite.
     if numeric_avail:
-        nwsum = sum(WEIGHTS[k] for k in numeric_avail)
+        nwsum = sum(WEIGHTS[k] for k in numeric_avail if k in WEIGHTS)
         numeric_composite = round(
-            sum(WEIGHTS[k] * v for k, v in numeric_avail.items()) / nwsum, 2)
+            sum(WEIGHTS[k] * v for k, v in numeric_avail.items()
+                if k in WEIGHTS) / nwsum, 2) if nwsum else None
     else:
         numeric_composite = None
 
@@ -348,7 +486,7 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
     numeric_band = (_band(numeric_composite, len(numeric_avail), regime)
                     if numeric_avail else None)
 
-    # Determine if we have only the language leg (no numeric FRED legs at all)
+    # Determine if we have only the language leg (no numeric FRED or XBRL legs at all)
     text_only = not numeric_avail and lang_z is not None
 
     band = _band(composite, n, regime,
@@ -393,16 +531,24 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
         "leg6_detail": leg6_out,
         "numeric_composite": numeric_composite,
         "numeric_band": numeric_band,
-        "weights": {k: WEIGHTS[k] for k in legs},
+        "weights": {k: WEIGHTS[k] for k in legs if k in WEIGHTS},
         "text_only": text_only,
+        "fingerprint": fingerprint,
     }
 
 
-def compute_bottleneck(write_ledger: bool = True) -> dict | None:
+def compute_bottleneck(write_ledger: bool = True, data_dir=None) -> dict | None:
     """Per-theme physical-tightness read over ALL themes (mapped + unmapped via text-only
     path). DISPLAY-ONLY.
 
+    data_dir: optional override (used by tests; production passes None → config.data_dir()).
+
     Returns None when no bottleneck data is available at all."""
+    # Reset fingerprint module-level caches so each compute_bottleneck call starts fresh
+    # (mirrors foresight_score.py's reset_caches pattern; prevents stale test fixtures
+    # bleeding into subsequent calls)
+    fp.reset_caches()
+
     # economy-wide shared legs computed once
     leg2 = _z(_series(INV_SALES))
     if leg2 is not None:
@@ -425,7 +571,8 @@ def compute_bottleneck(write_ledger: bool = True) -> dict | None:
     for key, spec in themes.items():
         try:
             r = _theme_bottleneck(
-                key, spec.get("name", key), spec.get("tickers") or [], shared, asof=asof
+                key, spec.get("name", key), spec.get("tickers") or [], shared,
+                asof=asof, data_dir=data_dir,
             )
         except Exception as e:  # noqa: BLE001 — one theme failing never blocks the rest
             log.warning("bottleneck[%s] failed: %s", key, e)
@@ -449,9 +596,15 @@ def compute_bottleneck(write_ledger: bool = True) -> dict | None:
             "delivery_diffusion": shared["delivery_diffusion"],
             "prices_received": shared["prices_received"],
         },
-        "note": ("display-only; T1 leading leg of the foresight cascade. leg6_language "
-                 "weight PROVISIONAL (shadow-calibration pending). Watchlist-builder / "
+        "note": ("display-only; T1 leading leg of the foresight cascade. All weights "
+                 "PROVISIONAL (shadow-calibration pending). W5a: legs 7-8 add per-theme "
+                 "XBRL member-level fingerprints (inventory-days + RPO). Watchlist-builder / "
                  "thesis-confirmer, NOT an entry-timer — defer the buy to the dislocation overlay."),
+        "fingerprint_coverage": {
+            k: (v.get("fingerprint") or {}).get("n_legs_live", 0)
+            for k, v in out.items()
+            if v.get("fingerprint") is not None
+        },
     }
 
     if write_ledger:
