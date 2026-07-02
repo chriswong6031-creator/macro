@@ -115,6 +115,16 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _desk_passport(desk_name: str) -> dict:
+    """Honest conviction-provenance passport for a desk card (#41), derived from the outcome
+    spine (measured · n / accruing · n=0). Degrade-never-raise → accruing on any failure."""
+    try:
+        from engine.passport import passport_from_spine
+        return passport_from_spine(f"desk:{desk_name}", family=f"desk:{desk_name}")
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return {"state": "accruing", "earned": False, "label_en": "accruing · n=0", "n": 0}
+
+
 # --------------------------------------------------------------------------- #
 # io helpers
 # --------------------------------------------------------------------------- #
@@ -533,6 +543,10 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "regime_context": None, "theses": [],
         "source_verdicts": _source_verdicts(state),
         "track_record": state.get("track_record"),     # injected by Phase-C scorer; else None
+        # #41 badge honesty: the desk's conviction badge carries an honest provenance passport
+        # (measured · n / accruing · n=0) derived from the outcome spine, so a cold desk's
+        # conviction can't read as an earned number. Shared helper, not a per-page patch.
+        "passport": _desk_passport("ai_desk"),
         "confidence": "low",
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
     }
