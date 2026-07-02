@@ -1,0 +1,162 @@
+{"theme":"nuclear_power","asof":"2026-05-01","ts":"2026-07-02T12:06:40.945847+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"nuclear_power","asof":"2026-05-01","ts":"2026-07-02T12:06:40.945847+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"nuclear_power","asof":"2026-05-01","ts":"2026-07-02T12:06:40.945847+00:00","cutoff":2.0,"would_be_band":"TIGHTENING (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"rare_earth_critical_min","asof":"2026-05-01","ts":"2026-07-02T12:06:40.952424+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":2}
+{"theme":"rare_earth_critical_min","asof":"2026-05-01","ts":"2026-07-02T12:06:40.952424+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":2}
+{"theme":"rare_earth_critical_min","asof":"2026-05-01","ts":"2026-07-02T12:06:40.952424+00:00","cutoff":2.0,"would_be_band":"TIGHTENING (text)","lang_accel":2.0,"n_filers":2}
+{"theme":"data_center_power","asof":"2026-05-01","ts":"2026-07-02T12:06:40.957743+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"data_center_power","asof":"2026-05-01","ts":"2026-07-02T12:06:40.957743+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"data_center_power","asof":"2026-05-01","ts":"2026-07-02T12:06:40.957743+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"memory_storage","asof":"2026-05-01","ts":"2026-07-02T12:06:40.964702+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":2}
+{"theme":"memory_storage","asof":"2026-05-01","ts":"2026-07-02T12:06:40.964702+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":2}
+{"theme":"memory_storage","asof":"2026-05-01","ts":"2026-07-02T12:06:40.964702+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":2}
+{"theme":"ai_semiconductors","asof":"2026-05-01","ts":"2026-07-02T12:06:40.971607+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":1.4,"n_filers":4}
+{"theme":"ai_semiconductors","asof":"2026-05-01","ts":"2026-07-02T12:06:40.971607+00:00","cutoff":1.5,"would_be_band":"TIGHTENING (text)","lang_accel":1.4,"n_filers":4}
+{"theme":"ai_semiconductors","asof":"2026-05-01","ts":"2026-07-02T12:06:40.971607+00:00","cutoff":2.0,"would_be_band":"TIGHTENING (text)","lang_accel":1.4,"n_filers":4}
+{"theme":"semicap_equipment","asof":"2026-05-01","ts":"2026-07-02T12:06:40.979040+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"semicap_equipment","asof":"2026-05-01","ts":"2026-07-02T12:06:40.979040+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"semicap_equipment","asof":"2026-05-01","ts":"2026-07-02T12:06:40.979040+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"cybersecurity","asof":"2026-05-01","ts":"2026-07-02T12:06:40.981930+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"cybersecurity","asof":"2026-05-01","ts":"2026-07-02T12:06:40.981930+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"cybersecurity","asof":"2026-05-01","ts":"2026-07-02T12:06:40.981930+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"glp1_obesity","asof":"2026-05-01","ts":"2026-07-02T12:06:40.984330+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"glp1_obesity","asof":"2026-05-01","ts":"2026-07-02T12:06:40.984330+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"glp1_obesity","asof":"2026-05-01","ts":"2026-07-02T12:06:40.984330+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"defense_aerospace","asof":"2026-05-01","ts":"2026-07-02T12:06:40.987711+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":4}
+{"theme":"defense_aerospace","asof":"2026-05-01","ts":"2026-07-02T12:06:40.987711+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":4}
+{"theme":"defense_aerospace","asof":"2026-05-01","ts":"2026-07-02T12:06:40.987711+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":4}
+{"theme":"copper_steel_electrify","asof":"2026-05-01","ts":"2026-07-02T12:06:40.994611+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"copper_steel_electrify","asof":"2026-05-01","ts":"2026-07-02T12:06:40.994611+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"copper_steel_electrify","asof":"2026-05-01","ts":"2026-07-02T12:06:40.994611+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"solar","asof":"2026-05-01","ts":"2026-07-02T12:06:40.997032+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"solar","asof":"2026-05-01","ts":"2026-07-02T12:06:40.997032+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"solar","asof":"2026-05-01","ts":"2026-07-02T12:06:40.997032+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"robotics_automation","asof":"2026-05-01","ts":"2026-07-02T12:06:40.999636+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"robotics_automation","asof":"2026-05-01","ts":"2026-07-02T12:06:40.999636+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"robotics_automation","asof":"2026-05-01","ts":"2026-07-02T12:06:40.999636+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"fintech_payments","asof":"2026-05-01","ts":"2026-07-02T12:06:41.001860+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"fintech_payments","asof":"2026-05-01","ts":"2026-07-02T12:06:41.001860+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"fintech_payments","asof":"2026-05-01","ts":"2026-07-02T12:06:41.001860+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"medical_devices","asof":"2026-05-01","ts":"2026-07-02T12:06:41.005288+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"medical_devices","asof":"2026-05-01","ts":"2026-07-02T12:06:41.005288+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"medical_devices","asof":"2026-05-01","ts":"2026-07-02T12:06:41.005288+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":1.0,"n_filers":1}
+{"theme":"diagnostics_lifesci","asof":"2026-05-01","ts":"2026-07-02T12:06:41.007219+00:00","cutoff":1.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"diagnostics_lifesci","asof":"2026-05-01","ts":"2026-07-02T12:06:41.007219+00:00","cutoff":1.5,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"diagnostics_lifesci","asof":"2026-05-01","ts":"2026-07-02T12:06:41.007219+00:00","cutoff":2.0,"would_be_band":"NEUTRAL","lang_accel":0.0,"n_filers":0}
+{"theme":"ag_fertilizer","asof":"2026-05-01","ts":"2026-07-02T12:06:41.010715+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"ag_fertilizer","asof":"2026-05-01","ts":"2026-07-02T12:06:41.010715+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"ag_fertilizer","asof":"2026-05-01","ts":"2026-07-02T12:06:41.010715+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":4.0,"n_filers":2}
+{"theme":"space_satellite","asof":"2026-05-01","ts":"2026-07-02T12:06:41.013978+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"space_satellite","asof":"2026-05-01","ts":"2026-07-02T12:06:41.013978+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"space_satellite","asof":"2026-05-01","ts":"2026-07-02T12:06:41.013978+00:00","cutoff":2.0,"would_be_band":"TIGHTENING (text)","lang_accel":2.0,"n_filers":3}
+{"theme":"grid_electrification","asof":"2026-05-01","ts":"2026-07-02T12:06:41.019206+00:00","cutoff":1.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"grid_electrification","asof":"2026-05-01","ts":"2026-07-02T12:06:41.019206+00:00","cutoff":1.5,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"theme":"grid_electrification","asof":"2026-05-01","ts":"2026-07-02T12:06:41.019206+00:00","cutoff":2.0,"would_be_band":"TIGHT (text)","lang_accel":3.0,"n_filers":2}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"space_satellite","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"data_center_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"solar","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"diagnostics_lifesci","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"semicap_equipment","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"fintech_payments","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"robotics_automation","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"ag_fertilizer","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"PRECIPICE (text)","live_stage":"PRECIPICE (text)"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"glp1_obesity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"medical_devices","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"memory_storage","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"cybersecurity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"defense_aerospace","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"ai_semiconductors","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"RE-RATING"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"copper_steel_electrify","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"rare_earth_critical_min","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"grid_electrification","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.0,"theme":"nuclear_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"space_satellite","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"data_center_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"solar","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"diagnostics_lifesci","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"semicap_equipment","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"fintech_payments","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"robotics_automation","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"ag_fertilizer","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"PRECIPICE (text)","live_stage":"PRECIPICE (text)"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"glp1_obesity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"medical_devices","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"memory_storage","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"cybersecurity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"defense_aerospace","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"ai_semiconductors","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"RE-RATING"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"copper_steel_electrify","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"rare_earth_critical_min","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"grid_electrification","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":1.5,"theme":"nuclear_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"space_satellite","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"data_center_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"solar","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"diagnostics_lifesci","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"semicap_equipment","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"fintech_payments","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"robotics_automation","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"ag_fertilizer","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"PRECIPICE (text)","live_stage":"PRECIPICE (text)"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"glp1_obesity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"medical_devices","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"memory_storage","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"cybersecurity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"defense_aerospace","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"ai_semiconductors","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"RE-RATING"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"copper_steel_electrify","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"rare_earth_critical_min","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"grid_electrification","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"lang_z_cutoff","candidate":2.0,"theme":"nuclear_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"space_satellite","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"data_center_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"solar","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"diagnostics_lifesci","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"semicap_equipment","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"fintech_payments","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"robotics_automation","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"ag_fertilizer","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"PRECIPICE (text)","live_stage":"PRECIPICE (text)"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"glp1_obesity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"medical_devices","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"memory_storage","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"cybersecurity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"defense_aerospace","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"ai_semiconductors","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"RE-RATING"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"copper_steel_electrify","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"rare_earth_critical_min","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"grid_electrification","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":70.0,"theme":"nuclear_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"space_satellite","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"data_center_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"solar","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"diagnostics_lifesci","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"semicap_equipment","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"fintech_payments","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"robotics_automation","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"ag_fertilizer","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"PRECIPICE (text)","live_stage":"PRECIPICE (text)"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"glp1_obesity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"medical_devices","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"memory_storage","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"cybersecurity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"defense_aerospace","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"ai_semiconductors","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"RE-RATING","live_stage":"RE-RATING"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"copper_steel_electrify","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"rare_earth_critical_min","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"grid_electrification","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":80.0,"theme":"nuclear_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"space_satellite","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"data_center_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"solar","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"diagnostics_lifesci","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"semicap_equipment","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"fintech_payments","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"robotics_automation","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"ag_fertilizer","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"PRECIPICE (text)","live_stage":"PRECIPICE (text)"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"glp1_obesity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"medical_devices","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"memory_storage","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"cybersecurity","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"WATCH","live_stage":"WATCH"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"defense_aerospace","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"ai_semiconductors","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"RE-RATING"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"copper_steel_electrify","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"rare_earth_critical_min","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"grid_electrification","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}
+{"param":"broad_hi_pctile","candidate":90.0,"theme":"nuclear_power","asof":"2026-07-01","ts":"2026-07-02T12:13:17.578259+00:00","stage":"BROADENING (text)","live_stage":"BROADENING (text)"}

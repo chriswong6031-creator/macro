@@ -18,7 +18,9 @@ Six physical legs, each free:
 Weight 0.25 is PROVISIONAL — shadow-calibration pending (§3.2 of the upgrade spec).
 The live cutoff and z-threshold are also PROVISIONAL until the PIT backtest (Wave 3a)
 produces empirically-earned values. Shadow variants are logged to
-data/foresight/shadow_log.jsonl from day one (see _shadow_log_cutoffs).
+data/foresight/shadow_bands_log.jsonl from day one (see _shadow_log_cutoffs;
+band-level rows — the STAGE-level shadow ledger is engine/foresight_shadow.py's
+shadow_log.jsonl; the two schemas never share a file per the W3b review).
 
 The HBM template fires when legs 1-4 fire TOGETHER (demand outrunning supply). leg6
 can additionally lift a theme to TIGHT (text)/TIGHTENING (text) for unmapped themes.
@@ -214,13 +216,13 @@ def _shadow_log_cutoffs(theme_key: str, asof: str | None, lang_accel: float | No
     """Log shadow z-cutoff variants for the language leg per §3.2.
 
     For each cutoff in LANG_Z_SHADOW_CUTOFFS, compute what the text band WOULD be and
-    append to data/foresight/shadow_log.jsonl (append-only, deduped by theme+asof+cutoff).
+    append to data/foresight/shadow_bands_log.jsonl (append-only, deduped by theme+asof+cutoff).
     Non-fatal — the live band is unaffected.
     """
     if lang_accel is None or asof is None:
         return
     try:
-        p = config.data_dir() / "foresight" / "shadow_log.jsonl"
+        p = config.data_dir() / "foresight" / "shadow_bands_log.jsonl"
         p.parent.mkdir(parents=True, exist_ok=True)
         seen: set[tuple] = set()
         if p.exists():
@@ -286,6 +288,8 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
             "language_hits": lang_hits,
             "language_n_filers": n_filers,
             "leg6_detail": leg6_out,
+            "numeric_composite": None,
+            "numeric_band": None,      # language-only pass — no numeric legs exist
             "weights": {"leg6_language": WEIGHTS["leg6_language"]},
             "text_only": True,
         }
@@ -337,6 +341,13 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
     else:
         numeric_composite = None
 
+    # the band the NUMERIC legs alone would produce — surfaced so the shadow-threshold
+    # machinery (engine/foresight_shadow.py) can re-derive candidate bands faithfully
+    # (W3b review B3: an approximation that lost the numeric base band biased the
+    # lang_z calibration toward text-bands)
+    numeric_band = (_band(numeric_composite, len(numeric_avail), regime)
+                    if numeric_avail else None)
+
     # Determine if we have only the language leg (no numeric FRED legs at all)
     text_only = not numeric_avail and lang_z is not None
 
@@ -380,6 +391,8 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
         "language_hits": lang_hits,
         "language_n_filers": n_filers,
         "leg6_detail": leg6_out,
+        "numeric_composite": numeric_composite,
+        "numeric_band": numeric_band,
         "weights": {k: WEIGHTS[k] for k in legs},
         "text_only": text_only,
     }

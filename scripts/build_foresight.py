@@ -91,6 +91,37 @@ def main() -> int:
         log.warning("foresight grader failed (non-fatal): %s", e)
         grade_summary = None
 
+    # §3.2 shadow-threshold ledger: recompute stages under each shadow-grid candidate
+    # and grade them into a separate track record.  Non-fatal; append-only; display-only.
+    try:
+        from engine.foresight_shadow import (
+            compute_shadow_stages, grade_shadow, shadow_promotion_report,
+        )
+        # Reuse already-computed cascade inputs (bottleneck + revisions + glut are consumed
+        # by compute_foresight_cascade above — shadow re-runs pure functions, no IO cost).
+        from engine.bottleneck import compute_bottleneck
+        from engine.theme_revisions import compute_theme_revisions
+        from engine.glut_watch import compute_glut_watch
+        _shadow_bn = compute_bottleneck(write_ledger=False)
+        _shadow_rv = compute_theme_revisions(write_ledger=False)
+        _shadow_gl = compute_glut_watch(demand=None, write_ledger=False)
+        n_shadow = compute_shadow_stages(
+            bottleneck=_shadow_bn,
+            revisions=_shadow_rv,
+            glut=_shadow_gl,
+            asof=(cascade or {}).get("asof"),
+        )
+        log.info("shadow ledger: %d new rows appended", n_shadow)
+        shadow_grade = grade_shadow(write=True)
+        shadow_report = shadow_promotion_report(shadow_summary=shadow_grade)
+        n_promotable = len(shadow_report.get("promotable") or {})
+        log.info("shadow promotion report: %d PROMOTABLE candidates (accruing=%s)",
+                 n_promotable, shadow_report.get("accruing"))
+    except Exception as e:  # noqa: BLE001 — never block the live build
+        log.warning("shadow-threshold ledger failed (non-fatal): %s", e)
+        shadow_grade = None
+        shadow_report = None
+
     # Discovery: candidate emerging bottlenecks forming outside the tracked themes
     try:
         from engine.theme_emergence import compute_theme_emergence
