@@ -27,7 +27,7 @@ from urllib.parse import parse_qs, urlparse
 
 from . import (ai_cost, auth, brief, config_store, content, experiments, flags,
                ga4, github_api, github_config, gitops, health, services, settings,
-               system, umami, uptime_board, users)
+               system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
 _CTYPES = {".html": "text/html; charset=utf-8",
@@ -252,6 +252,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(brief.panel())
             if path == "/api/experiments":
                 return self._json(experiments.panel())
+            if path == "/api/vector_override":
+                # OWNER-ONLY (W3/D2): behind the same auth as every other panel;
+                # numbers only, no action affordances (D3).
+                return self._json(vector_override.panel())
             if path == "/api/health":
                 return self._json(health.summary())
             if path == "/api/cost":

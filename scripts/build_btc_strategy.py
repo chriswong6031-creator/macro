@@ -198,14 +198,16 @@ def main():
     # the SAME gate the Vector uses so the page and the live engine agree. (For the cycle
     # timer this is ~a no-op — its down-phase already brackets the midterms — but it adds a
     # real dodge to the trend/risk strategy.)
+    gate_live = {"active": False}   # W3: the ONE stamped gated-state flag (display side)
     try:
-        from engine.btc_signals import midterm_blackout
+        from engine.btc_signals import gate_state, midterm_blackout
         from lib import config
         mg = (config.load().get("vector", {}).get("allocation", {}) or {}).get("midterm_gate") \
             or {"enabled": True}
         gate = midterm_blackout(close.index, mg)
         a_cycle = a_cycle.where(~gate, 0.0)
         a_risk = a_risk.where(~gate, 0.0)
+        gate_live = gate_state(close.index[-1], mg)
         log.info("midterm-election blackout active on %d days", int(gate.sum()))
     except Exception as e:  # pragma: no cover - never break the page over the overlay
         log.warning("midterm blackout overlay skipped (%s)", e)
@@ -339,6 +341,9 @@ def main():
         "phase": phase,
         "hodl": m_hodl,
         "strategies": strategies,
+        # W3 (Override-Registry N6): the ONE stamped gated-state flag — any live gate copy
+        # this template family ever shows must read ctx.gate, never re-derive the window.
+        "gate": gate_live,
     }
 
     env = Environment(loader=FileSystemLoader(str(ROOT / "templates")),
