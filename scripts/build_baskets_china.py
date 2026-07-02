@@ -65,6 +65,14 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china narrative emergence failed: %s", e)
 
+    # Validated sleeve-size chip (W6-CN Fix 1) — thread risk_radar_intl gross_factor into the
+    # baskets JSON header as a DISPLAY chip. Regime sizes sleeves, never vetoes names.
+    try:
+        from engine.risk_radar_intl import cn_sleeve_chip
+        data["sleeve_chip"] = cn_sleeve_chip()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china baskets: sleeve chip failed (%s)", e)
+
     fdir = site / "chinabasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))

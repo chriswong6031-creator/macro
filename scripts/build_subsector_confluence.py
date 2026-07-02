@@ -241,6 +241,28 @@ def main_china() -> dict:
     for g in cn.get("baskets", []):
         _emit_group_files(site, g, ohlc_dir=CN_OHLC_DIR, sig_dir=CN_SIG_DIR)
     cn["generated_utc"] = generated
+    # Validated sleeve-size chip (W6-CN Fix 1) — thread risk_radar_intl gross_factor into the
+    # subsectors_china JSON header as a DISPLAY chip. Regime sizes sleeves, never vetoes names.
+    try:
+        from engine.risk_radar_intl import cn_sleeve_chip
+        cn["sleeve_chip"] = cn_sleeve_chip()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("subsectors_china: sleeve chip failed (%s)", e)
+    # Validated AI-semis slice confirmer (W6-CN Fix 3 — #773) — wire global AI-semis
+    # (SMH/SOXX/TSM 4w-mom) → next-week CN CPO/PCB/storage_chip tailwind chip on the
+    # subsectors_china board. Display chip + JSON field; no name-level gating.
+    try:
+        from engine.cn_ai_semis_confirmer import compute as _semis_compute, is_target_basket
+        semis_chip = _semis_compute()
+        cn["ai_semis_confirmer"] = semis_chip
+        # Annotate each AI-supply THS concept basket with the chip
+        for b in cn.get("baskets", []):
+            if is_target_basket(b.get("id", "") or b.get("key", "")):
+                b["ai_semis_confirmer"] = semis_chip
+        log.info("subsectors_china AI-semis confirmer: %s (mom_4w=%s)",
+                 semis_chip.get("state"), semis_chip.get("semis_mom_4w"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("subsectors_china: AI-semis confirmer failed (%s)", e)
     _write_json(site / CN_BOARD_JSON, cn)
     n = render_china_pages(site, _env(), generated)
     log.info("subsector_confluence[CHINA]: %d THS concepts (%d entry-now), %d pages — as_of %s",

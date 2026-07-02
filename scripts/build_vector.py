@@ -2797,26 +2797,56 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("canada dashboard (via build_vector) failed (%s)", e)
     # (build_intl ran concurrently as the background subprocess launched above; joined below.)
-    try:  # China A-share thematic baskets page — like build_canada, no dedicated daily.yml
-          # step yet (PAT lacks `workflow` scope), so it is built here off the china_search
-          # cache that the collectors already refresh. Self-sufficient + returns 0; additive.
-          # TODO: promote to a proper daily.yml `build_baskets_china` step beside build_baskets.
-        from scripts import build_baskets_china as _build_baskets_china
-        _build_baskets_china.main()
-    except Exception as e:  # noqa: BLE001
-        log.error("china baskets (via build_vector) failed (%s)", e)
-    try:  # 同花顺 (Tonghuashun) concept-board baskets page — the machine-maintained sibling, off
-          # the same china_search cache + data/baskets_china_ths/membership.json (seeded out-of-band
-          # by scripts.seed_china_ths_baskets since THS IP-throttles bursty scraping). Additive.
-        from scripts import build_baskets_china_ths as _build_baskets_china_ths
-        _build_baskets_china_ths.main()
-    except Exception as e:  # noqa: BLE001
-        log.error("china THS baskets (via build_vector) failed (%s)", e)
-    try:  # Hong Kong thematic baskets page — same pattern, off the hk_search cache.
-        from scripts import build_baskets_hk as _build_baskets_hk
-        _build_baskets_hk.main()
-    except Exception as e:  # noqa: BLE001
-        log.error("hk baskets (via build_vector) failed (%s)", e)
+    # W6-CN Fix 4 (lane unification): baskets_china/_ths/baskets_hk are now PRIMARILY built
+    # in asia-close.yml (after the china builds, sharing one CN session). This hook is the
+    # FALLBACK for the nightly 02:00 UTC lane (daily.yml via build_vector) — it runs only if
+    # the asia lane did not already build today's version (idempotent by as_of date).
+    # Idempotent guard: read the as_of from the committed chinabasketdata/baskets.json;
+    # if it matches today's UTC date, the asia lane already ran and we skip.
+    import datetime as _dt
+    _today_utc = str(_dt.date.today())
+
+    def _asia_already_built(json_path: str) -> bool:
+        """Return True if the committed basket JSON has today's as_of (asia lane ran first)."""
+        try:
+            import json as _json
+            p = config.ROOT / "site" / json_path
+            if not p.exists():
+                return False
+            d = _json.loads(p.read_text())
+            return str(d.get("as_of", "")).startswith(_today_utc)
+        except Exception:  # noqa: BLE001
+            return False
+
+    if _asia_already_built("chinabasketdata/baskets.json"):
+        log.info("build_vector: china baskets already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # China A-share thematic baskets page — fallback if asia lane did not run.
+              # Promoted to asia-close.yml (W6-CN Fix 4); this is the nightly fallback.
+            from scripts import build_baskets_china as _build_baskets_china
+            _build_baskets_china.main()
+        except Exception as e:  # noqa: BLE001
+            log.error("china baskets (via build_vector) failed (%s)", e)
+
+    if _asia_already_built("chinabasketdata/baskets_ths.json"):
+        log.info("build_vector: china THS baskets already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # 同花顺 (Tonghuashun) concept-board baskets page — fallback if asia lane did not run.
+              # Promoted to asia-close.yml (W6-CN Fix 4); this is the nightly fallback.
+            from scripts import build_baskets_china_ths as _build_baskets_china_ths
+            _build_baskets_china_ths.main()
+        except Exception as e:  # noqa: BLE001
+            log.error("china THS baskets (via build_vector) failed (%s)", e)
+
+    if _asia_already_built("hkbasketdata/baskets.json"):
+        log.info("build_vector: HK baskets already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # Hong Kong thematic baskets page — fallback if asia lane did not run.
+              # Promoted to asia-close.yml (W6-CN Fix 4); this is the nightly fallback.
+            from scripts import build_baskets_hk as _build_baskets_hk
+            _build_baskets_hk.main()
+        except Exception as e:  # noqa: BLE001
+            log.error("hk baskets (via build_vector) failed (%s)", e)
     try:  # Canada / S&P-TSX thematic baskets page — same pattern, off the canada_search cache.
         from scripts import build_baskets_canada as _build_baskets_canada
         _build_baskets_canada.main()

@@ -28,12 +28,30 @@ SCHEMA = "china_altdata.v1"
 # returns earned, forward-return-validated weights). Two-sided signed legs only: value/margin
 # (own-history valuation cheapness + financing trend), flow (主力资金 net inflow — Tushare-GATED,
 # the push2 replacement, absent without a token), comment (千股千评 inst-vs-retail + main-force),
-# lhb (龙虎榜 hot-money net buy), block (大宗交易 premium/discount); analyst is a near-useless GATE
-# (China sell-side ~universally "buy"). The point is cross-sectional agreement.
-_W_DEFAULT = {"value": 0.24, "margin": 0.20, "flow": 0.18, "comment": 0.15, "lhb": 0.10,
-              "block": 0.05, "analyst": 0.08}
+# lhb (龙虎榜 hot-money net buy — SIGN-FLIPPED NEGATIVE per research/CHINA_ENGINE_REASSESSMENT.md:
+#   raw hot-money LHB flag on dip names measured −1.43%/21d fill-realistic excess, cluster-t≈−2.2
+#   (931 obs). The apparent positive is all in survivorship-inflated up-day flags. The raw hotmoney
+#   score as designed DRAINS alpha → DEMOTION weight. See §W6-CN Fix 2.),
+# block (大宗交易 premium/discount — SIGN-FLIPPED NEGATIVE per research/CHINA_ENGINE_REASSESSMENT.md:
+#   block-trade PREMIUM leg as designed measured −0.60%/5d, t≈−2.8. Premium = institutional unload
+#   on dip names, not accumulation. DEMOTION weight. See §W6-CN Fix 2.),
+# analyst is a near-useless GATE (China sell-side ~universally "buy"). The point is cross-sectional
+# agreement.
+_W_DEFAULT = {"value": 0.24, "margin": 0.20, "flow": 0.18, "comment": 0.15,
+              "lhb": -0.10,   # DEMOTION: measured −1.43%/21d on dip names (§W6-CN Fix 2)
+              "block": -0.05, # DEMOTION: measured −0.60%/5d premium-block drag (§W6-CN Fix 2)
+              "analyst": 0.08}
 _W = _W_DEFAULT   # back-compat alias
 _CROWD_CHG = 25.0   # financing 20d change % above which we flag leverage crowding
+
+# PROBATIONARY confirmers — emit as chips and log to the forward ledger for accrual.
+# ZERO score weight until the ledger matures (~2 months after store-group fix in CN-1).
+# Passport: basis=probationary (research/ENGINE_FIX_MASTERPLAN.md §W6-CN).
+# deep-discount blocks (≤−15%): +3.45%/21d fill-realistic (t≈3.4, 669 obs) — best
+#   northbound replacement found (§8 Q4 answer, CHINA_ENGINE_REASSESSMENT.md).
+# inst-seat LHB (≥2 institutional seats, net buy): +1.57%/21d (t≈0.8, 140 obs) — weak-positive,
+#   never negative, forward-ledger candidate (see also china_discovery.lhb_inst).
+_PROBATIONARY_DISCOUNT_PCT = -15.0   # block discount threshold for the deep-discount confirmer
 
 
 def _leg_weights() -> dict:
@@ -209,6 +227,60 @@ def convergence_map() -> dict[str, dict]:
         return {}
 
 
+def _probationary_chips() -> dict[str, dict]:
+    """Probationary confirmers — emitted as chips + logged for the forward ledger.
+    ZERO score weight until the ledger matures (~2 months post CN-1 store-group fix).
+    Passport: basis=probationary (research/ENGINE_FIX_MASTERPLAN.md §W6-CN Fix 2).
+
+    Returns {ticker: {deep_discount: bool, inst_lhb: bool, ...}} for names that fire at
+    least one probationary leg. These chips render on the detail page but DO NOT enter
+    any ranking path.
+    """
+    try:
+        from engine import china_extras as ce
+        out: dict[str, dict] = {}
+        # (1) deep-discount blocks (≤−15% discount): +3.45%/21d fill-realistic (t≈3.4, 669 obs).
+        #     Best northbound replacement found. Inverted from the raw block leg.
+        #     Measured: research/CHINA_ENGINE_REASSESSMENT.md §Measurements / Sign tests.
+        block = ce.block_trades() or {}
+        for t, bv in block.items():
+            prem = bv.get("avg_premium_pct") or 0.0
+            amt = bv.get("block_amt_yi") or 0.0
+            if prem <= _PROBATIONARY_DISCOUNT_PCT and amt > 0:
+                out.setdefault(t, {})["deep_discount_block"] = {
+                    "avg_premium_pct": round(prem, 2),
+                    "block_amt_yi": round(amt, 2),
+                    "passport": {
+                        "basis": "probationary",
+                        "measured": "+3.45%/21d fill-realistic t≈3.4 (669 obs, single regime)",
+                        "source": "research/CHINA_ENGINE_REASSESSMENT.md §Q4/Sign tests",
+                        "weight": 0.0,
+                        "note": "Zero score weight until forward ledger matures.",
+                    },
+                }
+        # (2) institutional-seat LHB net-buy (≥2 inst seats, net buy): +1.57%/21d (t≈0.8, 140 obs).
+        #     Weak-positive, never negative — accrual candidate.
+        lhb = ce.lhb() or {}
+        for t, lv in lhb.items():
+            if lv.get("leading") and lv.get("n_inst_buy", 0) >= 2 and lv.get("inst_net_buy_yi", 0.0) > 0:
+                out.setdefault(t, {})["inst_seat_lhb"] = {
+                    "n_inst_buy": lv.get("n_inst_buy"),
+                    "inst_net_buy_yi": lv.get("inst_net_buy_yi"),
+                    "inst_accum_score": lv.get("inst_accum_score"),
+                    "passport": {
+                        "basis": "probationary",
+                        "measured": "+1.57%/21d t≈0.8 (140 obs, weak-positive, never negative)",
+                        "source": "research/CHINA_ENGINE_REASSESSMENT.md §Q4/Sign tests",
+                        "weight": 0.0,
+                        "note": "Zero score weight until forward ledger matures.",
+                    },
+                }
+        return out
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.debug("china_altdata probationary chips failed (%s)", e)
+        return {}
+
+
 def by_ticker(min_signals: int = 2, top_n: int = 30) -> dict | None:
     """Per-ticker convergence desk view (top/bottom/triple slices). Never raises."""
     try:
@@ -217,6 +289,14 @@ def by_ticker(min_signals: int = 2, top_n: int = 30) -> dict | None:
             return None
         triple = [r for r in rows if r["n_signals"] >= 3]
         crowding = [r["ticker"] for r in rows if r["flags"]][:20]
+        # Probationary chips: deep-discount blocks + inst-seat LHB (ZERO weight, display only).
+        # Emitted separately so they never contaminate the convergence score ranking.
+        prob = _probationary_chips()
+        # Annotate rows that carry a probationary chip
+        for r in rows:
+            pc = prob.get(r.get("ticker"))
+            if pc:
+                r["probationary_chips"] = pc
         return {
             "schema": SCHEMA, "is_context_only": True, "asof": str(date.today()),
             "built": datetime.now(timezone.utc).isoformat(),
@@ -225,6 +305,16 @@ def by_ticker(min_signals: int = 2, top_n: int = 30) -> dict | None:
             "top": rows[:top_n], "bottom": rows[-top_n:][::-1],
             "crowding_flags": crowding,
             "weights": _leg_weights(),
+            # Probationary chip index: {ticker: {deep_discount_block?, inst_seat_lhb?}}
+            # ZERO scoring weight; display chips + forward ledger seed only.
+            "probationary": {t: c for t, c in prob.items()},
+            "probationary_passport": {
+                "basis": "probationary",
+                "source": "research/CHINA_ENGINE_REASSESSMENT.md §Q4 / §W6-CN Fix 2",
+                "weight": 0.0,
+                "note": ("Zero score weight until ledger matures. deep_discount_block: "
+                         "+3.45%/21d t≈3.4 (669 obs). inst_seat_lhb: +1.57%/21d t≈0.8 (140 obs)."),
+            },
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china_altdata.by_ticker failed (%s)", e)

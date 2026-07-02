@@ -1163,6 +1163,15 @@ def main(alpha: dict | None = None) -> dict | None:
                      min(60, len(wide["buy"])), _bn, _bt.get("n_graded"))
         except Exception as e:  # noqa: BLE001 — telemetry, never fatal
             log.warning("china standout board-track failed (%s)", e)
+        # Validated sleeve-size chip (W6-CN Fix 1) — thread the risk_radar_intl gross_factor
+        # into the board header as a DISPLAY chip. Regime sizes sleeves, never vetoes names.
+        # Passport: basis=measured, validation=cn_forward_log.jsonl (the repo's only closed loop).
+        try:
+            from engine.risk_radar_intl import cn_sleeve_chip
+            wide["sleeve_chip"] = cn_sleeve_chip()
+            log.info("china stocks sleeve chip: %s", wide["sleeve_chip"].get("label_en"))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china stocks sleeve chip failed (%s)", e)
         (site / "factordata" / "china_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
         log.info("wrote china_standouts.json (%d buy of %d eligible / %d universe)",
