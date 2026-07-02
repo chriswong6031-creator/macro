@@ -1,0 +1,135 @@
+{
+  "schema": "display_vs_scoring_manifest.v1",
+  "generated": "2026-07-02",
+  "description": "Every seam where intl/global data touches position-sizing or de-risk logic vs display-only. Verified against origin/main. This file is machine-checked by tests/test_manifest_seams.py.",
+  "seams": [
+    {
+      "seam": "conditions._macro_risk_legs",
+      "kind": "scoring",
+      "file": "engine/conditions.py",
+      "symbol": "_macro_risk_legs",
+      "line_ref": 851,
+      "notes": "Single source of truth for all MRS legs (recession, drawdown, nfci, liquidity, transition). Currently US-only. C2 intl macro-sleeve leg wires in here (W2)."
+    },
+    {
+      "seam": "conditions.macro_risk_series",
+      "kind": "scoring",
+      "file": "engine/conditions.py",
+      "symbol": "macro_risk_series",
+      "line_ref": 884,
+      "notes": "Daily MRS in [0,1] across history. Consumed by playbook.py:547 as the primary scoring input."
+    },
+    {
+      "seam": "conditions.sector_macro_beta",
+      "kind": "scoring",
+      "file": "engine/conditions.py",
+      "symbol": "sector_macro_beta",
+      "line_ref": 910,
+      "notes": "Per-sector sensitivity to risk-OFF macro reading; keyed by SPDR ticker or GICS name. Consumed at playbook.py:592."
+    },
+    {
+      "seam": "playbook.macro_risk_series x sector_macro_beta",
+      "kind": "scoring",
+      "file": "engine/playbook.py",
+      "symbol": "macro_risk_series",
+      "line_ref": 547,
+      "notes": "Imports macro_risk_series + sector_macro_beta from conditions at line 547. Computes macro_drag per sector and applies to scoring pipeline. This is where MRS intl-sleeve (C2) flows automatically once wired into _macro_risk_legs."
+    },
+    {
+      "seam": "stock_score._edge_weights calm master-switch",
+      "kind": "scoring",
+      "file": "engine/stock_score.py",
+      "symbol": "_edge_weights",
+      "line_ref": 125,
+      "notes": "Residual-momentum weight 0.28 calm -> 0.04 stress via the regime calm score [0,1]. Validated regime-switch IC +/-0.03. Intl de-risk channel would set calm lower, reducing momentum weight."
+    },
+    {
+      "seam": "stock_score._axis_tailwind",
+      "kind": "scoring",
+      "file": "engine/stock_score.py",
+      "symbol": "_axis_tailwind",
+      "line_ref": 835,
+      "notes": "Sector + thematic tailwind axis (weight 0.10). Spotlight tilt hook — the C6 Asia-semi and C7 luxury channels wire here if validated (W4). DOWNGRADE-capable only."
+    },
+    {
+      "seam": "stock_score.conviction_profile ctx risk_overlay + regime.calm",
+      "kind": "scoring",
+      "file": "engine/stock_score.py",
+      "symbol": "conviction_profile",
+      "line_ref": 1160,
+      "notes": "conviction_profile accepts ctx dict with risk_overlay (macro/event overlay, subtract-only haircut at line 1218) and regime.calm (feeds _edge_weights via line 1170). HK template injects risk_overlay here."
+    },
+    {
+      "seam": "name_score._tailwind bounded [0.85, 1.15]",
+      "kind": "scoring",
+      "file": "engine/name_score.py",
+      "symbol": "_tailwind",
+      "line_ref": 139,
+      "notes": "Per-name buy-readiness tailwind multiplier bounded [0.85, 1.15]. Maps to china_name_score._tailwind in masterplan ADJ-5; the shim now lives in engine/name_score.py. C1 China global-beta size-dampener wires here (W2)."
+    },
+    {
+      "seam": "risk_radar_intl post-can_force override",
+      "kind": "scoring",
+      "file": "engine/risk_radar_intl.py",
+      "symbol": "snapshot",
+      "line_ref": 316,
+      "notes": "snapshot() exposes can_force field (line 347). Display-only until can_force fires (>=30 graded, >=8 alerts, realized lift >=1.25x). market_state_cn.py:153 wires _radar_override_intl for sleeve sizing. This is the scored seam after maturation."
+    },
+    {
+      "seam": "market_state_cn._radar_override_intl",
+      "kind": "scoring",
+      "file": "engine/market_state_cn.py",
+      "symbol": "_radar_override_intl",
+      "line_ref": 153,
+      "notes": "Wires the CN external-driver radar into market_state scoring via radar_override parameter. Validated: 2.07x conditional lift (p=0.01, 2016+ 2.53x). Currently gated on can_force for position sizing."
+    },
+    {
+      "seam": "market_state.py (all markets) — DISPLAY ONLY",
+      "kind": "display",
+      "file": "engine/market_state.py",
+      "symbol": "score",
+      "line_ref": 3,
+      "notes": "Docstring line 3: 'A DISPLAY-ONLY synthesis ... it never scores, sizes, or feeds any axis / regime / macro_risk.' Integration target is the scoring seams above, NOT this module."
+    },
+    {
+      "seam": "engine/china_radar.py — DISPLAY/CONTEXT ONLY",
+      "kind": "display",
+      "file": "engine/china_radar.py",
+      "symbol": "scan",
+      "line_ref": 379,
+      "notes": "Docstring: 'LEAF · DISPLAY/CONTEXT-ONLY · KEYLESS · NO VALIDATED EDGE'. scan() is the public entry. Nothing here is scored into an allocation."
+    },
+    {
+      "seam": "engine/regime_snap_veto.py — CONTEXT ONLY (vetoes nothing)",
+      "kind": "display",
+      "file": "engine/regime_snap_veto.py",
+      "symbol": "is_context_only",
+      "line_ref": 121,
+      "notes": "INTL-41: vetoes nothing — display-only LLM durability annotation, US-RORO-only inputs. is_context_only=True at line 121. Do not route intl data through this module."
+    },
+    {
+      "seam": "engine/hk_global_beta.py — display/context input",
+      "kind": "display",
+      "file": "engine/hk_global_beta.py",
+      "symbol": "compute_global_betas",
+      "line_ref": 65,
+      "notes": "Causal rolling beta to lagged S&P factor, Vasicek-shrunk. Currently display/context (per-name risk EXPOSURE, not selection alpha). C1 would promote it to scoring via name_score._tailwind."
+    },
+    {
+      "seam": "engine/forex_dollar.py — display only",
+      "kind": "display",
+      "file": "engine/forex_dollar.py",
+      "symbol": "dollar_desk",
+      "line_ref": 324,
+      "notes": "Full broad-dollar lean written to data/forex/latest.json for display only (INTL-45). No US small-cap/cyclical context flag consumes it yet. C4b promotion path."
+    },
+    {
+      "seam": "engine/forex_regime.py — display only",
+      "kind": "display",
+      "file": "engine/forex_regime.py",
+      "symbol": "_sub_intensity",
+      "line_ref": 136,
+      "notes": "6 FX regime scenarios with Wilson-CI. Display only; 60-trial family all fail DSR (best USDCAD 0.86 < 0.90). No pair-level equity gating ever (INTL-43)."
+    }
+  ]
+}
