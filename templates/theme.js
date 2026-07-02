@@ -321,7 +321,7 @@
      on the vector / commodities / forex / bonds family) packs ~17 links plus
      the theme + language toggles onto one row. On a phone that wrapped into a
      wall of pills that ate half the viewport. We progressively enhance: inject
-     a hamburger button + a scoped stylesheet that, below 700px, collapses the
+     a hamburger button + a scoped stylesheet that, below 1260px, collapses the
      links into a tap-to-open dropdown while the toggles stay on one compact
      bar. With JS off the original wrapping nav remains (every link reachable).
      The CSS is injected here — not in theme.css — because the .topbar pages are
@@ -330,7 +330,7 @@
      (--grid/--card). */
   var NAV_MOBILE_CSS = [
     ".nav-toggle{display:none}",
-    "@media (max-width:700px){",
+    "@media (max-width:1259px){",
       ".nav-toggle{display:inline-flex;align-items:center;justify-content:center;width:42px;height:34px;padding:0;flex:none;cursor:pointer;border-radius:10px;border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--text,var(--ink));-webkit-tap-highlight-color:transparent}",
       ".nav-toggle-bars,.nav-toggle-bars::before,.nav-toggle-bars::after{content:'';display:block;width:18px;height:2px;border-radius:2px;background:currentColor;transition:transform .22s ease,opacity .2s ease}",
       ".nav-toggle-bars{position:relative}",
@@ -442,7 +442,7 @@
       var trigger = dd.querySelector(':scope > a');   // .nav-link OR .nav-sub-trig
       if (!trigger) return;
       trigger.addEventListener('click', function(e) {
-        if (window.innerWidth > 700) return;
+        if (window.innerWidth > 1259) return;
         e.preventDefault(); e.stopPropagation();
         var wasOpen = dd.classList.contains('open');
         dd.parentElement.querySelectorAll(':scope > .nav-dd.open').forEach(function(d) {
@@ -463,7 +463,7 @@
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNav(); });
     document.addEventListener('click', function (e) { if (!nav.contains(e.target)) closeNav(); });
-    window.addEventListener('resize', function () { if (window.innerWidth > 700) closeNav(); });
+    window.addEventListener('resize', function () { if (window.innerWidth > 1259) closeNav(); });
   }
 
   /* ---- settings modal (theme + language + future account) -----------------
@@ -1031,7 +1031,7 @@
        row. Injected here — not only in theme.css — so the self-contained vector /
        forex / bonds / commodities family (which never loads theme.css) gets the
        exact same two-row bar live, no rebuild, same pattern as the mobile-nav CSS
-       above. >700px only; the <=700px collapse (flex + has-nav-toggle) overrides. */
+       above. >=1260px only; the <=1259px collapse (flex + has-nav-toggle) overrides. */
     '.site-nav .nav-links{grid-column:1 / -1;grid-row:1}',
     '.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px}',
     '.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;margin-top:0}',
