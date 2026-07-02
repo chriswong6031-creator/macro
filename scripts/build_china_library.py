@@ -667,7 +667,8 @@ def main(alpha: dict | None = None) -> dict | None:
     try:
         _mp = config.data_dir() / "china_margin_detail" / "detail.parquet"
         if _mp.exists():
-            _md = pd.read_parquet(_mp)
+            from collectors._drip import latest_snapshot
+            _md = latest_snapshot(pd.read_parquet(_mp), "date")  # append-only PIT → latest session
             for _, _r in _md.iterrows():
                 fb, fbp = china_signals._f(_r.get("fin_balance")), china_signals._f(_r.get("fin_balance_prior"))
                 chg = ((fb / fbp - 1.0) * 100.0) if (fb and fbp and fbp > 0) else None

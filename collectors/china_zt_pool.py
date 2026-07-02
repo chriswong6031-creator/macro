@@ -26,6 +26,7 @@ import logging
 import pandas as pd
 
 from lib import config
+from collectors import _drip
 from collectors.china_analyst import to_ticker, _num
 
 log = logging.getLogger("china_zt_pool")
@@ -97,18 +98,21 @@ def _parse(date: str, df: pd.DataFrame, asof: str) -> list[dict]:
     return rows
 
 
+def _stored_sessions() -> set[str]:
+    """The set of session `date`s already on disk (append-only PIT history)."""
+    if not OUT.exists():
+        return set()
+    try:
+        return set(pd.read_parquet(OUT, columns=["date"])["date"].astype(str).unique())
+    except Exception:  # noqa: BLE001
+        return set()
+
+
 def refresh() -> int:
-    """Bake the most recent populated limit-up pool. Best-effort; returns names
-    written (0 on failure). Idempotent within a UTC day: a cache already stamped
-    with today's date is left untouched."""
+    """Bake the most recent populated limit-up pool and APPEND it to the point-in-time history
+    (keep-last per session `date`, so a same-session re-collect corrects). Best-effort; returns
+    names written for the latest session (0 on failure / already-stored session)."""
     asof = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
-    if OUT.exists():
-        try:
-            if str(pd.read_parquet(OUT, columns=["asof"])["asof"].max()) >= asof:
-                log.info("china zt pool: cache already fresh (%s)", asof)
-                return 0
-        except Exception:  # noqa: BLE001
-            pass
     today = _dt.date.today()
     dates = [(today - _dt.timedelta(days=i)).strftime("%Y%m%d")
              for i in range(WALK_BACK_DAYS + 1)]
@@ -116,19 +120,51 @@ def refresh() -> int:
     if df is None:
         log.warning("china zt pool: no populated session in last %d days", WALK_BACK_DAYS)
         return 0
+    iso = pd.to_datetime(pop_date).strftime("%Y-%m-%d")
+    if iso in _stored_sessions():                          # append-only idempotency = per SESSION
+        log.info("china zt pool: session %s already stored", iso)
+        return 0
     rows = _parse(pop_date, df, asof)
     if not rows:
         return 0
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(rows).to_parquet(OUT, index=False)
-    log.info("china zt pool: wrote %s (%d names, session %s, asof %s)",
-             OUT, len(rows), pop_date, asof)
-    return len(rows)
+    n = _drip.append_snapshot(OUT, rows, date_col="date")
+    log.info("china zt pool: appended %s (%d names, session %s, asof %s)",
+             OUT, n, pop_date, asof)
+    return n
+
+
+def backfill(start: str, end: str) -> int:
+    """Range-backfill the limit-up pool PIT history: append every populated trading session in
+    [start, end] (YYYY-MM-DD). akshare serves stock_zt_pool_em per-date, so history is fetchable.
+    Skips sessions already stored. Returns the number of NEW sessions appended."""
+    asof = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
+    have = _stored_sessions()
+    days = pd.bdate_range(start, end)                      # weekdays; holidays return empty pools
+    added = 0
+    for d in days:
+        iso = d.strftime("%Y-%m-%d")
+        if iso in have:
+            continue
+        df = _pool_for(d.strftime("%Y%m%d"))
+        if df is None:
+            continue
+        rows = _parse(d.strftime("%Y%m%d"), df, asof)
+        if rows:
+            _drip.append_snapshot(OUT, rows, date_col="date")
+            added += 1
+            log.info("china zt pool backfill: appended session %s (%d names)", iso, len(rows))
+    log.info("china zt pool backfill: %d new sessions [%s..%s]", added, start, end)
+    return added
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    argparse.ArgumentParser().parse_args()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--backfill", nargs=2, metavar=("START", "END"),
+                    help="range-backfill PIT history for [START END] (YYYY-MM-DD)")
+    a = ap.parse_args()
+    if a.backfill:
+        return 0 if backfill(a.backfill[0], a.backfill[1]) else 0
     return 0 if refresh() else 1
 
 

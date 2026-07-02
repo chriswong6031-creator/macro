@@ -65,6 +65,10 @@ FLAG_LABELS: dict[str, tuple[str, str]] = {
 
 
 # --------------------------------------------------------------------------- io
+# append-only drip caches carry a PIT history now; this engine wants the latest single-day snapshot.
+_DRIP_DATE_COL = {"china_zt_pool": "date", "china_margin_detail": "date", "china_lhb": "asof"}
+
+
 def _read(group: str, file: str) -> pd.DataFrame | None:
     """Read data/<group>/<file>.parquet, or None on any miss/error."""
     p = config.data_dir() / group / f"{file}.parquet"
@@ -75,6 +79,10 @@ def _read(group: str, file: str) -> pd.DataFrame | None:
     except Exception as e:  # noqa: BLE001 — a broken cache must never break a build
         log.warning("china_crowding: %s/%s unreadable (%s)", group, file, e)
         return None
+    dc = _DRIP_DATE_COL.get(group)
+    if dc and df is not None and dc in df.columns:
+        from collectors._drip import latest_snapshot
+        df = latest_snapshot(df, dc)                        # single-day snapshot from PIT history
     return df if df is not None and len(df) else None
 
 
