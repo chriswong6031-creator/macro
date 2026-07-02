@@ -69,13 +69,27 @@ def _factor_z(s: pd.Series) -> pd.Series:
     return slope_z(s, g["slope_window"], g["baseline_window"], use_log=use_log)
 
 
-def composite(idx: pd.DatetimeIndex) -> pd.DataFrame:
+def composite(idx: pd.DatetimeIndex,
+              asof: pd.Timestamp | None = None) -> pd.DataFrame:
     """Per-day risk-on/off composite over the index. Returns columns:
     global_score (-1..+1, weighted net of factor direction), risk_state
-    (Risk-on/Risk-off/Neutral), plus the peg sub-state from HKD=X."""
+    (Risk-on/Risk-off/Neutral), plus the peg sub-state from HKD=X.
+
+    ``asof`` — when supplied, each factor series is truncated to
+    ``asof`` BEFORE computing z-scores and forward-fills.  This is the
+    required guard for historical / backfill paths: a label at date D
+    must not see any factor bars that arrived after D (data look-ahead).
+    ``snapshot()`` enforces this via its own ``end`` clamp; ``classify()``
+    passes ``idx.max()`` so that routine backfills never leak future data.
+    """
     g = _gcfg()
     comps = g["components"]
-    series = factor_series()
+    raw_series = factor_series()
+    # ---- as-of truncation (look-ahead guard) --------------------------------
+    if asof is not None:
+        raw_series = {k: v[v.index <= asof] for k, v in raw_series.items()}
+        raw_series = {k: v for k, v in raw_series.items() if not v.empty}
+    series = raw_series
     out = pd.DataFrame(index=idx)
 
     signed, weights = {}, {}
@@ -110,11 +124,15 @@ def composite(idx: pd.DatetimeIndex) -> pd.DataFrame:
     state[out["global_score"].isna()] = "unknown"
     out["risk_state"] = state
 
-    # peg sub-state (HKD=X), if present
+    # peg sub-state (HKD=X), if present — also truncated to asof
     hkd = store.read("hk", "HKD=X")
     if hkd is not None and "close" in hkd.columns:
-        peg = peg_frame(hkd["close"].dropna().reindex(idx.union(hkd.index)).ffill(limit=5).reindex(idx))
-        out = out.join(peg)
+        hkd_close = hkd["close"].dropna()
+        if asof is not None:
+            hkd_close = hkd_close[hkd_close.index <= asof]
+        if not hkd_close.empty:
+            peg = peg_frame(hkd_close.reindex(idx.union(hkd_close.index)).ffill(limit=5).reindex(idx))
+            out = out.join(peg)
     return out
 
 
