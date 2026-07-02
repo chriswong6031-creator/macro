@@ -364,6 +364,31 @@
 <script src="mm_charts.js?v=2"></script>
 <script src="markets_app.js?v=6"></script>
 <script>try{document.getElementById('cyc-asof').textContent=(window.MARKET_META||{}).asOf||'';}catch(e){}</script>
+<script>
+/* markets_data.js staleness banner — INTL-47.
+   markets_data.js is a hand-curated static file; its MARKET_META.asOf is the
+   authoritative freshness date. Show a visible warning when >5 days old so the
+   reader is never misled by stale "now" blocks (level / %-off-ATH / valuations). */
+(function(){
+  try {
+    var asOf = (window.MARKET_META||{}).asOf;
+    if (!asOf) return;
+    var msPerDay = 86400000;
+    var ageDays = Math.floor((Date.now() - new Date(asOf).getTime()) / msPerDay);
+    if (ageDays <= 5) return;
+    var b = document.createElement('div');
+    b.id = 'mkt-stale-banner';
+    b.style.cssText = 'margin:8px 0 4px;padding:7px 14px;border-radius:8px;background:rgba(217,119,6,.14);border:1px solid rgba(217,119,6,.35);color:var(--amber,#c98a2e);font-size:13px;line-height:1.4;display:flex;gap:8px;align-items:center';
+    b.innerHTML = '<span style="font-size:16px">&#9888;</span>'
+      + '<span class="l-en"><b>Market snapshot data is ' + ageDays + ' days old</b> (as of ' + asOf + ').'
+      + ' Live levels, % off ATH and valuations may be stale — verify before acting.</span>'
+      + '<span class="l-zh"><b>市场快照数据已有 ' + ageDays + ' 天</b>（截至 ' + asOf + '）。'
+      + '实时价位、偏离历史高点幅度及估值数据可能已过期，操作前请核实。</span>';
+    var wrap = document.querySelector('.cyc-wrap');
+    if (wrap) wrap.insertBefore(b, wrap.firstChild);
+  } catch(e) {}
+})();
+</script>
 <script src="theme.js"></script>
 <script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>

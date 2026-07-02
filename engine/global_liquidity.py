@@ -93,7 +93,10 @@ def _load(cfg: dict | None = None) -> tuple[pd.DataFrame, dict]:
         if spec.get("fx") and fx is None:           # FX needed but unavailable -> skip
             continue
         series[bid] = bank_usd(raw, spec.get("unit_mult", 1.0), fx)
-        meta[bid] = {"label_en": spec.get("label_en", bid), "label_zh": spec.get("label_zh", bid)}
+        raw_last = raw.dropna().index[-1]
+        asof_str = str(raw_last.date()) if hasattr(raw_last, "date") else str(raw_last)[:10]
+        meta[bid] = {"label_en": spec.get("label_en", bid), "label_zh": spec.get("label_zh", bid),
+                     "raw_asof": asof_str}
     return aggregate(series), meta
 
 
@@ -121,10 +124,14 @@ def snapshot(cfg: dict | None = None) -> dict | None:
             "decelerating" if short < long / 4 else "steady")
     banks = []
     last = df.iloc[-1]
+    asof_by_bank: dict[str, str] = {}
     for bid in [c for c in df.columns if c != "total"]:
+        raw_asof = meta[bid].get("raw_asof", "")
+        asof_by_bank[bid] = raw_asof
         banks.append({"id": bid, "label_en": meta[bid]["label_en"], "label_zh": meta[bid]["label_zh"],
                       "usd_tn": round(float(last[bid]) / 1e12, 2),
-                      "share": round(100.0 * float(last[bid]) / float(last["total"]), 1)})
+                      "share": round(100.0 * float(last[bid]) / float(last["total"]), 1),
+                      "raw_asof": raw_asof})
     banks.sort(key=lambda b: b["usd_tn"], reverse=True)
     spark = [round(float(v), 2) for v in tn.tail(104).tolist()]   # ~2y weekly sparkline
     return {
@@ -133,6 +140,7 @@ def snapshot(cfg: dict | None = None) -> dict | None:
         "total_usd_tn": round(float(tn.iloc[-1]), 2),
         "impulse_pct": imp, "state": state, "accel": accel,
         "banks": banks, "n_banks": len(banks), "spark": spark,
+        "asof_by_bank": asof_by_bank,
         "note": ("Global central-bank balance-sheet liquidity (Fed + ECB + BoJ), summed in "
                  "USD. The IMPULSE — its rate of change — leads risk assets with a variable "
                  "lag (weeks to months); rising = a liquidity tailwind. Context, not a signal: "

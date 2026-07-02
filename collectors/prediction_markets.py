@@ -101,11 +101,32 @@ class PredictionMarketsAdapter(Adapter):
         return {"prediction_markets_runs": s}
 
     def _fetch_active(self) -> list[dict]:
-        r = self.http_get(GAMMA, retries=int(self.cfg.get("retries", 3)),
-                          params={"closed": "false", "active": "true", "limit": 500,
-                                  "order": "volume24hr", "ascending": "false"})
-        d = r.json()
-        return d if isinstance(d, list) else []
+        """Fetch active Polymarket events with pagination.
+
+        The Gamma API silently caps at 100 events per page regardless of the
+        `limit` parameter.  Lower-volume events (e.g. the recession market,
+        ~$1.6M total volume, volume24hr ~$12K) live well past position 100
+        when results are sorted by volume24hr descending.  We paginate until
+        we either get an empty page or reach the configured page cap (default 8
+        pages = 800 events), which is ample to capture all macro events.
+        """
+        retries = int(self.cfg.get("retries", 3))
+        page_size = 100    # Gamma's effective cap per page
+        max_pages = int(self.cfg.get("fetch_max_pages", 8))
+        all_events: list[dict] = []
+        for page in range(max_pages):
+            offset = page * page_size
+            r = self.http_get(GAMMA, retries=retries,
+                              params={"closed": "false", "active": "true",
+                                      "limit": page_size, "offset": offset,
+                                      "order": "volume24hr", "ascending": "false"})
+            d = r.json()
+            if not isinstance(d, list) or not d:
+                break
+            all_events.extend(d)
+            if len(d) < page_size:
+                break   # last page
+        return all_events
 
     def _append_snapshot(self, new: pd.DataFrame) -> None:
         p = config.data_dir() / "prediction_markets" / "snapshots.parquet"
