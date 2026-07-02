@@ -9,15 +9,18 @@ name: intraday-fastpath
 # marks stale legs honestly). When a real-time/websocket plan (Alpaca / Polygon
 # advanced) lands, flip config `live.delayed_min: 0` — NO code change here.
 #
-# CADENCE: dispatch-only for now. Before enabling a tight cron, move the overlay
-# OFF main -> a side branch (like live-quotes.yml pushes quotes.json to `live-data`),
-# so a 10-30-min cadence does not fire a Pages deploy every run. At a true 10-min /
-# real-time cadence this graduates from an Actions job to a native systemd timer /
-# daemon on the box (Actions cron is best-effort ~15-45 min — too loose for 10 min).
+# CADENCE: every 30 min during US RTH (enabled 2026-07-02). The small live artifacts
+# (overlay.json + risk_state.json) commit to main -> each run fires a Pages deploy; this is
+# the accepted trade-off for a live Market State on the static deploy. If the deploy volume
+# ever becomes a problem, the next step is to move these OFF main to a side branch (like
+# live-quotes.yml pushes quotes.json to `live-data`); at a true 10-min / real-time cadence
+# it graduates to a native systemd timer on the box (Actions cron is best-effort ~15-45 min).
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: "*/30 13-21 * * 1-5"   # every 30 min during US RTH — enable after the serving path is finalised
+  schedule:
+    - cron: "*/30 13-20 * * 1-5"   # :00 + :30, 13:00-20:30 UTC, Mon-Fri — the 13:00 tick lands the
+                                    # regime freshness self-heal before the 13:30 open; covers RTH to
+                                    # the 20:00 close + a post-close settle tick.
 
 permissions:
   contents: write
@@ -39,21 +42,45 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: regime freshness self-heal (re-stamp latest.json if the store advanced past it)
+        # Fast (~25s), cancellation-proof catch-up for the nightly staleness bug: when the price
+        # store's last SPY close is newer than data/regime/latest.json's date (a late daily-collection
+        # commit, or the heavy nightly build cancelled at its timeout before the engine commit), this
+        # re-runs the regime engine so the macro.html regime badge + Market State board as-of follow
+        # the latest close. No-ops when already fresh. See scripts/refresh_regime_if_stale.py.
+        run: python -m scripts.refresh_regime_if_stale
       - name: build live overlay (fast leaves + live-marked GTAA allocations)
         env:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
         run: python -m scripts.build_live_overlay
-      - name: commit live overlay
+      - name: build live risk-state (fast Market State on live prices -> live/risk_state.json)
+        # Recomputes ONLY the price-driven Market State legs on live(-ish) prices and carries the slow
+        # legs from the freshened nightly baseline (runs AFTER the self-heal so nightly_asof is current).
+        # risk_state_live.js polls the output to patch the macro.html headline/score/date + live pill.
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+        run: python -m scripts.build_risk_state
+      - name: commit live overlay + risk-state + refreshed regime as-of
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          # site/live/ is gitignored (force-track pattern, like site/stockdata etc.) -> -f
-          git add -f site/live/overlay.json site/live_config.js
-          if git diff --cached --quiet; then echo "no overlay change"; exit 0; fi
-          git commit -m "live: intraday overlay $(date -u +%FT%H:%MZ)"
+          # Stage the served live artifacts (site/live/* is gitignored -> force-track, like site/stockdata)
+          # + the (maybe) refreshed regime as-of + Market State snapshot that the page reads its date from.
+          git add -f site/live/overlay.json site/live/risk_state.json site/live_config.js
+          git add -f data/regime/latest.json data/market_state/latest.json
+          # Discard the forward-grading byproducts engine.run also touches (regime_history.parquet,
+          # regime_one.json, base_effect_fwd.jsonl, *_log.jsonl, *_log.parquet ...). The NIGHTLY build is
+          # their canonical once-per-session writer; committing them from a 30-min fast path would append
+          # duplicate intraday rows and corrupt the forward measurement. Reverting the unstaged tracked
+          # changes also leaves a clean tree so `git pull --rebase` below can never fail on a dirty tree.
+          git checkout -- . 2>/dev/null || true
+          git clean -fdq data/ 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no live/regime change"; exit 0; fi
+          git commit -m "live: intraday overlay + risk-state + regime freshness $(date -u +%FT%H:%MZ)"
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then echo "pushed overlay (attempt $i)"; exit 0; fi
-            git rebase --abort 2>/dev/null || true; echo "overlay push attempt $i lost a race"; sleep $((i * 5))
+            if git pull --rebase -X theirs origin main && git push; then echo "pushed (attempt $i)"; exit 0; fi
+            git rebase --abort 2>/dev/null || true; echo "push attempt $i lost a race"; sleep $((i * 5))
           done
-          echo "::warning::could not push live overlay after 5 attempts (non-fatal)"
+          echo "::warning::could not push live artifacts after 5 attempts (non-fatal)"

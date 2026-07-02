@@ -50,7 +50,18 @@
       var word = d.realtime ? (isZh() ? "实时 " : "live ") : (isZh() ? "延迟 " : "delayed ");
       dt.textContent = "· " + word + hhmm + " UTC";
       dt.classList.toggle("ms-date-live", !!d.realtime);
+    } else if (dt && d.nightly_asof) {
+      // market closed / no fresh quote: still show the freshest available CLOSE (the
+      // self-healed nightly as-of), not the possibly-staler date baked into the page at
+      // render time — so a late-landing daily bar surfaces without waiting for a re-render.
+      dt.textContent = "· " + d.nightly_asof;
+      dt.classList.remove("ms-date-live");
     }
+    // the "Current Macro Regime" hero eyebrow reads the SAME nightly as-of. The Quad is a slow
+    // nowcast — it does not tick intraday — but its date must follow the latest close. Forward-
+    // compatible: no-ops until a render bakes the #regime-asof id into the page.
+    var rg = document.getElementById("regime-asof");
+    if (rg && d.nightly_asof) rg.textContent = d.nightly_asof;
     var pill = document.getElementById("ms-live-pill");
     if (pill) pill.classList.toggle("on", !!(d.live_active && d.realtime));
   }
