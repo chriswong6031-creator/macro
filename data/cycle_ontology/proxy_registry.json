@@ -1,0 +1,621 @@
+{
+  "version": 1,
+  "ruling": "A3/A17/R3-C5",
+  "cycles": {
+    "semis": {
+      "name": "Semiconductors",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:SOXX",
+          "freq": "D",
+          "basis": "etf_tr",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "^SOX index level backs the falsifier; SOXX ETF is the tradeable cycle"
+        }
+      ]
+    },
+    "oil": {
+      "name": "Oil",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": [
+            "fred:DCOILWTICO",
+            "yahoo:CL=F"
+          ],
+          "freq": "D",
+          "basis": "spot",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "FRED WTI spot preferred over continuous futures for ZigZag cleanliness"
+        }
+      ]
+    },
+    "copper": {
+      "name": "Copper",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:HG=F",
+          "freq": "D",
+          "basis": "futures_cont",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "falsifier $/t = $/lb \u00d7 2204.62"
+        }
+      ]
+    },
+    "credit": {
+      "name": "Credit (HY spreads)",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "fred:BAMLH0A0HYM2",
+          "freq": "D",
+          "basis": "fred_level",
+          "invert": true,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "INVERTED: tights = cycle top (risk-on). 100 = tightest spreads (complacent)"
+        }
+      ]
+    },
+    "agriculture": {
+      "name": "Agriculture",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:DBA",
+          "freq": "D",
+          "basis": "etf_tr",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "DBA is the tradeable GSCI-ag object; ZC=F backs the corn falsifier leg"
+        }
+      ]
+    },
+    "vol": {
+      "name": "Volatility",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": [
+            "fred:VIXCLS",
+            "yahoo:^VIX"
+          ],
+          "freq": "D",
+          "basis": "fred_level",
+          "invert": true,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "INVERTED: deep calm = cycle top. Richest turn sample (~2y period)"
+        }
+      ]
+    },
+    "biotech": {
+      "name": "Biotech",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": [
+            "yahoo:XBI",
+            "yahoo:IBB"
+          ],
+          "freq": "D",
+          "basis": "etf_tr",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "XBI equal-weight primary; IBB cap-weight secondary"
+        }
+      ]
+    },
+    "long-bonds": {
+      "name": "Long Bonds",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "fred:DGS30",
+          "freq": "D",
+          "basis": "fred_level",
+          "invert": true,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "INVERTED 30y yield = price-cycle clock (low yield = price top). DEVIATION: D3's abs-35bp expressed as vol-scaled % on 1/x; TLT backs the falsifier"
+        }
+      ]
+    },
+    "natural-gas": {
+      "name": "Natural Gas",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": [
+            "fred:DHHNGSP",
+            "yahoo:NG=F"
+          ],
+          "freq": "D",
+          "basis": "spot",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "Henry Hub spot; storage falsifier leg (EIA weekly) not collected \u2192 dropped"
+        }
+      ]
+    },
+    "silver": {
+      "name": "Silver",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:SI=F",
+          "freq": "D",
+          "basis": "futures_cont",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "gold/silver ratio derived for tripwires"
+        }
+      ]
+    },
+    "em-equities": {
+      "name": "EM Equities",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:EEM",
+          "freq": "D",
+          "basis": "etf_tr",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "MSCI-EM-index falsifier levels rewritten as EEM levels"
+        }
+      ]
+    },
+    "pgms": {
+      "name": "PGMs (Platinum / Palladium)",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:PL=F",
+          "freq": "D",
+          "basis": "futures_cont",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "NP-3 trap: explicit PL=F (platinum) \u2014 NOT PL (Planet Labs equity). PA=F (palladium) is the second leg for the falsifier"
+        }
+      ]
+    },
+    "business": {
+      "name": "Business (Kitchin)",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "fred:INDPRO",
+          "freq": "M",
+          "basis": "fred_level",
+          "invert": false,
+          "kernel": {
+            "zz_abs": 1.5,
+            "zz_standardize": true,
+            "trend_span": 60,
+            "stoch_win": 60
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "DEVIATION: D3 specced a leading-index COMPOSITE via business_cycle.py; W3.1 binds INDPRO monthly with abs-ZigZag on its z-score (1.5\u03c3, zz_standardize=True \u2014 a raw-abs threshold over-segments a trending level). Kitchin ~4y \u2192 ~7 turns/30y, gradeable at the monthly horizon"
+        }
+      ]
+    },
+    "memory": {
+      "name": "Memory (DRAM / NAND)",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:MU",
+          "freq": "D",
+          "basis": "equity_px",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": true,
+          "position_gauge": false,
+          "fitness": {
+            "kind": "dram",
+            "match_rate_min": 0.7,
+            "offset_max_months": 6
+          },
+          "note": "DRAM contract ASP has NO free tape. MU = LABELED equity proxy for turn TIMING only; hand ASP turns survive as a frame overlay. Fitness gate \u00a71.5"
+        },
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [],
+          "note": "hand-dated DRAM ASP turns \u2014 curated history overlay"
+        }
+      ]
+    },
+    "uranium": {
+      "name": "Uranium",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:CCJ",
+          "freq": "D",
+          "basis": "equity_px",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": true,
+          "position_gauge": false,
+          "fitness": {
+            "kind": "u3o8",
+            "match_rate_min": 0.7,
+            "offset_max_months": 6
+          },
+          "note": "spot U3O8 (UxC/Numerco) paywalled. CCJ = LABELED equity proxy for turn TIMING only; hand spot turns = frame overlay. URA too short (2010\u2192); rejected"
+        },
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [],
+          "note": "hand-dated U3O8 spot turns \u2014 curated history overlay"
+        }
+      ]
+    },
+    "gold": {
+      "name": "Gold / Precious Metals",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:GC=F",
+          "freq": "D",
+          "basis": "futures_cont",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "measured intermediate cycle"
+        },
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [],
+          "note": "17y secular gold clock \u2014 frame band (year-of arithmetic)"
+        }
+      ]
+    },
+    "bitcoin": {
+      "name": "Bitcoin",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": "yahoo:BTC-USD",
+          "freq": "D",
+          "basis": "spot",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "measured intermediate cycle; kept out of the equity hazard family"
+        },
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [],
+          "note": "4y halving clock \u2014 frame band; cite the BTC 1064/364 program"
+        }
+      ]
+    },
+    "dollar": {
+      "name": "US Dollar",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": [
+            "yahoo:DX-Y.NYB",
+            "fred:DTWEXBGS"
+          ],
+          "freq": "D",
+          "basis": "index_px",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "DXY is price-basis already (no dividends) \u2014 clean"
+        },
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [],
+          "note": "15y secular dollar frame"
+        }
+      ]
+    },
+    "japan": {
+      "name": "Japan (Nikkei)",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": [
+            "intl:^N225",
+            "yahoo:EWJ"
+          ],
+          "freq": "D",
+          "basis": "index_px",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "local-ccy Nikkei primary (61y tape); EWJ (USD) as the FX-decomposed leg"
+        },
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [],
+          "note": "secular Nikkei frame (1989 bubble chronology)"
+        }
+      ]
+    },
+    "housing": {
+      "name": "Housing / Real Estate",
+      "bands": [
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [
+            "fred:CSUSHPISA",
+            "fred:PERMIT",
+            "fred:HOUST",
+            "fred:MORTGAGE30US",
+            "yahoo:XHB"
+          ],
+          "note": "18y land cycle, n\u22482 graded turns \u2192 never measured. Full monitor coverage"
+        }
+      ]
+    },
+    "shipping": {
+      "name": "Shipping (Baltic Dry)",
+      "bands": [
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [
+            "yahoo:BDRY"
+          ],
+          "note": "BDI Baltic-Exchange proprietary; the honest NONE case. Manual falsifier + TTL"
+        }
+      ]
+    },
+    "lithium": {
+      "name": "Lithium",
+      "bands": [
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [
+            "yahoo:ALB",
+            "yahoo:SQM",
+            "yahoo:LAC"
+          ],
+          "note": "spot Li2CO3 paywalled; equity monitors feed tripwires only"
+        }
+      ]
+    },
+    "iron-ore": {
+      "name": "Iron Ore",
+      "bands": [
+        {
+          "band": "secular",
+          "tier": "frame",
+          "series": null,
+          "freq": null,
+          "basis": null,
+          "invert": false,
+          "kernel": null,
+          "proxy": false,
+          "position_gauge": false,
+          "fitness": null,
+          "monitors": [
+            "fred:PCU331110331110",
+            "yahoo:SLX"
+          ],
+          "note": "62% Fe (SGX/Platts) paywalled; US steel PPI \u2260 seaborne iron ore. Honest NONE"
+        }
+      ]
+    },
+    "spx": {
+      "name": "US Equities (SPX flagship)",
+      "bands": [
+        {
+          "band": "intermediate",
+          "tier": "measured",
+          "series": [
+            "yahoo:SPY",
+            "yahoo:^GSPC"
+          ],
+          "freq": "D",
+          "basis": "etf_tr",
+          "invert": false,
+          "kernel": {
+            "zz_scaled": true
+          },
+          "proxy": false,
+          "position_gauge": true,
+          "fitness": null,
+          "note": "markets.html US flagship; ^GSPC backs the falsifier levels"
+        }
+      ]
+    }
+  },
+  "census": {
+    "measured": 17,
+    "measured_proxy": 2,
+    "measured_monthly": 1,
+    "frame": 10,
+    "dual": 6,
+    "frame_only": 4
+  }
+}

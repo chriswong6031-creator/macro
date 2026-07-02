@@ -211,6 +211,77 @@ def _detect_swings(close: pd.Series, pct: float = _ZZ_PCT) -> list[dict]:
     return out
 
 
+def _detect_swings_abs(close: pd.Series, thr: float,
+                       major_abs: float | None = None) -> list[dict]:
+    """Absolute-threshold ZigZag — the diffusion-series sibling of `_detect_swings`.
+
+    Identical alternating-pivot machinery, but a reversal is confirmed when the
+    series moves by ≥ `thr` **absolute units** away from the running extreme (rather
+    than a % of level).  This is the right filter for BOUNDED / diffusion-style series
+    where a percentage of the level is meaningless — e.g. a z-scored business-cycle
+    composite (thr = 1.5 σ-units) or a rate in points.  Returns the identical swing-dict
+    shape (incl. the `provisional` running-extreme entry) so every downstream consumer
+    is threshold-mode-agnostic (D3 §2.2 implementation note)."""
+    c = close.dropna()
+    arr = c.to_numpy()
+    n = len(arr)
+    if n < 30:
+        return []
+    maj = float(major_abs) if major_abs is not None else 2.0 * float(thr)
+    piv: list[tuple[int, str]] = []
+    trend = 0                      # 0 unknown, +1 up-leg, -1 down-leg
+    ext_i, ext_px = 0, arr[0]      # running extreme of the current leg
+    ref_px = arr[0]                # provisional first-pivot price (unknown leg)
+    for i in range(1, n):
+        p = arr[i]
+        if trend == 0:
+            if p >= ref_px + thr:
+                piv.append((0, "trough")); trend, ext_i, ext_px = 1, i, p
+            elif p <= ref_px - thr:
+                piv.append((0, "peak")); trend, ext_i, ext_px = -1, i, p
+            else:
+                if p < ref_px:
+                    ref_px = p          # seed the unknown leg from the lower start
+        elif trend == 1:
+            if p > ext_px:
+                ext_i, ext_px = i, p
+            elif p <= ext_px - thr:
+                piv.append((ext_i, "peak")); trend, ext_i, ext_px = -1, i, p
+        else:
+            if p < ext_px:
+                ext_i, ext_px = i, p
+            elif p >= ext_px + thr:
+                piv.append((ext_i, "trough")); trend, ext_i, ext_px = 1, i, p
+    prov_kind = "peak" if trend == 1 else "trough" if trend == -1 else "peak"
+    piv.append((ext_i, prov_kind))
+
+    out: list[dict] = []
+    for n_, (i, kind) in enumerate(piv):
+        ts = c.index[i]
+        prev_px = arr[piv[n_ - 1][0]] if n_ else None
+        # mag_pct kept for schema parity; abs series ALSO report mag_abs so the
+        # "major" flag can key on absolute units instead of a meaningless percent.
+        mag = round(abs(arr[i] - prev_px) / prev_px * 100.0, 1) if prev_px else None
+        mag_abs = round(abs(float(arr[i]) - float(prev_px)), 3) if prev_px is not None else None
+        out.append({"i": i, "date": str(ts.date()), "t": ts.strftime("%Y-%m"),
+                    "x": round(_yf(ts), 3), "px": round(float(arr[i]), 2),
+                    "k": kind, "mag_pct": mag, "mag_abs": mag_abs,
+                    "major": bool(mag_abs is not None and mag_abs >= maj),
+                    "provisional": n_ == len(piv) - 1})
+    return out
+
+
+def _zz_pct_for_monthly(full: pd.Series) -> float:
+    """Monthly ZigZag threshold, annualised from MONTHLY returns (D3 §2.3):
+    base 8% at 22% annualised vol, floor 5%, cap 30%.  Distinct from the daily
+    `_zz_pct_for` (which annualises daily returns and centres on 14%)."""
+    r = full.pct_change().dropna()
+    if len(r) < 12:
+        return 8.0
+    vol = float(r.std()) * (12.0 ** 0.5)             # annualised from monthly bars
+    return float(min(30.0, max(5.0, 8.0 * max(1.0, vol / 0.22))))
+
+
 def _classify_phase(pos: float, slope: float, w: dict, t3: dict,
                     above200: bool) -> tuple[str, str]:
     """Multi-month sector cycle phase: LEVEL from the 0–100 position, DIRECTION from
@@ -381,48 +452,84 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
                  pct: float = _ZZ_PCT, *, series_id: str = "",
                  _phase_pending: dict | None = None,
                  price: pd.Series | None = None) -> dict | None:
-    """Shared cycle math for ANY close/level series (a sector ETF or a basket index):
-    rebased-to-100 price + 0–100 oscillator series (weekly), ZigZag turns, the
-    weekly/3-day MACD-confirmed phase, and the median-half-cycle projection.
+    """Daily cycle math for a sector ETF / basket index — now the DAILY SPECIAL CASE
+    of `record_series` (D3-W3.1 §2.2).  It delegates verbatim to
+    `record_series(full, ..., freq="D", zz_pct=pct)`, which is byte-identical to the
+    pre-W3.1 body for the daily path.  Kept as a named entry point so the ~dozen
+    existing callers (build_sector / build_basket / index families / country + china
+    engines) need no edit.
 
     W2.2 basis split (D4 §7): the STRUCTURE math — rebased price line, detrended
     oscillator, ZigZag turns, next-turn projection, and `cycles.analyze` trough/DCL/
     failed-cycle — runs on `price` (split-adj, dividend-UNadjusted `close_price`) when
-    supplied, so a dividend-inflated total-return tape can no longer push a turn date or
-    a drawdown level.  The MOMENTUM / RS math (MACD, StochRSI, RSI in `cycles.analyze`,
-    and RS-vs-SPY folded later in _apply_leadership) stays on `full` (the TR series) so a
-    return stat keeps dividend fidelity.
+    supplied.  The MOMENTUM / RS math stays on `full` (TR).  `price=None` (legacy
+    default) runs everything on `full`.  See `record_series` for the full field-schema
+    and basis documentation."""
+    return record_series(full, win_start=win_start, last_ts=last_ts,
+                          freq="D", zz_pct=pct, series_id=series_id,
+                          _phase_pending=_phase_pending, price=price)
 
-    `price=None` (the legacy default) runs EVERYTHING on `full` — byte-identical to W1.6.
-    The emitted `now.basis` records which structure basis was actually used:
-      "price"        — structure math ran on the supplied close_price series;
-      "tr"           — legacy path (no price supplied);
-      "tr_fallback"  — price WAS requested but the series degraded to TR (the caller
-                       passed a series tagged .attrs['price_basis']=='tr_fallback', i.e.
-                       close_price was missing for this ticker — never silent, always
-                       labeled so the audit + graders can exclude it).
 
-    W1.6 additions (data-only, no UI change):
-    - pos_v2         : canonical_position() (100·Φ(z)) alongside legacy pos (range-stoch)
-    - phase_v2       : classify_phase() from the ontology (hysteresis via _phase_pending)
-    - phase_v2_age_bars: bars since last phase_v2 transition (placeholder; always 0 at
-                        this single-bar call; the full phase_age_bars is computed in the
-                        backfill wave W2.3 which replays the series bar-by-bar)
-    - stance         : resolve_state() stance key
-    - divergence     : resolve_state() divergence flag
-    - tone           : stance tone (bullish|bearish|neutral|caution|anticipatory)
-    - overdue        : whether the projection's central date has passed (new proj field)
-    Legacy fields (phase, pos, signal, timing_state, ...) are byte-identical to W0.3
-    whenever price=None.
+def record_series(full: pd.Series, *, win_start: pd.Timestamp, last_ts: pd.Timestamp,
+                  freq: str = "D",
+                  invert: bool = False,
+                  zz_pct: float | None = None,
+                  zz_abs: float | None = None,
+                  zz_standardize: bool = False,
+                  trend_span: int | None = None,
+                  stoch_win: int | None = None,
+                  ladder: bool | None = None,
+                  basis_label: str | None = None,
+                  family: str = "sector",
+                  series_id: str = "",
+                  _phase_pending: dict | None = None,
+                  price: pd.Series | None = None) -> dict | None:
+    """Superset cycle kernel (D3-W3.1 §2.2) for ANY level series at daily or monthly
+    frequency.  Emits the IDENTICAL record schema (price/osc/turns/proj/now{...}) as the
+    pre-W3.1 `_record_core`, so every downstream consumer (JS renderers, backfill,
+    hazard pool, graders) is frequency-agnostic.
 
-    Parameters
-    ----------
-    price : the structure-math basis series (close_price).  None → legacy TR-only path.
-    _phase_pending : mutable hysteresis dict, caller-owned (per-series). Pass None to
-                     start fresh (default). The dict is mutated in-place by classify_phase;
-                     callers that want hysteresis persistence across build iterations
-                     should hold and pass the same dict per series.
+    The DAILY path (freq="D", invert=False, zz_abs=None, default spans, family="sector")
+    is BYTE-IDENTICAL to the pre-W3.1 core — the three engine pages regression-test this.
+
+    Extensions over the daily core:
+      freq="M"        month-end (or native-monthly) bars; min 72 bars (6y) vs 60 daily;
+                      canonical_position + detrend/stoch use the ontology's M param set
+                      (5y trend / 5y window / smooth 3); cycles.analyze() (the daily
+                      timing ladder) is NOT called → timing_state/action/dc_phase=None
+                      (D1 crosswalk declares the ladder sub-read OPTIONAL keyed on freq);
+                      the phase DIRECTION vote comes from a monthly MACD(6,13,5) ×2 plus
+                      the 3-bar osc slope (±1 when |slope₃ₘ|>3); above200 becomes above_20m.
+      invert=True     s ← 1.0/s BEFORE all math (credit tights / vol calm / low yields =
+                      cycle top, so 100 stays "risk-on/complacent").  turns[].px is
+                      re-inverted to ORIGINAL units for display; %-ZigZag thresholds are
+                      ~symmetric in log space so 1/x preserves them.
+      zz_abs          absolute-threshold ZigZag (`_detect_swings_abs`) for bounded /
+                      diffusion series where % of level is meaningless; wins over zz_pct.
+      zz_standardize  run the abs-ZigZag on a CAUSAL z-score of the series rather than the
+                      raw level (D3 §2.3: "zz_abs=1.5 on the z-scored leading index").  A
+                      raw-abs threshold is scale-inconsistent on a TRENDING level (INDPRO
+                      3.7→104: a 1.5-pt move is 40% at the low end, 1.4% at the high end,
+                      so it over-segments).  Standardizing makes zz_abs=1.5 a stable 1.5σ
+                      filter; turns[].px is mapped back to ORIGINAL units for display, like
+                      `invert`.  Only meaningful with zz_abs set.
+      trend_span      override the detrend EMA span (bars); stoch_win overrides the
+                      stochastic window (bars).  None → freq defaults.
+      basis_label     an explicit basis string (e.g. "spot", "futures_cont", "fred_level"),
+                      threaded from the proxy registry; overrides the auto tr/price basis.
+      family          hazard-pool family tag ("sector"|"country"|"basket"|"flagship").
+
+    Also stamps (additive; absent-safe for legacy consumers):
+      now.freq              "D"|"M"
+      now.hazard_features   the D-hazard pillar feature row (§2.5)
     """
+    if freq not in ("D", "M"):
+        raise ValueError(f"record_series: freq must be 'D' or 'M', got {freq!r}")
+    is_daily = (freq == "D")
+    if ladder is None:
+        ladder = is_daily
+    pct = zz_pct if zz_pct is not None else _ZZ_PCT
+
     # ── basis resolution (D4 §7 structure-vs-momentum split) ────────────────────
     # `struct` is what all structure math reads; `full` (TR) always drives momentum/RS.
     if price is not None:
@@ -436,37 +543,94 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
     else:
         struct = full
         basis = "tr"
+    if basis_label is not None:                # registry-declared basis wins (flagships)
+        basis = basis_label
+
+    # ── invert (level series that cycle on 1/x: credit spreads, vol, yields) ────
+    # Done AFTER basis resolution so both the momentum tape (`full`) and the structure
+    # tape (`struct`) share the same risk-on orientation.  turns[].px re-inverts below.
+    if invert:
+        struct = (1.0 / struct.replace(0.0, np.nan)).dropna()
+        full = (1.0 / full.replace(0.0, np.nan)).dropna()
+
+    # ── monthly resample (freq="M"): month-end bars unless already monthly ──────
+    if not is_daily:
+        struct = _to_monthly(struct)
+        full = _to_monthly(full)
 
     win = struct[struct.index >= win_start]
-    if len(win) < 60:
+    min_bars = 60 if is_daily else 72          # 5y daily / 6y monthly floor (§2.2)
+    if len(win) < min_bars:
         return None
     base = float(win.iloc[0])
     if base <= 0:
         return None
     recent_start = last_ts - pd.DateOffset(years=DEFAULT_WINDOW_YEARS)
     price_pts = _taper_points(win, recent_start, lambda v: v / base * 100.0)
-    osc_full = _detrended_osc(struct)
+    if is_daily:
+        osc_full = _detrended_osc(struct)
+    else:
+        # monthly detrend/stochastic: 5y trend, 5y window, light 3-bar smooth (§2.2)
+        osc_full = _detrended_osc(struct, trend=(trend_span or 60),
+                                  win=(stoch_win or 60), smooth=3)
     osc_pts = _taper_points(osc_full[osc_full.index >= win_start], recent_start)
 
-    swings_all = _detect_swings(struct, pct)
+    if zz_abs is not None:
+        # D3 §2.3: for a TRENDING level (INDPRO 3.7→104) a raw abs threshold is
+        # scale-inconsistent, so `zz_standardize` runs the abs-ZigZag on a causal z-score
+        # (zz_abs then reads as σ-units, a stable 1.5σ filter).  The pivot LEVEL is mapped
+        # back to raw units below (via `struct`), exactly like the invert re-expression.
+        zz_series = _causal_zscore(struct, trend_span or (60 if not is_daily else 252)) \
+            if zz_standardize else struct
+        swings_all = _detect_swings_abs(zz_series, zz_abs)
+    else:
+        swings_all = _detect_swings(struct, pct)
     swings = [s for s in swings_all if s["x"] >= _yf(win_start) - 0.05]
+    if zz_abs is not None and zz_standardize:
+        # re-express each pivot's px from z-score space back to the RAW level (nearest bar)
+        # so turns[].px reads in native units; `rebased` is recomputed from the raw px.
+        for s in swings_all:
+            raw = struct.reindex([pd.Timestamp(s["date"])], method="nearest")
+            if len(raw) and pd.notna(raw.iloc[0]):
+                s["px"] = round(float(raw.iloc[0]), 2)
     for s in swings:                           # attach rebased y + osc y for the chart
+        # `rebased` (and the price/osc lines) stay in the PLOTTED space: for an inverted
+        # card that is 1/x space, so the line rises as risk-on rises (tights = up).
         s["rebased"] = round(s["px"] / base * 100.0, 2)
         oy = osc_full.reindex([pd.Timestamp(s["date"])], method="nearest")
         s["osc"] = round(float(oy.iloc[0]), 1) if len(oy) and pd.notna(oy.iloc[0]) else None
+    if invert:
+        # D3 §2.2: report the pivot LEVEL (turns[].px) in ORIGINAL units (re-invert), while
+        # `rebased`/price/osc stay in plotted (1/x) space.  `swings` is a filtered VIEW of
+        # the same dict objects in `swings_all`, so inverting the superset once covers both
+        # — do NOT touch `swings` again (that would double-invert the shared objects).
+        for s in swings_all:
+            if s.get("px"):
+                s["px"] = round(1.0 / s["px"], 4)
 
-    # analyze: structure math on `struct` (price), momentum/MACD on `full` (TR) — the
-    # A13 substrate seam.  price=struct only when a distinct structure basis exists (a
-    # tr_fallback series would just pass TR twice, a no-op that keeps the legacy path).
-    res = cycles.analyze(full, kind="equity",
-                         price=(struct if basis == "price" else None))
-    lad = (res or {}).get("ladder") or {}
-    mtf = (res or {}).get("mtf") or {}
+    if is_daily:
+        # analyze: structure math on `struct` (price), momentum/MACD on `full` (TR) — the
+        # A13 substrate seam.  price=struct only when a distinct structure basis exists (a
+        # tr_fallback series would just pass TR twice, a no-op that keeps the legacy path).
+        res = cycles.analyze(full, kind="equity",
+                             price=(struct if basis == "price" else None))
+        lad = (res or {}).get("ladder") or {}
+        mtf = (res or {}).get("mtf") or {}
+    else:
+        # monthly macro series have NO daily timing ladder — the ontology crosswalk
+        # declares the ladder/DC/IC sub-reads OPTIONAL keyed on now.freq (D1 dependency).
+        res = None
+        lad = {}
+        mtf = {"W": _monthly_macd_state(full), "3D": {}}
     osc_clean = osc_full.dropna()               # osc_full is on `struct` (structure basis)
     pos_now = float(osc_clean.iloc[-1]) if len(osc_clean) else 50.0
-    osc_slope = float(osc_clean.iloc[-1] - osc_clean.iloc[-22]) if len(osc_clean) > 22 else 0.0
-    # above200 is a DRAWDOWN/trend read (structure) → measure on `struct`.
-    above200 = bool(len(struct) >= 200 and struct.iloc[-1] > struct.iloc[-200:].mean())
+    if is_daily:
+        osc_slope = float(osc_clean.iloc[-1] - osc_clean.iloc[-22]) if len(osc_clean) > 22 else 0.0
+        above200 = bool(len(struct) >= 200 and struct.iloc[-1] > struct.iloc[-200:].mean())
+    else:
+        # monthly: 3-bar osc slope ≈ the daily kernel's 22-bar month; above_20m ≈ above200d
+        osc_slope = float(osc_clean.iloc[-1] - osc_clean.iloc[-4]) if len(osc_clean) > 4 else 0.0
+        above200 = bool(len(struct) >= 20 and struct.iloc[-1] > struct.iloc[-20:].mean())
     phase, phase_label = _classify_phase(pos_now, osc_slope, mtf.get("W") or {},
                                          mtf.get("3D") or {}, above200)
     last_trough = next((s["t"] for s in reversed(swings) if s["k"] == "trough"), None)
@@ -482,7 +646,8 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
     # pos_v2: canonical 100·Φ(z) position from the ontology — a cycle-POSITION read
     # (structure) → compute on `struct` (price basis when supplied).
     try:
-        pos_v2_series = onto.canonical_position(struct, freq="D")
+        pos_v2_series = onto.canonical_position(struct, freq=freq,
+                                                trend_span=trend_span, smooth_span=None)
         pos_v2_clean = pos_v2_series.dropna()
         pos_v2 = round(float(pos_v2_clean.iloc[-1]), 2) if len(pos_v2_clean) else None
     except Exception:  # noqa: BLE001
@@ -512,8 +677,8 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
 
     # resolve_state: full stance/divergence/tone from the 5×8 crosswalk
     ladder_state = lad.get("state") or ""
-    dc_phase = (res.get("cycle") or {}).get("dc_phase")
-    failed_cycle = bool((res.get("cycle") or {}).get("failed_cycle"))
+    dc_phase = (res.get("cycle") or {}).get("dc_phase") if res else None
+    failed_cycle = bool((res.get("cycle") or {}).get("failed_cycle")) if res else False
     try:
         if ladder_state in onto.LADDER:
             rs_out = onto.resolve_state(
@@ -531,7 +696,7 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
     except Exception:  # noqa: BLE001
         stance = divergence = tone = None
 
-    return {
+    rec = {
         "price": price_pts, "osc": osc_pts, "turns": swings, "proj": proj,
         "n_turns_all": len(swings_all),
         # W2.2: which structure basis this record's turns/osc/projection were computed on.
@@ -561,6 +726,91 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
             # W2.2: structure basis (mirrored here for the forward-log writer)
             "basis":           basis,
         },
+    }
+    # ── W3.1 additive stamps (freq + hazard features) — NON-DAILY / NON-SECTOR only,
+    # so the daily sector/basket/country byte-identity gate is untouched. ──────────
+    if not (is_daily and family == "sector" and not invert and zz_abs is None):
+        rec["now"]["freq"] = freq
+        rec["now"]["hazard_features"] = _hazard_features(
+            swings_all, pos_now, osc_slope, freq, family)
+    return rec
+
+
+def _to_monthly(s: pd.Series) -> pd.Series:
+    """Month-end resample (last value in month) for the monthly kernel path.  Idempotent
+    on a series that is already monthly (native FRED monthly tapes come through unchanged
+    because a month-end resample of one-obs-per-month is that same obs)."""
+    return s.dropna().resample("ME").last().dropna()
+
+
+def _causal_zscore(s: pd.Series, span: int) -> pd.Series:
+    """Causal (leak-free) z-score of a level series for the standardized abs-ZigZag
+    (D3 §2.3).  Detrend by an EWMA of `span`, then divide by the EWM std of the residual
+    with an expanding-median vol floor (the same anti-blowup floor `canonical_position`
+    uses).  Fully backward-looking so a monthly PIT backfill never leaks — a pivot's
+    z-value uses only data up to that bar."""
+    c = s.dropna()
+    if len(c) < max(24, span // 3):
+        return c * 0.0
+    trend = c.ewm(span=span, min_periods=max(2, span // 3)).mean()
+    resid = c - trend
+    sigma = resid.ewm(span=span, min_periods=max(2, span // 3)).std()
+    floor = sigma.expanding(min_periods=1).median() * 0.25
+    sigma = sigma.clip(lower=floor.fillna(sigma))
+    z = (resid / sigma.replace(0.0, np.nan)).dropna()
+    return z
+
+
+def _monthly_macd_state(s: pd.Series) -> dict:
+    """Monthly MACD(6,13,5) state → the {macd_pos, macd_cross_up/dn, macd_curl_up/dn}
+    dict `_classify_phase` reads for its ×2 primary direction vote (D3 §2.2).  Replaces
+    the weekly MACD leg the daily kernel gets from cycles.analyze()."""
+    s = s.dropna()
+    if len(s) < 20:
+        return {}
+    ema_f = s.ewm(span=6, adjust=False).mean()
+    ema_s = s.ewm(span=13, adjust=False).mean()
+    macd = ema_f - ema_s
+    sig = macd.ewm(span=5, adjust=False).mean()
+    hist = (macd - sig)
+    if len(hist) < 3:
+        return {"macd_pos": bool(hist.iloc[-1] > 0)}
+    h0, h1, h2 = float(hist.iloc[-1]), float(hist.iloc[-2]), float(hist.iloc[-3])
+    return {
+        "macd_pos": bool(h0 > 0),
+        "macd_cross_up": bool(h1 <= 0 < h0),
+        "macd_cross_dn": bool(h1 >= 0 > h0),
+        "macd_curl_up": bool(h0 > h1 > h2 and h0 < 0),   # rising while still negative
+        "macd_curl_dn": bool(h0 < h1 < h2 and h0 > 0),   # falling while still positive
+    }
+
+
+def _hazard_features(swings_all: list[dict], pos: float, osc_slope: float,
+                     freq: str, family: str) -> dict:
+    """The D-hazard pillar feature row (D3 §2.5) — the exact contract the pooled
+    discrete-time hazard model consumes.  Display-only until that pillar's calibration
+    artifact exists; STRUCTURAL/frame bands contribute nothing (n≈2 is not a sample)."""
+    confirmed = [s for s in swings_all if not s.get("provisional")]
+    last = swings_all[-1] if swings_all else None
+    last_conf = confirmed[-1] if confirmed else None
+    bpy = 252.0 if freq == "D" else 12.0
+    # half-cycle spacing from confirmed pivots (years)
+    xs = [s["x"] for s in confirmed if s.get("x") is not None]
+    halves = [xs[i] - xs[i - 1] for i in range(1, len(xs))]
+    median_half = float(np.median(halves)) if halves else 0.0
+    now_x = last["x"] if last and last.get("x") is not None else (xs[-1] if xs else 0.0)
+    age_turn = (now_x - last_conf["x"]) if (last_conf and last_conf.get("x") is not None) else 0.0
+    amp_leg = last.get("mag_pct") if last else None
+    return {
+        "age_in_phase_bars": None,             # filled by the bar-replay backfill (W7)
+        "age_since_turn_bars": int(round(max(0.0, age_turn) * bpy)),
+        "pos": round(float(pos), 2),
+        "osc_slope": round(float(osc_slope), 2),
+        "amp_leg_pct": (round(float(amp_leg), 1) if amp_leg is not None else None),
+        "median_half_yrs": round(median_half, 3),
+        "n_turns_all": len(swings_all),
+        "freq": freq,
+        "family": family,
     }
 
 
