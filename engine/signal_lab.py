@@ -73,8 +73,18 @@ VERDICT_WORD = {
 
 def _row(name, name_zh, market, tier, why, why_zh, source, *, horizon="",
          ic=None, ic_ir=None, t_hac=None, q_fdr=None, dsr=None, sharpe=None,
-         hit=None, n=None, fdr_survivor=None, wired="", extra=None) -> dict:
-    """One scorecard row. Numeric fields are floats or None (None => '—')."""
+         hit=None, n=None, fdr_survivor=None, wired="", extra=None,
+         dsr_family=None, dsr_n_trials=None, dsr_basis=None, dsr_expiry=None) -> dict:
+    """One scorecard row. Numeric fields are floats or None (None => '—').
+
+    DSR PROVENANCE (W1d, audit #21): a quoted DSR is only honest if its multiple-testing
+    n_trials reflects the real search space. ``dsr_family`` names the Trial-Ledger family the
+    n_trials should come from; ``dsr_n_trials`` is the number as quoted in ``source``;
+    ``dsr_basis`` stamps how that number was fixed — ``'ledger'`` (sourced live at build from
+    the ledger), ``'frozen-quote'`` (a hardcoded quote pending re-derivation) — and
+    ``dsr_expiry`` date-stamps a frozen-quote per the passport rule. ``build_scorecard``
+    prefers the live ledger count when ``dsr_family`` resolves, else surfaces the frozen quote
+    with its expiry so a stale self-certifying number is visibly stale rather than trusted."""
     return {
         "name": name, "name_zh": name_zh, "market": market, "tier": tier,
         "horizon": horizon, "ic": ic, "ic_ir": ic_ir, "t_hac": t_hac,
@@ -82,6 +92,8 @@ def _row(name, name_zh, market, tier, why, why_zh, source, *, horizon="",
         "fdr_survivor": fdr_survivor, "wired": wired,
         "why": why, "why_zh": why_zh, "source": source,
         "extra": extra or [],   # list of (label, value_str) quoted context stats
+        "dsr_family": dsr_family, "dsr_n_trials": dsr_n_trials,
+        "dsr_basis": dsr_basis, "dsr_expiry": dsr_expiry,
     }
 
 
@@ -101,6 +113,10 @@ REGISTRY: list[dict] = [
                 "两半一致、置换零假设技能 p=0.0，且在真实时点（ALFRED）数据上仍成立。边际在回撤与夏普，而非 CAGR。",
          source="spvector-phase1/2/3-audit/pit.md", horizon="allocation (daily)",
          dsr=0.9994, sharpe=0.92, wired="spvector.html / vector_allocation",
+         # W1d passport: the "n_trials=30" is sourced LIVE from the spvector Trial-Ledger family
+         # when calibrate_spvector* has run into the persistent ledger; otherwise it renders as
+         # a frozen quote with an expiry (not a self-certifying constant).
+         dsr_family="spvector", dsr_n_trials=30, dsr_basis="frozen-quote", dsr_expiry="2026-09-30",
          extra=[("MaxDD", "−33.2% vs −55.2% B&H"), ("Sharpe 95% CI", "[0.61, 0.93, 1.25]"),
                 ("split-half", "0.83 / 1.02"), ("perm-null skill p", "0.0"),
                 ("PIT (ALFRED) Sharpe", "0.90")]),
@@ -752,6 +768,45 @@ _FACTOR_LABEL = {
 }
 
 
+def _resolve_dsr_provenance(registry: list[dict]) -> None:
+    """Stamp each row's DSR n_trials with a live-ledger or frozen-quote passport (W1d).
+
+    For a row carrying ``dsr_family``: if that family has a budget in the persistent Trial
+    Ledger, use the live ``effective_n`` (basis ``'ledger'``) — the number is now maintained,
+    not asserted. Otherwise fall back to the row's frozen ``dsr_n_trials`` with its
+    ``dsr_expiry``, and flag it EXPIRED once today is past the expiry (basis ``'frozen-quote'``
+    / ``'expired'``). Mutates rows in place, adding a ``dsr_provenance`` dict the template can
+    render. Degrade-safe: any ledger error leaves the frozen quote in place."""
+    try:
+        from datetime import date
+        from engine.trial_ledger import TrialLedger
+        led = TrialLedger()
+        today = date.today().isoformat()
+    except Exception:  # noqa: BLE001
+        led = None
+        today = None
+    for r in registry:
+        fam = r.get("dsr_family")
+        if not fam:
+            continue
+        live_n = 0
+        if led is not None:
+            try:
+                live_n = led.effective_n(fam) if led.declared_budget(fam) or led.literal_n(fam) else 0
+            except Exception:  # noqa: BLE001
+                live_n = 0
+        if live_n:
+            r["dsr_provenance"] = {"n_trials": live_n, "basis": "ledger", "family": fam}
+        else:
+            exp = r.get("dsr_expiry")
+            expired = bool(exp and today and today > exp)
+            r["dsr_provenance"] = {
+                "n_trials": r.get("dsr_n_trials"),
+                "basis": "expired" if expired else (r.get("dsr_basis") or "frozen-quote"),
+                "family": fam, "expiry": exp, "expired": expired,
+            }
+
+
 def build_scorecard() -> dict:
     """Assemble the full Signal Lab payload for the template. Pure assembler."""
     ft = _load_factor_table()
@@ -770,6 +825,10 @@ def build_scorecard() -> dict:
             })
         # sort by IC descending so the (failing) leaders sit on top
         factor_rows.sort(key=lambda r: (r["ic"] is None, -(r["ic"] or 0)))
+
+    # W1d: resolve each DSR quote's multiple-testing n_trials from the Trial Ledger (live) or
+    # surface it as a stamped frozen-quote with an expiry — no more self-certifying constants.
+    _resolve_dsr_provenance(REGISTRY)
 
     # group the curated registry by tier, preserving TIERS order
     by_tier: dict[str, list[dict]] = {t["key"]: [] for t in TIERS}

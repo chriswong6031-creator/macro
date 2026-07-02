@@ -405,7 +405,10 @@ def calibrate(closes: pd.DataFrame, sectors: list[str], spy: pd.Series,
     {state -> {exc63, hit, abs63, abs_hit, n}}.
 
     Point-in-time: the 3-day flags are computed on the resampled series and
-    forward-filled onto daily dates, so the read on date t uses only data ≤ t. The
+    forward-filled onto daily dates, so the read on date t uses only data ≤ t. Forward
+    returns use a NEXT-BAR fill (W1c, audit #15): the state read on bar t is entered on
+    t+1's close, so the measured base rate is not flattered by same-bar entry (the honest
+    convention shared with engine.grading / validation.py). The
     OVERSOLD_BOUNCE state is measured over the cohort's full below-200d history
     (cohort + price-shape guards, the SAME _verdict); the live state additionally
     requires the Fed put PRESENT, so the live read is conservative vs this rate."""
@@ -423,11 +426,18 @@ def calibrate(closes: pd.DataFrame, sectors: list[str], spy: pd.Series,
         df = _flag_frame(c)
         df3 = _flag_frame(c3).reindex(c.index, method="ffill")
         sma200 = c.rolling(200).mean()
-        fwd = c.shift(-horizon) / c - 1
-        spy_fwd = spy.reindex(c.index).shift(-horizon) / spy.reindex(c.index) - 1
+        # NEXT-BAR fill (W1c, audit #15): the state is READ on bar i but the position is
+        # FILLED on bar i+1 (you cannot trade the same close you observe the signal on),
+        # matching engine.grading / validation.py's alloc.shift(1). Denominator = c.shift(-1)
+        # (the next close), numerator = c.shift(-horizon-1) (horizon bars past the fill), both
+        # read at i via .iloc[i]. The SPY benchmark fills on the SAME next bar for consistency.
+        spy_c = spy.reindex(c.index)
+        fwd = c.shift(-horizon - 1) / c.shift(-1) - 1
+        spy_fwd = spy_c.shift(-horizon - 1) / spy_c.shift(-1) - 1
         exc = (fwd - spy_fwd)
         osb_elig = t in _OVERSOLD_BOUNCE_COHORT
-        for i in range(200, len(c) - horizon, 5):     # weekly sample
+        # -horizon-1: next-bar fill needs ONE extra forward bar (fill at i+1, measure to i+1+horizon)
+        for i in range(200, len(c) - horizon - 1, 5):     # weekly sample
             if not np.isfinite(exc.iloc[i]):
                 continue
             d, t3 = df.iloc[i], df3.iloc[i]

@@ -78,8 +78,9 @@ def test_forward_sign_matches_realized_return_sign():
     ev = meta_label.primary_events(df["alloc_optimal"])
     h = 30
     y = meta_label.forward_sign_labels(df["close"], ev, h)
-    fwd = df["close"].shift(-h) / df["close"] - 1.0
-    # y must equal 1 exactly where the realized forward return is positive
+    # NEXT-BAR fill (W1c): entry is the bar AFTER the event, return measured h bars past it.
+    fwd = df["close"].shift(-h - 1) / df["close"].shift(-1) - 1.0
+    # y must equal 1 exactly where the realized next-bar forward return is positive
     chk = pd.concat([y.rename("y"), (fwd.reindex(y.index) > 0).astype(float).rename("r")], axis=1)
     assert bool((chk["y"] == chk["r"]).all())
     assert y.notna().all() and set(np.unique(y)) <= {0.0, 1.0}
