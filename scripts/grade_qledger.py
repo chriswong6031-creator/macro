@@ -152,9 +152,16 @@ def run(root: Path | str | None = None, today: date | None = None,
             for row in new_rows:
                 fh.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    # Recompute and emit track_record.json.
+    # Recompute and emit track_record.json, then overlay the §3 promotion-ladder
+    # verdicts (per claim_family × horizon) so the ladder state is always current
+    # alongside the grade stats. emit_ladder_states merges into the file written by
+    # emit_track_record. Non-fatal: a ladder-emit crash must not lose the grades.
     if not dry_run:
         q.emit_track_record(root)
+        try:
+            q.emit_ladder_states(root)
+        except Exception as e:  # noqa: BLE001
+            log.warning("emit_ladder_states failed (non-fatal): %s", e)
 
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
