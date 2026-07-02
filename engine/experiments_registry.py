@@ -29,8 +29,8 @@ log = logging.getLogger(__name__)
 
 OUT = "marketdata/experiments.json"
 SEED = "data/experiments/registry_seed.json"
-_DONE = {"validated", "proven"}          # already concluded — don't re-flag on come-back date
-_NO_AUTO_READY = {"parked_research"}      # never auto-matures a result on a date
+_DONE = {"validated", "proven", "gate_open"}  # already concluded — don't re-flag on come-back date
+_NO_AUTO_READY = {"parked_research"}           # never auto-matures a result on a date
 
 
 def _root():
@@ -97,7 +97,88 @@ def _refresh_track_record(e: dict) -> dict:
     return out
 
 
-_HOOKS = {"track_record": _refresh_track_record}
+def _refresh_qledger_promotion(e: dict) -> dict:
+    """Live overlay for a qledger promotion-gate experiment.
+
+    Reads site/qledger/track_record.json["promotion_readiness"][claim_family] and
+    surfaces the live n_dates, wilson_ci_low, ready/approaching state, and the
+    duel-context line (challenger vs placebo |excess| at 5d) so the admin
+    Experiments tab shows real decision evidence rather than a static counter.
+
+    Fields updated:
+      status  — "accruing" | "gate_open" (ready=True at any horizon)
+      state   — live summary line: n_dates/needed, CI-low, excess_mean, duel context
+      ready   — True when §3 gate passes (n_dates>=25 AND wilson_ci_low>0)
+      duel_context_line — challenger vs placebo |excess| at 5d (injected into next_step)
+    """
+    family = e.get("claim_family") or ""
+    tr = _read_json("site/qledger/track_record.json")
+    if not tr:
+        return {}
+
+    readiness = (tr.get("promotion_readiness") or {}).get(family) or {}
+    duel_ctx = (tr.get("promotion_readiness") or {}).get("_duel_context", {}).get(family) or {}
+
+    # Pick the most-advanced horizon (smallest h with most n_dates)
+    best: dict = {}
+    for h_str in ("5", "21", "63"):
+        rec = readiness.get(h_str)
+        if rec and rec.get("n_dates", 0) > best.get("n_dates", -1):
+            best = dict(rec)
+            best["_horizon"] = int(h_str)
+
+    if not best:
+        # promotion_readiness not yet written — fall back gracefully
+        return {}
+
+    n_dates = best.get("n_dates", 0)
+    needed = best.get("needed", 25)
+    ci_low = best.get("wilson_ci_low")
+    hr = best.get("hit_rate")
+    ex = best.get("excess_mean")
+    horizon = best.get("_horizon", 5)
+    ready = bool(best.get("ready"))
+    approaching = bool(best.get("approaching"))
+    proj = best.get("projected_ready_date")
+
+    # Build a readable state line
+    ci_str = f"{ci_low:.3f}" if ci_low is not None else "n/a"
+    hr_str = f"{hr*100:.1f}%" if hr is not None else "salience-only"
+    ex_str = f"{ex*100:.2f}%" if ex is not None else "n/a"
+    state = (
+        f"n_dates={n_dates}/{needed} @ {horizon}d · CI-low={ci_str} · "
+        f"hit={hr_str} · excess={ex_str}"
+    )
+    if approaching and not ready:
+        state += " · APPROACHING (≥20)"
+    if proj and not ready:
+        state += f" · proj_ready≈{proj}"
+
+    # Duel context line: challenger vs placebo |excess| at 5d
+    ch_ex = duel_ctx.get("challenger_excess_mean_5d")
+    pl_ex = duel_ctx.get("placebo_covered_abs_excess_5d")
+    duel_line = ""
+    if ch_ex is not None and pl_ex is not None:
+        duel_line = (
+            f"Duel @5d: challenger excess_mean={ch_ex*100:.2f}% vs "
+            f"placebo |excess|={pl_ex*100:.2f}% (covered-ticker tape) · "
+            f"n_dates={duel_ctx.get('n_dates_5d',0)}"
+        )
+
+    out: dict = {
+        "status": "gate_open" if ready else "accruing",
+        "state": state,
+        "ready": ready,
+    }
+    if duel_line:
+        # Append duel context to next_step so it surfaces in the admin tab
+        existing_next = e.get("next_step") or ""
+        out["next_step"] = (f"{duel_line}\n{existing_next}").strip()
+    return out
+
+
+_HOOKS = {"track_record": _refresh_track_record,
+          "qledger_promotion": _refresh_qledger_promotion}
 
 
 def compute() -> dict:
