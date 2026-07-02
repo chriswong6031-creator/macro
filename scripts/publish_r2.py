@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import logging
 import os
 import sys
@@ -121,6 +122,13 @@ def publish(dirs, dry_run: bool = False, workers: int = 32) -> int:
         with ThreadPoolExecutor(max_workers=workers) as ex:
             list(ex.map(_up, todo))
         up += len(todo)
+        # Manifest goes up LAST, after every file it lists is in place. The public
+        # r2.dev host has no LIST endpoint, so bulk mirrors (e.g. the Mastermind bot's
+        # vendored-feed R2 leg) need an authoritative name list to sync and prune against.
+        names = sorted(p.relative_to(base).as_posix() for p in files)
+        s3.put_object(Bucket=bucket, Key=f"{d}/_manifest.json",
+                      Body=json.dumps({"dir": d, "count": len(names), "files": names}).encode(),
+                      ContentType="application/json")
     log.info("R2 publish done: %d uploaded, %d unchanged (bucket=%s)", up, skip, bucket)
     return 0
 
