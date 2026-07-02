@@ -226,7 +226,8 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
                               glut: dict | None = None,
                               guidance: dict | None = None,
                               confirmers: dict | None = None,
-                              write_ledger: bool = True) -> dict | None:
+                              write_ledger: bool = True,
+                              inputs_out: dict | None = None) -> dict | None:
     """Combine T1 (bottleneck) x T2 (demand) x T3 (guidance) x T4 (revisions) x exit-risk
     (glut) into a per-theme stage + entry overlay. Computes any input not supplied.
 
@@ -234,7 +235,11 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
     inverse-to-breadth, never a stage-changer.
 
     T3 guidance is a LEADING confirmer on the rationale + a score input, never a
-    stage-changer (the stage stays T1 x T4 x exit-risk)."""
+    stage-changer (the stage stays T1 x T4 x exit-risk).
+
+    `inputs_out`, when given, is filled with the RESOLVED sub-objects (bottleneck/revisions/
+    demand/glut/guidance/confirmers) so a caller can reuse them — e.g. the §3.2 shadow pass
+    in scripts/build_foresight.py — instead of re-running the EDGAR/FRED-backed engines."""
     if bottleneck is None:
         try:
             from engine.bottleneck import compute_bottleneck
@@ -277,6 +282,10 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         except Exception as e:  # noqa: BLE001
             log.warning("cascade: altdata_confirmers failed: %s", e)
             confirmers = None
+
+    if inputs_out is not None:
+        inputs_out.update({"bottleneck": bottleneck, "revisions": revisions, "demand": demand,
+                           "glut": glut, "guidance": guidance, "confirmers": confirmers})
 
     bn_themes = (bottleneck or {}).get("themes") or {}
     rv_themes = (revisions or {}).get("themes") or {}
