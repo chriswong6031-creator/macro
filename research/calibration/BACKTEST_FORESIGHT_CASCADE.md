@@ -23,7 +23,7 @@ is the latest-revised value truncated at the replay date: LOOK-AHEAD CONTAMINATE
 
 **Label: `pit_mode = LATEST_REVISED_TRUNCATED`** (all 0/8 bottleneck series missing from vintage matrix)
 
-- **EDGAR text leg:** ACTIVE (quarterly counts replayed)
+- **EDGAR text leg:** EFFECTIVELY ABSENT (query success rate 5.6% — network blocked or cache empty; the text leg contributed nothing to this run)
 
 ---
 
@@ -31,10 +31,10 @@ is the latest-revised value truncated at the replay date: LOOK-AHEAD CONTAMINATE
 
 | TIGHT cutoff | PRECIPICE mean excess (90d) | WATCH mean excess (90d) | Discrimination |
 |---|---|---|---|
-| 0.5 | 1.39% | 2.59% | -1.20% |
-| 0.75 | -5.64% | 2.56% | -8.20% |
-| 1.0 | n/a (no PRECIPICE obs) | 2.60% | n/a |
-| 1.25 | n/a (no PRECIPICE obs) | 2.62% | n/a |
+| 0.5 | -0.08% | 2.47% | -2.55% |
+| 0.75 | -2.24% | 2.59% | -4.83% |
+| 1.0 | -5.64% | 2.56% | -8.20% |
+| 1.25 | n/a (no PRECIPICE obs) | 2.60% | n/a |
 
 **Recommended TIGHT cutoff:** 0.75 — INDETERMINATE (no positive discrimination — keep live threshold 0.75)
 
@@ -46,24 +46,24 @@ is the latest-revised value truncated at the replay date: LOOK-AHEAD CONTAMINATE
 
 | Stage | N obs | 30d excess | 60d excess | 90d excess | 180d excess |
 |---|---|---|---|---|---|
-| PRECIPICE | 6 | -1.25% | -4.00% | -5.64% | 7.12% |
+| PRECIPICE | 16 | -1.28% | -1.17% | -2.24% | 8.64% |
 | PRECIPICE (text) | 0 | n/a (no basket data) | n/a (no basket data) | n/a (no basket data) | n/a (no basket data) |
-| BROADENING | 62 | 0.21% | 1.90% | 2.74% | 5.25% |
-| WATCH | 1444 | 0.71% | 1.61% | 2.56% | 6.10% |
+| BROADENING | 65 | 0.19% | 1.69% | 2.56% | 4.98% |
+| WATCH | 1431 | 0.73% | 1.62% | 2.59% | 6.09% |
 
 ---
 
 ## 4. Known-Answer Validation
 
-**Pass rate: 1/5**
+**Pass rate: 0/5**
 
 | Episode | Expected | Frac TIGHT | Frac LOOSE | Pass |
 |---|---|---|---|---|
 | memory_storage 2020-07→2021-03 | tightening | 0% | 100% | ✗ |
-| ai_semiconductors 2021-01→2021-12 | tightening | 0% | 67% | ✗ |
-| semicap_equipment 2021-01→2021-12 | tightening | 0% | 67% | ✗ |
+| ai_semiconductors 2021-01→2021-12 | tightening | 0% | 50% | ✗ |
+| semicap_equipment 2021-01→2021-12 | tightening | 0% | 50% | ✗ |
 | memory_storage 2024-01→2024-09 | tightening | 0% | 100% | ✗ |
-| memory_storage 2022-06→2023-06 | loosening | 0% | 46% | ✓ |
+| memory_storage 2022-06→2023-06 | loosening | 0% | 38% | ✗ |
 
 ---
 
@@ -81,7 +81,7 @@ is the latest-revised value truncated at the replay date: LOOK-AHEAD CONTAMINATE
 | MNFCTRIRSA | LATEST-REVISED-TRUNCATED | Look-ahead contaminated: post-replay revisions visible. Thresholds from this series apply only via §3.2 shadow ledger. |
 | PCU331110331110 | LATEST-REVISED-TRUNCATED | Look-ahead contaminated: post-replay revisions visible. Thresholds from this series apply only via §3.2 shadow ledger. |
 | PCU334413334413 | LATEST-REVISED-TRUNCATED | Look-ahead contaminated: post-replay revisions visible. Thresholds from this series apply only via §3.2 shadow ledger. |
-| EDGAR phrase counts | REPLAYED (quarterly counts) | Approximate per-quarter aggregate; no per-filer breakdown in the replay. |
+| EDGAR phrase counts | ABSENT | Text leg absent from this backtest run. |
 
 ### Survivorship caveat
 
@@ -114,10 +114,21 @@ tickers in data/yahoo/ for this run.
 - **Z_WIN:** 120 months (no sweep performed — expanding in a future run)
 - **Leg weights:** current PROVISIONAL weights (0.21/0.165/0.1875/0.1875/0.25) maintained
   pending ≥30 graded PRECIPICE rows from the shadow ledger (§3.2).
-- **Known-answer root cause:** economy-wide MNFCTRIRSA (inv/sales) dragged composites
-  negative during COVID-era inventory accumulation, masking semi-specific tightening.
-  This confirms the audit's non-discrimination finding; per-NAICS-sub-sector weights
-  would fix it once genuine PIT vintages land.
+- **Known-answer root cause:** the mapped physical legs are themselves
+  NON-RESPONSIVE — this is NOT just the economy-wide inv/sales drag. Verified
+  counterfactuals: removing MNFCTRIRSA entirely still never reads TIGHT (max
+  no-inventory composite +0.09 vs the 0.75 threshold), and the semi-specific
+  NAICS-3344 capacity leg never exceeded tightness 0.37 even through the
+  documented 2021 crunch. Reweighting the existing legs will NOT fix this;
+  the leverage is per-theme member-level physical fingerprints (XBRL
+  inventory/RPO/margin legs — upgrade-doc Q2), which this result strengthens.
+
+- **Statistical fragility (disclose before citing the discrimination table):**
+  the entire PRECIPICE bucket at cutoff 0.75 is 6 rows from ONE Q3-2021 metals
+  episode — two themes (rare_earth, copper_steel) with IDENTICAL NAICS-331 legs
+  and overlapping forward windows, driven by a single PPI-YoY z=5.33 outlier.
+  Effective sample: ~1 episode. The negative discrimination headline is a
+  1-observation read, not a calibration result.
 
 > These recommendations do NOT change any live engine constants.  Promotion requires
 > a shadow ledger slice that beats the live slice with BY-FDR significance (§3.2).

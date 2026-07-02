@@ -321,6 +321,12 @@ def _edgar_accel_at_date(edgar_counts: pd.DataFrame | None, theme_key: str,
     if sub.empty:
         return None, False
 
+    # Drop network-failure sentinel rows (count = -1) BEFORE aggregating — summing them
+    # as real counts would compute garbage accel on any partial-failure run (review #4)
+    sub = sub[sub["count"] >= 0]
+    if sub.empty:
+        return None, False
+
     # Aggregate hits per quarter (sum across phrases)
     qcounts = sub.groupby("quarter_start")["count"].sum().sort_index()
     if len(qcounts) < 2:
@@ -359,13 +365,12 @@ def _replay_theme_at_date(theme_key: str, tickers: list[str], asof: pd.Timestamp
     # ── EDGAR language leg ─────────────────────────────────────────────
     lang_accel, lang_net_ok = _edgar_accel_at_date(edgar_counts, theme_key, asof)
     lang_z = _language_z(lang_accel)
-    n_filers = 1 if (lang_accel is not None and lang_accel > 0) else 0  # approximation
-    lang_z_gated = (lang_z if (lang_z is not None and n_filers >= LANG_MIN_FILERS
-                               and lang_z > LANG_Z_LIVE) else lang_z)  # pass-through
-    # For replay purposes, n_filers approximation: we don't have per-filer counts from
-    # the quarterly aggregate; treat any positive accel as "sufficient filers" to match
-    # the live logic's ≥2 intent for the composite (conservative approximation).
-    legs["leg6_language"] = lang_z_gated
+    # REPLAY APPROXIMATION (disclosed in the report): the quarterly aggregate has no
+    # per-filer breakdown, so the live ≥2-distinct-filers gate cannot be applied here —
+    # any positive accel is treated as sufficient. The prior ternary was a no-op that
+    # CONTRADICTED its own gate comment (review #5); this pass-through is the same
+    # behavior, stated honestly.
+    legs["leg6_language"] = lang_z
 
     if spec is None:
         # unmapped theme — language-only path
@@ -789,7 +794,12 @@ def _generate_report(df: pd.DataFrame, sweep: pd.DataFrame,
 
     edgar_ok = pit_summary.get("edgar_ok", False)
     lines += [
-        f"- **EDGAR text leg:** {'ACTIVE (quarterly counts replayed)' if edgar_ok else 'ABSENT (network blocked or cache empty) — text leg = None for all replay dates'}",
+        f"- **EDGAR text leg:** "
+        + (f"ACTIVE (quarterly counts replayed; query success rate "
+           f"{pit_summary.get('edgar_success_rate', 0.0):.0%})" if edgar_ok
+           else f"EFFECTIVELY ABSENT (query success rate "
+                f"{pit_summary.get('edgar_success_rate', 0.0):.1%} — network blocked or "
+                "cache empty; the text leg contributed nothing to this run)"),
         "",
     ]
 
@@ -931,10 +941,21 @@ def _generate_report(df: pd.DataFrame, sweep: pd.DataFrame,
         "- **Z_WIN:** 120 months (no sweep performed — expanding in a future run)",
         "- **Leg weights:** current PROVISIONAL weights (0.21/0.165/0.1875/0.1875/0.25) maintained",
         "  pending ≥30 graded PRECIPICE rows from the shadow ledger (§3.2).",
-        "- **Known-answer root cause:** economy-wide MNFCTRIRSA (inv/sales) dragged composites",
-        "  negative during COVID-era inventory accumulation, masking semi-specific tightening.",
-        "  This confirms the audit's non-discrimination finding; per-NAICS-sub-sector weights",
-        "  would fix it once genuine PIT vintages land.",
+        "- **Known-answer root cause:** the mapped physical legs are themselves",
+        "  NON-RESPONSIVE — this is NOT just the economy-wide inv/sales drag. Verified",
+        "  counterfactuals: removing MNFCTRIRSA entirely still never reads TIGHT (max",
+        "  no-inventory composite +0.09 vs the 0.75 threshold), and the semi-specific",
+        "  NAICS-3344 capacity leg never exceeded tightness 0.37 even through the",
+        "  documented 2021 crunch. Reweighting the existing legs will NOT fix this;",
+        "  the leverage is per-theme member-level physical fingerprints (XBRL",
+        "  inventory/RPO/margin legs — upgrade-doc Q2), which this result strengthens.",
+        "",
+        "- **Statistical fragility (disclose before citing the discrimination table):**",
+        "  the entire PRECIPICE bucket at cutoff 0.75 is 6 rows from ONE Q3-2021 metals",
+        "  episode — two themes (rare_earth, copper_steel) with IDENTICAL NAICS-331 legs",
+        "  and overlapping forward windows, driven by a single PPI-YoY z=5.33 outlier.",
+        "  Effective sample: ~1 episode. The negative discrimination headline is a",
+        "  1-observation read, not a calibration result.",
         "",
         "> These recommendations do NOT change any live engine constants.  Promotion requires",
         "> a shadow ledger slice that beats the live slice with BY-FDR significance (§3.2).",
@@ -1009,8 +1030,13 @@ def main() -> int:
             "pit_pct": df["any_pit_clean"].mean() if "any_pit_clean" in df.columns else 0.0,
             "is_truly_pit": n_pit_covered > 0,
             "series_pit_map": series_pit_map,
+            # success RATE, not any(): a 5/5040-success run must not read "ACTIVE"
+            # (review #2). The label downstream requires a majority of resolved queries.
             "edgar_ok": bool(
-                df["lang_network_ok"].any() if "lang_network_ok" in df.columns else False
+                df["lang_network_ok"].mean() > 0.5 if "lang_network_ok" in df.columns else False
+            ),
+            "edgar_success_rate": (
+                float(df["lang_network_ok"].mean()) if "lang_network_ok" in df.columns else 0.0
             ),
         }
     else:
