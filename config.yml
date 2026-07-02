@@ -289,9 +289,13 @@ fred:
       # the physical correlate the semis/metals bottleneck can't give data-center-power / grid /
       # nuclear / solar). Keyless FRED; engine uses the first candidate per leg that resolves.
       IPG2211S: ip_electric_power     # IP: electric power generation (NAICS 2211) — demand/output
+      IPG2211A2N: ip_electric_power_alt  # IP: electric power alt id (NAICS 2211, annual; engine fallback)
       IPUTIL: ip_utilities            # IP: utilities (broader fallback)
       CAPUTLG2211S: cap_u_utilities   # cap-U electric power generation
+      CAPUTLG2211A2S: cap_u_utilities_alt  # cap-U electric power alt id (engine fallback)
+      # CAPUTLGMFS: cap_u_mfg_fs     # (non-existent on FRED — 404; kept as comment for audit trail)
       WPU0543: ppi_electric_power     # PPI: electric power
+      PCU221122221122: ppi_electric_power_alt  # PPI: electric power alt id (engine fallback)
       APU000072610: price_electricity # avg retail electricity price (US city avg, per kWh)
   retries: 3
   backoff_base_s: 5

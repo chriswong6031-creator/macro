@@ -287,11 +287,12 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
     from scripts import audit_common
     cfg = cfg or audit_common.quality_cfg()
     if audit_fns is None:
-        from scripts import audit_prices, audit_macro, audit_universe
+        from scripts import audit_prices, audit_macro, audit_universe, audit_fred_groups
         audit_fns = [
             ("prices", lambda: audit_prices.run(cfg=cfg)),
             ("macro", lambda: audit_macro.run(cfg=cfg)),
             ("universe", lambda: audit_universe.run(cfg=cfg)),
+            ("fred_groups", lambda: audit_fred_groups.audit_groups()),
         ]
 
     docs: list[tuple[str, dict]] = []

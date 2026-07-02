@@ -1,0 +1,17 @@
+{
+ "asof": "2026-07-02",
+ "audit": "fred_groups",
+ "stale_days": 45,
+ "min_present_pct": 50.0,
+ "any_dark": false,
+ "groups": [
+  {
+   "group": "real_grp",
+   "n_present": 1,
+   "n_total": 1,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  }
+ ]
+}
