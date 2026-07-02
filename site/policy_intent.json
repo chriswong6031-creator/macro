@@ -2,7 +2,7 @@
   "schema": "policy_intent_desk.v1",
   "is_context_only": true,
   "lens": "realpolitik",
-  "generated_at": "2026-07-02T09:21:00.827587+00:00",
+  "generated_at": "2026-07-02T10:07:19.218180+00:00",
   "state_asof": "2026-07-02",
   "model": "deepseek-v4-pro",
   "regime_context": "The policy regime operates as sequenced optionality: the Administration suppresses front-end yields via Treasury issuance and reforms, while the Fed stages hawkish credibility with no near-term cuts. Consensus may mistake the hawkish staging for a permanent high-rate regime, but revealed interest is to deliver lower real yields without the inflation\u2011impairing optics of early easing.",
