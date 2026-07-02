@@ -883,6 +883,7 @@ def main(alpha: dict | None = None) -> dict | None:
     _coil_wash:   dict[str, bool | None]  = {}
     _coil_div:    dict[str, bool]         = {}
     _coil_sector: dict[str, str | None]   = {}
+    _coil_fire:   dict[str, dict]         = {}   # wave-4 COILED-FIRE display marker (CN, no rank change)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -892,12 +893,14 @@ def main(alpha: dict | None = None) -> dict | None:
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned buy list (below).
         sig_verdict[ticker] = signal_gate.gate(ticker, close)
         # COILED wave-3 CN ranking bonus: collect per-name inputs for cohort computation below.
-        # All four assignments are guarded as one block; any failure leaves dicts empty for this name.
+        # Wave-4: also collect fire_recent for the COILED-FIRE display chip (CN included per wave-4
+        # ship record; HK NOT touched; display chip + forward-ledger only, NO rank/bonus change).
         try:
             _coil_d[ticker]      = coiled.weekly_d_last(close)
             _coil_wash[ticker]   = coiled.washout_ctx(close)
             _coil_div[ticker]    = coiled.bull_div(close)
             _coil_sector[ticker] = sector or None
+            _coil_fire[ticker]   = coiled.fire_recent(close)
         except Exception:  # noqa: BLE001 — additive, never fatal
             pass
         if alpha_pt.get(ticker):            # additive: absent => no alpha panel for this name
@@ -1196,6 +1199,15 @@ def main(alpha: dict | None = None) -> dict | None:
             t: coiled.assess(_coil_wash.get(t), _coil_frac.get(t), bool(_coil_div.get(t)))
             for t in sig_verdict
         }
+        # Wave-4 COILED-FIRE CN: inject fire fields into assess dict for COILED names with a
+        # recent fire. Display chip + forward-ledger only — NO rank/bonus change.
+        for t, cb in coiled_by.items():
+            if cb.get("coiled"):
+                _fr = _coil_fire.get(t) or {}
+                if _fr.get("fire"):
+                    cb["fire"]       = True
+                    cb["fire_ticks"] = _fr.get("ticks")
+                    cb["fire_src"]   = _fr.get("src")
     except Exception as _e:  # noqa: BLE001 — additive; board degrades gracefully without bonus
         log.warning("china coiled bonus skipped (%s)", _e)
         coiled_by = {}

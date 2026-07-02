@@ -154,6 +154,10 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             "coiled":        bool(_cb.get("coiled")),
             "coiled_star":   bool(_cb.get("star")),
             "coiled_cohort": _cb.get("cohort"),
+            # COILED-FIRE wave-4 display chip fields (wave-4 ship record 2026-07-02).
+            # Schema-union safe: old parquet rows missing these cols read as NaN (handled by concat).
+            "coiled_fire":       bool(_cb.get("fire")),
+            "coiled_fire_ticks": _cb.get("fire_ticks"),
         })
     if not out:
         return 0

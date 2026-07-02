@@ -2,10 +2,15 @@
 
 Framework doc: research/signal_engine/DURABLE_BOTTOM_FRAMEWORK.md §6 + §8 ledger (2026-07-01)
 Wave-2 report:  research/entry_timing/WAVE2_REPORT.md
+Wave-4 report:  research/entry_timing/WAVE4_REPORT.md
 
 Validated numbers (basket OOS, G2 — the decisive gate):
   COILED vs noncoiled_washout: clean15 +7.54pp, stop5 −5.64pp (better), n=6,842
   STAR (COILED ∩ bull_div): stop5 −2.4pp further vs COILED (baskets)
+
+Wave-4 COILED-FIRE marker (C2 = union m1d_s3d ∪ m2d_s3d inside COILED):
+  stop5 non-inferior to R on all panels; premium 7.02 vs 8.08; lead 3d vs 6d;
+  recall +1.83pp US stocks / +10.10pp CN. DISPLAY chip + forward-ledger only.
 
 WHAT THIS MODULE IS:
   display/ranking bonus + forward-ledger fields, NOT a standalone alpha signal,
@@ -23,6 +28,7 @@ Public API (all functions never raise):
   bull_div(daily_close)               -> bool
   cohort_fractions(latest_d, sector_of, d_thresh, min_peers) -> dict[str, float | None]
   assess(washout, cohort_frac, div)   -> dict  (JSON-safe, no NaN)
+  fire_recent(daily_close, within=3)  -> dict  (JSON-safe; fire/ticks/src; never raises)
 """
 from __future__ import annotations
 
@@ -50,6 +56,12 @@ _SMOOTH_D  = 3
 _MIN_WEEKLY = 60      # weekly_d_last: need >=60 weekly bars
 _WASH_CTX_A = 217     # washout_ctx: capit window (daily)
 _WASH_CTX_B = 91      # washout_ctx: look-back window for argmin
+
+# ── fire_recent constants ─────────────────────────────────────────────────────
+FIRE_WITHIN = 3       # default look-back for fire_recent (trading bars)
+_FIRE_MIN_BARS = 300  # minimum daily bars for fire_recent to attempt computation
+# CONF_W for the 3D stoch-cross recency window (must match tuning_harness.CONF_W = 8)
+_CONF_W = 8           # 3D bars within which the 3D stoch cross is considered "recent"
 
 
 def _ema(s: pd.Series, span: int) -> pd.Series:
@@ -310,3 +322,197 @@ def assess(
             "coiled": False, "star": False, "washout_ctx": None,
             "cohort": None, "div": False, "bonus": 0.0,
         }
+
+
+def fire_recent(daily_close: pd.Series, within: int = FIRE_WITHIN) -> dict:
+    """COILED-FIRE marker — did a fresh C2 (union m1d_s3d ∪ m2d_s3d) fire in the
+    last `within` trading bars?
+
+    Wave-4 ship record (2026-07-02):
+      C2 = union(m1d_s3d, m2d_s3d) inside COILED. Ships as **display chip +
+      forward-ledger fields ONLY — no rank/bonus change** (ledger grades it live
+      before it earns weight). Validated numbers:
+        stop5 non-inferior to R (38.41 vs 39.12 stocks); clean15 37.92 (within bar);
+        premium 7.02 vs 8.08; lead 3d vs 6d; recall +1.83pp US / +10.10pp CN.
+      HK: NOT shipped (wave-3 gate failed).
+
+    IMPORTANT SEMANTICS:
+      This function answers ONLY: "did a fresh union fire print in the last `within`
+      trading bars on the DAILY close series?" It does NOT:
+        - change any rank or bonus (NO rank/bonus change — display chip only)
+        - enforce COILED state (the caller checks coiled_by[t]['coiled'])
+        - dedupe or burst-suppress (dedupe / 8-bar burst semantics live in the
+          research harness; production boards typically call with within=3 daily bars)
+        - auto-trade or generate orders
+
+    Fire definition (C2):
+      m1d fire: RSI-MACD (14/60/5) bull cross on the 1D daily grid (xup of macd over
+        sig on the raw daily series), WHILE the 3D stoch (14/3/3, resample("3B").last())
+        has crossed up from oversold recently (within _CONF_W 2D bars) AND confirm
+        (prior-closed-week weekly RSI-MACD bull OR 3D stoch was oversold within window)
+        AND rsi_ok (3D RSI14 < 65).
+      m2d fire: same but the MACD cross is on the 2B grid (resample("2B").last()),
+        mapped to the daily index by known-date (same protocol as tuning_harness.to_daily).
+      union fire (any calendar day): m1d OR m2d (same-day counts once).
+      Returns {"fire": bool, "ticks": int|None, "src": "m1d"|"m2d"|"both"|None}.
+
+    Implementation replicates tuning_harness.build_signals (macd_cross trigger) conditions
+    faithfully (same math as the validated harness):
+      MACD-TF bull cross (xup of rsi_macd on that grid, mapped to daily by known-date)
+      AND recent 3D stoch cross (within CONF_W=8 3D bars, from-oversold flag feeding confirm)
+      AND confirm (prior-closed-week weekly rsi_macd bull OR 3D stoch was oversold within window)
+      AND rsi_ok (3D RSI14 < 65)
+    For the union, the 3D-stoch leg is shared between both TFs (same 3D grid, same known-date
+    mapping — C2 in the harness shares the stoch TF between m1d and m2d in the union).
+
+    Args:
+      daily_close: daily close price series with DatetimeIndex (or parseable index).
+      within: number of trading bars to look back for a union fire (default FIRE_WITHIN=3).
+
+    Returns dict (always, never raises):
+      {
+        "fire":  bool    — True iff any union (m1d OR m2d) fire landed in the last `within` bars,
+        "ticks": int|None — bars since the most recent union fire; None if no fire ever occurred,
+        "src":   "m1d"|"m2d"|"both"|None — source(s) of the most recent fire; None if never.
+      }
+    All values JSON-safe (no NaN, no numpy scalars).
+    """
+    _null = {"fire": False, "ticks": None, "src": None}
+    try:
+        c = daily_close.dropna()
+        if not isinstance(c.index, pd.DatetimeIndex):
+            c = c.copy()
+            c.index = pd.to_datetime(c.index)
+        n = len(c)
+        if n < _FIRE_MIN_BARS:
+            return _null
+        if within < 0:
+            within = 0
+
+        di = c.index
+
+        # ── helpers (inline, mirrors tuning_harness exactly) ──────────────────
+
+        def _xup(a: pd.Series, b: pd.Series) -> pd.Series:
+            return (a > b) & (a.shift(1) <= b.shift(1))
+
+        def _since_cross(cond: pd.Series) -> pd.Series:
+            """bars since last True (NaN where never fired yet)."""
+            pos = np.arange(len(cond))
+            last = pd.Series(np.where(cond.to_numpy(), pos, np.nan),
+                             index=cond.index).ffill()
+            return pd.Series(pos, index=cond.index) - last
+
+        def _to_daily_ffill(tf_vals: pd.Series, kn: pd.Series) -> pd.Series:
+            kd = pd.Series(tf_vals.to_numpy(), index=pd.to_datetime(kn.to_numpy()))
+            kd = kd[~kd.index.duplicated(keep="last")].sort_index()
+            return kd.reindex(di, method="ffill")
+
+        def _to_daily_event(tf_bool: pd.Series, kn: pd.Series) -> pd.Series:
+            """Place True on the daily bar at/after the known date of each True TF bar."""
+            out = pd.Series(False, index=di)
+            kd = pd.Series(tf_bool.to_numpy(), index=pd.to_datetime(kn.to_numpy()))
+            kd = kd[~kd.index.duplicated(keep="last")].sort_index()
+            for dt, v in kd.items():
+                if v:
+                    p = int(di.searchsorted(dt, side="left"))
+                    if p < len(di):
+                        out.iloc[p] = True
+            return out
+
+        def _known(tf_grid: pd.Series) -> pd.Series:
+            """known-date series: max daily date in each resample bucket."""
+            raw = c.resample(tf_grid.index.freqstr if hasattr(tf_grid.index, "freqstr")
+                             else "1B").apply(lambda x: x.dropna().index.max()
+                                              if len(x.dropna()) > 0 else pd.NaT)
+            return raw  # placeholder; see per-TF below
+
+        # ── 3D stoch grid (shared by both fire legs; tf=2B used as "2D" proxy for the
+        #    3D stoch, matching tuning_harness m2d_s3d / m1d_s3d where stoch_tf=3) ────
+        # NOTE: the harness uses stoch_tf=3 ("3B") for both m1d_s3d and m2d_s3d.
+        # We use "3B" here to match exactly.
+        s3 = c.resample("3B").last().dropna()
+        s3_known_raw = c.resample("3B").apply(
+            lambda x: x.dropna().index.max() if len(x.dropna()) > 0 else pd.NaT
+        ).reindex(s3.index)
+        s3_known = pd.Series(pd.to_datetime(s3_known_raw.values), index=s3.index).dropna()
+        s3 = s3.reindex(s3_known.index)
+
+        k3, d3 = _stoch_rsi_kd(s3)
+        sb_cross3 = _xup(k3, d3)
+        b1_from_os3 = d3.rolling(_CONF_W).min() < 20.0   # tuning_harness OS=20
+        recent_sb3  = _since_cross(sb_cross3) <= _CONF_W
+        sb_from_os3 = sb_cross3 & b1_from_os3
+        r14_3 = rsi(s3, _RSI_LEN)
+
+        # Map 3D indicators to daily
+        recent_sb_d  = _to_daily_ffill(recent_sb3.fillna(False), s3_known)
+        b1os_d       = _to_daily_ffill(b1_from_os3.fillna(False), s3_known)
+        r14_3_d      = _to_daily_ffill(r14_3, s3_known)
+
+        # ── weekly confirm (prior closed week; matches tuning_harness exactly) ─
+        wk = c.resample("W-FRI").last().dropna()
+        wmacd, wsig = _rsi_macd(wk)
+        w_bull_tf = (wmacd >= wsig).shift(1)   # prior closed week (no repaint)
+        w_bull_d  = w_bull_tf.reindex(di, method="ffill").fillna(False).astype(bool)
+
+        confirm_bull = (w_bull_d | b1os_d.reindex(di).fillna(False).astype(bool))
+        rsi_ok = (r14_3_d < 65.0).fillna(False)   # BUY_RSI_MAX=65
+
+        # ── m1d leg: MACD cross on the 1D (raw daily) grid ────────────────────
+        macd1, sig1 = _rsi_macd(c)
+        mb1_cross   = _xup(macd1, sig1)
+        # event mapping: True only on the day the cross happened (same logic as "event" in harness)
+        mb1_d       = mb1_cross.fillna(False)    # already on the daily grid
+
+        m1d_fire = (mb1_d & recent_sb_d.reindex(di).fillna(False).astype(bool)
+                    & confirm_bull & rsi_ok).fillna(False).astype(bool)
+
+        # ── m2d leg: MACD cross on the 2B grid, mapped by known-date ──────────
+        s2 = c.resample("2B").last().dropna()
+        s2_known_raw = c.resample("2B").apply(
+            lambda x: x.dropna().index.max() if len(x.dropna()) > 0 else pd.NaT
+        ).reindex(s2.index)
+        s2_known = pd.Series(pd.to_datetime(s2_known_raw.values), index=s2.index).dropna()
+        s2 = s2.reindex(s2_known.index)
+
+        macd2, sig2 = _rsi_macd(s2)
+        mb2_cross   = _xup(macd2, sig2)
+        mb2_d       = _to_daily_event(mb2_cross.fillna(False), s2_known)
+
+        m2d_fire = (mb2_d & recent_sb_d.reindex(di).fillna(False).astype(bool)
+                    & confirm_bull & rsi_ok).fillna(False).astype(bool)
+
+        # ── union and look-back ────────────────────────────────────────────────
+        union_fire = m1d_fire | m2d_fire   # same-day counts once
+
+        # find the most recent union fire
+        fire_positions = np.where(union_fire.to_numpy())[0]
+        if len(fire_positions) == 0:
+            return _null
+
+        last_pos = int(fire_positions[-1])
+        ticks    = int((n - 1) - last_pos)   # bars since most recent fire (0 = today)
+
+        # source of the most recent fire
+        at_m1d = bool(m1d_fire.iloc[last_pos]) if last_pos < n else False
+        at_m2d = bool(m2d_fire.iloc[last_pos]) if last_pos < n else False
+        if at_m1d and at_m2d:
+            src: str | None = "both"
+        elif at_m1d:
+            src = "m1d"
+        elif at_m2d:
+            src = "m2d"
+        else:
+            src = None
+
+        fired = ticks <= within if within >= 0 else False
+
+        return {
+            "fire":  bool(fired),
+            "ticks": ticks,
+            "src":   src,
+        }
+
+    except Exception:
+        return _null
