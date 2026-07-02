@@ -72,7 +72,7 @@ def test_confirmation_lifts_conviction():
                 [_sig("NVDA", 85, channels=["insider", "congress"])],
                 [{"ticker": "NVDA", "state": "CONFIRMED_UP", "edge_score": 80}],
                 [{"ticker": "NVDA", "label": "UPTREND", "conviction": 0.8}])
-    pol = {"theses": [{"subject": "NVDA", "lean": "overweight"}]}
+    pol = {"theses": [{"subject": "NVDA", "lean": "overweight", "conviction": "high"}]}
     hub = H.build(b, pol, {}, today=_TODAY)
     nvda = next(d for d in hub["command"] if d["ticker"] == "NVDA")
     assert nvda["n_confirm"] >= 4
@@ -123,7 +123,7 @@ def test_early_edge_and_stealth_never_coexist():
     # policy present → early_edge (the superset); stealth must NOT also list
     b = _bundle({"X": _news("neutral", n=0)}, [_sig("X", 80)],
                 [{"ticker": "X", "state": "POSITIVE_DIVERGENCE", "edge_score": 70}])
-    d = H.build(b, {"theses": [{"subject": "X", "lean": "overweight"}]}, {}, today=_TODAY)["command"][0]
+    d = H.build(b, {"theses": [{"subject": "X", "lean": "overweight", "conviction": "high"}]}, {}, today=_TODAY)["command"][0]
     assert "early_edge" in d["flags"] and "stealth_accumulation" not in d["flags"]
     # no policy → stealth_accumulation, not early_edge
     d2 = H.build(b, None, {}, today=_TODAY)["command"][0]
@@ -147,7 +147,7 @@ def test_dissent_erodes_conviction_and_caps_bonus():
 def test_policy_conflict_flag():
     # desks bullish but policy bearish → policy_conflict
     b = _bundle({"BANK": _news("pos", sectors=["XLF"])}, [_sig("BANK", 80)])
-    pol = {"theses": [{"subject": "XLF", "lean": "underweight"}]}
+    pol = {"theses": [{"subject": "XLF", "lean": "underweight", "conviction": "high"}]}
     d = next(x for x in H.build(b, pol, {}, today=_TODAY)["command"] if x["ticker"] == "BANK")
     assert d["directions"]["policy"] == -1
     assert "policy_conflict" in d["flags"]
