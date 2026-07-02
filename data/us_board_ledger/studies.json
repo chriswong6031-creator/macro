@@ -1,0 +1,361 @@
+{
+ "generated": "2026-07-02T00:22:23.745149+00:00",
+ "powered": false,
+ "power_note": "UNPOWERED shallow run (no deep panel / no PIT membership) \u2014 survivorship-INFLATED, DIRECTIONAL ONLY. Powered anchor: reports/stock-conviction-phase0.md (deep+PIT 2008-2025).",
+ "panel": {
+  "n_rebalances": 24,
+  "range": [
+   "2024-06-28",
+   "2026-05-29"
+  ],
+  "horizons": [
+   5,
+   10,
+   21
+  ],
+  "top_decile": 0.1
+ },
+ "the_live_key_gap": "The shipped rank key `bottoming-alignment` (engine.cycles.mtf_alignment) was NEVER fed to any validation harness \u2014 not the deep phase0 run, not this one. Timing here is the short-term-reversal PROXY. Grading the TRUE live key end-to-end (reconstruct the W/3D/D stack over history) remains the honest first step (audit open question A1).",
+ "study1_mae_timing_vs_alpha": {
+  "h5": {
+   "alpha_ranked": {
+    "n": 1866,
+    "n_rebalances": 24,
+    "median_excess": -0.00028,
+    "mean_excess": 0.00561,
+    "hit_rate": 0.4973,
+    "median_mae_close_excess": -0.02217,
+    "mean_mae_close_excess": -0.03801,
+    "p5_mae": -0.12787
+   },
+   "timing_gated": {
+    "n": 2166,
+    "n_rebalances": 24,
+    "median_excess": -0.00284,
+    "mean_excess": -0.00134,
+    "hit_rate": 0.4797,
+    "median_mae_close_excess": -0.01952,
+    "mean_mae_close_excess": -0.03416,
+    "p5_mae": -0.12158
+   },
+   "_verdict": {
+    "timing_mae_shallower_by": 0.00265,
+    "timing_return_delta": -0.00256,
+    "reading": "timing cohort has SHALLOWER median close-path drawdown"
+   }
+  },
+  "h10": {
+   "alpha_ranked": {
+    "n": 1866,
+    "n_rebalances": 24,
+    "median_excess": 0.00788,
+    "mean_excess": 0.013,
+    "hit_rate": 0.5364,
+    "median_mae_close_excess": -0.03757,
+    "mean_mae_close_excess": -0.0549,
+    "p5_mae": -0.17846
+   },
+   "timing_gated": {
+    "n": 2166,
+    "n_rebalances": 24,
+    "median_excess": -0.006,
+    "mean_excess": -0.00034,
+    "hit_rate": 0.4672,
+    "median_mae_close_excess": -0.03676,
+    "mean_mae_close_excess": -0.05293,
+    "p5_mae": -0.17216
+   },
+   "_verdict": {
+    "timing_mae_shallower_by": 0.00081,
+    "timing_return_delta": -0.01388,
+    "reading": "timing cohort has SHALLOWER median close-path drawdown"
+   }
+  },
+  "h21": {
+   "alpha_ranked": {
+    "n": 1757,
+    "n_rebalances": 23,
+    "median_excess": 0.00312,
+    "mean_excess": 0.01813,
+    "hit_rate": 0.5065,
+    "median_mae_close_excess": -0.05911,
+    "mean_mae_close_excess": -0.07875,
+    "p5_mae": -0.23201
+   },
+   "timing_gated": {
+    "n": 2057,
+    "n_rebalances": 23,
+    "median_excess": -0.0074,
+    "mean_excess": 0.0067,
+    "hit_rate": 0.4696,
+    "median_mae_close_excess": -0.05918,
+    "mean_mae_close_excess": -0.07712,
+    "p5_mae": -0.21814
+   },
+   "_verdict": {
+    "timing_mae_shallower_by": -7e-05,
+    "timing_return_delta": -0.01052,
+    "reading": "timing cohort has DEEPER/equal median close-path drawdown"
+   }
+  }
+ },
+ "study2_precision_at_k": {
+  "alpha": {
+   "h5": {
+    "mean_rank_ic": 0.0088,
+    "ic_ir": 0.056,
+    "n_rebalances": 24,
+    "P@1": 0.4583,
+    "mean_exc@1": 0.02567,
+    "P@3": 0.4306,
+    "mean_exc@3": 0.027,
+    "P@5": 0.4833,
+    "mean_exc@5": 0.02062,
+    "P@10": 0.4958,
+    "mean_exc@10": 0.01177,
+    "P@20": 0.4896,
+    "mean_exc@20": 0.00745
+   },
+   "h10": {
+    "mean_rank_ic": 0.0436,
+    "ic_ir": 0.321,
+    "n_rebalances": 24,
+    "P@1": 0.4583,
+    "mean_exc@1": 0.03231,
+    "P@3": 0.4444,
+    "mean_exc@3": 0.03954,
+    "P@5": 0.5,
+    "mean_exc@5": 0.03635,
+    "P@10": 0.5333,
+    "mean_exc@10": 0.02983,
+    "P@20": 0.5583,
+    "mean_exc@20": 0.02435
+   },
+   "h21": {
+    "mean_rank_ic": 0.0271,
+    "ic_ir": 0.226,
+    "n_rebalances": 23,
+    "P@1": 0.4348,
+    "mean_exc@1": 0.08334,
+    "P@3": 0.4348,
+    "mean_exc@3": 0.06074,
+    "P@5": 0.4435,
+    "mean_exc@5": 0.05301,
+    "P@10": 0.5,
+    "mean_exc@10": 0.04798,
+    "P@20": 0.4978,
+    "mean_exc@20": 0.03621
+   }
+  },
+  "timing_proxy": {
+   "h5": {
+    "mean_rank_ic": -0.0248,
+    "ic_ir": -0.177,
+    "n_rebalances": 24,
+    "P@1": 0.4167,
+    "mean_exc@1": -0.02384,
+    "P@3": 0.4306,
+    "mean_exc@3": -0.00572,
+    "P@5": 0.4917,
+    "mean_exc@5": 0.00071,
+    "P@10": 0.4792,
+    "mean_exc@10": 0.00169,
+    "P@20": 0.4875,
+    "mean_exc@20": 0.00217
+   },
+   "h10": {
+    "mean_rank_ic": -0.0241,
+    "ic_ir": -0.203,
+    "n_rebalances": 24,
+    "P@1": 0.5,
+    "mean_exc@1": -0.00703,
+    "P@3": 0.5278,
+    "mean_exc@3": 0.01234,
+    "P@5": 0.5333,
+    "mean_exc@5": 0.01937,
+    "P@10": 0.475,
+    "mean_exc@10": 0.00926,
+    "P@20": 0.4938,
+    "mean_exc@20": 0.00927
+   },
+   "h21": {
+    "mean_rank_ic": -0.0025,
+    "ic_ir": -0.023,
+    "n_rebalances": 23,
+    "P@1": 0.3478,
+    "mean_exc@1": -0.03214,
+    "P@3": 0.3913,
+    "mean_exc@3": -0.00435,
+    "P@5": 0.4435,
+    "mean_exc@5": 0.0263,
+    "P@10": 0.4435,
+    "mean_exc@10": 0.01382,
+    "P@20": 0.487,
+    "mean_exc@20": 0.01481
+   }
+  },
+  "composite": {
+   "h5": {
+    "mean_rank_ic": -0.0037,
+    "ic_ir": -0.024,
+    "n_rebalances": 24,
+    "P@1": 0.4167,
+    "mean_exc@1": 0.00503,
+    "P@3": 0.5139,
+    "mean_exc@3": 0.00369,
+    "P@5": 0.4917,
+    "mean_exc@5": 0.00492,
+    "P@10": 0.4875,
+    "mean_exc@10": 0.00726,
+    "P@20": 0.4833,
+    "mean_exc@20": 0.00332
+   },
+   "h10": {
+    "mean_rank_ic": 0.0147,
+    "ic_ir": 0.128,
+    "n_rebalances": 24,
+    "P@1": 0.4583,
+    "mean_exc@1": 0.02586,
+    "P@3": 0.5139,
+    "mean_exc@3": 0.02055,
+    "P@5": 0.5083,
+    "mean_exc@5": 0.02194,
+    "P@10": 0.5333,
+    "mean_exc@10": 0.02644,
+    "P@20": 0.525,
+    "mean_exc@20": 0.01529
+   },
+   "h21": {
+    "mean_rank_ic": 0.013,
+    "ic_ir": 0.119,
+    "n_rebalances": 23,
+    "P@1": 0.5217,
+    "mean_exc@1": 0.04503,
+    "P@3": 0.4928,
+    "mean_exc@3": 0.05103,
+    "P@5": 0.4783,
+    "mean_exc@5": 0.03917,
+    "P@10": 0.5,
+    "mean_exc@10": 0.03677,
+    "P@20": 0.4957,
+    "mean_exc@20": 0.02707
+   }
+  }
+ },
+ "study3_dispersion_conditioning": {
+  "dispersion_terciles_63d_std": {
+   "q33": 0.19488,
+   "q67": 0.22616
+  },
+  "alpha": {
+   "h5": {
+    "low_disp": {
+     "mean_ic": -0.058,
+     "n_rebalances": 8,
+     "P@5": 0.425
+    },
+    "mid_disp": {
+     "mean_ic": 0.0634,
+     "n_rebalances": 8,
+     "P@5": 0.6
+    },
+    "high_disp": {
+     "mean_ic": 0.0211,
+     "n_rebalances": 8,
+     "P@5": 0.425
+    }
+   },
+   "h10": {
+    "low_disp": {
+     "mean_ic": -0.0238,
+     "n_rebalances": 8,
+     "P@5": 0.45
+    },
+    "mid_disp": {
+     "mean_ic": 0.0895,
+     "n_rebalances": 8,
+     "P@5": 0.525
+    },
+    "high_disp": {
+     "mean_ic": 0.0651,
+     "n_rebalances": 8,
+     "P@5": 0.525
+    }
+   },
+   "h21": {
+    "low_disp": {
+     "mean_ic": -0.0099,
+     "n_rebalances": 8,
+     "P@5": 0.425
+    },
+    "mid_disp": {
+     "mean_ic": 0.0865,
+     "n_rebalances": 8,
+     "P@5": 0.475
+    },
+    "high_disp": {
+     "mean_ic": 0.0015,
+     "n_rebalances": 7,
+     "P@5": 0.4286
+    }
+   }
+  },
+  "timing_proxy": {
+   "h5": {
+    "low_disp": {
+     "mean_ic": -0.0438,
+     "n_rebalances": 8,
+     "P@5": 0.525
+    },
+    "mid_disp": {
+     "mean_ic": 0.0069,
+     "n_rebalances": 8,
+     "P@5": 0.55
+    },
+    "high_disp": {
+     "mean_ic": -0.0375,
+     "n_rebalances": 8,
+     "P@5": 0.4
+    }
+   },
+   "h10": {
+    "low_disp": {
+     "mean_ic": -0.0575,
+     "n_rebalances": 8,
+     "P@5": 0.675
+    },
+    "mid_disp": {
+     "mean_ic": 0.0271,
+     "n_rebalances": 8,
+     "P@5": 0.45
+    },
+    "high_disp": {
+     "mean_ic": -0.0421,
+     "n_rebalances": 8,
+     "P@5": 0.475
+    }
+   },
+   "h21": {
+    "low_disp": {
+     "mean_ic": -0.0252,
+     "n_rebalances": 8,
+     "P@5": 0.525
+    },
+    "mid_disp": {
+     "mean_ic": 0.0276,
+     "n_rebalances": 8,
+     "P@5": 0.475
+    },
+    "high_disp": {
+     "mean_ic": -0.0111,
+     "n_rebalances": 7,
+     "P@5": 0.3143
+    }
+   }
+  },
+  "_verdict": {
+   "alpha_ic_spread_across_buckets_h21": 0.0964,
+   "reading": "compare mean_ic across low/mid/high dispersion buckets \u2014 a large monotone spread would justify a dispersion-modulated edge floor; a noisy/small spread (likely at this n) means DISPLAY-ONLY per the passport rule."
+  }
+ }
+}
