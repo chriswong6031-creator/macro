@@ -157,3 +157,16 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.publish_r2 --dirs chinaohlc,hkohlc,subsectorohlc_china,chinastockdata,hkstockdata || echo "::warning::R2 publish failed (non-fatal)"
+      - name: verify R2 data plane freshness (loud tripwire — the publish above is non-fatal)
+        # The publish step swallows every failure (incl. the exit-0 no-op when the R2_*
+        # secrets are absent/expired), so the live site would serve stale CN/HK per-ticker
+        # data under a green run. HEAD the PUBLIC anchors instead: if the CN/HK stores
+        # weren't touched within 2h, this run's publish did not land -> red run + step
+        # summary. The scheduled heartbeat (scripts/healthcheck.py) independently
+        # re-probes with a 26h limit.
+        if: always()
+        run: |
+          if ! python -m scripts.audit_r2 --strict --anchors chinastockdata,hkstockdata --max-age-hours 2; then
+            echo "### ❌ R2 data plane STALE/DARK — publish_r2 failed or was skipped (expired R2_* secrets?); the live site keeps serving OLD CN/HK per-ticker data. See scripts/audit_r2.py." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi

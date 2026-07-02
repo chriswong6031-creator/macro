@@ -1,0 +1,23 @@
+{
+ "audit": "r2_data_plane",
+ "generated_utc": "2026-07-02T10:23:45.310280+00:00",
+ "ok": true,
+ "fail_reasons": [],
+ "warnings": [],
+ "anchors": {
+  "stockdata": {
+   "anchor": "stockdata/_manifest.json",
+   "last_modified": "2026-07-02T10:02:35+00:00",
+   "age_hours": 0.4
+  },
+  "chinastockdata": {
+   "anchor": "chinastockdata/index.json",
+   "last_modified": "2026-07-02T06:43:07+00:00",
+   "age_hours": 3.7
+  },
+  "stockdata/SPY.json": {
+   "asof": "2026-07-01",
+   "age_days": 1
+  }
+ }
+}

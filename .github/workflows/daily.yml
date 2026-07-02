@@ -807,6 +807,19 @@ jobs:
         # Content-hash skip -> only deltas upload. Still committed to git for now (Pages fallback);
         # the git de-bloat + Pages slim-down is the follow-up increment once the client reads R2.
         run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday || echo "::warning::R2 publish failed (non-fatal)"
+      - name: verify R2 data plane freshness (loud tripwire — the publish above is non-fatal)
+        # The publish step swallows every failure (incl. the exit-0 no-op when the R2_*
+        # secrets are absent/expired), so the live site would serve stale per-ticker data
+        # under a green run. HEAD the PUBLIC anchors instead: if stockdata/ohlc weren't
+        # touched within 2h, this run's publish did not land -> red run + step summary.
+        # Deploy is unaffected (artifact steps below are if:always()); the scheduled
+        # heartbeat (scripts/healthcheck.py) independently re-probes with a 26h limit.
+        if: always()
+        run: |
+          if ! python -m scripts.audit_r2 --strict --anchors stockdata,ohlc --max-age-hours 2; then
+            echo "### ❌ R2 data plane STALE/DARK — publish_r2 failed or was skipped (expired R2_* secrets?); the live site keeps serving OLD per-ticker data. See scripts/audit_r2.py." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
         if: always()
         run: |
