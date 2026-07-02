@@ -97,9 +97,31 @@ def test_narrative_regime_is_a_leaf():
         assert not m.startswith("engine."), f"NDI should import no engine modules, got {m}"
 
 
+def _imports_narrative_regime(src: str) -> bool:
+    """True iff the module actually IMPORTS narrative_regime (not merely mentions it
+    in a comment/docstring/string). AST-based so a stray reference — e.g. a
+    'narrative_regime precedent' code comment in qledger.py — does not false-positive."""
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            if any("narrative_regime" in a.name for a in node.names):
+                return True
+        elif isinstance(node, ast.ImportFrom):
+            mod = node.module or ""
+            if "narrative_regime" in mod:
+                return True
+            if any(a.name == "narrative_regime" for a in node.names):
+                return True
+    return False
+
+
 def test_no_engine_module_imports_narrative_regime():
     offenders = [p.name for p in (ROOT / "engine").glob("*.py")
-                 if p.name != "narrative_regime.py" and "narrative_regime" in p.read_text()]
+                 if p.name != "narrative_regime.py"
+                 and _imports_narrative_regime(p.read_text())]
     assert not offenders, f"scoring-core modules import NDI: {offenders}"
 
 
