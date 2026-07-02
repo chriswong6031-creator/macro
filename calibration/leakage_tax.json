@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-07-02T00:00:41.171991+00:00",
+    "generated": "2026-07-02T00:06:26.456234+00:00",
     "mode": "full",
     "analysis_span": "1999-02-02..2026-06-30",
     "pit_covered_from": "1999-02-02",
@@ -10,12 +10,23 @@
   },
   "vintage_coverage": {
     "vintaged_columns": [
+      "continued_claims",
+      "core_cpi",
+      "core_pce",
       "core_sticky_cpi",
+      "eci_comp",
+      "eci_wages",
       "flex_cpi",
       "gdpnow",
+      "headline_cpi",
+      "headline_pce",
       "indpro",
+      "initial_claims",
+      "initial_claims_4wk",
       "median_cpi",
       "payrolls",
+      "ppi_core",
+      "ppi_final_demand",
       "recession_prob",
       "sahm",
       "sticky_cpi",
@@ -27,34 +38,11 @@
       "wei"
     ],
     "calendar_columns": [
-      "continued_claims",
-      "core_cpi",
-      "core_pce",
       "cpi_core_services",
-      "cpi_shelter",
-      "eci_comp",
-      "eci_wages",
-      "headline_cpi",
-      "headline_pce",
-      "initial_claims",
-      "initial_claims_4wk",
-      "ppi_core",
-      "ppi_final_demand"
+      "cpi_shelter"
     ],
-    "vintage_store_gaps": [
-      "continued_claims (CCSA)",
-      "core_cpi (CPILFESL)",
-      "core_pce (PCEPILFE)",
-      "eci_comp (ECIALLCIV)",
-      "eci_wages (ECIWAG)",
-      "headline_cpi (CPIAUCSL)",
-      "headline_pce (PCEPI)",
-      "initial_claims (ICSA)",
-      "initial_claims_4wk (IC4WSA)",
-      "ppi_core (PPIFES)",
-      "ppi_final_demand (PPIFIS)"
-    ],
-    "n_vintaged_series_on_disk": 15
+    "vintage_store_gaps": [],
+    "n_vintaged_series_on_disk": 26
   },
   "availability_shift_days": {
     "payrolls": {
@@ -141,6 +129,62 @@
       "max_lag_days": 78,
       "n": 149
     },
+    "headline_cpi": {
+      "source": "vintage",
+      "median_lag_days": 45.0,
+      "p90_lag_days": 48.8,
+      "max_lag_days": 59,
+      "n": 353
+    },
+    "core_cpi": {
+      "source": "vintage",
+      "median_lag_days": 45.0,
+      "p90_lag_days": 48.8,
+      "max_lag_days": 59,
+      "n": 353
+    },
+    "headline_pce": {
+      "source": "vintage",
+      "median_lag_days": 59.0,
+      "p90_lag_days": 62.0,
+      "max_lag_days": 113,
+      "n": 311
+    },
+    "core_pce": {
+      "source": "vintage",
+      "median_lag_days": 59.0,
+      "p90_lag_days": 62.0,
+      "max_lag_days": 113,
+      "n": 311
+    },
+    "ppi_final_demand": {
+      "source": "vintage",
+      "median_lag_days": 43.0,
+      "p90_lag_days": 45.3,
+      "max_lag_days": 105,
+      "n": 148
+    },
+    "ppi_core": {
+      "source": "vintage",
+      "median_lag_days": 43.0,
+      "p90_lag_days": 45.3,
+      "max_lag_days": 105,
+      "n": 148
+    },
+    "eci_comp": {
+      "source": "vintage",
+      "median_lag_days": 121.0,
+      "p90_lag_days": 122.0,
+      "max_lag_days": 162,
+      "n": 51
+    },
+    "eci_wages": {
+      "source": "vintage",
+      "median_lag_days": 120.0,
+      "p90_lag_days": 122.0,
+      "max_lag_days": 162,
+      "n": 118
+    },
     "stlfsi": {
       "source": "vintage",
       "median_lag_days": 6.0,
@@ -162,17 +206,26 @@
       "max_lag_days": 57,
       "n": 326
     },
-    "headline_cpi": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 8,
-      "cadence": "M",
-      "note": "BLS CPI ~day 10-13 of following month"
+    "initial_claims": {
+      "source": "vintage",
+      "median_lag_days": 5.0,
+      "p90_lag_days": 5.0,
+      "max_lag_days": 54,
+      "n": 891
     },
-    "core_cpi": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 8,
-      "cadence": "M",
-      "note": "BLS CPI ~day 10-13 of following month"
+    "initial_claims_4wk": {
+      "source": "vintage",
+      "median_lag_days": 5.0,
+      "p90_lag_days": 5.0,
+      "max_lag_days": 54,
+      "n": 891
+    },
+    "continued_claims": {
+      "source": "vintage",
+      "median_lag_days": 12.0,
+      "p90_lag_days": 12.0,
+      "max_lag_days": 61,
+      "n": 876
     },
     "cpi_core_services": {
       "source": "calendar_prior",
@@ -185,60 +238,6 @@
       "modelled_lag_bd": 8,
       "cadence": "M",
       "note": "BLS CPI detail, same release as CPI"
-    },
-    "headline_pce": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 20,
-      "cadence": "M",
-      "note": "BEA Personal Income & Outlays ~day 26-30 of following month (~1 month lag)"
-    },
-    "core_pce": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 20,
-      "cadence": "M",
-      "note": "BEA PCE ~day 26-30 of following month; the Fed's target series"
-    },
-    "ppi_final_demand": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 9,
-      "cadence": "M",
-      "note": "BLS PPI ~day 11-14 of following month (day before/after CPI)"
-    },
-    "ppi_core": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 9,
-      "cadence": "M",
-      "note": "BLS PPI ~day 11-14 of following month"
-    },
-    "eci_comp": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 20,
-      "cadence": "Q",
-      "note": "BLS Employment Cost Index ~1 month after quarter end"
-    },
-    "eci_wages": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 20,
-      "cadence": "Q",
-      "note": "BLS ECI wages ~1 month after quarter end"
-    },
-    "initial_claims": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 5,
-      "cadence": "W",
-      "note": "DOL weekly jobless claims, Thursday for the week ending prior Saturday (~5 bd)"
-    },
-    "initial_claims_4wk": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 5,
-      "cadence": "W",
-      "note": "4-week moving avg, same DOL release"
-    },
-    "continued_claims": {
-      "source": "calendar_prior",
-      "modelled_lag_bd": 10,
-      "cadence": "W",
-      "note": "continued claims lag initial by one week (~1 extra week)"
     }
   },
   "quad_agreement": {
@@ -449,20 +448,20 @@
     "flip_pct_pit_later": 16.1,
     "biggest_leak_legs": [
       {
+        "leg": "eci_comp",
+        "median_release_lag_days": 121.0
+      },
+      {
+        "leg": "eci_wages",
+        "median_release_lag_days": 120.0
+      },
+      {
         "leg": "recession_prob",
         "median_release_lag_days": 64.0
       },
       {
-        "leg": "indpro",
-        "median_release_lag_days": 45.0
-      },
-      {
-        "leg": "us_m2",
-        "median_release_lag_days": 43.0
-      },
-      {
-        "leg": "sticky_cpi",
-        "median_release_lag_days": 42.0
+        "leg": "headline_pce",
+        "median_release_lag_days": 59.0
       }
     ],
     "split_half_delta_sharpe_ci_pit_minus_live": [
@@ -470,18 +469,6 @@
       0.015,
       0.184
     ],
-    "vintage_store_gaps": [
-      "continued_claims (CCSA)",
-      "core_cpi (CPILFESL)",
-      "core_pce (PCEPILFE)",
-      "eci_comp (ECIALLCIV)",
-      "eci_wages (ECIWAG)",
-      "headline_cpi (CPIAUCSL)",
-      "headline_pce (PCEPI)",
-      "initial_claims (ICSA)",
-      "initial_claims_4wk (IC4WSA)",
-      "ppi_core (PPIFES)",
-      "ppi_final_demand (PPIFIS)"
-    ]
+    "vintage_store_gaps": []
   }
 }

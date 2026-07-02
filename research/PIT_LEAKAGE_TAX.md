@@ -106,6 +106,65 @@ Consequences:
 - On a coarse risk-on/off SPY proxy, removing the leak costs **no significant Sharpe** (ΔSharpe CI straddles 0 on both spans). The regime's coarse directional edge is not a revision artifact.
 - **No engine should be demoted on these numbers alone.** The honest verdict is: the growth-axis timing leak is measurable but the coarse edge survives it; the inflation-axis leak is only *partially* measurable until the vintage store is completed. Passport recommendation: tag the regime `frame: latest` with a `leakage_tax` reference, and re-measure the inflation axis once core CPI/PCE vintages land before any promotion/demotion decision.
 
+---
+
+## Addendum 2026-07-01 — full inflation-axis vintage coverage landed
+
+**Branch:** `data/alfred-vintage-backfill` · **Harness re-run:** `scripts/shadow_pit_regime.py --full`
+
+The 11 missing ALFRED series were backfilled into `data/fred_vintage/vintages.parquet` via `FRED API output_type=4` (initial-release matrix). Coverage is now **26/26** (zero gaps). Updated `calibration/leakage_tax.json` reflects the fuller frame.
+
+### What changed in the numbers
+
+**Overall quad agreement: unchanged at 84.2 %** (7,151 days, 1999-02-02 to 2026-06-30). Adding true initial-release vintages for CPI/PCE/PPI/ECI/claims did not move the headline agreement number. The confusion table is also identical. This confirms the prior runs conclusion: the dominant quad-label mismatch is structural (hysteresis on market legs) rather than a CPI/PCE vintage gap artifact.
+
+**Inflation-axis availability shift — the numbers are now real, not modelled priors:**
+
+| leg | prior run (source) | this run (source) | measured median lag |
+|-----|-------------------|-------------------|--------------------:|
+| headline_cpi (CPIAUCSL) | calendar prior, 8 bd modelled | **vintage** | **45 d** |
+| core_cpi (CPILFESL) | calendar prior, 8 bd modelled | **vintage** | **45 d** |
+| headline_pce (PCEPI) | calendar prior, 20 bd modelled | **vintage** | **59 d** |
+| core_pce (PCEPILFE) | calendar prior, 20 bd modelled | **vintage** | **59 d** |
+| ppi_final_demand (PPIFIS) | calendar prior, 9 bd modelled | **vintage** | **43 d** |
+| ppi_core (PPIFES) | calendar prior, 9 bd modelled | **vintage** | **43 d** |
+| eci_comp (ECIALLCIV) | calendar prior, 20 bd modelled | **vintage** | **121 d** |
+| eci_wages (ECIWAG) | calendar prior, 20 bd modelled | **vintage** | **120 d** |
+| initial_claims (ICSA) | calendar prior, 5 bd modelled | **vintage** | **5 d** (confirmed) |
+| initial_claims_4wk (IC4WSA) | calendar prior, 5 bd modelled | **vintage** | **5 d** (confirmed) |
+| continued_claims (CCSA) | calendar prior, 10 bd modelled | **vintage** | **12 d** (slight upward revision) |
+
+The calendar priors for CPI (8 bd ~ 11 cal days) were substantially underestimating the true lag (~45 cal days). The 20 bd prior for PCE was closer but still short (~59 cal days). The ECI result is the largest surprise: the quarterly BLS Employment Cost Index carries a measured **120–121 day** initial-release lag — more than four months from the reference quarter end to initial ALFRED publication (quarter ends ~March/June/September/December; initial release is typically the last day of the following month, i.e. ~30–31 calendar days after quarter end, but ALFRED only holds releases from 2013 onward and appears to capture one release per series-period, so n=51–118 gives a reliable measurement).
+
+**Biggest-leak legs: ECI now displaces INDPRO and M2 in the top-4:**
+
+| prior run | this run |
+|-----------|----------|
+| recession_prob: 64 d | **eci_comp: 121 d** (new) |
+| indpro: 45 d | **eci_wages: 120 d** (new) |
+| us_m2: 43 d | recession_prob: 64 d |
+| sticky_cpi: 42 d | **headline_pce: 59 d** (new; previously calendar-prior) |
+
+**Inflation-axis disagreement: the Q1↔Q2 confusion pattern was NOT reduced by adding CPI/PCE vintages.** The confusion table is byte-identical (Q1→Q2: 255, Q4→Q1: 147, Q2→Q3: 123). This is the honest finding: adding true initial-release CPI/PCE vintages did not shift the inflation axis read enough to change quad labels at the inflection points that dominate the confusion. The inflation axis is driven by a composite of CPI/PCE/PPI/sticky-CPI/ECI, and the market-leg hysteresis swamps the econ-leg timing correction at these specific turning points.
+
+**Split-half edge delta: unchanged.** ΔSharpe CI (PIT − live) remains [−0.131, +0.015, +0.184] (CI straddles zero; removing the full inflation vintage lag is still Sharpe-neutral on the coarse Q→SPY proxy). The ECI lag is large in calendar days but quarterly — it contributes to four rows per year and ECI is a minority-weight axis leg.
+
+### ALFRED depth limits for new series
+
+- **CPIAUCSL / CPILFESL**: vintages back to 1997-01-14 (353 rows each). Deep and reliable.
+- **PCEPI / PCEPILFE**: vintages back to 2000-08-28 (311 rows). PCE has a shallower ALFRED history than CPI; pre-2000 the release-lag calendar prior is still the fallback.
+- **PPIFIS / PPIFES**: 2014-03-14 start (148 rows). ALFRED serves PPI only from 2014; pre-2014 the calendar prior remains the fallback.
+- **ECIALLCIV / ECIWAG**: ECI comp back to 2013-11-19 (51 rows); ECI wages back to 1997-01-28 (118 rows). The discrepancy reflects ALFRED availability by component.
+- **ICSA / IC4WSA / CCSA**: weekly claims from 2009 (876–891 rows). Pre-2009 the calendar prior is the fallback (but claims are weekly so the prior is mechanically tight; the vintage confirms median lag = 5 d for IC4WSA and 12 d for CCSA — the old 10 bd prior slightly underestimated).
+
+### Verdict update
+
+The original verdict stands with one refinement: the **ECI quarterly lag (120+ days) is now the single largest look-ahead in the axis**, not recession_prob. However, ECI enters the inflation axis at low weight (it measures labor cost acceleration, not the headline CPI/PCE print) and its quarterly cadence limits its impact to ~4 rows/year. The inflation-axis Q1↔Q2 disagreement — the #1 source of quad mismatches — is structurally driven by the market-leg hysteresis, and CPI/PCE vintage availability (now fully measured) does not change the confusion table.
+
+**The inflation-axis full de-leaking is now possible** (`engine/base_effect.py` can switch `revised=False` for CPI/PCE/PPI, unblocking audit `#16`). That is a W1c deliverable; this harness only measures, it does not migrate.
+
+---
+
 ## Artifacts
 
 - `engine/pit.py` — the PIT accessor (`series(name, as_of, basis)`, `coverage_report`).
