@@ -1694,6 +1694,30 @@ def main() -> int:
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
+            # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
+            # it is a first-class field available for the US-2 ledger study (depth vs
+            # forward returns for FRESH-BUY rows). NOT a gate — we do NOT filter on it
+            # (F2 caution: min-depth would kill the best trend-continuation entries).
+            _lad8 = r.get("ladder") or {}
+            _cdp8 = _lad8.get("cand_depth_pct")
+            if _cdp8 is not None:
+                r["cand_depth_pct"] = _cdp8
+        # W6-US fix 8 (cont): log FRESH-BUY rows with shallow depth for US-2 ledger study.
+        # Shallow = cand_depth_pct < 5.0% (less than 5% pullback from the pre-cycle high).
+        # The live ETN case: off_high=-2.2%, cand_depth_pct likely ~2-3%.
+        # We DO NOT gate on depth (F2 caution: min-depth kills best trend-continuation entries).
+        _FB_SHALLOW_THRESHOLD = 5.0
+        _fb_shallow = [(r.get("ticker"), r.get("cand_depth_pct"), r.get("off_high"))
+                       for r in wide["buy"]
+                       if r.get("state") in ("FRESH BUY", "TURN SIGNALED")
+                       and r.get("cand_depth_pct") is not None
+                       and r["cand_depth_pct"] < _FB_SHALLOW_THRESHOLD]
+        if _fb_shallow:
+            log.info("W6-US fix 8: %d FRESH-BUY/TURN-SIGNALED rows with shallow depth "
+                     "(cand_depth_pct < %.1f%%) — logged for US-2 ledger study (NOT gated): %s",
+                     len(_fb_shallow), _FB_SHALLOW_THRESHOLD,
+                     [(t, f"{d:.1f}%", f"off_high={o:.1f}%" if o else None)
+                      for t, d, o in _fb_shallow])
         # ENTRY-OPEN-FIRST board order: names whose entry gauge reads "Buy zone — entry
         # open now" lead the strip, then by the displayed conviction score. Stable, so
         # the bottoming-alignment + confluence rank above only settles ties. Applied
