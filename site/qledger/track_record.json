@@ -1,0 +1,99 @@
+{
+  "generated_at": "2026-07-02T11:33:49.457968+00:00",
+  "grade_horizons": [
+    5,
+    21,
+    63
+  ],
+  "graded_min_dates": 25,
+  "by_desk": {
+    "altdata": {
+      "5": {
+        "n_obs": 94,
+        "n_dates": 5,
+        "hit_rate": 0.56383,
+        "excess_mean": 0.004928,
+        "wilson_ci_low": 0.463027,
+        "state": "ACCRUING"
+      }
+    },
+    "radar": {
+      "5": {
+        "n_obs": 929,
+        "n_dates": 7,
+        "hit_rate": 0.544672,
+        "excess_mean": 0.005815,
+        "wilson_ci_low": 0.512529,
+        "state": "ACCRUING"
+      }
+    },
+    "policy": {
+      "5": {
+        "n_obs": 7,
+        "n_dates": 2,
+        "hit_rate": 0.285714,
+        "excess_mean": -0.007727,
+        "wilson_ci_low": 0.082217,
+        "state": "ACCRUING"
+      }
+    },
+    "china_news": {
+      "5": {
+        "n_obs": 492,
+        "n_dates": 7,
+        "hit_rate": null,
+        "excess_mean": 0.020491,
+        "wilson_ci_low": null,
+        "state": "ACCRUING"
+      }
+    }
+  },
+  "by_family": {
+    "altdata": {
+      "5": {
+        "n_obs": 94,
+        "n_dates": 5,
+        "hit_rate": 0.56383,
+        "excess_mean": 0.004928,
+        "wilson_ci_low": 0.463027,
+        "state": "ACCRUING"
+      }
+    },
+    "radar": {
+      "5": {
+        "n_obs": 929,
+        "n_dates": 7,
+        "hit_rate": 0.544672,
+        "excess_mean": 0.005815,
+        "wilson_ci_low": 0.512529,
+        "state": "ACCRUING"
+      }
+    },
+    "policy": {
+      "5": {
+        "n_obs": 7,
+        "n_dates": 2,
+        "hit_rate": 0.285714,
+        "excess_mean": -0.007727,
+        "wilson_ci_low": 0.082217,
+        "state": "ACCRUING"
+      }
+    },
+    "china_news": {
+      "5": {
+        "n_obs": 492,
+        "n_dates": 7,
+        "hit_rate": null,
+        "excess_mean": 0.020491,
+        "wilson_ci_low": null,
+        "state": "ACCRUING"
+      }
+    }
+  },
+  "counts": {
+    "n_claims": 3467,
+    "n_grades": 1536,
+    "n_placebo": 20,
+    "n_rejected": 0
+  }
+}
