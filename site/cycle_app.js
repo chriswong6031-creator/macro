@@ -14,6 +14,21 @@
   var META = window.CYCLE_META, CYCLES = window.CYCLES, PHASES = window.CYCLE_PHASES;
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+  /* ---- wall-clock TODAY (W0.1) -------------------------------------------
+     Derive the current decimal year from the live system clock so the Now dot,
+     history/projection split, and turn-elapsed detection are always accurate.
+     META.today (a frozen literal) is kept only as a data-as-of fallback if
+     Date() is somehow unavailable. */
+  function yfNow(d) {
+    var y = d.getFullYear();
+    var start = new Date(y, 0, 1), end = new Date(y + 1, 0, 1);
+    return y + (d - start) / (end - start);
+  }
+  var TODAY = (function () {
+    try { var n = new Date(); if (isFinite(n.getTime())) return yfNow(n); } catch (e) {}
+    return META.today;    // frozen fallback only
+  }());
+
   /* ---- i18n: EN default, 中文 when <html data-lang="zh"> --------------------
      Short UI strings are inline L(en, zh) pairs; long per-cycle/regime prose is
      looked up from window.CYCLE_ZH (cycle_i18n.js) with graceful EN fallback. */
@@ -58,13 +73,36 @@
     var turns = c.turns.map(function (tp) {
       return { x: yf(tp.t), y: tp.k === "peak" ? PEAK : TROUGH, k: tp.k, e: tp.e, v: tp.v, t: tp.t };
     });
-    var n = turns.length, last = turns[n - 1], today = META.today;
+    var n = turns.length, last = turns[n - 1];
     var nextY = c.proj.nextTurn === "peak" ? PEAK : TROUGH;
-    var tc = Math.max(yf(c.proj.central), today + 0.15);
-    var te = clamp(yf(c.proj.low), today + 0.05, tc);
-    var tl = Math.max(yf(c.proj.high), tc + 0.1);
-    var relax = c.proj.nextTurn === "peak" ? 58 : 42;
-    var projEnd = Math.min(META.xDomain[1], tl + 0.35 * (tl - today));
+
+    // W0.1: use wall-clock TODAY (no frozen literal); META.today is now data as-of only.
+    var today = TODAY;
+
+    // W0.1: NO Math.max push-forward. Use the hand-typed central date as-is.
+    // When tcRaw < today the projection window has elapsed; we render a dimmed
+    // "window passed" state instead of silently shifting the turn into the future.
+    var tcRaw = yf(c.proj.central);
+    var elapsed = tcRaw < today;   // true = turn date is in the past
+
+    // In the elapsed case keep tc/te/tl at the original hand-typed dates so the
+    // projection leg draws to where the research said, then dims — not pushed right.
+    // In the normal case guard against a non-positive (tt - today) denominator in
+    // legVal by clamping tc to at least today + 0.001 (one day buffer is enough;
+    // the elapsed branch already handles the tcRaw < today case separately).
+    var tc, te, tl, projEnd, relax;
+    relax = c.proj.nextTurn === "peak" ? 58 : 42;
+    if (elapsed) {
+      tc = tcRaw;
+      te = yf(c.proj.low);
+      tl = yf(c.proj.high);
+      projEnd = Math.max(tc, tl) + 0.1;    // draw to last plausible turn then stop
+    } else {
+      tc = tcRaw;
+      te = clamp(yf(c.proj.low), today + 0.05, tc);
+      tl = Math.max(yf(c.proj.high), tc + 0.1);
+      projEnd = Math.min(META.xDomain[1], tl + 0.35 * (tl - today));
+    }
 
     // Anchor the curve to the research-grounded CURRENT position (now.pos) so the
     // line passes through it at TODAY — faithful amplitude, not just time-fraction.
@@ -78,10 +116,12 @@
         var u = today <= last.x ? 1 : ((x - last.x) / (today - last.x)) * uNow;
         return last.y + (nextY - last.y) * (0.5 - 0.5 * Math.cos(Math.PI * clamp(u, 0, 1)));
       }
-      if (x <= tt) {
-        var u2 = uNow + ((x - today) / (tt - today)) * (1 - uNow);
-        return last.y + (nextY - last.y) * (0.5 - 0.5 * Math.cos(Math.PI * clamp(u2, 0, 1)));
-      }
+      // Guard: if tt <= today (elapsed branch), division by zero is avoided because
+      // the elapsed case only calls legVal for x <= today (no proj/cone generated).
+      // In the normal branch tt > today is guaranteed by the tc clamping above.
+      var denom = tt - today;
+      var u2 = denom > 0 ? uNow + ((x - today) / denom) * (1 - uNow) : 1;
+      if (x <= tt) return last.y + (nextY - last.y) * (0.5 - 0.5 * Math.cos(Math.PI * clamp(u2, 0, 1)));
       return cos(x, tt, nextY, projEnd, relax);
     }
     var center = function (x) { return legVal(x, tc); };
@@ -98,18 +138,28 @@
     for (var xx = last.x + step; xx <= today; xx += step) hist.push({ x: xx, y: center(xx) });
     hist.push({ x: today, y: center(today) });
 
-    // projection (today → next turn → relax), dashed
-    var proj = [];
-    for (var xp = today; xp <= projEnd + 1e-6; xp += step) proj.push({ x: xp, y: center(xp) });
+    // W0.1: elapsed-turn handling — projection leg/cone drawn to original hand-typed
+    // dates but flagged as elapsed (rendered dimmed/greyed by the caller).
+    // Normal case: full forward projection + cone.
+    var proj = [], cone = [];
+    if (elapsed) {
+      // Draw the projection leg from last turn to the hand-typed tc (all in the past),
+      // rendered dimmed so the reader sees "this was the projected window".
+      for (var xpe = last.x; xpe <= projEnd + 1e-6; xpe += step) {
+        proj.push({ x: xpe, y: cos(xpe, last.x, last.y, Math.max(tc, last.x + 0.01), nextY) });
+      }
+      // No cone in elapsed state — the window has passed.
+    } else {
+      for (var xp = today; xp <= projEnd + 1e-6; xp += step) proj.push({ x: xp, y: center(xp) });
 
-    // uncertainty cone: timing spread (early/central/late) + amplitude growing with horizon
-    var tlt = c.proj.tilt, hiW = tlt === "tailwind" ? 1.35 : tlt === "headwind" ? 0.7 : 1, loW = tlt === "headwind" ? 1.35 : tlt === "tailwind" ? 0.7 : 1;
-    var cone = [];
-    for (var xc = today; xc <= projEnd + 1e-6; xc += step) {
-      var vs = [withTurn(xc, te), center(xc), withTurn(xc, tl)];
-      var lo = Math.min(vs[0], vs[1], vs[2]), hi = Math.max(vs[0], vs[1], vs[2]);
-      var amp = lerp(1.5, 13, clamp((xc - today) / (projEnd - today), 0, 1));
-      cone.push({ x: xc, lo: clamp(lo - amp * loW, 2, 98), hi: clamp(hi + amp * hiW, 2, 98) });
+      // uncertainty cone: timing spread (early/central/late) + amplitude growing with horizon
+      var tlt = c.proj.tilt, hiW = tlt === "tailwind" ? 1.35 : tlt === "headwind" ? 0.7 : 1, loW = tlt === "headwind" ? 1.35 : tlt === "tailwind" ? 0.7 : 1;
+      for (var xc = today; xc <= projEnd + 1e-6; xc += step) {
+        var vs = [withTurn(xc, te), center(xc), withTurn(xc, tl)];
+        var lo = Math.min(vs[0], vs[1], vs[2]), hi = Math.max(vs[0], vs[1], vs[2]);
+        var amp = lerp(1.5, 13, clamp((xc - today) / (projEnd - today), 0, 1));
+        cone.push({ x: xc, lo: clamp(lo - amp * loW, 2, 98), hi: clamp(hi + amp * hiW, 2, 98) });
+      }
     }
 
     var markers = turns.filter(function (t) { return t.x >= META.xDomain[0] - 0.2; })
@@ -117,11 +167,14 @@
     var nowY = center(today);
     markers.push({ x: today, y: nowY, kind: "now", label: "Now", sub: c.now.phaseLabel });
 
+    // legPct: clamp to [0,1]; if elapsed push to 1 (>100% is displayed as "window elapsed")
+    var legPct = elapsed ? 1 : clamp((today - last.x) / Math.max(tc - last.x, 0.001), 0, 1);
+
     return {
       id: c.id, color: c.accent, label: c.name, width: 2,
       hist: hist, proj: proj, cone: cone, markers: markers,
       nowY: nowY, tc: tc, te: te, tl: tl, projEnd: projEnd,
-      legPct: clamp((today - last.x) / (tc - last.x), 0, 1), c: c
+      legPct: legPct, elapsed: elapsed, c: c
     };
   }
 
@@ -291,6 +344,9 @@
       var tilt = TILT[c.proj.tilt] || TILT.mixed;
       var pct = Math.round(m.legPct * 100);
       var legLab = curLang() === "zh" ? ("距下次" + turnWord(c.proj.nextTurn, false) + " " + pct + "%") : (pct + "% to next " + c.proj.nextTurn);
+      var elapsedChip = m.elapsed
+        ? '<div class="cc-elapsed">' + L("Projection window passed — awaiting re-research", "投影窗口已过 — 待重新研究") + '</div>'
+        : '';
       card.innerHTML =
         '<div class="cc-top">' +
           '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + zc(c.id, "name", c.name) + '</div>' +
@@ -298,6 +354,7 @@
           '<div class="cc-phase" style="--ph:' + (ph.hue || "var(--muted)") + '">' + phaseChip(c.now.phase) + '</div>' +
         '</div>' +
         '<div class="cc-spark"></div>' +
+        elapsedChip +
         '<div class="cc-meta">' +
           '<div class="cc-leg"><div class="cc-leg-bar"><i style="width:' + pct + '%"></i></div>' +
             '<div class="cc-leg-lab">' + legLab + '</div></div>' +
@@ -364,6 +421,9 @@
     var pct = Math.round(m.legPct * 100);
     var posVal = curLang() === "zh" ? ("距下一拐点 " + pct + "%") : (pct + "% to next turn");
     var lenVal = c.period.central + L(" yr (", " 年 (") + c.period.low + "–" + c.period.high + ")";
+    var elapsedBanner = m.elapsed
+      ? '<div class="cyc-elapsed-panel">' + L("Projection window passed — awaiting re-research", "投影窗口已过 — 待重新研究") + '</div>'
+      : '';
     return '' +
       '<div class="cyc-grp cyc-grp-full">' +
         '<button class="cyc-back">' + L("← All cycles", "← 全部周期") + '</button>' +
@@ -375,6 +435,7 @@
             '<span class="cyc-tchip ' + tilt.cls + '">' + tilt.ar + ' ' + tiltLab(tilt) + '</span>' +
           '</div>' +
         '</div>' +
+        elapsedBanner +
         '<p class="cyc-arche">' + zc(c.id, "archetype", c.archetype) + '</p>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
@@ -479,6 +540,24 @@
     handle.addEventListener("touchend", function () { dragging = false; });
   }
 
+  /* ---- staleness banner (W0.1) -------------------------------------------
+     When more than 14 days have passed since the dataset was last curated,
+     show an amber (14–59 d) or red (≥ 60 d) banner near the page header.
+     Uses L(en, zh) so no translated text appears in HTML attributes. */
+  function renderStalenessBanner() {
+    var host = document.getElementById("cyc-stale-banner");
+    if (!host) return;
+    var asOf = META.asOf || "";
+    var asOfYear = asOf ? yf(asOf) : TODAY;
+    var days = Math.round((TODAY - asOfYear) * 365.25);
+    if (days < 14) { host.innerHTML = ""; return; }
+    var cls = days >= 60 ? "stale-red" : "stale-amber";
+    host.innerHTML = '<div class="stale-banner ' + cls + '">' +
+      L("Curated dataset as of " + asOf + " — " + days + " days old",
+        "精选数据截至 " + asOf + " — 已 " + days + " 天未更新") +
+      '</div>';
+  }
+
   /* ---- language switch: re-render the JS-drawn DOM, preserving filter + focus
      (the hero chart re-renders itself on `langchange`; its tooltip reads the
      language live). ------------------------------------------------------- */
@@ -492,6 +571,7 @@
     buildGroups();                                              // resets phaseState
     PHASE_FILTER.forEach(function (p) { phaseState[p.key] = savedPhase[p.key]; });
     syncGroups();                                               // re-apply filter to fresh DOM
+    renderStalenessBanner();
     if (heroChart) {                                            // refresh axis/band labels + keep zoom-reset chip in sync
       heroChart.spec = heroSpec();
       heroChart.resize();
@@ -508,6 +588,7 @@
     mountHero();
     buildDefaultPanel();
     mountCards();
+    renderStalenessBanner();
     initSheet();
     document.addEventListener("langchange", rerender);
     // deep-link focus
