@@ -531,7 +531,8 @@ _BTC_RICH_COLS = (
     # Override-Registry (W0): feed the AI brief both the final (possibly gated)
     # allocation and the pure engine series + override flag so the LLM can narrate
     # the override honestly (e.g. "engine wants 22% but override holds to 0%").
-    "alloc_optimal_raw", "override_active",
+    # W2: override_released marks a Class-1 structural-invalidation auto-release.
+    "alloc_optimal_raw", "override_active", "override_released",
     "risk_index", "risk_regime", "momentum", "momentum_state", "structure_state",
     "impulse_state", "efficiency_ratio",
     "cycle_phase", "cycle_pct", "days_since_halving", "vdd_multiple", "cycle_position",
