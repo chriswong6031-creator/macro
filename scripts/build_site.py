@@ -2861,7 +2861,8 @@ def main() -> int:
     # the heavy page CSS lives in exactly one template.
     # Relief-radar view (deterministic) + the TRIGGERED AI knife-vs-dip veto: the
     # veto runs ONLY when a snap is firing/building (so ~never on a normal build) and
-    # is CONTEXT-ONLY — attached to the view for display, never read by any scorer.
+    # is CONTEXT-ONLY — attached to the view for the AI-desk artifact + grading log
+    # (the #518 declutter retired its on-card display), never read by any scorer.
     _rs_view = regime_snap_view(_cf)
     if _rs_view and _rs_view.get("status") != "dormant":
         try:

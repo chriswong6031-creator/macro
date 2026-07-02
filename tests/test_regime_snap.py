@@ -26,16 +26,17 @@ def _render_card(regime_snap, mode="macro"):
     """Render just the relief-radar section of dashboard.html.j2 (with the t()/help()
     macro header) — mirrors the Fear/Euphoria render harness.
 
-    Since the macro-terminal redesign (#277) the relief radar lives as the
-    `cb-p-relief` pane inside the consolidated `#now-board` panel, wrapped by the
-    page-level `{% if mode != 'stocks' %}` guard (it is hidden on the stocks page).
-    We slice out just that pane (self-contained on `regime_snap` + the t()/help()
-    macros) and re-apply the mode guard so the hidden-on-stocks behaviour holds."""
+    Since the command-center declutter (#518) the relief radar is a compact
+    `.nb-relief` strip inside the `#now-board` news panel: it renders ONLY while a
+    snap is firing/building (nothing at all when dormant) and sits inside the
+    page-level `{% if mode != 'stocks' %}` guard (hidden on the stocks page).
+    We slice out just that strip (self-contained on `regime_snap` + the t() macro)
+    and re-apply the mode guard so the hidden-on-stocks behaviour holds."""
     from jinja2 import Environment, FileSystemLoader
     src = (TEMPLATES / "dashboard.html.j2").read_text()
     macros = src[: src.index("{# coloured")]
-    start = src.index('<div class="cb-pane cb-p-relief"')
-    end = src.index("{% endif %}{# /mode != stocks — combined Now board")
+    start = src.index("{% if regime_snap and regime_snap.status")
+    end = src.index("{% endif %}", src.index("</div>", start)) + len("{% endif %}")
     section = "{% if mode != 'stocks' %}" + src[start:end] + "{% endif %}"
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
@@ -147,33 +148,39 @@ def test_never_scored_invariant():
         assert not re.search(r"\bregime_snap\b", src), f"{mod} must not reference regime_snap"
 
 
-# ---- card render (templates/dashboard.html.j2 relief-radar section) ----------
+# ---- card render (templates/dashboard.html.j2 relief-radar strip, #518) -------
 def test_card_renders_firing():
     html = _render_card(_FIRING)
     assert "Relief radar" in html
     assert "FIRING" in html
-    assert "72/100" in html                       # relief magnitude
-    assert "VIX" in html and "HY credit spread" in html   # flipped legs
-    assert "never scored" in html                 # display-only honesty carried
-    assert "tone-up" not in html and "tone-down" not in html   # neutral, no green/red
-    # pre-decided playbook appears on a firing snap
-    assert "Pre-decided playbook" in html
-    assert "This read fades if" in html and "durability checks" in html
-    assert "decision scaffold, not a trade recommendation" in html
+    assert "nb-relief firing" in html             # status class drives the accent colour
+    assert "5/7" in html                          # legs_up/legs_total
+    assert "97%ile" in html                       # velocity percentile
+    assert "coincident, not a buy signal" in html   # display-only honesty carried
+
+
+def test_card_renders_building():
+    payload = dict(_FIRING)
+    payload["status"] = "building"
+    html = _render_card(payload)
+    assert "Relief radar" in html
+    assert "nb-relief building" in html
+    assert "watch" in html                        # "a snap is building — watch"
+    assert "FIRING" not in html
 
 
 def test_card_renders_dormant():
+    # Since the #518 declutter a dormant detector renders NOTHING (the strip only
+    # exists while a snap is firing/building) — no card, no days-since counter.
     html = _render_card(_DORMANT)
-    assert "Relief radar" in html
-    assert "No snap" in html
+    assert "Relief radar" not in html
+    assert "nb-relief" not in html
     assert "FIRING" not in html
-    assert "120" in html                          # days since last snap
-    assert "Pre-decided playbook" not in html     # playbook hidden when dormant
 
 
 def test_card_hidden_on_stocks_page():
     html = _render_card(_FIRING, mode="stocks")
-    assert "Relief radar" not in html and "relief-radar" not in html
+    assert "Relief radar" not in html and "nb-relief" not in html
 
 
 def test_view_wired_into_build_site():
@@ -181,6 +188,10 @@ def test_view_wired_into_build_site():
     assert hasattr(bs, "regime_snap_view")
     src = (_ROOT / "scripts" / "build_site.py").read_text()
     assert "regime_snap_view(_cf)" in src and "regime_snap=_rs_view" in src
+    # the triggered veto is still attached + persisted (AI-desk artifact / grading
+    # log) even though the #518 declutter retired its on-card display
+    assert 'regime_snap_veto.assess(' in src
+    assert 'regime_snap.json' in src
     view = bs.regime_snap_view(_synthetic_frame())
     assert view is not None
     assert view["status"] in {"firing", "building", "dormant"}
@@ -239,12 +250,15 @@ def test_veto_never_scored_invariant():
         assert "regime_snap_veto" not in (_ROOT / mod).read_text(), mod
 
 
-def test_card_renders_veto_block():
+def test_card_tolerates_veto_payload():
+    """The #518 declutter removed the on-card AI-durability block; the veto is still
+    attached to the view by build_site (persisted for the AI desk + grading log), so
+    the strip must render cleanly with a veto in the payload without displaying it."""
     payload = dict(_FIRING)
     payload["veto"] = {"lean": "fragile", "confidence": "medium",
                        "read": "Verbal de-escalation; fragile.",
                        "checks": {"catalyst": "verbal, unsigned", "premium": "mostly unwound",
                                   "washout": "real", "follow_through": "likely fades"}}
     html = _render_card(payload)
-    assert "AI durability read" in html
-    assert "Verbal de-escalation" in html and "Context only" in html
+    assert "Relief radar" in html and "FIRING" in html
+    assert "AI durability read" not in html       # display retired in the declutter
