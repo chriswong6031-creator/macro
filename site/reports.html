@@ -2,11 +2,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span> — <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   /* ---------- shared Research-Reports chrome ---------- */
@@ -30,6 +29,9 @@
   .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
   .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
   .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
   footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
   
   .rep-hero { max-width:1060px; margin:18px auto 0; }
@@ -80,10 +82,23 @@
                 letter-spacing:.1em; text-transform:uppercase; padding:3px 9px; border-radius:6px; }
 
   .noresults { max-width:1060px; margin:30px auto; text-align:center; color:var(--muted); font-size:14px; display:none; }
+  @media (max-width:760px){
+    body{ padding-left:14px; padding-right:14px; }
+    .rep-hero h1{ font-size:24px; }
+    .rep-hero .lede{ font-size:14px; }
+    .controls{ margin-top:16px; gap:8px 12px; }
+    .search-box{ flex:1 1 100%; }
+    .rescount{ margin-left:0; }
+  }
   @media (max-width:640px){
-    .report-row { grid-template-columns:58px minmax(0,1fr); }
+    .report-row { grid-template-columns:54px minmax(0,1fr); gap:14px; padding:16px 12px; }
+    .report-row.feat{ padding:18px 14px; }
     .rr-aside { grid-column:2; flex-direction:row; align-items:center; gap:12px; }
+    .rr-arrow{ display:none; }
     .rr-date .day { font-size:21px; }
+    .rr-title{ font-size:16.5px; }
+    .report-row.feat .rr-title{ font-size:18.5px; }
+    .rr-dek{ font-size:13px; }
   }
 
 </style>
@@ -383,17 +398,36 @@
   <span class="rescount" id="repCount"></span>
   <div class="tagbar" id="tagBar">
     <span class="chip on" data-tag="all"><span class="l-en">All</span><span class="l-zh">全部</span></span>
-    <span class="chip tag-fed" data-tag="fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-rates" data-tag="rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span><span class="chip tag-crypto" data-tag="crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span><span class="chip tag-macro" data-tag="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-equities" data-tag="equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span>
+    <span class="chip tag-ai" data-tag="ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-macro" data-tag="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-fed" data-tag="fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-china" data-tag="china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-credit" data-tag="credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span><span class="chip tag-rates" data-tag="rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span><span class="chip tag-crypto" data-tag="crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span><span class="chip tag-equities" data-tag="equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span>
   </div>
 </div>
 
 <div class="report-list" id="reportList">
   
-  <a class="report-row feat" href="report_bessent_jun24.html"
+  <a class="report-row feat" href="report_ai_master_plan.html"
+     data-date="2026-07-01"
+     data-tags="ai macro fed china credit"
+     data-search="the ai master plan strip the white house ai action plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the united states — a physical-stock strategy that is bubble-dependent by design. a full decode: the five levers, why the state went long its own bubble, where the losses are pre-routed, and the predictive pathway that schedules the pop for after the buildout, after the midterms, and onshore. ai 总体规划 剥开白宫《ai 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码：五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处，以及那条把破裂“安排”在建设完成后、中期选举后、并在本土发生的预测路径。">
+    <span class="feat-badge"><span class="l-en">Latest</span><span class="l-zh">最新</span></span>
+    <div class="rr-date"><span class="mo">JUL</span><span class="day">1</span><span class="yr">2026</span></div>
+    <div class="rr-main">
+      <div class="rr-title"><span class="l-en">The AI Master Plan</span><span class="l-zh">AI 总体规划</span></div>
+      <div class="rr-dek"><span class="l-en">Strip the White House AI Action Plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the United States — a physical-stock strategy that is bubble-dependent by design. A full decode: the five levers, why the state went long its own bubble, where the losses are pre-routed, and the predictive pathway that schedules the pop for after the buildout, after the midterms, and onshore.</span><span class="l-zh">剥开白宫《AI 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码：五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处，以及那条把破裂“安排”在建设完成后、中期选举后、并在本土发生的预测路径。</span></div>
+      <div class="rr-tags">
+        <span class="chip tag-ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+      </div>
+    </div>
+    <div class="rr-aside">
+      <span>⏱ 26 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
+      <span class="rr-arrow">→</span>
+    </div>
+  </a>
+  
+  <a class="report-row " href="report_bessent_jun24.html"
      data-date="2026-06-24"
      data-tags="fed rates crypto macro"
      data-search="the bessent bridge one week after the warsh shock, the hawkish reset has done the fed&#39;s tightening for it — gold under $4,000, the dollar at a 13-month high, and the ai-and-semis leadership that led all year finally cracked. then the treasury secretary said the quiet part out loud: you can have a strong dollar while the fed cuts. a decode of the staged sequence — setup, not destination — and where the debasement trade bottoms. 贝森特之桥 沃什冲击一周后，鹰派重置已替美联储完成了紧缩 —— 黄金跌破4000美元、美元创13个月新高、今年全程领涨的ai与半导体板块终于裂开。随后，财长道出了潜台词：美联储降息时也能维持强势美元。解码这套分阶段的序列 —— 是铺垫，而非终点 —— 以及去货币化交易将在何处筑底。">
-    <span class="feat-badge"><span class="l-en">Latest</span><span class="l-zh">最新</span></span>
+    
     <div class="rr-date"><span class="mo">JUN</span><span class="day">24</span><span class="yr">2026</span></div>
     <div class="rr-main">
       <div class="rr-title"><span class="l-en">The Bessent Bridge</span><span class="l-zh">贝森特之桥</span></div>
