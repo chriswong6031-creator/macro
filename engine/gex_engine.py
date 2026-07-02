@@ -107,9 +107,38 @@ def _pcr(c: pd.DataFrame):
     return float(poi / coi) if coi > 0 else None
 
 
-def compute_gex(chain: pd.DataFrame, spot: float, cfg: dict | None = None) -> dict:
+# Index products whose gamma regime is at least a market-wide read (still assumption-signed,
+# but not a single-name product attribute). Everything else is treated as single-name.
+_INDEX_PRODUCTS = frozenset({"SPX", "SPY", "QQQ", "NDX", "IWM", "RUT", "VIX", "DIA", "SPXW"})
+
+
+def _gamma_regime_passport(symbol: str | None) -> dict:
+    """Audit #29: the dealer long-call/short-put SIGN is unobservable from Cboe OI alone, so
+    every gamma_regime is assumption-basis. For SINGLE NAMES the regime is additionally a
+    near-constant PRODUCT ATTRIBUTE (covered-call ETFs / retail call-buying pin the sign), so
+    the forward-RV validator's MIN_PER_BUCKET is structurally unreachable — it is NOT a
+    time-varying signal and must never be read as one."""
+    is_index = bool(symbol) and str(symbol).upper() in _INDEX_PRODUCTS
+    return {
+        "basis": "assumption",
+        "structurally_constant": (not is_index) if symbol else None,
+        "is_index_product": is_index if symbol else None,
+        "verdict": "display-only",
+        "note": ("dealer long-call/short-put sign is an unobservable assumption; "
+                 + ("single-name gamma regime is a near-constant product attribute, not a "
+                    "time-varying signal (validator MIN_PER_BUCKET structurally unreachable)"
+                    if (symbol and not is_index) else
+                    "even for indices SPY vs SPX can contradict same-day — read as assumption, "
+                    "not observed")),
+    }
+
+
+def compute_gex(chain: pd.DataFrame, spot: float, cfg: dict | None = None,
+                symbol: str | None = None) -> dict:
     """Per-strike chain -> magnets summary dict. Returns a low-confidence / empty
-    tier when the chain is too thin to trust. NEVER fabricates."""
+    tier when the chain is too thin to trust. NEVER fabricates. ``symbol`` (optional) lets the
+    summary carry a gamma-regime PASSPORT flagging single-name regimes as assumption-signed +
+    structurally-constant (audit #29)."""
     cf = {**DEFAULTS, **(cfg or {})}
     if chain is None or len(chain) == 0 or not (spot and spot > 0):
         return {"tier": "no_options", "note": "no listed options / empty chain"}
@@ -156,6 +185,7 @@ def compute_gex(chain: pd.DataFrame, spot: float, cfg: dict | None = None) -> di
         "tier": tier, "n_strikes": n, "spot": float(spot),
         "net_gex_bn": float(gex.sum() / 1e9), "net_vex": float(vex.sum()), "net_cex": net_cex,
         "gamma_flip": flip, "dist_to_flip_pct": dist, "gamma_regime": regime,
+        "regime_passport": _gamma_regime_passport(symbol),
         "magnet_up": magnet_up, "magnet_down": magnet_dn,
         "charm_anchor": charm_anchor,
         "charm_net_sign": (1 if net_cex > 0 else -1 if net_cex < 0 else 0),

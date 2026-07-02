@@ -721,10 +721,12 @@ def build_model(chain: pd.DataFrame, spot: float, cfg: dict | None = None,
     # all groupby("expiry"); both production collectors always emit it (see the input contract).
     if "expiry" not in chain.columns:
         return None
+    _sym = (meta or {}).get("key") or (meta or {}).get("symbol")
     base = compute_gex(chain[["K", "T", "iv", "oi", "is_call", "expiry"]],
                        spot, {k: cf[k] for k in ("contract_multiplier", "pct_move", "r", "q",
                                                  "strike_window_pct", "max_expiry_days")
-                              if k in cf} | {"strike_window_pct": cf.get("flip_window_pct", 0.25)})
+                              if k in cf} | {"strike_window_pct": cf.get("flip_window_pct", 0.25)},
+                       symbol=_sym)
     if base.get("tier") in (None, "no_options"):
         return None
 

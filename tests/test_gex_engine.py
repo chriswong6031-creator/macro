@@ -90,3 +90,24 @@ def test_summary_keys_and_tiers():
     few = [dict(K=100.0, T=0.08, iv=0.25, oi=100, is_call=True),
            dict(K=105.0, T=0.08, iv=0.25, oi=100, is_call=False)]
     assert compute_gex(pd.DataFrame(few), S)["tier"] == "no_options"   # <6 strikes
+
+
+def test_gamma_regime_passport_single_name_vs_index():
+    """Audit #29: every gamma_regime carries an assumption-basis passport. Single names are
+    flagged structurally-constant (product attribute, not a time-varying signal); indices are
+    not, but are still assumption-signed."""
+    S = 100.0
+    single = compute_gex(_chain(1000, 1000, S), S, symbol="AAPL")["regime_passport"]
+    assert single["basis"] == "assumption"
+    assert single["structurally_constant"] is True
+    assert single["is_index_product"] is False
+    assert single["verdict"] == "display-only"
+
+    index = compute_gex(_chain(1000, 1000, S), S, symbol="SPX")["regime_passport"]
+    assert index["basis"] == "assumption"
+    assert index["structurally_constant"] is False   # market-wide read, not a name attribute
+    assert index["is_index_product"] is True
+
+    # no symbol -> still assumption-basis, but constancy is unknown (None)
+    anon = compute_gex(_chain(1000, 1000, S), S)["regime_passport"]
+    assert anon["basis"] == "assumption" and anon["structurally_constant"] is None

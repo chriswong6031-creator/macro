@@ -131,7 +131,7 @@ def _optionable_gex() -> dict:
     for t in OPTIONABLE_GEX:
         try:
             chain, spot = adapter._chain(t)
-            summ = compute_gex(chain, spot, cfg={**ecfg, "r": gcfg.get("r", 0.043), "q": 0.0})
+            summ = compute_gex(chain, spot, cfg={**ecfg, "r": gcfg.get("r", 0.043), "q": 0.0}, symbol=t)
             if summ.get("tier") not in (None, "no_options"):
                 out[t] = summ
         except Exception as e:  # noqa: BLE001
