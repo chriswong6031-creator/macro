@@ -268,6 +268,73 @@ def test_panel_importable() -> None:
     assert callable(cn.panel) and callable(cn.policy_tone) and callable(cn.flash_headlines)
 
 
+def test_official_pages_write_clean_time(tmp_path: Path = None) -> None:
+    """_fetch_official_pages must sanitise `time` at the cache WRITE path, not only at
+    read/display time.  Without the write-path guard, a corrupted time value (HTML page
+    content leaked into the date field) can persist in the cache until the next TTL cycle.
+    This is the audit finding §PIT-write-guard."""
+    import json
+    import tempfile
+    from pathlib import Path
+    from unittest.mock import MagicMock, patch
+
+    tmp = Path(tempfile.mkdtemp())
+    # Minimal cfg that points cache at our tmp dir
+    cfg = {
+        "official_cache_dir": str(tmp),
+        "official_window_days": 45,
+        "use_official_pages": True,
+    }
+
+    # Build a fake soup <a> whose parent text concatenates the title+href into "when",
+    # which is what _parse_dateish used to return verbatim (now returns "" for URLs).
+    # We inject it by patching _parse_dateish to deliberately return a contaminated string
+    # that _clean_time must strip before the cache write.
+    contaminated_time = ("证监会推动资本市场法治协同建设 "
+                         "https://www.cnstock.com/commonDetail/734410")
+
+    class FakeA:
+        def __init__(self):
+            self.attrs = {"href": "/commonDetail/734410"}
+            self._text = "证监会推动资本市场法治协同建设"
+            self.parent = None
+        def get_text(self, sep="", strip=False):  # noqa: D401
+            return self._text
+        def __getitem__(self, key):
+            return self.attrs[key]
+
+    class FakeSoup:
+        def find_all(self, tag, **_kw):
+            return [FakeA()]
+
+    mock_r = MagicMock()
+    mock_r.status_code = 200
+    mock_r.text = "<html/>"
+
+    pages = [{"url": "https://www.cnstock.com/", "name": "cnstock", "tier": "official",
+               "theme": "policy"}]
+
+    with (patch("engine.china_news._parse_dateish", return_value=contaminated_time),
+          patch("engine.china_news.classify_theme", return_value="policy"),
+          patch("engine.china_news._clean_title",
+                return_value="证监会推动资本市场法治协同建设"),
+          patch("engine.china_news._official_cache_path",
+                return_value=tmp / "official.json"),
+          patch("requests.get", return_value=mock_r),
+          patch("bs4.BeautifulSoup", return_value=FakeSoup())):
+        items, _ = cn._fetch_official_pages({**cfg, "official_pages": pages})
+
+    # The write-path guard must have stripped the contaminated time before persisting
+    cached = json.loads((tmp / "official.json").read_text())
+    for item in cached["items"]:
+        assert "http" not in item.get("time", ""), (
+            f"Contaminated time persisted to cache: {item['time']!r}")
+    # The in-memory return value is also clean (it uses the sanitised list)
+    for item in items:
+        assert "http" not in item.get("time", ""), (
+            f"Contaminated time returned from fetch: {item['time']!r}")
+
+
 if __name__ == "__main__":
     tests = [
         test_classify_theme,
@@ -286,6 +353,7 @@ if __name__ == "__main__":
         test_decode_page_honors_document_charset,
         test_concept_nav_links_dropped,
         test_panel_importable,
+        test_official_pages_write_clean_time,
     ]
     for fn in tests:
         fn()

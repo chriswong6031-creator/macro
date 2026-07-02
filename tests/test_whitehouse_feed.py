@@ -100,6 +100,29 @@ def test_state_roundtrip(tmp_path=None) -> None:
     assert wf.load_processed(d) == {"seen": {}}
 
 
+def test_naive_pubdate_treated_as_eastern_not_utc() -> None:
+    """WH publishes in ET; a naive (no-timezone) pubDate must be interpreted as
+    America/New_York and converted to UTC — NOT assumed to be UTC.  Assuming UTC
+    introduced up to +5h recency error (EST offset) per audit finding §WH-tz."""
+    # Mon Jun 22 2026 09:00:00 ET = 13:00:00 UTC (EDT = UTC-4 in June)
+    naive_pubdate = "Mon, 22 Jun 2026 09:00:00"
+    iso = wf._to_iso(naive_pubdate)
+    assert iso, "expected a non-empty ISO string"
+    dt = datetime.fromisoformat(iso)
+    assert dt.tzinfo is not None, "result must be timezone-aware"
+    # EDT in June is UTC-4 → 09:00 ET = 13:00 UTC
+    assert dt.hour == 13, (
+        f"naive 09:00 ET should map to 13:00 UTC (EDT), got {dt.isoformat()}")
+    assert dt.minute == 0
+
+
+def test_explicit_utc_pubdate_unchanged() -> None:
+    """An explicit +0000 offset on a pubDate must still parse and convert correctly."""
+    iso = wf._to_iso("Mon, 22 Jun 2026 20:37:30 +0000")
+    dt = datetime.fromisoformat(iso)
+    assert dt.hour == 20 and dt.minute == 37
+
+
 def _run() -> None:
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):

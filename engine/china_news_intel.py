@@ -216,9 +216,46 @@ def _names_by_len() -> list[str]:
     return sorted(_name_to_ticker().keys(), key=len, reverse=True)
 
 
+# Chinese company names that are ALSO common nouns — they produce near-100% false
+# positive tags when the name appears generically in a headline (e.g. "机器人" in
+# "全球机器人产业大会开幕" tags 300024.SZ on every robotics-sector story).
+# A blocklisted name is only allowed to tag when a 6-digit exchange code appears
+# adjacent (within ~6 chars) in the title, e.g. "机器人(300024)一季度净利增长".
+#
+# Seeded from audit finding §ticker-generic-noun (机器人 measured 22/22 FP).
+# Review other short/common 3-char names (e.g. 中芯, 天合, 海控) for addition.
+_GENERIC_NOUN_NAMES: frozenset[str] = frozenset({
+    "机器人",   # 300024.SZ — "robot(s)" in standard Chinese; audit: 22/22 FP
+})
+
+# Matches a 6-digit A-share exchange code in close proximity to the name match.
+_ADJACENT_CODE_RE = re.compile(r"\d{6}")
+
+
+def _has_adjacent_code(blob: str, name: str) -> bool:
+    """Return True if a 6-digit exchange code appears within 10 characters of `name`
+    in `blob`.  The window is intentionally generous to cover patterns like
+    ``机器人(300024)`` where a bracket sits between the name and the code.
+    This is the only override that allows a generic-noun name to tag."""
+    idx = 0
+    while True:
+        pos = blob.find(name, idx)
+        if pos == -1:
+            return False
+        window_start = max(0, pos - 10)
+        window_end = min(len(blob), pos + len(name) + 10)
+        window = blob[window_start:window_end]
+        if _ADJACENT_CODE_RE.search(window):
+            return True
+        idx = pos + 1
+
+
 def tag_tickers(text: str) -> list[str]:
     """A-share tickers a headline names. Longest-match-first CJK scan with subsumed-name
-    suppression (a shorter name fully contained in an already-matched longer name is skipped)."""
+    suppression (a shorter name fully contained in an already-matched longer name is skipped).
+
+    Names in _GENERIC_NOUN_NAMES are only tagged when a 6-digit exchange code appears
+    adjacent in the title (prevents mass false positives from common-noun company names)."""
     blob = text or ""
     if not blob:
         return []
@@ -229,6 +266,9 @@ def tag_tickers(text: str) -> list[str]:
     for nm in _names_by_len():
         if nm in blob:
             if any(nm in mm for mm in matched):   # subsumed by a longer match
+                continue
+            # Generic-noun guard: blocklisted name requires an adjacent exchange code
+            if nm in _GENERIC_NOUN_NAMES and not _has_adjacent_code(blob, nm):
                 continue
             matched.append(nm)
             t = nm2t[nm]
