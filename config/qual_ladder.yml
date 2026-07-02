@@ -375,3 +375,47 @@ communique_diff.event_kind:
     accruing a forward log against 510300.SS (China event-move bench, [P1]/D4).
     Eligible for CONFIRMER only after n_dates>=25 with wilson_ci_low>0 — and only
     once phrase polarity is human-REVIEWED so the direction can leave 0.
+
+# ---------------------------------------------------------------------------
+# MISSING-TAPE — China Censorship-Survivorship Guard (W4-B2, spec D8)
+#
+# Three legs combined into ONE salience-only claim family. direction=0
+# throughout (RISK FLAG semantics only; never a positive signal).
+# Emitter: engine/missing_tape.py → site/chinadata/missing_tape.json
+# Collectors: scripts/recrawl_official_tape.py (Leg A)
+#             engine/missing_tape_gdelt.py (Leg B)
+#             engine/missing_tape_attention.py (Leg C)
+# ---------------------------------------------------------------------------
+missing_tape.risk_level:
+  field: risk_level
+  artifact_glob: "site/chinadata/missing_tape.json"
+  producer: engine/missing_tape.py
+  claim_family: missing_tape
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    Display-only censorship-survivorship risk flag (NONE | ELEVATED | HIGH).
+    Salience-only; direction=0 always (spec D8: "RISK FLAG semantics only,
+    never a positive signal"). Forward log accrues from W4 onwards for the
+    §3 gate. No page renders this wave (W6/W7 surface it). The three legs
+    are: (A) official-corpus body-hash recrawl T+3/T+7 → deletion_rate;
+    (B) GDELT onshore-zh vs offshore-en tone divergence → divergence_z;
+    (C) qbus attention-collapse anomaly per theme/entity → flags[].
+    timestamp_quality=SNAPSHOT_DATE (display-only; not an entry anchor).
+
+missing_tape.divergence_z:
+  field: divergence_z
+  artifact_glob: "site/chinadata/missing_tape.json"
+  producer: engine/missing_tape_gdelt.py
+  claim_family: missing_tape
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    Expanding-window z-score of daily onshore-zh minus offshore-en GDELT
+    tone spread. NaN until ≥ 5 data points. High z (≥ 1.5) = risk-off flag
+    (suppression-suspect). GDELT sourcelang cleanly separates populations
+    [P4]. 1req/5s pacing. Context-only; never a direction input.
