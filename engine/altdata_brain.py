@@ -148,49 +148,41 @@ def enabled() -> bool:
     return bool(_cfg().get("enabled", False))
 
 
-def _client(cfg: dict):
-    """Anthropic client via the Claude-Code OAuth token (Bearer + oauth beta), else API key."""
-    try:
-        import anthropic
-    except ImportError:
-        return None
-    token = config.secret(cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN"))
-    if token:
-        try:
-            return anthropic.Anthropic(auth_token=token, default_headers={"anthropic-beta": OAUTH_BETA})
-        except Exception:  # noqa: BLE001
-            return None
-    key = config.secret(cfg.get("api_key_env", "ANTHROPIC_API_KEY"))
-    if key:
-        try:
-            return anthropic.Anthropic(api_key=key)
-        except Exception:  # noqa: BLE001
-            return None
-    return None
-
-
 def _make_call(cfg: dict):
     """Return call(system, user) -> (text|None, degraded|None). Opus reasoning model; caches
-    the stable system block. None when no client/token."""
-    client = _client(cfg)
-    if client is None:
+    the stable system block. None when no provider is available.
+
+    W5 ITEM 1 — 401-fallback: uses engine.llm_auth.make_call() so an expired OAuth
+    token triggers a fallback to ANTHROPIC_API_KEY, with degraded_reason
+    "auth_invalid:<provider>" distinguishing auth failures from LLM content errors.
+    """
+    from engine import llm_auth
+
+    providers = llm_auth.build_providers(cfg, opus_model=_reasoning_model(cfg))
+    if not providers:
         return None
-    model = _reasoning_model(cfg)
     max_tokens = int(cfg.get("max_tokens", 8000))
 
     def call(system: str, user: str):
-        try:
+        def _do_call(client, model: str):
             resp = client.messages.create(
                 model=model, max_tokens=max_tokens,
-                system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+                system=[{"type": "text", "text": system,
+                         "cache_control": {"type": "ephemeral"}}],
                 messages=[{"role": "user", "content": user}])
             if getattr(resp, "stop_reason", None) == "refusal":
                 return None, "refusal"
             text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
             return (text, None) if text else (None, "empty_reply")
+
+        try:
+            text, reason, _used = llm_auth.make_call(
+                providers, _do_call, context="altdata_brain")
         except Exception as e:  # noqa: BLE001
-            log.warning("altdata_brain call failed (%s): %s", model, e)
+            log.warning("altdata_brain call failed: %s", e)
             return None, "llm_error"
+        return text, reason
+
     return call
 
 

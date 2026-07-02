@@ -1183,43 +1183,67 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
     sampling. Content-hash cache: SHA-256(model‖system‖user) → cached reply text;
     same inputs always yield the same output so the same day's theses ledger rows
     are not polluted by sampling noise across re-runs.
+
+    W5 ITEM 1 — 401-fallback: master_brain defaults to DeepSeek as its primary
+    provider (llm_base_url / api_key_env configurable). The waterfall is built via
+    engine.llm_auth.build_providers() so a 401 from any provider falls back cleanly.
+    The degraded_reason distinguishes "auth_invalid:<provider>" from "llm_error".
     """
+    from engine import llm_auth
+
+    # master_brain uses a non-standard provider config: the default provider is
+    # DeepSeek, but it is fully config-overridable via llm_base_url/api_key_env.
+    # We build a minimal provider descriptor directly rather than using build_providers()
+    # (which assumes the oauth→anthropic→deepseek order), because master_brain
+    # intentionally sends derived market state to an endpoint the operator chose.
     client = _client(cfg)
     if client is None:
         return None, "no_client_or_key"
     model = cfg.get("llm_model", "deepseek-v4-pro")
+    env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
+    providers = [{"name": "deepseek", "env_var": env_var, "cred": "present",
+                  "client": client, "model": model}]
+
     # content-hash cache check (graded producer theses land in a ledger)
     phash = _mb_prompt_hash(model, system, user)
     cached = _mb_reply_cache_get(phash, cfg)
     if cached is not None:
         log.debug("master_brain: reply cache HIT (%s)", phash[:12])
         return cached, None
-    try:
+
+    max_tokens = int(cfg.get("max_tokens", 4000))
+
+    def _do_call(_client, _model: str):
         kw: dict = {
-            "model": model,
-            "max_tokens": int(cfg.get("max_tokens", 4000)),
+            "model": _model,
+            "max_tokens": max_tokens,
             "system": system,
             "messages": [{"role": "user", "content": user}],
-            "temperature": 0,          # determinism kit: greedy decode where supported
+            "temperature": 0,
         }
         try:
             kw["seed"] = 0
-            resp = client.messages.create(**kw)
+            resp = _client.messages.create(**kw)
         except TypeError:
             del kw["seed"]
-            resp = client.messages.create(**kw)
+            resp = _client.messages.create(**kw)
         sr = getattr(resp, "stop_reason", None)
         if sr == "refusal":
             return None, "stop_refusal"
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
         if not text:
             return None, "empty_reply"
-        if text:
-            _mb_reply_cache_put(phash, text, cfg)  # cache successful reply
         return text, ("truncated" if sr == "max_tokens" else None)
+
+    try:
+        text, reason, _ = llm_auth.make_call(providers, _do_call, context="master_brain")
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("master_brain model call failed (%s)", e)
         return None, "llm_error"
+
+    if text:
+        _mb_reply_cache_put(phash, text, cfg)
+    return text, reason
 
 
 # --------------------------------------------------------------------------- #

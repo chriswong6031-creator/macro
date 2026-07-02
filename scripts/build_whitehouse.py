@@ -336,8 +336,25 @@ def _register_wh_claim(rec: dict, root: Path) -> None:
     """
     try:
         from engine import qledger as ql
-    except ImportError:
-        log.debug("qledger not available — skipping claim registration")
+    except ImportError as _ie:
+        # W5 ITEM 5: distinguish a DEV-mode intentional no-qledger path from a
+        # genuine production import failure. qledger is a hard prod dependency;
+        # a real import error (e.g. missing transitive dep, numpy ABI mismatch)
+        # must surface loudly rather than being silently swallowed.
+        #
+        # Heuristic: if the error message names "qledger" itself (i.e. the module
+        # simply isn't installed in this env), treat as optional dev path and log
+        # at DEBUG. Any other ImportError (broken dep, numpy poisoning, etc.) is
+        # a real prod failure → log.error so it appears in CI logs and alerts.
+        _ie_msg = str(_ie).lower()
+        if "qledger" in _ie_msg or "no module named 'engine.qledger'" in _ie_msg:
+            log.debug("qledger not installed in this env — skipping WH claim registration "
+                      "(expected in dev; set up the full engine package for prod)")
+        else:
+            log.error(
+                "qledger import failed with an unexpected error — this is a PRODUCTION "
+                "dependency failure, NOT a dev-mode no-qledger path. "
+                "Claim will NOT be registered. Error: %s", _ie, exc_info=True)
         return
 
     tone_dir = {"tailwind": 1, "headwind": -1}.get(rec.get("tone", ""), 0)

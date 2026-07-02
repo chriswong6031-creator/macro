@@ -216,29 +216,39 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
     passing it raises TypeError. Content-hash cache provides the idempotency
     guarantee instead: the same announcement body always yields the same graded
     record so the banner can't toggle between runs.
+
+    W5 ITEM 1 — 401-fallback: uses engine.llm_auth.make_call() so that an expired
+    OAuth token (HTTP 401) marks that provider dead and retries with the next
+    provider in the waterfall (ANTHROPIC_API_KEY → DEEPSEEK_API_KEY).
+    degraded_reason "auth_invalid:<provider>" surfaces in the health line so the
+    CI log clearly distinguishes an auth failure from an LLM content error.
     """
-    prov = _provider(cfg)
-    if prov is None:
+    from engine import llm_auth
+
+    providers = llm_auth.build_providers(cfg, opus_model=cfg.get("opus_model", "claude-opus-4-8"),
+                                         deepseek_model=cfg.get("deepseek_model", "deepseek-v4-pro"))
+    if not providers:
         return None, "no_provider"
-    provider, cred, model = prov
-    # content-hash cache check
-    phash = _wh_prompt_hash(model, system, user)
+
+    # Content-hash cache: keyed on first provider's model (determinism contract).
+    # We use the primary (first) provider's model id for the cache key; if we fall
+    # back the cached key won't match and the call will go through — correct.
+    first_model = providers[0]["model"]
+    phash = _wh_prompt_hash(first_model, system, user)
     cached = _wh_reply_cache_get(phash, cfg)
     if cached is not None:
         log.debug("whitehouse_brain: reply cache HIT (%s)", phash[:12])
         return cached, None
-    try:
-        client = _client(provider, cred, cfg)
-    except Exception as e:  # noqa: BLE001
-        log.warning("whitehouse_brain client init failed (%s)", e)
-        return None, "client_init_failed"
-    try:
+
+    max_tokens = int(cfg.get("max_tokens", 4000))
+
+    def _do_call(client, model: str):
         resp = client.messages.create(
             model=model,
-            max_tokens=int(cfg.get("max_tokens", 4000)),
+            max_tokens=max_tokens,
             system=system,
             messages=[{"role": "user", "content": user}],
-            temperature=0,          # greedy decode — determinism where supported
+            temperature=0,
         )
         sr = getattr(resp, "stop_reason", None)
         if sr == "refusal":
@@ -246,11 +256,22 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
         if not text:
             return None, "empty_reply"
-        _wh_reply_cache_put(phash, text, cfg)  # cache successful reply
         return text, ("truncated" if sr == "max_tokens" else None)
+
+    try:
+        text, reason, provider_used = llm_auth.make_call(
+            providers, _do_call, context="whitehouse_brain")
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("whitehouse_brain model call failed (%s)", e)
         return None, "llm_error"
+
+    if text:
+        # Cache under the first-model key (best-effort — non-fatal if mismatched)
+        _wh_reply_cache_put(phash, text, cfg)
+        if provider_used and provider_used != (providers[0]["name"] if providers else ""):
+            # surfaced in health line: fell back from expired oauth to deepseek
+            reason = reason or f"served_by:{provider_used}"
+    return text, reason
 
 
 # --------------------------------------------------------------------------- #

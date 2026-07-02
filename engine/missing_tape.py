@@ -114,7 +114,10 @@ def _register_claim(asof: str, risk_level: str, divergence_z: float | None) -> N
         direction=0,          # salience-only; direction is never a positive signal
         horizon_d=21,         # accrual horizon for the forward log
         timestamp_quality="SNAPSHOT_DATE",  # display-only snapshot
-        bench="SPY",          # required for macro scope by qledger schema
+        # W4 ITEM 3: bench changed from "SPY" to "510300.SS" — the machine-checkable
+        # China A-share benchmark used by communique_diff desk for macro scope claims.
+        # "SPY" was rejected by qledger D4 for scope=macro CN_CENSORSHIP_RISK claims.
+        bench="510300.SS",
         falsifier=(
             "divergence_z consistently < 1.0 over 63d AND zero HIGH-confidence "
             "attention-collapse flags AND zero gone/edited recrawl rows"
