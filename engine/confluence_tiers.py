@@ -236,3 +236,166 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         }
     except Exception:
         return dict(_BLANK)
+
+
+def _ticks_since_vec(known: pd.Series, cross_pos_daily: np.ndarray, di: pd.DatetimeIndex,
+                     fresh_ticks: int) -> np.ndarray:
+    """Vectorized per-day tick-age of the most-recent cross, on the TF grid whose per-bar
+    known-dates are ``known``. ``cross_pos_daily`` is a daily-length int array giving, for each
+    daily bar, the daily index of the last cross at-or-before it (or -1 if none). Returns the
+    per-day tick age (native-TF bars closed since that cross AND on-or-before the current day —
+    the point-in-time count, NOT the full-series count), matching the scalar _ticks_since run on
+    the series truncated at each day. The ≤-current-day bound is essential: without it the stream
+    would count every FUTURE TF bar and never look fresh (the interior-day leak that a naive
+    full-series pass introduces)."""
+    kv = pd.to_datetime(pd.Series(known).to_numpy()).values      # TF known-dates (sorted asc)
+    di_vals = di.values
+    out = np.full(len(di), np.iinfo(np.int32).max, dtype=np.int64)
+    for i in range(len(di)):
+        cp = cross_pos_daily[i]
+        if cp < 0:
+            continue
+        when = di_vals[cp]
+        today = di_vals[i]
+        # ticks whose known-date is strictly AFTER the cross and AT-OR-BEFORE the current day —
+        # exactly what _ticks_since(known_truncated_at_i, cross) counts point-in-time.
+        out[i] = int(((kv > when) & (kv <= today)).sum())
+    return out
+
+
+def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None) -> pd.DataFrame:
+    """VECTORIZED per-day tier for EVERY daily bar, on COMPLETED buckets (the validated / point-in-
+    time basis). This is the single-pass twin of :func:`cascade` — it shares every constant and
+    helper, and on the LAST bar of any truncation it reproduces cascade's tier EXACTLY when T1 is
+    taken via the raw-3D-cross fallback (tests/test_confluence_tier_stream pins this).
+
+    The provisional-basis replay compares this stream (completed buckets) against the per-day live
+    ``cascade`` (provisional tail) to measure the repaint (#22). T1 here uses the raw 3D RSI-MACD
+    cross as ``take`` (cascade's own fallback when no §7 take_date is supplied), so the stream is a
+    self-contained close-only signal; the live board's T1 (validated §7 master) is a strict subset.
+
+    Returns a daily-indexed frame: tier (T1..T4|None), weight, ticks, not_topped, eligible, sub.
+    ``fresh_ticks`` overrides the module FRESH_TICKS for a knob sweep. Never raises → empty frame."""
+    ft = FRESH_TICKS if fresh_ticks is None else int(fresh_ticks)
+    try:
+        c = daily_close.dropna()
+        if not isinstance(c.index, pd.DatetimeIndex):
+            c = c.copy(); c.index = pd.to_datetime(c.index)
+        if len(c) < MIN_HISTORY:
+            return pd.DataFrame()
+        di = c.index
+        n = len(di)
+
+        sm, smk = _tf_bars(c, 2)
+        m2, s2 = _rsi_macd(sm)
+        h2 = m2 - s2
+        mb2 = _xup(m2, s2)
+        slope2 = h2 - h2.shift(1)
+        btc = (-h2 / slope2)
+        imm2 = ((h2 < 0) & (slope2 > 0) & (btc > 0) & (btc <= EARLY_CROSS_BARS)).fillna(False)
+
+        ss3, sk3 = _tf_bars(c, 3)
+        k3, d3 = _stoch_rsi_kd(ss3)
+        sb3 = _xup(k3, d3)
+        recent3 = _since(sb3) <= CONF_W
+        fromos3 = d3.rolling(CONF_W).min() < OS
+        r14_3 = rsi(ss3, RSI_LEN)
+        m3, s3 = _rsi_macd(ss3)
+        mb3 = _xup(m3, s3)
+        k2, d2 = _stoch_rsi_kd(sm)
+        sb2 = _xup(k2, d2)
+        recent2 = _since(sb2) <= CONF_W
+        fromos2 = d2.rolling(CONF_W).min() < OS
+
+        wk = c.resample("W-FRI").last().dropna()
+        wm, ws = _rsi_macd(wk)
+        wbull = (wm >= ws).shift(1)
+        ma200 = c.rolling(200).mean()
+
+        td = lambda s, kn, how="ffill": _to_daily(s, kn, di, how)
+        mb2_d = td(mb2.fillna(False), smk, "event")
+        imm2_d = td(imm2.fillna(False), smk).fillna(False)
+        m2_d, s2_d = td(m2, smk), td(s2, smk)
+        mb3_d = td(mb3.fillna(False), sk3, "event")
+        m3_d, s3_d = td(m3, sk3), td(s3, sk3)
+        recent3_d = td(recent3.fillna(False), sk3).fillna(False)
+        fromos3_d = td(fromos3.fillna(False), sk3).fillna(False)
+        k3_d, d3_d = td(k3, sk3), td(d3, sk3)
+        r14_d = td(r14_3, sk3)
+        recent2_d = td(recent2.fillna(False), smk).fillna(False)
+        fromos2_d = td(fromos2.fillna(False), smk).fillna(False)
+        wbull_d = wbull.reindex(di, method="ffill").fillna(False).astype(bool)
+        above200 = (c > ma200).fillna(False)
+
+        confirm3 = (wbull_d | fromos3_d)
+        confirm2 = (wbull_d | fromos2_d)
+        rsi_ok = (r14_d < BUY_RSI_MAX).fillna(False)
+        long_bias = ((m2_d >= s2_d) & (k3_d >= d3_d)).fillna(False)
+
+        # veto (per-day, vectorized) — matches the scalar not_topped
+        k3n, d3n = k3_d.to_numpy(), d3_d.to_numpy()
+        m3n, s3n = m3_d.to_numpy(), s3_d.to_numpy()
+        stoch_ob = (k3n >= OB) | (d3n >= OB)
+        stoch_bear = k3n < d3n
+        macd_bear = m3n < s3n
+        not_topped = ~(stoch_ob | stoch_bear | macd_bear)
+
+        # per-day daily index of the last 3D cross (T1 raw fallback) and last T2 buy
+        mb3_np = mb3_d.fillna(False).to_numpy().astype(bool)
+        last_cross3 = _last_true_pos(mb3_np)
+        t1_ticks = _ticks_since_vec(sk3, last_cross3, di, ft)
+
+        t2_buy = (mb2_d & recent3_d & confirm3 & rsi_ok).fillna(False).to_numpy().astype(bool)
+        last_t2 = _last_true_pos(t2_buy)
+        t2_ticks = _ticks_since_vec(smk, last_t2, di, ft)
+
+        imm2_np = imm2_d.to_numpy().astype(bool)
+        recent3_np = recent3_d.to_numpy().astype(bool)
+        confirm3_np = confirm3.fillna(False).to_numpy().astype(bool)
+        confirm2_np = confirm2.fillna(False).to_numpy().astype(bool)
+        rsi_ok_np = rsi_ok.to_numpy().astype(bool)
+        recent2_np = recent2_d.to_numpy().astype(bool)
+        above200_np = above200.to_numpy().astype(bool)
+        long_bias_np = long_bias.to_numpy().astype(bool)
+        fromos3_np = fromos3_d.to_numpy().astype(bool)
+        fromos2_np = fromos2_d.to_numpy().astype(bool)
+
+        t1_fresh = (last_cross3 >= 0) & (t1_ticks <= ft)                    # raw-cross T1 fallback
+        t2_active = (last_t2 >= 0) & (t2_ticks <= ft) & long_bias_np
+        t3_active = imm2_np & recent3_np & confirm3_np & rsi_ok_np
+        t4_active = imm2_np & recent2_np & above200_np & confirm2_np & rsi_ok_np
+
+        tier = np.array([None] * n, dtype=object)
+        weight = np.zeros(n)
+        ticks = np.full(n, np.nan)
+        sub = np.array([None] * n, dtype=object)
+        elig = np.zeros(n, dtype=bool)
+        for i in range(n):
+            if not not_topped[i]:
+                continue
+            if t1_fresh[i]:
+                tier[i], weight[i], ticks[i] = "T1", WEIGHTS["T1"], t1_ticks[i]
+                sub[i] = "deep" if fromos3_np[i] else "shallow"
+            elif t2_active[i]:
+                tier[i], weight[i], ticks[i] = "T2", WEIGHTS["T2"], t2_ticks[i]
+                sub[i] = "deep" if fromos3_np[i] else "shallow"
+            elif t3_active[i]:
+                tier[i], weight[i], ticks[i] = "T3", WEIGHTS["T3"], 0
+                sub[i] = "deep" if fromos3_np[i] else "shallow"
+            elif t4_active[i]:
+                tier[i], weight[i], ticks[i] = "T4", WEIGHTS["T4"], 0
+                sub[i] = "deep" if fromos2_np[i] else "shallow"
+            else:
+                continue
+            elig[i] = True
+        return pd.DataFrame({"tier": tier, "weight": weight, "ticks": ticks,
+                             "not_topped": not_topped, "eligible": elig, "sub": sub}, index=di)
+    except Exception:
+        return pd.DataFrame()
+
+
+def _last_true_pos(mask: np.ndarray) -> np.ndarray:
+    """For each position i, the index of the most-recent True at-or-before i (or -1). Vectorized."""
+    n = len(mask)
+    idx = np.where(mask, np.arange(n), -1)
+    return np.maximum.accumulate(idx)

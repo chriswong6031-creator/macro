@@ -81,3 +81,14 @@
 {"ts": "2026-07-02T05:09:29.504919+00:00", "family": "regime", "config_hash": "78712e9eb84ba1c0", "config": {"knob": "K_SWEEP_5", "value": 5}, "source": "choice_ledger", "info_cutoff": null, "note": null}
 {"ts": "2026-07-02T05:09:29.504966+00:00", "family": "regime", "config_hash": "b2037deef4641984", "config": {"knob": "K_SWEEP_6", "value": 6}, "source": "choice_ledger", "info_cutoff": null, "note": null}
 {"ts": "2026-07-02T05:09:29.505012+00:00", "family": "regime", "kind": "declared_budget", "n": 22, "reason": "len(_build_choice_ledger) \u2014 a-priori parameter choices", "config_hash": "77bd9d21208480c1"}
+{"ts": "2026-07-02T05:17:32.844669+00:00", "family": "provisional_fresh_ticks_us", "kind": "declared_budget", "n": 4, "reason": "FRESH_TICKS just-crossed window sweep (US, held-out OOS)", "config_hash": "15e52bad71db5aab"}
+{"ts": "2026-07-02T05:17:32.851045+00:00", "family": "provisional_fresh_ticks_us", "config_hash": "51e9a56e07f17450", "config": {"FRESH_TICKS": 1}, "source": "grid", "info_cutoff": "2026-07-01", "note": null}
+{"ts": "2026-07-02T05:17:32.851185+00:00", "family": "provisional_fresh_ticks_us", "config_hash": "a1ec8969bfa5c871", "config": {"FRESH_TICKS": 2}, "source": "grid", "info_cutoff": "2026-07-01", "note": null}
+{"ts": "2026-07-02T05:17:32.851261+00:00", "family": "provisional_fresh_ticks_us", "config_hash": "99fba9305de7d050", "config": {"FRESH_TICKS": 3}, "source": "grid", "info_cutoff": "2026-07-01", "note": null}
+{"ts": "2026-07-02T05:17:32.851321+00:00", "family": "provisional_fresh_ticks_us", "config_hash": "07bbaeeb8fe66c01", "config": {"FRESH_TICKS": 4}, "source": "grid", "info_cutoff": "2026-07-01", "note": null}
+{"ts": "2026-07-02T05:23:29.806852+00:00", "family": "provisional_cn_blend", "kind": "declared_budget", "n": 16, "reason": "CN blend constants hand-tuned during research (4 knobs)", "config_hash": "20f200c272b625e8"}
+{"ts": "2026-07-02T05:26:40.866009+00:00", "family": "provisional_fresh_ticks_cn", "kind": "declared_budget", "n": 4, "reason": "FRESH_TICKS just-crossed window sweep (CN, held-out OOS)", "config_hash": "2780dc339c18d672"}
+{"ts": "2026-07-02T05:26:40.866539+00:00", "family": "provisional_fresh_ticks_cn", "config_hash": "a41d289f7a1cb303", "config": {"FRESH_TICKS": 1}, "source": "grid", "info_cutoff": "2026-07-01", "note": null}
+{"ts": "2026-07-02T05:26:40.866750+00:00", "family": "provisional_fresh_ticks_cn", "config_hash": "d30371daed7a810b", "config": {"FRESH_TICKS": 2}, "source": "grid", "info_cutoff": "2026-07-01", "note": null}
+{"ts": "2026-07-02T05:26:40.866901+00:00", "family": "provisional_fresh_ticks_cn", "config_hash": "50e348b28a36013c", "config": {"FRESH_TICKS": 3}, "source": "grid", "info_cutoff": "2026-07-01", "note": null}
+{"ts": "2026-07-02T05:26:40.867039+00:00", "family": "provisional_fresh_ticks_cn", "config_hash": "89416c3dd1f1d98b", "config": {"FRESH_TICKS": 4}, "source": "grid", "info_cutoff": "2026-07-01", "note": null}
