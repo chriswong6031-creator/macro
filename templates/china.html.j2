@@ -87,6 +87,16 @@
   .sb-table th.sorted .sarrow { opacity:.9; color:var(--link); }
   /* ---- standout-stock cards (ported from the US dashboard) ------------------- */
   .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:10px; margin-top:11px; }
+  /* mobile: pack the standout cards 2-up so the list doesn't scroll on and on (paired with the
+     3-row cap via data-showmore-rows + theme.js). Cards are already overflow-guarded + compact. */
+  @media (max-width:680px){
+    .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .nbgrid[data-showmore-rows] .nb-tk{ font-size:13px; }
+    .nbgrid[data-showmore-rows] .nb-px{ font-size:12px; }
+    /* let the header wrap so the signal badge + price drop to a new line instead of being
+       clipped by the card's overflow:hidden when the column is this narrow. */
+    .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
+  }
   a.nbcard { background:var(--panel2,var(--panel)); border:1px solid var(--line); border-radius:10px;
              padding:9px 11px 10px; border-left:3px solid var(--muted); display:flex;
              flex-direction:column; gap:4px; min-width:0; overflow:hidden;
@@ -1208,7 +1218,7 @@
       <span><b>{{ t('Two gauges', '两个量表') }}</b>: {{ t('Conviction (is it worth owning) + a separate Entry gauge (when & at what price)', '确信度（是否值得持有）＋ 独立的入场量表（何时、以何价）') }}</span>
       {% if _tt %}<span class="lg-sep">·</span><span><b>{{ t('Edge basis', '优势来源') }}</b>: <span class="l-en">{{ _tt.en }}</span><span class="l-zh">{{ _tt.zh }}</span></span>{% endif %}
     </div>
-    <div class="nbgrid" data-showmore="12">
+    <div class="nbgrid" data-showmore-rows="3">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
       <a class="nbcard nb-{{ _d }}" href="china_lookup.html#{{ n.ticker }}">
