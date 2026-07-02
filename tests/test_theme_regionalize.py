@@ -48,4 +48,5 @@ def test_compute_theme_intel_all_regions_when_present():
         assert ti["n_themes"] >= 1
         assert "act_now" in ti and "market_concentration" in ti
         t = ti["themes"][0]
-        assert set(t["textures"]) == {"bull_age", "overbought", "clean_entry", "rollover_risk"}
+        assert set(t["textures"]) == {"bull_age", "overbought", "clean_entry", "rollover_risk",
+                                      "breadth_divergence"}
