@@ -504,6 +504,35 @@ def cross_section(by_ticker: dict, view: str, metric: str = "stop_out_rate") -> 
 
 
 # ============================================================ overfit guard (comp. 5)
+
+# W1d: a harness that never REGISTERED its multiple-testing budget still swept many configs
+# in development. Defaulting n_trials to 1 (no deflation) is the lie the trial ledger exists
+# to end. When a family is unregistered, we assume this CONSERVATIVE FLOOR of trials rather
+# than 1 — a deliberate over-estimate (de Prado: over-estimating N is the safe direction). A
+# family that registers its true budget (via @register_trials / log_declared_budget) overrides
+# the floor upward; it can never go below it.
+UNREGISTERED_TRIALS_FLOOR = 8
+
+
+def _ledger_n_trials(family: str | None, ledger=None) -> int:
+    """Honest n_trials for `family` sourced from the Trial Ledger (declared budgets +
+    itemized grid configs, summed across every ledger family that STARTS WITH `family` so a
+    'commodity_tsmom' budget also covers 'commodity_tsmom:carry'). Returns the conservative
+    UNREGISTERED_TRIALS_FLOOR when nothing is registered — never 1. `family=None` keeps the
+    legacy floor too (an anonymous run is still a searched run)."""
+    try:
+        from engine.trial_ledger import TrialLedger
+        led = ledger if ledger is not None else TrialLedger()
+        if family is None:
+            fams = led.families()
+        else:
+            fams = [f for f in led.families() if f == family or f.startswith(family)]
+        total = sum(led.effective_n(f) for f in fams)
+    except Exception:  # noqa: BLE001 — the ledger is advisory; never crash a validation run
+        total = 0
+    return max(total, UNREGISTERED_TRIALS_FLOOR)
+
+
 def _mt_bump(n_trials: int) -> float:
     """Deflated-Sharpe-style multiple-testing bump on the OOS bar: more configs searched
     -> a higher bar, so a lucky best-of-n can't pass.  Capped so it never demands >90%."""
@@ -512,13 +541,20 @@ def _mt_bump(n_trials: int) -> float:
     return min(0.20, 0.05 * np.log2(n_trials))
 
 
-def overfit_guard(by_ticker: dict, n_trials: int = 1, metric: str = "stop_out_rate",
-                  min_frac: float = 0.70) -> dict:
+def overfit_guard(by_ticker: dict, n_trials: int | None = None, metric: str = "stop_out_rate",
+                  min_frac: float = 0.70, *, family: str | None = None, ledger=None) -> dict:
     """IS vs OOS decay flag + the pre-committed KILL RULE.  The IS->OOS decay is computed on
     a LIKE-FOR-LIKE population (names that traded >= MIN_DECAY_TRADES in BOTH views for BOTH
-    arms) so burn-in zero-trade names can't skew it.  For a non-fitted signal (n_trials=1)
-    the decay is a drift smell only; the real search guard is the n_trials-driven bar."""
+    arms) so burn-in zero-trade names can't skew it.  The real search guard is the
+    n_trials-driven bar.
+
+    W1d: n_trials now SOURCES FROM THE TRIAL LEDGER by `family` when not passed explicitly —
+    an unregistered family gets the conservative UNREGISTERED_TRIALS_FLOOR (not 1), so a
+    harness that never declared its search budget is deflated as if it swept several configs.
+    Passing an explicit int still works (legacy callers) and takes precedence."""
     _check_verdict_metric(metric)
+    if n_trials is None:
+        n_trials = _ledger_n_trials(family, ledger=ledger)
     cs_oos = cross_section(by_ticker, "oos", metric)
     cs_full = cross_section(by_ticker, "full", metric)
     bar = min_frac + _mt_bump(n_trials)
@@ -567,11 +603,15 @@ def kill_rule(by_ticker: dict, view: str = "oos", metric: str = "stop_out_rate",
 
 # ============================================================ the public entry
 def walk_forward(signal_fn, panel: dict, cfg: dict | None = None, *,
-                 baseline_fn=None, since: pd.Timestamp = SINCE, n_trials: int = 1,
+                 baseline_fn=None, since: pd.Timestamp = SINCE, n_trials: int | None = None,
                  metric: str = "stop_out_rate", run_id: str | None = None,
-                 tag: str = "wf", log: bool = True) -> dict:
+                 tag: str = "wf", log: bool = True, family: str | None = None) -> dict:
     """Run the harness over a panel.  Returns {run_id, config, by_ticker, pooled,
-    overfit_flags}.  See the module header for the signal-callable contract."""
+    overfit_flags}.  See the module header for the signal-callable contract.
+
+    W1d: pass `family` to source the multiple-testing `n_trials` from the Trial Ledger
+    (declared budget + itemized grid). An unregistered family is deflated at the conservative
+    UNREGISTERED_TRIALS_FLOOR, never 1. An explicit `n_trials` int overrides the ledger."""
     _check_verdict_metric(metric)
     cfg = {**DEFAULT_CFG, **(cfg or {})}
     by_ticker: dict = {}
@@ -606,7 +646,7 @@ def walk_forward(signal_fn, panel: dict, cfg: dict | None = None, *,
               file=sys.stderr)
 
     pooled = {v: cross_section(by_ticker, v, metric) for v in ("full", "oos", "is")}
-    overfit_flags = overfit_guard(by_ticker, n_trials=n_trials, metric=metric)
+    overfit_flags = overfit_guard(by_ticker, n_trials=n_trials, metric=metric, family=family)
 
     rid = run_id or _make_run_id(tag, cfg)
     result = {"run_id": rid, "config": cfg, "since": str(since.date()),

@@ -99,6 +99,10 @@ MARKETS: dict[str, dict] = {
         "label_zh": "A股",
         "size_label_en": "Mkt cap",
         "size_label_zh": "市值",
+        # Label tiles by company name, not the opaque 6-digit A-share code. The
+        # renderer prefers name_zh (always present for CN), else the English name,
+        # else the ticker.
+        "tile_label": "name",
     },
     "hk": {
         # HK carries no shares-outstanding feed, so tiles are sized by average
@@ -112,6 +116,10 @@ MARKETS: dict[str, dict] = {
         "label_zh": "港股",
         "size_label_en": "Avg turnover",
         "size_label_zh": "日均成交额",
+        # Label tiles by company name, not the 4-digit HK code. HK carries no
+        # Chinese-name feed yet, so the renderer falls back to the English name
+        # (Tencent, Alibaba…) — still far more legible than "0700".
+        "tile_label": "name",
     },
     "canada": {
         "currency": "CAD",
@@ -292,6 +300,7 @@ def build_market_heatmap(
         "stock_url": cfg["stock_url"],
         "size_label_en": cfg["size_label_en"],
         "size_label_zh": cfg["size_label_zh"],
+        "tile_label": cfg.get("tile_label", "ticker"),
         "default_tf": us.DEFAULT_TIMEFRAME,
         "timeframes": timeframes,
         "sectors": sectors_present,
@@ -314,6 +323,7 @@ def _empty_payload(market: str, cfg: dict, generated_utc: str | None) -> dict:
         "stock_url": cfg["stock_url"],
         "size_label_en": cfg["size_label_en"],
         "size_label_zh": cfg["size_label_zh"],
+        "tile_label": cfg.get("tile_label", "ticker"),
         "default_tf": us.DEFAULT_TIMEFRAME,
         "timeframes": [{**tf, "available": False} for tf in us.TIMEFRAMES],
         "sectors": [],

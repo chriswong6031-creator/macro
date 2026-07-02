@@ -135,6 +135,14 @@ All code lives in `research/signal_engine/`.
   84% of names.** Honest caveat: it captures less total return (it's selective) and does **not** improve
   return-per-drawdown — i.e. it is a **risk overlay / brain input**, not standalone alpha. This is the
   piece worth promoting.
+  > **2026-07-01 re-grade (W1c, audit #15).** Re-ran `test_buyfilter.py` on the current, larger
+  > panel (now **219** names, all still held-out): average max drawdown **−24.0% → −14.5%, shallower
+  > on 91% of names** — the headline SURVIVES and slightly strengthens on the bigger panel. The
+  > original harness already used the honest **next-bar fill** (`c.iloc[i+1]` entry), so this number
+  > was never contaminated by the same-bar bias. What W1c fixed was the *live* per-marker logger
+  > (`engine/track_record.py`), which used a same-bar fill and thus rendered every per-marker MDD
+  > ~0.6pp shallower than the validated convention — now corrected to next-bar (`engine/grading.py`),
+  > with a `fwd_mdd_60_samebar` shadow column so the correction stays measurable.
 - **❌ KILLED — the regime router** (`regime_router.py`): a classifier routing entry/exit by regime
   (efficiency + volatility axes). Looked great on ~7 hand-examined names; on 105 held-out names it was
   **no better than always-oscillator-exit and captured less.** Textbook regime-switching failure (the

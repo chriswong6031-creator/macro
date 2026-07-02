@@ -1,0 +1,1724 @@
+{
+ "schema": "signal_golden_vectors/v1",
+ "as_of": "2026-07-01",
+ "oracle": "engine.canon.confluence_signals",
+ "math": {
+  "rsiLen": 14,
+  "macd_fast": 14,
+  "macd_slow": 60,
+  "macd_signal": 5,
+  "stoch_len": 14,
+  "smooth_k": 3,
+  "smooth_d": 3,
+  "ob": 80,
+  "os": 20,
+  "confW": 8,
+  "buy_rsi_max": 65,
+  "ext_rsi": 70,
+  "rev_bars": 3,
+  "resample": "session_grouped_3",
+  "ema": "adjust_false",
+  "rma": "sma_seeded"
+ },
+ "note": "The dashboard is the ORACLE. A Terminal engine that reproduces this BUY/SELL/tier sequence from the same close window (verify inputs_hash first) is conformant; any mismatch means its confluence math drifted (audit #7). The corrected math relocated ~80% of NVDA signal dates vs the legacy calendar-3B resample the Terminal shipped.",
+ "symbols": [
+  {
+   "symbol": "NVDA",
+   "region": "US",
+   "label": "NVDA",
+   "window": {
+    "start": "2015-01-01",
+    "end": "2024-12-31",
+    "n_daily_bars": 2516,
+    "first_bar": "2015-01-02",
+    "last_bar": "2024-12-31"
+   },
+   "inputs_hash": "sha256:7f5ea6c4f2213bb886c3b70a5688cab897941921a9cb9020d2a21793c75df5af",
+   "n_signals": 53,
+   "expected_sequence": [
+    {
+     "ts": "2015-12-14",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-02-24",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-05-06",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-05-16",
+     "type": "REBUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-06-28",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-08-26",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-12-30",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-04-03",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-04-06",
+     "type": "CUT",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-04-28",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-07-03",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-09-22",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-11-30",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-03-05",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-05-08",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-06-25",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-08-07",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-09-27",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-10-02",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-10-05",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-01-08",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-05-06",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-06-26",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-08-08",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-08-21",
+     "type": "BUY",
+     "tier": "T2",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-12-06",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-12-19",
+     "type": "REBUY",
+     "tier": "T2",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-01-27",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-04-17",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-09-08",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-01-12",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-01-15",
+     "type": "CUT",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-01-21",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-01-29",
+     "type": "CUT",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-02-03",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-03-02",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-04-06",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-05-13",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-05-26",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-07-19",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-12-10",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2022-04-18",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-05-31",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-09-02",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-10-25",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-12-29",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2023-01-18",
+     "type": "BUY",
+     "tier": "T2",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2023-04-11",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2023-06-28",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2023-11-08",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-03-20",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-07-12",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-11-26",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    }
+   ]
+  },
+  {
+   "symbol": "600519.SS",
+   "region": "CN",
+   "label": "Kweichow Moutai (A-share)",
+   "window": {
+    "start": "2015-01-01",
+    "end": "2024-12-31",
+    "n_daily_bars": 2429,
+    "first_bar": "2015-01-05",
+    "last_bar": "2024-12-31"
+   },
+   "inputs_hash": "sha256:dc3f9b1c484a030d1c4677bf6483095123db7ed1630b1fef3a2930473838100e",
+   "n_signals": 54,
+   "expected_sequence": [
+    {
+     "ts": "2016-02-23",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-04-27",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-05-03",
+     "type": "REBUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-05-06",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-08-02",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-10-31",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-11-21",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-11-29",
+     "type": "REBUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-12-28",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-01-03",
+     "type": "REBUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-02-08",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-02-21",
+     "type": "REBUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-04-11",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-04-19",
+     "type": "REBUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-04-24",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-04-27",
+     "type": "REBUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-06-29",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-11-22",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-01-30",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-05-10",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-07-02",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-09-19",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-12-04",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-05-06",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-10-09",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-11-25",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-02-21",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-03-23",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-03-31",
+     "type": "REBUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-07-22",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-12-03",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-02-22",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-05-21",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-06-30",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-09-09",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-01-07",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-04-07",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-07-27",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-11-17",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2023-02-27",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2023-06-16",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2023-08-22",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2023-09-04",
+     "type": "BUY",
+     "tier": "T1",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2023-09-07",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2023-11-09",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2023-12-05",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-02-07",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-04-12",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-07-19",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-08-01",
+     "type": "CUT",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2024-08-09",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2024-11-25",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-12-24",
+     "type": "BUY",
+     "tier": "T1",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-12-31",
+     "type": "CUT",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    }
+   ]
+  },
+  {
+   "symbol": "0700.HK",
+   "region": "HK",
+   "label": "Tencent (HK)",
+   "window": {
+    "start": "2015-01-01",
+    "end": "2024-12-31",
+    "n_daily_bars": 2463,
+    "first_bar": "2015-01-02",
+    "last_bar": "2024-12-31"
+   },
+   "inputs_hash": "sha256:f1034d1652cae96bf299629dbcdb8edffcbb5d646cf110b93cdebb641f5532c7",
+   "n_signals": 58,
+   "expected_sequence": [
+    {
+     "ts": "2016-02-24",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-05-03",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-06-28",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-08-05",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-08-18",
+     "type": "REBUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2016-09-19",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-01-06",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-06-14",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-10-20",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2017-12-01",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-05-18",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-06-28",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-07-09",
+     "type": "REBUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-07-12",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-08-10",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-08-15",
+     "type": "CUT",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-08-20",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-10-22",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-10-25",
+     "type": "CUT",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2018-11-02",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-02-28",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-03-05",
+     "type": "BUY",
+     "tier": "T2",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-04-03",
+     "type": "BUY",
+     "tier": "T2",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-05-08",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-07-02",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-08-05",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2019-09-11",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-02-03",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-02-06",
+     "type": "REBUY",
+     "tier": "T2",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-02-24",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-04-16",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-07-31",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-10-20",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2020-11-19",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-01-15",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-02-25",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-05-31",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-06-22",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-06-25",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-06-30",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2021-08-25",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-01-13",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-02-24",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-04-13",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-04-20",
+     "type": "CUT",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-07-11",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-08-25",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-09-16",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2022-11-08",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2023-02-16",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": false
+     }
+    },
+    {
+     "ts": "2023-06-16",
+     "type": "BUY",
+     "tier": "T2",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2023-11-07",
+     "type": "BUY",
+     "tier": "T4",
+     "regime": {
+      "weeklyBull": false,
+      "above200": false,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2023-12-22",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": false,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-06-05",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-08-30",
+     "type": "BUY",
+     "tier": "T2",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-09-04",
+     "type": "CUT",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-10-22",
+     "type": "SELL",
+     "tier": "EXIT",
+     "regime": {
+      "weeklyBull": true,
+      "above200": true,
+      "monthlyBull": true
+     }
+    },
+    {
+     "ts": "2024-12-24",
+     "type": "BUY",
+     "tier": "T3",
+     "regime": {
+      "weeklyBull": false,
+      "above200": true,
+      "monthlyBull": true
+     }
+    }
+   ]
+  }
+ ]
+}

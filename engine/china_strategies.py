@@ -104,13 +104,18 @@ def _tsf_availability_stamp(series: pd.Series) -> pd.Series:
 def _credit_derisk() -> pd.Series:
     """China credit-impulse de-risk: TSF is a monthly FLOW with heavy January
     seasonality → de-seasonalise via a trailing-12m SUM, take YoY % (credit-growth
-    proxy), then the 6-month change of that growth (the IMPULSE). De-risk = 36-month
-    rolling percentile of the NEGATED impulse: contracting credit → high de-risk."""
+    proxy), then the 6-month change of that growth (credit-impulse ACCELERATION). De-risk
+    = 36-month rolling percentile of the NEGATED impulse: contracting credit → high de-risk.
+
+    Uses canon.credit_impulse_ACCEL (audit #12) — the 2nd-derivative. This is a DIFFERENT
+    series than china_radar's credit-impulse LEVEL (1st-derivative); the shared "credit
+    impulse" label used to hide that these leveraged-GTAA books read acceleration while the
+    radar chip reads the level. Byte-identical to the prior local."""
     tsf = _china_col("china_credit", "tsf", "tsf_total")
     if tsf.empty:
         return pd.Series(dtype=float)
-    yoy = tsf.rolling(12).sum().pct_change(12) * 100.0
-    impulse = yoy.diff(6)
+    from engine import canon
+    impulse = canon.credit_impulse_accel(tsf)
     derisk = pct_rank_window(-impulse, 36)
     # Re-stamp from reference-month-start to PUBLICATION-availability date so the
     # leg can never act on the impulse before the market saw the print (audit #27).

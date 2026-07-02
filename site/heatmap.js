@@ -630,10 +630,16 @@
       var showSym = tw >= 26 && th >= 17;
       var showPc = tw >= 44 && th >= 31;
       if (!showSym) return '';
-      // cap the font to the tile width so long tickers shrink to fit instead of overflowing
-      var sym = dispT(t.t);
+      // CN/HK maps opt into a company-name label (data.tile_label==='name') — a
+      // bare 601398 / 0700 code is meaningless at a glance. Prefer the Chinese
+      // name, fall back to the English name, then the ticker. US / Canada leave
+      // tile_label unset and keep the recognizable ticker.
+      var sym = data.tile_label === 'name' ? (t.name_zh || t.name || dispT(t.t)) : dispT(t.t);
+      // CJK glyphs are ~full-em wide vs ~0.6em for latin/digits, so a 4-char name
+      // needs a wider per-char budget than a 6-digit code to fit the same tile.
+      var cjk = false; for (var _i = 0; _i < sym.length; _i++) { var _cc = sym.charCodeAt(_i); if (_cc >= 0x3400 && _cc <= 0x9fff) { cjk = true; break; } }
       var nch = sym.length || 1;
-      var fitF = (tw - 5) / (nch * 0.80);
+      var fitF = (tw - 5) / (nch * (cjk ? 1.06 : 0.80));
       var symF = Math.max(6, Math.min(tw / 3.7, th * 0.52, fitF, 22));
       var pcF = Math.max(8, Math.min(tw / 5.4, th * 0.34, 13));
       var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(sym) + '</span>';
@@ -900,11 +906,19 @@
               + '<span class="hm-mid"><b>' + esc(t.name) + '</b><span>' + det + '</span></span></div>');
             return;
           }
-          var rnm = (isZh() && t.name_zh) ? t.name_zh : t.name;
-          var sub = t.industry && t.industry !== t.sector ? esc(t.industry) : esc(rnm);
+          // CN/HK (tile_label==='name'): lead the row with the company name and
+          // drop the ticker to the sub-line. US/CA keep the ticker as the
+          // headline with the name / sub-industry beneath (unchanged).
+          var byName = data.tile_label === 'name';
+          var nm = t.name_zh || t.name || '';
+          var primary = (byName && nm) ? nm : dispT(t.t);
+          var sub = (byName && nm)
+            ? dispT(t.t)
+            : (t.industry && t.industry !== t.sector ? t.industry
+               : ((isZh() && t.name_zh) ? t.name_zh : t.name));
           html.push('<a class="hm-mrow" href="' + STOCK_URL + encodeURIComponent(t.t) + '">'
             + '<span class="hm-mpc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
-            + '<span class="hm-mid"><b>' + esc(dispT(t.t)) + '</b><span>' + sub + '</span></span>'
+            + '<span class="hm-mid"><b>' + esc(primary) + '</b><span>' + esc(sub) + '</span></span>'
             + '<span class="hm-mgo">›</span></a>');
         });
         html.push('</div>');
