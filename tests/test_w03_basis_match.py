@@ -278,7 +278,8 @@ class TestEngineOwnedRead:
     def test_js_prefers_engine_read_over_narr(self):
         """Verify that the JS template uses nw.read/nw.read_zh as primary (not NARR.now)."""
         import pathlib
-        src = pathlib.Path("/tmp/wave-w023/templates/sector_cycles.js").read_text()
+        root = pathlib.Path(__file__).resolve().parent.parent
+        src = (root / "templates" / "sector_cycles.js").read_text()
         # The W0.3 change: engine read primary, NARR demoted to analyst_note
         assert "nw.read_zh" in src or "nw.read" in src, (
             "sector_cycles.js: nw.read not referenced"
