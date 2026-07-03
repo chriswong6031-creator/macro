@@ -759,3 +759,55 @@ def test_anticipation_note_fires_on_favorable_cone_muted_score():
            "tech": {"off_52w_high_pct": -10.0, "rsi14": 50.0}}
     p = ss.conviction_profile(rec, "US", ctx={"score_pct": 50})
     assert p["notes"] and any(n["kind"] == "anticipation" for n in p["notes"])
+
+
+# ---------------------------------------------------------------------------
+# W9-B DEMOTE — tailwind rank weight removed for US (2026-07-03, #1143)
+# ---------------------------------------------------------------------------
+
+def test_w9b_us_tailwind_weight_is_zero():
+    """W9-B: _WEIGHT_PRIOR["US"]["tailwind"] must be 0.0 — the ordering change."""
+    assert ss._WEIGHT_PRIOR["US"]["tailwind"] == 0.0, (
+        "W9-B DEMOTE: US tailwind weight must be 0.0 (negative tercile spreads, "
+        "both panels — axis demoted to display-only context)"
+    )
+
+
+def test_w9b_non_us_tailwind_weight_unchanged():
+    """W9-B only applies to US; other markets are untested and must not change."""
+    for mkt in ("CA", "CN", "HK", "INTL"):
+        assert ss._WEIGHT_PRIOR[mkt]["tailwind"] > 0.0, (
+            f"W9-B: only US tailwind was demoted; {mkt} weight should remain > 0"
+        )
+
+
+def test_w9b_tailwind_axis_still_computed_for_display():
+    """W9-B: the tailwind axis z is still computed and present in the profile (display-only)."""
+    rec = _rec(basket={"rel20": 8.0}, sector_rs={"pct": 90.0})
+    p = ss.conviction_profile(rec, "US")
+    tw = p["axes"]["tailwind"]
+    # axis is computed and non-None (strong basket + sector-RS)
+    assert tw["z"] is not None
+    assert tw["present"]  # at least one present leg
+
+
+def test_w9b_tailwind_does_not_affect_us_composite_z():
+    """W9-B ordering invariant: changing tailwind inputs must not change US composite_z."""
+    rec_no_tail = _rec(basket=None, sector_rs=None)
+    rec_strong_tail = _rec(basket={"rel20": 12.0}, sector_rs={"pct": 95.0})
+    p_no = ss.conviction_profile(rec_no_tail, "US")
+    p_strong = ss.conviction_profile(rec_strong_tail, "US")
+    # If tailwind weight=0, composite_z must be equal (both share same sel/entry/quality inputs)
+    assert p_no.get("composite_z") == pytest.approx(p_strong.get("composite_z"), abs=1e-6), (
+        "W9-B: tailwind must not move US composite_z — weight is 0.0"
+    )
+
+
+def test_w9b_ca_tailwind_still_affects_composite():
+    """CA tailwind (weight > 0) must still move the composite_z (sanity check)."""
+    rec_no = _rec(basket=None, sector_rs=None, spotlight=None)
+    rec_tw = _rec(basket={"rel20": 12.0}, sector_rs={"pct": 95.0})
+    p_no = ss.conviction_profile(rec_no, "CA")
+    p_tw = ss.conviction_profile(rec_tw, "CA")
+    # With positive tailwind weight, the composite should differ
+    assert p_no.get("composite_z") != pytest.approx(p_tw.get("composite_z"), abs=1e-6)
