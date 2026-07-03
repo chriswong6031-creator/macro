@@ -287,6 +287,11 @@ def _capture_guard_logs(import_error: BaseException) -> tuple[list, Path]:
 
     h = _Cap(level=logging.DEBUG)
     old_level = bw.log.level
+    # logging.disable() is PROCESS-GLOBAL: an import-time leak elsewhere in the
+    # suite (e.g. a research CLI's module-level silencer) would mute bw.log and
+    # make these guard tests order-dependent. Clear it for the capture, restore after.
+    old_disable = logging.root.manager.disable
+    logging.disable(logging.NOTSET)
     bw.log.addHandler(h)
     bw.log.setLevel(logging.DEBUG)
     try:
@@ -295,6 +300,7 @@ def _capture_guard_logs(import_error: BaseException) -> tuple[list, Path]:
     finally:
         bw.log.removeHandler(h)
         bw.log.setLevel(old_level)
+        logging.disable(old_disable)
     return records, d
 
 

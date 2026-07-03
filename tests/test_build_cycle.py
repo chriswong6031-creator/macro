@@ -41,6 +41,18 @@ def _have(band) -> bool:
         return False
 
 
+@pytest.fixture(autouse=True)
+def _tripwires_to_tmp(tmp_path, monkeypatch):
+    """compute() runs the W3.3 tripwire pass, whose latch persistence targets the
+    CWD-relative data/cycle_ontology/tripwire_state.json — a TRACKED file. Point
+    the latch file at tmp so test runs never dirty the repo, and no-op alert
+    dispatch: against an empty tmp state every currently-FIRED tripwire would
+    count as newly fired and try to notify."""
+    from engine import falsifier_tripwires as ft
+    monkeypatch.setattr(ft, "_STATE_JSON", tmp_path / "tripwire_state.json")
+    monkeypatch.setattr(ft, "dispatch_alerts", lambda *a, **k: None)
+
+
 # ── (1) SEED PARSER ──────────────────────────────────────────────────────────
 def test_seed_parses_23_cycles():
     seed = _cycle_seed.load_seed(SEED_JS)
