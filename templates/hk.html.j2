@@ -435,7 +435,7 @@
   /* southbound + A/H conviction chips on the standout cards */
   .nb-flow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
   .nb-flow span { font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 7px; letter-spacing: .01em;
-      border: 1px solid var(--line); color: var(--muted); background: var(--panel); white-space: nowrap; }
+      border: 1px solid var(--line); color: var(--muted); background: var(--panel); overflow-wrap: anywhere; max-width: 100%; }
   .nb-flow .fl-buy { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line));
       background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
   .nb-flow .fl-sell { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line));
