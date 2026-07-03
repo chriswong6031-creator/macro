@@ -380,6 +380,10 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     "hold_days":       feat.get("hold_days"),
                     "hold_inv":        feat.get("hold_inv"),
                     "hold_anchor_src": feat.get("hold_anchor_src"),
+                    # W0.2b — tier_cascade was in _row_features but never emitted into the graded
+                    # record; add it here so aggregate() can stratify by T1/T2/T3/T4.
+                    # None on pre-schema boards (earliest revisions lacked the signal.tier_cascade field).
+                    "tier_cascade":    feat.get("tier_cascade"),
                     "ret": nret,
                 }
                 # excess vs SPY
@@ -530,6 +534,10 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                 "by_donor_state": _slice_table(buy, "donor_state", "excess_spy"),
                 # W6-C HOLD tracker — grades stratified by basing state at board publication
                 "by_hold_state": _slice_table(buy, "hold_state", "excess_spy"),
+                # W0.2b — tier_cascade stratification (T1/T2/T3/T4). Was captured in
+                # _row_features but never emitted to the graded record or stratified.
+                # "None" = pre-schema boards lacking the signal.tier_cascade field.
+                "by_tier_cascade": _slice_table(buy, "tier_cascade", "excess_spy"),
                 "mae_close_excess_spy": {
                     "median": round(float(buy["mae_close_excess_spy"].dropna().median()), 5)
                     if buy["mae_close_excess_spy"].notna().any() else None,

@@ -28,6 +28,7 @@ from scripts.grade_us_board import (  # noqa: E402
 
 def _minimal_grade_df(as_of="2026-01-02", n=3, horizon=5, lane="buy"):
     """Return a tiny graded DataFrame with all columns build_track expects."""
+    tiers = ["T1", "T2", "T3", "T4"]
     rows = []
     for i in range(n):
         rows.append({
@@ -49,6 +50,9 @@ def _minimal_grade_df(as_of="2026-01-02", n=3, horizon=5, lane="buy"):
             "donor_state": None, "donor_sector": None,
             "hold_state": None, "hold_days": None,
             "hold_inv": None, "hold_anchor_src": None,
+            # W0.2b — tier_cascade column (None on pre-schema boards; cycled through T1-T4 here
+            # so that _slice_table(buy, "tier_cascade", "excess_spy") exercises real strata).
+            "tier_cascade": tiers[i % len(tiers)],
         })
     return pd.DataFrame(rows)
 
@@ -177,3 +181,38 @@ def test_build_track_precision_at_k_present():
     # k1 through k5 exist (K_LIST = [1, 3, 5, 10]; only k1..k5 valid with n=6)
     for k in ["k1", "k3", "k5"]:
         assert k in buy_h5["precision_at_k_board_order_vs_spy"], f"{k} missing"
+
+
+# ---------------------------------------------------------------------------
+# W0.2b — tier_cascade in graded record + by_tier_cascade stratification
+# ---------------------------------------------------------------------------
+
+def test_graded_df_carries_tier_cascade():
+    """W0.2b: tier_cascade emitted into the graded record so retro_grades.parquet
+    stores the field (previously captured in _row_features but never in the rec dict)."""
+    df = _minimal_grade_df(n=4, lane="buy")
+    # _minimal_grade_df now cycles through T1-T4 for tier_cascade
+    assert "tier_cascade" in df.columns
+    assert set(df["tier_cascade"].dropna()) <= {"T1", "T2", "T3", "T4"}
+
+
+def test_build_track_by_tier_cascade_present():
+    """W0.2b: build_track emits by_tier_cascade in the buy_lane block so downstream
+    consumers can stratify graded results by T1/T2/T3/T4 cascade tier."""
+    df = _minimal_grade_df(n=4, lane="buy")
+    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    buy_h5 = track["per_horizon"]["h5"]["buy_lane"]
+    assert "by_tier_cascade" in buy_h5, "by_tier_cascade missing from buy_lane output"
+    # the strata should be non-empty (the df has T1/T2/T3/T4 with n=1 each)
+    assert len(buy_h5["by_tier_cascade"]) > 0
+
+
+def test_by_tier_cascade_hit_stats_are_bounded():
+    """W0.2b: per-tier hit_rate in by_tier_cascade is between 0 and 1 (sanity)."""
+    df = _minimal_grade_df(n=8, lane="buy")
+    track = build_track(df, _boards_stub("2026-01-02"), _names_stub())
+    by_tier = track["per_horizon"]["h5"]["buy_lane"]["by_tier_cascade"]
+    for tier, stats in by_tier.items():
+        if "hit_rate" in stats:
+            assert 0.0 <= stats["hit_rate"] <= 1.0, (
+                f"tier {tier} hit_rate={stats['hit_rate']} out of bounds")

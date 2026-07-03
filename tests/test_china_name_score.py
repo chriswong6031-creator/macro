@@ -7,6 +7,7 @@ import pandas as pd
 
 from engine import china_name_score as ns
 from engine import china_name_score_grader as gr
+from engine import name_score_grader as _ng  # the actual implementation (gr is a shim)
 
 
 def _rec(state, *, off_high=-10.0, vs200=0.0, rsi=55.0, entry_status="buy_now",
@@ -98,3 +99,78 @@ def test_grader_no_calls_is_honest(tmp_path, monkeypatch):
     monkeypatch.setattr(gr.config, "data_dir", lambda: tmp_path)
     g = gr.grade()
     assert g["available"] is False
+
+
+# ---------------------------------------------------------------------------
+# W0.3 — CN store-group fix: A-share board tickers now resolve prices
+# ---------------------------------------------------------------------------
+
+def test_cn_fwd_group_is_tuple_not_china_only():
+    """W0.3: _FWD_GROUP['CN'] in name_score_grader must be a tuple starting with
+    'china_stocks' — the fix for the dead grader (original "china" only → 0/N resolves
+    because all board tickers live in china_stocks, not in the ~30 ETF parquets in china)."""
+    grp = _ng._FWD_GROUP.get("CN")
+    assert isinstance(grp, tuple), f"_FWD_GROUP['CN'] must be a tuple, got {type(grp)}"
+    assert grp[0] == "china_stocks", f"first element must be 'china_stocks', got {grp[0]}"
+    assert "china" in grp, "china ETF fallback must still be present in the tuple"
+
+
+def test_cn_resolution_uses_china_stocks_first(tmp_path, monkeypatch):
+    """W0.3: a CN A-share ticker in china_stocks resolves; the same ticker absent from
+    the china ETF store would have returned None under the original single-group mapping."""
+    import numpy as np
+    import pandas as pd
+    from lib import config as lconfig, store as lstore
+
+    monkeypatch.setattr(lconfig, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(_ng.config, "data_dir", lambda: tmp_path)
+
+    dates = pd.bdate_range("2026-01-01", periods=130)
+    closes = 10.0 * (1.02 ** np.arange(len(dates)))
+    df = pd.DataFrame({"close": closes, "high": closes * 1.01,
+                       "low": closes * 0.99, "volume": np.full(len(dates), 1e6)},
+                      index=dates)
+    lstore.upsert("china_stocks", "600001.SS", df)     # per-name A-share store
+    # confirm the china (ETF) store does NOT have this ticker — proving the old mapping failed
+    assert lstore.read("china", "600001.SS") is None
+
+    # post-fix: _fwd_return resolves via china_stocks (on the real implementation module)
+    result = _ng._fwd_return("CN", "600001.SS", pd.Timestamp("2026-01-02"), 21)
+    assert result is not None, (
+        "W0.3 fix failed: CN ticker should resolve via china_stocks → non-None fwd return")
+
+
+def test_cn_grade_resolves_nonzero_after_fix(tmp_path, monkeypatch):
+    """W0.3: grade('CN') reports n_graded > 0 for a matured synthetic ledger once the
+    store-group fix is in place. Under the old mapping grade() always reported n_graded=0."""
+    import numpy as np
+    import pandas as pd
+    from lib import config as lconfig, store as lstore
+
+    monkeypatch.setattr(lconfig, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(_ng.config, "data_dir", lambda: tmp_path)
+
+    dates = pd.bdate_range("2026-01-01", periods=130)
+    # seed 10 per-name tickers in china_stocks
+    for i in range(10):
+        tk = f"60000{i}.SS"
+        closes = 10.0 * (1.02 ** np.arange(len(dates)))
+        df = pd.DataFrame({"close": closes, "high": closes * 1.01,
+                           "low": closes * 0.99, "volume": np.full(len(dates), 1e6)},
+                          index=dates)
+        lstore.upsert("china_stocks", tk, df)
+
+    # log 10 calls stamped at a date that has 21+ forward sessions (date[0] → exit date[21])
+    calls = [{"ticker": f"60000{i}.SS", "score": 50 + i * 5, "tier": "primed",
+              "fuel": 0.7, "trigger": 1.0, "level": 10.0} for i in range(10)]
+    gr.append_name_calls(calls, market="CN", asof=str(dates[0].date()))
+
+    result = gr.grade("CN")
+    assert result["available"] is True
+    assert result["n_calls"] == 10
+    # 21d horizon must have graded rows (not 0) since dates[0]+21 is within the series
+    n_21 = result.get("by_horizon", {}).get("21d", {}).get("n", 0)
+    assert n_21 > 0, (
+        f"W0.3 fix verification: expected n_21d > 0, got {n_21}. "
+        "If n==0, the store-group fix did not take effect."
+    )
