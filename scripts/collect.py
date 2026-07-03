@@ -174,6 +174,7 @@ def all_adapters() -> dict:
         ("hkma", "collectors.hkma", "HkmaAdapter"),                            # peg-funding: Aggregate Balance + HIBOR + TWI
         ("hk_indices", "collectors.hk_indices", "HkIndicesAdapter"),           # true Hang Seng TECH (HSTECH) index OHLCV — retires the 3033.HK ETF proxy
         ("hk_ah_official", "collectors.hk_ah_official", "HkAhOfficialAdapter"),  # official ~190-pair A/H premium snapshot + reconstructed daily index
+        ("hk_ah_panel", "collectors.hk_ah_panel", "HkAhPanelAdapter"),          # A/H matched-pair premium panel (25 pairs, 2001->): pure-compute from in-tree stores, no network
         ("hk_connect_channels", "collectors.hk_connect_channels", "HkConnectChannelsAdapter"),  # 港股通沪/深 per-channel southbound history (additive to china_connect)
         ("hk_southbound_holdings", "collectors.hk_southbound_holdings", "HkSouthboundHoldingsAdapter"),  # per-STOCK southbound holdings (mainland smart-money) — feeds the HK Stock Desk conviction
         ("hk_valuation", "collectors.hk_valuation", "HkValuationAdapter"),     # Baidu PE/PB market-median (currency-neutral; the read hk_fundamentals skips)
