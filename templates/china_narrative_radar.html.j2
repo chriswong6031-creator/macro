@@ -1,0 +1,362 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro pc(v) -%}
+{% if v is none %}<span class="chg na">·</span>{% else %}<span class="chg {{ 'pos' if v>=0 else 'neg' }}">{{ '%+.2f'|format(v) }}%</span>{% endif %}
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>China Narrative Basket Radar — Market Intelligence</title>
+<style>
+:root{
+  --blue:{{ C.blue if C.blue is defined else '#285FFF' }};
+  --indigo:{{ C.indigo if C.indigo is defined else '#4559DC' }};
+  --ink:{{ C.ink if C.ink is defined else '#0B1733' }};
+  --text:{{ C.text if C.text is defined else '#344054' }};
+  --muted:{{ C.muted if C.muted is defined else '#6F6F6F' }};
+  --faint:{{ C.faint if C.faint is defined else '#A0A0A0' }};
+  --red:{{ C.red if C.red is defined else '#D30B0B' }};
+  --amber:{{ C.amber if C.amber is defined else '#F5AD42' }};
+  --grid:{{ C.grid if C.grid is defined else '#EAECF0' }};
+  --card:{{ C.card if C.card is defined else '#FFFFFF' }};
+  --bg:{{ C.bg if C.bg is defined else '#F7F8FA' }};
+  --green:#1FA971;
+  --up:var(--green);
+  --down:var(--red);
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
+.site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
+.site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
+.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
+@media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+.nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
+html[data-theme="dark"] .lang-toggle{background:#222732}
+html[data-theme="dark"] .theme-switch{background:#222732}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
+/* zh up/down color flip at root */
+html[data-lang="zh"] .chg.pos{color:var(--red)}
+html[data-lang="zh"] .chg.neg{color:var(--green)}
+/* ─── Page chrome ────────────────────────────────────────────────── */
+.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 4px}
+.intro{color:var(--muted);font-size:14.5px;max-width:880px;margin-bottom:6px}
+.sec-h{display:flex;align-items:baseline;gap:12px;margin:34px 0 10px}
+.sec-h h2{font-size:21px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.02em}
+.sec-h .sub{color:var(--muted);font-size:13px}
+.chg{font-variant-numeric:tabular-nums;font-weight:700}
+.chg.pos{color:var(--green)} .chg.neg{color:var(--red)} .chg.na{color:var(--faint);font-weight:400}
+/* ─── Honesty banner ─────────────────────────────────────────────── */
+.honesty-banner{border-left:3px solid var(--amber);padding:10px 14px;margin:16px 0 22px;background:color-mix(in srgb,var(--amber) 8%,var(--card));border-radius:0 10px 10px 0;font-size:13px;color:var(--text);max-width:980px;line-height:1.6}
+.honesty-banner strong{color:var(--amber)}
+/* ─── Headline strip ─────────────────────────────────────────────── */
+.headline-strip{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 28px}
+.hl-card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:16px 20px;flex:1;min-width:220px;max-width:340px;position:relative}
+.hl-card .hl-rank{position:absolute;top:12px;right:14px;font-size:11px;font-weight:700;color:var(--muted);background:color-mix(in srgb,var(--blue) 10%,var(--card));border:1px solid color-mix(in srgb,var(--blue) 18%,transparent);border-radius:999px;padding:2px 8px}
+.hl-card .hl-name{font-size:17px;font-weight:800;color:var(--ink);margin:0 0 4px;line-height:1.2;padding-right:40px}
+.hl-card .hl-ret{font-size:28px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1;margin:4px 0}
+.hl-card .hl-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.shield{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.shield.on{background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green);border:1px solid color-mix(in srgb,var(--green) 25%,transparent)}
+.shield.off{background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--red);border:1px solid color-mix(in srgb,var(--red) 20%,transparent)}
+.shield.na{background:color-mix(in srgb,var(--muted) 10%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent)}
+.state-chip{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--grid);color:var(--muted)}
+.ai-arrow{font-size:14px;line-height:1}
+/* ─── Sort controls ──────────────────────────────────────────────── */
+.sort-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.sort-bar .lbl{font-size:12px;color:var(--muted);font-weight:600;margin-right:4px}
+.sort-btn{padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--grid);background:var(--card);color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.sort-btn:hover,.sort-btn.active{border-color:var(--blue);color:var(--blue);background:color-mix(in srgb,var(--blue) 8%,var(--card))}
+/* ─── Card grid ──────────────────────────────────────────────────── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.bcard{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:16px 18px;position:relative;transition:border-color .15s,box-shadow .15s}
+.bcard:hover{border-color:var(--blue);box-shadow:0 6px 22px -8px color-mix(in srgb,var(--blue) 22%,transparent)}
+.bcard .bc-rank{position:absolute;top:12px;right:14px;font-size:11px;font-weight:700;color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,var(--card));border:1px solid var(--grid);border-radius:999px;padding:2px 7px}
+.bcard .bc-name{font-size:15px;font-weight:800;color:var(--ink);margin:0 32px 2px 0;line-height:1.25}
+.bcard .bc-cat{font-size:11.5px;color:var(--muted);margin-bottom:6px}
+.bcard .bc-row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.bcard .bc-ret{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
+.bcard .bc-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+/* position bar */
+.posbar-wrap{margin:6px 0 4px}
+.posbar-track{height:5px;border-radius:999px;background:color-mix(in srgb,var(--muted) 14%,var(--card));position:relative;overflow:visible}
+.posbar-fill{position:absolute;top:0;left:0;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green),var(--amber) 65%,var(--red));width:var(--pct,50%)}
+.posbar-dot{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:var(--blue);border:2px solid var(--card);transform:translate(-50%,-50%);left:var(--pct,50%)}
+.posbar-ends{display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:2px}
+html[data-lang="zh"] .posbar-fill{background:linear-gradient(90deg,var(--red),var(--amber) 65%,var(--green))}
+/* AI confirmer */
+.ai-chip{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:9px;border:1px solid var(--grid);background:color-mix(in srgb,var(--muted) 5%,var(--card));font-size:11.5px;margin-bottom:6px}
+.ai-chip .ai-dir{font-size:16px;line-height:1}
+.ai-chip .ai-pct{font-variant-numeric:tabular-nums;font-weight:700}
+.ai-chip .ai-tag{font-size:10px;font-weight:700;padding:1px 5px;border-radius:999px;border:1px solid;margin-left:auto}
+.ai-chip .ai-tag.validated{color:var(--green);border-color:color-mix(in srgb,var(--green) 30%,transparent)}
+.ai-chip .ai-tag.partial{color:var(--blue);border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
+.ai-chip .ai-tag.limited{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 30%,transparent)}
+.ai-chip .ai-tag.weak{color:var(--muted);border-color:var(--grid)}
+/* Members */
+.members{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.member-chip{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:color-mix(in srgb,var(--blue) 8%,var(--card));border:1px solid color-mix(in srgb,var(--blue) 14%,transparent);color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s}
+.member-chip:hover{background:color-mix(in srgb,var(--blue) 16%,var(--card));border-color:color-mix(in srgb,var(--blue) 28%,transparent)}
+.member-chip .mr{font-size:10px;font-variant-numeric:tabular-nums;font-weight:400;color:var(--muted);margin-left:3px}
+.member-chip .mr.pos{color:var(--green)} .member-chip .mr.neg{color:var(--red)}
+html[data-lang="zh"] .member-chip .mr.pos{color:var(--red)} html[data-lang="zh"] .member-chip .mr.neg{color:var(--green)}
+/* Footer */
+.foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:980px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    {% include "_navlinks.html.j2" %}
+    <div class="nav-ctrls">
+      <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+      <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
+      <a class="ai-brief-link" href="china.html">🇨🇳 {{ t('China Regime','中国体制') }}</a>
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="h1">📡 {{ t('China Narrative Basket Radar','中国主题篮子雷达') }}</div>
+  <div class="intro">{{ t('Which THS theme basket is running, is its global driver intact, and which members have clean entries?','哪个同花顺主题篮子正在运行？其全球驱动因素是否完好？哪些成员具有清洁入场点？') }}</div>
+
+  {# ─── Honesty banner (bilingual) ──────────────────────────────────────── #}
+  <div class="honesty-banner">
+    <strong>{{ t('Positioning lens — NOT a buy list','定位透镜——非买入清单') }}</strong>
+    <br>
+    <span class="l-en">Theme momentum (63d rank) is a <strong>descriptive positioning lens</strong> — one-regime in backtest (#754/#773), <strong>NOT validated alpha</strong>. The global AI-semis arrow is a validated weekly directional confirmer for the CPO basket only (t=3.27, #773); other baskets are partial / 2024+-only / weak — honesty tags shown per card.</span>
+    <span class="l-zh"><strong>定位透镜 positioning lens</strong>：主题动量（63日排名）为描述性定位工具——历史回测仅单一机制（#754/#773），<strong>非经验证的超额收益</strong>。全球AI半导体箭头仅对CPO篮子为经验证的周度方向确认信号（t=3.27，#773）；其他篮子标注为"部分/仅限2024+/弱"，详见各卡片标签。</span>
+  </div>
+
+  {# ─── Headline strip: top-3 baskets by 63d return ─────────────────────── #}
+  <div class="sec-h">
+    <h2>🏆 {{ t('Top Running Baskets','领先运行主题') }}</h2>
+    <span class="sub">{{ t('trailing 63 trading days · as of','近63交易日 · 截至') }} {{ data.as_of }}</span>
+  </div>
+  <div class="headline-strip">
+  {% for b in data.baskets[:3] %}
+  {% set ret = b.ret_63d %}
+  {% set ab200 = b.above_200d %}
+  {% set ai = b.global_ai %}
+    <div class="hl-card">
+      <div class="hl-rank">#{{ b.rank_63d }}</div>
+      <div class="hl-name">
+        <span class="l-en">{{ b.name }}</span><span class="l-zh">{{ b.name_zh }}</span>
+      </div>
+      <div class="hl-ret">{{ pc(ret) }}</div>
+      <div class="hl-meta">
+        {# 200d shield #}
+        {% if ab200 is none %}
+          <span class="shield na" title="200d SMA · insufficient history">🛡 <span class="l-en">n/a</span><span class="l-zh">无数据</span></span>
+        {% elif ab200 %}
+          <span class="shield on" title="EW level above 200d SMA — trend gate: pass">🛡 <span class="l-en">Above 200d</span><span class="l-zh">200日均线上方</span></span>
+        {% else %}
+          <span class="shield off" title="EW level below 200d SMA — trend gate: fail">🛡 <span class="l-en">Below 200d</span><span class="l-zh">200日均线下方</span></span>
+        {% endif %}
+        {# State label #}
+        {% if b.state.label != '—' %}
+          <span class="state-chip">{{ t(b.state.label, b.state.label_zh) }}{% if b.state.score is not none %} · {{ b.state.score|int }}/100{% endif %}</span>
+        {% endif %}
+        {# Global AI arrow (AI-mapped baskets only) #}
+        {% if ai %}
+          <span class="ai-arrow" title="Global AI-semis (SMH/SOXX/TSM) 4w-momentum · {{ ai.validated_tag }}">
+            {% if ai.direction == 'up' %}↑{% elif ai.direction == 'down' %}↓{% else %}→{% endif %}
+            <span class="l-en">AI-semis</span><span class="l-zh">AI半导</span>
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+
+  {# ─── Sort controls ────────────────────────────────────────────────────── #}
+  <div class="sec-h">
+    <h2>📊 {{ t('All Baskets','全部主题篮子') }}</h2>
+    <span class="sub">{{ data.baskets|length }} {{ t('baskets · click a member to view its signals','个主题篮子 · 点击成员查看信号') }}</span>
+  </div>
+  <div class="sort-bar">
+    <span class="lbl">{{ t('Sort by:','排序方式：') }}</span>
+    <button class="sort-btn active" data-sort="rank">{{ t('Momentum (63d)','动量 63日') }}</button>
+    <button class="sort-btn" data-sort="score">{{ t('Cycle position','周期位置') }}</button>
+    <button class="sort-btn" data-sort="name">{{ t('Name','名称') }}</button>
+  </div>
+
+  <div class="card-grid" id="card-grid">
+  {% for b in data.baskets %}
+  {% set ret = b.ret_63d %}
+  {% set ab200 = b.above_200d %}
+  {% set ai = b.global_ai %}
+  {% set st = b.state %}
+    <div class="bcard"
+         data-rank="{{ b.rank_63d }}"
+         data-score="{{ st.score if st.score is not none else -1 }}"
+         data-name="{{ b.name }}">
+      <div class="bc-rank">#{{ b.rank_63d }}</div>
+
+      <div class="bc-name">
+        <span class="l-en">{{ b.name }}</span><span class="l-zh">{{ b.name_zh }}</span>
+      </div>
+      {% if b.category %}
+      <div class="bc-cat">
+        <span class="l-en">{{ b.category }}</span><span class="l-zh">{{ b.category_zh if b.category_zh else b.category }}</span>
+      </div>
+      {% endif %}
+
+      {# 63d return + 200d shield #}
+      <div class="bc-row1">
+        <span class="bc-ret">{{ pc(ret) }}</span>
+        {% if ab200 is none %}
+          <span class="shield na" title="200d SMA gate: insufficient history">🛡</span>
+        {% elif ab200 %}
+          <span class="shield on" title="Above 200d SMA">🛡 <span class="l-en">200d</span><span class="l-zh">200日</span></span>
+        {% else %}
+          <span class="shield off" title="Below 200d SMA">🛡 <span class="l-en">Below</span><span class="l-zh">下方</span></span>
+        {% endif %}
+      </div>
+
+      {# State label + bar #}
+      {% if st.score is not none %}
+      <div class="bc-meta">
+        <span class="state-chip">{{ t(st.label, st.label_zh) }} · {{ st.score|int }}/100</span>
+      </div>
+      <div class="posbar-wrap">
+        <div class="posbar-track">
+          <div class="posbar-fill" style="--pct:{{ st.score|int }}%"></div>
+          <div class="posbar-dot" style="--pct:{{ st.score|int }}%"></div>
+        </div>
+        <div class="posbar-ends">
+          <span>{{ t('Beaten down','深度超跌') }}</span>
+          <span>{{ t('Overheated','过热') }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      {# Global AI confirmer (AI-mapped baskets only) #}
+      {% if ai %}
+      <div class="ai-chip">
+        <span class="ai-dir">{% if ai.direction == 'up' %}↑{% elif ai.direction == 'down' %}↓{% else %}→{% endif %}</span>
+        <span><span class="l-en">AI-semis 4w</span><span class="l-zh">AI半导4周</span></span>
+        {% if ai.mom_4w_pct is not none %}
+          <span class="ai-pct {{ 'pos' if ai.direction == 'up' else 'neg' if ai.direction == 'down' else '' }}">{{ '%+.2f'|format(ai.mom_4w_pct) }}%</span>
+        {% endif %}
+        {% set htag = ai.validated_tag %}
+        {% if htag == 'validated' %}
+          <span class="ai-tag validated" title="t=3.27 CPO, pre-2024 survives, horse-race stable (#773)">✓ {{ t('validated','已验证') }}</span>
+        {% elif htag == 'partial' %}
+          <span class="ai-tag partial" title="Survives full sample; weaker pre-2024 split">~ {{ t('partial','部分') }}</span>
+        {% elif htag == '2024+-only' %}
+          <span class="ai-tag limited" title="Statistically strong but only post-2024">2024+</span>
+        {% else %}
+          <span class="ai-tag weak" title="Mapped but marginal in backtest">{{ t('weak','弱') }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# Member chips — link to china_lookup.html#TICKER #}
+      {% if b.top_members %}
+      <div class="members">
+        {% for m in b.top_members %}
+        <a class="member-chip" href="china_lookup.html#{{ m.ticker }}" title="{{ m.ticker }} · {{ t('63d return','63日收益') }}">
+          {{ m.name_zh }}
+          {% if m.ret_63d is not none %}
+            <span class="mr {{ 'pos' if m.ret_63d >= 0 else 'neg' }}">{{ '%+.1f'|format(m.ret_63d) }}%</span>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+  </div>
+
+  <div class="foot">
+    {{ t('Source: THS (同花顺) concept-board membership + china_search close cache. EW level = cumprod of mean active-member daily returns (≥3 members required). 63d return = trailing 63 trading-day EW-level return. 200d shield = EW level vs its 200d SMA. Cycle position = own-history percentile of distance-from-200DMA + drawdown-from-1y-high (engine.china_sector_pathway._position, leak-free). Global AI-semis = EW 4-week log-momentum of SMH+SOXX+TSM weekly closes → next-week CPO basket return (validated #773, t=3.27, horse-race stable). Member links → china_lookup.html per-stock signal badges.','来源：同花顺概念板块成员 + china_search 收盘价缓存。等权水平 = 每日活跃成员平均收益的累乘（至少需3名成员）。63日收益 = 近63个交易日等权水平收益。200日盾牌 = 等权水平 vs 200日均线。周期位置 = 偏离200日均线 + 距一年高点回撤的自身历史分位（engine.china_sector_pathway._position，无未来信息泄露）。全球AI半导 = SMH+SOXX+TSM 周线等权4周对数动量 → 下周CPO篮子收益（已验证 #773，t=3.27，对照稳健）。成员链接 → china_lookup.html 个股信号徽章。') }}
+    <br>{{ t('Built','生成于') }} {{ generated_utc }}.
+  </div>
+</div>
+
+<script>
+// ─── Theme + lang toggle ────────────────────────────────────────────────────
+(function(){
+  document.querySelectorAll('.theme-switch').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var d=document.documentElement;
+      var nxt=d.getAttribute('data-theme')==='dark'?'light':'dark';
+      d.setAttribute('data-theme',nxt);
+      try{localStorage.setItem('theme',nxt);}catch(e){}
+    });
+  });
+  document.querySelectorAll('.lang-toggle .opt').forEach(function(opt){
+    opt.addEventListener('click',function(){
+      var l=this.getAttribute('data-l');
+      document.documentElement.setAttribute('data-lang',l);
+      try{localStorage.setItem('lang',l);}catch(e){}
+    });
+  });
+})();
+
+// ─── Sort ───────────────────────────────────────────────────────────────────
+(function(){
+  var grid = document.getElementById('card-grid');
+  if(!grid) return;
+  var cards = Array.from(grid.children);
+  document.querySelectorAll('.sort-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.sort-btn').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      var key = btn.getAttribute('data-sort');
+      var sorted = cards.slice().sort(function(a,b){
+        if(key==='rank')   return (+a.dataset.rank)  - (+b.dataset.rank);
+        if(key==='score')  return (+b.dataset.score) - (+a.dataset.score);  // high score = top
+        if(key==='name')   return a.dataset.name.localeCompare(b.dataset.name);
+        return 0;
+      });
+      sorted.forEach(function(c){ grid.appendChild(c); });
+    });
+  });
+})();
+</script>
+</body>
+</html>
