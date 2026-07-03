@@ -30,12 +30,23 @@ Schema stored in `data/<engine>/forward_log.parquet` (append-only, keep-FIRST pe
   stance       str|None   resolve_state() stance key               (W1.6)
   divergence   bool|None  resolve_state() divergence flag          (W1.6)
   overdue      bool|None  True when projected central date < today (W1.6)
+  hazard_1m_p  float|None P(turn ≤ 1m) from model or KM prior    (W4.3)
+  hazard_1m_src str|None  'MODEL'|'PRIOR'                         (W4.3)
+  hazard_3m_p  float|None P(turn ≤ 3m)                           (W4.3)
+  hazard_3m_src str|None  'MODEL'|'PRIOR'                         (W4.3)
+  hazard_6m_p  float|None P(turn ≤ 6m)                           (W4.3)
+  hazard_6m_src str|None  'MODEL'|'PRIOR'                         (W4.3)
 
 NEW columns (proj_lo / proj_hi) fix the N-D2-1 gap: the cone-edge data hole that
 makes prospective cone-coverage grading impossible without them.
 
 W1.6 adds five new columns for the ontology live-in-data milestone.  All are additive
 (keep-FIRST untouched for existing columns).
+
+W4.3 adds six hazard columns (hazard_{1m,3m,6m}_{p,src}).  The hazard_score module
+writes MODEL for PASS cells and PRIOR for cells whose gate verdict is PRIOR.  These
+columns accrue daily from the first live stamp so reliability of the LIVE MODEL cells
+can be measured once n_matured ≥ 40 per cell (see experiments registry).
 
 Discipline: append-only, keep-FIRST per (date, id). A past day's stamp is NEVER
 rewritten — this is the PIT invariant. The grader re-enforces this on read;
@@ -67,7 +78,10 @@ def _extract_rows(data: dict) -> list[dict]:
         # the grader can enforce basis homogeneity (audit basis_version_homogeneous) and
         # never pool a price-epoch stamp with a tr_v0 one.
         basis = rec.get("basis") or nw.get("basis") or "tr"
-        rows.append({
+
+        # W4.3 — hazard scores (additive; None when scorer returns None)
+        hz = nw.get("hazard") or {}
+        row = {
             "date": asof,
             "id": rec.get("id"),
             "kind": rec.get("kind"),
@@ -92,7 +106,15 @@ def _extract_rows(data: dict) -> list[dict]:
             "overdue":   pr.get("overdue"),        # projection overdue flag
             # W2.2 basis stamp (additive) — the structure basis this stamp was computed on.
             "basis":     basis,
-        })
+            # W4.3 hazard scores — additive columns; None when scorer unavailable.
+            "hazard_1m_p":   (hz.get("1m") or {}).get("p"),
+            "hazard_1m_src": (hz.get("1m") or {}).get("source"),
+            "hazard_3m_p":   (hz.get("3m") or {}).get("p"),
+            "hazard_3m_src": (hz.get("3m") or {}).get("source"),
+            "hazard_6m_p":   (hz.get("6m") or {}).get("p"),
+            "hazard_6m_src": (hz.get("6m") or {}).get("source"),
+        }
+        rows.append(row)
     return rows
 
 

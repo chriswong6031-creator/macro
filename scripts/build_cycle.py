@@ -119,6 +119,17 @@ def _measured_record(cid: str, band: dict) -> dict | None:
     if x0 is not None:
         price_pts = [p for p in price_pts if (p.get("x") or 0) >= x0]
         osc_pts = [p for p in osc_pts if (p.get("x") or 0) >= x0]
+    # W4.3: score the hazard (P(turn ≤ 1m/3m/6m)) — additive, never fatal.
+    hz = None
+    hf = now.get("hazard_features")
+    if hf:
+        try:
+            from engine.hazard_score import score as _hz_score, _UP_PHASES
+            direction = "up" if (now.get("phase") or "") in _UP_PHASES else "down"
+            hz = _hz_score(hf, direction, family="flagship")
+        except Exception as _hz_exc:  # noqa: BLE001
+            log.debug("build_cycle: hazard score failed for %s: %s", cid, _hz_exc)
+
     return {
         "band": band["band"],
         "tier": "measured",
@@ -151,6 +162,7 @@ def _measured_record(cid: str, band: dict) -> dict | None:
             "lastTrough": now.get("lastTrough"),
             "freq": now.get("freq") or band["freq"],
             "hazard_features": now.get("hazard_features"),
+            "hazard": hz,               # W4.3: P(turn ≤ 1m/3m/6m) or None
         },
         "n_turns_all": rec.get("n_turns_all"),
     }

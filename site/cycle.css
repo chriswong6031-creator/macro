@@ -669,3 +669,16 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
   margin-bottom: 6px; border-bottom: 1px dashed color-mix(in srgb, var(--muted) 22%, transparent);
   padding-bottom: 5px;
 }
+
+/* ── W4.3 Turn-odds hazard line (MEASURED cards, focus panel) ─────────────── */
+.cyc-hazard { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;
+  font-size: 11px; line-height: 1.5; color: var(--text); background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; margin-bottom: 10px; }
+.hz-label { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); margin-right: 4px; flex-shrink: 0; }
+.hz-cell { cursor: help; font-variant-numeric: tabular-nums; }
+.hz-src { font-size: 9px; font-weight: 600; letter-spacing: .04em; color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+  border-radius: 999px; padding: 0 5px; vertical-align: middle; margin-left: 2px; }
+.hz-sep { color: var(--line); }
