@@ -1,0 +1,64 @@
+{
+  "prereg": "research/HK_CANADA_H2a_PREREG.md (bc0796822d)",
+  "n_trials_dsr": 30,
+  "trial_LEVEL": {
+    "trial": "LEVEL",
+    "sig": "s1",
+    "n_weeks": 666,
+    "mean_ic": -0.0074,
+    "ic_hac_t": -0.908,
+    "ic_hac_p": 0.3637,
+    "mean_Q5mQ1": -0.00394,
+    "sp_hac_t": -1.805,
+    "sp_hac_p": 0.0711,
+    "sign_correct": true,
+    "split_h1": -0.00023,
+    "split_h2": -0.00766,
+    "split_sign_ok": true,
+    "book_sharpe_wk": 0.1152,
+    "t_eff": 189,
+    "dsr": 0.3174,
+    "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)"
+  },
+  "trial_DELTA4W": {
+    "trial": "DELTA4W",
+    "sig": "s2",
+    "n_weeks": 662,
+    "mean_ic": -0.009,
+    "ic_hac_t": -1.187,
+    "ic_hac_p": 0.2351,
+    "mean_Q5mQ1": -0.00202,
+    "sp_hac_t": -0.975,
+    "sp_hac_p": 0.3297,
+    "sign_correct": true,
+    "split_h1": -0.00335,
+    "split_h2": -0.00068,
+    "split_sign_ok": true,
+    "book_sharpe_wk": 0.0578,
+    "t_eff": 210,
+    "dsr": 0.1053,
+    "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)"
+  },
+  "bh_fdr": {
+    "DELTA4W": {
+      "p": 0.3297,
+      "q": 0.3297,
+      "reject": false
+    },
+    "LEVEL": {
+      "p": 0.0711,
+      "q": 0.1422,
+      "reject": false
+    }
+  },
+  "lag_cost_T0_Q5mQ1_LEVEL": -0.00496,
+  "secondary_svl_LEVEL": {
+    "mean_Q5mQ1": -0.00516,
+    "hac_t": -2.413,
+    "n_wk": 666
+  },
+  "surv_imputed_Q5mQ1_LEVEL": -0.00394,
+  "surv_sign_held": true,
+  "coverage_core": 157,
+  "coverage_union": 157
+}
