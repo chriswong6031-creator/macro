@@ -33,7 +33,12 @@
 }
 
 mastermind-x.com, www.mastermind-x.com {
-	root * /opt/macro/site
+	# Root is /opt/macro/site.served, NOT the git work-tree /opt/macro/site.
+	# macro-update rsyncs site/ -> site.served (atomic per-file rename) so a
+	# `git reset --hard` refresh can never expose a half-written 0-byte file to be
+	# cached by the CDN edge (the 2026-07-03 white-page incident). Paired with the
+	# short must-revalidate Cache-Control below as defence-in-depth.
+	root * /opt/macro/site.served
 	encode zstd gzip
 
 	# Slice 2 backend — FastAPI (macro-api.service) on localhost. Everything under

@@ -16,7 +16,7 @@ log() { echo "[setup] $*"; }
 log "[1/6] base packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl git ufw gnupg
+apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl git ufw gnupg rsync
 
 log "[2/6] Caddy (official repo)"
 if ! command -v caddy >/dev/null 2>&1; then
@@ -37,6 +37,15 @@ else
 	git clone --depth 1 --branch main "$REPO_URL" "$APP_DIR"
 fi
 test -f "$APP_DIR/site/index.html" || { log "FATAL: $APP_DIR/site/index.html missing after clone"; exit 1; }
+
+# Publish the served tree ATOMICALLY into a dir OUTSIDE the git work-tree, so the
+# `git reset --hard` in update.sh can never expose a 0-byte file to Caddy/the CDN
+# (2026-07-03 white-page incident). Caddy's root is $APP_DIR/site.served (see
+# Caddyfile); it MUST exist + be populated before Caddy starts below, or the site
+# 404s until the first cron pull. rsync is atomic per-file (temp-write + rename).
+log "[3b/6] publish served tree -> $APP_DIR/site.served (atomic)"
+mkdir -p "$APP_DIR/site.served"
+rsync -a --delete "$APP_DIR/site/" "$APP_DIR/site.served/"
 
 log "[4/6] install + validate Caddyfile"
 install -m 0644 "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile
@@ -68,6 +77,6 @@ install -m 0644 "$APP_DIR/app/deploy/logrotate-macro-vps" /etc/logrotate.d/macro
 # a CF-fetch failure leaves provisioning intact rather than blocking the deploy.
 bash "$APP_DIR/app/deploy/firewall-cloudflare.sh" || log "firewall step skipped (non-fatal)"
 
-log "DONE — Caddy serving https://$DOMAIN from $APP_DIR/site"
+log "DONE — Caddy serving https://$DOMAIN from $APP_DIR/site.served (atomic mirror of $APP_DIR/site)"
 log "HEAD: $(git -C "$APP_DIR" rev-parse --short HEAD)"
 systemctl --no-pager status caddy | head -4 || true

@@ -4,6 +4,10 @@ __pycache__/
 *.pyc
 .DS_Store
 .env
+# VPS deploy artifact: Caddy's served root is an atomic rsync mirror of site/,
+# living OUTSIDE the git work-tree so `git reset --hard` can't expose a partial
+# file (app/deploy/update.sh + Caddyfile). Box-only; never committed.
+site.served/
 site/_tmp/
 site/stockdata/
 site/ohlc/
