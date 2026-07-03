@@ -194,6 +194,29 @@ _PORT_STAMPS = ("washout_2w", "extended", "hold_basing", "dt_compress")
 # Optional risk-gate stamp columns — same nullable-bool semantics as _PORT_STAMPS.
 _GATE_STAMPS = ("placement_flag",)
 
+# Columns that carry strings (or bool/None) but are nullable: an all-NaN column read
+# from parquet types as float64, and pandas 3.x then REFUSES a string cell write
+# (TypeError: Invalid value 'CLEAN_LIFTOFF' for dtype 'float64'). Coerce to object
+# wherever a frame is assembled so cell writes are dtype-safe regardless of how a
+# legacy parquet happened to be typed.
+_OBJECT_COLS = (
+    "species_id", "archetype", "own_market_regime", "own_market_regime_note",
+    "us_rate_pressure", "us_quad_hard_label", "us_fused_risk_label",
+    "us_vol_regime", "us_risk_radar_state", "us_regime_vector_degraded",
+    "vector_asof",
+    "terminal_state_clean15_126", "terminal_state_clean8_21",
+    "post_cushion_breach",
+)
+
+
+def _coerce_object_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """Force the string-bearing nullable columns to object dtype (NaN → None)."""
+    for col in _OBJECT_COLS:
+        if col in df.columns and df[col].dtype != object:
+            coerced = df[col].astype(object)
+            df[col] = coerced.where(pd.notna(coerced), None)
+    return df
+
 # Own-market regime constraint note (documented null — see module docstring §3a)
 _OWN_REGIME_NOTE = (
     "null: HK/CA regime_history.parquet is recomputed from latest-state on each run "
@@ -353,6 +376,7 @@ def append_board(
             )
             # keep-FIRST per (date, ticker) — honesty: stamp is immutable once written
             combined = combined.drop_duplicates(subset=["date", "ticker"], keep="first")
+            combined = _coerce_object_cols(combined)
         else:
             combined = new
         for col in (*_PORT_STAMPS, *_GATE_STAMPS):
@@ -493,6 +517,7 @@ def grade(market: str) -> dict:
     for col in all_cols:
         if col not in df.columns:
             df[col] = None
+    df = _coerce_object_cols(df)
 
     bench = _bench_close(m)
     ca_cache: dict = {}

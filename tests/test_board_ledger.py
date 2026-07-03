@@ -441,8 +441,10 @@ class TestPortStamps:
         keep-FIRST still enforced."""
         monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
 
-        legacy_cols = [c for c in bl._SCHEMA
-                       if c not in (*bl._PORT_STAMPS, *bl._GATE_STAMPS)]
+        # the TRUE pre-stamp 10-column schema, frozen — deriving from the live
+        # _SCHEMA made this test break every time the schema legitimately grows
+        legacy_cols = ["date", "market", "ticker", "board_pos", "group",
+                       "edge_z", "gate_tier", "align_tier", "entry_state", "close_asof"]
         legacy = pd.DataFrame([{
             "date": "2026-07-09", "market": "HK", "ticker": "0001.HK",
             "board_pos": 1, "group": "entry_open", "edge_z": 1.0,
