@@ -17,8 +17,41 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.build_canada_library import (  # noqa: E402
-    _branch_b_order, _lead_sentence, _oil_regime_on, _row_group,
+    _branch_b_order, _build_watch, _lead_sentence, _oil_regime_on, _row_group,
 )
+
+
+def test_build_watch_strong_but_blocked():
+    """WATCH strip (W6): strong momentum SCREEN z the alignment gate held OUT of the buy
+    list — a real edge with no base yet. Aligned/near names and sub-floor screens excluded;
+    a still-falling weekly is tagged watch_reason='knife'."""
+    cand = [
+        (9.0, {"ticker": "KNF.TO", "name": "Knife Co", "alpha": 2.4}),   # strong, weekly falling -> knife
+        (9.0, {"ticker": "BLK.TO", "name": "Blocked Co", "alpha": 1.5}),  # strong, blocked, weekly basing
+        (9.0, {"ticker": "BUY.TO", "name": "Aligned Co", "alpha": 3.0}),  # strong but ALIGNED -> not watch
+        (1.0, {"ticker": "WEAK.TO", "name": "Weak Co", "alpha": 0.1}),    # sub-floor -> never watch
+    ]
+    align_map = {
+        "KNF.TO": {"aligned": False, "near": False, "weekly": "bear_falling", "reason": "wk falling"},
+        "BLK.TO": {"aligned": False, "near": False, "weekly": "bear_recovering", "reason": "no turn"},
+        "BUY.TO": {"aligned": True, "near": False, "weekly": "basing"},
+    }
+    profiles = {"KNF.TO": {"score": 60, "verdict": "v", "verdict_zh": "v"}}
+    watch = _build_watch(cand, buys=[{"ticker": "BUY.TO"}], align_map=align_map, profiles=profiles)
+    tickers = [w["ticker"] for w in watch]
+    assert "BUY.TO" not in tickers            # aligned -> excluded
+    assert "WEAK.TO" not in tickers           # sub-floor -> excluded
+    assert set(tickers) == {"KNF.TO", "BLK.TO"}
+    by_t = {w["ticker"]: w for w in watch}
+    assert by_t["KNF.TO"]["watch_reason"] == "knife"      # falling weekly
+    assert by_t["BLK.TO"]["watch_reason"] == "blocked"    # blocked, not falling
+    assert watch[0]["ticker"] == "KNF.TO"     # knives first, then by screen z desc
+    assert by_t["KNF.TO"]["conviction"]["score"] == 60    # profile stitched on
+
+
+def test_build_watch_empty_pool_is_safe():
+    assert _build_watch([], buys=[], align_map={}, profiles={}) == []
+    assert _build_watch(None, buys=None, align_map=None, profiles=None) == []
 
 
 def _row(ticker, alpha, status, **kw):
