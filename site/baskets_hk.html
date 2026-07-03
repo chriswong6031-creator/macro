@@ -557,6 +557,106 @@
 </div>
   
   <div id="sleeve-chip"></div>
+
+  <style>
+    .ign-hdr { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:10px 0 2px; font-size:12.5px; }
+    .ign-hdr .ign-asof { color:var(--muted); font-variant-numeric:tabular-nums; }
+    .ign-stale { font-size:11px; font-weight:700; padding:1px 8px; border-radius:7px;
+      background:rgba(250,204,21,.14); border:1px solid rgba(250,204,21,.45); color:var(--warn); }
+    .ign-radar { display:none; align-items:center; gap:9px; font-size:12.5px; padding:8px 12px;
+      border-radius:9px; margin:8px 0 4px; border:1px solid var(--line); background:var(--panel2); }
+    .ign-radar.on { display:flex; }
+    .ign-radar .rd-ic { font-size:15px; }
+    .ign-radar.elevated, .ign-radar.risk-off { background:rgba(248,113,113,.12); border-color:rgba(248,113,113,.4); }
+    .ign-radar b { font-weight:660; }
+    .ign-strip { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 12px; margin:6px 0 6px; }
+    .ign-note { font-size:11px; color:var(--muted); font-style:italic; margin:2px 0 9px; line-height:1.45; max-width:96ch; }
+    .ign-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; }
+    .ign-card { border:1px solid var(--line); border-left:3px solid var(--ic,#888); border-radius:9px; padding:9px 10px; background:var(--panel2); }
+    .ign-card .ic-top { display:flex; align-items:baseline; gap:8px; }
+    .ign-card .ic-rk { font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .ign-card .ic-nm { font-weight:640; font-size:12.5px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ign-card .ic-sc { font-size:16px; font-weight:720; font-variant-numeric:tabular-nums; }
+    .ign-state { font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:1px 6px; border-radius:6px; white-space:nowrap; }
+    .ign-state.igniting { color:var(--up); border:1px solid var(--up); }
+    .ign-state.running  { color:var(--warn); border:1px solid var(--warn); }
+    .ign-state.fading, .ign-state.idle { color:var(--muted); border:1px solid var(--line); }
+    .ign-chips { display:flex; flex-wrap:wrap; gap:3px 5px; margin-top:6px; }
+    .ign-chip { font-size:10px; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:5px; padding:0 5px; font-variant-numeric:tabular-nums; }
+    .ign-chip.on { color:var(--up); border-color:var(--up); }
+    .ign-prov { font-size:10px; color:var(--muted); margin-top:5px; opacity:.85; }
+    @media (max-width:680px){ .ign-cards { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; } .ign-card { padding:7px 8px; } }
+  </style>
+  <section id="ignition-section" style="margin-top:8px">
+    <div class="ign-hdr">
+      <h2 style="margin:0"><span class="idx">★</span>🔥 <span class="l-en">Sector ignition</span><span class="l-zh">板块点火</span>
+        <span class="sect-tag"><span class="l-en">turn evidence · not trailing strength</span><span class="l-zh">拐点证据 · 非追涨强度</span></span></h2>
+      <span class="ign-asof"><span class="l-en">basket prices as of</span><span class="l-zh">篮子价格截至</span> <b id="ign-asof">—</b></span>
+      <span class="ign-stale" id="ign-stale" style="display:none"></span>
+    </div>
+    <div class="ign-radar" id="ign-radar"><span class="rd-ic">⚠️</span><span id="ign-radar-txt"></span></div>
+    <p class="ign-note"><span class="l-en">Baskets ranked by TURN evidence — fresh breadth thrust (members newly crossing their 20-day line), relative-strength curvature (is RS turning up, not just high), and a weekly higher-timeframe confirm. Display-only, forward-graded, NOT validated: this is a descriptive read, not a buy signal, and its forward value is being scored in public. Narrow market — ignition is context, not a ranker.</span><span class="l-zh">篮子按拐点证据排名 — 新鲜广度推力（成分股刚上穿 20 日线）、相对强度曲率（RS 是否正在向上拐，而非仅仅偏高），以及周线高周期确认。仅供展示、前瞻打分、未经验证：这是描述性读数而非买入信号，其前瞻价值正在公开打分中。窄市场 — 点火为参考背景，非排序依据。</span></p>
+    <p class="ign-note" id="ign-scoreboard"></p>
+    <div class="ign-strip"><div class="ign-cards" id="ign-cards"></div></div>
+  </section>
+  <script>
+  (function(){
+    var IGN = {"market":"hk","as_of":"2026-06-18","has_southbound_leg":false,"commodity_flip_active":false,"items":[{"id":"hk_dividend","ignition_score":0.5264,"state":"running","components":{"breadth_thrust":null,"breadth_n":[0,0],"rs_slope_change":0.5396,"rs_slope_raw":0.00396,"mtf_confirm":0.5,"mtf_ok":true,"commodity_flip":false},"name":"High-Dividend Blue Chips","name_zh":"高股息蓝筹","category":"Telecom, Utilities & Income","resource_mapped":false},{"id":"hk_banks","ignition_score":0.4366,"state":"running","components":{"breadth_thrust":0.1667,"breadth_n":[1,6],"rs_slope_change":0.9248,"rs_slope_raw":0.06273,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Banks (H + HK)","name_zh":"银行","category":"Financials","resource_mapped":false},{"id":"hk_biotech","ignition_score":0.4122,"state":"running","components":{"breadth_thrust":0.1111,"breadth_n":[1,9],"rs_slope_change":0.9195,"rs_slope_raw":0.06088,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Biotech, Pharma & CXO","name_zh":"生物医药与CXO","category":"Consumer & Healthcare","resource_mapped":false},{"id":"hk_ev","ignition_score":0.3891,"state":"running","components":{"breadth_thrust":0.0,"breadth_n":[0,3],"rs_slope_change":0.9728,"rs_slope_raw":0.08945,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"China EV & Autos","name_zh":"中资电动车","category":"Autos & EV","resource_mapped":false},{"id":"hk_china_tech","ignition_score":0.3504,"state":"running","components":{"breadth_thrust":0.2,"breadth_n":[2,10],"rs_slope_change":0.6759,"rs_slope_raw":0.01838,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"China Tech & Internet","name_zh":"中资科技与互联网","category":"Tech & Internet","resource_mapped":false},{"id":"hk_insurers","ignition_score":0.3176,"state":"fading","components":{"breadth_thrust":0.0,"breadth_n":[0,3],"rs_slope_change":0.794,"rs_slope_raw":0.03373,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Insurers","name_zh":"保险","category":"Financials","resource_mapped":false},{"id":"hk_industrials","ignition_score":0.3032,"state":"fading","components":{"breadth_thrust":0.3333,"breadth_n":[3,9],"rs_slope_change":0.4246,"rs_slope_raw":-0.0076,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Industrials & Infrastructure","name_zh":"工业与基建","category":"Industrials & Transport","resource_mapped":false},{"id":"hk_materials","ignition_score":0.2147,"state":"fading","components":{"breadth_thrust":0.0,"breadth_n":[0,6],"rs_slope_change":0.5366,"rs_slope_raw":0.00367,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Materials & Metals","name_zh":"有色金属","category":"Energy & Resources","resource_mapped":false},{"id":"hk_consumer","ignition_score":0.2048,"state":"fading","components":{"breadth_thrust":0.0,"breadth_n":[0,9],"rs_slope_change":0.5121,"rs_slope_raw":0.00121,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"China Consumer Brands","name_zh":"中资消费品牌","category":"Consumer & Healthcare","resource_mapped":false},{"id":"hk_gaming","ignition_score":0.1497,"state":"idle","components":{"breadth_thrust":0.0,"breadth_n":[0,1],"rs_slope_change":0.3743,"rs_slope_raw":-0.01285,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Macau Gaming","name_zh":"澳门博彩","category":"Gaming & Tourism","resource_mapped":false},{"id":"hk_conglo","ignition_score":0.0663,"state":"idle","components":{"breadth_thrust":0.0,"breadth_n":[0,2],"rs_slope_change":0.1658,"rs_slope_raw":-0.0404,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Conglomerates & Exchange","name_zh":"综合企业与交易所","category":"Financials","resource_mapped":false},{"id":"hk_energy","ignition_score":0.0248,"state":"idle","components":{"breadth_thrust":0.0,"breadth_n":[0,5],"rs_slope_change":0.062,"rs_slope_raw":-0.06792,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Energy (H-shares)","name_zh":"能源","category":"Energy & Resources","resource_mapped":false},{"id":"hk_telco_util","ignition_score":0.0045,"state":"idle","components":{"breadth_thrust":0.0,"breadth_n":[0,4],"rs_slope_change":0.0111,"rs_slope_raw":-0.11217,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Telecom & Utilities","name_zh":"电信与公用事业","category":"Telecom, Utilities & Income","resource_mapped":false},{"id":"hk_property","ignition_score":0.0022,"state":"idle","components":{"breadth_thrust":0.0,"breadth_n":[0,7],"rs_slope_change":0.0056,"rs_slope_raw":-0.1297,"mtf_confirm":0.0,"mtf_ok":false,"commodity_flip":false},"name":"Property & REITs","name_zh":"地产与REITs","category":"Property","resource_mapped":false}],"scoreboard":{"market":"hk","n_graded":0,"note":"scoreboard accruing — first read ~Aug 2026 (4w grades mature ~+20 sessions)","n_logged_today":0}};
+    var IGN_PROV = {"curated":"2026-06-18","by_id":{"hk_china_tech":{"curated":"2026-06-18","created":"2021-06-15"},"hk_consumer":{"curated":"2026-06-18","created":"2021-06-15"},"hk_biotech":{"curated":"2026-06-18","created":"2021-06-15"},"hk_ev":{"curated":"2026-06-18","created":"2021-06-15"},"hk_banks":{"curated":"2026-06-18","created":"2021-06-15"},"hk_insurers":{"curated":"2026-06-18","created":"2021-06-15"},"hk_conglo":{"curated":"2026-06-18","created":"2021-06-15"},"hk_property":{"curated":"2026-06-18","created":"2021-06-15"},"hk_gaming":{"curated":"2026-06-18","created":"2021-06-15"},"hk_energy":{"curated":"2026-06-18","created":"2021-06-15"},"hk_materials":{"curated":"2026-06-18","created":"2021-06-15"},"hk_telco_util":{"curated":"2026-06-18","created":"2021-06-15"},"hk_dividend":{"curated":"2026-06-18","created":"2021-06-15"},"hk_industrials":{"curated":"2026-06-18","created":"2021-06-15"}}};
+    var IGN_FRESH = {"as_of":"2026-06-18","trading_days_old":11,"stale":true,"threshold":3};
+    var IGN_RADAR = {"state":"caution","market":"hk","dominant_scare":"capital_flow","drawdown_prob":0.34,"asof":"2026-07-03"};
+    var LANGof = function(){ return document.documentElement.getAttribute('data-lang')||'en'; };
+    function nm(it){ return (LANGof()==='zh' && it.name_zh) ? it.name_zh : (it.name||it.id); }
+    function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+    var STLAB = { igniting:['Igniting','点火'], running:['Running','运行'], fading:['Fading','退潮'], idle:['Idle','静止'] };
+    function render(){
+      var zh = LANGof()==='zh';
+      // as-of + freshness gate
+      var asofEl=document.getElementById('ign-asof'); if(asofEl) asofEl.textContent = IGN.as_of || (IGN_FRESH.as_of||'—');
+      var st=document.getElementById('ign-stale');
+      if(st){ if(IGN_FRESH && IGN_FRESH.stale){ st.style.display='inline-block';
+          st.textContent = (zh?'篮子价格已过期 ':'basket prices ')+ (IGN_FRESH.trading_days_old!=null?IGN_FRESH.trading_days_old:'?') +(zh?' 个交易日':' trading days stale'); }
+        else st.style.display='none'; }
+      // risk-radar drawdown banner (presence-guarded)
+      var rd=document.getElementById('ign-radar'); var rdt=document.getElementById('ign-radar-txt');
+      if(rd && IGN_RADAR && IGN_RADAR.state && ['elevated','risk-off','caution','watch'].indexOf(IGN_RADAR.state)>=0){
+        rd.className='ign-radar on '+IGN_RADAR.state;
+        var dd = (IGN_RADAR.drawdown_prob!=null)? ' · '+(zh?'回撤概率':'drawdown odds')+' '+Math.round(IGN_RADAR.drawdown_prob*100)+'%' : '';
+        var scare = IGN_RADAR.dominant_scare? ' · '+esc(IGN_RADAR.dominant_scare):'';
+        rdt.innerHTML = '<b>'+(zh?'风险雷达':'Risk radar')+': '+esc(IGN_RADAR.state)+'</b>'+esc(scare)+dd+' — '+(zh?'展示性回撤风险背景':'display-only drawdown-risk context');
+      } else if(rd){ rd.className='ign-radar'; }
+      // scoreboard accruing line
+      var sb=document.getElementById('ign-scoreboard');
+      if(sb){ var sc=IGN.scoreboard||{}; var ng=sc.n_graded||0;
+        sb.textContent = ng>0 ? (zh?('评分板：已评 '+ng+' 项 · 4周命中精度 '+(sc.alert_precision_4w!=null?Math.round(sc.alert_precision_4w*100)+'%':'—'))
+                                   :('Scoreboard: '+ng+' graded · 4w alert precision '+(sc.alert_precision_4w!=null?Math.round(sc.alert_precision_4w*100)+'%':'—')))
+                              : (zh?'评分板积累中 — 首次读数约 2026 年 8 月（4 周窗口成熟）':'Scoreboard accruing — first read ~Aug 2026 (4-week window matures).'); }
+      // cards
+      var el=document.getElementById('ign-cards'); if(!el) return;
+      var PAL=['#4ade80','#facc15','#5aa7ff','#fb923c','#a78bfa','#2dd4bf','#f472b6','#38bdf8'];
+      var items=(IGN.items||[]).filter(function(i){return i.ignition_score!=null;});
+      if(!items.length){ el.innerHTML='<p class="ign-note">'+(zh?'暂无点火读数（数据不足）。':'No ignition reads yet (insufficient data).')+'</p>'; return; }
+      el.innerHTML = items.map(function(it,i){
+        var c=it.components||{}; var color=PAL[i%PAL.length];
+        var stl=STLAB[it.state]||[it.state,it.state]; var stt=zh?stl[1]:stl[0];
+        var chips=[];
+        if(c.breadth_thrust!=null) chips.push('<span class="ign-chip">'+(zh?'广度':'thrust')+' '+Math.round(c.breadth_thrust*100)+'% ('+(c.breadth_n?c.breadth_n[0]+'/'+c.breadth_n[1]:'')+')</span>');
+        if(c.rs_slope_change!=null) chips.push('<span class="ign-chip">RS↗ '+c.rs_slope_change.toFixed(2)+'</span>');
+        if(c.mtf_confirm!=null) chips.push('<span class="ign-chip">'+(zh?'周线':'wk')+' '+(c.mtf_ok?(zh?'确认':'ok'):(zh?'下破':'down'))+'</span>');
+        if(c.commodity_flip) chips.push('<span class="ign-chip on">'+(zh?'油价翻多':'oil flip')+'</span>');
+        var prov=IGN_PROV.by_id&&IGN_PROV.by_id[it.id]; var pl='';
+        if(prov&&prov.curated){ pl=(zh?'整理于 ':'curated ')+esc(prov.curated)+(zh?' — 描述性，非样本外':' — descriptive, not out-of-sample'); }
+        return '<div class="ign-card" style="--ic:'+color+'">'
+          +'<div class="ic-top"><span class="ic-rk">#'+(i+1)+'</span><span class="ic-nm">'+esc(nm(it))+'</span><span class="ic-sc">'+it.ignition_score.toFixed(2)+'</span></div>'
+          +'<div style="margin-top:4px"><span class="ign-state '+it.state+'">'+esc(stt)+'</span></div>'
+          +'<div class="ign-chips">'+chips.join('')+'</div>'
+          + (pl?'<div class="ign-prov">'+pl+'</div>':'') +'</div>';
+      }).join('');
+    }
+    if(document.readyState!=='loading') render(); else document.addEventListener('DOMContentLoaded',render);
+    document.addEventListener('langchange',render);
+  })();
+  </script>
   <section id="actnow-section" style="margin-top:6px">
     <h2><span class="idx">★</span>✅ <span class="l-en">What to act on now</span><span class="l-zh">现在该做什么</span>
       <span class="sect-tag"><span class="l-en">buy now · wait for a pullback · reduce / avoid</span><span class="l-zh">立即买入 · 等待回调 · 减仓回避</span></span></h2>
@@ -633,7 +733,7 @@
 
   <footer>
     <span class="l-en">Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE hk_search HK-listed price cache (~5y, HSI/HSCEI names), benchmarked to the Hang Seng Index. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费的 china_search 大市值 A 股价格缓存（约 5 年），以恒生指数 (HSI) 为基准。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-03 15:58 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-03 16:50 UTC</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>

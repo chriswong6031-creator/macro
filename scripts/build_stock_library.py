@@ -1688,6 +1688,81 @@ def main() -> int:
         near = sorted([x for x in elig if x[2] == "near"], key=_asort, reverse=True)
         buyable = (aligned if len(aligned) >= ALIGN_MIN_KEEP
                    else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])
+
+        # ── W8-C Lane R admission ─────────────────────────────────────────────
+        # Evidence: W8-C wave8_ctlane: CT-BOUNCE fires == aligned fires on
+        # stop5/clean15 (deltas -0.2/-0.6pp, stable halves) → the _ALIGN_BAD_STATES
+        # hard-block on COUNTERTREND BOUNCE is unjustified; Lane R is licensed as
+        # EQUAL CITIZENS (no claimed edge, safety passed). Names already on the
+        # trend lane (aligned or near) keep lane='trend'. Names rejected ONLY
+        # because their ladder.state is in _ALIGN_BAD_STATES (not for knife or
+        # weekly-falling — those remain excluded) are reconsidered for lane='recovery'
+        # iff is_buyable AND not extended. Cap: at most 12 recovery rows.
+        from engine.cycles import _ALIGN_BAD_STATES as _ABS, _ALIGN_KNIFE_BLOCK as _AKB
+        from engine.china_signals import extension_read as _ext_read
+        _RECOVERY_CAP = 12
+        _buy_tickers_trend = {t for t, _, _ in buyable}
+
+        def _is_ctlane_candidate(t, p):
+            """True iff rejected ONLY due to _ALIGN_BAD_STATES (not knife/weekly-falling).
+
+            The masterplan explicitly requires knife and weekly-falling exclusions to
+            remain hard blocks in Lane R — only the _ALIGN_BAD_STATES state veto is
+            relaxed. We check both extra exclusion conditions from the alignment dict
+            (a["knife"] and a["weekly"]) so a name that is simultaneously a knife AND
+            COUNTERTREND BOUNCE is NOT admitted.
+            """
+            if t in _buy_tickers_trend:
+                return False          # already on trend lane
+            if not _entry_ok(p):
+                return False          # cycle_blocked or bad entry_z
+            a = p.get("alignment") or {}
+            if a.get("aligned") or a.get("near"):
+                return False          # actually passed alignment; shouldn't reach here
+            # Hard-block: knife (deep below 200dma, falling) remains excluded
+            if (a.get("knife") or 0.0) >= _AKB:
+                return False          # falling knife — excluded even in Lane R
+            # Hard-block: weekly still falling — confirmation not possible yet
+            if a.get("weekly") == "falling":
+                return False
+            # Check whether the remaining reason it failed alignment is _ALIGN_BAD_STATES
+            lad = p.get("ladder") or {}
+            state = lad.get("state")
+            if state not in _ABS:
+                return False          # excluded for some other reason not covered above
+            return True
+
+        _recovery_cands = []
+        for t, p in scored:
+            if not _is_ctlane_candidate(t, p):
+                continue
+            if not signal_gate.is_buyable(sig_verdict.get(t)):
+                continue
+            # extension_read: pass ticker='' for US (board_type falls back to main 10%)
+            row_r = row_by_t.get(t)
+            if row_r is None:
+                continue
+            # Use _ext_closes (the whole-universe close DataFrame built above) for the
+            # extension check — it is always available here, same basis as ext_map.
+            _close_r = (_ext_closes[t].dropna() if
+                        ("_ext_closes" in dir() and t in _ext_closes.columns)
+                        else None)
+            # Graceful: if no close series available, skip extension check (exclude conservatively)
+            if _close_r is None or len(_close_r) < 21:
+                continue
+            _ext_r = _ext_read(_close_r, row_r.get("tech"), ticker="")
+            if _ext_r.get("extended"):
+                continue              # already extended — not a constructive recovery entry
+            _recovery_cands.append((t, p))
+
+        # Order recovery candidates by alpha desc (W8 verdict: no rank power; alpha is
+        # the only validated sort leg; forward ledger will stratify by lane)
+        _recovery_cands.sort(key=lambda tp: -(tp[1].get("alpha") or tp[1].get("composite_z") or 0.0))
+        _recovery_cands = _recovery_cands[:_RECOVERY_CAP]
+        _recovery_tickers = {t for t, _ in _recovery_cands}
+
+        log.info("W8-C Lane R: %d recovery candidates admitted (cap=%d)",
+                 len(_recovery_cands), _RECOVERY_CAP)
         # COMBINE re-rank: keep main's aligned-above-near inclusion, but order WITHIN each
         # alignment tier by the owner's confluence weighted blend (conviction percentile +
         # 0.5 * cascade weight) so the strongest confluence entries (T1>T2>T3>T4) rise. Names
@@ -1755,7 +1830,7 @@ def main() -> int:
                  "top-2 share %.0f%%, %d overflow to watch",
                  len(buyable), _n_sectors6, 100 * _top2_share6, len(_buyable_overflow))
 
-        buy_ids = {t for t, _, _ in buyable}
+        buy_ids = {t for t, _, _ in buyable} | _recovery_tickers
         # overflow names join watch (only if positive conviction, no duplication)
         _overflow_tickers = {t for t, _, _ in _buyable_overflow}
         watch = [(t, p) for t, p in scored
@@ -1766,12 +1841,35 @@ def main() -> int:
                            if (profiles.get(t) or {}).get("composite_z", 0) > 0]
         watch = _overflow_watch + watch
 
-        def _tag(t, tier):
+        def _tag(t, tier, lane="trend"):
             r = row_by_t[t]
             r["align_tier"] = tier
+            r["lane"] = lane
             return r
+
+        # ── W8 alpha-within-lane ordering ─────────────────────────────────────
+        # Forward ledger (#1062): P@1 board-order 28.6% vs alpha-order 71.4%.
+        # Replace entry_open_first as the terminal sort for the wide board:
+        # within lane='trend' order by alpha desc; then lane='recovery' block
+        # ordered by alpha desc. The entry status BADGE is kept (not removed).
+        def _alpha_key(r_tuple):
+            t, p, _tier = r_tuple
+            return -(p.get("alpha") or 0.0)
+
+        buyable_trend = sorted(buyable, key=_alpha_key)    # alpha desc within trend
+        # Recovery rows: tag and order by alpha desc
+        _recovery_rows_ordered = [
+            _tag(t, "recovery", lane="recovery")
+            for t, p in _recovery_cands
+        ]
+
+        # Trend rows (tag them last so _tag mutation runs after recovery tagging)
+        _trend_rows_ordered = [_tag(t, tier, lane="trend") for t, _, tier in buyable_trend[:120]]
+
+        _all_buy_rows = _trend_rows_ordered + _recovery_rows_ordered
+
         wide = {"as_of": alpha_asof, "rank_by": "bottoming-alignment", "gate_go": gate_go,
-                "buy": [_tag(t, tier) for t, _, tier in buyable[:120]],
+                "buy": _all_buy_rows,
                 "watch": [row_by_t[t] for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
                 "concentration": _concentration_stat,
@@ -1806,6 +1904,20 @@ def main() -> int:
             _cdp8 = _lad8.get("cand_depth_pct")
             if _cdp8 is not None:
                 r["cand_depth_pct"] = _cdp8
+            # W8-B postcross lifecycle chip (BASED/ARMED/SHAKEN) — DISPLAY-ONLY.
+            # W8-A verdict: NO rank power; ships as eligibility+display only; safety:
+            # stop5 -4/-5pp vs stale complement, NI vs FRESH. Additive + never fatal.
+            try:
+                from engine import postcross as _pc
+                _close_pc = (_ext_closes[t].dropna()
+                             if "_ext_closes" in dir() and t in _ext_closes.columns
+                             else None)
+                if _close_pc is not None and len(_close_pc) >= 100:
+                    _pc_state = _pc.postcross(_close_pc)
+                    if _pc_state.get("based"):
+                        r["postcross"] = _pc_state
+            except Exception as _pce:  # noqa: BLE001 — display-only; never fatal
+                pass
         # W6-US fix 8 (cont): log FRESH-BUY rows with shallow depth for US-2 ledger study.
         # Shallow = cand_depth_pct < 5.0% (less than 5% pullback from the pre-cycle high).
         # The live ETN case: off_high=-2.2%, cand_depth_pct likely ~2-3%.
@@ -1822,11 +1934,12 @@ def main() -> int:
                      len(_fb_shallow), _FB_SHALLOW_THRESHOLD,
                      [(t, f"{d:.1f}%", f"off_high={o:.1f}%" if o else None)
                       for t, d, o in _fb_shallow])
-        # ENTRY-OPEN-FIRST board order: names whose entry gauge reads "Buy zone — entry
-        # open now" lead the strip, then by the displayed conviction score. Stable, so
-        # the bottoming-alignment + confluence rank above only settles ties. Applied
-        # after enrichment so entry_signal + conviction are attached to every row.
-        wide["buy"] = entry_open_first(wide["buy"])
+        # W8 ordering: entry_open_first removed as the terminal sort for the wide board
+        # (forward ledger P@1: board-order 28.6% vs alpha-order 71.4% — entry_open_first
+        # is harmful as the terminal sort). The entry status BADGE is kept for display;
+        # the ordering above (alpha desc within lane) is the final order. entry_open_first
+        # is still used by the narrow "Top setups" / other consumers; it is NOT removed
+        # from engine/setups.py — only no longer applied here.
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
         if disp_regime:                            # selection-regime gross dial (board + bot)
@@ -1853,6 +1966,49 @@ def main() -> int:
         if _urgency_downgrade_count:
             log.info("W6-US fix 7: %d rows had urgency=now with non-open entry status "
                      "— downgraded to match entry_signal.status", _urgency_downgrade_count)
+
+        # --- W8 HEADLINE ARBITER (masterplan P5) ---
+        # A pure post-assembly pass that enforces honesty between the displayed state/label
+        # and the actual signal freshness + extension state. Two rules:
+        #   (1) FRESH-BUY-ish state/label with a stale cross (> FRESH_TICKS+1 ticks old) OR
+        #       extension_read.extended=True → downgrade state/label to the hold equivalent.
+        #   (2) urgency='imminent' while the entry/label indicates a blocked/BOTTOMING state
+        #       → downgrade urgency to 'caution'.
+        # Additive + never raises (nightly must not fail). Logs downgrade counts.
+        try:
+            from engine.confluence_tiers import FRESH_TICKS as _FRESH_TICKS
+            _FRESH_BUY_STATES = {"FRESH BUY", "TURN SIGNALED"}
+            _BOTM_STATES = {"BOTTOMING", "BASING", "ACCUMULATION"}
+            _arbiter_downgrade_count = 0
+            for _ra in wide["buy"] + wide["watch"]:
+                _sig_a = _ra.get("signal") or {}
+                _ticks_a = _sig_a.get("ticks")
+                # Check extension for this row (reuse ext_map pre-computed for the universe)
+                _ext_a = ext_map.get(_ra.get("ticker")) or {}
+                _ext_extended_a = bool(_ext_a.get("grade") in ("parabolic", "stretched"))
+                _state_a = _ra.get("state") or ""
+                _stale_a = (_ticks_a is not None and _ticks_a > _FRESH_TICKS + 1)
+                if _state_a in _FRESH_BUY_STATES and (_stale_a or _ext_extended_a):
+                    # Downgrade to HOLD / extended hold equivalent
+                    _why_a = "stale cross" if _stale_a else "extended"
+                    _ra["arbiter_note"] = f"downgraded from {_state_a} ({_why_a})"
+                    _ra["state"] = "HOLD — EXTENDED" if _ext_extended_a else "HOLD"
+                    _label_a = _ra.get("label") or ""
+                    if "FRESH" in _label_a.upper() or "TURN" in _label_a.upper():
+                        _ra["label"] = "Hold — entry aged" if not _ext_extended_a else "Hold — extended"
+                        _ra["label_zh"] = "持有—入场信号陈旧" if not _ext_extended_a else "持有—已过热"
+                    _arbiter_downgrade_count += 1
+                # Rule 2: urgency=imminent with blocked/BOTTOMING state
+                if _ra.get("urgency") == "imminent" and _state_a in _BOTM_STATES:
+                    _ra["urgency"] = "caution"
+                    if not _ra.get("arbiter_note"):
+                        _ra["arbiter_note"] = f"urgency imminent downgraded (state={_state_a})"
+                    _arbiter_downgrade_count += 1
+            if _arbiter_downgrade_count:
+                log.info("W8 arbiter: %d rows downgraded (state/urgency honesty pass)",
+                         _arbiter_downgrade_count)
+        except Exception as _ae:  # noqa: BLE001 — arbiter is additive; never fatal
+            log.warning("W8 arbiter skipped (%s)", _ae)
 
         # --- W6-US fix 3: build-time honesty invariants ---
         # (a) Band/verdict contradiction: band high/constructive while verdict is Lagging
