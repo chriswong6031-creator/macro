@@ -1,0 +1,10 @@
+{
+  "as_of": "2026-07-03T13:11:18Z",
+  "n_universe": 537,
+  "n_target": null,
+  "last_batch_done": -1,
+  "total_batches": null,
+  "n_fetched": 0,
+  "n_failed": 0,
+  "note": "initial checkpoint \u2014 no batches run yet; run: python -m scripts.collect --only hk_universe --full-history"
+}

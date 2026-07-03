@@ -47,6 +47,9 @@ DEFAULT_DIRS = [
     "intraday",
     "feeds",  # machine-consumable contract plane (scripts/build_feeds.py) — small,
               # but R2-only so bulk consumers (Mastermind bot) read ONE data plane
+    "hk_stocks_ext",  # expanded HSCI universe (~380 new names) deep OHLCV parquets
+                      # (data/hk_stocks_ext/*.parquet, gitignored); ~65 MB initial
+                      # — masterplan §3 H4, §8 W1 (collectors/hk_universe.py)
 ]
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}
