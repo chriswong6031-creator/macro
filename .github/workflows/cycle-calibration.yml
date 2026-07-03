@@ -89,6 +89,97 @@ jobs:
           fi
           python -m pytest tests/test_grading_stats.py -q
 
+      # ── HARD: BC-2 'validated' grep gate (W4.6) ────────────────────────────
+      # BC-2 (PREREGISTRATION.md §4): the word "validated"/"已验证" may appear in a
+      # user-facing surface ONLY where it maps to a backing artifact (validated:true)
+      # or a justified entry in data/regime/validated_claims_allowlist.json. A NEW
+      # unearned 'validated' claim (EN or zh) fails this step. Structural non-claims
+      # (engine-stamped data-field values, CSS class tokens, i18n label pairs) and
+      # negated/hedged uses ('no validated edge', 'unvalidated') are skipped by
+      # construction. Semantics: ABORT-LANE (hard failure). Added: W4.6.
+      - name: "HARD | check_validated_claims (BC-2: no unearned 'validated' EN+zh)"
+        run: |
+          if [ ! -f scripts/check_validated_claims.py ]; then
+            echo "scripts/check_validated_claims.py not present — skipping (pre-W4.6)"
+            exit 0
+          fi
+          python3 -m scripts.check_validated_claims --selftest
+          python3 -m scripts.check_validated_claims
+
+      # ── HARD: risk-calibration binding tests (W4.6) ────────────────────────
+      # vol-residualization math, embargo IMMUTABILITY, binding fallback byte-identity,
+      # null-cell discipline, grep-gate EN+zh firing. Semantics: ABORT-LANE. Added: W4.6.
+      - name: "HARD | ladder-risk-calibration tests (vol-resid, embargo, null-cell)"
+        run: |
+          if [ ! -f tests/test_ladder_risk_calibration.py ]; then
+            echo "tests/test_ladder_risk_calibration.py not present — skipping (pre-W4.6)"
+            exit 0
+          fi
+          python -m pytest tests/test_ladder_risk_calibration.py -q
+
+      # ── LOG: refit the risk-channel calibration + DIFF-AND-ALERT (W4.6, R1) ──
+      # Re-runs scripts.fit_ladder_risk_calibration on the committed keystone cohort and
+      # LOUDLY summarizes any (state x family) risk_size_mult that changed by >10% vs the
+      # committed artifact. A refit changes LIVE sizing behavior with NO code diff — this
+      # is the R1 reflexivity containment: a silent weight drift becomes a visible run-
+      # summary alert. Semantics: LOG-AND-SKIP (never blocks the lane; the last-good
+      # artifact stays committed until a human commits the refit). It reads only committed
+      # artifacts (keystone backfill + TR close panel) — cheap (<1 min). Added: W4.6.
+      - name: "LOG | risk-calibration refit → diff-and-alert (>10% weight change)"
+        run: |
+          if [ ! -f scripts/fit_ladder_risk_calibration.py ]; then
+            echo "scripts/fit_ladder_risk_calibration.py not present — skipping (pre-W4.6)"
+            exit 0
+          fi
+          OLD=data/regime/ladder_risk_calibration.json
+          cp -f "$OLD" /tmp/ladder_risk_calibration.prev.json 2>/dev/null || true
+          python -m scripts.fit_ladder_risk_calibration || { echo "refit failed (fail-open)"; exit 0; }
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          import json, os
+          new = json.load(open("data/regime/ladder_risk_calibration.json"))
+          prev_p = "/tmp/ladder_risk_calibration.prev.json"
+          print("## W4.6 risk-calibration refit — diff-and-alert")
+          print()
+          if not os.path.exists(prev_p):
+              print("No committed artifact to diff against (first run). No alert.")
+              raise SystemExit
+          prev = json.load(open(prev_p))
+          def flat(d):
+              out = {}
+              for fam, sts in (d.get("risk_size_mult") or {}).items():
+                  for st, c in sts.items():
+                      out[(fam, st)] = c.get("risk_size_mult", 1.0) if isinstance(c, dict) else float(c)
+              return out
+          a, b = flat(prev), flat(new)
+          changed = []
+          for k in sorted(set(a) | set(b)):
+              o, n = a.get(k, 1.0), b.get(k, 1.0)
+              base = abs(o) if o else 1.0
+              if abs(n - o) / base > 0.10:
+                  changed.append((k, o, n))
+          print(f"- prev version: `{prev.get('version')}`  →  new version: `{new.get('version')}`")
+          print(f"- validated: prev={prev.get('validated')} new={new.get('validated')}")
+          print(f"- BC-1: prev={prev.get('bc1',{}).get('verdict')} new={new.get('bc1',{}).get('verdict')}")
+          if not changed:
+              print("- **No (state × family) risk_size_mult changed by >10%.** Behavior stable.")
+          else:
+              print(f"- ⚠️ **{len(changed)} weight(s) changed by >10% — refit alters LIVE sizing:**")
+              print()
+              print("| family | state | old | new |")
+              print("|---|---|---|---|")
+              for (fam, st), o, n in changed:
+                  print(f"| {fam} | {st} | {o} | {n} |")
+              print()
+              print("**Action:** review the refit before committing the new artifact. A weight moved "
+                    "with no code diff — confirm the data change that drove it (R1 reflexivity containment).")
+          # restore committed artifact so the refit is never silently committed by CI
+          import shutil
+          shutil.copyfile(prev_p, "data/regime/ladder_risk_calibration.json")
+          print()
+          print("_(committed artifact restored; CI never commits a refit — a human does)_")
+          PY
+          cp -f /tmp/ladder_risk_calibration.prev.json "$OLD" 2>/dev/null || true
+
       # ── Slot: D2 PIT backfill integrity check (planned, W2.3) ──────────────
       # When merged: python -m scripts.check_backfill_integrity --warn
       # Semantics: LOG-AND-SKIP (fail-open; stale backfill stays in place).
@@ -196,9 +287,11 @@ jobs:
             echo ""
             echo "| Gate | Status |"
             echo "|---|---|"
-            echo "| gen_ontology_js --check | see above |"
-            echo "| test_cycle_forward_log  | see above |"
-            echo "| test_grading_stats      | see above |"
+            echo "| gen_ontology_js --check      | see above |"
+            echo "| test_cycle_forward_log       | see above |"
+            echo "| test_grading_stats           | see above |"
+            echo "| check_validated_claims (BC-2) | see above |"
+            echo "| test_ladder_risk_calibration | see above |"
             echo ""
             echo "Action: fix the failing script/test and re-dispatch this"
             echo "workflow.  The main pipeline-batch lane is unaffected."

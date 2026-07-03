@@ -133,6 +133,24 @@ gate's KG-3 result is operationalized: if DECLINE's return-per-tail genuinely ra
 FRESH-BUY out-of-sample, BC-1 encodes it; if the keystone said NO-EDGE, BC-1 fails and the
 ladder ships as FRAME context, not a fitted score.
 
+**RESULTS (W4.6, 2026-07-03 — appended per A15; criteria above were NOT moved):**
+
+| id | criterion (verbatim, frozen) | result | judged by | date |
+|---|---|---|---|---|
+| **BC-1** | train→holdout rank-corr of the risk-adjusted score >0.5 AND n_eff≥40 AND FDR-survived AND CI excludes null | **FAIL** — train→holdout rank-corr of `mean_fwd_ret/\|dd_p10\|` per state = **−0.119** (bar >0.5; *negative* — the return-per-tail ordering INVERTS out-of-sample). Exactly the §6.5 pre-committed expectation. `validated=false`; the ladder ships as FRAME context, not a fitted score. | `data/regime/ladder_risk_calibration.json` → `bc1.{verdict,rank_corr_train_vs_holdout}` | 2026-07-03 |
+| **BC-2** | grep EN+zh+generated JS for "validated"/"已验证"; fail if the token appears without a backing artifact whose `validated==true` | **WIRED + PASSING** — implemented as `scripts/check_validated_claims.py` (+ `data/regime/validated_claims_allowlist.json`, 166 justified entries) rather than `test_no_unearned_validated.py`; runs as a HARD abort-lane step in `cycle-calibration.yml`. Whole-tree scan clean; selftest proves it fires on a synthetic unearned claim in EN and zh. NO unearned uses were found in the existing corpus (it was already disciplined). | the gate + its `--selftest` (CI hard step) | 2026-07-03 |
+
+**The re-scope actually applied (D2 §4.1 metric replaced per §6.5 item 2).** The `mean_fwd_ret/|dd_p10|`
+metric is denominator-dominated (ranks states by ambient vol). W4.6 re-scoped to the RISK channel:
+the binding metric is the **vol-residualized forward drawdown** `rdd = fwd_maxdd / trailing_63d_vol`,
+and the binding value is a **SIZE multiplier in [0.5,1.5]** (never a directional score). The disciplined
+verdict: after vol-residualization, **0 of 48 (state × family × horizon) cells survive BH-FDR q=0.10**
+within the `calibration` family (2 nominal pre-FDR hits = the ~2–3-by-luck rate this ledger fences).
+**Every cell ships `risk_size_mult=1.0` — there is no risk-sizing signal.** The raw
+`ladder_calibration.json` drawdown ordering was ambient-vol clustering. The directional `LADDER_SCORE`
+is UNTOUCHED this wave (its axis-flip is W4.7's question). Full verdict:
+`research/cycle_masterplan/W46_BINDING_CALIBRATION_VERDICT.md`.
+
 ---
 
 ## 5 · Lead-lag two-stage gate (D5 §4, Waves W5.1–W5.2)
@@ -222,6 +240,15 @@ feature simply does not ship.
 - 2026-07-02 — Ledger created at W0.4. KG-1..5 judged this wave (see
   `W04_KEYSTONE_VERDICT.md`); all downstream gates registered, criteria frozen. No
   amendments.
+- 2026-07-03 — **W4.6 results appended** (BC-1 FAIL, BC-2 wired+passing; §4 results block).
+  No success criterion was moved. Two honest implementation notes recorded as findings, not
+  silent changes: (1) BC-1's *binding metric* was re-scoped per §6.5 item 2 from the
+  denominator-dominated `mean_fwd_ret/|dd_p10|` to the vol-residualized `fwd_maxdd/trailing_vol`
+  (the SUCCESS CRITERION — rank-corr>0.5, n_eff≥40, FDR, CI-excludes-null — was applied
+  unchanged; the return-channel metric was ALSO evaluated verbatim and recorded as FAIL). (2)
+  BC-2 was implemented as `scripts/check_validated_claims.py` + a justified allowlist rather
+  than the placeholder filename `tests/test_no_unearned_validated.py` named in the criterion;
+  the MECHANISM (grep EN+zh+generated JS; fail on an unbacked 'validated') is identical.
 
 ---
 

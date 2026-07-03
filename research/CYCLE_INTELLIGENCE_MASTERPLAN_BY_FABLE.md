@@ -388,6 +388,25 @@ MEASURED-prediction status.
 
 ## Status log
 
+- 2026-07-03 — **W4.6 SHIPPED** (risk-channel binding calibration, re-scoped per §6.5 item 2). THE
+  headline: **there is NO risk-sizing signal.** After vol-residualization (`rdd = fwd_maxdd /
+  trailing_63d_vol`, the §6.5 fix to the denominator-dominated metric), **0 of 48 (state × family ×
+  horizon) cells survive BH-FDR q=0.10** — the raw `ladder_calibration.json` drawdown ordering was
+  ambient-vol clustering. **BC-1 (return channel, verbatim): FAIL** — train→holdout rank-corr = −0.119
+  (bar >0.5; inverts OOS), exactly the pre-registered expectation. Every cell ships `risk_size_mult=1.0`.
+  Deliverables: `scripts/fit_ladder_risk_calibration.py` + `data/regime/ladder_risk_calibration.json`
+  (vol-resid DD stats, month-block bootstrap CIs, n_months, PERMANENTLY-EMBARGOED holdout
+  `[2024-01-01, end]` declared+immutable, `validated:false`, per (phase×ladder) stance-evidence table);
+  additive `risk_size_mult` field on `engine/cycles.ladder_state` (W2.8 artifact+fallback+one-time-log
+  pattern; directional `LADDER_SCORE` UNTOUCHED — axis-flip is W4.7); `sector_central` consumes it as a
+  capped, traced SIZE lever (inert at 1.0); `stance_matrix.json` cells carry backfilled vol-resid
+  evidence (R3, no behavior change). BC-2: `scripts/check_validated_claims.py` + 166-entry justified
+  allowlist — greps EN+zh+generated JS, HARD abort-lane step in `cycle-calibration.yml`; whole tree
+  clean, selftest fires on synthetic EN+zh; NO unearned uses found (corpus was already disciplined).
+  R1 containment: `cycle-calibration.yml` refit → diff-and-alert on any weight moving >10%. 17 W4.6
+  tests + 125 cycle/sector_central/country regression tests green. Closes cycles-core-1,
+  sector-central-us-5, doctrine #4/#5. Verdict: `research/cycle_masterplan/W46_BINDING_CALIBRATION_VERDICT.md`;
+  PREREGISTRATION.md §4 results appended (criteria unmoved; A15).
 - 2026-07-02 — Masterplan authored (14-agent design fleet + 4-agent red team; arbitration §1). Supporting
   docs committed under `research/cycle_masterplan/`.
 - 2026-07-02 — **W0.2+W0.3 SHIPPED** (#913): `engine/cycle_forward_log.py`; US sector + country forward

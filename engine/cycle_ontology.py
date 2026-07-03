@@ -1197,6 +1197,20 @@ def export_payload() -> dict:
 # Written to data/cycle_ontology/stance_matrix.json
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _load_stance_evidence(repo_root: str) -> dict:
+    """Load the per (phase|ladder) evidence table from the W4.6 risk-calibration artifact.
+    Returns {} on any error (fallback: stance matrix ships with no evidence, unchanged)."""
+    try:
+        p = os.path.join(repo_root, "data", "regime", "ladder_risk_calibration.json")
+        if not os.path.exists(p):
+            return {}
+        with open(p, encoding="utf-8") as fh:
+            d = json.load(fh)
+        return (d.get("stance_evidence") or {}).get("cells") or {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 def write_stance_matrix(path: str | None = None) -> str:
     """Write the stance matrix JSON artifact (versioned, provenance fields).
 
@@ -1208,31 +1222,50 @@ def write_stance_matrix(path: str | None = None) -> str:
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
+    # W4.6 (R3): per (phase x ladder) backfilled vol-residualized DD / forward stats — the
+    # EVIDENCE per stance cell. Read from the committed risk-calibration artifact when
+    # present (fallback: no evidence). Display/bindable METADATA only — attaching it changes
+    # no stance, tone, or resolve_state behavior this wave.
+    # repo root = parent of data/ (path is <root>/data/cycle_ontology/stance_matrix.json)
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(path))))
+    evidence = _load_stance_evidence(repo_root)
+
+    def _ev(phase: str, ladder: str) -> dict | None:
+        return evidence.get(f"{phase}|{ladder}")
+
     # Build human-readable matrix
     matrix: list[dict] = []
     for (phase, ladder), cell in _SIMPLE_CROSSWALK.items():
-        matrix.append({
+        row = {
             "phase":     phase,
             "ladder":    ladder,
             "stance":    cell["stance"],
             "divergence": cell.get("divergence", False),
             "tone":      STANCES[cell["stance"]]["tone"],
             "note_key":  cell.get("note_key", "none"),
-        })
+        }
+        ev = _ev(phase, ladder)
+        if ev is not None:
+            row["evidence"] = ev
+        matrix.append(row)
     # Downturn pos-gated cells
     for ladder_s in ("TURN SIGNALED", "FRESH BUY"):
         for pos_gate in (">=55", "<55"):
             stance = "COUNTERTREND ONLY" if pos_gate == ">=55" else (
                 "GET READY" if ladder_s == "TURN SIGNALED" else "BUY"
             )
-            matrix.append({
+            row = {
                 "phase":     "Downturn",
                 "ladder":    ladder_s,
                 "stance":    stance,
                 "divergence": pos_gate == ">=55",
                 "tone":      STANCES[stance]["tone"],
                 "pos_gate":  pos_gate,
-            })
+            }
+            ev = _ev("Downturn", ladder_s)
+            if ev is not None:
+                row["evidence"] = ev
+            matrix.append(row)
 
     artifact = {
         "version":           ONTOLOGY_VERSION,
