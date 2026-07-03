@@ -1,0 +1,140 @@
+{
+  "stamp": {
+    "ext_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/amazing-blackburn-5d2027/data/hk_stocks_ext",
+    "n_ext": 388,
+    "n_hk": 157,
+    "hsi_max": "2026-06-12",
+    "union_names": 545,
+    "union_range": [
+      "2000-01-03",
+      "2026-06-12"
+    ],
+    "deep67_names": 67
+  },
+  "trials": {
+    "PRIMARY": {
+      "label": "PRIMARY",
+      "n_months": 308,
+      "ls_mean_m": -0.0092,
+      "ls_t_hac": -2.142,
+      "ls_p_hac": 0.0322,
+      "long_mean_m": 0.01282,
+      "rank_ic_mean": -0.0162,
+      "ic_hit": 0.422,
+      "sr_monthly": -0.1211,
+      "dsr": 0.0,
+      "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+      "eff_n": 308,
+      "splithalf": {
+        "h1": -0.00803,
+        "h2": -0.01036,
+        "sign_stable": true
+      },
+      "med_held": 20,
+      "bound": {
+        "ls_mean_m": -0.0092,
+        "ls_t_hac": -2.142,
+        "sign_flip": false
+      },
+      "fill": "open"
+    },
+    "SECONDARY": {
+      "label": "SECONDARY",
+      "n_months": 314,
+      "ls_mean_m": -0.01131,
+      "ls_t_hac": -2.456,
+      "ls_p_hac": 0.014,
+      "long_mean_m": 0.01198,
+      "rank_ic_mean": -0.0197,
+      "ic_hit": 0.42,
+      "sr_monthly": -0.1459,
+      "dsr": 0.0,
+      "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+      "eff_n": 276,
+      "splithalf": {
+        "h1": -0.01148,
+        "h2": -0.01113,
+        "sign_stable": true
+      },
+      "med_held": 18,
+      "bound": {
+        "ls_mean_m": -0.01131,
+        "ls_t_hac": -2.456,
+        "sign_flip": false
+      },
+      "fill": "open"
+    },
+    "CONTROL1": {
+      "label": "CONTROL1",
+      "n_months": 314,
+      "ls_mean_m": -0.00404,
+      "ls_t_hac": -1.03,
+      "ls_p_hac": 0.303,
+      "long_mean_m": 0.01037,
+      "rank_ic_mean": -0.0044,
+      "ic_hit": 0.468,
+      "sr_monthly": -0.0554,
+      "dsr": 0.0012,
+      "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+      "eff_n": 314,
+      "splithalf": {
+        "h1": -0.00614,
+        "h2": -0.00193,
+        "sign_stable": true
+      },
+      "med_held": 23,
+      "bound": {
+        "ls_mean_m": -0.00404,
+        "ls_t_hac": -1.03,
+        "sign_flip": false
+      },
+      "fill": "close"
+    },
+    "CONTROL2": {
+      "label": "CONTROL2",
+      "n_months": 314,
+      "ls_mean_m": -0.00455,
+      "ls_t_hac": -1.247,
+      "ls_p_hac": 0.2126,
+      "long_mean_m": 0.01018,
+      "rank_ic_mean": -0.0015,
+      "ic_hit": 0.459,
+      "sr_monthly": -0.0648,
+      "dsr": 0.0007,
+      "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+      "eff_n": 314,
+      "splithalf": {
+        "h1": -0.00644,
+        "h2": -0.00267,
+        "sign_stable": true
+      },
+      "med_held": 14,
+      "bound": {
+        "ls_mean_m": -0.00455,
+        "ls_t_hac": -1.247,
+        "sign_flip": false
+      },
+      "fill": "close"
+    }
+  },
+  "bh_fdr": {
+    "PRIMARY": {
+      "p": 0.0322,
+      "q": 0.0322,
+      "reject": true
+    },
+    "SECONDARY": {
+      "p": 0.014,
+      "q": 0.028,
+      "reject": true
+    }
+  },
+  "params": {
+    "lookback": 63,
+    "hold": 21,
+    "adv_floor": 1000000,
+    "n_trials": 30,
+    "delist_monthly_2x": 0.005,
+    "phantom_ret": -0.3
+  }
+}
