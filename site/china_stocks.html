@@ -227,9 +227,49 @@
   .nb-ax .axt { height:3px; border-radius:2px; background:var(--line); margin-top:1px; overflow:hidden; }
   .nb-ax .axf { height:100%; background:var(--g-cold); border-radius:2px; }
   .nb-ax.ax-na .axf { background:transparent; }
-  .nb-cau { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
-  .nb-cau span { font-size:8.5px; font-weight:700; padding:0 4px; border-radius:6px;
-                 color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  /* ---- Caution icon + popover (replaces old pill-row; ported from dashboard #1061) ---- */
+  .nb-cau { position:relative; display:inline-flex; margin-top:4px; }
+  .nb-cau-btn {
+    display:inline-flex; align-items:center; gap:3px;
+    padding:0 5px 0 4px; height:18px; border-radius:9px; border:none; cursor:pointer;
+    font-size:9px; font-weight:700; line-height:1;
+    color:var(--warn); background:color-mix(in srgb,var(--warn) 14%,var(--panel));
+    text-decoration:none;
+    animation:nb-cau-pulse 2.5s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { .nb-cau-btn { animation:none; } }
+  @keyframes nb-cau-pulse {
+    0%, 100% { opacity:1; }
+    50%       { opacity:.55; }
+  }
+  .nb-cau-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:13px; height:13px; border-radius:50%; font-size:8px; font-weight:800;
+    background:var(--warn); color:var(--panel);
+  }
+  .nb-cau-pop {
+    display:none; position:absolute; z-index:120; bottom:calc(100% + 5px); left:0;
+    min-width:180px; max-width:min(260px, calc(100vw - 24px));
+    padding:7px 9px; border-radius:8px;
+    background:var(--panel); border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line));
+    box-shadow:0 4px 16px rgba(0,0,0,.18);
+    font-size:10px; font-weight:600; line-height:1.45; color:var(--warn);
+    pointer-events:none;
+  }
+  .nb-cau-pop .cau-row { display:block; padding:2px 0; }
+  .nb-cau-pop .cau-row + .cau-row { border-top:1px solid color-mix(in srgb,var(--warn) 20%,var(--line)); padding-top:4px; margin-top:2px; }
+  /* Show on hover/focus (desktop) */
+  .nb-cau:hover .nb-cau-pop,
+  .nb-cau:focus-within .nb-cau-pop,
+  .nb-cau.nb-cau-open .nb-cau-pop { display:block; pointer-events:auto; }
+  /* Flip to below if near top of viewport (added by JS) */
+  .nb-cau.pop-below .nb-cau-pop { bottom:auto; top:calc(100% + 5px); }
+  /* Clamp to right edge */
+  .nb-cau.pop-right .nb-cau-pop { left:auto; right:0; }
+  /* The card clips overflow; release it while the popover is showing or the top of a
+     tall popover is cut off at the card edge */
+  a.nbcard:has(.nb-cau:hover), a.nbcard:has(.nb-cau:focus-within),
+  a.nbcard:has(.nb-cau-open) { overflow:visible; }
   /* (.nb-tier removed — the trust tier is now shown once in the shared .nb-legend) */
   /* volatility black hole + honesty notes (China overhaul) */
   .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
@@ -4865,7 +4905,7 @@
           <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
           
         </div>
-        <div class="nb-cau"><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">cycle: NEARING A HIGH</span><span class="l-zh">周期：接近高点</span></span></div></div>
         
         
         
@@ -5061,7 +5101,7 @@
           <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
           
         </div>
-        <div class="nb-cau"><span class="l-en">⚠ extended +31% over 200dma — chasing</span><span class="l-zh">⚠ 高于200日均线 +31% — 追高</span><span class="l-en">⚠ stressed tape — size down / confirm</span><span class="l-zh">⚠ 盘面承压 — 减仓／确认</span><span class="l-en">⚠ cycle: BOTTOMING</span><span class="l-zh">⚠ 周期：筑底中</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">extended +31% over 200dma — chasing</span><span class="l-zh">高于200日均线 +31% — 追高</span></span><span class="cau-row"><span class="l-en">stressed tape — size down / confirm</span><span class="l-zh">盘面承压 — 减仓／确认</span></span><span class="cau-row"><span class="l-en">cycle: BOTTOMING</span><span class="l-zh">周期：筑底中</span></span></div></div>
         
         
         
@@ -5450,7 +5490,7 @@
         
         
         
-        <div class="nb-cau"><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">cycle: NEARING A HIGH</span><span class="l-zh">周期：接近高点</span></span></div></div>
         
         
         
@@ -5728,7 +5768,7 @@
         
         
         
-        <div class="nb-cau"><span class="l-en">⚠ cycle: DOWNTREND</span><span class="l-zh">⚠ 周期：下跌趋势</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">cycle: DOWNTREND</span><span class="l-zh">周期：下跌趋势</span></span></div></div>
         
         
         
@@ -5909,7 +5949,7 @@
         
         
         
-        <div class="nb-cau"><span class="l-en">⚠ cycle: DOWNTREND</span><span class="l-zh">⚠ 周期：下跌趋势</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">cycle: DOWNTREND</span><span class="l-zh">周期：下跌趋势</span></span></div></div>
         
         
         
@@ -5996,7 +6036,7 @@
         
         
         
-        <div class="nb-cau"><span class="l-en">⚠ cycle: DOWNTREND</span><span class="l-zh">⚠ 周期：下跌趋势</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">cycle: DOWNTREND</span><span class="l-zh">周期：下跌趋势</span></span></div></div>
         
         
         
@@ -6181,7 +6221,7 @@
         
         
         
-        <div class="nb-cau"><span class="l-en">⚠ cycle: DOWNTREND</span><span class="l-zh">⚠ 周期：下跌趋势</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">cycle: DOWNTREND</span><span class="l-zh">周期：下跌趋势</span></span></div></div>
         
         
         
@@ -6273,7 +6313,7 @@
           <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
           
         </div>
-        <div class="nb-cau"><span class="l-en">⚠ cycle: DOWNTREND</span><span class="l-zh">⚠ 周期：下跌趋势</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">cycle: DOWNTREND</span><span class="l-zh">周期：下跌趋势</span></span></div></div>
         
         
         
@@ -6360,7 +6400,7 @@
         
         
         
-        <div class="nb-cau"><span class="l-en">⚠ cycle: DOWNTREND</span><span class="l-zh">⚠ 周期：下跌趋势</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">cycle: DOWNTREND</span><span class="l-zh">周期：下跌趋势</span></span></div></div>
         
         
         
@@ -8755,7 +8795,7 @@
         
         
         
-        <div class="nb-cau"><span class="l-en">⚠ cycle: DOWNTREND</span><span class="l-zh">⚠ 周期：下跌趋势</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">cycle: DOWNTREND</span><span class="l-zh">周期：下跌趋势</span></span></div></div>
         
         
         
@@ -10673,7 +10713,7 @@
         
         
         
-        <div class="nb-cau"><span class="l-en">⚠ extended +35% over 200dma — chasing</span><span class="l-zh">⚠ 高于200日均线 +35% — 追高</span><span class="l-en">⚠ stressed tape — size down / confirm</span><span class="l-zh">⚠ 盘面承压 — 减仓／确认</span><span class="l-en">⚠ cycle: UNCONFIRMED TURN</span><span class="l-zh">⚠ 周期：未确认转向</span></div>
+        <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">extended +35% over 200dma — chasing</span><span class="l-zh">高于200日均线 +35% — 追高</span></span><span class="cau-row"><span class="l-en">stressed tape — size down / confirm</span><span class="l-zh">盘面承压 — 减仓／确认</span></span><span class="cau-row"><span class="l-en">cycle: UNCONFIRMED TURN</span><span class="l-zh">周期：未确认转向</span></span></div></div>
         
         
         
@@ -12068,7 +12108,7 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-03 14:39 UTC ·
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-03 15:14 UTC ·
   <span class="l-en">Free public data (yfinance + Eastmoney), mechanical &amp; backtested · not investment advice</span><span class="l-zh">免费公开数据（yfinance + 东方财富），机械化并经回测 · 非投资建议</span><br>
   <span class="l-en">Sector ETFs ~5y history (display-grade RS); regime &amp; ladder calibrated on the deep 2006–2026 panel.</span><span class="l-zh">板块ETF约5年历史（展示级相对强弱）；周期与阶梯基于2006–2026深度样本校准。</span>
 </div>
@@ -12097,6 +12137,42 @@ window.__CHART_SWAP__ = {
     if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
+</script>
+<script>
+/* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
+   Also corrects popover position (flip above/below, clamp to right edge). */
+(function(){
+  function placePop(wrap){
+    var pop = wrap.querySelector('.nb-cau-pop');
+    if (!pop) return;
+    var r = wrap.getBoundingClientRect();
+    wrap.classList.toggle('pop-below', r.top < 180);
+    wrap.classList.toggle('pop-right', r.left > window.innerWidth - 200);
+  }
+  /* Tap the button → toggle open/closed */
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.nb-cau-btn');
+    if (btn){
+      e.preventDefault(); e.stopPropagation();
+      var wrap = btn.closest('.nb-cau');
+      if (!wrap) return;
+      var wasOpen = wrap.classList.contains('nb-cau-open');
+      /* close any other open popovers */
+      document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      if (!wasOpen){ placePop(wrap); wrap.classList.add('nb-cau-open'); }
+    } else {
+      /* outside tap: close all */
+      if (!e.target.closest('.nb-cau-pop')){
+        document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      }
+    }
+  }, true);
+  /* Also position-correct on hover (desktop) */
+  document.addEventListener('pointerover', function(e){
+    var wrap = e.target.closest && e.target.closest('.nb-cau');
+    if (wrap) placePop(wrap);
+  }, true);
+})();
 </script>
 </body>
 </html>

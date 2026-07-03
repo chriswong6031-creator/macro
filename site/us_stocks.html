@@ -780,6 +780,10 @@
   .nb-cau.pop-below .nb-cau-pop { bottom: auto; top: calc(100% + 5px); }
   /* Clamp to right edge */
   .nb-cau.pop-right .nb-cau-pop { left: auto; right: 0; }
+  /* The card clips overflow; release it while the popover is showing or the top of a
+     tall popover is cut off at the card edge */
+  a.nbcard:has(.nb-cau:hover), a.nbcard:has(.nb-cau:focus-within),
+  a.nbcard:has(.nb-cau-open) { overflow: visible; }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
   /* ---- Entry-timing gauge (the SECOND gauge: "buy now / wait / extended") ---- */
   .nb-entry { margin: 5px 0 1px; padding: 5px 7px; border-radius: 8px;
