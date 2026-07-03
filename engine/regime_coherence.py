@@ -66,8 +66,8 @@ _GATE_CAUTIOUS_MAX = 0.90
 # rate_pressure: the one new categorical state introduced by regime_vector.
 _RATE_PRESSURE_STATES = {"relief", "neutral", "pressure", "panic"}
 # vol_regime 4-state tokens (vol_regime._regime_label vocabulary)
-_VOL_REGIME_STATES = {"normal", "low_vol", "elevated", "vol_warning",
-                      "risk-off", "risk_off", "RISK_OFF", "backwardation"}
+_VOL_REGIME_STATES = {"calm-contango", "normalizing", "warning",
+                      "backwardation-stress"}
 # A stress-level rate_pressure state (panic) is treated as an ADDITIONAL cautious signal
 # alongside the existing risk vocabulary — not a gate, but tracked in the coherence report.
 _RATE_PRESSURE_STRESS = {"panic", "pressure"}

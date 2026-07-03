@@ -152,11 +152,23 @@ class TestPanicEscalation:
         return {"rate_pressure": state, "rate_pressure_candidate": state}
 
     def test_panic_escalation_from_pressure(self):
-        # rates score at threshold → panic
+        # Exercise the escalation TRIGGER through hysteresis (not the steady state).
         score = rv.RATE_PANIC_SCARE_THRESHOLD
-        prior = self._prior("panic")
+        # Day 1: prior state "pressure", panic candidate appears → trigger fires,
+        # hysteresis holds the published state at pressure.
+        prior = self._prior("pressure")
         state, deg, cand = rv._compute_rate_pressure(
-            rv.RATE_PRESSURE_BP + 1.0,   # > +25bp → would be "pressure"
+            rv.RATE_PRESSURE_BP + 1.0,   # > +25bp → base "pressure"
+            _radar(rates_score=score),
+            prior,
+        )
+        assert cand == "panic"           # the trigger itself
+        assert state == "pressure"       # day 1: held by hysteresis
+        assert not deg
+        # Day 2: panic candidate repeats → commits.
+        prior = {"rate_pressure": "pressure", "rate_pressure_candidate": "panic"}
+        state, deg, cand = rv._compute_rate_pressure(
+            rv.RATE_PRESSURE_BP + 1.0,
             _radar(rates_score=score),
             prior,
         )
@@ -171,7 +183,22 @@ class TestPanicEscalation:
             _radar(rates_score=score),
             prior,
         )
+        assert cand == "pressure"        # trigger must NOT fire below threshold
         assert state == "pressure"
+
+    def test_null_day_resets_pending_transition(self):
+        """A degraded/null day interrupts a pending transition: the candidate
+        counter resets and the flip needs two fresh consecutive clean days."""
+        score = rv.RATE_PANIC_SCARE_THRESHOLD
+        # Day 1 pended panic; day 2 was null/degraded → prior_candidate is None.
+        prior = {"rate_pressure": "pressure", "rate_pressure_candidate": None}
+        state, deg, cand = rv._compute_rate_pressure(
+            rv.RATE_PRESSURE_BP + 1.0,
+            _radar(rates_score=score),
+            prior,
+        )
+        assert cand == "panic"
+        assert state == "pressure"       # NOT committed across the null gap
 
     def test_panic_requires_pressure_base_not_neutral(self):
         """A high rates scare with NEUTRAL base (bp=0) does NOT escalate to panic."""
@@ -278,7 +305,7 @@ class TestDegradedInputs:
         latest = _latest(real10y_bp=None)
         result = rv.build(latest)
         assert result["rate_pressure"] is None
-        assert result["regime_vector_degraded"] is True or 1
+        assert result["regime_vector_degraded"] is True
         assert "rate_pressure" in result["degraded_axes"]
 
     def test_missing_risk_radar_degrades_rate_pressure(self):
@@ -294,13 +321,13 @@ class TestDegradedInputs:
         result = rv.build(latest)
         assert result["quad_hard_label"] is None
         assert result["quad_p"] is None
-        assert result["regime_vector_degraded"] is True or 1
+        assert result["regime_vector_degraded"] is True
 
     def test_degraded_regime_one(self):
         latest = _latest(r1_degraded=True)
         result = rv.build(latest)
         assert result["fused_risk_label"] is None
-        assert result["regime_vector_degraded"] is True or 1
+        assert result["regime_vector_degraded"] is True
 
     def test_null_inputs_never_emit_default_state(self):
         """The engine must never emit a 'neutral' default when inputs are degraded."""

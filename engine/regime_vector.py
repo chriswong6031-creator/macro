@@ -16,7 +16,8 @@ Hysteresis
 ALL state transitions (rate_pressure and any future categorical axis added here) use
 2-consecutive-day hysteresis — a candidate state must persist for two consecutive days
 before the published state flips.  The prior state is read from the parquet store
-(last committed row).  On the very first run (empty store) no hysteresis is applied.
+(last committed row).  On the very first run (empty store) the published state is None (no prior
+to confirm against); the candidate is persisted so day 2 can commit.
 Hysteresis state is stored in the parquet itself, not in a separate side-file.
 
 Degraded inputs
@@ -317,8 +318,8 @@ def build(latest: dict, data_dir: Path | None = None) -> dict:
     r1_degraded = bool(r1.get("degraded"))
     lq = latest.get("liquidity_quality") or {}
 
-    # regime_one carries liquidity in two possible keys
-    lq_overlay = r1.get("fused_risk", {}).get("liquidity") or None
+    # regime_one carries the liquidity nudge at fused_risk.gate.liquidity
+    lq_overlay = ((r1.get("fused_risk") or {}).get("gate") or {}).get("liquidity")
     # also try the top-level legacy key
     if lq_overlay is None:
         lq_overlay = latest.get("liquidity_overlay")
@@ -442,7 +443,7 @@ def build(latest: dict, data_dir: Path | None = None) -> dict:
     # -----------------------------------------------------------------------
     deesc = (rr or {}).get("deescalation") or {}
     out["deescalation_eligible"] = deesc.get("eligible")
-    out["deescalation_trajectory"] = deesc.get("trajectory")
+    out["deescalation_trajectory"] = (rr or {}).get("trajectory")
 
     dis = latest.get("dislocation") or {}
     out["dislocation_verdict"] = dis.get("verdict")
@@ -550,8 +551,8 @@ REGIME_VECTOR_VOCABULARY: dict[str, tuple[str, ...]] = {
     "rate_pressure_pressure": ("pressure",),
     "rate_pressure_panic": ("panic",),
     # vol_regime 4-state (from engine/vol_regime._regime_label)
-    "vol_regime_normal": ("normal", "low_vol"),
-    "vol_regime_elevated": ("elevated", "vol_warning"),
-    "vol_regime_risk_off": ("risk-off", "risk_off", "RISK_OFF"),
-    "vol_regime_backwardation": ("backwardation",),
+    "vol_regime_calm": ("calm-contango",),
+    "vol_regime_normalizing": ("normalizing",),
+    "vol_regime_warning": ("warning",),
+    "vol_regime_stress": ("backwardation-stress",),
 }
