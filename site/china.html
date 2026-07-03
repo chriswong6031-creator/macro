@@ -332,14 +332,14 @@
                white-space:nowrap; flex:1; min-width:0; }
   .nb-rip-imm { font-size:8.5px; font-weight:800; color:var(--warn); flex:none; }
   .nb-rip-chips { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
-  .nb-rip-chip { font-size:8px; font-weight:700; padding:1px 5px; border-radius:6px; white-space:nowrap;
+  .nb-rip-chip { font-size:8px; font-weight:700; padding:1px 5px; border-radius:6px; overflow-wrap:anywhere; max-width:100%;
                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel));
                  border:1px solid color-mix(in srgb,var(--warn) 38%,var(--line)); }
   .nb-rip-sec { font-size:9px; color:var(--muted); }
   /* ── W2-B: NARRATIVE CHIP + A-TIER BADGE ─────────────────────────────────── */
   /* Quiet narrative heat chip — appears under the stage on ENTRY/RIPENING cards */
   .nb-narr { display:inline-flex; align-items:center; gap:3px; font-size:8px; font-weight:700;
-             padding:1px 6px; border-radius:6px; white-space:nowrap; cursor:help;
+             padding:1px 6px; border-radius:6px; overflow-wrap:anywhere; max-width:100%; cursor:help;
              color:var(--link); background:color-mix(in srgb,var(--link) 10%,var(--panel));
              border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
   .nb-narr.narr-hot { color:var(--up); background:color-mix(in srgb,var(--up) 10%,var(--panel));
