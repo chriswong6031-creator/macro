@@ -70,10 +70,15 @@ def _ema(s: pd.Series, n: int) -> pd.Series:
 
 
 def _rsi_macd_fallback(close: pd.Series):
-    """Fallback RSI-MACD when tuning_harness is not importable."""
-    r    = _rsi(close)
-    macd = _ema(r, 3) - _ema(r, 10)
-    sig  = _ema(macd, 16)
+    """Fallback RSI-MACD when tuning_harness is not importable.
+
+    Params mirror tuning_harness.rsi_macd exactly (RSI_LEN=14, FAST=14,
+    BASE=60, SIG=5) so the fallback never silently diverges from the
+    registered Wave-5b/Wave-6 spec.
+    """
+    r    = _rsi(close, n=14)
+    macd = _ema(r, 14) - _ema(r, 60)
+    sig  = _ema(macd, 5)
     return macd, sig
 
 

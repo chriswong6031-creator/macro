@@ -287,6 +287,78 @@ class TestCompletedWeekDiscipline:
             f"Got legs={result['legs']}, state={result['state']}, "
             f"donor_sector={result['donor_sector']}, asof={result.get('asof')}")
 
+    def test_friday_ending_current_week_cross_blocked_by_shift1(self):
+        """Mutation-proof test: daily index ends on a Friday where a raw weekly
+        RSI-MACD bearish cross fires on the final W-FRI bar.
+
+        When the last bar IS a Friday, the W-FRI resample label for the current
+        week EQUALS the last daily date.  ffill maps it onto the last daily bar.
+        WITHOUT shift(1) the current week's cross leaks through as 'known';
+        WITH shift(1) the cross is pushed one week forward and is NOT known yet.
+
+        This test FAILS if `wbear.shift(1)` is replaced by `wbear` in donor.py.
+
+        Fixture design:
+          - 5 sectors × 5 members, each built from a sine-wave-on-trend series
+            (rising trend + oscillation) scaled by sector weight (0.6..1.0×).
+          - The full 3500-bar sine-wave series is trimmed to end exactly on
+            2022-11-18 (a Friday) — a date where the donor EW composite
+            produces a raw RSI-MACD bearish cross on that W-FRI bar.
+          - All sectors share the same base oscillation (leadership preserved).
+          - After shift(1) the 2022-11-18 cross is pushed to the following week
+            and is NOT known at 2022-11-18 → weekly_bear_cross must be False.
+
+        Note: the cross is produced by tuning_harness.rsi_macd (the same
+        implementation used in production runs).  The exact cross date was
+        verified by instrumenting the composite pipeline directly.
+        """
+        n_bars   = 3500
+        idx_full = pd.bdate_range(start="2010-01-04", periods=n_bars)
+        # Trim to 2022-11-18 (Friday) — the date where the sine-wave EW composite
+        # generates a raw weekly RSI-MACD bearish cross on the final W-FRI bar.
+        TARGET_FRI = pd.Timestamp("2022-11-18")
+        idx        = idx_full[idx_full <= TARGET_FRI]
+        n          = len(idx)
+        assert idx[-1] == TARGET_FRI, "Fixture start must reach 2022-11-18"
+        assert idx[-1].weekday() == 4, "Fixture must end on a Friday"
+
+        # Base oscillating series: rising trend + sine wave, normalised to 1.0
+        t_full = np.linspace(0, 6 * np.pi, n_bars)
+        v_base = 100.0 + 50.0 * t_full / t_full.max() + 30.0 * np.sin(t_full)
+        v_base = v_base / v_base[0]
+        v_base = v_base[:n]
+
+        # Scale each sector by a different factor so S0 is the clear 126d leader
+        sector_scales = {
+            "S0": 1.00, "S1": 0.90, "S2": 0.80, "S3": 0.70, "S4": 0.60,
+        }
+        closes: dict   = {}
+        sector_of: dict = {}
+        for si, (sec, scale) in enumerate(sector_scales.items()):
+            for j in range(5):
+                t   = f"{sec}_{j}"
+                rng = np.random.default_rng(si * 10 + j + 555)
+                v   = v_base * scale
+                v  *= (1.0 + rng.normal(0, 0.0001, n))   # minimal noise
+                closes[t]    = pd.Series(v, index=idx, dtype=float)
+                sector_of[t] = sec
+
+        result = donor.donor_state(closes, sector_of)
+        assert result is not None, "Expected dict, got None"
+
+        # The 2022-11-18 W-FRI weekly bar is the CURRENT (not-yet-closed) week
+        # at the last daily bar (they are the same date).  shift(1) must push the
+        # raw cross one week forward so it is NOT counted as 'known' today.
+        # This assertion FAILS if shift(1) is removed from donor.py line 176.
+        assert result["legs"]["weekly_bear_cross"] is False, (
+            "CRITICAL SHIFT-1 DISCIPLINE FAILURE (Friday-ending index): "
+            "the 2022-11-18 W-FRI weekly bar equals the last daily bar, so ffill "
+            "maps it onto the last daily row. Without shift(1), the raw bearish "
+            "cross on that bar leaks through as 'known'. "
+            "This test MUST fail if shift(1) is removed from engine/donor.py. "
+            f"Got legs={result['legs']}, state={result['state']}, "
+            f"donor_sector={result['donor_sector']}, asof={result.get('asof')}")
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # (e) ret20<0 leg alone -> cracking (no weekly cross needed)
