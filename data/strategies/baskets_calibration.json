@@ -642,5 +642,338 @@
     },
     "verdict": "weak_separation",
     "note": "Display-only texture in ALL cases; the verdict only controls the displayed grade. CN/HK reads are descriptive-only regardless (US-proxy verdict cited cross-market, 0/152-FWER CN prior)."
+  },
+  "abs_escape_fit": {
+    "universe": "proxy_spdr_sectors",
+    "n_assets": 11,
+    "span": [
+      "1998-12-22",
+      "2026-07-01"
+    ],
+    "preregistered": "research/LABEL_FALTERING_PHASE0.md#B1",
+    "n": 12854,
+    "n_inset": 8591,
+    "base_rate_inset": 0.103,
+    "n_trials": 12,
+    "grid_pct": [
+      -3,
+      -5,
+      -7
+    ],
+    "primary_cell_pct": -5,
+    "breadth_det_def": "net_nh<=0 OR pct50<0.5 (panel proxy, broadcast)",
+    "cells": {
+      "-3%": {
+        "n_fired": 461,
+        "n_days_fired": 217,
+        "dd21_med_fired_pct": -3.37,
+        "dd21_med_inset_pct": -2.02,
+        "ret21_med_fired_pct": 1.48,
+        "rel21_med_fired_pct": 0.04,
+        "hit_fired": 0.219,
+        "lift": 2.14,
+        "lift_ci": [
+          1.61,
+          2.66
+        ],
+        "t_dd_paired": {
+          "t": -1.994,
+          "mean": -0.51,
+          "n_days": 199
+        },
+        "t_ret_paired": {
+          "t": 1.128,
+          "mean": 0.39,
+          "n_days": 199
+        },
+        "split_half": {
+          "pre2013": {
+            "lift": 1.82,
+            "n_fired": 274
+          },
+          "post2013": {
+            "lift": 2.49,
+            "n_fired": 187
+          }
+        },
+        "g1_risk": false,
+        "killed": false,
+        "verdict": "no_incremental_edge"
+      },
+      "-5%": {
+        "n_fired": 148,
+        "n_days_fired": 72,
+        "dd21_med_fired_pct": -4.69,
+        "dd21_med_inset_pct": -2.02,
+        "ret21_med_fired_pct": 1.84,
+        "rel21_med_fired_pct": -0.68,
+        "hit_fired": 0.338,
+        "lift": 3.29,
+        "lift_ci": [
+          2.15,
+          4.47
+        ],
+        "t_dd_paired": {
+          "t": -1.966,
+          "mean": -1.39,
+          "n_days": 65
+        },
+        "t_ret_paired": {
+          "t": -0.095,
+          "mean": -0.07,
+          "n_days": 65
+        },
+        "split_half": {
+          "pre2013": {
+            "lift": 2.71,
+            "n_fired": 92
+          },
+          "post2013": {
+            "lift": 4.05,
+            "n_fired": 56
+          }
+        },
+        "g1_risk": false,
+        "killed": false,
+        "verdict": "no_incremental_edge"
+      },
+      "-7%": {
+        "n_fired": 79,
+        "n_days_fired": 42,
+        "dd21_med_fired_pct": -5.11,
+        "dd21_med_inset_pct": -2.02,
+        "ret21_med_fired_pct": 2.11,
+        "rel21_med_fired_pct": -0.52,
+        "hit_fired": 0.418,
+        "lift": 4.07,
+        "lift_ci": [
+          2.55,
+          5.79
+        ],
+        "t_dd_paired": {
+          "t": -0.983,
+          "mean": -0.88,
+          "n_days": 38
+        },
+        "t_ret_paired": {
+          "t": 1.344,
+          "mean": 1.01,
+          "n_days": 38
+        },
+        "split_half": {
+          "pre2013": {
+            "lift": 3.45,
+            "n_fired": 42
+          },
+          "post2013": {
+            "lift": 4.84,
+            "n_fired": 37
+          }
+        },
+        "g1_risk": false,
+        "killed": false,
+        "verdict": "no_incremental_edge"
+      }
+    },
+    "sensitivity_kill_veto": false,
+    "verdict": "no_incremental_edge",
+    "note": "In-set = relative-path label NOT fading/deteriorating \u2014 the events the escape leg would ADD. Not wired into _label() in this task."
+  },
+  "conviction_demotion_fit": {
+    "universe": "proxy_spdr_sectors",
+    "preregistered": "research/LABEL_FALTERING_PHASE0.md#B2",
+    "n_trials": 12,
+    "pit_audit": {
+      "china_standout_track": {
+        "span": [
+          "2026-06-30",
+          "2026-07-02"
+        ],
+        "n_days": 3,
+        "has_conviction_field": false,
+        "fields": [
+          "date",
+          "ticker",
+          "board_rank",
+          "tier",
+          "setup",
+          "extended",
+          "washout",
+          "level",
+          "coiled",
+          "coiled_star",
+          "coiled_cohort",
+          "coiled_fire",
+          "coiled_fire_ticks"
+        ]
+      },
+      "signal_archive_baskets": {
+        "span": [
+          "2026-06-18",
+          "2026-07-02"
+        ],
+        "n_days": 10,
+        "conviction_fields": []
+      },
+      "git_rendered_stores": {
+        "note": "site/*stockdata/*.json carried conviction blocks in git only 2026-06-13 \u2192 2026-07-01 (~13 trading days), then untracked to R2 (r2-data-plane). Rendered current-state, formula drift across renders \u2014 not a PIT series."
+      },
+      "r2_data_plane": {
+        "note": "current-state per-ticker stores only; no dated snapshots."
+      },
+      "usable_pit_history": false
+    },
+    "accrual_spec": {
+      "what": "daily, per basket and region: member conviction.potential median, IQR, n_members, theme score, label \u2014 archived via engine.signal_archive at render",
+      "rerun_bar": ">=180 archived trading days (~9 months; ~36 non-overlapping 21d windows per basket x ~25 baskets, date-blocked pooling)",
+      "gates_on_rerun": "identical to the proxy G1/G2 below, pre-registered 2026-07-03"
+    },
+    "proxy": {
+      "n_constructive": 778,
+      "base_rate": 0.032,
+      "n_events": 0,
+      "event_def": "constructive AND member-median health <= 25",
+      "g1_standalone": {
+        "pass": false,
+        "note": "too few collapse events"
+      },
+      "g2_incremental": {
+        "pass": false,
+        "n": 12854,
+        "base_rate": 0.11,
+        "oos_lift_hand5": 1.08,
+        "oos_lift_fit5": 1.32,
+        "oos_lift_fit6": 1.32,
+        "w6_full_fit": 0.0,
+        "w6_by_fold": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "verdict": "proxy_no_signal"
+    },
+    "verdict": "no_pit_history_accrue",
+    "note": "The proxy health composite is a PRICE stand-in for the conviction score's price legs \u2014 it can set the prior for the accrued re-run but can never ship the demotion leg. Not wired in this task."
+  },
+  "rank_dd_modulation_fit": {
+    "universe": "proxy_spdr_sectors",
+    "span": [
+      "1998-12-22",
+      "2026-07-01"
+    ],
+    "preregistered": "research/LABEL_FALTERING_PHASE0.md#B3",
+    "n_trials": 12,
+    "cost_bps": 10.0,
+    "grid_pct": [
+      -5,
+      -10,
+      -15
+    ],
+    "primary_cell_pct": -10,
+    "base": {
+      "sharpe": 0.552,
+      "maxdd_pct": -33.9,
+      "cagr": 6.99
+    },
+    "cells": {
+      "-5%": {
+        "sharpe": 0.538,
+        "maxdd_pct": -37.7,
+        "cagr": 6.6,
+        "sharpe_diff_ci": {
+          "sharpe_diff_ci": [
+            -0.077,
+            -0.015,
+            0.052
+          ],
+          "real_improvement": false,
+          "real_degradation": false,
+          "n": 6922
+        },
+        "dd_reduction_ci": {
+          "dd_reduction_pp_ci": [
+            -4.4,
+            0.3,
+            5.5
+          ],
+          "favorable": false,
+          "excludes_0": false,
+          "n": 6922
+        },
+        "split_half_sharpe_diff": {
+          "pre2013": -0.041,
+          "post2013": 0.015
+        },
+        "go": false,
+        "verdict": "no_edge"
+      },
+      "-10%": {
+        "sharpe": 0.553,
+        "maxdd_pct": -33.9,
+        "cagr": 6.99,
+        "sharpe_diff_ci": {
+          "sharpe_diff_ci": [
+            -0.014,
+            0.001,
+            0.015
+          ],
+          "real_improvement": false,
+          "real_degradation": false,
+          "n": 6922
+        },
+        "dd_reduction_ci": {
+          "dd_reduction_pp_ci": [
+            -1.2,
+            0.0,
+            1.4
+          ],
+          "favorable": false,
+          "excludes_0": false,
+          "n": 6922
+        },
+        "split_half_sharpe_diff": {
+          "pre2013": 0.01,
+          "post2013": -0.009
+        },
+        "go": false,
+        "verdict": "no_edge"
+      },
+      "-15%": {
+        "sharpe": 0.547,
+        "maxdd_pct": -33.9,
+        "cagr": 6.92,
+        "sharpe_diff_ci": {
+          "sharpe_diff_ci": [
+            -0.018,
+            -0.004,
+            0.004
+          ],
+          "real_improvement": false,
+          "real_degradation": false,
+          "n": 6922
+        },
+        "dd_reduction_ci": {
+          "dd_reduction_pp_ci": [
+            -1.3,
+            0.0,
+            0.6
+          ],
+          "favorable": false,
+          "excludes_0": false,
+          "n": 6922
+        },
+        "split_half_sharpe_diff": {
+          "pre2013": 0.0,
+          "post2013": -0.009
+        },
+        "go": false,
+        "verdict": "no_edge"
+      }
+    },
+    "verdict": "no_edge",
+    "note": "Verdict from the pre-declared primary cell; sensitivity cells reported. Not wired into rank_themes()/allocate() in this task."
   }
 }

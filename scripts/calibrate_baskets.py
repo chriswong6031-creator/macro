@@ -1079,6 +1079,575 @@ def main_bd() -> int:
     return 0
 
 
+# =========================================================================== #
+# LABEL-FALTERING PHASE-0 (pre-registered 2026-07-03 — research/LABEL_FALTERING_PHASE0.md)
+# Three candidate fixes from the 2026-07-03 "ACCUMULATE while the bubble pops" incident,
+# deliberately NOT shipped blind. B1/B3 fit NO parameters (all thresholds pre-declared in
+# the doc), so inference is HAC + date-blocked bootstrap + split-half, no CV folds; B2's
+# incremental leg fits weights -> purged/embargoed 5-fold (the run_rollover_fit machinery).
+# NOTHING here wires into _label()/_reco()/allocate() regardless of verdict.
+# =========================================================================== #
+ESC_GRID = (-0.03, -0.05, -0.07)   # B1: 5d ABSOLUTE-return escape thresholds
+ESC_PRIMARY = -0.05                # pre-declared primary cell; ±2% cells are sensitivity
+RDM_GRID = (-0.05, -0.10, -0.15)   # B3: 21d-return demotion thresholds at rank time
+RDM_PRIMARY = -0.10                # pre-declared primary cell
+CONV_LOW = 25.0                    # B2 proxy: member-median health "collapse" level (0-100)
+LF_SPLIT = SZ_SPLIT                # split-half boundary (2013-01-01), shared with sizing
+
+
+def _paired_daily_diff_t(metric: np.ndarray, fired: np.ndarray, inset: np.ndarray,
+                         ev: np.ndarray) -> dict:
+    """HAC t of the SAME-DAY paired difference: per bar, mean(metric | fired) minus
+    mean(metric | in-set & not fired). Non-trivial by construction (fwd drawdown is <= 0
+    everywhere, so a raw HAC t on it is meaningless — the paired diff is the claim)."""
+    ok = inset & np.isfinite(metric)
+    diffs = []
+    for b in np.unique(ev[ok & fired]):
+        day = ok & (ev == b)
+        f, u = day & fired, day & ~fired
+        if f.any() and u.any():
+            diffs.append(float(metric[f].mean() - metric[u].mean()))
+    if len(diffs) < 8:
+        return {"t": None, "mean": None, "n_days": len(diffs)}
+    nw = V.newey_west_tstat(np.array(diffs), lags=int(np.ceil(21 / STEP)))
+    return {"t": nw["t"], "mean": round(100 * (nw["mean"] or 0), 2), "n_days": len(diffs)}
+
+
+def _hit_lift_ci(fired: np.ndarray, inset: np.ndarray, y: np.ndarray, ev: np.ndarray,
+                 B: int = 800, seed: int = 7) -> tuple[float | None, list | None]:
+    """P(y|fired)/P(y|in-set) with a date-blocked bootstrap CI (whole bars resampled, so
+    same-day correlated sector rows move together)."""
+    if not fired.any() or not inset.any():
+        return None, None
+    base = float(y[inset].mean())
+    lift = float(y[fired].mean()) / base if base > 0 else None
+    uev = np.unique(ev[inset])
+    rows_by_bar = {b: np.where(inset & (ev == b))[0] for b in uev}
+    rng = np.random.default_rng(seed)
+    lifts = []
+    for _ in range(B):
+        pick = rng.choice(uev, size=len(uev), replace=True)
+        ridx = np.concatenate([rows_by_bar[b] for b in pick])
+        fb = fired[ridx]
+        b2 = float(y[ridx].mean())
+        if int(fb.sum()) >= 10 and b2 > 0:
+            lifts.append(float(y[ridx][fb].mean()) / b2)
+    ci = [round(float(np.percentile(lifts, 2.5)), 2),
+          round(float(np.percentile(lifts, 97.5)), 2)] if len(lifts) >= 100 else None
+    return (round(lift, 2) if lift is not None else None), ci
+
+
+# --------------------------------------------------------------------------- #
+# B1 — absolute-return escape leg in the fading path (abs_escape_fit)
+# --------------------------------------------------------------------------- #
+def run_abs_escape(region: str = "us") -> dict:
+    """Would `fading` on (5d ABS return <= X AND breadth deterioration) — fired ONLY where
+    the relative-only path did NOT already flag risk — precede deeper forward drawdowns
+    (G1) without systematically selling bottoms (KILL: fired events resolving UP vs the
+    same-day in-set baseline)? Thresholds pre-declared; nothing fitted."""
+    spec = REGION_SECTORS[region]
+    P = sector_prices(region, monthly=False)
+    spy = _adj(spec["bench"], spec["group"])
+    if P.empty or spy is None or P.shape[1] < 4:
+        return {"error": "insufficient proxy data"}
+    spy = spy.reindex(P.index).ffill()
+    breadth = _panel_breadth(P)
+    feats = {c: _rs_features(P[c].dropna().reindex(P.index), spy) for c in P.columns}
+    spy_v = spy.to_numpy()
+    idx = P.index
+    bnp = {"pct50": breadth["pct50"].to_numpy(), "pct200": breadth["pct200"].to_numpy(),
+           "nh": breadth["nh"].to_numpy(), "nl": breadth["nl"].to_numpy(),
+           "net_nh": breadth["net_nh"].to_numpy()}
+
+    led = TrialLedger()
+    led.log_grid([{"abs5_thresh": x} for x in ESC_GRID], family="baskets_abs_escape",
+                 info_cutoff="2026-07-02", source="calibrate_baskets:abs_escape")
+    led.log_declared_budget(12, family="baskets_abs_escape",
+                            reason="escape-leg design variants considered: breadth-det gate "
+                                   "forms / 1d-vs-5d window / in-set definitions")
+
+    # rows: (abs5, det, inset, dd21, ret21, rel21, bar, pre2013)
+    rows = []
+    for i in range(max(Z_LB, 200), len(idx) - 22, STEP):
+        net_raw = bnp["nh"][i] - bnp["nl"][i]
+        det = bool((np.isfinite(net_raw) and net_raw <= 0)
+                   or (np.isfinite(bnp["pct50"][i]) and bnp["pct50"][i] < 0.5))
+        for c, f in feats.items():
+            px = P[c].to_numpy()
+            if not np.isfinite(px[i]) or i < 5 or not np.isfinite(px[i - 5]):
+                continue
+            accel_z = f["accel_z"].iloc[i]; rs_p = f["rs_pctile"].iloc[i]
+            if pd.isna(accel_z) or pd.isna(rs_p):
+                continue
+            accel_z, rs_p = float(accel_z), float(rs_p)
+            r5, r20, r60 = f["r5"].iloc[i], f["r20"].iloc[i], f["r60"].iloc[i]
+            d5 = f["delta_5d"].iloc[i]
+            trend = _trend_leg(r5, r20, r60, accel_z)
+            bl = _breadth_leg(bnp["pct50"][i], bnp["pct200"][i], bnp["net_nh"][i])
+            cp = _crowd_pen(rs_p)
+            score = _proxy_score(trend, bl, cp)
+            fp = {"accel_z": accel_z, "rs_pctile": rs_p}
+            perf = {"5d": {"rel": _f(r5)}, "20d": {"rel": _f(r20)}, "60d": {"rel": _f(r60)}}
+            bdict = {"pct50": _f(bnp["pct50"][i]), "nh": int(bnp["nh"][i]), "nl": int(bnp["nl"][i])}
+            lab = _label(score, fp, perf, bdict, _f(d5))
+            inset = lab not in ("fading", "deteriorating")   # relative path did NOT flag risk
+            abs5 = float(px[i] / px[i - 5] - 1.0)
+            dd21 = _fwd_dd(px, i, 21)
+            ret21 = float(px[i + 21] / px[i] - 1.0) if i + 21 < len(px) else np.nan
+            rel21 = _fwd_rel(px, spy_v, i, 21)
+            if not (np.isfinite(dd21) and np.isfinite(ret21)):
+                continue
+            rows.append((abs5, 1.0 if det else 0.0, 1.0 if inset else 0.0,
+                         dd21, ret21, rel21 if np.isfinite(rel21) else np.nan,
+                         float(i), 1.0 if idx[i] < LF_SPLIT else 0.0))
+    if len(rows) < 500:
+        return {"error": "thin", "n": len(rows)}
+    A = np.array(rows, float)
+    abs5, det, inset = A[:, 0], A[:, 1].astype(bool), A[:, 2].astype(bool)
+    dd21, ret21, rel21, ev, pre = A[:, 3], A[:, 4], A[:, 5], A[:, 6], A[:, 7].astype(bool)
+    y = (dd21 < DD_RISK).astype(float)
+    base_inset = float(y[inset].mean())
+
+    cells = {}
+    for x in ESC_GRID:
+        fired = inset & det & (abs5 <= x)
+        n_fired = int(fired.sum())
+        cell = {"n_fired": n_fired, "n_days_fired": int(len(np.unique(ev[fired])))}
+        if n_fired < 40:
+            cell["verdict"] = "thin"
+            cells[f"{x:+.0%}"] = cell
+            continue
+        lift, ci = _hit_lift_ci(fired, inset, y, ev)
+        t_dd = _paired_daily_diff_t(dd21, fired, inset, ev)
+        t_ret = _paired_daily_diff_t(ret21, fired, inset, ev)
+        halves_ok, halves = True, {}
+        for hn, hm in (("pre2013", pre), ("post2013", ~pre)):
+            hb = float(y[inset & hm].mean()) if (inset & hm).any() else 0.0
+            hf = float(y[fired & hm].mean()) if (fired & hm).any() else None
+            hl = round(hf / hb, 2) if (hf is not None and hb > 0) else None
+            halves[hn] = {"lift": hl, "n_fired": int((fired & hm).sum())}
+            halves_ok &= bool(hl is not None and hl > 1.0)
+        kill = bool(t_ret["t"] is not None and t_ret["t"] >= HAC_FLOOR_T)
+        g1 = bool(ci is not None and ci[0] > 1.0
+                  and t_dd["t"] is not None and t_dd["t"] <= -HAC_FLOOR_T
+                  and halves_ok)
+        cell.update({
+            "dd21_med_fired_pct": round(100 * float(np.median(dd21[fired])), 2),
+            "dd21_med_inset_pct": round(100 * float(np.median(dd21[inset])), 2),
+            "ret21_med_fired_pct": round(100 * float(np.median(ret21[fired])), 2),
+            "rel21_med_fired_pct": round(100 * float(np.nanmedian(rel21[fired])), 2),
+            "hit_fired": round(float(y[fired].mean()), 3), "lift": lift, "lift_ci": ci,
+            "t_dd_paired": t_dd, "t_ret_paired": t_ret, "split_half": halves,
+            "g1_risk": g1, "killed": kill,
+            "verdict": ("sell_the_bottom_generator" if kill
+                        else "ship_escape_leg" if g1 else "no_incremental_edge")})
+        cells[f"{x:+.0%}"] = cell
+
+    prim = cells.get(f"{ESC_PRIMARY:+.0%}", {})
+    sens_kill = any(c.get("killed") for k, c in cells.items()
+                    if k != f"{ESC_PRIMARY:+.0%}")
+    verdict = prim.get("verdict", "thin")
+    if verdict == "ship_escape_leg" and sens_kill:
+        verdict = "no_incremental_edge"          # a sensitivity-cell kill vetoes the ship
+    return {"universe": "proxy_spdr_sectors", "n_assets": int(P.shape[1]),
+            "span": [str(idx.min().date()), str(idx.max().date())],
+            "preregistered": "research/LABEL_FALTERING_PHASE0.md#B1",
+            "n": int(len(A)), "n_inset": int(inset.sum()),
+            "base_rate_inset": round(base_inset, 3),
+            "n_trials": led.effective_n("baskets_abs_escape"),
+            "grid_pct": [round(100 * x) for x in ESC_GRID],
+            "primary_cell_pct": round(100 * ESC_PRIMARY),
+            "breadth_det_def": "net_nh<=0 OR pct50<0.5 (panel proxy, broadcast)",
+            "cells": cells, "sensitivity_kill_veto": bool(sens_kill),
+            "verdict": verdict,
+            "note": "In-set = relative-path label NOT fading/deteriorating — the events the "
+                    "escape leg would ADD. Not wired into _label() in this task."}
+
+
+# --------------------------------------------------------------------------- #
+# B2 — member-conviction-median demotion leg (conviction_demotion_fit)
+# --------------------------------------------------------------------------- #
+def _audit_conviction_pit() -> dict:
+    """Programmatic audit of every candidate PIT source for per-basket member-conviction
+    history (audited 2026-07-03). The real study needs a dated series of the member
+    conviction.potential median; a rendered current-state store is not history."""
+    out = {}
+    try:
+        b = pd.read_parquet(config.data_dir() / "china_standout_track" / "board.parquet")
+        out["china_standout_track"] = {
+            "span": [str(b["date"].min()), str(b["date"].max())],
+            "n_days": int(b["date"].nunique()),
+            "has_conviction_field": bool(any("conv" in c.lower() for c in b.columns)),
+            "fields": list(b.columns)}
+    except Exception as e:  # noqa: BLE001
+        out["china_standout_track"] = {"error": str(e)}
+    try:
+        a = pd.read_parquet(config.data_dir() / "signal_archive" / "baskets.parquet")
+        out["signal_archive_baskets"] = {
+            "span": [str(a["asof"].min()), str(a["asof"].max())],
+            "n_days": int(a["asof"].nunique()),
+            "conviction_fields": [c for c in a.columns if "conv" in c.lower() or "member" in c.lower()]}
+    except Exception as e:  # noqa: BLE001
+        out["signal_archive_baskets"] = {"error": str(e)}
+    out["git_rendered_stores"] = {
+        "note": "site/*stockdata/*.json carried conviction blocks in git only 2026-06-13 → "
+                "2026-07-01 (~13 trading days), then untracked to R2 (r2-data-plane). "
+                "Rendered current-state, formula drift across renders — not a PIT series."}
+    out["r2_data_plane"] = {"note": "current-state per-ticker stores only; no dated snapshots."}
+    days = [v.get("n_days", 0) for v in out.values() if isinstance(v, dict)]
+    conv = [bool(v.get("has_conviction_field")) or bool(v.get("conviction_fields"))
+            for v in out.values() if isinstance(v, dict)]
+    out["usable_pit_history"] = bool(any(d >= 126 and c for d, c in zip(days, conv)))
+    return out
+
+
+def run_conviction_demotion(region: str = "us") -> dict:
+    """B2 in three pre-registered parts: (1) PIT-source audit — the real study cannot run
+    without a dated member-conviction-median history; (2) the accrual spec if none exists;
+    (3) an SPDR price-proxy kill-test (prior-setting ONLY — the proxy health composite is
+    a price stand-in for conviction.potential's price legs and can never ship the leg)."""
+    audit = _audit_conviction_pit()
+    accrual = {
+        "what": "daily, per basket and region: member conviction.potential median, IQR, "
+                "n_members, theme score, label — archived via engine.signal_archive at render",
+        "rerun_bar": ">=180 archived trading days (~9 months; ~36 non-overlapping 21d windows "
+                     "per basket x ~25 baskets, date-blocked pooling)",
+        "gates_on_rerun": "identical to the proxy G1/G2 below, pre-registered 2026-07-03"}
+
+    led = TrialLedger()
+    led.log_grid([{"health_legs": "50d+200d+r20+dd252", "low": CONV_LOW,
+                   "constructive": "lvl>200dma & r20>0"}],
+                 family="baskets_conviction_demotion",
+                 info_cutoff="2026-07-02", source="calibrate_baskets:conviction_demotion")
+    led.log_declared_budget(12, family="baskets_conviction_demotion",
+                            reason="proxy-health design variants considered: leg splits / "
+                                   "collapse-delta vs level / constructive definitions")
+
+    # ---- Part 3 proxy: member health median vs the EW panel basket
+    spec = REGION_SECTORS[region]
+    P = sector_prices(region, monthly=False)
+    spy = _adj(spec["bench"], spec["group"])
+    if P.empty or spy is None or P.shape[1] < 4:
+        return {"error": "insufficient proxy data", "pit_audit": audit, "accrual_spec": accrual}
+    spy = spy.reindex(P.index).ffill()
+    ma50 = P.rolling(50, min_periods=25).mean()
+    ma200 = P.rolling(200, min_periods=100).mean()
+    r20 = P.pct_change(20, fill_method=None)
+    dd252 = P / P.rolling(252, min_periods=60).max() - 1.0
+    health = (25.0 * (P > ma50).astype(float) + 25.0 * (P > ma200).astype(float)
+              + 25.0 * (r20 > 0).astype(float) + 25.0 * (dd252 > -0.15).astype(float))
+    health = health.where(P.notna() & ma200.notna())
+    med_h = health.median(axis=1)
+    lvl = (1.0 + P.pct_change(fill_method=None).mean(axis=1).fillna(0.0)).cumprod()
+    lvl_ma = lvl.rolling(200, min_periods=100).mean()
+    constructive = (lvl > lvl_ma) & (lvl.pct_change(20, fill_method=None) > 0)
+
+    lvl_v, med_v, con_v = lvl.to_numpy(), med_h.to_numpy(), constructive.to_numpy()
+    samp = []                                  # (event, y, bar) on constructive days only
+    for i in range(max(Z_LB, 200), len(lvl_v) - 22, STEP):
+        if not con_v[i] or not np.isfinite(med_v[i]):
+            continue
+        dd = _fwd_dd(lvl_v, i, 21)
+        if not np.isfinite(dd):
+            continue
+        samp.append((1.0 if med_v[i] <= CONV_LOW else 0.0, 1.0 if dd < DD_RISK else 0.0, float(i)))
+    proxy: dict = {"n_constructive": len(samp)}
+    g1 = False
+    if len(samp) >= 100:
+        S = np.array(samp, float)
+        event, y1, ev1 = S[:, 0].astype(bool), S[:, 1], S[:, 2]
+        base = float(y1.mean())
+        n_ev = int(event.sum())
+        proxy.update({"base_rate": round(base, 3), "n_events": n_ev,
+                      "event_def": f"constructive AND member-median health <= {CONV_LOW:.0f}"})
+        if n_ev >= 20:
+            # single-series -> BLOCK bootstrap (5-obs blocks span one forward window; an
+            # i.i.d. bar bootstrap would understate width on overlapping 21d windows)
+            lift = float(y1[event].mean()) / base if base > 0 else None
+            rng = np.random.default_rng(7)
+            n1, blk = len(y1), int(np.ceil(21 / STEP))
+            nb, grid = int(np.ceil(n1 / blk)), np.arange(blk)
+            lifts = []
+            for _ in range(800):
+                starts = rng.integers(0, n1, nb)
+                ridx = (starts[:, None] + grid[None, :]).ravel()[:n1] % n1
+                eb, yb = event[ridx], y1[ridx]
+                b2 = float(yb.mean())
+                if int(eb.sum()) >= 10 and b2 > 0:
+                    lifts.append(float(yb[eb].mean()) / b2)
+            ci = [round(float(np.percentile(lifts, 2.5)), 2),
+                  round(float(np.percentile(lifts, 97.5)), 2)] if len(lifts) >= 100 else None
+            g1 = bool(ci is not None and ci[0] > 1.0)
+            proxy["g1_standalone"] = {"pass": g1, "lift": round(lift, 2) if lift else None,
+                                      "lift_ci": ci}
+        else:
+            proxy["g1_standalone"] = {"pass": False, "note": "too few collapse events"}
+    else:
+        proxy["g1_standalone"] = {"pass": False, "note": "thin"}
+
+    # ---- G2 incremental: collapse flag as 6th sign-constrained rollover leg (prior 0)
+    feats = {c: _rs_features(P[c].dropna().reindex(P.index), spy) for c in P.columns}
+    HAND5 = np.array([0.30, 0.25, 0.20, 0.15, 0.10])
+    flag_v = (constructive & (med_h <= CONV_LOW)).to_numpy().astype(float)
+    rows6 = []
+    for c, f in feats.items():
+        px = P[c].to_numpy()
+        rs_p = f["rs_pctile"].to_numpy(); az = f["accel_z"].to_numpy(); r5 = f["r5"].to_numpy()
+        az5 = f["accel_z"].shift(5).to_numpy()
+        m50 = ma50[c].to_numpy()
+        for i in range(max(Z_LB, 200), len(px) - 22, STEP):
+            rp, a = rs_p[i], az[i]
+            if not (np.isfinite(rp) and np.isfinite(a)):
+                continue
+            dd = _fwd_dd(px, i, 21)
+            if not np.isfinite(dd):
+                continue
+            l1 = 1.0 if rp >= 0.8 else 0.0
+            l2_ = 1.0 if (np.isfinite(az5[i]) and a < az5[i] and a < 0) else 0.0
+            l3 = 1.0 if a < -0.4 else 0.0
+            l4 = 1.0 if (np.isfinite(m50[i]) and px[i] < m50[i]) else 0.0
+            l5 = 1.0 if (np.isfinite(r5[i]) and r5[i] < -0.01 and rp > 0.7) else 0.0
+            rows6.append((l1, l2_, l3, l4, l5, float(flag_v[i]),
+                          1.0 if dd < DD_RISK else 0.0, float(i)))
+    g2 = False
+    inc: dict = {"n": len(rows6)}
+    if len(rows6) >= 500:
+        A6 = np.array(rows6, float)
+        A6 = A6[np.argsort(A6[:, 7], kind="stable")]
+        X6, y6, ev6 = A6[:, :6], A6[:, 6], A6[:, 7]
+        X5 = X6[:, :5]
+        hand_score = (X5 @ HAND5) / HAND5.sum()
+        prior6 = np.concatenate([HAND5, [0.0]])
+        k, emb = 5, 21
+        b6 = np.linspace(0, len(X6), k + 1).astype(int)
+        fit5_l, fit6_l, hand_l, w6_folds = [], [], [], []
+        for j in range(k):
+            lo, hi = int(b6[j]), int(b6[j + 1])
+            test = np.zeros(len(X6), bool); test[lo:hi] = True
+            if not test.any():
+                continue
+            blo, bhi = ev6[test].min(), ev6[test].max()
+            train = (~test) & ((ev6 < blo - emb) | (ev6 > bhi + emb))
+            if train.sum() < 200 or test.sum() < 50:
+                continue
+            w5f, b5f = _fit_logistic_signed(X5[train], y6[train], HAND5, l2=1.0)
+            w6f, b6f = _fit_logistic_signed(X6[train], y6[train], prior6, l2=1.0)
+            w6_folds.append(round(float(w6f[5]), 3))
+            bte = float(y6[test].mean()) or 1.0
+            for score, store_ in ((1.0 / (1.0 + np.exp(-(X5[test] @ w5f + b5f))), fit5_l),
+                                  (1.0 / (1.0 + np.exp(-(X6[test] @ w6f + b6f))), fit6_l),
+                                  (hand_score[test], hand_l)):
+                fire = score >= np.quantile(score, 2 / 3)
+                if int(fire.sum()) >= 20:
+                    store_.append(float(y6[test][fire].mean()) / bte)
+        fit5 = round(float(np.mean(fit5_l)), 2) if fit5_l else None
+        fit6 = round(float(np.mean(fit6_l)), 2) if fit6_l else None
+        hand = round(float(np.mean(hand_l)), 2) if hand_l else None
+        wfull6, _bf6 = _fit_logistic_signed(X6, y6, prior6, l2=1.0)
+        g2 = bool(fit6 is not None and hand is not None
+                  and fit6 > hand + 0.05 and (fit5 is None or fit6 > fit5)
+                  and float(wfull6[5]) > 0.02)
+        inc.update({"base_rate": round(float(y6.mean()), 3),
+                    "oos_lift_hand5": hand, "oos_lift_fit5": fit5, "oos_lift_fit6": fit6,
+                    "w6_full_fit": round(float(wfull6[5]), 3), "w6_by_fold": w6_folds})
+    proxy["g2_incremental"] = {"pass": g2, **inc}
+    proxy["verdict"] = ("proxy_supports" if (g1 and g2)
+                        else "proxy_redundant_with_breadth" if g1 else "proxy_no_signal")
+
+    verdict = ("pit_history_exists_run_real_study" if audit.get("usable_pit_history")
+               else "no_pit_history_accrue")
+    return {"universe": "proxy_spdr_sectors",
+            "preregistered": "research/LABEL_FALTERING_PHASE0.md#B2",
+            "n_trials": led.effective_n("baskets_conviction_demotion"),
+            "pit_audit": audit, "accrual_spec": accrual, "proxy": proxy,
+            "verdict": verdict,
+            "note": "The proxy health composite is a PRICE stand-in for the conviction "
+                    "score's price legs — it can set the prior for the accrued re-run but "
+                    "can never ship the demotion leg. Not wired in this task."}
+
+
+# --------------------------------------------------------------------------- #
+# B3 — allocation-rank modulation for recent absolute drawdown (rank_dd_modulation_fit)
+# --------------------------------------------------------------------------- #
+def _rotation_book_dd_demote(P: pd.DataFrame, thresh: float, top_n: int = 4,
+                             lookback: int = 12, trend_ma: int = 200) -> pd.DataFrame:
+    """_rotation_book with the pre-registered demotion: at each monthly decision, a
+    candidate whose trailing 21d ABSOLUTE return <= thresh is excluded from selection
+    (the next eligible name refills the slot; unfilled slots sit in cash). This is the
+    rank-time analogue of de-ranking a leader in a sharp current drawdown — exactly the
+    window narrative_rotation's SKIP_D=21 blinds."""
+    M = P.resample("ME").last()
+    mom = M.pct_change(lookback) - M.pct_change(1)
+    above = (P > P.rolling(trend_ma, min_periods=trend_ma // 2).mean())
+    r21m = P.pct_change(21, fill_method=None).resample("ME").last()
+    w = pd.DataFrame(0.0, index=M.index, columns=P.columns)
+    for dt in M.index[max(lookback, 10):]:
+        m = mom.loc[dt].dropna()
+        ab = above.loc[:dt]
+        if ab.empty or m.empty:
+            continue
+        m = m[ab.iloc[-1].reindex(m.index).fillna(False)]
+        rr = r21m.loc[dt].reindex(m.index)
+        m = m[~(rr <= thresh).fillna(False)]
+        top = m.sort_values(ascending=False).head(top_n).index
+        if len(top):
+            w.loc[dt, top] = 1.0 / top_n
+    return w.reindex(P.index, method="ffill").fillna(0.0)
+
+
+def _sharpe_diff_ci(strat_net: pd.Series, base_net: pd.Series, block: int = 21,
+                    B: int = 4000, seed: int = 13) -> dict:
+    """Paired circular-block bootstrap CI of the annualized Sharpe DIFFERENCE
+    (strat − base). Lower bound > 0 => a real risk-adjusted improvement; upper bound < 0
+    => a real degradation (the reversal-noise signature)."""
+    a = strat_net.dropna(); b = base_net.reindex(a.index).fillna(0.0)
+    ra, rb = a.to_numpy(float), b.to_numpy(float); n = len(ra)
+    if n < max(block * 3, 60):
+        return {}
+    rng = np.random.default_rng(seed); nb = int(np.ceil(n / block)); grid = np.arange(block)
+
+    def _sh(x: np.ndarray) -> float:
+        sd = x.std()
+        return float(x.mean() / sd * np.sqrt(252)) if sd > 0 else np.nan
+
+    diffs = np.empty(B)
+    for k in range(B):
+        starts = rng.integers(0, n, nb)
+        ridx = (starts[:, None] + grid[None, :]).ravel()[:n] % n
+        diffs[k] = _sh(ra[ridx]) - _sh(rb[ridx])
+    diffs = diffs[np.isfinite(diffs)]
+    if len(diffs) < 100:
+        return {}
+    lo, med, hi = (float(np.percentile(diffs, p)) for p in (2.5, 50, 97.5))
+    return {"sharpe_diff_ci": [round(lo, 3), round(med, 3), round(hi, 3)],
+            "real_improvement": bool(lo > 0), "real_degradation": bool(hi < 0), "n": n}
+
+
+def run_rank_dd_modulation(region: str = "us") -> dict:
+    """Does demoting a ranked leader in a sharp recent absolute drawdown improve the
+    allocation backtest, or does it re-import the short-term-reversal noise SKIP_D=21
+    exists to avoid? Thresholds pre-declared; nothing fitted."""
+    from engine import active_alloc as aa
+    P = sector_prices(region, monthly=False)
+    if P.empty or P.shape[1] < 4:
+        return {"error": "insufficient proxy data"}
+    bill = _daily_bill(P.index)
+    led = TrialLedger()
+    led.log_grid([{"r21_demote": x} for x in RDM_GRID], family="baskets_rank_dd_mod",
+                 info_cutoff="2026-07-02", source="calibrate_baskets:rank_dd_modulation")
+    led.log_declared_budget(12, family="baskets_rank_dd_mod",
+                            reason="rank-modulation variants considered: r21 vs dd-from-63d-high "
+                                   "/ exclude-vs-downweight / refill rules")
+
+    def bt(w, prices=P, b=bill):
+        return aa.backtest_portfolio(w, prices, b, cost_bps=SZ_COST_BPS)
+
+    base = bt(_rotation_book(P))
+    base_sh, base_dd = _ann_sharpe(base["net"]), _maxdd_ret(base["net"])
+    cells = {}
+    for x in RDM_GRID:
+        mod = bt(_rotation_book_dd_demote(P, x))
+        sh, dd = _ann_sharpe(mod["net"]), _maxdd_ret(mod["net"])
+        shci = _sharpe_diff_ci(mod["net"], base["net"])
+        ddci = _dd_reduction_ci(mod["net"], base["net"])
+        halves = {}
+        for hn, mask in {"pre2013": P.index < LF_SPLIT, "post2013": P.index >= LF_SPLIT}.items():
+            sub = P[mask]
+            if len(sub) < 400:
+                continue
+            sb = _daily_bill(sub.index)
+            mm = aa.backtest_portfolio(_rotation_book_dd_demote(sub, x), sub, sb, cost_bps=SZ_COST_BPS)
+            bb = aa.backtest_portfolio(_rotation_book(sub), sub, sb, cost_bps=SZ_COST_BPS)
+            halves[hn] = round(_ann_sharpe(mm["net"]) - _ann_sharpe(bb["net"]), 3)
+        med = (shci.get("sharpe_diff_ci") or [None, None, None])[1]
+        go = bool(shci.get("real_improvement")
+                  or (ddci.get("favorable") and med is not None and med >= -0.02))
+        cells[f"{x:+.0%}"] = {
+            "sharpe": round(sh, 3), "maxdd_pct": round(dd * 100, 1), "cagr": mod.get("cagr"),
+            "sharpe_diff_ci": shci, "dd_reduction_ci": ddci, "split_half_sharpe_diff": halves,
+            "go": go,
+            "verdict": ("ship_rank_modulation" if go
+                        else "reversal_noise_reimported" if shci.get("real_degradation")
+                        else "no_edge")}
+    prim = cells.get(f"{RDM_PRIMARY:+.0%}", {})
+    return {"universe": "proxy_spdr_sectors",
+            "span": [str(P.index.min().date()), str(P.index.max().date())],
+            "preregistered": "research/LABEL_FALTERING_PHASE0.md#B3",
+            "n_trials": led.effective_n("baskets_rank_dd_mod"), "cost_bps": SZ_COST_BPS,
+            "grid_pct": [round(100 * x) for x in RDM_GRID],
+            "primary_cell_pct": round(100 * RDM_PRIMARY),
+            "base": {"sharpe": round(base_sh, 3), "maxdd_pct": round(base_dd * 100, 1),
+                     "cagr": base.get("cagr")},
+            "cells": cells, "verdict": prim.get("verdict", "thin"),
+            "note": "Verdict from the pre-declared primary cell; sensitivity cells reported. "
+                    "Not wired into rank_themes()/allocate() in this task."}
+
+
+def _print_label_faltering(esc: dict, conv: dict, rdm: dict) -> None:
+    print("\n=== LABEL-FALTERING PHASE-0 (pre-registered research/LABEL_FALTERING_PHASE0.md) ===")
+    if esc.get("error"):
+        print(f"  B1 abs-escape: {esc['error']}")
+    else:
+        print(f"  B1 abs-escape (in-set n {esc['n_inset']}, base P(dd<-8%) {esc['base_rate_inset']}):")
+        for k, c in esc.get("cells", {}).items():
+            if c.get("verdict") == "thin":
+                print(f"    X={k}: thin (n_fired {c.get('n_fired')})"); continue
+            print(f"    X={k}: n_fired {c['n_fired']}  hit {c['hit_fired']}  lift {c['lift']} "
+                  f"CI {c['lift_ci']}  t_dd {c['t_dd_paired'].get('t')}  "
+                  f"t_ret {c['t_ret_paired'].get('t')}  med fwd ret {c['ret21_med_fired_pct']}%  "
+                  f"→ {c['verdict']}")
+        print(f"    >>> B1 VERDICT (primary {esc.get('primary_cell_pct')}%): {esc.get('verdict')}")
+    if conv.get("error"):
+        print(f"  B2 conviction-demotion: {conv['error']}")
+    else:
+        au = conv.get("pit_audit", {})
+        print(f"  B2 conviction-demotion: usable PIT history = {au.get('usable_pit_history')}")
+        px = conv.get("proxy", {})
+        g1p, g2p = px.get("g1_standalone", {}), px.get("g2_incremental", {})
+        print(f"    proxy: events {px.get('n_events')}  G1 lift {g1p.get('lift')} CI {g1p.get('lift_ci')} "
+              f"pass={g1p.get('pass')}  G2 fit6 {g2p.get('oos_lift_fit6')} vs fit5 "
+              f"{g2p.get('oos_lift_fit5')} w6 {g2p.get('w6_full_fit')} pass={g2p.get('pass')} "
+              f"→ {px.get('verdict')}")
+        print(f"    >>> B2 VERDICT: {conv.get('verdict')}")
+    if rdm.get("error"):
+        print(f"  B3 rank-modulation: {rdm['error']}")
+    else:
+        b = rdm.get("base", {})
+        print(f"  B3 rank-modulation (base Sharpe {b.get('sharpe')} MaxDD {b.get('maxdd_pct')}%):")
+        for k, c in rdm.get("cells", {}).items():
+            print(f"    X={k}: Sharpe {c['sharpe']}  MaxDD {c['maxdd_pct']}%  "
+                  f"ΔSharpe CI {c['sharpe_diff_ci'].get('sharpe_diff_ci')}  "
+                  f"ΔDD CI {c['dd_reduction_ci'].get('dd_reduction_pp_ci')}  "
+                  f"halves {c['split_half_sharpe_diff']}  → {c['verdict']}")
+        print(f"    >>> B3 VERDICT (primary {rdm.get('primary_cell_pct')}%): {rdm.get('verdict')}")
+
+
+def main_label_faltering() -> int:
+    """Standalone entry (`--label-faltering`): run ONLY the three pre-registered B1/B2/B3
+    studies and merge their verdict blocks ADDITIVELY into baskets_calibration.json under
+    'abs_escape_fit' / 'conviction_demotion_fit' / 'rank_dd_modulation_fit' — existing
+    keys are never disturbed."""
+    log.info("running B1 absolute-escape kill-test…")
+    esc = run_abs_escape("us")
+    log.info("running B2 conviction-demotion PIT audit + proxy…")
+    conv = run_conviction_demotion("us")
+    log.info("running B3 rank-modulation A/B…")
+    rdm = run_rank_dd_modulation("us")
+    _print_label_faltering(esc, conv, rdm)
+    p = config.data_dir() / "strategies" / "baskets_calibration.json"
+    try:
+        d = json.loads(p.read_text()) if p.exists() else {}
+    except Exception:  # noqa: BLE001 — a corrupt file must not block the additive write
+        d = {}
+    d["abs_escape_fit"] = esc
+    d["conviction_demotion_fit"] = conv
+    d["rank_dd_modulation_fit"] = rdm
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(d, indent=2, default=str))
+    log.info("wrote %s (abs_escape_fit + conviction_demotion_fit + rank_dd_modulation_fit, additive)", p)
+    return 0
+
+
 # --------------------------------------------------------------------------- #
 # LIVE universe — full-fidelity labels, descriptive context only (never a gate)
 # --------------------------------------------------------------------------- #
@@ -1303,6 +1872,10 @@ def main(do_live: bool = False) -> int:
 
 
 if __name__ == "__main__":
-    # `--bd` runs ONLY the P2b breadth-divergence Phase-0 and merges its verdict block
-    # additively into the existing calibration JSON (the full main() rerun is ~minutes).
+    # `--bd` runs ONLY the P2b breadth-divergence Phase-0; `--label-faltering` runs ONLY
+    # the pre-registered B1/B2/B3 studies (research/LABEL_FALTERING_PHASE0.md). Both merge
+    # their verdict blocks additively into the existing calibration JSON (the full main()
+    # rerun is ~minutes).
+    if "--label-faltering" in sys.argv:
+        sys.exit(main_label_faltering())
     sys.exit(main_bd() if "--bd" in sys.argv else main("--live" in sys.argv))
