@@ -298,7 +298,7 @@ html[data-lang="zh"] .member-chip .mr.pos{color:var(--red)} html[data-lang="zh"]
       {% if b.top_members %}
       <div class="members">
         {% for m in b.top_members %}
-        <a class="member-chip" href="china_lookup.html#{{ m.ticker }}" title="{{ m.ticker }} · {{ t('63d return','63日收益') }}">
+        <a class="member-chip" href="china_lookup.html#{{ m.ticker }}" title="{{ m.ticker }} · 63d return">
           {{ m.name_zh }}
           {% if m.ret_63d is not none %}
             <span class="mr {{ 'pos' if m.ret_63d >= 0 else 'neg' }}">{{ '%+.1f'|format(m.ret_63d) }}%</span>
