@@ -1818,6 +1818,22 @@
         "results": "data/experiments/r1_removal_gate_results.json"
       },
       "pr": "hkca-w7pre-r1"
+    },
+    {
+      "id": "hkca-x1-atwin-readthrough",
+      "title": "X1 -- A-twin read-through: does the A-share twin state predict the H leg (HK)",
+      "kind": "validation",
+      "hypothesis": "For dual-listed A/H pairs (25, data/hk_ah_panel/pairs.json), the A-share twin carries validated in-house state (within-history 3M reversal -- reports/china-reversal-phase0 -- and 1M momentum). Because A/H investor bases are segmented (Connect quotas, capital controls, different marginal buyers), the A leg can discover China-local info before the H leg impounds it. Three pre-registered trials (research/HK_CANADA_X1_PREREG.md), one FDR family, program DSR budget 36: (a) A-3M-reversal within-history z -> H forward 3m excess vs HSI; (b) A-1M-momentum z -> H forward ~1m; (c) double-cheap interaction (A-washout AND H-discount-extreme) vs either alone. Suspension-honest next-close fills, HAC t, BH-FDR, DSR (ledger-fed budget 36, t_eff), split-half + 2016-12 SZ-Connect era stability, H-own-return C1 control, survivorship bounds.",
+      "status": "accruing",
+      "program": "hk_canada_stocks",
+      "wave": "W7-pre",
+      "channel": "X1",
+      "phase": "ACCRUE",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2027-07-03",
+      "come_back_note": "Verdict: (a) A-3M-reversal read-through NO-GO (rank-IC -0.007 t -0.28 at 3m; dividend-neutral L/S NEGATIVE t -1.01; the only positive number, +1.71% top-5 long-only, is TR-vs-price dividend drift + shared HK/China beta, not skill; survivorship-robust null). (b) A-1M-momentum lead ACCRUE/near-GO -- rank-IC +0.034 (t 1.67), same sign at ~2w, survives H-own-return C1 control (keep 80%, sign OK), FDR-reject, split-half + era stable, but IC-t 1.67<2.0, L/S-t 1.51<2.0, DSR 0.846<0.90 at budget 36. (c) double-cheap interaction NO-GO/REFUTED -- double cell +3.09% (t 3.08) does NOT beat H-discount-alone +3.00% (t 3.86); the A-washout adds nothing over H3 premium. NOTHING WIRED. Come-back leg = (b) only, as the matched panel deepens (25 pairs, one correlated basket, t_eff ~209). Report reports/hkca-x1-phase0.md; code research/hk_x1_atwin_readthrough.py; raw research/hk_x1_results.json.",
+      "n_trials_program_dsr": 36,
+      "pr": "hkca-w7pre-x1"
     }
   ]
 }
