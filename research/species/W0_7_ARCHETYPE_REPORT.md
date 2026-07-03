@@ -112,9 +112,17 @@ as directional only.**
 | secular_growth | 29 | +0.6% | +0.8% | −3.7% | 31.0% | 58.6% | 55.2% |
 | cyclical | 103 | 0.0% | −0.3% | −2.5% | 17.5% | 57.3% | 53.4% |
 | distressed | 103 | +0.9% | +0.9% | −3.2% | 20.4% | 57.3% | 51.5% |
-| broken_growth | 18 | +3.3% | +3.6% | −2.2% | 11.1% | 66.7% | 72.2% |
+| commodity_sensitive | 0 | — | — | — | — | — | — |
 | speculative_unprofitable | 80 | −1.8% | −1.9% | −4.6% | 42.5% | 38.8% | 37.5% |
 | high_beta_momentum | 32 | −1.5% | −1.3% | −6.1% | 46.9% | 43.8% | 43.8% |
+
+*Errata: the original table contained a duplicate `broken_growth` row (rows 4 and 11
+were identical) and was missing `commodity_sensitive`. The duplicate was removed. The
+`commodity_sensitive` row above (n=0) reflects that zero fires in this ledger
+(2026-06-16 to 2026-06-25) matched that archetype in the latest-FY snapshot — confirmed
+by recomputing all rows using the §1.1 methodology (latest FY archetype joined on ticker);
+spot-checks for `financial`, `cyclical`, and `distressed` reproduce the original values
+exactly.*
 
 ### 2.3 Both-halves sign check
 
@@ -187,6 +195,24 @@ signal. The regime confound cannot be estimated with one regime.
 filing (FY2025) for each ticker, not from the archetype at the fire date. For
 any ticker that changed archetype since FY2025 filing, the assignment is stale.
 
+**Historical archetype labels are non-PIT for beta/sector-driven buckets:**
+`data/archetypes/history.parquet` contains genuinely PIT inputs only for Altman
+Z ratio components and rev/EPS CAGRs (statements filtered to `fy <= row fy`).
+Sector, rates_beta, oil_beta_raw, and factor z-scores are CURRENT-SNAPSHOT values
+(single 2026 read from `site/factor_betas.json` and `site/factordata/factors.json`)
+used identically for every historical row. Empirically 0/1331 tickers vary their
+sector/rates_beta/oil_beta across years in this parquet, confirming the labels for
+rate_sensitive, commodity_sensitive, financial, and cyclical buckets reflect 2026
+cross-section, not true historical state. Per masterplan §3.4: these labels may
+seed **display-only** hypothesis priors and never learned multipliers or
+species scope-gates.
+
+**Distressed bucket silent gap pre-~2020:** Altman Z inputs are NaN for most
+pre-~2020 rows (EDGAR XBRL coverage is sparse before 2018-2020). Early-year rows
+for which Altman inputs are absent are classified entirely by current-day inputs
+(sector, betas, factor z-scores). The distressed bucket should be treated as
+unreliable before FY2020.
+
 **Small n for 5 buckets:** quality_compounder (11), dividend_defensive (5),
 deep_value (4), broken_growth (18), secular_growth (29). No significance test
 is reported because the effective n is too small and the regime confound is
@@ -196,15 +222,23 @@ uncontrolled.
 scope only where the conditional spread is real AND both-halves checked. This
 report is a measurement baseline, not a demotion or promotion trigger.
 
+**_GROWTH_ARCH compatibility note (engine/stock_macro_sensitivity.py):** `secular_growth`
+and `broken_growth` have been added to `_GROWTH_ARCH` so that names reclassified
+from `quality_compounder`/`high_beta_momentum` into these v2 buckets retain their
+negative inflation-beta read. `rate_sensitive`, `cyclical`, `financial`,
+`commodity_sensitive`, and `distressed` are deliberately excluded — those
+reclassifications change the macro nature of the name.
+
 ---
 
 ## 5. Data paths
 
 | file | description |
 |---|---|
-| `data/archetypes/history.parquet` | PIT-safe annual archetype series (19,487 rows, FY2009–2025) |
+| `data/archetypes/history.parquet` | annual archetype series — fundamentals PIT, sector/betas/factor-z CURRENT-SNAPSHOT (non-PIT labels for beta/sector-driven buckets) (19,487 rows, FY2009–2025) |
 | `data/us_board_ledger/retro_grades.parquet` | Grade ledger used for phase-0 (950 fires) |
 | `engine/stock_fundamentals.py` | `_archetype()` v2, `archetypes_history()` |
+| `scripts/build_archetype_history.py` | Rebuild entrypoint — rebuilt on demand; not on the nightly path; frozen between rebuilds |
 | `research/species/W0_7_ARCHETYPE_REPORT.md` | This file |
 
 ---

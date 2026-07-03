@@ -1342,18 +1342,48 @@ def archetypes_history(out_path=None) -> pd.DataFrame:
     (data/edgar/fundamentals_panel.parquet) at annual steps and persist
     the result to data/archetypes/history.parquet.
 
-    PIT-safety guarantee: the fundamentals_panel uses ``asof_date`` (the date
-    the filing became public) so no look-ahead. The series steps by fiscal year
-    (FY) — fundamentals are annual-only, so a quarterly step would be synthetic.
-    The ``basis`` column records ``annual_fy`` to make this explicit.
+    Point-in-time (PIT) status of each input — NOT a uniform PIT guarantee:
+
+      PIT inputs (genuinely point-in-time):
+        - Altman Z ratio inputs: assets, cur_assets, cur_liab, retained_earnings,
+          op_income, revenue — drawn from statements.parquet filtered to fy <= this
+          row's fy, so no forward look on the balance-sheet / income numbers.
+        - rev_cagr, eps_cagr — computed from statements rows with fy <= this panel fy
+          (same PIT filter), so CAGR inputs are historically valid.
+
+      CURRENT-SNAPSHOT inputs (NOT PIT — same 2026 value used for every historical row):
+        - sector: from site/factordata/factors.json (single cross-sectional snapshot)
+        - rates_beta: from site/factor_betas.json (single 2026 regression snapshot)
+        - oil_beta_raw: from site/factor_betas.json (same 2026 snapshot)
+        - factor z-scores (value, quality, profitability, …): from factors.json (2026)
+
+    CONSEQUENCE: archetype LABELS for beta/sector-driven buckets (rate_sensitive,
+    commodity_sensitive, financial, cyclical) are NON-PIT for historical rows.
+    Empirical check: 0/1331 tickers vary their sector/rates_beta/oil_beta across
+    years in this parquet (all snapshots are single-valued), confirming the
+    non-variation is structural, not incidental.
+
+    DISPLAY-ONLY constraint (§3.4 of the masterplan): historical archetype labels
+    may seed display-only hypothesis priors. They must NEVER be used as learned
+    multipliers, training labels, or species scope-gates — those uses require
+    genuinely PIT inputs.
+
+    The distressed bucket also has a silent early-year gap: Altman inputs are NaN
+    for most pre-~2020 rows (EDGAR XBRL coverage is sparse before 2018-2020), so
+    early-year rows are almost entirely determined by current-day inputs (sector,
+    betas, factor z-scores).
+
+    The ``basis`` column records ``annual_fy`` to make the annual step explicit.
 
     Inputs consumed (all optional — rows that lack them get None for those fields):
       - data/edgar/fundamentals_panel.parquet   (PIT financials — Altman inputs)
-      - data/edgar/statements.parquet           (rev/EPS multi-year for CAGR)
-      - site/factor_betas.json                  (rate/oil betas — static snapshot)
-      - site/factordata/factors.json            (sector + factor z-scores)
+      - data/edgar/statements.parquet           (rev/EPS multi-year for CAGR — PIT-filtered)
+      - site/factor_betas.json                  (rate/oil betas — CURRENT-SNAPSHOT, non-PIT)
+      - site/factordata/factors.json            (sector + factor z-scores — CURRENT-SNAPSHOT, non-PIT)
 
     Returns the DataFrame (also written to disk).
+    Lifecycle: rebuilt on demand via scripts/build_archetype_history.py; not on the
+    nightly path; frozen between rebuilds.
     """
     import os
 

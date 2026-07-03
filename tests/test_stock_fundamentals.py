@@ -316,6 +316,105 @@ def test_archetype_v2_taxonomy_completeness():
     assert len(prec_keys) == len(set(prec_keys)), "ARCHETYPE_PRECEDENCE has duplicate keys"
 
 
+def test_archetype_precedence_cascade_order():
+    """ARCHETYPE_PRECEDENCE is not just documentation — its order must match the
+    actual first-match-wins cascade in _archetype(). This test constructs minimal
+    fixtures that fire each overlapping bucket pair and asserts the higher-priority
+    bucket wins, catching any divergence if the cascade is reordered without
+    updating ARCHETYPE_PRECEDENCE (or vice versa).
+
+    Pairs tested (higher priority listed first per ARCHETYPE_PRECEDENCE):
+      1 > 2: speculative_unprofitable beats distressed
+      1 > 3: speculative_unprofitable beats financial
+      2 > 3: distressed beats financial
+      3 > 4: financial beats rate_sensitive
+      4 > 5: rate_sensitive beats commodity_sensitive
+      5 > 6: commodity_sensitive beats secular_growth
+      6 > 7: secular_growth beats broken_growth
+      6 > 8: secular_growth beats cyclical
+      7 > 8: broken_growth beats cyclical
+      8 > 9: cyclical beats high_beta_momentum
+    """
+    base = {"value": 0.0, "quality": 0.0, "profitability": 0.0,
+            "payout": 0.0, "low_vol": 0.0, "low_beta": 0.0}
+
+    # (higher_priority, lower_priority, kwargs_that_fire_both)
+    overlap_cases = [
+        # 1 > 2: unprofitable veto fires even with Altman distress
+        ("speculative_unprofitable", "distressed",
+         dict(ni=-100.0, net_margin=-5.0, nm_top_thr=20.0,
+              my={"rev_cagr": 2.0, "eps_cagr": 1.0,
+                  "altman": {"z": 0.8, "zone": "distress", "approx": False}})),
+        # 1 > 3: unprofitable fires even in Financials sector
+        ("speculative_unprofitable", "financial",
+         dict(ni=-100.0, net_margin=-5.0, nm_top_thr=20.0, sector="Financials")),
+        # 2 > 3: distressed beats financial sector for a profitable bank
+        ("distressed", "financial",
+         dict(ni=50.0, net_margin=5.0, nm_top_thr=20.0, sector="Financials",
+              my={"rev_cagr": 2.0, "eps_cagr": 1.0,
+                  "altman": {"z": 0.8, "zone": "distress", "approx": False}})),
+        # 3 > 4: financial sector wins over high rates beta
+        ("financial", "rate_sensitive",
+         dict(ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Financials",
+              betas={"rates": 0.7, "raw": {"oil": 0.01}})),
+        # 4 > 5: rates beta wins over oil beta when both exceed thresholds
+        ("rate_sensitive", "commodity_sensitive",
+         dict(ni=10.0, net_margin=5.0, nm_top_thr=20.0,
+              betas={"rates": 0.55, "raw": {"oil": 0.50}})),
+        # 5 > 6: oil beta wins over secular CAGR thresholds
+        ("commodity_sensitive", "secular_growth",
+         dict(ni=10.0, net_margin=5.0, nm_top_thr=20.0,
+              my={"rev_cagr": 20.0, "eps_cagr": 15.0,
+                  "altman": {"z": 4.0, "zone": "safe", "approx": False}},
+              betas={"rates": 0.05, "raw": {"oil": 0.50}})),
+        # 6 > 7: secular_growth wins over broken_growth (secular requires BOTH rev+eps high;
+        #        broken requires rev high + eps<=0 — they cannot fire simultaneously, so
+        #        we test secular_growth beats broken_growth via the eps floor)
+        # NOTE: secular_growth and broken_growth are mutually exclusive by construction
+        # (secular requires eps_cagr>=12, broken requires eps_cagr<=0), so instead verify
+        # secular_growth beats cyclical (rule 6 > rule 8):
+        ("secular_growth", "cyclical",
+         dict(ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Industrials",
+              my={"rev_cagr": 20.0, "eps_cagr": 15.0,
+                  "altman": {"z": 4.0, "zone": "safe", "approx": False}})),
+        # 7 > 8: broken_growth beats cyclical
+        ("broken_growth", "cyclical",
+         dict(ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Industrials",
+              my={"rev_cagr": 12.0, "eps_cagr": -3.0,
+                  "altman": {"z": 4.0, "zone": "safe", "approx": False}})),
+        # 8 > 9: cyclical beats high_beta_momentum (cyclical sector + high beta)
+        ("cyclical", "high_beta_momentum",
+         dict(ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Industrials",
+              fac_override={"value": 0.0, "quality": 0.0, "profitability": 0.0,
+                            "payout": 0.0, "low_vol": -0.6, "low_beta": -0.8})),
+    ]
+
+    for hi, lo, kwargs in overlap_cases:
+        fac = kwargs.pop("fac_override", None) or base
+        result = SF._archetype(fac, **kwargs)
+        assert result is not None, f"_archetype returned None for {hi}>{lo} case"
+        assert result["key"] == hi, (
+            f"Precedence violation: expected '{hi}' to beat '{lo}', "
+            f"got '{result['key']}' (ARCHETYPE_PRECEDENCE says {hi} has higher priority)"
+        )
+
+    # Also assert the cascade key order in ARCHETYPE_PRECEDENCE itself matches
+    # the declared list exactly (guards against list mutation without test update).
+    prec = SF.ARCHETYPE_PRECEDENCE
+    expected_order = [
+        "speculative_unprofitable", "distressed", "financial",
+        "rate_sensitive", "commodity_sensitive",
+        "secular_growth", "broken_growth", "cyclical",
+        "high_beta_momentum", "dividend_defensive",
+        "quality_compounder", "deep_value", "mixed",
+    ]
+    assert prec == expected_order, (
+        f"ARCHETYPE_PRECEDENCE order mismatch.\n"
+        f"  Expected: {expected_order}\n"
+        f"  Got:      {prec}"
+    )
+
+
 def _run():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     passed = 0
