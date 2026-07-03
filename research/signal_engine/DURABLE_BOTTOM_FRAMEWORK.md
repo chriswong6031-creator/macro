@@ -455,3 +455,5 @@ awaits a serial-P&L gate. Naive-vs-honest population gap logged (honest blocked 
 fires, two orders of magnitude below the naive `close<MA200` bar count — amendment #1 correction on the
 record). Leak audit clean (grid-identical blocked replication, completedness/anti-repaint assertions
 green pre-panel).
+
+| 2026-07-03 | **Wave-7 serial-P&L lockout (C-LOCKOUT as capital protector)** | **RETIRED PRE-RUN — panel measured the answer** | Tencent knife costs S-ALL only −0.15R under −5% stops (lockout saves +0.10R, 5× below margin); ratchet net-NEGATIVE under 3:1 barriers (worst-decile −0.35R HK, 61% of serial names lose); release condition chases (Tencent SHUT 27mo, reopens post-recovery). Stop discipline, not gates, caps knife damage. Open: blocked population measured net-positive under stops on ALL panels (proxy) — the 200MA bar may over-block | WAVE7_PREREG.md §8 |
