@@ -1,8 +1,8 @@
 {
-  "version": "2026-06-22",
+  "version": "2026-07-03",
   "note": "Equal-weight thematic baskets over the FREE price universe. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest. Prices come from the breadth caches plus a baskets-only DEEP close store (data/baskets/extras.parquet): it carries on-thesis names outside the S&P-1500 (recent IPOs, crypto & nuclear) AND a deep ~3y tape for large-caps the breadth cache only holds in a ~15-month rolling window — so baskets render full history instead of a short stub. Recent IPOs / late entrants are still flagged partial where their own tape is short.",
   "seed_date": "2023-05-09",
-  "curated": "2026-06-22",
+  "curated": "2026-07-03",
   "baskets": {
     "mag7": {
       "name": "Magnificent Seven",
@@ -2209,15 +2209,15 @@
     "crypto": {
       "name": "Crypto & Digital Assets",
       "name_zh": "加密与数字资产",
-      "theme": "Exchanges, brokerages, miners, treasuries & stablecoins",
+      "theme": "Exchanges, miners, treasuries, spot ETFs & stablecoins",
       "category": "Crypto & Digital Assets",
       "etf_proxy": "IBIT",
       "created": "2026-06-15",
-      "curated": "2026-06-18",
+      "curated": "2026-07-03",
       "omitted": [
         "BLSH Bullish, GEMI Gemini, ETOR eToro, STRC (too-recent / illiquid — excluded)",
-        "BITF, WULF, CIFR, APLD, BTDR (secondary miners — excluded)",
-        "IREN, CORZ, HUT (removed 2026-06: bitcoin miners that pivoted to AI/HPC hyperscaler hosting and decoupled from BTC)"
+        "BITF, WULF, CIFR, APLD, BTDR (miners that pivoted to AI/HPC — tracked in AI Neoclouds, not crypto exposure)",
+        "IREN, CORZ, HUT, RIOT (exited 2026-06: pivoted to AI/HPC hosting and decoupled from BTC; 2026-07-03 audit re-confirmed all four as neocloud beta — RIOT is a statistical tie (0.55/0.55 at 90d) kept in Neoclouds on its declared AI-datacenter pivot, re-audit next curation)"
       ],
       "members": [
         {
@@ -2242,19 +2242,19 @@
           "ticker": "CRCL",
           "added": "2025-06-05",
           "removed": null,
-          "rationale": "Circle — USDC stablecoin issuer"
+          "rationale": "Circle — USDC stablecoin issuer; moat broken ~2026-06-30 by the 'Open USD' 140-company consortium (partners keep the reserve yield; CRCL −39% in a month). Kept as the stablecoin-sector beta monitor; EXCLUDED from Crypto & Digital Rails per §10.4"
         },
         {
           "ticker": "GLXY",
           "added": "2025-05-16",
-          "removed": "2026-06-18",
-          "rationale": "GLXY — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
+          "removed": null,
+          "rationale": "Galaxy Digital — crypto trading/asset-management franchise; RE-ADMITTED 2026-07-03: BTC beta dominates (corr to IBIT 0.69/0.72/0.72 at 40/90/180d vs 0.39/0.46/0.54 to CRWV+NBIS); the Helios AI lease is a sleeve, not the business"
         },
         {
           "ticker": "MARA",
           "added": "2023-05-09",
-          "removed": "2026-06-18",
-          "rationale": "MARA — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
+          "removed": null,
+          "rationale": "MARA Holdings — pure-play scale miner + ~50K-BTC treasury; RE-ADMITTED 2026-07-03: BTC beta still dominates (corr to IBIT 0.77/0.55/0.71 at 40/90/180d vs 0.43/0.31/0.48 to CRWV+NBIS) and majority revenue is still BTC mining"
         },
         {
           "ticker": "RIOT",
@@ -2265,8 +2265,8 @@
         {
           "ticker": "CLSK",
           "added": "2023-05-09",
-          "removed": "2026-06-18",
-          "rationale": "CLSK — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
+          "removed": null,
+          "rationale": "CleanSpark — pure-play BTC miner (~12K-BTC treasury, HPC still pilot-scale); RE-ADMITTED 2026-07-03: BTC beta dominates (corr to IBIT 0.62/0.62/0.70 at 40/90/180d vs 0.37/0.43/0.54 to CRWV+NBIS)"
         },
         {
           "ticker": "IREN",
@@ -2294,7 +2294,7 @@
         }
       ],
       "etf_proxy_note": "spot-BTC ETF",
-      "thesis": "Pure crypto-asset beta — the US exchange (COIN), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL) and spot-ETH (ETHA). Miners that pivoted to AI/HPC moved to AI Neoclouds; the retail broker (HOOD) moved to Fintech. A regime sensor, not a buy list.",
+      "thesis": "Pure crypto-asset beta — the US exchange (COIN), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL — moat broken by Open USD, kept as the sector monitor), spot-ETH (ETHA), and the mining/franchise names whose BTC beta still dominates (MARA, CLSK, GLXY — re-admitted 2026-07-03 after a correlation audit). Miners with majority AI/HPC beta live in AI Neoclouds; the higher-conviction expression of the theme is Crypto & Digital Rails (§10.4). A regime sensor, not a buy list.",
       "weighting": "equal",
       "changelog": [
         {
@@ -2321,6 +2321,11 @@
           "date": "2026-06-18",
           "action": "remove",
           "note": "Moved RIOT/CLSK/MARA/GLXY to AI Neoclouds (all now AI/HPC hyperscalers) and HOOD to Payments & Fintech (retail brokerage). Crypto now = COIN/MSTR/CRCL/ETHA."
+        },
+        {
+          "date": "2026-07-03",
+          "action": "add",
+          "note": "Second Act follow-through audit (data through 2026-07-01). RE-ADMITTED MARA/CLSK/GLXY from AI Neoclouds — the June exits overshot: 40/90/180d return-corr to IBIT (MARA 0.77/0.55/0.71, CLSK 0.62/0.62/0.70, GLXY 0.69/0.72/0.72) still dominates their corr to the CRWV+NBIS neocloud anchor, and all three still earn majority revenue from BTC mining/treasury/trading — the honest edge-case rule: majority-BTC revenue stays crypto, majority contracted AI/HPC moves. Confirmed IREN/CORZ/HUT/APLD/WULF/CIFR/BTDR as neocloud beta (stay). Noted CRCL moat break (Open USD, ~2026-06-30). Sibling basket Crypto & Digital Rails founded today per §10.4."
         }
       ],
       "parent": "Crypto",
@@ -2328,6 +2333,84 @@
         "crypto",
         "bitcoin",
         "ethereum"
+      ]
+    },
+    "crypto_rails": {
+      "name": "Crypto & Digital Rails",
+      "name_zh": "加密与数字轨道",
+      "theme": "The financial rails of digital assets — exchange/distribution, agentic-payment plumbing, tokenization sleeve & the BTC cycle anchor",
+      "category": "Crypto & Digital Assets",
+      "etf_proxy": "IBIT",
+      "etf_proxy_note": "spot BTC — measures how much asset beta the rails still carry; the thesis is the rails, not the coin",
+      "created": "2026-07-03",
+      "curated": "2026-07-03",
+      "omitted": [
+        "CRCL Circle — EXPLICITLY EXCLUDED per Second Act §10.4: the 'Open USD' 140-company consortium (launched ~2026-06-30) lets partners keep the reserve yield; the issuer without distribution is a money-market fund with extra steps (CRCL −39% in a month). Own the distribution instead (COIN/HOOD/CME).",
+        "SECZ Securitize — the BUIDL tokenization platform itself, listed NYSE 2026-07-02 via the Cantor SPAC; first candidate for the tokenization sleeve once the tape seasons (too-recent per house rule).",
+        "WT WisdomTree — tokenized-fund platform considered for the sleeve; kept tight to the two BUIDL-adjacent majors (BLK/BEN).",
+        "Metaplanet (3350.T) — DAT complex, Tokyo-listed, outside the US cache; its sub-1x mNAV stands as DAT-overhang evidence, not an investable line here."
+      ],
+      "members": [
+        {
+          "ticker": "IBIT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "iShares spot-BTC ETF — the cycle anchor; §10.2 trough protocol: $42–58K primary floor, Oct–Dec 2026 modal window, tranches weighted to Oct–Nov"
+        },
+        {
+          "ticker": "COIN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Coinbase — the listed pure-play on the whole rails stack: perps, USDC economics, Base (Amazon Bedrock agents settle x402 in ~200ms on it), custody"
+        },
+        {
+          "ticker": "HOOD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Robinhood — own L2, tokenized equities in 120 countries, 7% USDG yield as a deposit magnet; re-enters as RAILS (it left Crypto as a brokerage, it returns as infrastructure)"
+        },
+        {
+          "ticker": "CME",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "CME Group — institutional crypto volumes at records (+46% y/y), 24/7 trading live since May 2026; the boring confirmation that market structure matured straight through the bear"
+        },
+        {
+          "ticker": "BLK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "BlackRock — BUIDL sponsor (~$3.1B, the largest tokenized-treasury fund; Securitize-powered); the tokenization sleeve's anchor"
+        },
+        {
+          "ticker": "BEN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Franklin Resources — Benji/FOBXX, the first on-chain US money fund; tokenization sleeve"
+        },
+        {
+          "ticker": "MSTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "[DAT TRADING SLEEVE — never core] Strategy — purchases paused, first coin sales since 2022, 847K coins at $75.7K basis with an authorized sell drip: the telegraphed permanent overhang. Admitted per §10.4 only as the tagged trading sleeve, played against its own overhang."
+        }
+      ],
+      "thesis": "Founded by The Second Act §10.4 (2026-07-03): while the fourth BTC bear ran (−53% from the Oct-2025 top), the rails won the standards war — x402 settles agentic payments with USDC at 99.8% protocol share, Google AP2 adopted it, Mastercard shipped Agent Pay, Visa runs $7B annualized stablecoin settlement. Own the distribution (COIN, HOOD, CME) plus a tokenization sleeve (BLK, BEN — BUIDL-adjacent managers), anchored by spot BTC (IBIT) into the Oct–Dec 2026 trough window ($42–58K primary floor). CRCL is explicitly excluded — Open USD broke the issuer moat; in stablecoins distribution owns the economics. The DAT complex enters only as a tagged trading sleeve (MSTR). Assembly is timed to the October confluence. KILL CRITERION: if the §10.2 turn-confirmation set (ETF flows positive 3+ weeks, hashprice above miner marginal cost, dominance rolling over, spot-led rallies) has not appeared by February 2027, the basket dies. A monitoring basket, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-07-03",
+          "action": "create",
+          "note": "Founded per The Second Act §10.4 (site/report_second_act.html; research/SECOND_ACT_NOTE.md) — the section is the basket's founding document. 7 equal-weight members: IBIT (cycle anchor) + COIN/HOOD/CME (distribution rails) + BLK/BEN (tokenization sleeve) + MSTR ([DAT TRADING SLEEVE] tag — admitted, never core). CRCL explicitly excluded (Open USD consortium broke the issuer moat, −39% in a month); SECZ (Securitize, the BUIDL platform, NYSE 2026-07-02) watch-listed for the sleeve once seasoned. Members backdated to the seed date for backtest history (partial flags mark IBIT's Jan-2024 tape start). Kill criterion: §10.2 confirmation set failing by Feb 2027."
+        }
+      ],
+      "parent": "Crypto",
+      "tags": [
+        "crypto",
+        "rails",
+        "stablecoins",
+        "tokenization",
+        "agentic-payments",
+        "btc"
       ]
     },
     "ai_neoclouds": {
@@ -2347,7 +2430,7 @@
       "etf_proxy": null,
       "etf_proxy_note": "",
       "created": "2026-06-19",
-      "curated": "2026-06-19",
+      "curated": "2026-07-03",
       "members": [
         {
           "ticker": "CRWV",
@@ -2412,20 +2495,20 @@
         {
           "ticker": "CLSK",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "CleanSpark — miner repurposing low-cost power sites toward HPC/AI compute"
+          "removed": "2026-07-06",
+          "rationale": "CLSK — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.62/0.62/0.70 vs 0.37/0.43/0.54; still a pure-play BTC miner, HPC pilot-scale). Exit staged to 2026-07-06 to stay under the freeze truncation guard."
         },
         {
           "ticker": "MARA",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "MARA Holdings — miner/BTC-treasury expanding into AI-HPC datacenter hosting"
+          "removed": "2026-07-04",
+          "rationale": "MARA — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.77/0.55/0.71 (40/90/180d) vs 0.43/0.31/0.48 to CRWV+NBIS; majority revenue still BTC mining + ~50K-BTC treasury). Exit staged to 2026-07-04 to stay under the freeze truncation guard."
         },
         {
           "ticker": "GLXY",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "Galaxy Digital — Helios datacenter converted to AI/HPC (CoreWeave lease)"
+          "removed": "2026-07-08",
+          "rationale": "GLXY — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.69/0.72/0.72 vs 0.39/0.46/0.54; crypto trading/AM franchise — Helios lease is a sleeve, not the business). Exit staged to 2026-07-08 to stay under the freeze truncation guard."
         }
       ],
       "thesis": "A basket of GPU-cloud and AI-HPC hosting pure-plays — \"neoclouds\" renting Nvidia capacity to AI labs plus ex-bitcoin miners converting power and datacenter shells into compute leases — driven by hyperscaler capex, GPU supply, power availability, and signed take-or-pay contracts. Treat it as a monitoring lens on the AI compute buildout, not a buy list: names are early-stage, capital-intensive, lease-concentrated, and highly volatile.",
@@ -2440,6 +2523,11 @@
           "date": "2026-06-18",
           "action": "add",
           "note": "Added RIOT/CLSK/MARA/GLXY — bitcoin miners + Galaxy that pivoted to AI/HPC hosting (from Crypto)."
+        },
+        {
+          "date": "2026-07-03",
+          "action": "remove",
+          "note": "2026-07-03 correlation audit (data through 2026-07-01): MARA/CLSK/GLXY exit back to Crypto — their BTC beta still dominates the neocloud anchor at every window (see per-member rationales) and their majority revenue is still BTC-native, so they were injecting crypto beta into this basket's signal exactly as the AI names once polluted Crypto. Exits are STAGED 07-04/07-06/07-08 (one name per ~2 build days) so no single day shrinks membership >15% and trips the basket_freeze truncation guard (13→10 at once = 23%). IREN/CORZ/HUT/APLD/WULF/CIFR/BTDR confirmed neocloud beta at 90/180d and stay. RIOT is a statistical tie (IBIT 0.55 vs neocloud 0.55 at 90d; 0.61/0.61 at 180d, neocloud-leaning at 40d) — stays on its declared AI-datacenter pivot; flagged for re-audit at next curation."
         }
       ]
     },
