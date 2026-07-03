@@ -13,6 +13,13 @@
 - **2026-07-03** — Program opened. Diagnostics complete (7 agents). Masterplan authored.
   W0 launched: (a) W-ARM + CT-LANE pre-registration & panel backtest (wave-8 harness);
   (b) yellow-alert icon/popover UI fix; (c) us_board_track grader populate/robustness fix.
+- **2026-07-03** — W0(b) SHIPPED #1061 (alert icon + tap/hover popover, pulse, i18n-safe;
+  fast-render verified; china/hk/canada siblings flagged for parity follow-up).
+  W0(c) SHIPPED #1062 (grader hardened + 950 graded rows). **First forward reading:** h5
+  buy-lane n=611, hit 62.7% vs SPY (CI 58.8–66.4), median excess +1.60% — the board's buys
+  are real; but **P@1 board-order = 28.6% vs 71.4% under alpha-order of the same names** —
+  the #1 slot is near-worst under current ordering. The P5/W2 rank fix (lane → state →
+  alpha) is now *forward-measured*, not just audited. Wave-8 backtest still running.
 
 ## 1. What the diagnostics established (the evidence base)
 
@@ -118,9 +125,11 @@ FRESH (0-2t)┤
   (`is_buyable`) **or** BASED/ARMED state, with low extension — priority-boosted when the sector
   cohort is washed-out-and-turning (coiled fraction, sector_bottom durable-bottom, subsector
   improving). Cards carry the lane label; **lanes are never blended into one fused score.**
-- Board order: lane → entry state (ARMED > FRESH > BASED) → **alpha within state** (the validated
-  leg finally orders what the user reads). Expected effect: the four healthcare setups names appear
-  on the board in Lane R instead of being invisible.
+- Board order: lane → **alpha** (the validated leg finally orders what the user reads).
+  *Amended 2026-07-03 per W8-A verdict:* lifecycle states are **eligibility + display only, never
+  ordering power** — the rank-lift claim failed its gate (clean15 spread +1.37pp, ticker-halves
+  unstable), while the safety claim passed (stop5 −4/−5pp, NI on clean15). Expected effect: the
+  four healthcare setups names appear on the board in Lane R instead of being invisible.
 
 ### P3 — Evidence stack v1 (the "human judgment" layer)
 Per-card dossier of independent, PIT-safe lenses — each a chip with its own forward grade, plus a

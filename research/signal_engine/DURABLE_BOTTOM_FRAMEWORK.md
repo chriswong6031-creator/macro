@@ -457,3 +457,151 @@ record). Leak audit clean (grid-identical blocked replication, completedness/ant
 green pre-panel).
 
 | 2026-07-03 | **Wave-7 serial-P&L lockout (C-LOCKOUT as capital protector)** | **RETIRED PRE-RUN — panel measured the answer** | Tencent knife costs S-ALL only −0.15R under −5% stops (lockout saves +0.10R, 5× below margin); ratchet net-NEGATIVE under 3:1 barriers (worst-decile −0.35R HK, 61% of serial names lose); release condition chases (Tencent SHUT 27mo, reopens post-recovery). Stop discipline, not gates, caps knife damage. Open: blocked population measured net-positive under stops on ALL panels (proxy) — the 200MA bar may over-block | WAVE7_PREREG.md §8 |
+
+---
+
+## Wave-8 pre-registration (2026-07-03, written BEFORE the runs)
+
+> Fable, 2026-07-03. Eighth wave of the DURABLE_BOTTOM_FRAMEWORK program (§2/§4 bind verbatim).
+> Successor to Wave-7 retirement. Open question from §8 ledger: F7 weekly-stoch-turn was a
+> +1.47/+1.55pp near-miss on the COILED-blocked population; separately, the W-ARM intuition
+> (owner): a stale cross that is approaching a WEEKLY RSI-MACD zero-cross is a DIFFERENT object
+> from a basedchip (pure survival) and from F7 (different population and different indicator).
+> All three hypotheses are pre-registered here BEFORE any panel run.
+
+### W8-A "W-ARM" — Weekly-ARM approach on the stale-cross population
+
+**Mechanism story.** After a 3D RSI-MACD confluence cross (m2d_s3d trigger), if the name has
+NOT launched (price has not run >5% from cross level, 3D stoch k/d not deeply OB at ≥85), the
+cross is STALE (3–8 ticks old on the 3D grid). During this base period, supply absorption is
+ongoing. The WEEKLY RSI-MACD histogram (exact variant from `engine/confluence_tiers.py` lines
+174–176: `wm, ws = _rsi_macd(wk)` where `wk = c.resample("W-FRI").last().dropna()`, histogram
+`wm − ws`) is a SLOW TF indicator that lags the 3D cross by weeks. If the weekly hist is
+NEGATIVE (confirming the slow-TF context is still recovering) but NET-RISING over recent bars
+and the linear extrapolation of the hist-vs-time regression crosses zero within 2 weeks, this
+marks the END of the re-accumulation phase — the weekly arrow is about to flip. This is NOT a
+stale-admit (pure survival state = BASED chip, operationally falsified wave-5). The freshness
+lives on the WEEKLY direction, so the FIRE event is governed by a slow-TF trigger, not the
+3D cross age. Mechanism distinguishes from F7 (wave-6): F7 was a weekly STOCH cross-up on
+the BLOCKED (counter-trend below 200MA) population; W-ARM is a weekly RSI-MACD histogram
+approach on the STALE-CROSS population (distinct population + distinct indicator).
+
+**Primary pre-registered variant (W8-A-primary):**
+- Population: m2d_s3d fires that are STALE at the observation bar j (3D-tick age in [3, 8])
+  AND not launched (max_up_since_cross < 5% = cross price × 1.05 threshold) AND 3D stoch k/d
+  not deeply OB (neither k3 nor d3 >= 85 at bar j) AND current ext_atr in [−6, +2] (current
+  ext from cross price / ATRp_at_cross_known in ATR units).
+- W-ARM trigger (STRICT variant): weekly RSI-MACD histogram is (a) NEGATIVE at bar j,
+  (b) STRICTLY RISING over the 3 most-recent known weekly bars (each bar strictly > prior bar),
+  (c) above −theta (theta = 0.75 RSI units; i.e. hist > −0.75 on the most-recent known bar),
+  (d) linear extrapolation (OLS on last 5 known weekly hist values vs bar index) crosses zero
+  within w2x = 2 weeks (slope > 0, intercept / −slope ≤ 2).
+  Known-date guard: a weekly bar's known date = the last trading day in the week (from
+  `c.resample("W-FRI").apply(lambda x: x.dropna().index.max())`); a bar is only "known" at
+  observation bar j if its known date ≤ bar j's date. The SHIFT(1) in confluence_tiers.py
+  line 176 (`wbull = (wm >= ws).shift(1)`) is there for the BULL STATE; for the histogram
+  APPROACH detector here, we use the raw hist with the same known-date protocol (no
+  additional shift needed — the last-close-in-week known date already provides the leak guard).
+- Baselines inside wave8_warm.py:
+  - **FRESH**: same m2d_s3d fires in the stale-0-2-tick window (no W-ARM condition; the natural
+    incumbent for freshness comparison).
+  - **STALE-3-8t-noW**: stale population WITHOUT the W-ARM trigger (the complement; tests
+    whether W-ARM selects better fires than stale fires in general).
+  - **F7-recompute**: F7's weekly-stoch-cross-up condition recomputed ON THE STALE-3-8t
+    population (cross-check: does F7's near-miss derive from the same fires? If Jaccard
+    overlap is high, W-ARM is a reformulation; if low, they are genuinely different).
+  - **BASED-chip-overlap**: Jaccard(W-ARM fires, BASED-chip fires i+7..i+24) — must show
+    W-ARM is a different object (expected Jaccard < 0.30).
+
+**Net-rise variant (W8-A-net, secondary):** condition (b) relaxed to net-rise over 3 bars
+(hist[last] > hist[last−3], no strict-per-bar requirement); MCD fires under this variant only.
+
+**Promotion gate (§4.3 compliant):**
+- Favorable (W-ARM fires) vs unfavorable (stale-3-8t-noW) on clean15: spread ≥ 5pp.
+- n ≥ 300 per stratum panel-wide.
+- Same sign on BOTH ticker halves AND BOTH time halves (pre/post 2020).
+- stop5 not worse by > 2pp.
+- Non-inferiority to FRESH fires: clean15(W-ARM) ≥ clean15(FRESH) − 3pp AND stop5(W-ARM)
+  ≤ stop5(FRESH) + 2pp (W-ARM fires a few days LATER than fresh, so some degradation
+  acceptable — the claim is recall gain, not outright superiority).
+- Recall gain: B15-durable-bottom recall of W-ARM ≥ recall of STALE-3-8t-noW (W-ARM must
+  capture durable bottoms that the unguarded stale population misses — the claim is
+  selectivity, not recall vs FRESH).
+
+**Secondary sweeps (pre-registered, reported but not in the gate):**
+1. theta ∈ {0.50, 0.75, 1.00} — sensitivity to the "close to cross" threshold.
+2. Strict-consecutive (all 3 of last 3 bars strictly rising) vs net-rise (last > last−3).
+3. maxDU threshold variants: max_up < 3% vs < 5% vs < 8%.
+4. Weekly StochRSI confluence variant: require additionally that the weekly StochRSI K
+   is rising (K[last] > K[last−2]) — the F7-inspired add-on.
+
+### W8-B "SHAKEN" — post-cross new-low recovery (MCD anatomy; report-only if n small)
+
+**Mechanism story.** After a 3D confluence cross, price drops to a NEW LOW that is > 1.5 ATR
+below the cross price (a "shake-out"), then RECOVERS above the midpoint of the pre-smash base
+(midpoint = (cross_price + new_low) / 2) with the weekly RSI-MACD histogram net-rising. This
+is the MCD anatomy (June 2026 cross followed by a −4.5% dip before partial recovery). Unlike
+BASED (pure survival) or W-ARM (no new low), SHAKEN admits a post-cross NEW low as long as the
+subsequent recovery is present. The mechanism is: the shake-out expelled weak holders; the
+recovery with weekly approach marks institutional re-entry above the shaken-out base.
+
+**Conditions:**
+- Stale cross (3D-tick age ≥ 3) with a new low at some bar j1 in [i+1, i+20] where
+  close[j1] < cross_price × (1 − 1.5 × ATRp_at_cross) (new low > 1.5 ATR below cross price).
+- Recovery: at observation bar j2 > j1, close[j2] > (cross_price + close[j1]) / 2
+  (above the pre-smash base midpoint).
+- Weekly RSI-MACD histogram net-rising at bar j2 (same protocol as W-ARM).
+- Not deeply OB (k3, d3 < 85) and not launched (max_up_since_j1 < 5% above j1 price).
+
+**Report-only clause:** if n < 100 fires panel-wide, full analysis reported but no promotion
+gate applied (insufficient statistical power; the MCD fixture proves the anatomy is real, not
+that it is common).
+
+### W8-C "CT-LANE" — counter-trend buyable fires vs aligned fires
+
+**Mechanism story.** The standout board hard-blocks fires where the cycles ladder state is in
+`engine.cycles._ALIGN_BAD_STATES` (= {"DECLINE", "ROLLING OVER", "TOP WATCH", "COUNTERTREND
+BOUNCE"}) even if `engine.signal_gate.is_buyable()` returns True (the signal itself is fresh,
+active, meeting T1/T2/T3 criteria). This wave measures: are CT-LANE fires (ladder state in
+_ALIGN_BAD_STATES but is_buyable=True, i.e. blocked by the alignment gate but not by the
+signal quality gate) materially worse on clean15/stop5/dead-money than ALIGNED fires (state
+NOT in _ALIGN_BAD_STATES)? If not-worse on stop5 and clean15, the standout board's hard-block
+is unjustified per the framework's per-event evidence standard (§3: T4 200MA gate lesson).
+
+**Conditions for CT-LANE classification (computed leak-free at fire bar i):**
+- m2d_s3d fire (primary trigger).
+- Cycles ladder state at bar i (from `engine.cycles.mtf_alignment` applied to the daily
+  close series truncated at bar i): state ∈ _ALIGN_BAD_STATES.
+- is_buyable equivalent: the fire has a valid T1/T2/T3 confluence tier at bar i (the signal
+  gate's own criterion, computed from the harness fire already being m2d_s3d).
+- ALIGNED baseline: same fires where ladder state ∉ _ALIGN_BAD_STATES.
+
+**Promotion gate (§4.3 compliant, directional test):** if clean15(CT-LANE) ≥ clean15(ALIGNED)
+− 5pp AND stop5(CT-LANE) ≤ stop5(ALIGNED) + 2pp, same sign both time halves — the hard-block
+is unjustified (NOT-WORSE verdict, report forward). Otherwise: block is confirmed helpful.
+This test is one-directional (CT-LANE is assumed worse a priori; we are measuring whether the
+gate's cost is justified). Multiplicity: three cells (W8-A, B, C), Holm-corrected if all
+three promote; given W8-C is a product-gate question, it is not held to the same bar as
+W8-A/B for a "ship" decision — it informs the standout board's gate design only.
+
+**Implementation note:** `engine.cycles.mtf_alignment` is a stateful function that requires
+a full history series to warm up its ladder state. The CT-LANE worker calls it with the daily
+close truncated at bar i (causal). The cycles module is imported read-only; no modification.
+
+### Wave-8 multiplicity and sweep accounting
+
+Three pre-registered cells (W8-A primary + secondary sweeps, W8-B report-only, W8-C one-
+directional product question). Primary promotion gate: W8-A-primary. Secondary sweeps (theta,
+strict-vs-net, maxDU, stoch-add-on): reported, not held to the §4.3 bar individually. W8-B:
+report-only. W8-C: product-gate question, not a §4.3 promotion. Total multiplicity: 1 primary
+gate + ~8 secondary sweeps + 1 report-only + 1 product question = acknowledged.
+
+| date | candidate | verdict | numbers | where |
+|---|---|---|---|---|
+| 2026-07-03 | **W8-A pre-registration** | pre-registered | primary variant + sweeps above | DURABLE_BOTTOM_FRAMEWORK.md §8 wave-8 |
+| 2026-07-03 | **W8-B pre-registration** | pre-registered | SHAKEN report-only | DURABLE_BOTTOM_FRAMEWORK.md §8 wave-8 |
+| 2026-07-03 | **W8-C pre-registration** | pre-registered | CT-LANE product-gate | DURABLE_BOTTOM_FRAMEWORK.md §8 wave-8 |
+| 2026-07-03 | **W8-A deep panel (212 names, 2012+)** | **NOT PROMOTED as clean15 stratifier; safety claims passed** | Gates: [1] clean15 spread W_ARM_STRICT−STALE_noW **+1.37pp FAIL** (need ≥5); [2] stop5 delta **−5.09pp PASS**; [3] NI clean15 vs FRESH +1.27pp PASS; [4] NI stop5 vs FRESH −3.83pp PASS; [5] stability: time halves OK (+1.72/+1.07), **ticker halves FAIL** (+3.74/−1.10); [6] recall 5.05% (narrow lens); [7] Jaccard vs F7 = 0.029, [8] vs BASED = 0.004 (genuinely distinct object). Strata (stop5/clean15/dead %): FRESH 40.3/34.2/16.1 · STALE_noW 41.6/34.1/17.1 · W_ARM_STRICT 36.5/35.4/14.3 · W_ARM_NET 38.5/34.7/14.9 | wave8_warm.py --gates --stocks |
+| 2026-07-03 | **W8-B SHAKEN deep panel (report-only)** | exploratory — best cohort on the table; OOS confirmation required before any claim | n=1303: stop5 **35.8%** (−4.5pp vs FRESH), clean15 35.9%, dead 15.3% | wave8_warm parquets |
+| 2026-07-03 | **W8-C CT-LANE deep panel (212 names, 2012+)** | **NOT_WORSE — the `_ALIGN_BAD_STATES` hard-block is unjustified** | CT_LANE n=7392 (58% of all buyable fires) stop5 40.3 / clean15 33.9 vs ALIGNED n=5272 stop5 40.5 / clean15 34.5; deltas −0.16pp / −0.6pp, sign-stable both time halves (pre-2020 −0.2/−0.8, post-2020 −0.1/−0.4). Product consequence: Lane R (recovery lane) admission for counter-trend buyable names is licensed — as equal citizens, not as a claimed edge | wave8_ctlane.py --gates |
+| 2026-07-03 | **W8-A-OOS / W8-B-OOS pre-registration (baskets panel, confirmatory)** | pre-registered BEFORE the baskets parquets are read | W8-A-OOS (safety confirmation, W_ARM_STRICT): NI clean15 ≥ −3pp vs FRESH AND stop5 ≤ −2pp vs STALE_noW AND stop5 effect sign-stable on both ticker halves + both time halves, n≥300. W8-B-OOS (SHAKEN chip): stop5 ≤ −2pp vs FRESH AND clean15 NI ≥ −1pp AND sign-stable both splits, n≥300. Ship-shape if passed: **display chip + forward ledger only — NO rank power** (rank-order lift was the failed claim per [1]/[5]) | this row; evaluated by direct parquet read against these thresholds |
