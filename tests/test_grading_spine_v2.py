@@ -399,6 +399,60 @@ class TestCushionIncidence:
 
 
 # --------------------------------------------------------------------------- #
+# 3b. post_cushion_breach() — per-fire flag (W0-stageB)
+# --------------------------------------------------------------------------- #
+class TestPostCushionBreach:
+    """The per-fire flag must use the IDENTICAL scan as cushion_incidence's
+    breach rate. Review finding on the first Stage-B PR: a cushioned-then-
+    stopped fire must be True (a stop-out is below entry by definition) —
+    never silently left None, which would drop the WORST cushioned fires
+    from the breach numerator in an append-only ledger."""
+
+    def test_cushioned_then_stopped_is_breach_true(self):
+        # fill bar 1 = 100; fwd: 106 (cushion), 101, 94 (stop → below entry)
+        s = _bseries([100, 100, 106, 101, 94, 96, 97])
+        sig = str(s.index[0].date())
+        assert grading.post_cushion_breach(s, sig, horizon=5) is True
+
+    def test_cushioned_never_below_entry_is_false(self):
+        s = _bseries([100, 100, 106, 103, 102, 101, 104])
+        sig = str(s.index[0].date())
+        assert grading.post_cushion_breach(s, sig, horizon=5) is False
+
+    def test_stopped_before_cushion_is_none(self):
+        # stop (94) hits before any cushion bar → flag not applicable
+        s = _bseries([100, 100, 97, 94, 108, 110, 111])
+        sig = str(s.index[0].date())
+        assert grading.post_cushion_breach(s, sig, horizon=5) is None
+
+    def test_never_cushioned_is_none(self):
+        s = _bseries([100, 100, 101, 102, 101, 100, 101])
+        sig = str(s.index[0].date())
+        assert grading.post_cushion_breach(s, sig, horizon=5) is None
+
+    def test_not_matured_is_none(self):
+        s = _bseries([100, 100, 106, 101])
+        sig = str(s.index[0].date())
+        assert grading.post_cushion_breach(s, sig, horizon=5) is None
+
+    def test_breach_scan_starts_after_cushion_bar(self):
+        # a dip below entry BEFORE the cushion bar must NOT count as breach
+        s = _bseries([100, 100, 96, 106, 103, 102, 101])
+        sig = str(s.index[0].date())
+        assert grading.post_cushion_breach(s, sig, horizon=5) is False
+
+    def test_agrees_with_cushion_incidence_breach_count(self):
+        # single-fire flag reproduces the aggregate scan on the same fire
+        s = _bseries([100, 100, 106, 101, 94, 96, 97])
+        sig = str(s.index[0].date())
+        flag = grading.post_cushion_breach(s, sig, horizon=5)
+        r = cushion_incidence([(s, sig)], k_days=(5,))
+        assert flag is True
+        assert r["cushion_reached_count"] == 1
+        assert r["post_cushion_breakeven_breach_rate"] == pytest.approx(100.0)  # percent
+
+
+# --------------------------------------------------------------------------- #
 # 4. as_of_panel() PIT membership wiring
 # --------------------------------------------------------------------------- #
 class TestPitMembershipWiring:

@@ -62,6 +62,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from engine import grading  # W1c: one shared next-bar/survivorship-aware grader
+from engine import regime_vector as _rv  # W0-stageB: vector stamping
 
 logger = logging.getLogger(__name__)
 
@@ -89,12 +90,24 @@ _IDENTITY_COLS = [
     "quality",      # str/null  take / block  (null for sell/cut)
     "reason",       # str/null  engine reason text  (null for sell/cut)
     "entry_price",  # float  close on date (snapped to prior bar if needed)
-    "regime_at_entry",        # str  bull / bear / choppy / unknown
+    "regime_at_entry",        # str  bull / bear / choppy / unknown  (per-name SMA200 axis)
     "above200_at_entry",      # bool/null
     "sma200_rising_at_entry", # bool/null
     "vol_annual_at_entry",    # float/null  trailing-63d σ × √252
     "er_at_entry",            # float/null  Kaufman Efficiency Ratio (20-bar)
     "first_seen_asof",        # str  mtf asof when row first written
+    # W0-stageB: macro regime_vector stamp (§3.4) — US primary, distinct from regime_at_entry
+    "rate_pressure",          # str/null  relief / neutral / pressure / panic
+    "quad_hard_label",        # str/null  e.g. "goldilocks" / "stagflation" / …
+    "fused_risk_label",       # str/null  regime_one fused risk label
+    "vol_regime",             # str/null  calm-contango / normalizing / warning / backwardation-stress
+    "risk_radar_state",       # str/null  e.g. "risk-off" / "risk-on" / …
+    "regime_vector_degraded", # int/null  1 = any vector axis was null/degraded at stamp time
+    "vector_asof",            # str/null  ISO date of the persisted vector row used
+    "staleness_hours",        # float/null  hours between vector_asof and marker_date (0 = exact)
+    # W0-stageB: species / archetype (§5.1 species_id + §3.2 archetype stamp)
+    "species_id",             # str/null  unambiguous registry mapping; null if ambiguous or none
+    "archetype",              # str/null  archetype key from site/stockdata/<ticker>.json at stamp time
 ]
 
 # Maturation columns — NULL until enough forward data, then filled once and frozen
@@ -108,15 +121,30 @@ _MATURATION_COLS = [
     "fwd_mdd_20",   # float/null  min(0, min(close[fill+1..fill+20])/entry − 1)  (≤0)  THE §3 METRIC
     "fwd_mdd_60",
     "fwd_mdd_180",
-    "fwd_mdd_60_samebar",  # float/null  W1c shadow: the OLD same-bar-fill 60d MDD — for measuring the next-bar correction
-    "fill_offset",  # int/null  bars from marker to fill (1 = honest next-bar; 0 = same-bar legacy/unfillable)
-    "trade_mae",    # float/null  min(0, min(close[fill+1..exit])/entry − 1)  (≤0, trade-level §3-faithful)
+    "fwd_mdd_60_samebar",  # float/null  W1c shadow: the OLD same-bar-fill 60d MDD
+    "fill_offset",  # int/null  bars from marker to fill (1 = honest next-bar; 0 = same-bar legacy)
+    "trade_mae",    # float/null  min(0, min(close[fill+1..exit])/entry − 1)  (≤0, trade-level)
     "outcome",      # str/null  win / loss / still_held
     "exit_date",    # str/null
     "exit_type",    # str/null  sell / cut
     "exit_price",   # float/null
     "trade_ret",    # float/null  exit_price/entry − 1  (secondary context, NOT the verdict)
     "last_backfill_asof",  # str/null  provenance: asof of run that last filled a mat. col
+    # W0-stageB: Outcome Spine v2 primitives (§5.1 sub-task; §1.1 terminal-state partition)
+    # fwd_mfe at each spine horizon — max favorable excursion from grading.forward_metrics
+    "fwd_mfe_5",    # float/null  max(0, max(close[fill+1..fill+5])/entry − 1)
+    "fwd_mfe_10",
+    "fwd_mfe_21",
+    "fwd_mfe_63",
+    "fwd_mfe_126",
+    # terminal_state partition for clean15_126 (positional primary) — TerminalState str
+    "terminal_state_clean15_126",   # str/null  STOPPED/DEAD_MONEY/CUSHIONED/CLEAN_LIFTOFF
+    # terminal_state partition for clean8_21 (rotational primary) — TerminalState str
+    "terminal_state_clean8_21",     # str/null  same vocabulary
+    # post-cushion breakeven-breach flag (single-fire version of §1.1 cushion_incidence metric)
+    # True = price fell back below entry_price after first touching +5%; False = did not;
+    # None = fire not yet cushioned or not yet matured.
+    "post_cushion_breach",          # bool/null
 ]
 
 _ALL_COLS = _IDENTITY_COLS + _MATURATION_COLS
@@ -126,6 +154,8 @@ _KEY = ("ticker", "date", "type")
 _ENTRY_TYPES = {"buy", "rebuy"}
 _EXIT_TYPES  = {"sell", "cut"}
 _FWD_HORIZONS = [20, 60, 180]
+# Spine horizons for fwd_mfe + terminal_state (§5.1, §1.1)
+_SPINE_HORIZONS = list(grading.SPINE_HORIZONS)  # (5, 10, 21, 63, 126)
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +291,151 @@ def _resolve_exit(
 
 
 # ---------------------------------------------------------------------------
+# W0-stageB helpers: regime_vector stamp, species_id, archetype
+# ---------------------------------------------------------------------------
+
+def _regime_stamp(marker_date: str, data_dir: "Path | None" = None) -> dict[str, Any]:
+    """Stamp the persisted regime_vector onto a new row (§3.4).
+
+    Returns a dict with the 8 stamp columns (all nullable).  PIT-safe: reads
+    ONLY persisted rows whose date ≤ marker_date.
+
+    Null result (all None) when no persisted vector covers the date.
+    """
+    try:
+        return _rv.get_vector_for_date(marker_date, data_dir=data_dir)
+    except Exception as exc:
+        logger.debug("regime_stamp: could not look up vector for %s: %s", marker_date, exc)
+        return {
+            "rate_pressure": None, "quad_hard_label": None,
+            "fused_risk_label": None, "vol_regime": None,
+            "risk_radar_state": None, "regime_vector_degraded": None,
+            "vector_asof": None, "staleness_hours": None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Species registry cache (loaded once per builder run, not per row)
+# ---------------------------------------------------------------------------
+
+_species_registry_cache: dict | None = None
+
+
+def _load_species_registry(
+    repo_root: "Path | None" = None,
+    data_dir: "Path | None" = None,
+) -> dict:
+    """Load data/species/registry.json; return {} on error.
+
+    Lookup order:
+      1. data_dir / "species" / "registry.json"   (when data_dir is supplied)
+      2. repo_root / "data" / "species" / "registry.json"
+      3. module-relative default (parents[1] / "data" / "species" / "registry.json")
+    """
+    global _species_registry_cache  # noqa: PLW0603
+    if _species_registry_cache is not None:
+        return _species_registry_cache
+
+    candidates: list[Path] = []
+    if data_dir is not None:
+        candidates.append(Path(data_dir) / "species" / "registry.json")
+    if repo_root is not None:
+        candidates.append(Path(repo_root) / "data" / "species" / "registry.json")
+    candidates.append(Path(__file__).resolve().parents[1] / "data" / "species" / "registry.json")
+
+    for p in candidates:
+        if p.exists():
+            try:
+                doc = json.loads(p.read_text())
+                _species_registry_cache = doc
+                return doc
+            except Exception as exc:
+                logger.debug("species registry read error (%s: %s) — trying next", p, exc)
+
+    logger.debug("species registry not found — species_id stamps will be null")
+    _species_registry_cache = {}
+    return {}
+
+
+def _build_mtype_to_species(registry: dict) -> dict[str, str]:
+    """Build a dict mapping marker_type → species_id where the mapping is UNAMBIGUOUS.
+
+    Reads `ledger_binding` entries from the registry.  A marker_type maps to a
+    species_id only when EXACTLY one registered species binds to the 'track_record'
+    ledger AND that species' ledger_binding covers this marker type.
+
+    §5 spec: stamp only where mapping is UNAMBIGUOUS — else null.  The track_record
+    ledger currently has no registered species (all species bind to us_board_ledger or
+    china_standout_track), so this dict will be empty and all species_id stamps will
+    be null.  When a future species registers track_record as its ledger, add it here
+    via the ledger_binding field.
+    """
+    # species whose ledger_binding references 'track_record'
+    candidates: dict[str, list[str]] = {}  # mtype -> [species_ids]
+    for sp in registry.get("species", []):
+        sp_id = sp.get("species_id")
+        lb = sp.get("ledger_binding") or {}
+        ledger = lb.get("ledger", "") if isinstance(lb, dict) else str(lb)
+        if "track_record" in ledger:
+            # For simplicity, register under the species' marker types if stated;
+            # default to 'buy' for entry species
+            marker_types = sp.get("marker_types") or ["buy"]
+            for mt in marker_types:
+                candidates.setdefault(mt, []).append(sp_id)
+    # Only keep unambiguous (exactly 1 species per mtype)
+    return {mt: sids[0] for mt, sids in candidates.items() if len(sids) == 1}
+
+
+# ---------------------------------------------------------------------------
+# Archetype cache: load from site/stockdata/<ticker>.json (last committed state)
+# ---------------------------------------------------------------------------
+
+_archetype_cache: dict[str, str | None] = {}  # ticker -> archetype key (or None)
+_archetype_stockdata_dir: "Path | None" = None
+
+
+def _archetype_for_ticker(ticker: str, stockdata_dir: "Path | None" = None) -> str | None:
+    """Read the current archetype key for a ticker from site/stockdata/<ticker>.json.
+
+    This is the archetype from the LAST COMMITTED stockdata build — PIT-safe because
+    track_record runs before the new build; the stockdata reflects yesterday's state.
+
+    Returns the archetype `key` string (e.g. 'mixed', 'quality_compounder', …) or None
+    if the file is absent, the key is missing, or an error occurs.
+
+    Caches per ticker within a builder run.
+    """
+    global _archetype_stockdata_dir  # noqa: PLW0603
+    if ticker in _archetype_cache:
+        return _archetype_cache[ticker]
+
+    if stockdata_dir is None:
+        if _archetype_stockdata_dir is not None:
+            stockdata_dir = _archetype_stockdata_dir
+        else:
+            stockdata_dir = Path(__file__).resolve().parents[1] / "site" / "stockdata"
+
+    p = Path(stockdata_dir) / f"{ticker}.json"
+    result: str | None = None
+    try:
+        doc = json.loads(p.read_text())
+        arche = (doc.get("profile") or {}).get("archetype") or {}
+        result = arche.get("key") if isinstance(arche, dict) else None
+    except Exception:
+        result = None
+
+    _archetype_cache[ticker] = result
+    return result
+
+
+def _reset_per_run_caches() -> None:
+    """Reset caches that should refresh on each builder run."""
+    global _species_registry_cache, _archetype_cache  # noqa: PLW0603
+    _species_registry_cache = None
+    _archetype_cache = {}
+
+
+# ---------------------------------------------------------------------------
 # Row builder
 # ---------------------------------------------------------------------------
 
@@ -271,11 +446,20 @@ def _build_row(
     marker_idx: int,
     close: pd.Series,
     asof: str,
+    *,
+    mtype_to_species: dict | None = None,
+    data_dir: "Path | None" = None,
+    stockdata_dir: "Path | None" = None,
 ) -> dict[str, Any]:
     """Build a single track-record row dict from a marker.
 
     Entry-time features are computed no-look-ahead.  Maturation columns are left
     None here — they are filled separately during the maturation pass.
+
+    New parameters (W0-stageB):
+      mtype_to_species : unambiguous mtype→species_id mapping from the registry.
+      data_dir         : override for regime_vector parquet dir.
+      stockdata_dir    : override for site/stockdata/ dir (archetype source).
     """
     date = marker["date"]
     mtype = marker["type"]
@@ -294,6 +478,15 @@ def _build_row(
     vol_annual = _vol_annual_at(close, date)
     er = _kaufman_er_at(close, date)
 
+    # W0-stageB: regime_vector stamp (§3.4) — PIT-safe from persisted parquet
+    rv_stamp = _regime_stamp(date, data_dir=data_dir)
+
+    # W0-stageB: species_id — unambiguous registry mapping only (§5 spec)
+    sp_id: str | None = (mtype_to_species or {}).get(mtype)
+
+    # W0-stageB: archetype from last committed stockdata (PIT-safe by construction)
+    archetype = _archetype_for_ticker(ticker, stockdata_dir=stockdata_dir)
+
     row: dict[str, Any] = {
         "ticker": ticker,
         "date": date,
@@ -307,6 +500,18 @@ def _build_row(
         "vol_annual_at_entry": vol_annual,
         "er_at_entry": er,
         "first_seen_asof": asof,
+        # W0-stageB: regime_vector stamp columns (frozen at creation)
+        "rate_pressure": rv_stamp.get("rate_pressure"),
+        "quad_hard_label": rv_stamp.get("quad_hard_label"),
+        "fused_risk_label": rv_stamp.get("fused_risk_label"),
+        "vol_regime": rv_stamp.get("vol_regime"),
+        "risk_radar_state": rv_stamp.get("risk_radar_state"),
+        "regime_vector_degraded": rv_stamp.get("regime_vector_degraded"),
+        "vector_asof": rv_stamp.get("vector_asof"),
+        "staleness_hours": rv_stamp.get("staleness_hours"),
+        # W0-stageB: species/archetype (frozen at creation)
+        "species_id": sp_id,
+        "archetype": archetype,
         # maturation — all None at birth
         "fwd_ret_20": None, "fwd_ret_60": None, "fwd_ret_180": None,
         "fwd_price_20": None, "fwd_price_60": None, "fwd_price_180": None,
@@ -316,6 +521,12 @@ def _build_row(
         "exit_date": None, "exit_type": None, "exit_price": None,
         "trade_ret": None,
         "last_backfill_asof": None,
+        # W0-stageB: spine maturation columns (all None at birth)
+        "fwd_mfe_5": None, "fwd_mfe_10": None, "fwd_mfe_21": None,
+        "fwd_mfe_63": None, "fwd_mfe_126": None,
+        "terminal_state_clean15_126": None,
+        "terminal_state_clean8_21": None,
+        "post_cushion_breach": None,
     }
     return row
 
@@ -372,6 +583,45 @@ def _fill_maturation(
     if any(_is_null(row.get(f"fwd_mdd_{h}")) for h in _FWD_HORIZONS):
         for k, v in _forward_metrics(close, date, _FWD_HORIZONS).items():
             _freeze(k, v)
+
+    # --- W0-stageB: spine fwd_mfe at each SPINE_HORIZON ---
+    if any(_is_null(row.get(f"fwd_mfe_{h}")) for h in _SPINE_HORIZONS):
+        spine_m = grading.forward_metrics(close, date, horizons=tuple(_SPINE_HORIZONS))
+        for h in _SPINE_HORIZONS:
+            _freeze(f"fwd_mfe_{h}", spine_m.get(f"fwd_mfe_{h}"))
+
+    # --- W0-stageB: terminal_state partition columns ---
+    # clean15_126 (positional primary): liftoff_mult=1.15, liftoff_horizon=126
+    if _is_null(row.get("terminal_state_clean15_126")):
+        ts15 = grading.terminal_state(
+            close, date,
+            liftoff_mult=grading.LIFTOFF_15,
+            liftoff_horizon=grading.LIFTOFF_HORIZON_126,
+        )
+        state15 = ts15.get("state")
+        if state15 is not None:
+            _freeze("terminal_state_clean15_126", str(state15))
+
+    # clean8_21 (rotational primary): liftoff_mult=1.08, liftoff_horizon=21
+    if _is_null(row.get("terminal_state_clean8_21")):
+        ts8 = grading.terminal_state(
+            close, date,
+            liftoff_mult=grading.LIFTOFF_8,
+            liftoff_horizon=grading.LIFTOFF_HORIZON_21,
+        )
+        state8 = ts8.get("state")
+        if state8 is not None:
+            _freeze("terminal_state_clean8_21", str(state8))
+
+    # --- W0-stageB: post_cushion_breach flag (single-fire, §1.1) ---
+    # Routed through grading.post_cushion_breach (one-grader law §1.2) — the
+    # per-row flag uses the IDENTICAL scan as cushion_incidence's breach rate,
+    # so a cushioned-then-stopped fire is True (below entry by definition),
+    # never silently dropped. Window = clean8_21 horizon (21, rotational).
+    if _is_null(row.get("post_cushion_breach")):
+        breach = grading.post_cushion_breach(close, date, horizon=21)
+        if breach is not None:
+            _freeze("post_cushion_breach", bool(breach))
 
     # --- trade-level metrics (entry markers only) ---
     if mtype in _ENTRY_TYPES:
@@ -500,6 +750,9 @@ def update_track_record(
     stocks_dir: str | Path | None = None,
     out_path: str | Path | None = None,
     asof: str | None = None,
+    *,
+    data_dir: "Path | None" = None,
+    stockdata_dir: "Path | None" = None,
 ) -> dict:
     """Append-only, idempotent track-record logger.
 
@@ -511,11 +764,17 @@ def update_track_record(
     stocks_dir : path to data/stocks/*.parquet.
     out_path : output parquet path.
     asof : override for the run's as-of string; default = mtf leaf's 'asof'.
+    data_dir : (W0-stageB) override for data/ root (regime_vector parquet, species registry).
+    stockdata_dir : (W0-stageB) override for site/stockdata/ (archetype source).
 
     Returns
     -------
-    dict with keys: new_rows, matured_rows, total_rows, skipped_pending, out_path.
+    dict with keys: new_rows, matured_rows, total_rows, skipped_pending, out_path,
+                    unstamped_count (rows with no regime_vector coverage — §3.4 honesty).
     """
+    # --- reset per-run caches (species registry, archetype cache) ---
+    _reset_per_run_caches()
+
     # --- resolve paths ---
     if repo_root is None:
         repo_root = Path(__file__).resolve().parents[1]
@@ -529,11 +788,16 @@ def update_track_record(
         stocks_dir = repo_root / "data" / "stocks"
     if out_path is None:
         out_path = repo_root / "data" / "signal_archive" / "track_record.parquet"
+    if data_dir is None:
+        data_dir = repo_root / "data"
+    if stockdata_dir is None:
+        stockdata_dir = repo_root / "site" / "stockdata"
 
     signals_dir = Path(signals_dir)
     mtf_path    = Path(mtf_path)
     stocks_dir  = Path(stocks_dir)
     out_path    = Path(out_path)
+    data_dir    = Path(data_dir)
 
     # --- resolve asof (NEVER use wall-clock) ---
     run_asof = _load_asof(mtf_path, asof)
@@ -551,6 +815,14 @@ def update_track_record(
     new_rows: list[dict] = []
     skipped_pending = 0
     matured_rows = 0
+
+    # W0-stageB: load species registry once per run and build mtype→species map
+    registry = _load_species_registry(repo_root, data_dir=data_dir)
+    mtype_to_species = _build_mtype_to_species(registry)
+
+    # W0-stageB: pre-wire the stockdata dir into the archetype cache
+    global _archetype_stockdata_dir  # noqa: PLW0603
+    _archetype_stockdata_dir = Path(stockdata_dir)
 
     # dead-name terminal store (8-K Item 1.03 bankruptcy imputation) — a name that
     # delisted mid-horizon still grades at its loss instead of vanishing (W1c, audit #15).
@@ -596,14 +868,32 @@ def update_track_record(
             key = (ticker, marker["date"], mtype)
 
             if key in existing_keys:
-                # Row already exists — fill NULL maturation columns only
+                # Row already exists — fill NULL maturation columns only (NEVER overwrite
+                # non-null identity or regime_vector columns — keep-FIRST is global).
                 row = existing_keys[key]
                 changed = _fill_maturation(row, markers, idx, close, run_asof)
+                # W0-stageB: backfill regime_vector for historical rows where vector_asof
+                # is null (PIT-safe: reads only persisted rows ≤ marker_date).
+                if _is_null(row.get("vector_asof")):
+                    rv_back = _regime_stamp(row["date"], data_dir=data_dir)
+                    if not _is_null(rv_back.get("vector_asof")):
+                        # Keep-FIRST: only fill null columns (never overwrite a non-null value)
+                        for col in ("rate_pressure", "quad_hard_label", "fused_risk_label",
+                                    "vol_regime", "risk_radar_state", "regime_vector_degraded",
+                                    "vector_asof", "staleness_hours"):
+                            if _is_null(row.get(col)):
+                                row[col] = rv_back.get(col)
+                                changed = True
                 if changed:
                     matured_rows += 1
             else:
                 # New row — build identity + entry-time features + attempt maturation
-                row = _build_row(ticker, marker, markers, idx, close, run_asof)
+                row = _build_row(
+                    ticker, marker, markers, idx, close, run_asof,
+                    mtype_to_species=mtype_to_species,
+                    data_dir=data_dir,
+                    stockdata_dir=stockdata_dir,
+                )
                 _fill_maturation(row, markers, idx, close, run_asof)
                 existing_keys[key] = row
                 new_rows.append(row)
@@ -615,6 +905,20 @@ def update_track_record(
     else:
         out_df = pd.DataFrame(all_rows, columns=_ALL_COLS)
 
+    # --- §3.4 honesty: count rows with no regime_vector coverage (unstamped) ---
+    unstamped_count = 0
+    if not out_df.empty and "vector_asof" in out_df.columns:
+        unstamped_count = int(out_df["vector_asof"].isna().sum())
+    logger.info(
+        "track_record: %d rows have no regime_vector coverage (vector_asof=null)",
+        unstamped_count,
+    )
+    if unstamped_count > 0:
+        print(
+            f"track_record: {unstamped_count} rows unstamped (no regime_vector "
+            f"coverage — §3.4; these pre-date the persisted vector)",
+        )
+
     # --- write ---
     _write_parquet(out_df, out_path)
 
@@ -624,4 +928,5 @@ def update_track_record(
         "total_rows": len(out_df),
         "skipped_pending": skipped_pending,
         "out_path": str(out_path),
+        "unstamped_count": unstamped_count,
     }
