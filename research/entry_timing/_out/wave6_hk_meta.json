@@ -1,0 +1,12 @@
+{
+  "panel": "hk",
+  "n_episodes": 237,
+  "n_confluence_fires": 8849,
+  "n_blocked_honest": 3024,
+  "n_blocked_eval": 2158,
+  "naive_below": 290176,
+  "n_cshallow": 372,
+  "n_clockout_admit": 2182,
+  "n_wa_fires": 6981,
+  "n_wb_fires": 2158
+}

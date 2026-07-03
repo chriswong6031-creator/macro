@@ -433,3 +433,25 @@ RETEST marker fails G5r. No `engine/coiled.py` / `build_stock_library.py` / `gra
 `dashboard.html.j2` touch triggered. `BUYABLE_TIERS`/`setups.json`/discovery gating untouched. The
 "basing after confluence" candidate is FALSIFIED *as operationalized* — the state carries zero
 selection over surviving 7 days. Re-open only via a wave-6 with a distinguishing BASED predicate.
+
+**Wave-6 results (2026-07-02, harness `wave6.py`, prereg `WAVE6_PREREG.md` v2, panels deep US
+2,457 / baskets 24,775 / HK 2,158 blocked-eval fires; selftest green pre-panel, errors=0):**
+
+| date | candidate | verdict | numbers | where |
+|---|---|---|---|---|
+| 2026-07-02 | **G6a donor-unwind context chip** (E_FRESH m2d_s3d, cracking vs intact donor, episode-clustered) | **SHIPS — US only, display-only chip + forward-ledger fields** | deep clean15 cracking 38.38 vs intact 32.43 (**+5.96pp**); baskets 34.40 vs 28.59 (**+5.81pp**); episode-clustered 90% LB of paired diff **+2.66pp > 0**; **159** cracking episodes (≥12 floor); per-name majority **69.3%** (≥3-fire names); excl-2025 +5.97pp, half1 +7.61 / half2 +3.88 (both +). Cracking also has the LOWER stop5 and dead-money on both US panels. The SOLE statistical ship of the wave (§6 family: one) | WAVE6_REPORT.md §2 |
+| 2026-07-02 | **G6a on HK** (adversarial context) | **INVERTS — HK gets nothing** | HK cracking clean15 31.75 vs intact 35.54 (**−3.78pp**, wrong sign); sign-stable wrong-way every HK split (excl-2025 −5.17, half1 −1.59, half2 −5.75). Same HK-cohort-non-discrimination mechanism as the wave-3 HK failure (macro-correlated market, ~12 sectors → "leader cracking" ≈ universal in drawdowns). Chip ships US-only by construction | WAVE6_REPORT.md §2.4 |
+| 2026-07-02 | **W6-B blocked-population discovery** (F1–F8 singles + C-SHALLOW/C-LOCKOUT composites, wave-1 stratification protocol) | **0 / 8 PROMOTE on ANY panel — the shallow-dip thesis is falsified at the fire bar** | Promotion bar = fav−unf ≥ +5pp clean15, n≥300/side, stop5 not worse >2pp, sign-stable both time+ticker halves, ≥25 63d blocks. **F1 shallow vs deep = −9.91 / −6.29 / −5.88pp** (favorable side WORSE, higher stop5 too — the owner's shallow-dip shape is the losing side). F5/F8/C-SHALLOW/C-LOCKOUT also negative on the decisive US panels. F7 weekly-turn is the only directionally-right leg (+1.47 / +1.55 / +2.78pp, stop not worse, sign-stable) but ~3.5pp short of the bar → does not promote. NOTHING promotes to a wave-7 gate candidate | WAVE6_REPORT.md §3/§7 |
+| 2026-07-02 | **within-¬bear_ctx decomposition** (§8 finding-9 required table) | **no bear-context-free selection exists** | F8's headline −14.19pp deep gap is a fixed-barrier vol artifact (bear_ctx cell stop5 22.16 vs 44.85 — stops out less in a persistent bear). Stripping bear_ctx: F1 stays −5.46/−5.60pp (US), F3/F5/F7 collapse to ~0. bear_ctx correctly demoted to stratifier; any wave-7 gate on these features MUST vol-match first | WAVE6_REPORT.md §3.3 |
+| 2026-07-02 | **C-LOCKOUT ratchet** (serial per-name economics) + **F4 dwell curve** | recorded — valid strict subset, no per-fire lift; dwell has no knee | Tencent fixture: admits ≤1 knife fire (2021-08-24), **100% SHUT from knife onset** incl. 2021-09-30 (reverses v1's twice-open inversion). But admitted set clean15 −6.87/−6.14pp (stocks/HK) vs the fires it prunes — it removes the later deep (higher-clean15) fires; its real payoff (avoided serial fires 2..N) is untested by a per-fire clean15 rule. F4 dwell curve non-monotone on a smooth distribution (rises 3→6, reverses at 7, tiny tail-n) — no promotable cut (amendment #14/#18 confirmed) | WAVE6_REPORT.md §3.2/§3.4/§4.1 |
+
+**Wave-6 ship record (2026-07-02):** **G6a SHIPS** as a US-only market-wide donor-unwind context chip
+("rotation: leader cracking / intact") + forward-ledger fields, **display-only** — never a rank change
+or hard gate this wave. **W6-B promotes NOTHING** (0/8 on every panel); the owner's shallow-dip thesis
+(F1/C-SHALLOW) is FALSIFIED as a population feature at the fire bar; F7-weekly is the near-miss carried
+for a possible future lower-bar wave. The donor mechanism **does not generalize to HK** (sign inverts).
+C-LOCKOUT is a validated strict subset (Tencent lockout proven) whose serial capital-preservation value
+awaits a serial-P&L gate. Naive-vs-honest population gap logged (honest blocked ≈ 27–34% of confluence
+fires, two orders of magnitude below the naive `close<MA200` bar count — amendment #1 correction on the
+record). Leak audit clean (grid-identical blocked replication, completedness/anti-repaint assertions
+green pre-panel).
