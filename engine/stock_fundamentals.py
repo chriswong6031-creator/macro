@@ -38,16 +38,94 @@ from lib import config
 log = logging.getLogger(__name__)
 
 # ---- archetype labels (EN, ZH) ---------------------------------------------
+# v2 taxonomy — shared constant so CN/HK/CA forks can import without duplicating.
+# The original 6 buckets are preserved unchanged; 7 new buckets are appended.
 ARCHETYPES = {
-    "quality_compounder": ("Quality compounder", "优质复利股"),
-    "dividend_defensive": ("Dividend / defensive", "高股息防御"),
-    "deep_value": ("Deep value", "深度价值"),
-    "high_beta_momentum": ("High-beta momentum", "高贝塔动量"),
+    # --- original 6 (factor-z driven) ---
+    "quality_compounder":      ("Quality compounder",        "优质复利股"),
+    "dividend_defensive":      ("Dividend / defensive",      "高股息防御"),
+    "deep_value":              ("Deep value",                "深度价值"),
+    "high_beta_momentum":      ("High-beta momentum",        "高贝塔动量"),
     "speculative_unprofitable": ("Speculative / unprofitable", "投机／未盈利"),
-    "mixed": ("Mixed profile", "混合特征"),
+    "mixed":                   ("Mixed profile",             "混合特征"),
+    # --- v2 additions ---
+    "distressed":              ("Distressed",                "困境股"),
+    "financial":               ("Financial",                 "金融股"),
+    "rate_sensitive":          ("Rate-sensitive",            "利率敏感"),
+    "commodity_sensitive":     ("Commodity-sensitive",       "大宗商品敏感"),
+    "secular_growth":          ("Secular growth",            "长期成长"),
+    "broken_growth":           ("Broken growth",             "成长受损"),
+    "cyclical":                ("Cyclical",                  "周期股"),
 }
+
+# Shared taxonomy for CN/HK/CA forks (import this, never redefine).
+ARCHETYPE_TAXONOMY = ARCHETYPES
+
+# Deterministic first-match-wins precedence order (lower index = higher priority).
+# Document: names appearing earlier in this list block later buckets for the same name.
+ARCHETYPE_PRECEDENCE = [
+    # 1. Hard veto — unprofitable/speculative always fires first (unchanged behavior)
+    "speculative_unprofitable",
+    # 2. Altman distress zone — financially impaired even if nominally profitable
+    "distressed",
+    # 3. Financial sector — EDGAR tags absent for banks; sector-keyed to avoid ratio noise
+    "financial",
+    # 4. Rate-sensitive — per-name residual rates beta; stable macro characteristic
+    "rate_sensitive",
+    # 5. Commodity-sensitive — oil beta; captures energy/materials via returns not SIC
+    "commodity_sensitive",
+    # 6. Secular growth — anchored CAGR thresholds; growth must be real and sustained
+    "secular_growth",
+    # 7. Broken growth — once-growth story with stalling/negative EPS
+    "broken_growth",
+    # 8. Cyclical — sector + earnings variability confirms the macro link
+    "cyclical",
+    # 9–13. Original factor-z buckets (unchanged behavior, lower priority than new v2 set)
+    "high_beta_momentum",
+    "dividend_defensive",
+    "quality_compounder",
+    "deep_value",
+    "mixed",
+]
+
+# GICS sector strings that qualify for the financial archetype (sector-keyed, not ratio-keyed
+# — EDGAR inventory/receivables/gross_profit tags are reliably absent for banks/insurers).
+_FINANCIAL_SECTORS = frozenset({"Financials"})
+
+# GICS sectors with structural cyclicality (confirmed by earnings variance patterns).
+_CYCLICAL_SECTORS = frozenset({"Industrials", "Materials", "Consumer Discretionary", "Energy"})
+
 # the six radar axes (the composite legs) in display order
 RADAR_AXES = ["value", "profitability", "quality", "investment", "payout", "low_vol"]
+
+# ---- v2 archetype threshold constants (anchored) ---------------------------
+# Each threshold ships as a named constant with a one-line justification.
+# anchored=True → absolute, stable through time; anchored=False → cross-sectional z, flagged.
+
+# Altman distress cut: <1.81 is the published Altman (1968) distress zone boundary.  anchored=True
+_ALTMAN_DISTRESS_MAX = 1.81
+
+# Rates beta (residualized): |beta| > 0.40 flags meaningful rate sensitivity on a
+# 252-day regression; the 0.40 level separates the top ~20% of TLT-beta names from
+# the cross-section without being cross-sectionally defined.  anchored=True (abs level, not rank)
+_RATE_BETA_THR = 0.40
+
+# Oil beta (raw, not residualized): raw oil beta > 0.35 covers the energy / commodity
+# complex; at this level a 1% oil move drives ~0.35% idiosyncratic sensitivity.  anchored=True
+_OIL_BETA_THR = 0.35
+
+# Secular growth revenue CAGR ≥ 15% p.a. over the available panel: the threshold
+# sits above S&P 500 median GDP+inflation (~5%) and above the median large-cap grower,
+# matching the commonly cited "secular compounder" revenue hurdle.  anchored=True
+_SECULAR_REV_CAGR_THR = 15.0
+
+# Secular growth EPS CAGR ≥ 12% p.a.: slightly lower than revenue to allow for
+# investment years; still comfortably above cost-of-equity.  anchored=True
+_SECULAR_EPS_CAGR_THR = 12.0
+
+# Broken growth: revenue CAGR ≥ 10% (prior growth) but EPS CAGR ≤ 0 (margin/dilution
+# destruction). The 10% revenue floor avoids labeling slow growers as "broken".  anchored=True
+_BROKEN_REV_CAGR_THR = 10.0
 
 
 # ---- small numeric helpers --------------------------------------------------
@@ -148,6 +226,22 @@ def _load_analyst_revisions() -> dict[str, dict]:
         from engine import analyst_revisions
         return analyst_revisions.revision_map()
     except Exception:  # noqa: BLE001 — never break panels over a context chip
+        return {}
+
+
+def _load_betas() -> dict[str, dict]:
+    """ticker -> beta row from site/factor_betas.json['betas'].
+    Used by _archetype() v2 for rate_sensitive and commodity_sensitive buckets.
+    Returns empty dict when the file is absent — _archetype() degrades to v1 output."""
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    p = site / "factor_betas.json"
+    if not p.exists():
+        return {}
+    try:
+        d = json.loads(p.read_text())
+        return d.get("betas") or {}
+    except Exception as e:  # noqa: BLE001
+        log.debug("stock_fundamentals: factor_betas.json unreadable (%s)", e)
         return {}
 
 
@@ -818,17 +912,49 @@ def _context_frame(fund: pd.DataFrame, table: dict) -> pd.DataFrame:
 
 # ---- archetype classifier ---------------------------------------------------
 def _archetype(fac: dict, ni: float | None, net_margin: float | None,
-               nm_top_thr: float | None) -> dict | None:
-    """Transparent first-match-wins cascade over the factor z-scores (the
-    unprofitable veto fires FIRST so a money-loser never reads 'quality'). Returns
-    {key, label, label_zh, confidence, conf_word, why, why_zh}."""
+               nm_top_thr: float | None, *,
+               sector: str | None = None,
+               my: dict | None = None,
+               betas: dict | None = None) -> dict | None:
+    """Transparent first-match-wins cascade, v2.
+
+    Original 4-argument call signature is preserved (new args are keyword-only
+    with None defaults) so all existing callers compile unchanged.
+
+    Precedence order is defined by ARCHETYPE_PRECEDENCE. The v2 new buckets
+    (distressed, financial, rate_sensitive, commodity_sensitive, secular_growth,
+    broken_growth, cyclical) are inserted ABOVE the original factor-z buckets
+    (high_beta_momentum, dividend_defensive, quality_compounder, deep_value, mixed),
+    so the original 6-bucket behavior is preserved for names where no v2 bucket
+    fires.
+
+    New inputs (all optional — degrading gracefully to v1 output when absent):
+      sector  str   GICS sector string from factor table
+      my      dict  _multiyear() output (rev_cagr, eps_cagr, altman sub-dict)
+      betas   dict  per-ticker row from factor_betas.json['betas']
+
+    Returns {key, label, label_zh, confidence, conf_word, why, why_zh,
+             anchored, v2_inputs}.
+    """
     if not fac:
         return None
     v, q, p = fac.get("value"), fac.get("quality"), fac.get("profitability")
     pay, lv, lb = fac.get("payout"), fac.get("low_vol"), fac.get("low_beta")
     nm_top = (net_margin is not None and nm_top_thr is not None and net_margin >= nm_top_thr)
 
+    # --- v2 input extraction (graceful None when absent) ---
+    altman   = (my or {}).get("altman") or {}
+    rev_cagr = _num((my or {}).get("rev_cagr"))
+    eps_cagr = _num((my or {}).get("eps_cagr"))
+    # rates beta: residualized (orthogonal) beta from factor regression
+    rates_beta = _num((betas or {}).get("rates"))
+    # oil beta: raw (not residualized) beta; raw dict inside betas row
+    _betas_raw = (betas or {}).get("raw") or {}
+    oil_beta   = _num(_betas_raw.get("oil"))
+
     key, slack, why, why_zh = "mixed", 0.0, [], []
+
+    # ── 1. speculative_unprofitable (original veto — fires first, unchanged) ──
     if (ni is not None and ni <= 0) or (_le(p, -0.75) and _le(v, -0.5) and _le(lb, -0.5)):
         key = "speculative_unprofitable"
         if ni is not None and ni <= 0:
@@ -837,23 +963,98 @@ def _archetype(fac: dict, ni: float | None, net_margin: float | None,
         else:
             why, why_zh = ["weak profitability & expensive & high beta"], ["盈利弱、估值高、高贝塔"]
             slack = min(abs(_num(p) + 0.75), abs(_num(v) + 0.5), abs(_num(lb) + 0.5))
+
+    # ── 2. distressed — Altman Z in distress zone (non-approx preferred) ──
+    elif (altman.get("zone") == "distress" and
+          not altman.get("approx", True) and
+          _num(altman.get("z")) is not None and
+          _num(altman.get("z")) < _ALTMAN_DISTRESS_MAX):
+        key = "distressed"
+        z_val = _num(altman.get("z"))
+        why    = [f"Altman Z {z_val:.2f} < {_ALTMAN_DISTRESS_MAX} (distress zone)"]
+        why_zh = [f"Altman Z {z_val:.2f}，处于困境区"]
+        slack  = (_ALTMAN_DISTRESS_MAX - z_val) / _ALTMAN_DISTRESS_MAX   # 0→1 as Z→0
+
+    # ── 3. financial — sector-keyed (EDGAR ratios unreliable for banks) ──
+    elif sector in _FINANCIAL_SECTORS:
+        key = "financial"
+        why    = [f"financial sector ({sector}) — ratio-based gates unreliable"]
+        why_zh = [f"金融行业（{sector}）——财务比率指标适用性受限"]
+        slack  = 0.8   # sector tag is definitive when present
+
+    # ── 4. rate_sensitive — anchored absolute residual rates beta ──
+    elif rates_beta is not None and abs(rates_beta) >= _RATE_BETA_THR:
+        key    = "rate_sensitive"
+        dirn   = "positive" if rates_beta > 0 else "negative"
+        why    = [f"residual rates beta {rates_beta:+.2f} (|β|≥{_RATE_BETA_THR}, {dirn})"]
+        why_zh = [f"利率残差贝塔 {rates_beta:+.2f}（绝对值≥{_RATE_BETA_THR}，{dirn}方向）"]
+        slack  = (abs(rates_beta) - _RATE_BETA_THR) / _RATE_BETA_THR
+
+    # ── 5. commodity_sensitive — anchored absolute oil beta (raw) ──
+    elif oil_beta is not None and abs(oil_beta) >= _OIL_BETA_THR:
+        key    = "commodity_sensitive"
+        dirn   = "positive" if oil_beta > 0 else "negative"
+        why    = [f"raw oil beta {oil_beta:+.2f} (|β|≥{_OIL_BETA_THR}, {dirn})"]
+        why_zh = [f"原油原始贝塔 {oil_beta:+.2f}（绝对值≥{_OIL_BETA_THR}，{dirn}方向）"]
+        slack  = (abs(oil_beta) - _OIL_BETA_THR) / _OIL_BETA_THR
+
+    # ── 6. secular_growth — anchored CAGR thresholds (never cross-sectional) ──
+    elif (rev_cagr is not None and rev_cagr >= _SECULAR_REV_CAGR_THR and
+          eps_cagr is not None and eps_cagr >= _SECULAR_EPS_CAGR_THR):
+        key    = "secular_growth"
+        why    = [f"rev CAGR {rev_cagr:.1f}%≥{_SECULAR_REV_CAGR_THR}%, "
+                  f"EPS CAGR {eps_cagr:.1f}%≥{_SECULAR_EPS_CAGR_THR}%"]
+        why_zh = [f"营收复合增速 {rev_cagr:.1f}%≥{_SECULAR_REV_CAGR_THR}%，"
+                  f"EPS复合增速 {eps_cagr:.1f}%≥{_SECULAR_EPS_CAGR_THR}%"]
+        slack  = min((rev_cagr - _SECULAR_REV_CAGR_THR) / 10.0,
+                     (eps_cagr - _SECULAR_EPS_CAGR_THR) / 10.0)
+
+    # ── 7. broken_growth — prior revenue growth, but EPS failing ──
+    elif (rev_cagr is not None and rev_cagr >= _BROKEN_REV_CAGR_THR and
+          eps_cagr is not None and eps_cagr <= 0.0):
+        key    = "broken_growth"
+        why    = [f"rev CAGR {rev_cagr:.1f}%≥{_BROKEN_REV_CAGR_THR}% "
+                  f"but EPS CAGR {eps_cagr:.1f}%≤0 (margin/dilution destruction)"]
+        why_zh = [f"营收复合增速 {rev_cagr:.1f}%≥{_BROKEN_REV_CAGR_THR}%，"
+                  f"但EPS复合增速 {eps_cagr:.1f}%≤0（利润率/稀释问题）"]
+        slack  = min((rev_cagr - _BROKEN_REV_CAGR_THR) / 10.0,
+                     abs(eps_cagr) / 10.0)
+
+    # ── 8. cyclical — sector + no strong quality/defensive overlay ──
+    elif (sector in _CYCLICAL_SECTORS and
+          not (_ge(pay, 0.5) and _ge(lv, 0.3)) and    # not defensive
+          not _ge(q, 0.6)):                             # not quality compounder
+        key    = "cyclical"
+        why    = [f"cyclical sector ({sector}), no defensive/quality overlay"]
+        why_zh = [f"周期性行业（{sector}），无防御/质量叠加"]
+        slack  = 0.5
+
+    # ── 9. high_beta_momentum (original — unchanged) ──
     elif _le(lb, -0.6) and _le(lv, -0.4):
         key = "high_beta_momentum"
         why, why_zh = ["high beta & high volatility vs peers"], ["相对同业高贝塔、高波动"]
         slack = min(abs(_num(lb) + 0.6), abs(_num(lv) + 0.4))
+
+    # ── 10. dividend_defensive (original — unchanged) ──
     elif _ge(pay, 0.5) and _ge(lv, 0.4) and _ge(lb, 0.3):
         key = "dividend_defensive"
         why, why_zh = ["high shareholder payout, low volatility & low beta"], ["高股东回报、低波动、低贝塔"]
         slack = min(_num(pay) - 0.5, _num(lv) - 0.4, _num(lb) - 0.3)
+
+    # ── 11. quality_compounder (original — unchanged) ──
     elif _ge(q, 0.5) and (_ge(p, 0.3) or nm_top) and not _ge(v, 0.75):
         key = "quality_compounder"
         why, why_zh = ["high quality" + (", strong margins" if nm_top else "")], \
                       ["高质量" + ("、利润率领先" if nm_top else "")]
         slack = _num(q) - 0.5
+
+    # ── 12. deep_value (original — unchanged) ──
     elif _ge(v, 0.75) and not _ge(q, 0.5):
         key = "deep_value"
         why, why_zh = ["cheap on value factors, quality not high"], ["价值因子便宜，质量一般"]
         slack = _num(v) - 0.75
+
+    # ── 13. mixed (original fallback — unchanged) ──
     else:
         key = "mixed"
         why, why_zh = ["no single factor dominates"], ["无单一因子主导"]
@@ -863,9 +1064,27 @@ def _archetype(fac: dict, ni: float | None, net_margin: float | None,
     conf = max(0.0, min(1.0, slack / 0.6))
     conf_word = "high" if conf >= 0.66 else "moderate" if conf >= 0.33 else "low"
     en, zh = ARCHETYPES[key]
+
+    # anchored flag: True when the threshold is absolute/time-stable (v2 buckets 2-8),
+    # False for the factor-z driven buckets which are cross-sectionally relative.
+    _ANCHORED_KEYS = frozenset({
+        "distressed", "financial", "rate_sensitive", "commodity_sensitive",
+        "secular_growth", "broken_growth", "cyclical",
+    })
+    anchored = key in _ANCHORED_KEYS
+
+    # v2_inputs: surface which optional inputs fired (for debuggability)
+    v2_inputs = {
+        "sector": sector,
+        "rev_cagr": rev_cagr, "eps_cagr": eps_cagr,
+        "altman_z": _num(altman.get("z")), "altman_zone": altman.get("zone"),
+        "rates_beta": rates_beta, "oil_beta_raw": oil_beta,
+    }
+
     return {"key": key, "label": en, "label_zh": zh,
             "confidence": round(conf, 2), "conf_word": conf_word,
-            "why": "; ".join(why), "why_zh": "；".join(why_zh)}
+            "why": "; ".join(why), "why_zh": "；".join(why_zh),
+            "anchored": anchored, "v2_inputs": v2_inputs}
 
 
 def _mktcap_tier(mcap_bn: float | None) -> dict | None:
@@ -1073,6 +1292,7 @@ def panels() -> dict[str, dict]:
     statements = _load_statements()
     earnings = _load_earnings()
     aq_cfg = config.load().get("accounting_quality") or {}
+    betas_map = _load_betas()   # v2: per-name rates/oil betas for archetype v2
 
     M = _context_frame(fund, table)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
@@ -1082,10 +1302,16 @@ def panels() -> dict[str, dict]:
         fac = table.get(t)
         ni = _num(f.get("ni"))
         net_margin = _num(M.loc[t, "net_margin"]) if t in M.index else None
-        arche = _archetype(fac, ni, net_margin, nm_top_thr)
         mcap = _num(M.loc[t, "mktcap"]) if t in M.index else None
         rows = statements.get(str(t))
         my = _multiyear(rows, mcap)
+        # v2: pass sector, multiyear, and per-name betas into _archetype()
+        arche = _archetype(
+            fac, ni, net_margin, nm_top_thr,
+            sector=(fac or {}).get("sector"),
+            my=my,
+            betas=betas_map.get(str(t)),
+        )
         fin = _financials(t, f, deep.get(t), my)
         blocks = {
             "profile": _profile(t, f, fac, M, arche, profiles.get(str(t))),
@@ -1107,3 +1333,152 @@ def panels() -> dict[str, dict]:
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",
              len(out), len(table), len(deep), 0 if short is None else len(short))
     return out
+
+
+# ── Historical archetype series ──────────────────────────────────────────────
+
+def archetypes_history(out_path=None) -> pd.DataFrame:
+    """Run the v2 archetype classifier over the PIT fundamentals panel
+    (data/edgar/fundamentals_panel.parquet) at annual steps and persist
+    the result to data/archetypes/history.parquet.
+
+    Point-in-time (PIT) status of each input — NOT a uniform PIT guarantee:
+
+      PIT inputs (genuinely point-in-time):
+        - Altman Z ratio inputs: assets, cur_assets, cur_liab, retained_earnings,
+          op_income, revenue — drawn from statements.parquet filtered to fy <= this
+          row's fy, so no forward look on the balance-sheet / income numbers.
+        - rev_cagr, eps_cagr — computed from statements rows with fy <= this panel fy
+          (same PIT filter), so CAGR inputs are historically valid.
+
+      CURRENT-SNAPSHOT inputs (NOT PIT — same 2026 value used for every historical row):
+        - sector: from site/factordata/factors.json (single cross-sectional snapshot)
+        - rates_beta: from site/factor_betas.json (single 2026 regression snapshot)
+        - oil_beta_raw: from site/factor_betas.json (same 2026 snapshot)
+        - factor z-scores (value, quality, profitability, …): from factors.json (2026)
+
+    CONSEQUENCE: archetype LABELS for beta/sector-driven buckets (rate_sensitive,
+    commodity_sensitive, financial, cyclical) are NON-PIT for historical rows.
+    Empirical check: 0/1331 tickers vary their sector/rates_beta/oil_beta across
+    years in this parquet (all snapshots are single-valued), confirming the
+    non-variation is structural, not incidental.
+
+    DISPLAY-ONLY constraint (§3.4 of the masterplan): historical archetype labels
+    may seed display-only hypothesis priors. They must NEVER be used as learned
+    multipliers, training labels, or species scope-gates — those uses require
+    genuinely PIT inputs.
+
+    The distressed bucket also has a silent early-year gap: Altman inputs are NaN
+    for most pre-~2020 rows (EDGAR XBRL coverage is sparse before 2018-2020), so
+    early-year rows are almost entirely determined by current-day inputs (sector,
+    betas, factor z-scores).
+
+    The ``basis`` column records ``annual_fy`` to make the annual step explicit.
+
+    Inputs consumed (all optional — rows that lack them get None for those fields):
+      - data/edgar/fundamentals_panel.parquet   (PIT financials — Altman inputs)
+      - data/edgar/statements.parquet           (rev/EPS multi-year for CAGR — PIT-filtered)
+      - site/factor_betas.json                  (rate/oil betas — CURRENT-SNAPSHOT, non-PIT)
+      - site/factordata/factors.json            (sector + factor z-scores — CURRENT-SNAPSHOT, non-PIT)
+
+    Returns the DataFrame (also written to disk).
+    Lifecycle: rebuilt on demand via scripts/build_archetype_history.py; not on the
+    nightly path; frozen between rebuilds.
+    """
+    import os
+
+    panel_path = config.data_dir() / "edgar" / "fundamentals_panel.parquet"
+    if not panel_path.exists():
+        log.warning("archetypes_history: fundamentals_panel.parquet not found — skip")
+        return pd.DataFrame()
+
+    panel = pd.read_parquet(panel_path)
+    if panel.empty:
+        return pd.DataFrame()
+
+    # Load side tables for v2 inputs
+    stmts = _load_statements()        # ticker -> list[dict] of annual rows (ascending fy)
+    betas_map = _load_betas()         # ticker -> beta row
+    facts = _load_factors()
+    table = facts["table"]            # ticker -> factor z-scores + sector
+
+    # Build mktcap map from the factor table (cross-sectional, same for all years —
+    # we only have one mktcap snapshot, not PIT mktcap history)
+    mcap_map: dict[str, float] = {}
+    for t, r in table.items():
+        b = _num(r.get("mktcap_bn"))
+        if b and b > 0:
+            mcap_map[t] = b * 1e9
+
+    records = []
+    for _, row in panel.iterrows():
+        ticker = str(row["ticker"])
+        fy = int(row["fy"])
+        asof = row.get("asof_date")
+        period_end = row.get("period_end")
+
+        mcap = mcap_map.get(ticker)
+
+        # Multi-year CAGRs: use only statements rows with fy <= this panel fy (PIT-safe)
+        stmt_rows = [r for r in (stmts.get(ticker) or []) if int(r.get("fy", 9999)) <= fy]
+        # Altman: use the matching statements row (has cur_assets/cur_liab/retained_earnings
+        # /op_income) rather than fundamentals_panel (which lacks those columns)
+        stmt_latest = stmt_rows[-1] if stmt_rows else {}
+        # Supplement with panel fields if statements row is incomplete
+        altman_row = {
+            "assets":            stmt_latest.get("assets") or row.get("assets"),
+            "cur_assets":        stmt_latest.get("cur_assets"),
+            "cur_liab":          stmt_latest.get("cur_liab"),
+            "liabilities":       stmt_latest.get("liabilities"),
+            "equity":            stmt_latest.get("equity") or row.get("equity"),
+            "retained_earnings": stmt_latest.get("retained_earnings"),
+            "op_income":         stmt_latest.get("op_income"),
+            "revenue":           stmt_latest.get("revenue") or row.get("revenue"),
+        }
+        altman_result = _altman(altman_row, mcap)
+        my_block = _multiyear(stmt_rows, mcap) if stmt_rows else None
+
+        fac = table.get(ticker)
+        ni = _num(row.get("ni"))
+
+        # For net_margin we compute inline (no context_frame available here)
+        rev = _num(row.get("revenue"))
+        net_margin = (ni / rev * 100) if (ni is not None and rev and rev != 0) else None
+
+        arche = _archetype(
+            fac, ni, net_margin, nm_top_thr=None,   # no cross-sectional threshold
+            sector=(fac or {}).get("sector"),
+            my={**(my_block or {}), "altman": altman_result},
+            betas=betas_map.get(ticker),
+        )
+
+        records.append({
+            "ticker":     ticker,
+            "fy":         fy,
+            "asof_date":  asof,
+            "period_end": period_end,
+            "basis":      "annual_fy",
+            "archetype":  arche["key"] if arche else None,
+            "confidence": arche["confidence"] if arche else None,
+            "anchored":   arche["anchored"] if arche else None,
+            "why":        arche["why"] if arche else None,
+            "sector":     (fac or {}).get("sector"),
+            "rev_cagr":   (my_block or {}).get("rev_cagr"),
+            "eps_cagr":   (my_block or {}).get("eps_cagr"),
+            "altman_z":   (altman_result or {}).get("z"),
+            "altman_zone": (altman_result or {}).get("zone"),
+            "rates_beta": (betas_map.get(ticker) or {}).get("rates"),
+            "oil_beta_raw": ((betas_map.get(ticker) or {}).get("raw") or {}).get("oil"),
+        })
+
+    df = pd.DataFrame(records)
+    if df.empty:
+        return df
+
+    # Write to data/archetypes/history.parquet
+    if out_path is None:
+        out_path = config.data_dir() / "archetypes" / "history.parquet"
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    df.to_parquet(out_path, index=False)
+    log.info("archetypes_history: wrote %d rows to %s", len(df), out_path)
+    return df

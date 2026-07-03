@@ -92,7 +92,12 @@ OIL_HEDGE_BETA = 0.10
 # archetypes (engine.stock_fundamentals.ARCHETYPES keys) that lean value / real-asset.
 _VALUE_ARCH = {"deep_value"}
 # ...and the long-duration-growth archetypes that carry a negative inflation beta.
-_GROWTH_ARCH = {"high_beta_momentum", "speculative_unprofitable", "quality_compounder"}
+# secular_growth and broken_growth are added here: both are CAGR-driven growth buckets
+# introduced in v2; under v1 those names were mostly quality_compounder or
+# high_beta_momentum, so extending _GROWTH_ARCH preserves inflation_label semantics
+# for reclassified names without changing the read for non-growth bucket members.
+_GROWTH_ARCH = {"high_beta_momentum", "speculative_unprofitable", "quality_compounder",
+                "secular_growth", "broken_growth"}
 # sectors whose duration is dominated by long-duration GROWTH (their rate risk runs
 # through the market/growth factor, so the orthogonal sector beta reads ~neutral) — used
 # only for the inflation classification, where the growth tilt is the relevant axis.
