@@ -124,22 +124,24 @@ Unchanged mechanics; HK gains washout_2w boost + extension demote + entry trio (
 
 Constitution inherited (pre-reg first; HAC; BH-FDR within family; **program-level DSR n_trials ≈ 30+ counting every config across both markets**; split-half sign-stability; effective-N = independent episodes; DSR ≥ 0.90 the only door into scored seams; suspension-honest fills; survivorship bounds; verdicts GO/NO-GO/KILL/ACCRUE).
 
-### 6.1 Trial ledger (pre-stated power honesty)
-| ID | Test | Earliest run | Effective-N basis | Decision-grade? |
+### 6.1 Trial ledger — RESOLVED 2026-07-03 (all batteries run; reports in `reports/`)
+| ID | Test | **VERDICT** | Key numbers | Disposition |
 |---|---|---|---|---|
-| H1 {Δ4w, Δ1w} | southbound holding-Δ | W3 (post-capture) | ~104 wkly xsec, ~2y | **ACCRUE-lean** (full read 2027-07) |
-| H-INCL | Connect-inclusion events | W3 | ~200–400 events 2016→ | **YES** |
-| H2a {level, Δ4w} | SFC short positions | W3 | ~600 wks × coverage-limited names | YES if coverage ≥60 names |
-| H3 {pctile, 1yΔ} | A/H discount | W3 | ~130 monthly xsec, unbalanced pairs | Borderline — GO/ACCRUE |
-| H4 {small-cap primary + 2 controls} | reversal | W2/W3 (post-universe) | ~310 monthly rebalances; quintiles thin | YES on expanded universe only |
-| H5 | peg-liquidity split | W2 | few regimes 2018→ | **Conditioner-grade only** |
-| C1 {oil, gold, copper} | commodity→sector | **W2** | ~20–36 pooled episodes | Borderline — GO/ACCRUE |
-| C-BANK {window, PEAD} | bank season | **W2** | ~100 bank-quarters | **YES** |
-| C7 {tot, res} × {names, ETFs} | momentum keystone | **W2** | 60 monthly (names) / 300 (ETFs) | **YES** (ETF leg strongest) |
-| C5 {Δ, level} | CIRO shorts | W3 (post-verify) | ~330 semi-monthly xsec if archive real | YES if depth verified |
-| C4 | earnings streak | W2 | ~100 events, 4Q depth | **Non-evidential** (exploratory) |
-| C2 | SEDI insider | — | 1.5y, one regime | **ACCRUE-only → ~2028** |
-| C6 | tax-loss seasonal | — | ~25 Decembers | **Never — descriptive chip** |
+| H1 {Δ4w, Δ1w} | southbound holding-Δ | **NO-GO both** (#1073) | lag+0 blip (t 1.33) erased at lag+1 — render lag eats it | context chip only; re-run 2027-07 |
+| H-INCL (+re-run) | Connect-inclusion events | **NO-GO, retired** (#1077, #1078) | K=74 on 545-name panel: +20d CAR negative; run-1's +5d seed collapsed | free 796-event roster shipped; **removal side t≈−3.9 → new battery (cause-controlled) before any use** |
+| H2a {level, Δ4w} | SFC short positions | **LEVEL ACCRUE · Δ4w NO-GO** (#1076) | level Q5−Q1 −0.39%/4w, HAC-t −1.81, correct CCY sign, t_eff 189; svl variant t −2.41 (non-decision) | context chip; re-run on expanded universe |
+| H3 {pctile, 1yΔ} | A/H discount | **ACCRUE — near-GO** (#1068) | IC .055 (t 2.23), top-5 tilt +2.77%/3m (t 3.08), 5/6 gates, **DSR 0.879 vs 0.90** | lead accruing HK edge; fusion re-weighted toward it (W4); come-back 2027-01 |
+| H4 {small-cap primary + controls} | reversal | **KILL — wrong sign w/ power** (#1070) | deepest 3M losers −0.92%/mo (t −2.14, effN 308, both halves) | → **falling-knife DEMOTE gate** (W4); CN-reversal port dead forever |
+| H5 | peg-liquidity split | **ACCRUE conditioner** (#1040) | EASY vs TIGHT maxDD −21% vs −49%; live wire = agg_balance | deskhero conditioner chip + sizing context (W4) |
+| C1 {oil, gold, copper} | commodity→sector | **oil ACCRUE · gold/copper NO-GO** (#1038) | oil→XEG t 2.75, FDR-reject, DSR 0.54, builds 4→8w; gold t −0.04 | oil chip live (fires on risk-on only); come-back as history deepens |
+| C-BANK {window, PEAD} | bank season | **NO-GO both** (#1039) | season contrast −0.49%/qtr (wrong sign); PEAD degenerate 18/2 | slot closed |
+| C7 {tot, res} × {names, ETFs} | momentum keystone | **4× ACCRUE → BRANCH B** (#1041) | names mom_res t 3.95, FDR-stable, LS 1.06, but DSR 0.37 @ ~3 episodes | CA board = ripe-list contract permanently; composite suppressed; re-test 2027-01 |
+| C5 {Δ, level} | CIRO shorts | **ACCRUE-DATA — unrunnable** (#1080) | archive ends 2019-08 vs CA panel 2021-06→: zero overlap; parser bug fixed | forward accrual; ~2028 |
+| C4 | earnings streak | exploratory only | non-evidential by design | catalyst chip |
+| C2 | SEDI insider | ACCRUE-only | 99.6% post-2025 | ~2028; append-only accruing |
+| C6 | tax-loss seasonal | never gated | ~25 Decembers | descriptive chip only |
+
+**Program outcome: 0 GO · 4 signal-ACCRUEs (H3 near-GO 0.879, oil→XEG, CA mom_res, H2a-level) · 1 conditioner · 7 NO-GO · 1 KILL-turned-demote-gate — zero results tortured.** Branch B (§4.1/§5.0) is the operative product on CA; HK runs the evidence-re-weighted screen. First forward-scoreboard read: ~late-Aug 2026 (21d), Oct (63d); graduation review W7 = Q4.
 
 ---
 
@@ -197,5 +199,9 @@ Survivorship bounds mandatory (not stamps) · southbound capture is day-one-urge
 Nothing weaker than 2–4 counts as "goal met."
 
 ## 11. Status log
-- 2026-07-03 — v1 authored on Phase-A evidence; 5-critic red-team returned 12 fatal / 26 major; v2 authored with corrections owned in §0.1. Next: merge; dispatch W0+W1.
+- 2026-07-03 — v1 authored on Phase-A evidence; 5-critic red-team returned 12 fatal / 26 major; v2 authored with corrections owned in §0.1.
+- 2026-07-03 — **W0+W1a SHIPPED** (#1037/42/44/46/52/57/59/65): southbound 2y window captured (464d, 6.3MB); board-ledger module; truth fixes; FRED `_fetch_fred` dropna bug found+fixed → BoC-vs-Fed coupling live; SFC collector (721wk backfill completed, 153/157 coverage); CIRO (true archive 2018-11→2019-08 only — §6.1); SEDI append-only; HSCI universe 537 (388 new names fetched, R2-destined); A/H panel 25 pairs 2001→.
+- 2026-07-03 — **W1b BOARDS SHIPPED** (#1069 HK, #1072 CA): ripe-list contract §5.0 live on both boards; entry windows + bilingual mechanism leads on every card; board ledger writing (day-1: HK 9 / CA 14 rows); hard freshness gate live (suppressed the stale HK tailwind on first render — positive control); **CA Branch B implemented** (composite suppressed, rank pills, "screen — accruing" badge); C1 oil chip (risk-on-gated); health banners incl. HKCA-13 surfaced on-page.
+- 2026-07-03 — **W2+W3 ALL BATTERIES RESOLVED** (#1038-41, #1068/70/73/76/77/78/80): full verdicts in §6.1. Zero GO — Branch B operative; H3 A/H = near-GO (DSR 0.879); H4 = KILL→demote gate; H1/H-INCL retired by delivery-lag/impound evidence.
+- 2026-07-03 — **W4 dispatched** (HK wiring: A/H-tilted fusion re-weight, falling-knife demote, H5 conditioner chip, SFC days-to-cover chip). Remaining: W5 ignition+baskets (additive only — `baskets_region` untouched per §8.1 pact), W6 UX overhaul, W7 = Q4 graduation review (first stable scoreboard read ~late-Aug). New batteries registered: Connect-REMOVAL risk gate (cause-controlled); ext-store corporate-action tripwire follow-up.
 - 2026-07-03 — HK residual-momentum pins refreshed: `closes_deep` expanded 73→157 names (06-18 stamp) sign-flips mom_res LS Sharpe to +0.17 full / +0.31 modern (still fails DSR, IC≈0 — KILL stands). §0 + §4 C7 gate re-worded to live-harness acceptance (no frozen pins); `reports/hk-residual-alpha-phase0.md` regenerated from the live fork.
