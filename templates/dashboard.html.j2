@@ -1280,10 +1280,17 @@
       grid-template-areas:"radar radar" "head head" "state hero" "tape hero"}
     /* Risk Radar = a wide BANNER spanning the top: header + escalating odds on the left,
        and the threat meters / leading evidence / action — which used to stack at the bottom
-       of a tall half-width block — moved into the right column that was empty whitespace. */
+       of a tall half-width block — moved into the right column that was empty whitespace.
+       Even 1fr/1fr columns (the detail-heavy right column used to be squeezed narrow, which
+       made it TALLER and left the sparse left column with a ~190px void beneath the ramp). */
     body.page-macro .ms-front>.rrx{grid-area:radar;margin-bottom:12px;
-      grid-template-columns:minmax(0,1.32fr) minmax(0,1fr);column-gap:22px;row-gap:0;align-items:stretch}
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:22px;row-gap:0;align-items:stretch}
     body.page-macro .ms-front>.rrx>.rrx-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+    /* the odds/ramp hero grows to fill whatever height the (taller) right column sets, so the
+       left column never leaves a void — the escalating ramp simply reads taller and clearer. */
+    body.page-macro .ms-front>.rrx>.rrx-main .rrx-odds{flex:1 1 auto}
+    body.page-macro .ms-front>.rrx>.rrx-main .rrx-ramp{align-items:stretch}
+    body.page-macro .ms-front>.rrx>.rrx-main .rrx-tk{height:auto;flex:1 1 auto;min-height:64px}
     body.page-macro .ms-front>.rrx>.rrx-side{display:flex;flex-direction:column;justify-content:center;gap:9px;min-width:0;
       padding-left:22px;border-left:1px solid color-mix(in srgb,var(--rc) 22%,var(--line))}
     body.page-macro .ms-front>.ms-head{grid-area:head}

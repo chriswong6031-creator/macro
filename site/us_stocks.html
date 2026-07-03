@@ -292,9 +292,14 @@
      keeps its own (higher-specificity, identical) copy; this is what reaches the
      China / HK / Canada boards that only load this shared partial. */
   @media (min-width: 1100px) {
-    .ms-front > .rrx { grid-template-columns: minmax(0,1.32fr) minmax(0,1fr);
+    .ms-front > .rrx { grid-template-columns: minmax(0,1fr) minmax(0,1fr);
       column-gap: 22px; row-gap: 0; align-items: stretch; }
     .ms-front > .rrx > .rrx-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    /* the detail-heavy right column sets the banner height; grow the odds/ramp hero so the
+       sparse left column fills it instead of leaving a void beneath the ramp. */
+    .ms-front > .rrx > .rrx-main .rrx-odds { flex: 1 1 auto; }
+    .ms-front > .rrx > .rrx-main .rrx-ramp { align-items: stretch; }
+    .ms-front > .rrx > .rrx-main .rrx-tk { height: auto; flex: 1 1 auto; min-height: 64px; }
     .ms-front > .rrx > .rrx-side { display: flex; flex-direction: column; justify-content: center;
       gap: 9px; min-width: 0; padding-left: 22px;
       border-left: 1px solid color-mix(in srgb, var(--rc) 22%, var(--line)); }
