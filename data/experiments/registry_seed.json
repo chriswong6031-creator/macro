@@ -1114,6 +1114,36 @@
       "state": "Slice F shipped (PR hkca-w01a-hk-shorts): collectors/hk_shorts.py HkShortsTurnoverAdapter wired. Accruing from 2026-07-03; today-only source, no backfill. Holiday/weekend heartbeat confirmed. Nothing wired to build/render.",
       "next_step": "Accrue ~1y. At 2027-07-03: run turnover-zscore rank-IC. Wire only if phase-0 clears sign-stability gate.",
       "phase_hint": "W1/Slice-F — HK/CA masterplan §3 H2b"
+    },
+    {
+      "id": "ciro-short-panel",
+      "title": "CIRO / IIROC CSPR twice-monthly TSX short-position panel",
+      "kind": "data_collection",
+      "hypothesis": "CIRO Consolidated Short Position Report (CSPR) provides a reliable, twice-monthly (15th + last day) cross-section of TSX short interest. After accumulating >= 6 cross-sections (3 months) we will re-assess cadence, coverage and staleness to determine whether the panel can serve as a C5 phase-0 substrate for short-squeeze or momentum signals.",
+      "status": "collecting",
+      "program": "hk_canada_stocks",
+      "wave": "W3",
+      "channel": "C5",
+      "phase": "phase-0",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2027-01-15",
+      "come_back_note": "6-month accrue: ~12 additional cross-sections. Re-evaluate cadence reliability, symbol coverage (target >85% of Canada universe), and whether short-interest time series show enough variation to gate a momentum or squeeze signal.",
+      "pr": "w01a(ca-shorts-insider)"
+    },
+    {
+      "id": "sedi-insider-accrual",
+      "title": "SEDI Canada insider transactions -- append-only accumulation",
+      "kind": "data_collection",
+      "hypothesis": "yfinance get_insider_transactions() provides SEDI-sourced Canadian insider filings (personal open-market trades only) for ~85-90% of TSX names. The 150-row cap means useful history requires append-only accumulation over many rebuild cycles. After ~3 years of accrual the panel should hold >= 500 personal open-market transactions per ticker (for the most-active names), enabling a cross-sectional insider-conviction signal. Free-mirror spike (2026-07-03) confirmed canadianinsider.com/INK are PAID-ONLY; SEDI.ca is CAPTCHA-walled. No free bulk-history shortcut exists.",
+      "status": "accruing",
+      "program": "hk_canada_stocks",
+      "wave": "N/A",
+      "channel": "C2",
+      "phase": "ACCRUE",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2027-07-01",
+      "come_back_note": "1-year checkpoint. Check depth: number of tickers with >= 100 personal open-market rows, date span per ticker, top-of-funnel coverage. Phase-0 gate: if median per-ticker depth >= 150 rows with a >= 2y span, proceed to signal design. Otherwise extend accrue by 1y (C2 come_back ~2028).",
+      "pr": "w01a(ca-shorts-insider)"
     }
   ]
 }
