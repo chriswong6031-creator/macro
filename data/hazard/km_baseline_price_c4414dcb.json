@@ -1,0 +1,2324 @@
+{
+  "built_at": "2026-07-03T13:34:38.123404+00:00",
+  "turn_def_version": "price_c4414dcb",
+  "doc": "Age-only Kaplan-Meier hazard per (direction x family). This is the formalized median-half-cycle prior and THE baseline any hazard model (W4.2) must beat to earn ship credit. KM estimator: lambda_t = events_t / at_risk_t. Survival: S(t) = prod_{s<=t}(1 - lambda_s). Wilson CIs on lambda_t per age bucket.",
+  "families": {
+    "us_sector": {
+      "up": {
+        "n_rows": 2554,
+        "n_events_y1": 616,
+        "n_censored": 126,
+        "censoring_rate": 0.0493,
+        "median_survival_bucket": "b2",
+        "median_survival_m": 58,
+        "buckets": [
+          {
+            "bucket": "b1",
+            "at_risk": 220,
+            "events": 76,
+            "lambda": 0.34545,
+            "lambda_ci_90lo": 0.295,
+            "lambda_ci_90hi": 0.4,
+            "survival": 0.65455,
+            "cumulative_hazard": 0.42381
+          },
+          {
+            "bucket": "b2",
+            "at_risk": 165,
+            "events": 48,
+            "lambda": 0.29091,
+            "lambda_ci_90lo": 0.236,
+            "lambda_ci_90hi": 0.352,
+            "survival": 0.46413,
+            "cumulative_hazard": 0.76759
+          },
+          {
+            "bucket": "b3",
+            "at_risk": 162,
+            "events": 47,
+            "lambda": 0.29012,
+            "lambda_ci_90lo": 0.235,
+            "lambda_ci_90hi": 0.352,
+            "survival": 0.32948,
+            "cumulative_hazard": 1.11025
+          },
+          {
+            "bucket": "b4",
+            "at_risk": 190,
+            "events": 39,
+            "lambda": 0.20526,
+            "lambda_ci_90lo": 0.161,
+            "lambda_ci_90hi": 0.257,
+            "survival": 0.26185,
+            "cumulative_hazard": 1.33999
+          },
+          {
+            "bucket": "b5",
+            "at_risk": 1817,
+            "events": 406,
+            "lambda": 0.22345,
+            "lambda_ci_90lo": 0.208,
+            "lambda_ci_90hi": 0.24,
+            "survival": 0.20334,
+            "cumulative_hazard": 1.59288
+          }
+        ],
+        "km_by_month": [
+          {
+            "age_m": 1,
+            "at_risk": 2554,
+            "events": 32,
+            "lambda": 0.01253,
+            "survival": 0.98747
+          },
+          {
+            "age_m": 2,
+            "at_risk": 2482,
+            "events": 40,
+            "lambda": 0.01612,
+            "survival": 0.97156
+          },
+          {
+            "age_m": 3,
+            "at_risk": 2355,
+            "events": 46,
+            "lambda": 0.01953,
+            "survival": 0.95258
+          },
+          {
+            "age_m": 4,
+            "at_risk": 2213,
+            "events": 41,
+            "lambda": 0.01853,
+            "survival": 0.93493
+          },
+          {
+            "age_m": 5,
+            "at_risk": 2079,
+            "events": 29,
+            "lambda": 0.01395,
+            "survival": 0.92189
+          },
+          {
+            "age_m": 6,
+            "at_risk": 1956,
+            "events": 24,
+            "lambda": 0.01227,
+            "survival": 0.91058
+          },
+          {
+            "age_m": 7,
+            "at_risk": 1841,
+            "events": 24,
+            "lambda": 0.01304,
+            "survival": 0.89871
+          },
+          {
+            "age_m": 8,
+            "at_risk": 1731,
+            "events": 22,
+            "lambda": 0.01271,
+            "survival": 0.88729
+          },
+          {
+            "age_m": 9,
+            "at_risk": 1625,
+            "events": 26,
+            "lambda": 0.016,
+            "survival": 0.87309
+          },
+          {
+            "age_m": 10,
+            "at_risk": 1526,
+            "events": 29,
+            "lambda": 0.019,
+            "survival": 0.8565
+          },
+          {
+            "age_m": 11,
+            "at_risk": 1429,
+            "events": 22,
+            "lambda": 0.0154,
+            "survival": 0.84331
+          },
+          {
+            "age_m": 12,
+            "at_risk": 1343,
+            "events": 18,
+            "lambda": 0.0134,
+            "survival": 0.83201
+          },
+          {
+            "age_m": 13,
+            "at_risk": 1261,
+            "events": 21,
+            "lambda": 0.01665,
+            "survival": 0.81815
+          },
+          {
+            "age_m": 14,
+            "at_risk": 1183,
+            "events": 21,
+            "lambda": 0.01775,
+            "survival": 0.80363
+          },
+          {
+            "age_m": 15,
+            "at_risk": 1110,
+            "events": 14,
+            "lambda": 0.01261,
+            "survival": 0.79349
+          },
+          {
+            "age_m": 16,
+            "at_risk": 1047,
+            "events": 5,
+            "lambda": 0.00478,
+            "survival": 0.7897
+          },
+          {
+            "age_m": 17,
+            "at_risk": 997,
+            "events": 3,
+            "lambda": 0.00301,
+            "survival": 0.78733
+          },
+          {
+            "age_m": 18,
+            "at_risk": 948,
+            "events": 4,
+            "lambda": 0.00422,
+            "survival": 0.78401
+          },
+          {
+            "age_m": 19,
+            "at_risk": 902,
+            "events": 4,
+            "lambda": 0.00443,
+            "survival": 0.78053
+          },
+          {
+            "age_m": 20,
+            "at_risk": 856,
+            "events": 5,
+            "lambda": 0.00584,
+            "survival": 0.77597
+          },
+          {
+            "age_m": 21,
+            "at_risk": 813,
+            "events": 7,
+            "lambda": 0.00861,
+            "survival": 0.76929
+          },
+          {
+            "age_m": 22,
+            "at_risk": 768,
+            "events": 8,
+            "lambda": 0.01042,
+            "survival": 0.76127
+          },
+          {
+            "age_m": 23,
+            "at_risk": 726,
+            "events": 6,
+            "lambda": 0.00826,
+            "survival": 0.75498
+          },
+          {
+            "age_m": 24,
+            "at_risk": 687,
+            "events": 10,
+            "lambda": 0.01456,
+            "survival": 0.74399
+          },
+          {
+            "age_m": 25,
+            "at_risk": 649,
+            "events": 14,
+            "lambda": 0.02157,
+            "survival": 0.72794
+          },
+          {
+            "age_m": 26,
+            "at_risk": 611,
+            "events": 13,
+            "lambda": 0.02128,
+            "survival": 0.71246
+          },
+          {
+            "age_m": 27,
+            "at_risk": 576,
+            "events": 14,
+            "lambda": 0.02431,
+            "survival": 0.69514
+          },
+          {
+            "age_m": 28,
+            "at_risk": 542,
+            "events": 8,
+            "lambda": 0.01476,
+            "survival": 0.68488
+          },
+          {
+            "age_m": 29,
+            "at_risk": 514,
+            "events": 8,
+            "lambda": 0.01556,
+            "survival": 0.67422
+          },
+          {
+            "age_m": 30,
+            "at_risk": 486,
+            "events": 5,
+            "lambda": 0.01029,
+            "survival": 0.66728
+          },
+          {
+            "age_m": 31,
+            "at_risk": 461,
+            "events": 5,
+            "lambda": 0.01085,
+            "survival": 0.66005
+          },
+          {
+            "age_m": 32,
+            "at_risk": 437,
+            "events": 6,
+            "lambda": 0.01373,
+            "survival": 0.65098
+          },
+          {
+            "age_m": 33,
+            "at_risk": 413,
+            "events": 6,
+            "lambda": 0.01453,
+            "survival": 0.64153
+          },
+          {
+            "age_m": 34,
+            "at_risk": 390,
+            "events": 4,
+            "lambda": 0.01026,
+            "survival": 0.63495
+          },
+          {
+            "age_m": 35,
+            "at_risk": 371,
+            "events": 0,
+            "lambda": 0.0,
+            "survival": 0.63495
+          },
+          {
+            "age_m": 36,
+            "at_risk": 356,
+            "events": 0,
+            "lambda": 0.0,
+            "survival": 0.63495
+          }
+        ]
+      },
+      "down": {
+        "n_rows": 531,
+        "n_events_y1": 376,
+        "n_censored": 1,
+        "censoring_rate": 0.0019,
+        "median_survival_bucket": "b1",
+        "median_survival_m": 7,
+        "buckets": [
+          {
+            "bucket": "b1",
+            "at_risk": 60,
+            "events": 43,
+            "lambda": 0.71667,
+            "lambda_ci_90lo": 0.613,
+            "lambda_ci_90hi": 0.801,
+            "survival": 0.28333,
+            "cumulative_hazard": 1.26113
+          },
+          {
+            "bucket": "b2",
+            "at_risk": 67,
+            "events": 51,
+            "lambda": 0.76119,
+            "lambda_ci_90lo": 0.666,
+            "lambda_ci_90hi": 0.836,
+            "survival": 0.06766,
+            "cumulative_hazard": 2.69324
+          },
+          {
+            "bucket": "b3",
+            "at_risk": 67,
+            "events": 45,
+            "lambda": 0.67164,
+            "lambda_ci_90lo": 0.572,
+            "lambda_ci_90hi": 0.758,
+            "survival": 0.02222,
+            "cumulative_hazard": 3.80689
+          },
+          {
+            "bucket": "b4",
+            "at_risk": 78,
+            "events": 56,
+            "lambda": 0.71795,
+            "lambda_ci_90lo": 0.628,
+            "lambda_ci_90hi": 0.793,
+            "survival": 0.00627,
+            "cumulative_hazard": 5.07255
+          },
+          {
+            "bucket": "b5",
+            "at_risk": 254,
+            "events": 177,
+            "lambda": 0.69685,
+            "lambda_ci_90lo": 0.648,
+            "lambda_ci_90hi": 0.742,
+            "survival": 0.0019,
+            "cumulative_hazard": 6.26608
+          }
+        ],
+        "km_by_month": [
+          {
+            "age_m": 1,
+            "at_risk": 531,
+            "events": 10,
+            "lambda": 0.01883,
+            "survival": 0.98117
+          },
+          {
+            "age_m": 2,
+            "at_risk": 516,
+            "events": 50,
+            "lambda": 0.0969,
+            "survival": 0.88609
+          },
+          {
+            "age_m": 3,
+            "at_risk": 449,
+            "events": 51,
+            "lambda": 0.11359,
+            "survival": 0.78545
+          },
+          {
+            "age_m": 4,
+            "at_risk": 375,
+            "events": 47,
+            "lambda": 0.12533,
+            "survival": 0.687
+          },
+          {
+            "age_m": 5,
+            "at_risk": 306,
+            "events": 44,
+            "lambda": 0.14379,
+            "survival": 0.58822
+          },
+          {
+            "age_m": 6,
+            "at_risk": 241,
+            "events": 30,
+            "lambda": 0.12448,
+            "survival": 0.515
+          },
+          {
+            "age_m": 7,
+            "at_risk": 194,
+            "events": 33,
+            "lambda": 0.1701,
+            "survival": 0.42739
+          },
+          {
+            "age_m": 8,
+            "at_risk": 149,
+            "events": 25,
+            "lambda": 0.16779,
+            "survival": 0.35568
+          },
+          {
+            "age_m": 9,
+            "at_risk": 117,
+            "events": 18,
+            "lambda": 0.15385,
+            "survival": 0.30096
+          },
+          {
+            "age_m": 10,
+            "at_risk": 91,
+            "events": 18,
+            "lambda": 0.1978,
+            "survival": 0.24143
+          },
+          {
+            "age_m": 11,
+            "at_risk": 64,
+            "events": 15,
+            "lambda": 0.23438,
+            "survival": 0.18485
+          },
+          {
+            "age_m": 12,
+            "at_risk": 44,
+            "events": 13,
+            "lambda": 0.29545,
+            "survival": 0.13023
+          },
+          {
+            "age_m": 13,
+            "at_risk": 27,
+            "events": 7,
+            "lambda": 0.25926,
+            "survival": 0.09647
+          },
+          {
+            "age_m": 14,
+            "at_risk": 16,
+            "events": 7,
+            "lambda": 0.4375,
+            "survival": 0.05426
+          },
+          {
+            "age_m": 15,
+            "at_risk": 8,
+            "events": 5,
+            "lambda": 0.625,
+            "survival": 0.02035
+          },
+          {
+            "age_m": 16,
+            "at_risk": 3,
+            "events": 2,
+            "lambda": 0.66667,
+            "survival": 0.00678
+          },
+          {
+            "age_m": 17,
+            "at_risk": 1,
+            "events": 1,
+            "lambda": 1.0,
+            "survival": 0.0
+          }
+        ]
+      }
+    },
+    "country": {
+      "up": {
+        "n_rows": 6564,
+        "n_events_y1": 2322,
+        "n_censored": 381,
+        "censoring_rate": 0.058,
+        "median_survival_bucket": "b2",
+        "median_survival_m": 22,
+        "buckets": [
+          {
+            "bucket": "b1",
+            "at_risk": 582,
+            "events": 237,
+            "lambda": 0.40722,
+            "lambda_ci_90lo": 0.374,
+            "lambda_ci_90hi": 0.441,
+            "survival": 0.59278,
+            "cumulative_hazard": 0.52293
+          },
+          {
+            "bucket": "b2",
+            "at_risk": 507,
+            "events": 192,
+            "lambda": 0.3787,
+            "lambda_ci_90lo": 0.344,
+            "lambda_ci_90hi": 0.415,
+            "survival": 0.3683,
+            "cumulative_hazard": 0.99886
+          },
+          {
+            "bucket": "b3",
+            "at_risk": 495,
+            "events": 177,
+            "lambda": 0.35758,
+            "lambda_ci_90lo": 0.323,
+            "lambda_ci_90hi": 0.394,
+            "survival": 0.2366,
+            "cumulative_hazard": 1.44137
+          },
+          {
+            "bucket": "b4",
+            "at_risk": 613,
+            "events": 216,
+            "lambda": 0.35237,
+            "lambda_ci_90lo": 0.321,
+            "lambda_ci_90hi": 0.385,
+            "survival": 0.15323,
+            "cumulative_hazard": 1.8758
+          },
+          {
+            "bucket": "b5",
+            "at_risk": 4367,
+            "events": 1500,
+            "lambda": 0.34349,
+            "lambda_ci_90lo": 0.332,
+            "lambda_ci_90hi": 0.355,
+            "survival": 0.1006,
+            "cumulative_hazard": 2.29661
+          }
+        ],
+        "km_by_month": [
+          {
+            "age_m": 1,
+            "at_risk": 6564,
+            "events": 122,
+            "lambda": 0.01859,
+            "survival": 0.98141
+          },
+          {
+            "age_m": 2,
+            "at_risk": 6284,
+            "events": 185,
+            "lambda": 0.02944,
+            "survival": 0.95252
+          },
+          {
+            "age_m": 3,
+            "at_risk": 5799,
+            "events": 223,
+            "lambda": 0.03845,
+            "survival": 0.91589
+          },
+          {
+            "age_m": 4,
+            "at_risk": 5232,
+            "events": 199,
+            "lambda": 0.03804,
+            "survival": 0.88106
+          },
+          {
+            "age_m": 5,
+            "at_risk": 4704,
+            "events": 170,
+            "lambda": 0.03614,
+            "survival": 0.84922
+          },
+          {
+            "age_m": 6,
+            "at_risk": 4222,
+            "events": 131,
+            "lambda": 0.03103,
+            "survival": 0.82287
+          },
+          {
+            "age_m": 7,
+            "at_risk": 3802,
+            "events": 125,
+            "lambda": 0.03288,
+            "survival": 0.79581
+          },
+          {
+            "age_m": 8,
+            "at_risk": 3423,
+            "events": 99,
+            "lambda": 0.02892,
+            "survival": 0.7728
+          },
+          {
+            "age_m": 9,
+            "at_risk": 3096,
+            "events": 95,
+            "lambda": 0.03068,
+            "survival": 0.74908
+          },
+          {
+            "age_m": 10,
+            "at_risk": 2771,
+            "events": 96,
+            "lambda": 0.03464,
+            "survival": 0.72313
+          },
+          {
+            "age_m": 11,
+            "at_risk": 2471,
+            "events": 85,
+            "lambda": 0.0344,
+            "survival": 0.69826
+          },
+          {
+            "age_m": 12,
+            "at_risk": 2206,
+            "events": 78,
+            "lambda": 0.03536,
+            "survival": 0.67357
+          },
+          {
+            "age_m": 13,
+            "at_risk": 1959,
+            "events": 88,
+            "lambda": 0.04492,
+            "survival": 0.64331
+          },
+          {
+            "age_m": 14,
+            "at_risk": 1740,
+            "events": 80,
+            "lambda": 0.04598,
+            "survival": 0.61373
+          },
+          {
+            "age_m": 15,
+            "at_risk": 1539,
+            "events": 53,
+            "lambda": 0.03444,
+            "survival": 0.5926
+          },
+          {
+            "age_m": 16,
+            "at_risk": 1372,
+            "events": 25,
+            "lambda": 0.01822,
+            "survival": 0.5818
+          },
+          {
+            "age_m": 17,
+            "at_risk": 1252,
+            "events": 27,
+            "lambda": 0.02157,
+            "survival": 0.56925
+          },
+          {
+            "age_m": 18,
+            "at_risk": 1137,
+            "events": 30,
+            "lambda": 0.02639,
+            "survival": 0.55423
+          },
+          {
+            "age_m": 19,
+            "at_risk": 1029,
+            "events": 29,
+            "lambda": 0.02818,
+            "survival": 0.53861
+          },
+          {
+            "age_m": 20,
+            "at_risk": 933,
+            "events": 26,
+            "lambda": 0.02787,
+            "survival": 0.5236
+          },
+          {
+            "age_m": 21,
+            "at_risk": 852,
+            "events": 27,
+            "lambda": 0.03169,
+            "survival": 0.50701
+          },
+          {
+            "age_m": 22,
+            "at_risk": 758,
+            "events": 27,
+            "lambda": 0.03562,
+            "survival": 0.48895
+          },
+          {
+            "age_m": 23,
+            "at_risk": 675,
+            "events": 30,
+            "lambda": 0.04444,
+            "survival": 0.46722
+          },
+          {
+            "age_m": 24,
+            "at_risk": 602,
+            "events": 47,
+            "lambda": 0.07807,
+            "survival": 0.43074
+          },
+          {
+            "age_m": 25,
+            "at_risk": 532,
+            "events": 37,
+            "lambda": 0.06955,
+            "survival": 0.40078
+          },
+          {
+            "age_m": 26,
+            "at_risk": 474,
+            "events": 31,
+            "lambda": 0.0654,
+            "survival": 0.37457
+          },
+          {
+            "age_m": 27,
+            "at_risk": 423,
+            "events": 30,
+            "lambda": 0.07092,
+            "survival": 0.34801
+          },
+          {
+            "age_m": 28,
+            "at_risk": 374,
+            "events": 28,
+            "lambda": 0.07487,
+            "survival": 0.32195
+          },
+          {
+            "age_m": 29,
+            "at_risk": 327,
+            "events": 19,
+            "lambda": 0.0581,
+            "survival": 0.30325
+          },
+          {
+            "age_m": 30,
+            "at_risk": 290,
+            "events": 16,
+            "lambda": 0.05517,
+            "survival": 0.28652
+          },
+          {
+            "age_m": 31,
+            "at_risk": 258,
+            "events": 11,
+            "lambda": 0.04264,
+            "survival": 0.2743
+          },
+          {
+            "age_m": 32,
+            "at_risk": 232,
+            "events": 7,
+            "lambda": 0.03017,
+            "survival": 0.26602
+          },
+          {
+            "age_m": 33,
+            "at_risk": 210,
+            "events": 4,
+            "lambda": 0.01905,
+            "survival": 0.26096
+          },
+          {
+            "age_m": 34,
+            "at_risk": 191,
+            "events": 4,
+            "lambda": 0.02094,
+            "survival": 0.25549
+          },
+          {
+            "age_m": 35,
+            "at_risk": 176,
+            "events": 4,
+            "lambda": 0.02273,
+            "survival": 0.24968
+          },
+          {
+            "age_m": 36,
+            "at_risk": 161,
+            "events": 3,
+            "lambda": 0.01863,
+            "survival": 0.24503
+          }
+        ]
+      },
+      "down": {
+        "n_rows": 2418,
+        "n_events_y1": 1506,
+        "n_censored": 14,
+        "censoring_rate": 0.0058,
+        "median_survival_bucket": "b1",
+        "median_survival_m": 7,
+        "buckets": [
+          {
+            "bucket": "b1",
+            "at_risk": 149,
+            "events": 112,
+            "lambda": 0.75168,
+            "lambda_ci_90lo": 0.689,
+            "lambda_ci_90hi": 0.805,
+            "survival": 0.24832,
+            "cumulative_hazard": 1.39303
+          },
+          {
+            "bucket": "b2",
+            "at_risk": 244,
+            "events": 143,
+            "lambda": 0.58607,
+            "lambda_ci_90lo": 0.534,
+            "lambda_ci_90hi": 0.637,
+            "survival": 0.10279,
+            "cumulative_hazard": 2.27508
+          },
+          {
+            "bucket": "b3",
+            "at_risk": 231,
+            "events": 157,
+            "lambda": 0.67965,
+            "lambda_ci_90lo": 0.627,
+            "lambda_ci_90hi": 0.728,
+            "survival": 0.03293,
+            "cumulative_hazard": 3.41343
+          },
+          {
+            "bucket": "b4",
+            "at_risk": 301,
+            "events": 182,
+            "lambda": 0.60465,
+            "lambda_ci_90lo": 0.558,
+            "lambda_ci_90hi": 0.65,
+            "survival": 0.01302,
+            "cumulative_hazard": 4.34142
+          },
+          {
+            "bucket": "b5",
+            "at_risk": 1493,
+            "events": 912,
+            "lambda": 0.61085,
+            "lambda_ci_90lo": 0.59,
+            "lambda_ci_90hi": 0.631,
+            "survival": 0.00507,
+            "cumulative_hazard": 5.28521
+          }
+        ],
+        "km_by_month": [
+          {
+            "age_m": 1,
+            "at_risk": 2418,
+            "events": 93,
+            "lambda": 0.03846,
+            "survival": 0.96154
+          },
+          {
+            "age_m": 2,
+            "at_risk": 2295,
+            "events": 210,
+            "lambda": 0.0915,
+            "survival": 0.87355
+          },
+          {
+            "age_m": 3,
+            "at_risk": 1975,
+            "events": 235,
+            "lambda": 0.11899,
+            "survival": 0.76961
+          },
+          {
+            "age_m": 4,
+            "at_risk": 1621,
+            "events": 211,
+            "lambda": 0.13017,
+            "survival": 0.66943
+          },
+          {
+            "age_m": 5,
+            "at_risk": 1289,
+            "events": 186,
+            "lambda": 0.1443,
+            "survival": 0.57284
+          },
+          {
+            "age_m": 6,
+            "at_risk": 995,
+            "events": 114,
+            "lambda": 0.11457,
+            "survival": 0.50721
+          },
+          {
+            "age_m": 7,
+            "at_risk": 796,
+            "events": 90,
+            "lambda": 0.11307,
+            "survival": 0.44986
+          },
+          {
+            "age_m": 8,
+            "at_risk": 627,
+            "events": 55,
+            "lambda": 0.08772,
+            "survival": 0.4104
+          },
+          {
+            "age_m": 9,
+            "at_risk": 503,
+            "events": 62,
+            "lambda": 0.12326,
+            "survival": 0.35981
+          },
+          {
+            "age_m": 10,
+            "at_risk": 397,
+            "events": 52,
+            "lambda": 0.13098,
+            "survival": 0.31268
+          },
+          {
+            "age_m": 11,
+            "at_risk": 300,
+            "events": 54,
+            "lambda": 0.18,
+            "survival": 0.2564
+          },
+          {
+            "age_m": 12,
+            "at_risk": 223,
+            "events": 39,
+            "lambda": 0.17489,
+            "survival": 0.21156
+          },
+          {
+            "age_m": 13,
+            "at_risk": 166,
+            "events": 33,
+            "lambda": 0.1988,
+            "survival": 0.1695
+          },
+          {
+            "age_m": 14,
+            "at_risk": 119,
+            "events": 22,
+            "lambda": 0.18487,
+            "survival": 0.13817
+          },
+          {
+            "age_m": 15,
+            "at_risk": 86,
+            "events": 15,
+            "lambda": 0.17442,
+            "survival": 0.11407
+          },
+          {
+            "age_m": 16,
+            "at_risk": 63,
+            "events": 9,
+            "lambda": 0.14286,
+            "survival": 0.09777
+          },
+          {
+            "age_m": 17,
+            "at_risk": 48,
+            "events": 6,
+            "lambda": 0.125,
+            "survival": 0.08555
+          },
+          {
+            "age_m": 18,
+            "at_risk": 37,
+            "events": 5,
+            "lambda": 0.13514,
+            "survival": 0.07399
+          },
+          {
+            "age_m": 19,
+            "at_risk": 28,
+            "events": 2,
+            "lambda": 0.07143,
+            "survival": 0.0687
+          },
+          {
+            "age_m": 20,
+            "at_risk": 22,
+            "events": 5,
+            "lambda": 0.22727,
+            "survival": 0.05309
+          },
+          {
+            "age_m": 21,
+            "at_risk": 16,
+            "events": 4,
+            "lambda": 0.25,
+            "survival": 0.03982
+          },
+          {
+            "age_m": 22,
+            "at_risk": 11,
+            "events": 2,
+            "lambda": 0.18182,
+            "survival": 0.03258
+          },
+          {
+            "age_m": 23,
+            "at_risk": 8,
+            "events": 0,
+            "lambda": 0.0,
+            "survival": 0.03258
+          },
+          {
+            "age_m": 24,
+            "at_risk": 7,
+            "events": 0,
+            "lambda": 0.0,
+            "survival": 0.03258
+          },
+          {
+            "age_m": 25,
+            "at_risk": 6,
+            "events": 0,
+            "lambda": 0.0,
+            "survival": 0.03258
+          },
+          {
+            "age_m": 26,
+            "at_risk": 5,
+            "events": 0,
+            "lambda": 0.0,
+            "survival": 0.03258
+          },
+          {
+            "age_m": 27,
+            "at_risk": 4,
+            "events": 0,
+            "lambda": 0.0,
+            "survival": 0.03258
+          },
+          {
+            "age_m": 28,
+            "at_risk": 3,
+            "events": 0,
+            "lambda": 0.0,
+            "survival": 0.03258
+          },
+          {
+            "age_m": 29,
+            "at_risk": 2,
+            "events": 1,
+            "lambda": 0.5,
+            "survival": 0.01629
+          },
+          {
+            "age_m": 30,
+            "at_risk": 1,
+            "events": 1,
+            "lambda": 1.0,
+            "survival": 0.0
+          }
+        ]
+      }
+    },
+    "cn_sector": {
+      "up": {
+        "n_rows": 4091,
+        "n_events_y1": 1749,
+        "n_censored": 179,
+        "censoring_rate": 0.0438,
+        "median_survival_bucket": "b2",
+        "median_survival_m": 16,
+        "buckets": [
+          {
+            "bucket": "b1",
+            "at_risk": 446,
+            "events": 197,
+            "lambda": 0.4417,
+            "lambda_ci_90lo": 0.403,
+            "lambda_ci_90hi": 0.481,
+            "survival": 0.5583,
+            "cumulative_hazard": 0.58287
+          },
+          {
+            "bucket": "b2",
+            "at_risk": 447,
+            "events": 254,
+            "lambda": 0.56823,
+            "lambda_ci_90lo": 0.529,
+            "lambda_ci_90hi": 0.606,
+            "survival": 0.24105,
+            "cumulative_hazard": 1.42273
+          },
+          {
+            "bucket": "b3",
+            "at_risk": 409,
+            "events": 213,
+            "lambda": 0.52078,
+            "lambda_ci_90lo": 0.48,
+            "lambda_ci_90hi": 0.561,
+            "survival": 0.11552,
+            "cumulative_hazard": 2.15833
+          },
+          {
+            "bucket": "b4",
+            "at_risk": 458,
+            "events": 219,
+            "lambda": 0.47817,
+            "lambda_ci_90lo": 0.44,
+            "lambda_ci_90hi": 0.517,
+            "survival": 0.06028,
+            "cumulative_hazard": 2.80874
+          },
+          {
+            "bucket": "b5",
+            "at_risk": 2331,
+            "events": 866,
+            "lambda": 0.37151,
+            "lambda_ci_90lo": 0.355,
+            "lambda_ci_90hi": 0.388,
+            "survival": 0.03789,
+            "cumulative_hazard": 3.27318
+          }
+        ],
+        "km_by_month": [
+          {
+            "age_m": 1,
+            "at_risk": 4091,
+            "events": 68,
+            "lambda": 0.01662,
+            "survival": 0.98338
+          },
+          {
+            "age_m": 2,
+            "at_risk": 3952,
+            "events": 99,
+            "lambda": 0.02505,
+            "survival": 0.95874
+          },
+          {
+            "age_m": 3,
+            "at_risk": 3696,
+            "events": 159,
+            "lambda": 0.04302,
+            "survival": 0.9175
+          },
+          {
+            "age_m": 4,
+            "at_risk": 3350,
+            "events": 189,
+            "lambda": 0.05642,
+            "survival": 0.86574
+          },
+          {
+            "age_m": 5,
+            "at_risk": 2973,
+            "events": 164,
+            "lambda": 0.05516,
+            "survival": 0.81798
+          },
+          {
+            "age_m": 6,
+            "at_risk": 2634,
+            "events": 162,
+            "lambda": 0.0615,
+            "survival": 0.76767
+          },
+          {
+            "age_m": 7,
+            "at_risk": 2326,
+            "events": 124,
+            "lambda": 0.05331,
+            "survival": 0.72675
+          },
+          {
+            "age_m": 8,
+            "at_risk": 2057,
+            "events": 90,
+            "lambda": 0.04375,
+            "survival": 0.69495
+          },
+          {
+            "age_m": 9,
+            "at_risk": 1833,
+            "events": 99,
+            "lambda": 0.05401,
+            "survival": 0.65741
+          },
+          {
+            "age_m": 10,
+            "at_risk": 1623,
+            "events": 83,
+            "lambda": 0.05114,
+            "survival": 0.62379
+          },
+          {
+            "age_m": 11,
+            "at_risk": 1441,
+            "events": 62,
+            "lambda": 0.04303,
+            "survival": 0.59696
+          },
+          {
+            "age_m": 12,
+            "at_risk": 1289,
+            "events": 51,
+            "lambda": 0.03957,
+            "survival": 0.57334
+          },
+          {
+            "age_m": 13,
+            "at_risk": 1151,
+            "events": 37,
+            "lambda": 0.03215,
+            "survival": 0.55491
+          },
+          {
+            "age_m": 14,
+            "at_risk": 1035,
+            "events": 49,
+            "lambda": 0.04734,
+            "survival": 0.52863
+          },
+          {
+            "age_m": 15,
+            "at_risk": 909,
+            "events": 27,
+            "lambda": 0.0297,
+            "survival": 0.51293
+          },
+          {
+            "age_m": 16,
+            "at_risk": 816,
+            "events": 33,
+            "lambda": 0.04044,
+            "survival": 0.49219
+          },
+          {
+            "age_m": 17,
+            "at_risk": 713,
+            "events": 24,
+            "lambda": 0.03366,
+            "survival": 0.47562
+          },
+          {
+            "age_m": 18,
+            "at_risk": 637,
+            "events": 22,
+            "lambda": 0.03454,
+            "survival": 0.4592
+          },
+          {
+            "age_m": 19,
+            "at_risk": 562,
+            "events": 17,
+            "lambda": 0.03025,
+            "survival": 0.44531
+          },
+          {
+            "age_m": 20,
+            "at_risk": 496,
+            "events": 13,
+            "lambda": 0.02621,
+            "survival": 0.43363
+          },
+          {
+            "age_m": 21,
+            "at_risk": 435,
+            "events": 13,
+            "lambda": 0.02989,
+            "survival": 0.42067
+          },
+          {
+            "age_m": 22,
+            "at_risk": 377,
+            "events": 20,
+            "lambda": 0.05305,
+            "survival": 0.39836
+          },
+          {
+            "age_m": 23,
+            "at_risk": 323,
+            "events": 27,
+            "lambda": 0.08359,
+            "survival": 0.36506
+          },
+          {
+            "age_m": 24,
+            "at_risk": 270,
+            "events": 19,
+            "lambda": 0.07037,
+            "survival": 0.33937
+          },
+          {
+            "age_m": 25,
+            "at_risk": 233,
+            "events": 13,
+            "lambda": 0.05579,
+            "survival": 0.32043
+          },
+          {
+            "age_m": 26,
+            "at_risk": 204,
+            "events": 9,
+            "lambda": 0.04412,
+            "survival": 0.3063
+          },
+          {
+            "age_m": 27,
+            "at_risk": 179,
+            "events": 7,
+            "lambda": 0.03911,
+            "survival": 0.29432
+          },
+          {
+            "age_m": 28,
+            "at_risk": 156,
+            "events": 9,
+            "lambda": 0.05769,
+            "survival": 0.27734
+          },
+          {
+            "age_m": 29,
+            "at_risk": 132,
+            "events": 9,
+            "lambda": 0.06818,
+            "survival": 0.25843
+          },
+          {
+            "age_m": 30,
+            "at_risk": 112,
+            "events": 11,
+            "lambda": 0.09821,
+            "survival": 0.23305
+          },
+          {
+            "age_m": 31,
+            "at_risk": 95,
+            "events": 8,
+            "lambda": 0.08421,
+            "survival": 0.21342
+          },
+          {
+            "age_m": 32,
+            "at_risk": 83,
+            "events": 4,
+            "lambda": 0.04819,
+            "survival": 0.20314
+          },
+          {
+            "age_m": 33,
+            "at_risk": 76,
+            "events": 4,
+            "lambda": 0.05263,
+            "survival": 0.19245
+          },
+          {
+            "age_m": 34,
+            "at_risk": 70,
+            "events": 1,
+            "lambda": 0.01429,
+            "survival": 0.1897
+          },
+          {
+            "age_m": 35,
+            "at_risk": 67,
+            "events": 3,
+            "lambda": 0.04478,
+            "survival": 0.1812
+          },
+          {
+            "age_m": 36,
+            "at_risk": 62,
+            "events": 1,
+            "lambda": 0.01613,
+            "survival": 0.17828
+          }
+        ]
+      },
+      "down": {
+        "n_rows": 2461,
+        "n_events_y1": 1205,
+        "n_censored": 53,
+        "censoring_rate": 0.0215,
+        "median_survival_bucket": "b1",
+        "median_survival_m": 12,
+        "buckets": [
+          {
+            "bucket": "b1",
+            "at_risk": 249,
+            "events": 153,
+            "lambda": 0.61446,
+            "lambda_ci_90lo": 0.563,
+            "lambda_ci_90hi": 0.664,
+            "survival": 0.38554,
+            "cumulative_hazard": 0.9531
+          },
+          {
+            "bucket": "b2",
+            "at_risk": 255,
+            "events": 128,
+            "lambda": 0.50196,
+            "lambda_ci_90lo": 0.451,
+            "lambda_ci_90hi": 0.553,
+            "survival": 0.19202,
+            "cumulative_hazard": 1.65018
+          },
+          {
+            "bucket": "b3",
+            "at_risk": 243,
+            "events": 117,
+            "lambda": 0.48148,
+            "lambda_ci_90lo": 0.429,
+            "lambda_ci_90hi": 0.534,
+            "survival": 0.09956,
+            "cumulative_hazard": 2.30696
+          },
+          {
+            "bucket": "b4",
+            "at_risk": 321,
+            "events": 165,
+            "lambda": 0.51402,
+            "lambda_ci_90lo": 0.468,
+            "lambda_ci_90hi": 0.56,
+            "survival": 0.04839,
+            "cumulative_hazard": 3.02855
+          },
+          {
+            "bucket": "b5",
+            "at_risk": 1387,
+            "events": 639,
+            "lambda": 0.46071,
+            "lambda_ci_90lo": 0.439,
+            "lambda_ci_90hi": 0.483,
+            "survival": 0.02609,
+            "cumulative_hazard": 3.64604
+          }
+        ],
+        "km_by_month": [
+          {
+            "age_m": 1,
+            "at_risk": 2461,
+            "events": 66,
+            "lambda": 0.02682,
+            "survival": 0.97318
+          },
+          {
+            "age_m": 2,
+            "at_risk": 2376,
+            "events": 113,
+            "lambda": 0.04756,
+            "survival": 0.9269
+          },
+          {
+            "age_m": 3,
+            "at_risk": 2183,
+            "events": 135,
+            "lambda": 0.06184,
+            "survival": 0.86958
+          },
+          {
+            "age_m": 4,
+            "at_risk": 1932,
+            "events": 123,
+            "lambda": 0.06366,
+            "survival": 0.81422
+          },
+          {
+            "age_m": 5,
+            "at_risk": 1709,
+            "events": 104,
+            "lambda": 0.06085,
+            "survival": 0.76467
+          },
+          {
+            "age_m": 6,
+            "at_risk": 1497,
+            "events": 84,
+            "lambda": 0.05611,
+            "survival": 0.72176
+          },
+          {
+            "age_m": 7,
+            "at_risk": 1303,
+            "events": 74,
+            "lambda": 0.05679,
+            "survival": 0.68077
+          },
+          {
+            "age_m": 8,
+            "at_risk": 1127,
+            "events": 62,
+            "lambda": 0.05501,
+            "survival": 0.64332
+          },
+          {
+            "age_m": 9,
+            "at_risk": 970,
+            "events": 69,
+            "lambda": 0.07113,
+            "survival": 0.59756
+          },
+          {
+            "age_m": 10,
+            "at_risk": 819,
+            "events": 61,
+            "lambda": 0.07448,
+            "survival": 0.55305
+          },
+          {
+            "age_m": 11,
+            "at_risk": 687,
+            "events": 42,
+            "lambda": 0.06114,
+            "survival": 0.51924
+          },
+          {
+            "age_m": 12,
+            "at_risk": 586,
+            "events": 41,
+            "lambda": 0.06997,
+            "survival": 0.48291
+          },
+          {
+            "age_m": 13,
+            "at_risk": 495,
+            "events": 27,
+            "lambda": 0.05455,
+            "survival": 0.45657
+          },
+          {
+            "age_m": 14,
+            "at_risk": 421,
+            "events": 26,
+            "lambda": 0.06176,
+            "survival": 0.42837
+          },
+          {
+            "age_m": 15,
+            "at_risk": 355,
+            "events": 26,
+            "lambda": 0.07324,
+            "survival": 0.397
+          },
+          {
+            "age_m": 16,
+            "at_risk": 293,
+            "events": 21,
+            "lambda": 0.07167,
+            "survival": 0.36855
+          },
+          {
+            "age_m": 17,
+            "at_risk": 240,
+            "events": 20,
+            "lambda": 0.08333,
+            "survival": 0.33783
+          },
+          {
+            "age_m": 18,
+            "at_risk": 196,
+            "events": 19,
+            "lambda": 0.09694,
+            "survival": 0.30508
+          },
+          {
+            "age_m": 19,
+            "at_risk": 159,
+            "events": 19,
+            "lambda": 0.1195,
+            "survival": 0.26863
+          },
+          {
+            "age_m": 20,
+            "at_risk": 127,
+            "events": 12,
+            "lambda": 0.09449,
+            "survival": 0.24325
+          },
+          {
+            "age_m": 21,
+            "at_risk": 102,
+            "events": 8,
+            "lambda": 0.07843,
+            "survival": 0.22417
+          },
+          {
+            "age_m": 22,
+            "at_risk": 82,
+            "events": 7,
+            "lambda": 0.08537,
+            "survival": 0.20503
+          },
+          {
+            "age_m": 23,
+            "at_risk": 64,
+            "events": 8,
+            "lambda": 0.125,
+            "survival": 0.1794
+          },
+          {
+            "age_m": 24,
+            "at_risk": 50,
+            "events": 8,
+            "lambda": 0.16,
+            "survival": 0.1507
+          },
+          {
+            "age_m": 25,
+            "at_risk": 38,
+            "events": 8,
+            "lambda": 0.21053,
+            "survival": 0.11897
+          },
+          {
+            "age_m": 26,
+            "at_risk": 27,
+            "events": 8,
+            "lambda": 0.2963,
+            "survival": 0.08372
+          },
+          {
+            "age_m": 27,
+            "at_risk": 17,
+            "events": 7,
+            "lambda": 0.41176,
+            "survival": 0.04925
+          },
+          {
+            "age_m": 28,
+            "at_risk": 9,
+            "events": 1,
+            "lambda": 0.11111,
+            "survival": 0.04378
+          },
+          {
+            "age_m": 29,
+            "at_risk": 7,
+            "events": 1,
+            "lambda": 0.14286,
+            "survival": 0.03752
+          },
+          {
+            "age_m": 30,
+            "at_risk": 5,
+            "events": 1,
+            "lambda": 0.2,
+            "survival": 0.03002
+          },
+          {
+            "age_m": 31,
+            "at_risk": 4,
+            "events": 1,
+            "lambda": 0.25,
+            "survival": 0.02251
+          },
+          {
+            "age_m": 32,
+            "at_risk": 3,
+            "events": 1,
+            "lambda": 0.33333,
+            "survival": 0.01501
+          },
+          {
+            "age_m": 33,
+            "at_risk": 2,
+            "events": 1,
+            "lambda": 0.5,
+            "survival": 0.0075
+          },
+          {
+            "age_m": 34,
+            "at_risk": 1,
+            "events": 1,
+            "lambda": 1.0,
+            "survival": 0.0
+          }
+        ]
+      }
+    }
+  },
+  "pooled": {
+    "up": {
+      "n_rows": 13209,
+      "n_events_y1": 4687,
+      "n_censored": 686,
+      "censoring_rate": 0.0519,
+      "median_survival_bucket": "b2",
+      "median_survival_m": 24,
+      "buckets": [
+        {
+          "bucket": "b1",
+          "at_risk": 1248,
+          "events": 510,
+          "lambda": 0.40865,
+          "lambda_ci_90lo": 0.386,
+          "lambda_ci_90hi": 0.432,
+          "survival": 0.59135,
+          "cumulative_hazard": 0.52535
+        },
+        {
+          "bucket": "b2",
+          "at_risk": 1119,
+          "events": 494,
+          "lambda": 0.44147,
+          "lambda_ci_90lo": 0.417,
+          "lambda_ci_90hi": 0.466,
+          "survival": 0.33029,
+          "cumulative_hazard": 1.10779
+        },
+        {
+          "bucket": "b3",
+          "at_risk": 1066,
+          "events": 437,
+          "lambda": 0.40994,
+          "lambda_ci_90lo": 0.385,
+          "lambda_ci_90hi": 0.435,
+          "survival": 0.19489,
+          "cumulative_hazard": 1.63533
+        },
+        {
+          "bucket": "b4",
+          "at_risk": 1261,
+          "events": 474,
+          "lambda": 0.37589,
+          "lambda_ci_90lo": 0.354,
+          "lambda_ci_90hi": 0.399,
+          "survival": 0.12163,
+          "cumulative_hazard": 2.10676
+        },
+        {
+          "bucket": "b5",
+          "at_risk": 8515,
+          "events": 2772,
+          "lambda": 0.32554,
+          "lambda_ci_90lo": 0.317,
+          "lambda_ci_90hi": 0.334,
+          "survival": 0.08203,
+          "cumulative_hazard": 2.50061
+        }
+      ],
+      "km_by_month": [
+        {
+          "age_m": 1,
+          "at_risk": 13209,
+          "events": 222,
+          "lambda": 0.01681,
+          "survival": 0.98319
+        },
+        {
+          "age_m": 2,
+          "at_risk": 12718,
+          "events": 324,
+          "lambda": 0.02548,
+          "survival": 0.95815
+        },
+        {
+          "age_m": 3,
+          "at_risk": 11850,
+          "events": 428,
+          "lambda": 0.03612,
+          "survival": 0.92354
+        },
+        {
+          "age_m": 4,
+          "at_risk": 10795,
+          "events": 429,
+          "lambda": 0.03974,
+          "survival": 0.88684
+        },
+        {
+          "age_m": 5,
+          "at_risk": 9756,
+          "events": 363,
+          "lambda": 0.03721,
+          "survival": 0.85384
+        },
+        {
+          "age_m": 6,
+          "at_risk": 8812,
+          "events": 317,
+          "lambda": 0.03597,
+          "survival": 0.82312
+        },
+        {
+          "age_m": 7,
+          "at_risk": 7969,
+          "events": 273,
+          "lambda": 0.03426,
+          "survival": 0.79493
+        },
+        {
+          "age_m": 8,
+          "at_risk": 7211,
+          "events": 211,
+          "lambda": 0.02926,
+          "survival": 0.77167
+        },
+        {
+          "age_m": 9,
+          "at_risk": 6554,
+          "events": 220,
+          "lambda": 0.03357,
+          "survival": 0.74576
+        },
+        {
+          "age_m": 10,
+          "at_risk": 5920,
+          "events": 208,
+          "lambda": 0.03514,
+          "survival": 0.71956
+        },
+        {
+          "age_m": 11,
+          "at_risk": 5341,
+          "events": 169,
+          "lambda": 0.03164,
+          "survival": 0.69679
+        },
+        {
+          "age_m": 12,
+          "at_risk": 4838,
+          "events": 147,
+          "lambda": 0.03038,
+          "survival": 0.67562
+        },
+        {
+          "age_m": 13,
+          "at_risk": 4371,
+          "events": 146,
+          "lambda": 0.0334,
+          "survival": 0.65305
+        },
+        {
+          "age_m": 14,
+          "at_risk": 3958,
+          "events": 150,
+          "lambda": 0.0379,
+          "survival": 0.6283
+        },
+        {
+          "age_m": 15,
+          "at_risk": 3558,
+          "events": 94,
+          "lambda": 0.02642,
+          "survival": 0.6117
+        },
+        {
+          "age_m": 16,
+          "at_risk": 3235,
+          "events": 63,
+          "lambda": 0.01947,
+          "survival": 0.59979
+        },
+        {
+          "age_m": 17,
+          "at_risk": 2962,
+          "events": 54,
+          "lambda": 0.01823,
+          "survival": 0.58886
+        },
+        {
+          "age_m": 18,
+          "at_risk": 2722,
+          "events": 56,
+          "lambda": 0.02057,
+          "survival": 0.57674
+        },
+        {
+          "age_m": 19,
+          "at_risk": 2493,
+          "events": 50,
+          "lambda": 0.02006,
+          "survival": 0.56518
+        },
+        {
+          "age_m": 20,
+          "at_risk": 2285,
+          "events": 44,
+          "lambda": 0.01926,
+          "survival": 0.55429
+        },
+        {
+          "age_m": 21,
+          "at_risk": 2100,
+          "events": 47,
+          "lambda": 0.02238,
+          "survival": 0.54189
+        },
+        {
+          "age_m": 22,
+          "at_risk": 1903,
+          "events": 55,
+          "lambda": 0.0289,
+          "survival": 0.52623
+        },
+        {
+          "age_m": 23,
+          "at_risk": 1724,
+          "events": 63,
+          "lambda": 0.03654,
+          "survival": 0.507
+        },
+        {
+          "age_m": 24,
+          "at_risk": 1559,
+          "events": 76,
+          "lambda": 0.04875,
+          "survival": 0.48228
+        },
+        {
+          "age_m": 25,
+          "at_risk": 1414,
+          "events": 64,
+          "lambda": 0.04526,
+          "survival": 0.46045
+        },
+        {
+          "age_m": 26,
+          "at_risk": 1289,
+          "events": 53,
+          "lambda": 0.04112,
+          "survival": 0.44152
+        },
+        {
+          "age_m": 27,
+          "at_risk": 1178,
+          "events": 51,
+          "lambda": 0.04329,
+          "survival": 0.4224
+        },
+        {
+          "age_m": 28,
+          "at_risk": 1072,
+          "events": 45,
+          "lambda": 0.04198,
+          "survival": 0.40467
+        },
+        {
+          "age_m": 29,
+          "at_risk": 973,
+          "events": 36,
+          "lambda": 0.037,
+          "survival": 0.3897
+        },
+        {
+          "age_m": 30,
+          "at_risk": 888,
+          "events": 32,
+          "lambda": 0.03604,
+          "survival": 0.37566
+        },
+        {
+          "age_m": 31,
+          "at_risk": 814,
+          "events": 24,
+          "lambda": 0.02948,
+          "survival": 0.36458
+        },
+        {
+          "age_m": 32,
+          "at_risk": 752,
+          "events": 17,
+          "lambda": 0.02261,
+          "survival": 0.35634
+        },
+        {
+          "age_m": 33,
+          "at_risk": 699,
+          "events": 14,
+          "lambda": 0.02003,
+          "survival": 0.3492
+        },
+        {
+          "age_m": 34,
+          "at_risk": 651,
+          "events": 9,
+          "lambda": 0.01382,
+          "survival": 0.34437
+        },
+        {
+          "age_m": 35,
+          "at_risk": 614,
+          "events": 7,
+          "lambda": 0.0114,
+          "survival": 0.34045
+        },
+        {
+          "age_m": 36,
+          "at_risk": 579,
+          "events": 4,
+          "lambda": 0.00691,
+          "survival": 0.3381
+        }
+      ]
+    },
+    "down": {
+      "n_rows": 5410,
+      "n_events_y1": 3087,
+      "n_censored": 68,
+      "censoring_rate": 0.0126,
+      "median_survival_bucket": "b1",
+      "median_survival_m": 9,
+      "buckets": [
+        {
+          "bucket": "b1",
+          "at_risk": 458,
+          "events": 308,
+          "lambda": 0.67249,
+          "lambda_ci_90lo": 0.635,
+          "lambda_ci_90hi": 0.707,
+          "survival": 0.32751,
+          "cumulative_hazard": 1.11623
+        },
+        {
+          "bucket": "b2",
+          "at_risk": 566,
+          "events": 322,
+          "lambda": 0.5689,
+          "lambda_ci_90lo": 0.534,
+          "lambda_ci_90hi": 0.603,
+          "survival": 0.14119,
+          "cumulative_hazard": 1.95766
+        },
+        {
+          "bucket": "b3",
+          "at_risk": 541,
+          "events": 319,
+          "lambda": 0.58965,
+          "lambda_ci_90lo": 0.554,
+          "lambda_ci_90hi": 0.624,
+          "survival": 0.05794,
+          "cumulative_hazard": 2.8484
+        },
+        {
+          "bucket": "b4",
+          "at_risk": 700,
+          "events": 403,
+          "lambda": 0.57571,
+          "lambda_ci_90lo": 0.545,
+          "lambda_ci_90hi": 0.606,
+          "survival": 0.02458,
+          "cumulative_hazard": 3.70575
+        },
+        {
+          "bucket": "b5",
+          "at_risk": 3134,
+          "events": 1728,
+          "lambda": 0.55137,
+          "lambda_ci_90lo": 0.537,
+          "lambda_ci_90hi": 0.566,
+          "survival": 0.01103,
+          "cumulative_hazard": 4.50731
+        }
+      ],
+      "km_by_month": [
+        {
+          "age_m": 1,
+          "at_risk": 5410,
+          "events": 169,
+          "lambda": 0.03124,
+          "survival": 0.96876
+        },
+        {
+          "age_m": 2,
+          "at_risk": 5187,
+          "events": 373,
+          "lambda": 0.07191,
+          "survival": 0.8991
+        },
+        {
+          "age_m": 3,
+          "at_risk": 4607,
+          "events": 421,
+          "lambda": 0.09138,
+          "survival": 0.81694
+        },
+        {
+          "age_m": 4,
+          "at_risk": 3928,
+          "events": 381,
+          "lambda": 0.097,
+          "survival": 0.7377
+        },
+        {
+          "age_m": 5,
+          "at_risk": 3304,
+          "events": 334,
+          "lambda": 0.10109,
+          "survival": 0.66312
+        },
+        {
+          "age_m": 6,
+          "at_risk": 2733,
+          "events": 228,
+          "lambda": 0.08342,
+          "survival": 0.6078
+        },
+        {
+          "age_m": 7,
+          "at_risk": 2293,
+          "events": 197,
+          "lambda": 0.08591,
+          "survival": 0.55558
+        },
+        {
+          "age_m": 8,
+          "at_risk": 1903,
+          "events": 142,
+          "lambda": 0.07462,
+          "survival": 0.51413
+        },
+        {
+          "age_m": 9,
+          "at_risk": 1590,
+          "events": 149,
+          "lambda": 0.09371,
+          "survival": 0.46595
+        },
+        {
+          "age_m": 10,
+          "at_risk": 1307,
+          "events": 131,
+          "lambda": 0.10023,
+          "survival": 0.41925
+        },
+        {
+          "age_m": 11,
+          "at_risk": 1051,
+          "events": 111,
+          "lambda": 0.10561,
+          "survival": 0.37497
+        },
+        {
+          "age_m": 12,
+          "at_risk": 853,
+          "events": 93,
+          "lambda": 0.10903,
+          "survival": 0.33409
+        },
+        {
+          "age_m": 13,
+          "at_risk": 688,
+          "events": 67,
+          "lambda": 0.09738,
+          "survival": 0.30155
+        },
+        {
+          "age_m": 14,
+          "at_risk": 556,
+          "events": 55,
+          "lambda": 0.09892,
+          "survival": 0.27172
+        },
+        {
+          "age_m": 15,
+          "at_risk": 449,
+          "events": 46,
+          "lambda": 0.10245,
+          "survival": 0.24388
+        },
+        {
+          "age_m": 16,
+          "at_risk": 359,
+          "events": 32,
+          "lambda": 0.08914,
+          "survival": 0.22214
+        },
+        {
+          "age_m": 17,
+          "at_risk": 289,
+          "events": 27,
+          "lambda": 0.09343,
+          "survival": 0.20139
+        },
+        {
+          "age_m": 18,
+          "at_risk": 233,
+          "events": 24,
+          "lambda": 0.103,
+          "survival": 0.18065
+        },
+        {
+          "age_m": 19,
+          "at_risk": 187,
+          "events": 21,
+          "lambda": 0.1123,
+          "survival": 0.16036
+        },
+        {
+          "age_m": 20,
+          "at_risk": 149,
+          "events": 17,
+          "lambda": 0.11409,
+          "survival": 0.14206
+        },
+        {
+          "age_m": 21,
+          "at_risk": 118,
+          "events": 12,
+          "lambda": 0.10169,
+          "survival": 0.12762
+        },
+        {
+          "age_m": 22,
+          "at_risk": 93,
+          "events": 9,
+          "lambda": 0.09677,
+          "survival": 0.11527
+        },
+        {
+          "age_m": 23,
+          "at_risk": 72,
+          "events": 8,
+          "lambda": 0.11111,
+          "survival": 0.10246
+        },
+        {
+          "age_m": 24,
+          "at_risk": 57,
+          "events": 8,
+          "lambda": 0.14035,
+          "survival": 0.08808
+        },
+        {
+          "age_m": 25,
+          "at_risk": 44,
+          "events": 8,
+          "lambda": 0.18182,
+          "survival": 0.07206
+        },
+        {
+          "age_m": 26,
+          "at_risk": 32,
+          "events": 8,
+          "lambda": 0.25,
+          "survival": 0.05405
+        },
+        {
+          "age_m": 27,
+          "at_risk": 21,
+          "events": 7,
+          "lambda": 0.33333,
+          "survival": 0.03603
+        },
+        {
+          "age_m": 28,
+          "at_risk": 12,
+          "events": 1,
+          "lambda": 0.08333,
+          "survival": 0.03303
+        },
+        {
+          "age_m": 29,
+          "at_risk": 9,
+          "events": 2,
+          "lambda": 0.22222,
+          "survival": 0.02569
+        },
+        {
+          "age_m": 30,
+          "at_risk": 6,
+          "events": 2,
+          "lambda": 0.33333,
+          "survival": 0.01713
+        },
+        {
+          "age_m": 31,
+          "at_risk": 4,
+          "events": 1,
+          "lambda": 0.25,
+          "survival": 0.01284
+        },
+        {
+          "age_m": 32,
+          "at_risk": 3,
+          "events": 1,
+          "lambda": 0.33333,
+          "survival": 0.00856
+        },
+        {
+          "age_m": 33,
+          "at_risk": 2,
+          "events": 1,
+          "lambda": 0.5,
+          "survival": 0.00428
+        },
+        {
+          "age_m": 34,
+          "at_risk": 1,
+          "events": 1,
+          "lambda": 1.0,
+          "survival": 0.0
+        }
+      ]
+    }
+  }
+}

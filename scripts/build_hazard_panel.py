@@ -117,6 +117,7 @@ RS_BENCH = {
 # ---------------------------------------------------------------------------
 
 def _load_yahoo_close(ticker: str, yahoo_dir: Path) -> pd.Series | None:
+    """TR close (split+dividend adjusted). Feature/RS basis per D4 contract."""
     path = yahoo_dir / f"{ticker.upper()}.parquet"
     if not path.exists():
         return None
@@ -124,6 +125,31 @@ def _load_yahoo_close(ticker: str, yahoo_dir: Path) -> pd.Series | None:
     if "close" not in df.columns:
         return None
     s = df["close"].dropna().sort_index()
+    s.index = pd.to_datetime(s.index)
+    return s
+
+
+def _load_yahoo_price(ticker: str, yahoo_dir: Path) -> pd.Series | None:
+    """Price close (split-adjusted, dividend-UNadjusted). STRUCTURE-MATH basis.
+
+    D4_SUBSTRATE §1 contract: ZigZag turns (leg/age/label construction) MUST be
+    detected on the ``price`` basis, never on total-return closes — dividends
+    inject spurious drift that moves pivot dates. The dual-basis store (T5) exposes
+    this as the ``close_price`` column. Falls back to TR ``close`` only if the
+    price column is absent (pre-T5 stores), which callers must treat as a
+    contract-violation warning.
+    """
+    path = yahoo_dir / f"{ticker.upper()}.parquet"
+    if not path.exists():
+        return None
+    df = pd.read_parquet(path)
+    if "close_price" in df.columns:
+        s = df["close_price"].dropna().sort_index()
+    elif "close" in df.columns:
+        # Pre-T5 fallback — WRONG basis; caller warns.
+        s = df["close"].dropna().sort_index()
+    else:
+        return None
     s.index = pd.to_datetime(s.index)
     return s
 
@@ -153,9 +179,16 @@ def _detect_turns_for_instrument(
     close: pd.Series,
     series_id: str,
     pct: float,
+    basis: str = "close_price",
 ) -> list[dict]:
-    """Detect turns; all with confirmed_at populated (detect_turns v2)."""
-    params = TurnParams(pct=pct, basis="close_tr", version=2)
+    """Detect turns on the STRUCTURE-MATH price basis (D4 contract).
+
+    ``basis`` is the label stamped on every turn; the series passed in MUST match
+    it. For yahoo instruments this is ``close_price`` (split-adj, div-unadj); for
+    Shenwan CN sectors the custodian ``close`` IS a price-basis index so we pass
+    ``close`` and label it ``close_price`` (D4_SUBSTRATE §1.54/§175).
+    """
+    params = TurnParams(pct=pct, basis=basis, version=2)
     return detect_turns(close, series_id=series_id, params=params)
 
 
@@ -754,10 +787,12 @@ def build_panel(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ── Turn epoch stamp ─────────────────────────────────────────────────────
-    # v0: TR basis, 14% for US/country, 18% for CN
-    # We use a single epoch for the panel (basis=tr, zz_params covers all families)
-    t_epoch_us = turn_epoch(basis="close_tr", zz_params=14.0, detector_version=2)
-    t_epoch_cn = turn_epoch(basis="close_tr", zz_params=18.0, detector_version=2)
+    # PRICE basis (split-adj, div-UNadj), 14% for US/country, 18% for CN.
+    # D4_SUBSTRATE §1 contract: structure-math (ZigZag turns) consumes the price
+    # basis; the prior tr_* epoch was a substrate-contract VIOLATION (turns on
+    # total-return closes) — corrected here (W4.2 epoch sanity check).
+    t_epoch_us = turn_epoch(basis="close_price", zz_params=14.0, detector_version=2)
+    t_epoch_cn = turn_epoch(basis="close_price", zz_params=18.0, detector_version=2)
     # Panel uses the US epoch as the primary stamp (family-specific pct noted in schema)
     panel_epoch = t_epoch_us
 
@@ -799,29 +834,38 @@ def build_panel(
     print("Detecting turns for all instruments...")
     all_turns_cache: dict[str, tuple[str, list[dict]]] = {}  # id -> (family, turns)
 
-    # US sectors
+    # Track any instrument whose price basis was unavailable (contract-violation warn)
+    price_basis_fallbacks: list[str] = []
+
+    # US sectors — turns on close_price (structure basis)
     for iid in US_SECTOR_IDS:
-        close = _load_yahoo_close(iid, yahoo_dir)
-        if close is None or len(close) < 200:
+        px = _load_yahoo_price(iid, yahoo_dir)
+        raw = pd.read_parquet(yahoo_dir / f"{iid.upper()}.parquet") if (yahoo_dir / f"{iid.upper()}.parquet").exists() else None
+        if raw is not None and "close_price" not in raw.columns:
+            price_basis_fallbacks.append(iid)
+        if px is None or len(px) < 200:
             print(f"  SKIP {iid}: insufficient data")
             continue
-        turns = _detect_turns_for_instrument(close, iid, ZZ_PCT_US)
+        turns = _detect_turns_for_instrument(px, iid, ZZ_PCT_US)
         all_turns_cache[iid] = ("us_sector", turns)
         n_conf = len([t for t in turns if not t.get("provisional")])
-        print(f"  US {iid}: {n_conf} confirmed turns")
+        print(f"  US {iid}: {n_conf} confirmed turns (price basis)")
 
-    # Country ETFs
+    # Country ETFs — turns on close_price (structure basis)
     for iid in COUNTRY_IDS:
-        close = _load_yahoo_close(iid, yahoo_dir)
-        if close is None or len(close) < 200:
+        px = _load_yahoo_price(iid, yahoo_dir)
+        raw = pd.read_parquet(yahoo_dir / f"{iid.upper()}.parquet") if (yahoo_dir / f"{iid.upper()}.parquet").exists() else None
+        if raw is not None and "close_price" not in raw.columns:
+            price_basis_fallbacks.append(iid)
+        if px is None or len(px) < 200:
             print(f"  SKIP {iid}: insufficient data")
             continue
-        turns = _detect_turns_for_instrument(close, iid, ZZ_PCT_COUNTRY)
+        turns = _detect_turns_for_instrument(px, iid, ZZ_PCT_COUNTRY)
         all_turns_cache[iid] = ("country", turns)
         n_conf = len([t for t in turns if not t.get("provisional")])
-        print(f"  COUNTRY {iid}: {n_conf} confirmed turns")
+        print(f"  COUNTRY {iid}: {n_conf} confirmed turns (price basis)")
 
-    # CN sectors
+    # CN sectors — Shenwan custodian close IS price basis (D4 §1.54); label close_price
     for iid in CN_SECTOR_IDS:
         close = _load_cn_sector_close(iid, cn_dir)
         if close is None or len(close) < 200:
@@ -830,7 +874,11 @@ def build_panel(
         turns = _detect_turns_for_instrument(close, iid, ZZ_PCT_CN)
         all_turns_cache[iid] = ("cn_sector", turns)
         n_conf = len([t for t in turns if not t.get("provisional")])
-        print(f"  CN {iid}: {n_conf} confirmed turns")
+        print(f"  CN {iid}: {n_conf} confirmed turns (price basis: Shenwan custodian index)")
+
+    if price_basis_fallbacks:
+        print(f"  WARNING: {len(price_basis_fallbacks)} instruments lacked close_price "
+              f"(TR fallback — SUBSTRATE CONTRACT VIOLATION): {price_basis_fallbacks}")
 
     # ── Compute per-family expanding medians ──────────────────────────────────
     # We cache the full turns per instrument; expanding medians are computed per t
