@@ -248,6 +248,11 @@ def all_adapters() -> dict:
         # SEC EDGAR full-text search for Trump-linked entity filings — the genuinely-early
         # channel (8-K/S-4/425/EX-99 at filing time). Keyless (UA only). See collectors/edgar_trumpflow.py.
         ("edgar_trumpflow", "collectors.edgar_trumpflow", "EdgarTrumpflowAdapter"),
+        # LBNL "Queued Up" annual interconnection-queue — total queued GW -> YoY% ->
+        # data/eia/interconnection_queue.json; arms engine.power_scarcity._queue_pull()
+        # (the queue_buildout leg). Keyless; emp.lbl.gov is Cloudflare-gated so a
+        # committed seed JSON keeps the engine live when network fetches fail.
+        ("lbnl_queue", "collectors.lbnl_queue", "LbnlQueueAdapter"),
     ]
     for key, mod, cls in specs:
         try:
@@ -271,6 +276,7 @@ _SLOW = set(_QUIVER_KEYS) | {
     "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership", "cot",
     "openfda", "huggingface", "grants_gov", "clinicaltrials", "finnhub_altdata",
     "polygon_news", "github_repos", "sam_gov", "usaspending", "prediction_markets",
+    "lbnl_queue",
 }
 
 
