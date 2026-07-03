@@ -17,7 +17,13 @@ On modern point-in-time, survivorship-aware data, the validated cross-sectional 
 | Residual momentum (12-1) | +0.012 | 0.08 | 1.50 | 0.40 | ≤0 | FAILS FDR — weak/context |
 | value/quality/profit composite | +0.015 | 0.25 | 1.03 | 0.52 | — | "pure noise" |
 | China momentum | −0.001..−0.009 | — | — | — | — | KILL (A-shares mean-revert) |
-| HK residual momentum | +0.004 | — | 0.35 | — | −0.22 | KILL (pure beta) |
+| HK residual momentum | +0.012 | 0.26 | 1.28 | 0.25 | +0.17 | KILL (pure beta) |
+
+> *HK row refreshed 2026-07-03: the original −0.22/−0.35 LS-Sharpe pin came from the pre-2026-06-18
+> 73-name `closes_deep` panel; the live 157-name harness (`scripts/hk_residual_alpha_phase0`) gives
+> mom_res LS Sharpe +0.17 full / +0.31 modern. The panel expansion sign-flipped a near-zero Sharpe,
+> not the verdict — KILL stands on DSR/IC grounds (fails DSR in every window, IC≈0), not sign.
+> See `reports/hk-residual-alpha-phase0.md`.*
 
 **v1's central flaw: it ranks by the weak leg (residual momentum) and buries the
 validated edges (SUE, insider) as display chips.** v2 inverts this.
