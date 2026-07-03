@@ -1031,6 +1031,27 @@
       "state": "W2 report shipped. ACCRUE — pre-registered honest default. 4/5 gates pass (direction, drawdown separation, split-half, episodes>=4); GO-3 statistical power fails (t=1.10<1.5). Engine-ready regime spec in report §8. NOT wired to any board/engine.",
       "next_step": "None on in-tree data until 2028-01 window extension. If wired at W4 as an exposure conditioner, weight toward the agg_balance-quantile leg (carries the signal); keep spread leg for interpretability only.",
       "phase_hint": "W2 phase-0 battery H5"
+    },
+    {
+      "id": "hk-southbound-holdings-panel",
+      "name": "HK Southbound Holdings Panel — per-name rolling window capture (H1 data leg)",
+      "kind": "data_collection",
+      "priority": "high",
+      "cadence": "daily (nightly Asia collect group — hk_southbound_holdings adapter)",
+      "what": "Captures Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS (港股通 legs 003=沪+004=深) for all dates in the 2-year rolling window. Eastmoney enforces a strict 2y horizon; earliest confirmed date = 2024-07-03. Nightly adapter appends new trading days via combine_first on a (date, ticker) MultiIndex parquet store. W01A backfill seeded the full 2y window (~500 HK names per day). Gap tripwire (data/hk_southbound/backfill_gap_audit.json) flags any >3-business-day hole.",
+      "source": "engine/hk_southbound_stocks.py + scripts/backfill_hk_southbound.py",
+      "storage": "data/hk_southbound/holdings.parquet",
+      "track_json": "data/hk_southbound/backfill_gap_audit.json",
+      "hook": "static",
+      "claim_family": "hkca_h1",
+      "started": "2024-07-03",
+      "come_back_on": "2027-07-01",
+      "come_back_note": "H1 phase-0 gate: ~104 weekly cross-sections needed (W3, ~2026-09-30). Full-power re-run come_back_on 2027-07-01 for 3-year panel. Check: holdings.parquet has >=500 dates for >=400 unique HK names. If yes, run H1 phase-0: IC of southbound-flow rank vs 21d/63d forward HK-relative return.",
+      "maturation": "H1 phase-0 at ~104 weekly cross-sections (W3, ~2026-09-30); ACCRUE-lean until then. Full statistical power (n>=3y panel) ~2027-07-01. Do NOT wire to HKCA board before H1 phase-0 pass.",
+      "status": "accruing",
+      "state": "2026-07-03 W01A: backfill seeded full 2y window (2024-07-03 to 2026-07-02, ~500 trading dates, ~500 HK names/day). Nightly adapter live in Asia collect group. Gap tripwire active.",
+      "next_step": "2026-09-30 progress check: if >=104 weekly cross-sections present, run H1 phase-0 (IC of southbound rank vs 21d/63d fwd return). Gate: IC > 0.05 with p < 0.10 on Spearman.",
+      "phase_hint": "H1 (HKCA southbound panel)"
     }
   ]
 }
