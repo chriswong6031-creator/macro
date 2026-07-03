@@ -1698,13 +1698,20 @@ def main() -> int:
         # because their ladder.state is in _ALIGN_BAD_STATES (not for knife or
         # weekly-falling — those remain excluded) are reconsidered for lane='recovery'
         # iff is_buyable AND not extended. Cap: at most 12 recovery rows.
-        from engine.cycles import _ALIGN_BAD_STATES as _ABS
+        from engine.cycles import _ALIGN_BAD_STATES as _ABS, _ALIGN_KNIFE_BLOCK as _AKB
         from engine.china_signals import extension_read as _ext_read
         _RECOVERY_CAP = 12
         _buy_tickers_trend = {t for t, _, _ in buyable}
 
         def _is_ctlane_candidate(t, p):
-            """True iff rejected ONLY due to _ALIGN_BAD_STATES (not knife/weekly)."""
+            """True iff rejected ONLY due to _ALIGN_BAD_STATES (not knife/weekly-falling).
+
+            The masterplan explicitly requires knife and weekly-falling exclusions to
+            remain hard blocks in Lane R — only the _ALIGN_BAD_STATES state veto is
+            relaxed. We check both extra exclusion conditions from the alignment dict
+            (a["knife"] and a["weekly"]) so a name that is simultaneously a knife AND
+            COUNTERTREND BOUNCE is NOT admitted.
+            """
             if t in _buy_tickers_trend:
                 return False          # already on trend lane
             if not _entry_ok(p):
@@ -1712,11 +1719,17 @@ def main() -> int:
             a = p.get("alignment") or {}
             if a.get("aligned") or a.get("near"):
                 return False          # actually passed alignment; shouldn't reach here
-            # Check whether the ONLY reason it failed alignment is _ALIGN_BAD_STATES
+            # Hard-block: knife (deep below 200dma, falling) remains excluded
+            if (a.get("knife") or 0.0) >= _AKB:
+                return False          # falling knife — excluded even in Lane R
+            # Hard-block: weekly still falling — confirmation not possible yet
+            if a.get("weekly") == "falling":
+                return False
+            # Check whether the remaining reason it failed alignment is _ALIGN_BAD_STATES
             lad = p.get("ladder") or {}
             state = lad.get("state")
             if state not in _ABS:
-                return False          # excluded for another reason (knife / weekly-falling / etc.)
+                return False          # excluded for some other reason not covered above
             return True
 
         _recovery_cands = []

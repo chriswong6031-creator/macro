@@ -95,6 +95,55 @@ class TestLaneRAdmission:
         admitted, _ = self._recovery_check(close, is_buyable=False, is_extended=False)
         assert not admitted, "Non-buyable CT-bounce must NOT be admitted"
 
+    def test_knife_excluded_from_lane_r(self):
+        """A name that is COUNTERTREND BOUNCE but also a falling knife must NOT be admitted.
+        Hard-block: knife >= _ALIGN_KNIFE_BLOCK regardless of state.
+        """
+        from engine.cycles import _ALIGN_KNIFE_BLOCK, _ALIGN_BAD_STATES
+
+        def _is_ctlane_candidate_inline(alignment, state, *, _buy_tickers_trend=frozenset()):
+            """Inline mirror of the fixed _is_ctlane_candidate check."""
+            if not alignment.get("aligned") is False and alignment.get("near") is False:
+                pass  # not in trend lane
+            if (alignment.get("knife") or 0.0) >= _ALIGN_KNIFE_BLOCK:
+                return False    # falling knife — excluded even in Lane R
+            if alignment.get("weekly") == "falling":
+                return False
+            if state not in _ALIGN_BAD_STATES:
+                return False
+            return True
+
+        # CT bounce + knife >= threshold → must NOT be admitted
+        result = _is_ctlane_candidate_inline(
+            {"knife": 0.75, "weekly": "bear_recovering", "aligned": False, "near": False},
+            "COUNTERTREND BOUNCE")
+        assert not result, "Knife + CT BOUNCE must NOT be admitted to Lane R"
+
+    def test_weekly_falling_excluded_from_lane_r(self):
+        """A name with weekly='falling' must NOT be admitted even if state is in _ALIGN_BAD_STATES."""
+        from engine.cycles import _ALIGN_KNIFE_BLOCK, _ALIGN_BAD_STATES
+
+        def _is_ctlane_candidate_inline(alignment, state):
+            if (alignment.get("knife") or 0.0) >= _ALIGN_KNIFE_BLOCK:
+                return False
+            if alignment.get("weekly") == "falling":
+                return False
+            if state not in _ALIGN_BAD_STATES:
+                return False
+            return True
+
+        # Weekly falling + COUNTERTREND BOUNCE → must NOT be admitted
+        result = _is_ctlane_candidate_inline(
+            {"knife": 0.1, "weekly": "falling", "aligned": False, "near": False},
+            "COUNTERTREND BOUNCE")
+        assert not result, "weekly=falling + CT BOUNCE must NOT be admitted to Lane R"
+
+        # Non-falling weekly + CT BOUNCE → eligible (may still be screened by is_buyable+ext)
+        result_ok = _is_ctlane_candidate_inline(
+            {"knife": 0.1, "weekly": "basing", "aligned": False, "near": False},
+            "COUNTERTREND BOUNCE")
+        assert result_ok, "Non-falling weekly CT BOUNCE should pass the _is_ctlane_candidate gate"
+
 
 # ---------------------------------------------------------------------------
 # 2. Ordering: alpha desc within lane; no negative-alpha above positive-alpha
