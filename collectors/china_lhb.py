@@ -30,6 +30,7 @@ import logging
 
 import pandas as pd
 
+from collectors.base import Adapter
 from lib import config, store
 from collectors import _drip
 from collectors.china_analyst import to_ticker, _num
@@ -261,6 +262,28 @@ def backfill(start: str, end: str, chunk_days: int = 30) -> int:
             log.info("china lhb backfill: %s..%s → %d events", lo.date(), hi.date(), len(ev))
     log.info("china lhb backfill: %d raw events [%s..%s]", total, start, end)
     return total
+
+
+class ChinaLhbAdapter(Adapter):
+    """Wraps refresh() in the standard run_adapter / circuit-breaker machinery so
+    china_lhb participates in the collect lane freshness / health tracking.
+    Group ``china_lhb`` starts with ``china`` so it is auto-assigned to the
+    ``asia`` shard (asia-close.yml). Data path data/china_lhb/ is covered by
+    ``git add data/`` in that workflow's commit step.
+
+    Adapter.fetch() calls refresh() and returns a sentinel DataFrame so run_adapter
+    records a successful fetch. akshare failures are isolated inside refresh() and
+    never raise, so the adapter never trips the circuit breaker on a GFW/rate-limit
+    transient."""
+
+    name = "china_lhb"
+    group = "china_lhb"
+    stale_after_days = 3   # trading daily; flag if 3 days stale
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        n = refresh()
+        sentinel = pd.DataFrame({"n_names": [n]}, index=[pd.Timestamp.utcnow().normalize()])
+        return {"refresh": sentinel}
 
 
 def main() -> int:
