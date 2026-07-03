@@ -947,6 +947,27 @@
       "state": "W3.9 ship: fx_share stamped on every local turn (14% flagged >0.6 across 330 attributed turns at launch). No forward log for the FX leg yet (deferred).",
       "next_step": "D5: split the country forward-outcome ledger by turns[].fx_flag; test whether currency-driven turns mean-revert differently.",
       "phase_hint": "W3.9 FX decomposition"
+    },
+    {
+      "id": "hkca-cbank-season-pead",
+      "name": "C-BANK — Canadian bank earnings-season window + PEAD (phase-0)",
+      "kind": "phase0_backtest",
+      "priority": "medium",
+      "cadence": "quarterly",
+      "what": "HK/CA masterplan §4.1 C-BANK W2 phase-0 (red-team-requested CA-native mechanism). (a) Season-window: XFN.TO/ZEB.TO daily excess vs _GSPTSE inside ±2w fixed bank-earnings-season windows (Feb25/May28/Aug27/Dec03) vs outside, aggregated to NON-OVERLAPPING season-quarter episodes (XFN 101, ZEB 65); div-carry cancelled by in-out contrast. (b) PEAD: 5 in-panel big-6 banks (NA.TO absent) x 4Q = 20 events, sector-neutral fwd drift beat vs miss. Stats: HAC t>=2.5 + BH-FDR-within-family + DSR n_trials=30 + split-half. VERDICT: NO-GO both legs. XFN contrast -0.49%/qtr, HAC t=-2.05 (WRONG sign vs prior, but -0.24 bps/day = economically null, DSR 0.013); ZEB null + split-half sign FLIP; PEAD degenerate (18 beats/2 misses -> no testable contrast). Directional prior REFUTED. Exploratory XUT/XRE (non-gated): positive, XRE t~1.9 -> hint the rate-sleeve not Financials carries any season premium; informs BoC-window design. NO wiring.",
+      "source": "scripts/cbank_phase0.py",
+      "storage": "reports/cbank-phase0.md + research/CBANK_PREREG.md",
+      "track_json": null,
+      "hook": "none",
+      "claim_family": "hkca_cbank",
+      "started": "2026-07-03",
+      "come_back_on": "2027-08-01",
+      "come_back_note": "PEAD leg is ACCRUE-forward ONLY on a future 25y single-name bank panel (needs ~100 bank-quarters + real miss population; in-tree 5y gives 20 events @ 90% beat rate -> uncomputable). Season leg is decision-grade NOW at 101 episodes and says NO-GO (prior refuted); do NOT re-run without a pre-registered alternative window/anchor spec. Revisit XRE/XUT rate-sleeve hint only inside a properly pre-registered BoC-rate-window battery.",
+      "maturation": "In-tree backtest, no forward ledger. Season leg decision-grade NOW (101/65 non-overlapping episodes). PEAD structurally under-powered on 5y panel (20 events, 2 misses). DSR>=0.90 the only GO door — not cleared (XFN DSR 0.013).",
+      "status": "registered",
+      "state": "W2 report shipped. NO-GO on both legs — season prior refuted (contrary but economically null), PEAD degenerate. Zero GO — a respectable pre-registered null. NOT wired to any board.",
+      "next_step": "None on in-tree data. PEAD revisits only if a 25y single-name Canadian bank panel is built (ACCRUE-forward). Season leg is closed NO-GO absent a new pre-registered spec.",
+      "phase_hint": "W2 phase-0 battery C-BANK"
     }
   ]
 }
