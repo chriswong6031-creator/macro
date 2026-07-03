@@ -32,7 +32,7 @@ rate_pressure constants (§3.4, frozen — do not adjust without a §8 status ro
 RATE_RELIEF_BP    = −25  (≤ this → "relief")
 RATE_PRESSURE_BP  = +25  (> this → "pressure")
 PANIC escalation: rates_scare sub-score ≥ RATE_PANIC_SCARE_THRESHOLD → "panic"
-RATE_PANIC_SCARE_THRESHOLD = 68.0  (== the radar's "caution" band floor, §3.4)
+RATE_PANIC_SCARE_THRESHOLD = 78.0  (== the radar's LOUD tier: "elevated" band floor, §3.4)
 """
 from __future__ import annotations
 
@@ -52,9 +52,9 @@ log = logging.getLogger(__name__)
 RATE_RELIEF_BP: float = -25.0    # real10y_chg63 ≤ this → "relief"
 RATE_PRESSURE_BP: float = 25.0   # real10y_chg63 > this → "pressure"
 # Radar rates-scare sub-score at/above which "pressure" escalates to "panic".
-# Uses the radar's "caution" band floor (68.0) so the threshold is self-anchored
-# to the same calibrated scale the radar already publishes.
-RATE_PANIC_SCARE_THRESHOLD: float = 68.0
+# §3.4 letter: escalation fires at the radar's LOUD tier — the "elevated" band
+# floor (78.0, risk_radar._DEFAULT_BANDS / _ALERT_FROM), NOT the "caution" floor.
+RATE_PANIC_SCARE_THRESHOLD: float = 78.0
 
 # Hysteresis window (consecutive days required before a state transition commits)
 _HYSTERESIS_DAYS: int = 2

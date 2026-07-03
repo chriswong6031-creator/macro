@@ -138,7 +138,7 @@ class TestRatePressureBase:
         """The constants are exported as named module-level names."""
         assert rv.RATE_RELIEF_BP == -25.0
         assert rv.RATE_PRESSURE_BP == 25.0
-        assert rv.RATE_PANIC_SCARE_THRESHOLD == 68.0
+        assert rv.RATE_PANIC_SCARE_THRESHOLD == 78.0
 
 
 # ---------------------------------------------------------------------------
