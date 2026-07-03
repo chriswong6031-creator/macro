@@ -754,6 +754,49 @@
   function focusTierBadge(band, card) { return tierBadge(band, card); }
   function dualHint() { return '<span class="cyc-dual-hint">' + L("dual", "双轨") + '</span>'; }
 
+  /* ---- W4.3 turn-odds line (MEASURED cards only) -------------------------
+     Renders a compact "turn odds" row from band.now.hazard, showing P(turn ≤ h)
+     for h = 1m / 3m / 6m with a [model] / [prior] source badge.
+     The hover (title attr) carries: cell verdicts, epoch, BACKTEST-cohort note
+     (ruling A6: these are backtest-validated, live cohort accruing).
+     Renders nothing if hazard data is absent (non-MEASURED or scorer unavailable). */
+  function hazardLine(band) {
+    var hz = band.now && band.now.hazard;
+    if (!hz) return '';
+    var epoch = hz.epoch || '';
+    var revOpt = hz.revision_optimistic ? ' · revision-optimistic (quad not PIT-vintaged)' : '';
+    var dir = hz.direction || '';
+
+    function cell(key, label, labelZh) {
+      var c = hz[key];
+      if (!c || c.p == null) return '';
+      var pct = Math.round(c.p * 100);
+      var src = c.source === 'MODEL' ? '[model]' : '[prior]';
+      var srcZh = c.source === 'MODEL' ? '[模型]' : '[先验]';
+      var verdict = c.cell_verdict || c.source || '';
+      return '<span class="hz-cell" title="' + esc(
+        'Cell: ' + key + ' ' + dir + ' · verdict: ' + verdict +
+        ' · epoch: ' + epoch + revOpt +
+        ' · backtest-validated OOS (n≥9,246 person-periods); live cohort accruing (come-back: n_matured≥40 per cell)'
+      ) + '">' +
+        '<span class="l-en">' + label + ' ' + pct + '% <span class="hz-src">' + src + '</span></span>' +
+        '<span class="l-zh">' + labelZh + ' ' + pct + '% <span class="hz-src">' + srcZh + '</span></span>' +
+      '</span>';
+    }
+
+    var cells = [
+      cell('1m', 'P(turn ≤ 1m)', 'P(转折≤1月)'),
+      cell('3m', '≤3m',  '≤3月'),
+      cell('6m', '≤6m',  '≤6月'),
+    ].filter(Boolean);
+    if (!cells.length) return '';
+
+    return '<div class="cyc-hazard">' +
+      '<span class="hz-label"><span class="l-en">Turn odds</span><span class="l-zh">转折概率</span></span>' +
+      cells.join('<span class="hz-sep"> · </span>') +
+      '</div>';
+  }
+
   function measuredFacts(card, band) {
     var pj = band.proj || {};
     var h = band.health || {};
@@ -771,6 +814,7 @@
       factRow(L("Typical length", "典型周期"), (pj.period_yrs ? (pj.period_yrs.median + L(" yr (", " 年 (") + pj.period_yrs.lo + "–" + pj.period_yrs.hi + ")") : "—")) +
       factRow(L("Position", "当前位置"), '<b>' + (band.now && band.now.pos != null ? band.now.pos : "—") + '</b> ' + L("(engine)", "（引擎）")) +
       '</div>' +
+      hazardLine(band) +
       '<div class="cyc-howline">' + L("How computed", "计算方式") + ': ' + esc(howComputed(card, band)) + '</div>' +
       '</div>';
   }

@@ -1250,6 +1250,66 @@
       "come_back_on": "2027-01-15",
       "come_back_note": "Re-run when the H4 expanded-HSCI universe collector lands (broadens the cross-section beyond the 157 large-caps the >=0.02pct SFC threshold observes -- the single biggest reason LEVEL is sub-threshold). Gate: LEVEL Q5-Q1 HAC-t >= 2.0 AND DSR >= 0.90 AND BH-FDR reject -> GO; else remain ACCRUE. Delta4w stays NO-GO unless it independently clears. H2b (sstoday short-sell TURNOVER) is a separate accrue-only leg, non-substitutable.",
       "pr": "w3(h2a)"
+    },
+    {
+      "id": "hazard-live-reliability-up-1m",
+      "title": "Live hazard reliability — up/1m (MODEL cell): OOS Brier vs KM prior in live data",
+      "kind": "phase0",
+      "hypothesis": "The up/1m hazard cell (PASS: ΔBrier=+0.0140, CI [+0.0068,+0.0209], 14/17 yrs positive) continues to outperform the family-stratified KM prior in live daily stamps. Live P(turn≤1m) scores are stamped in forward_log.parquet hazard_1m_{p,src} columns from 2026-07-03. Maturation: n_matured≥40 live stamps per cell where hazard_1m_src='MODEL' AND the projected turn horizon has elapsed (≥1m from stamp date).",
+      "status": "accruing",
+      "program": "cycle_intelligence",
+      "wave": "W4.3",
+      "channel": "hazard",
+      "phase": "ACCRUE",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2026-11-01",
+      "come_back_note": "~4 months = ~120 trading days, expect ≥40 matured MODEL stamps across sector+country+cn_sector engines. Gate: live OOS Brier(MODEL) < Brier(KM prior) on these stamps, with Wilson 90% CI excluding 0. If passes: confirm live reliability, update ledger. If fails: flag revision-optimistic caveat, investigate quad-vintage confound (P-D5-1).",
+      "pr": "feat(hazard): W4.3"
+    },
+    {
+      "id": "hazard-live-reliability-down-1m",
+      "title": "Live hazard reliability — down/1m (MODEL cell): OOS Brier vs KM prior in live data",
+      "kind": "phase0",
+      "hypothesis": "The down/1m hazard cell (PASS: ΔBrier=+0.0141, CI [+0.0034,+0.0247], 11/17 yrs positive) continues to outperform the KM prior in live data. Note: down/1m is less robust than up/1m (CI lower=+0.0034 vs +0.0068). Live stamps accrue from 2026-07-03 in forward_log.parquet hazard_1m_{p,src}.",
+      "status": "accruing",
+      "program": "cycle_intelligence",
+      "wave": "W4.3",
+      "channel": "hazard",
+      "phase": "ACCRUE",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2026-11-01",
+      "come_back_note": "n_matured≥40 live MODEL stamps where direction='down' AND ≥1m elapsed. Same gate as up/1m. Higher prior-flip risk (CI lower bound closer to 0).",
+      "pr": "feat(hazard): W4.3"
+    },
+    {
+      "id": "hazard-live-reliability-down-3m",
+      "title": "Live hazard reliability — down/3m (MODEL cell, MARGINAL): OOS Brier vs KM prior",
+      "kind": "phase0",
+      "hypothesis": "The down/3m cell (PASS but MARGINAL: ΔBrier=+0.0078, CI lower=+0.0005, p=0.036). The marginal lower CI bound means this cell is most likely to fail the live reliability gate. Accruing from 2026-07-03. Come-back requires n_matured≥40 stamps where direction='down' AND ≥3m elapsed from stamp date.",
+      "status": "accruing",
+      "program": "cycle_intelligence",
+      "wave": "W4.3",
+      "channel": "hazard",
+      "phase": "ACCRUE",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2027-01-01",
+      "come_back_note": "6-month horizon means maturation comes later (~2027-01). Gate: live OOS ΔBrier CI excludes 0. If fails: demote to PRIOR, document that the marginal backtest cell did not hold up live. Expected: 50/50 given the CI barely excluded 0.",
+      "pr": "feat(hazard): W4.3"
+    },
+    {
+      "id": "hazard-live-reliability-down-6m",
+      "title": "Live hazard reliability — down/6m (MODEL cell, MARGINAL): OOS Brier vs KM prior",
+      "kind": "phase0",
+      "hypothesis": "The down/6m cell (PASS but MARGINAL: ΔBrier=+0.0042, CI lower=+0.0005, p=0.024). The narrowest CI lower bound of the four passing cells. Live stamps from 2026-07-03; maturation requires ≥6m elapsed from stamp.",
+      "status": "accruing",
+      "program": "cycle_intelligence",
+      "wave": "W4.3",
+      "channel": "hazard",
+      "phase": "ACCRUE",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2027-04-01",
+      "come_back_note": "9-month horizon (6m maturation + buffer). Gate: same as down/3m. Most marginal cell — highest prior-flip risk. If fails: demote to PRIOR. If passes: tentative live confirmation of the marginal backtest edge.",
+      "pr": "feat(hazard): W4.3"
     }
   ]
 }

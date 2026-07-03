@@ -169,6 +169,7 @@ def build_sector(code: str, meta: tuple, accent: str, bench: pd.Series | None,
         pb = _pathway_block(gs)
         if pb:
             rec["pathway"] = pb
+    sc._stamp_hazard(rec, family="cn_sector")  # W4.3: now['hazard'] P(turn ≤ 1m/3m/6m)
     return rec
 
 
@@ -212,6 +213,7 @@ def build_basket(b: dict, chart: dict, accent: str, bench: pd.Series | None,
     sig = _signature(full)
     if sig:
         rec["now"]["signature"] = sig
+    sc._stamp_hazard(rec, family="cn_sector")  # W4.3: now['hazard'] P(turn ≤ 1m/3m/6m)
     return rec
 
 
@@ -331,6 +333,7 @@ def append_forward_log(data: dict) -> int:
         pw = rec.get("pathway") or {}
         cond = pw.get("conditional") or {}
         h6 = cond.get("h6") or cond.get("h3") or {}
+        hz = nw.get("hazard") or {}
         rows.append({
             "date": asof, "id": rec.get("id"), "kind": rec.get("kind"), "name": rec.get("name"),
             "phase": nw.get("phase"), "pos": nw.get("pos"), "osc_slope": nw.get("osc_slope"),
@@ -340,6 +343,13 @@ def append_forward_log(data: dict) -> int:
             "proj_lo": pr.get("low"), "proj_hi": pr.get("high"),  # cone-edge columns (N-D2-1 fix)
             "pathway_cond_rate": h6.get("cond_rate"), "pathway_base_rate": h6.get("base_rate"),
             "pathway_tercile": (pw.get("setup") or {}).get("tercile"),
+            # W4.3 hazard scores (additive — keep-FIRST unchanged for existing rows)
+            "hazard_1m_p":   (hz.get("1m") or {}).get("p"),
+            "hazard_1m_src": (hz.get("1m") or {}).get("source"),
+            "hazard_3m_p":   (hz.get("3m") or {}).get("p"),
+            "hazard_3m_src": (hz.get("3m") or {}).get("source"),
+            "hazard_6m_p":   (hz.get("6m") or {}).get("p"),
+            "hazard_6m_src": (hz.get("6m") or {}).get("source"),
         })
     if not rows or not asof:
         return 0

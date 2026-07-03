@@ -207,6 +207,8 @@ def _build_one(ticker: str, meta: dict, closes: pd.DataFrame, win_start: pd.Time
             rec["fx"] = {"note": "multi-currency bloc — FX decomposition not defined",
                          "note_zh": "多货币区域 — 未定义汇率拆分"}
             rec["lc_source"] = None
+    # W4.3: stamp now['hazard'] with P(turn ≤ 1m/3m/6m) — additive, never raises.
+    sc._stamp_hazard(rec, family="country")
     return rec
 
 

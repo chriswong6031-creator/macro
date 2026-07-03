@@ -881,6 +881,85 @@ def _apply_leadership(rec: dict, lead: dict) -> None:
         rec["proj"]["tilt"] = tilt
 
 
+def _stamp_hazard(rec: dict, family: str = "sector") -> None:
+    """W4.3 — stamp rec['now']['hazard'] with P(turn ≤ 1m/3m/6m) from hazard_score.
+
+    Works ADDITIVELY on the assembled record after _apply_leadership/_set_engine_read
+    so it never touches record_series byte-identity.  Derives a hazard_features dict
+    from the record's own turns/proj/now fields and calls hazard_score.score().
+
+    Stamped into now['hazard'] (a sub-dict), not now['hazard_features'] — the test
+    at test_cycle_proxies.py:236 checks 'hazard_features' is absent for sector; the
+    new 'hazard' key is separate.  Never raises — any failure is a warning + no stamp.
+    """
+    try:
+        from engine.hazard_score import score as _hz_score, _UP_PHASES
+    except Exception as exc:  # noqa: BLE001
+        log.debug("hazard_score unavailable: %s", exc)
+        return
+
+    nw = rec.get("now") or {}
+    turns = rec.get("turns") or []
+
+    # Already has hazard_features (non-sector / monthly path) — use it directly.
+    if "hazard_features" in nw:
+        hf = nw["hazard_features"]
+    else:
+        # Reconstruct hazard_features from the assembled record.
+        # Confirmed turns are those without provisional flag.
+        confirmed = [t for t in turns if not t.get("provisional")]
+        last_conf = confirmed[-1] if confirmed else None
+        last_t = turns[-1] if turns else None
+
+        # Age since last confirmed turn in bars (using x = float years from series start)
+        # Now is the last bar in rec; the projection's age is implicit.
+        # Use proj.period_yrs.median for median_half_yrs.
+        proj = rec.get("proj") or {}
+        period_yrs = proj.get("period_yrs") or {}
+        median_half_yrs = float(period_yrs.get("median") or 0.0)
+
+        now_x_approx: float = 0.0
+        # Compute now_x from the oscillator's last point x-value (years-from-series-start).
+        osc_pts = rec.get("osc") or []
+        if osc_pts:
+            now_x_approx = float(osc_pts[-1].get("x") or osc_pts[-1]["x"])
+
+        age_turn_yrs = 0.0
+        if last_conf and last_conf.get("x") is not None:
+            age_turn_yrs = max(0.0, now_x_approx - float(last_conf["x"]))
+        age_since_turn_bars = int(round(age_turn_yrs * 252.0))
+
+        amp_leg_pct = last_t.get("mag_pct") if last_t else None
+
+        hf = {
+            "age_since_turn_bars": age_since_turn_bars,
+            "pos":                 float(nw.get("pos") or 50.0),
+            "osc_slope":           float(nw.get("osc_slope") or 0.0),
+            "amp_leg_pct":         amp_leg_pct,
+            "median_half_yrs":     median_half_yrs,
+            "n_turns_all":         len(turns),
+            "freq":                "D",
+            "family":              family,
+            # These are not in the base record; hazard_score defaults them
+            "mom_score":           nw.get("rs_63d"),   # closest proxy available
+            "rs_63d":              nw.get("rs_63d"),
+            "vol_pctile":          None,
+            "trend_pass":          float(bool(nw.get("above200d"))),
+        }
+
+    phase = nw.get("phase") or nw.get("phase_v2") or ""
+    direction = "up" if phase in _UP_PHASES else "down"
+    quad = nw.get("quad")
+    liq_expanding = nw.get("liq_expanding")
+
+    try:
+        hz = _hz_score(hf, direction, family, quad, liq_expanding)
+        if hz is not None:
+            nw["hazard"] = hz
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hazard_score failed for %s: %s", rec.get("id", "?"), exc)
+
+
 def build_sector(ticker: str, meta: dict, closes: pd.DataFrame,
                  win_start: pd.Timestamp,
                  closes_px: pd.DataFrame | None = None) -> dict | None:
@@ -906,6 +985,7 @@ def build_sector(ticker: str, meta: dict, closes: pd.DataFrame,
                 "accent": meta["accent"]})
     _apply_leadership(rec, _leadership(closes, ticker))
     _set_engine_read(rec)    # W0.3: populate engine-owned read after RS is available
+    _stamp_hazard(rec, family="sector")   # W4.3: now['hazard'] P(turn ≤ 1m/3m/6m)
     return rec
 
 
@@ -959,6 +1039,7 @@ def build_basket(bid: str, bmeta: dict, win_start: pd.Timestamp, last_ts: pd.Tim
                 "n_members": (cmeta or {}).get("n_live")})
     _apply_leadership(rec, _basket_rs(full, spy))
     _set_engine_read(rec)    # W0.3: populate engine-owned read after RS is available
+    _stamp_hazard(rec, family="basket")   # W4.3: now['hazard'] P(turn ≤ 1m/3m/6m)
     return rec
 
 
