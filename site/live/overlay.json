@@ -1,7 +1,7 @@
 {
   "schema": "live.overlay.v2",
-  "built": "2026-07-03 19:56:13 UTC",
-  "quote_ts_max": "2026-07-03T19:56:14.149087+00:00",
+  "built": "2026-07-03 20:58:46 UTC",
+  "quote_ts_max": "2026-07-03T20:58:47.216358+00:00",
   "stale_after_min": 20.0,
   "max_chg_pct": 35.0,
   "delayed_min": 15,
@@ -16,23 +16,23 @@
   "sessions": {
     "us": {
       "region": "us",
-      "open": true,
-      "local_time": "2026-07-03 15:56 EDT"
+      "open": false,
+      "local_time": "2026-07-03 16:58 EDT"
     },
     "cn": {
       "region": "cn",
       "open": false,
-      "local_time": "2026-07-04 03:56 CST"
+      "local_time": "2026-07-04 04:58 CST"
     },
     "hk": {
       "region": "hk",
       "open": false,
-      "local_time": "2026-07-04 03:56 HKT"
+      "local_time": "2026-07-04 04:58 HKT"
     },
     "ca": {
       "region": "ca",
-      "open": true,
-      "local_time": "2026-07-03 15:56 EDT"
+      "open": false,
+      "local_time": "2026-07-03 16:58 EDT"
     }
   },
   "market": {
@@ -63,10 +63,10 @@
     "SPY": {
       "ticker": "SPY",
       "region": "us",
-      "session_open": true,
+      "session_open": false,
       "price": 745.76,
       "source": "polygon",
-      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
+      "quote_ts": "2026-07-03T20:58:47.216358+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -92,10 +92,10 @@
     "QQQ": {
       "ticker": "QQQ",
       "region": "us",
-      "session_open": true,
+      "session_open": false,
       "price": 725.17,
       "source": "polygon",
-      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
+      "quote_ts": "2026-07-03T20:58:47.216358+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -121,10 +121,10 @@
     "IEF": {
       "ticker": "IEF",
       "region": "us",
-      "session_open": true,
+      "session_open": false,
       "price": 94.03,
       "source": "polygon",
-      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
+      "quote_ts": "2026-07-03T20:58:47.216358+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -150,10 +150,10 @@
     "TLT": {
       "ticker": "TLT",
       "region": "us",
-      "session_open": true,
+      "session_open": false,
       "price": 85.52,
       "source": "polygon",
-      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
+      "quote_ts": "2026-07-03T20:58:47.216358+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -179,10 +179,10 @@
     "LQD": {
       "ticker": "LQD",
       "region": "us",
-      "session_open": true,
+      "session_open": false,
       "price": 108.46,
       "source": "polygon",
-      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
+      "quote_ts": "2026-07-03T20:58:47.216358+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -208,10 +208,10 @@
     "HYG": {
       "ticker": "HYG",
       "region": "us",
-      "session_open": true,
+      "session_open": false,
       "price": 79.59,
       "source": "polygon",
-      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
+      "quote_ts": "2026-07-03T20:58:47.216358+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -237,14 +237,14 @@
     "GC=F": {
       "ticker": "GC=F",
       "region": "us",
-      "session_open": true,
+      "session_open": false,
       "price": 4074.2,
       "source": "yahoo",
       "quote_ts": "2026-07-03T16:59:58+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 176.3,
-      "stale_reason": "feed stale during RTH",
+      "age_min": 238.8,
+      "stale_reason": "market closed",
       "baseline_asof": "2026-07-02",
       "tech": {
         "price": 4074.2,
@@ -266,14 +266,14 @@
     "HG=F": {
       "ticker": "HG=F",
       "region": "us",
-      "session_open": true,
+      "session_open": false,
       "price": 6.14,
       "source": "yahoo",
       "quote_ts": "2026-07-03T16:59:59+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 176.3,
-      "stale_reason": "feed stale during RTH",
+      "age_min": 238.8,
+      "stale_reason": "market closed",
       "baseline_asof": "2026-07-02",
       "tech": {
         "price": 6.14,
@@ -295,10 +295,10 @@
     "BTC-USD": {
       "ticker": "BTC-USD",
       "region": "us",
-      "session_open": true,
-      "price": 62173.95,
+      "session_open": false,
+      "price": 62663.32,
       "source": "yahoo",
-      "quote_ts": "2026-07-03T19:56:11+00:00",
+      "quote_ts": "2026-07-03T20:58:44+00:00",
       "price_basis": "regular",
       "delay_min": 0.1,
       "currency": "USD",
@@ -308,22 +308,22 @@
       "baseline_age_days": 1,
       "baseline_stale": false,
       "prev_close": 60488.98,
-      "chg_pct": 2.79,
+      "chg_pct": 3.59,
       "tech": {
-        "price": 62173.95,
+        "price": 62663.32,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -7.6,
-        "pct_vs_200dma": -17.0,
-        "rsi14": 47.0,
+        "pct_vs_50dma": -6.9,
+        "pct_vs_200dma": -16.4,
+        "rsi14": 49.0,
         "macd_pos": true,
-        "off_52w_high_pct": -45.7
+        "off_52w_high_pct": -45.3
       },
       "divergence": {
         "flag": "within_band",
         "severity": "none",
         "detail": "live move inside the nightly 1-day band",
-        "chg_pct": 2.79,
+        "chg_pct": 3.59,
         "band": [
           null,
           null
@@ -333,7 +333,7 @@
         "extreme": false,
         "crossings": [],
         "rsi_from": 40.0,
-        "rsi_to": 47.0
+        "rsi_to": 49.0
       }
     }
   },
