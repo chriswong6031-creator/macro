@@ -2827,6 +2827,15 @@ def main() -> int:
             us_standouts = json.loads(_us.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_standouts.json unreadable (%s)", e)
+    # W2 surfaced-outcome strip (written by grade_us_board.py --nightly).
+    # Absent on first run or before grade_us_board runs. Additive, never fatal.
+    us_board_outcomes = None
+    _ubo = site / "factordata" / "us_board_outcomes.json"
+    if _ubo.exists():
+        try:
+            us_board_outcomes = json.loads(_ubo.read_text())
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("us_board_outcomes.json unreadable (%s)", e)
 
     # Macro news & catalysts (LEAF, additive, never fatal). Catalysts (FOMC + jobs
     # report) are keyless and always on; filtered headlines + the optional LLM brief
@@ -2988,6 +2997,7 @@ def main() -> int:
         action_board=action_board(sector_timing, notable, basket_action_items(site)),
         top_setups=top_setups,
         us_standouts=us_standouts,
+        us_board_outcomes=us_board_outcomes,
         market_gamma=market_gamma,
         components_confirming=confirming,
         components_contradicting=contradicting,

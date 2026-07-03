@@ -760,6 +760,15 @@
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
             padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
             background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
+  /* W3 evidence-stack chips (display-only; forward IC accruing; context framing only) */
+  .nb-ev{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
+  .nb-ev-gex{color:var(--info);background:color-mix(in srgb,var(--info) 10%,transparent);border:1px solid color-mix(in srgb,var(--info) 28%,transparent)}
+  .nb-ev-alt{color:var(--up);background:color-mix(in srgb,var(--up) 8%,transparent);border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
+  .nb-ev-news{color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent);border:1px solid color-mix(in srgb,var(--muted) 18%,transparent)}
+  .nb-ev-sm{color:var(--up);background:color-mix(in srgb,var(--up) 8%,transparent);border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
+  .nb-ev-conf{color:var(--link);font-weight:900;background:color-mix(in srgb,var(--link) 10%,transparent);border:1px solid color-mix(in srgb,var(--link) 30%,transparent)}
+  .nb-stop{font-size:9px;color:var(--muted);margin-top:2px}
+  .nb-stop .stop-unscored{opacity:.55}
   /* broad "Top setups" board (selection × timing across the S&P 1500) */
   .topsetups { margin-top: 14px; }
   .ts-more { margin-left: auto; font-size: 11px; font-weight: 700; white-space: nowrap; }
@@ -2663,7 +2672,7 @@
             {% if n.eq_grade %}<span class="nb-grade" style="color:{{ 'var(--up)' if n.eq_dir=='up' else ('var(--down)' if n.eq_dir=='down' else 'var(--muted)') }}">{{ t(n.eq_grade, n.eq_grade_zh) if n.eq_grade_zh else n.eq_grade }}</span> ·{% endif %}
             <span data-tip-en="signal triggered {{ n.signal_date }}" data-tip-zh="信号触发 {{ n.signal_date }}">⏱ {{ t(n.age_short, n.age_short_zh) if n.age_short else (n.signal_date or '') }}</span>
           </div>
-          {% if n.alpha_z is not none or n.insider_buyers or n.sue_z or n.demand %}
+          {% if n.alpha_z is not none or n.insider_buyers or n.sue_z or n.demand or n.gex_confirm or n.altdata or n.news_burst or n.smartmoney_chip or n.confluence_plus %}
           <div class="nb-alpha">
             {% if n.alpha_z is not none %}<span class="nb-az {{ 'az-up' if n.alpha_z > 0 else ('az-dn' if n.alpha_z < 0 else '') }}" data-tip-en="Sector-neutral residual momentum (z) — stock-specific strength with market + sector beta stripped. A ranking/context leg, not a standalone signal." data-tip-zh="行业中性残差动量（z）— 剥离大盘与行业 beta 后的个股特定强度。属排序/情境维度，并非独立信号。">α {{ '%+.2f'|format(n.alpha_z) }}</span>{% endif %}
             {% if n.alpha_sector_rank %}<span class="nb-rk" data-tip-en="Rank within its GICS sector by sector-neutral momentum" data-tip-zh="按行业中性动量在其 GICS 行业内的排名">#{{ n.alpha_sector_rank }}/{{ n.alpha_sector_n }}</span>{% endif %}
@@ -2674,12 +2683,63 @@
             {% if n.demand %}{% set dyoy = (' ' + '%+.0f'|format(n.demand.yoy) + '%') if n.demand.yoy is not none else '' %}
               {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" data-tip-en="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal" data-tip-zh="需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>
               {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" data-tip-en="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal" data-tip-zh="需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
+            {# W3 evidence-stack chips. Display-only context; no return claims; chip = accruing. #}
+            {# GEX confirmer (Source 2): gamma-wall / regime confirm. Context chip. #}
+            {% if n.gex_confirm and n.gex_confirm.get('verdict') in ('confirm', 'caution') %}{% set _gv = n.gex_confirm %}
+              <span class="nb-ev nb-ev-gex" data-tip-en="GEX {{ _gv.get('verdict','') }}: dealer-gamma structure {{ 'supports' if _gv.get('verdict')=='confirm' else 'may constrain' }} the move. Max-pain {{ '%.1f'|format(_gv.get('levels',{}).get('max_pain',0) or 0) if _gv.get('levels',{}).get('max_pain') else '' }} · regime {{ _gv.get('regime','') }}. Display-only; EOD options snapshot, not a sizing input." data-tip-zh="GEX {{ '确认' if _gv.get('verdict')=='confirm' else '注意' }}：庄家伽马结构{{ '支持' if _gv.get('verdict')=='confirm' else '可能约束' }}此次移动。仅供展示，EOD 期权快照，不作为仓位依据。"><span class="l-en">{{ 'GEX ✓' if _gv.get('verdict')=='confirm' else 'GEX !' }}</span><span class="l-zh">{{ 'GEX 确认' if _gv.get('verdict')=='confirm' else 'GEX 注意' }}</span></span>
+            {% endif %}
+            {# Alt-data convergence (Source 3): multiple independent non-insider channels lit. #}
+            {% if n.altdata and (n.altdata.get('convergence_score') or 0) >= 2 %}{% set _ad = n.altdata %}
+              <span class="nb-ev nb-ev-alt" data-tip-en="Alt-data convergence: {{ _ad.get('convergence_score') }} independent channels lit ({{ ((_ad.get('channels') or [])[:4])|join(', ') }}{{ ', …' if (_ad.get('channels') or [])|length > 4 else '' }}). Channels count independent signals — not all are equal strength. Context, display-only; not a standalone buy signal." data-tip-zh="替代数据共振：{{ _ad.get('convergence_score') }} 个独立渠道同时亮起。仅供展示，不作为独立买入信号。"><span class="l-en">Alt ×{{ _ad.get('convergence_score') }}</span><span class="l-zh">替代 ×{{ _ad.get('convergence_score') }}</span></span>
+            {% endif %}
+            {# News burst (Source 5): elevated coverage context (17-ticker coverage today). #}
+            {% if n.news_burst and (n.news_burst.get('n_recent') or 0) >= 3 %}{% set _nb = n.news_burst %}
+              <span class="nb-ev nb-ev-news" data-tip-en="News burst: {{ _nb.get('n_recent') }} recent articles — elevated coverage context. Sentiment scoring not yet active; this is a coverage-volume signal only. Display-only." data-tip-zh="新闻激增：{{ _nb.get('n_recent') }} 篇近期文章，覆盖量偏高。情感评分尚未激活；仅为覆盖量信号。仅供展示。"><span class="l-en">News ×{{ _nb.get('n_recent') }}</span><span class="l-zh">新闻 ×{{ _nb.get('n_recent') }}</span></span>
+            {% endif %}
+            {# Smartmoney 13F (Source 7): A/B-grade fund new/add — quarterly lag caveat required. #}
+            {% if n.smartmoney_chip %}{% set _sm = n.smartmoney_chip %}
+              <span class="nb-ev nb-ev-sm" data-tip-en="13F signal: {{ _sm.get('n_funds_adding') }} A/B-grade fund(s) added/initiated — {{ _sm.get('best_fund','') }} (grade {{ _sm.get('best_grade','') }}). {{ _sm.get('staleness_caveat','Q1-2026 13F') }}: ~45-day disclosure lag + quarter lag. Context only; do NOT treat as a real-time institutional read." data-tip-zh="13F信号：{{ _sm.get('n_funds_adding') }} 只A/B级基金建仓/加仓。{{ _sm.get('staleness_caveat','Q1-2026 13F') }}：约45天披露滞后+季度滞后。仅供参考，切勿视为实时机构动向。"><span class="l-en">13F {{ _sm.get('best_grade','') }}</span><span class="l-zh">13F {{ _sm.get('best_grade','') }}</span></span>
+            {% endif %}
+            {# Confluence+ badge: k >= 2 independent group votes. Display-only. #}
+            {% if n.confluence_plus and (n.confluence_plus.get('k') or 0) >= 2 %}{% set _cp = n.confluence_plus %}
+              <span class="nb-ev nb-ev-conf" data-tip-en="Confluence+: {{ _cp.get('k') }} independent evidence groups converging ({{ (_cp.get('groups') or [])|join(' · ') }}). Each group contributes at most 1 vote — same-signal pairs never double-count. Context display; forward IC accruing; no return claim." data-tip-zh="多元共振：{{ _cp.get('k') }} 个独立证据组同时共振（{{ (_cp.get('groups') or [])|join(' · ') }}）。每组最多贡献1票——同源信号不重复计算。情境展示，前瞻IC累积中，不作收益承诺。"><span class="l-en">conf+ {{ _cp.get('k') }}</span><span class="l-zh">多元共振 {{ _cp.get('k') }}</span></span>
+            {% endif %}
           </div>
+          {# W3 stop-budget guidance line: anticipation drawdown-validated stop width (display-only). #}
+          {% if n.stop_guidance %}{% set _sg = n.stop_guidance %}
+          <div class="nb-stop">
+            <span class="{{ '' if _sg.get('scored') else 'stop-unscored' }}" data-tip-en="Anticipation stop-width (drawdown-validated{{ ' — GO legs only' if _sg.get('scored') else '; unscored horizon' }}): avg close-path adverse excursion {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail {{ _sg.get('tail_pct') }}%{% endif %} over the {{ _sg.get('horizon','?') }}-day horizon. DISPLAY-ONLY context — not a hard stop, not a sizing input." data-tip-zh="预期止损宽度（回撤验证{{ '，仅限GO腿' if _sg.get('scored') else '；未评分区间' }}）：平均收盘路径不利偏移 {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 {{ _sg.get('tail_pct') }}%{% endif %}。仅供展示，非硬止损，不作为仓位依据。"><span class="l-en">Avg stop: −{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail −{{ _sg.get('tail_pct') }}%{% endif %}</span><span class="l-zh">均值止损：−{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 −{{ _sg.get('tail_pct') }}%{% endif %}</span></span>
+          </div>
+          {% endif %}
           {% endif %}
         </a>
       {% endfor %}
       {% endif %}
       </div>
+      {# W2 surfaced-outcome strip: names that left the buy board in the last 21 sessions.
+         Survivorship disclosure: n_skipped_no_price = names with no price / delisted
+         that were silently excluded from graded outcomes (the win/loss mix is survivor-tilted). #}
+      {% if us_board_outcomes and not us_board_outcomes.get('empty') and us_board_outcomes.get('rows') %}
+      {% set _ubo_surv = us_board_outcomes.get('survivorship') or {} %}
+      <div class="ubo-strip" style="margin-top:10px;font-size:10.5px">
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+          <span style="font-weight:700">{{ t('Surfaced → outcome', '已浮出 → 结果') }}</span>
+          <span class="muted">{{ t('exited the buy board in the last 21 sessions', '过去21个交易日离开买入榜') }}</span>
+          {% if _ubo_surv.get('n_skipped_no_price', 0) > 0 %}
+          <span class="muted" data-tip-en="{{ _ubo_surv.get('n_skipped_no_price') }} name(s) excluded from graded outcomes: no usable price series (delisted / renamed). The win/loss mix above is survivor-tilted — names that left the board because they collapsed and got delisted are invisible." data-tip-zh="{{ _ubo_surv.get('n_skipped_no_price') }} 个标的因无可用价格数据（退市/改名）被排除在评分结果之外。上方盈亏混合偏向幸存者——因崩跌退市而离开榜单的标的不可见。">(<span class="l-en">{{ _ubo_surv.get('n_skipped_no_price') }} excluded: no price/delisted</span><span class="l-zh">{{ _ubo_surv.get('n_skipped_no_price') }} 个排除：无价格/退市</span>)</span>
+          {% endif %}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          {% for _oe in us_board_outcomes.rows %}
+          {% set _ocls = 'az-up' if _oe.pct_since > 2 else ('az-dn' if _oe.pct_since < -2 else '') %}
+          <span class="ubo-row" data-tip-en="{{ _oe.ticker }} ({{ _oe.sector or '–' }}) surfaced {{ _oe.first_surfaced }} @ ${{ _oe.surfaced_price }}; last ${{ _oe.last_price }}; {{ _oe.days_on_board }} sessions on board; status: {{ _oe.status }}" data-tip-zh="{{ _oe.ticker }} 上榜日期 {{ _oe.first_surfaced }}，入场价 ${{ _oe.surfaced_price }}，最新价 ${{ _oe.last_price }}，在榜 {{ _oe.days_on_board }} 日，状态：{{ _oe.status }}">
+            <span style="font-weight:700">{{ _oe.ticker }}</span>
+            <span class="{{ _ocls }}" style="font-variant-numeric:tabular-nums">{{ '+' if _oe.pct_since > 0 else '' }}{{ '%.1f'|format(_oe.pct_since) }}%</span>
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
       {% if top_setups %}
       <div class="topsetups">
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
