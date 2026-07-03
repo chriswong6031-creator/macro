@@ -1119,16 +1119,16 @@
    "id": "ciro-short-panel",
    "title": "CIRO / IIROC CSPR twice-monthly TSX short-position panel",
    "kind": "data_collection",
-   "hypothesis": "CIRO Consolidated Short Position Report (CSPR) provides a reliable, twice-monthly (15th + last day) cross-section of TSX short interest. After accumulating >= 6 cross-sections (3 months) we will re-assess cadence, coverage and staleness to determine whether the panel can serve as a C5 phase-0 substrate for short-squeeze or momentum signals.",
-   "status": "collecting",
+   "hypothesis": "CIRO Consolidated Short Position Report (CSPR), twice-monthly TSX short interest. W3 depth re-verification (2026-07-03) FALSIFIED the earlier '~2021-10-> forward-accruing, ~114 xsec' premise: the .xls files are reachable ONLY by walking Wayback snapshots of the CSPR page (iiroc.ca, archived 2019-01->2021-05), and the reports span ~2018-11->2021-02 (landed 19 distinct report dates, 2018-11-30..2019-08-31, 38793 TSX rows). The ciro.ca successor page is not in Wayback and the live site is 403 Cloudflare, so the historical archive is FROZEN, not accruing, and does NOT overlap the name-level price panel (2021-06->). Forward collection from now is the only path to a joinable panel.",
+   "status": "frozen-historical",
    "program": "hk_canada_stocks",
    "wave": "W3",
    "channel": "C5",
    "phase": "phase-0",
    "registered_on": "2026-07-03",
-   "come_back_on": "2027-01-15",
-   "come_back_note": "6-month accrue: ~12 additional cross-sections. Re-evaluate cadence reliability, symbol coverage (target >85% of Canada universe), and whether short-interest time series show enough variation to gate a momentum or squeeze signal.",
-   "pr": "w01a(ca-shorts-insider)"
+   "come_back_on": "2028-01-15",
+   "come_back_note": "Frozen historical archive (2018-11..2021-02) cannot be joined to the name-level return panel (2021-06->). Re-assess ONLY forward-accrued cross-sections: target >=60 forward semi-monthly xsec on name-panel dates (~2.5y of twice-monthly live collection) before any C5 phase-0 is runnable.",
+   "pr": "w3(c5-collector-fix)"
   },
   {
    "id": "sedi-insider-accrual",
@@ -1218,6 +1218,23 @@
    "state": "W3 deeper-panel re-run shipped (hkca-w3-hincl2). Coverage 275/444 (7.2x), K=74. NO-GO both gated trials ROBUSTLY: post-inclusion drift is mildly NEGATIVE on the small/mid caps the mega-cap panel lacked; the run-1 pre-fill rally and +5d seed do not survive the broader panel. Inclusion ACCRUE path retired. Live thread = exploratory removal de-rate (|t|~4). NOT wired.",
    "next_step": "Do NOT re-run inclusion (tested, NO-GO). Optionally open a NEW pre-registered Connect-REMOVAL de-rate battery (the |t|~3-4 exploratory signal) with a removal-cause control. roster.parquet remains H1's PIT southbound-eligibility gate.",
    "phase_hint": "W3 phase-0 battery H-INCL"
+  },
+  {
+   "id": "c5-ciro-short-delta",
+   "title": "C5 -- CIRO short-position Delta / level -> forward within-sector excess (phase-0)",
+   "kind": "phase0_verdict",
+   "hypothesis": "Semi-monthly change (Delta) and cross-sectional level of CIRO short interest (normalized by shares-outstanding primary / 63d-ADV fallback) predict forward 1-2m within-sector excess return for TSX names, on publication-lag-honest windows (T+2 pub lag + 10td info buffer). Pre-registered research/C5_CIRO_SHORT_PREREG.md.",
+   "status": "accrue-data",
+   "verdict": "ACCRUE-DATA",
+   "program": "hk_canada_stocks",
+   "wave": "W3",
+   "channel": "C5",
+   "phase": "phase-0",
+   "registered_on": "2026-07-03",
+   "come_back_on": "2028-01-15",
+   "come_back_note": "NOT RUN: two independent power nails. (1) Reachable CIRO archive = 19 semi-monthly xsec (2018-11-30..2019-08-31), below the pre-registered floor of 60. (2) ZERO overlap with the name-level price panel (2021-06->), so no (short-reading, forward-return) pair exists at the name tier -- unrunnable, not merely low-N. Decision-grade only once >=60 FORWARD xsec accrue on name-panel dates (~2028). Report: reports/c5-phase0.md. Min-N alert gate: do not ping before 60 forward overlapping cross-sections.",
+   "n_trials_program_dsr": 30,
+   "pr": "w3(c5)"
   }
  ]
 }

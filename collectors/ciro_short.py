@@ -9,13 +9,35 @@ Consolidated Short Position Report (CSPR) twice per month: on the 15th and on th
 last calendar day of each month.  Each report is an XLS file listing aggregate
 short positions (shares) for every TSX (and TSXV/CSE) listed security.
 
-DEPTH (VERIFIED 2026-07-03)
-----------------------------
-The masterplan assumed a 2012→ or 2017→ CSPR archive. Wayback Machine CDX query
-on 2026-07-03 returned the FIRST archived URL at 2021-10-15. The live ciro.ca site
-returns a Cloudflare challenge page to all non-browser requests. Wayback is the only
-programmatic path. TRUE archive depth: 2021-10-15 → present (~114 semi-monthly
-cross-sections at programme launch).  C5 phase-0 is rescoped from ~330 to ~114.
+DEPTH (RE-VERIFIED 2026-07-03, W3 — the earlier ~114/2021-10 figure was WRONG)
+------------------------------------------------------------------------------
+The masterplan assumed a 2012→ or 2017→ CSPR archive; the Slice-G collector docstring
+then claimed "2021-10-15 → present, ~114 cross-sections". BOTH are falsified by direct
+Wayback probe on 2026-07-03 (W3):
+
+  * The .xls report files are NOT independently indexed in the Wayback CDX API
+    (they have opaque GUID filenames, e.g. `ab44fc63-..._en.xls`, with the report
+    date carried only in the PAGE's anchor TEXT `YYYYMMDD_CSPR_Report`, never in the
+    URL).  The old `*CSPR*.xls` CDX globs therefore returned zero rows — the collector
+    was silently finding nothing.  Verified: `iiroc.ca/Documents/2021/*_en.xls`,
+    `.../2020/*_en.xls`, and three specific report GUIDs all return `[]` from CDX.
+  * The WORKING route is a PAGE-snapshot walk: CDX-enumerate snapshots of the CSPR
+    *page* (`iiroc.ca/.../consolidated-short-position-report.aspx`), fetch each
+    snapshot's HTML, extract the `(report_date, guid_href)` pairs from the anchor
+    list (each snapshot lists ~4-10 recent semi-monthly reports), dedupe by date,
+    then replay-fetch each file via the FULL replay host
+    `web.archive.org/web/<page_ts>/<href>` (Wayback redirects to the nearest actual
+    capture; the `id_` raw variant 404s because it demands an exact-timestamp capture
+    the file doesn't have).  One such fetch verified: 437 KB, `application/vnd.ms-excel`,
+    OLE2/BIFF magic `\\xd0\\xcf\\x11\\xe0` — a genuine .xls.
+  * TRUE achievable depth: the iiroc CSPR page was archived 2019-01 → 2021-05 (it 404s
+    after the 2021-05 site migration to ciro.ca).  The listed reports span
+    ~2018-11-30 → 2021-02-15.  The ciro.ca successor page is NOT in Wayback under any
+    CSPR slug and its files live at opaque `/media/<id>/download` URLs also uncaptured;
+    the live ciro.ca site returns 403 Cloudflare to browser UAs.  So the reachable
+    window is ONLY ~2018-11 → 2021-02 → roughly 40-50 semi-monthly cross-sections,
+    NOT 114 and NOT to present.  C5 phase-0 (which needs >=60 cross-sections) therefore
+    does NOT clear the power bar → verdict ACCRUE-DATA (see reports/c5-phase0.md).
 
 STORE (GIT-TRACKED, NOT R2)
 ----------------------------
@@ -25,10 +47,10 @@ STORE (GIT-TRACKED, NOT R2)
              net_change (int64)
   data/ciro_short/coverage.json
     {fetched_at, n_report_dates, earliest_date, latest_date,
-     n_tsx_rows_total, n_new_dates, n_failed_dates}
+     n_tsx_rows_total, n_new_dates, n_failed_dates, n_page_snapshots, n_page_failed}
 
-Store decision: ~114 report-dates × ~2,500 TSX rows ≈ 285,000 rows total.
-At ~50B/row that's <15MB, well inside the 20MB git-track threshold.  Not R2.
+Store decision: ~45 report-dates × ~2,000-2,500 TSX rows ≈ 100k rows total.
+Well inside the 20MB git-track threshold.  Not R2.
 
 SYMBOL NORMALISATION
 --------------------
@@ -71,11 +93,30 @@ _BROWSER_UA = (
 
 # Wayback Machine CDX API — enumerate archived URLs matching a pattern
 _WB_CDX_URL = "https://web.archive.org/cdx/search/cdx"
-# Wayback replay endpoint — fetch a specific archived snapshot
+# Wayback replay host prefix — fetch an archived resource; Wayback redirects a
+# "/web/<page_ts>/<original_or_archived_href>" request to the nearest actual capture.
+_WB_HOST = "https://web.archive.org"
 _WB_REPLAY = "https://web.archive.org/web/{timestamp}/{original}"
 
-# True archive depth confirmed by CDX query 2026-07-03
-_EARLIEST_VERIFIED = date(2021, 10, 15)
+# The CSPR *page* URLs whose Wayback snapshots list the semi-monthly report files.
+# The iiroc.ca page was archived 2019-01 → 2021-05 (404s after the ciro.ca migration);
+# the ciro.ca variants are listed for forward-completeness but were not archived under
+# any CSPR slug as of 2026-07-03 (they resolve to zero snapshots — harmless).
+_CSPR_PAGES = [
+    "iiroc.ca/industry/marketmonitoringanalysis/Pages/consolidated-short-position-report.aspx",
+    "ciro.ca/office-investor/market-data-and-statistics/consolidated-short-position-report",
+    "ciro.ca/newsroom/publications/consolidated-short-position-report",
+]
+
+# Anchor-text pattern carrying the report date: "20210430_CSPR_Report".
+_REPORT_ANCHOR_RE = re.compile(
+    r'<a[^>]+href="(/web/[^"]*Documents/\d{4}/[0-9a-f-]+_en\.xls)"[^>]*>\s*(\d{8})_CSPR',
+    re.IGNORECASE,
+)
+
+# True achievable archive depth re-verified by page-snapshot walk 2026-07-03 (W3).
+# The reachable window is ~2018-11 → 2021-02 (iiroc page archived through 2021-05).
+_EARLIEST_VERIFIED = date(2018, 11, 1)
 
 # Stores
 _STORE = Path(config.data_dir()) / "ciro_short" / "positions.parquet"
@@ -138,28 +179,51 @@ def _parse_xls_bytes(raw: bytes, report_date: date) -> pd.DataFrame:
     for row_idx in range(min(20, sheet.nrows)):
         row = [str(sheet.cell_value(row_idx, c)).strip().lower()
                for c in range(sheet.ncols)]
-        # Detect header by presence of 'symbol' or 'ticker' in a cell
+        # Detect header by presence of 'symbol' or 'ticker' in a cell.
         if any("symbol" in cell or "ticker" in cell for cell in row):
             header_row = row_idx
+            # The canonical CSPR header (verified 2019→2021) is:
+            #   Security Issue Name | Security Symbol | Exchange Code | No.Shares | Net Change
+            # Detect columns by keyword, matching Net Change FIRST so the "No.Shares"
+            # / "position" (short-shares) column can never be shadowed by "Net Change".
             for c_idx, cell in enumerate(row):
                 if "symbol" in cell or "ticker" in cell:
-                    col_symbol = col_symbol or c_idx
+                    if col_symbol is None:
+                        col_symbol = c_idx
                 if "exchange" in cell or "market" in cell:
-                    col_exchange = col_exchange or c_idx
+                    if col_exchange is None:
+                        col_exchange = c_idx
                 if "name" in cell:
-                    col_name = col_name or c_idx
-                if "short" in cell and "position" in cell:
-                    col_shares = col_shares or c_idx
-                elif "position" in cell and col_shares is None:
-                    col_shares = c_idx
-                if "change" in cell or "net" in cell:
-                    col_change = col_change or c_idx
+                    if col_name is None:
+                        col_name = c_idx
+                # Net change first (so it wins col 4, not the shares detector).
+                if ("net" in cell and "change" in cell) or cell.strip() == "net change":
+                    if col_change is None:
+                        col_change = c_idx
+                    continue
+                # Short-position share count: "No.Shares" / "shares" / "short position".
+                if ("share" in cell) or ("short" in cell and "position" in cell):
+                    if col_shares is None:
+                        col_shares = c_idx
+            # Fallback: bare "change" if the explicit "net change" match missed.
+            if col_change is None:
+                for c_idx, cell in enumerate(row):
+                    if "change" in cell:
+                        col_change = c_idx
+                        break
             break
 
     if header_row is None:
         raise ValueError(f"CSPR XLS for {report_date}: no header row found")
     if col_symbol is None:
         raise ValueError(f"CSPR XLS for {report_date}: no symbol column found")
+    if col_shares is None:
+        # Fail loud rather than emit a cross-section of all-zero short positions.
+        raise ValueError(
+            f"CSPR XLS for {report_date}: no short-shares column found "
+            f"(header row {header_row}: "
+            f"{[str(sheet.cell_value(header_row, c)) for c in range(sheet.ncols)]})"
+        )
 
     rows: list[dict] = []
     for row_idx in range(header_row + 1, sheet.nrows):
@@ -240,68 +304,155 @@ def _cspr_report_dates(start: date, end: date) -> Iterator[date]:
 
 
 # ---------------------------------------------------------------------------
-# Wayback Machine CDX discovery
+# Wayback HTTP helper (polite, backoff on 503 / connection resets)
 # ---------------------------------------------------------------------------
 
-def _wb_cdx_archived_dates(timeout: int = 30) -> list[tuple[str, str]]:
-    """Query Wayback CDX API for all archived CSPR XLS files.
+def _wb_get(url: str, *, timeout: int = 90, max_attempts: int = 5,
+            params: dict | None = None) -> requests.Response:
+    """GET a Wayback URL with exponential backoff.
 
-    Returns list of (timestamp, original_url) tuples, sorted by timestamp.
-    Checks both the old iiroc.ca domain and the new ciro.ca domain.
+    Wayback returns 503 under load and periodically refuses connections; both are
+    transient. Backs off (3s, 6s, 12s, ...) and retries. Raises the last error if
+    all attempts fail.
     """
-    results: list[tuple[str, str]] = []
-    patterns = [
-        "iiroc.ca/*CSPR*.xls",
-        "ciro.ca/*CSPR*.xls",
-        "ciro.ca/sites/default/files/epubs/CSPR/*.xls",
-    ]
-    seen_ts: set[str] = set()
-    for pattern in patterns:
+    last: Exception | None = None
+    for att in range(max_attempts):
         try:
             r = requests.get(
-                _WB_CDX_URL,
-                params={
-                    "url": pattern,
-                    "output": "json",
-                    "fl": "timestamp,original",
-                    "filter": "statuscode:200",
-                    "collapse": "timestamp:8",  # dedupe by date (YYYYMMDD)
-                    "limit": "2000",
-                },
+                url,
+                params=params,
                 headers={"User-Agent": _BROWSER_UA},
                 timeout=timeout,
+                allow_redirects=True,
             )
+            # 404 = the resource was never captured by Wayback — permanent, do not
+            # retry (retrying only wastes the backoff budget on a dead file).
+            if r.status_code == 404:
+                r.raise_for_status()
+            if r.status_code == 503:
+                raise requests.HTTPError("503 Wayback busy", response=r)
             r.raise_for_status()
+            return r
+        except requests.HTTPError as e:
+            resp = getattr(e, "response", None)
+            if resp is not None and resp.status_code == 404:
+                raise  # permanent — surface immediately, no backoff
+            last = e
+            if att < max_attempts - 1:
+                time.sleep(3 * (2 ** att))
+        except Exception as e:  # noqa: BLE001  (connection resets etc. — transient)
+            last = e
+            if att < max_attempts - 1:
+                time.sleep(3 * (2 ** att))
+    assert last is not None
+    raise last
+
+
+# ---------------------------------------------------------------------------
+# Wayback page-snapshot discovery (the WORKING route — see module docstring)
+# ---------------------------------------------------------------------------
+
+def _wb_page_snapshots(timeout: int = 60) -> list[tuple[str, str]]:
+    """Enumerate Wayback snapshots of the CSPR *page(s)* (statuscode 200).
+
+    Returns sorted, de-duplicated (timestamp, page_original_url) pairs. The .xls
+    report files themselves are NOT independently indexed in CDX (GUID filenames);
+    we must read each page snapshot's HTML to discover them. Each snapshot is later
+    replayed at ITS OWN page URL (the iiroc.ca vs ciro.ca host differs).
+    """
+    seen: dict[str, str] = {}  # timestamp -> page_original_url
+    for page in _CSPR_PAGES:
+        try:
+            r = _wb_get(
+                _WB_CDX_URL, timeout=timeout,
+                params={
+                    "url": page,
+                    "output": "json",
+                    "fl": "timestamp,original,statuscode",
+                    "filter": "statuscode:200",
+                    "limit": "500",
+                },
+            )
             data = r.json()
-            if not data or len(data) < 2:
-                continue
-            # data[0] is the header row ["timestamp", "original"]
-            for row in data[1:]:
-                ts, orig = str(row[0]), str(row[1])
-                if ts not in seen_ts:
-                    seen_ts.add(ts)
-                    results.append((ts, orig))
-            time.sleep(0.5)
+            if data and len(data) > 1:
+                for row in data[1:]:
+                    ts, orig = str(row[0]), str(row[1])
+                    seen.setdefault(ts, orig)
         except Exception as e:  # noqa: BLE001
-            log.warning("CDX query failed for pattern %s: %s", pattern, e)
+            log.warning("ciro_short: CDX page enumeration failed for %s: %s", page, e)
+        time.sleep(0.5)
+    snaps = sorted(seen.items())
+    log.info("ciro_short: %d CSPR page snapshots found", len(snaps))
+    return snaps
 
-    results.sort(key=lambda x: x[0])
-    log.info("CDX found %d archived CSPR snapshots", len(results))
-    return results
 
+def _wb_discover_reports() -> tuple[dict[date, tuple[str, str]], int, int]:
+    """Walk CSPR page snapshots and discover semi-monthly report files.
 
-def _wb_replay_download(timestamp: str, original: str,
-                         timeout: int = 30) -> bytes:
-    """Download a file from the Wayback Machine replay endpoint."""
-    url = _WB_REPLAY.format(timestamp=timestamp, original=original)
-    r = requests.get(
-        url,
-        headers={"User-Agent": _BROWSER_UA},
-        timeout=timeout,
-        allow_redirects=True,
+    For each page snapshot, fetch the archived HTML and extract every
+    (report_date, archived_href) pair from the `YYYYMMDD_CSPR_Report` anchors.
+    A single snapshot typically lists ~4-10 recent reports, so many snapshots over
+    years dedupe (by report_date, keeping the first/earliest page_ts) into a dense
+    semi-monthly series.
+
+    Returns:
+        (date2ref, n_page_snapshots, n_page_failed) where date2ref maps
+        report_date -> (page_timestamp, archived_href).
+    """
+    snaps = _wb_page_snapshots()
+    date2ref: dict[date, tuple[str, str]] = {}
+    n_page_failed = 0
+
+    for ts, page_orig in snaps:
+        # Replay each snapshot at its OWN archived page URL.
+        page_url = f"{_WB_HOST}/web/{ts}/{page_orig}"
+        try:
+            html = _wb_get(page_url, timeout=90).text
+        except Exception as e:  # noqa: BLE001
+            n_page_failed += 1
+            log.warning("ciro_short: page snapshot %s fetch failed: %s", ts, e)
+            continue
+
+        for m in _REPORT_ANCHOR_RE.finditer(html):
+            href, ds = m.group(1), m.group(2)
+            try:
+                rd = date(int(ds[:4]), int(ds[4:6]), int(ds[6:8]))
+            except ValueError:
+                continue
+            # keep the first-seen href for a given report date (earliest page_ts)
+            date2ref.setdefault(rd, (ts, href))
+        time.sleep(0.5)  # polite pacing
+
+    log.info(
+        "ciro_short: discovered %d distinct report dates (%d page snapshots, "
+        "%d page fetch failures)",
+        len(date2ref), len(snaps), n_page_failed,
     )
-    r.raise_for_status()
-    return r.content
+    return date2ref, len(snaps), n_page_failed
+
+
+def _wb_replay_download(page_ts: str, archived_href: str,
+                        timeout: int = 90) -> bytes:
+    """Download a report file via the Wayback replay host.
+
+    `archived_href` is the `/web/<ts>/https://www.iiroc.ca/Documents/.../GUID_en.xls`
+    href extracted from the page HTML. Wayback redirects to the nearest actual
+    capture of the file. Validates the OLE2/BIFF magic so an HTML error page never
+    reaches the xlrd parser.
+    """
+    if archived_href.startswith("/web/"):
+        url = _WB_HOST + archived_href
+    else:
+        url = _WB_REPLAY.format(timestamp=page_ts, original=archived_href)
+    r = _wb_get(url, timeout=timeout)
+    content = r.content
+    # OLE2/BIFF (legacy .xls) magic; guards against Wayback 404 HTML pages.
+    if content[:8] != b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1":
+        raise ValueError(
+            f"replay for {archived_href[-40:]} returned non-XLS content "
+            f"({content[:16]!r}, {len(content)} bytes)"
+        )
+    return content
 
 
 # ---------------------------------------------------------------------------
@@ -339,6 +490,8 @@ def _write_coverage(
     n_tsx_rows_total: int,
     n_new_dates: int,
     n_failed_dates: int,
+    n_page_snapshots: int = 0,
+    n_page_failed: int = 0,
 ) -> None:
     _COVERAGE.parent.mkdir(parents=True, exist_ok=True)
     _COVERAGE.write_text(json.dumps({
@@ -349,6 +502,8 @@ def _write_coverage(
         "n_tsx_rows_total": n_tsx_rows_total,
         "n_new_dates": n_new_dates,
         "n_failed_dates": n_failed_dates,
+        "n_page_snapshots": n_page_snapshots,
+        "n_page_failed": n_page_failed,
     }, indent=2))
 
 
@@ -356,89 +511,72 @@ def _write_coverage(
 # Main fetch function
 # ---------------------------------------------------------------------------
 
-def fetch_ciro_short(full_history: bool = False) -> int:
-    """Download and parse CIRO CSPR XLS files via the Wayback Machine.
+def fetch_ciro_short(full_history: bool = False,
+                     checkpoint_every: int = 5) -> int:
+    """Download and parse CIRO CSPR XLS files via the Wayback page-snapshot walk.
+
+    Route (see module docstring): CDX-enumerate CSPR *page* snapshots → parse each
+    snapshot's HTML for `(report_date, archived_href)` anchors → dedupe by date →
+    replay-fetch each file via the Wayback host → parse via xlrd. Polite pacing +
+    exponential backoff on Wayback 503s; the parquet is checkpoint-saved every
+    `checkpoint_every` new dates so an interrupted run resumes (already-stored dates
+    are skipped on the next run).
 
     Args:
-        full_history: If True, fetch all archived dates back to _EARLIEST_VERIFIED.
-                      If False, only fetch dates not already in the store and within
-                      the last 60 days (incremental top-up).
+        full_history: If True, fetch all discoverable report dates. If False, only
+                      dates newer than the last 60 days that are not already stored
+                      (incremental top-up — mostly a no-op now that the archive is
+                      frozen at 2021-02, but kept for forward compatibility).
+        checkpoint_every: Save the parquet after this many newly-parsed dates.
 
     Returns:
         Number of new report dates successfully parsed and stored.
 
     Raises:
         RuntimeError: If no new dates could be fetched AND the store is empty
-                      (fail-closed: at least one report date must succeed on first run).
+                      (fail-closed: at least one report date must land on first run).
     """
     existing = _load_store()
     already_have = _stored_report_dates(existing)
 
-    # Discover archived CSPR files via Wayback CDX
-    cdx_entries = _wb_cdx_archived_dates()
-    if not cdx_entries:
+    # Discover report files by walking the CSPR page snapshots.
+    date2ref, n_page_snaps, n_page_failed = _wb_discover_reports()
+    if not date2ref:
         if not already_have:
-            raise RuntimeError("ciro_short: CDX returned no results and store is empty")
-        log.warning("ciro_short: CDX returned no results; using existing store")
+            raise RuntimeError(
+                "ciro_short: page-walk discovered no CSPR reports and store is empty "
+                f"({n_page_snaps} page snapshots, {n_page_failed} page failures)"
+            )
+        log.warning("ciro_short: page-walk found no reports; using existing store")
+        _write_coverage(
+            n_report_dates=len(already_have),
+            earliest_date=str(min(already_have)) if already_have else "",
+            latest_date=str(max(already_have)) if already_have else "",
+            n_tsx_rows_total=len(existing),
+            n_new_dates=0, n_failed_dates=0,
+            n_page_snapshots=n_page_snaps, n_page_failed=n_page_failed,
+        )
         return 0
 
-    # Determine which report dates to attempt
-    today = date.today()
+    # Determine which report dates to attempt.
     if full_history:
         cutoff = _EARLIEST_VERIFIED
     else:
-        cutoff = today - timedelta(days=60)
+        cutoff = date.today() - timedelta(days=60)
+
+    targets = sorted(rd for rd in date2ref
+                     if rd >= cutoff and rd not in already_have)
 
     new_chunks: list[pd.DataFrame] = []
     n_new = 0
     n_failed = 0
 
-    for ts, orig in cdx_entries:
-        # Parse the date from the CDX timestamp (YYYYMMDD...)
-        try:
-            snap_date = date(int(ts[:4]), int(ts[4:6]), int(ts[6:8]))
-        except (ValueError, IndexError):
-            continue
-
-        if snap_date < cutoff:
-            continue
-
-        # Infer report_date from the filename or snapshot date
-        # CSPR filename is like 20231015_CSPR_Report.xls
-        m = re.search(r'(\d{8})_CSPR', orig, re.IGNORECASE)
-        if m:
-            try:
-                ds = m.group(1)
-                report_date = date(int(ds[:4]), int(ds[4:6]), int(ds[6:8]))
-            except ValueError:
-                report_date = snap_date
-        else:
-            report_date = snap_date
-
-        if report_date in already_have:
-            continue
-
-        try:
-            raw = _wb_replay_download(ts, orig, timeout=30)
-            df_chunk = _parse_xls_bytes(raw, report_date)
-            new_chunks.append(df_chunk)
-            already_have.add(report_date)
-            n_new += 1
-            log.info("ciro_short: fetched %s (%d TSX rows)", report_date, len(df_chunk))
-            time.sleep(0.3)  # polite pacing for Wayback
-        except Exception as e:  # noqa: BLE001
-            n_failed += 1
-            log.warning("ciro_short: failed %s (%s): %s", report_date, ts, e)
-
-    if n_new == 0 and not already_have:
-        raise RuntimeError(
-            f"ciro_short: 0 new dates fetched and store is empty "
-            f"({n_failed} failures). Check CDX results and Wayback access."
-        )
-
-    if new_chunks:
+    def _flush() -> pd.DataFrame:
+        """Merge new chunks into the store and persist (checkpoint)."""
+        nonlocal existing, new_chunks
+        if not new_chunks:
+            return existing
         combined = pd.concat([existing] + new_chunks, ignore_index=True)
-        # Dedup on (report_date, symbol) — keep latest
         combined["_sort_key"] = pd.to_datetime(combined["report_date"])
         combined = (
             combined.sort_values("_sort_key")
@@ -447,24 +585,50 @@ def fetch_ciro_short(full_history: bool = False) -> int:
             .reset_index(drop=True)
         )
         _save_store(combined)
-        log.info("ciro_short: stored %d new report dates; panel total %d rows",
-                 n_new, len(combined))
+        existing = combined
+        new_chunks = []
+        return combined
 
-        # Update coverage.json
-        dates_in_store = sorted(
-            pd.to_datetime(combined["report_date"]).dt.date.unique()
-        )
-        _write_coverage(
-            n_report_dates=len(dates_in_store),
-            earliest_date=str(dates_in_store[0]) if dates_in_store else "",
-            latest_date=str(dates_in_store[-1]) if dates_in_store else "",
-            n_tsx_rows_total=len(combined),
-            n_new_dates=n_new,
-            n_failed_dates=n_failed,
-        )
-    elif already_have:
-        log.info("ciro_short: no new dates to fetch (store already current)")
+    for rd in targets:
+        page_ts, href = date2ref[rd]
+        try:
+            raw = _wb_replay_download(page_ts, href, timeout=90)
+            df_chunk = _parse_xls_bytes(raw, rd)
+            new_chunks.append(df_chunk)
+            already_have.add(rd)
+            n_new += 1
+            log.info("ciro_short: fetched %s (%d TSX rows)", rd, len(df_chunk))
+            if n_new % checkpoint_every == 0:
+                _flush()  # checkpoint so an interrupted run resumes
+            time.sleep(0.4)  # polite pacing for Wayback
+        except Exception as e:  # noqa: BLE001
+            n_failed += 1
+            log.warning("ciro_short: failed %s (%s): %s", rd, page_ts, e)
 
+    combined = _flush()
+
+    if n_new == 0 and not already_have:
+        raise RuntimeError(
+            f"ciro_short: 0 new dates parsed and store is empty "
+            f"({n_failed} file failures over {len(targets)} targets). "
+            "Check Wayback replay access."
+        )
+
+    dates_in_store = sorted(
+        pd.to_datetime(combined["report_date"]).dt.date.unique()
+    ) if not combined.empty else []
+    _write_coverage(
+        n_report_dates=len(dates_in_store),
+        earliest_date=str(dates_in_store[0]) if dates_in_store else "",
+        latest_date=str(dates_in_store[-1]) if dates_in_store else "",
+        n_tsx_rows_total=len(combined),
+        n_new_dates=n_new,
+        n_failed_dates=n_failed,
+        n_page_snapshots=n_page_snaps,
+        n_page_failed=n_page_failed,
+    )
+    log.info("ciro_short: %d new dates; panel %d rows over %d report dates",
+             n_new, len(combined), len(dates_in_store))
     return n_new
 
 
@@ -589,16 +753,18 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="CIRO CSPR short-position collector")
     parser.add_argument("--full-history", action="store_true",
-                        help=f"Backfill from {_EARLIEST_VERIFIED} (Wayback CDX verified depth)")
-    parser.add_argument("--dry-cdx", action="store_true",
-                        help="Just list Wayback CDX results, don't download")
+                        help=f"Backfill from {_EARLIEST_VERIFIED} (page-walk verified depth)")
+    parser.add_argument("--dry-discover", action="store_true",
+                        help="Just walk CSPR page snapshots and list discoverable report dates")
     args = parser.parse_args()
 
-    if args.dry_cdx:
-        entries = _wb_cdx_archived_dates()
-        for ts, orig in entries:
-            print(ts, orig)
-        print(f"\nTotal: {len(entries)} archived CSPR snapshots")
+    if args.dry_discover:
+        d2r, n_snaps, n_pf = _wb_discover_reports()
+        for rd in sorted(d2r):
+            ts, href = d2r[rd]
+            print(rd, ts, href[-46:])
+        print(f"\nTotal: {len(d2r)} distinct report dates "
+              f"({n_snaps} page snapshots, {n_pf} page failures)")
     else:
         n = fetch_ciro_short(full_history=args.full_history)
         print(f"Done: {n} new report dates fetched")
