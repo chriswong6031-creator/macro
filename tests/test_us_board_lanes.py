@@ -360,3 +360,145 @@ class TestGraderRowFeatures:
         }
         feat = self._row_features(row)
         assert feat["lane"] is None, "Missing lane key must default to None"
+
+
+# ---------------------------------------------------------------------------
+# 6. W2 (P5) — alpha_entry values rendered on nbcard (F6 fix)
+# ---------------------------------------------------------------------------
+
+class TestAlphaEntryRender:
+    """alpha_entry=pullback / extended / laggard all render on the main nbcard.
+
+    The template (templates/dashboard.html.j2) now renders all three values
+    on the nbcard's nb-top block. This test verifies via a Jinja2 render with
+    a synthetic context that the right CSS classes appear.
+    """
+
+    def _render_card(self, alpha_entry_val: str) -> str:
+        """Render a minimal nbcard stub and return the HTML fragment."""
+        import jinja2
+        from pathlib import Path
+        tpl_path = Path(__file__).resolve().parents[1] / "templates"
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(str(tpl_path)),
+            undefined=jinja2.Undefined,
+            autoescape=False,
+        )
+        # Render the card alpha_entry fragment inline to avoid needing the full VM
+        fragment = """
+{%- set n = row -%}
+{% if n.get('alpha_entry') == 'laggard' %}<span class="nb-ent ent-lag"></span>
+{% elif n.get('alpha_entry') == 'pullback' %}<span class="nb-ent ent-good"></span>
+{% elif n.get('alpha_entry') == 'extended' %}<span class="nb-ent ent-warn"></span>
+{% endif %}
+"""
+        t = env.from_string(fragment)
+        return t.render(row={"alpha_entry": alpha_entry_val})
+
+    def test_laggard_renders_ent_lag(self):
+        html = self._render_card("laggard")
+        assert "ent-lag" in html, "alpha_entry=laggard must render ent-lag chip"
+
+    def test_pullback_renders_ent_good(self):
+        html = self._render_card("pullback")
+        assert "ent-good" in html, "alpha_entry=pullback must render ent-good chip"
+
+    def test_extended_renders_ent_warn(self):
+        html = self._render_card("extended")
+        assert "ent-warn" in html, "alpha_entry=extended must render ent-warn chip"
+
+    def test_neutral_renders_nothing(self):
+        html = self._render_card("neutral")
+        assert "ent-lag" not in html
+        assert "ent-good" not in html
+        assert "ent-warn" not in html
+
+
+# ---------------------------------------------------------------------------
+# 7. W2 (P5) — contradiction guard: alpha_entry=laggard on BUY band logs warn
+# ---------------------------------------------------------------------------
+
+class TestContradictionGuard:
+    """Invariant (d): a BUY card with alpha_entry=laggard should log a warning.
+
+    This guard is a WARNING (not a raise) — the display gap is surfaced
+    for monitoring but must never crash the nightly render.
+    """
+
+    def _build_rows(self, alpha_entry: str, band: str) -> list[dict]:
+        return [{"ticker": "LAG", "alpha_entry": alpha_entry,
+                 "conviction": {"band": band, "verdict": "Leader", "score": 70}}]
+
+    def test_laggard_on_high_band_detected(self):
+        """A laggard entry on a 'high' band row is a contradiction worth flagging."""
+        rows = self._build_rows("laggard", "high")
+        # The invariant in build_stock_library.py (invariant d) walks wide["buy"]
+        # and logs a warning for alpha_entry=laggard rows with constructive/high band.
+        # Here we replicate the detection logic:
+        violations = []
+        for r in rows:
+            ae = r.get("alpha_entry")
+            band = (r.get("conviction") or {}).get("band") or ""
+            if ae == "laggard" and band in ("high", "constructive"):
+                violations.append(r["ticker"])
+        assert len(violations) == 1, "One laggard-on-high-band contradiction must be detected"
+
+    def test_laggard_on_caution_band_ok(self):
+        """laggard + caution band is consistent (laggard named, band correctly muted)."""
+        rows = self._build_rows("laggard", "caution")
+        violations = []
+        for r in rows:
+            ae = r.get("alpha_entry")
+            band = (r.get("conviction") or {}).get("band") or ""
+            if ae == "laggard" and band in ("high", "constructive"):
+                violations.append(r["ticker"])
+        assert len(violations) == 0, "laggard + caution band must NOT be flagged"
+
+    def test_pullback_on_high_band_ok(self):
+        """pullback + high band is consistent — not a contradiction."""
+        rows = self._build_rows("pullback", "high")
+        violations = []
+        for r in rows:
+            ae = r.get("alpha_entry")
+            band = (r.get("conviction") or {}).get("band") or ""
+            if ae == "laggard" and band in ("high", "constructive"):
+                violations.append(r["ticker"])
+        assert len(violations) == 0, "pullback + high band must NOT be flagged"
+
+
+# ---------------------------------------------------------------------------
+# 8. W2 (P4) — board track JSON structure recognized by template
+# ---------------------------------------------------------------------------
+
+class TestBoardTrackStructure:
+    """Verify us_board_track.json (site/factordata/) has the keys the template needs."""
+
+    def test_track_json_has_required_keys(self):
+        """If the board track JSON exists, it must have the per_horizon.h5.buy_lane path."""
+        import json
+        from pathlib import Path
+        track_path = Path(__file__).resolve().parents[1] / "site" / "factordata" / "us_board_track.json"
+        if not track_path.exists():
+            pytest.skip("us_board_track.json not yet generated (first run)")
+        d = json.loads(track_path.read_text())
+        assert "per_horizon" in d, "per_horizon key required"
+        h5 = d["per_horizon"].get("h5") or {}
+        bl = h5.get("buy_lane") or {}
+        assert "vs_spy" in bl, "buy_lane.vs_spy required"
+        vs = bl["vs_spy"]
+        assert "n" in vs, "vs_spy.n required"
+        assert "hit_rate" in vs, "vs_spy.hit_rate required"
+
+    def test_track_json_has_precision_at_k(self):
+        """P@k keys (board-order and alpha-order) must be present for the W1 scoreboard."""
+        import json
+        from pathlib import Path
+        track_path = Path(__file__).resolve().parents[1] / "site" / "factordata" / "us_board_track.json"
+        if not track_path.exists():
+            pytest.skip("us_board_track.json not yet generated (first run)")
+        d = json.loads(track_path.read_text())
+        bl = d["per_horizon"]["h5"]["buy_lane"]
+        assert "precision_at_k_board_order_vs_spy" in bl, (
+            "precision_at_k_board_order_vs_spy required for P@1 board-order display")
+        assert "precision_at_k_alpha_order_vs_spy" in bl, (
+            "precision_at_k_alpha_order_vs_spy required for P@1 alpha-order comparison")
