@@ -79,6 +79,18 @@ def test_core_removed_and_partial():
     assert "A" not in {p["symbol"] for p in b["partial"]}
 
 
+def test_core_pre_window_add_not_partial():
+    """`added` dates that predate the rolling calendar must not flag the whole basket partial
+    once the window rolls past them (same window-clamp as engine/baskets.py) — only the
+    genuinely-late tape is flagged."""
+    closes, idx = _frame(["A", "B", "C", "D"], n=400, start="2024-01-01")
+    closes.loc[closes.index[:300], "D"] = np.nan        # D's tape genuinely starts mid-window
+    members = {"t": {"name": "T", "category": "C", "created": "2022-01-03", "members": [
+        {"ticker": t, "added": "2022-01-03"} for t in "ABCD"]}}          # all added pre-window
+    out = reg.compute_region_baskets(closes, _mem(members), _bench(idx), lambda s: None)
+    assert {p["symbol"] for p in out["baskets"][0]["partial"]} == {"D"}
+
+
 def test_core_reference_via_injected_reader():
     closes, idx = _frame(["A", "B", "C"])
     etf = pd.DataFrame({"close": 50 * np.cumprod(1 + np.random.default_rng(2).normal(0, 0.01, len(idx)))}, index=idx)

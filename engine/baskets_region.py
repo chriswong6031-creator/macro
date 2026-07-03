@@ -96,7 +96,9 @@ def compute_region_baskets(closes: pd.DataFrame | None, mem: dict | None,
                 continue
             first_tape = tc.index[0]
             eff_start = max(first_tape, pd.Timestamp(m["added"]))
-            gap = first_tape > pd.Timestamp(m["added"]) + pd.Timedelta(days=7)
+            # window-clamped (mirrors engine/baskets.py): pre-window `added` dates must not
+            # trip `gap` once the rolling calendar moves past them.
+            gap = first_tape > max(pd.Timestamp(m["added"]), idx[0]) + pd.Timedelta(days=7)
             short = eff_start > idx[0] + pd.Timedelta(days=180)
             if gap or short:
                 partial.append({"symbol": t, "from": eff_start.strftime("%Y-%m-%d")})

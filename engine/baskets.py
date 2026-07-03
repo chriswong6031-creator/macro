@@ -215,7 +215,10 @@ def compute_baskets() -> dict | None:
             # effective in-basket history start: never before `added`, so a de-SPAC shell's
             # pre-listing tape (e.g. OKLO before 2024-05) doesn't masquerade as full history.
             eff_start = max(first_tape, pd.Timestamp(m["added"]))
-            gap = first_tape > pd.Timestamp(m["added"]) + pd.Timedelta(days=7)   # data lags the claimed add
+            # window-clamped: an `added` that predates the rolling calendar (idx[0]) must not
+            # trip `gap` forever once the window rolls past it — a full-window tape is full
+            # history for the visible chart.
+            gap = first_tape > max(pd.Timestamp(m["added"]), idx[0]) + pd.Timedelta(days=7)   # data lags the claimed add
             short = eff_start > idx[0] + pd.Timedelta(days=PARTIAL_GAP_DAYS)      # mid-window entrant / recent IPO
             if gap or short:
                 partial.append({"symbol": t, "from": eff_start.strftime("%Y-%m-%d")})
