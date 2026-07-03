@@ -1,5 +1,5 @@
 {
- "generated": "2026-07-03T13:50:42.640644+00:00",
+ "generated": "2026-07-03T17:47:33.027552+00:00",
  "source": "git-archaeology + forward snapshots (unioned, de-duped on as_of)",
  "board_dates_total": 13,
  "board_dates_range": [
@@ -693,6 +693,16 @@
       "mean_excess": 0.0161
      }
     },
+    "by_tier_cascade": {
+     "None": {
+      "n": 611,
+      "hit_rate": 0.6268,
+      "wilson_lo": 0.5878,
+      "wilson_hi": 0.6643,
+      "median_excess": 0.01595,
+      "mean_excess": 0.0161
+     }
+    },
     "mae_close_excess_spy": {
      "median": -0.00782,
      "n": 611
@@ -1206,6 +1216,16 @@
      }
     },
     "by_hold_state": {
+     "None": {
+      "n": 177,
+      "hit_rate": 0.565,
+      "wilson_lo": 0.4913,
+      "wilson_hi": 0.6359,
+      "median_excess": 0.01482,
+      "mean_excess": 0.00746
+     }
+    },
+    "by_tier_cascade": {
      "None": {
       "n": 177,
       "hit_rate": 0.565,
