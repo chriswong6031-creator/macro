@@ -602,6 +602,79 @@ def _hk_alloc_card() -> dict:
         return {"present": False}
 
 
+def _hk_track_record_vm() -> dict | None:
+    """W6 track-record panel (§7.4) — the standout-board forward scorecard, rendered
+    honestly in its 'accruing' state (or with graded hit-rates + rank-IC once the
+    min-IC-dates gate clears).
+
+    Returns a compact, template-ready dict (bilingual copy assembled here so the
+    template stays declarative) or None if the ledger module is unavailable. Never
+    raises — the panel is presence-gated in hk.html.j2.
+    """
+    from engine import board_ledger
+
+    sc = board_ledger.scorecard("HK")
+    if not sc:
+        return None
+
+    status = sc.get("status", "accruing")
+    first_read_est = sc.get("first_read_est")   # program-level stable-read date
+
+    # honest 'accruing since' = the ledger's first logged call-date; the first single
+    # 21-trading-day grade lands ~21 business days later.
+    first_write = None
+    first_21d = None
+    try:
+        p = board_ledger._store_path("HK")
+        if p.exists():
+            _df = pd.read_parquet(p)
+            if not _df.empty and "date" in _df.columns:
+                fw = pd.to_datetime(_df["date"]).min()
+                first_write = fw.strftime("%Y-%m-%d")
+                first_21d = (fw + pd.offsets.BDay(21)).strftime("%Y-%m-%d")
+    except Exception:  # noqa: BLE001 — dates are cosmetic; panel still renders
+        pass
+
+    out = {
+        "status": status,
+        "first_write": first_write,
+        "first_21d_read": first_21d,
+        "first_stable_read": first_read_est,
+        "n_calls": sc.get("n_calls", 0),
+        "n_graded": sc.get("n_graded", 0),
+        "n_suspended": sc.get("n_suspended", 0),
+        "survivorship": sc.get("survivorship"),
+    }
+
+    if status == "scored":
+        # per-horizon rank-IC + per-group hit-rates, template-ready
+        horizons = []
+        for h_key in ("5d", "10d", "21d", "63d"):
+            hh = (sc.get("by_horizon") or {}).get(h_key)
+            if not hh:
+                continue
+            groups = []
+            for gname, gd in (hh.get("by_group") or {}).items():
+                groups.append({
+                    "group": gname,
+                    "n": gd.get("n"),
+                    "pos_rate": gd.get("pos_rate"),
+                    "mean_excess": gd.get("mean_excess"),
+                })
+            horizons.append({
+                "h": h_key,
+                "n": hh.get("n"),
+                "rank_ic": hh.get("rank_ic"),
+                "n_ic_dates": hh.get("n_ic_dates"),
+                "hit_rate_21d": hh.get("hit_rate_21d"),
+                "n_buy": hh.get("n_buy"),
+                "by_group": groups,
+            })
+        out["horizons"] = horizons
+
+    return out
+
+
 def main() -> int:
     try:
         from engine.hk_run import run
@@ -789,6 +862,16 @@ def main() -> int:
                     json.dumps(vm["hk_scoreboard"], separators=(",", ":"), default=str))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk scoreboard persist failed (%s); skipping", e)
+
+        # W6 TRACK-RECORD panel (§7.4) — the program's public-accountability centerpiece.
+        # Reads the standout-board forward scorecard and renders the honest 'accruing' state
+        # (or graded hit-rates + rank-IC once the min-IC-dates gate clears). View-model only;
+        # never fatal — the panel is presence-gated in the template.
+        try:
+            vm["track_record"] = _hk_track_record_vm()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk track-record view-model failed (%s); skipping", e)
+            vm["track_record"] = None
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
