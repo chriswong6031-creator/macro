@@ -772,27 +772,8 @@
   /* W8-B postcross lifecycle chip (SHAKEN; ARMED display removed per W8-A-OOS FAIL) */
   .nb-postcross{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
   .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
-  /* W2 chip popovers — generic popover wrapper reusing the .nb-cau mechanism.
-     Chip itself is the trigger (hover/focus desktop, tap mobile). One open at a time
-     (shared JS). Viewport-safe: pop-below + pop-right flip classes added by JS. */
-  .nb-chip-pop-wrap{position:relative;display:inline-flex;flex:none}
-  .nb-chip-pop{
-    display:none;position:absolute;z-index:121;bottom:calc(100% + 5px);left:0;
-    min-width:200px;max-width:min(280px,calc(100vw - 24px));
-    padding:7px 9px;border-radius:8px;
-    background:var(--panel);border:1px solid var(--line);
-    box-shadow:0 4px 16px rgba(0,0,0,.18);
-    font-size:10px;font-weight:500;line-height:1.5;color:var(--text);
-    pointer-events:none;text-align:left;
-  }
-  .nb-chip-pop-wrap:hover .nb-chip-pop,
-  .nb-chip-pop-wrap:focus-within .nb-chip-pop,
-  .nb-chip-pop-wrap.chip-pop-open .nb-chip-pop{display:block;pointer-events:auto}
-  .nb-chip-pop-wrap.pop-below .nb-chip-pop{bottom:auto;top:calc(100% + 5px)}
-  .nb-chip-pop-wrap.pop-right .nb-chip-pop{left:auto;right:0}
-  a.nbcard:has(.nb-chip-pop-wrap:hover),a.nbcard:has(.nb-chip-pop-wrap:focus-within),
-  a.nbcard:has(.chip-pop-open){overflow:visible}
-  @media(prefers-reduced-motion:reduce){.nb-chip-pop-wrap .nb-chip-pop{transition:none}}
+  /* W2 merge note: chip explanatory copy uses the repo-standard data-tip-en/data-tip-zh
+     + theme.js popover (check_title_i18n.py-guarded); the bespoke .nb-chip-pop is retired. */
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
             padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
             background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
@@ -2068,7 +2049,7 @@
          measured conditional probability (low ~10% vs base ~19%) — still lagging, never
          shown as "calm". See the radar reconciliation note just below the grid. #}
       <div class="idx-gauge">
-        <div class="idx-gk" title="Slow macro/credit composite (recession risk, NFCI, EBP, HY OAS) · lags price · 63-day horizon · for near-term timing see the Risk Radar above · 慢速宏观/信用综合（衰退风险、NFCI、EBP、高收益利差）· 滞后于价格 · 63日窗口 · 近端择时见上方风险雷达">
+        <div class="idx-gk" data-tip-en="Slow macro/credit composite (recession risk, NFCI, EBP, HY OAS) · lags price · 63-day horizon · for near-term timing see the Risk Radar above" data-tip-zh="慢速宏观/信用综合（衰退风险、NFCI、EBP、高收益利差）· 滞后于价格 · 63日窗口 · 近端择时见上方风险雷达">
           {% if dr and dr.label %}{{ t(dr.label, dr.label_zh or dr.label) }}{% else %}{{ t('Macro/credit drawdown pressure (lagging)', '宏观/信用回撤压力（滞后）') }}{% endif %}
           {{ help('A SLOW macro/credit composite (recession risk, NFCI, EBP, HY OAS) over a 63-day horizon — it LAGS price, so a low read here is NOT a near-term all-clear: the probability is measured point-in-time against the base rate (low band ~10% vs base ~19%), but it moves slowly and after price. For the leading, near-term (≤21d) drawdown-odds read, trust the Risk Radar at the top of the Market State board above. The two answer different questions and can legitimately disagree.', '慢速的宏观/信用综合指标（衰退风险、NFCI、EBP、高收益利差），观察窗口为63日 — 它滞后于价格，因此此处读数偏低并不代表近端“安全”：该概率为时点法实测值（低区间约10%，基准约19%），但变化缓慢且滞后于价格。近端（≤21日）的领先回撤概率，请以上方市场状态板顶部的风险雷达为准。两者回答的是不同问题，出现分歧属正常。') }}
         </div>
@@ -2424,7 +2405,7 @@
        and basket reduces a VALIDATED marker (✓, the absolute-trend drawdown gate); ★ = in the
        narrative-rotation model book. #}
     {% macro themeitem(x) -%}
-    <a class="actitem ai-theme" href="{{ x.href }}"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">{{ x.name }}</span><span class="l-zh">{{ x.name_zh or x.name }}</span></b>{% if x.book_wt %}<span class="ai-book" title="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the validated absolute-trend gate · 已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过已验证的绝对趋势门槛">★{{ '%.0f'|format(x.book_wt*100) }}%</span>{% endif %}{% if x.validated %}<span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span>{% else %}<span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span>{% endif %}</a>
+    <a class="actitem ai-theme" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">{{ x.name }}</span><span class="l-zh">{{ x.name_zh or x.name }}</span></b>{% if x.book_wt %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the validated absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过已验证的绝对趋势门槛">★{{ '%.0f'|format(x.book_wt*100) }}%</span>{% endif %}{% if x.validated %}<span class="ai-val" data-tip-en="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge" data-tip-zh="已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span>{% else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span>{% endif %}</a>
     {%- endmacro %}
     <div class="actiongrid">
       <div class="actcol act-buy">
@@ -2491,7 +2472,7 @@
       </div>
       {% endif %}
       {% if _su and _su.dispersion_regime %}{% set _dr = _su.dispersion_regime %}
-      <div class="nb-disp disp-{{ _dr.state }}" title="Cross-sectional dispersion regime — the read for WHEN stock-selection tends to pay. When names fan out (high dispersion / low pairwise correlation) selection historically earns more; a macro-driven tape (low dispersion / high correlation) mutes it. DISPLAY-ONLY: the state does NOT move the book's gross (live ×1.0). The suggested tilt (shadow ×{{ _dr.shadow_gross_mult }}) is a hand-picked prior with no measured edge on this universe and would gross UP into high-VIX stress — clamped off until a survivorship-clean selection-IR edge is measured (US_BOARD_MEASUREMENT §Study 3). Dispersion percentile {{ _dr.dispersion_pctile }} · avg pairwise corr {{ _dr.avg_corr }}. · 横截面离散度状态 — 仅供参考，不影响仓位。">
+      <div class="nb-disp disp-{{ _dr.state }}" data-tip-en="Cross-sectional dispersion regime — the read for WHEN stock-selection tends to pay. When names fan out (high dispersion / low pairwise correlation) selection historically earns more; a macro-driven tape (low dispersion / high correlation) mutes it. DISPLAY-ONLY: the state does NOT move the book's gross (live ×1.0). The suggested tilt (shadow ×{{ _dr.shadow_gross_mult }}) is a hand-picked prior with no measured edge on this universe and would gross UP into high-VIX stress — clamped off until a survivorship-clean selection-IR edge is measured (US_BOARD_MEASUREMENT §Study 3). Dispersion percentile {{ _dr.dispersion_pctile }} · avg pairwise corr {{ _dr.avg_corr }}." data-tip-zh="横截面离散度状态 — 仅供参考，不影响仓位。">
         <span class="disp-ic">{{ '🎯' if _dr.state == 'lean_in' else ('🌫️' if _dr.state == 'lean_out' else '⚖️') }}</span>
         <b><span class="l-en">{{ _dr.label }}</span><span class="l-zh">{{ _dr.label_zh }}</span></b>
         <span class="disp-meta">{{ t('context', '参考') }}{% if _dr.avg_corr is not none %} · {{ t('avg corr', '平均相关') }} {{ _dr.avg_corr }}{% endif %} · <span class="disp-shadow" title="shadow prior — not applied to sizing">{{ t('suggested', '建议倾向') }} ×{{ _dr.shadow_gross_mult }}</span></span>
@@ -2503,7 +2484,7 @@
          Top-2-sector share and N sectors are emitted in concentration JSON. #}
       {% if _su and _su.concentration is defined %}{% set _conc = _su.concentration %}
       {% if _conc.top2_sector_share is not none and _conc.top2_sector_share >= 0.4 %}
-      <div class="nb-conc muted" title="Concentration note — a soft per-sector cap (5 names) is applied to prevent bottoming-alignment from flooding the board with one washed-out sector. Overflow names appear in the watch strip. Effective bets ≈ the number of distinct sectors. · 集中度说明——应用软性单板块上限（5个标的），防止筑底共振选出同一行业大量名称。超出上限的标的出现在观察名单中。有效押注 ≈ 不同行业数量。">
+      <div class="nb-conc muted" data-tip-en="Concentration note — a soft per-sector cap (5 names) is applied to prevent bottoming-alignment from flooding the board with one washed-out sector. Overflow names appear in the watch strip. Effective bets ≈ the number of distinct sectors." data-tip-zh="集中度说明——应用软性单板块上限（5个标的），防止筑底共振选出同一行业大量名称。超出上限的标的出现在观察名单中。有效押注 ≈ 不同行业数量。">
         {{ t('Board', '榜单') }}: {{ _conc.n_names }} {{ t('names across', '个标的分布在') }} {{ _conc.n_sectors }} {{ t('sectors', '个行业') }} — {{ t('effective bets ≈', '有效押注 ≈') }} {{ _conc.n_sectors }}. {{ t('Top-2 sectors:', '前两大行业：') }} {{ '%d'|format((100 * _conc.top2_sector_share)|round|int) }}% {{ t('of board.', '的榜单。') }}{% if _conc.overflow_count %} {{ _conc.overflow_count }} {{ t('overflow names → watch strip.', '个溢出标的 → 观察名单。') }}{% endif %}
       </div>
       {% endif %}{% endif %}
@@ -2513,7 +2494,7 @@
          composite within the trailing 4 completed weeks, OR its 20d return < 0.
          'intact' = neither leg fires. NOT a trade signal — context for entry sizing. #}
       {% if _su and _su.donor and _su.donor.donor_sector %}{% set _don = _su.donor %}
-      <div class="nb-donor donor-{{ _don.state }}" title="{{ 'Rotation: the leading GICS sector (' + _don.donor_sector + ', top-126d equal-weight return across ' + (_don.n_sectors | string) + ' sectors) shows signs of cracking — a fresh weekly RSI-MACD bearish cross on its composite within the last 4 completed weeks, or its 20-day EW return has gone negative. Historically, stock entries during donor cracking have higher clean-exit rates (G6a, +5.96 pp deep / +5.81 pp baskets, episode LB +2.66 pp). DISPLAY-ONLY: does not change rankings, gates, or sizing. Context for your own entry-timing discipline. · 轮动：领涨GICS板块（' + _don.donor_sector + '，全市场126日等权收益最高，共' + (_don.n_sectors | string) + '个板块）显现趋弱迹象——过去4个已完结周内出现周线RSI-MACD看跌交叉，或其20日等权收益已转负。历史数据显示，领涨板块趋弱期间入场的胜率更高（G6a，深度+5.96pp / 篮子+5.81pp）。仅供参考：不影响排名、门控或仓位。' if _don.state == 'cracking' else 'Rotation: the leading GICS sector (' + _don.donor_sector + ', top-126d equal-weight return across ' + (_don.n_sectors | string) + ' sectors) is intact — no fresh weekly RSI-MACD bearish cross in the last 4 completed weeks and its 20-day EW return is positive. The rotation leader is still running. DISPLAY-ONLY: context only, not a signal. · 轮动：领涨GICS板块（' + _don.donor_sector + '，全市场126日等权收益最高，共' + (_don.n_sectors | string) + '个板块）运行稳健——过去4个已完结周内无周线RSI-MACD看跌交叉，且20日等权收益为正。轮动领涨板块仍在运行。仅供参考：非交易信号。' }} · {{ _don.state }} · {{ _don.donor_sector }} · as of {{ _don.asof }}">
+      <div class="nb-donor donor-{{ _don.state }}" data-tip-en="{{ 'Rotation: the leading GICS sector (' + _don.donor_sector + ', top-126d equal-weight return across ' + (_don.n_sectors | string) + ' sectors) shows signs of cracking — a fresh weekly RSI-MACD bearish cross on its composite within the last 4 completed weeks, or its 20-day EW return has gone negative. Historically, stock entries during donor cracking have higher clean-exit rates (G6a, +5.96 pp deep / +5.81 pp baskets, episode LB +2.66 pp). DISPLAY-ONLY: does not change rankings, gates, or sizing. Context for your own entry-timing discipline.' if _don.state == 'cracking' else 'Rotation: the leading GICS sector (' + _don.donor_sector + ', top-126d equal-weight return across ' + (_don.n_sectors | string) + ' sectors) is intact — no fresh weekly RSI-MACD bearish cross in the last 4 completed weeks and its 20-day EW return is positive. The rotation leader is still running. DISPLAY-ONLY: context only, not a signal.' }} · {{ _don.state }} · {{ _don.donor_sector }} · as of {{ _don.asof }}" data-tip-zh="{{ '轮动：领涨GICS板块（' + _don.donor_sector + '，全市场126日等权收益最高，共' + (_don.n_sectors | string) + '个板块）显现趋弱迹象——过去4个已完结周内出现周线RSI-MACD看跌交叉，或其20日等权收益已转负。历史数据显示，领涨板块趋弱期间入场的胜率更高（G6a，深度+5.96pp / 篮子+5.81pp）。仅供参考：不影响排名、门控或仓位。' if _don.state == 'cracking' else '轮动：领涨GICS板块（' + _don.donor_sector + '，全市场126日等权收益最高，共' + (_don.n_sectors | string) + '个板块）运行稳健——过去4个已完结周内无周线RSI-MACD看跌交叉，且20日等权收益为正。轮动领涨板块仍在运行。仅供参考：非交易信号。' }} · {{ _don.state }} · {{ _don.donor_sector }} · as of {{ _don.asof }}">
         <span class="donor-ic">{{ '⚠' if _don.state == 'cracking' else '✓' }}</span>
         <b><span class="l-en">Rotation: leader {% if _don.state == 'cracking' %}cracking{% else %}intact{% endif %} ({{ _don.donor_sector }})</span><span class="l-zh">轮动：领先板块{% if _don.state == 'cracking' %}趋弱{% else %}稳健{% endif %}（{{ _don.donor_sector }}）</span></b>
         <span class="donor-meta muted"><span class="l-en">display-only · G6a context</span><span class="l-zh">仅供参考 · G6a 情境</span></span>
@@ -2536,17 +2517,21 @@
             <span class="nb-nm">{{ n.name }}</span>
             {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
             {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}
-            {# W6-C HOLD chip — basing state after confluence anchor; calm on intact, muted on launched/broken.
-               W2: illegal bilingual title= stripped; copy moved to .nb-chip-pop popover body. #}
-            {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-chip-pop-wrap" tabindex="0"><span class="nb-hold hold-{{ _hs }}"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span><span class="nb-chip-pop"><span class="l-en">Hold tracker (W6-C, display-only): base {{ _hd.get('days_basing',0) }}d · invalidation ${{ '%.2f'|format(_hd.get('invalidation',0) or 0) }}{% if _hd.get('provisional') %} (est.){% endif %}. INTACT = basing below +5%. LAUNCHED = extended or overbought. BROKEN = closed below trough.</span><span class="l-zh">持有追踪器（W6-C，仅供参考）：筑底{{ _hd.get('days_basing',0) }}天 · 止损 ${{ '%.2f'|format(_hd.get('invalidation',0) or 0) }}{% if _hd.get('provisional') %}（估算）{% endif %}。INTACT＝筑底低于+5%。LAUNCHED＝已过热或超买。BROKEN＝收盘跌破低点。</span></span></span>{% endif %}
-            {# W8 lane + postcross chips — W2: converted to popover pattern.
-               NO title= attributes (repo i18n rule — translated text never in attributes).
-               ARMED chip removed: W8-A-OOS FAILED. SHAKEN confirmed both panels (W8-B-OOS PASS). #}
-            {% if n.get('lane') == 'recovery' %}<span class="nb-chip-pop-wrap" tabindex="0"><span class="nb-lane lane-recovery"><span class="l-en">Recovery</span><span class="l-zh">复苏</span></span><span class="nb-chip-pop"><span class="l-en">Recovery lane — counter-trend name passing the validated entry confluence (T1–T3), not extended. Measured equal to aligned names on stop-out and upside (wave-8 CT-LANE, n=7,392). No ranking edge claimed.</span><span class="l-zh">复苏通道——通过经验证入场共振（T1–T3）且未过热的逆势标的。在止损与上涨方面与顺势标的等量齐观（第8波 CT-LANE，n=7,392）。不声称任何排名优势。</span></span></span>
-            {% elif n.get('lane') == 'trend' %}<span class="nb-chip-pop-wrap" tabindex="0"><span class="nb-lane lane-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span><span class="nb-chip-pop"><span class="l-en">Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission).</span><span class="l-zh">趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。</span></span></span>{% endif %}
-            {% if n.get('alpha_entry') == 'laggard' %}<span class="nb-chip-pop-wrap" tabindex="0"><span class="nb-ent ent-lag"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span><span class="nb-chip-pop"><span class="l-en">Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto.</span><span class="l-zh">行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。</span></span></span>{% endif %}
+            {# W6-C HOLD chip — basing state after confluence anchor. MERGE RESOLUTION 2026-07-03:
+               main's data-tip-en/data-tip-zh + theme.js popover is the repo-standard i18n tooltip
+               mechanism (guarded by check_title_i18n.py); W2's bespoke .nb-chip-pop is retired and
+               its explanatory copy carried into data-tip attributes. #}
+            {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" data-tip-en="Base {{ _hd.get('days_basing',0) }}d · inv ${{ '%.2f'|format(_hd.get('invalidation',0)) }}{% if _hd.get('provisional') %} · est{% endif %} · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期{{ _hd.get('days_basing',0) }}天 · 止损 ${{ '%.2f'|format(_hd.get('invalidation',0)) }}。仅供参考。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}
+            {# W8 lane + postcross chips — explanatory copy via data-tip (W2).
+               ARMED chip removed 2026-07-03: W8-A-OOS FAILED (stop5 edge did not transfer
+               OOS, sign-unstable) — armed fields still computed + emitted for silent
+               forward-ledger accrual, but nothing renders. SHAKEN confirmed both panels
+               (W8-B-OOS PASS: stop5 −4.6pp vs FRESH, NI clean15, sign-stable all splits). #}
+            {% if n.get('lane') == 'recovery' %}<span class="nb-lane lane-recovery" data-tip-en="Recovery lane — counter-trend name passing the validated entry confluence (T1–T3), not extended. Measured equal to aligned names on stop-out and upside (wave-8 CT-LANE, n=7,392). No ranking edge claimed." data-tip-zh="复苏通道——通过经验证入场共振（T1–T3）且未过热的逆势标的。在止损与上涨方面与顺势标的等量齐观（第8波 CT-LANE，n=7,392）。不声称任何排名优势。"><span class="l-en">Recovery</span><span class="l-zh">复苏</span></span>
+            {% elif n.get('lane') == 'trend' %}<span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>{% endif %}
+            {% if n.get('alpha_entry') == 'laggard' %}<span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>{% endif %}
             {% set _pc = n.get('postcross') %}
-            {% if _pc and _pc.get('shaken') %}<span class="nb-chip-pop-wrap" tabindex="0"><span class="nb-postcross pc-shaken"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span><span class="nb-chip-pop"><span class="l-en">Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power.</span><span class="l-zh">交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。</span></span></span>{% endif %}
+            {% if _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           {# Context line LEADS with the specific narrative basket (de-blurs "Technology"
@@ -2574,13 +2559,13 @@
           <div class="nb-conv">
             {# PRIMARY: score_timing (buy-readiness blend). Band is verdict-anchored:
                never green/constructive/high for Lagging or no-clear-edge names. #}
-            {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank. · 择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">{{ c.score }}</span>{% endif %}
+            {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">{{ c.score }}</span>{% endif %}
             {# SECONDARY: score_edge (within-market edge percentile, honest cross-sectional rank).
                Shown as a small muted "edge" label so a leader like WAB (edge pct 98) is visible
                alongside a laggard like LKQ (edge pct 46) without confusion. #}
-            {% if c.score_edge is defined and c.score_edge is not none %}<span class="nb-edge-pct muted" title="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above. · 优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。">{{ t('edge', '优势') }} {{ c.score_edge }}%ile</span>{% endif %}
+            {% if c.score_edge is defined and c.score_edge is not none %}<span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。">{{ t('edge', '优势') }} {{ c.score_edge }}%ile</span>{% endif %}
             <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
-            {% if c.valuation_band %}<span class="nb-val val-{{ c.valuation_band }}" title="{{ c.valuation_note }} · {{ c.valuation_note_zh }}">{{ t(c.valuation_band, {'cheap':'便宜','fair':'合理','stretched':'偏贵','extreme':'昂贵'}[c.valuation_band] if c.valuation_band in ['cheap','fair','stretched','extreme'] else c.valuation_band) }}</span>{% endif %}
+            {% if c.valuation_band %}<span class="nb-val val-{{ c.valuation_band }}" data-tip-en="{{ c.valuation_note }}" data-tip-zh="{{ c.valuation_note_zh }}">{{ t(c.valuation_band, {'cheap':'便宜','fair':'合理','stretched':'偏贵','extreme':'昂贵'}[c.valuation_band] if c.valuation_band in ['cheap','fair','stretched','extreme'] else c.valuation_band) }}</span>{% endif %}
           </div>
           {% set al = c.alignment %}
           {% if al and al.line %}
@@ -2588,7 +2573,7 @@
              must be a FRESH turn from a low — weekly bear-recovering/basing + 3-day cross
              from oversold (<25) + daily just-crossed. 🟢 Prime/Armed = confirmed entry; 🟡
              Approaching = early backfill (not yet a buy). The reason states WHY it qualifies. #}
-          <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" title="{{ al.line }} · {{ al.line_zh }}">
+          <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" data-tip-en="{{ al.line }}" data-tip-zh="{{ al.line_zh }}">
             <span class="nba-mark">{{ '🟡' if n.align_tier == 'near' else '🟢' }}</span>
             <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
             {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
@@ -2648,26 +2633,26 @@
           <div class="nb-vf">
             {# GEX chip: only when gate is scored=True (validated) #}
             {% if _gc_scored %}{% set _gr = (_gc.reasons[0] if _gc.reasons else None) %}
-            <span class="nb-vchip vf-{{ _gc.verdict }}" title="Options check (dealer gamma){% if _gr %} — {{ _gr.en }}{% endif %}{% if _gc.levels.call_wall %} · call wall {{ _gc.levels.call_wall }}{% endif %}{% if _gc.levels.flip %} · flip {{ _gc.levels.flip }}{% endif %} · {{ _gc.caveat }} | 期权确认（做市商 Gamma）{% if _gr %} — {{ _gr.zh }}{% endif %} · {{ _gc.caveat_zh }}">{{ '✓' if _gc.verdict=='confirm' else ('⚠' if _gc.verdict=='caution' else '·') }} {{ t('Options', '期权') }} {% if _gc.verdict=='confirm' %}{{ t('confirm','确认') }}{% elif _gc.verdict=='caution' %}{{ t('caution','警示') }}{% else %}{{ t('neutral','中性') }}{% endif %}</span>
+            <span class="nb-vchip vf-{{ _gc.verdict }}" data-tip-en="Options check (dealer gamma){% if _gr %} — {{ _gr.en }}{% endif %}{% if _gc.levels.call_wall %} · call wall {{ _gc.levels.call_wall }}{% endif %}{% if _gc.levels.flip %} · flip {{ _gc.levels.flip }}{% endif %} · {{ _gc.caveat }}" data-tip-zh="期权确认（做市商 Gamma）{% if _gr %} — {{ _gr.zh }}{% endif %} · {{ _gc.caveat_zh }}">{{ '✓' if _gc.verdict=='confirm' else ('⚠' if _gc.verdict=='caution' else '·') }} {{ t('Options', '期权') }} {% if _gc.verdict=='confirm' %}{{ t('confirm','确认') }}{% elif _gc.verdict=='caution' %}{{ t('caution','警示') }}{% else %}{{ t('neutral','中性') }}{% endif %}</span>
             {% elif _gc_unval_caution %}
             {# Unvalidated GEX caution: show a muted label so the data isn't silently hidden #}
-            <span class="nb-vchip vf-unval" title="Options positioning — unvalidated, accruing history (gate not yet open). Shows caution only; not in score. · 期权仓位——未验证，历史积累中（门控尚未开放）。仅显示警示；不计入分数。">⚠ {{ t('Options caution (unvalidated)', '期权警示（未验证）') }}</span>{% endif %}
+            <span class="nb-vchip vf-unval" data-tip-en="Options positioning — unvalidated, accruing history (gate not yet open). Shows caution only; not in score." data-tip-zh="期权仓位——未验证，历史积累中（门控尚未开放）。仅显示警示；不计入分数。">⚠ {{ t('Options caution (unvalidated)', '期权警示（未验证）') }}</span>{% endif %}
             {# IV-spread chip: only when gate is scored=True (validated) #}
             {% if _ivshow %}{% set _ir = (_iv.reasons[0] if _iv.reasons else None) %}
-            <span class="nb-vchip vf-{{ _iv.verdict }}" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread{% if _ir %} — {{ _ir.en }}{% endif %} · {{ _iv.caveat }} | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差{% if _ir %} — {{ _ir.zh }}{% endif %} · {{ _iv.caveat_zh }}">{{ '↑' if _iv.verdict=='confirm' else '↓' }} {{ t('IV lean', 'IV偏向') }} {% if _iv.verdict=='confirm' %}{{ t('up','偏多') }}{% else %}{{ t('down','偏空') }}{% endif %}</span>
+            <span class="nb-vchip vf-{{ _iv.verdict }}" data-tip-en="Options IV lean — Cremers-Weinbaum call−put implied-vol spread{% if _ir %} — {{ _ir.en }}{% endif %} · {{ _iv.caveat }}" data-tip-zh="期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差{% if _ir %} — {{ _ir.zh }}{% endif %} · {{ _iv.caveat_zh }}">{{ '↑' if _iv.verdict=='confirm' else '↓' }} {{ t('IV lean', 'IV偏向') }} {% if _iv.verdict=='confirm' %}{{ t('up','偏多') }}{% else %}{{ t('down','偏空') }}{% endif %}</span>
             {% elif _iv_unval_caution %}
-            <span class="nb-vchip vf-unval" title="Options IV lean — Cremers-Weinbaum IV spread, unvalidated (accruing history, gate not open). Shows caution only. · 期权IV偏向——未验证（历史积累中，门控尚未开放）。仅显示警示。">⚠ {{ t('IV caution (unvalidated)', 'IV警示（未验证）') }}</span>{% endif %}
+            <span class="nb-vchip vf-unval" data-tip-en="Options IV lean — Cremers-Weinbaum IV spread, unvalidated (accruing history, gate not open). Shows caution only." data-tip-zh="期权IV偏向——未验证（历史积累中，门控尚未开放）。仅显示警示。">⚠ {{ t('IV caution (unvalidated)', 'IV警示（未验证）') }}</span>{% endif %}
             {% if _sqshow %}
-            <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %}{% if _vs.bbwp is not none %} · BBWP {{ _vs.bbwp }}{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% if _vs.volume_confirmed %} ✓{% endif %}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>{% endif %}
+            <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %}{% if _vs.bbwp is not none %} · BBWP {{ _vs.bbwp }}{% endif %} — {{ _vs.caveat }}" data-tip-zh="波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% if _vs.volume_confirmed %} ✓{% endif %}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>{% endif %}
           </div>
           {% endif %}
           <div class="nb-bot">
-            {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha > 0 else ('az-dn' if n.alpha < 0 else '') }}" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
+            {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha > 0 else ('az-dn' if n.alpha < 0 else '') }}" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
             {% if n.sector_rank %}<span class="nb-rk">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
-            {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
+            {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
             {% if n.demand %}{% set dyoy = (' ' + '%+.0f'|format(n.demand.yoy) + '%') if n.demand.yoy is not none else '' %}
-              {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" title="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal · 需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>
-              {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" title="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal · 需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
+              {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" data-tip-en="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal" data-tip-zh="需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>
+              {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" data-tip-en="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal" data-tip-zh="需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
           </div>
           {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
           {# only NAME-SPECIFIC notes here (e.g. favourable risk-cone); the generic
@@ -2694,19 +2679,19 @@
           </div>
           <div class="nb-meta">
             {% if n.eq_grade %}<span class="nb-grade" style="color:{{ 'var(--up)' if n.eq_dir=='up' else ('var(--down)' if n.eq_dir=='down' else 'var(--muted)') }}">{{ t(n.eq_grade, n.eq_grade_zh) if n.eq_grade_zh else n.eq_grade }}</span> ·{% endif %}
-            <span title="signal triggered {{ n.signal_date }} · 信号触发 {{ n.signal_date }}">⏱ {{ t(n.age_short, n.age_short_zh) if n.age_short else (n.signal_date or '') }}</span>
+            <span data-tip-en="signal triggered {{ n.signal_date }}" data-tip-zh="信号触发 {{ n.signal_date }}">⏱ {{ t(n.age_short, n.age_short_zh) if n.age_short else (n.signal_date or '') }}</span>
           </div>
           {% if n.alpha_z is not none or n.insider_buyers or n.sue_z or n.demand %}
           <div class="nb-alpha">
-            {% if n.alpha_z is not none %}<span class="nb-az {{ 'az-up' if n.alpha_z > 0 else ('az-dn' if n.alpha_z < 0 else '') }}" title="Sector-neutral residual momentum (z) — stock-specific strength with market + sector beta stripped. A ranking/context leg, not a standalone signal. · 行业中性残差动量（z）— 剥离大盘与行业 beta 后的个股特定强度。属排序/情境维度，并非独立信号。">α {{ '%+.2f'|format(n.alpha_z) }}</span>{% endif %}
-            {% if n.alpha_sector_rank %}<span class="nb-rk" title="Rank within its GICS sector by sector-neutral momentum · 按行业中性动量在其 GICS 行业内的排名">#{{ n.alpha_sector_rank }}/{{ n.alpha_sector_n }}</span>{% endif %}
-            {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" title="A leader on a recent pullback — a more constructive entry · 强势股近期回调 — 更具建设性的入场点">{{ t('pullback', '回调') }}</span>
-            {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" title="A leader that just spiked — short-term reversal risk · 强势股刚刚拉升 — 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
-            {% if n.insider_buyers %}<span class="nb-ins" title="{{ n.insider_buyers }} distinct insiders net-bought{% if n.insider_net_mn %} ${{ '%.1f'|format(n.insider_net_mn) }}M{% endif %}{% if n.insider_bps %} (+{{ n.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer (orthogonal long-only conviction, not a standalone signal) · {{ n.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认指标">👤 {{ n.insider_buyers }}</span>{% endif %}
-            {% if n.sue_z %}<span class="nb-sue" title="Earnings momentum: SUE z {{ '%+.1f'|format(n.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score · 盈利动量：SUE z {{ '%+.1f'|format(n.sue_z) }}（相对标普1500）— 最新季度超出去年同期季节性预期并倾向延续漂移（盈利后漂移）。在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(n.sue_z) }}</span>{% endif %}
+            {% if n.alpha_z is not none %}<span class="nb-az {{ 'az-up' if n.alpha_z > 0 else ('az-dn' if n.alpha_z < 0 else '') }}" data-tip-en="Sector-neutral residual momentum (z) — stock-specific strength with market + sector beta stripped. A ranking/context leg, not a standalone signal." data-tip-zh="行业中性残差动量（z）— 剥离大盘与行业 beta 后的个股特定强度。属排序/情境维度，并非独立信号。">α {{ '%+.2f'|format(n.alpha_z) }}</span>{% endif %}
+            {% if n.alpha_sector_rank %}<span class="nb-rk" data-tip-en="Rank within its GICS sector by sector-neutral momentum" data-tip-zh="按行业中性动量在其 GICS 行业内的排名">#{{ n.alpha_sector_rank }}/{{ n.alpha_sector_n }}</span>{% endif %}
+            {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" data-tip-en="A leader on a recent pullback — a more constructive entry" data-tip-zh="强势股近期回调 — 更具建设性的入场点">{{ t('pullback', '回调') }}</span>
+            {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" data-tip-en="A leader that just spiked — short-term reversal risk" data-tip-zh="强势股刚刚拉升 — 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
+            {% if n.insider_buyers %}<span class="nb-ins" data-tip-en="{{ n.insider_buyers }} distinct insiders net-bought{% if n.insider_net_mn %} ${{ '%.1f'|format(n.insider_net_mn) }}M{% endif %}{% if n.insider_bps %} (+{{ n.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer (orthogonal long-only conviction, not a standalone signal)" data-tip-zh="{{ n.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认指标">👤 {{ n.insider_buyers }}</span>{% endif %}
+            {% if n.sue_z %}<span class="nb-sue" data-tip-en="Earnings momentum: SUE z {{ '%+.1f'|format(n.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z {{ '%+.1f'|format(n.sue_z) }}（相对标普1500）— 最新季度超出去年同期季节性预期并倾向延续漂移（盈利后漂移）。在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(n.sue_z) }}</span>{% endif %}
             {% if n.demand %}{% set dyoy = (' ' + '%+.0f'|format(n.demand.yoy) + '%') if n.demand.yoy is not none else '' %}
-              {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" title="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal · 需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>
-              {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" title="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal · 需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
+              {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" data-tip-en="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal" data-tip-zh="需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>
+              {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" data-tip-en="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal" data-tip-zh="需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
           </div>
           {% endif %}
         </a>
@@ -2759,19 +2744,19 @@
           <thead><tr>
             <th>{{ t('Stock', '个股') }}</th><th>{{ t('Sector', '板块') }}</th>
             <th class="r">α</th><th class="r">{{ t('rank', '排名') }}</th>
-            <th title="The validated MACD-2D × StochRSI-3D confluence buy gate (engine/signal_gate): Buy zone = both crossed within ~6 days, still constructive; About to cross = 3D StochRSI crossed, 2D MACD imminent. The board requires this. · 经验证的共振买入门控：买入区=两者约近6日内交叉且建设性；即将交叉=3日StochRSI已上穿、2日MACD即将交叉。榜单以此为准。">{{ t('buy', '买入') }}</th>
+            <th data-tip-en="The validated MACD-2D × StochRSI-3D confluence buy gate (engine/signal_gate): Buy zone = both crossed within ~6 days, still constructive; About to cross = 3D StochRSI crossed, 2D MACD imminent. The board requires this." data-tip-zh="经验证的共振买入门控：买入区=两者约近6日内交叉且建设性；即将交叉=3日StochRSI已上穿、2日MACD即将交叉。榜单以此为准。">{{ t('buy', '买入') }}</th>
             <th>{{ t('cycle', '周期') }}</th><th>{{ t('trend', '趋势') }}</th>
-            <th class="r" title="Cross-sectional factor composite (value / quality / low-vol …) — a LIGHT quality tiebreaker (crowded, post-publication decayed), not a driver · 横截面因子综合（价值/质量/低波…）— 轻量质量打破平局，非主导">{{ t('factor', '因子') }}</th>
-            <th class="r" title="Entry-context blend (0.7·alpha-z + cycle/reversal timing). The board is ranked by α, not this — Phase-0 found the blend does not improve forward-return ranking (reports/setup-score-phase0.md). · 入场情境混合分（0.7·alpha-z + 周期/反转择时）。榜单按 α 排序而非此分 — Phase-0 显示该混合不改善前瞻收益排序。">{{ t('setup', '布局分') }}</th>
+            <th class="r" data-tip-en="Cross-sectional factor composite (value / quality / low-vol …) — a LIGHT quality tiebreaker (crowded, post-publication decayed), not a driver" data-tip-zh="横截面因子综合（价值/质量/低波…）— 轻量质量打破平局，非主导">{{ t('factor', '因子') }}</th>
+            <th class="r" data-tip-en="Entry-context blend (0.7·alpha-z + cycle/reversal timing). The board is ranked by α, not this — Phase-0 found the blend does not improve forward-return ranking (reports/setup-score-phase0.md)." data-tip-zh="入场情境混合分（0.7·alpha-z + 周期/反转择时）。榜单按 α 排序而非此分 — Phase-0 显示该混合不改善前瞻收益排序。">{{ t('setup', '布局分') }}</th>
           </tr></thead>
           <tbody>
           {% for r in top_setups.buy[:10] %}
             <tr class="ts-row" onclick="location.href='stock.html#{{ r.ticker }}'">
-              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" title="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer · {{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" title="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score · 盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(r.sue_z) }}</span>{% endif %}</td>
+              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" data-tip-en="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="{{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" data-tip-en="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(r.sue_z) }}</span>{% endif %}</td>
               <td class="muted">{{ td(r.sector) }}</td>
               <td class="r {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
               <td class="r muted">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
-              <td>{% set sg = r.signal if (r.signal is defined) else none %}{% if sg and sg.tier_cascade in ('T1','T2') %}<span class="ts-buy ok" title="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive · 已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性">{{ t('Buy zone', '买入区') }}</span>{% elif sg and sg.tier_cascade == 'T3' %}<span class="ts-buy soon" title="Anticipation: 3D StochRSI crossed, 2D MACD-RSI about to cross (next 1-2 bars){% if sg.provisional %}. PROVISIONAL — projected off the incomplete 2D bucket; a measured 23.8% of US T3 fresh fires repaint when it completes (calibration/provisional_replay.json, W6 #22){% endif %} · 预期：3日StochRSI已上穿、2日MACD-RSI即将交叉（未来1-2根K线）{% if sg.provisional %}。暂定 — 基于未完成的2日K线桶，桶完成后实测23.8%的美股T3新信号会重绘{% endif %}">{{ t('About to cross', '即将交叉') }}</span>{% if sg.provisional %}<span class="prov-flag" title="Provisional — may repaint. Measured: 23.8% of US T3 fresh fires (41/172) vanish within 4 sessions of the 2D bucket completing (calibration/provisional_replay.json, W6 #22). · 暂定 — 可能重绘：实测美股23.8%（41/172）的T3新信号在K线桶完成后4个交易日内消失。"><span class="l-en">prov</span><span class="l-zh">暂定</span></span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td>{% set sg = r.signal if (r.signal is defined) else none %}{% if sg and sg.tier_cascade in ('T1','T2') %}<span class="ts-buy ok" data-tip-en="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive" data-tip-zh="已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性">{{ t('Buy zone', '买入区') }}</span>{% elif sg and sg.tier_cascade == 'T3' %}<span class="ts-buy soon" data-tip-en="Anticipation: 3D StochRSI crossed, 2D MACD-RSI about to cross (next 1-2 bars){% if sg.provisional %}. PROVISIONAL — projected off the incomplete 2D bucket; a measured 23.8% of US T3 fresh fires repaint when it completes (calibration/provisional_replay.json, W6 #22){% endif %}" data-tip-zh="预期：3日StochRSI已上穿、2日MACD-RSI即将交叉（未来1-2根K线）{% if sg.provisional %}。暂定 — 基于未完成的2日K线桶，桶完成后实测23.8%的美股T3新信号会重绘{% endif %}">{{ t('About to cross', '即将交叉') }}</span>{% if sg.provisional %}<span class="prov-flag" data-tip-en="Provisional — may repaint. Measured: 23.8% of US T3 fresh fires (41/172) vanish within 4 sessions of the 2D bucket completing (calibration/provisional_replay.json, W6 #22)." data-tip-zh="暂定 — 可能重绘：实测美股23.8%（41/172）的T3新信号在K线桶完成后4个交易日内消失。"><span class="l-en">prov</span><span class="l-zh">暂定</span></span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
               <td>{% if r.label %}{{ td(r.label) }}{% else %}<span class="muted">—</span>{% endif %}</td>
               <td>{% if r.alpha_entry == 'pullback' %}<span class="ent-good">{{ t('pullback', '回调') }}</span>{% elif r.alpha_entry == 'extended' %}<span class="ent-warn">{{ t('extended', '过热') }}</span>{% else %}<span class="muted">{{ r.alpha_entry or '—' }}</span>{% endif %}</td>
               <td class="r {{ 'az-up' if r.factor_z and r.factor_z > 0 else ('az-dn' if r.factor_z and r.factor_z < 0 else 'muted') }}">{% if r.factor_z is not none %}{{ '%+.1f'|format(r.factor_z) }}{% else %}—{% endif %}</td>
@@ -3266,10 +3251,10 @@ window.__CHART_SWAP__ = {
 })();
 </script>
 <script>
-/* Caution icon + chip popovers — tap-to-toggle on mobile, hover on desktop via CSS.
+/* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
    Also corrects popover position (flip above/below, clamp to right edge).
-   Both .nb-cau (caution button) and .nb-chip-pop-wrap (W2 chip popovers) share
-   the same one-open-at-a-time behaviour. */
+   (Chip explanatory copy uses the theme.js data-tip mechanism instead — one
+   repo-standard tooltip; the W2 bespoke chip popover was retired at merge.) */
 (function(){
   function placePopCau(wrap){
     var pop = wrap.querySelector('.nb-cau-pop');
@@ -3278,16 +3263,8 @@ window.__CHART_SWAP__ = {
     wrap.classList.toggle('pop-below', r.top < 180);
     wrap.classList.toggle('pop-right', r.left > window.innerWidth - 200);
   }
-  function placePopChip(wrap){
-    var pop = wrap.querySelector('.nb-chip-pop');
-    if (!pop) return;
-    var r = wrap.getBoundingClientRect();
-    wrap.classList.toggle('pop-below', r.top < 180);
-    wrap.classList.toggle('pop-right', r.left > window.innerWidth - 200);
-  }
   function closeAllPops(){
     document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
-    document.querySelectorAll('.nb-chip-pop-wrap.chip-pop-open').forEach(function(el){ el.classList.remove('chip-pop-open'); });
   }
   /* Tap: toggle open/closed */
   document.addEventListener('click', function(e){
@@ -3301,17 +3278,8 @@ window.__CHART_SWAP__ = {
       if (!wasOpen){ placePopCau(wrap); wrap.classList.add('nb-cau-open'); }
       return;
     }
-    /* chip tap on mobile (no hover) */
-    var chipWrap = e.target.closest && e.target.closest('.nb-chip-pop-wrap');
-    if (chipWrap){
-      e.preventDefault(); e.stopPropagation();
-      var wasOpen = chipWrap.classList.contains('chip-pop-open');
-      closeAllPops();
-      if (!wasOpen){ placePopChip(chipWrap); chipWrap.classList.add('chip-pop-open'); }
-      return;
-    }
     /* outside tap: close all */
-    if (!e.target.closest('.nb-cau-pop') && !e.target.closest('.nb-chip-pop')){
+    if (!e.target.closest('.nb-cau-pop')){
       closeAllPops();
     }
   }, true);
@@ -3319,8 +3287,6 @@ window.__CHART_SWAP__ = {
   document.addEventListener('pointerover', function(e){
     var cau = e.target.closest && e.target.closest('.nb-cau');
     if (cau){ placePopCau(cau); return; }
-    var chip = e.target.closest && e.target.closest('.nb-chip-pop-wrap');
-    if (chip){ placePopChip(chip); }
   }, true);
 })();
 </script>

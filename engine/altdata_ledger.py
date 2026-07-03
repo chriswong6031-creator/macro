@@ -131,7 +131,9 @@ def score(root=None, today=None) -> dict | None:
                 for r in new_rows:
                     fh.write(json.dumps(r, default=str) + "\n")
         _p(root, _TRACK).write_text(json.dumps(track, indent=2, default=str))
-        site = config.ROOT / "site" / "altdata"
+        # derive from root (== config.ROOT in prod) so root=tmp_path tests
+        # don't overwrite the tracked site/altdata/track_record.json
+        site = root / "site" / "altdata"
         site.mkdir(parents=True, exist_ok=True)
         (site / "track_record.json").write_text(json.dumps(track, indent=2, default=str))
         if new_rows:

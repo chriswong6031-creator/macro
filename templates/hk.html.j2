@@ -548,7 +548,7 @@
   .tr-tbl th:first-child, .tr-tbl td:first-child { text-align: left; }
   .tr-tbl th { color: var(--muted); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; }
 
-  /* (C) evidence-tag micro-style on the why-now chips — validated / accruing / context. */
+  /* (C) evidence-tag micro-style on the why-now chips — .et-validated / .et-accruing / .et-context. */
   .ev-tag { font-size: 7.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em;
       padding: 0 3px; border-radius: 4px; margin-left: 3px; vertical-align: middle; }
   .ev-tag.et-validated { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
@@ -658,7 +658,7 @@
            context ONLY — never a rank / direction call. #}
         {% set _lq = setups.liquidity_regime if setups else None %}
         {% if _lq and _lq.regime %}
-        <div class="desk-liq lq-{{ _lq.regime|lower }}" title="{{ _lq.sizing_note.en }} · {{ _lq.sizing_note.zh }}">
+        <div class="desk-liq lq-{{ _lq.regime|lower }}">
           <span class="lq-chip">💧 {{ t('HK liquidity regime', '香港流动性状态') }}:
             <b>{{ t('EASY', '宽松') if _lq.regime == 'EASY' else (t('TIGHT', '紧张') if _lq.regime == 'TIGHT' else t('NEUTRAL', '中性')) }}</b>
             <span class="lq-accrue">({{ t('accruing conditioner', '累积中调节器') }})</span></span>
@@ -700,7 +700,7 @@
       </div>
       <div class="dm-cell dm-isnt">
         <div class="dm-k">✕ {{ t('What it isn\'t', '它不是什么') }}</div>
-        <div class="dm-v">{{ t('A <b>validated buy list</b>. HK has no idiosyncratic selection alpha (residual momentum is dead on a 40-year panel), so nothing here says "Buy" and the scoreboard is still building — it proves, or refutes, this screen in public.', '一份<b>已验证的买入清单</b>。香港没有特异选股阿尔法（残差动量在40年面板上无效），故此处永不显示“买入”，且记分牌仍在积累 —— 它将在公开中验证或证伪这套筛选。') }}</div>
+        <div class="dm-v">{{ t('<b>Not a validated buy list</b>. HK has no idiosyncratic selection alpha (residual momentum is dead on a 40-year panel), so nothing here says "Buy" and the scoreboard is still building — it proves, or refutes, this screen in public.', '<b>不是已验证的买入清单</b>。香港没有特异选股阿尔法（残差动量在40年面板上无效），故此处永不显示“买入”，且记分牌仍在积累 —— 它将在公开中验证或证伪这套筛选。') }}</div>
       </div>
       <div class="dm-tierline">{{ t('<b>Trust tier: screen.</b> The live cycle state caps every verdict; the size chip is risk-budgeting context, never a rank input. Each card carries its own tier badge below.', '<b>信任等级：筛选。</b>实时周期状态封顶每个结论；仓位标签为风险预算背景，从不参与排名。每张卡片下方标注其自身等级。') }}
         <a href="hk.html" style="color:var(--link);font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></div>
@@ -756,13 +756,13 @@
         <div class="nb-ripe">
           {% if n.group %}<span class="nb-grp grp-{{ 'open' if n.group == 'entry_open' else 'set' }}">{{ t('Entry open', '入场开启') if n.group == 'entry_open' else t('Setting up', '蓄势中') }}</span>{% endif %}
           {% if n.entry_window and n.entry_window.kind %}<span class="nb-ewin ew-{{ n.entry_window.kind }}"><span class="l-en">{{ n.entry_window.en }}</span><span class="l-zh">{{ n.entry_window.zh }}</span></span>{% endif %}
-          {% if n.washout_2w %}<span class="nb-port pt-wash" title="2-week StochRSI washout-reclaim — a higher-timeframe oversold bounce. Accruing demote/boost study (reports/entry_timing); not yet a rank input. · 2周 StochRSI 超卖反抽 —— 高周期超卖反弹。累积研究，暂不参与排名。">{{ t('2W washout', '2周超卖') }}<span class="ev-tag et-accruing">{{ t('accruing', '累积') }}</span></span>{% endif %}
-          {% if n.extended %}<span class="nb-port pt-ext" title="Stretched above its 200-day trend. Accruing demote study (reports/entry_timing); not yet a rank input. · 高于200日趋势。累积降权研究，暂不参与排名。">{{ t('extended', '过热') }}<span class="ev-tag et-context">{{ t('context', '背景') }}</span></span>{% endif %}
+          {% if n.washout_2w %}<span class="nb-port pt-wash" data-tip-en="2-week StochRSI washout-reclaim — a higher-timeframe oversold bounce. Accruing demote/boost study (reports/entry_timing); not yet a rank input." data-tip-zh="2周 StochRSI 超卖反抽 —— 高周期超卖反弹。累积研究，暂不参与排名。">{{ t('2W washout', '2周超卖') }}<span class="ev-tag et-accruing">{{ t('accruing', '累积') }}</span></span>{% endif %}
+          {% if n.extended %}<span class="nb-port pt-ext" data-tip-en="Stretched above its 200-day trend. Accruing demote study (reports/entry_timing); not yet a rank input." data-tip-zh="高于200日趋势。累积降权研究，暂不参与排名。">{{ t('extended', '过热') }}<span class="ev-tag et-context">{{ t('context', '背景') }}</span></span>{% endif %}
         </div>
         {% endif %}
         {% if c %}
         <div class="nb-conv">
-          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified edge-stack percentile (display skin, not a probability) — deliberately de-emphasised on this screen-tier market: the mechanism lead and entry window carry the weight, not this number. · 统一优势栈百分位（展示皮肤，非概率）—— 在此筛选级市场刻意弱化：以机制与入场窗口为主，而非此数字。">{{ c.score }}</span>{% endif %}
+          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Unified edge-stack percentile (display skin, not a probability) — deliberately de-emphasised on this screen-tier market: the mechanism lead and entry window carry the weight, not this number." data-tip-zh="统一优势栈百分位（展示皮肤，非概率）—— 在此筛选级市场刻意弱化：以机制与入场窗口为主，而非此数字。">{{ c.score }}</span>{% endif %}
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
         {% set al = c.alignment %}
@@ -771,7 +771,7 @@
            must be a FRESH turn from a low — weekly bear-recovering/basing + 3-day cross from
            oversold (<25) + daily just-crossed. 🟢 Prime/Armed = confirmed; 🟡 Approaching =
            early backfill (not yet a buy). The reason states WHY it qualifies. #}
-        <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" title="{{ al.line }} · {{ al.line_zh }}">
+        <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" data-tip-en="{{ al.line }}" data-tip-zh="{{ al.line_zh }}">
           <span class="nba-mark">{{ '🟡' if n.align_tier == 'near' else '🟢' }}</span>
           <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
           {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
@@ -792,43 +792,43 @@
         {# ENTRY-timing gauge (US-parity gauge 2): buy now / wait for the pullback / extended,
            with the buy-zone price. Compact HK skin — the WHEN/AT-WHAT-PRICE the conviction
            score must never be mistaken for. #}
-        <div class="nb-entry nbe-{{ es.status }}" title="Entry timing — when & at what price to buy, separate from the conviction score (own-it) and the size chip (how much). · 入场择时 — 何时、以何价买入，与确信度（是否持有）和仓位（持仓量）相互独立。">
+        <div class="nb-entry nbe-{{ es.status }}" data-tip-en="Entry timing — when & at what price to buy, separate from the conviction score (own-it) and the size chip (how much)." data-tip-zh="入场择时 — 何时、以何价买入，与确信度（是否持有）和仓位（持仓量）相互独立。">
           <span class="nbe-dot a{{ es.act_level }}"></span>
           <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
           {% if es.buy_zone and es.buy_zone.high is not none %}
-          <span class="nbe-zone" title="Buy zone · 买入区">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}{% if es.buy_zone.pct_from_spot is not none %} ({{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%){% endif %}</span>
+          <span class="nbe-zone" data-tip-en="Buy zone" data-tip-zh="买入区">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}{% if es.buy_zone.pct_from_spot is not none %} ({{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%){% endif %}</span>
           {% endif %}
         </div>
         {% endif %}
         <div class="nb-bot">
           {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
-          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). HOW MUCH to own — separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。决定持仓量，与选股（确信度）和择时（入场）相互独立。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
+          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). HOW MUCH to own — separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。决定持仓量，与选股（确信度）和择时（入场）相互独立。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
         </div>
         {% if n.alpha is not none or n.alpha_entry %}
         <div class="nb-alpha">
-          {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha>0 else ('az-dn' if n.alpha<0 else '') }}" title="Cross-sectional relative strength (z) — ~3-month return vs the HK universe. A descriptive leadership read. · 横截面相对强度（z）— 近3个月相对港股全体的收益。描述性领先读数。">RS {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
-          {% if n.sector_rank %}<span class="nb-rk" title="Rank within its sector by relative strength · 按相对强度在其板块内排名">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
-          {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" title="A leader that has cooled off (RSI≤55) — a less-stretched entry · 已回落的强势股（RSI≤55）— 较不过热的入场">{{ t('pullback', '回调') }}</span>
-          {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" title="Stretched (RSI≥70) — short-term reversal risk · 过热（RSI≥70）— 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
+          {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha>0 else ('az-dn' if n.alpha<0 else '') }}" data-tip-en="Cross-sectional relative strength (z) — ~3-month return vs the HK universe. A descriptive leadership read." data-tip-zh="横截面相对强度（z）— 近3个月相对港股全体的收益。描述性领先读数。">RS {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
+          {% if n.sector_rank %}<span class="nb-rk" data-tip-en="Rank within its sector by relative strength" data-tip-zh="按相对强度在其板块内排名">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
+          {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" data-tip-en="A leader that has cooled off (RSI≤55) — a less-stretched entry" data-tip-zh="已回落的强势股（RSI≤55）— 较不过热的入场">{{ t('pullback', '回调') }}</span>
+          {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" data-tip-en="Stretched (RSI≥70) — short-term reversal risk" data-tip-zh="过热（RSI≥70）— 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
         </div>
         {% endif %}
         {% if n.southbound or n.ah_value %}
         <div class="nb-flow">
-          {# W6 evidence tags (§7.3): each why-now chip carries validated / accruing / context
+          {# W6 evidence tags (§7.3): each why-now chip carries an et-validated / et-accruing / et-context
              colour-coding + a tooltip citing its phase-0 report. A/H = the near-GO (DSR 0.879)
              → visual priority via fl-lead. SB flow decays at render lag (H1 NO-GO) → context. #}
           {% if n.southbound and n.southbound.accum_z is not none %}
           {% set sbz = n.southbound.accum_z %}
-          <span class="{{ 'fl-buy' if sbz>=0.6 else ('fl-sell' if sbz<=-0.6 else '') }}" title="Southbound smart-money: the mainland Connect crowd is {{ n.southbound.label }} this name (accumulation z {{ '%+.2f'|format(sbz) }}{% if n.southbound.own_pct is not none %}; they hold {{ n.southbound.own_pct }}% of issued shares{% endif %}). HK's dominant marginal buyer. Phase-0 H1: the weekly holding-Δ edge is erased by disclosure+render lag (NO-GO, reports/h1) — a positioning CONTEXT chip, not a rank input. · 南向资金：内地港股通{{ '加仓' if sbz>=0.6 else ('减仓' if sbz<=-0.6 else '持平') }}（z {{ '%+.2f'|format(sbz) }}）。H1 相位0：周度持仓变动优势被披露与渲染时滞抹平（NO-GO），为定仓背景，非排名输入。">🇨🇳 {{ t('SB', '南向') }} {{ '%+.1f'|format(sbz) }}{% if n.southbound.own_pct is not none %} · {{ n.southbound.own_pct }}%{% endif %}<span class="ev-tag et-context">{{ t('context', '背景') }}</span></span>
+          <span class="{{ 'fl-buy' if sbz>=0.6 else ('fl-sell' if sbz<=-0.6 else '') }}" data-tip-en="Southbound smart-money: the mainland Connect crowd is {{ n.southbound.label }} this name (accumulation z {{ '%+.2f'|format(sbz) }}{% if n.southbound.own_pct is not none %}; they hold {{ n.southbound.own_pct }}% of issued shares{% endif %}). HK's dominant marginal buyer. Phase-0 H1: the weekly holding-Δ edge is erased by disclosure+render lag (NO-GO, reports/h1) — a positioning CONTEXT chip, not a rank input." data-tip-zh="南向资金：内地港股通{{ '加仓' if sbz>=0.6 else ('减仓' if sbz<=-0.6 else '持平') }}（z {{ '%+.2f'|format(sbz) }}）。H1 相位0：周度持仓变动优势被披露与渲染时滞抹平（NO-GO），为定仓背景，非排名输入。">🇨🇳 {{ t('SB', '南向') }} {{ '%+.1f'|format(sbz) }}{% if n.southbound.own_pct is not none %} · {{ n.southbound.own_pct }}%{% endif %}<span class="ev-tag et-context">{{ t('context', '背景') }}</span></span>
           {% endif %}
           {% if n.ah_value and n.ah_value.z is not none %}
-          <span class="fl-val{{ ' fl-lead' if n.ah_value.cheap else '' }}" title="A/H value: the H/HK line trades at a {{ n.ah_value.premium_pct }}% discount to its mainland A twin (value z {{ '%+.2f'|format(n.ah_value.z) }}). A high discount = H is the cheaper way to own the same company. Phase-0 H3: the lead accruing HK edge — IC .055 (t 2.23), top-5 tilt +2.77%/3m, DSR 0.879 (near the 0.90 gate), reports/h3. · A/H 价值：港股 H 相对 A 股孪生折价 {{ n.ah_value.premium_pct }}%（z {{ '%+.2f'|format(n.ah_value.z) }}）。H3 相位0：领先累积的香港优势 —— IC .055，前五组合 +2.77%/3月，DSR 0.879（临近0.90门槛）。">A/H {{ '%+.1f'|format(n.ah_value.z) }}{% if n.ah_value.cheap %} · {{ t('cheap H', 'H 便宜') }}{% endif %}<span class="ev-tag et-accruing">{{ t('near-GO', '临近达标') }}</span></span>
+          <span class="fl-val{{ ' fl-lead' if n.ah_value.cheap else '' }}" data-tip-en="A/H value: the H/HK line trades at a {{ n.ah_value.premium_pct }}% discount to its mainland A twin (value z {{ '%+.2f'|format(n.ah_value.z) }}). A high discount = H is the cheaper way to own the same company. Phase-0 H3: the lead accruing HK edge — IC .055 (t 2.23), top-5 tilt +2.77%/3m, DSR 0.879 (near the 0.90 gate), reports/h3." data-tip-zh="A/H 价值：港股 H 相对 A 股孪生折价 {{ n.ah_value.premium_pct }}%（z {{ '%+.2f'|format(n.ah_value.z) }}）。H3 相位0：领先累积的香港优势 —— IC .055，前五组合 +2.77%/3月，DSR 0.879（临近0.90门槛）。">A/H {{ '%+.1f'|format(n.ah_value.z) }}{% if n.ah_value.cheap %} · {{ t('cheap H', 'H 便宜') }}{% endif %}<span class="ev-tag et-accruing">{{ t('near-GO', '临近达标') }}</span></span>
           {% endif %}
           {# SFC reportable-short CONTEXT chip (H2a — ACCRUE-labelled, reports/h2a-phase0.md).
              own-history days-to-cover percentile; correct-signed (high shorts -> softer fwd
              returns) but sub-threshold (DSR 0.32), so it is CONTEXT, never a rank input. #}
           {% if n.sfc_short and n.sfc_short.pctile is not none %}
-          <span class="{{ 'fl-short' if n.sfc_short.pctile >= 75 else '' }}" title="SFC reportable short positions: this name's days-to-cover (short shares / 63d ADV) sits at its own-history P{{ n.sfc_short.pctile }} (currently {{ n.sfc_short.dtc }} days, SFC week {{ n.sfc_short.as_of }}). Phase-0 H2a: a high short book leans forward returns SOFTER — but the edge is correct-signed and SUB-threshold (DSR 0.32 &lt; 0.90), so this is ACCRUING CONTEXT, not a rank input. · 证监会可报告淡仓：该股回补天数（淡仓股数／63日均量）处于自身历史 P{{ n.sfc_short.pctile }}（当前 {{ n.sfc_short.dtc }} 天，数据周 {{ n.sfc_short.as_of }}）。H2a 相位0：高淡仓使前瞻收益偏软 —— 但优势方向正确却低于门槛（DSR 0.32），故为累积背景，非排名输入。">🩳 {{ t('shorts', '淡仓') }} P{{ n.sfc_short.pctile }}<span class="ev-tag et-accruing">{{ t('accruing', '累积') }}</span></span>
+          <span class="{{ 'fl-short' if n.sfc_short.pctile >= 75 else '' }}" data-tip-en="SFC reportable short positions: this name's days-to-cover (short shares / 63d ADV) sits at its own-history P{{ n.sfc_short.pctile }} (currently {{ n.sfc_short.dtc }} days, SFC week {{ n.sfc_short.as_of }}). Phase-0 H2a: a high short book leans forward returns SOFTER — but the edge is correct-signed and SUB-threshold (DSR 0.32 &lt; 0.90), so this is ACCRUING CONTEXT, not a rank input." data-tip-zh="证监会可报告淡仓：该股回补天数（淡仓股数／63日均量）处于自身历史 P{{ n.sfc_short.pctile }}（当前 {{ n.sfc_short.dtc }} 天，数据周 {{ n.sfc_short.as_of }}）。H2a 相位0：高淡仓使前瞻收益偏软 —— 但优势方向正确却低于门槛（DSR 0.32），故为累积背景，非排名输入。">🩳 {{ t('shorts', '淡仓') }} P{{ n.sfc_short.pctile }}<span class="ev-tag et-accruing">{{ t('accruing', '累积') }}</span></span>
           {% endif %}
         </div>
         {% endif %}
@@ -837,7 +837,7 @@
         {% set _vs = c.vol_squeeze %}
         {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
         <div class="nb-vf">
-          <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
+          <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }}" data-tip-zh="波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
         </div>{% endif %}
         {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
         {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
@@ -858,7 +858,7 @@
           {# FALLING-KNIFE reason chip (H4 phase-0 KILL — reports/h4-phase0.md). A deepest-
              quintile 3M loser pushed OUT of the entry groups: they keep falling, not rebound. #}
           {% if w.watch_reason == 'knife' %}
-          <span class="wg-knife-chip" title="Deepest-quintile trailing-3M loser (return z {{ w.knife_z }}). H4 phase-0 KILL: on this HK universe the deepest 3M losers KEEP FALLING (−0.92%/mo, t −2.14) — short-horizon momentum, not reversal — so this name is held OUT of the entry groups. Screen hygiene gate, not a validated seam. · 近3个月跌幅最深五分位（收益 z {{ w.knife_z }}）。H4 相位0 KILL：在该港股universe中，3个月跌幅最深者继续下跌（−0.92%/月，t −2.14）—— 短周期动量而非反转 —— 故该股被排除在入场组之外。筛选卫生门槛，非已验证seam。">
+          <span class="wg-knife-chip" data-tip-en="Deepest-quintile trailing-3M loser (return z {{ w.knife_z }}). H4 phase-0 KILL: on this HK universe the deepest 3M losers KEEP FALLING (−0.92%/mo, t −2.14) — short-horizon momentum, not reversal — so this name is held OUT of the entry groups. Screen hygiene gate, not a validated seam." data-tip-zh="近3个月跌幅最深五分位（收益 z {{ w.knife_z }}）。H4 相位0 KILL：在该港股universe中，3个月跌幅最深者继续下跌（−0.92%/月，t −2.14）—— 短周期动量而非反转 —— 故该股被排除在入场组之外。筛选卫生门槛，非已验证seam。">
             <span class="l-en">🔻 3M deepest losers keep falling in HK — phase-0 KILL 2026-07</span>
             <span class="l-zh">🔻 港股3个月最深跌幅者继续下跌 —— 相位0 KILL 2026-07</span>
           </span>
@@ -868,7 +868,7 @@
              dilution + discounted-stock overhang; held OUT of the entry groups. Renders on
              any flagged watch name (incl. knife demotes carrying a placement stamp too). #}
           {% if w.placement_flag and w.placement_info %}
-          <span class="wg-plc-chip" title="Dilutive {{ w.placement_info.cat_en }} announced {{ w.placement_info.days_ago }}d ago ({{ w.placement_info.date }}). H-PLC risk gate (masterplan §3): the discounted top-up placement / rights issue is HK's highest-frequency idiosyncratic run-killer — fresh dilution plus a block of below-market stock over the name — so it is held OUT of the entry groups for 90 days. Hygiene gate, ships validation-free; the post-placement drift event study is accruing in the experiments registry. · 近{{ w.placement_info.days_ago }}天公告摊薄性{{ w.placement_info.cat_zh }}（{{ w.placement_info.date }}）。H-PLC 风险门（蓝图§3）：折价配售/供股是港股最高频的个股行情杀手 —— 新增摊薄+低于市价的筹码悬顶 —— 故90天内排除在入场组之外。卫生门槛，无需验证即上线；配售后漂移事件研究已在实验登记册累积。">
+          <span class="wg-plc-chip" data-tip-en="Dilutive {{ w.placement_info.cat_en }} announced {{ w.placement_info.days_ago }}d ago ({{ w.placement_info.date }}). H-PLC risk gate (masterplan §3): the discounted top-up placement / rights issue is HK's highest-frequency idiosyncratic run-killer — fresh dilution plus a block of below-market stock over the name — so it is held OUT of the entry groups for 90 days. Hygiene gate, ships validation-free; the post-placement drift event study is accruing in the experiments registry." data-tip-zh="近{{ w.placement_info.days_ago }}天公告摊薄性{{ w.placement_info.cat_zh }}（{{ w.placement_info.date }}）。H-PLC 风险门（蓝图§3）：折价配售/供股是港股最高频的个股行情杀手 —— 新增摊薄+低于市价的筹码悬顶 —— 故90天内排除在入场组之外。卫生门槛，无需验证即上线；配售后漂移事件研究已在实验登记册累积。">
             <span class="l-en">💸 {{ w.placement_info.cat_en | title }} {{ w.placement_info.days_ago }}d ago — dilution overhang (H-PLC gate)</span>
             <span class="l-zh">💸 {{ w.placement_info.days_ago }}天前{{ w.placement_info.cat_zh }} —— 摊薄悬顶（H-PLC 风险门）</span>
           </span>

@@ -40,7 +40,7 @@
 {% set seat = sbt.get(m.ticker) %}{% set cc = confcls(m.vel, seat) %}
 <tr class="mrow {{ cc }}{{ ' show' if show }}" data-sector="{{ sid }}">
   <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}<a href="{{ ('hk_lookup.html#' if m.ticker.endswith('.HK') else 'china_lookup.html#') ~ m.ticker }}">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></a></td>
-  <td>{% if seat %}<span class="seat {{ seat.dir }}" title="Dragon-Tiger institutional-seat net (机构专用)">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
+  <td>{% if seat %}<span class="seat {{ seat.dir }}" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
   <td></td>
   <td>{{ rate(m.rate_4wk) }}</td>
   <td style="text-align:center">{{ vbar(m.vel, 'sm', i) }}</td>

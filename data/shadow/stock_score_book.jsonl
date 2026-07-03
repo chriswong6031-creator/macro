@@ -1305,3 +1305,7 @@
 {"date": "2026-07-02", "ticker": "EPC", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-02", "ticker": "IPAR", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-02", "ticker": "FWRD", "score": 61.0, "percentile": 61.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-02", "ticker": "CASY", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-02", "ticker": "AME", "score": 51.0, "percentile": 51.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-02", "ticker": "WAB", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-02", "ticker": "VYX", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}

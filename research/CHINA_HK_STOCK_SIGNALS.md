@@ -145,28 +145,35 @@ is a product decision (the signal inverts the request + carries real risk) — f
 - **Phase 3 (Hong Kong) — deep-history validated → KILL the residual-alpha leg; do NOT ship.**
   First read on the 3y cache (73 names, ~23 rebalances) was inconclusive, so the binding
   constraint (history length) was removed: `scripts/hk_residual_alpha_phase0.py --fetch` pulls
-  full yfinance history for the 73 constituents + ^HSI → a **~40-year, 447-rebalance** deep panel
-  (`data/hk_search/closes_deep.parquet`, 1986→2026), then re-runs the identical harness.
-  `reports/hk-residual-alpha-phase0.md`. **Definitive result — the residual INVERTS vs US/China:**
+  full yfinance history for the curated constituents + ^HSI → a **~40-year, 447-rebalance** deep
+  panel (`data/hk_search/closes_deep.parquet`, 1986→2026; 73 names at the original run, **157**
+  since the 2026-06-18 expansion), then re-runs the identical harness.
+  `reports/hk-residual-alpha-phase0.md`. **Definitive result — the residual DIES on HK:**
 
   | signal | DEEP full (447 reb) | DEEP modern 2010+ (171 reb) |
   |---|--:|--:|
-  | `mom_tot` (plain/beta) | IC +0.032, t **2.0**, LS Sharpe 0.23 | IC +0.030, LS 0.08 |
-  | `mom_res` (residual) | IC +0.004, **LS Sharpe −0.22** | IC +0.007, **LS −0.35** |
-  | `ir_res` | IC +0.010, LS 0.02 | IC +0.010, LS 0.18 |
-  | `acc_res\|SN` | IC −0.034, t −3.6 ✓FDR (KILLED) | −0.029, t −2.8 ✓FDR |
+  | `mom_tot` (plain/beta) | IC +0.028, t **2.2** ✓FDR, LS Sharpe 0.20 | IC +0.028, LS 0.20 |
+  | `mom_res` (residual) | IC +0.012, t 1.28, **LS +0.17, DSR 0.28** | IC +0.012, **LS +0.31, DSR 0.33** |
+  | `ir_res` | IC +0.014, LS −0.05 | IC +0.012, LS 0.21 |
+  | `acc_res\|SN` | IC −0.023, t −3.0 ✓FDR (KILLED) | −0.020, t −2.3 |
+
+  *(Table refreshed 2026-07-03 from the live 157-name panel: the original 73-name run gave mom_res
+  LS Sharpe −0.22 full / −0.35 modern — the panel expansion sign-flipped a near-zero Sharpe, but
+  the KILL rests on DSR/IC grounds (fails DSR in every window, IC≈0), not sign.)*
 
   HK's ONLY positive cross-sectional signal is plain TOTAL-return momentum — but it's weak (fails
   DSR) and it is **beta, not alpha**. The **residual (beta-stripped) construction — the durable
-  winner-picker for US + China A-shares — has a NEGATIVE long-short Sharpe in HK.** Stripping
-  market+sector beta REMOVES HK's signal: the cross-section is beta-dominated, the hard-data
-  confirmation that **HK is a macro/global-risk product, not a stock-selection one** (~2×
-  global-beta, `china-global-factors`; matches the HK model's own "no stable single-sector
-  outperformance" disclaimer). Shipping the China leg here would deploy a negative-Sharpe signal.
+  winner-picker for US + China A-shares — has no tradable edge in HK**: IC ≈ 0, the long-short
+  fails the DSR haircut in every window, and its near-zero Sharpe flips sign with panel
+  composition. Stripping market+sector beta REMOVES HK's signal: the cross-section is
+  beta-dominated, the hard-data confirmation that **HK is a macro/global-risk product, not a
+  stock-selection one** (~2× global-beta, `china-global-factors`; matches the HK model's own "no
+  stable single-sector outperformance" disclaimer). Shipping the China leg here would deploy a
+  signal with no demonstrated edge.
   **Recommended HK path instead:** a per-stock **global-risk-beta** context read (which names are
   most levered to the validated risk-on/off overlay), NOT residual momentum. Name-count expansion
-  won't change this — the residual is dead even with 447 rebalances; HK lacks idiosyncratic
-  stock momentum, full stop.
+  doesn't change this — tested: the 73→157 expansion left the residual dead across 447 rebalances;
+  HK lacks idiosyncratic stock momentum, full stop.
 - **Phase 3b (Hong Kong global-risk-beta) — SHIPPED + verified.** The honest HK per-name read,
   pivoting from selection to RISK EXPOSURE. `engine/hk_global_beta.py`: each constituent's causal
   252d beta to global risk (S&P 500, lagged one day for the overnight US→HK transmission),
