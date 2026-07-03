@@ -40,6 +40,24 @@
   invariants), W3 evidence stack, W4 sector re-arm bus + tailwind inversion, W5 grading
   maturity (P@k new-vs-old order on the live ledger is the program's success metric).
 
+- **2026-07-03 — W2 SHIPPED #1122** (+ parallel complements #1123/#1126 from a second
+  session: survivorship disclosure `n_skipped_no_price`): surfaced-outcome strip (exited
+  buy names -> visible P&L ledger, |move|-sorted; first live read: 7 running incl. AGYS
+  +26.6%, 8 stopped incl. MPWR −21.9%, median −15.2%), chip explanatory copy via the
+  repo-standard data-tip popovers, and check_board_contradictions.py as a two-tier guard
+  (PR job artifact-conditional + pages.yml deploy-gate twin).
+- **2026-07-03 — W3 SHIPPED #1127**: evidence stack v1 — 7 PIT-safe lenses (insider
+  cluster, GEX confirmer, altdata convergence, SUE freshness, news burst, smartmoney 13F,
+  anticipation stop-budget) as display chips behind per-source freshness gates
+  (stale ⇒ `evidence_health` unknown, never neutral), Confluence+ k-of-n badge with
+  independence groups, and per-lens grader strata. ZERO ordering power — every lens must
+  earn tilt through the live ledger.
+- **2026-07-03 — wave-9 measurement launched** (gates W4): W9-A sector-conditioned
+  re-arm (cohort-washout conditioning of the BASED population) + W9-B tailwind A/B
+  (bottoming-phase score vs incumbent 20d-rel as outcome stratifier; three-way decision
+  rule pre-registered incl. demote-to-display). W4 implements per verdicts. W5 (grading
+  maturity) awaits live accrual.
+
 ## 1. What the diagnostics established (the evidence base)
 
 **F1 — The REGN/VEEV "disappearance" was not a bug, and the truth is more useful than a bug.**
