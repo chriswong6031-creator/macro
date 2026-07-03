@@ -44,10 +44,15 @@ import warnings
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-warnings.filterwarnings("ignore")
 import logging  # noqa: E402
 
-logging.disable(logging.CRITICAL)
+if __name__ == "__main__":
+    # CLI-only silencers.  logging.disable() is PROCESS-GLOBAL state: at module level it
+    # leaks out of any import of this file and mutes every logger for the rest of the
+    # process (order-dependent pytest flakes; bitten twice — see walk_forward.py and
+    # tests/test_no_module_level_logging_disable.py).
+    warnings.filterwarnings("ignore")
+    logging.disable(logging.CRITICAL)
 
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402

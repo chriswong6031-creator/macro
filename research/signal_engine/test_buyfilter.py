@@ -9,7 +9,13 @@ WITHOUT killing too many trades — and does it hold on names I never looked at?
 from __future__ import annotations
 import glob, pathlib, warnings, logging
 import numpy as np, pandas as pd
-warnings.filterwarnings("ignore"); logging.disable(logging.CRITICAL)
+if __name__ == "__main__":
+    # CLI-only silencers.  logging.disable() is PROCESS-GLOBAL state: at module level it
+    # leaks out of any import of this file and mutes every logger for the rest of the
+    # process (order-dependent pytest flakes; bitten twice — see walk_forward.py and
+    # tests/test_no_module_level_logging_disable.py).
+    warnings.filterwarnings("ignore")
+    logging.disable(logging.CRITICAL)
 
 from confluence import compute_signals
 from diagnose_tencent_baba import swing_points, divergence_at

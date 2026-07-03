@@ -441,7 +441,8 @@ class TestPortStamps:
         keep-FIRST still enforced."""
         monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
 
-        legacy_cols = [c for c in bl._SCHEMA if c not in bl._PORT_STAMPS]
+        legacy_cols = [c for c in bl._SCHEMA
+                       if c not in (*bl._PORT_STAMPS, *bl._GATE_STAMPS)]
         legacy = pd.DataFrame([{
             "date": "2026-07-09", "market": "HK", "ticker": "0001.HK",
             "board_pos": 1, "group": "entry_open", "edge_z": 1.0,
@@ -509,3 +510,29 @@ class TestHelpers:
         assert p_hk.name == "hk_board.parquet"
         assert p_ca.name == "ca_board.parquet"
         assert p_hk.parent.name == "board_ledger"
+
+
+# ---------------------------------------------------------------------------
+# 7. H-PLC risk-gate stamp column (placement_flag, nullable bool — W1c)
+# ---------------------------------------------------------------------------
+class TestPlacementFlagStamp:
+    def test_placement_flag_round_trips_and_defaults_na(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        calls = [
+            {"ticker": "6651.HK", "group": "watch", "close_asof": 10.0,
+             "placement_flag": True},
+            {"ticker": "0700.HK", "group": "entry_open", "close_asof": 380.0,
+             "placement_flag": False},
+            {"ticker": "0005.HK", "group": "setting_up", "close_asof": 62.0},
+            # degraded-store render stamps None explicitly ('not stamped')
+            {"ticker": "0388.HK", "group": "setting_up", "close_asof": 300.0,
+             "placement_flag": None},
+        ]
+        assert bl.append_board(calls, "HK", asof="2026-07-10") == 4
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        assert str(df["placement_flag"].dtype) == "boolean"
+        by = df.set_index("ticker")["placement_flag"]
+        assert by["6651.HK"] == True        # noqa: E712 — pd.BooleanDtype scalar
+        assert by["0700.HK"] == False       # noqa: E712
+        assert pd.isna(by["0005.HK"]) and pd.isna(by["0388.HK"])

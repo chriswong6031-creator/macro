@@ -154,6 +154,47 @@ body{margin:0;padding-top:24px}
 .mh-exp-what{font-size:.75rem;color:var(--muted,#8899aa);margin-top:3px}
 .mh-exp-cb{font-family:monospace;font-size:.75rem}
 
+/* ── Sync gauge (W5.1 STOP-fallback) ─────────────────────────────────────── */
+.sg-wrap{margin-bottom:48px}
+.sg-stop-banner{background:color-mix(in srgb,var(--down,#ef4444) 7%,var(--surface,#0f1629));
+  border:1px solid color-mix(in srgb,var(--down,#ef4444) 22%,transparent);
+  border-radius:10px;padding:14px 18px;margin-bottom:20px;
+  font-size:.85rem;line-height:1.6;color:var(--text,#e2e8f0)}
+.sg-stop-banner strong{color:var(--down,#ef4444)}
+.sg-honest-note{background:color-mix(in srgb,var(--blue,#3b82f6) 6%,var(--surface,#0f1629));
+  border:1px solid color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
+  border-radius:8px;padding:12px 16px;margin-bottom:20px;
+  font-size:.8rem;line-height:1.55;color:var(--muted,#8899aa)}
+.sg-honest-note strong{color:var(--blue,#3b82f6)}
+.sg-families{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+.sg-family{padding:16px;border-radius:10px;
+  border:1px solid var(--border,rgba(255,255,255,.08));
+  background:var(--card,rgba(255,255,255,.03))}
+.sg-fam-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+.sg-fam-name{font-size:.88rem;font-weight:700;color:var(--text,#e2e8f0)}
+.sg-fam-date{font-size:.72rem;color:var(--muted,#8899aa);font-family:monospace}
+.sg-sync-val{font-size:1.5rem;font-weight:800;margin:0 0 4px}
+.sg-sync-bar{height:6px;border-radius:3px;
+  background:color-mix(in srgb,var(--text) 10%,transparent);margin-bottom:10px;overflow:hidden}
+.sg-sync-fill{height:100%;border-radius:3px;
+  background:var(--blue,#3b82f6);transition:width .3s}
+.sg-frac-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.sg-frac-chip{font-size:.7rem;padding:2px 7px;border-radius:4px;
+  background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--muted,#8899aa)}
+.sg-frac-chip strong{color:var(--text,#e2e8f0)}
+.sg-hist-stats{margin-top:10px;font-size:.75rem;color:var(--muted,#8899aa);
+  display:flex;gap:16px;flex-wrap:wrap}
+.sg-sparkline{margin-top:12px;width:100%;height:52px}
+.sg-gate-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:16px}
+.sg-gate-cell{padding:10px 12px;border-radius:6px;
+  background:color-mix(in srgb,var(--text) 3%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06))}
+.sg-gate-lbl{font-size:.68rem;color:var(--muted,#8899aa);margin-bottom:3px}
+.sg-gate-val{font-size:.88rem;font-weight:700;color:var(--text,#e2e8f0)}
+@media(max-width:600px){
+  .sg-families{grid-template-columns:1fr}
+}
+
 /* ── Provenance footer ───────────────────────────────────────────────────── */
 .mh-provenance{margin-top:48px;padding:20px;border-radius:10px;
   border:1px solid var(--border,rgba(255,255,255,.07));
@@ -602,6 +643,123 @@ body{margin:0;padding-top:24px}
   </section>
   {% endif %}
 
+  {# ── SYNC GAUGE — W5.1 STOP-fallback (T7) ────────────────────────────── #}
+  {% if sync_gauge and sync_gauge.get('available') %}
+  <section class="mh-section sg-wrap" id="sg-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Cycle Sync Gauge (W5.1)</span><span class="l-zh">周期同步指标（W5.1）</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Cross-sectional phase dispersion · STOP-fallback from lead-lag NO-GO</span><span class="l-zh">截面阶段离散度 · 引领-滞后NO-GO的替代产出</span></span>
+    </div>
+
+    <div class="sg-stop-banner">
+      <strong><span class="l-en">STOP decision (W5.1 LL-B NO-GO)</span><span class="l-zh">停止决定（W5.1 LL-B NO-GO）</span>: </strong>
+      <span class="l-en">The lead-lag interaction layer was <em>not</em> built. Stage A found 136 FDR-surviving pairs in-sample, but Stage B (OOS 2018–2026) showed near-zero pooled Brier improvement
+      (+0.029%, bar ≥2%); CI₉₀ = [−0.26%, +0.29%] spans zero; only 3 of 9 year-blocks positive (bar ≥6). All three LL-B sub-criteria fail.</span>
+      <span class="l-zh">引领-滞后交互层<em>未</em>构建。A阶段在样本内发现136个FDR存活对，但B阶段（样本外2018–2026）显示汇总Brier改进接近零
+      (+0.029%，门槛≥2%）；CI₉₀=[−0.26%,+0.29%]含零；仅3/9年份块为正（门槛≥6）。LL-B三项子标准全部失败。</span>
+    </div>
+
+    <div class="sg-honest-note">
+      <strong><span class="l-en">What this gauge is (and is not)</span><span class="l-zh">此指标是什么（和不是什么）</span></strong><br>
+      <span class="l-en">
+        <strong>Is:</strong> a measured dispersion statistic — sync = 1 − circ_var(2π·pos/100), the mean resultant length of phase angles. High sync ≈ all instruments in the same phase; low sync ≈ phases dispersed. Computed monthly, retroactively verified, presented as a conditioning state.<br>
+        <strong>Is not:</strong> a predicted convergence. markets.html previously showed fake convergence bands drawn by assumption. This gauge replaces that with a measured time series — honest about what is descriptive and what is unknown.
+      </span>
+      <span class="l-zh">
+        <strong>是：</strong>一个已测量的离散度统计——sync = 1 − circ_var(2π·pos/100)，即相位角的平均合成长度。高sync≈所有标的处于同一阶段；低sync≈阶段分散。按月计算，回溯验证，作为条件化状态呈现。<br>
+        <strong>不是：</strong>对收敛的预测。markets.html之前展示的收敛带是凭假设画出的。此指标以已测量的时间序列取而代之——诚实区分描述性内容与未知内容。
+      </span>
+    </div>
+
+    <div class="sg-families" id="sg-families">
+      {% for fam in sync_gauge.get('families', []) %}
+      <div class="sg-family">
+        <div class="sg-fam-hd">
+          <span class="sg-fam-name"><span class="l-en">{{ fam.label_en }}</span><span class="l-zh">{{ fam.label_zh }}</span></span>
+          <span class="sg-fam-date">{{ fam.latest_date }}</span>
+        </div>
+        <div class="sg-sync-val" style="color:{% if fam.latest_sync >= 0.7 %}var(--up,#22c55e){% elif fam.latest_sync >= 0.4 %}var(--warn,#f59e0b){% else %}var(--down,#ef4444){% endif %}">
+          {{ "%.3f"|format(fam.latest_sync) }}
+        </div>
+        <div class="sg-sync-bar">
+          <div class="sg-sync-fill" style="width:{{ (fam.latest_sync * 100)|int }}%"></div>
+        </div>
+        {% if fam.latest_frac %}
+        <div class="sg-frac-row">
+          {% for phase in ['trough','advance','peak','decline'] %}
+          {% if fam.latest_frac.get(phase, 0) > 0 %}
+          <span class="sg-frac-chip"><strong>{{ phase[0]|upper }}{{ phase[1:] }}</strong> {{ "%.0f"|format(fam.latest_frac.get(phase, 0) * 100) }}%</span>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="sg-hist-stats">
+          {% if fam.sync_mean is not none %}
+          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> {{ "%.3f"|format(fam.sync_mean) }}</span>
+          {% endif %}
+          {% if fam.sync_p10 is not none %}
+          <span>P10 {{ "%.3f"|format(fam.sync_p10) }}</span>
+          {% endif %}
+          {% if fam.sync_p90 is not none %}
+          <span>P90 {{ "%.3f"|format(fam.sync_p90) }}</span>
+          {% endif %}
+          <span><span class="l-en">n</span><span class="l-zh">n</span>={{ fam.n_history }}</span>
+        </div>
+        <svg class="sg-sparkline" data-fam="{{ fam.key }}" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
+          <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="{{ fam.key }}"/>
+        </svg>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# Gate provenance #}
+    {% set gs = sync_gauge.get('gate_summary', {}) %}
+    {% if gs %}
+    <div class="mh-sh" style="margin-top:16px">
+      <h2 style="font-size:.9rem"><span class="l-en">W5.1 Gate Record</span><span class="l-zh">W5.1门控记录</span></h2>
+    </div>
+    <div class="sg-gate-row">
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl"><span class="l-en">Verdict</span><span class="l-zh">裁定</span></div>
+        <div class="sg-gate-val" style="color:var(--down,#ef4444)">{{ gs.get('verdict', '—') }}</div>
+      </div>
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl">LL-A</div>
+        <div class="sg-gate-val" style="color:{% if gs.get('LL_A_pass') %}var(--up,#22c55e){% else %}var(--down,#ef4444){% endif %}">
+          {% if gs.get('LL_A_pass') %}PASS{% else %}FAIL{% endif %}
+        </div>
+      </div>
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl">LL-B</div>
+        <div class="sg-gate-val" style="color:{% if gs.get('LL_B_pass') %}var(--up,#22c55e){% else %}var(--down,#ef4444){% endif %}">
+          {% if gs.get('LL_B_pass') %}PASS{% else %}FAIL{% endif %}
+        </div>
+      </div>
+      {% if gs.get('rel_brier_improvement') is not none %}
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl"><span class="l-en">Rel Brier improvement</span><span class="l-zh">相对Brier改进</span></div>
+        <div class="sg-gate-val" style="color:var(--down,#ef4444)">{{ "+%.3f%%"|format(gs.rel_brier_improvement * 100) }}</div>
+      </div>
+      {% endif %}
+      {% if gs.get('n_year_blocks_positive') is not none %}
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl"><span class="l-en">Year-blocks positive</span><span class="l-zh">正向年份块</span></div>
+        <div class="sg-gate-val" style="color:var(--down,#ef4444)">{{ gs.n_year_blocks_positive }} / {{ gs.get('n_year_blocks', 9) }}</div>
+      </div>
+      {% endif %}
+      {% if gs.get('ci90') %}
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl">CI₉₀ ΔBrier</div>
+        <div class="sg-gate-val" style="color:var(--down,#ef4444);font-size:.78rem">
+          [{{ "+%.3f%%"|format(gs.ci90[0]*100) }}, {{ "+%.3f%%"|format(gs.ci90[1]*100) }}]
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
   {# ── PROVENANCE FOOTER ────────────────────────────────────────────────── #}
   <div class="mh-provenance">
     <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
@@ -677,6 +835,33 @@ body{margin:0;padding-top:24px}
     var sw = document.body.scrollWidth, vw = window.innerWidth;
     if(sw > vw + 4) console.warn('measurement.html: horizontal overflow at ' + vw + 'px (scrollWidth=' + sw + ')');
   }catch(e){}
+
+  // Sync gauge sparklines — drawn from window.MEASUREMENT.sync_gauge (ruling A11: no fetch)
+  (function(){
+    if(typeof window.MEASUREMENT === 'undefined') return;
+    var sg = (window.MEASUREMENT || {}).sync_gauge;
+    if(!sg || !sg.families) return;
+    var famMap = {};
+    sg.families.forEach(function(f){ famMap[f.key] = f; });
+    document.querySelectorAll('.sg-sparkline').forEach(function(svg){
+      var key = svg.getAttribute('data-fam');
+      var fam = famMap[key];
+      if(!fam || !fam.history || fam.history.length < 2) return;
+      var hist = fam.history;
+      var vals = hist.map(function(r){ return r.s; });
+      var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+      if(mx === mn){ mx = mn + 0.01; }
+      var W = 280, H = 52, pad = 2;
+      var pts = vals.map(function(v, i){
+        var x = pad + (i / (vals.length - 1)) * (W - 2 * pad);
+        var y = H - pad - ((v - mn) / (mx - mn)) * (H - 2 * pad);
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      });
+      var path = svg.querySelector('.sg-spark-line');
+      if(path) path.setAttribute('d', 'M' + pts.join('L'));
+    });
+    console.log('measurement.html: sync gauge sparklines drawn for ' + sg.families.length + ' families');
+  })();
 })();
 </script>
 </body>

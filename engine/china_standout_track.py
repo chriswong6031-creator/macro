@@ -182,6 +182,18 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             # W1-B stage: lifecycle shelf (ENTRY / RAN_LATE / None) for board rows (rules 1-2).
             # Schema-union safe: old parquet rows missing this col read as NaN via pd.concat.
             "stage":        r.get("stage"),
+            # W2-B narrative columns: per-name theme heat + A/B tier (display/ledger only).
+            # Schema-union safe: old parquet rows missing these cols read as NaN via pd.concat.
+            # narr_theme: basket display name (EN) of the strongest qualifying theme.
+            # narr_level: "HOT" | "WARMING" | None
+            # narr_rel20: basket 20d return relative to CSI300 (pp)
+            # narr_breadth: fraction of basket members above their 20d MA (0..1)
+            # ab_tier: "A" | "B" | None (None for RAN_LATE rows per spec)
+            "narr_theme":   (r.get("narrative") or {}).get("theme"),
+            "narr_level":   (r.get("narrative") or {}).get("level"),
+            "narr_rel20":   (r.get("narrative") or {}).get("rel20"),
+            "narr_breadth": (r.get("narrative") or {}).get("breadth"),
+            "ab_tier":      r.get("ab_tier"),
         })
     if not out:
         return 0
@@ -451,6 +463,13 @@ def append_ripening(rows: list[dict], asof: str | None = None,
             "imminence": r.get("imminence"),
             "w2_stoch": r.get("w2_stoch"),
             "setup_live": True,
+            # W2-B narrative columns (schema-union safe; old rows missing these cols = NaN).
+            # Mirrors the board ledger schema so W6 can stratify RIPENING by narrative heat.
+            "narr_theme":   (r.get("narrative") or {}).get("theme"),
+            "narr_level":   (r.get("narrative") or {}).get("level"),
+            "narr_rel20":   (r.get("narrative") or {}).get("rel20"),
+            "narr_breadth": (r.get("narrative") or {}).get("breadth"),
+            "ab_tier":      r.get("ab_tier"),
         })
     if not out:
         return 0

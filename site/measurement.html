@@ -34,58 +34,6 @@ body{margin:0;padding-top:24px}
 .mh-sh h2{font-size:1.15rem;font-weight:700;margin:0;color:var(--text,#e2e8f0)}
 .mh-sh .mh-sh-sub{font-size:.78rem;color:var(--muted,#8899aa)}
 
-/* ── Conditional cells section (W4.4) ───────────────────────────────────── */
-.cc-collapsible{border:1px solid var(--border,rgba(255,255,255,.1));border-radius:10px;
-  overflow:hidden;margin-bottom:24px}
-.cc-trigger{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;
-  background:color-mix(in srgb,var(--surface,#0f1629) 80%,var(--blue,#3b82f6) 20%);
-  user-select:none}
-.cc-trigger:hover{background:color-mix(in srgb,var(--surface,#0f1629) 70%,var(--blue,#3b82f6) 30%)}
-.cc-trigger-title{font-size:.95rem;font-weight:700;color:var(--text,#e2e8f0)}
-.cc-trigger-badge{font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:20px;
-  background:color-mix(in srgb,var(--warn,#f59e0b) 15%,transparent);
-  color:var(--warn,#f59e0b);border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 35%,transparent)}
-.cc-trigger-caret{margin-left:auto;font-size:.8rem;color:var(--muted,#8899aa);
-  transition:transform .2s}
-.cc-trigger[aria-expanded="true"] .cc-trigger-caret{transform:rotate(180deg)}
-.cc-body{display:none;padding:20px}
-.cc-body.open{display:block}
-.cc-caveat{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,transparent);
-  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
-  border-radius:8px;padding:12px 16px;margin-bottom:20px;
-  font-size:.82rem;line-height:1.6;color:var(--text,#e2e8f0)}
-.cc-caveat strong{color:var(--warn,#f59e0b)}
-.cc-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
-.cc-sel-btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border,rgba(255,255,255,.1));
-  background:transparent;color:var(--muted,#8899aa);font-size:.78rem;cursor:pointer;transition:all .15s}
-.cc-sel-btn.on{background:var(--blue,#3b82f6);border-color:var(--blue,#3b82f6);color:#fff;font-weight:600}
-.cc-heat-wrap{overflow-x:auto}
-.cc-heat-table{border-collapse:collapse;width:100%;font-size:.78rem;min-width:520px}
-.cc-heat-table th{padding:7px 10px;text-align:left;font-weight:600;
-  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.1));
-  white-space:nowrap}
-.cc-heat-table td{padding:6px 10px;border-bottom:1px solid var(--border,rgba(255,255,255,.06));
-  vertical-align:middle;white-space:nowrap}
-.cc-heat-table tr:last-child td{border-bottom:none}
-.cc-phase-hd td{font-weight:700;background:color-mix(in srgb,var(--surface,#0f1629) 95%,var(--blue,#3b82f6) 5%);
-  color:var(--text,#e2e8f0);padding:8px 10px}
-.cc-cell-val{font-weight:700}
-.cc-cell-pos{color:var(--green,#22c55e)}
-.cc-cell-neg{color:var(--red,#ef4444)}
-.cc-cell-neutral{color:var(--muted,#8899aa)}
-.cc-cell-collapsed{opacity:.45;font-style:italic}
-.cc-ci{font-size:.72rem;color:var(--muted,#8899aa)}
-.cc-ci-win{color:var(--text,#e2e8f0);font-weight:600}
-.cc-revopt{display:inline-block;font-size:.68rem;padding:1px 5px;border-radius:3px;
-  background:color-mix(in srgb,var(--warn,#f59e0b) 15%,transparent);
-  color:var(--warn,#f59e0b);margin-left:4px;vertical-align:middle}
-.cc-n{font-size:.72rem;color:var(--muted,#8899aa)}
-.cc-winner-mark{color:var(--green,#22c55e);font-size:.75rem;margin-left:3px}
-.cc-foot{margin-top:16px;font-size:.75rem;color:var(--muted,#8899aa);line-height:1.6;
-  border-top:1px solid var(--border,rgba(255,255,255,.1));padding-top:12px}
-.cc-pooled-row td{background:color-mix(in srgb,var(--blue,#3b82f6) 5%,transparent);
-  font-size:.72rem;color:var(--muted,#8899aa)}
-
 /* ── Engine tabs ─────────────────────────────────────────────────────────── */
 .mh-tabs{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}
 .mh-tab{padding:7px 14px;border-radius:7px;border:1px solid var(--border,rgba(255,255,255,.1));
@@ -201,6 +149,47 @@ body{margin:0;padding-top:24px}
 .mh-exp-what{font-size:.75rem;color:var(--muted,#8899aa);margin-top:3px}
 .mh-exp-cb{font-family:monospace;font-size:.75rem}
 
+/* ── Sync gauge (W5.1 STOP-fallback) ─────────────────────────────────────── */
+.sg-wrap{margin-bottom:48px}
+.sg-stop-banner{background:color-mix(in srgb,var(--down,#ef4444) 7%,var(--surface,#0f1629));
+  border:1px solid color-mix(in srgb,var(--down,#ef4444) 22%,transparent);
+  border-radius:10px;padding:14px 18px;margin-bottom:20px;
+  font-size:.85rem;line-height:1.6;color:var(--text,#e2e8f0)}
+.sg-stop-banner strong{color:var(--down,#ef4444)}
+.sg-honest-note{background:color-mix(in srgb,var(--blue,#3b82f6) 6%,var(--surface,#0f1629));
+  border:1px solid color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
+  border-radius:8px;padding:12px 16px;margin-bottom:20px;
+  font-size:.8rem;line-height:1.55;color:var(--muted,#8899aa)}
+.sg-honest-note strong{color:var(--blue,#3b82f6)}
+.sg-families{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+.sg-family{padding:16px;border-radius:10px;
+  border:1px solid var(--border,rgba(255,255,255,.08));
+  background:var(--card,rgba(255,255,255,.03))}
+.sg-fam-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+.sg-fam-name{font-size:.88rem;font-weight:700;color:var(--text,#e2e8f0)}
+.sg-fam-date{font-size:.72rem;color:var(--muted,#8899aa);font-family:monospace}
+.sg-sync-val{font-size:1.5rem;font-weight:800;margin:0 0 4px}
+.sg-sync-bar{height:6px;border-radius:3px;
+  background:color-mix(in srgb,var(--text) 10%,transparent);margin-bottom:10px;overflow:hidden}
+.sg-sync-fill{height:100%;border-radius:3px;
+  background:var(--blue,#3b82f6);transition:width .3s}
+.sg-frac-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.sg-frac-chip{font-size:.7rem;padding:2px 7px;border-radius:4px;
+  background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--muted,#8899aa)}
+.sg-frac-chip strong{color:var(--text,#e2e8f0)}
+.sg-hist-stats{margin-top:10px;font-size:.75rem;color:var(--muted,#8899aa);
+  display:flex;gap:16px;flex-wrap:wrap}
+.sg-sparkline{margin-top:12px;width:100%;height:52px}
+.sg-gate-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:16px}
+.sg-gate-cell{padding:10px 12px;border-radius:6px;
+  background:color-mix(in srgb,var(--text) 3%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06))}
+.sg-gate-lbl{font-size:.68rem;color:var(--muted,#8899aa);margin-bottom:3px}
+.sg-gate-val{font-size:.88rem;font-weight:700;color:var(--text,#e2e8f0)}
+@media(max-width:600px){
+  .sg-families{grid-template-columns:1fr}
+}
+
 /* ── Provenance footer ───────────────────────────────────────────────────── */
 .mh-provenance{margin-top:48px;padding:20px;border-radius:10px;
   border:1px solid var(--border,rgba(255,255,255,.07));
@@ -312,6 +301,7 @@ body{margin:0;padding-top:24px}
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
       </div>
@@ -1803,10 +1793,22 @@ body{margin:0;padding-top:24px}
           <td style="font-size:.78rem">Some ordered pair's lagged Δphase-position leads</td>
           <td>
             
-            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            <span class="verdict verdict-pass"><span class="l-en">PASS</span><span class="l-zh">通过</span></span>
             
           </td>
-          <td class="gate-result">—</td>
+          <td class="gate-result">PASS — 136 of 8,253 pair×lag tests survive BH-FDR; top-20 frozen</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">LL-B</td>
+          <td><span class="mh-gate-fam">leadlag</span></td>
+          <td style="font-size:.78rem">Knowing the leader's confirmed turn improves the follower's OOS hazard</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">NO-GO — rel improvement +0.029% (bar ≥2%), CI₉₀ [−0.26%,+0.29%] includes 0, 3/9 year-blocks positive (bar ≥6/9). STOP: interaction layer not built. Sync gauge shipped.</td>
         </tr>
         
       </tbody>
@@ -1924,8 +1926,134 @@ body{margin:0;padding-top:24px}
             <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
             
           </td>
-          <td class="mh-exp-cb">on_W2.4_grader_launch</td>
+          <td class="mh-exp-cb">2027-05-01</td>
           <td style="font-size:.76rem;color:var(--muted,#8899aa)">W2.4 graders consume this via load_graded_log(); re-run on basis_version bump.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">US Sector Cycles — Turn Precision/Recall (W2.4)</div>
+            <div class="mh-exp-what">Turn Precision/Recall vs independent realized-extrema truth (ruling A6)</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-01-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">US Sector Cycles — Cone Coverage (W2.4)</div>
+            <div class="mh-exp-what">Cone coverage vs 0.80 nominal via grading_stats.cone_coverage</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-01-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">US Sector Cycles — Reliability / Brier (W2.4)</div>
+            <div class="mh-exp-what">Directional Brier skill (signal/stance) vs per-instrument base rate over 63d</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-01-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">Country Cycles — Turn Precision/Recall (W2.4)</div>
+            <div class="mh-exp-what">Turn Precision/Recall vs independent realized-extrema truth (ruling A6)</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-01-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">Country Cycles — Cone Coverage (W2.4)</div>
+            <div class="mh-exp-what">Cone coverage vs 0.80 nominal via grading_stats.cone_coverage</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-01-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">Country Cycles — Reliability / Brier (W2.4)</div>
+            <div class="mh-exp-what">Directional Brier skill (signal/stance) vs per-instrument base rate over 63d</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-01-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">China Sector Cycles — Turn Precision/Recall (W2.4)</div>
+            <div class="mh-exp-what">Turn Precision/Recall vs independent realized-extrema truth (ruling A6)</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-01-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">China Sector Cycles — Cone Coverage (W2.4)</div>
+            <div class="mh-exp-what">Cone coverage vs 0.80 nominal via grading_stats.cone_coverage</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-01-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">China Sector Cycles — Reliability / Brier (W2.4)</div>
+            <div class="mh-exp-what">Directional Brier skill (signal/stance) vs per-instrument base rate over 63d</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-01-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
         </tr>
         
       </tbody>
@@ -1934,135 +2062,244 @@ body{margin:0;padding-top:24px}
   </section>
   
 
-  <!-- W4.4: Conditional Forward-Return Cells — research surface only (ruling A7) -->
-  <section class="mh-section" id="cc-section">
+  
+  
+  <section class="mh-section sg-wrap" id="sg-section">
     <div class="mh-sh">
-      <h2>
-        <span class="l-en">Conditional Forward-Return Cells</span>
-        <span class="l-zh">条件前向收益单元格</span>
-      </h2>
-      <span class="mh-sh-sub">
-        <span class="l-en">Research surface only — ruling A7 · W4.4</span>
-        <span class="l-zh">仅供研究展示 — 规则 A7 · W4.4</span>
+      <h2><span class="l-en">Cycle Sync Gauge (W5.1)</span><span class="l-zh">周期同步指标（W5.1）</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Cross-sectional phase dispersion · STOP-fallback from lead-lag NO-GO</span><span class="l-zh">截面阶段离散度 · 引领-滞后NO-GO的替代产出</span></span>
+    </div>
+
+    <div class="sg-stop-banner">
+      <strong><span class="l-en">STOP decision (W5.1 LL-B NO-GO)</span><span class="l-zh">停止决定（W5.1 LL-B NO-GO）</span>: </strong>
+      <span class="l-en">The lead-lag interaction layer was <em>not</em> built. Stage A found 136 FDR-surviving pairs in-sample, but Stage B (OOS 2018–2026) showed near-zero pooled Brier improvement
+      (+0.029%, bar ≥2%); CI₉₀ = [−0.26%, +0.29%] spans zero; only 3 of 9 year-blocks positive (bar ≥6). All three LL-B sub-criteria fail.</span>
+      <span class="l-zh">引领-滞后交互层<em>未</em>构建。A阶段在样本内发现136个FDR存活对，但B阶段（样本外2018–2026）显示汇总Brier改进接近零
+      (+0.029%，门槛≥2%）；CI₉₀=[−0.26%,+0.29%]含零；仅3/9年份块为正（门槛≥6）。LL-B三项子标准全部失败。</span>
+    </div>
+
+    <div class="sg-honest-note">
+      <strong><span class="l-en">What this gauge is (and is not)</span><span class="l-zh">此指标是什么（和不是什么）</span></strong><br>
+      <span class="l-en">
+        <strong>Is:</strong> a measured dispersion statistic — sync = 1 − circ_var(2π·pos/100), the mean resultant length of phase angles. High sync ≈ all instruments in the same phase; low sync ≈ phases dispersed. Computed monthly, retroactively verified, presented as a conditioning state.<br>
+        <strong>Is not:</strong> a predicted convergence. markets.html previously showed fake convergence bands drawn by assumption. This gauge replaces that with a measured time series — honest about what is descriptive and what is unknown.
+      </span>
+      <span class="l-zh">
+        <strong>是：</strong>一个已测量的离散度统计——sync = 1 − circ_var(2π·pos/100)，即相位角的平均合成长度。高sync≈所有标的处于同一阶段；低sync≈阶段分散。按月计算，回溯验证，作为条件化状态呈现。<br>
+        <strong>不是：</strong>对收敛的预测。markets.html之前展示的收敛带是凭假设画出的。此指标以已测量的时间序列取而代之——诚实区分描述性内容与未知内容。
       </span>
     </div>
 
-    <div class="cc-collapsible" id="cc-wrap">
-      <div class="cc-trigger" role="button" tabindex="0" aria-expanded="false"
-           aria-controls="cc-body" id="cc-trig">
-        <span class="cc-trigger-title">
-          <span class="l-en">Phase × Quad conditional cells — James-Stein shrinkage, month-block bootstrap</span>
-          <span class="l-zh">阶段 × 象限条件单元格 — 詹姆斯-斯坦因收缩，月度分块自助法</span>
-        </span>
-        <span class="cc-trigger-badge">
-          <span class="l-en">RESEARCH ONLY</span><span class="l-zh">仅供研究</span>
-        </span>
-        <span class="cc-trigger-caret">▾</span>
+    <div class="sg-families" id="sg-families">
+      
+      <div class="sg-family">
+        <div class="sg-fam-hd">
+          <span class="sg-fam-name"><span class="l-en">US Sector</span><span class="l-zh">美国板块</span></span>
+          <span class="sg-fam-date">2026-06-30</span>
+        </div>
+        <div class="sg-sync-val" style="color:var(--down,#ef4444)">
+          0.315
+        </div>
+        <div class="sg-sync-bar">
+          <div class="sg-sync-fill" style="width:31%"></div>
+        </div>
+        
+        <div class="sg-frac-row">
+          
+          
+          <span class="sg-frac-chip"><strong>Trough</strong> 9%</span>
+          
+          
+          
+          <span class="sg-frac-chip"><strong>Advance</strong> 46%</span>
+          
+          
+          
+          <span class="sg-frac-chip"><strong>Peak</strong> 27%</span>
+          
+          
+          
+          <span class="sg-frac-chip"><strong>Decline</strong> 18%</span>
+          
+          
+        </div>
+        
+        <div class="sg-hist-stats">
+          
+          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.532</span>
+          
+          
+          <span>P10 0.250</span>
+          
+          
+          <span>P90 0.818</span>
+          
+          <span><span class="l-en">n</span><span class="l-zh">n</span>=322</span>
+        </div>
+        <svg class="sg-sparkline" data-fam="us_sector" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
+          <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="us_sector"/>
+        </svg>
       </div>
-      <div class="cc-body" id="cc-body" role="region" aria-labelledby="cc-trig">
+      
+      <div class="sg-family">
+        <div class="sg-fam-hd">
+          <span class="sg-fam-name"><span class="l-en">Country ETF</span><span class="l-zh">国家ETF</span></span>
+          <span class="sg-fam-date">2026-06-30</span>
+        </div>
+        <div class="sg-sync-val" style="color:var(--down,#ef4444)">
+          0.223
+        </div>
+        <div class="sg-sync-bar">
+          <div class="sg-sync-fill" style="width:22%"></div>
+        </div>
+        
+        <div class="sg-frac-row">
+          
+          
+          <span class="sg-frac-chip"><strong>Trough</strong> 21%</span>
+          
+          
+          
+          <span class="sg-frac-chip"><strong>Advance</strong> 21%</span>
+          
+          
+          
+          <span class="sg-frac-chip"><strong>Peak</strong> 42%</span>
+          
+          
+          
+          <span class="sg-frac-chip"><strong>Decline</strong> 17%</span>
+          
+          
+        </div>
+        
+        <div class="sg-hist-stats">
+          
+          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.599</span>
+          
+          
+          <span>P10 0.314</span>
+          
+          
+          <span>P90 0.845</span>
+          
+          <span><span class="l-en">n</span><span class="l-zh">n</span>=354</span>
+        </div>
+        <svg class="sg-sparkline" data-fam="country" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
+          <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="country"/>
+        </svg>
+      </div>
+      
+      <div class="sg-family">
+        <div class="sg-fam-hd">
+          <span class="sg-fam-name"><span class="l-en">China Sector (Shenwan)</span><span class="l-zh">中国申万板块</span></span>
+          <span class="sg-fam-date">2026-06-30</span>
+        </div>
+        <div class="sg-sync-val" style="color:var(--warn,#f59e0b)">
+          0.524
+        </div>
+        <div class="sg-sync-bar">
+          <div class="sg-sync-fill" style="width:52%"></div>
+        </div>
+        
+        <div class="sg-frac-row">
+          
+          
+          <span class="sg-frac-chip"><strong>Trough</strong> 58%</span>
+          
+          
+          
+          <span class="sg-frac-chip"><strong>Advance</strong> 23%</span>
+          
+          
+          
+          <span class="sg-frac-chip"><strong>Peak</strong> 6%</span>
+          
+          
+          
+          <span class="sg-frac-chip"><strong>Decline</strong> 13%</span>
+          
+          
+        </div>
+        
+        <div class="sg-hist-stats">
+          
+          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.701</span>
+          
+          
+          <span>P10 0.436</span>
+          
+          
+          <span>P90 0.979</span>
+          
+          <span><span class="l-en">n</span><span class="l-zh">n</span>=300</span>
+        </div>
+        <svg class="sg-sparkline" data-fam="cn_sector" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
+          <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="cn_sector"/>
+        </svg>
+      </div>
+      
+    </div>
 
-        <div class="cc-caveat">
-          <strong>
-            <span class="l-en">⚠ Revision-optimistic (P-D5-1)</span>
-            <span class="l-zh">⚠ 修订乐观偏差（P-D5-1）</span>
-          </strong>
-          <span class="l-en">:
-            All quad-conditioned cells use macro-regime labels derived from <em>revised</em> data series
-            (no ALFRED point-in-time vintages). The apparent edge may shrink or reverse under real-time
-            quad labeling. These estimates are conditioning context, not forecasts.
-            No cell drives any trading card, conviction tilt, or badge (ruling A7 — DL-2 gate not yet run).
-          </span>
-          <span class="l-zh">：
-            所有象限条件单元格均使用来自<em>修订后</em>宏观数据系列的象限标签（无ALFRED历史时点版本）。
-            在实时象限标注下，表观优势可能缩小或反转。这些估计值是条件背景，而非预测。
-            任何单元格均不驱动任何交易卡、信念倾斜或徽章（规则A7——DL-2决策关卡尚未运行）。
-          </span>
+    
+    
+    
+    <div class="mh-sh" style="margin-top:16px">
+      <h2 style="font-size:.9rem"><span class="l-en">W5.1 Gate Record</span><span class="l-zh">W5.1门控记录</span></h2>
+    </div>
+    <div class="sg-gate-row">
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl"><span class="l-en">Verdict</span><span class="l-zh">裁定</span></div>
+        <div class="sg-gate-val" style="color:var(--down,#ef4444)">NO-GO</div>
+      </div>
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl">LL-A</div>
+        <div class="sg-gate-val" style="color:var(--up,#22c55e)">
+          PASS
         </div>
-
-        <!-- Selector: family and outcome/horizon -->
-        <div class="cc-selector" id="cc-fam-sel" role="group">
-          <button class="cc-sel-btn on" data-fam="us_sector">
-            <span class="l-en">US Sectors</span><span class="l-zh">美国板块</span>
-          </button>
-          <button class="cc-sel-btn" data-fam="country">
-            <span class="l-en">Country ETFs</span><span class="l-zh">国家ETF</span>
-          </button>
-          <button class="cc-sel-btn" data-fam="cn_sector">
-            <span class="l-en">China Sectors</span><span class="l-zh">中国板块</span>
-          </button>
+      </div>
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl">LL-B</div>
+        <div class="sg-gate-val" style="color:var(--down,#ef4444)">
+          FAIL
         </div>
-        <div class="cc-selector" id="cc-oh-sel" role="group">
-          <button class="cc-sel-btn on" data-oh="forward_return|63d">
-            <span class="l-en">Fwd return 63d</span><span class="l-zh">前向收益 63日</span>
-          </button>
-          <button class="cc-sel-btn" data-oh="forward_return|126d">
-            <span class="l-en">Fwd return 126d</span><span class="l-zh">前向收益 126日</span>
-          </button>
-          <button class="cc-sel-btn" data-oh="vol_residualized_maxdd|63d">
-            <span class="l-en">Vol-resid. max-DD 63d</span><span class="l-zh">波动残差最大回撤 63日</span>
-          </button>
-          <button class="cc-sel-btn" data-oh="vol_residualized_maxdd|126d">
-            <span class="l-en">Vol-resid. max-DD 126d</span><span class="l-zh">波动残差最大回撤 126日</span>
-          </button>
+      </div>
+      
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl"><span class="l-en">Rel Brier improvement</span><span class="l-zh">相对Brier改进</span></div>
+        <div class="sg-gate-val" style="color:var(--down,#ef4444)">+0.029%</div>
+      </div>
+      
+      
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl"><span class="l-en">Year-blocks positive</span><span class="l-zh">正向年份块</span></div>
+        <div class="sg-gate-val" style="color:var(--down,#ef4444)">3 / 9</div>
+      </div>
+      
+      
+      <div class="sg-gate-cell">
+        <div class="sg-gate-lbl">CI₉₀ ΔBrier</div>
+        <div class="sg-gate-val" style="color:var(--down,#ef4444);font-size:.78rem">
+          [+-0.261%, +0.288%]
         </div>
-
-        <!-- Heat table — rendered by JS -->
-        <div class="cc-heat-wrap">
-          <table class="cc-heat-table" id="cc-heat-table">
-            <thead>
-              <tr>
-                <th><span class="l-en">Phase</span><span class="l-zh">阶段</span></th>
-                <th>Q1 <span class="l-en" style="font-weight:400;font-size:.7rem">(Goldilocks)</span><span class="l-zh" style="font-weight:400;font-size:.7rem">（金发）</span></th>
-                <th>Q2 <span class="l-en" style="font-weight:400;font-size:.7rem">(Reflation)</span><span class="l-zh" style="font-weight:400;font-size:.7rem">（再通胀）</span></th>
-                <th>Q3 <span class="l-en" style="font-weight:400;font-size:.7rem">(Stagflation)</span><span class="l-zh" style="font-weight:400;font-size:.7rem">（滞涨）</span></th>
-                <th>Q4 <span class="l-en" style="font-weight:400;font-size:.7rem">(Deflation)</span><span class="l-zh" style="font-weight:400;font-size:.7rem">（通缩）</span></th>
-                <th><span class="l-en">Phase pooled</span><span class="l-zh">阶段汇总</span></th>
-              </tr>
-            </thead>
-            <tbody id="cc-tbody">
-              <tr><td colspan="6" style="text-align:center;color:var(--muted,#8899aa);padding:20px">
-                <span class="l-en">Loading…</span><span class="l-zh">加载中…</span>
-              </td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="cc-foot">
-          <span class="l-en">
-            <strong>How to read:</strong>
-            Each cell shows the James-Stein shrunk mean gap vs the phase-pooled baseline
-            (in log-return or vol-residualized drawdown units), with the 95% bootstrap CI on the gap.
-            <span class="cc-winner-mark">★</span> = CI excludes 0 (both bounds same sign).
-            <span class="cc-revopt">rev-opt</span> = revision-optimistic (all quad cells).
-            Collapsed cells (n_months &lt; 12) show the pooled estimate only.
-            All inference via whole-month date-block bootstrap (ruling A2) — no Wilson CI on n_eff.
-            Shrink weight: 0 = full shrinkage to pooled; 1 = raw estimate retained.
-          </span>
-          <span class="l-zh">
-            <strong>读法：</strong>
-            每格显示相对于阶段汇总基准的詹姆斯-斯坦因收缩均值差（对数收益率或波动残差最大回撤单位），
-            及差值的95%自助法置信区间。
-            <span class="cc-winner-mark">★</span> = 置信区间不含零（两个界同号）。
-            <span class="cc-revopt">修订乐观</span> = 修订乐观偏差（全部象限单元格）。
-            折叠单元格（n_months &lt; 12）仅显示汇总估计。
-            所有推断均通过整月日期分块自助法（规则A2）——不对n_eff使用Wilson置信区间。
-            收缩权重：0=完全收缩至汇总；1=保留原始估计。
-          </span>
-        </div>
-      </div><!-- .cc-body -->
-    </div><!-- .cc-collapsible -->
+      </div>
+      
+    </div>
+    
   </section>
+  
 
+  
   <div class="mh-provenance">
     <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
     <div class="mh-prov-grid">
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Build date</span><span class="l-zh">构建日期</span></dt>
-        <dd>2026-07-02</dd>
+        <dd>2026-07-03</dd>
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-07-02T22:23:21.808100Z</dd>
+        <dd>2026-07-03T17:23:12.639773Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">
@@ -2094,7 +2331,6 @@ body{margin:0;padding-top:24px}
 </div>
 
 <script src="measurementdata/measurement_data.js"></script>
-<script src="condcelldata/cond_cells_data.js"></script>
 <script>
 (function(){
   "use strict";
@@ -2138,170 +2374,34 @@ body{margin:0;padding-top:24px}
     var sw = document.body.scrollWidth, vw = window.innerWidth;
     if(sw > vw + 4) console.warn('measurement.html: horizontal overflow at ' + vw + 'px (scrollWidth=' + sw + ')');
   }catch(e){}
-})();
 
-// ── W4.4 Conditional Cells — research surface (ruling A7) ─────────────────
-(function(){
-  'use strict';
-  var PHASES = ['Trough','Recovery','Expansion','Peak','Downturn'];
-  var QUADS  = ['Q1','Q2','Q3','Q4'];
-  var curFam = 'us_sector';
-  var curOH  = 'forward_return|63d';
-
-  // Collapsible toggle
-  var trig = document.getElementById('cc-trig');
-  var body = document.getElementById('cc-body');
-  if(trig && body){
-    function toggleCC(){
-      var open = body.classList.toggle('open');
-      trig.setAttribute('aria-expanded', open ? 'true' : 'false');
-    }
-    trig.addEventListener('click', toggleCC);
-    trig.addEventListener('keydown', function(e){
-      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggleCC(); }
-    });
-  }
-
-  // Selector wiring
-  function wireSelGroup(groupId, onChange){
-    var btns = document.querySelectorAll('#'+groupId+' .cc-sel-btn');
-    btns.forEach(function(btn){
-      btn.addEventListener('click', function(){
-        btns.forEach(function(b){ b.classList.remove('on'); });
-        btn.classList.add('on');
-        onChange(btn.dataset.fam || btn.dataset.oh);
-        renderTable();
+  // Sync gauge sparklines — drawn from window.MEASUREMENT.sync_gauge (ruling A11: no fetch)
+  (function(){
+    if(typeof window.MEASUREMENT === 'undefined') return;
+    var sg = (window.MEASUREMENT || {}).sync_gauge;
+    if(!sg || !sg.families) return;
+    var famMap = {};
+    sg.families.forEach(function(f){ famMap[f.key] = f; });
+    document.querySelectorAll('.sg-sparkline').forEach(function(svg){
+      var key = svg.getAttribute('data-fam');
+      var fam = famMap[key];
+      if(!fam || !fam.history || fam.history.length < 2) return;
+      var hist = fam.history;
+      var vals = hist.map(function(r){ return r.s; });
+      var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+      if(mx === mn){ mx = mn + 0.01; }
+      var W = 280, H = 52, pad = 2;
+      var pts = vals.map(function(v, i){
+        var x = pad + (i / (vals.length - 1)) * (W - 2 * pad);
+        var y = H - pad - ((v - mn) / (mx - mn)) * (H - 2 * pad);
+        return x.toFixed(1) + ',' + y.toFixed(1);
       });
+      var path = svg.querySelector('.sg-spark-line');
+      if(path) path.setAttribute('d', 'M' + pts.join('L'));
     });
-  }
-  wireSelGroup('cc-fam-sel', function(v){ curFam = v; });
-  wireSelGroup('cc-oh-sel',  function(v){ curOH  = v; });
-
-  // Format a cell value as percentage string
-  function fmt(v, decimals){
-    if(v === null || v === undefined || isNaN(v)) return '—';
-    return (v >= 0 ? '+' : '') + (v * 100).toFixed(decimals !== undefined ? decimals : 1) + '%';
-  }
-
-  function ciStr(ci){
-    if(!ci) return '';
-    return '[' + fmt(ci[0], 1) + ', ' + fmt(ci[1], 1) + ']';
-  }
-
-  function isWinner(c){
-    var ci = c.boot_ci;
-    if(!ci) return false;
-    return (ci[0] > 0 && ci[1] > 0) || (ci[0] < 0 && ci[1] < 0);
-  }
-
-  function renderTable(){
-    var tbody = document.getElementById('cc-tbody');
-    if(!tbody) return;
-
-    if(typeof window.COND_CELLS === 'undefined'){
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted,#8899aa);padding:20px">' +
-        '<span class="l-en">Data not loaded</span><span class="l-zh">数据未加载</span></td></tr>';
-      return;
-    }
-
-    var parts = curOH.split('|');
-    var outcome = parts[0], h = parts[1];
-    var allCells = (window.COND_CELLS.cells[outcome] || {})[h] || [];
-
-    // Build lookup: phase → quad → cell
-    var lookup = {};
-    allCells.forEach(function(c){
-      if(c.family !== curFam) return;
-      if(!lookup[c.phase]) lookup[c.phase] = {};
-      lookup[c.phase][c.quad] = c;
-    });
-
-    var html = '';
-    PHASES.forEach(function(phase){
-      var pCells = lookup[phase] || {};
-      var pooled = pCells['pooled'];
-      html += '<tr class="cc-phase-hd"><td colspan="6">' +
-        '<span class="l-en">' + phase + '</span>' +
-        '<span class="l-zh">' + phaseZh(phase) + '</span>';
-      if(pooled){
-        html += ' <span class="cc-n">n=' + pooled.n_months + 'mo · ' +
-          '<span class="l-en">pooled</span><span class="l-zh">汇总</span>: ' +
-          fmt(pooled.shrunk_mean) + '</span>';
-      }
-      html += '</td></tr>';
-
-      html += '<tr>';
-      // Phase col (label only)
-      html += '<td style="color:var(--muted,#8899aa);font-size:.72rem">' +
-        '<span class="l-en">vs pooled</span><span class="l-zh">vs汇总</span></td>';
-
-      QUADS.forEach(function(q){
-        var c = pCells[q];
-        if(!c){
-          html += '<td class="cc-cell-neutral">—</td>';
-          return;
-        }
-        var win = isWinner(c);
-        var collapsed = c.collapsed;
-        var gapVal = (c.shrunk_mean !== null && pooled && pooled.shrunk_mean !== null)
-          ? c.shrunk_mean - pooled.shrunk_mean : null;
-        var valClass = (gapVal === null) ? 'cc-cell-neutral'
-          : (gapVal > 0.002) ? 'cc-cell-pos'
-          : (gapVal < -0.002) ? 'cc-cell-neg' : 'cc-cell-neutral';
-
-        html += '<td class="' + (collapsed ? 'cc-cell-collapsed' : '') + '">';
-        if(collapsed){
-          html += '<span class="cc-cell-neutral cc-n">' +
-            '<span class="l-en">collapsed (n&lt;12mo)</span>' +
-            '<span class="l-zh">折叠（n&lt;12月）</span></span>';
-        } else {
-          html += '<span class="cc-cell-val ' + valClass + '">' +
-            (gapVal !== null ? fmt(gapVal) : '—') +
-            '</span>';
-          if(win) html += '<span class="cc-winner-mark" title="CI excludes 0">★</span>';
-          html += '<span class="cc-revopt">rev-opt</span>';
-          if(c.boot_ci){
-            html += '<br><span class="cc-ci ' + (win ? 'cc-ci-win' : '') + '">' +
-              ciStr(c.boot_ci) + '</span>';
-          }
-          html += '<br><span class="cc-n">n=' + c.n_months + 'mo w=' + c.shrink_weight.toFixed(2) + '</span>';
-        }
-        html += '</td>';
-      });
-
-      // Pooled col
-      if(pooled){
-        html += '<td class="cc-pooled-row">' +
-          '<span>' + fmt(pooled.shrunk_mean) + '</span>' +
-          '<br><span class="cc-n">n=' + pooled.n_months + 'mo</span>';
-        html += '</td>';
-      } else {
-        html += '<td>—</td>';
-      }
-      html += '</tr>';
-    });
-
-    tbody.innerHTML = html;
-  }
-
-  function phaseZh(p){
-    var m = {'Trough':'谷底','Recovery':'复苏','Expansion':'扩张','Peak':'顶峰','Downturn':'下行'};
-    return m[p] || p;
-  }
-
-  // Initial render on load
-  if(typeof window.COND_CELLS !== 'undefined'){
-    renderTable();
-    console.log('W4.4 conditional cells loaded: epoch=' + window.COND_CELLS.epoch);
-  } else {
-    // Script may be deferred; render on DOMContentLoaded fallback
-    document.addEventListener('DOMContentLoaded', function(){
-      if(typeof window.COND_CELLS !== 'undefined') renderTable();
-      else console.error('measurement.html: window.COND_CELLS not loaded — check condcelldata/cond_cells_data.js');
-    });
-  }
+    console.log('measurement.html: sync gauge sparklines drawn for ' + sg.families.length + ' families');
+  })();
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

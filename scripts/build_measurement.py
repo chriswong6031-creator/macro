@@ -179,8 +179,18 @@ GATE_LEDGER_FALLBACK: list[dict] = [
      "judged_by": "walk-forward sizing backtest artifact (not yet built)", "status": "accruing", "result": None},
     {"id": "LL-A", "family": "leadlag", "claim": "Some ordered pair's lagged Δphase-position leads",
      "criterion": "≥1 pair×lag survives BH-FDR q=0.10 on ≤2017 TRAIN cross-correlation",
-     "judged_by": "data/cycle_hazard/leadlag_phase0.json (not yet built)", "status": "accruing", "result": None},
+     "judged_by": "data/cycle_hazard/leadlag_phase0.json",
+     "status": "pass", "result": "PASS — 136 of 8,253 pair×lag tests survive BH-FDR; top-20 frozen"},
+    {"id": "LL-B", "family": "leadlag", "claim": "Knowing the leader's confirmed turn improves the follower's OOS hazard",
+     "criterion": "Pooled OOS 3m Brier improvement ≥2% AND positive in ≥2/3 year-blocks AND CI₉₀ excludes 0",
+     "judged_by": "data/cycle_hazard/leadlag_phase0.json → stageB.pooled",
+     "status": "fail",
+     "result": "NO-GO — rel improvement +0.029% (bar ≥2%), CI₉₀ [−0.26%,+0.29%] includes 0, 3/9 year-blocks positive (bar ≥6/9). STOP: interaction layer not built. Sync gauge shipped."},
 ]
+
+# ── sync gauge paths ───────────────────────────────────────────────────────────
+SYNC_GAUGE_PATH = DATA / "leadlag" / "sync_gauge.json"
+LEADLAG_PHASE0_PATH = DATA / "cycle_hazard" / "leadlag_phase0.json"
 
 
 def load_json(path: Path) -> dict | list:
@@ -422,6 +432,82 @@ def build_collinearity() -> dict:
     }
 
 
+def build_sync_gauge() -> dict:
+    """Load the W5.1 STOP-fallback sync gauge artifact.
+
+    Ruling A11: data is script-tag embedded (window.X), zero fetch, zero runtime compute.
+    The sync gauge is the honest replacement for markets.html fake convergence bands —
+    a measured dispersion statistic (1 − circ_var(2π·pos/100)), not a predicted convergence.
+    """
+    if not SYNC_GAUGE_PATH.exists():
+        log.warning("Sync gauge not found: %s", SYNC_GAUGE_PATH)
+        return {}
+
+    raw = load_json(SYNC_GAUGE_PATH)
+    families = raw.get("families", {})
+
+    # Build per-family summary stats (latest + recent range)
+    family_summaries: list[dict] = []
+    FAMILY_LABELS = {
+        "us_sector": {"en": "US Sector", "zh": "美国板块"},
+        "country": {"en": "Country ETF", "zh": "国家ETF"},
+        "cn_sector": {"en": "China Sector (Shenwan)", "zh": "中国申万板块"},
+    }
+    for fam_key, series in families.items():
+        if not series:
+            continue
+        latest = series[-1]
+        syncs = [row["sync"] for row in series if row.get("n", 0) >= 5]
+        fam_summary = {
+            "key": fam_key,
+            "label_en": FAMILY_LABELS.get(fam_key, {}).get("en", fam_key),
+            "label_zh": FAMILY_LABELS.get(fam_key, {}).get("zh", fam_key),
+            "latest_date": latest.get("date", ""),
+            "latest_sync": round(latest.get("sync", 0), 4),
+            "latest_n": latest.get("n", 0),
+            "latest_frac": latest.get("frac", {}),
+            "n_history": len(series),
+            "sync_mean": round(sum(syncs) / len(syncs), 4) if syncs else None,
+            "sync_p10": round(sorted(syncs)[int(len(syncs) * 0.10)], 4) if len(syncs) >= 10 else None,
+            "sync_p90": round(sorted(syncs)[int(len(syncs) * 0.90)], 4) if len(syncs) >= 10 else None,
+            # full history for sparkline (date + sync only; frac embedded)
+            "history": [
+                {"d": row["date"], "s": row["sync"], "n": row.get("n", 0),
+                 "f": row.get("frac", {})}
+                for row in series
+            ],
+        }
+        family_summaries.append(fam_summary)
+
+    # Load gate verdict from leadlag_phase0.json for provenance
+    gate_summary: dict = {}
+    if LEADLAG_PHASE0_PATH.exists():
+        try:
+            ll = load_json(LEADLAG_PHASE0_PATH)
+            gate = ll.get("gate", {})
+            sb = ll.get("stageB", {}).get("pooled", {})
+            gate_summary = {
+                "verdict": gate.get("verdict", ""),
+                "LL_A_pass": gate.get("LL_A_pass", False),
+                "LL_B_pass": gate.get("LL_B_pass", False),
+                "rel_brier_improvement": sb.get("rel_brier_improvement"),
+                "n_year_blocks_positive": sb.get("n_year_blocks_positive"),
+                "n_year_blocks": sb.get("n_year_blocks"),
+                "ci90": sb.get("ci90"),
+                "generated_at": ll.get("generated_at", ""),
+            }
+        except Exception as e:
+            log.warning("Failed to load leadlag_phase0.json for sync gauge provenance: %s", e)
+
+    return {
+        "available": bool(family_summaries),
+        "generated_at": raw.get("generated_at", ""),
+        "definition": raw.get("definition", ""),
+        "families": family_summaries,
+        "gate_summary": gate_summary,
+    }
+
+
 def build_provenance(engines: list[dict]) -> dict:
     """Compile provenance footer from all engine scorecards."""
     epochs = {}
@@ -509,6 +595,13 @@ def run() -> None:
     # 6. Collinearity
     collinearity = build_collinearity()
 
+    # 6b. Sync gauge (W5.1 STOP-fallback)
+    sync_gauge = build_sync_gauge()
+    if sync_gauge.get("available"):
+        log.info("Sync gauge: %d families loaded", len(sync_gauge.get("families", [])))
+    else:
+        log.warning("Sync gauge not available — check data/leadlag/sync_gauge.json")
+
     # 7. Provenance
     provenance = build_provenance(engines)
 
@@ -523,6 +616,7 @@ def run() -> None:
         "collinearity": collinearity,
         "provenance": provenance,
         # Headline consolidated verdict (§6.6)
+        "sync_gauge": sync_gauge,
         "consolidated_verdict": {
             "en": (
                 "Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance. "
@@ -561,6 +655,7 @@ def run() -> None:
         accruing_experiments=accruing,
         cone_recalibration=cone_recal,
         collinearity=collinearity,
+        sync_gauge=sync_gauge,
         provenance=provenance,
         build_date=date.today().isoformat(),
         generated_at=payload["generated_at"],
