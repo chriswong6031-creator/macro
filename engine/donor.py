@@ -53,6 +53,16 @@ DONOR_20D         = 20     # donor 20d EW return threshold (< 0 while top-ranked
 # minimum per-member bars to include in composite (mirrors stocks panel in wave5b)
 _MEMBER_MIN_BARS = 1500
 
+# The 11 canonical GICS sectors — the exact universe the wave-6 G6a study ranked
+# (constituents.parquet 'sector' strings). Pseudo-buckets from the live builder's
+# wider map ('ETF / macro', theme tags, None) must never compete for donor.
+GICS_SECTORS = frozenset({
+    "Information Technology", "Health Care", "Financials",
+    "Consumer Discretionary", "Consumer Staples", "Industrials",
+    "Energy", "Materials", "Utilities", "Real Estate",
+    "Communication Services",
+})
+
 
 def _rsi(close: pd.Series, n: int = 14) -> pd.Series:
     """Pure-Python RSI — used when tuning_harness is unavailable.
@@ -115,7 +125,13 @@ def _build_sector_composites(closes: dict[str, pd.Series],
     by_sector: dict[str, list] = _dd(list)
     for t, daily in closes.items():
         sec = sector_of.get(t)
-        if sec is None:
+        # GICS ALLOWLIST — the wave-6 study validated on the 11 GICS sectors from
+        # constituents.parquet. The live builder's sector map ALSO carries pseudo-
+        # buckets ('ETF / macro' for extra_names/leveraged/crypto ETFs, etc.) whose
+        # EW "return" is not a sector rotation signal — on 2026-07-02 the unfiltered
+        # ranking crowned 'ETF / macro' at +144% 126d, a production bug caught by
+        # post-ship verification. Only canonical GICS sectors may compete for donor.
+        if sec is None or sec not in GICS_SECTORS:
             continue
         daily = daily.dropna()
         if len(daily) < min_bars:

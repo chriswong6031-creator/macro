@@ -29,6 +29,13 @@ from engine import donor  # noqa: E402
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+# Fixtures must use REAL GICS sector names — engine/donor.py enforces a GICS
+# allowlist (production hotfix: pseudo-buckets like "ETF / macro" were out-ranking
+# real sectors). S0..S4 map onto five canonical sectors.
+_GICS5 = ["Information Technology", "Health Care", "Financials",
+          "Industrials", "Energy"]
+
+
 def _make_bdate(n: int, start: str = "2010-01-04") -> pd.DatetimeIndex:
     return pd.bdate_range(start=start, periods=n)
 
@@ -43,7 +50,7 @@ def _build_5_sector_closes(n_bars: int = 2200,
     Returns (closes, sector_of).
     """
     if sector_end_vals is None:
-        sector_end_vals = {f"S{i}": 100.0 + (5 - i) * 20.0 for i in range(5)}
+        sector_end_vals = {_GICS5[i]: 100.0 + (5 - i) * 20.0 for i in range(5)}
     closes: dict   = {}
     sector_of: dict = {}
     idx = _make_bdate(n_bars, start=start)
@@ -114,11 +121,11 @@ class TestCrackingViaWeeklyBearCross:
         n   = len(idx)
 
         sector_end_vals = {
-            "S0": 200.0,  # leader
-            "S1": 130.0,
-            "S2": 120.0,
-            "S3": 115.0,
-            "S4": 110.0,
+            _GICS5[0]: 200.0,  # leader
+            _GICS5[1]: 130.0,
+            _GICS5[2]: 120.0,
+            _GICS5[3]: 115.0,
+            _GICS5[4]: 110.0,
         }
         closes: dict = {}
         sector_of: dict = {}
@@ -213,7 +220,7 @@ class TestMinMembersGuard:
         for i in range(6):
             t = f"SINGLE_{i}"
             closes[t]    = pd.Series(np.linspace(100, 200, 2000), index=idx, dtype=float)
-            sector_of[t] = "OnlySector"
+            sector_of[t] = "Utilities"
         result = donor.donor_state(closes, sector_of)
         assert result is None, (
             f"Expected None with only one eligible sector, got {result}")
@@ -262,7 +269,7 @@ class TestCompletedWeekDiscipline:
         closes: dict = {}
         sector_of: dict = {}
         sector_end_vals = {
-            "S0": 200.0, "S1": 150.0, "S2": 130.0, "S3": 120.0, "S4": 110.0,
+            _GICS5[0]: 200.0, _GICS5[1]: 150.0, _GICS5[2]: 130.0, _GICS5[3]: 120.0, _GICS5[4]: 110.0,
         }
         for si, (sec, ev) in enumerate(sector_end_vals.items()):
             for j in range(5):
@@ -330,7 +337,7 @@ class TestCompletedWeekDiscipline:
 
         # Scale each sector by a different factor so S0 is the clear 126d leader
         sector_scales = {
-            "S0": 1.00, "S1": 0.90, "S2": 0.80, "S3": 0.70, "S4": 0.60,
+            _GICS5[0]: 1.00, _GICS5[1]: 0.90, _GICS5[2]: 0.80, _GICS5[3]: 0.70, _GICS5[4]: 0.60,
         }
         closes: dict   = {}
         sector_of: dict = {}
@@ -386,11 +393,11 @@ class TestRet20NegLeg:
         n        = len(idx)
 
         sector_end_vals = {
-            "S0": 250.0,
-            "S1": 140.0,
-            "S2": 125.0,
-            "S3": 118.0,
-            "S4": 112.0,
+            _GICS5[0]: 250.0,
+            _GICS5[1]: 140.0,
+            _GICS5[2]: 125.0,
+            _GICS5[3]: 118.0,
+            _GICS5[4]: 112.0,
         }
         closes: dict = {}
         sector_of: dict = {}
@@ -492,3 +499,37 @@ class TestFallbackFidelity:
         x1 = ((m1 < s1) & (m1.shift(1) >= s1.shift(1))).fillna(False)
         x2 = donor._xdn(m2, s2).fillna(False)
         assert int((x1 != x2).sum()) == 0
+
+
+class TestGicsAllowlist:
+    """Pseudo-sector buckets from the live builder's wider map ('ETF / macro',
+    theme tags) must NEVER compete for donor — on 2026-07-02 the unfiltered
+    ranking crowned 'ETF / macro' at +144% 126d (production bug, hotfixed).
+    The donor universe is exactly the 11 GICS sectors the G6a study ranked."""
+
+    def test_pseudo_bucket_excluded_even_when_top_ranked(self):
+        import numpy as np
+        import pandas as pd
+        from engine import donor
+
+        idx = pd.bdate_range("2018-01-02", periods=1600)
+        rng = np.random.default_rng(3)
+        closes, sector_of = {}, {}
+        # two real GICS sectors, 5 flat-ish members each
+        for si, sec in enumerate(("Information Technology", "Health Care")):
+            for k in range(5):
+                t = f"{sec[:2]}{k}"
+                drift = 0.0004 if si == 0 else 0.0002   # IT outperforms HC
+                closes[t] = pd.Series(100 * np.exp(np.cumsum(rng.normal(drift, 0.01, len(idx)))), index=idx)
+                sector_of[t] = sec
+        # a pseudo-bucket with 5 members MASSIVELY outperforming (levered-ETF-like)
+        for k in range(5):
+            t = f"ETF{k}"
+            closes[t] = pd.Series(100 * np.exp(np.cumsum(rng.normal(0.004, 0.02, len(idx)))), index=idx)
+            sector_of[t] = "ETF / macro"
+
+        res = donor.donor_state(closes, sector_of)
+        assert res is not None
+        assert res["donor_sector"] in donor.GICS_SECTORS
+        assert res["donor_sector"] != "ETF / macro"
+        assert res["n_sectors"] <= 11
