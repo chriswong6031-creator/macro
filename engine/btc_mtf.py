@@ -102,15 +102,20 @@ def confluence_verdict(a: dict, composite_state: str | None = None,
 
     # per-timeframe MACD-trend read (honest: shows whether each timeframe's TREND
     # has turned — a bounce can be up while every timeframe's MACD is still down).
-    per_tf = {tf: ("up" if _tf_sign(mtf.get(tf)) > 0 else
-                   ("down" if _tf_sign(mtf.get(tf)) < 0 else "flat"))
-              for tf in ("D", "3D", "W", "2W", "ME")}
+    # ME falls back to the calibrated engine's "M" when the month-end resample is
+    # absent (baskets feed cycles.analyze output directly, which has no ME/2W —
+    # without the fallback the verdict is BLIND to the monthly trend there).
+    _me = mtf.get("ME") or mtf.get("M")
+    _tfd = {"D": mtf.get("D"), "3D": mtf.get("3D"), "W": mtf.get("W"),
+            "2W": mtf.get("2W"), "ME": _me}
+    per_tf = {tf: ("up" if _tf_sign(d) > 0 else ("down" if _tf_sign(d) < 0 else "flat"))
+              for tf, d in _tfd.items()}
     mid_sign = int(np.sign(_tf_sign(mtf.get("W")) + _tf_sign(mtf.get("2W"))))
 
     reg = ladder.get("regime")
     state = ladder.get("state")
     # LONG = the structural governor (cycle regime + monthly trend + cycle health)
-    long_score = (2 if reg == "bull" else (-2 if reg == "bear" else 0)) + _tf_sign(mtf.get("ME"))
+    long_score = (2 if reg == "bull" else (-2 if reg == "bear" else 0)) + _tf_sign(_me)
     if cyc.get("translation") == "left":
         long_score -= 1
     if cyc.get("failed_cycle"):
@@ -118,17 +123,25 @@ def confluence_verdict(a: dict, composite_state: str | None = None,
     long_sign = int(np.sign(long_score))
 
     # SHORT = the calibrated ladder tape (authoritative — it detects the bounce
-    # the raw MACD signs miss, via swing-low + StochRSI pop).
+    # the raw MACD signs miss, via swing-low + StochRSI pop). The WATCH states are
+    # daily-driven *warnings*, not confirmed direction — when the D/3D MACD tape
+    # decisively disagrees they defer to it (fix: a basket 8 days into a fresh
+    # monthly cross-up printed TOP WATCH → short=-1 → "downtrend" with every
+    # timeframe pointing up). DECLINE / ROLLING OVER stay authoritative.
     _bull_states = {"FRESH BUY", "TURN SIGNALED", "RALLY ON"}
-    _bear_states = {"DECLINE", "ROLLING OVER", "TOP WATCH", "BOTTOM WATCH"}
+    _bear_states = {"DECLINE", "ROLLING OVER"}
+    _watch_states = {"TOP WATCH": -1, "BOTTOM WATCH": -1}
+    _tape = int(np.sign(_tf_sign(mtf.get("D")) + _tf_sign(mtf.get("3D"))))
     if state == "COUNTERTREND BOUNCE":
         short_sign = 1
     elif state in _bull_states:
         short_sign = 1
     elif state in _bear_states:
         short_sign = -1
+    elif state in _watch_states:
+        short_sign = _tape if _tape != 0 else _watch_states[state]
     else:
-        short_sign = int(np.sign(_tf_sign(mtf.get("D")) + _tf_sign(mtf.get("3D"))))
+        short_sign = _tape
 
     # the ladder's COUNTERTREND BOUNCE *is* the short-up/long-bear case — honour it
     if state == "COUNTERTREND BOUNCE":
@@ -142,6 +155,17 @@ def confluence_verdict(a: dict, composite_state: str | None = None,
     elif long_sign < 0 and short_sign < 0:
         key = "avoid"
     else:
+        key = "wait"
+    # HONESTY GUARD — the "confirmed across timeframes" prose must never contradict
+    # the per-timeframe reads on the same payload. When the ladder/cycle governor says
+    # avoid but every AVAILABLE timeframe's MACD reads up (or trend-follow vs all-down),
+    # the state is transitional, not confirmed — downgrade to WAIT.
+    _avail = [_tf_sign(d) for d in _tfd.values() if d]
+    _ups = sum(1 for s in _avail if s > 0)
+    _dns = sum(1 for s in _avail if s < 0)
+    if key == "avoid" and _dns == 0 and _ups >= 2:
+        key = "wait"
+    elif key == "trend" and _ups == 0 and _dns >= 2:
         key = "wait"
     head, sub, grade, head_zh, sub_zh, grade_zh = _VERDICTS[key]
 
