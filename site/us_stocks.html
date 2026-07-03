@@ -831,6 +831,14 @@
              background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
   .nb-dmnd.dmnd-rk { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line));
              background: color-mix(in srgb, var(--down) 11%, var(--panel)); }
+  /* G6a donor-sector context chip (display-only, US standouts header area) */
+  .nb-donor{display:flex;align-items:center;gap:7px;padding:5px 11px;margin:6px 0 4px;border-radius:8px;font-size:11px;border:1px solid var(--line);background:var(--panel2)}
+  .nb-donor.donor-cracking{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel2))}
+  .nb-donor.donor-intact{border-color:color-mix(in srgb,var(--up) 35%,var(--line));background:color-mix(in srgb,var(--up) 6%,var(--panel2))}
+  .nb-donor .donor-ic{font-size:12px;flex:none}
+  .nb-donor.donor-cracking .donor-ic{color:var(--warn)}
+  .nb-donor.donor-intact .donor-ic{color:var(--up)}
+  .nb-donor .donor-meta{font-size:9.5px;margin-left:auto}
   /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only, US standouts) */
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
   .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
@@ -1799,6 +1807,8 @@
         <b><span class="l-en">Mixed selection backdrop</span><span class="l-zh">选股环境中性</span></b>
         <span class="disp-meta"><span class="l-en">context</span><span class="l-zh">参考</span> · <span class="l-en">avg corr</span><span class="l-zh">平均相关</span> 0.17 · <span class="disp-shadow" title="shadow prior — not applied to sizing"><span class="l-en">suggested</span><span class="l-zh">建议倾向</span> ×1.0</span></span>
       </div>
+      
+      
       
       
       
