@@ -1,0 +1,12 @@
+{
+  "panel": "baskets",
+  "n_episodes": 143,
+  "n_confluence_fires": 76485,
+  "n_blocked_honest": 26093,
+  "n_blocked_eval": 24775,
+  "naive_below": 2568714,
+  "n_cshallow": 2381,
+  "n_clockout_admit": 18720,
+  "n_wa_fires": 81260,
+  "n_wb_fires": 24775
+}
