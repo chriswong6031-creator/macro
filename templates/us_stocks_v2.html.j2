@@ -21,7 +21,7 @@
     {# GLYPH 2 — ENTRY state (tier + freshness) #}
     <span class="glyph entry tone-{{ r.entry_glyph.tone }}">
       {{ r.entry_glyph.tier or '—' }}{% if r.entry_glyph.freshness %} · {{ r.entry_glyph.freshness }}{% endif %}</span>
-    {% if r.provisional %}<span class="glyph prov" title="Provisional — may repaint. Graded on the incomplete 2D/3D resample bucket; the W6 #22 replay measured 23.8% of US T3 fresh fires (41/172) vanishing within 4 sessions of the bucket completing (calibration/provisional_replay.json). · 暂定 — 可能重绘：基于未完成K线桶；实测美股23.8%（41/172）的T3新信号在桶完成后4个交易日内消失。">provisional</span>{% endif %}
+    {% if r.provisional %}<span class="glyph prov" title="Provisional — may repaint. Graded on the incomplete 2D/3D resample bucket; the W6 #22 replay measured 23.8% of US T3 fresh fires (41/172) vanishing within 4 sessions of the bucket completing (calibration/provisional_replay.json).">provisional</span>{% endif %}
   </div>
   <div class="v2-name">{{ r.name }}{% if r.sector %} · <span class="v2-sec">{{ r.sector }}</span>{% endif %}</div>
   <div class="v2-lead">

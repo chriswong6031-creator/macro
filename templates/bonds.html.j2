@@ -172,7 +172,7 @@ html[data-theme="dark"] .xa-bar{background:#222732}
         {{ t('Cycle', '周期') }} <b style="color:{{ vm.health.phase_color }}">{{ t(vm.health.phase_en, vm.health.phase_zh) }}</b>
         <span class="faint">·</span> {{ t('recession risk', '衰退风险') }} <b>{{ vm.health.recession_risk if vm.health.recession_risk is not none else '—' }}</b>/100
         <span class="faint">·</span> {{ t('drawdown risk', '回撤风险') }} <b>{{ vm.health.drawdown_risk if vm.health.drawdown_risk is not none else '—' }}</b>/100
-        {% if usd_link %}<span class="faint">·</span> {{ t('10y corr to USD', '10年债对美元相关') }} <b class="{{ 'down' if usd_link.corr<0 else 'up' }}" title="Contemporaneous 63d correlation of the 10y Treasury to the broad dollar (from the Forex Dollar Desk) — a stronger dollar usually coincides with higher yields. Context, not a forecast. · 10年期国债对广义美元的63日同步相关（来自外汇美元桌）— 美元走强通常伴随收益率上行。仅作背景，非预测。">{{ '%+.2f'|format(usd_link.corr) }}</b>{% if not usd_link.stable %} <span class="faint">{{ t('(unstable)', '（不稳定）') }}</span>{% endif %}{% endif %}
+        {% if usd_link %}<span class="faint">·</span> {{ t('10y corr to USD', '10年债对美元相关') }} <b class="{{ 'down' if usd_link.corr<0 else 'up' }}" data-tip-en="Contemporaneous 63d correlation of the 10y Treasury to the broad dollar (from the Forex Dollar Desk) — a stronger dollar usually coincides with higher yields. Context, not a forecast." data-tip-zh="10年期国债对广义美元的63日同步相关（来自外汇美元桌）— 美元走强通常伴随收益率上行。仅作背景，非预测。">{{ '%+.2f'|format(usd_link.corr) }}</b>{% if not usd_link.stable %} <span class="faint">{{ t('(unstable)', '（不稳定）') }}</span>{% endif %}{% endif %}
       </div>
       <p class="verdict-lead"><span class="l-en">{{ vm.health.verdict_en }}</span><span class="l-zh">{{ vm.health.verdict_zh }}</span></p>
       {% if vm.alarms %}{% for a in vm.alarms %}
@@ -407,7 +407,7 @@ html[data-theme="dark"] .xa-bar{background:#222732}
       {% for r in intl.countries %}
       {% set ss = SST.get(r.slope_state, (C.muted, r.slope_state or '—', r.slope_state or '—')) %}
       <tr>
-        <td class="cty"><span class="dot" style="background:{{ {'US':C.blue,'DE':C.amber,'JP':C.red,'GB':C.teal,'CA':C.indigo,'AU':C.gold,'CH':C.muted}.get(r.code, C.muted) }}"></span>{{ t(r.en, r.zh) }}{% if r.stale %}<span class="stale-tag" title="OECD monthly series — lags ~1 month · OECD月度序列 · 滞后约1个月">{{ t('lag','滞后') }}</span>{% elif r.cadence == 'monthly' %}<span class="faint" style="font-size:10px;margin-left:4px">{{ t('mo','月') }}</span>{% endif %}</td>
+        <td class="cty"><span class="dot" style="background:{{ {'US':C.blue,'DE':C.amber,'JP':C.red,'GB':C.teal,'CA':C.indigo,'AU':C.gold,'CH':C.muted}.get(r.code, C.muted) }}"></span>{{ t(r.en, r.zh) }}{% if r.stale %}<span class="stale-tag" data-tip-en="OECD monthly series — lags ~1 month" data-tip-zh="OECD月度序列 · 滞后约1个月">{{ t('lag','滞后') }}</span>{% elif r.cadence == 'monthly' %}<span class="faint" style="font-size:10px;margin-left:4px">{{ t('mo','月') }}</span>{% endif %}</td>
         <td><b>{{ '%.2f'|format(r.y10) }}%</b></td>
         <td>{{ ('%.2f'|format(r.real_10y) ~ '%') if r.real_10y is not none else '—' }}</td>
         <td>{{ ('%+.2f'|format(r.slope)) if r.slope is not none else '—' }}</td>

@@ -1500,3 +1500,76 @@
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load
   window.addEventListener('load', function () { themeCharts(); wrapTables(); });
 })();
+
+/* ---- i18n tooltip: [data-tip-en] / [data-tip-zh] ----------------------------------
+   The replacement for bilingual title="EN · 中文" attributes. The i18n rule is that
+   translated text NEVER goes in HTML attributes — the dual-span l-en/l-zh mechanism
+   cannot operate inside an attribute, so a native tooltip always shows both languages
+   mashed together. Instead, chips carry data-tip-en / data-tip-zh and this delegated
+   handler shows ONE body-appended popover with a dual-span body, so the existing
+   [data-lang] CSS picks the active language (and live-updates on toggle).
+   Hover/focus on desktop; tap-to-toggle on touch (mirrors the #1061 .nb-cau pattern).
+   Body-appended + position:fixed → immune to card overflow clipping on every page. */
+(function () {
+  var pop = null, cur = null;
+  function ensurePop() {
+    if (pop) return pop;
+    pop = document.createElement('div');
+    pop.className = 'i18n-tip-pop';
+    pop.setAttribute('role', 'tooltip');
+    document.body.appendChild(pop);
+    return pop;
+  }
+  function hide() {
+    if (pop) { pop.style.display = 'none'; }
+    cur = null;
+  }
+  function show(el) {
+    var en = el.getAttribute('data-tip-en') || '';
+    if (!en) return;
+    var zh = el.getAttribute('data-tip-zh') || en;
+    ensurePop();
+    pop.textContent = '';
+    var sEn = document.createElement('span'); sEn.className = 'l-en'; sEn.textContent = en;
+    var sZh = document.createElement('span'); sZh.className = 'l-zh'; sZh.textContent = zh;
+    pop.appendChild(sEn); pop.appendChild(sZh);
+    // measure hidden, then place: above the trigger by default, below near the top,
+    // clamped to the viewport horizontally
+    pop.style.visibility = 'hidden'; pop.style.display = 'block';
+    var r = el.getBoundingClientRect();
+    var w = pop.offsetWidth, h = pop.offsetHeight;
+    var left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+    var top = (r.top >= h + 12) ? (r.top - h - 6) : (r.bottom + 6);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.visibility = 'visible';
+    cur = el;
+  }
+  document.addEventListener('pointerover', function (e) {
+    if (!e.target || !e.target.closest) return;
+    var t = e.target.closest('[data-tip-en]');
+    if (t) { if (t !== cur) show(t); return; }
+    if (pop && pop.style.display === 'block' && pop.contains(e.target)) return; // keep while over the pop
+    if (cur) hide();
+  }, true);
+  document.addEventListener('focusin', function (e) {
+    var t = e.target && e.target.closest && e.target.closest('[data-tip-en]');
+    if (t) show(t);
+  }, true);
+  document.addEventListener('focusout', function () { if (cur) hide(); }, true);
+  // Touch: tap toggles the tip instead of following the parent card link (the chip is
+  // a tiny target; the rest of the card still navigates). Desktop clicks pass through.
+  document.addEventListener('click', function (e) {
+    if (!window.matchMedia || !window.matchMedia('(hover: none)').matches) return;
+    if (!e.target || !e.target.closest) return;
+    var t = e.target.closest('[data-tip-en]');
+    if (t) {
+      e.preventDefault(); e.stopPropagation();
+      if (cur === t) { hide(); } else { show(t); }
+    } else if (!(pop && pop.contains(e.target))) {
+      if (cur) hide();
+    }
+  }, true);
+  window.addEventListener('scroll', function () { if (cur) hide(); }, true);
+  window.addEventListener('resize', function () { if (cur) hide(); });
+})();

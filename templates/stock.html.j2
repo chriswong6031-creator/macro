@@ -1172,7 +1172,7 @@
       var hz = [];
       if (my && my.piotroski) {
         var f = my.piotroski, fcol = (f.score >= Math.ceil(f.of*0.7)) ? 'var(--up)' : (f.score <= Math.floor(f.of*0.34)) ? 'var(--down)' : 'var(--muted)';
-        hz.push('<span class="hchip" style="color:'+fcol+';background:color-mix(in srgb,'+fcol+' 14%,transparent)" title="'+lz('Piotroski F — fundamental-momentum signals passing','Piotroski F — 通过的基本面动能信号')+'">F '+f.score+'/'+f.of+'</span>');
+        hz.push('<span class="hchip" style="color:'+fcol+';background:color-mix(in srgb,'+fcol+' 14%,transparent)" data-tip-en="Piotroski F — fundamental-momentum signals passing" data-tip-zh="Piotroski F — 通过的基本面动能信号">F '+f.score+'/'+f.of+'</span>');
       }
       if (my && my.altman) {
         var z = my.altman, zcol = z.zone==='safe' ? 'var(--up)' : z.zone==='distress' ? 'var(--down)' : 'var(--warn)';
@@ -1664,7 +1664,7 @@
       var pct = (h.pct_portfolio == null) ? '—' : Number(h.pct_portfolio).toFixed(1) + '%';
       var chg = (h.shares_change_pct == null) ? (h.action === 'new' ? lz('new', '新') : '—')
         : (h.shares_change_pct >= 0 ? '+' : '') + Number(h.shares_change_pct).toFixed(0) + '%';
-      var grade = h.fund_grade ? ' <span class="sm-grade sm-g' + esc(h.fund_grade) + '" title="' + lz('backtest fund-quality grade', '回测基金质量评级') + '">' + esc(h.fund_grade) + '</span>' : '';
+      var grade = h.fund_grade ? ' <span class="sm-grade sm-g' + esc(h.fund_grade) + '" data-tip-en="backtest fund-quality grade" data-tip-zh="回测基金质量评级">' + esc(h.fund_grade) + '</span>' : '';
       var asof = h.period_end ? ' <span class="sm-asof">· ' + esc(h.period_end) + '</span>' : '';
       return '<tr><td><b>' + h.fund + '</b>' + grade + ' <span class="muted">' + (h.fund_name || '') + '</span></td>' +
         '<td' + col + '>' + dir + asof + '</td>' +

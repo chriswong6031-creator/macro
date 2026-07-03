@@ -11,6 +11,9 @@ on:
       - "scripts/check_inline_js.py"
       - "scripts/check_nav_gap.py"
       - "scripts/check_nav_mega.py"
+      # title-i18n guard: bilingual/CJK text must never sit in a title= attribute.
+      - "scripts/check_title_i18n.py"
+      - "templates/**"
       - ".github/workflows/ci.yml"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
@@ -119,6 +122,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: shared-nav pages must carry the Research mega-menu
         run: python3 scripts/check_nav_mega.py site
+
+  title-i18n:
+    # The i18n rule: translated text NEVER goes in HTML attributes — the dual-span
+    # l-en/l-zh mechanism cannot operate there, so a bilingual title= shows both
+    # languages mashed together. This scans template SOURCE for CJK, t() calls, or
+    # zh-variable interpolations inside title attributes (the fix is data-tip-en/
+    # data-tip-zh + the theme.js popover, an English-only title, or no title).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: no translated text in title attributes
+        run: python3 scripts/check_title_i18n.py templates
 
   signal-contract:
     # HARD pre-merge gate for the signal→chart §7 contract (research/signal_engine/SCHEMA.json,
