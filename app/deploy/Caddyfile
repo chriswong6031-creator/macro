@@ -45,6 +45,26 @@ mastermind-x.com, www.mastermind-x.com {
 		index index.html
 	}
 
+	# --- CDN cache safety (2026-07-03 white-page incident) ----------------------
+	# macro-update refreshes the served tree with `git reset --hard`, which rewrites
+	# changed files IN PLACE — so Caddy can briefly serve a 0-byte file mid-write.
+	# With NO Cache-Control the EdgeOne edge cached that empty 200 with no TTL bound
+	# and served a white page for ~an hour across us_stocks/macro/china/etc. A short,
+	# must-revalidate TTL caps any bad edge entry (HTML <=60s, other static <=300s)
+	# and forces the edge to revalidate against the (healthy) origin, so a transient
+	# bad render can never get STUCK in cache. Mirrors the greydeercapital.com block
+	# below. The zero-window structural fix (atomic swap) lives in update.sh.
+	@html {
+		path *.html /
+		not path /api/*
+	}
+	@static {
+		path /vendor/* *.js *.css *.json *.svg *.png *.jpg *.jpeg *.ico *.webp *.woff *.woff2
+		not path /api/*
+	}
+	header @html   Cache-Control "public, max-age=60, must-revalidate"
+	header @static Cache-Control "public, max-age=300, must-revalidate"
+
 	header {
 		# PUBLIC (was pre-launch noindex): the site is now open to search engines.
 		# The old `X-Robots-Tag "noindex, nofollow, noarchive"` header was removed
