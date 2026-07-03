@@ -39,7 +39,11 @@ HONESTY CONVENTIONS (read these — they bound every claim downstream)
   uncertainty. No strong claims. See the "caveats" block in the JSON.
 
 Survivorship: the broad cache is current-membership only. Delisted names are
-invisible, which inflates hit-rates for any reversal/laggard lane. Flagged in output.
+invisible, which inflates hit-rates for any reversal/laggard lane. Flagged in output
+AND quantified: the track JSON carries a `survivorship` block (n_skipped_no_price =
+distinct board tickers with no usable series) so the display strip can disclose the
+excluded names instead of silently showing a survivor-only win/loss mix — a name that
+left the board BECAUSE it collapsed and got delisted is exactly the name this counts.
 """
 from __future__ import annotations
 
@@ -494,10 +498,47 @@ def _slice_table(df: pd.DataFrame, by: str, col: str = "excess_spy") -> dict:
     return out
 
 
+def _survivorship_block(boards: list[dict], names: pd.DataFrame) -> dict:
+    """Quantify the silent survivorship hole across the FULL board history.
+
+    grade_boards() drops any row whose ticker has no usable series in the broad
+    closes cache (`not in names.columns` or all-NaN). The cache is current-membership
+    only, so a name that exited the board because it collapsed and got delisted is
+    invisible — the displayed win/loss mix tilts toward survivors. This block is
+    emitted into the track JSON so the strip can say "(N names excluded: no price /
+    delisted)" instead of implying full coverage. Counted from boards x names (not
+    df.attrs, which does not survive the parquet store round-trip) so the count
+    covers all history, matching what the track aggregates actually omit."""
+    cols = names.columns if isinstance(names, pd.DataFrame) else []
+    usable = {c for c in cols if names[c].notna().any()}
+    n_rows_total = n_rows_skipped = 0
+    skipped: set[str] = set()
+    for b in boards:
+        for feat in b.get("rows") or []:
+            tk = feat.get("ticker")
+            if not tk:
+                continue
+            n_rows_total += 1
+            if tk not in usable:
+                n_rows_skipped += 1
+                skipped.add(tk)
+    return {
+        # distinct tickers with no usable price series — the "(N names excluded)" N
+        "n_skipped_no_price": len(skipped),
+        "n_rows_skipped_no_price": n_rows_skipped,
+        "n_board_rows_total": n_rows_total,
+        "tickers_skipped": sorted(skipped)[:30],
+        "note": ("broad cache is current-membership only; these board names have no "
+                 "usable price series (delisted / renamed / never cached) and are "
+                 "absent from every stat above — the win/loss mix is survivor-tilted"),
+    }
+
+
 def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> dict:
+    survivorship = _survivorship_block(boards, names)
     if df.empty:
         return {"generated": dt.datetime.now(dt.timezone.utc).isoformat(), "empty": True,
-                "note": "no matured graded rows"}
+                "note": "no matured graded rows", "survivorship": survivorship}
     board_dates = sorted({b["as_of"] for b in boards})
     graded_dates = sorted(df["as_of"].unique().tolist())
     per_horizon = {}
@@ -578,7 +619,9 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
         "price_source": "engine.equity_factors._closes('broad') (S&P-1500 breadth caches) + data/yahoo/{SPY,XL*}",
         "price_coverage_note": (
             f"{df['ticker'].nunique()} distinct tickers graded; rows with no price in the "
-            "broad cache are dropped (survivor-biased current-membership universe)."),
+            "broad cache are dropped (survivor-biased current-membership universe) — "
+            "see the `survivorship` block for the quantified exclusion count."),
+        "survivorship": survivorship,
         "conventions": {
             "entry": "next session's close after as_of (next-bar realism)",
             "returns": "total-return (dividend-adjusted) closes; excess = name_ret - benchmark_ret",
@@ -720,6 +763,11 @@ def main() -> None:
     TRACK_JSON.write_text(json.dumps(track, indent=1, default=str))
     if not args.quiet:
         print(f"[track] wrote {TRACK_JSON.relative_to(ROOT)}")
+        surv = track.get("survivorship") or {}
+        if surv.get("n_skipped_no_price"):
+            print(f"[survivorship] {surv['n_skipped_no_price']} board tickers have no usable "
+                  f"price series ({surv['n_rows_skipped_no_price']}/{surv['n_board_rows_total']} "
+                  f"board rows excluded from every stat): {surv['tickers_skipped']}")
         # headline
         for h in HORIZONS:
             blk = track.get("per_horizon", {}).get(f"h{h}", {})
