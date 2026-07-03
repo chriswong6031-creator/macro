@@ -516,3 +516,31 @@ MEASURED-prediction status.
   markets↔country ties, spread 0.00), 1 declared cross-tape difference (EEM etf_tr vs price, both labeled);
   report at `research/cycle_masterplan/W36_CONSISTENCY_REPORT.md`. Checker fails on a synthetic same-tape
   mismatch and on an undeclared cross-tape difference (tested).
+- 2026-07-02 — **W3.8 SHIPPED** (#1003): frozen basket levels + membership hashes — 318 baskets frozen
+  day-one (US 45 / CN 22 / THS 237 / HK 14); graders read frozen-only (live recompute deleted, proven by
+  monkeypatch); hash-change = grade INVALIDATION; >15% truncation refuses to freeze + alerts; pre-freeze
+  survivorship hole declared.
+- 2026-07-02 — **W3.3 SHIPPED** (#1005): falsifier tripwire compiler — 12 FULL + 7 PARTIAL + 5 MANUAL-TTL;
+  latched FIRED with current-leg honesty; alert wiring. **Three falsifiers fired on first evaluation:
+  bitcoin >$126k (the analyst's own ATH falsifier against the "shallow bear" card), corn >$5.75 sustained,
+  platinum >$1,900** — three stale theses caught on day one.
+- 2026-07-02 — **W3.5 SHIPPED** (#1004): markets.html re-pointed at the country engine (page identity kept
+  per A9); posFromDrawdown + fake convergence bands DELETED. Honesty delta: China curated 68/Expansion →
+  engine 8.6/Trough (−59.4); UK +24.9; India −24.5.
+- 2026-07-02 — **W3.7 SHIPPED** (#1006): site/measurement.html — scorecards with red FAILED badges
+  unsoftened, 24-gate prereg ledger, cone-recal cards, collinearity verdict, BACKTEST/LIVE discipline
+  visible, provenance footer; nav guards green.
+- 2026-07-02 — **W3.6 SHIPPED** (#1007): the pos-99-with-Trough contradiction diagnosed as MIXED
+  VOCABULARIES (W1.6 fed legacy pos into the v2 phase classifier — the audit's disease resurfacing inside
+  the fix); kernel now derives the whole v2 triple from one position; 8 forbidden records → 0; stance +
+  "clocks disagree" chips on all pages; NEW cycle-consistency CI gate (same tape agrees cross-page or
+  carries a declared basis label).
+- 2026-07-02 — **W3.4 SHIPPED** (#1010): narrative TTL/staleness badges on 193 entries; 21 archetypes get
+  LIVE mechanism checks (via the W3.3 evaluator — no second evaluator); tolerance report caught 8 live
+  violations (EWP claims pos 30, engine 99.8); revision-provenance notes.
+- 2026-07-03 — **W3.9 SHIPPED** (#1028): local-currency country cycles (native index by max-coverage, else
+  synthetic ETF÷FX) as the PRIMARY card; per-turn fx_share attribution + >60% currency-driven flags; FX leg
+  as a graded drawer record; blocs declared null-FX; EWJ-2022 direction test anchors correctness;
+  cross-page checker green with declared basis labels. **PHASE 3 COMPLETE — the Minimum Viable Spine plus
+  every honest-surface wave has shipped. Phase 4/5 proceed only through their pre-registered gates (W2.5
+  feature set, W2.4 baselines).**
