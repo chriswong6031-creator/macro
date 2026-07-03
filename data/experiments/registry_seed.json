@@ -1196,6 +1196,28 @@
       "come_back_on": "2027-01-03",
       "come_back_note": "3M-formation/1M-hold reversal construction CLOSED (sign against, well-powered). Reopen ONLY if a distinct weekly-horizon (1-5 day) reversal is separately pre-registered on a true HK micro-cap panel.",
       "pr": "w3(h4)"
+    },
+    {
+      "id": "hkca_h_incl_connect_events",
+      "name": "H-INCL — Stock-Connect southbound (港股通) inclusion events (phase-0)",
+      "kind": "phase0_backtest",
+      "priority": "medium",
+      "cadence": "quarterly",
+      "what": "HK/CA masterplan §3 H-INCL W3 phase-0 (red-team's strongest new HK mechanism + supplies the PIT southbound roster H1 needs). STEP-1 roster feasibility = PASS: built data/hk_connect_roster/roster.parquet (796 rows, 2015-09->2026-07; 466 add / 330 remove events, 444 distinct add tickers) by scraping the SSE 港股通标的调整 announcement archive (dated 调入/调出 tables). Rejected routes documented: HKEX View-All = northbound only; akshare ggt_components = current snapshot; HKEX CCASS mutualmarket.aspx = strict ~365d rolling window (cannot reach 2016). STEP-2 event study on the 157-name closes_deep panel: 2 gated trials {announcement-drift, effective-day-demand}, index-relative CAR vs _HSI, next-bar fills, episode-N=distinct add-date, HAC + BH-FDR + DSR n_trials=30 + split-half + survivorship LB. VERDICT: NO-GO both. Only 39/466 add events land in-panel -> K=25 episodes. T-ANN +20d mean CAR +1.57% HAC t=0.46 DSR=0.074 split-half FLIPS; T-EFF +20d -1.04% t=-0.29 DSR=0.007 FLIPS; BH-FDR rejects neither (q=0.61). Event-time curve: name rallies +5.3% vs HSI in t-10->0 (pre-fill), then flat/-0.3% to +20d -> the inclusion demand is impounded BEFORE the dashboard's next-open fill (implementation-lag kill). Marginal T-ANN +5d (t=1.65, DSR 0.28) = fast-decay drift hint -> ACCRUE seed. NO wiring.",
+      "source": "scripts/collect_hk_connect_roster.py + scripts/hincl_event_study.py",
+      "storage": "reports/hincl-phase0.md + research/H_INCL_PREREG.md + data/hk_connect_roster/roster.parquet",
+      "track_json": "data/experiments/hincl_event_study_results.json",
+      "hook": "none",
+      "claim_family": "hkca_hincl",
+      "started": "2026-07-03",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2026-10-01",
+      "come_back_note": "ACCRUE path is NOT time-based but DATA-based: re-run the event study once the planned hk_stocks_ext ~500-name expanded HSCI panel lands (masterplan W1). That lifts studiable-K by including the small/mid-caps that ARE the Connect additions (currently 419/444 add tickers are off-panel). Only then is a decision-grade read of the fast pre-effective announcement drift possible. Even then the capturability question stands (impound is pre-fill). Do NOT re-run on the 157-name panel (K=25 is the ceiling there). The roster.parquet itself also feeds H1's PIT southbound-eligibility gate now.",
+      "maturation": "In-tree backtest on committed roster + panel; no forward ledger. NOT decision-grade at K=25 studiable episodes on the mega-cap panel (roster is decision-grade; the PANEL is the binding limit). DSR>=0.90 the only GO door -- best DSR 0.28 (T-ANN +5d).",
+      "status": "registered",
+      "state": "W3 report shipped. STEP-1 PASS (roster built, feeds H1 too). STEP-2 NO-GO on both gated trials -- inclusion demand real (+5.3% pre-fill) but impounded before the dashboard fill; under-powered on mega-cap panel. Respectable pre-registered near-null with an ACCRUE-on-deeper-panel path. NOT wired.",
+      "next_step": "Re-run event study when hk_stocks_ext (expanded HSCI ~500 names) lands. Meanwhile roster.parquet is available as the PIT southbound-eligibility gate for H1 (masterplan §3 H1).",
+      "phase_hint": "W3 phase-0 battery H-INCL"
     }
   ]
 }
