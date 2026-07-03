@@ -469,10 +469,16 @@
     /* let the header wrap so the signal badge + price drop to a new line instead of being
        clipped by the card's overflow:hidden when the column is this narrow. */
     .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
+    /* 2-up columns are ~150px: the conviction row (score + edge%ile + verdict) would otherwise
+       crush the verdict into a ~30px column that wraps every word mid-character. Let the row
+       wrap and drop the verdict to its own full-width line (readable whole words). */
+    .nbgrid[data-showmore-rows] .nb-conv{ flex-wrap:wrap; row-gap:2px; }
+    .nbgrid[data-showmore-rows] .nb-verdict{ flex:1 0 100%; overflow-wrap:normal; word-break:normal; }
+    .nbgrid[data-showmore-rows] .nb-edge-pct{ font-size:8.5px; }
   }
   a.nbcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
             padding: 9px 11px 10px; border-left: 3px solid var(--muted);
-            display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow: hidden;
+            display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow: hidden;
             transition: transform .12s, box-shadow .12s, border-color .12s; }
   /* every flex/grid child may shrink below content width — kills horizontal bleed */
   a.nbcard > * { min-width: 0; max-width: 100%; }
@@ -503,7 +509,7 @@
   .nb-legend .lg-sep { color: var(--line); }
   .nb-spark { width: 100%; height: 42px; border-radius: 5px; }
   .nbcard .nch { background: transparent; margin: 4px 0 2px; }
-  .nb-bot { display: flex; align-items: center; gap: 6px; margin-top: 1px; font-size: 10px; }
+  .nb-bot { display: flex; align-items: center; flex-wrap: wrap; gap: 3px 6px; margin-top: 1px; font-size: 10px; }
   .nb-state { font-size: 10px; font-weight: 800; letter-spacing: .02em; padding: 1px 7px;
               border-radius: 8px; }
   .nb-up .nb-state { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
@@ -533,7 +539,7 @@
   .nb-comp.cmp-neg { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
   .nb-size { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
              padding: 0 5px; border-radius: 7px; background: var(--panel);
-             border: 1px solid var(--line); color: var(--muted); cursor: help; margin-left: auto; }
+             border: 1px solid var(--line); color: var(--muted); cursor: help; }
   .nb-size.sz-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
                    background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
   .nb-size.sz-dn { color: var(--warn, #c79a2e); border-color: color-mix(in srgb, var(--warn, #c79a2e) 42%, var(--line));
@@ -574,7 +580,7 @@
                      background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
   .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
-  .nb-conv { display: flex; align-items: center; gap: 7px; margin: 5px 0 1px; min-width: 0; }
+  .nb-conv { display: flex; align-items: center; gap: 7px; margin: 3px 0 1px; min-width: 0; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
                min-width: 30px; flex: none; text-align: center; padding: 1px 5px; border-radius: 8px;
                border: 1px solid var(--line); color: var(--ink); }
@@ -587,8 +593,12 @@
   .nb-verdict { font-size: 10.5px; font-weight: 700; line-height: 1.25; color: var(--ink);
                 flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
   .nb-val { flex: none; }
+  /* edge percentile: a small MUTED secondary rank. It had NO size rule and inherited ~15px,
+     out-sizing the verdict and crushing the conv row on 2-up mobile — pin it small. */
+  .nb-edge-pct { font-size: 9px; font-weight: 700; flex: none; white-space: nowrap;
+                 color: var(--muted); font-variant-numeric: tabular-nums; }
   /* multi-timeframe bottoming-alignment chip (weekly+3d+daily turning up) */
-  .nb-align { display: flex; align-items: center; gap: 5px; margin: 3px 0 1px; min-width: 0;
+  .nb-align { display: flex; align-items: center; gap: 5px; margin: 2px 0 1px; min-width: 0;
               font-size: 9.5px; font-weight: 700; letter-spacing: .01em;
               padding: 2px 7px; border-radius: 7px; border: 1px solid var(--line);
               color: var(--up); background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
@@ -596,14 +606,14 @@
   .nb-align .nba-line { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nb-align .nba-tag { margin-left: auto; flex: none; font-size: 8px; font-weight: 800;
                        text-transform: uppercase; letter-spacing: .04em; opacity: .85; }
-  .nb-axes { display: flex; gap: 4px; margin-top: 3px; }
+  .nb-axes { display: flex; gap: 4px; margin-top: 2px; }
   .nb-ax { flex: 1; }
   .nb-ax .axl { font-size: 8px; color: var(--muted); letter-spacing: .03em; }
   .nb-ax .axt { height: 3px; border-radius: 2px; background: var(--line); margin-top: 1px; overflow: hidden; }
   .nb-ax .axf { height: 100%; background: var(--g-cold); border-radius: 2px; }
   .nb-ax.ax-na .axf { background: transparent; }
   /* ---- Caution icon + popover (replaces old pill-row) ---- */
-  .nb-cau { position: relative; display: inline-flex; margin-top: 4px; }
+  .nb-cau { position: relative; display: inline-flex; margin-top: 3px; }
   .nb-cau-btn {
     display: inline-flex; align-items: center; gap: 3px;
     padding: 0 5px 0 4px; height: 18px; border-radius: 9px; border: none; cursor: pointer;
@@ -633,6 +643,8 @@
   }
   .nb-cau-pop .cau-row { display: block; padding: 2px 0; }
   .nb-cau-pop .cau-row + .cau-row { border-top: 1px solid color-mix(in srgb, var(--warn) 20%, var(--line)); padding-top: 4px; margin-top: 2px; }
+  /* display-only (unvalidated) folded rows — Options/IV positioning — read muted vs real cautions */
+  .nb-cau-pop .cau-row.cau-unval { color: var(--muted); font-weight: 500; }
   /* Show on hover/focus (desktop) */
   .nb-cau:hover .nb-cau-pop,
   .nb-cau:focus-within .nb-cau-pop,
@@ -647,7 +659,7 @@
   a.nbcard:has(.nb-cau-open) { overflow: visible; }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
   /* ---- Entry-timing gauge (the SECOND gauge: "buy now / wait / extended") ---- */
-  .nb-entry { margin: 5px 0 1px; padding: 5px 7px; border-radius: 8px;
+  .nb-entry { margin: 3px 0 1px; padding: 4px 7px; border-radius: 8px;
               background: var(--panel); border: 1px solid var(--line);
               border-left: 3px solid var(--muted); }
   .nbe-buy_now, .nbe-partial { border-left-color: var(--up);
@@ -686,14 +698,14 @@
   .nb-note-anticipation { color: var(--g-cold, var(--link));
              background: color-mix(in srgb, var(--link) 8%, var(--panel)); }
   /* per-leg EDGE basis chips (top-3 firing legs, tier-colored) */
-  .nb-basis { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+  .nb-basis { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
   .nbb { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
          border: 1px solid var(--line); font-variant-numeric: tabular-nums; color: var(--muted); }
   .nbb-validated { color: var(--up); border-color: color-mix(in srgb, var(--up) 35%, var(--line)); }
   .nbb-literature { color: var(--g-cold); border-color: color-mix(in srgb, var(--g-cold) 35%, var(--line)); }
   .nbb-screen { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
   /* the two new VERIFIERS — dealer-gamma "Options check" + the single-stock vol black hole */
-  .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
   .nb-vchip { font-size: 8.5px; font-weight: 800; padding: 0 5px; border-radius: 6px;
               border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
   .vf-confirm { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
@@ -2638,19 +2650,16 @@
           {# unvalidated caution: show a muted "unvalidated — accruing" chip only when caution #}
           {% set _gc_unval_caution = _gc and not _gc_scored and _gc.verdict == 'caution' %}
           {% set _iv_unval_caution = _iv and not _iv_scored and _iv.verdict == 'caution' %}
-          {% if _gc_scored or _sqshow or _ivshow or _gc_unval_caution or _iv_unval_caution %}
+          {# verifier row keeps ONLY validated/scored content now; the unvalidated Options/IV
+             positioning cautions were folded into the one Caution popover below (declutter). #}
+          {% if _gc_scored or _sqshow or _ivshow %}
           <div class="nb-vf">
             {# GEX chip: only when gate is scored=True (validated) #}
             {% if _gc_scored %}{% set _gr = (_gc.reasons[0] if _gc.reasons else None) %}
-            <span class="nb-vchip vf-{{ _gc.verdict }}" data-tip-en="Options check (dealer gamma){% if _gr %} — {{ _gr.en }}{% endif %}{% if _gc.levels.call_wall %} · call wall {{ _gc.levels.call_wall }}{% endif %}{% if _gc.levels.flip %} · flip {{ _gc.levels.flip }}{% endif %} · {{ _gc.caveat }}" data-tip-zh="期权确认（做市商 Gamma）{% if _gr %} — {{ _gr.zh }}{% endif %} · {{ _gc.caveat_zh }}">{{ '✓' if _gc.verdict=='confirm' else ('⚠' if _gc.verdict=='caution' else '·') }} {{ t('Options', '期权') }} {% if _gc.verdict=='confirm' %}{{ t('confirm','确认') }}{% elif _gc.verdict=='caution' %}{{ t('caution','警示') }}{% else %}{{ t('neutral','中性') }}{% endif %}</span>
-            {% elif _gc_unval_caution %}
-            {# Unvalidated GEX caution: show a muted label so the data isn't silently hidden #}
-            <span class="nb-vchip vf-unval" data-tip-en="Options positioning — unvalidated, accruing history (gate not yet open). Shows caution only; not in score." data-tip-zh="期权仓位——未验证，历史积累中（门控尚未开放）。仅显示警示；不计入分数。">⚠ {{ t('Options caution (unvalidated)', '期权警示（未验证）') }}</span>{% endif %}
+            <span class="nb-vchip vf-{{ _gc.verdict }}" data-tip-en="Options check (dealer gamma){% if _gr %} — {{ _gr.en }}{% endif %}{% if _gc.levels.call_wall %} · call wall {{ _gc.levels.call_wall }}{% endif %}{% if _gc.levels.flip %} · flip {{ _gc.levels.flip }}{% endif %} · {{ _gc.caveat }}" data-tip-zh="期权确认（做市商 Gamma）{% if _gr %} — {{ _gr.zh }}{% endif %} · {{ _gc.caveat_zh }}">{{ '✓' if _gc.verdict=='confirm' else ('⚠' if _gc.verdict=='caution' else '·') }} {{ t('Options', '期权') }} {% if _gc.verdict=='confirm' %}{{ t('confirm','确认') }}{% elif _gc.verdict=='caution' %}{{ t('caution','警示') }}{% else %}{{ t('neutral','中性') }}{% endif %}</span>{% endif %}
             {# IV-spread chip: only when gate is scored=True (validated) #}
             {% if _ivshow %}{% set _ir = (_iv.reasons[0] if _iv.reasons else None) %}
-            <span class="nb-vchip vf-{{ _iv.verdict }}" data-tip-en="Options IV lean — Cremers-Weinbaum call−put implied-vol spread{% if _ir %} — {{ _ir.en }}{% endif %} · {{ _iv.caveat }}" data-tip-zh="期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差{% if _ir %} — {{ _ir.zh }}{% endif %} · {{ _iv.caveat_zh }}">{{ '↑' if _iv.verdict=='confirm' else '↓' }} {{ t('IV lean', 'IV偏向') }} {% if _iv.verdict=='confirm' %}{{ t('up','偏多') }}{% else %}{{ t('down','偏空') }}{% endif %}</span>
-            {% elif _iv_unval_caution %}
-            <span class="nb-vchip vf-unval" data-tip-en="Options IV lean — Cremers-Weinbaum IV spread, unvalidated (accruing history, gate not open). Shows caution only." data-tip-zh="期权IV偏向——未验证（历史积累中，门控尚未开放）。仅显示警示。">⚠ {{ t('IV caution (unvalidated)', 'IV警示（未验证）') }}</span>{% endif %}
+            <span class="nb-vchip vf-{{ _iv.verdict }}" data-tip-en="Options IV lean — Cremers-Weinbaum call−put implied-vol spread{% if _ir %} — {{ _ir.en }}{% endif %} · {{ _iv.caveat }}" data-tip-zh="期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差{% if _ir %} — {{ _ir.zh }}{% endif %} · {{ _iv.caveat_zh }}">{{ '↑' if _iv.verdict=='confirm' else '↓' }} {{ t('IV lean', 'IV偏向') }} {% if _iv.verdict=='confirm' %}{{ t('up','偏多') }}{% else %}{{ t('down','偏空') }}{% endif %}</span>{% endif %}
             {% if _sqshow %}
             <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %}{% if _vs.bbwp is not none %} · BBWP {{ _vs.bbwp }}{% endif %} — {{ _vs.caveat }}" data-tip-zh="波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% if _vs.volume_confirmed %} ✓{% endif %}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>{% endif %}
           </div>
@@ -2663,7 +2672,20 @@
               {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" data-tip-en="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal" data-tip-zh="需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>
               {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" data-tip-en="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal" data-tip-zh="需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
           </div>
-          {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
+          {# ONE caution popover per card. Sources, in order:
+             (1) name-specific cautions from the conviction builder, MINUS the low-signal
+                 "accounting watch" — it fires on ~1/3 of names and dilutes the buy-gating
+                 "accounting warn"; its quality-axis cap in engine.stock_score._axis_quality
+                 STILL applies (only the row is suppressed). Keyed on the stable EN token emitted
+                 at engine/stock_score.py (~L962); "accounting warn" is kept.
+             (2) the display-only Options / IV positioning cautions, folded in from the old
+                 verifier row (consolidate into the one Caution panel).
+             i18n: every string lives in paired l-en/l-zh spans — never in title=/attrs. #}
+          {% set _gr0 = (_gc.reasons[0] if (_gc_unval_caution and _gc.reasons) else None) %}
+          {% set _ir0 = (_iv.reasons[0] if (_iv_unval_caution and _iv.reasons) else None) %}
+          {% set _has_aw = 'accounting watch' in (c.cautions or []) %}
+          {% set _cau_n = (c.cautions or [])|length - (1 if _has_aw else 0) + (1 if _gc_unval_caution else 0) + (1 if _iv_unval_caution else 0) %}
+          {% if _cau_n > 0 %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ _cau_n }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ _cau_n }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in (c.cautions or []) %}{% if cau != 'accounting watch' %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endif %}{% endfor %}{% if _gc_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options positioning{% if _gr0 %} — {{ _gr0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权仓位{% if _gr0 %} — {{ _gr0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}{% if _iv_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options IV lean{% if _ir0 %} — {{ _ir0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向{% if _ir0 %} — {{ _ir0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}</div></div>{% endif %}
           {# only NAME-SPECIFIC notes here (e.g. favourable risk-cone); the generic
              percentile-rank caveat + edge-basis are hoisted to the one .nb-legend above. #}
           {% if c.notes %}{% for nt in c.notes if nt.kind != 'rank' %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
