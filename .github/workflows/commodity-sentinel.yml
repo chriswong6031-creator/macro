@@ -49,7 +49,7 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "commodity: shock alert $(date -u +%FT%H:%MZ)"
           for i in 1 2 3 4 5; do
-            git pull --rebase origin main && git push && exit 0
+            git pull --rebase --autostash -X theirs origin main && git push && exit 0
             echo "push attempt $i failed; retrying"; sleep $((i*3))
           done
           exit 1

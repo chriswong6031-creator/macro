@@ -43,5 +43,5 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add data/vector data/coinbase/btc_hourly.parquet site/vector.html site/index.html
           git diff --cached --quiet || git commit -m "vector: flash-crash alert $(date -u +%FT%H:%MZ)"
-          git pull --rebase origin main
+          git pull --rebase --autostash -X theirs origin main
           git push
