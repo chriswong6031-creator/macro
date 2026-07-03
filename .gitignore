@@ -17,6 +17,9 @@ site/canadaohlc/
 site/intlohlc/
 site/hkohlc/
 site/intraday/
+# machine-consumable contract plane (scripts/build_feeds.py) — R2-only by design,
+# regenerated every daily run; consumers read the R2 _manifest.json, never git
+site/feeds/
 # live intraday overlay — runtime artifact written by scripts/build_live_overlay (intraday
 # cron) and by the offline test path; never committed (the cron force-pushes / re-emits it).
 site/live/

@@ -14,7 +14,7 @@ import pandas as pd
 from engine.inputs import build_features
 from engine.regime import QUAD_NAMES, classify, flip_condition
 from engine.sectors import pair_ratios_snapshot, preference_check, rs_table
-from engine.transition import compute_flags, state_machine
+from engine.transition import compute_flags, state_machine_detail
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -70,7 +70,10 @@ def run() -> dict:
     regime = classify(f)
     flags = compute_flags(f, regime)
     regime = regime.join(flags)
-    regime["transition_state"] = state_machine(flags, regime)
+    # ratcheted + raw transition state (engine/transition.state_machine_detail):
+    # transition_state stays the headline enum; _raw/_ratcheted/_dwell_remaining
+    # are additive audit columns (2026-07-02 incident fix)
+    regime = regime.join(state_machine_detail(flags, regime))
 
     hist_cols = [c for c in regime.columns if not c.startswith("c_")]
     full = regime.copy()
@@ -93,7 +96,13 @@ def run() -> dict:
 
     confirming, contradicting = confirming_contradicting(full, asof)
     table = rs_table(asof)
+    fc = flip_condition(f, regime, asof)
     latest = {
+        # contract hygiene (research/PERCEPTION_CONTRACTS.md): versioned schema +
+        # a TRUE-DATA timestamp at top level (asof = last session in the regime
+        # frame, == freshness.asof; built_at lives in freshness). Additive.
+        "schema_version": 1,
+        "asof": str(asof.date()),
         "date": str(asof.date()),
         "quad": quad,
         "quad_name": QUAD_NAMES.get(quad, quad),
@@ -106,10 +115,19 @@ def run() -> dict:
         "liquidity_overlay": row["liquidity"],
         "cycle_tag": row["cycle"],
         "transition_state": row["transition_state"],
+        # ratchet audit plane (additive; incident 2026-07-02): the memoryless read,
+        # whether the dwell is holding the state hotter than raw, and how many
+        # clean sessions remain before the next step-down
+        "transition_state_raw": row["transition_state_raw"],
+        "transition_ratcheted": bool(row["transition_ratcheted"]),
+        "transition_dwell_remaining": int(row["transition_dwell_remaining"]),
         "transition_flags": {c: bool(row[c]) for c in flags.columns if c != "n_flags"},
         "confirming": confirming,
         "contradicting": contradicting,
-        "flip_condition": flip_condition(f, regime, asof),
+        "flip_condition": fc,
+        # top-level mirror of flip_condition.margin — the single number consumers
+        # damp on (was only nested; None when the axis is already mixed)
+        "flip_margin": (fc or {}).get("margin"),
         "sector_rs": table.reset_index().to_dict(orient="records"),
         "preference_check": preference_check(quad, table),
         "pair_ratios": pair_ratios_snapshot(f),
@@ -119,6 +137,23 @@ def run() -> dict:
     }
     from engine.inputs import yahoo_closes
     from engine.playbook import build_playbook
+    # Liquidity QUALITY (engine/regime.liquidity_quality; incident 2026-07-02
+    # root-cause #3): classifies the bare quantity-RoC overlay into benign vs
+    # stress vs hollow — RRP-buffer exhaustion, TGA/RRP-vs-WALCL composition,
+    # credit/funding co-check, ffill staleness. liquidity_overlay is UNCHANGED;
+    # this is the additive quality plane every consumer reads instead of
+    # re-deriving. Additive, never fatal.
+    try:
+        lq_cfg = (config.load().get("engine", {}).get("liquidity", {}) or {})
+        if lq_cfg.get("quality_enabled", True):
+            from engine.regime import liquidity_quality
+            latest["liquidity_quality"] = liquidity_quality(
+                f, overlay=row["liquidity"], asof=asof)
+        else:
+            latest["liquidity_quality"] = None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("liquidity-quality layer failed: %s", e)
+        latest["liquidity_quality"] = None
     # conditions layer is computed FIRST so the exposure dial can consume the
     # recession-risk + financial-conditions edges (research/QUANT_FACTOR_EXPANSION.md).
     try:
@@ -239,6 +274,17 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("regime-one layer failed: %s", e)
         latest["regime_one"] = None
+    # quad_vector (engine/quad_vector.py): the published continuous-P(Quad)
+    # CONTRACT — a thin reshape of regime_one's causal filtered posterior (P7:
+    # the probabilities are owned by the hedgeye program; this only publishes
+    # the stable consumer shape). NOT next_quad_probs — that name is taken by
+    # two historical Markov objects. Additive, never fatal.
+    try:
+        from engine.quad_vector import build as build_quad_vector
+        latest["quad_vector"] = build_quad_vector(latest, full, asof)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("quad-vector layer failed: %s", e)
+        latest["quad_vector"] = None
     # Catalyst tone (LLM Tier-A): a DIGEST of the most recent public catalyst (FOMC
     # statement) as honest CONTEXT only. Default-off LEAF (engine/catalyst_tone.py);
     # None when disabled or nothing recent. NEVER enters the deterministic scoring path.

@@ -192,8 +192,18 @@ def assess(latest: dict) -> dict | None:
         if not present:
             return {"present": False}
 
-        receding = (phase == "receding")
-        peaking = (phase == "peaking")
+        # ONE risk voice per page (2026-07-02 incident): the radar publishes the
+        # de-escalation verdict beside its scares (risk_radar.deescalation); this
+        # panel is a DERIVATIVE of it, not an independent opinion. When the radar
+        # says not eligible (dominant risk-off scare escalating / pullback odds
+        # rising), the green "receding" presentation is suppressed — the panel may
+        # still narrate what IS fading, never an all-clear. Absent block (older
+        # artifact) degrades to the standalone behavior.
+        deesc = rr.get("deescalation")
+        suppressed = bool(deesc) and deesc.get("eligible") is False
+
+        receding = (phase == "receding") and not suppressed
+        peaking = (phase == "peaking") and not suppressed
         turn_confirmed = bool(receding and n_fresh >= 1)   # risk derating + liquidity injection
 
         off = traj.get("off_peak") or 0.0
@@ -209,7 +219,17 @@ def assess(latest: dict) -> dict | None:
         days = int(traj.get("peak_days_ago") or 0)
 
         # ---- bilingual copy ----
-        if turn_confirmed:
+        if suppressed:
+            dom_en = rr.get("dominant_label_en") or (rr.get("dominant_scare") or "risk")
+            dom_zh = rr.get("dominant_label_zh") or "风险"
+            fading = (deesc or {}).get("receding_scare")
+            if fading:
+                head_en = f"Mixed: {fading} scare fading — {dom_en} still escalating"
+                head_zh = f"分化：{fading} 风险消退 — {dom_zh}仍在升级"
+            else:
+                head_en = f"Not receding — {dom_en} still escalating"
+                head_zh = f"风险未回落 — {dom_zh}仍在升级"
+        elif turn_confirmed:
             head_en, head_zh = "Risk receding — liquidity turning supportive", "风险回落 — 流动性转向支持"
         elif receding:
             head_en, head_zh = "Risk receding — pullback odds rolling over", "风险回落 — 回撤概率见顶回落"
@@ -217,7 +237,10 @@ def assess(latest: dict) -> dict | None:
             head_en, head_zh = "Risk may be peaking", "风险或已见顶"
 
         # one-line sub headline with the concrete odds turn
-        if odds_now is not None and odds_peak is not None and odds_peak > odds_now:
+        if suppressed:
+            sub_en = (deesc or {}).get("reason") or "The dominant scare is still escalating."
+            sub_zh = "主导风险仍在升级，回撤概率上行。"
+        elif odds_now is not None and odds_peak is not None and odds_peak > odds_now:
             sub_en = (f"Pullback odds {round(odds_peak*100)}% → {round(odds_now*100)}% "
                       f"(peaked {days} day{'s' if days != 1 else ''} ago).")
             sub_zh = f"回撤概率 {round(odds_peak*100)}% → {round(odds_now*100)}%（{days} 日前见顶）。"
@@ -228,7 +251,11 @@ def assess(latest: dict) -> dict | None:
             sub_en = "The radar's intensity is rolling over."
             sub_zh = "雷达强度正见顶回落。"
 
-        if turn_confirmed:
+        if suppressed:
+            do_en = ("An older scare is fading but the dominant one is still escalating — this is "
+                     "rotation, not recovery. No all-clear: keep the de-risked posture and stops.")
+            do_zh = ("旧风险消退但主导风险仍在升级 — 这是轮动而非复苏。并非解除警报：维持降险仓位与止损。")
+        elif turn_confirmed:
             do_en = ("The risk-off may be nearing its end. Begin scaling exposure back in tranches — "
                      "keep stops, let price confirm the low. Don't chase the first bounce.")
             do_zh = ("避险或已接近尾声。可分批逐步回补敞口 — 保留止损，待价格确认低点，切勿追逐首次反弹。")
@@ -253,6 +280,9 @@ def assess(latest: dict) -> dict | None:
         return {
             "present": True,
             "phase": phase, "receding": receding, "peaking": peaking,
+            # radar-derived gate (one risk voice): green suppressed while the
+            # dominant scare escalates; mirrored for the template/bot to read
+            "suppressed": suppressed, "deescalation": deesc,
             "turn_confirmed": turn_confirmed, "strength": strength,
             # the odds turn + velocity (mirrored from the trajectory so the template reads one dict)
             "odds_now": odds_now, "odds_peak": odds_peak, "odds_delta": odds_delta,
