@@ -57,6 +57,13 @@ washout_2w    bool|None  CN-port stamp (§5.3): 2W-FRI StochRSI washout-reclaim 
                          (caller predates the port or doesn't compute it).
 extended      bool|None  CN-port stamp (§5.3): extension read in {stretched, parabolic}.
                          Log-and-grade only. None = not stamped.
+placement_flag bool|None H-PLC risk-gate stamp (masterplan §3, W1c): dilutive
+                         placement/rights/open-offer announcement within the trailing
+                         90d window at render (HK only). Flagged names are demoted off
+                         the entry groups; the stamp lets the gate itself be graded.
+                         None = not stamped (pre-W1c row, non-HK market, or the
+                         placement store was degraded that render — distinct from
+                         False = 'checked, clean').
 """
 from __future__ import annotations
 
@@ -87,12 +94,15 @@ MIN_NAMES_PER_DATE = 5
 _SCHEMA = [
     "date", "market", "ticker", "board_pos", "group",
     "edge_z", "gate_tier", "align_tier", "entry_state", "close_asof",
-    "washout_2w", "extended",
+    "washout_2w", "extended", "placement_flag",
 ]
 
 # Optional CN-port stamp columns — nullable bool ('boolean' dtype in the store).
 # None means 'not stamped' (distinct from False = 'computed, absent').
 _PORT_STAMPS = ("washout_2w", "extended")
+
+# Optional risk-gate stamp columns — same nullable-bool semantics as _PORT_STAMPS.
+_GATE_STAMPS = ("placement_flag",)
 
 
 def _store_path(market: str) -> Path:
@@ -121,6 +131,8 @@ def append_board(
         close_asof    — today's close (float, optional)
         washout_2w    — CN-port stamp (bool, optional; None if omitted)
         extended      — CN-port stamp (bool, optional; None if omitted)
+        placement_flag — H-PLC risk-gate stamp (bool, optional; None if omitted
+                        or the placement store was degraded that render)
 
     Keep-FIRST per (date, ticker): a price already stamped for a given date is
     never overwritten — point-in-time integrity.
@@ -148,6 +160,7 @@ def append_board(
             "close_asof": _float_or_none(c.get("close_asof")),
             "washout_2w": _bool_or_none(c.get("washout_2w")),
             "extended": _bool_or_none(c.get("extended")),
+            "placement_flag": _bool_or_none(c.get("placement_flag")),
         })
     if not rows:
         return 0
@@ -168,7 +181,7 @@ def append_board(
             combined = combined.drop_duplicates(subset=["date", "ticker"], keep="first")
         else:
             combined = new
-        for col in _PORT_STAMPS:
+        for col in (*_PORT_STAMPS, *_GATE_STAMPS):
             combined[col] = combined[col].astype("boolean")
         combined.to_parquet(p, index=False)
         return int(len(combined))

@@ -46,6 +46,9 @@ data/canada_breadth/_closes_cache.parquet
 # evidence for the H2a phase-0 test.  Only the _closes_cache-equivalent rebuild
 # artifacts are excluded (none exist for this store).
 # NOTE: data/hk_shorts/ is intentionally NOT listed here — all files are committed.
+# hk_placements (H-PLC, W1c): events.parquet + coverage.json are GIT-tracked (NOT R2)
+# — tiny append-only event store (~1.5k rows/yr), evidence for the post-placement
+# drift accrual. data/hk_placements/ intentionally NOT listed here.
 # data-quality audit revision baselines: a daily-changing full copy of the macro series
 # (machine state for backwards-revision detection), cached cross-run in CI rather than
 # committed. The audit JSON reports under data/quality/*.json ARE committed (trend artifact).
