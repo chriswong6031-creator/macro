@@ -142,6 +142,13 @@ calibration/ab_risk_gate_divergence.jsonl
 # Per-ticker parquets served from Cloudflare R2 via scripts/publish_r2 --dirs hk_stocks_ext.
 # Committed files in the same dir (_universe.json, _checkpoint.json) are NOT ignored.
 data/hk_stocks_ext/*.parquet
+
+# Massive.com whole-market daily OHLCV derived store (R2-only; Setup-Species §7 W0.6a).
+# Per-ticker parquets published via scripts/publish_r2 --dirs massive_stock_day.
+# Committed: data/massive_stock_day/_manifest.json (freshness anchor for audit_r2)
+#            data/massive_stock_day/_backfill_state.json (resume state)
+# ~12,400 tickers × ~350 rows = ~240 MB total — must NOT be committed to git.
+data/massive_stock_day/*.parquet
 # (NOT R2) — not regenerable without re-scraping; critical H2a phase-0 evidence.
 # data/hk_shorts/ is intentionally NOT listed here; all files are committed.
 # ---- Slice G store decisions (2026-07-03) ------------------------------------

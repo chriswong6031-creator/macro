@@ -188,6 +188,7 @@ def all_adapters() -> dict:
         ("hk_shorts_positions", "collectors.hk_shorts", "HkShortsPositionsAdapter"),
         ("hk_shorts_turnover", "collectors.hk_shorts", "HkShortsTurnoverAdapter"),
         ("hk_universe", "collectors.hk_universe", "HkUniverseAdapter"),  # expanded HSCI universe (~537 names) deep OHLCV (R2: data/hk_stocks_ext/) — H4 reversal + breadth ignition (masterplan §3 H4, §8 W1)
+        ("massive_stock_day", "collectors.massive_stock_day", "MassiveStockDayAdapter"),  # whole-market US daily OHLCV nightly incremental (R2: data/massive_stock_day/) — Setup-Species §7 W0.6a
         # Canada / S&P/TSX dashboard — keyless: yfinance prices + BoC VALET / StatsCan WDS / FRED macro
         ("canada_prices", "collectors.canada_prices", "CanadaPriceAdapter"),
         ("canada_macro", "collectors.canada_macro", "CanadaMacroAdapter"),     # BoC VALET + StatsCan WDS + FRED comparables

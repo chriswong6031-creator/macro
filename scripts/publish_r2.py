@@ -50,7 +50,14 @@ DEFAULT_DIRS = [
     "hk_stocks_ext",  # expanded HSCI universe (~380 new names) deep OHLCV parquets
                       # (data/hk_stocks_ext/*.parquet, gitignored); ~65 MB initial
                       # — masterplan §3 H4, §8 W1 (collectors/hk_universe.py)
+    "massive_stock_day",  # whole-market daily OHLCV per-ticker parquets
+                          # (data/massive_stock_day/*.parquet, gitignored); ~240 MB
+                          # — Setup-Species §7 W0.6a (collectors/massive_stock_day.py)
 ]
+
+# Dirs whose source lives under data/ rather than site/ (per-ticker parquet stores
+# that are never rendered into site/ — published straight from the data plane).
+_DATA_DIRS = {"hk_stocks_ext", "massive_stock_day"}
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}
 
@@ -132,8 +139,13 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
     bucket = os.environ["R2_BUCKET"]
     site = config.ROOT / config.load()["storage"]["site_dir"]
     up = skip = 0
+    data = config.ROOT / config.load()["storage"]["data_dir"]
     for d in dirs:
-        base = site / d
+        # Per-ticker parquet stores live under data/<dir>, not site/<dir>.
+        if d in _DATA_DIRS:
+            base = data / d
+        else:
+            base = site / d
         if not base.is_dir():
             log.info("%s: absent — skip", d)
             continue
