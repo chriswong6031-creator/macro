@@ -1,0 +1,1 @@
+{"total_gw_yoy":26.3,"asof_year":2023,"total_gw":2600.0,"prior_year":2022,"prior_gw":2058.0,"source":"LBNL Queued Up through 2023","_collected":"2026-07-03T00:00:00+00:00","_note":"seed from published LBNL Queued Up 2023 report; run lbnl_queue collector to refresh"}

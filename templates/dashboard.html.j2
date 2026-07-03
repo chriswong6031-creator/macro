@@ -2161,6 +2161,14 @@
       (<b style="color:{{ rdcol }}">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} {{ rd.top_score }}/100{% endif %}</b>{% if rd.label_en %} — {{ t(rd.label_en, rd.label_zh) }}{% endif %}){{ t(' — it is the ≤21-day read to trust for timing.', ' — 它是择时应信赖的≤21日读数。') }}
     </p>
     {% endif %}
+    {% set _idx_deep = ((risk_model and risk_model.legs) or chart_risk_model or chart_curve or chart_vix_term) %}
+    {% if mode != 'stocks' and _idx_deep %}
+    {# fold the deep risk-model table + Plotly charts behind a toggle on macro; the index
+       tiles, drawdown/recession/allocation gauges and radar note above stay at a glance.
+       Charts are responsive:true, so re-fire a resize when the fold opens (Plotly sizes at
+       0-width while display:none). Stocks keeps everything inline. #}
+    <details class="jarg" id="idx-deep" style="margin-top:14px"><summary>{{ t('Risk-model breakdown + recession, yield-curve &amp; volatility charts','风险模型拆解 + 衰退、收益率曲线与波动率图表') }}</summary>
+    {% endif %}
     {% if risk_model and risk_model.legs %}
     <h3 style="margin-top:16px">{{ t('Index risk model — what is driving de-risk', '指数风险模型 — 降险信号由什么驱动') }}
       {{ help("The S&P Vector de-risk score (0-100) and the legs that build it: macro-stress drawdown gauge, recession risk, financial conditions, credit-spread widening, and net-liquidity. Each leg's points sum to the score, so the bar shows exactly what is risk-on or risk-off now. The full allocation strategy + backtest lives on the S&P Vector page.", "标普向量降险评分（0-100）及其构成分项：宏观压力回撤计、衰退风险、金融条件、信用利差走阔、净流动性。各分项贡献分相加即为总分，进度条直观显示当前什么在加／降风险。完整仓位策略与回测见标普向量页。") }}
@@ -2202,6 +2210,13 @@
       </div>
       {% endif %}
     </div>
+    {% endif %}
+    {% if mode != 'stocks' and _idx_deep %}
+    </details>
+    <script>
+    (function(){var d=document.getElementById('idx-deep');if(!d)return;
+      d.addEventListener('toggle',function(){if(d.open)setTimeout(function(){window.dispatchEvent(new Event('resize'));},30);});})();
+    </script>
     {% endif %}
   </div>
 
