@@ -45,7 +45,7 @@
     "memory_storage",
     "managed_care",
     "ai_infra",
-    "payments_fintech"
+    "cybersecurity"
   ],
   "leader": "memory_storage",
   "names": {
@@ -57,6 +57,7 @@
     "big_pharma": "Big Pharma",
     "critical_minerals": "Critical Minerals & Rare Earths",
     "crypto": "Crypto & Digital Assets",
+    "crypto_rails": "Crypto & Digital Rails",
     "cybersecurity": "Cybersecurity",
     "data_center_power": "Data-Center Power & Cooling",
     "defense": "Defense & Aerospace",
