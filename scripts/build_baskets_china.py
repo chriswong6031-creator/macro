@@ -102,13 +102,29 @@ def main() -> int:
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
     chart = data.pop("chart")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    # W5-B: load the sleeve summary stats for the strategy card (additive, best-effort).
+    # Reads the committed sleeve JSON if it exists; falling back to None just hides the card stats.
+    sleeve_stats = None
+    try:
+        _sleeve_json = site / "factordata" / "cn_reversal_sleeve.json"
+        if _sleeve_json.exists():
+            _sd = json.loads(_sleeve_json.read_text())
+            _sf = (_sd.get("sizing") or {}).get("sleeve_factor")
+            _nm = _sd.get("n_members")
+            if _sf is not None and _nm is not None:
+                sleeve_stats = {"n_members": int(_nm), "sleeve_factor": float(_sf)}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.debug("baskets_china: sleeve stats load skipped (%s)", e)
+
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("baskets_china.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(chart, separators=(",", ":")),
         theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
         bench_en="CSI 300", bench_zh="沪深300",
-        generated_utc=built)
+        generated_utc=built,
+        sleeve_stats=sleeve_stats)
     write_page(site / "baskets_china.html", html)
 
     # per-theme detail pages (site/basket_china/<id>.html) + the shared desk renderer
