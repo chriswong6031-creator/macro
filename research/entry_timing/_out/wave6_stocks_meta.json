@@ -1,0 +1,12 @@
+{
+  "panel": "stocks",
+  "n_episodes": 741,
+  "n_confluence_fires": 26373,
+  "n_blocked_honest": 7121,
+  "n_blocked_eval": 2457,
+  "naive_below": 673816,
+  "n_cshallow": 1166,
+  "n_clockout_admit": 5873,
+  "n_wa_fires": 10286,
+  "n_wb_fires": 2457
+}
