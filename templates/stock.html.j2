@@ -67,6 +67,9 @@
   .ms-chip.ms-hedge { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
   .ms-chip.ms-negative { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .ms-chip.ms-tier-low { color:var(--muted); }
+  /* W0c gov-exposure band tints (bare .warn/.muted carry no color rule in this scope) */
+  .ms-chip.muted, .macro-sens .muted { color:var(--muted); }
+  .ms-chip.warn, .macro-sens .warn { color:#d69e2e; border-color:color-mix(in srgb,#d69e2e 40%,transparent); }
   .macro-sens .ms-cav { margin:6px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
   /* alt-data convergence chip reuses .macro-sens chrome; tier sets the accent */
   .macro-sens.ad-tier-high { border-left-color:#e0607a; }
@@ -556,6 +559,8 @@
       <div id="r_hold" style="display:none"></div>
       <!-- alt-data convergence — a live deep-context panel (not a fallback) -->
       <div id="r_altdata" class="macro-sens" style="display:none"></div>
+      <!-- W0c — government-funding exposure chip (fingerprint-class, display-only) -->
+      <div id="r_govexp" class="macro-sens" style="display:none"></div>
       <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
       <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
         <div id="r_bc" class="bcbox" style="display:none"></div>
@@ -954,6 +959,51 @@
       '<div class="muted" style="font-size:12px;margin-top:5px">' +
         esc(lz(a.detail.en, a.detail.zh)) + '</div>' +
       '<div class="ms-cav">' + esc(lz(a.caveat.en, a.caveat.zh)) + '</div>';
+    box.style.display = 'block';
+  }
+
+  // W0c — Government-funding exposure chip (engine/gov_exposure.py).
+  // Fingerprint-class (annual XBRL lag + 1-2 month award lag); score_cap=60.
+  // R9a caveat: recipient→ticker matching is curated-alias (fuzzy string) — subsidiary
+  // contracts may be missed or misattributed. R9e caveat: mktcap denominator is
+  // price-live while the award numerator is lagged 1-2 months.
+  // DISPLAY-ONLY; never feeds any scored path.
+  function renderGovExposure(d) {
+    var box = el('r_govexp'), g = d.gov_exposure;
+    if (!box) return;
+    if (!g) { box.style.display = 'none'; return; }
+    var isZh = lang() === 'zh';
+    var bandLabel = g.band === 'heavy'   ? (isZh ? '高度依赖' : 'Heavy (>10%)') :
+                    g.band === 'notable' ? (isZh ? '显著'     : 'Notable (>2%)') :
+                                           (isZh ? '轻微'     : 'Minor (<2%)');
+    var bandCls = g.band === 'heavy' ? 'neg' : g.band === 'notable' ? 'warn' : 'muted';
+    var contracts = g.contracts_ttm != null ? ('$' + (g.contracts_ttm / 1e9).toFixed(1) + 'B') : '—';
+    var grants    = g.grants_ttm    != null ? ('$' + (g.grants_ttm    / 1e9).toFixed(1) + 'B') : '—';
+    var tipEn = 'TTM federal prime-contract + grant awards ÷ current market cap. ' +
+      'Awards lag 1–2 months (USAspending reporting delay). ' +
+      'Recipient→ticker matching is curated (fuzzy string) — subsidiary contracts may be missed (R9a). ' +
+      'Market-cap denominator is price-live while awards are lagged (R9e). ' +
+      'Annual XBRL evidence; display-only; score cap 60.';
+    var tipZh = 'TTM联邦主合同+补贴奖励÷当前市值。奖励滞后1–2个月（USAspending申报延迟）。' +
+      '受益方→股票代码匹配为人工维护（模糊字符串）—子公司合同可能遗漏（R9a）。' +
+      '市值分母为实时价格而奖励数据有滞后（R9e）。年度XBRL数据；仅展示；评分上限60。';
+    box.innerHTML =
+      '<div class="ms-head">' +
+        '<span class="ms-ttl">' + (isZh ? '政府资金敞口' : 'Gov funding exposure') + '</span>' +
+        '<span class="' + bandCls + ' num" style="font-weight:600">' + g.ratio_pct.toFixed(1) + '% TTM</span>' +
+        ' <span class="ms-chip ' + bandCls + '">' + esc(bandLabel) + '</span>' +
+        '<span class="help" style="margin-left:6px">?<span class="tip">' +
+          '<span class="l-en">' + esc(tipEn) + '</span>' +
+          '<span class="l-zh">' + esc(tipZh) + '</span>' +
+        '</span></span>' +
+      '</div>' +
+      '<div class="ms-chips">' +
+        (g.contracts_ttm != null ? '<span class="ms-chip">' + (isZh ? '合同' : 'Contracts') + ' ' + esc(contracts) + '</span>' : '') +
+        (g.grants_ttm    != null ? '<span class="ms-chip">' + (isZh ? '补贴'  : 'Grants')    + ' ' + esc(grants)    + '</span>' : '') +
+        '<span class="ms-chip muted">' + (isZh ? '市值' : 'Mktcap') + ' $' + (g.mktcap / 1e9).toFixed(0) + 'B</span>' +
+        '<span class="ms-chip muted">' + g.n_months + (isZh ? '个月' : 'm') + '</span>' +
+      '</div>' +
+      '<div class="ms-cav">' + (isZh ? '指纹级 · 仅展示 · 评分上限60' : 'Fingerprint-class · display-only · score cap 60') + '</div>';
     box.style.display = 'block';
   }
 
@@ -1817,8 +1867,9 @@
     else { macro.style.display = 'none'; }
     // (macro-sensitivity + dt-contra now fold into the view-model: evidence.macro +
     //  falsifiers — rendered by SV.mount above; the legacy renders run only on fallback.)
-    renderAltData(d);   // alt-data is a deep context panel (not a competing verdict)
-    renderHold(d);      // W6-C HOLD tracker (basing state + invalidation, display-only)
+    renderAltData(d);       // alt-data is a deep context panel (not a competing verdict)
+    renderGovExposure(d);   // W0c gov-funding chip (fingerprint-class, display-only)
+    renderHold(d);          // W6-C HOLD tracker (basing state + invalidation, display-only)
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
@@ -1894,7 +1945,7 @@
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';
-    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_hold', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
+    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_govexp', 'r_hold', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
       .forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
     if (afCtl) afCtl.close();
     hideFundamentals();

@@ -937,6 +937,31 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("alt-data context unavailable (%s)", e)
         altdata_ctx = {}
+    # W0c — Government-funding exposure chip (engine/gov_exposure.py).
+    # DISPLAY-ONLY; evidence_tier=fingerprint (annual XBRL + monthly awards lag);
+    # score_cap=60.  Absent data or ticker not in USAspending coverage → no chip.
+    # R9a caveat (curated-alias matching) + R9e caveat (price-live mktcap vs lagged
+    # awards) are rendered on-page in stock.html.j2.
+    _gov_obs:  "pd.DataFrame | None" = None
+    _gov_gl:   "pd.DataFrame | None" = None
+    _gov_mktcap: dict[str, float] = {}
+    try:
+        from engine import gov_exposure as _gov_exp
+        _obs_p = config.data_dir() / "usaspending" / "obligations.parquet"
+        _gl_p  = config.data_dir() / "usaspending" / "grants_loans.parquet"
+        if _obs_p.exists():
+            _gov_obs = pd.read_parquet(_obs_p)
+        if _gl_p.exists():
+            _gov_gl = pd.read_parquet(_gl_p)
+        _fj_p = site / "factordata" / "factors.json"
+        if _fj_p.exists():
+            for _fr in (json.loads(_fj_p.read_text()) or {}).get("table", []):
+                _t = _fr.get("ticker")
+                _mc = _fr.get("mktcap_bn")
+                if _t and _mc:
+                    _gov_mktcap[_t] = float(_mc) * 1e9  # factors.json is in $B
+    except Exception as _gve:  # noqa: BLE001 — additive, never fatal
+        log.warning("gov_exposure preload skipped (%s)", _gve)
     # W3 evidence-stack: news burst (DISPLAY-ONLY; 17-ticker coverage today).
     # site/news/by_ticker.json schema: {schema, is_context_only, asof, tickers}.
     # Absent file or missing ticker => chip absent.
@@ -1473,6 +1498,17 @@ def main() -> int:
                     rec["altdata"] = ad
             except Exception as e:  # noqa: BLE001 — additive, never fatal
                 log.warning("alt-data chip for %s failed (%s)", ticker, e)
+        # ---- Government-funding exposure chip (W0c, display-only) -----------
+        # Fingerprint-class (annual XBRL lag + monthly awards lag); score_cap=60.
+        # R9a/R9e caveats rendered in template via data-tip-en/data-tip-zh.
+        if _gov_obs is not None and _gov_mktcap:
+            try:
+                _ge = _gov_exp.funding_to_mktcap(
+                    ticker, _gov_obs, _gov_gl, _gov_mktcap)
+                if _ge:
+                    rec["gov_exposure"] = _ge
+            except Exception as _gee:  # noqa: BLE001 — additive, never fatal
+                log.warning("gov_exposure chip for %s failed (%s)", ticker, _gee)
         # ---- DannyTrades CONTRARIAN read (display-only) -----------------------
         # extension flag (decile Spearman −0.88) + whale-fade; needs full OHLCV+volume
         # (data/stocks names only — others silently skip). See research/DANNYTRADES_PHASE0.md.
