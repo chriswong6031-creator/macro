@@ -150,6 +150,57 @@ def _lifespan_rows(quad: pd.Series) -> list[dict]:
     return rows
 
 
+def _check_closes_cache() -> dict | None:
+    """HKCA-13: canada_breadth/_closes_cache.parquet is gitignored rebuild-only.
+    In a fresh worktree (or after any worktree wipe) it is absent, which makes
+    the per-sector drill-down pages render with zero stock-level cards -- silently.
+    This check makes the absence VISIBLE in the health table at build time.
+    DO NOT rebuild the cache here; that belongs in the collect lane (canada_breadth)."""
+    cache = config.data_dir() / "canada_breadth" / "_closes_cache.parquet"
+    if not cache.exists():
+        log.error(
+            "HKCA-13: canada_breadth/_closes_cache.parquet is MISSING -- "
+            "sector drill-down pages will ship with empty stock-level cards.  "
+            "Fix: run scripts/collect.py --only canada_breadth to rebuild it."
+        )
+        return {
+            "en": "Sector drill-down cache (MISSING -- run canada_breadth collector)",
+            "zh": "板块下钻缓存（缺失 -- 请运行 canada_breadth 收集器）",
+            "status": "MISSING",
+            "rows": 0,
+            "last": "—",
+        }
+    try:
+        df = pd.read_parquet(cache)
+    except Exception as exc:  # noqa: BLE001
+        log.error("HKCA-13: canada_breadth/_closes_cache.parquet unreadable: %s", exc)
+        return {
+            "en": "Sector drill-down cache (UNREADABLE -- see build log)",
+            "zh": "板块下钻缓存（不可读 -- 查看构建日志）",
+            "status": "ERROR",
+            "rows": 0,
+            "last": "—",
+        }
+    if df.empty or df.shape[1] == 0:
+        log.error(
+            "HKCA-13: canada_breadth/_closes_cache.parquet exists but is empty "
+            "(%s) -- sector drill-down pages will ship hollow.  "
+            "Fix: run scripts/collect.py --only canada_breadth to rebuild it.",
+            cache,
+        )
+        return {
+            "en": "Sector drill-down cache (EMPTY -- run canada_breadth collector)",
+            "zh": "板块下钻缓存（为空 -- 请运行 canada_breadth 收集器）",
+            "status": "EMPTY",
+            "rows": 0,
+            "last": "—",
+        }
+    last_date = df.index.max().date() if hasattr(df.index, "max") else "?"
+    n_names = df.shape[1]
+    log.info("canada_breadth/_closes_cache.parquet: %d names, last=%s", n_names, last_date)
+    return None   # None = healthy; no warning row needed
+
+
 def _health_rows() -> list[dict]:
     sources = store.read_status().get("sources", {})
     labels = {"canada_prices": ("Prices / sectors", "价格 / 板块"),
@@ -162,6 +213,10 @@ def _health_rows() -> list[dict]:
             continue
         rows.append({"en": en, "zh": zh, "status": s.get("status", "?"),
                      "rows": s.get("rows", 0), "last": s.get("last_date") or "—"})
+    # HKCA-13: make a missing/empty _closes_cache.parquet visible in the health table.
+    cache_warn = _check_closes_cache()
+    if cache_warn is not None:
+        rows.append(cache_warn)
     return rows
 
 
