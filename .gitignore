@@ -131,7 +131,9 @@ research/_recon_raw/
 site/live/
 
 # options-flow transient caches (re-downloadable; keep out of git)
+# Options Alpha §A8: data/massive_flat/ and data/massive_flatfiles/ are dead stray dirs; do not write to them.
 data/massive_flat/
+data/massive_flatfiles/
 data/options_flow/_*.parquet
 # heavy per-ticker stores — served from Cloudflare R2 (scripts/publish_r2.py), not committed/deployed
 site/subsectorohlc/
@@ -154,6 +156,11 @@ data/hk_stocks_ext/*.parquet
 #            data/massive_stock_day/_backfill_state.json (resume state)
 # ~12,400 tickers × ~350 rows = ~240 MB total — must NOT be committed to git.
 data/massive_stock_day/*.parquet
+# Options Alpha §A4/A8: raw Massive.com options day-agg cache.
+# Local cache + R2-published via publish_r2 --dirs massive_options_day.
+# NEVER committed to git; content is re-downloadable from massive.com entitlement.
+# See research/OPTIONS_ALPHA_MASTERPLAN.md §3 rulings A4 and A8.
+data/massive_options_day/
 # (NOT R2) — not regenerable without re-scraping; critical H2a phase-0 evidence.
 # data/hk_shorts/ is intentionally NOT listed here; all files are committed.
 # ---- Slice G store decisions (2026-07-03) ------------------------------------
