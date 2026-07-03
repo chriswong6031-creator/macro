@@ -472,6 +472,11 @@
       background: color-mix(in srgb, var(--down) 7%, var(--panel)); }
   .watch-grid .wg-knife-chip { margin-top: 3px; font-size: 9px; font-weight: 800; line-height: 1.25;
       color: var(--down); }
+  /* H-PLC placement/rights dilution demote — dilutive top-up announced within 90d */
+  .watch-grid a.wg-plc { border-color: color-mix(in srgb, var(--down) 34%, var(--line));
+      background: color-mix(in srgb, var(--down) 7%, var(--panel)); }
+  .watch-grid .wg-plc-chip { margin-top: 3px; font-size: 9px; font-weight: 800; line-height: 1.25;
+      color: var(--down); }
   /* H5 peg-liquidity regime conditioner chip in the deskhero */
   .desk-liq { margin-top: 9px; display: flex; flex-direction: column; gap: 3px; padding: 8px 11px;
       border-radius: 9px; border: 1px solid var(--line); background: var(--panel); }
@@ -543,7 +548,7 @@
   .tr-tbl th:first-child, .tr-tbl td:first-child { text-align: left; }
   .tr-tbl th { color: var(--muted); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; }
 
-  /* (C) evidence-tag micro-style on the why-now chips — validated / accruing / context. */
+  /* (C) evidence-tag micro-style on the why-now chips — .et-validated / .et-accruing / .et-context. */
   .ev-tag { font-size: 7.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em;
       padding: 0 3px; border-radius: 4px; margin-left: 3px; vertical-align: middle; }
   .ev-tag.et-validated { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
@@ -695,7 +700,7 @@
       </div>
       <div class="dm-cell dm-isnt">
         <div class="dm-k">✕ {{ t('What it isn\'t', '它不是什么') }}</div>
-        <div class="dm-v">{{ t('A <b>validated buy list</b>. HK has no idiosyncratic selection alpha (residual momentum is dead on a 40-year panel), so nothing here says "Buy" and the scoreboard is still building — it proves, or refutes, this screen in public.', '一份<b>已验证的买入清单</b>。香港没有特异选股阿尔法（残差动量在40年面板上无效），故此处永不显示“买入”，且记分牌仍在积累 —— 它将在公开中验证或证伪这套筛选。') }}</div>
+        <div class="dm-v">{{ t('<b>Not a validated buy list</b>. HK has no idiosyncratic selection alpha (residual momentum is dead on a 40-year panel), so nothing here says "Buy" and the scoreboard is still building — it proves, or refutes, this screen in public.', '<b>不是已验证的买入清单</b>。香港没有特异选股阿尔法（残差动量在40年面板上无效），故此处永不显示“买入”，且记分牌仍在积累 —— 它将在公开中验证或证伪这套筛选。') }}</div>
       </div>
       <div class="dm-tierline">{{ t('<b>Trust tier: screen.</b> The live cycle state caps every verdict; the size chip is risk-budgeting context, never a rank input. Each card carries its own tier badge below.', '<b>信任等级：筛选。</b>实时周期状态封顶每个结论；仓位标签为风险预算背景，从不参与排名。每张卡片下方标注其自身等级。') }}
         <a href="hk.html" style="color:var(--link);font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></div>
@@ -809,7 +814,7 @@
         {% endif %}
         {% if n.southbound or n.ah_value %}
         <div class="nb-flow">
-          {# W6 evidence tags (§7.3): each why-now chip carries validated / accruing / context
+          {# W6 evidence tags (§7.3): each why-now chip carries an et-validated / et-accruing / et-context
              colour-coding + a tooltip citing its phase-0 report. A/H = the near-GO (DSR 0.879)
              → visual priority via fl-lead. SB flow decays at render lag (H1 NO-GO) → context. #}
           {% if n.southbound and n.southbound.accum_z is not none %}
@@ -847,7 +852,7 @@
       <div class="watch-grid">
         {% for w in setups.watch %}
         {% set wc = w.conviction %}
-        <a href="hk_lookup.html#{{ w.ticker }}" class="{{ 'wg-knife' if w.watch_reason == 'knife' else '' }}" title="{{ wc.verdict if wc else '' }}">
+        <a href="hk_lookup.html#{{ w.ticker }}" class="{{ 'wg-knife' if w.watch_reason == 'knife' else ('wg-plc' if w.watch_reason == 'placement' else '') }}" title="{{ wc.verdict if wc else '' }}">
           <span class="wg-tk">{{ w.ticker }} {% if wc and wc.score is not none %}<span class="note" style="font-weight:600">· {{ wc.score }}</span>{% endif %}</span>
           <span class="wg-v">{{ w.name }}{% if wc %} — <span class="l-en">{{ wc.verdict }}</span><span class="l-zh">{{ wc.verdict_zh }}</span>{% endif %}</span>
           {# FALLING-KNIFE reason chip (H4 phase-0 KILL — reports/h4-phase0.md). A deepest-
@@ -856,6 +861,16 @@
           <span class="wg-knife-chip" data-tip-en="Deepest-quintile trailing-3M loser (return z {{ w.knife_z }}). H4 phase-0 KILL: on this HK universe the deepest 3M losers KEEP FALLING (−0.92%/mo, t −2.14) — short-horizon momentum, not reversal — so this name is held OUT of the entry groups. Screen hygiene gate, not a validated seam." data-tip-zh="近3个月跌幅最深五分位（收益 z {{ w.knife_z }}）。H4 相位0 KILL：在该港股universe中，3个月跌幅最深者继续下跌（−0.92%/月，t −2.14）—— 短周期动量而非反转 —— 故该股被排除在入场组之外。筛选卫生门槛，非已验证seam。">
             <span class="l-en">🔻 3M deepest losers keep falling in HK — phase-0 KILL 2026-07</span>
             <span class="l-zh">🔻 港股3个月最深跌幅者继续下跌 —— 相位0 KILL 2026-07</span>
+          </span>
+          {% endif %}
+          {# H-PLC placement/rights dilution chip (masterplan §3, W1c). A dilutive top-up
+             placement / rights issue / open offer inside the trailing 90d window — fresh
+             dilution + discounted-stock overhang; held OUT of the entry groups. Renders on
+             any flagged watch name (incl. knife demotes carrying a placement stamp too). #}
+          {% if w.placement_flag and w.placement_info %}
+          <span class="wg-plc-chip" title="Dilutive {{ w.placement_info.cat_en }} announced {{ w.placement_info.days_ago }}d ago ({{ w.placement_info.date }}). H-PLC risk gate (masterplan §3): the discounted top-up placement / rights issue is HK's highest-frequency idiosyncratic run-killer — fresh dilution plus a block of below-market stock over the name — so it is held OUT of the entry groups for 90 days. Hygiene gate, ships validation-free; the post-placement drift event study is accruing in the experiments registry. · 近{{ w.placement_info.days_ago }}天公告摊薄性{{ w.placement_info.cat_zh }}（{{ w.placement_info.date }}）。H-PLC 风险门（蓝图§3）：折价配售/供股是港股最高频的个股行情杀手 —— 新增摊薄+低于市价的筹码悬顶 —— 故90天内排除在入场组之外。卫生门槛，无需验证即上线；配售后漂移事件研究已在实验登记册累积。">
+            <span class="l-en">💸 {{ w.placement_info.cat_en | title }} {{ w.placement_info.days_ago }}d ago — dilution overhang (H-PLC gate)</span>
+            <span class="l-zh">💸 {{ w.placement_info.days_ago }}天前{{ w.placement_info.cat_zh }} —— 摊薄悬顶（H-PLC 风险门）</span>
           </span>
           {% endif %}
         </a>

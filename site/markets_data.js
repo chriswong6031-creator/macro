@@ -244,6 +244,7 @@
       "falsifier": "A sustained close back above 7,610 with broadening breadth (NYSE advance-decline new highs) would invalidate the near-term peak call and reopen the melt-up."
     },
     "regimeNote": "Mid-2026's regime is a headwind-tilted-mixed one for the S&P 500: a hawkish Warsh Fed holding at 3.50-3.75% with a hike-leaning dot plot, sticky ~3.6% PCE inflation aggravated by a Strait-of-Hormuz oil spike, and ~2.2% GDP growth, all pressing on a market priced for perfection at a ~40 CAPE.",
+    "regime_claim": { "quad": "Q3", "as_of": "2026-06-24", "conf": "low" },
     "sources": [
       "https://en.wikipedia.org/wiki/Closing_milestones_of_the_S%26P_500",
       "https://www.gurufocus.com/economic_indicators/56/sp-500-shiller-cape-ratio",
@@ -1422,6 +1423,7 @@
       "falsifier": "A decisive break and hold above the ~28,000 February-2026 peak, or a Fed pivot back to cuts, would invalidate the 'correction toward a near-term trough' thesis and signal the bull leg has resumed."
     },
     "regimeNote": "Mid-2026's hawkish Fed (held at 3.50-3.75% with a hiking tilt under Warsh) and firm US dollar are a clear headwind for the USD-pegged HSI, partially offset by China's ongoing fiscal/monetary stimulus and Hong Kong's rock-bottom valuations.",
+    "regime_claim": { "quad": "Q3", "as_of": "2026-07-01", "conf": "medium" },
     "sources": [
       "https://tradingeconomics.com/hong-kong/stock-market",
       "https://www.gurufocus.com/economic_indicators/4421/hang-seng-index",

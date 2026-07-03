@@ -45,8 +45,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-warnings.filterwarnings("ignore")
-logging.disable(logging.CRITICAL)
+if __name__ == "__main__":
+    # CLI-only silencers.  logging.disable() is PROCESS-GLOBAL state: at module level it
+    # leaked out of `import tuning_harness` (engine/donor.py's guarded import, reached via
+    # tests/test_donor.py at pytest collection) and muted every logger for the rest of the
+    # run — breaking any later test that asserts on emitted log records (e.g.
+    # test_whitehouse_w5's qledger import-guard tests). Same rule as walk_forward.py.
+    warnings.filterwarnings("ignore")
+    logging.disable(logging.CRITICAL)
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data" / "stocks"

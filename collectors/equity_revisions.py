@@ -26,6 +26,26 @@ W2a (P1-A): add n_covering + breadth_cov
   breadth_cov — (up − down) / n_covering, coverage-normalised.  Emitted alongside legacy
                 fields (additive — legacy fields are never renamed or removed).  None whenever
                 n_covering is absent.
+
+W0.6b (Setup-Species data plane): add estimate DISPERSION + REVENUE revision metrics
+  eps_dispersion_norm        — (high_est − low_est) / |mean_est| for the forward-year EPS
+                               estimate.  Source: yfinance earnings_estimate accessor columns
+                               'high', 'low', 'avg'.  None when avg ≈ 0 or fields missing.
+                               High dispersion = wide analyst disagreement.
+  rev_growth_fwd             — forward-year implied revenue YoY growth (%): 100 ×
+                               (avg_fwd − yearAgoRevenue) / |yearAgoRevenue|.  Source:
+                               yfinance revenue_estimate accessor.  None when base ≈ 0.
+  rev_est_high_low_spread_norm — (rev_high − rev_low) / |rev_avg| for the forward-year
+                               revenue estimate.  Revenue analyst disagreement proxy.
+  rev_n_analysts             — numberOfAnalysts from revenue_estimate.  Additive; never
+                               substitutes n_analysts or n_covering.
+
+Note: yfinance has no revenue_trend / revenue_revisions endpoint (confirmed 2026-07-03).
+The 30d/90d revenue drift columns are structurally unavailable; they are NOT emitted
+(omitted rather than fabricated).
+
+All four W0.6b fields are ADDITIVE to the existing schema; no existing field is renamed or
+removed.  PIT history behavior is unchanged (append-only history.parquet).
 """
 from __future__ import annotations
 
@@ -106,6 +126,87 @@ def _one(ticker: str) -> dict | None:
         n_covering = None
         breadth_cov = None
 
+    # W0.6b: EPS estimate DISPERSION from earnings_estimate high/low/avg.
+    # Normalised by |avg| so it's comparable across stocks.
+    # None when avg ≈ 0 or any of the three columns are missing/NaN.
+    eps_dispersion_norm: float | None = None
+    try:
+        ee = t.earnings_estimate  # may already be fetched above (yfinance caches)
+        if ee is not None and hasattr(ee, "index"):
+            ee_row = None
+            for k in ("+1y", "0y"):
+                if k in ee.index:
+                    ee_row = k
+                    break
+            if ee_row is not None:
+                for col_set in (("high", "low", "avg"), ("High", "Low", "Avg")):
+                    c_hi, c_lo, c_av = col_set
+                    if all(c in ee.columns for c in col_set):
+                        hi = ee.loc[ee_row, c_hi]
+                        lo = ee.loc[ee_row, c_lo]
+                        av = ee.loc[ee_row, c_av]
+                        try:
+                            hi, lo, av = float(hi), float(lo), float(av)
+                            if hi == hi and lo == lo and av == av and abs(av) >= 1e-6:
+                                eps_dispersion_norm = round((hi - lo) / abs(av), 4)
+                        except (TypeError, ValueError):
+                            pass
+                        break
+    except Exception:  # noqa: BLE001
+        eps_dispersion_norm = None
+
+    # W0.6b: REVENUE revision metrics from revenue_estimate accessor.
+    # revenue_estimate is a DataFrame indexed by horizon, with columns:
+    #   avg, low, high, numberOfAnalysts, yearAgoRevenue, growth  (Yahoo revenueEstimate)
+    # yfinance does NOT expose a revenue_trend / revenue_revisions endpoint — there is no
+    # 30daysAgo / 90daysAgo column for revenue estimates (confirmed 2026-07-03).
+    # We therefore emit:
+    #   rev_growth_fwd  — forward-year implied revenue growth vs yearAgoRevenue (YoY %)
+    #   rev_est_high_low_spread_norm — (high − low) / avg revenue estimate (dispersion)
+    #   rev_n_analysts  — numberOfAnalysts from revenue_estimate (additive, never
+    #                     substitutes n_analysts or n_covering)
+    # The 30d/90d drift columns are structurally unavailable from yfinance; they are
+    # intentionally omitted rather than fabricated.
+    rev_growth_fwd: float | None = None
+    rev_est_high_low_spread_norm: float | None = None
+    rev_n_analysts: int | None = None
+    try:
+        re_df = t.revenue_estimate
+        if re_df is not None and hasattr(re_df, "index"):
+            re_row = None
+            for k in ("+1y", "0y"):
+                if k in re_df.index:
+                    re_row = k
+                    break
+            if re_row is not None:
+                def _rev_num(col: str):
+                    try:
+                        if col not in re_df.columns:
+                            return None
+                        v = float(re_df.loc[re_row, col])
+                        return v if v == v else None
+                    except Exception:  # noqa: BLE001
+                        return None
+
+                re_avg = _rev_num("avg")
+                re_hi = _rev_num("high")
+                re_lo = _rev_num("low")
+                re_yago = _rev_num("yearAgoRevenue")
+                re_na = _rev_num("numberOfAnalysts")
+
+                # YoY growth: (fwd_avg − year_ago) / |year_ago| * 100
+                if re_avg is not None and re_yago is not None and abs(re_yago) >= 1:
+                    rev_growth_fwd = round((re_avg - re_yago) / abs(re_yago) * 100.0, 2)
+                # Spread dispersion: (high − low) / avg
+                if re_hi is not None and re_lo is not None and re_avg is not None and abs(re_avg) >= 1:
+                    rev_est_high_low_spread_norm = round((re_hi - re_lo) / abs(re_avg), 4)
+                if re_na is not None and re_na >= 1:
+                    rev_n_analysts = int(re_na)
+    except Exception:  # noqa: BLE001
+        rev_growth_fwd = None
+        rev_est_high_low_spread_norm = None
+        rev_n_analysts = None
+
     out = {
         "net_up_30d": up - dn,
         "breadth": round((up - dn) / tot, 3) if tot >= 1 else None,
@@ -115,6 +216,11 @@ def _one(ticker: str) -> dict | None:
         # W2a additions — None when earnings_estimate accessor is unavailable
         "n_covering": n_covering,
         "breadth_cov": breadth_cov,
+        # W0.6b additions — None when accessor is unavailable or base ≈ 0
+        "eps_dispersion_norm": eps_dispersion_norm,
+        "rev_growth_fwd": rev_growth_fwd,
+        "rev_est_high_low_spread_norm": rev_est_high_low_spread_norm,
+        "rev_n_analysts": rev_n_analysts,
     }
     return out if any(v is not None for v in out.values()) else None
 

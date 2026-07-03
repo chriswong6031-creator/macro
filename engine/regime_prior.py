@@ -27,14 +27,18 @@ Artifacts:
     data/regime/market_state_history.parquet (keep-first per date) — the PIT accrual
     stub so market_state can become a model feature once n_days >= 250.
 
-Reconciliation helper:
+Reconciliation helpers:
   - check_staleness(curated_as_of) → dict with keys {stale: bool, days: int|None,
     banner_en: str, banner_zh: str}.  Used by build_cycle and build_markets to render
     staleness banners when curated regime prose is > 30 days old.
-  - The current curated cycle_data.js prose (regimeNote strings) carries NO machine-
-    readable regime_claim fields, so contradiction-checking is not yet possible for
-    cycle.html.  markets.html similarly has no regime_claim.  Both pages render
-    staleness-only banners; this module records the honest check limit.
+  - check_claims(narratives, prior) → per-narrative contradiction list: curated data
+    objects may declare ``regime_claim: {quad: "QN", as_of: "YYYY-MM-DD"}``
+    (cycle_data.js CYCLE_META.regime + per-cycle; markets_data.js per-market), and each
+    claimed quad is compared against the live engine quad.
+  - disagreement_block(narratives, prior) → the ``regime_disagreement`` payload block
+    embedded by build_cycle (window.CYCLE_ENGINE) and build_markets
+    (window.MARKETS_ENGINE), with banner SOFTENING when the engine read is itself
+    provisional (low confidence or a fresh TRANSITIONING flip).
 """
 from __future__ import annotations
 
@@ -52,6 +56,34 @@ log = logging.getLogger(__name__)
 _STALE_DAYS = 5
 # Curated prose staleness threshold for reconciliation banner (days)
 _PROSE_STALE_DAYS = 30
+
+# Contradiction-banner SOFTENING — the engine quad is not always a firm read.  When the
+# live regime is low-confidence OR mid-transition (a just-flipped quad that has not dwelled),
+# a curated-vs-engine quad disagreement is downgraded from a firm red banner to a soft amber
+# "provisional" note, so a fresh, uncommitted engine flip does not shout down well-reasoned
+# curated prose.  These thresholds are deliberately permissive: the banner still appears, it
+# just carries the caveat.  A confidence of None (unavailable) is treated as NOT provisional
+# (we cannot claim the read is weak if we cannot read its confidence).
+_PROVISIONAL_CONFIDENCE = 0.40
+_TRANSITIONING_STATES = ("TRANSITIONING",)
+
+
+# Canonical quad → (English, Simplified-Chinese) label map — the single source used by
+# both regime_prior() and the reconciliation banner so a quad code always reads the same.
+_QUAD_NAMES: dict[str, tuple[str, str]] = {
+    "Q1": ("Goldilocks", "金发姑娘"),
+    "Q2": ("Reflation", "再通胀"),
+    "Q3": ("Stagflation", "滞涨"),
+    "Q4": ("Growth-scare", "增长恐慌"),
+}
+
+
+def _quad_label(quad: str | None) -> tuple[str, str]:
+    """'Q3' → ('Q3 Stagflation', 'Q3 滞涨').  Unknown/None → (quad-or-'?', same)."""
+    if not quad:
+        return ("?", "?")
+    en, zh = _QUAD_NAMES.get(quad, ("", ""))
+    return (f"{quad} {en}".strip(), f"{quad} {zh}".strip())
 
 
 def _today_str() -> str:
@@ -152,13 +184,7 @@ def regime_prior(
     # --- 1. Regime quad + liquidity ---
     reg = _read_regime_latest(data_dir)
     quad = reg.get("quad")
-    quad_names = {
-        "Q1": ("Goldilocks", "金发姑娘"),
-        "Q2": ("Reflation", "再通胀"),
-        "Q3": ("Stagflation", "滞涨"),
-        "Q4": ("Growth-scare", "增长恐慌"),
-    }
-    quad_name_en, quad_name_zh = quad_names.get(quad, ("Unknown", "未知")) if quad else ("Unknown", "未知")
+    quad_name_en, quad_name_zh = _QUAD_NAMES.get(quad, ("Unknown", "未知")) if quad else ("Unknown", "未知")
     reg_asof = reg.get("asof") or reg.get("date")
     reg_status = _source_status(reg_asof) if reg else "unavailable"
 
@@ -284,17 +310,14 @@ def check_staleness(curated_as_of: str | None) -> dict[str, Any]:
         "days": days,
         "banner_en": banner_en,
         "banner_zh": banner_zh,
-        # Honest limit: the curated prose (regimeNote strings in cycle_data.js,
-        # narratives in markets_data.js) carries no machine-readable regime_claim
-        # fields.  Contradiction-checking (claimed quad vs engine quad) is not
-        # possible until those fields are added to the curated data.  Only
-        # staleness is checkable today.
+        # This helper checks STALENESS only.  Machine-readable regime_claim fields
+        # ({"regime_claim": {"quad": "QN", "as_of": "YYYY-MM-DD"}} on the curated data
+        # objects) are contradiction-checked separately by check_claims() /
+        # disagreement_block() in the build path.
         "checkable": False,
         "contradiction_note": (
-            "Curated prose carries no machine-readable regime_claim fields; "
-            "contradiction detection requires adding {\"regime_claim\": {\"quad\": \"QN\", "
-            "\"as_of\": \"YYYY-MM-DD\"}} to the curated seed. "
-            "Until then, only prose staleness (>30d) triggers the banner."
+            "Staleness-only helper: machine-readable regime_claim fields on the "
+            "curated seed are contradiction-checked by check_claims(), not here."
         ),
     }
 
@@ -307,9 +330,9 @@ def check_claims(narratives: list[dict] | None, prior: dict | None = None) -> li
 
     If ``prior`` is None, calls regime_prior() to fetch it live.
 
-    This function is a stub for the future — no current curated narrative declares
-    regime_claim, so it will return [] in all current builds.  It is wired and tested
-    so that when regime_claim fields are added, the guard activates automatically.
+    A narrative may opt out explicitly with ``"regime_claim": None`` (a category where a
+    US-quad premise would be a false claim — e.g. a BoJ-premised market).  Narratives with
+    no ``regime_claim`` key at all are simply skipped (unreconciled prose).
     """
     if not narratives:
         return []
@@ -344,3 +367,114 @@ def check_claims(narratives: list[dict] | None, prior: dict | None = None) -> li
                 ),
             })
     return disagreements
+
+
+def _prior_is_provisional(prior: dict | None) -> tuple[bool, str | None]:
+    """Is the live engine quad a firm read, or a fresh/uncommitted one?
+
+    Returns ``(provisional, reason)``.  The engine read is treated as provisional when
+    EITHER the regime confidence is below ``_PROVISIONAL_CONFIDENCE`` OR the transition
+    state is TRANSITIONING (a just-flipped quad that has not dwelled).  A missing
+    confidence is NOT treated as provisional on its own — only an explicit low number is.
+    """
+    p = prior or {}
+    conf = p.get("confidence")
+    trans = p.get("transition_state")
+    reasons: list[str] = []
+    if isinstance(conf, (int, float)) and conf < _PROVISIONAL_CONFIDENCE:
+        reasons.append(f"low confidence {conf:.2f}")
+    if isinstance(trans, str) and trans.upper() in _TRANSITIONING_STATES:
+        reasons.append("regime transitioning")
+    return (bool(reasons), "; ".join(reasons) if reasons else None)
+
+
+def _zh_provisional_reason(prior: dict) -> str:
+    """Simplified-Chinese rendering of the provisional reason(s)."""
+    conf = prior.get("confidence")
+    trans = prior.get("transition_state")
+    parts: list[str] = []
+    if isinstance(conf, (int, float)) and conf < _PROVISIONAL_CONFIDENCE:
+        parts.append(f"置信度偏低 {conf:.2f}")
+    if isinstance(trans, str) and trans.upper() in _TRANSITIONING_STATES:
+        parts.append("体制切换中")
+    return "；".join(parts)
+
+
+def disagreement_block(
+    narratives: list[dict] | None,
+    prior: dict | None = None,
+) -> dict | None:
+    """Compose the ``regime_disagreement`` page-payload block (D5 §3.2).
+
+    Runs ``check_claims`` and wraps the result with the engine read's provenance, a page-level
+    SUMMARY banner, and a SOFTENING flag.  When the engine quad is provisional (low confidence
+    or mid-transition, per ``_prior_is_provisional``), the banner is downgraded to amber with a
+    "provisional" caveat instead of a firm red contradiction, so a fresh, uncommitted engine
+    flip does not shout down well-reasoned curated prose.
+
+    The summary banner leads with the PRIMARY narrative (id "meta" when present, else the first
+    disagreement) and counts how many curated notes assert the same claimed quad — so the reader
+    sees one headline, not a stack of near-identical per-cycle banners (those survive in
+    ``disagreements`` for a card-level UI or debugging).
+
+    Returns None when there is nothing to render (no narratives, no disagreements) so the caller
+    can omit the key entirely rather than emit an empty block.
+    """
+    if prior is None:
+        try:
+            prior = regime_prior()
+        except Exception as e:  # noqa: BLE001
+            log.warning("regime_prior.disagreement_block: could not load prior: %s", e)
+            return None
+    disagreements = check_claims(narratives, prior=prior)
+    if not disagreements:
+        return None
+
+    p = prior or {}
+    provisional, reason = _prior_is_provisional(p)
+    for d in disagreements:
+        d["soft"] = provisional
+
+    engine_quad = p.get("quad")
+    engine_asof = (p.get("sources") or {}).get("regime", {}).get("asof")
+    eng_en, eng_zh = _quad_label(engine_quad)
+
+    # primary = the meta narrative (the page's headline premise) when present, else the first.
+    primary = next((d for d in disagreements if d.get("narrative_id") == "meta"), disagreements[0])
+    claimed_quad = primary.get("claimed_quad")
+    clm_en, clm_zh = _quad_label(claimed_quad)
+    n_same = sum(1 for d in disagreements if d.get("claimed_quad") == claimed_quad)
+
+    banner_en = (
+        f"Curated regime narrative reads {clm_en}; the live regime engine reads "
+        f"{eng_en} (as of {engine_asof})."
+    )
+    banner_zh = (
+        f"策展体制叙述为 {clm_zh}；实时体制引擎读数为 {eng_zh}（截至 {engine_asof}）。"
+    )
+    if n_same > 1:
+        banner_en += f" {n_same} curated notes assert {claimed_quad}."
+        banner_zh += f" 共 {n_same} 条策展注记指向 {claimed_quad}。"
+    if provisional:
+        banner_en += f" Engine read is provisional — {reason}; treat as a soft flag."
+        banner_zh += f" 引擎读数为暂定——{_zh_provisional_reason(p)}；视为柔性提示。"
+
+    return {
+        "engine_quad": engine_quad,
+        "engine_quad_label_en": eng_en,
+        "engine_quad_label_zh": eng_zh,
+        "engine_asof": engine_asof,
+        "engine_confidence": p.get("confidence"),
+        "engine_transition_state": p.get("transition_state"),
+        "engine_liquidity": p.get("liquidity"),
+        "claimed_quad": claimed_quad,
+        "primary_narrative_id": primary.get("narrative_id"),
+        "provisional": provisional,
+        "provisional_reason": reason,
+        # amber when the engine read is itself provisional (soft flag); red when firm.
+        "cls": "stale-amber" if provisional else "stale-red",
+        "banner_en": banner_en,
+        "banner_zh": banner_zh,
+        "n": len(disagreements),
+        "disagreements": disagreements,
+    }

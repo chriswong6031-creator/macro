@@ -586,6 +586,87 @@ def _falling_knife_demote(buys: list[dict], enriched: list[dict]) -> tuple[list[
     return keep, demoted, cut
 
 
+# Render-lane freshness gate on the H-PLC store: placings print near-daily across
+# SEHK, so a store whose newest announcement is a week behind the price panel means
+# the collect lane is broken — degrade loudly, never silently fail open.
+PLACEMENT_STORE_MAX_STALE_D = 7
+
+
+def _placement_flags(tickers: list[str], as_of) -> tuple[dict, dict | None, bool]:
+    """H-PLC dilution-flag lookup + freshness gate (masterplan §3 H-PLC, W1c).
+
+    Reads the collect-lane store via ``collectors.hk_placements.flag_map`` — a pure
+    parquet read, no network in the render lane. Fail-closed lives at the COLLECTOR
+    (a zero-event fetch raises there, tripwire-named); here a missing or stale store
+    degrades LOUDLY: no flags plus a visible health row (§2 principle 6), never a
+    silent fail-open where freshly-diluted names sail into the entry groups
+    unmarked. Returns ``(flag_map, health_row | None, available)`` — ``available``
+    False also nulls the board-ledger stamp (None = 'not stamped', never a fake
+    False)."""
+    degraded = {
+        "leg": "placement_gate",
+        "en": "Placement/rights dilution gate unavailable this render — flags suppressed (see logs).",
+        "zh": "配售/供股摊薄风险门本次不可用 —— 标记已抑制（见日志）。",
+    }
+    try:
+        from collectors.hk_placements import flag_map, store_status
+        st = store_status()
+        if not st.get("available"):
+            log.warning("hk placement gate: event store missing/empty — flags suppressed")
+            return {}, degraded, False
+        if st.get("latest") and as_of:
+            gap = int((pd.Timestamp(str(as_of)) - pd.Timestamp(str(st["latest"]))).days)
+            if gap > PLACEMENT_STORE_MAX_STALE_D:
+                log.warning("hk placement gate: store %dd behind panel — flags suppressed", gap)
+                return {}, {
+                    "leg": "placement_gate",
+                    "en": (f"Placement/rights dilution gate degraded — newest stored announcement "
+                           f"is {gap} days behind the price panel; flags suppressed this render."),
+                    "zh": f"配售/供股摊薄风险门已降级 —— 最新公告落后价格面板 {gap} 天；本次渲染未标记。",
+                }, False
+        return flag_map(tickers, asof=str(as_of) if as_of else None), None, True
+    except Exception as ex:  # noqa: BLE001 — degrade loudly, never break the render
+        log.warning("hk placement gate unavailable (%s) — flags suppressed, health flagged", ex)
+        return {}, degraded, False
+
+
+def _placement_demote(buys: list[dict], enriched: list[dict],
+                      plc_map: dict[str, dict]) -> tuple[list[dict], list[dict]]:
+    """PLACEMENT/RIGHTS DILUTION DEMOTE (H-PLC — masterplan §3, shipped W1c).
+
+    HK's highest-frequency idiosyncratic run-killer: a discounted top-up placement /
+    rights issue prints fresh dilution and hangs a block of below-market stock over
+    the name. A name with a dilutive announcement inside the trailing 90d window
+    (``collectors.hk_placements.FLAG_WINDOW_D``) must NOT sit in the ripe-list
+    entry_open/setting_up groups — it is pushed onto the watch strip with a
+    bilingual warning chip. This is the §5.0 hygiene predicate "not
+    placement-flagged [HK]" delivered as a demote (the W4 falling-knife pattern),
+    NOT a scored seam: risk gates ship validation-free; the post-placement drift
+    event study accrues in the experiments registry for the honest read later.
+
+    Tags EVERY flagged row in ``enriched`` in place (``placement_flag`` /
+    ``placement_info`` with bilingual category + days_ago) so knife-demoted and
+    watch names also carry the stamp for the board ledger and the chip, then splits
+    ``buys`` into (kept, demoted)."""
+    cats = {"placing": ("placing", "配售"),
+            "rights_issue": ("rights issue", "供股"),
+            "open_offer": ("open offer", "公开发售")}
+    for e in enriched:
+        info = plc_map.get(e.get("ticker"))
+        if not info:
+            continue
+        cat_en, cat_zh = cats.get(info.get("category"),
+                                  (str(info.get("category")), str(info.get("category"))))
+        e["placement_flag"] = True
+        e["placement_info"] = {"cat_en": cat_en, "cat_zh": cat_zh,
+                               "date": info.get("date"),
+                               "days_ago": info.get("days_ago"),
+                               "n_events": info.get("n_events")}
+    keep = [e for e in buys if not e.get("placement_flag")]
+    demoted = [e for e in buys if e.get("placement_flag")]
+    return keep, demoted
+
+
 def _adv63_map(tickers: list[str]) -> dict[str, float]:
     """63-day average dollar TURNOVER (close × volume) per ticker, from the deep
     hk_stocks OHLCV store — the ripe-list TIEBREAK (§5.0). HK breadth names are
@@ -1145,6 +1226,17 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                  "(3M-return z <= P20 %.2f)", len(demoted_knife),
                  len(demoted_knife) + len(buys), _knife_cut)
 
+    # ---- PLACEMENT/RIGHTS DILUTION DEMOTE (H-PLC — masterplan §3, W1c risk gate) --------
+    # dilutive announcement within 90d -> pushed OUT of the entry groups onto the watch
+    # strip (fresh dilution + discounted-stock overhang). Hygiene gate, not a scored seam.
+    plc_map, _plc_health, _plc_ok = _placement_flags(
+        [e.get("ticker") for e in enriched], as_of)
+    buys, demoted_plc = _placement_demote(buys, enriched, plc_map)
+    if demoted_plc:
+        log.info("hk placement demote (H-PLC): demoted %d of %d entry candidates "
+                 "(dilutive placement/rights announcement in window)",
+                 len(demoted_plc), len(demoted_plc) + len(buys))
+
     for e in buys:
         e["group"] = "entry_open" if _entry_open(e) else "setting_up"
         e["entry_window"] = _entry_window(e)     # open-now | pullback lo–hi | wait-for-weekly
@@ -1156,10 +1248,13 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     # reason chip so the watcher sees WHY they were pushed out of the entry groups.
     for e in demoted_knife:
         e["watch_reason"] = "knife"
-    _knife_ids = {id(d) for d in demoted_knife}
-    watch = demoted_knife + [e for e in ranked
-                             if id(e) not in buy_keys and id(e) not in _knife_ids
-                             and comp(e) > 0.2][: max(0, 8 - len(demoted_knife))]
+    for e in demoted_plc:
+        e["watch_reason"] = "placement"
+    _demoted = demoted_knife + demoted_plc
+    _demoted_ids = {id(d) for d in _demoted}
+    watch = _demoted + [e for e in ranked
+                        if id(e) not in buy_keys and id(e) not in _demoted_ids
+                        and comp(e) > 0.2][: max(0, 8 - len(_demoted))]
     laggards = sorted(enriched, key=comp)[:n_lag]
 
     for e in buys + watch:
@@ -1179,6 +1274,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             "en": f"Theme tailwind suppressed — basket prices {_stale_td} trading days stale.",
             "zh": f"主题顺风已抑制 —— 篮子价格滞后 {_stale_td} 个交易日。",
         })
+    if _plc_health:                       # H-PLC store missing/stale — flags suppressed
+        health.append(_plc_health)
     # southbound store staleness: the smart-money summary's as_of vs the card panel date.
     try:
         out_sb = hk_southbound_stocks.market_summary()
@@ -1227,6 +1324,10 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                 "knife_demoted": bool(e.get("knife_demoted")),
                 "sfc_short_pctile": (e.get("sfc_short") or {}).get("pctile"),
                 "liq_regime": (liquidity_regime or {}).get("regime"),
+                # W1c H-PLC risk-gate stamp (persisted — board_ledger schema column).
+                # None when the placement store was degraded this render: 'not
+                # stamped' must stay distinct from 'checked, clean'.
+                "placement_flag": (bool(e.get("placement_flag")) if _plc_ok else None),
             })
         _n = board_ledger.append_board(calls, market="HK", asof=str(as_of) if as_of else None)
         if _n:

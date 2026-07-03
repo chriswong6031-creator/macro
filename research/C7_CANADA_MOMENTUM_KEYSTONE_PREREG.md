@@ -6,6 +6,24 @@
 
 ---
 
+> **ERRATA / ADDENDUM (2026-07-03) — HK reference numbers superseded; the pre-registered text
+> below is preserved as committed.** The HK pins cited in §0 and §1.1 (`mom_res` LS Sharpe
+> −0.22 full / −0.35 modern, DSR 0.00) came from the pre-2026-06-18 **73-name**
+> `data/hk_search/closes_deep.parquet` panel. The panel expanded to **157 names** (2026-06-18
+> stamp); the live harness (`scripts/hk_residual_alpha_phase0`) now gives `mom_res` IC +0.012
+> (t_HAC 1.28), LS Sharpe **+0.17 full / +0.31 modern**, DSR 0.28/0.33 — still fails DSR in every
+> window. The expansion sign-flipped a near-zero Sharpe, not the verdict: the HK **KILL stands on
+> DSR/IC grounds, not sign**, so the §0 honest prior (`mom_res` on CA prior-lean NO-GO by analogy)
+> is unchanged. The **§1.1 acceptance gate is superseded** by the masterplan §4.1 C7 re-wording
+> (PR #1047): the fork must reproduce, **to the digit, a same-day fresh run of
+> `scripts/hk_residual_alpha_phase0` on the current HK panel — never a frozen numeric pin**; the
+> ±0.05 tolerance around −0.22/−0.35 is void. (§3's "the HK `mom_res` outcome" KILL example: on
+> the live panel the HK result maps to this doc's NO-GO band — near-zero-positive Sharpe, DSR
+> near 0 — while the house verdict label remains KILL.) Reference:
+> `reports/hk-residual-alpha-phase0.md` (regenerated).
+
+---
+
 ## 0. Question & honest prior
 
 **Question.** On Canada, does cross-sectional momentum (total OR beta-stripped residual) predict
@@ -20,7 +38,8 @@ split-half sign-stability, independent-episode effective-N)?
 
 **Honest priors (pre-stated, per masterplan §4.1):**
 - HK precedent (`reports/hk-residual-alpha-phase0.md`) says the *residual* construction is **dead**
-  on a beta-dominated Asian large-cap panel: `mom_res` LS Sharpe −0.22 full / −0.35 modern, DSR 0.00.
+  on a beta-dominated Asian large-cap panel: `mom_res` LS Sharpe −0.22 full / −0.35 modern, DSR 0.00
+  *(numbers superseded — see Errata 2026-07-03 above; prior-lean unchanged)*.
   So `mom_res` on CA is prior-lean NO-GO by analogy.
 - Canada literature (Foerster et al. and the TSX momentum literature) says **total-return** momentum
   is plausible on Canadian equities.
@@ -52,6 +71,11 @@ tolerance **±0.05**. Achieved by importing the SAME shared `score_panel`/`quint
 that the HK fork uses and running the HK panel through the fork's own code path. If it cannot
 reproduce within tolerance, the fork is fixed before CA runs; the reproduction numbers are pasted
 into the report. (No CA verdict on an unvalidated harness.)
+
+*(Gate superseded — see Errata 2026-07-03 above: per masterplan §4.1 C7 (PR #1047) the fork must
+reproduce, to the digit, a **same-day fresh run** of `scripts/hk_residual_alpha_phase0` on the
+current HK panel — never the frozen −0.22/−0.35 pin, which the 2026-06-18 73→157 panel expansion
+sign-flipped to +0.17/+0.31 while leaving the KILL intact.)*
 
 ### 1.2 Construction (fixed before running)
 Mirrors the shared harness exactly (betas causal, lagged 1d, shrink 0.66; formation 252d skip 21d =
