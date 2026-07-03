@@ -30,7 +30,7 @@ from engine import stock_technicals  # noqa: E402  — richer close-only technic
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
-from engine.setups import ALIGN_MIN_KEEP, entry_open_first  # noqa: E402
+from engine.setups import ALIGN_MIN_KEEP  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -459,12 +459,174 @@ def _spark_svg(vals: list[float], color: str = "var(--link)",
             f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
 
 
+# Hard freshness gate (masterplan §2 principle 6 / §5.2 / audit HKCA-3): the basket
+# tailwind axis is fed by the hk_search deep close panel (closes_deep.parquet); the
+# CARD price comes from the hk_breadth close cache. If the basket price source is more
+# than this many TRADING days staler than the card panel, the tailwind axis is a lie
+# and must be SUPPRESSED with a visible reason — enforced in code, never by cadence.
+FRESHNESS_MAX_STALE_TD = 3
+
+
+def _entry_window(e: dict) -> dict:
+    """Derive the ripe-list CARD entry window (§5.0) from the existing entry-gauge
+    fields — one of 'open-now' | 'pullback LO–HI' | 'wait-for-weekly'.
+
+    Reads e['entry_signal'] (engine.entry_signal.assess) + e['group']:
+      * open-now         — status buy_now/partial (window open)
+      * pullback LO–HI   — a buy_zone exists below spot; wait to buy the dip
+      * wait-for-weekly  — aligned/near but no open window / awaiting confluence
+    Returns {kind, en, zh, lo, hi} — lo/hi are the buy-zone bounds when present.
+    """
+    es = e.get("entry_signal") or {}
+    st = es.get("status")
+    bz = es.get("buy_zone") or {}
+    lo, hi = bz.get("low"), bz.get("high")
+    if st in ("buy_now", "partial"):
+        return {"kind": "open-now",
+                "en": "entry: open now", "zh": "入场：当前开启", "lo": lo, "hi": hi}
+    if hi is not None and st in ("buy_soon", "wait_pullback", "watch"):
+        _lo = lo if lo is not None else hi
+        if hi != _lo:
+            span = f"{_lo:.2f}–{hi:.2f}"
+        else:
+            span = f"{hi:.2f}"
+        return {"kind": "pullback",
+                "en": f"entry: pullback {span}", "zh": f"入场：回调 {span}",
+                "lo": _lo, "hi": hi}
+    return {"kind": "wait-for-weekly",
+            "en": "entry: wait for the weekly to turn", "zh": "入场：等待周线转向",
+            "lo": lo, "hi": hi}
+
+
+def _card_lead(e: dict, ewin: dict) -> dict:
+    """One plain-English, mechanism-FIRST sentence per card (§7.1), assembled from
+    already-computed fields — active language, en + zh, ending with the entry window.
+
+    Fields used (all pre-stamped on the enriched row): southbound accum z, A/H value
+    (percentile/cheap), bottoming-alignment state, and the derived entry window. The
+    lead leads with the strongest FRESH mechanism, never the composite score.
+    Example: "Mainland crowd adding (SB z +1.2) · H cheap vs A · weekly basing ·
+              entry: pullback 41.20–42.80."
+    """
+    en_parts: list[str] = []
+    zh_parts: list[str] = []
+    sb = e.get("southbound") or {}
+    sbz = sb.get("accum_z")
+    if sbz is not None and sbz >= 0.6:
+        en_parts.append(f"Mainland crowd adding (SB z {sbz:+.1f})")
+        zh_parts.append(f"内地资金加仓（南向 z {sbz:+.1f}）")
+    elif sbz is not None and sbz <= -0.6:
+        en_parts.append(f"Mainland crowd trimming (SB z {sbz:+.1f})")
+        zh_parts.append(f"内地资金减仓（南向 z {sbz:+.1f}）")
+    ah = e.get("ah_value") or {}
+    if ah.get("cheap"):
+        pp = ah.get("premium_pct")
+        en_parts.append("H cheap vs A" + (f" ({pp:.0f}% disc)" if pp is not None else ""))
+        zh_parts.append("H 相对 A 便宜" + (f"（折价 {pp:.0f}%）" if pp is not None else ""))
+    al = (e.get("conviction") or {}).get("alignment") or {}
+    if e.get("group") == "entry_open":
+        en_parts.append("cycle aligned")
+        zh_parts.append("周期共振")
+    elif al.get("aligned") or al.get("near"):
+        en_parts.append("weekly basing")
+        zh_parts.append("周线筑底")
+    if e.get("washout_2w"):
+        en_parts.append("2W washout reclaim")
+        zh_parts.append("2周超卖反抽")
+    if not en_parts:                       # never emit a hollow lead
+        en_parts.append("Structural screen")
+        zh_parts.append("结构性筛选")
+    en = " · ".join(en_parts) + " · " + ewin["en"] + "."
+    zh = " · ".join(zh_parts) + " · " + ewin["zh"] + "。"
+    return {"en": en, "zh": zh}
+
+
+def _float_or_zero(v) -> float:
+    try:
+        f = float(v)
+        return f if f == f else 0.0   # NaN -> 0
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _adv63_map(tickers: list[str]) -> dict[str, float]:
+    """63-day average dollar TURNOVER (close × volume) per ticker, from the deep
+    hk_stocks OHLCV store — the ripe-list TIEBREAK (§5.0). HK breadth names are
+    close-ONLY, so ADV is available only for names backfilled into the deep store;
+    absent => 0.0 and the contract sort falls back to the conviction composite for
+    that name's tiebreak. Best-effort; a bad read yields no entry."""
+    out: dict[str, float] = {}
+    for t in tickers:
+        try:
+            df = store.read("hk_stocks", t)
+            if df is None or "volume" not in df.columns or "close" not in df.columns:
+                continue
+            dv = (pd.to_numeric(df["close"], errors="coerce")
+                  * pd.to_numeric(df["volume"], errors="coerce")).dropna()
+            if len(dv) >= 20:
+                out[t] = float(dv.tail(63).mean())
+        except Exception:  # noqa: BLE001 — additive; a missing name just tiebreaks on conviction
+            continue
+    return out
+
+
+def _panel_max_date(path: Path) -> pd.Timestamp | None:
+    """Max index date of a wide [Date × ticker] close parquet (None if unreadable)."""
+    if not path.exists():
+        return None
+    try:
+        idx = pd.DatetimeIndex(pd.read_parquet(path, columns=[]).index)
+        return idx.max() if len(idx) else None
+    except Exception:  # noqa: BLE001 — best-effort; a bad read never blocks the gate
+        try:
+            idx = pd.DatetimeIndex(pd.read_parquet(path).index)
+            return idx.max() if len(idx) else None
+        except Exception:  # noqa: BLE001
+            return None
+
+
+def _tailwind_staleness_td() -> int | None:
+    """Trading-day gap between the CARD price panel (hk_breadth/_closes_cache) and the
+    BASKET tailwind price source (hk_search/closes_deep). Positive => baskets are staler.
+
+    Counts TRADING days (bars present in the fresher card panel that fall after the
+    basket source's last bar), not calendar days — so a normal weekend never trips the
+    gate. Returns None when either panel is unreadable (gate then no-ops open — logged
+    by the caller). Masterplan §2.6 / HKCA-3.
+    """
+    d = config.data_dir()
+    card = _panel_max_date(d / "hk_breadth" / "_closes_cache.parquet")
+    basket = _panel_max_date(d / "hk_search" / "closes_deep.parquet")
+    if card is None or basket is None:
+        return None
+    if basket >= card:
+        return 0
+    try:
+        card_idx = pd.DatetimeIndex(pd.read_parquet(
+            d / "hk_breadth" / "_closes_cache.parquet", columns=[]).index).sort_values()
+    except Exception:  # noqa: BLE001
+        # calendar-day fallback if the empty-column read path is unavailable
+        return int((card - basket).days)
+    return int((card_idx > basket).sum())
+
+
 def _basket_tailwind_map() -> dict[str, dict]:
     """Per-ticker thematic-basket TAILWIND for the Conviction "upside" axis — the
     strongest HK theme a name belongs to, scored by that basket's 20d return vs the
     HSI benchmark (engine.baskets_hk). Mirrors build_stock_library._basket_tailwind_map.
     Best-effort — any failure yields {} and the axis is simply absent (the engine
-    never reads a missing leg as neutral)."""
+    never reads a missing leg as neutral).
+
+    HARD FRESHNESS GATE (§2.6, HKCA-3): if the basket price source (hk_search/
+    closes_deep) is >FRESHNESS_MAX_STALE_TD trading days staler than the card price
+    panel (hk_breadth cache), the whole axis is SUPPRESSED ({} returned) — the caller
+    surfaces a visible "basket prices N days stale" health banner. Code, not cadence.
+    """
+    stale_td = _tailwind_staleness_td()
+    if stale_td is not None and stale_td > FRESHNESS_MAX_STALE_TD:
+        log.warning("hk basket tailwind SUPPRESSED — basket prices %d trading days "
+                    "staler than card panel (> %d gate)", stale_td, FRESHNESS_MAX_STALE_TD)
+        return {}
     out: dict[str, dict] = {}
     try:
         from engine import baskets_hk
@@ -521,7 +683,28 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     (parabolic / over-200dma / lottery) and the macro risk overlay are armed so the size /
     verb are meaningful. HK still has NO selection alpha, so trust_tier='HK'/'screen' and
     the verdict never says "Buy". Board is ranked by the gated conviction composite and
-    split buy / watch (strong-but-blocked) / laggards. Returns a setups-shaped dict."""
+    split buy / watch (strong-but-blocked) / laggards. Returns a setups-shaped dict.
+
+    THE RIPE-LIST CONTRACT (masterplan §5.0 — the deterministic pre-validation board
+    order; quoted verbatim). Under the C7 zero-GO branch (all Canada momentum trials
+    ACCRUE, §4.1 Branch B) this is ALSO the permanent product, so the order is made
+    EXACT and deterministic here, not merely emergent:
+
+        UNIVERSE = names passing hygiene (ADV floor · not suspended · price fresh · not
+                   placement-flagged [HK])
+        INCLUDE  = bottoming-alignment ∈ {PRIME, ARMED} (existing gate; near-aligned
+                   backfill to min 10 when thin)
+        GROUP    = entry-open (confluence T1-T3 buyable ∧ in/near buy-zone) > setting-up
+                   (aligned, awaiting trigger)
+        RANK     = within group, edge-stack z percentile (HK: hk_edge fused z as shipped)
+        TIEBREAK = 63d ADV desc
+        CARD     = mechanism lead (§7.1) + entry window (open-now | pullback lo–hi |
+                   wait-for-weekly) + tier badge + why-now chips
+
+    Timing GROUPS and GATES; the edge RANKS within groups — the house truth. Every
+    ranked name is stamped with group + entry_window and logged to the standout-board
+    forward ledger (engine.board_ledger, §5.4) at render time.
+    """
     from collections import defaultdict
     from engine import dispersion, entry_signal, extension as ext_eng, risk_sizing
     from engine import hk_ah, hk_southbound_stocks, hk_stock_signals
@@ -592,6 +775,9 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
 
     # ---- HK-native conviction legs (the unique system) -----------------------
     tickers = [e["ticker"] for e in enriched]
+    adv63 = _adv63_map(tickers)          # ripe-list TIEBREAK (§5.0): 63d dollar turnover
+    for e in enriched:
+        e["_adv63"] = adv63.get(e["ticker"])
     closes = _closes_matrix()
     factor = _factor_ret()
     # cross-sectional DISPERSION regime — the dial for WHEN selection pays, computed ONCE over
@@ -616,6 +802,20 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             if (closes is not None and factor is not None) else {})
     ext_map = ext_eng.extension_signals(closes) if closes is not None else {}
     lottery = hk_stock_signals.lottery_map(closes) if closes is not None else {}
+    # ---- CN PORTS as LOG-AND-GRADE (masterplan §5.3) — computed here, stamped on the
+    # card + ledger, but NEVER allowed to affect rank yet (grades mature first, W4/W7).
+    #   washout_2w: the 2W-FRI StochRSI washout-reclaim pattern ported verbatim from
+    #               build_china_library (_tf_state on the 2-week resample).
+    #   extended:   the extension read (ext_map grade in {stretched, parabolic}).
+    washout_2w: dict[str, bool] = {}
+    if closes is not None:
+        from engine.cycles import _tf_state as _tf_state_2w
+        for t in list(closes.columns):
+            try:
+                s2w = closes[t].resample("2W-FRI").last().dropna()
+                washout_2w[t] = bool(_tf_state_2w(s2w).get("stoch_cross_up"))
+            except Exception:  # noqa: BLE001 — additive; thin history -> no flag
+                continue
     edge = hk_stock_signals.hk_edge(tickers, southbound=southbound, ah_value=ah_value,
                                     bnrs=bnrs, betas_pt=betas_pt, risk_state=risk_state)
     vhsi_pct = _vhsi_pctile()
@@ -637,6 +837,10 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         e["edge_basis"] = ed.get("basis")
         e["southbound"] = southbound.get(t)
         e["ah_value"] = ah_value.get(t)
+        # CN ports — LOG-AND-GRADE only, never a rank input yet (§5.3).
+        e["washout_2w"] = bool(washout_2w.get(t))
+        _xg = (ext_map.get(t) or {}).get("grade")
+        e["extended"] = _xg in ("stretched", "parabolic")
         # the FUSED HK edge lands in the selection slot (rs_z); falls back to the raw RS z
         # only when no HK-native leg resolves. The pullback/extended tag rides on alpha_entry.
         sel_z = ed.get("z") if ed.get("z") is not None else e["alpha"]
@@ -806,10 +1010,48 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     for e in buys:
         e["align_tier"] = _atier(e)
         e["signal"] = signal_gate.compact(sig_verdict.get(e["ticker"]))   # confluence T1->T4 badge
-    # ENTRY-OPEN-FIRST: lead with names whose entry gauge reads "Buy zone — entry open
-    # now", then by the displayed conviction score (stable; the alignment/confluence
-    # rank settles ties). Each row carries conviction + entry_signal already.
-    buys = entry_open_first(buys)
+
+    # ---- RIPE-LIST CONTRACT (§5.0): make the board order EXACTLY the contract -------------
+    # INCLUSION is already the contract's UNIVERSE→INCLUDE (hygiene via compute_hk_scoreboard's
+    # tradability screen + the bottoming-alignment {aligned≈PRIME, near≈ARMED} gate above,
+    # near-aligned backfilling to ALIGN_MIN_KEEP). Here we impose the contract's GROUP → RANK →
+    # TIEBREAK deterministically:
+    #   GROUP    entry-open (confluence T1-T3 buyable ∧ in/near buy-zone)  >  setting-up
+    #   RANK     within group, by the FUSED hk_edge z percentile (edge stacks; timing gates)
+    #   TIEBREAK 63d ADV desc  (proxy: the per-name 63d dollar-turnover; falls back to conviction)
+    _ez_vals = sorted(e.get("edge_z") for e in buys if e.get("edge_z") is not None)
+    _ezn = len(_ez_vals) or 1
+
+    def _edge_pctile(e: dict) -> float:
+        z = e.get("edge_z")
+        if z is None:
+            return 0.0
+        return _bisect.bisect_right(_ez_vals, z) / _ezn
+
+    def _entry_open(e: dict) -> bool:
+        # confluence T1-T3 buyable (owner's cascade) AND the entry gauge is at/near an
+        # open window (buy_now / partial / in-buy-zone) — the contract's GROUP-1 predicate.
+        buyable = signal_gate.is_buyable(sig_verdict.get(e["ticker"]))
+        es = e.get("entry_signal") or {}
+        st = es.get("status")
+        near_zone = bool((es.get("buy_zone") or {}).get("high") is not None
+                         and st in ("buy_now", "partial", "buy_soon"))
+        return bool(buyable and (st in ("buy_now", "partial") or near_zone))
+
+    def _adv63(e: dict) -> float:
+        return _float_or_zero(e.get("_adv63"))
+
+    def _contract_key(e: dict):
+        # group first (0 = entry-open, 1 = setting-up), then edge-z percentile DESC, then
+        # 63d ADV DESC, then conviction composite DESC (final deterministic settle).
+        return (0 if _entry_open(e) else 1,
+                -_edge_pctile(e), -_adv63(e), -comp(e))
+
+    buys = sorted(buys, key=_contract_key)
+    for e in buys:
+        e["group"] = "entry_open" if _entry_open(e) else "setting_up"
+        e["entry_window"] = _entry_window(e)     # open-now | pullback lo–hi | wait-for-weekly
+        e["lead"] = _card_lead(e, e["entry_window"])  # §7.1 mechanism-first sentence
     buy_keys = {id(e) for e in buys}
     # strong-but-unaligned names (good edge, weekly still falling / unconfirmed) -> a WATCH
     # strip, not the buy list — the honest "wait for the weekly to turn" demotion.
@@ -823,13 +1065,88 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     # board-level fragility gauge over the top conviction cohort (display-only sizing context)
     cohort = ext_eng.cohort_stretch([ext_map[e["ticker"]] for e in ranked[:24]
                                      if e["ticker"] in ext_map])
+    # ---- HEALTH SURFACE (§5.5 / §2 principle 6) — every degraded leg this render, so the
+    # page never silently fails open. Each item: {leg, en, zh}. Rendered as a banner strip.
+    health: list[dict] = []
+    _stale_td = _tailwind_staleness_td()
+    if _stale_td is not None and _stale_td > FRESHNESS_MAX_STALE_TD:
+        health.append({
+            "leg": "tailwind",
+            "en": f"Theme tailwind suppressed — basket prices {_stale_td} trading days stale.",
+            "zh": f"主题顺风已抑制 —— 篮子价格滞后 {_stale_td} 个交易日。",
+        })
+    # southbound store staleness: the smart-money summary's as_of vs the card panel date.
+    try:
+        out_sb = hk_southbound_stocks.market_summary()
+    except Exception:  # noqa: BLE001
+        out_sb = None
+    _sb_asof = (out_sb or {}).get("as_of")
+    if _sb_asof and as_of:
+        try:
+            _gap = int((pd.Timestamp(str(as_of)) - pd.Timestamp(str(_sb_asof))).days)
+            if _gap > FRESHNESS_MAX_STALE_TD:
+                health.append({
+                    "leg": "southbound",
+                    "en": f"Southbound smart-money store stale — {_gap} days behind the price panel.",
+                    "zh": f"南向资金存储陈旧 —— 落后价格面板 {_gap} 天。",
+                })
+        except Exception:  # noqa: BLE001
+            pass
+
+    # ---- STANDOUT-BOARD FORWARD LEDGER (§5.4) — log the ranked board + grade incrementally.
+    # Fail-OPEN (never breaks the render) but never SILENT: a write failure emits a loud log
+    # AND a health row. The ledger consumes the fused hk_edge z, the confluence tier, the
+    # alignment tier, the entry state, and today's close — plus the CN-port stamps.
+    board_track = None
+    try:
+        from engine import board_ledger
+        calls = []
+        for e in (buys + watch):
+            sig = e.get("signal") or {}
+            ew = e.get("entry_window") or {}
+            calls.append({
+                "ticker": e.get("ticker"),
+                "group": e.get("group") or ("watch" if e in watch else "setting_up"),
+                "edge_z": e.get("edge_z"),                       # fused hk_edge z
+                "gate_tier": sig.get("tier"),                    # signal_gate compact tier
+                "align_tier": e.get("align_tier"),
+                "entry_state": ew.get("kind"),                   # open-now|pullback|wait-for-weekly
+                "close_asof": e.get("price"),
+                # CN ports stamped for maturation study (never rank inputs yet, §5.3):
+                "washout_2w": bool(e.get("washout_2w")),
+                "extended": bool(e.get("extended")),
+            })
+        _n = board_ledger.append_board(calls, market="HK", asof=str(as_of) if as_of else None)
+        if _n:
+            _bt = board_ledger.grade("HK")            # cheap incremental — maturation accrues
+            if _bt.get("available"):
+                board_track = _bt
+            log.info("hk standout board-ledger: logged %d rows (ledger=%d, graded=%s)",
+                     len(calls), _n, (_bt or {}).get("n_graded"))
+        else:
+            log.warning("hk standout board-ledger: append_board returned 0 (no rows written)")
+            health.append({
+                "leg": "board_ledger",
+                "en": "Board ledger write returned no rows — the scoreboard did not accrue this render.",
+                "zh": "看板账本写入 0 行 —— 本次渲染未累积记分。",
+            })
+    except Exception as ex:  # noqa: BLE001 — fail-OPEN, never SILENT
+        log.warning("hk standout board-ledger FAILED (%s) — render continues, health flagged", ex)
+        health.append({
+            "leg": "board_ledger",
+            "en": "Board ledger write failed this render — scoreboard did not accrue (see logs).",
+            "zh": "本次渲染看板账本写入失败 —— 记分未累积（见日志）。",
+        })
+
     for e in enriched:                                          # drop bulky temp fields
-        for k in ("_chart", "_ret63", "_rec", "_path", "_row"):
+        for k in ("_chart", "_ret63", "_rec", "_path", "_row", "_adv63"):
             e.pop(k, None)
     out = {"as_of": as_of, "risk_state": risk_state, "overlay": overlay,
            "calm": calm, "cohort": cohort or None,
            "buy": buys, "watch": watch, "laggards": laggards,
-           "southbound_summary": hk_southbound_stocks.market_summary(),
+           "southbound_summary": out_sb,
+           "health": health or None,
+           "board_track": board_track,
            "eligible": len(aligned),
            "universe": len(enriched)}
     if disp_regime:                                  # selection-regime gross dial (board context)
