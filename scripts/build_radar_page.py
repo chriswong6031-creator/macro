@@ -14,6 +14,7 @@ import logging
 from jinja2 import Environment, FileSystemLoader
 
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ def main() -> int:
     try:
         env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
         html = env.get_template("radar.html.j2").render()
-        (config.ROOT / "site" / "radar.html").write_text(html)
+        write_page(config.ROOT / "site" / "radar.html", html)
         log.info("wrote site/radar.html (%d KB)", len(html) // 1024)
     except Exception as e:  # noqa: BLE001 — additive, never abort the build
         log.error("build_radar_page failed: %s", e)

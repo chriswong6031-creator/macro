@@ -27,6 +27,7 @@ import plotly.graph_objects as go  # noqa: E402
 from markupsafe import Markup  # noqa: E402
 
 from lib import config, store  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_hk")
@@ -273,7 +274,7 @@ def _build_sector_pages(env) -> int:
             s["holdings"].append({"ticker": tick, "name": names.get(tick, tick),
                                   "ladder": h["ladder"], "cycle": h["cycle"],
                                   "mtf_json": json.dumps(h["mtf"])})
-        (outdir / f"{sector_slug(name)}.html").write_text(env.get_template("hk_sector.html.j2").render(s=s))
+        write_page(outdir / f"{sector_slug(name)}.html", env.get_template("hk_sector.html.j2").render(s=s))
         built += 1
     log.info("wrote %d hk sector pages", built)
     return built
@@ -299,7 +300,7 @@ def _build_history(env, latest: dict, generated: str) -> None:
         latest=latest, generated_utc=generated,
         chart_regime=_chart_regime(px, hist) if not px.empty else "", chart_axes=_chart_axes(hist),
         lifespan_rows=rows)
-    (Path(config.load()["storage"]["site_dir"]) / "hk_history.html").write_text(html)
+    write_page(Path(config.load()["storage"]["site_dir"]) / "hk_history.html", html)
     log.info("wrote hk_history.html (%d regime periods)", trans.get("n_segments", 0))
 
 
@@ -799,7 +800,7 @@ def main() -> int:
         # recomputed and the heavy page CSS lives in exactly one template.
         tmpl = env.get_template("hk.html.j2")
         html = tmpl.render(**vm, mode="macro")
-        (site / "hk.html").write_text(html)
+        write_page(site / "hk.html", html)
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a
             if src.exists():
@@ -809,7 +810,7 @@ def main() -> int:
         # HK Stock & Exposure board — same VM, the "looking for stocks" half.
         # HK has no validated stock-picking edge — this is beta/sector positioning.
         html_st = tmpl.render(**vm, mode="stocks")
-        (site / "hk_stocks.html").write_text(html_st)
+        write_page(site / "hk_stocks.html", html_st)
         log.info("wrote %s/hk_stocks.html (%d KB)", site, len(html_st) // 1024)
         # landing-hub card stat (presence-gated by the .html existing)
         _bt = vm.get("betas") or {}
@@ -827,7 +828,7 @@ def main() -> int:
             stock_html = env.get_template("hk_lookup.html.j2").render(
                 state_display_json=json.dumps(STATE_DISPLAY, default=str),
                 generated_utc=vm["built"])
-            (site / "hk_lookup.html").write_text(stock_html)
+            write_page(site / "hk_lookup.html", stock_html)
             log.info("wrote %s/hk_lookup.html + hkstockdata/", site)
         except Exception as e:  # noqa: BLE001 — search is additive, never fatal
             log.error("hk stock search render failed (%s); skipping", e)

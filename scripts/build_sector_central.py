@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_sector_central")
@@ -152,7 +153,7 @@ def main() -> int:
         flows_html = None
     try:
         html = env.get_template("sector_central.html.j2").render(flows_html=flows_html)
-        (site / "sector_central.html").write_text(html, encoding="utf-8")
+        write_page(site / "sector_central.html", html, encoding="utf-8")
     except Exception as e:  # noqa: BLE001 — a template error must NOT abort the daily engine job
         # The CI step that runs this is a bare `run:` (its claim "the builder returns 0 on any
         # failure" is only true if main() never raises), so an unguarded render here aborts the

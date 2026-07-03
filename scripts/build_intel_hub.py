@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from datetime import date  # noqa: E402
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 from engine import intel_hub, hub_track_record  # noqa: E402
 from engine.qledger_ui import chips_for_desks, load_track_record  # noqa: E402
 
@@ -102,7 +103,7 @@ def build(write: bool = True) -> dict:
         html = env.get_template("intelligence_hub.html.j2").render(
             hub=hub, built=datetime.now(timezone.utc).isoformat(), mode="intel_hub",
             qledger_chips=qledger_chips)
-        (site / "intelligence_hub.html").write_text(html)
+        write_page(site / "intelligence_hub.html", html)
         log.info("built site/intelligence_hub.html")
     except Exception as e:  # noqa: BLE001
         log.error("intelligence_hub render failed: %s", e)

@@ -29,6 +29,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger("build_country_cycles")
 
@@ -122,7 +123,7 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
         env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     html = env.get_template("country_cycles.html.j2").render()
-    (site / "country_cycles.html").write_text(html, encoding="utf-8")
+    write_page(site / "country_cycles.html", html, encoding="utf-8")
 
     for asset in PAGE_ASSETS:
         src = root / "templates" / asset

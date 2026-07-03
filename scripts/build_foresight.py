@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from jinja2 import Environment, FileSystemLoader  # noqa: E402
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_foresight")
@@ -261,7 +262,7 @@ def main() -> int:
         return 0
 
     site.mkdir(exist_ok=True)
-    (site / "foresight.html").write_text(html)
+    write_page(site / "foresight.html", html)
     log.info("wrote %s/foresight.html (%.0f KB) — %d themes", site, len(html) / 1024, len(themes))
     return 0
 

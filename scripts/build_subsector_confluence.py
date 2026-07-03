@@ -31,6 +31,7 @@ import numpy as np
 
 from engine import subsector_confluence as sc
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger(__name__)
 
@@ -190,7 +191,7 @@ def render_pages(site: Path, env=None, generated_utc: str | None = None) -> int:
         baskets = {"baskets": []}
 
     # the board page
-    (site / "subsectors.html").write_text(
+    write_page(site / "subsectors.html",
         env.get_template("subsectors.html.j2").render(generated_utc=generated_utc))
 
     # one detail page per group (subsectors + curated baskets)
@@ -213,7 +214,7 @@ def render_pages(site: Path, env=None, generated_utc: str | None = None) -> int:
         html = tmpl.render(detail_json=json.dumps(_clean(detail), separators=(",", ":"), allow_nan=False),
                            group_name=g.get("label", key), chart_key=g.get("chart_key"),
                            has_signals=bool(g.get("has_signals")), generated_utc=generated_utc)
-        (out_dir / f"{key}.html").write_text(html)
+        write_page(out_dir / f"{key}.html", html)
         live.add(key)
         n += 1
     if n:  # never prune on an empty/failed render
@@ -281,7 +282,7 @@ def render_china_pages(site: Path, env=None, generated_utc: str | None = None) -
     except Exception as e:  # noqa: BLE001
         log.error("china confluence board JSON missing (%s) — run main_china() first", e)
         return 0
-    (site / "subsectors_china.html").write_text(
+    write_page(site / "subsectors_china.html",
         env.get_template("subsectors_china.html.j2").render(generated_utc=generated_utc))
 
     out_dir = site / CN_DETAIL_DIR
@@ -302,7 +303,7 @@ def render_china_pages(site: Path, env=None, generated_utc: str | None = None) -
                            group_name=g.get("label_zh") or g.get("label", key),
                            chart_key=g.get("chart_key"), has_signals=bool(g.get("has_signals")),
                            back_href="../subsectors_china.html", generated_utc=generated_utc)
-        (out_dir / f"{key}.html").write_text(html)
+        write_page(out_dir / f"{key}.html", html)
         live.add(key)
         n += 1
     if n:  # never prune on an empty/failed render
@@ -393,7 +394,7 @@ def render_index_pages(ns: str, site: Path, env=None, generated_utc: str | None 
                            group_name=g.get("label", key), chart_key=g.get("chart_key"),
                            has_signals=bool(g.get("has_signals")), back_href="../subsectors.html",
                            generated_utc=generated_utc)
-        (out_dir / f"{key}.html").write_text(html)
+        write_page(out_dir / f"{key}.html", html)
         live.add(key)
         n += 1
     if n:  # never prune on an empty/failed render

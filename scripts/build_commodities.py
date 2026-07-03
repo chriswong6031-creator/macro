@@ -28,6 +28,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config, store  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_commodities")
@@ -600,7 +601,7 @@ def main() -> int:
         timeline_days=acfg["timeline_days"], n_alerts=len(recent_events),
         catalysts=catalysts, news_disclaimer=news_disclaimer)
     site = config.ROOT / config.load()["storage"]["site_dir"]
-    (site / "commodities.html").write_text(html)
+    write_page(site / "commodities.html", html)
     log.info("wrote %s/commodities.html (%d KB)", site, len(html) // 1024)
 
     # hub latest.json (consumed by build_vector's hub card; runs before build_vector)

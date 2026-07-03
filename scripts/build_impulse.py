@@ -31,6 +31,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from engine import i18n, impulse
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger("build_impulse")
 
@@ -295,7 +296,7 @@ def render(payload: dict, site=None) -> None:
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     html = env.get_template("impulse.html.j2").render(d=payload, built=built)
-    (site / "impulse.html").write_text(html)
+    write_page(site / "impulse.html", html)
     log.info("wrote %s (%.0f KB)", site / "impulse.html",
              (site / "impulse.html").stat().st_size / 1024)
 

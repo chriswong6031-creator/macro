@@ -23,6 +23,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 from engine import anticipation  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -113,7 +114,7 @@ def main() -> int:
         html = env.get_template("anticipation.html.j2").render(
             d=payload, data_json=json.dumps(payload, separators=(",", ":"), default=str),
             generated_utc=built)
-        (site / "anticipation.html").write_text(html)
+        write_page(site / "anticipation.html", html)
         log.info("wrote %s/anticipation.html (%d assets, %d KB)", site, len(assets), len(html) // 1024)
         return 0
     except Exception as e:  # noqa: BLE001

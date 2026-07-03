@@ -34,6 +34,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import dbase_prefix, inject_text  # noqa: E402
 from engine import whitehouse_feed as wf  # noqa: E402
 from engine import whitehouse_brain as wb  # noqa: E402
 
@@ -127,8 +128,11 @@ def _date_display(s: str | None) -> str:
 
 def _write_if_changed(path: Path, text: str) -> bool:
     """Write only when the content differs — keeps the sentinel from committing an
-    identical file every hour. Returns True if it wrote."""
+    identical file every hour. Returns True if it wrote. HTML gets the data-base
+    shim injected BEFORE the compare so an unchanged page stays a no-op."""
     try:
+        if path.suffix == ".html":
+            text = inject_text(text, dbase_prefix(path))
         if path.exists() and path.read_text() == text:
             return False
         path.parent.mkdir(parents=True, exist_ok=True)

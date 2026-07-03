@@ -30,6 +30,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger("build_measurement")
 
@@ -564,7 +565,7 @@ def run() -> None:
         build_date=date.today().isoformat(),
         generated_at=payload["generated_at"],
     )
-    OUT_HTML.write_text(html, encoding="utf-8")
+    write_page(OUT_HTML, html, encoding="utf-8")
     log.info("Wrote %s (%d bytes)", OUT_HTML.relative_to(ROOT), len(html))
 
     elapsed = time.time() - t0

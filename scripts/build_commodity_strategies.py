@@ -25,6 +25,7 @@ from jinja2 import Environment, FileSystemLoader
 from engine import active_commodity as Ach
 from engine import commodity_strategies as S
 from lib import config
+from lib.pages import write_page
 from scripts import _active_render as AR
 from scripts.build_strategies import _card, _detail_vm, _evaluate
 from scripts.build_vector import C
@@ -71,7 +72,7 @@ def _build_active(env, site, built, cards_by_group: dict) -> list:
         vm = AR.commodity_detail_vm(ev, built=built, back=_BACK,
                                     caveat=_ACTIVE_CAV, verdict=_ACTIVE_VERDICT[key])
         html = env.get_template("active_detail.html.j2").render(**vm, C=C)
-        (site / f"strategy_{key}.html").write_text(html)
+        write_page(site / f"strategy_{key}.html", html)
     return out
 
 
@@ -95,7 +96,7 @@ def build() -> str:
         html = env.get_template("strategy_detail.html.j2").render(
             **_detail_vm(ev, built, leg_meta=S.CM_LEG_META, back_href="commodity_strategies.html",
                          back_label=BACK), C=C)
-        (site / f"strategy_{spec.key}.html").write_text(html)
+        write_page(site / f"strategy_{spec.key}.html", html)
 
     # ACTIVE (vol-targeted, levered) models — the CAGR-beaters, one per gold/silver/copper.
     flat += _build_active(env, site, built, cards_by_group)
@@ -103,7 +104,7 @@ def build() -> str:
     groups = [{**g, "cards": cards_by_group.get(g["key"], [])} for g in S.COMMODITY_GROUPS
               if cards_by_group.get(g["key"])]
     hub = env.get_template("commodity_strategies.html.j2").render(groups=groups, built=built, C=C)
-    (site / "commodity_strategies.html").write_text(hub)
+    write_page(site / "commodity_strategies.html", hub)
 
     snap = {"n": len(flat), "groups": [g["key"] for g in groups], "built": built,
             "cards": [{"key": c["key"], "name": c["name_en"], "cagr": c["cagr"],

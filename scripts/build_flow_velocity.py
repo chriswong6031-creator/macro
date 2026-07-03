@@ -21,6 +21,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_flow_velocity")
@@ -56,7 +57,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a template error must not sink the China build
         log.error("flow_velocity render failed: %s", e)
         return 0
-    (site / "flow_velocity.html").write_text(html)
+    write_page(site / "flow_velocity.html", html)
 
     # small JSON payload (parity with the other desks; handy for a future hub card)
     try:

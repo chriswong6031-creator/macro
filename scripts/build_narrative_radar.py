@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_narrative_radar")
@@ -72,7 +73,7 @@ def main() -> int:
         C=C,
     )
     html_path = site / "narrative_radar.html"
-    html_path.write_text(html)
+    write_page(html_path, html)
     log.info(
         "wrote %s (%d KB, %d baskets)",
         html_path, len(html) // 1024, len(data["baskets"])

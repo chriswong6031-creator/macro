@@ -25,6 +25,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_china_sector_desk")
@@ -78,7 +79,7 @@ def main() -> int:
         C=C, desk=desk, pathway=pathway, gate=gate,
         desk_json=json.dumps(desk, separators=(",", ":"), ensure_ascii=False),
         built=built)
-    (site / "china_sector_desk.html").write_text(html)
+    write_page(site / "china_sector_desk.html", html)
 
     # small hub card payload
     try:

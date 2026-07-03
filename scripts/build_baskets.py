@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets")
@@ -174,7 +175,7 @@ def main() -> int:
         risk_state=risk_state,
         risk_radar=risk_radar,
         generated_utc=built)
-    (site / "baskets.html").write_text(html)
+    write_page(site / "baskets.html", html)
     # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with
     # theme_intel + members) and the env; chart already split off above. Additive.
     try:

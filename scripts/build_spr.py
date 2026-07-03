@@ -31,6 +31,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config, store  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 from engine import strategic_reserves as sr  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -262,7 +263,7 @@ def main() -> int:
         charts=charts, scfg=scfg, caveat=sr.SPR_CAVEAT,
         assess_word=sr.ASSESS_WORD, gold=gold)
     site = config.ROOT / config.load()["storage"]["site_dir"]
-    (site / "spr.html").write_text(html)
+    write_page(site / "spr.html", html)
     log.info("wrote %s/spr.html (%d KB)", site, len(html) // 1024)
 
     # hub latest.json (consumed by build_vector's hub card; runs before build_vector)

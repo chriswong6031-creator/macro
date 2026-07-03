@@ -8,42 +8,23 @@ data_base.js) + idempotent (the data-dbase marker skips already-injected / re-ru
 pages). Also guarantees site/data_base.js exists (copied from the template) so the tag
 never 404s. Modeled on scripts/inject_wh_banner.py; never raises.
 
+Builders inject at write time via lib.pages.write_page (canonical home of the shim
+logic) — this post-render sweep is the idempotent safety net for anything else.
+
 Run standalone: python -m scripts.inject_data_base
 """
 from __future__ import annotations
 
 import logging
-import re
 import shutil
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from lib.pages import DBASE_MARKER as _MARKER, inject_text  # noqa: E402,F401 — re-exported
+
 log = logging.getLogger("inject_data_base")
-
-_MARKER = "data-dbase"
-_HEAD_RE = re.compile(r"<head[^>]*>", re.IGNORECASE)
-
-
-def _tag(prefix: str) -> str:
-    return f'<script {_MARKER} src="{prefix}data_base.js"></script>'
-
-
-def inject_text(text: str, prefix: str = "") -> str:
-    """Return `text` with the shim <script> inserted at the TOP of <head> (so it runs
-    before any body fetch). Idempotent — text already carrying the marker is unchanged."""
-    if _MARKER in text:
-        return text
-    tag = _tag(prefix)
-    m = _HEAD_RE.search(text)
-    if m:
-        i = m.end()
-        return text[:i] + "\n" + tag + text[i:]
-    # no <head> — fall back to before </body>, else prepend
-    low = text.lower()
-    j = low.find("</body>")
-    return (text[:j] + tag + "\n" + text[j:]) if j != -1 else tag + "\n" + text
 
 
 def inject(site_dir: Path) -> int:

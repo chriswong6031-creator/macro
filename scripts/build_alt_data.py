@@ -23,6 +23,7 @@ from engine import (altdata, altdata_alerts, altdata_brain, altdata_emit,  # noq
 from engine.influence import graph as influence_graph  # noqa: E402
 from engine.qledger_ui import chips_for_desks, load_track_record  # noqa: E402
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 log = logging.getLogger("build_alt_data")
@@ -105,7 +106,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("alt-data render failed — skipping (additive): %s", e)
         return 0
-    (site / "alt_data.html").write_text(html)
+    write_page(site / "alt_data.html", html)
     n_conv = len(feed.get("signals", {}).get("convergence", []))
     n_sig = len(mastermind.get("signals", []))
     log.info("wrote %s/alt_data.html (%d convergence, %d emitted signals, %d KB)",
