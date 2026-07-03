@@ -181,7 +181,48 @@ class BreadthAdapter(Adapter):
             log.warning("%s constituents churn log failed (%s)", self.name, e)
         members.set_index("symbol").to_parquet(cpath)
 
-        return {"breadth": self.compute(closes)}
+        out = {"breadth": self.compute(closes)}
+        # per-GICS-sector breadth (rotation-tensor breadth-migration gap,
+        # 2026-07-02 incident handoff H5): same closes matrix, split by the
+        # sector labels already on the constituents table. Never fatal —
+        # market-wide breadth must ship even if the sector split fails.
+        try:
+            sb = self.compute_sectors(closes, members)
+            if sb is not None and not sb.empty:
+                out["sector_breadth"] = sb
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("breadth sector split failed (%s) — market-wide only", e)
+        return out
+
+    def compute_sectors(self, closes: pd.DataFrame,
+                        members: pd.DataFrame) -> pd.DataFrame | None:
+        """pct_above_50 / pct_above_200 / n_members per GICS sector, wide frame
+        with flat '<sector>|<metric>' columns (parquet-friendly). Same MA windows
+        and partial-row discipline as the market-wide compute()."""
+        if "sector" not in members.columns:
+            return None
+        w50, w200 = self.cfg["ma_windows"]
+        sec_map = members.set_index("symbol")["sector"].dropna()
+        ma50 = closes.rolling(w50, min_periods=w50).mean()
+        ma200 = closes.rolling(w200, min_periods=w200).mean()
+        cols = {}
+        for sector, syms in sec_map.groupby(sec_map).groups.items():
+            tick = [t for t in syms if t in closes.columns]
+            if len(tick) < 5:  # a sector this thin would print noise
+                continue
+            c, m50, m200 = closes[tick], ma50[tick], ma200[tick]
+            n50 = m50.notna().sum(axis=1)
+            n200 = m200.notna().sum(axis=1)
+            cols[f"{sector}|pct_above_50"] = (
+                100 * (c > m50).sum(axis=1) / n50.where(n50 > 0)).astype(float)
+            cols[f"{sector}|pct_above_200"] = (
+                100 * (c > m200).sum(axis=1) / n200.where(n200 > 0)).astype(float)
+            cols[f"{sector}|n"] = c.notna().sum(axis=1).astype(float)
+        if not cols:
+            return None
+        out = pd.DataFrame(cols).dropna(how="all")
+        p50 = [c for c in out.columns if c.endswith("|pct_above_50")]
+        return out.dropna(subset=p50, how="all")
 
     def compute(self, closes: pd.DataFrame) -> pd.DataFrame:
         w50, w200 = self.cfg["ma_windows"]

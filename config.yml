@@ -1657,6 +1657,12 @@ engine:
     roc_window_d: 20              # ~4 trading weeks
     expanding_threshold_bn: 25    # net-liq 4w change > +$25bn -> expanding
     contracting_threshold_bn: -25
+    # quality classifier (engine/regime.liquidity_quality; 2026-07-02 incident):
+    # benign vs stress vs hollow read, published beside the untouched overlay
+    quality_enabled: true
+    rrp_floor_bn: 100             # RRPONTSYD below this = buffer exhausted (unverified-prior)
+    benign_fed_share_min: 0.5     # |dWALCL| share of the RoC below this = mechanical TGA/RRP move (unverified-prior)
+    stress_oas_z: 1.0             # HY-OAS 20d-change z at/above this = credit confirming stress
 
   cycle:
     curve_inversion_level: 0.0
@@ -1667,6 +1673,14 @@ engine:
   transition:
     weakening_flags: 2
     transitioning_flags: 3
+    # de-escalation ratchet (2026-07-02 semis-breakdown incident): escalate
+    # instantly, clear slowly. Dwell values tagged (unverified-prior) — mirrored
+    # from the bot-side macro_risk dwell machine, not yet independently tuned.
+    ratchet_enabled: true         # single-flag revert to the memoryless counter
+    clear_dwell_days: 5           # consecutive clean sessions to step DOWN one level (unverified-prior)
+    rotation_persist_days: 10     # cyc/def slope contra-quad this long -> flag_rotation_persistence (unverified-prior)
+    max_dwell_days: 15            # auto-release: a stuck state self-heals, never a hard lock (unverified-prior)
+    contradiction_floor: true     # {cyclical_defensive, wei_trend} contra-growth pair forces >= WEAKENING
     breadth_price:
       index_near_high_pct: 2.0    # index within 2% of 60d high
       high_window_d: 60
@@ -1679,6 +1693,14 @@ engine:
       slope_window_d: 50
     confidence_decay_window_d: 10
     gex_flip_proximity_pct: 1.0   # spot within 1% of gamma flip
+
+  risk_radar:
+    # THRESHOLD REVIEW (2026-07-02 incident, synthesis §4 item 6): when true,
+    # cap_leadership also fires at 'caution' if the dominant scare is the
+    # growth/defensive rotation with h21 pullback odds rising (the 07-01 tape:
+    # caution 91/100 + rising odds, but cap_leadership stayed False). Default
+    # false — the radar owner flips it deliberately; the incident is the falsifier.
+    cap_leadership_on_rotation_caution: false
 
   sector_preferences:             # framework-preferred sectors per quad
     Q1: [XLK, XLC, XLY, QUAL]
@@ -2095,7 +2117,7 @@ notify:
 # run) and run `--strict --max-age-hours 2` right after each publish in daily/asia CI.
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
-  anchors: [stockdata, chinastockdata]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json
+  anchors: [stockdata, chinastockdata, feeds]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
   max_age_hours: 26   # both lanes republish daily, landing ~05-10 UTC; the 14:30 UTC heartbeat sees ~5-9h
                       # fresh vs ~29-33h on the FIRST missed day — 26 trips on the first miss, ~30 can slide to day 2
   asof_max_days: 6    # stockdata/SPY.json `asof` (content-level): last bar date; 3-day weekend + a holiday tolerated

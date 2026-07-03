@@ -45,6 +45,8 @@ DEFAULT_DIRS = [
     "subsectorohlc", "subsectorohlc_china", "subsectorohlc_russell", "subsectorohlc_nasdaq",
     "stockdata", "chinastockdata", "hkstockdata", "canadastockdata", "intlstockdata",
     "intraday",
+    "feeds",  # machine-consumable contract plane (scripts/build_feeds.py) — small,
+              # but R2-only so bulk consumers (Mastermind bot) read ONE data plane
 ]
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}

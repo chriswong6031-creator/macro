@@ -564,6 +564,24 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
     mod["gross_applied"] = bool(gross_applied)
     prob = _drawdown_prob(state, len(hotA), calib)
     head_en, head_zh = _headline(state, dominant, hotA)
+    traj = trajectory(subs, calib)
+    deesc = _deescalation(dominant["scare"] if dominant else None, subs, traj, prob)
+
+    # cap_leadership is True from 'elevated'. THRESHOLD REVIEW (incident
+    # synthesis.md §4 item 6, flagged NOT auto-decided): the opt-in knob below
+    # extends the cap to 'caution' when the dominant scare is a growth/defensive
+    # rotation with RISING pullback odds — the exact 07-01 tape. Default false
+    # so leadership-capping behavior does not silently change firm-wide; the
+    # incident is the falsifier for whoever owns the flip.
+    cap_leadership = _STATE_ORDER.index(state) >= _STATE_ORDER.index("elevated")
+    try:
+        rcfg = (config.load().get("engine", {}) or {}).get("risk_radar", {}) or {}
+        if (bool(rcfg.get("cap_leadership_on_rotation_caution", False))
+                and state == "caution" and dominant and dominant["scare"] == "growth"
+                and deesc.get("drawdown_prob_trend") == "rising"):
+            cap_leadership = True
+    except Exception as e:  # noqa: BLE001 — knob read must never break the radar
+        log.warning("risk_radar cap_leadership knob read failed: %s", e)
 
     return {
         "schema": "risk_radar.v2",
@@ -586,10 +604,14 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         "gross_factor": gross,
         # de-escalation PATH (peaked? falling? how fast?) — leak-free, reuses the subscore history
         # already computed above; consumed by engine/risk_radar_recovery.py for the recovery panel.
-        "trajectory": trajectory(subs, calib),
+        "trajectory": traj,
+        # ONE risk voice per page (incident 2026-07-02 root-cause #10): the page's
+        # "risk receding" verdict is DERIVED here, beside the scares it must agree
+        # with — the recovery panel renders green only when eligible=true.
+        "deescalation": deesc,
         "cycle_context": cyc,   # election-cycle MODULATOR (display + sizing; never originates an alert)
         "favor_entries": _STATE_ORDER.index(state) >= _STATE_ORDER.index("caution"),
-        "cap_leadership": _STATE_ORDER.index(state) >= _STATE_ORDER.index("elevated"),
+        "cap_leadership": bool(cap_leadership),
         "reader_contract": _READER[state],
         "is_context_only": False,
         "loud_early": True,
@@ -763,6 +785,72 @@ def trajectory(subs: pd.DataFrame | None = None, calib: dict | None = None,
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("risk_radar trajectory failed: %s", e)
         return None
+
+
+# every scare type here is a risk-off scare, but 'bubble' measures froth BUILDING
+# (its recede is a cooling, not a threat escalating); the rotation/stress family
+# below is what must gate an all-clear.
+_RISK_OFF_SCARES = {"growth", "credit", "rates", "vol"}
+
+
+def _deescalation(dominant: str | None, subs: pd.DataFrame | None,
+                  traj: dict | None, prob: dict | None) -> dict:
+    """ONE risk voice per page (2026-07-02 incident root-cause #10). Through the
+    semis breakdown the de-escalation panel showed green 'risk receding' (the
+    June vol scare fading) while this radar's own dominant growth scare sat at
+    caution with h21 pullback odds RISING — two products, one page, opposite
+    stories. The receding verdict now lives HERE, beside the scares it must
+    agree with: eligible=false whenever the dominant scare is risk-off-flavored
+    and the odds trend is rising (or the dominant sub-score itself is still
+    climbing). The panel may still narrate what IS fading (receding_scare) as
+    context — it may not present an all-clear. Pure; never raises."""
+    h21 = (prob or {}).get("h21")
+    od = (traj or {}).get("odds_delta")
+    trend = "unknown"
+    if od is not None:
+        trend = "rising" if od > 0.005 else ("falling" if od < -0.005 else "flat")
+    receding_scare = None
+    dominant_velocity = None
+    try:
+        if subs is not None and not subs.empty:
+            best_off = None
+            for s in subs.columns:
+                w = subs[s].dropna().tail(_TRAJ_WINDOW)
+                if len(w) < 10:
+                    continue
+                lb = min(_TRAJ_VEL_LB, len(w) - 1)
+                vel = float(w.iloc[-1] - w.iloc[-1 - lb]) if lb > 0 else 0.0
+                off = float(w.max()) - float(w.iloc[-1])
+                if s == dominant:
+                    dominant_velocity = round(vel, 1)
+                # same receding thresholds as _trajectory_from_series
+                if vel <= -1.5 and off >= 3.0 and (best_off is None or off > best_off):
+                    best_off, receding_scare = off, s
+    except Exception as e:  # noqa: BLE001 — context field, never fatal
+        log.warning("deescalation per-scare read failed: %s", e)
+    suppress = bool(dominant in _RISK_OFF_SCARES
+                    and (trend == "rising" or (dominant_velocity or 0.0) >= 1.5))
+    phase = (traj or {}).get("phase")
+    eligible = bool(phase in ("peaking", "receding") and not suppress)
+    if suppress:
+        bits = [f"dominant scare = {dominant}"]
+        if trend == "rising":
+            bits.append("h21 drawdown_prob RISING")
+        if (dominant_velocity or 0.0) >= 1.5:
+            bits.append(f"{dominant} sub-score still climbing")
+        reason = "; ".join(bits)
+    elif eligible:
+        reason = f"radar {phase} on the dominant scare; h21 drawdown_prob {trend}"
+    else:
+        reason = f"radar phase = {phase or 'unknown'} — nothing to recede from"
+    return {
+        "eligible": eligible,
+        "reason": reason,
+        "receding_scare": receding_scare,       # what IS fading (may differ from dominant)
+        "dominant_velocity": dominant_velocity,  # pts over ~1wk on the dominant sub-score
+        "drawdown_prob_h21": h21,
+        "drawdown_prob_trend": trend,
+    }
 
 
 def snapshot(root=None) -> dict:

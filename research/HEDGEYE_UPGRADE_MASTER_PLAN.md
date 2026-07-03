@@ -1800,3 +1800,25 @@ Sixteen subsystems, each read against the 7-layer blueprint. Rigor flags, P0 upg
   - **[L1 / M] ALFRED point-in-time lag fix for FRED macro carry inputs** - In engine/masterminds.py _conviction() carry block (lines 184-191): add per-series release lags matching equity_alloc.LEG_LAGS: DGS10 -> lag 2d (market rate, daily), BAMLH0A0HYM2 -> lag 2d, DFII10 -> lag 2d. These are already market-traded series so the lag is
 - **Verdict:** The portfolio construction layer has a working, honestly-scored conviction-weighted vol-targeted GTAA engine with a clean cost model and split-half OOS, but it is missing the three specific L7 blueprint ingredients — HRP base (ERC exists but is display-only), Black-Litterman view-blending (no BL anywhere), and a regime-conditional CVaR drawdown budget — while the regime dial is static per-profile knobs rather than P(Quad)-driven gross/net; close-to-close vol only; no DSR on the live mastermind scorecard; and all macro carry inputs use latest-revision FRED data without ALFRED point-in-time vintages.
 
+
+---
+
+## Interface handoff (2026-07-02, semis-breakdown incident): `quad_vector` + two ship-blocker guards
+
+The continuous P(Quad) this plan owns (A.3's causal filtered posterior,
+`engine/regime_one._causal_filtered_pquad`) is now PUBLISHED under the stable
+consumer contract `latest.quad_vector` (`engine/quad_vector.py` — a thin
+reshape, zero new probability math; the producer stays here). Evolve the
+internals freely; the contract shape is what the Mastermind bot and other
+machine consumers code against. Full shape + conventions:
+`research/PERCEPTION_CONTRACTS.md`.
+
+Two guards are SHIP-BLOCKERS on this program's magnitude-weighted axis work
+(deliberately NOT patched into `engine/axes.py` — P7, one continuous-growth
+engine, and it belongs here): (1) single-leg domination cap — per-leg
+contribution capped at `|w_i * clip(z_i/zt, -1.5, +1.5)|` and >=2 non-zero
+same-sign legs before |axis| may exceed its +/-1-democracy value; (2) fast/slow
+split — monthlies (`payrolls/indpro/gdpnow/wei_trend`) at 0.5x weight while
+`transition_state` is WEAKENING/TRANSITIONING, and sticky-CPI's growth-relevant
+signal routed so rising-sticky + falling-growth can pull mass toward Q3.
+Rationale + incident evidence: PERCEPTION_CONTRACTS.md §3.

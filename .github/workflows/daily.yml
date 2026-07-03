@@ -796,6 +796,13 @@ jobs:
             echo "engine push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push engine outputs after 5 attempts (non-fatal — site still deploys via artifact)"
+      - name: assemble machine-consumable feeds (site/feeds -> R2)
+        if: always()
+        # Handoff H4 (2026-07-02 incident): risk_radar snapshot, froth/dislocation
+        # logs, group_flow meta, RRG rotation, event calendar, intl spillover,
+        # per-sector breadth — one flat dir whose _manifest.json bulk consumers
+        # (Mastermind bot) sync against. Never fatal; missing sources are skipped.
+        run: python -m scripts.build_feeds || echo "::warning::build_feeds failed (non-fatal)"
       - name: publish heavy per-ticker stores to R2 (additive; no-op without creds)
         if: always()
         env:
@@ -806,7 +813,7 @@ jobs:
         # US-evening shard owns the US/intl/canada/subsector stores; CN/HK go via asia-close.yml.
         # Content-hash skip -> only deltas upload. Still committed to git for now (Pages fallback);
         # the git de-bloat + Pages slim-down is the follow-up increment once the client reads R2.
-        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday || echo "::warning::R2 publish failed (non-fatal)"
+        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday,feeds || echo "::warning::R2 publish failed (non-fatal)"
       - name: verify R2 data plane freshness (loud tripwire — the publish above is non-fatal)
         # The publish step swallows every failure (incl. the exit-0 no-op when the R2_*
         # secrets are absent/expired), so the live site would serve stale per-ticker data
@@ -823,7 +830,7 @@ jobs:
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
         if: always()
         run: |
-          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday 2>/dev/null || true
+          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday site/feeds 2>/dev/null || true
       - name: upload pages artifact
         if: always()   # deploy must not hinge on the commit-push above succeeding
         uses: actions/upload-pages-artifact@v3

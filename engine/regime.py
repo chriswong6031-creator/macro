@@ -113,6 +113,124 @@ def liquidity_overlay(f: pd.DataFrame) -> pd.Series:
     return _debounce(out, int(cfg.get("persist_days", 0)))
 
 
+def liquidity_quality(f: pd.DataFrame, overlay: str | None = None,
+                      asof: pd.Timestamp | None = None) -> dict | None:
+    """QUALITY dimension the pure quantity-RoC overlay lacks (2026-07-02 incident
+    root-cause #3: the 07-01 'expanding' was one-day base-effect noise composed of
+    TGA drawdown against an RRP drained to $6.4bn — mechanical/stress plumbing read
+    as benign Fed easing). Classifies the CURRENT overlay read into
+    benign-expansion | stress-expansion | neutral | neutral-hollow | contracting
+    | unknown; label != overlay is itself the signal. One source of truth (P7):
+    the Mastermind bot and every other latest.json consumer read this label
+    instead of re-deriving it from vendored FRED. Point-in-time dict, additive,
+    returns None only when the liquidity columns are entirely absent."""
+    cfg = config.load()["engine"]["liquidity"]
+    if "net_liquidity_bn" not in f or f["net_liquidity_bn"].isna().all():
+        return None
+    lag = int(cfg.get("lag_bd", 3))
+    win = int(cfg["roc_window_d"])
+    rrp_floor = float(cfg.get("rrp_floor_bn", 100.0))
+    fed_share_min = float(cfg.get("benign_fed_share_min", 0.5))
+    oas_z_thr = float(cfg.get("stress_oas_z", 1.0))
+
+    asof = asof or f["net_liquidity_bn"].last_valid_index()
+    sub = f.loc[:asof]
+    nl = sub["net_liquidity_bn"].shift(lag)
+    roc = nl - nl.shift(win)
+    roc_now = roc.iloc[-1] if len(roc) else np.nan
+
+    def _tail(col: str) -> pd.Series | None:
+        s = sub.get(col)
+        return None if s is None or s.isna().all() else s.shift(lag)
+
+    walcl, rrp, tga = _tail("walcl_bn"), _tail("rrp_bn"), _tail("tga_bn")
+
+    # composition of the same RoC window: roc ≈ d_walcl + d(−rrp) + d(−tga).
+    # 'mechanical' = the move is TGA/RRP plumbing, not Fed balance-sheet.
+    def _d(s: pd.Series | None) -> float | None:
+        if s is None:
+            return None
+        d = s - s.shift(win)
+        v = d.iloc[-1] if len(d) else np.nan
+        return None if pd.isna(v) else round(float(v), 1)
+
+    d_walcl = _d(walcl)
+    d_neg_rrp = None if (v := _d(rrp)) is None else round(-v, 1)
+    d_neg_tga = None if (v := _d(tga)) is None else round(-v, 1)
+    parts = [abs(x) for x in (d_walcl, d_neg_rrp, d_neg_tga) if x is not None]
+    fed_share = (abs(d_walcl) / sum(parts)) if (d_walcl is not None and sum(parts) > 0) else None
+    mechanical = bool(fed_share is not None and fed_share < fed_share_min)
+
+    # RRP buffer: with the facility ~empty, the benign RRP->reserves plumbing is
+    # exhausted — further issuance drains reserves directly (stress-flavored).
+    rrp_last = None
+    if rrp is not None and rrp.last_valid_index() is not None:
+        rrp_last = round(float(rrp.loc[rrp.last_valid_index()]), 1)
+    rrp_exhausted = bool(rrp_last is not None and rrp_last < rrp_floor)
+
+    # credit/funding co-check (leading edge the quantity RoC never sees)
+    stress = {"confirming_stress": False}
+    hy = sub.get("hy_oas")
+    if hy is not None and not hy.isna().all():
+        chg = hy.diff(win)
+        z = (chg - chg.rolling(252, min_periods=126).mean()) \
+            / chg.rolling(252, min_periods=126).std()
+        zv = z.iloc[-1] if len(z) else np.nan
+        stress["hy_oas_pct"] = round(float(hy.ffill().iloc[-1]), 2)
+        stress["hy_oas_chg_20d"] = None if pd.isna(chg.iloc[-1]) else round(float(chg.iloc[-1]), 2)
+        stress["hy_oas_z"] = None if pd.isna(zv) else round(float(zv), 2)
+        if not pd.isna(zv) and zv >= oas_z_thr:
+            stress["confirming_stress"] = True
+    nfci = sub.get("nfci")
+    if nfci is not None and not nfci.isna().all():
+        nv = float(nfci.ffill().iloc[-1])
+        rising = bool((nfci.ffill().diff(win)).iloc[-1] > 0) if len(nfci) > win else False
+        stress["nfci"] = round(nv, 3)
+        stress["nfci_trend"] = "tightening" if rising else "loose"
+        if nv > 0 and rising:  # tighter than average AND tightening
+            stress["confirming_stress"] = True
+
+    # surfaced ffill staleness (a flat walcl was masking the 07-01 base effect)
+    walcl_stale_days = None
+    if walcl is not None and walcl.notna().sum() > 1:
+        w = walcl.dropna()
+        changed = w.ne(w.shift())
+        last_chg = changed[changed].index[-1] if changed.any() else w.index[0]
+        walcl_stale_days = int((w.index > last_chg).sum())
+
+    hollow = rrp_exhausted or mechanical
+    if overlay is None:
+        overlay = "unknown"
+    if overlay == "expanding":
+        label = "stress-expansion" if (hollow or stress["confirming_stress"]) \
+            else "benign-expansion"
+    elif overlay == "contracting":
+        label = "contracting"
+    elif overlay == "unknown":
+        label = "unknown"
+    else:  # neutral
+        label = "neutral-hollow" if hollow else "neutral"
+
+    return {
+        "schema_version": 1,
+        "asof": str(pd.Timestamp(asof).date()),
+        "label": label,
+        "label_enum": ["benign-expansion", "stress-expansion", "neutral",
+                       "neutral-hollow", "contracting", "unknown"],
+        "quantity_roc_bn": None if pd.isna(roc_now) else round(float(roc_now), 1),
+        "rrp_buffer_bn": rrp_last,
+        "rrp_exhausted": rrp_exhausted,
+        "composition": {
+            "d_walcl": d_walcl, "d_neg_rrp": d_neg_rrp, "d_neg_tga": d_neg_tga,
+            "fed_share": None if fed_share is None else round(float(fed_share), 2),
+            "mechanical": mechanical,
+        },
+        "stress_overlay": stress,
+        "walcl_stale_days": walcl_stale_days,
+        "degraded": bool(pd.isna(roc_now) or rrp_last is None or d_walcl is None),
+    }
+
+
 def cycle_tag(f: pd.DataFrame) -> pd.Series:
     cfg = config.load()["engine"]["cycle"]
     curve = f["spread_2s10s"]
