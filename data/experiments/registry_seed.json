@@ -1779,6 +1779,22 @@
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Safety-net axes (stop-out, dead-money, cushion incidence at rotational horizons) PLUS sleeve-level excess-vs-SPY (CN-2 pattern). Pre-registered kill criteria: modern-era decay + mega-cap sign flip. assert_no_gate() must remain enforced.",
       "phase_hint": "horizon=rotational deployment=unshipped"
+    },
+    {
+      "id": "h-plc-post-placement-drift",
+      "title": "H-PLC -- post-placement/rights-issue drift event study (HK)",
+      "kind": "data_collection",
+      "hypothesis": "HK names printing a dilutive placement / rights issue / open offer announcement (HKEX headline categories 18480/18500/18460, dilutive-title filtered via collectors.hk_placements.is_dilutive) show negative forward drift over the following weeks-to-months (fresh dilution + discounted-stock overhang) -- i.e. the H-PLC ripe-list demote (shipped W1c, validation-free as a risk gate) is not just hygiene but graded-correct. Event study: announcement-date anchored, next-open fills, suspension-honest, market/size-controlled forward 5/21/63d returns vs matched non-event names.",
+      "status": "accruing",
+      "program": "hk_canada_stocks",
+      "wave": "W1c",
+      "channel": "H-PLC",
+      "phase": "ACCRUE",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2027-07-03",
+      "come_back_note": "Queued per masterplan section 3 H-PLC: run once >=1y of FORWARD events accrues alongside the graded board ledger (placement_flag column stamps every HK render from W1c). NOTE the collector's HKEX headline archive reaches back to 2007-06-25 (one command: python -m scripts.collect --only hk_placements --full-history), so a deep ARCHIVE leg (~19y, thousands of events) is available earlier if a trial slot is granted -- the forward year then serves as the out-of-sample confirm. Store: data/hk_placements/events.parquet. The gate ships regardless of verdict (risk gates need no alpha validation); a NO-DRIFT verdict would narrow or retire the 90d demote window, and that decision belongs to the graded read.",
+      "n_trials_program_dsr": 30,
+      "pr": "w1c(h-plc)"
     }
   ]
 }
