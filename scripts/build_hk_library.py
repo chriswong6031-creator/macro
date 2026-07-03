@@ -549,6 +549,43 @@ def _float_or_zero(v) -> float:
         return 0.0
 
 
+def _falling_knife_demote(buys: list[dict], enriched: list[dict]) -> tuple[list[dict], list[dict], float | None]:
+    """FALLING-KNIFE DEMOTE (H4 phase-0 KILL — reports/h4-phase0.md).
+
+    H4 refuted the within-universe REVERSAL hypothesis with WRONG-SIGN power on this exact
+    expanded HK universe: the deepest trailing-3M losers do NOT rebound — they KEEP FALLING
+    (deepest-quintile L/S −0.92%/mo, HAC-t −2.14, DSR 0.00, split-half sign-stable; it is
+    short-horizon MOMENTUM, not reversal). So a name in the DEEPEST trailing-3M-return
+    quintile of the board universe must NOT sit in the ripe-list entry_open/setting_up
+    groups (that would sell a falling knife as a constructive entry). This is a HYGIENE
+    GATE on the §5.0 ripe-list contract — it does not re-rank survivors, it only pushes the
+    deepest-quintile losers OUT of the entry groups and onto the watch strip. Screen-tier
+    gate cited to H4, NOT a validated scored seam.
+
+    ``alpha`` == the trailing-3M-return z within the board universe (built upstream from
+    _ret63 over ``enriched``). The quintile threshold is the 20th percentile of ``alpha``
+    over the WHOLE board universe (``enriched``) — the honest cross-section, not just the
+    entry survivors. Returns (kept_buys, demoted, quintile_cut); demoted entries are tagged
+    ``knife_demoted``/``knife_z`` in place. No-op (nothing demoted) when the cross-section
+    is too thin (<5) for a stable quintile."""
+    import statistics as _stats
+    alphas = [e.get("alpha") for e in enriched if e.get("alpha") is not None]
+    if len(alphas) < 5:                        # need a meaningful cross-section for a quintile
+        return buys, [], None
+    cut = _stats.quantiles(alphas, n=5, method="inclusive")[0]   # 20th percentile (deepest Q)
+    keep: list[dict] = []
+    demoted: list[dict] = []
+    for e in buys:
+        a = e.get("alpha")
+        if a is not None and a <= cut:
+            e["knife_demoted"] = True          # deepest-quintile 3M loser -> watch, not entry
+            e["knife_z"] = round(float(a), 2)
+            demoted.append(e)
+        else:
+            keep.append(e)
+    return keep, demoted, cut
+
+
 def _adv63_map(tickers: list[str]) -> dict[str, float]:
     """63-day average dollar TURNOVER (close × volume) per ticker, from the deep
     hk_stocks OHLCV store — the ripe-list TIEBREAK (§5.0). HK breadth names are
@@ -566,6 +603,27 @@ def _adv63_map(tickers: list[str]) -> dict[str, float]:
             if len(dv) >= 20:
                 out[t] = float(dv.tail(63).mean())
         except Exception:  # noqa: BLE001 — additive; a missing name just tiebreaks on conviction
+            continue
+    return out
+
+
+def _volume_map(tickers: list[str]) -> dict[str, pd.Series]:
+    """Daily SHARE-volume Series per ticker from the deep hk_stocks OHLCV store — the
+    input the H2a SFC days-to-cover normalization needs (shorted_shares / 63d ADV-shares).
+    Distinct from ``_adv63_map`` (which is dollar TURNOVER for the ripe-list tiebreak):
+    here we return the raw share-volume series so engine.hk_stock_signals.sfc_short_pressure
+    can build a trailing ADV asof each weekly SFC date. Best-effort; a missing name simply
+    yields no SFC chip. Close-only breadth names have no volume => absent."""
+    out: dict[str, pd.Series] = {}
+    for t in tickers:
+        try:
+            df = store.read("hk_stocks", t)
+            if df is None or "volume" not in df.columns:
+                continue
+            v = pd.to_numeric(df["volume"], errors="coerce").dropna()
+            if len(v) >= 63:
+                out[t] = v
+        except Exception:  # noqa: BLE001 — additive; a missing name just drops the SFC chip
             continue
     return out
 
@@ -802,6 +860,34 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             if (closes is not None and factor is not None) else {})
     ext_map = ext_eng.extension_signals(closes) if closes is not None else {}
     lottery = hk_stock_signals.lottery_map(closes) if closes is not None else {}
+    # ---- H2a SFC reportable short-position CONTEXT (ACCRUE-labelled — reports/h2a-phase0.md).
+    # Per covered name: current days-to-cover own-history percentile. Context chip only, NEVER
+    # a rank input; freshness-guarded (suppressed when the latest SFC week is >12 trading days
+    # old). shorted_shares from the git-committed weekly panel; ADV-shares from hk_stocks.
+    sfc_short: dict[str, dict] = {}
+    _as_of_seed = (scoreboard or {}).get("as_of")
+    try:
+        _pos = store.read("hk_shorts", "positions")
+        if _pos is not None and not _pos.empty:
+            sfc_short = hk_stock_signals.sfc_short_pressure(
+                _pos, _volume_map(tickers), asof=_as_of_seed)
+            log.info("hk SFC short-pressure: %d covered names with a days-to-cover percentile "
+                     "(H2a ACCRUE context)", len(sfc_short))
+    except Exception as ex:  # noqa: BLE001 — additive context; never fatal
+        log.warning("hk SFC short-pressure skipped (%s)", ex)
+    # ---- H5 peg-liquidity REGIME conditioner (ACCRUE — reports/h5-peg-liquidity-phase0.md).
+    # agg_balance-driven EASY/TIGHT label for the deskhero + sizing context. Display + sizing
+    # only; NO rank effect. Pure function over hkma/interbank_liquidity.
+    liquidity_regime = None
+    try:
+        from engine import hk_liquidity_regime as _hklr
+        liquidity_regime = _hklr.liquidity_regime(
+            store.read("hkma", "interbank_liquidity"), asof=_as_of_seed)
+        if liquidity_regime:
+            log.info("hk peg-liquidity regime: %s (agg_balance pctile %s; H5 ACCRUE conditioner)",
+                     liquidity_regime.get("regime"), liquidity_regime.get("pctile"))
+    except Exception as ex:  # noqa: BLE001 — additive conditioner; never fatal
+        log.warning("hk peg-liquidity regime skipped (%s)", ex)
     # ---- CN PORTS as LOG-AND-GRADE (masterplan §5.3) — computed here, stamped on the
     # card + ledger, but NEVER allowed to affect rank yet (grades mature first, W4/W7).
     #   washout_2w: the 2W-FRI StochRSI washout-reclaim pattern ported verbatim from
@@ -837,6 +923,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         e["edge_basis"] = ed.get("basis")
         e["southbound"] = southbound.get(t)
         e["ah_value"] = ah_value.get(t)
+        e["sfc_short"] = sfc_short.get(t)      # H2a days-to-cover pctile — context chip only
         # CN ports — LOG-AND-GRADE only, never a rank input yet (§5.3).
         e["washout_2w"] = bool(washout_2w.get(t))
         _xg = (ext_map.get(t) or {}).get("grade")
@@ -1048,14 +1135,31 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                 -_edge_pctile(e), -_adv63(e), -comp(e))
 
     buys = sorted(buys, key=_contract_key)
+
+    # ---- FALLING-KNIFE DEMOTE (H4 phase-0 KILL — reports/h4-phase0.md) — pure helper -------
+    # deepest trailing-3M-return quintile -> pushed OUT of the entry groups onto the watch
+    # strip (they keep falling, not rebound). Screen hygiene gate, not a scored seam.
+    buys, demoted_knife, _knife_cut = _falling_knife_demote(buys, enriched)
+    if _knife_cut is not None:
+        log.info("hk falling-knife demote (H4 KILL): demoted %d of %d entry candidates "
+                 "(3M-return z <= P20 %.2f)", len(demoted_knife),
+                 len(demoted_knife) + len(buys), _knife_cut)
+
     for e in buys:
         e["group"] = "entry_open" if _entry_open(e) else "setting_up"
         e["entry_window"] = _entry_window(e)     # open-now | pullback lo–hi | wait-for-weekly
         e["lead"] = _card_lead(e, e["entry_window"])  # §7.1 mechanism-first sentence
     buy_keys = {id(e) for e in buys}
     # strong-but-unaligned names (good edge, weekly still falling / unconfirmed) -> a WATCH
-    # strip, not the buy list — the honest "wait for the weekly to turn" demotion.
-    watch = [e for e in ranked if id(e) not in buy_keys and comp(e) > 0.2][:8]
+    # strip, not the buy list — the honest "wait for the weekly to turn" demotion. The
+    # falling-knife demotes (deepest-3M losers, H4 KILL) join the strip FIRST, tagged with a
+    # reason chip so the watcher sees WHY they were pushed out of the entry groups.
+    for e in demoted_knife:
+        e["watch_reason"] = "knife"
+    _knife_ids = {id(d) for d in demoted_knife}
+    watch = demoted_knife + [e for e in ranked
+                             if id(e) not in buy_keys and id(e) not in _knife_ids
+                             and comp(e) > 0.2][: max(0, 8 - len(demoted_knife))]
     laggards = sorted(enriched, key=comp)[:n_lag]
 
     for e in buys + watch:
@@ -1115,6 +1219,14 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                 # CN ports stamped for maturation study (never rank inputs yet, §5.3):
                 "washout_2w": bool(e.get("washout_2w")),
                 "extended": bool(e.get("extended")),
+                # W4 phase-0 context fields (forward-compatible; harmless if the frozen
+                # ledger schema drops them — matches the 1b precedent):
+                #   knife_demoted: deepest-3M-loser demote fired (H4 KILL, reports/h4-phase0.md)
+                #   sfc_short_pctile: SFC days-to-cover own-history pctile (H2a ACCRUE context)
+                #   liq_regime: HK peg-liquidity regime at render (H5 ACCRUE conditioner)
+                "knife_demoted": bool(e.get("knife_demoted")),
+                "sfc_short_pctile": (e.get("sfc_short") or {}).get("pctile"),
+                "liq_regime": (liquidity_regime or {}).get("regime"),
             })
         _n = board_ledger.append_board(calls, market="HK", asof=str(as_of) if as_of else None)
         if _n:
@@ -1145,6 +1257,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
            "calm": calm, "cohort": cohort or None,
            "buy": buys, "watch": watch, "laggards": laggards,
            "southbound_summary": out_sb,
+           "liquidity_regime": liquidity_regime,   # H5 ACCRUE conditioner — deskhero chip
            "health": health or None,
            "board_track": board_track,
            "eligible": len(aligned),
