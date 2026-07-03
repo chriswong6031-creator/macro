@@ -26,6 +26,7 @@ from plotly.subplots import make_subplots
 from engine import equity_alloc as ea
 from engine.validation import backtest_core
 from lib import config
+from lib.pages import write_page
 # Reuse the size-disciplined Plotly helpers + light palette (no edits to build_vector).
 from scripts.build_vector import _html, _plot_y, _dx, _plot_idx, _runs, PLOT, C
 
@@ -304,7 +305,7 @@ def build() -> str:
         env.globals.update(td=lambda en: en, tr=lambda en: en)
     html = env.get_template("spvector.html.j2").render(**vm, C=C)
     out = config.ROOT / "site" / "spvector.html"
-    out.write_text(html)
+    write_page(out, html)
 
     # snapshot for the landing-hub US allocation/vector card
     snap = {"date": spy.index[-1].strftime("%Y-%m-%d"), "score": score,

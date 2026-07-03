@@ -30,6 +30,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_policy_watch")
@@ -145,7 +146,7 @@ def main() -> int:
         rot=rot, rot_hist=rot_hist, dates=dates, catalysts=catalysts, scorecard=scorecard,
         generated_utc=built, active_section="research", active_page="policy_watch",
     )
-    (site / "policy_watch.html").write_text(html)
+    write_page(site / "policy_watch.html", html)
     log.info("wrote %s/policy_watch.html (%d preds, %d task forces, %d KB)",
              site, counts["total"], len(intel.get("fed", {}).get("task_forces", [])), len(html) // 1024)
     return 0

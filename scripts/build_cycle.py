@@ -57,6 +57,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 from scripts._cycle_seed import load_seed  # noqa: E402
 
 log = logging.getLogger("build_cycle")
@@ -416,7 +417,7 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
         env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     html = env.get_template("cycle.html.j2").render()
-    (site / "cycle.html").write_text(html, encoding="utf-8")
+    write_page(site / "cycle.html", html, encoding="utf-8")
 
     # 3 · copy the committed shell assets (cycle_data.js stays the curated seed) ─
     for asset in PAGE_ASSETS:

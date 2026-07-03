@@ -21,6 +21,7 @@ from datetime import date
 from pathlib import Path
 
 from lib import config
+from lib.pages import write_page
 from engine.trial_ledger import TrialLedger
 
 log = logging.getLogger(__name__)
@@ -202,7 +203,7 @@ def run(root=None, persist: bool = True) -> dict:
             (out / "summary.json").write_text(json.dumps(s, indent=2, default=str))
             site = Path(root) / config.load()["storage"]["site_dir"]
             site.mkdir(parents=True, exist_ok=True)
-            (site / "calibration.html").write_text(render_html(s))
+            write_page(site / "calibration.html", render_html(s))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("calibration_hub: persist failed: %s", e)
     return s

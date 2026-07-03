@@ -25,6 +25,7 @@ from engine import demand_chain as dc
 from engine import demand_ledger as dl
 from engine.i18n import td, tr
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger("build_demand")
 
@@ -157,7 +158,7 @@ def build(root=None) -> str:
         track=track, phase0=phase0, n_variants=n_variants, as_of=as_of, built=built)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
-    (site / "demand.html").write_text(html)
+    write_page(site / "demand.html", html)
     log.info("build_demand: %d reads (%d ahead, %d at-risk) → site/demand.html",
              len(reads), n_variants, len(groups["consensus_at_risk"]))
     return html

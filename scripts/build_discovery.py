@@ -40,6 +40,7 @@ from engine.extension import (GRADES, VAL_LABELS, cohort_stretch,  # noqa: E402
 from engine.top_picks import (ALPHA_W, TILT_LEGS, TILT_W,  # noqa: E402
                               band, compute_scores, entry_meta)
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_discovery")
@@ -302,7 +303,7 @@ def main() -> int:
         attn_threshold=float((config.load().get("wiki_pageviews") or {}).get("chip_threshold", 2.0)),
         as_of=alpha.get("as_of"), windows=alpha.get("windows") or {},
         n=len(rows), n_buyable=n_buyable, built=built)
-    (site / "discovery.html").write_text(html)
+    write_page(site / "discovery.html", html)
     log.info("wrote %s/discovery.html (%d names, %d sectors, %d buy-zone, %d KB)",
              site, len(rows), len(by_sector), len(buyzone), len(html) // 1024)
     return 0

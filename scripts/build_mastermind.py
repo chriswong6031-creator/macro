@@ -24,6 +24,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_mastermind")
@@ -45,7 +46,7 @@ def main() -> int:
 
         as_of = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         html = env.get_template("mastermind.html.j2").render(as_of=as_of)
-        (site / "mastermind.html").write_text(html)
+        write_page(site / "mastermind.html", html)
 
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a

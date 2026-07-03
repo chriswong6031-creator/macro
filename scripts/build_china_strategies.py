@@ -23,6 +23,7 @@ from jinja2 import Environment, FileSystemLoader
 from engine import china_allocation as ca
 from engine import china_strategies as S
 from lib import config
+from lib.pages import write_page
 from scripts.build_strategies import _card, _detail_vm, _evaluate
 from scripts.build_vector import C
 
@@ -75,7 +76,7 @@ def build() -> str:
         html = env.get_template("strategy_detail.html.j2").render(
             **_detail_vm(ev, built, leg_meta=S.CN_LEG_META, back_href="china_strategies.html",
                          back_label=BACK), C=C)
-        (site / f"strategy_{spec.key}.html").write_text(html)
+        write_page(site / f"strategy_{spec.key}.html", html)
 
     # Pinned "China Mastermind Flagships" hero — the 3 multi-asset GTAA cards from the SAME
     # source build_china_masterminds renders (engine.china_masterminds), so the pinned hero
@@ -91,7 +92,7 @@ def build() -> str:
 
     hub = env.get_template("china_strategies.html.j2").render(cards=cards, masterminds=masterminds,
                                                               built=built, C=C)
-    (site / "china_strategies.html").write_text(hub)
+    write_page(site / "china_strategies.html", hub)
 
     snap = {"n": len(cards), "built": built,
             "cards": [{"key": c["key"], "name": c["name_en"], "cagr": c["cagr"],

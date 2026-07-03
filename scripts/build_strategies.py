@@ -30,6 +30,7 @@ from engine import equity_alloc as ea
 from engine import strategies as S
 from engine.validation import backtest_core, deflated_sharpe, ret_moments
 from lib import config
+from lib.pages import write_page
 # Reuse the size-disciplined Plotly helpers + the (now label-parametrized) chart builders.
 from scripts.build_spvector import _chart_strategy, _chart_growth, _chart_dd
 from scripts.build_vector import C
@@ -238,7 +239,7 @@ def build() -> str:
         cards.append(_card(ev))
         if spec.own_page is None:        # NEW strategies → render the generic detail page
             html = env.get_template("strategy_detail.html.j2").render(**_detail_vm(ev, built), C=C)
-            (site / f"strategy_{spec.key}.html").write_text(html)
+            write_page(site / f"strategy_{spec.key}.html", html)
 
     # Pinned "Mastermind Flagships" hero — the 3 multi-asset GTAA cards, fetched from the
     # SAME source build_masterminds renders (engine.masterminds via M.backtest), so the
@@ -253,7 +254,7 @@ def build() -> str:
 
     hub = env.get_template("strategies.html.j2").render(cards=cards, masterminds=masterminds,
                                                         built=built, C=C)
-    (site / "strategies.html").write_text(hub)
+    write_page(site / "strategies.html", hub)
 
     snap = {"n": len(cards), "built": built,
             "cards": [{"key": c["key"], "name": c["name_en"], "cagr": c["cagr"],

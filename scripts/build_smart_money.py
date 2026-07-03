@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from jinja2 import Environment, FileSystemLoader  # noqa: E402
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 log = logging.getLogger("build_smart_money")
@@ -54,7 +55,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — render failure is non-fatal (JSON still written)
         log.warning("smart-money render failed — JSON written, page skipped: %s", e)
         return 0
-    (site / "smart_money.html").write_text(html)
+    write_page(site / "smart_money.html", html)
 
     cov = tracker.get("coverage", {})
     lb = tracker.get("leaderboard", [])

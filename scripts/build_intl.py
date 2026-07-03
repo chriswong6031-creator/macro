@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_intl")
@@ -132,8 +133,8 @@ def main() -> int:
         env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
 
         tmpl = env.get_template("intl.html.j2")
-        (site / "intl.html").write_text(tmpl.render(**vm, mode="macro"))
-        (site / "intl_stocks.html").write_text(tmpl.render(**vm, mode="stocks"))
+        write_page(site / "intl.html", tmpl.render(**vm, mode="macro"))
+        write_page(site / "intl_stocks.html", tmpl.render(**vm, mode="stocks"))
         log.info("wrote intl.html + intl_stocks.html (%d economies, %d standouts)",
                  vm["summary"]["n"], len((setups or {}).get("buy") or []))
 
@@ -142,7 +143,7 @@ def main() -> int:
             from engine.cycles import STATE_DISPLAY
             shell = env.get_template("intl_stock.html.j2").render(
                 state_display_json=json.dumps(STATE_DISPLAY, default=str), generated_utc=vm["built"])
-            (site / "intl_stock.html").write_text(shell)
+            write_page(site / "intl_stock.html", shell)
         except Exception as e:  # noqa: BLE001 — search additive
             log.error("intl stock shell render failed (%s)", e)
 

@@ -33,6 +33,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_gex_board")
@@ -342,7 +343,7 @@ def main() -> int:
         manifest=manifest, groups=groups, built=built, default_key=default_key,
         coverage=coverage, coverage_json=json.dumps(coverage, default=float),
         manifest_json=json.dumps(manifest, default=float))
-    (site / "gex.html").write_text(html)
+    write_page(site / "gex.html", html)
     log.info("gex: wrote %s/gex.html + %d payloads (%d of %d symbols had liquid options)",
              site, len(manifest), len(manifest), len(rows))
     return 0

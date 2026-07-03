@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 
 from engine import special_situations as sse
 from lib import config
+from lib.pages import write_page
 from scripts.build_vector import C
 
 log = logging.getLogger(__name__)
@@ -168,7 +169,7 @@ def build(refresh: bool = True) -> str:
         env.globals.update(td=lambda en: en, tr=lambda en: en)
     html = env.get_template("special_situations.html.j2").render(**vm, C=C)
     out = config.ROOT / "site" / "special_situations.html"
-    out.write_text(html)
+    write_page(out, html)
 
     # landing-hub snapshot
     cov = snap.get("coverage", {})

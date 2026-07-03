@@ -27,6 +27,7 @@ from engine import i18n  # noqa: E402
 from engine.i18n import td as _td  # noqa: E402
 from engine.i18n import tr as _tr  # noqa: E402
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 
 def main() -> int:
@@ -47,13 +48,13 @@ def main() -> int:
 
     for mode, name in (("macro", "macro.html"), ("stocks", "us_stocks.html")):
         out = site / name
-        out.write_text(tmpl.render(**vm, mode=mode))
+        write_page(out, tmpl.render(**vm, mode=mode))
         print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB)")
     out = site / "news.html"
-    out.write_text(env.get_template("news.html.j2").render(**vm))
+    write_page(out, env.get_template("news.html.j2").render(**vm))
     print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB)")
     out = site / "macro_signals.html"
-    out.write_text(env.get_template("macro_signals.html.j2").render(**vm))
+    write_page(out, env.get_template("macro_signals.html.j2").render(**vm))
     print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB)")
     return 0
 

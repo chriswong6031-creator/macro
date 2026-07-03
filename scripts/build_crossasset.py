@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_crossasset")
@@ -106,7 +107,7 @@ def main() -> int:
         liquidity=liquidity, liq_spark=(_sparkline(liquidity["spark"]) if liquidity else ""),
         funding=funding, fund_spark=(_sparkline(funding["spark"]) if funding else ""))
     site = config.ROOT / config.load()["storage"]["site_dir"]
-    (site / "crossasset.html").write_text(html)
+    write_page(site / "crossasset.html", html)
     log.info("wrote %s/crossasset.html (%d KB)", site, len(html) // 1024)
 
     # hub feed (consumed by build_vector's hub card; runs before build_vector)

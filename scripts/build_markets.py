@@ -28,6 +28,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger(__name__)
 
@@ -222,7 +223,7 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
         env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     html = env.get_template("markets.html.j2").render()
-    (site / "markets.html").write_text(html, encoding="utf-8")
+    write_page(site / "markets.html", html, encoding="utf-8")
 
     # ---- 5. Copy committed page assets ----
     for asset in PAGE_ASSETS:

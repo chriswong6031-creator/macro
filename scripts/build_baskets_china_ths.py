@@ -26,6 +26,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets_china_ths")
@@ -81,7 +82,7 @@ def main() -> int:
         lite=True, basket_base="",
         bench_en="CSI 300", bench_zh="沪深300",
         generated_utc=built)
-    (site / "baskets_china_ths.html").write_text(html)
+    write_page(site / "baskets_china_ths.html", html)
     # the page uses the TradingView Lightweight Charts runtime (Apache-2.0); the curated china
     # build also ships it, but emit it here too so this page works even if built standalone.
     lwc = config.ROOT / "templates" / "lightweight-charts.js"

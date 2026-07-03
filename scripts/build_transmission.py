@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_transmission")
@@ -68,7 +69,7 @@ def main() -> int:
         C=C, as_of=as_of, built=built, span=span, tx=tx, gate=gate, yc=yc)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
-    (site / "transmission.html").write_text(html)
+    write_page(site / "transmission.html", html)
     log.info("wrote %s/transmission.html (%d KB)", site, len(html) // 1024)
 
     # machine-readable hub contract (for the macro panel + LLM brief), mirrors the

@@ -16,6 +16,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from engine import masterminds as M
 from lib import config
+from lib.pages import write_page
 from scripts import _active_render as AR
 from scripts.build_vector import C
 
@@ -208,10 +209,10 @@ def build() -> str:
         cards.append(_rich_card(pk, res))          # same rich card as the strategies.html hero
         ress.append(res)                           # keep alloc/asof for the emit contract
         html = env.get_template("mastermind_detail.html.j2").render(**_detail_vm(pk, res, built), C=C)
-        (site / f"strategy_mm_{pk}.html").write_text(html)
+        write_page(site / f"strategy_mm_{pk}.html", html)
 
     hub = env.get_template("masterminds.html.j2").render(cards=cards, built=built, C=C)
-    (site / "masterminds.html").write_text(hub)
+    write_page(site / "masterminds.html", hub)
 
     snap_dir = config.data_dir() / "regime"
     snap_dir.mkdir(parents=True, exist_ok=True)

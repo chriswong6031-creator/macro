@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import plotly.graph_objects as go  # noqa: E402
 
 from lib import config, store  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_canada")
@@ -297,7 +298,7 @@ def _build_history(env, latest: dict, generated: str) -> None:
         latest=latest, generated_utc=generated,
         chart_regime=_chart_regime(px, hist) if not px.empty else "", chart_axes=_chart_axes(hist),
         lifespan_rows=rows)
-    (Path(config.load()["storage"]["site_dir"]) / "canada_history.html").write_text(html)
+    write_page(Path(config.load()["storage"]["site_dir"]) / "canada_history.html", html)
     log.info("wrote canada_history.html (%d regime periods)", trans.get("n_segments", 0))
 
 
@@ -345,7 +346,7 @@ def _build_sector_pages(env) -> int:
                 continue
             s["holdings"].append({"ticker": tick, "ladder": h["ladder"], "cycle": h["cycle"],
                                   "mtf_json": json.dumps(h["mtf"])})
-        (outdir / f"{fund}.html").write_text(env.get_template("canada_sector.html.j2").render(s=s))
+        write_page(outdir / f"{fund}.html", env.get_template("canada_sector.html.j2").render(s=s))
         built += 1
     log.info("wrote %d canada sector pages", built)
     return built
@@ -479,7 +480,7 @@ def main() -> int:
         # flag (macro / stocks) that selects which sections show. Mirrors China / HK.
         tmpl = env.get_template("canada.html.j2")
         html = tmpl.render(**vm, mode="macro")
-        (site / "canada.html").write_text(html)
+        write_page(site / "canada.html", html)
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a
             if src.exists():
@@ -488,7 +489,7 @@ def main() -> int:
 
         # TSX Stock Dashboard — same VM, the standout-names half (show-more card strip).
         html_st = tmpl.render(**vm, mode="stocks")
-        (site / "canada_stocks.html").write_text(html_st)
+        write_page(site / "canada_stocks.html", html_st)
         log.info("wrote %s/canada_stocks.html (%d KB)", site, len(html_st) // 1024)
         # landing-hub card stat (presence-gated by the .html existing)
         _su = vm.get("setups") or {}
@@ -506,7 +507,7 @@ def main() -> int:
             stock_html = env.get_template("canada_stock.html.j2").render(
                 state_display_json=json.dumps(STATE_DISPLAY, default=str),
                 generated_utc=vm["built"])
-            (site / "canada_stock.html").write_text(stock_html)
+            write_page(site / "canada_stock.html", stock_html)
             log.info("wrote %s/canada_stock.html + canadastockdata/", site)
         except Exception as e:  # noqa: BLE001 — search is additive, never fatal
             log.error("canada stock search render failed (%s); skipping", e)
