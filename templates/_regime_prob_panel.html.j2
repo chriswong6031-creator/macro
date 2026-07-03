@@ -5,7 +5,9 @@
 {% if latest.regime_hmm and latest.regime_hmm.regime_probs %}
 {% set _h = latest.regime_hmm %}
 {% set _RQN = {'Q1':['Goldilocks','理想增长'],'Q2':['Reflation','再通胀'],'Q3':['Stagflation','滞胀'],'Q4':['Growth-scare','增长恐慌']} %}
-<div class="panel span12 bfwd">
+{# _embedded (set by _regime_read_panel) drops the standalone panel chrome so this can sit
+   inside the combined "Regime — now & next" card; china.html.j2 includes it unembedded. #}
+<div class="{{ 'rr-part' if _embedded else 'panel span12 bfwd' }}">
   <div class="bfwd-head">
     <h3>{{ t('Regime probability','周期概率') }} · {{ t('how solid is the current read','当前判断有多稳固') }}</h3>
     {{ help("A 4-state Gaussian hidden Markov model over the growth/inflation history: instead of forcing today into one box with a made-up confidence number, it gives the PROBABILITY of each regime, plus the odds of a change next month (the hazard) and how long this regime typically lasts. The bars are soft membership; today's read is dominated by one quad only when the model is genuinely confident. This is a probabilistic reading of the CURRENT regime — the forward path is the base-effect strip below. Display-only; it does not drive any position.",

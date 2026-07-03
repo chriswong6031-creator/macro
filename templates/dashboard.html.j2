@@ -1891,11 +1891,11 @@
   </div>
 
 
-  {% include "_regime_prob_panel.html.j2" %}
-
+  {# Combined "Regime — now & where it's headed": the current-regime HMM probability and the
+     base-effect forward path, merged into one scorecard (were two near-identical panels). #}
   {% set be_note_en = 'Growth is point-in-time back to 1997; inflation uses latest-revision data until the core-CPI/PCE vintages backfill.' %}
   {% set be_note_zh = '增长为 1997 年以来的时点数据；通胀在核心 CPI／PCE 修订版历史回填前使用最新修订数据。' %}
-  {% include "_base_effect_strip.html.j2" %}
+  {% include "_regime_read_panel.html.j2" %}
 
   <!-- Heads-up strip — compact live flags (next catalyst / Fed stance / fragility).
        Replaces the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
