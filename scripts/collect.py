@@ -179,6 +179,14 @@ def all_adapters() -> dict:
         ("hk_valuation", "collectors.hk_valuation", "HkValuationAdapter"),     # Baidu PE/PB market-median (currency-neutral; the read hk_fundamentals skips)
         ("hk_property", "collectors.hk_property", "HkPropertyAdapter"),         # Centaline CCL weekly HK home-price index (+ CVI/CSI) — DISPLAY only (fragile->blocked)
         ("hk_full_breadth", "collectors.hk_full_breadth", "HkFullBreadthAdapter"),  # full HK main-board adv/dec participation (Eastmoney spot; fragile->blocked)
+        ("hk_closes_deep", "collectors.hk_closes_deep", "HkClosesDeepAdapter"),  # nightly incremental refresh of data/hk_search/closes_deep.parquet (HKCA-3 fix)
+        # HK short-data plane (W1/Slice-F): two DISTINCT sub-stores (see collectors/hk_shorts.py)
+        # hk_shorts_positions = SFC aggregated weekly POSITIONS (≥0.02% of issued, T+7, 2012→)
+        # hk_shorts_turnover  = HKEX daily short-sell TURNOVER (today-only, accrue-forward)
+        # CRITICAL: positions ≠ turnover; never conflate (masterplan §3 H2 + red-team)
+        ("hk_shorts_positions", "collectors.hk_shorts", "HkShortsPositionsAdapter"),
+        ("hk_shorts_turnover", "collectors.hk_shorts", "HkShortsTurnoverAdapter"),
+        ("hk_universe", "collectors.hk_universe", "HkUniverseAdapter"),  # expanded HSCI universe (~537 names) deep OHLCV (R2: data/hk_stocks_ext/) — H4 reversal + breadth ignition (masterplan §3 H4, §8 W1)
         # Canada / S&P/TSX dashboard — keyless: yfinance prices + BoC VALET / StatsCan WDS / FRED macro
         ("canada_prices", "collectors.canada_prices", "CanadaPriceAdapter"),
         ("canada_macro", "collectors.canada_macro", "CanadaMacroAdapter"),     # BoC VALET + StatsCan WDS + FRED comparables
