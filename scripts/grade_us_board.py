@@ -197,6 +197,11 @@ def _row_features(r: dict) -> dict:
         # filled in _board_to_record after _row_features; None pre-schema
         "donor_state":  None,
         "donor_sector": None,
+        # W6-C HOLD tracker: basing state after confluence anchor (per-row; None pre-schema)
+        "hold_state":     _dig(r, ("hold", "state"), default=None),
+        "hold_days":      _num(_dig(r, ("hold", "days_basing"), default=None)),
+        "hold_inv":       _num(_dig(r, ("hold", "invalidation"), default=None)),
+        "hold_anchor_src": _dig(r, ("hold", "anchor_src"), default=None),
     }
 
 
@@ -370,6 +375,11 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     "donor_state": feat.get("donor_state"),
                     "donor_sector": feat.get("donor_sector"),
                     "off_high": feat.get("off_high"),
+                    # W6-C HOLD tracker fields (per-row; None on pre-schema boards)
+                    "hold_state":      feat.get("hold_state"),
+                    "hold_days":       feat.get("hold_days"),
+                    "hold_inv":        feat.get("hold_inv"),
+                    "hold_anchor_src": feat.get("hold_anchor_src"),
                     "ret": nret,
                 }
                 # excess vs SPY
@@ -518,6 +528,8 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                 "by_dispersion": _slice_table(buy, "dispersion_state", "excess_spy"),
                 # G6a donor-unwind rotation context — grades stratified by leader state
                 "by_donor_state": _slice_table(buy, "donor_state", "excess_spy"),
+                # W6-C HOLD tracker — grades stratified by basing state at board publication
+                "by_hold_state": _slice_table(buy, "hold_state", "excess_spy"),
                 "mae_close_excess_spy": {
                     "median": round(float(buy["mae_close_excess_spy"].dropna().median()), 5)
                     if buy["mae_close_excess_spy"].notna().any() else None,
