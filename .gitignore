@@ -41,6 +41,11 @@ data/midcap_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
 data/canada_breadth/_closes_cache.parquet
+# hk_shorts: positions.parquet + turnover.parquet + coverage.json are GIT-tracked
+# (NOT R2) because they are not regenerable without re-scraping and are critical
+# evidence for the H2a phase-0 test.  Only the _closes_cache-equivalent rebuild
+# artifacts are excluded (none exist for this store).
+# NOTE: data/hk_shorts/ is intentionally NOT listed here — all files are committed.
 # data-quality audit revision baselines: a daily-changing full copy of the macro series
 # (machine state for backwards-revision detection), cached cross-run in CI rather than
 # committed. The audit JSON reports under data/quality/*.json ARE committed (trend artifact).
@@ -132,3 +137,8 @@ site/subsectorohlc_nasdaq/
 # A/B risk-gate per-day divergence dump (~3MB, 13k+ rows) — the committed summary
 # (calibration/ab_risk_gate.json) carries the stats + the event-window replay rows.
 calibration/ab_risk_gate_divergence.jsonl
+
+# Expanded HSCI universe deep OHLCV store (R2-only, ~65 MB initial and growing).
+# Per-ticker parquets served from Cloudflare R2 via scripts/publish_r2 --dirs hk_stocks_ext.
+# Committed files in the same dir (_universe.json, _checkpoint.json) are NOT ignored.
+data/hk_stocks_ext/*.parquet
