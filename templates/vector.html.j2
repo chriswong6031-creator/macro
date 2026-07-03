@@ -426,8 +426,12 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     </div>
     <div>
       <div class="cmd-r-top">
-        <span class="cmd-price">{{ price|money }}</span>
-        <span class="{{ 'up' if chg24>=0 else 'down' }}" style="font-weight:700">{{ '%+0.2f'|format(chg24) }}% {{ t('24h','24小时') }}</span>
+        {# live.js patches the price + 24h change in place from the same-origin live snapshot
+           (site/live/quotes.json, refreshed hourly 24/7 by the btc-live Action) — .nb-px / .nb-chg
+           carry the canonical Yahoo symbol; the baked values below are the fallback until JS runs.
+           Both live nodes hold ONLY the number: live.js overwrites textContent, so the "24h" label stays outside. #}
+        <span class="cmd-price nb-px" data-sym="BTC-USD" data-mkt="crypto">{{ price|money }}</span>
+        <span style="font-weight:700"><span class="nb-chg {{ 'up' if chg24>=0 else 'down' }}" data-sym="BTC-USD" data-mkt="crypto">{{ '%+0.2f'|format(chg24) }}%</span> {{ t('24h','24小时') }}</span>
         {% set cs_c = {'ACCUMULATE':'var(--blue)','RISK-ON':'var(--blue)','DISTRIBUTE':'var(--r3)','RISK-OFF':'var(--r3)','NEUTRAL':'var(--muted)'} %}
         {% set cs_z = {'ACCUMULATE':'累积','RISK-ON':'风险偏好','DISTRIBUTE':'派发','RISK-OFF':'风险规避','NEUTRAL':'中性'} %}
         <span class="cmd-stance" style="color:{{ cs_c.get(composite_state,'var(--muted)') }}">{{ t('Stance','立场') }}: {{ t(composite_state, cs_z.get(composite_state, composite_state)) }}</span>

@@ -47,11 +47,24 @@
   function symNodes() { return [].slice.call(document.querySelectorAll(".nb-px[data-sym],.nb-chg[data-sym]")); }
   function rawSym(el) { return (el.getAttribute("data-sym") || "").trim().toUpperCase(); }
   function fmtPrice(price, mkt) {
+    if (mkt === "crypto") {                       // "$" + thousands, no decimals (matches the baked BTC header)
+      try { return "$" + Number(price).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+      catch (e) { return "$" + Math.round(Number(price)); }
+    }
     var dec = (mkt === "fx") ? 4 : 2;
     var s;
     try { s = Number(price).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
     catch (e) { s = Number(price).toFixed(dec); }
     return (mkt === "us" ? "$" : "") + s;
+  }
+  // Crypto trades 24/7 and is refreshed on its own hourly cadence, so it goes stale
+  // only when a scheduled refresh is actually MISSED (~65 min), not at the 20-min
+  // equity threshold — otherwise a healthy hourly BTC quote would read grey for
+  // most of every hour. ageMin already carries the DELAYED_MIN vendor floor.
+  function isStale(mkt, ageMin, fallback) {
+    if (ageMin == null) return !!fallback;
+    var lim = (mkt === "crypto") ? (window.LIVE_CRYPTO_STALE_MIN || 65) : STALE_MIN;
+    return ageMin > lim;
   }
   function paintChg(el, chg, stale) {
     var up = chg >= 0;
@@ -61,6 +74,7 @@
     if (stale) el.classList.add("stale");      // last-session move, not live
   }
   function regionOf(s) {
+    if (/-USD$/.test(s)) return "crypto";      // 24/7 — no session table -> never "market closed"
     if (/\.HK$/.test(s)) return "hk";
     if (/\.(SS|SZ|BJ)$/.test(s)) return "cn";
     if (/\.(TO|V)$/.test(s)) return "ca";
@@ -133,8 +147,9 @@
         el.textContent = fmtPrice(p.price, mkt);
         var sess = sessions[regionOf(sym)];
         var closed = sess && sess.open === false;
+        var stale = isStale(mkt, p.ageMin, p.stale);
         // when fresh: "delayed" (amber, no pulse) on a delayed plan, else "live" (green pulse)
-        var state = p.stale ? (closed ? "closed" : "stale") : (DELAYED_MIN > 0 ? "delayed" : "1");
+        var state = stale ? (closed ? "closed" : "stale") : (DELAYED_MIN > 0 ? "delayed" : "1");
         el.setAttribute("data-live", state);
         var word = state === "closed" ? "market closed"
                  : state === "stale" ? "stale"
@@ -148,10 +163,11 @@
       if (ov && ov.divergence && !ov.stale && !ov.baseline_stale) setChip(el, ov.divergence);
     });
 
-    // % change chips (index / futures / FX strips): green up, red down, muted stale.
+    // % change chips (index / futures / FX / crypto strips): green up, red down, muted stale.
     chgNodes().forEach(function (el) {
+      var mkt = el.getAttribute("data-mkt") || "us";
       var p = pick(rawSym(el));
-      if (p.chg != null) paintChg(el, p.chg, p.stale);
+      if (p.chg != null) paintChg(el, p.chg, isStale(mkt, p.ageMin, p.stale));
     });
   }
 
