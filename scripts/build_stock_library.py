@@ -2068,6 +2068,21 @@ def main() -> int:
         except Exception as _e3:  # noqa: BLE001
             log.debug("W6-US invariant (c) GEX check skipped: %s", _e3)
 
+        # (d) W2 (P5) contradiction guard: alpha_entry=laggard on a buy-band row.
+        # A card labelled "laggard" on the α-entry axis but carrying a high/constructive
+        # band is a display contradiction (F6 finding). WARNING (not raise) — the render
+        # shows the laggard chip (W2 fix), so users see it; this log surfaces monitoring.
+        _lagbuy = [
+            _r.get("ticker") for _r in wide["buy"]
+            if _r.get("alpha_entry") == "laggard"
+            and (_r.get("conviction") or {}).get("band") in ("high", "constructive")
+        ]
+        if _lagbuy:
+            log.warning(
+                "W2 invariant (d): %d buy row(s) have alpha_entry=laggard on a "
+                "constructive/high band — contradiction rendered as chip: %s",
+                len(_lagbuy), _lagbuy[:8])
+
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",

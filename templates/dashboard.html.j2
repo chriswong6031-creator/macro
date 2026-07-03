@@ -752,6 +752,25 @@
   .nb-lane{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
   .lane-trend{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
   .lane-recovery{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+  /* W2 — chip-info popover wrapper: reuses .nb-cau position/overflow mechanics but
+     neutral color (info, not warning). Chip itself is the hover target. */
+  .nb-chip-info{position:relative;display:inline-flex;flex:none}
+  .nb-chip-info .nb-chip-pop{
+    display:none;position:absolute;z-index:120;bottom:calc(100% + 5px);left:0;
+    min-width:180px;max-width:min(240px,calc(100vw - 24px));
+    padding:7px 9px;border-radius:8px;
+    background:var(--panel);border:1px solid var(--line);
+    box-shadow:0 4px 16px rgba(0,0,0,.18);
+    font-size:10px;font-weight:500;line-height:1.5;color:var(--ink-2);
+    pointer-events:none;
+  }
+  .nb-chip-info:hover .nb-chip-pop,
+  .nb-chip-info:focus-within .nb-chip-pop,
+  .nb-chip-info.nb-cau-open .nb-chip-pop{display:block;pointer-events:auto}
+  .nb-chip-info.pop-below .nb-chip-pop{bottom:auto;top:calc(100% + 5px)}
+  .nb-chip-info.pop-right .nb-chip-pop{left:auto;right:0}
+  a.nbcard:has(.nb-chip-info:hover),a.nbcard:has(.nb-chip-info:focus-within),
+  a.nbcard:has(.nb-chip-info.nb-cau-open){overflow:visible}
   /* α laggard chip (alpha_entry=laggard, honest copy) */
   .ent-lag{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent);font-size:8px;font-weight:700;padding:1px 5px;border-radius:6px;white-space:nowrap}
   /* W8-B postcross lifecycle chip (SHAKEN; ARMED display removed per W8-A-OOS FAIL) */
@@ -2513,22 +2532,26 @@
             {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}
             {# W6-C HOLD chip — basing state after confluence anchor; calm on intact, muted on launched/broken #}
             {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" title="Base {{ _hd.get('days_basing',0) }}d · inv ${{ '%.2f'|format(_hd.get('invalidation',0)) }}{% if _hd.get('provisional') %} · est{% endif %} · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough. 基础期{{ _hd.get('days_basing',0) }}天 · 止损 ${{ '%.2f'|format(_hd.get('invalidation',0)) }}。仅供参考。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}
-            {# W8 lane chip (Trend/Recovery) — admission lane for this name on the board #}
-            {# W8 lane + postcross chips. NO title= attributes — translated text never goes
-               in attributes (repo i18n rule); explanatory copy belongs in a popover (W2).
+            {# W8 lane chip (Trend/Recovery) — admission lane for this name on the board.
+               W2 (P5): wrapped in .nb-chip-info for hover/tap popover — translated text
+               must never go in title= attributes (repo i18n rule §nav-chrome-architecture).
                ARMED chip removed 2026-07-03: W8-A-OOS FAILED (stop5 edge did not transfer
                OOS, sign-unstable) — armed fields still computed + emitted for silent
                forward-ledger accrual, but nothing renders. SHAKEN confirmed both panels
                (W8-B-OOS PASS: stop5 −4.6pp vs FRESH, NI clean15, sign-stable all splits). #}
-            {% if n.get('lane') == 'recovery' %}<span class="nb-lane lane-recovery"><span class="l-en">Recovery</span><span class="l-zh">复苏</span></span>
-            {% elif n.get('lane') == 'trend' %}<span class="nb-lane lane-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>{% endif %}
+            {% if n.get('lane') == 'recovery' %}
+            <div class="nb-chip-info"><span class="nb-lane lane-recovery"><span class="l-en">Recovery</span><span class="l-zh">复苏</span></span><div class="nb-chip-pop" role="tooltip"><span class="l-en"><b>Recovery lane</b> — admitted because the weekly trend is not yet aligned (COUNTERTREND BOUNCE state) but the entry confluence gate passed and the name is not extended. Equal-citizen admission: OOS stop5 matches aligned fires (W8-C). Display-only; no rank power.</span><span class="l-zh"><b>复苏通道</b> — 因周线趋势尚未共振（逆势反弹状态）但入场共振门控通过且未过热而准入。等权公民准入：OOS止损5日与共振触发相当（W8-C）。仅展示；不影响排名。</span></div></div>
+            {% elif n.get('lane') == 'trend' %}
+            <div class="nb-chip-info"><span class="nb-lane lane-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span><div class="nb-chip-pop" role="tooltip"><span class="l-en"><b>Trend lane</b> — weekly/3-day/daily cycles aligned to the upside (bottoming-alignment gate). The default admission path.</span><span class="l-zh"><b>趋势通道</b> — 周线/3日/日线周期向上共振（筑底共振门控）。默认准入路径。</span></div></div>{% endif %}
             {# W2 (P5) — α entry context chip: laggard / pullback / extended #}
             {% if n.get('alpha_entry') == 'laggard' %}<span class="nb-ent ent-lag"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             {% elif n.get('alpha_entry') == 'pullback' %}<span class="nb-ent ent-good"><span class="l-en">α pullback</span><span class="l-zh">α 回调</span></span>
             {% elif n.get('alpha_entry') == 'extended' %}<span class="nb-ent ent-warn"><span class="l-en">α extended</span><span class="l-zh">α 过热</span></span>{% endif %}
             {% set _pc = n.get('postcross') %}
-            {% if _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}
-            {# W2 (P5) — arbiter note: visible chip when the headline arbiter downgraded this card #}
+            {% if _pc and _pc.get('shaken') %}
+            <div class="nb-chip-info"><span class="nb-postcross pc-shaken"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span><div class="nb-chip-pop" role="tooltip"><span class="l-en"><b>Shaken-recovery</b> — post-cross price fell &gt;1.5 ATR below the cross price, then recovered above the midpoint with weekly RSI-MACD hist net-rising. OOS validated: stop5 −4.6pp vs FRESH, NI clean15, sign-stable both splits (W8-B). Display-only.</span><span class="l-zh"><b>震仓复苏</b> — 交叉后价格跌破交叉价超1.5ATR，随后回升至中点以上，周线RSI-MACD柱净上行。OOS已验证：止损5日 −4.6pp vs 新鲜交叉，干净15日NI，两次分割符号稳定（W8-B）。仅展示。</span></div></div>{% endif %}
+            {# W2 (P5) — arbiter note: visible chip when the headline arbiter downgraded this card.
+               arbiter_note is always English-only (Python-generated debug string) — title= OK. #}
             {% if n.get('arbiter_note') %}<span class="nb-arbiter" title="Headline arbiter — {{ n.arbiter_note }}"><span class="l-en">⚠ arbiter</span><span class="l-zh">⚠ 已修正</span></span>{% endif %}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
@@ -3263,37 +3286,44 @@ window.__CHART_SWAP__ = {
 })();
 </script>
 <script>
-/* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
-   Also corrects popover position (flip above/below, clamp to right edge). */
+/* Caution icon popover + chip-info popover — tap-to-toggle on mobile, hover on desktop.
+   Also corrects popover position (flip above/below, clamp to right edge).
+   W2: .nb-chip-info (lane/postcross chips) shares the same tap/position logic. */
 (function(){
   function placePop(wrap){
-    var pop = wrap.querySelector('.nb-cau-pop');
+    var pop = wrap.querySelector('.nb-cau-pop') || wrap.querySelector('.nb-chip-pop');
     if (!pop) return;
     var r = wrap.getBoundingClientRect();
     wrap.classList.toggle('pop-below', r.top < 180);
     wrap.classList.toggle('pop-right', r.left > window.innerWidth - 200);
   }
-  /* Tap the button → toggle open/closed */
+  /* Tap the button (caution) or chip-info div → toggle open/closed */
   document.addEventListener('click', function(e){
     var btn = e.target.closest && e.target.closest('.nb-cau-btn');
+    var chip = !btn && e.target.closest && e.target.closest('.nb-chip-info');
     if (btn){
       e.preventDefault(); e.stopPropagation();
       var wrap = btn.closest('.nb-cau');
       if (!wrap) return;
       var wasOpen = wrap.classList.contains('nb-cau-open');
-      /* close any other open popovers */
-      document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      document.querySelectorAll('.nb-cau.nb-cau-open,.nb-chip-info.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
       if (!wasOpen){ placePop(wrap); wrap.classList.add('nb-cau-open'); }
+    } else if (chip && !e.target.closest('.nb-chip-pop')){
+      e.preventDefault(); e.stopPropagation();
+      var wasOpen = chip.classList.contains('nb-cau-open');
+      document.querySelectorAll('.nb-cau.nb-cau-open,.nb-chip-info.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      if (!wasOpen){ placePop(chip); chip.classList.add('nb-cau-open'); }
     } else {
       /* outside tap: close all */
-      if (!e.target.closest('.nb-cau-pop')){
-        document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      if (!e.target.closest('.nb-cau-pop') && !e.target.closest('.nb-chip-pop')){
+        document.querySelectorAll('.nb-cau.nb-cau-open,.nb-chip-info.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
       }
     }
   }, true);
   /* Also position-correct on hover (desktop) */
   document.addEventListener('pointerover', function(e){
-    var wrap = e.target.closest && e.target.closest('.nb-cau');
+    var wrap = (e.target.closest && e.target.closest('.nb-cau'))
+            || (e.target.closest && e.target.closest('.nb-chip-info'));
     if (wrap) placePop(wrap);
   }, true);
 })();
