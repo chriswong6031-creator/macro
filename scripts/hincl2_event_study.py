@@ -19,6 +19,7 @@ import pandas as pd
 from engine.validation import (
     newey_west_tstat, benjamini_hochberg, deflated_sharpe, ret_moments,
 )
+from engine.trial_ledger import TrialLedger
 
 ROSTER = pathlib.Path("data/hk_connect_roster/roster.parquet")
 CLOSES_DEEP = pathlib.Path("data/hk_search/closes_deep.parquet")
@@ -27,7 +28,9 @@ EXT = pathlib.Path("/Users/chriswong/Documents/Cluade/Macro Dashboard/"
                    ".claude/worktrees/amazing-blackburn-5d2027/data/hk_stocks_ext")
 HSI_FRESH = pathlib.Path("data/hk/_HSI.parquet")
 
-N_TRIALS = 32          # program-level DSR (masterplan §6; bumped 30->32, stricter)
+N_TRIALS = 32          # program-level DSR (masterplan §6; bumped 30->32, stricter), ledger floor
+FAMILY = "hincl2_event_study"
+_LED = TrialLedger.with_declared_budget(N_TRIALS, FAMILY)
 HORIZONS = [5, 10, 20, 40, 60]
 PRIMARY_H = 20
 PRE = 10
@@ -222,7 +225,7 @@ def run_trial(adds, closes, hsi, cal, anchor, h):
     if K >= 3 and mom is not None:
         sr, sk, ku, _ = mom
         try:
-            dsr = deflated_sharpe(sr, sk, ku, T=K, n_trials=N_TRIALS)
+            dsr = deflated_sharpe(sr, sk, ku, T=K, ledger=_LED, family=FAMILY)
         except Exception:
             dsr = None
     sh = None

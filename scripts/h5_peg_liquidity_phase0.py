@@ -28,7 +28,7 @@ from engine.validation import (
     bootstrap_effective_t,
     block_bootstrap_ci,
 )
-from engine.trial_ledger import register_trials
+from engine.trial_ledger import TrialLedger, register_trials
 
 log = logging.getLogger("h5")
 
@@ -41,6 +41,8 @@ DEBOUNCE_GAP = 5       # bd opposite/neutral interruption tolerated inside an ep
 STALE_CAP_BD = 3       # usd/hkma forward-fill staleness cap (business days)
 HORIZONS = {"1m": 21, "3m": 63}
 PROGRAM_N_TRIALS = 30  # masterplan §6 program-level DSR budget (both markets)
+FAMILY = "h5_peg_liquidity_phase0"
+_LED = TrialLedger.with_declared_budget(PROGRAM_N_TRIALS, FAMILY)
 SOFR_START = pd.Timestamp("2018-04-02")
 
 
@@ -303,7 +305,7 @@ def run_trial(name: str, hkma: pd.DataFrame, usd_leg: pd.Series, hsi: pd.Series,
         dsr = deflated_sharpe(
             sr_daily=float(sr_d), skew=float(overlay.skew()),
             kurt=float(overlay.kurtosis() + 3.0), T=len(overlay),
-            n_trials=PROGRAM_N_TRIALS, t_eff=bt.get("t_eff"))
+            ledger=_LED, family=FAMILY, t_eff=bt.get("t_eff"))
 
     return {
         "name": name,

@@ -65,18 +65,13 @@ LEGACY_LITERAL_NTRIALS = frozenset({
 # Files that call the literal path ON PURPOSE — and always will — to contrast it with
 # the honest ledger path (the keystone demo). Exempt, not grandfathered: never migrate.
 #
-# The HK/CA phase-0 battery scripts (masterplan §6) deflate by a FIXED program-level
-# N=30 — the whole-program config count the constitution mandates as a constant, not a
-# per-script ledger count. That is the deliberate-literal case by design; they are
-# exempt, not offenders. (They already ship on main; this entry makes the ratchet honest
-# about them rather than leaving the test red.)
+# A constitution-mandated program-level N (e.g. the HK/CA masterplan §6 "≈30+ counting
+# every config") is NOT a deliberate-literal case: §9 of that masterplan requires the
+# multiplicity be "controlled via ledger-fed DSR", and the ledger expresses a program
+# floor as ``TrialLedger.with_declared_budget(N, family)`` — same haircut, but audited
+# and monotone-upward as the program tries more configs. New battery scripts use that.
 DELIBERATE_LITERAL = frozenset({
     "scripts/trial_ledger_demo.py",
-    "scripts/hk_h1_southbound_phase0.py",
-    "scripts/h5_peg_liquidity_phase0.py",
-    "scripts/c1_commodity_sector_phase0.py",
-    "scripts/cbank_phase0.py",
-    "scripts/canada_residual_alpha_phase0.py",
 })
 
 

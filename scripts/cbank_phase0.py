@@ -24,9 +24,11 @@ from engine.validation import (  # noqa: E402
     newey_west_tstat, deflated_sharpe, bootstrap_effective_t,
     benjamini_hochberg, ret_moments, dsr_verdict,
 )
-from engine.trial_ledger import register_trials  # noqa: E402
+from engine.trial_ledger import TrialLedger, register_trials  # noqa: E402
 
-N_TRIALS_PROGRAM = 30          # masterplan §6 program-level DSR count
+N_TRIALS_PROGRAM = 30          # masterplan §6 program-level DSR count, ledger-declared floor
+FAMILY = "cbank_phase0"
+_LED = TrialLedger.with_declared_budget(N_TRIALS_PROGRAM, FAMILY)
 ANCHORS = {"Feb": (2, 25), "May": (5, 28), "Aug": (8, 27), "Dec": (12, 3)}
 WIN_DAYS = 14                  # ± calendar days around anchor
 BANKS = ["RY.TO", "TD.TO", "BMO.TO", "BNS.TO", "CM.TO"]  # NA.TO absent (verified)
@@ -142,7 +144,7 @@ def season_trial(etf: str):
     if mom is not None:
         sr_daily, skew, kurt, _ = mom
         dsr = deflated_sharpe(sr_daily, skew, kurt, T=len(strat_daily),
-                              n_trials=N_TRIALS_PROGRAM,
+                              ledger=_LED, family=FAMILY,
                               t_eff=teff.get("t_eff") if teff else None)
     else:
         dsr = None

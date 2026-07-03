@@ -24,7 +24,7 @@ from engine.validation import (  # noqa: E402
     newey_west_tstat, benjamini_hochberg, bootstrap_effective_t,
     deflated_sharpe,
 )
-from engine.trial_ledger import register_trials  # noqa: E402
+from engine.trial_ledger import TrialLedger, register_trials  # noqa: E402
 
 # ---- frozen pre-reg constants -------------------------------------------------
 SLOPE_WIN = 63          # trend slope window (~13wk)
@@ -35,7 +35,9 @@ MIN_DUR = 20            # min-duration debounce (trading days, ~4wk)
 HORIZONS = {"2w": 10, "4w": 20, "6w": 30, "8w": 40}
 PRIMARY_H = "4w"
 SPLIT_DATE = pd.Timestamp("2013-01-01")
-N_TRIALS = 30           # program-level DSR n_trials (masterplan §6)
+N_TRIALS = 30           # program-level DSR n_trials (masterplan §6), ledger-declared floor
+FAMILY = "c1_commodity_sector_phase0"
+_LED = TrialLedger.with_declared_budget(N_TRIALS, FAMILY)
 DSR_BLOCK = 21
 
 DATA_C = ROOT / "data" / "canada"
@@ -186,7 +188,7 @@ def analyse_trial(name, commodity, etf, bench, target=1):
                 from scipy.stats import skew as _sk, kurtosis as _ku
                 sr = m / sd
                 dsr = deflated_sharpe(sr, float(_sk(ep.values)), float(_ku(ep.values, fisher=False)),
-                                      T=n, n_trials=N_TRIALS,
+                                      T=n, ledger=_LED, family=FAMILY,
                                       t_eff=teff.get("t_eff") if teff else None)
                 row["sr_episode"] = round(sr, 4)
                 row["dsr"] = dsr["dsr"] if dsr else None

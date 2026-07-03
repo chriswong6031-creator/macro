@@ -24,6 +24,7 @@ from engine.validation import (  # noqa: E402
     bootstrap_effective_t, deflated_sharpe, dsr_verdict, newey_west_tstat,
     rank_ic, benjamini_hochberg, ret_moments,
 )
+from engine.trial_ledger import TrialLedger  # noqa: E402
 
 # ---- data locations (ext store is gitignored → read from the fetched sibling worktree) ----
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,7 +41,9 @@ HOLD = 21              # ~1-month forward hold
 ADV_WIN = 63           # dollar-ADV window
 ADV_FLOOR = 1_000_000  # HKD/day hygiene floor (small-cap-scaled)
 STALE_SESS = 5         # staleness / suspension window
-N_TRIALS = 30          # PROGRAM-level multiplicity
+N_TRIALS = 30          # PROGRAM-level multiplicity (masterplan §6), ledger-declared floor
+FAMILY = "h4_reversal_phase0"
+_LED = TrialLedger.with_declared_budget(N_TRIALS, FAMILY)
 DELIST_MONTHLY = 0.005  # survivorship bound: 0.5%/month-of-held phantom losers
 PHANTOM_RET = -0.30    # phantom terminal 1m return
 
@@ -297,7 +300,7 @@ def _summarize(label, dates, ls_ret, long_ret, ic_series, held_counts):
     # effective-N via block bootstrap on a daily-equivalent proxy: use monthly series
     teff = bootstrap_effective_t(ls, block=6, B=2000)
     t_eff = teff.get("t_eff") if teff else None
-    dsr = deflated_sharpe(sr_m, skew, kurt, T=n, n_trials=N_TRIALS,
+    dsr = deflated_sharpe(sr_m, skew, kurt, T=n, ledger=_LED, family=FAMILY,
                           trading_year=12, t_eff=t_eff)
     res["sr_monthly"] = round(sr_m, 4)
     res["dsr"] = dsr["dsr"] if dsr else None
