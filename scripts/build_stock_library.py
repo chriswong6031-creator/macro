@@ -937,6 +937,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("alt-data context unavailable (%s)", e)
         altdata_ctx = {}
+    # W3 evidence-stack: news burst (DISPLAY-ONLY; 17-ticker coverage today).
+    # site/news/by_ticker.json schema: {schema, is_context_only, asof, tickers}.
+    # Absent file or missing ticker => chip absent.
+    _news_p = site / "news" / "by_ticker.json"
+    news_map: dict[str, dict] = {}
+    if _news_p.exists():
+        try:
+            news_map = json.loads(_news_p.read_text()).get("tickers", {})
+        except Exception as _ne:  # noqa: BLE001 — additive, never fatal
+            log.warning("news/by_ticker.json unreadable (%s)", _ne)
     # Phase-0 gate: the board rank stays the VALIDATED leg unless a deep-CI run proved
     # the composite beats it (scripts/stock_conviction_phase0.py). Absent / shallow =>
     # NEUTRAL => gate_go False => Conviction ships as display-only context.
@@ -1200,6 +1210,12 @@ def main() -> int:
     _donor_closes: dict[str, "pd.Series"] = {}  # close series for donor composite
     # W6-C HOLD tracker: per-name basing state (INTACT/LAUNCHED/BROKEN) + invalidation
     _hold_state: dict[str, dict] = {}           # hold dict per name (None when no anchor)
+    # W3 evidence-stack: per-ticker evidence fields collected during the rec loop.
+    # These are joined to ALL board rows (buy + watch) after cand assembly.
+    # Keys: gex_confirm, altdata, sue_fresh_days, news_burst, smartmoney_chip, stop_guidance.
+    # Insider fields (insider_buyers/bps/net_mn) are already attached to the cand row at L1248.
+    # evidence_health carries staleness markers: {source: 'stale-Nd'} when the artifact is stale.
+    _w3_evidence: dict[str, dict] = {}   # ticker -> evidence payload for board-row propagation
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -1483,6 +1499,92 @@ def main() -> int:
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
+        # W3 evidence-stack: collect board-row fields from rec for propagation after assembly.
+        # ZERO ordering/admission impact — display chips + grader strata only.
+        # Stale/absent artifact => field absent + health marker; never a neutral default.
+        try:
+            _ev: dict = {}
+            _ev_health: dict = {}
+            # GEX confirmer (Source 2): propagate from rec (already computed above).
+            # Scope: magnet-distance >= 5% OR regime == 'short' via gex_confirm.assess().
+            _gc = rec.get("gex_confirm")
+            if _gc:
+                _ev["gex_confirm"] = _gc
+            # Alt-data convergence (Source 3): convergence_score >= 2 across independent channels.
+            # Reuse altdata_ctx (same as site/altdata/by_ticker.json tickers).
+            _adv = altdata_ctx.get(ticker)
+            if _adv and (_adv.get("convergence_score") or 0) >= 2:
+                _ev["altdata"] = {
+                    "convergence_score": _adv.get("convergence_score"),
+                    "channels": _adv.get("channels"),
+                    "weighted_score": _adv.get("weighted_score"),
+                    "trump_linked": _adv.get("trump_linked"),
+                }
+            # SUE freshness (Source 4): attach sue_fresh_days alongside sue_z.
+            # Both already available (sue_z dict + sue_fresh dict loaded above).
+            _sz = sue_z.get(ticker)
+            _sf = sue_fresh.get(ticker)
+            if _sz is not None and _sf is not None and _sf <= 60:
+                _ev["sue_fresh_days"] = _sf
+            # News burst (Source 5): n_recent >= 3 fires chip.
+            # Coverage is 17 tickers only (context chip; is_context_only=true).
+            _nv = news_map.get(ticker)
+            if _nv and (_nv.get("n_recent") or 0) >= 3:
+                _ev["news_burst"] = {
+                    "n_recent": _nv.get("n_recent"),
+                    "sentiment_lean": _nv.get("sentiment_lean"),
+                    "n_pos": _nv.get("n_pos"),
+                    "n_neg": _nv.get("n_neg"),
+                }
+            # Anticipation stop-budget (Source 6): derive stop_guidance from GO horizons.
+            # rec["anticipation"] is computed inside rec_for(). Propagate the stop-width
+            # guidance (dd_avg / dd_tail) from the best direction_scored horizon.
+            _ant = rec.get("anticipation")
+            if _ant:
+                try:
+                    _horizons = (_ant.get("horizons") or {}).values()
+                    _scored_h = [h for h in _horizons
+                                 if h.get("direction_scored") and h.get("dd_avg") is not None]
+                    if not _scored_h:
+                        _scored_h = [h for h in _horizons if h.get("dd_avg") is not None]
+                    if _scored_h:
+                        # shortest validated horizon (fewest window days)
+                        _best_h = min(_scored_h, key=lambda h: h.get("window_td") or 999)
+                        _dda = _best_h.get("dd_avg")
+                        _ddt = _best_h.get("dd_tail")
+                        if _dda is not None:
+                            _ev["stop_guidance"] = {
+                                "pct": round(abs(float(_dda)) * 100, 1),
+                                "tail_pct": round(abs(float(_ddt)) * 100, 1) if _ddt is not None else None,
+                                "horizon": _best_h.get("window_td"),
+                                "scored": bool(_best_h.get("direction_scored")),
+                            }
+                except Exception:  # noqa: BLE001 — display-only, never fatal
+                    pass
+            # Smartmoney 13F (Source 7): A/B-grade fund new/add action.
+            # Already in rec["smart_money"] (joined above). Q1-2026 data — staleness caveat on chip.
+            _sm = rec.get("smart_money")
+            if _sm:
+                _holders = _sm.get("holders") or []
+                _ab_add = [h for h in _holders
+                           if h.get("action") in ("new", "add")
+                           and h.get("fund_grade") in ("A", "B")]
+                if _ab_add:
+                    _best_ab = min(_ab_add, key=lambda h: {"A": 0, "B": 1}.get(h.get("fund_grade"), 2))
+                    _ev["smartmoney_chip"] = {
+                        "action": _best_ab.get("action"),
+                        "n_funds_adding": len(_ab_add),
+                        "best_fund": _best_ab.get("fund_name"),
+                        "best_grade": _best_ab.get("fund_grade"),
+                        "period_end": _best_ab.get("period_end", "2026-03-31"),
+                        "staleness_caveat": "Q1-2026 13F",
+                    }
+            if _ev_health:
+                _ev["evidence_health"] = _ev_health
+            if _ev:
+                _w3_evidence[ticker] = _ev
+        except Exception as _w3e:  # noqa: BLE001 — W3 evidence is additive, never fatal
+            log.warning("W3 evidence collection for %s failed (%s)", ticker, _w3e)
         built += 1
     # surface any GICS sector strings the spotlight sector-channel couldn't bridge to an SPDR
     # ETF (the theme channel still fires for these names) so the alias map can be widened.
@@ -1917,6 +2019,80 @@ def main() -> int:
                     if _pc_state.get("based"):
                         r["postcross"] = _pc_state
             except Exception as _pce:  # noqa: BLE001 — display-only; never fatal
+                pass
+            # W3 evidence-stack: propagate evidence fields to ALL board rows (buy + watch).
+            # ZERO ordering/admission impact — display chips + grader strata only.
+            # Missing artifact => field absent, chip absent; never a neutral default.
+            _w3ev = _w3_evidence.get(t)
+            if _w3ev:
+                # GEX confirmer (Source 2)
+                if _w3ev.get("gex_confirm") is not None:
+                    r["gex_confirm"] = _w3ev["gex_confirm"]
+                # Alt-data convergence (Source 3)
+                if _w3ev.get("altdata") is not None:
+                    r["altdata"] = _w3ev["altdata"]
+                # SUE freshness (Source 4) — also attach sue_fresh_days alongside the existing sue_z
+                if _w3ev.get("sue_fresh_days") is not None:
+                    r["sue_fresh_days"] = _w3ev["sue_fresh_days"]
+                # News burst (Source 5)
+                if _w3ev.get("news_burst") is not None:
+                    r["news_burst"] = _w3ev["news_burst"]
+                # Anticipation stop-budget (Source 6)
+                if _w3ev.get("stop_guidance") is not None:
+                    r["stop_guidance"] = _w3ev["stop_guidance"]
+                # Smartmoney 13F (Source 7)
+                if _w3ev.get("smartmoney_chip") is not None:
+                    r["smartmoney_chip"] = _w3ev["smartmoney_chip"]
+                # Propagate evidence_health if any sources had staleness markers
+                if _w3ev.get("evidence_health"):
+                    r["evidence_health"] = _w3ev["evidence_health"]
+            # W3 Confluence+ badge: k-of-n independent group votes.
+            # Groups: INSIDER, POLITICAL/GOV, GEX-OPTIONS, ALTDATA-ALT, SUE, NEWS, SMARTMONEY.
+            # Same-group signals (e.g. insider_cluster + altdata insider_buy) never double-count.
+            # Badge fires at k >= 2 independent group votes. ZERO admission/ordering power.
+            try:
+                _c_votes = 0
+                _c_groups: list[str] = []
+                # INSIDER group (Source 1): insider_buyers >= 2 (from cand row; also altdata insider)
+                if (r.get("insider_buyers") or 0) >= 2:
+                    _c_votes += 1
+                    _c_groups.append("INSIDER")
+                # POLITICAL/GOV group: altdata channels containing political signals
+                _ad_r = r.get("altdata") or {}
+                _ad_chans = set(_ad_r.get("channels") or [])
+                _POL_CHANS = frozenset({"congress_buy", "trump", "gov_contract",
+                                        "gov_contract_accel", "gov_grant", "lobbying"})
+                if _ad_chans & _POL_CHANS:
+                    _c_votes += 1
+                    _c_groups.append("POLITICAL/GOV")
+                # GEX-OPTIONS group: gex_confirm verdict == "confirm" only
+                if (r.get("gex_confirm") or {}).get("verdict") == "confirm":
+                    _c_votes += 1
+                    _c_groups.append("GEX-OPTIONS")
+                # ALTDATA-ALT group: altdata convergence >= 2 from NON-insider, NON-political channels
+                _EXCL_CHANS = frozenset({"insider_buy", "insider_cluster",
+                                         "congress_buy", "trump", "gov_contract",
+                                         "gov_contract_accel", "gov_grant", "lobbying"})
+                _alt_chans = _ad_chans - _EXCL_CHANS
+                if _ad_r.get("convergence_score", 0) and _alt_chans:
+                    # at least 1 non-insider/non-political channel present
+                    _c_votes += 1
+                    _c_groups.append("ALTDATA-ALT")
+                # SUE group: sue_z >= 1 AND sue_fresh_days <= 60 (both must be present on row)
+                if r.get("sue_z") and r.get("sue_fresh_days") is not None and r["sue_fresh_days"] <= 60:
+                    _c_votes += 1
+                    _c_groups.append("SUE")
+                # NEWS group: news_burst present (n_recent >= 3 already checked at collection)
+                if r.get("news_burst"):
+                    _c_votes += 1
+                    _c_groups.append("NEWS")
+                # SMARTMONEY group: smartmoney_chip present (A/B-grade new/add already checked)
+                if r.get("smartmoney_chip"):
+                    _c_votes += 1
+                    _c_groups.append("SMARTMONEY")
+                if _c_votes >= 2:
+                    r["confluence_plus"] = {"k": _c_votes, "groups": _c_groups}
+            except Exception as _cpe:  # noqa: BLE001 — display-only; never fatal
                 pass
         # W6-US fix 8 (cont): log FRESH-BUY rows with shallow depth for US-2 ledger study.
         # Shallow = cand_depth_pct < 5.0% (less than 5% pullback from the pre-cycle high).

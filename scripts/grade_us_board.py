@@ -214,6 +214,15 @@ def _row_features(r: dict) -> dict:
         "postcross_armed":  (r.get("postcross") or {}).get("armed"),   # 'strict'|'net'|None
         "postcross_shaken": bool((r.get("postcross") or {}).get("shaken")),
         "postcross_ticks":  _num((r.get("postcross") or {}).get("ticks_since_cross")),
+        # W3 evidence-stack strata (display-only; forward IC under accrual; False/None pre-schema)
+        "insider_cluster":      bool((r.get("insider_buyers") or 0) >= 2),
+        "gex_confirm_verdict":  _dig(r, ("gex_confirm", "verdict"), default=None),
+        "altdata_conv_gte2":    bool((_dig(r, ("altdata", "convergence_score"), default=0) or 0) >= 2),
+        "sue_fresh":            bool(r.get("sue_z") and (r.get("sue_fresh_days") or 999) <= 60),
+        "news_burst":           bool((_dig(r, ("news_burst", "n_recent"), default=0) or 0) >= 3),
+        "smartmoney_add":       bool(r.get("smartmoney_chip")),
+        "has_stop_guidance":    bool(r.get("stop_guidance")),
+        "confluence_k":         int((r.get("confluence_plus") or {}).get("k") or 0),
     }
 
 
@@ -396,6 +405,15 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     # record; add it here so aggregate() can stratify by T1/T2/T3/T4.
                     # None on pre-schema boards (earliest revisions lacked the signal.tier_cascade field).
                     "tier_cascade":    feat.get("tier_cascade"),
+                    # W3 evidence-stack strata (display-only; forward IC under accrual; None pre-schema)
+                    "insider_cluster":   feat.get("insider_cluster"),
+                    "gex_confirm_verdict": feat.get("gex_confirm_verdict"),
+                    "altdata_conv_gte2": feat.get("altdata_conv_gte2"),
+                    "sue_fresh":         feat.get("sue_fresh"),
+                    "news_burst":        feat.get("news_burst"),
+                    "smartmoney_add":    feat.get("smartmoney_add"),
+                    "has_stop_guidance": feat.get("has_stop_guidance"),
+                    "confluence_k":      feat.get("confluence_k"),
                     "ret": nret,
                 }
                 # excess vs SPY
@@ -491,6 +509,8 @@ def _precision_at_k(sub: pd.DataFrame, col: str = "excess_spy",
 
 
 def _slice_table(df: pd.DataFrame, by: str, col: str = "excess_spy") -> dict:
+    if by not in df.columns:
+        return {}  # pre-schema boards lacking the field — not an error
     out = {}
     for val, g in df.groupby(by, dropna=False):
         key = "None" if (val is None or (isinstance(val, float) and math.isnan(val))) else str(val)
@@ -586,7 +606,16 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                 # W0.2b — tier_cascade stratification (T1/T2/T3/T4). Was captured in
                 # _row_features but never emitted to the graded record or stratified.
                 # "None" = pre-schema boards lacking the signal.tier_cascade field.
-                "by_tier_cascade": _slice_table(buy, "tier_cascade", "excess_spy"),
+                "by_tier_cascade":      _slice_table(buy, "tier_cascade", "excess_spy"),
+                # W3 evidence-stack strata (display-only; forward IC under accrual)
+                "by_insider_cluster":   _slice_table(buy, "insider_cluster", "excess_spy"),
+                "by_gex_confirm":       _slice_table(buy, "gex_confirm_verdict", "excess_spy"),
+                "by_altdata_conv":      _slice_table(buy, "altdata_conv_gte2", "excess_spy"),
+                "by_sue_fresh":         _slice_table(buy, "sue_fresh", "excess_spy"),
+                "by_news_burst":        _slice_table(buy, "news_burst", "excess_spy"),
+                "by_smartmoney":        _slice_table(buy, "smartmoney_add", "excess_spy"),
+                "by_stop_guidance":     _slice_table(buy, "has_stop_guidance", "excess_spy"),
+                "by_confluence_k":      _slice_table(buy, "confluence_k", "excess_spy"),
                 "mae_close_excess_spy": {
                     "median": round(float(buy["mae_close_excess_spy"].dropna().median()), 5)
                     if buy["mae_close_excess_spy"].notna().any() else None,
@@ -639,6 +668,10 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
             "SCHEMA DRIFT: earliest boards (2026-06-16..) had 120-row buy lanes, no watch "
             "lane, no entry_signal/signal fields; those slices show 'None'. align_tier and "
             "signal.last.quality only populate on later revisions.",
+            "W3 EVIDENCE STRATA: by_news_burst has tiny sample (<= 17 tickers / board); "
+            "by_smartmoney uses Q1-2026 13F (~45-day lag); by_insider_cluster uses 6-month "
+            "rolling Form-4 window. All W3 strata are DISPLAY-ONLY context; no return "
+            "claims until wave-8 forward-ledger accrual matures.",
         ],
         "per_horizon": per_horizon,
     }
