@@ -748,6 +748,21 @@
   .nb-hold{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
   .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
   .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
+  /* W2 outcomes strip — recently surfaced → outcome */
+  .board-outcomes{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
+  .board-outcomes-hdr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+  .board-outcomes-title{font-weight:700;font-size:12px}
+  .board-outcomes-sub{font-size:11px;color:var(--muted)}
+  .outcomes-tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+  .outcomes-tbl th{text-align:left;font-weight:700;color:var(--muted);font-size:10px;padding:2px 4px 3px;border-bottom:1px solid var(--line)}
+  .outcomes-tbl td{padding:3px 4px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);vertical-align:middle}
+  .outcomes-tbl tr:last-child td{border-bottom:none}
+  .oc-dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .oc-dot.running{background:var(--up)}
+  .oc-dot.stopped{background:var(--down)}
+  .oc-dot.flat{background:var(--muted)}
+  .oc-pct.az-up{color:var(--up);font-weight:700}
+  .oc-pct.az-dn{color:var(--down);font-weight:700}
   /* W8 dual-lane admission chips (display-only, US standouts) */
   .nb-lane{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
   .lane-trend{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
@@ -2680,6 +2695,39 @@
       {% endfor %}
       {% endif %}
       </div>
+      {# W2 outcomes strip: recently surfaced → outcome. Renders only when the artifact
+         exists and has rows (us_board_outcomes is None when empty:true or absent).
+         Ticker links mirror the standout card href pattern (stock.html#TICKER).
+         Color uses az-up / az-dn semantic vars — zh root flips up→red/down→green correctly. #}
+      {% if us_board_outcomes and us_board_outcomes.get('rows') %}{% set _oc = us_board_outcomes %}
+      <div class="board-outcomes">
+        <div class="board-outcomes-hdr">
+          <span class="board-outcomes-title">{{ t('Recently surfaced → outcome', '近期上榜 → 结果') }}</span>
+          {% set _sm = _oc.get('summary') or {} %}
+          <span class="board-outcomes-sub">{{ t('names that left the buy board in the last 21 sessions', '21个交易日内离开买入榜的标的') }} · {{ t('as of', '截至') }} {{ _oc.get('as_of','') }}{% if _sm.get('n_running') is not none %} · <span class="az-up">{{ _sm.get('n_running') }} {{ t('running', '上涨') }}</span> · <span class="az-dn">{{ _sm.get('n_stopped') }} {{ t('stopped', '止损') }}</span>{% endif %}</span>
+        </div>
+        <table class="outcomes-tbl">
+          <thead><tr>
+            <th>{{ t('Stock', '个股') }}</th>
+            <th>{{ t('Sector', '行业') }}</th>
+            <th>{{ t('Surfaced', '上榜日') }}</th>
+            <th class="r">{{ t('Return', '涨跌') }}</th>
+            <th>{{ t('Status', '状态') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for oc in _oc.get('rows', []) %}
+          <tr>
+            <td><a href="stock.html#{{ oc.ticker }}" style="font-weight:700;text-decoration:none">{{ oc.ticker }}</a></td>
+            <td class="muted" style="font-size:10.5px">{{ td(oc.get('sector','')) }}</td>
+            <td class="muted" style="font-size:10.5px">{{ oc.get('first_surfaced','') }}</td>
+            <td class="r"><span class="oc-pct {{ 'az-up' if oc.pct_since > 0 else ('az-dn' if oc.pct_since < 0 else 'muted') }}">{{ '%+.1f'|format(oc.pct_since) }}%</span></td>
+            <td><span class="oc-dot {{ oc.get('status','flat') }}"></span></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
       {% if top_setups %}
       <div class="topsetups">
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">

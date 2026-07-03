@@ -2828,6 +2828,19 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_standouts.json unreadable (%s)", e)
 
+    # W2 outcomes strip — names that left the buy board in the last 21 board dates,
+    # with their pct return since first surfaced. Written by grade_us_board --nightly.
+    # Absent on first run or when the nightly hasn't run yet → strip degrades silently.
+    us_board_outcomes = None
+    _uo = site / "factordata" / "us_board_outcomes.json"
+    if _uo.exists():
+        try:
+            _uod = json.loads(_uo.read_text())
+            if not _uod.get("empty"):
+                us_board_outcomes = _uod
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("us_board_outcomes.json unreadable (%s)", e)
+
     # Macro news & catalysts (LEAF, additive, never fatal). Catalysts (FOMC + jobs
     # report) are keyless and always on; filtered headlines + the optional LLM brief
     # only when macro_news.enabled. News NEVER feeds any score.
@@ -2988,6 +3001,7 @@ def main() -> int:
         action_board=action_board(sector_timing, notable, basket_action_items(site)),
         top_setups=top_setups,
         us_standouts=us_standouts,
+        us_board_outcomes=us_board_outcomes,
         market_gamma=market_gamma,
         components_confirming=confirming,
         components_contradicting=contradicting,
