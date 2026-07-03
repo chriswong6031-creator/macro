@@ -842,6 +842,16 @@
       "match": "cpo basket return (validated #773",
       "backing": "same AI-semis→CPO confirmer as above (#773, t=3.27, horse-race stable) — the source-caption restatement; backing artifact engine.cn_ai_semis_confirmer + scripts/china_global_theme_backtest.py.",
       "surfaces": ["narrative_radar"]
+    },
+    {
+      "match": "validated entry confluence (T1–T3)",
+      "backing": "T1–T3 confluence buy-gate (signal_gate.is_buyable, #736) + Lane R admission licensed by the W8-C CT-LANE deep-panel row in research/signal_engine/DURABLE_BOTTOM_FRAMEWORK.md decisions ledger (2026-07-03): CT_LANE n=7392 vs ALIGNED n=5272, stop5/clean15 deltas −0.16pp/−0.6pp, sign-stable both time halves — counter-trend buyables admitted as equal citizens, no ranking edge claimed (harness wave8_ctlane.py --gates). The tooltip's own copy repeats the no-edge disclaimer.",
+      "surfaces": ["us_stocks"]
+    },
+    {
+      "match": "validated on two panels: stop-out",
+      "backing": "W8-B-OOS SHAKEN confirmatory PASS, research/signal_engine/DURABLE_BOTTOM_FRAMEWORK.md decisions ledger (2026-07-03): n=8009 stop5 42.5 vs FRESH 47.1 (−4.59pp), clean15 +1.59pp NI, sign-stable all four splits (tickerA/tickerB/pre/post); confirmed on the deep panel (35.8 vs 40.3). The Wave-8 ship decision in the same ledger explicitly licenses the SHAKEN chip's validated copy (display-only, no rank power).",
+      "surfaces": ["us_stocks"]
     }
   ]
 }
