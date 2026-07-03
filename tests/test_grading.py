@@ -145,10 +145,11 @@ class TestSurvivorshipPanel:
         assert "GONE" in panel["closes"]      # the dropped name is IN the 2016 panel
 
     def test_cold_start_falls_back_and_is_flagged(self):
-        # asof before accrual (empty ledger) -> cold-start tag + today's panel.
+        # asof before accrual (empty ledger) AND no PIT file -> cold-start tag + today's panel.
+        # Pass pit_path pointing to a nonexistent file so the PIT fallback is bypassed.
         closes = {"A": _series(range(10, 400))}
         panel = grading.as_of_panel(closes, "2010-01-01", ledger=pd.DataFrame(),
-                                    include_dead=False)
+                                    include_dead=False, pit_path="/nonexistent/pit.parquet")
         assert panel["survivorship"] == "cold-start"
         assert set(panel["members"]) == {"A"}
 
