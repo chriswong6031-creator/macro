@@ -55,8 +55,12 @@ BACKOFF_S = 3.0
 BATCH = 60                  # tickers per yfinance download call
 
 # membership ticker -> the symbol yfinance actually resolves it under (ticker renames where Yahoo
-# only keeps the OLD symbol's series). Fetched under the value, stored under the key.
-ALIASES = {"FI": "FISV"}    # Fiserv renamed FISV->FI in 2023; Yahoo still serves the FISV series
+# serves the series under a different symbol — sometimes the old one, sometimes the new one).
+# Fetched under the value, stored under the key.
+ALIASES = {
+    "FI": "FISV",       # Fiserv renamed FISV->FI in 2023; Yahoo still serves the FISV series
+    "MMC": "MRSH",      # Marsh McLennan: Yahoo migrated the series to MRSH; MMC returns nothing
+}
 
 # ETF proxies a basket's reference cross-check points at but the rest of the site does not
 # already cache (members go in extras.parquet; proxies go in the yahoo store like SPY).
