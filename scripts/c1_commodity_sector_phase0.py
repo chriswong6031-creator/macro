@@ -24,6 +24,7 @@ from engine.validation import (  # noqa: E402
     newey_west_tstat, benjamini_hochberg, bootstrap_effective_t,
     deflated_sharpe,
 )
+from engine.trial_ledger import register_trials  # noqa: E402
 
 # ---- frozen pre-reg constants -------------------------------------------------
 SLOPE_WIN = 63          # trend slope window (~13wk)
@@ -234,6 +235,8 @@ def verdict(row):
     return "NO-GO"
 
 
+@register_trials("c1_commodity_sector_phase0", budget=N_TRIALS, basis="estimated",
+                 reason="masterplan §6 program-level DSR budget (both markets)")
 def main():
     cl = _load(DATA_Y / "CL_F.parquet")
     gc = _load(DATA_Y / "GC_F.parquet")

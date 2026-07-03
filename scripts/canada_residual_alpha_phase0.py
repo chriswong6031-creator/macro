@@ -39,6 +39,7 @@ warnings.filterwarnings("ignore")
 from engine.validation import (benjamini_hochberg, block_bootstrap_ci,  # noqa: E402
                                deflated_sharpe, dsr_verdict, ic_summary,
                                rank_ic, ret_moments)
+from engine.trial_ledger import register_trials  # noqa: E402
 from lib import config  # noqa: E402
 from scripts.residual_alpha_phase0 import (COST_BPS, build_residuals,  # noqa: E402
                                            ew_peer, month_grid, signal_matrices)
@@ -477,6 +478,8 @@ def render(accept, panels):
     return "\n".join(L), verdicts, hv
 
 
+@register_trials("canada_residual_alpha_phase0", budget=PROGRAM_N_TRIALS, basis="estimated",
+                 reason="masterplan §6 program-level DSR budget (both markets)")
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--accept", action="store_true",

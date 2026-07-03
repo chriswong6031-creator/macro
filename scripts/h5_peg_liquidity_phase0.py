@@ -28,6 +28,7 @@ from engine.validation import (
     bootstrap_effective_t,
     block_bootstrap_ci,
 )
+from engine.trial_ledger import register_trials
 
 log = logging.getLogger("h5")
 
@@ -403,6 +404,8 @@ def robustness(hkma, sofr, hsi) -> dict:
     return out
 
 
+@register_trials("h5_peg_liquidity_phase0", budget=PROGRAM_N_TRIALS, basis="estimated",
+                 reason="masterplan §6 program-level DSR budget (both markets)")
 def main() -> dict:
     hkma = load_hkma()
     sofr, dff = load_usd_leg()
