@@ -741,9 +741,13 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
     - Find tickers that are ABSENT from the CURRENT (most-recent) buy board.
     - For each such exited ticker, compute pct change from the close on their
       first_surfaced date to the most-recent available close.
-    - Skip rows with missing prices (never fabricate).
+    - Skip rows with missing prices (never fabricate) — but COUNT them: the broad
+      cache is current-membership only, so a name that left the board BECAUSE it
+      collapsed and got delisted is exactly the name with no price here. Silently
+      dropping it tilts the displayed win/loss mix toward survivors. The count is
+      emitted as summary.n_skipped_no_price so the strip header can disclose it.
     - Sort by |pct_since| desc, cap at 15 rows.
-    - Include summary: n_running, n_stopped, median_pct.
+    - Include summary: n_running, n_stopped, median_pct, n_skipped_no_price.
 
     Returns the dict to be serialised as us_board_outcomes.json.
     Degrades to {"empty": True, ...} only when genuinely no exited names exist.
@@ -798,11 +802,17 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
     # Price lookups: use the broad closes DataFrame (columns=ticker, index=DatetimeIndex)
     last_price_date = names.index.max() if not names.empty else None
     rows_out = []
+    # survivorship disclosure: exited names with no usable price path in the broad
+    # cache (missing column / all-NaN / series ends before first_surfaced) — likely
+    # delisted, i.e. the very outcomes the strip would otherwise hide.
+    skipped_no_price: list[str] = []
     for tk, meta in exited.items():
         if tk not in names.columns:
+            skipped_no_price.append(tk)
             continue
         ser = names[tk].dropna()
         if ser.empty:
+            skipped_no_price.append(tk)
             continue
 
         first_surfaced_str = meta["first_surfaced"]
@@ -814,6 +824,7 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
         # Close on or after first_surfaced (next available bar at or after that date)
         idx_first = ser.index.searchsorted(first_dt, side="left")
         if idx_first >= len(ser):
+            skipped_no_price.append(tk)
             continue
         surfaced_price = float(ser.iloc[idx_first])
         if surfaced_price <= 0:
@@ -867,6 +878,8 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             "empty": True,
             "as_of": current_as_of,
             "reason": "no exited tickers had price data",
+            "n_skipped_no_price": len(skipped_no_price),
+            "skipped_no_price": sorted(skipped_no_price)[:15],
         }
 
     # Sort by |pct_since| desc, cap at 15
@@ -885,6 +898,11 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             "n_running": n_running,
             "n_stopped": n_stopped,
             "median_pct": round(median_pct, 1),
+            # names excluded for lack of any usable price path (see loop above) —
+            # rendered as "(N names excluded: no price / delisted)" in the strip
+            # header so the mix never silently reads as survivor-complete.
+            "n_skipped_no_price": len(skipped_no_price),
+            "skipped_no_price": sorted(skipped_no_price)[:15],
         },
     }
 
@@ -959,7 +977,9 @@ def main() -> None:
                 smry = outcomes.get("summary", {})
                 print(f"[outcomes] {len(outcomes.get('rows', []))} exited names "
                       f"(running={smry.get('n_running')} stopped={smry.get('n_stopped')} "
-                      f"median={smry.get('median_pct')}%) → {OUTCOMES_JSON.name}")
+                      f"median={smry.get('median_pct')}% "
+                      f"skipped_no_price={smry.get('n_skipped_no_price', 0)}) "
+                      f"→ {OUTCOMES_JSON.name}")
     except Exception as _oe:  # noqa: BLE001 — outcomes strip is additive; never fatal
         if not args.quiet:
             print(f"[outcomes] skipped ({_oe})")
