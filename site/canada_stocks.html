@@ -153,7 +153,6 @@
   .nb-cau.pop-below .nb-cau-pop { bottom:auto; top:calc(100% + 5px); }
   /* Clamp to right edge */
   .nb-cau.pop-right .nb-cau-pop { left:auto; right:0; }
-  .nb-tier { font-size:8px; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
   /* volatility black hole chip + honesty notes (Canada overhaul, mirrors china.html) */
   .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
   .nb-vchip { font-size:8.5px; font-weight:800; padding:0 5px; border-radius:6px; border:1px solid var(--line);
@@ -254,6 +253,21 @@
     background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
   .nb-vchip.ev-earn { color:var(--link); border-color:color-mix(in srgb,var(--link) 42%,var(--line));
     background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
+  /* CA2 confluence tier badge — T1..T4 green (fresh cross), gate-none muted (ran, no cross). */
+  .nb-vchip.gate-tier { color:var(--up); border-color:color-mix(in srgb,var(--up) 50%,var(--line));
+    background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
+  .nb-vchip.gate-none { color:var(--muted); border-style:dotted;
+    border-color:color-mix(in srgb,var(--muted) 40%,var(--line)); }
+  /* CA2 confluence stat line in the desk header. */
+  .desk-hdr .dh-conf { font-size:12px; color:var(--muted); line-height:1.5; margin:6px 0 0; }
+  .desk-hdr .dh-conf b.pos { color:var(--up); }
+  .desk-hdr .dh-conf b.neg { color:var(--muted); }
+  /* CA2 sector-concentration banner — honest, not a re-rank. */
+  .chip.sec-conc { border-color:color-mix(in srgb,var(--warn) 35%,var(--line));
+    background:color-mix(in srgb,var(--warn) 6%,var(--panel)); font-size:12px; }
+  /* CA2 pullback-zone row inside the entry gauge (cool, a don't-chase reset range). */
+  .nbe-zone.nbe-pull { color:var(--g-cold); }
+  .nbe-zone.nbe-pull .nbe-px { color:var(--g-cold); }
   /* entry-window state drives the card accent (open-now warm / pullback cool / wait muted). */
   .card.ent-open { border-left:3px solid var(--up); }
   .card.ent-pullback { border-left:3px solid var(--g-cold); }
@@ -568,9 +582,14 @@
      keeps its own (higher-specificity, identical) copy; this is what reaches the
      China / HK / Canada boards that only load this shared partial. */
   @media (min-width: 1100px) {
-    .ms-front > .rrx { grid-template-columns: minmax(0,1.32fr) minmax(0,1fr);
+    .ms-front > .rrx { grid-template-columns: minmax(0,1fr) minmax(0,1fr);
       column-gap: 22px; row-gap: 0; align-items: stretch; }
     .ms-front > .rrx > .rrx-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    /* the detail-heavy right column sets the banner height; grow the odds/ramp hero so the
+       sparse left column fills it instead of leaving a void beneath the ramp. */
+    .ms-front > .rrx > .rrx-main .rrx-odds { flex: 1 1 auto; }
+    .ms-front > .rrx > .rrx-main .rrx-ramp { align-items: stretch; }
+    .ms-front > .rrx > .rrx-main .rrx-tk { height: auto; flex: 1 1 auto; min-height: 64px; }
     .ms-front > .rrx > .rrx-side { display: flex; flex-direction: column; justify-content: center;
       gap: 9px; min-width: 0; padding-left: 22px;
       border-left: 1px solid color-mix(in srgb, var(--rc) 22%, var(--line)); }
@@ -971,10 +990,10 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-30 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-03 19:12 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-30 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-03 21:06 UTC</span>
   </div>
   
-  <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout TSX names ranked by sector-neutral residual momentum, with the cycle entry as timing context. Search any TSX stock from the box above; click a card for the full breakdown.</span><span class="l-zh">按板块中性残差动量排名的 TSX 个股精选，并以周期入场作为时机背景。可在上方搜索框查询任意 TSX 个股；点击卡片查看完整拆解。</span>
+  <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
     <a href="canada.html" style="color:var(--link);font-weight:600">← <span class="l-en">Canada macro dashboard</span><span class="l-zh">加拿大宏观看板</span></a></p>
   
 </div>
@@ -999,14 +1018,31 @@
 
 <div class="panel">
   <h2><span class="l-en">⚡ Standout TSX names — ripe-list screen</span><span class="l-zh">⚡ 突出的 TSX 个股 — 成熟清单筛选</span>
-    <span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">14 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 14 <span class="l-en">cycle-aligned across weekly · 3-day · daily (bottoming, not a falling knife)</span><span class="l-zh">在周线·3日·日线上周期共振（筑底，而非接飞刀）</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Board order (masterplan §5.0 ripe-list contract): hygiene → INCLUDE bottoming-alignment {PRIME, ARMED} → GROUP entry-open before setting-up → RANK within group by the residual-momentum SCREEN z. The small rank pill (#1, #2…) is a within-group order, NOT a probability. See the desk-header block below for what this screen is / isn’t.</span><span class="l-zh">榜单顺序（规划书 §5.0 成熟清单契约）：卫生筛 → 纳入筑底共振 {PRIME, ARMED} → 分组：入场已开启优先于蓄势中 → 组内按残差动量筛选 z 排名。小排名徽章（#1、#2…）是组内顺序，而非概率。此筛选是什么／不是什么，见下方说明块。</span></span></span>
+    <span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">14 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 14 <span class="l-en">bottoming and turning up (not still falling)</span><span class="l-zh">筑底并开始转向（而非仍在下跌）</span></span>
+    <span class="help">?<span class="tip"><span class="l-en">How the list is ordered: first we keep names that are bottoming and starting to turn up — not ones still falling — then we put the ones you can buy today ahead of those still setting up, and sort each group by a momentum screen. The small #1, #2… is only the order within a group, not a score or a probability.</span><span class="l-zh">榜单排序方式：先保留正在筑底、开始转向的个股（而非仍在下跌的），再把“今天就能买”的排在“仍在蓄势”的前面，然后在每组内按动量筛选排序。小徽章 #1、#2… 只是组内顺序，不是评分或概率。</span></span></span>
   </h2>
   
   <div class="desk-hdr">
-    <p class="dh-is"><span class="l-en">A ripe-list <b>SCREEN</b> ordered by entry-readiness, then an accruing momentum prior (Branch B, phase-0 2026-07) — with a public scoreboard below.</span><span class="l-zh">一份成熟清单<b>筛选</b>：先按入场就绪度排序，再叠加累积中的动量先验（分支 B，Phase-0 2026-07）——下方附公开记分牌。</span></p>
-    <p class="dh-isnt"><span class="l-en">Not a validated buy list. The C7 momentum keystone landed all-ACCRUE in phase-0, so the 0-100 composite is <b>suppressed</b>: the pill is a within-group order, not a probability. The momentum leg is FDR-stable but DSR-short (re-test 2027-01). Timing groups and gates; the screen only ranks within a group. Context, not personalized advice.</span><span class="l-zh">并非经验证的买入清单。C7 动量关键测试在 Phase-0 全部 ACCRUE，故 0-100 综合分<b>已抑制</b>：徽章是组内顺序，而非概率。动量腿通过 FDR 但 DSR 不足（2027-01 复测）。时机负责分组与门控；筛选仅在组内排名。仅作背景，非个性化建议。</span></p>
+    <p class="dh-is"><span class="l-en">A shortlist of TSX names that look ready — sorted by how buyable they are right now, with a public scoreboard below that grades every call.</span><span class="l-zh">一份看起来已就绪的 TSX 个股短名单 — 按“当前可买程度”排序，下方附公开记分牌，对每次入选前瞻评分。</span></p>
+    <p class="dh-isnt"><span class="l-en">Not a guaranteed buy list. The ranking is a screen we're still testing, so the #1, #2… is just an order, not a score. Educational context, not personal advice.</span><span class="l-zh">并非稳赚的买入清单。此排名是仍在检验中的筛选，因此 #1、#2… 只是顺序、而非评分。仅为教育性背景，非个人投资建议。</span><span class="help">?<span class="tip"><span class="l-en">Technical: the C7 momentum keystone test came back all-ACCRUE in the July 2026 phase-0 run, so the 0-100 composite score is suppressed and the board shows a within-group order instead. The momentum leg is FDR-stable but DSR-short — a real screen, not yet a validated edge. Re-test January 2027.</span><span class="l-zh">技术说明：C7 动量关键测试在 2026 年 7 月 Phase-0 全部为 ACCRUE，故 0-100 综合评分被抑制，榜单改为显示组内顺序。动量腿通过 FDR 但 DSR 不足 — 是真实筛选器，尚非经验证优势。2027 年 1 月复测。</span></span></span></p>
+    
+    
+    <p class="dh-conf" data-tip-en="A board name is a confluence BUY today only when its MACD-2D × StochRSI-3D just crossed up fresh (signal_gate tier T1–T4). Most tapes have zero — that is normal and now visible, not hidden." data-tip-zh="仅当 MACD-2D × StochRSI-3D 今日新鲜金叉（signal_gate 层级 T1–T4）时，该股才算今日汇合买入。多数行情为零 — 属正常且现已可见。">
+      <span class="l-en">Confluence: <b class="neg">0</b> buyable crosses today of 14 board names — no fresh entry trigger on this tape.</span>
+      <span class="l-zh">汇合：14 只榜单个股中今日有 <b class="neg">0</b> 只出现可买金叉 — 本行情无新鲜入场触发。</span>
+    </p>
+    
   </div>
+  
+  
+  
+  <p class="chip off sec-conc" style="margin:2px 0 10px; display:block; line-height:1.6">
+    <span class="l-en">🧭 <b>10/14</b> picks are <b>Materials</b> — the basing cohort is concentrated in this complex on this tape.
+      <span class="muted">Materials 10 ·</span> <span class="muted">Energy 2 ·</span> <span class="muted">Industrials 1 ·</span> <span class="muted">Utilities 1</span> </span>
+    <span class="l-zh">🧭 <b>10/14</b> 只精选属于 <b>Materials</b> — 本行情筑底队列集中于该板块。
+      <span class="muted">Materials 10 ·</span> <span class="muted">Energy 2 ·</span> <span class="muted">Industrials 1 ·</span> <span class="muted">Utilities 1</span> </span>
+  </p>
+  
   
   
   
@@ -1046,7 +1082,7 @@
         <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">CAD-beta -0.12 primary driver · momentum screen z +1.8 (accruing) · entry: pullback 224.00–231.20</span><span class="l-zh">主要驱动：加元-β -0.12 · 动量筛选 z +1.8（待验证） · 入场：回撤 224.00–231.20</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: CAD · buy on a pullback to $224.00–$231.20</span><span class="l-zh">主要驱动：加元 · 回撤至 $224.00–$231.20 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+1.79</b></span>
         <span>#3/30 <span class="l-en">Industrials</span><span class="l-zh">工业</span></span>
@@ -1055,7 +1091,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: sell). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: sell）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -1122,13 +1163,27 @@
           <span class="nbe-pct">-2.4%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-up" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-05-01 (cross): 41d basing, invalidation $155.96. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-05-01 的筑底状态：41 天筑底，失效价 $155.96。持仓背景，非排名输入。">🚀 <span class="l-en">launched</span><span class="l-zh">已启动</span></span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.57 of the conviction-base size (forecast vol 38.4% · inverse-vol ×0.57 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.57×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.57 scales a normal position (forecast volatility 38.4%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.57 在常规仓位上缩放（预测年化波动 38.4%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.57×</span>
       </div>
       
       
@@ -1139,7 +1194,6 @@
       </div>
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -1159,7 +1213,7 @@
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +0.38 primary driver · momentum screen z +0.9 (accruing) · entry: pullback 19.43–20.02</span><span class="l-zh">主要驱动：黄金-β +0.38 · 动量筛选 z +0.9（待验证） · 入场：回撤 19.43–20.02</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $19.43–$20.02</span><span class="l-zh">主要驱动：黄金 · 回撤至 $19.43–$20.02 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.92</b></span>
         <span>#5/38 <span class="l-en">Energy</span><span class="l-zh">能源</span></span>
@@ -1168,7 +1222,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: sell). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: sell）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -1235,13 +1294,18 @@
           <span class="nbe-pct">-4.2%</span>
         </div>
         
+        
+        
+        
       </div>
+      
+      
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.41 of the conviction-base size (forecast vol 53.4% · inverse-vol ×0.41 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.41×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.41 scales a normal position (forecast volatility 53.4%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.41 在常规仓位上缩放（预测年化波动 53.4%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.41×</span>
       </div>
       
       
@@ -1249,7 +1313,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -1269,7 +1332,7 @@
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +1.12 primary driver · momentum screen z +0.8 (accruing) · entry: pullback 22.50–23.29</span><span class="l-zh">主要驱动：黄金-β +1.12 · 动量筛选 z +0.8（待验证） · 入场：回撤 22.50–23.29</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $22.50–$23.29</span><span class="l-zh">主要驱动：黄金 · 回撤至 $22.50–$23.29 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.78</b></span>
         <span>#10/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -1278,7 +1341,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: cut). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: cut）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -1345,13 +1413,27 @@
           <span class="nbe-pct">-4.9%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-down" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-06-01 (cross): 21d basing, invalidation $24.29. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-06-01 的筑底状态：21 天筑底，失效价 $24.29。持仓背景，非排名输入。">💔 <span class="l-en">base broken</span><span class="l-zh">筑底破位</span></span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 45.5% · inverse-vol ×0.48 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.48 scales a normal position (forecast volatility 45.5%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.48 在常规仓位上缩放（预测年化波动 45.5%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.48×</span>
       </div>
       
       
@@ -1359,7 +1441,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -1379,7 +1460,7 @@
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +1.08 primary driver · momentum screen z +0.7 (accruing) · insider cluster 5 buyers/180d · entry: pullback 1.97–2.01</span><span class="l-zh">主要驱动：黄金-β +1.08 · 动量筛选 z +0.7（待验证） · 内部人买入 5人/180天 · 入场：回撤 1.97–2.01</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $1.97–$2.01</span><span class="l-zh">主要驱动：黄金 · 回撤至 $1.97–$2.01 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.68</b></span>
         <span>#11/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -1388,9 +1469,14 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
         
-        <span class="nb-vchip ev-insider" data-tip-en="SEDI insider filings (180d window): 5 buy vs 0 sell — net insider BUYING. A confirmer chip only; SEDI data is collected + displayed, ACCRUING toward validation (~2028), never a rank input." data-tip-zh="SEDI 内部人申报（180日窗口）：5 笔买入 vs 0 笔卖出 — 净买入。仅为确认信号；SEDI 数据已采集展示、积累验证中（~2028），非排名输入。">👤 <span class="l-en">insider buying</span><span class="l-zh">内部人买入</span> 5/0</span>
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: sell). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: sell）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
+        
+        <span class="nb-vchip ev-insider" data-tip-en="Company insiders' own trades over the last 180 days: 5 buys vs 0 sells — a net buying signal. Shown as supporting context only; it does not affect the ranking." data-tip-zh="公司内部人在过去 180 天的交易：5 笔买入 vs 0 笔卖出 — 净买入信号。仅作辅助参考，不影响排名。">👤 <span class="l-en">insider buying</span><span class="l-zh">内部人买入</span> 5/0</span>
         
         
       </div>
@@ -1455,13 +1541,27 @@
           <span class="nbe-pct">-3.4%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-coil" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-06-17 (cross): 9d basing, invalidation $1.71. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-06-17 的筑底状态：9 天筑底，失效价 $1.71。持仓背景，非排名输入。">🪨 <span class="l-en">basing</span><span class="l-zh">筑底中</span> 9d</span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.63 of the conviction-base size (forecast vol 34.9% · inverse-vol ×0.63 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.63×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.63 scales a normal position (forecast volatility 34.9%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.63 在常规仓位上缩放（预测年化波动 34.9%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.63×</span>
       </div>
       
       
@@ -1469,7 +1569,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -1489,7 +1588,7 @@
         <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +0.95 primary driver · momentum screen z +0.7 (accruing) · entry: pullback 45.69–45.92</span><span class="l-zh">主要驱动：黄金-β +0.95 · 动量筛选 z +0.7（待验证） · 入场：回撤 45.69–45.92</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $45.69–$45.92</span><span class="l-zh">主要驱动：黄金 · 回撤至 $45.69–$45.92 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.66</b></span>
         <span>#13/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -1498,7 +1597,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: sell). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: sell）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -1565,13 +1669,27 @@
           <span class="nbe-pct">-0.6%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-coil" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-06-04 (cross): 18d basing, invalidation $40.55. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-06-04 的筑底状态：18 天筑底，失效价 $40.55。持仓背景，非排名输入。">🪨 <span class="l-en">basing</span><span class="l-zh">筑底中</span> 18d</span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.52 of the conviction-base size (forecast vol 42.6% · inverse-vol ×0.52 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.52×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.52 scales a normal position (forecast volatility 42.6%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.52 在常规仓位上缩放（预测年化波动 42.6%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.52×</span>
       </div>
       
       
@@ -1582,7 +1700,6 @@
       </div>
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -1602,7 +1719,7 @@
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +1.03 primary driver · momentum screen z +0.4 (accruing) · entry: pullback 33.56–34.55</span><span class="l-zh">主要驱动：黄金-β +1.03 · 动量筛选 z +0.4（待验证） · 入场：回撤 33.56–34.55</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $33.56–$34.55</span><span class="l-zh">主要驱动：黄金 · 回撤至 $33.56–$34.55 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.37</b></span>
         <span>#18/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -1611,7 +1728,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: cut). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: cut）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -1678,13 +1800,27 @@
           <span class="nbe-pct">-4.2%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-down" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-05-14 (cross): 32d basing, invalidation $38.42. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-05-14 的筑底状态：32 天筑底，失效价 $38.42。持仓背景，非排名输入。">💔 <span class="l-en">base broken</span><span class="l-zh">筑底破位</span></span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.58 of the conviction-base size (forecast vol 37.6% · inverse-vol ×0.58 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.58×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.58 scales a normal position (forecast volatility 37.6%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.58 在常规仓位上缩放（预测年化波动 37.6%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.58×</span>
       </div>
       
       
@@ -1692,7 +1828,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -1712,7 +1847,7 @@
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +1.20 primary driver · momentum screen z +0.3 (accruing) · entry: pullback 35.35–36.58</span><span class="l-zh">主要驱动：黄金-β +1.20 · 动量筛选 z +0.3（待验证） · 入场：回撤 35.35–36.58</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $35.35–$36.58</span><span class="l-zh">主要驱动：黄金 · 回撤至 $35.35–$36.58 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.33</b></span>
         <span>#20/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -1721,7 +1856,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: sell). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: sell）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -1788,13 +1928,27 @@
           <span class="nbe-pct">-4.9%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-coil" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-05-14 (cross): 32d basing, invalidation $33.32. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-05-14 的筑底状态：32 天筑底，失效价 $33.32。持仓背景，非排名输入。">🪨 <span class="l-en">basing</span><span class="l-zh">筑底中</span> 32d</span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.55 of the conviction-base size (forecast vol 40.3% · inverse-vol ×0.55 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.55×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.55 scales a normal position (forecast volatility 40.3%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.55 在常规仓位上缩放（预测年化波动 40.3%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.55×</span>
       </div>
       
       
@@ -1805,7 +1959,6 @@
       </div>
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -1825,7 +1978,7 @@
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">CAD-beta +0.12 primary driver · momentum screen z +0.3 (accruing) · entry: pullback 139.10–141.80</span><span class="l-zh">主要驱动：加元-β +0.12 · 动量筛选 z +0.3（待验证） · 入场：回撤 139.10–141.80</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: CAD · buy on a pullback to $139.10–$141.80</span><span class="l-zh">主要驱动：加元 · 回撤至 $139.10–$141.80 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.30</b></span>
         <span>#15/38 <span class="l-en">Energy</span><span class="l-zh">能源</span></span>
@@ -1834,7 +1987,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: sell). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: sell）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -1901,13 +2059,18 @@
           <span class="nbe-pct">-2.8%</span>
         </div>
         
+        
+        
+        
       </div>
+      
+      
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.63 of the conviction-base size (forecast vol 34.9% · inverse-vol ×0.63 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.63×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.63 scales a normal position (forecast volatility 34.9%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.63 在常规仓位上缩放（预测年化波动 34.9%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.63×</span>
       </div>
       
       
@@ -1915,7 +2078,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -1935,7 +2097,7 @@
         <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +0.67 primary driver · momentum screen z +0.2 (accruing) · entry: pullback 25.13–25.13</span><span class="l-zh">主要驱动：黄金-β +0.67 · 动量筛选 z +0.2（待验证） · 入场：回撤 25.13–25.13</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $25.13–$25.13</span><span class="l-zh">主要驱动：黄金 · 回撤至 $25.13–$25.13 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.21</b></span>
         <span>#25/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -1944,7 +2106,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (held but topped/rolled-over — no longer a fresh entry). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（held but topped/rolled-over — no longer a fresh entry）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -2011,13 +2178,27 @@
           <span class="nbe-pct">-1.0%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-up" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-05-27 (cross): 24d basing, invalidation $21.43. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-05-27 的筑底状态：24 天筑底，失效价 $21.43。持仓背景，非排名输入。">🚀 <span class="l-en">launched</span><span class="l-zh">已启动</span></span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.4 of the conviction-base size (forecast vol 58.9% · inverse-vol ×0.4 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.40×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.4 scales a normal position (forecast volatility 58.9%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.4 在常规仓位上缩放（预测年化波动 58.9%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.40×</span>
       </div>
       
       
@@ -2028,7 +2209,6 @@
       </div>
       
       <div class="nb-note nb-note-anticipation"><span class="l-en">ℹ Forward risk cone is favourable (≈25% median upside vs ≈12% average drawdown) — a constructive risk SHAPE the factor axes don't price.</span><span class="l-zh">ℹ 前瞻风险锥形态有利（中位上行约 25% 对平均回撤约 12%）——因子维度未计入的有利风险形态。</span></div>
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -2048,7 +2228,7 @@
         <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +1.31 primary driver · momentum screen z +0.1 (accruing) · entry: pullback 8.20–8.36</span><span class="l-zh">主要驱动：黄金-β +1.31 · 动量筛选 z +0.1（待验证） · 入场：回撤 8.20–8.36</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $8.20–$8.36</span><span class="l-zh">主要驱动：黄金 · 回撤至 $8.20–$8.36 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.13</b></span>
         <span>#30/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -2057,7 +2237,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (buy blocked by filter: failed reclaim-and-hold). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（buy blocked by filter: failed reclaim-and-hold）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -2124,13 +2309,27 @@
           <span class="nbe-pct">-2.4%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-coil" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-06-17 (cross): 9d basing, invalidation $7.02. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-06-17 的筑底状态：9 天筑底，失效价 $7.02。持仓背景，非排名输入。">🪨 <span class="l-en">basing</span><span class="l-zh">筑底中</span> 9d</span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.4 of the conviction-base size (forecast vol 71.7% · inverse-vol ×0.4 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.40×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.4 scales a normal position (forecast volatility 71.7%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.4 在常规仓位上缩放（预测年化波动 71.7%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.40×</span>
       </div>
       
       
@@ -2138,7 +2337,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -2158,7 +2356,7 @@
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +1.09 primary driver · momentum screen z +0.1 (accruing) · entry: pullback 10.91–11.34</span><span class="l-zh">主要驱动：黄金-β +1.09 · 动量筛选 z +0.1（待验证） · 入场：回撤 10.91–11.34</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $10.91–$11.34</span><span class="l-zh">主要驱动：黄金 · 回撤至 $10.91–$11.34 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.10</b></span>
         <span>#31/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -2167,7 +2365,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (buy blocked by filter: counter-trend, no 200-reclaim/hold). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（buy blocked by filter: counter-trend, no 200-reclaim/hold）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -2234,13 +2437,27 @@
           <span class="nbe-pct">-5.5%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-coil" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-06-30 (cross): 0d basing, invalidation $10.05. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-06-30 的筑底状态：0 天筑底，失效价 $10.05。持仓背景，非排名输入。">🪨 <span class="l-en">basing</span><span class="l-zh">筑底中</span> 0d</span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.43 of the conviction-base size (forecast vol 51.3% · inverse-vol ×0.43 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.43×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.43 scales a normal position (forecast volatility 51.3%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.43 在常规仓位上缩放（预测年化波动 51.3%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.43×</span>
       </div>
       
       
@@ -2248,7 +2465,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -2268,7 +2484,7 @@
         <span class="lad up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Utilities sector · momentum screen z +0.1 (accruing) · entry: pullback 74.55–75.23</span><span class="l-zh">Utilities 板块 · 动量筛选 z +0.1（待验证） · 入场：回撤 74.55–75.23</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Utilities sector · buy on a pullback to $74.55–$75.23</span><span class="l-zh">主要驱动：Utilities 板块 · 回撤至 $74.55–$75.23 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.06</b></span>
         <span>#5/14 <span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
@@ -2277,7 +2493,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: cut). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: cut）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -2344,13 +2565,27 @@
           <span class="nbe-pct">-0.5%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-coil" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-06-25 (cross): 3d basing, invalidation $66.83. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-06-25 的筑底状态：3 天筑底，失效价 $66.83。持仓背景，非排名输入。">🪨 <span class="l-en">basing</span><span class="l-zh">筑底中</span> 3d</span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-up" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×2.16 of the conviction-base size (forecast vol 10.2% · inverse-vol ×2.16 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 2.16×</span>
+        <span class="nb-size sz-up" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×2.16 scales a normal position (forecast volatility 10.2%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×2.16 在常规仓位上缩放（预测年化波动 10.2%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 2.16×</span>
       </div>
       
       
@@ -2358,7 +2593,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -2378,7 +2612,7 @@
         <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +1.29 primary driver · momentum screen z -0.1 (accruing) · entry: pullback 8.80–8.84</span><span class="l-zh">主要驱动：黄金-β +1.29 · 动量筛选 z -0.1（待验证） · 入场：回撤 8.80–8.84</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $8.80–$8.84</span><span class="l-zh">主要驱动：黄金 · 回撤至 $8.80–$8.84 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="neg">-0.09</b></span>
         <span>#34/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -2387,7 +2621,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (held but topped/rolled-over — no longer a fresh entry). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（held but topped/rolled-over — no longer a fresh entry）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -2454,13 +2693,27 @@
           <span class="nbe-pct">-1.9%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-up" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-06-12 (cross): 12d basing, invalidation $7.1. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-06-12 的筑底状态：12 天筑底，失效价 $7.1。持仓背景，非排名输入。">🚀 <span class="l-en">launched</span><span class="l-zh">已启动</span></span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.41 of the conviction-base size (forecast vol 53.7% · inverse-vol ×0.41 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.41×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.41 scales a normal position (forecast volatility 53.7%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.41 在常规仓位上缩放（预测年化波动 53.7%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.41×</span>
       </div>
       
       
@@ -2468,7 +2721,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -2488,7 +2740,7 @@
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
       
-      <p class="nb-lead"><span class="l-en">Gold-beta +0.90 primary driver · momentum screen z -0.3 (accruing) · entry: pullback 21.33–21.79</span><span class="l-zh">主要驱动：黄金-β +0.90 · 动量筛选 z -0.3（待验证） · 入场：回撤 21.33–21.79</span></p>
+      <p class="nb-lead"><span class="l-en">Main driver: Gold · buy on a pullback to $21.33–$21.79</span><span class="l-zh">主要驱动：黄金 · 回撤至 $21.33–$21.79 买入</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
         <span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="neg">-0.35</b></span>
         <span>#39/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
@@ -2497,7 +2749,12 @@
       
       
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">动量待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+        
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today (flat: sell). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（flat: sell）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ <span class="l-en">no confluence cross</span><span class="l-zh">无汇合金叉</span></span>
+        
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
         
         
@@ -2564,13 +2821,27 @@
           <span class="nbe-pct">-3.1%</span>
         </div>
         
+        
+        
+        
+      </div>
+      
+      
+      
+      <div class="nb-vf">
+        
+        
+        <span class="nb-vchip vf-up" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor 2026-05-11 (cross): 35d basing, invalidation $19.84. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 2026-05-11 的筑底状态：35 天筑底，失效价 $19.84。持仓背景，非排名输入。">🚀 <span class="l-en">launched</span><span class="l-zh">已启动</span></span>
+        
+        
+        
       </div>
       
       
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.67 of the conviction-base size (forecast vol 32.6% · inverse-vol ×0.67 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.67×</span>
+        <span class="nb-size sz-dn" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×0.67 scales a normal position (forecast volatility 32.6%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×0.67 在常规仓位上缩放（预测年化波动 32.6%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ 0.67×</span>
       </div>
       
       
@@ -2578,7 +2849,6 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
@@ -2732,7 +3002,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-03 19:12 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-03 21:06 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>

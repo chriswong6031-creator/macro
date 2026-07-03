@@ -17,7 +17,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.build_canada_library import (  # noqa: E402
-    _branch_b_order, _build_watch, _lead_sentence, _oil_regime_on, _row_group,
+    _branch_b_order, _build_watch, _confluence_stat, _lead_sentence,
+    _oil_regime_on, _row_group, _sector_concentration,
 )
 
 
@@ -124,18 +125,21 @@ def test_oil_chip_off_when_regime_off():
     assert out[0]["oil_tailwind"] is False
 
 
-def test_lead_sentence_mechanism_first():
+def test_lead_sentence_plain_driver_and_entry():
+    # the lead is now a plain-English one-liner: the main driver + when to buy.
     overlay_on = {"factors": [{"key": "oil", "risk": "on", "z": 1.2}]}
     r = _row("XEG.TO", 1.8, "buy_now",
              sector="Energy",
              factor_beta={"primary": "oil", "primary_label": "Oil", "oil": 1.42},
              insider={"lean": "buying", "distinct_buyers": 2, "window_days": 60})
     lead = _lead_sentence(r, oil_on=_oil_regime_on(overlay_on), zh=False)
-    assert "Oil-beta +1.42 primary driver" in lead
-    assert "tailwind" in lead                       # oil regime tag
-    assert "momentum screen z +1.8 (accruing)" in lead
-    assert "insider cluster 2 buyers/60d" in lead
-    assert "entry: open now" in lead
+    assert "Main driver: Oil" in lead
+    assert "buy now" in lead
+    # the raw beta, momentum-screen z and insider cluster moved to their own chips —
+    # the lead stays jargon-free.
+    assert "primary driver" not in lead
+    assert "momentum screen z" not in lead
+    assert "insider cluster" not in lead
 
 
 def test_lead_sentence_pullback_entry_window():
@@ -143,8 +147,8 @@ def test_lead_sentence_pullback_entry_window():
              buy_zone={"low": 41.20, "high": 42.80},
              factor_beta={"primary": None}, sector="Financials")
     lead = _lead_sentence(r, oil_on=False, zh=False)
-    assert "Financials sector" in lead
-    assert "entry: pullback 41.20–42.80" in lead
+    assert "Main driver: Financials sector" in lead
+    assert "buy on a pullback to $41.20–$42.80" in lead
 
 
 def test_lead_sentence_zh_is_bilingual_and_nonempty():
@@ -152,4 +156,80 @@ def test_lead_sentence_zh_is_bilingual_and_nonempty():
              factor_beta={"primary": "oil", "primary_label": "Oil",
                           "primary_label_zh": "原油", "oil": 0.9})
     zh = _lead_sentence(r, oil_on=True, zh=True)
-    assert "原油" in zh and "动量筛选" in zh
+    assert "原油" in zh and "主要驱动" in zh
+
+
+# ---------------------------------------------------------------------------
+# CA2 fix — gate-tier passthrough + confluence stat + sector-concentration banner
+# ---------------------------------------------------------------------------
+def _sig(tier=None, reason="flat: cut", eligible=False, ticks=0):
+    """A signal_gate.compact-shaped verdict. tier=None + eligible False = a RAN gate that
+    found no fresh confluence cross (the owner-reported all-None board is this, x14)."""
+    return {"eligible": eligible, "tier": tier, "sub": None, "reason": reason,
+            "tier_cascade": tier, "weight": 0.0 if tier is None else 1.0,
+            "ticks": ticks, "provisional": False}
+
+
+def test_confluence_stat_zero_cross_tape_is_counted_not_blank():
+    """The owner-reported all-None board: signal_gate RAN for every name and found no
+    fresh MACD-2D x StochRSI-3D cross. The stat must read 0 of N — a VISIBLE fact — never
+    a silent blank. This is the regression guard for the invisible zero-cross tape."""
+    rows = [{"ticker": f"M{i}.TO", "signal": _sig()} for i in range(14)]
+    stat = _confluence_stat(rows)
+    assert stat == {"crosses": 0, "board": 14}
+
+
+def test_confluence_stat_counts_only_buyable_crosses():
+    """is_buyable requires eligible AND tier_cascade in BUYABLE_TIERS (T1/T2/T3). A topped /
+    stale / blocked verdict — the common case — clears eligibility, so it does NOT count."""
+    rows = [
+        {"ticker": "A.TO", "signal": _sig(tier="T1", reason="held take", eligible=True, ticks=0)},
+        {"ticker": "B.TO", "signal": _sig(tier=None, reason="topped — no longer fresh", eligible=False)},
+        {"ticker": "C.TO", "signal": _sig()},          # no cross (eligible False, cascade None)
+        {"ticker": "D.TO", "signal": None},            # no verdict at all
+    ]
+    stat = _confluence_stat(rows)
+    assert stat["board"] == 4
+    assert stat["crosses"] == 1          # only the fresh eligible T1
+
+
+def test_gate_tier_passthrough_carries_real_tier_when_present():
+    """When the gate fires a fresh tier, r['signal'].tier must survive onto the board row so
+    the card badge + the forward ledger's gate_tier read the REAL T1..T4 (not None)."""
+    rows = [{"ticker": "A.TO", "signal": _sig(tier="T2", eligible=True, ticks=0)}]
+    assert rows[0]["signal"]["tier"] == "T2"        # passthrough intact
+    # and is_buyable agrees the cross is open (so it counts in the confluence stat)
+    assert _confluence_stat(rows)["crosses"] == 1
+
+
+def test_sector_concentration_fires_above_60pct():
+    """>60% of the board in one sector → honest banner with per-sector counts. Mirrors the
+    real tape (10/14 Materials). Not a re-rank — a fact surfaced."""
+    rows = ([{"ticker": f"MAT{i}.TO", "sector": "Materials"} for i in range(10)]
+            + [{"ticker": "E1.TO", "sector": "Energy"}, {"ticker": "E2.TO", "sector": "Energy"},
+               {"ticker": "I1.TO", "sector": "Industrials"}, {"ticker": "U1.TO", "sector": "Utilities"}])
+    sc = _sector_concentration(rows)
+    assert sc is not None
+    assert sc["sector"] == "Materials" and sc["n"] == 10 and sc["total"] == 14
+    assert sc["counts"]["Materials"] == 10 and sc["counts"]["Energy"] == 2
+    # counts are sorted descending so the template lists the biggest cohort first
+    assert list(sc["counts"])[0] == "Materials"
+
+
+def test_sector_concentration_silent_when_diversified():
+    """At exactly 60% (not >60%) or below, no banner — the threshold is strict."""
+    rows = ([{"ticker": f"M{i}.TO", "sector": "Materials"} for i in range(6)]
+            + [{"ticker": f"E{i}.TO", "sector": "Energy"} for i in range(4)])  # 6/10 = 60%, not >60
+    assert _sector_concentration(rows) is None
+
+
+def test_sector_concentration_ignores_unlabeled_dominance():
+    """A board dominated by the '—' unlabeled sector must not fire a banner (it is a data
+    gap, not a real concentration to report)."""
+    rows = [{"ticker": f"X{i}.TO", "sector": "—"} for i in range(9)] + [{"ticker": "R.TO", "sector": "Energy"}]
+    assert _sector_concentration(rows) is None
+
+
+def test_sector_concentration_empty_board_is_safe():
+    assert _sector_concentration([]) is None
+    assert _confluence_stat([]) == {"crosses": 0, "board": 0}

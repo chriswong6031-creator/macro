@@ -31,7 +31,11 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-warnings.filterwarnings("ignore")
+# NO module-level warnings.filterwarnings("ignore") here: engine modules are imported by
+# production render AND tests, and the filter list is process-global — muting it at import
+# leaks to every other module (same leak class as the #1115 logging.disable bug in this
+# file's guarded tuning_harness import). Noisy pandas ops are silenced inside donor_state
+# via a scoped catch_warnings block instead.
 
 # ── tuning_harness lives in research/signal_engine — guarded import ───────────
 try:
@@ -265,35 +269,37 @@ def donor_state(closes: dict[str, pd.Series],
     Never raises.
     """
     try:
-        comp_bundle = _build_sector_composites(closes, sector_of)
-        comps       = comp_bundle.get("comps", {})
-        n_sectors   = len(comps)
-        if n_sectors < 2:
-            return None  # insufficient data
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # scoped: composites divide/mean over sparse panels
+            comp_bundle = _build_sector_composites(closes, sector_of)
+            comps       = comp_bundle.get("comps", {})
+            n_sectors   = len(comps)
+            if n_sectors < 2:
+                return None  # insufficient data
 
-        tl = _build_donor_timeline(comp_bundle)
-        if tl.empty:
-            return None
+            tl = _build_donor_timeline(comp_bundle)
+            if tl.empty:
+                return None
 
-        last_row = tl.iloc[-1]
-        dn       = last_row["donor"]
-        if not isinstance(dn, str):
-            return None
+            last_row = tl.iloc[-1]
+            dn       = last_row["donor"]
+            if not isinstance(dn, str):
+                return None
 
-        leg_wk  = bool(last_row["donor_unwind_wk"])
-        leg_20  = bool(last_row["donor_unwind_20d"])
-        unwind  = bool(last_row["donor_unwind"])
-        state   = "cracking" if unwind else "intact"
-        r126    = float(last_row["donor_ret126"]) if not pd.isna(last_row["donor_ret126"]) else float("nan")
-        asof    = tl.index[-1].strftime("%Y-%m-%d")
+            leg_wk  = bool(last_row["donor_unwind_wk"])
+            leg_20  = bool(last_row["donor_unwind_20d"])
+            unwind  = bool(last_row["donor_unwind"])
+            state   = "cracking" if unwind else "intact"
+            r126    = float(last_row["donor_ret126"]) if not pd.isna(last_row["donor_ret126"]) else float("nan")
+            asof    = tl.index[-1].strftime("%Y-%m-%d")
 
-        return {
-            "donor_sector":   dn,
-            "state":          state,
-            "legs":           {"weekly_bear_cross": leg_wk, "ret20_neg": leg_20},
-            "ranked_ret126":  round(r126, 6) if not np.isnan(r126) else None,
-            "asof":           asof,
-            "n_sectors":      n_sectors,
-        }
+            return {
+                "donor_sector":   dn,
+                "state":          state,
+                "legs":           {"weekly_bear_cross": leg_wk, "ret20_neg": leg_20},
+                "ranked_ret126":  round(r126, 6) if not np.isnan(r126) else None,
+                "asof":           asof,
+                "n_sectors":      n_sectors,
+            }
     except Exception:  # noqa: BLE001 — display-only chip, never fatal
         return None

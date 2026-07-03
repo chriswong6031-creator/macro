@@ -1,6 +1,6 @@
 {# ===================================================================== #}
-{#  CN Reversal Sleeve — SHADOW preview (cn_reversal_sleeve.html)         #}
-{#  UNLINKED: deliberately NOT in _navlinks. noindex. Preview-only.       #}
+{#  CN Reversal Sleeve — product page (cn_reversal_sleeve.html)           #}
+{#  Linked from baskets_china.html (CONFIRM verdict, W5-B).               #}
 {#  The validated within-sector 3M reversal edge at its OWN product unit: #}
 {#  a monthly-rebalanced, no-gate, EW, small-per-name BASKET (a PORTFOLIO,#}
 {#  not stock tips). Sleeve-level stats only; per-member context chips    #}
@@ -18,8 +18,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>CN Reversal Sleeve — shadow preview (portfolio, not tips)</title>
+{# noindex removed: page is now linked from baskets_china.html (W5-B CONFIRM verdict) #}
+<title>CN Reversal Sleeve — monthly-rebalanced contrarian basket (portfolio, not tips)</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -77,11 +77,25 @@
   .empty { color:var(--muted); font-size:13px; padding:14px; border:1px dashed var(--line); border-radius:10px; }
   .pass { font-size:11.5px; color:var(--muted); margin:8px 0 0; }
   .foot { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; }
+  /* W5-B survivorship-honest re-derivation block */
+  .rederive { border:2px solid color-mix(in srgb,var(--up) 40%,var(--line)); border-radius:12px;
+    background:color-mix(in srgb,var(--up) 5%,var(--panel)); padding:14px 16px; margin:0 0 16px; max-width:980px; }
+  .rederive .rd-head { font-size:15px; font-weight:700; margin:0 0 4px; }
+  .rederive .rd-sub { font-size:12px; color:var(--muted); margin:0 0 10px; max-width:88ch; }
+  .rederive .rd-verdict { display:inline-block; font-size:12px; font-weight:800; letter-spacing:.04em;
+    color:var(--up); border:1px solid color-mix(in srgb,var(--up) 45%,var(--line));
+    background:color-mix(in srgb,var(--up) 10%,transparent); padding:2px 9px; border-radius:7px; margin:0 0 10px; }
+  .rederive .rd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 8px; }
+  .rederive .rd-stat { font-size:12px; color:var(--muted); padding:4px 10px;
+    border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+  .rederive .rd-stat b { color:var(--text); font-size:13px; font-variant-numeric:tabular-nums; }
+  .rederive .rd-warn { font-size:11.5px; color:var(--warn); margin:6px 0 0; }
+  .rederive .rd-ub { font-size:11px; color:var(--muted); border-top:1px dashed var(--line); margin:8px 0 0; padding-top:6px; }
   code { font-size:11px; background:color-mix(in srgb,var(--muted) 12%,transparent); padding:1px 4px; border-radius:4px; }
 </style>
 </head>
 <body>
-<h1>{{ t('CN Reversal Sleeve','A股反转组合') }}<span class="shadow-tag">SHADOW · not live</span></h1>
+<h1>{{ t('CN Reversal Sleeve','A股反转组合') }}<span class="shadow-tag">{{ t('beta · accruing grades','Beta · 成绩累积中') }}</span></h1>
 <p class="lead-p">{{ t(
   'The validated A-share edge — deepest-quintile 3-month WITHIN-SECTOR reversal — shipped at its own product unit: a MONTHLY-rebalanced, EQUAL-WEIGHT, small-per-name BASKET with NO confirmation gate (every gate tested flips the edge negative). This is a PORTFOLIO, not stock tips. Sleeve-level stats only.',
   '已验证的A股优势——季度内“同板块最深回撤”反转（最深五分位）——以其自身产品单元交付：按月再平衡、等权、单只小仓位的组合，且无任何确认门槛（每一个门槛都会让优势转负）。这是一个组合，不是个股建议。仅展示组合层面统计。') }}</p>
@@ -121,10 +135,52 @@
   </ul>
 </div>
 
-{# ---- BACKCAST NAV vs CSI300 (reconstruction, upper bound) ---- #}
-<div class="sec"><h2>{{ t('Backcast — NAV vs CSI300','回测——净值 vs 沪深300') }}</h2>
+{# ---- W5-B: SURVIVORSHIP-HONEST RE-DERIVATION BLOCK (ABOVE the upper-bound backcast) ---- #}
+{# Sources: research/china_alpha/w5/w5a_rederive_stats.json (committed, emitted by            #}
+{# scripts/china_reversal_rederive_phase0.py). Absent file = block omitted, no crash.         #}
+{% set rd = d.rederive_stats %}
+{% if rd %}
+{% set rp = rd.primary.full %}
+{% set re = rd.primary.early %}
+{% set rl = rd.primary.late %}
+{% set rp24 = rd.primary.post_2024 %}
+<div class="rederive" id="rederive-block">
+  <div class="rd-head">{{ t('Survivorship-honest re-derivation (W5-A)','幸存者偏差修正后再推导（W5-A）') }}</div>
+  <p class="rd-sub">{{ t(
+    'The re-derived number on the survivorship-clean(er) RAW plane (data/china_stocks_raw — RAW/unadjusted, 1990–2026, append-only). This replaces the unreproducible 0.58 Sharpe as the honest headline. The trimmed-plane backcast below is an upper bound; these numbers are the tighter, more honest estimate.',
+    '在幸存者偏差更小的原始价格面板（data/china_stocks_raw — 原始未复权，1990–2026，追加写入）上再推导的数值。本结果取代了无法复现的0.58夏普，作为诚实的标题统计。下方的裁剪面板回测为上界；本区块数据是更严格、更诚实的估计。') }}</p>
+  <span class="rd-verdict">{{ rd.verdict }}</span>
+  <div class="rd-grid">
+    <span class="rd-stat">{{ t('long-leg spread (universe-rel.)','多腿超额（相对等权宇宙）') }} <b>{% if rp.mean_pct is not none %}+{{ '%.3f'|format(rp.mean_pct) }}%/reb{% else %}&mdash;{% endif %}</b></span>
+    <span class="rd-stat">NW-HAC t <b>{% if rp.t_hac is not none %}{{ '%.2f'|format(rp.t_hac) }}{% else %}&mdash;{% endif %}</b></span>
+    <span class="rd-stat">{{ t('ann. Sharpe','年化夏普') }} <b>{% if rp.sharpe is not none %}{{ '%.2f'|format(rp.sharpe) }}{% else %}&mdash;{% endif %}</b></span>
+    <span class="rd-stat">{{ t('n rebalances','再平衡次数') }} <b>{% if rp.n is not none %}{{ rp.n }}{% else %}&mdash;{% endif %}</b></span>
+    <span class="rd-stat">{{ t('hit rate','胜率') }} <b>{% if rp.hit is not none %}{{ '%.1f'|format(rp.hit * 100) }}%{% else %}&mdash;{% endif %}</b></span>
+    <span class="rd-stat">{{ t('maxDD (universe-rel.)','最大回撤（相对等权宇宙）') }} <span class="neg">{% if rp.maxdd_pct is not none %}{{ '%.1f'|format(rp.maxdd_pct) }}%{% else %}&mdash;{% endif %}</span></span>
+    <span class="rd-stat">{{ t('fill tax','成交税') }} <b>{% if rd.fill_tax.close_to_close_pct is not none and rd.fill_tax.fill_realistic_pct is not none %}{{ '%.3f'|format(rd.fill_tax.close_to_close_pct) }}% c2c vs {{ '%.3f'|format(rd.fill_tax.fill_realistic_pct) }}% T+1{% else %}&mdash;{% endif %}</b></span>
+    <span class="rd-stat">{{ t('placebo perm_p','随机置换p值') }} <b>{% if rd.placebo.perm_p is not none %}{{ '%.4f'|format(rd.placebo.perm_p) }}{% else %}&mdash;{% endif %}</b></span>
+  </div>
+  <div class="rd-grid">
+    <span class="rd-stat">{{ t('early half','前半段') }} <b>{% if re.mean_pct is not none %}{{ '%+.3f'|format(re.mean_pct) }}%/reb, t {{ '%.2f'|format(re.t_hac) }}{% else %}&mdash;{% endif %}</b></span>
+    <span class="rd-stat">{{ t('late half','后半段') }} <b>{% if rl.mean_pct is not none %}{{ '%+.3f'|format(rl.mean_pct) }}%/reb, t {{ '%.2f'|format(rl.t_hac) }}{% else %}&mdash;{% endif %}</b></span>
+    <span class="rd-stat">{{ t('per-name p1 drawdown','个股p1回撤') }} <span class="neg">{% if rd.per_name_drawdown.p1_pct is not none %}{{ '%.1f'|format(rd.per_name_drawdown.p1_pct) }}%{% else %}&mdash;{% endif %}</span></span>
+    <span class="rd-stat">{{ t('per-name p5 drawdown','个股p5回撤') }} <span class="neg">{% if rd.per_name_drawdown.p5_pct is not none %}{{ '%.1f'|format(rd.per_name_drawdown.p5_pct) }}%{% else %}&mdash;{% endif %}</span></span>
+  </div>
+  {% if rp24 and rp24.mean_pct is not none and rp24.mean_pct < 0 %}
+  <div class="rd-warn">{{ t(
+    '2024+ caveat: the most recent 29-rebalance tail is negative (',
+    '2024+注意：最近29次再平衡尾部为负（') }}{{ '%+.3f'|format(rp24.mean_pct) }}%/reb, t {{ '%.2f'|format(rp24.t_hac) }}{{ t(') — CONFIRM keys on the two time-halves per pre-registration; the forward ledger adjudicates whether this is noise or a regime change.',') — CONFIRM依据的是前后两半段（依预登记），前瞻台账将裁定这是噪声还是机制变化。') }}</div>
+  {% endif %}
+  <div class="rd-ub">{{ t(
+    'UPPER BOUND on the available plane: both substrates are pure-survivor on the delisting axis (0 of 1,469 raw names end before the panel max). The reversal signal buys the deepest decliners — precisely the population most likely to contain eventual delistings. True out-of-sample number is at or below this one. Substrate repair (PIT membership store retaining delisted-name terminal returns) is an F9/W1 task; until then every reversal number stays labeled an upper bound.',
+    '可用面板上的上界：两个底层数据库均在退市轴上为纯幸存者（1,469只原始标的中0只在面板最新日之前结束）。反转信号买入的是跌幅最深的标的——正是最可能包含最终退市标的的群体。真实样本外数值等于或低于此数。底层数据修复（保留退市标的最终回报的时点成分库）是F9/W1任务；在此之前，所有反转数字保持标注为上界。') }}</div>
+</div>
+{% endif %}
+
+{# ---- BACKCAST NAV vs CSI300 (trimmed-plane reconstruction, upper bound) ---- #}
+<div class="sec"><h2>{{ t('Trimmed-plane reconstruction (upper bound) — NAV vs CSI300','裁剪面板重建（上界）——净值 vs 沪深300') }}</h2>
   <span class="cnt">{% if d.backcast %}{{ d.backcast.n_legs }} {{ t('rebalances','次再平衡') }} · {{ d.backcast.months }}m{% endif %}</span></div>
-<p class="sub">{{ t('Reconstruction of the trailing ~24 monthly rebalances on the current (upper-bound) plane — clearly marked reconstruction, not a live record.','在当前（上界）面板上重建近约24次月度再平衡——明确标注为重建，而非真实记录。') }}</p>
+<p class="sub">{{ t('Reconstruction of the trailing ~24 monthly rebalances on the trimmed china_search plane (upper-bound plane — survivorship- and adjustment-inflated vs the raw-plane re-derivation above). Clearly marked reconstruction, not a live record. See the honest re-derivation block above for the tighter number.','在裁剪后的 china_search 面板（上界面板——相比上方原始面板再推导结果存在幸存者偏差与调整价膨胀）上重建近约24次月度再平衡。明确标注为重建，而非真实记录。更严格的数据见上方诚实再推导区块。') }}</p>
 {% if d.backcast and d.backcast.nav and d.backcast.nav.dates|length > 1 %}
 {% set nav = d.backcast.nav %}
 {% set allv = nav.sleeve + nav.csi300 %}
@@ -158,7 +214,7 @@
     <span>{{ t('graded on','评分基准') }} <code>{{ d.backcast.graded_on }}</code></span>
   </div>
   <div class="bc-stats">
-    <span>{{ t('Reference (validated, 1990→2026)','参考（已验证，1990→2026）') }}:
+    <span>{{ t('Original reference (1990→2026, upper bound — see re-derivation above for honest number)','原始参考（1990→2026，上界——诚实数据见上方再推导区块）') }}:
       {{ t('excess','超额') }} <b>+{{ d.reference.excess_mo_pct }}%/mo</b> ·
       Sharpe <b>{{ d.reference.sharpe }}</b> · maxDD <span class="neg">{{ d.reference.maxdd_pct }}%</span> ·
       {{ t('hit','胜率') }} <b>{{ d.reference.hit_pct }}%</b> · n={{ d.reference.n_rebalances }}</span>
@@ -228,9 +284,10 @@
 {% endif %}
 
 <div class="foot">
-  {{ t('SHADOW product','影子产品') }} · <code>site/factordata/cn_reversal_sleeve.json</code> ·
+  {{ t('Reversal Sleeve — monthly-rebalanced contrarian basket. A portfolio, NOT stock tips; high variance, size small.','反转组合 — 按月再平衡的逆向篮子。这是一个组合，不是个股建议；高波动，宜小仓位。') }}
+  · <code>site/factordata/cn_reversal_sleeve.json</code> ·
   {{ t('built','构建于') }} {{ built }} ·
-  {{ t('This replaces the current baskets framing only when its forward ledger beats the baskets on measured CSI300-relative hit + Sharpe.','仅当其前瞻记录簿在实测沪深300相对胜率与夏普上胜过现有篮子框架时，才取代现有篮子。') }}
+  {{ t('W5-B: page promoted from shadow (CONFIRM verdict, 2026-07-03). Honest headline from survivorship-clean(er) raw-plane re-derive; forward ledger is the real record.','W5-B：页面已从影子状态升级（CONFIRM裁决，2026-07-03）。诚实标题数据来自幸存者偏差更小的原始面板再推导；前瞻台账是真实记录。') }}
 </div>
 </body>
 </html>

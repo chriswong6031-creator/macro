@@ -1,0 +1,75 @@
+{
+  "_note": "W5-A re-derive stats — the honest headline the sleeve page carries instead of the unreproducible 0.58 Sharpe.  Source: scripts/china_reversal_rederive_phase0.py.  ALL numbers are UPPER BOUND on the available plane (both substrates pure-survivor on the delisting axis).  Do NOT re-run without a substrate repair that retains delisted names' terminal returns.",
+  "verdict": "CONFIRM-ON-AVAILABLE-PLANE",
+  "primary": {
+    "full": {
+      "n": 349,
+      "mean_pct": 0.426,
+      "t_hac": 3.29,
+      "sharpe": 0.57,
+      "maxdd_pct": -62.8,
+      "hit": 0.539
+    },
+    "early": {
+      "n": 138,
+      "mean_pct": 0.597,
+      "t_hac": 2.97,
+      "sharpe": 0.73,
+      "maxdd_pct": -62.8,
+      "hit": 0.507
+    },
+    "late": {
+      "n": 211,
+      "mean_pct": 0.314,
+      "t_hac": 1.92,
+      "sharpe": 0.46,
+      "maxdd_pct": -37.7,
+      "hit": 0.559
+    },
+    "pre_2024": {
+      "n": 320,
+      "mean_pct": 0.534,
+      "t_hac": 4.17,
+      "sharpe": 0.73,
+      "maxdd_pct": -62.8,
+      "hit": 0.55
+    },
+    "post_2024": {
+      "n": 29,
+      "mean_pct": -0.772,
+      "t_hac": -1.6,
+      "sharpe": -0.97,
+      "maxdd_pct": -21.4,
+      "hit": 0.414
+    }
+  },
+  "csi300_reference": {
+    "n": 169,
+    "mean_pct": 1.052,
+    "t_hac": 2.49,
+    "sharpe": 0.67,
+    "maxdd_pct": -37.7,
+    "hit": null
+  },
+  "ls_spread": {
+    "mean_pct": 0.686,
+    "t_hac": 2.52,
+    "sharpe": 0.44
+  },
+  "fill_tax": {
+    "close_to_close_pct": 0.51,
+    "fill_realistic_pct": 0.426
+  },
+  "per_name_drawdown": {
+    "p1_pct": -26.6,
+    "p5_pct": -17.3,
+    "worst_pct": -62.1
+  },
+  "placebo": {
+    "perm_p": 0.0005,
+    "real_t_hac": 3.29
+  },
+  "source": "research/china_alpha/w5/W5A_REVERSAL_REDERIVE.md",
+  "plane": "data/china_stocks_raw (append-only, RAW/UNADJUSTED, 1990-12-19)",
+  "upper_bound_qualifier": "Both substrates are pure-survivor on the delisting axis (0 of 1469 raw names end >20 sessions before panel max).  The reversal signal BUYS the deepest within-sector decliners — precisely the population most likely to contain eventual delistings.  True out-of-sample number is at or below this one."
+}

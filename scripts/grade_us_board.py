@@ -5,8 +5,8 @@ WHAT THIS IS
 ------------
 `site/factordata/us_standouts.json` is committed daily (~90 revisions back to
 2026-06-16). This script reconstructs every past board from git history, grades
-every row (buy / watch / laggard lanes) at matured horizons (5d, 10d, 21d) versus
-SPY and versus the name's sector ETF, and writes:
+every row (buy / watch / laggard lanes) at matured horizons (5d, 10d, 21d, 63d)
+versus SPY and versus the name's sector ETF, and writes:
 
   * data/us_board_ledger/retro_grades.parquet  — one row per (as_of, lane, ticker, horizon)
   * site/factordata/us_board_track.json         — aggregated hit-rate / precision@k / Wilson-CI
@@ -23,14 +23,16 @@ HONESTY CONVENTIONS (read these — they bound every claim downstream)
 * Entry fill = the NEXT session's close after the board's as_of. Boards publish in
   the evening on the as_of date, so the earliest realistic fill is the following
   session's close (next-bar realism). Horizon h return = close[entry+h] / close[entry] - 1.
-* Prices come from engine.equity_factors._closes("broad") (survivor-biased S&P-1500
-  breadth caches, ~2023-05 -> latest) PLUS data/yahoo/{SPY,XL*}.parquet for the
-  benchmarks. All are DIVIDEND-ADJUSTED total-return closes (see MEMORY:
+  W0.1 (B-b): forward returns and MFE are now computed via engine.grading.forward_metrics
+  (the one-grader law §1.2) — same next-bar convention, same window semantics.
+* Prices come from engine.equity_factors._closes("broad") extended by
+  engine.grading.resolve_series (which appends the 8-K Item 1.03 dead-name imputation
+  store when present). All are DIVIDEND-ADJUSTED total-return closes (see MEMORY:
   yahoo-close-is-total-return). Excess return subtracts benchmark total return, so
   both legs share the same basis — the comparison is clean; absolute levels are TR.
 * Excess return = name_ret - benchmark_ret (SPY and, separately, sector ETF).
 * MAE = maximum ADVERSE excursion. We only have daily CLOSES, not intraday lows, so
-  this is a CLOSE-PATH MAE: min(close[entry..entry+h]) / close[entry] - 1, in EXCESS
+  this is a CLOSE-PATH MAE: min_over_window(name_cum_ret - bench_cum_ret), in EXCESS
   terms vs SPY. It UNDER-states true intraday drawdown; labelled `mae_close_excess`.
 * n is reported everywhere. ~11 trading days of matured 5d data at first run is TINY.
   Daily boards + multi-day horizons overlap heavily -> serial correlation -> the
@@ -38,12 +40,26 @@ HONESTY CONVENTIONS (read these — they bound every claim downstream)
   the RAW n and are therefore OPTIMISTICALLY narrow; treat them as lower bounds on
   uncertainty. No strong claims. See the "caveats" block in the JSON.
 
-Survivorship: the broad cache is current-membership only. Delisted names are
-invisible, which inflates hit-rates for any reversal/laggard lane. Flagged in output
-AND quantified: the track JSON carries a `survivorship` block (n_skipped_no_price =
-distinct board tickers with no usable series) so the display strip can disclose the
-excluded names instead of silently showing a survivor-only win/loss mix — a name that
-left the board BECAUSE it collapsed and got delisted is exactly the name this counts.
+Survivorship: prices now route through engine.grading.resolve_series, which appends
+the dead-name terminal series (data/edgar/dead_name_prices.parquet) so a delisted
+name grades at its imputed terminal value instead of vanishing. n_skipped_no_price
+now counts ONLY names with no price path in either the live cache OR the dead-name
+store (genuinely unresolvable). Coverage note: data/edgar/dead_name_prices.parquet
+must be present (populated by collectors/edgar_deadname_prices) for this fix to be
+active; when the store is absent, the grader degrades to the old live-only path and
+prints a coverage note in the survivorship block.
+
+SPINE COLUMNS (W0.1 B-b — §3.4, §5.1 sub-task 2):
+  fwd_mfe_{5,10,21,63}    — max favorable excursion (via grading); rows are
+    per-(as_of,ticker,lane,horizon), so each row populates ONLY its own
+    horizon's fwd_mfe_{h} column (the others stay null on that row)
+  terminal_state_clean15_126, terminal_state_clean8_21  — per §1.1 partition
+  post_cushion_breach      — per-fire flag at horizon=21 (grading primitive)
+  rate_pressure, quad_hard_label, fused_risk_label, vol_regime, risk_radar_state,
+  regime_vector_degraded, vector_asof, staleness_hours  — PIT regime stamp
+  species_id               — null (multiple species bind this ledger; ambiguous)
+  archetype                — from board row payload at grade time; null if absent
+All nullable; existing rows keep nulls (schema-union only; keep-FIRST on dedup key).
 """
 from __future__ import annotations
 
@@ -62,6 +78,19 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from engine.equity_factors import _closes  # noqa: E402
+from engine.grading import (  # noqa: E402
+    fill_index,
+    forward_metrics,
+    terminal_state,
+    post_cushion_breach,
+    resolve_series,
+    load_dead_prices,
+    LIFTOFF_HORIZON_21,
+    LIFTOFF_HORIZON_126,
+    LIFTOFF_15,
+    LIFTOFF_8,
+)
+from engine.regime_vector import get_vector_for_date  # noqa: E402
 
 BOARD_PATH = "site/factordata/us_standouts.json"
 LEDGER_DIR = ROOT / "data" / "us_board_ledger"
@@ -73,7 +102,7 @@ OUTCOMES_JSON = ROOT / "site" / "factordata" / "us_board_outcomes.json"
 # Number of board dates (not calendar days) to look back for the outcomes strip.
 OUTCOMES_LOOKBACK_BOARDS = 21
 
-HORIZONS = [5, 10, 21]
+HORIZONS = [5, 10, 21, 63]  # W0.1 B-b: 63d lane added per §5.1 sub-task 2
 LANES = ["buy", "watch", "laggards", "laggard"]
 K_LIST = [1, 3, 5, 10]
 
@@ -305,40 +334,41 @@ def _board_to_record(d: dict) -> dict | None:
 
 
 # --------------------------------------------------------------------------- #
-# grading
+# grading helpers
 # --------------------------------------------------------------------------- #
-def _pos_after(index: pd.DatetimeIndex, date: pd.Timestamp) -> int | None:
-    """Index position of the first trading day STRICTLY AFTER `date` (next-bar entry)."""
-    loc = index.searchsorted(date, side="right")
-    if loc >= len(index):
-        return None
-    return int(loc)
 
+# W0.1 B-b: _fwd_ret and _close_path_mae are DELETED.
+# All forward returns now come from engine.grading.forward_metrics (one-grader law §1.2).
+# Excess MAE is computed inline in grade_boards using the fill position returned by
+# engine.grading.fill_index — same next-bar convention, same window semantics.
 
-def _fwd_ret(series: pd.Series, entry_pos: int, h: int) -> float | None:
-    """Total return from close at entry_pos to close at entry_pos+h."""
-    if entry_pos + h >= len(series):
-        return None
-    p0 = series.iloc[entry_pos]
-    p1 = series.iloc[entry_pos + h]
-    if pd.isna(p0) or pd.isna(p1) or p0 <= 0:
-        return None
-    return float(p1 / p0 - 1.0)
+def _excess_close_path_mae(
+    name_ser: pd.Series,
+    bench_ser_aligned: pd.Series,
+    fill: int,
+    h: int,
+) -> float | None:
+    """Close-path excess MAE: min over bars (fill+1 .. fill+h) of
+    (name_cum_ret_t - bench_cum_ret_t).  Same window as forward_metrics fwd_mdd
+    (strictly forward, exclusive of the fill bar). Returns None when there are
+    fewer than h bars available (not yet matured). Bench series must already be
+    aligned/reindexed to name_ser's index.
 
-
-def _close_path_mae(name_ser, bench_ser, entry_pos, h) -> float | None:
-    """Close-path MAE in EXCESS terms (min excess cumulative return over the window)."""
-    if entry_pos + h >= len(name_ser):
+    Preserves the documented convention from the original _close_path_mae:
+    excess return computed as (npj/np0 - 1) - (bpj/bp0 - 1) on a bar-by-bar
+    basis, taking the minimum over the window. Label: mae_close_excess.
+    """
+    if fill + h >= len(name_ser):
         return None
-    np0 = name_ser.iloc[entry_pos]
-    bp0 = bench_ser.iloc[entry_pos]
-    if pd.isna(np0) or pd.isna(bp0) or np0 <= 0 or bp0 <= 0:
+    np0 = float(name_ser.iloc[fill])
+    bp0 = float(bench_ser_aligned.iloc[fill])
+    if not (np.isfinite(np0) and np.isfinite(bp0) and np0 > 0 and bp0 > 0):
         return None
     worst = 0.0
     for j in range(1, h + 1):
-        npj = name_ser.iloc[entry_pos + j]
-        bpj = bench_ser.iloc[entry_pos + j]
-        if pd.isna(npj) or pd.isna(bpj):
+        npj = float(name_ser.iloc[fill + j])
+        bpj = float(bench_ser_aligned.iloc[fill + j])
+        if not (np.isfinite(npj) and np.isfinite(bpj)):
             continue
         exc = (npj / np0 - 1.0) - (bpj / bp0 - 1.0)
         worst = min(worst, exc)
@@ -346,42 +376,100 @@ def _close_path_mae(name_ser, bench_ser, entry_pos, h) -> float | None:
 
 
 def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) -> pd.DataFrame:
+    """Grade all matured board rows, routing all forward metrics through engine.grading
+    (one-grader law §1.2). New in W0.1 B-b:
+
+    1. GRADER: _fwd_ret/_close_path_mae removed; forward_metrics + _excess_close_path_mae used.
+    2. 63d LANE: HORIZONS now includes 63 — all four horizons graded per row.
+    3. SURVIVORSHIP FIX: prices resolved via resolve_series (extends live series with
+       dead-name terminal values when the edgar dead-name store is present).
+    4. SPINE COLUMNS: fwd_mfe_{H} for each H; terminal_state_clean15_126,
+       terminal_state_clean8_21, post_cushion_breach (at horizon=21); all nullable.
+    5. REGIME STAMP: PIT regime_vector fields stamped per as_of row.
+    6. SPECIES/ARCHETYPE: species_id=null (ambiguous ledger); archetype from row payload.
+    """
     spy = etfs[BENCH].dropna() if BENCH in etfs.columns else None
     last_price_date = names.index.max()
+
+    # W0.1 B-b: load dead-name price store once per run for resolve_series
+    dead_prices = load_dead_prices()
+    _dead_price_count = len(dead_prices)  # for coverage reporting
+
     recs = []
     skipped_no_price = 0
     for b in boards:
         as_of = pd.Timestamp(b["as_of"])
+        as_of_str = b["as_of"]
         rank_by = b.get("rank_by")
+
+        # W0.1 B-b scope 4: PIT regime stamp — looked up once per board date
+        regime_stamp = get_vector_for_date(as_of)
+
         for feat in b["rows"]:
             tk = feat["ticker"]
-            if tk not in names.columns:
+            # W0.1 B-b scope 3: resolve_series extends live closes with dead-name terminals
+            live_col = names[tk].dropna() if tk in names.columns else None
+            nser = resolve_series(tk, live_col, dead_prices=dead_prices)
+            if nser is None or nser.empty:
                 skipped_no_price += 1
                 continue
-            nser = names[tk].dropna()
-            if nser.empty:
-                skipped_no_price += 1
+
+            # fill position: strictly after as_of (next-bar entry convention)
+            fill = fill_index(nser, as_of)
+            if fill is None:
                 continue
-            entry_pos = _pos_after(nser.index, as_of)
-            if entry_pos is None:
-                continue
-            entry_date = nser.index[entry_pos]
+            entry_date = nser.index[fill]
+
             # benchmark series aligned to name's trading calendar
-            # sector ETF
             etf_t = feat.get("spot_sector_etf") or _GICS_ETF.get(feat.get("sector") or "")
+
+            # Compute forward_metrics for the name once for all horizons (all four h values)
+            # forward_metrics handles maturity check internally (returns None for unmatured H)
+            fwd = forward_metrics(nser, as_of, horizons=tuple(HORIZONS))
+
+            # terminal_state (per-as_of, computed once for positional + rotational params)
+            # These are horizon-independent state classifications — computed per fire, not per horizon
+            ts_clean15 = terminal_state(
+                nser, as_of,
+                liftoff_mult=LIFTOFF_15, liftoff_horizon=LIFTOFF_HORIZON_126,
+            )
+            ts_clean8 = terminal_state(
+                nser, as_of,
+                liftoff_mult=LIFTOFF_8, liftoff_horizon=LIFTOFF_HORIZON_21,
+            )
+            # post_cushion_breach at horizon=21 (rotational)
+            pcb = post_cushion_breach(nser, as_of, horizon=LIFTOFF_HORIZON_21)
+
+            # Pre-align benchmark series to name index (done once per name per board)
+            spy_al = spy.reindex(nser.index).ffill() if spy is not None else None
+            etf_al = (etfs[etf_t].reindex(nser.index).ffill()
+                      if etf_t and etf_t in etfs.columns else None)
+
+            # Benchmark forward metrics — computed ONCE per name/as_of for all horizons
+            spy_fwd = (forward_metrics(spy_al, as_of, horizons=tuple(HORIZONS))
+                       if spy_al is not None else {})
+            etf_fwd = (forward_metrics(etf_al, as_of, horizons=tuple(HORIZONS))
+                       if etf_al is not None else {})
+
+            # archetype: from the board row payload (never backfilled; null if absent)
+            archetype = feat.get("archetype")
+
             for h in HORIZONS:
-                # need matured horizon: entry + h must be <= last available price date
-                if entry_pos + h >= len(nser):
-                    continue
-                # confirm the horizon bar actually exists in the data window (matured)
-                horizon_date = nser.index[entry_pos + h]
-                if horizon_date > last_price_date:
-                    continue
-                nret = _fwd_ret(nser, entry_pos, h)
+                # maturity check: forward_metrics returns None for unmatured H
+                nret = fwd.get(f"fwd_ret_{h}")
                 if nret is None:
                     continue
+                # secondary maturity check: confirm horizon date is within data window
+                if fill + h >= len(nser):
+                    continue
+                horizon_date = nser.index[fill + h]
+                if horizon_date > last_price_date:
+                    continue
+
+                fwd_mfe = fwd.get(f"fwd_mfe_{h}")
+
                 rec = {
-                    "as_of": b["as_of"], "entry_date": entry_date.date().isoformat(),
+                    "as_of": as_of_str, "entry_date": entry_date.date().isoformat(),
                     "rank_by": rank_by,
                     "horizon": h, "lane": feat["lane"], "position": feat["position"],
                     "ticker": tk, "sector": feat.get("sector"),
@@ -395,8 +483,7 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     "validation_status": feat.get("validation_status"),
                     "vol_squeeze": feat.get("vol_squeeze"),
                     "dispersion_state": feat.get("dispersion_state"),
-                    # G6a donor-unwind rotation context (page-level, constant per as_of) —
-                    # must reach the graded frame or the ledger cannot stratify by it
+                    # G6a donor-unwind rotation context (page-level, constant per as_of)
                     "donor_state": feat.get("donor_state"),
                     "donor_sector": feat.get("donor_sector"),
                     "off_high": feat.get("off_high"),
@@ -405,9 +492,7 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     "hold_days":       feat.get("hold_days"),
                     "hold_inv":        feat.get("hold_inv"),
                     "hold_anchor_src": feat.get("hold_anchor_src"),
-                    # W0.2b — tier_cascade was in _row_features but never emitted into the graded
-                    # record; add it here so aggregate() can stratify by T1/T2/T3/T4.
-                    # None on pre-schema boards (earliest revisions lacked the signal.tier_cascade field).
+                    # W0.2b tier_cascade
                     "tier_cascade":    feat.get("tier_cascade"),
                     # W3 evidence-stack strata (display-only; forward IC under accrual; None pre-schema)
                     "insider_cluster":   feat.get("insider_cluster"),
@@ -419,30 +504,48 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     "has_stop_guidance": feat.get("has_stop_guidance"),
                     "confluence_k":      feat.get("confluence_k"),
                     "ret": nret,
+                    # W0.1 B-b spine columns (§5.1, §3.4)
+                    f"fwd_mfe_{h}":      fwd_mfe,
+                    # terminal_state and post_cushion_breach are per-fire, not per-horizon;
+                    # stamp them on each horizon row so the parquet is self-contained.
+                    "terminal_state_clean15_126": ts_clean15.get("state"),
+                    "terminal_state_clean8_21":   ts_clean8.get("state"),
+                    "post_cushion_breach":         pcb,
+                    # regime_vector PIT stamp (§3.4; US ledger → US vector primary)
+                    "rate_pressure":          regime_stamp.get("rate_pressure"),
+                    "quad_hard_label":        regime_stamp.get("quad_hard_label"),
+                    "fused_risk_label":       regime_stamp.get("fused_risk_label"),
+                    "vol_regime":             regime_stamp.get("vol_regime"),
+                    "risk_radar_state":       regime_stamp.get("risk_radar_state"),
+                    "regime_vector_degraded": regime_stamp.get("regime_vector_degraded"),
+                    "vector_asof":            regime_stamp.get("vector_asof"),
+                    "staleness_hours":        regime_stamp.get("staleness_hours"),
+                    # species/archetype (§3.4; species_id=null because ledger is ambiguous)
+                    "species_id": None,
+                    "archetype":  archetype,
                 }
                 # excess vs SPY
-                if spy is not None:
-                    spy_al = spy.reindex(nser.index).ffill()
-                    sret = _fwd_ret(spy_al, entry_pos, h)
+                if spy_al is not None:
+                    sret = spy_fwd.get(f"fwd_ret_{h}")
                     rec["spy_ret"] = sret
                     rec["excess_spy"] = (nret - sret) if sret is not None else None
-                    rec["mae_close_excess_spy"] = _close_path_mae(nser, spy_al, entry_pos, h)
+                    rec["mae_close_excess_spy"] = _excess_close_path_mae(nser, spy_al, fill, h)
                 else:
                     rec["spy_ret"] = rec["excess_spy"] = rec["mae_close_excess_spy"] = None
                 # excess vs sector ETF
-                if etf_t and etf_t in etfs.columns:
-                    etf_al = etfs[etf_t].reindex(nser.index).ffill()
-                    eret = _fwd_ret(etf_al, entry_pos, h)
+                if etf_al is not None:
+                    eret = etf_fwd.get(f"fwd_ret_{h}")
                     rec["sector_etf"] = etf_t
                     rec["etf_ret"] = eret
                     rec["excess_sector"] = (nret - eret) if eret is not None else None
-                    rec["mae_close_excess_sector"] = _close_path_mae(nser, etf_al, entry_pos, h)
+                    rec["mae_close_excess_sector"] = _excess_close_path_mae(nser, etf_al, fill, h)
                 else:
                     rec["sector_etf"] = etf_t
                     rec["etf_ret"] = rec["excess_sector"] = rec["mae_close_excess_sector"] = None
                 recs.append(rec)
     df = pd.DataFrame(recs)
     df.attrs["skipped_no_price"] = skipped_no_price
+    df.attrs["dead_price_store_tickers"] = _dead_price_count
     return df
 
 
@@ -523,38 +626,61 @@ def _slice_table(df: pd.DataFrame, by: str, col: str = "excess_spy") -> dict:
 
 
 def _survivorship_block(boards: list[dict], names: pd.DataFrame) -> dict:
-    """Quantify the silent survivorship hole across the FULL board history.
+    """Quantify the survivorship situation across the FULL board history.
 
-    grade_boards() drops any row whose ticker has no usable series in the broad
-    closes cache (`not in names.columns` or all-NaN). The cache is current-membership
-    only, so a name that exited the board because it collapsed and got delisted is
-    invisible — the displayed win/loss mix tilts toward survivors. This block is
-    emitted into the track JSON so the strip can say "(N names excluded: no price /
-    delisted)" instead of implying full coverage. Counted from boards x names (not
-    df.attrs, which does not survive the parquet store round-trip) so the count
-    covers all history, matching what the track aggregates actually omit."""
+    W0.1 B-b: prices are now resolved via engine.grading.resolve_series, which
+    extends live closes with the dead-name terminal series from the edgar store.
+    n_skipped_no_price now counts ONLY names that are absent from BOTH the live
+    broad cache AND the dead-name store (genuinely unresolvable).
+
+    The note field reports whether the dead-name store is active so the reader
+    can assess residual survivor bias honestly.
+    """
     cols = names.columns if isinstance(names, pd.DataFrame) else []
-    usable = {c for c in cols if names[c].notna().any()}
+    live_usable = {c for c in cols if names[c].notna().any()}
+    dead_prices = load_dead_prices()
+    dead_usable = set(dead_prices.keys())
+    all_usable = live_usable | dead_usable
+
     n_rows_total = n_rows_skipped = 0
     skipped: set[str] = set()
+    recovered_by_dead: set[str] = set()  # in dead store but not live cache
     for b in boards:
         for feat in b.get("rows") or []:
             tk = feat.get("ticker")
             if not tk:
                 continue
             n_rows_total += 1
-            if tk not in usable:
+            if tk not in all_usable:
                 n_rows_skipped += 1
                 skipped.add(tk)
+            elif tk not in live_usable and tk in dead_usable:
+                recovered_by_dead.add(tk)
+
+    if dead_usable:
+        note = (
+            f"prices resolved via live broad cache ({len(live_usable)} tickers) + "
+            f"edgar dead-name store ({len(dead_usable)} tickers); "
+            f"{len(recovered_by_dead)} board names recovered from dead store; "
+            f"n_skipped_no_price counts ONLY names absent from both sources"
+        )
+    else:
+        note = (
+            "broad cache is current-membership only; edgar dead-name store absent "
+            "(data/edgar/dead_name_prices.parquet not found — populate via "
+            "collectors/edgar_deadname_prices to recover delisted names); "
+            "n_skipped_no_price may include delisted names whose terminal values "
+            "would have been graded if the store were present — residual survivor bias"
+        )
     return {
-        # distinct tickers with no usable price series — the "(N names excluded)" N
         "n_skipped_no_price": len(skipped),
         "n_rows_skipped_no_price": n_rows_skipped,
         "n_board_rows_total": n_rows_total,
         "tickers_skipped": sorted(skipped)[:30],
-        "note": ("broad cache is current-membership only; these board names have no "
-                 "usable price series (delisted / renamed / never cached) and are "
-                 "absent from every stat above — the win/loss mix is survivor-tilted"),
+        "n_recovered_by_dead_store": len(recovered_by_dead),
+        "dead_store_active": bool(dead_usable),
+        "dead_store_tickers": len(dead_usable),
+        "note": note,
     }
 
 
@@ -649,17 +775,20 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
         "board_dates_range": [board_dates[0], board_dates[-1]] if board_dates else None,
         "graded_dates": graded_dates,
         "graded_rows_total": int(len(df)),
-        "price_source": "engine.equity_factors._closes('broad') (S&P-1500 breadth caches) + data/yahoo/{SPY,XL*}",
+        "price_source": ("engine.equity_factors._closes('broad') + engine.grading.resolve_series "
+                         "(extends with edgar dead-name terminals) + data/yahoo/{SPY,XL*}"),
         "price_coverage_note": (
-            f"{df['ticker'].nunique()} distinct tickers graded; rows with no price in the "
-            "broad cache are dropped (survivor-biased current-membership universe) — "
+            f"{df['ticker'].nunique()} distinct tickers graded; rows unresolvable by both "
+            "live cache and dead-name store are skipped — "
             "see the `survivorship` block for the quantified exclusion count."),
         "survivorship": survivorship,
         "conventions": {
-            "entry": "next session's close after as_of (next-bar realism)",
+            "entry": "next session's close after as_of (next-bar realism, via engine.grading.fill_index)",
             "returns": "total-return (dividend-adjusted) closes; excess = name_ret - benchmark_ret",
             "mae": "CLOSE-PATH MAE (min excess cum-return over window); UNDER-states intraday DD",
             "benchmarks": "SPY and per-name GICS sector SPDR ETF",
+            "grader": "engine.grading.forward_metrics (one-grader law §1.2, W0.1 B-b)",
+            "horizons": str(HORIZONS),
         },
         "caveats": [
             "TINY n: multi-day horizons only recently matured; first runs have ~11 trading "
@@ -667,8 +796,9 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
             "OVERLAPPING WINDOWS: daily boards x multi-day horizons -> heavy serial "
             "correlation. Effective independent-sample count << n. Wilson CIs on raw n are "
             "OPTIMISTICALLY NARROW (lower bound on true uncertainty).",
-            "SURVIVORSHIP: broad cache is current membership; delisted names invisible -> "
-            "inflates hit-rates, especially for reversal/laggard lanes.",
+            "SURVIVORSHIP: dead-name store (data/edgar/dead_name_prices.parquet) extends "
+            "coverage; if absent, delisted names are invisible — see survivorship.dead_store_active. "
+            "Residual survivor bias remains for names absent from both sources.",
             "SCHEMA DRIFT: earliest boards (2026-06-16..) had 120-row buy lanes, no watch "
             "lane, no entry_signal/signal fields; those slices show 'None'. align_tier and "
             "signal.last.quality only populate on later revisions.",
@@ -735,6 +865,14 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
     built from the full accumulated history, never just from the rows that happened
     to mature in this run.
 
+    W0.1 B-b: schema-union — new spine columns (fwd_mfe_*, terminal_state_*,
+    post_cushion_breach, regime stamp, species_id, archetype) are added to the
+    stored frame with NaN/None for legacy rows that predate this PR. Merge is
+    keep-FRESH on the dedup key (as main always was): a fresh row replaces the
+    stored row wholesale — safe because a grade is a deterministic re-computation
+    from prices (a matured horizon can never regress to null). The PIT fire log
+    is snapshots.jsonl; this parquet is the derived grade store.
+
     If fresh is empty AND the store already exists, the store is returned as-is
     (no write needed).  This is the key guard against the empty:true regression."""
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
@@ -749,6 +887,10 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
     if stored.empty:
         merged = fresh.copy()
     else:
+        # schema-union: add any new columns from fresh to stored (legacy rows get NaN)
+        for col in fresh.columns:
+            if col not in stored.columns:
+                stored[col] = None
         # fresh rows take precedence: drop stored rows that overlap with fresh on
         # the dedup key, then concat.
         key_cols = [c for c in _DEDUP_KEYS if c in fresh.columns and c in stored.columns]
@@ -756,9 +898,49 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
         mask = stored.apply(lambda r: tuple(r[k] for k in key_cols) not in fresh_keys, axis=1)
         merged = pd.concat([stored[mask], fresh], ignore_index=True)
 
-    # Preserve attrs (skipped_no_price from the fresh grading pass, not meaningful for full store)
     merged.to_parquet(RETRO_PARQUET, index=False)
     return merged
+
+
+# W0.1 B-b: regime_vector backfill constants
+_REGIME_STAMP_COLS = [
+    "rate_pressure", "quad_hard_label", "fused_risk_label", "vol_regime",
+    "risk_radar_state", "regime_vector_degraded", "vector_asof", "staleness_hours",
+]
+
+
+def _backfill_regime_stamps(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Backfill null regime_vector stamps on historical rows where the persisted
+    regime_vector.parquet covers the row's as_of date.
+
+    §3.4 PIT constraint: reads ONLY the persisted daily vector (never latest-state).
+    Only fills rows where ALL stamp columns are null (never overwrites non-null).
+    Returns (updated_df, n_newly_stamped) so main() can print the unstamped count.
+    """
+    if df.empty:
+        return df, 0
+
+    # Identify rows that are completely unstamped
+    stamp_cols_present = [c for c in _REGIME_STAMP_COLS if c in df.columns]
+    if not stamp_cols_present:
+        return df, 0
+
+    unstamped_mask = df[stamp_cols_present].isna().all(axis=1)
+    if not unstamped_mask.any():
+        return df, 0
+
+    newly_stamped = 0
+    df = df.copy()
+    for idx in df.index[unstamped_mask]:
+        as_of = df.at[idx, "as_of"]
+        stamp = get_vector_for_date(as_of)
+        # only apply if the vector actually covers this date (vector_asof is not None)
+        if stamp.get("vector_asof") is not None:
+            for col in stamp_cols_present:
+                df.at[idx, col] = stamp.get(col)
+            newly_stamped += 1
+
+    return df, newly_stamped
 
 
 # --------------------------------------------------------------------------- #
@@ -970,9 +1152,24 @@ def main() -> None:
     full_df = _merge_into_store(df)
     if not args.quiet:
         new_rows = len(df) if not df.empty else 0
+        dead_n = df.attrs.get("dead_price_store_tickers", 0)
         print(f"[grade] {new_rows} new matured rows this run "
-              f"(skipped {df.attrs.get('skipped_no_price', 0)} no-price rows); "
+              f"(skipped {df.attrs.get('skipped_no_price', 0)} no-price rows, "
+              f"dead_name_store_tickers={dead_n}); "
               f"store total -> {len(full_df)} rows in {RETRO_PARQUET.name}")
+
+    # W0.1 B-b: backfill null regime stamps on historical rows where the persisted
+    # regime_vector covers the as_of date (PIT-safe: reads only persisted rows ≤ as_of)
+    full_df, n_newly_stamped = _backfill_regime_stamps(full_df)
+    if n_newly_stamped > 0:
+        full_df.to_parquet(RETRO_PARQUET, index=False)
+        if not args.quiet:
+            print(f"[regime_stamp] backfilled {n_newly_stamped} historical rows")
+    stamp_cols_present = [c for c in _REGIME_STAMP_COLS if c in full_df.columns]
+    n_unstamped = int(full_df[stamp_cols_present].isna().all(axis=1).sum()) if stamp_cols_present else len(full_df)
+    if not args.quiet:
+        print(f"[regime_stamp] {n_unstamped}/{len(full_df)} rows still unstamped "
+              f"(regime_vector.parquet absent or no coverage for those as_of dates)")
 
     track = build_track(full_df, boards, names)
     TRACK_JSON.parent.mkdir(parents=True, exist_ok=True)

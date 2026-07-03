@@ -673,6 +673,21 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("mtf-signals leaf failed: %s", e)
         latest["mtf_signals"] = None
+    # Regime Vector (W0.5a — Setup-Species program §3.4): thin aggregator that consumes
+    # existing siblings (quad_vector, regime_one, risk_radar, vol_regime, MRS, breadth,
+    # dislocation, rate_inflation_transmission) and publishes the one new categorical state
+    # (rate_pressure).  Runs AFTER risk_radar (needs its rates-scare sub-score for panic
+    # escalation) and BEFORE the coherence assert (whose vocabulary check now covers
+    # rate_pressure tokens).  Persists daily to data/regime/regime_vector.parquet (NOT
+    # regime_history.parquet — four files share that name; wrong-file appends are #1026-
+    # class hazard).  Additive, never fatal.
+    try:
+        from engine.regime_vector import build as rv_build, persist as rv_persist
+        latest["regime_vector"] = rv_build(latest)
+        rv_persist(latest["regime_vector"])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("regime-vector failed: %s", e)
+        latest["regime_vector"] = None
     # Risk COHERENCE assert (P2-B', audit #4) — the "can never contradict on a stress day"
     # guarantee. Verifies (A) the three gross tables agree (single source), (B) the live
     # sector-central gate basis is still MRS (no silent flip; the 06-23 replay didn't pass),

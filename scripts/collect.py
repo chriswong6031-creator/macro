@@ -152,6 +152,8 @@ def all_adapters() -> dict:
         ("china_breadth", "collectors.china_breadth", "ChinaBreadthAdapter"),
         ("china_universe", "collectors.china_universe", "ChinaUniverseAdapter"),  # broad A-share SEARCH set (decoupled from breadth)
         ("china_margin", "collectors.china_margin", "ChinaMarginAdapter"),     # 融资融券 crowd meter
+        ("china_margin_detail", "collectors.china_margin_detail", "ChinaMarginDetailAdapter"),  # per-name 融资余额+融券余量 daily accrual (W3-C margin-velocity substrate)
+        ("china_lhb", "collectors.china_lhb", "ChinaLhbAdapter"),              # 龙虎榜 daily append + events tape (W3-C LHB substrate)
         ("china_connect", "collectors.china_connect", "ChinaConnectAdapter"),  # 沪深港通 flows (repairs connect_flow)
         ("china_flows", "collectors.china_flows", "ChinaFlowsAdapter"),        # AH premium / limit-up / ETF shares
         ("china_qvix", "collectors.china_qvix", "ChinaQvixAdapter"),           # 300/50ETF option-implied vol ("China VIX") — fear/euphoria + drawdown
