@@ -186,6 +186,12 @@ Until DL-1/DL-2 pass, the corresponding outputs ship **as a research surface** (
 page), never as a badge that sizes a position. D5-W8 novel features (provisional-turn
 classifier, leg-velocity) are **cut to research backlog** unless their own §7 gate passes.
 
+### DL-2 results (W4.4, 2026-07-03 — criteria above UNCHANGED)
+
+| id | criterion (verbatim, frozen) | result | judged by | date |
+|---|---|---|---|---|
+| **DL-2** | the fitted tilt improves sector_central walk-forward drawdown-adjusted conviction ordering vs the flat map, CI excluding 0 | **NOT RUN** — W4.4 delivers the cell estimates and CIs (research surface); the walk-forward conviction backtest is a downstream wave. Prerequisite met: 7 cells in fwd_ret/63d and 11 in fwd_ret/126d have CIs excluding the phase-pooled mean. All are `revision_optimistic=True` (P-D5-1). Ruling A7: cells ship as research surface on `measurement.html` only. No `tilt_config.json` is produced this wave. | `data/cycle_ontology/conditional_cells_20260703.json` → `verdict_summary` | 2026-07-03 |
+
 ---
 
 ## 7 · Proxy-fitness gates (D3 §, Wave W3.1)
@@ -240,6 +246,12 @@ feature simply does not ship.
 - 2026-07-02 — Ledger created at W0.4. KG-1..5 judged this wave (see
   `W04_KEYSTONE_VERDICT.md`); all downstream gates registered, criteria frozen. No
   amendments.
+- 2026-07-03 — **W4.4 results appended** (DL-2 gate status recorded; §6 results block).
+  DL-2 criterion unchanged. Implementation note: the conditional-cell builder derives `phase_v2`
+  from `pos_osc` + `direction` (using D1's ZONE_EHI/ZONE_ELO boundaries) since MTF MACD votes
+  are not available in the monthly panel. This is a PIT-pure simplification relative to the
+  full `classify_phase()`; future waves may upgrade to full phase classification if panel is
+  enriched. All 39 winning cells are `revision_optimistic=True` (P-D5-1).
 - 2026-07-03 — **W4.6 results appended** (BC-1 FAIL, BC-2 wired+passing; §4 results block).
   No success criterion was moved. Two honest implementation notes recorded as findings, not
   silent changes: (1) BC-1's *binding metric* was re-scoped per §6.5 item 2 from the
