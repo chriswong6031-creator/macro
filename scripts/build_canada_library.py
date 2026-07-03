@@ -321,51 +321,33 @@ def _oil_regime_on(overlay: dict | None) -> bool:
 
 
 def _lead_sentence(r: dict, oil_on: bool, zh: bool = False) -> str:
-    """Mechanism-first card lead (§7.1) built from fields already on the row.
+    """Plain-English card lead — 'what moves this stock, and when to buy it'.
 
-    Leads with the primary factor-beta driver (the TSX signature) + the momentum
-    SCREEN z (honestly labeled accruing) + insider cluster (if present) + the
-    entry window. No validated-edge language — the momentum leg is a screen."""
+    Deliberately short and jargon-free: the raw factor beta, the momentum-screen z
+    and the insider cluster each already have their own chip/row on the card, so the
+    lead is a one-glance summary, not a data dump. The main driver is named in plain
+    words (Gold / Oil / CAD) with the beta number left to the per-stock detail page."""
     parts: list[str] = []
     fb = r.get("factor_beta") or {}
     prim = fb.get("primary")
     sec = r.get("sector")
-    # 1) primary commodity/FX driver — the differentiated TSX exposure read
+    # 1) main driver — plain words, no beta number
     if prim:
         lbl = (fb.get("primary_label_zh") if zh else fb.get("primary_label")) or prim
-        beta = fb.get(prim if prim != "usdcad" else "cad")
-        tail = (("" if not (oil_on and prim == "oil") else (" 顺风" if zh else " tailwind")))
-        if zh:
-            parts.append(f"主要驱动：{lbl}-β {beta:+.2f}{tail}" if beta is not None
-                         else f"主要驱动：{lbl}{tail}")
-        else:
-            parts.append(f"{lbl}-beta {beta:+.2f} primary driver{tail}" if beta is not None
-                         else f"{lbl} primary driver")
+        parts.append((f"主要驱动：{lbl}" if zh else f"Main driver: {lbl}"))
     elif sec:
-        parts.append((f"{sec} 板块" if zh else f"{sec} sector"))
-    # 2) momentum SCREEN z — accruing, never a validated composite
-    az = r.get("alpha")
-    if az is not None:
-        parts.append((f"动量筛选 z {az:+.1f}（待验证）" if zh
-                      else f"momentum screen z {az:+.1f} (accruing)"))
-    # 3) insider cluster — context confirmer if present
-    ins = r.get("insider") or {}
-    nb = ins.get("distinct_buyers") or ins.get("n_buys")
-    if ins.get("lean") == "buying" and nb:
-        wd = ins.get("window_days") or 90
-        parts.append((f"内部人买入 {nb}人/{wd}天" if zh
-                      else f"insider cluster {nb} buyer{'s' if nb != 1 else ''}/{wd}d"))
-    # 4) entry window — from the entry gauge's buy-zone
+        parts.append((f"主要驱动：{sec} 板块" if zh else f"Main driver: {sec} sector"))
+    # 2) entry cue — plain words + the buy-zone price
     es = r.get("entry_signal") or {}
     st = es.get("status")
     bz = es.get("buy_zone") or {}
     if st in _ENTRY_OPEN_STATUS:
-        parts.append(("入场：现在开启" if zh else "entry: open now"))
+        parts.append(("现在可买" if zh else "buy now"))
     elif bz.get("low") is not None and bz.get("high") is not None:
-        parts.append((f"入场：回撤 {bz['low']:.2f}–{bz['high']:.2f}" if zh
-                      else f"entry: pullback {bz['low']:.2f}–{bz['high']:.2f}"))
+        parts.append((f"回撤至 ${bz['low']:.2f}–${bz['high']:.2f} 买入" if zh
+                      else f"buy on a pullback to ${bz['low']:.2f}–${bz['high']:.2f}"))
     else:
-        parts.append(("入场：等待周线触发" if zh else "entry: wait for weekly trigger"))
+        parts.append(("等待周线转向" if zh else "wait for the weekly turn"))
     return " · ".join(parts)
 
 

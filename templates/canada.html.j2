@@ -142,7 +142,6 @@
   .nb-cau.pop-below .nb-cau-pop { bottom:auto; top:calc(100% + 5px); }
   /* Clamp to right edge */
   .nb-cau.pop-right .nb-cau-pop { left:auto; right:0; }
-  .nb-tier { font-size:8px; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
   /* volatility black hole chip + honesty notes (Canada overhaul, mirrors china.html) */
   .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
   .nb-vchip { font-size:8.5px; font-weight:800; padding:0 5px; border-radius:6px; border:1px solid var(--line);
@@ -286,7 +285,7 @@
     <span class="muted small">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }}</span>
   </div>
   {% if mode == 'stocks' %}
-  <p class="muted small" style="margin:6px 0 0">{{ t('Standout TSX names ranked by sector-neutral residual momentum, with the cycle entry as timing context. Search any TSX stock from the box above; click a card for the full breakdown.', '按板块中性残差动量排名的 TSX 个股精选，并以周期入场作为时机背景。可在上方搜索框查询任意 TSX 个股；点击卡片查看完整拆解。') }}
+  <p class="muted small" style="margin:6px 0 0">{{ t('A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.', '一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。') }}
     <a href="canada.html" style="color:var(--link);font-weight:600">← {{ t('Canada macro dashboard', '加拿大宏观看板') }}</a></p>
   {% else %}
   <p class="muted small" style="margin:6px 0 0">{{ t('Commodity-and-bank-cycle market — the TSX is ~70% Financials, Energy & Materials. The growth/inflation quad sets the slow backdrop; the commodity / CAD / BoC-vs-Fed overlay below is the high-frequency driver.', '大宗商品与银行周期市场 — TSX 约 70% 为金融、能源与材料。增长／通胀象限给出慢速背景；下方的大宗商品／加元／央行-美联储叠加为高频驱动。') }}
@@ -486,15 +485,15 @@
 {% endif %}
 <div class="panel">
   <h2>{{ t('⚡ Standout TSX names — ripe-list screen', '⚡ 突出的 TSX 个股 — 成熟清单筛选') }}
-    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('cycle-aligned across weekly · 3-day · daily (bottoming, not a falling knife)', '在周线·3日·日线上周期共振（筑底，而非接飞刀）') }}</span>{% endif %}
-    {{ help('Board order (masterplan §5.0 ripe-list contract): hygiene → INCLUDE bottoming-alignment {PRIME, ARMED} → GROUP entry-open before setting-up → RANK within group by the residual-momentum SCREEN z. The small rank pill (#1, #2…) is a within-group order, NOT a probability. See the desk-header block below for what this screen is / isn’t.', '榜单顺序（规划书 §5.0 成熟清单契约）：卫生筛 → 纳入筑底共振 {PRIME, ARMED} → 分组：入场已开启优先于蓄势中 → 组内按残差动量筛选 z 排名。小排名徽章（#1、#2…）是组内顺序，而非概率。此筛选是什么／不是什么，见下方说明块。') }}
+    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('bottoming and turning up (not still falling)', '筑底并开始转向（而非仍在下跌）') }}</span>{% endif %}
+    {{ help('How the list is ordered: first we keep names that are bottoming and starting to turn up — not ones still falling — then we put the ones you can buy today ahead of those still setting up, and sort each group by a momentum screen. The small #1, #2… is only the order within a group, not a score or a probability.', '榜单排序方式：先保留正在筑底、开始转向的个股（而非仍在下跌的），再把“今天就能买”的排在“仍在蓄势”的前面，然后在每组内按动量筛选排序。小徽章 #1、#2… 只是组内顺序，不是评分或概率。') }}
   </h2>
   {# ===== ONE desk-header "what this desk is / isn't" block (§7.2 / §7.3) — consolidates
      the caveat museum (the old per-page repetitions are DELETED; the tier badge lives on
      each card). Bilingual. ===== #}
   <div class="desk-hdr">
-    <p class="dh-is"><span class="l-en">A ripe-list <b>SCREEN</b> ordered by entry-readiness, then an accruing momentum prior (Branch B, phase-0 2026-07) — with a public scoreboard below.</span><span class="l-zh">一份成熟清单<b>筛选</b>：先按入场就绪度排序，再叠加累积中的动量先验（分支 B，Phase-0 2026-07）——下方附公开记分牌。</span></p>
-    <p class="dh-isnt"><span class="l-en">Not a validated buy list. The C7 momentum keystone landed all-ACCRUE in phase-0, so the 0-100 composite is <b>suppressed</b>: the pill is a within-group order, not a probability. The momentum leg is FDR-stable but DSR-short (re-test 2027-01). Timing groups and gates; the screen only ranks within a group. Context, not personalized advice.</span><span class="l-zh">并非经验证的买入清单。C7 动量关键测试在 Phase-0 全部 ACCRUE，故 0-100 综合分<b>已抑制</b>：徽章是组内顺序，而非概率。动量腿通过 FDR 但 DSR 不足（2027-01 复测）。时机负责分组与门控；筛选仅在组内排名。仅作背景，非个性化建议。</span></p>
+    <p class="dh-is"><span class="l-en">A shortlist of TSX names that look ready — sorted by how buyable they are right now, with a public scoreboard below that grades every call.</span><span class="l-zh">一份看起来已就绪的 TSX 个股短名单 — 按“当前可买程度”排序，下方附公开记分牌，对每次入选前瞻评分。</span></p>
+    <p class="dh-isnt"><span class="l-en">Not a guaranteed buy list. The ranking is a screen we're still testing, so the #1, #2… is just an order, not a score. Educational context, not personal advice.</span><span class="l-zh">并非稳赚的买入清单。此排名是仍在检验中的筛选，因此 #1、#2… 只是顺序、而非评分。仅为教育性背景，非个人投资建议。</span>{{ help('Technical: the C7 momentum keystone test came back all-ACCRUE in the July 2026 phase-0 run, so the 0-100 composite score is suppressed and the board shows a within-group order instead. The momentum leg is FDR-stable but DSR-short — a real screen, not yet a validated edge. Re-test January 2027.', '技术说明：C7 动量关键测试在 2026 年 7 月 Phase-0 全部为 ACCRUE，故 0-100 综合评分被抑制，榜单改为显示组内顺序。动量腿通过 FDR 但 DSR 不足 — 是真实筛选器，尚非经验证优势。2027 年 1 月复测。') }}</p>
   </div>
   {# ===== TRACK-RECORD panel (§7.4) — the desk's accountability centerpiece. Ships in
      'accruing' state with the honest first-stable-read date printed on the panel; flips to
@@ -564,9 +563,9 @@
          tier (accruing = dashed · oil-regime · insider · earnings-catalyst · extended),
          with a report-citing tooltip. Context/accruing legs, never rank inputs. ── #}
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。">{{ t('momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)', '动量待验证（通过 FDR、DSR 不足；2027-01 复测）') }}</span>
-        {% if s.oil_tailwind %}<span class="nb-vchip ev-oil" data-tip-en="C1 phase-0: oil→XEG is the one ACCRUE (HAC t +2.75, FDR-pass, DSR-short; reports/c1-canada-commodity-phase0.md); gold/copper NO-GO. Fires only when the overlay oil factor is risk-on AND this name loads primarily on oil." data-tip-zh="C1 Phase-0：油→XEG 是唯一 ACCRUE（HAC t +2.75、通过 FDR、DSR 不足）；金/铜 NO-GO。仅当叠加油因子为风险偏好且该股主要负荷油时触发。">🛢 {{ t('oil-regime — accruing (C1)', '油周期 — 待验证 (C1)') }}</span>{% endif %}
-        {% if s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0 %}<span class="nb-vchip ev-insider" data-tip-en="SEDI insider filings ({{ s.insider.window_days }}d window): {{ s.insider.n_buys }} buy vs {{ s.insider.n_sells }} sell — net insider BUYING. A confirmer chip only; SEDI data is collected + displayed, ACCRUING toward validation (~2028), never a rank input." data-tip-zh="SEDI 内部人申报（{{ s.insider.window_days }}日窗口）：{{ s.insider.n_buys }} 笔买入 vs {{ s.insider.n_sells }} 笔卖出 — 净买入。仅为确认信号；SEDI 数据已采集展示、积累验证中（~2028），非排名输入。">👤 {{ t('insider buying', '内部人买入') }} {{ s.insider.n_buys }}/{{ s.insider.n_sells }}</span>{% endif %}
+        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。">{{ t('momentum screen · unproven', '动量筛选 · 未验证') }}</span>
+        {% if s.oil_tailwind %}<span class="nb-vchip ev-oil" data-tip-en="C1 phase-0: oil→XEG is the one ACCRUE (HAC t +2.75, FDR-pass, DSR-short; reports/c1-canada-commodity-phase0.md); gold/copper NO-GO. Fires only when the overlay oil factor is risk-on AND this name loads primarily on oil." data-tip-zh="C1 Phase-0：油→XEG 是唯一 ACCRUE（HAC t +2.75、通过 FDR、DSR 不足）；金/铜 NO-GO。仅当叠加油因子为风险偏好且该股主要负荷油时触发。">🛢 {{ t('oil tailwind', '油价顺风') }}</span>{% endif %}
+        {% if s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0 %}<span class="nb-vchip ev-insider" data-tip-en="Company insiders' own trades over the last {{ s.insider.window_days }} days: {{ s.insider.n_buys }} buys vs {{ s.insider.n_sells }} sells — a net buying signal. Shown as supporting context only; it does not affect the ranking." data-tip-zh="公司内部人在过去 {{ s.insider.window_days }} 天的交易：{{ s.insider.n_buys }} 笔买入 vs {{ s.insider.n_sells }} 笔卖出 — 净买入信号。仅作辅助参考，不影响排名。">👤 {{ t('insider buying', '内部人买入') }} {{ s.insider.n_buys }}/{{ s.insider.n_sells }}</span>{% endif %}
         {% if s.earnings and s.earnings.days_to is defined and s.earnings.days_to is not none and s.earnings.days_to <= 21 %}<span class="nb-vchip ev-earn" data-tip-en="Next earnings report {{ s.earnings.next_date }} ({{ s.earnings.days_to }} days out) — a scheduled catalyst / volatility event. Context for timing, not a rank input." data-tip-zh="下次财报 {{ s.earnings.next_date }}（还有 {{ s.earnings.days_to }} 天）— 计划中的催化剂／波动事件。择时背景，非排名输入。">📅 {{ t('reports in', '财报还有') }} {{ s.earnings.days_to }}{{ t('d', '天') }}</span>{% endif %}
         {% if s.extended %}<span class="nb-vchip vf-exp" data-tip-en="Extension log-and-grade — this name is stretched vs its 200d line (a risk-placement lens, NOT rank-affecting; phase-0 showed freshness does not cut drawdown)." data-tip-zh="扩张记录评分 — 该股相对 200 日线偏离（风险定位视角，不影响排名；Phase-0 显示新鲜度不减回撤）。">📐 {{ t('extended', '偏离') }}{% if s.extended.ext_z is not none %} z{{ '%+.1f'|format(s.extended.ext_z) }}{% endif %}</span>{% endif %}
       </div>
@@ -623,7 +622,7 @@
       {% set _rs = s.risk_sizing %}
       {% if _rs and _rs.size_mult is not none %}
       <div class="nb-bot">
-        <span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>
+        <span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×{{ _rs.size_mult }} scales a normal position (forecast volatility {{ _rs.vol_ann_pct }}%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×{{ _rs.size_mult }} 在常规仓位上缩放（预测年化波动 {{ _rs.vol_ann_pct }}%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>
       </div>
       {% endif %}
       {# volatility black hole (vol_squeeze) chip #}
@@ -634,7 +633,6 @@
       </div>{% endif %}
       {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
       {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
-      <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
       {% endif %}
     </div>
     {% endfor %}
