@@ -129,3 +129,29 @@ def test_extras_union_partial_and_despac(monkeypatch):
     assert partial.get("E") == ipo                  # recent IPO: short-history from its first tape
     assert partial.get("F") == late                 # de-SPAC: from `added`, NOT its earlier shell tape
     assert "A" not in partial and "C" not in partial  # full-history names are not flagged
+
+
+def test_pre_window_added_members_not_partial(monkeypatch):
+    """`added` dates that predate the rolling calendar (idx[0]) must not trip the `gap` flag
+    forever once the window rolls past them — a member whose tape spans the whole visible
+    window has full history for the displayed chart. Only a tape starting late relative to
+    BOTH the add date and the window start is partial (the 2023-05-30 all-members-partial bug)."""
+    idx = pd.date_range("2025-01-02", periods=200, freq="B")
+    closes = pd.DataFrame({
+        "A": 100 * (1.0010 ** np.arange(200)),
+        "B": 100 * (1.0005 ** np.arange(200)),
+        "C": 100 * (0.9990 ** np.arange(200)),
+        "D": np.r_[[np.nan] * 150, 50 * (1.002 ** np.arange(50))],   # tape genuinely starts mid-window
+    }, index=idx)
+    spy = pd.DataFrame({"close": 400 * (1.0008 ** np.arange(200)), "volume": np.ones(200)}, index=idx)
+    monkeypatch.setattr(bk, "_closes", lambda: closes)
+    monkeypatch.setattr(bk, "_basket_extras", lambda: None)
+    monkeypatch.setattr(bk, "_names_sectors", lambda: {})
+    monkeypatch.setattr(bk.store, "read", lambda g, n: spy if (g, n) == ("yahoo", "SPY") else None)
+    monkeypatch.setattr(bk, "_membership", lambda: {"baskets": {
+        "t": {"name": "T", "category": "X", "created": "2022-01-03", "members": [
+            {"ticker": t, "added": "2022-01-03"} for t in "ABCD"]}}})   # all added ~3y pre-window
+    b = bk.compute_baskets()["baskets"][0]
+    partial = {p["symbol"]: p["from"] for p in b["partial"]}
+    assert set(partial) == {"D"}                          # window-spanning tapes are NOT partial
+    assert partial["D"] == idx[150].strftime("%Y-%m-%d")  # the late tape flags from its true start
