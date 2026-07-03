@@ -13,6 +13,12 @@ silently skipped — it activates the moment the key lands.
 
 Output: data/sam_gov/opp_velocity.parquet — pre-aggregated per-basket {recent_count, prior_count}.
 NAICS -> basket map: data/sam_gov/naics_themes.json.
+
+W0d addition: new_programs() pure function detects first-ever-seen NAICS codes per basket and
+writes a ledger (data/sam_gov/naics_seen.json) used by engine/theme_activity._load_new_program_events()
+to surface new-program regime annotations.  Appends new events to data/theme_activity/program_ledger.parquet.
+Limitation: the velocity() function (and its on-disk output) remains count-only — new_programs()
+requires the full raw opps list, available only inside fetch().
 """
 from __future__ import annotations
 
@@ -20,6 +26,7 @@ import json
 import logging
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pandas as pd
 
@@ -43,6 +50,49 @@ def _naics_themes() -> dict[str, list[str]]:
         return (json.loads(p.read_text()) or {}).get("naics", {})
     except Exception:  # noqa: BLE001
         return {}
+
+
+def new_programs(opps: list[dict], naics_map: dict[str, list[str]],
+                 seen_path: Path) -> list[dict]:
+    """Pure (except disk I/O): detect first-ever-seen NAICS codes per basket.
+
+    Reads the persistent seen_path JSON ({basket_id: [naics, ...]}) and emits an event dict
+    for each NAICS code that is new for a basket this run.  Writes the updated set back to
+    seen_path.  Idempotent: re-running with the same opps produces [] after the first call.
+
+    Returns a list of {basket_id, naics_or_cfda, source, first_seen_date, title, type} dicts
+    for all newly-seen codes.  Empty when opps or naics_map is empty."""
+    if not opps or not naics_map:
+        return []
+    seen: dict[str, list[str]] = {}
+    if seen_path.exists():
+        try:
+            seen = json.loads(seen_path.read_text()) or {}
+        except Exception:  # noqa: BLE001
+            seen = {}
+    events: list[dict] = []
+    today_str = str(pd.Timestamp.now().date())
+    for o in opps:
+        naics = str(o.get("naicsCode") or "").strip()
+        if not naics:
+            continue
+        baskets = naics_map.get(naics) or naics_map.get(naics[:6]) or []
+        for b in baskets:
+            known = seen.setdefault(b, [])
+            if naics not in known:
+                known.append(naics)
+                events.append({
+                    "basket_id": b,
+                    "naics_or_cfda": naics,
+                    "source": "sam_gov",
+                    "first_seen_date": today_str,
+                    "title": str(o.get("title") or "")[:120],
+                    "type": str(o.get("type") or ""),
+                })
+    if events:
+        seen_path.parent.mkdir(parents=True, exist_ok=True)
+        seen_path.write_text(json.dumps(seen, indent=2))
+    return events
 
 
 def velocity(opps: list[dict], naics_map: dict[str, list[str]], *, today=None) -> pd.DataFrame:
@@ -119,6 +169,18 @@ class SamGovAdapter(Adapter):
             p = config.data_dir() / "sam_gov" / "opp_velocity.parquet"
             p.parent.mkdir(parents=True, exist_ok=True)
             vel.to_parquet(p)
+        # W0d: new-program detection — first-seen NAICS per basket; appends to program_ledger
+        seen_path = config.data_dir() / "sam_gov" / "naics_seen.json"
+        np_events = new_programs(opps, naics_map, seen_path)
+        if np_events:
+            ledger_path = config.data_dir() / "theme_activity" / "program_ledger.parquet"
+            ledger_path.parent.mkdir(parents=True, exist_ok=True)
+            new_df = pd.DataFrame(np_events)
+            if ledger_path.exists():
+                existing = pd.read_parquet(ledger_path)
+                new_df = pd.concat([existing, new_df], ignore_index=True)
+            new_df.to_parquet(ledger_path, index=False)
+            log.info("sam_gov: %d new NAICS programs detected", len(np_events))
         log.info("sam_gov: %d opportunities over %d NAICS -> %d baskets, %d errors",
                  len(opps), len(naics_map), len(vel), errors)
         ingest = pd.DataFrame({"opps": [len(opps)], "baskets": [len(vel)]},
