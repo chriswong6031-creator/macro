@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
-  "as_of": "2026-07-02",
-  "generated_utc": "2026-07-02T23:09:42.987609+00:00",
+  "as_of": "2026-07-03",
+  "generated_utc": "2026-07-03T01:10:05.214801+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties.",
   "regime_read": null,
   "brain_present": false,
@@ -12,7 +12,7 @@
     "open": 0,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 116,
+  "n_signals": 115,
   "signals": [
     {
       "ticker": "NVDA",
@@ -247,6 +247,30 @@
       "clamped": null
     },
     {
+      "ticker": "HOOD",
+      "signal_score": 55,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.95,
+      "convergence_score": 3,
+      "channels": [
+        "insider_cluster",
+        "material_8k",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 42.5,
+      "extended": true,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "LUV",
       "signal_score": 55,
       "conviction": "medium",
@@ -467,6 +491,29 @@
       "clamped": null
     },
     {
+      "ticker": "F",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.45,
+      "convergence_score": 2,
+      "channels": [
+        "activist_13d",
+        "gov_contract_accel"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "AZN",
       "signal_score": 46,
       "conviction": "medium",
@@ -561,29 +608,6 @@
       "clamped": null
     },
     {
-      "ticker": "HOOD",
-      "signal_score": 45,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.4,
-      "convergence_score": 2,
-      "channels": [
-        "insider_cluster",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": null,
-      "extended": false,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "LILA",
       "signal_score": 45,
       "conviction": "medium",
@@ -621,30 +645,6 @@
       ],
       "trump_linked": false,
       "rs_vs_spy_60d": null,
-      "extended": false,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "AVGO",
-      "signal_score": 45,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.35,
-      "convergence_score": 3,
-      "channels": [
-        "13f_add",
-        "material_8k",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 4.5,
       "extended": false,
       "affiliations": [],
       "n_affiliated_actors": 0,
@@ -741,6 +741,29 @@
         }
       ],
       "n_affiliated_actors": 4,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "LUMN",
+      "signal_score": 42,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.3,
+      "convergence_score": 2,
+      "channels": [
+        "gov_contract_accel",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -892,31 +915,6 @@
       "trump_linked": false,
       "rs_vs_spy_60d": null,
       "extended": false,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "AMD",
-      "signal_score": 37,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.3,
-      "convergence_score": 4,
-      "channels": [
-        "congress_buy",
-        "github_momentum",
-        "retail_buzz",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 132.5,
-      "extended": true,
       "affiliations": [],
       "n_affiliated_actors": 0,
       "thesis": null,
