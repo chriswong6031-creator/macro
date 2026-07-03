@@ -1968,13 +1968,17 @@ def main() -> int:
                      "— downgraded to match entry_signal.status", _urgency_downgrade_count)
 
         # --- W8 HEADLINE ARBITER (masterplan P5) ---
-        # A pure post-assembly pass that enforces honesty between the displayed state/label
-        # and the actual signal freshness + extension state. Two rules:
+        # A pure post-assembly pass that enforces honesty. Three rules:
         #   (1) FRESH-BUY-ish state/label with a stale cross (> FRESH_TICKS+1 ticks old) OR
         #       extension_read.extended=True → downgrade state/label to the hold equivalent.
         #   (2) urgency='imminent' while the entry/label indicates a blocked/BOTTOMING state
         #       → downgrade urgency to 'caution'.
+        #   (3) W2 NEW: band in {high, constructive} while conviction verdict is Lagging or
+        #       no-clear-edge → demote band one step + record arbiter_note. This fires BEFORE
+        #       the W6-US fix-3(a) invariant check so that invariant never fires in production
+        #       for this class (the arbiter closes the gap at build time).
         # Additive + never raises (nightly must not fail). Logs downgrade counts.
+        _BAND_DEMOTE = {"high": "constructive", "constructive": "neutral"}
         try:
             from engine.confluence_tiers import FRESH_TICKS as _FRESH_TICKS
             _FRESH_BUY_STATES = {"FRESH BUY", "TURN SIGNALED"}
@@ -1989,7 +1993,7 @@ def main() -> int:
                 _state_a = _ra.get("state") or ""
                 _stale_a = (_ticks_a is not None and _ticks_a > _FRESH_TICKS + 1)
                 if _state_a in _FRESH_BUY_STATES and (_stale_a or _ext_extended_a):
-                    # Downgrade to HOLD / extended hold equivalent
+                    # Rule 1: Downgrade to HOLD / extended hold equivalent
                     _why_a = "stale cross" if _stale_a else "extended"
                     _ra["arbiter_note"] = f"downgraded from {_state_a} ({_why_a})"
                     _ra["state"] = "HOLD — EXTENDED" if _ext_extended_a else "HOLD"
@@ -2004,8 +2008,23 @@ def main() -> int:
                     if not _ra.get("arbiter_note"):
                         _ra["arbiter_note"] = f"urgency imminent downgraded (state={_state_a})"
                     _arbiter_downgrade_count += 1
+                # Rule 3 (W2): band high/constructive while verdict is lagging/no-clear-edge
+                # → demote band one step so the visual band reflects the conviction read.
+                _c_arb = _ra.get("conviction") or {}
+                _v_arb = (_c_arb.get("verdict") or "").lower()
+                _b_arb = _c_arb.get("band") or ""
+                if _b_arb in _BAND_DEMOTE and any(k in _v_arb for k in ("lagging", "no clear edge")):
+                    _new_band = _BAND_DEMOTE[_b_arb]
+                    _c_arb["band"] = _new_band
+                    _note_arb = f"band demoted {_b_arb}→{_new_band} (verdict={_c_arb.get('verdict')})"
+                    if _ra.get("arbiter_note"):
+                        _ra["arbiter_note"] += "; " + _note_arb
+                    else:
+                        _ra["arbiter_note"] = _note_arb
+                    _arbiter_downgrade_count += 1
+                    log.debug("W2 arbiter rule3: %s %s", _ra.get("ticker"), _note_arb)
             if _arbiter_downgrade_count:
-                log.info("W8 arbiter: %d rows downgraded (state/urgency honesty pass)",
+                log.info("W8 arbiter: %d rows downgraded (state/urgency/band honesty pass)",
                          _arbiter_downgrade_count)
         except Exception as _ae:  # noqa: BLE001 — arbiter is additive; never fatal
             log.warning("W8 arbiter skipped (%s)", _ae)

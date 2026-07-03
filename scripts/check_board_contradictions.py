@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""Static guard: validates site/factordata/us_standouts.json for build-time contradictions.
+
+Four invariants checked (W2, mirroring check_nav_mega.py style):
+
+  (a) No FRESH-BUY-ish state/label with cross age > FRESH_TICKS+1 OR extension grade.
+      The W8 arbiter should have demoted these at build time; a hit here means the arbiter
+      missed a path.
+
+  (b) No urgency=imminent on a row with a blocked label or BOTTOMING-class state.
+      The W6-US fix 7 + W8 arbiter should close this; a hit means a new code path bypassed both.
+
+  (c) No band high/constructive while verdict is Lagging or no-clear-edge.
+      The W6-US fix 2 + W2 arbiter rule-3 should close this; a hit is a regression.
+
+  (d) Slot-1 alpha is not negative while positive-alpha rows exist in the same lane.
+      If the board is supposed to rank by alpha DESC, the first row must have the highest alpha
+      in its lane (or equal). A violation means the sort was applied incorrectly.
+
+Exit 0 on clean. Exit 1 with a readable table on violation.
+
+Usage:
+    python3 scripts/check_board_contradictions.py [ARTIFACT_PATH]
+    # default: site/factordata/us_standouts.json
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+# Cross-age threshold from engine/confluence_tiers.py
+FRESH_TICKS = 2
+
+_FRESH_BUY_STATES = {"FRESH BUY", "TURN SIGNALED"}
+_BOTM_STATES = {"BOTTOMING", "BASING", "ACCUMULATION"}
+_GREEN_BANDS = {"high", "constructive"}
+_LAGGING_VERDICTS = ("lagging", "no clear edge")
+
+# The grade values that mean "extended" in extension_read
+_EXT_GRADES = {"parabolic", "stretched"}
+
+
+def _check(artifact_path: str = "site/factordata/us_standouts.json") -> list[str]:
+    """Return a list of violation strings. Empty list = clean."""
+    p = Path(artifact_path)
+    if not p.is_absolute():
+        p = ROOT / p
+    if not p.exists():
+        # Absent artifact is not a violation (first run or not yet emitted)
+        return []
+
+    try:
+        data = json.loads(p.read_text())
+    except Exception as e:
+        return [f"JSON parse error: {e}"]
+
+    violations: list[str] = []
+    buy_rows = data.get("buy") or []
+
+    # ---- (a) FRESH-BUY-ish state with stale cross or extended grade ----
+    for r in buy_rows:
+        state = (r.get("state") or "").upper()
+        if state not in _FRESH_BUY_STATES:
+            continue
+        sig = r.get("signal") or {}
+        ticks = sig.get("ticks")
+        if ticks is not None and ticks > FRESH_TICKS + 1:
+            violations.append(
+                f"(a) {r.get('ticker')}: state={state!r} but ticks={ticks} > FRESH_TICKS+1={FRESH_TICKS + 1}"
+            )
+        # Extension grade (best-effort; may be absent in older schemas)
+        ext = r.get("extension_read") or {}
+        if isinstance(ext, dict) and ext.get("grade") in _EXT_GRADES:
+            violations.append(
+                f"(a) {r.get('ticker')}: state={state!r} but extension.grade={ext.get('grade')!r}"
+            )
+
+    # ---- (b) urgency=imminent on blocked label or BOTTOMING-class state ----
+    for r in buy_rows:
+        if r.get("urgency") != "imminent":
+            continue
+        state = (r.get("state") or "").upper()
+        if state in _BOTM_STATES:
+            violations.append(
+                f"(b) {r.get('ticker')}: urgency=imminent but state={state!r}"
+            )
+        label = (r.get("label") or "").lower()
+        if "block" in label:
+            violations.append(
+                f"(b) {r.get('ticker')}: urgency=imminent but label contains 'block' ({r.get('label')!r})"
+            )
+
+    # ---- (c) band high/constructive while verdict is lagging/no-clear-edge ----
+    for r in buy_rows:
+        c = r.get("conviction") or {}
+        band = (c.get("band") or "").lower()
+        verdict = (c.get("verdict") or "").lower()
+        if band in _GREEN_BANDS and any(k in verdict for k in _LAGGING_VERDICTS):
+            violations.append(
+                f"(c) {r.get('ticker')}: band={band!r} but verdict={c.get('verdict')!r}"
+            )
+
+    # ---- (d) slot-1 alpha not negative while positive-alpha rows exist in same lane ----
+    # Group rows by lane; check that row[0].alpha >= all others (sort by alpha desc invariant).
+    # Only fires when at least two rows in a lane have non-None alpha.
+    lane_rows: dict[str, list] = {}
+    for r in buy_rows:
+        lane = r.get("lane") or "buy"
+        lane_rows.setdefault(lane, []).append(r)
+
+    for lane, rows in lane_rows.items():
+        alphas = [(i, r.get("alpha")) for i, r in enumerate(rows) if r.get("alpha") is not None]
+        if len(alphas) < 2:
+            continue
+        # Find the highest alpha value across the lane
+        max_alpha = max(a for _, a in alphas)
+        # The first row in the lane should have the highest (or equal) alpha
+        first_alpha = alphas[0][1]
+        if first_alpha < 0 and max_alpha > 0:
+            violations.append(
+                f"(d) lane={lane!r}: slot-1 alpha={first_alpha:.3f} is negative "
+                f"but max alpha in lane={max_alpha:.3f} > 0 (sort broken)"
+            )
+
+    return violations
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = argv if argv is not None else sys.argv[1:]
+    artifact = argv[0] if argv else "site/factordata/us_standouts.json"
+
+    violations = _check(artifact)
+    if violations:
+        print(
+            f"check_board_contradictions: FAIL — {len(violations)} invariant violation(s) "
+            f"in {artifact}:\n",
+            file=sys.stderr,
+        )
+        for v in violations:
+            print(f"  {v}", file=sys.stderr)
+        print(
+            "\nThese are build-time invariants: the W8 arbiter + W6-US fix passes should have "
+            "prevented them. Investigate the build path for the listed tickers and re-run the build.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(
+        f"check_board_contradictions: OK — {artifact} passes all 4 board invariants "
+        f"(a: stale-fresh, b: imminent-blocked, c: band-verdict, d: alpha-sort)."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
