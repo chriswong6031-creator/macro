@@ -10,6 +10,9 @@ Coverage:
   4. accruing-status gating: scorecard() returns status='accruing' when fewer than
      MIN_IC_DATES matured dates with ≥ MIN_NAMES_PER_DATE names exist.
   5. scored-status gate clears correctly once the minimum IC dates threshold is met.
+  6. CN-port stamp columns (washout_2w / extended, nullable bool) round-trip through
+     the parquet store, default to NA when omitted, and merge cleanly with prior
+     frames written under the pre-stamp 10-column schema.
 """
 from __future__ import annotations
 
@@ -388,7 +391,90 @@ class TestAccruingStatusGating:
 
 
 # ---------------------------------------------------------------------------
-# 6. Helpers
+# 6. CN-port stamp columns (washout_2w / extended)
+# ---------------------------------------------------------------------------
+class TestPortStamps:
+    def test_stamps_round_trip(self, tmp_path, monkeypatch):
+        """washout_2w / extended passed to append_board must persist to parquet
+        and read back as nullable bools."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [
+            {"ticker": "0700.HK", "group": "entry_open", "edge_z": 1.5,
+             "close_asof": 380.0, "washout_2w": True, "extended": False},
+            {"ticker": "0005.HK", "group": "watch", "edge_z": 0.2,
+             "close_asof": 62.0, "washout_2w": False, "extended": True},
+        ]
+        n = bl.append_board(calls, "HK", asof="2026-07-10")
+        assert n == 2
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        assert "washout_2w" in df.columns and "extended" in df.columns
+        assert str(df["washout_2w"].dtype) == "boolean"
+        assert str(df["extended"].dtype) == "boolean"
+
+        r_tencent = df[df["ticker"] == "0700.HK"].iloc[0]
+        assert r_tencent["washout_2w"] == True   # noqa: E712 — pd.BooleanDtype scalar
+        assert r_tencent["extended"] == False    # noqa: E712
+        r_hsbc = df[df["ticker"] == "0005.HK"].iloc[0]
+        assert r_hsbc["washout_2w"] == False     # noqa: E712
+        assert r_hsbc["extended"] == True        # noqa: E712
+
+    def test_stamps_default_na_when_omitted(self, tmp_path, monkeypatch):
+        """Callers that don't pass the stamps (e.g. the CA builder) must still work,
+        with the columns stored as NA ('not stamped'), not False."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [{"ticker": "RY.TO", "group": "entry_open", "edge_z": 1.1,
+                  "close_asof": 140.0}]
+        n = bl.append_board(calls, "CA", asof="2026-07-10")
+        assert n == 1
+
+        df = pd.read_parquet(tmp_path / "ca_board.parquet")
+        assert "washout_2w" in df.columns and "extended" in df.columns
+        assert pd.isna(df["washout_2w"].iloc[0])
+        assert pd.isna(df["extended"].iloc[0])
+
+    def test_merge_with_legacy_prior_frame(self, tmp_path, monkeypatch):
+        """A prior parquet written under the pre-stamp 10-column schema must merge
+        with a stamped append: no column dropped, legacy rows NA, new rows valued,
+        keep-FIRST still enforced."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        legacy_cols = [c for c in bl._SCHEMA if c not in bl._PORT_STAMPS]
+        legacy = pd.DataFrame([{
+            "date": "2026-07-09", "market": "HK", "ticker": "0001.HK",
+            "board_pos": 1, "group": "entry_open", "edge_z": 1.0,
+            "gate_tier": "T1", "align_tier": "aligned",
+            "entry_state": "open", "close_asof": 50.0,
+        }])[legacy_cols]
+        (tmp_path / "hk_board.parquet").parent.mkdir(parents=True, exist_ok=True)
+        legacy.to_parquet(tmp_path / "hk_board.parquet", index=False)
+
+        calls = [
+            # duplicate of the legacy (date, ticker) — keep-FIRST must preserve legacy row
+            {"ticker": "0001.HK", "group": "watch", "washout_2w": True, "extended": True},
+            {"ticker": "0002.HK", "group": "entry_open", "washout_2w": True, "extended": False},
+        ]
+        # same date as legacy for the dup; the new name lands too
+        n = bl.append_board(calls, "HK", asof="2026-07-09")
+        assert n == 2
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        assert set(bl._SCHEMA).issubset(df.columns)
+
+        legacy_row = df[df["ticker"] == "0001.HK"].iloc[0]
+        assert legacy_row["group"] == "entry_open"        # keep-FIRST: legacy wins
+        assert pd.isna(legacy_row["washout_2w"])          # never backfilled
+        assert pd.isna(legacy_row["extended"])
+
+        new_row = df[df["ticker"] == "0002.HK"].iloc[0]
+        assert new_row["washout_2w"] == True              # noqa: E712
+        assert new_row["extended"] == False               # noqa: E712
+
+
+# ---------------------------------------------------------------------------
+# 7. Helpers
 # ---------------------------------------------------------------------------
 class TestHelpers:
     def test_float_or_none(self):
@@ -397,6 +483,14 @@ class TestHelpers:
         assert bl._float_or_none(float("nan")) is None
         assert bl._float_or_none(float("inf")) is None
         assert bl._float_or_none("bad") is None
+
+    def test_bool_or_none(self):
+        assert bl._bool_or_none(True) is True
+        assert bl._bool_or_none(False) is False
+        assert bl._bool_or_none(1) is True
+        assert bl._bool_or_none(None) is None
+        assert bl._bool_or_none(float("nan")) is None
+        assert bl._bool_or_none(pd.NA) is None
 
     def test_excess(self):
         assert bl._excess(0.1, 0.05) == pytest.approx(0.05)

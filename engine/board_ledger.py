@@ -52,6 +52,11 @@ gate_tier     str|None   T1 | T2 | T3 | T4 | None  (confluence gate tier)
 align_tier    str|None   'aligned' | 'near' | None
 entry_state   str|None   e.g. 'open' | 'pullback' | 'wait' | None
 close_asof    float|None closing price on render date
+washout_2w    bool|None  CN-port stamp (§5.3): 2W-FRI StochRSI washout-reclaim held at
+                         render. Log-and-grade only — never a rank input. None = not stamped
+                         (caller predates the port or doesn't compute it).
+extended      bool|None  CN-port stamp (§5.3): extension read in {stretched, parabolic}.
+                         Log-and-grade only. None = not stamped.
 """
 from __future__ import annotations
 
@@ -82,7 +87,12 @@ MIN_NAMES_PER_DATE = 5
 _SCHEMA = [
     "date", "market", "ticker", "board_pos", "group",
     "edge_z", "gate_tier", "align_tier", "entry_state", "close_asof",
+    "washout_2w", "extended",
 ]
+
+# Optional CN-port stamp columns — nullable bool ('boolean' dtype in the store).
+# None means 'not stamped' (distinct from False = 'computed, absent').
+_PORT_STAMPS = ("washout_2w", "extended")
 
 
 def _store_path(market: str) -> Path:
@@ -109,6 +119,8 @@ def append_board(
         align_tier    — 'aligned'/'near'/None
         entry_state   — e.g. 'open'/'pullback'/'wait'/None
         close_asof    — today's close (float, optional)
+        washout_2w    — CN-port stamp (bool, optional; None if omitted)
+        extended      — CN-port stamp (bool, optional; None if omitted)
 
     Keep-FIRST per (date, ticker): a price already stamped for a given date is
     never overwritten — point-in-time integrity.
@@ -134,6 +146,8 @@ def append_board(
             "align_tier": c.get("align_tier") or None,
             "entry_state": c.get("entry_state") or None,
             "close_asof": _float_or_none(c.get("close_asof")),
+            "washout_2w": _bool_or_none(c.get("washout_2w")),
+            "extended": _bool_or_none(c.get("extended")),
         })
     if not rows:
         return 0
@@ -143,12 +157,19 @@ def append_board(
         p.parent.mkdir(parents=True, exist_ok=True)
         if p.exists():
             prior = pd.read_parquet(p)
-            # keep all columns if schema has evolved (forward-compat)
-            combined = pd.concat([prior, new], ignore_index=True)
+            # union schema: prior frames may predate the optional stamp columns (and may
+            # carry legacy extras) — reindex both sides so concat never drops a column
+            cols = list(dict.fromkeys([*_SCHEMA, *prior.columns]))
+            combined = pd.concat(
+                [prior.reindex(columns=cols), new.reindex(columns=cols)],
+                ignore_index=True,
+            )
             # keep-FIRST per (date, ticker) — honesty: stamp is immutable once written
             combined = combined.drop_duplicates(subset=["date", "ticker"], keep="first")
         else:
             combined = new
+        for col in _PORT_STAMPS:
+            combined[col] = combined[col].astype("boolean")
         combined.to_parquet(p, index=False)
         return int(len(combined))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
@@ -466,6 +487,16 @@ def _float_or_none(v) -> float | None:
     try:
         f = float(v)
         return f if np.isfinite(f) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _bool_or_none(v) -> bool | None:
+    """Coerce to bool, preserving None/NaN/pd.NA as None ('not stamped')."""
+    try:
+        if v is None or pd.isna(v):
+            return None
+        return bool(v)
     except (TypeError, ValueError):
         return None
 
