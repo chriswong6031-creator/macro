@@ -154,6 +154,94 @@
   }
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
+  /* ---- W3.9: FX-decomposition UX (INTL/country page only) ----------------
+     The country card's PRIMARY chart/position is now the LOCAL-currency equity
+     cycle (the engine promotes the local record to the top-level fields, so the
+     card renders it with zero structural change).  These helpers add, INTL-only:
+       · a currency-glyph chip when the latest turn was currency-driven (fx_flag),
+       · a "USD view" link chip (the USD ETF cycle lives in the drawer),
+       · a per-turn currency glyph on the flagged cycle legs,
+       · a per-country DRAWER: the FX cycle leg + the local-vs-USD divergence.
+     Every string is bilingual via L(); nothing here runs on US/China (IS_INTL). */
+  var CUR_GLYPH = "₵";   // generic currency glyph for a currency-driven turn badge
+  function hasFx(s) { return IS_INTL && s && s.fx && s.fx.pair; }           // decomposed single-country
+  function lcSourceLabel(s) {
+    return s.lc_source === "native" ? L("native index", "本地指数")
+      : s.lc_source === "synthetic" ? L("ETF ÷ FX", "ETF ÷ 汇率") : "";
+  }
+  // one-glance card chip: fires when the MOST RECENT local turn was >60% currency.
+  function fxCardChip(s) {
+    if (!hasFx(s) || !s.now || !s.now.fx_driven_last) return "";
+    var pct = s.now.fx_share_last != null ? Math.round(s.now.fx_share_last * 100) : null;
+    var tip = pct != null
+      ? L("currency drove " + pct + "% of this USD move", "货币驱动了此美元波动的 " + pct + "%")
+      : L("last turn was currency-driven", "上次拐点由货币驱动");
+    return '<span class="cc-fx" title="' + esc(tip) + '">' + CUR_GLYPH + " " +
+      L("FX-driven", "汇率驱动") + '</span>';
+  }
+  // small "USD view" pill in the detail head — the USD ETF cycle is disclosed in the drawer.
+  function usdViewChip(s) {
+    if (!hasFx(s) || !s.usd_record) return "";
+    return '<span class="cc-usdview" title="' +
+      esc(L("This card shows the LOCAL-currency equity cycle. See the FX drawer for the USD-ETF view.",
+            "本卡显示本地货币股票周期。美元 ETF 视图见汇率抽屉。")) + '">' +
+      L("Local · USD view ↓", "本地 · 美元视图 ↓") + '</span>';
+  }
+  // per-country FX drawer: currency-cycle leg + local-vs-USD honesty delta + peg note.
+  function fxDrawerHTML(s) {
+    if (!hasFx(s)) return "";
+    var fx = s.fx, ur = s.usd_record, nw = s.now;
+    var rows = [];
+    // 1) basis line — which local tape this card runs on.
+    rows.push('<div class="f"><div class="fk">' + L("Local basis", "本地基准") +
+      '</div><div class="fv">' + lcSourceLabel(s) + '</div></div>');
+    // 2) the FX currency-cycle read (same kernel on the FX pair).
+    if (fx.cycle_pos != null) {
+      var fxPhase = fx.cycle_phase ? (PHASE_LAB[fx.cycle_phase] ? L(PHASE_LAB[fx.cycle_phase][0], PHASE_LAB[fx.cycle_phase][1]) : fx.cycle_phase) : "";
+      rows.push('<div class="f"><div class="fk">' + fx.pair + ' ' + L("cycle", "周期") +
+        '</div><div class="fv">' + Math.round(fx.cycle_pos) + '/100' + (fxPhase ? ' · ' + fxPhase : '') + '</div></div>');
+    }
+    if (fx.leg_return_252d != null) {
+      rows.push('<div class="f"><div class="fk">' + fx.pair + ' ' + L("1y", "1年") +
+        '</div><div class="fv">' + (fx.leg_return_252d >= 0 ? "+" : "") + fx.leg_return_252d + '%</div></div>');
+    }
+    // 3) local-vs-USD divergence — the honesty delta.
+    if (ur && ur.now && nw && nw.pos_v2 != null && ur.now.pos_v2 != null) {
+      var d = Math.round((nw.pos_v2 - ur.now.pos_v2) * 10) / 10;
+      rows.push('<div class="f"><div class="fk">' + L("Local vs USD position", "本地 vs 美元位置") +
+        '</div><div class="fv">' + Math.round(nw.pos_v2) + ' vs ' + Math.round(ur.now.pos_v2) +
+        ' (' + (d >= 0 ? "+" : "") + d + ')</div></div>');
+    }
+    // 4) peg annotation (HKD).
+    var peg = fx.peg;
+    var pegLine = peg ? ('<div class="cc-fx-peg">' +
+      L("Hard peg " + peg.band + " · ", "硬挂钩 " + peg.band + " · ") +
+      (peg.in_band ? L("in band", "在区间内") : L("OUT of band", "超出区间")) +
+      ' (' + (peg.dist_bps >= 0 ? "+" : "") + peg.dist_bps + ' bps)</div>') : "";
+    return '<div class="cyc-grp cyc-grp-3 cc-fx-drawer">' +
+      '<div class="cyc-lbl">' + CUR_GLYPH + " " + L("Currency decomposition", "货币拆分") + '</div>' +
+      '<p class="cc-fx-intro">' +
+        L("This card runs on the LOCAL-currency equity cycle so the currency move doesn't masquerade as an equity turn. The USD-ETF cycle (a US investor's raw experience) and the currency's own cycle are broken out here.",
+          "本卡基于本地货币股票周期，以免货币波动被误当作股票拐点。此处拆出美元 ETF 周期（美国投资者的原始体验）与货币自身的周期。") +
+      '</p>' +
+      '<div class="cyc-facts">' + rows.join("") + '</div>' +
+      pegLine +
+      '<p class="cc-fx-note">' + fxNote(s) + '</p>' +
+    '</div>';
+  }
+  // an honest one-liner about the latest currency-driven turn, if any.
+  function fxNote(s) {
+    if (!s.now || !s.now.fx_driven_last) {
+      return L("Recent turns were mostly equity-driven (currency < 60% of the USD move).",
+               "近期拐点主要由股票驱动（货币占美元波动不足 60%）。");
+    }
+    var pct = s.now.fx_share_last != null ? Math.round(s.now.fx_share_last * 100) : null;
+    return pct != null
+      ? L("⚠ The latest turn was currency-driven: the currency drove " + pct + "% of the USD move.",
+          "⚠ 最近一次拐点由货币驱动：货币占美元波动的 " + pct + "%。")
+      : L("⚠ The latest turn was currency-driven.", "⚠ 最近一次拐点由货币驱动。");
+  }
+
   /* ---- y-scaling: price (rebased, log/linear) vs cycle position (0–100) --- */
   function yval(v) { return state.mode === "osc" ? v : (state.scale === "log" ? log10(v) : v); }
 
@@ -828,7 +916,7 @@
         '<div class="cc-top">' +
           '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + nm(s) + '</div>' +
           '<div class="cc-px">' + pxLine + '</div></div></div>' +
-          '<div class="cc-tags"><div class="cc-phase" style="--ph:' + phaseHue(nw.phase) + '">' + phaseLabel(s) + '</div>' + stanceTag + divTag + sigHTML + '</div>' +
+          '<div class="cc-tags"><div class="cc-phase" style="--ph:' + phaseHue(nw.phase) + '">' + phaseLabel(s) + '</div>' + stanceTag + divTag + sigHTML + fxCardChip(s) + '</div>' +
         '</div>' +
         '<div class="cc-spark"></div>' +
         '<div class="cc-meta">' +
@@ -1152,6 +1240,7 @@
             '<span class="cyc-pchip" style="--ph:' + (ph.hue || "var(--muted)") + '">' + phaseLabel(s) + '</span>' +
             stanceHTML(nw) +
             '<span class="cyc-tchip ' + tilt.cls + '">' + tilt.ar + ' ' + L(tilt.lab[0], tilt.lab[1]) + '</span>' +
+            usdViewChip(s) +
           '</div>' +
           divergenceHTML(nw, { full: true }) +
         '</div>' +
@@ -1175,6 +1264,7 @@
         forecastCardHTML(s) +
       '</div>' +
       dnaHTML(s) +
+      fxDrawerHTML(s) +
       pathwayHTML(s) +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Cycle legs — tap for the story", "周期区段 — 点击查看故事") + '</div>' +
@@ -1191,8 +1281,15 @@
       var verb = g.dir === "up" ? L("Rally", "上涨") : L("Selloff", "下跌");
       var dt = fmtMon(g.start.t) + " → " + fmtMon(g.end.t);
       var title = g.narr && nz(g.narr, "title") ? nz(g.narr, "title") : (verb + " " + (g.mag != null ? sign + g.mag + "%" : ""));
+      // W3.9: a currency glyph on the leg whose END turn was >60% currency-driven — so a
+      // yen-crash "trough" never reads as a Japanese-equity trough without the disclosure.
+      var fxBadge = (hasFx(s) && g.end && g.end.fx_flag)
+        ? ('<span class="sc-leg-fx" title="' +
+            esc(L("currency drove " + Math.round((g.end.fx_share || 0) * 100) + "% of this USD move",
+                  "货币占此美元波动的 " + Math.round((g.end.fx_share || 0) * 100) + "%")) + '">' + CUR_GLYPH + '</span>')
+        : "";
       return '<div class="sc-leg" role="button" tabindex="0" data-i="' + g.i + '" style="--c:' + s.accent + ';--lc:' + lc + '">' +
-        '<span class="sc-leg-k ' + g.dir + '">' + verb + '</span>' +
+        '<span class="sc-leg-k ' + g.dir + '">' + verb + fxBadge + '</span>' +
         '<span class="sc-leg-t">' + title + ' <span class="sc-leg-dt">· ' + dt + '</span></span>' +
         '<span class="sc-leg-m">' + (g.mag != null ? sign + g.mag + "%" : "") + '</span>' +
         '<div class="sc-leg-body" data-body="' + g.i + '" style="grid-column:1/-1">' + legBody(g) + '</div>' +

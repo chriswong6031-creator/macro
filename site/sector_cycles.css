@@ -186,6 +186,25 @@ html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
 .cc-diverge-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 8px; }
 .cc-diverge-note { font-size: 12px; color: var(--muted); line-height: 1.4; flex: 1 1 200px; min-width: 0; }
 
+/* ---- W3.9: FX-decomposition chips + drawer (INTL/country page only) ------ */
+/* currency-driven card chip: a cyan "FX-driven" pill when the latest turn was
+   >60% currency — the one-glance "don't read this USD move as an equity turn" flag. */
+.cc-fx { font-size: 10.5px; font-weight: 800; letter-spacing: .04em; padding: 2px 8px;
+  border-radius: 6px; line-height: 1.45; white-space: nowrap; color: var(--cyan, #38bdf8);
+  background: color-mix(in srgb, var(--cyan, #38bdf8) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cyan, #38bdf8) 45%, var(--line)); }
+/* "USD view" pill in the focus head — the USD-ETF cycle lives in the FX drawer below. */
+.cc-usdview { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; padding: 2px 8px;
+  border-radius: 6px; line-height: 1.45; white-space: nowrap; color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 8%, transparent); border: 1px solid var(--line); }
+/* per-leg currency glyph — sits next to the Rally/Selloff verb on flagged legs. */
+.sc-leg-fx { margin-left: 5px; font-weight: 800; color: var(--cyan, #38bdf8);
+  font-size: 12px; cursor: help; }
+/* the drawer body. */
+.cc-fx-drawer .cc-fx-intro { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin: 4px 0 10px; }
+.cc-fx-drawer .cc-fx-note { font-size: 12.5px; color: var(--text); line-height: 1.5; margin: 10px 0 0; }
+.cc-fx-peg { font-size: 12px; font-weight: 650; color: var(--warn); margin: 8px 0 0; }
+
 /* keep the detail underbar a stable height so clicking a scorecard (which swaps the
    default↔focus panel above it) never shifts the page / the cards below it */
 @media (min-width: 881px) { .sc-page .cyc-detail { min-height: 366px; } }
