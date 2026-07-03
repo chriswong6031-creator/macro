@@ -31,7 +31,9 @@ Eastmoney backend degrades to the last good snapshot instead of dropping the sig
 """
 from __future__ import annotations
 
+import json
 import logging
+from datetime import date as _date
 import time
 
 import numpy as np
@@ -145,11 +147,44 @@ def fetch_snapshot(*, persist: bool = True, retries: int = 4, timeout: int = 25,
     return df
 
 
+
+def _write_gap_audit(all_dates: list) -> None:
+    """Write a gap-detection tripwire JSON to ``data/hk_southbound/backfill_gap_audit.json``.
+
+    Flags any gap >3 business days between consecutive captured HOLD_DATEs.  Verdict is
+    ``"OK"`` when no such gap exists, ``"GAPS_DETECTED"`` otherwise.  Called after every
+    successful ``_persist`` write so the tripwire stays current.
+    """
+    try:
+        dates_sorted = sorted(str(d)[:10] for d in all_dates if d)
+        gaps = []
+        for i in range(1, len(dates_sorted)):
+            d0 = dates_sorted[i - 1]
+            d1 = dates_sorted[i]
+            bd = int(np.busday_count(d0, d1))
+            if bd > 3:
+                gaps.append({"from": d0, "to": d1, "bdays": bd})
+        audit = {
+            "updated": str(_date.today()),
+            "n_dates": len(dates_sorted),
+            "earliest": dates_sorted[0] if dates_sorted else None,
+            "latest": dates_sorted[-1] if dates_sorted else None,
+            "n_gaps": len(gaps),
+            "gaps": gaps,
+            "verdict": "GAPS_DETECTED" if gaps else "OK",
+        }
+        path = _store_path().parent / "backfill_gap_audit.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(audit, indent=2))
+    except Exception as e:  # noqa: BLE001 -- tripwire write must never break collect
+        log.debug("hk_southbound gap audit write skipped (%s)", e)
+
+
 def _persist(df: pd.DataFrame) -> None:
     """Append the snapshot long-form to ``data/hk_southbound/holdings.parquet`` keyed by
     (date, ticker), keeping prior dates — a per-name flow history accrues over time.
     Best-effort: a write failure never breaks the build (the signal still uses the
-    in-memory snapshot)."""
+    in-memory snapshot). After each successful write, updates the gap-detection tripwire."""
     try:
         path = _store_path()
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -162,8 +197,10 @@ def _persist(df: pd.DataFrame) -> None:
                 merged = new.combine_first(old)
                 merged = merged[~merged.index.duplicated(keep="first")].sort_index()
                 merged.to_parquet(path)
+                _write_gap_audit(list(merged.index.get_level_values("date").unique()))
                 return
         new.to_parquet(path)
+        _write_gap_audit(list(new.index.get_level_values("date").unique()))
     except Exception as e:  # noqa: BLE001 — persistence is additive, never fatal
         log.debug("hk_southbound persist skipped (%s)", e)
 
