@@ -166,9 +166,18 @@ def trust_tier(market: str, gate_go: bool = False) -> dict:
         return {"tier": "reversal", "en": "Reversal context — validated but high-variance, not a buy list",
                 "zh": "均值回归参考 — 已验证但高波动，非买入清单", "css": "tt-reversal"}
     if m == "CA":
-        # no event feeds on the TSX -> residual-momentum prior, never claimed as validated.
-        return {"tier": "context", "en": "Residual-momentum prior — unvalidated, not a standalone edge",
-                "zh": "残差动量先验 — 未验证，非独立超额收益", "css": "tt-context"}
+        # SEDI insider is collected and displayed, accruing toward validation (~2028);
+        # residual-momentum prior is unvalidated pending Phase-0 C7 keystone test.
+        return {"tier": "context",
+                "en": (
+                    "SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; "
+                    "residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)"
+                ),
+                "zh": (
+                    "SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；"
+                    "残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）"
+                ),
+                "css": "tt-context"}
     if m == "INTL":
         # no ex-US event feeds either -> same residual-momentum prior as the TSX.
         return {"tier": "context", "en": "Residual-momentum prior (ex-US) — unvalidated, not a standalone edge",
