@@ -301,9 +301,10 @@ def test_gdelt_series_to_dict():
 
 def test_gdelt_update_no_network(tmp_path, monkeypatch):
     """update() returns existing df gracefully when GDELT returns no records."""
+    # since W5 (#972) _fetch_gdelt returns (records, fetch_status)
     monkeypatch.setattr(
         "engine.missing_tape_gdelt._fetch_gdelt",
-        lambda url, timeout=30: [],
+        lambda url, timeout=30: ([], "empty"),
     )
     from engine.missing_tape_gdelt import update
     df = update(

@@ -178,6 +178,22 @@ def test_renorm_stealth_skips_unavailable():
 # --------------------------------------------------------------------------- #
 # DISPLAY-ONLY firewall (load-bearing)
 # --------------------------------------------------------------------------- #
+def _code_only(p: Path) -> str:
+    """Source minus comments and docstrings (ast round-trip). Prose may CITE the design
+    lineage (basket_breadth_divergence is a within-basket RE-IMPLEMENTATION of the Face-B
+    mechanics — macro#860, no import); any CODE reference — an import, an attribute, or
+    even a dynamic-import string literal (non-docstring strings survive unparse) — trips."""
+    import ast
+    tree = ast.parse(p.read_text())
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            if (node.body and isinstance(node.body[0], ast.Expr)
+                    and isinstance(node.body[0].value, ast.Constant)
+                    and isinstance(node.body[0].value.value, str)):
+                node.body[0].value.value = ""
+    return ast.unparse(tree)
+
+
 def test_firewall_not_referenced_by_scoring_engines():
     """froth_fragility may be referenced ONLY by engine/run.py (wiring) and itself —
     never by any scoring engine. The view-helper lives only in build_site."""
@@ -185,7 +201,7 @@ def test_firewall_not_referenced_by_scoring_engines():
     for p in (ROOT / "engine").glob("*.py"):
         if p.name in allowed:
             continue
-        src = p.read_text()
+        src = _code_only(p)
         assert "froth_fragility" not in src, p.name
         assert "_froth_fragility_view" not in src, p.name
     assert "froth_fragility" in (ROOT / "engine" / "run.py").read_text()   # actually wired
@@ -274,16 +290,17 @@ def test_track_record_empty():
 # Template render smoke + bilingual + absent-when-none
 # --------------------------------------------------------------------------- #
 def _render_card(froth_fragility):
+    # since #757 the card lives inside the merged "Sentiment regime" section
     from jinja2 import Environment, FileSystemLoader
     from engine import i18n
     src = (TEMPLATES / "dashboard.html.j2").read_text()
     macros = src[: src.index("{# coloured")]
-    start = src.index("<!-- ===================== FROTH & FRAGILITY")
-    end = src.index("<!-- ===================== RATE & INFLATION TRANSMISSION")
+    start = src.index("<!-- ===================== SENTIMENT REGIME")
+    end = src.index("<!-- ===================== CROSS-ASSET MACRO")
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
     return env.from_string(macros + src[start:end]).render(
-        froth_fragility=froth_fragility, mode="macro", latest={})
+        froth_fragility=froth_fragility, fear_euphoria=None, mode="macro", latest={})
 
 
 _FF_MIN = {
@@ -312,16 +329,21 @@ _FF_MIN = {
 
 
 def test_render_smoke_bilingual():
+    # the #757 merged card shows headline/quadrant/face scores + forward record;
+    # the per-leg Face A/B tables did not survive the merge (macro_signals is the
+    # full-breakdown page)
     html = _render_card(_FF_MIN)
-    assert 'id="froth-fragility"' in html
+    assert 'id="sentiment-regime"' in html
     assert "Froth & Fragility" in html and "狂热与脆弱" in html       # title both langs
-    assert "Face A" in html and "A 面" in html                       # face labels both langs
     assert "narrowing-top risk" in html and "顶部收窄风险" in html     # quadrant both langs
-    assert "Leadership distribution" in html and "龙头派发" in html    # a scored leg both langs
-    assert "accruing" in html and "积累中" in html                    # display pill both langs
+    assert "Euphoria" in html and "欣喜" in html                     # face-A score row
+    assert "Fragility / distribution" in html and "脆弱／派发" in html # face-B score row
+    assert "accruing" in html and "积累中" in html                    # forward record both langs
+    assert "provisional" in html and "暂定" in html                  # accrual badge both langs
     assert 'class="pos"' not in html and 'class="neg"' not in html   # euphoria not "good"/"bad"
 
 
 def test_render_absent_when_none():
     html = _render_card(None)
-    assert 'id="froth-fragility"' not in html
+    assert 'id="sentiment-regime"' not in html
+    assert "狂热与脆弱" not in html      # (the EN title also sits in the comment marker)

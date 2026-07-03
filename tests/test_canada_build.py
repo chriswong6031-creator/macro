@@ -67,7 +67,11 @@ def test_canada_macro_template_renders():
     assert "XEG.TO" in html                            # sector rotation stays on macro
     assert "TD Bank" not in html                       # standouts moved to the stock dashboard
     assert "canada_stocks.html" in html                # cross-link to the stock dashboard
-    assert "canadastockdata/index.json" in html        # nav search wired
+    # nav search moved into the shared multi-market lib (theme.js) — assert the page
+    # loads it and the lib itself still wires the Canada index
+    assert "theme.js" in html
+    assert "canadastockdata/index.json" in (
+        Path(__file__).resolve().parent.parent / "templates" / "theme.js").read_text()
     assert len(html) > 8000
 
 
@@ -77,7 +81,7 @@ def test_canada_stocks_template_renders():
     assert "TSX Stock Dashboard" in html
     assert "Standout individual stocks" in html
     assert "TD Bank" in html                            # the standout setup renders here
-    assert 'data-showmore="12"' in html                 # the progressive reveal is wired
+    assert 'data-showmore-rows=' in html                # the progressive reveal is wired (#888 row-capped)
     assert "Commodity / CAD" not in html                # overlay hero is macro-only
     assert "Housing & household-debt" not in html       # housing is macro-only
     assert len(html) > 8000

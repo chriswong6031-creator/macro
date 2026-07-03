@@ -6,8 +6,9 @@ the one leading gauge (breadth divergence) was firewalled, and the contract carr
 freshness stamp. These tests lock in the fixes:
 
   • `lead_lag` tags on the five risk gauges (so the bot can discount coincident gauges)
-  • `drawdown_risk` low band relabelled as the unconditional base rate, not a forward
-    all-clear (an 8% read is no longer presented as a measured forward probability)
+  • `drawdown_risk` tagged lagging; since the PIT re-measure (#887, audit #39) its low
+    band is a MEASURED conditional prob BELOW the base rate (~10% vs ~19%), carried with
+    a measured-basis stat_passport — no longer a bare base-rate read
   • `complacency.breadth_div` promoted to a ONE-WAY risk-OFF caution, firewall preserved
   • a `freshness` stamp that flags the Juneteenth-stale 06-18→06-22 window
   • a replay assertion: the 06-22 fragile state no longer prints an unqualified all-clear
@@ -101,28 +102,31 @@ def test_lead_lag_tags_present_on_all_five_gauges() -> None:
     assert dsnap["verdict"] == "calm"          # the labeling did not change the verdict
 
 
-# --- drawdown_risk: low band is the base rate, not a forward all-clear --------
+# --- drawdown_risk: low band is a measured prob below base, still tagged lagging ---
 def test_drawdown_low_band_is_flagged_base_rate_not_forward_prob() -> None:
     # the gauge needs ~570+ rows to populate (5y z-lookback + 10y expanding pctile)
     dr = conditions_snapshot(_frame(700))["drawdown_risk"]
     assert dr["band"] == "low"
     assert dr["lead_lag"] == "lagging"
-    assert dr["is_base_rate"] is True
-    assert dr["dd10_prob_informative"] is False
-    # the honesty invariant: in the low band the "probability" == the base rate
-    assert dr["dd10_prob_pct"] == dr["base_rate_pct"] == 8
+    # since #887 the low band no longer equals base: it is a measured conditional
+    # probability BELOW the base rate (PIT frame, claims leg), so the base-rate
+    # relabel is retired — the honesty now travels via the measured stat_passport.
+    assert dr["is_base_rate"] is False
+    assert dr["dd10_prob_informative"] is True
+    assert dr["dd10_prob_pct"] < dr["base_rate_pct"]
+    assert dr["stat_passport"]["basis"] == "measured"
     assert "lagging" in dr["label"].lower()
     assert dr["label_zh"]                        # bilingual label present
     assert "macro/credit" in dr["basis"].lower()
 
 
 def test_drawdown_band_flags_are_internally_consistent() -> None:
-    """is_base_rate and dd10_prob_informative must mirror the band on any frame."""
-    for f in (_frame(), _fragile_frame()):
+    """is_base_rate is retired (always False); dd10_prob_informative mirrors band presence."""
+    for f in (_frame(), _fragile_frame(), _frame(700)):
         dr = conditions_snapshot(f)["drawdown_risk"]
         band = dr["band"]
-        assert dr["is_base_rate"] == (band == "low")
-        assert dr["dd10_prob_informative"] == (band is not None and band != "low")
+        assert dr["is_base_rate"] is False
+        assert dr["dd10_prob_informative"] == (band is not None)
 
 
 def test_drawdown_elevated_band_marks_probability_informative() -> None:
@@ -217,14 +221,17 @@ def _replay_0622_frame(n: int = 700) -> pd.DataFrame:
 def test_replay_0622_does_not_print_unqualified_all_clear() -> None:
     """Acceptance: replaying the 2026-06-22 state, the coincident/lagging gauges still
     read calm — but the contract is no longer an unqualified all-clear. (a) drawdown_risk
-    is tagged lagging with its low read flagged as the base rate (not a forward 8%), and
-    (b) the leading breadth-divergence caution fires."""
+    is tagged lagging and its low read is a measured conditional prob below base with a
+    measured-basis passport (post-#887), and (b) the leading breadth-divergence caution
+    fires."""
     snap = conditions_snapshot(_replay_0622_frame())
     dr, comp = snap["drawdown_risk"], snap["complacency"]
     # (a) the lagging gauge no longer masquerades as a forward all-clear
     assert dr["band"] == "low"
     assert dr["lead_lag"] == "lagging"
-    assert dr["is_base_rate"] is True and dr["dd10_prob_informative"] is False
+    assert dr["is_base_rate"] is False and dr["dd10_prob_informative"] is True
+    assert dr["dd10_prob_pct"] < dr["base_rate_pct"]
+    assert dr["stat_passport"]["basis"] == "measured"
     # (b) at least one honest caution is raised even while the surface reads calm
     assert comp["breadth_div"] is True and comp["caution"] is True
     # and the contract that day is stale-flagged through the holiday window
