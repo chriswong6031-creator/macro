@@ -67,6 +67,9 @@
   .ms-chip.ms-hedge { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
   .ms-chip.ms-negative { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .ms-chip.ms-tier-low { color:var(--muted); }
+  /* W0c gov-exposure band tints (bare .warn/.muted carry no color rule in this scope) */
+  .ms-chip.muted, .macro-sens .muted { color:var(--muted); }
+  .ms-chip.warn, .macro-sens .warn { color:#d69e2e; border-color:color-mix(in srgb,#d69e2e 40%,transparent); }
   .macro-sens .ms-cav { margin:6px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
   /* alt-data convergence chip reuses .macro-sens chrome; tier sets the accent */
   .macro-sens.ad-tier-high { border-left-color:#e0607a; }

@@ -88,12 +88,19 @@ class TestFundingToMktcap:
         assert r["contracts_ttm"] is not None
         assert r["grants_ttm"] is not None
 
-    def test_notable_band(self):
+    def test_heavy_band(self):
         obs = _make_obligations(["HII"], months=14, value=1e9)
-        mkt = {"HII": 80e9}   # ~80B → ratio ~15% → heavy; use small mktcap
+        mkt = {"HII": 80e9}   # 12B TTM / 80B → 15% → heavy
         r = funding_to_mktcap("HII", obs, None, mkt)
         assert r is not None
         assert r["band"] == "heavy"
+
+    def test_notable_band(self):
+        obs = _make_obligations(["HII"], months=14, value=1e9)
+        mkt = {"HII": 240e9}  # 12B TTM / 240B → 5% → notable (2% <= r < 10%)
+        r = funding_to_mktcap("HII", obs, None, mkt)
+        assert r is not None
+        assert r["band"] == "notable"
 
     def test_none_on_missing_ticker(self):
         obs = _make_obligations(["LMT"], months=14)
@@ -251,15 +258,22 @@ class TestSpenderCapexBurden:
             assert burden is not None, f"{tkr} should have a burden result"
             assert burden["evidence_tier"] == "fingerprint"
 
-    def test_absent_ticker_returns_none(self):
-        """A spender ticker absent from statements → None, not KeyError/0."""
+    def test_absent_ticker_omitted_and_thin_history_none(self):
+        """Spenders absent from statements are OMITTED (not mapped to 0); a spender
+        PRESENT with fewer than min_years valid cfo rows maps to None (not 0)."""
         empty_df = pd.DataFrame(columns=["ticker", "fy", "cfo", "capex",
                                          "debt_lt", "debt_cur", "cash"])
         result = spender_capex_burden(empty_df, "ai_datacenter")
-        # result dict may be empty if no tickers matched
-        # but if a ticker IS in the result, its value must be None (not 0)
-        for v in result.values():
-            assert v is None
+        assert result == {}   # nothing matched → omitted, never fabricated
+        thin = pd.DataFrame([  # MSFT present but only 2 years (< min_years=3)
+            {"ticker": "MSFT", "fy": 2024, "cfo": 1e11, "capex": 4e10,
+             "debt_lt": 5e10, "debt_cur": 1e10, "cash": 8e10},
+            {"ticker": "MSFT", "fy": 2025, "cfo": 1.2e11, "capex": 6e10,
+             "debt_lt": 5e10, "debt_cur": 1e10, "cash": 7e10},
+        ])
+        result = spender_capex_burden(thin, "ai_datacenter")
+        assert "MSFT" in result
+        assert result["MSFT"] is None   # thin history → None, never 0
 
     def test_unknown_chain_returns_empty(self):
         df = pd.DataFrame()
