@@ -124,18 +124,21 @@ def test_oil_chip_off_when_regime_off():
     assert out[0]["oil_tailwind"] is False
 
 
-def test_lead_sentence_mechanism_first():
+def test_lead_sentence_plain_driver_and_entry():
+    # the lead is now a plain-English one-liner: the main driver + when to buy.
     overlay_on = {"factors": [{"key": "oil", "risk": "on", "z": 1.2}]}
     r = _row("XEG.TO", 1.8, "buy_now",
              sector="Energy",
              factor_beta={"primary": "oil", "primary_label": "Oil", "oil": 1.42},
              insider={"lean": "buying", "distinct_buyers": 2, "window_days": 60})
     lead = _lead_sentence(r, oil_on=_oil_regime_on(overlay_on), zh=False)
-    assert "Oil-beta +1.42 primary driver" in lead
-    assert "tailwind" in lead                       # oil regime tag
-    assert "momentum screen z +1.8 (accruing)" in lead
-    assert "insider cluster 2 buyers/60d" in lead
-    assert "entry: open now" in lead
+    assert "Main driver: Oil" in lead
+    assert "buy now" in lead
+    # the raw beta, momentum-screen z and insider cluster moved to their own chips —
+    # the lead stays jargon-free.
+    assert "primary driver" not in lead
+    assert "momentum screen z" not in lead
+    assert "insider cluster" not in lead
 
 
 def test_lead_sentence_pullback_entry_window():
@@ -143,8 +146,8 @@ def test_lead_sentence_pullback_entry_window():
              buy_zone={"low": 41.20, "high": 42.80},
              factor_beta={"primary": None}, sector="Financials")
     lead = _lead_sentence(r, oil_on=False, zh=False)
-    assert "Financials sector" in lead
-    assert "entry: pullback 41.20–42.80" in lead
+    assert "Main driver: Financials sector" in lead
+    assert "buy on a pullback to $41.20–$42.80" in lead
 
 
 def test_lead_sentence_zh_is_bilingual_and_nonempty():
@@ -152,4 +155,4 @@ def test_lead_sentence_zh_is_bilingual_and_nonempty():
              factor_beta={"primary": "oil", "primary_label": "Oil",
                           "primary_label_zh": "原油", "oil": 0.9})
     zh = _lead_sentence(r, oil_on=True, zh=True)
-    assert "原油" in zh and "动量筛选" in zh
+    assert "原油" in zh and "主要驱动" in zh

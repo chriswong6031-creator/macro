@@ -55,8 +55,8 @@ def _vm() -> dict:
                             "group": "setting_up", "board_pos": 1, "oil_tailwind": False,
                             "insider": {"lean": "buying", "n_buys": 3, "n_sells": 0, "window_days": 180},
                             "earnings": {"next_date": "2026-07-10", "days_to": 7},
-                            "lead_en": "Financials sector · momentum screen z +1.8 (accruing) · entry: wait for weekly trigger",
-                            "lead_zh": "Financials 板块 · 动量筛选 z +1.8（待验证） · 入场：等待周线触发",
+                            "lead_en": "Main driver: Financials sector · wait for the weekly turn",
+                            "lead_zh": "主要驱动：Financials 板块 · 等待周线转向",
                             "entry_signal": {"status": "wait_pullback", "buy_zone": {}}}]},
         "stocks_health": [], "board_health": [],
         "breadth": {"pct_above_50": 62.0, "pct_above_200": 71.0, "nh": 8, "nl": 2,
@@ -104,7 +104,7 @@ def test_canada_stocks_template_renders():
     assert "TD Bank" in html                            # the standout setup renders here
     # Branch B: composite 0-100 chip SUPPRESSED, rank pill + accruing screen badge present
     assert "rankpill" in html and ">#1<" in html
-    assert "momentum-accruing" in html                  # W6 why-now evidence-tag chip (renamed)
+    assert "momentum screen · unproven" in html         # W6 why-now evidence-tag chip (plain-language label)
     assert 'class="nb-cscore' not in html               # composite score chip is gone
     assert 'data-showmore-rows=' in html                # the progressive reveal is wired (#888 row-capped)
     assert "Commodity / CAD" not in html                # overlay hero is macro-only
@@ -112,7 +112,7 @@ def test_canada_stocks_template_renders():
     # ── W6 UX overhaul (§7): consolidated desk-header + accruing track-record panel +
     #    watch/laggard parity strips + why-now evidence chips + entry-window card accent ──
     assert 'class="desk-hdr"' in html                   # ONE "what this desk is / isn't" block
-    assert "Not a validated buy list" in html
+    assert "Not a guaranteed buy list" in html
     assert 'class="trk"' in html and "ACCRUING" in html  # track-record centerpiece (accruing)
     assert "2026-08-24" in html                          # honest first-stable-read date on the panel
     assert 'class="watch-strip"' in html and "CLS.TO" in html   # strong-but-blocked watch strip
