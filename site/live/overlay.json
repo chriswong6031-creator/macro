@@ -1,7 +1,7 @@
 {
   "schema": "live.overlay.v2",
-  "built": "2026-07-03 18:08:09 UTC",
-  "quote_ts_max": "2026-07-03T18:08:09.812383+00:00",
+  "built": "2026-07-03 19:56:13 UTC",
+  "quote_ts_max": "2026-07-03T19:56:14.149087+00:00",
   "stale_after_min": 20.0,
   "max_chg_pct": 35.0,
   "delayed_min": 15,
@@ -17,22 +17,22 @@
     "us": {
       "region": "us",
       "open": true,
-      "local_time": "2026-07-03 14:08 EDT"
+      "local_time": "2026-07-03 15:56 EDT"
     },
     "cn": {
       "region": "cn",
       "open": false,
-      "local_time": "2026-07-04 02:08 CST"
+      "local_time": "2026-07-04 03:56 CST"
     },
     "hk": {
       "region": "hk",
       "open": false,
-      "local_time": "2026-07-04 02:08 HKT"
+      "local_time": "2026-07-04 03:56 HKT"
     },
     "ca": {
       "region": "ca",
       "open": true,
-      "local_time": "2026-07-03 14:08 EDT"
+      "local_time": "2026-07-03 15:56 EDT"
     }
   },
   "market": {
@@ -66,7 +66,7 @@
       "session_open": true,
       "price": 745.76,
       "source": "polygon",
-      "quote_ts": "2026-07-03T18:08:09.812383+00:00",
+      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -95,7 +95,7 @@
       "session_open": true,
       "price": 725.17,
       "source": "polygon",
-      "quote_ts": "2026-07-03T18:08:09.812383+00:00",
+      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -124,7 +124,7 @@
       "session_open": true,
       "price": 94.03,
       "source": "polygon",
-      "quote_ts": "2026-07-03T18:08:09.812383+00:00",
+      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -153,7 +153,7 @@
       "session_open": true,
       "price": 85.52,
       "source": "polygon",
-      "quote_ts": "2026-07-03T18:08:09.812383+00:00",
+      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -182,7 +182,7 @@
       "session_open": true,
       "price": 108.46,
       "source": "polygon",
-      "quote_ts": "2026-07-03T18:08:09.812383+00:00",
+      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -211,7 +211,7 @@
       "session_open": true,
       "price": 79.59,
       "source": "polygon",
-      "quote_ts": "2026-07-03T18:08:09.812383+00:00",
+      "quote_ts": "2026-07-03T19:56:14.149087+00:00",
       "price_basis": "prev",
       "stale": true,
       "age_min": 0.0,
@@ -243,7 +243,7 @@
       "quote_ts": "2026-07-03T16:59:58+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 68.2,
+      "age_min": 176.3,
       "stale_reason": "feed stale during RTH",
       "baseline_asof": "2026-07-02",
       "tech": {
@@ -272,7 +272,7 @@
       "quote_ts": "2026-07-03T16:59:59+00:00",
       "price_basis": "regular",
       "stale": true,
-      "age_min": 68.2,
+      "age_min": 176.3,
       "stale_reason": "feed stale during RTH",
       "baseline_asof": "2026-07-02",
       "tech": {
@@ -296,34 +296,34 @@
       "ticker": "BTC-USD",
       "region": "us",
       "session_open": true,
-      "price": 62081.89,
+      "price": 62173.95,
       "source": "yahoo",
-      "quote_ts": "2026-07-03T18:07:53+00:00",
+      "quote_ts": "2026-07-03T19:56:11+00:00",
       "price_basis": "regular",
-      "delay_min": 0.3,
+      "delay_min": 0.1,
       "currency": "USD",
       "stale": false,
-      "age_min": 0.3,
+      "age_min": 0.1,
       "baseline_asof": "2026-07-02",
       "baseline_age_days": 1,
       "baseline_stale": false,
       "prev_close": 60488.98,
-      "chg_pct": 2.63,
+      "chg_pct": 2.79,
       "tech": {
-        "price": 62081.89,
+        "price": 62173.95,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -7.8,
-        "pct_vs_200dma": -17.2,
+        "pct_vs_50dma": -7.6,
+        "pct_vs_200dma": -17.0,
         "rsi14": 47.0,
         "macd_pos": true,
-        "off_52w_high_pct": -45.8
+        "off_52w_high_pct": -45.7
       },
       "divergence": {
         "flag": "within_band",
         "severity": "none",
         "detail": "live move inside the nightly 1-day band",
-        "chg_pct": 2.63,
+        "chg_pct": 2.79,
         "band": [
           null,
           null
