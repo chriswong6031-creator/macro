@@ -47,6 +47,7 @@
         </div>
       </div>
       <div id="cyc-stale-banner"></div>
+      <div id="regime-prior-banner"></div>
       <div class="cyc-groups" id="cyc-groups" aria-label="Group filter"></div>
       <div class="cyc-chips" id="cyc-chips" aria-label="Cycle toggles"></div>
       <div id="cyc-chart" data-h="452" role="img" aria-label="Cross-cycle overlay chart"></div>
@@ -68,12 +69,62 @@
   <div class="cyc-cards" id="cyc-cards"></div>
 </div>
 
+<script src="regimedata/regime_prior.js"></script>
 <script src="cycle_data.js"></script>
 <script src="cycledata/cycle_engine.js"></script>
 <script src="mm_charts.js"></script>
 <script src="cycle_i18n.js"></script>
 <script src="cycle_app.js"></script>
 <script>try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}</script>
+<script>
+/* W4.5 regime-prior reconciliation banner — rendered after all data scripts load.
+   Staleness-only: curated prose (regimeNote) carries no machine-readable regime_claim
+   so contradiction-checking is not yet possible. Banner fires when curated prose asOf
+   is > 30 days old OR when the regime_prior itself is stale/partial.
+   Dual-span EN/zh — no t() in attributes. */
+(function(){
+  try{
+    var host=document.getElementById('regime-prior-banner');
+    if(!host)return;
+    var prior=window.REGIME_PRIOR||{};
+    var meta=window.CYCLE_ENGINE||window.CYCLE_META||{};
+    var lang=(document.documentElement.getAttribute('data-lang')||'').slice(0,2).toLowerCase();
+    var zh=lang==='zh';
+    var msgs=[];
+    // 1. Prior itself stale/partial
+    var ps=prior.status;
+    if(ps==='stale'||ps==='partial'){
+      var sources=prior.sources||{};
+      var staleSrcs=[];
+      for(var k in sources){if(sources[k]&&(sources[k].status==='stale'||sources[k].status==='unavailable'))staleSrcs.push(k);}
+      var enMsg='Regime data is '+ps+' ('+staleSrcs.join(', ')+') — some components may not reflect the latest build.';
+      var zhMsg='体制数据状态为'+ps+'（'+staleSrcs.join('、')+'）——部分组件可能未反映最新构建。';
+      msgs.push({en:enMsg,zh:zhMsg,cls:'stale-amber'});
+    }
+    // 2. Curated prose staleness (>30d from CYCLE_META.asOf or CYCLE_ENGINE.as_of)
+    var curatedAsOf=meta.asOf||meta.as_of||null;
+    if(curatedAsOf){
+      var d=new Date(curatedAsOf+'T00:00:00Z');
+      var daysDiff=Math.round((Date.now()-d.getTime())/86400000);
+      if(daysDiff>30){
+        var cls2=daysDiff>60?'stale-red':'stale-amber';
+        var enMsg2='Regime narrative notes last updated '+curatedAsOf+' ('+daysDiff+'d ago) — may not reflect the live engine ('+((prior.quad||'?')+' '+((prior.liquidity||'')))+ ').';
+        var zhMsg2='体制叙述最后更新于 '+curatedAsOf+'（已 '+daysDiff+' 天）——可能未反映实时引擎读数（当前：'+(prior.quad||'?')+' '+(prior.liquidity||'')+'）。';
+        msgs.push({en:enMsg2,zh:zhMsg2,cls:cls2});
+      }
+    }
+    if(!msgs.length){host.innerHTML='';return;}
+    var html='';
+    msgs.forEach(function(m){
+      html+='<div class="stale-banner '+m.cls+'">'
+        +'<span class="l-en">'+m.en+'</span>'
+        +'<span class="l-zh">'+m.zh+'</span>'
+        +'</div>';
+    });
+    host.innerHTML=html;
+  }catch(e){}
+})();
+</script>
 <script src="theme.js"></script>
 </body>
 </html>
