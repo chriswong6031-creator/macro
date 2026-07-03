@@ -192,6 +192,14 @@ P(dd21 < −8%) = 0.103.
   `conviction.potential` median, IQR, n_members, theme score, label — via
   `engine.signal_archive` at render time. Re-run bar: ≥ 180 archived trading days
   (~9 months → first adequately-powered read ≈ 2027-04), gates in §2 unchanged.
+* **Status 2026-07-03 — accrual WIRED.** `engine/conviction_accrual.py`, called
+  best-effort from all five library builders (`scripts/build_*_library.py`, right
+  after the potential attach + panel scoring). Daily rows land in
+  `data/signal_archive/conviction_{us,china,hk,canada,intl}.parquet` (append-only,
+  keep-first per as-of): per-basket {median, iqr, n, n_total, theme_score, label}
+  + a deduped region roll-up; `theme_asof` records the label vintage (the basket
+  build can be a session behind the library build). Write-only research ledger —
+  `_label()` / `_reco()` / `allocate()` untouched.
 
 ### B3 — `no_edge` (NO-GO; SKIP_D keeps its rationale)
 

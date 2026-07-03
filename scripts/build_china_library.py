@@ -1059,6 +1059,16 @@ def main(alpha: dict | None = None) -> dict | None:
             log.info("china name-score grader: logged %d calls for %s (ledger=%d)", len(_calls), _asof, _n)
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("china name-score grader append failed (%s)", e)
+    # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-
+    # conviction stats (potential median/IQR/n + theme score/label) so the pre-registered
+    # demotion study can run once ≥180 trading days accrue. Write-only ledger, never fatal.
+    try:
+        from engine import conviction_accrual
+        _b2_asof = (alpha or {}).get("as_of")
+        if conviction_accrual.archive_member_conviction("china", profiles, asof=_b2_asof):
+            log.info("B2 conviction accrual: archived conviction_china for %s", _b2_asof)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("B2 conviction accrual (china) failed (%s)", e)
     for safe, rec in to_write:
         rec["view"] = stock_view.build_view(rec, "CN")   # canonical render model (rebuilt below once val/margin land)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))

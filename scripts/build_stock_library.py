@@ -1546,6 +1546,15 @@ def main() -> int:
             log.info("US name-score grader: logged %d calls for %s (ledger=%d)", len(_calls), _asof, _n)
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("US name-score grader append failed (%s)", e)
+    # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-
+    # conviction stats (potential median/IQR/n + theme score/label) so the pre-registered
+    # demotion study can run once ≥180 trading days accrue. Write-only ledger, never fatal.
+    try:
+        from engine import conviction_accrual
+        if conviction_accrual.archive_member_conviction("us", profiles, asof=alpha_asof):
+            log.info("B2 conviction accrual: archived conviction_us for %s", alpha_asof)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("B2 conviction accrual (us) failed (%s)", e)
     for safe, rec in to_write:
         # canonical render model (engine/stock_view) — built AFTER attach_panel_scores so
         # the view's score/band match the final within-market percentile. Additive: the

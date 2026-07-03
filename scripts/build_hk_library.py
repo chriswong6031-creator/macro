@@ -748,6 +748,15 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                                                 asof=str(pd.Timestamp.utcnow().date()))
     except Exception as ex:  # noqa: BLE001 — grading is additive, never fatal
         log.debug("hk name-score grader append failed (%s)", ex)
+    # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-
+    # conviction stats (potential median/IQR/n + theme score/label) so the pre-registered
+    # demotion study can run once ≥180 trading days accrue. Write-only ledger, never fatal.
+    try:
+        from engine import conviction_accrual
+        if conviction_accrual.archive_member_conviction("hk", profiles, asof=as_of):
+            log.info("B2 conviction accrual: archived conviction_hk for %s", as_of)
+    except Exception as ex:  # noqa: BLE001 — additive, never fatal
+        log.warning("B2 conviction accrual (hk) failed (%s)", ex)
 
     # ---- rank by the GATED conviction composite, split buy / watch / laggards ----
     def comp(e: dict) -> float:
