@@ -142,3 +142,5 @@ calibration/ab_risk_gate_divergence.jsonl
 # Per-ticker parquets served from Cloudflare R2 via scripts/publish_r2 --dirs hk_stocks_ext.
 # Committed files in the same dir (_universe.json, _checkpoint.json) are NOT ignored.
 data/hk_stocks_ext/*.parquet
+# (NOT R2) — not regenerable without re-scraping; critical H2a phase-0 evidence.
+# data/hk_shorts/ is intentionally NOT listed here; all files are committed.
