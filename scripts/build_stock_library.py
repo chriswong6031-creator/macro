@@ -1891,6 +1891,20 @@ def main() -> int:
             _cdp8 = _lad8.get("cand_depth_pct")
             if _cdp8 is not None:
                 r["cand_depth_pct"] = _cdp8
+            # W8-B postcross lifecycle chip (BASED/ARMED/SHAKEN) — DISPLAY-ONLY.
+            # W8-A verdict: NO rank power; ships as eligibility+display only; safety:
+            # stop5 -4/-5pp vs stale complement, NI vs FRESH. Additive + never fatal.
+            try:
+                from engine import postcross as _pc
+                _close_pc = (_ext_closes[t].dropna()
+                             if "_ext_closes" in dir() and t in _ext_closes.columns
+                             else None)
+                if _close_pc is not None and len(_close_pc) >= 100:
+                    _pc_state = _pc.postcross(_close_pc)
+                    if _pc_state.get("based"):
+                        r["postcross"] = _pc_state
+            except Exception as _pce:  # noqa: BLE001 — display-only; never fatal
+                pass
         # W6-US fix 8 (cont): log FRESH-BUY rows with shallow depth for US-2 ledger study.
         # Shallow = cand_depth_pct < 5.0% (less than 5% pullback from the pre-cycle high).
         # The live ETN case: off_high=-2.2%, cand_depth_pct likely ~2-3%.

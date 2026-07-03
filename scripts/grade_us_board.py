@@ -205,6 +205,11 @@ def _row_features(r: dict) -> dict:
         # W8 dual-lane fields (forward-ledger strata; None pre-schema)
         "lane":         r.get("lane"),              # 'trend' | 'recovery' | None
         "arbiter_note": r.get("arbiter_note"),      # downgrade reason from W8 arbiter | None
+        # W8-B postcross lifecycle (display-only; None pre-schema)
+        "postcross_based":  bool((r.get("postcross") or {}).get("based")),
+        "postcross_armed":  (r.get("postcross") or {}).get("armed"),   # 'strict'|'net'|None
+        "postcross_shaken": bool((r.get("postcross") or {}).get("shaken")),
+        "postcross_ticks":  _num((r.get("postcross") or {}).get("ticks_since_cross")),
     }
 
 
