@@ -457,10 +457,14 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
         else:
             log.info("CA board ledger: logged %d ranked names for %s (ledger=%d)",
                      len(calls), asof, n)
-        # nightly grade of matured calls — 'accruing' until forward returns exist
+        # nightly grade of matured calls — 'accruing' until forward returns exist. The
+        # track-record PANEL (W6, §7.4) ships in 'accruing' state from day one, so ALWAYS
+        # attach the scorecard (it self-reports status='accruing' with first_read_est until
+        # the MIN_IC_DATES gate is met ≈ 2026-08-24). This is the desk's accountability
+        # centerpiece — it must render honestly-empty, never be absent.
+        setups["board_track"] = board_ledger.scorecard("CA")
         g = board_ledger.grade("CA")
         if g.get("available"):
-            setups["board_track"] = board_ledger.scorecard("CA")
             log.info("CA board ledger: grade n_calls=%s n_graded=%s n_suspended=%s",
                      g.get("n_calls"), g.get("n_graded"), g.get("n_suspended"))
     except Exception as e:  # noqa: BLE001 — fail-open-LOUD (health row + log)
@@ -648,6 +652,13 @@ def main() -> int:
         _src_degraded = [h for h in (vm.get("health") or [])
                          if str(h.get("status", "")).upper() not in ("OK", "FRESH", "HEALTHY", "?")]
         vm["stocks_health"] = _src_degraded + vm["board_health"]
+        # AI-brief doorway (W6 §7.5) — PRESENCE-GUARDED: only expose the link if a Canada
+        # AI-brief page actually exists in the site output. None ships today, so the
+        # template's {% if ca_aibrief_href %} keeps it hidden; the day a CA brief lands
+        # (canada_aibrief.html / aibrief_canada.html) this lights up automatically.
+        vm["ca_aibrief_href"] = next(
+            (n for n in ("canada_aibrief.html", "aibrief_canada.html")
+             if (site / n).exists()), None)
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)

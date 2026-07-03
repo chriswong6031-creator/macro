@@ -194,6 +194,59 @@
   .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:none; }
   .help:hover .tip { display:block; }
   .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
+  /* ===== W6 UX overhaul (§7): desk-header · track-record · watch/laggard strips ===== */
+  /* ONE "what this desk is / isn't" block — replaces the 6× repeated caveat museum. */
+  .desk-hdr { margin:2px 0 12px; padding:11px 14px; border-radius:11px;
+    border:1px solid color-mix(in srgb,var(--link) 26%,var(--line));
+    background:linear-gradient(180deg, color-mix(in srgb,var(--link) 7%,var(--panel)), var(--panel)); }
+  .desk-hdr .dh-is { font-size:13px; font-weight:700; color:var(--text); line-height:1.5; margin:0; }
+  .desk-hdr .dh-isnt { font-size:12px; color:var(--muted); line-height:1.5; margin:5px 0 0; }
+  .desk-hdr .dh-isnt b { color:color-mix(in srgb,var(--warn) 80%,var(--text)); font-weight:700; }
+  /* track-record panel — the accountability centerpiece; ships 'accruing'. */
+  .trk { margin:10px 0 2px; padding:11px 13px; border-radius:11px; border:1px solid var(--line);
+    background:color-mix(in srgb,var(--text) 3%,var(--panel)); }
+  .trk-h { font-size:12px; font-weight:800; letter-spacing:.03em; text-transform:uppercase;
+    color:var(--text); margin:0 0 6px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .trk-badge { font-size:9px; font-weight:800; padding:1px 7px; border-radius:20px; letter-spacing:.04em;
+    border:1px solid color-mix(in srgb,var(--g-cold) 45%,var(--line)); color:var(--g-cold);
+    background:color-mix(in srgb,var(--g-cold) 10%,var(--panel)); }
+  .trk-badge.scored { border-color:color-mix(in srgb,var(--up) 50%,var(--line)); color:var(--up);
+    background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
+  .trk-body { font-size:12.5px; color:var(--text); line-height:1.55; }
+  .trk-note { font-size:11px; color:var(--muted); margin:6px 0 0; }
+  .trk-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin:7px 0 0; }
+  .trk-cell { padding:6px 9px; border-radius:8px; border:1px solid var(--line);
+    background:var(--panel); }
+  .trk-cell .tv { font-size:16px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--text); }
+  .trk-cell .tk { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  /* WATCH strip — strong edge, blocked entry (parity with hk.html.j2). */
+  .watch-strip { margin:14px 0 2px; padding:11px 13px; border-radius:11px;
+    border:1px solid color-mix(in srgb,var(--g-cold) 32%,var(--line));
+    background:color-mix(in srgb,var(--g-cold) 6%,var(--panel)); }
+  .watch-strip .ws-h { font-size:12px; font-weight:800; margin:0 0 7px; text-transform:uppercase;
+    letter-spacing:.04em; color:color-mix(in srgb,var(--g-cold) 78%,var(--text)); }
+  .watch-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:8px; }
+  .watch-grid a { display:block; padding:6px 9px; border-radius:8px; border:1px solid var(--line);
+    background:var(--panel); text-decoration:none; }
+  .watch-grid a.wg-knife { border-color:color-mix(in srgb,var(--down) 34%,var(--line)); }
+  .watch-grid .wg-tk { display:block; font-weight:800; color:var(--text); font-size:12.5px; }
+  .watch-grid .wg-v { display:block; font-size:10.5px; color:var(--muted); line-height:1.35; margin-top:1px; }
+  .wg-knife-chip { display:inline-block; margin-top:4px; font-size:8.5px; font-weight:800; padding:1px 5px;
+    border-radius:6px; color:var(--down); border:1px solid color-mix(in srgb,var(--down) 38%,var(--line));
+    background:color-mix(in srgb,var(--down) 9%,var(--panel)); }
+  .wg-blk-chip { display:inline-block; margin-top:4px; font-size:8.5px; font-weight:800; padding:1px 5px;
+    border-radius:6px; color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 34%,var(--line)); }
+  /* why-now evidence-tag micro-style (§7.4) — colour-codes the chip's evidence tier. */
+  .nb-vchip.ev-accrue { border-style:dashed; }
+  .nb-vchip.ev-oil { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); }
+  .nb-vchip.ev-insider { color:var(--up); border-color:color-mix(in srgb,var(--up) 42%,var(--line));
+    background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
+  .nb-vchip.ev-earn { color:var(--link); border-color:color-mix(in srgb,var(--link) 42%,var(--line));
+    background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
+  /* entry-window state drives the card accent (open-now warm / pullback cool / wait muted). */
+  .card.ent-open { border-left:3px solid var(--up); }
+  .card.ent-pullback { border-left:3px solid var(--g-cold); }
+  .card.ent-wait { border-left:3px solid var(--muted); }
 {% include "_cmd_hero.css.j2" %}
 {% include "_market_state.css.j2" %}
 </style>
@@ -434,8 +487,39 @@
 <div class="panel">
   <h2>{{ t('⚡ Standout TSX names — ripe-list screen', '⚡ 突出的 TSX 个股 — 成熟清单筛选') }}
     {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('cycle-aligned across weekly · 3-day · daily (bottoming, not a falling knife)', '在周线·3日·日线上周期共振（筑底，而非接飞刀）') }}</span>{% endif %}
-    {{ help('Board order (masterplan §5.0 ripe-list contract): hygiene → INCLUDE bottoming-alignment {PRIME, ARMED} → GROUP entry-open before setting-up → RANK within group by the residual-momentum SCREEN z. The 0-100 composite is SUPPRESSED here: the C7 momentum keystone landed ALL-ACCRUE in phase-0 (masterplan §4.1 Branch B), so no validated composite exists to sort by — the small rank pill (#1, #2…) is a within-group order, NOT a probability. The momentum leg is FDR-stable but DSR-short (re-test 2027-01); it is a SCREEN, honestly labeled per card. Timing groups and gates; the screen only ranks within a group. Context, not personalized advice.', '榜单顺序（规划书 §5.0 成熟清单契约）：卫生筛 → 纳入筑底共振 {PRIME, ARMED} → 分组：入场已开启优先于蓄势中 → 组内按残差动量筛选 z 排名。此处 0-100 综合分已抑制：C7 动量关键测试在 Phase-0 全部 ACCRUE（规划书 §4.1 分支 B），无经验证的综合分可排序——小排名徽章（#1、#2…）是组内顺序，而非概率。动量腿通过 FDR 但 DSR 不足（2027-01 复测）；它是筛选器，每张卡片如实标注。时机负责分组与门控；筛选仅在组内排名。仅作背景，非个性化建议。') }}
+    {{ help('Board order (masterplan §5.0 ripe-list contract): hygiene → INCLUDE bottoming-alignment {PRIME, ARMED} → GROUP entry-open before setting-up → RANK within group by the residual-momentum SCREEN z. The small rank pill (#1, #2…) is a within-group order, NOT a probability. See the desk-header block below for what this screen is / isn’t.', '榜单顺序（规划书 §5.0 成熟清单契约）：卫生筛 → 纳入筑底共振 {PRIME, ARMED} → 分组：入场已开启优先于蓄势中 → 组内按残差动量筛选 z 排名。小排名徽章（#1、#2…）是组内顺序，而非概率。此筛选是什么／不是什么，见下方说明块。') }}
   </h2>
+  {# ===== ONE desk-header "what this desk is / isn't" block (§7.2 / §7.3) — consolidates
+     the caveat museum (the old per-page repetitions are DELETED; the tier badge lives on
+     each card). Bilingual. ===== #}
+  <div class="desk-hdr">
+    <p class="dh-is"><span class="l-en">A ripe-list <b>SCREEN</b> ordered by entry-readiness, then an accruing momentum prior (Branch B, phase-0 2026-07) — with a public scoreboard below.</span><span class="l-zh">一份成熟清单<b>筛选</b>：先按入场就绪度排序，再叠加累积中的动量先验（分支 B，Phase-0 2026-07）——下方附公开记分牌。</span></p>
+    <p class="dh-isnt"><span class="l-en">Not a validated buy list. The C7 momentum keystone landed all-ACCRUE in phase-0, so the 0-100 composite is <b>suppressed</b>: the pill is a within-group order, not a probability. The momentum leg is FDR-stable but DSR-short (re-test 2027-01). Timing groups and gates; the screen only ranks within a group. Context, not personalized advice.</span><span class="l-zh">并非经验证的买入清单。C7 动量关键测试在 Phase-0 全部 ACCRUE，故 0-100 综合分<b>已抑制</b>：徽章是组内顺序，而非概率。动量腿通过 FDR 但 DSR 不足（2027-01 复测）。时机负责分组与门控；筛选仅在组内排名。仅作背景，非个性化建议。</span></p>
+  </div>
+  {# ===== TRACK-RECORD panel (§7.4) — the desk's accountability centerpiece. Ships in
+     'accruing' state with the honest first-stable-read date printed on the panel; flips to
+     a scored hit-rate / rank-IC read once ≥5 IC-dates mature (≈ late-Aug 21d). ===== #}
+  {% set trk = setups.board_track %}
+  {% if trk %}
+  <div class="trk">
+    <p class="trk-h">📊 {{ t('Public scoreboard — this board, graded forward', '公开记分牌 — 本榜单前瞻评分') }}
+      {% if trk.status == 'scored' %}<span class="trk-badge scored">{{ t('SCORED', '已评分') }}</span>{% else %}<span class="trk-badge">{{ t('ACCRUING', '累积中') }}</span>{% endif %}
+    </p>
+    {% if trk.status == 'scored' %}
+    {% set h21 = (trk.by_horizon or {})['21d'] if (trk.by_horizon and '21d' in trk.by_horizon) else none %}
+    <div class="trk-body"><span class="l-en">Each nightly board is logged and graded against forward excess return vs the TSX index. Lower rank-IC (more negative) means the board order predicted outperformance.</span><span class="l-zh">每晚榜单均被记录，并按相对 TSX 指数的前瞻超额收益评分。rank-IC 越低（越负）表示榜单顺序越能预测跑赢。</span></div>
+    <div class="trk-grid">
+      <div class="trk-cell"><div class="tv">{{ trk.n_graded if trk.n_graded is not none else '—' }}</div><div class="tk">{{ t('graded calls', '已评分') }}</div></div>
+      {% if h21 and h21.rank_ic is not none %}<div class="trk-cell"><div class="tv">{{ '%+.2f'|format(h21.rank_ic) }}</div><div class="tk">{{ t('21d rank-IC', '21日 rank-IC') }}</div></div>{% endif %}
+      {% if h21 and h21.hit_rate_21d is not none %}<div class="trk-cell"><div class="tv">{{ '%.0f'|format(h21.hit_rate_21d * 100) }}%</div><div class="tk">{{ t('21d buy hit-rate', '21日买入命中率') }}</div></div>{% endif %}
+      {% if trk.n_suspended is not none %}<div class="trk-cell"><div class="tv">{{ trk.n_suspended }}</div><div class="tk">{{ t('suspended (excl.)', '已停牌（剔除）') }}</div></div>{% endif %}
+    </div>
+    {% else %}
+    <div class="trk-body"><span class="l-en">Every nightly board is logged to a forward ledger and will be graded against realized excess return — <b>no cherry-picking, no hindsight</b>. The scoreboard is building in public.</span><span class="l-zh">每晚榜单都会写入前瞻账本，并按实际超额收益评分——<b>不挑样本、不事后诸葛</b>。记分牌正在公开累积。</span></div>
+    <p class="trk-note"><span class="l-en">First stable read ≈ <b>{{ trk.first_read_est or '2026-08-24' }}</b> (needs ≥5 matured 21-day cross-sections). 63-day read ≈ Q4. Until then this panel is honestly empty.</span><span class="l-zh">首次稳定读数 ≈ <b>{{ trk.first_read_est or '2026-08-24' }}</b>（需 ≥5 个成熟的 21 日横截面）。63 日读数 ≈ 四季度。在此之前本面板如实留空。</span></p>
+    {% endif %}
+  </div>
+  {% endif %}
   {# hard freshness gate banner (deliverable 4): tailwind axis suppressed when the
      canada_search panel is >3 trading days staler than the board's own price date. #}
   {% if setups.tailwind_suppressed %}
@@ -452,7 +536,11 @@
     </div>
     {% endif %}
     {% set c = s.conviction %}
-    <div class="card">
+    {# entry-window state drives the card accent (§7.4): open-now warm / pullback cool /
+       wait muted — read from the entry-timing gauge's status. #}
+    {% set _est = (s.entry_signal.status if s.entry_signal else none) %}
+    {% set _ent = 'ent-open' if _est in ['buy_now','partial'] else ('ent-pullback' if _est in ['wait_pullback','buy_soon'] else ('ent-wait' if _est else '')) %}
+    <div class="card {{ _ent }}">
       <div class="row" style="gap:8px">
         {# BRANCH B: composite 0-100 chip is SUPPRESSED; a small rank pill takes its place.
            The pill is a within-group order (#1, #2…), NOT a score/probability. #}
@@ -472,9 +560,14 @@
       </div>
       {# BRANCH-B tier badge line (replaces the composite score): honest one-liner, long
          form in the title tooltip. C1 oil context chip + extension log-and-grade chip. #}
+      {# ── WHY-NOW evidence-tag chips (§7.4): each chip is colour-keyed to its evidence
+         tier (accruing = dashed · oil-regime · insider · earnings-catalyst · extended),
+         with a report-citing tooltip. Context/accruing legs, never rank inputs. ── #}
       <div class="nb-vf" style="margin-top:2px">
-        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。">{{ t('screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)', '筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）') }}</span>
-        {% if s.oil_tailwind %}<span class="nb-vchip vf-up" title="C1 phase-0: oil→XEG is the one ACCRUE (HAC t +2.75, FDR-pass, DSR-short); gold/copper NO-GO. Fires only when the overlay oil factor is risk-on AND this name loads primarily on oil. · C1 Phase-0：油→XEG 是唯一 ACCRUE（HAC t +2.75、通过 FDR、DSR 不足）；金/铜 NO-GO。仅当叠加油因子为风险偏好且该股主要负荷油时触发。">🛢 {{ t('oil regime tailwind — accruing (C1)', '油周期顺风 — 待验证 (C1)') }}</span>{% endif %}
+        <span class="nb-vchip ev-accrue" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。">{{ t('momentum-accruing (FDR-stable, DSR-short; re-test 2027-01)', '动量待验证（通过 FDR、DSR 不足；2027-01 复测）') }}</span>
+        {% if s.oil_tailwind %}<span class="nb-vchip ev-oil" title="C1 phase-0: oil→XEG is the one ACCRUE (HAC t +2.75, FDR-pass, DSR-short; reports/c1-canada-commodity-phase0.md); gold/copper NO-GO. Fires only when the overlay oil factor is risk-on AND this name loads primarily on oil. · C1 Phase-0：油→XEG 是唯一 ACCRUE（HAC t +2.75、通过 FDR、DSR 不足）；金/铜 NO-GO。仅当叠加油因子为风险偏好且该股主要负荷油时触发。">🛢 {{ t('oil-regime — accruing (C1)', '油周期 — 待验证 (C1)') }}</span>{% endif %}
+        {% if s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0 %}<span class="nb-vchip ev-insider" title="SEDI insider filings ({{ s.insider.window_days }}d window): {{ s.insider.n_buys }} buy vs {{ s.insider.n_sells }} sell — net insider BUYING. A confirmer chip only; SEDI data is collected + displayed, ACCRUING toward validation (~2028), never a rank input. · SEDI 内部人申报（{{ s.insider.window_days }}日窗口）：{{ s.insider.n_buys }} 笔买入 vs {{ s.insider.n_sells }} 笔卖出 — 净买入。仅为确认信号；SEDI 数据已采集展示、积累验证中（~2028），非排名输入。">👤 {{ t('insider buying', '内部人买入') }} {{ s.insider.n_buys }}/{{ s.insider.n_sells }}</span>{% endif %}
+        {% if s.earnings and s.earnings.days_to is defined and s.earnings.days_to is not none and s.earnings.days_to <= 21 %}<span class="nb-vchip ev-earn" title="Next earnings report {{ s.earnings.next_date }} ({{ s.earnings.days_to }} days out) — a scheduled catalyst / volatility event. Context for timing, not a rank input. · 下次财报 {{ s.earnings.next_date }}（还有 {{ s.earnings.days_to }} 天）— 计划中的催化剂／波动事件。择时背景，非排名输入。">📅 {{ t('reports in', '财报还有') }} {{ s.earnings.days_to }}{{ t('d', '天') }}</span>{% endif %}
         {% if s.extended %}<span class="nb-vchip vf-exp" title="Extension log-and-grade — this name is stretched vs its 200d line (a risk-placement lens, NOT rank-affecting; phase-0 showed freshness does not cut drawdown). · 扩张记录评分 — 该股相对 200 日线偏离（风险定位视角，不影响排名；Phase-0 显示新鲜度不减回撤）。">📐 {{ t('extended', '偏离') }}{% if s.extended.ext_z is not none %} z{{ '%+.1f'|format(s.extended.ext_z) }}{% endif %}</span>{% endif %}
       </div>
       {% if s.spark_svg %}{{ s.spark_svg | safe }}{% endif %}
@@ -546,7 +639,46 @@
     </div>
     {% endfor %}
   </div>
-  <p class="caveat" style="margin-top:8px">{{ t('BRANCH B (masterplan §4.1): the C7 momentum keystone landed all-ACCRUE in phase-0, so no validated composite exists — the CA board runs the ripe-list screen permanently. Cards are ranked WITHIN group by the residual-momentum SCREEN (FDR-stable, DSR-short; re-test 2027-01); the 0-100 composite is suppressed. Timing groups and gates; the screen ranks within a group. This is a planned honest-screen outcome, not a failure.', '分支 B（规划书 §4.1）：C7 动量关键测试在 Phase-0 全部 ACCRUE，无经验证综合分——加拿大榜单长期运行成熟清单筛选。卡片按组内残差动量筛选排名（通过 FDR、DSR 不足；2027-01 复测）；0-100 综合分已抑制。时机负责分组门控；筛选仅在组内排名。这是计划中的诚实筛选结果，而非失败。') }}</p>
+  {# ===== WATCH strip (W6 parity R6/R7/R8) — strong momentum SCREEN, blocked entry
+     (weekly not yet turned / falling knife). A real edge with NO base yet: watch, don't
+     buy. Ported from hk.html.j2's watch-strip; links to canada_stock.html. ===== #}
+  {% if setups.watch %}
+  <div class="watch-strip">
+    <p class="ws-h">👁 {{ t('On watch — strong screen, blocked entry (wait for a base)', '观察名单 — 筛选强但入场受阻（等待筑底）') }}</p>
+    <div class="watch-grid">
+      {% for w in setups.watch %}
+      {% set wc = w.conviction %}
+      <a href="canada_stock.html#{{ w.ticker }}" class="{{ 'wg-knife' if w.watch_reason == 'knife' else '' }}" title="{{ (wc.verdict if wc else '') }} · {{ w.block_reason or '' }}">
+        <span class="wg-tk">{{ w.ticker }}{% if wc and wc.score is not none %} <span class="muted small" style="font-weight:600">· {{ wc.score }}</span>{% endif %} <span class="muted small">{{ t('mom', '动量') }} {{ '%+.2f'|format(w.alpha) }}</span></span>
+        <span class="wg-v">{{ w.name }}{% if wc and wc.verdict %} — <span class="l-en">{{ wc.verdict }}</span><span class="l-zh">{{ wc.verdict_zh or wc.verdict }}</span>{% endif %}</span>
+        {% if w.watch_reason == 'knife' %}
+        <span class="wg-knife-chip" title="Weekly timeframe is still FALLING — a strong momentum screen on a name whose higher timeframe hasn't turned. Held OUT of the entry groups (a falling knife keeps falling; bottoming-alignment gate, not a scored seam). · 周线级别仍在下行 — 动量筛选强但高周期尚未转向。被排除在入场组之外（接飞刀会继续下跌；筑底共振门槛，非评分 seam）。">
+          <span class="l-en">🔻 weekly still falling — wait for the turn</span><span class="l-zh">🔻 周线仍下行 — 等待转向</span>
+        </span>
+        {% else %}
+        <span class="wg-blk-chip" title="Bottoming-alignment gate blocked the entry: {{ w.block_reason or 'no fresh multi-timeframe turn yet' }}. Strong screen, no base yet. · 筑底共振门槛阻止入场：{{ w.block_reason_zh or w.block_reason or '尚无新鲜的多周期转向' }}。筛选强但尚未筑底。">
+          <span class="l-en">⏳ entry blocked — awaiting a base</span><span class="l-zh">⏳ 入场受阻 — 等待筑底</span>
+        </span>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {# ===== LAGGARD / avoid strip (W6 parity) — weakest momentum screen: distribution /
+     avoid. Fed by setups.laggards (and any falling-knife demotes surfaced above). ===== #}
+  {% if setups.laggards %}
+  <p class="note" style="margin:13px 0 5px; text-transform:none; color:var(--down); font-weight:700">⚠ {{ t('Weakest screen (laggards) — distribution / avoid:', '筛选最弱（落后股）— 派发／回避：') }}</p>
+  <p style="margin:0; line-height:2">
+    {% for r in setups.laggards %}<a href="canada_stock.html#{{ r.ticker }}" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ r.name }}</span>{% if r.alpha is not none %} <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span>{% endif %}</a>{% endfor %}
+  </p>
+  {% endif %}
+  {# ===== AI-brief doorway (W6 §7.5) — presence-guarded. No CA AI brief exists yet
+     (no canada_aibrief page in the build), so this is intentionally hidden until one
+     ships. The guard means it lights up automatically the day a CA brief lands. ===== #}
+  {% if ca_aibrief_href %}
+  <a class="ai-brief-link" href="{{ ca_aibrief_href }}" style="margin-top:12px; display:inline-flex">🤖 {{ t('Read the Canada AI brief', '阅读加拿大 AI 简报') }}</a>
+  {% endif %}
 </div>
 {% endif %}
 

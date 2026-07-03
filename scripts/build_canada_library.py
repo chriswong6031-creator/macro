@@ -395,6 +395,61 @@ def _branch_b_order(rows: list[dict], overlay: dict | None) -> list[dict]:
     return ordered
 
 
+# weekly states that mean the higher timeframe is still FALLING — a name blocked here
+# with a strong momentum screen is a falling-knife-style demote (edge, but no base yet).
+_KNIFE_WEEKLY = {"bear", "bear_falling", "falling", "down", "bear_down"}
+
+
+def _build_watch(cand: list, buys: list[dict], align_map: dict | None,
+                 profiles: dict | None, n: int = 8) -> list[dict]:
+    """Strong-but-blocked WATCH strip (W6 parity with HK's watch-strip).
+
+    A name reaches the watch strip when its residual-momentum SCREEN z clears the buy
+    floor (BUY_MIN) but the multi-timeframe bottoming-alignment gate held it OUT of the
+    buy list (weekly not turned / no fresh entry) — a real edge awaiting a base, NOT a
+    scored pick. Rows whose weekly is still falling are tagged watch_reason='knife' so
+    the card states why they were pushed off the entry groups. Ranked by screen z desc.
+
+    Pure re-selection over the already-scored candidate pool — no new network / IO."""
+    from engine.setups import BUY_MIN
+    am = align_map or {}
+    pf = profiles or {}
+    buy_ids = {r.get("ticker") for r in (buys or [])}
+    watch: list[dict] = []
+    for item in (cand or []):
+        r = item[1] if isinstance(item, (tuple, list)) else item
+        t = r.get("ticker")
+        if not t or t in buy_ids:
+            continue
+        a = r.get("alpha")
+        if a is None or a < BUY_MIN:          # strong momentum SCREEN only
+            continue
+        al = am.get(t) or {}
+        if al.get("aligned") or al.get("near"):
+            continue                          # not blocked → it is (near-)buyable, skip
+        wk = str(al.get("weekly") or "").lower()
+        knife = wk in _KNIFE_WEEKLY or ((al.get("knife") or 0.0) >= 0.66)
+        row = {
+            "ticker": t,
+            "name": r.get("name"),
+            "alpha": a,
+            "watch_reason": "knife" if knife else "blocked",
+            "block_reason": al.get("reason"),
+            "block_reason_zh": al.get("reason_zh"),
+        }
+        if pf.get(t):
+            _c = pf[t]
+            row["conviction"] = {
+                "score": _c.get("score"),
+                "verdict": _c.get("verdict"),
+                "verdict_zh": _c.get("verdict_zh"),
+            }
+        watch.append(row)
+    # knives first (they earned the loudest explanation), then by screen z descending.
+    watch.sort(key=lambda w: (0 if w["watch_reason"] == "knife" else 1, -(w["alpha"] or 0)))
+    return watch[:n]
+
+
 def compute_canada_standouts(setups: dict | None, overlay: dict | None = None) -> dict | None:
     """Enrich the alpha-led `setups.buy` shortlist into the CA standout board and
     apply the BRANCH-B ripe-list contract order (masterplan §5.0 + C7 verdict).
@@ -440,6 +495,18 @@ def compute_canada_standouts(setups: dict | None, overlay: dict | None = None) -
                     r["factor_beta"] = rec["factor_beta"]
                 if rec.get("insider"):
                     r["insider"] = rec["insider"]
+                # earnings catalyst — next report date drives the "reports in Nd" why-now
+                # chip (W6 §7.4). Presence-guarded on the card; context, never a rank input.
+                if rec.get("earnings"):
+                    r["earnings"] = rec["earnings"]
+                    nd = rec["earnings"].get("next_date")
+                    if nd:
+                        try:
+                            _dt = (pd.Timestamp(nd).normalize()
+                                   - pd.Timestamp.utcnow().normalize()).days
+                            r["earnings"]["days_to"] = int(_dt) if _dt >= 0 else None
+                        except Exception:  # noqa: BLE001 — chip is optional
+                            pass
             except Exception:  # noqa: BLE001
                 pass
         # extension demote as LOG-AND-GRADE: an 'extended' chip when the name is
@@ -814,6 +881,12 @@ def main(alpha: dict | None = None) -> dict | None:
                 r["conviction"] = profiles[t]
         setups["eligible"] = eligible        # how many passed the alignment gate
         setups["universe"] = len(cand)
+        # WATCH strip (W6 parity with HK) — strong momentum-SCREEN z that the bottoming-
+        # alignment gate BLOCKED from the buy list (weekly still falling / no fresh turn):
+        # a real edge with no entry window yet. Names whose weekly is a falling knife are
+        # tagged so the watcher sees WHY they were held out of the entry groups. This is a
+        # SCREEN-hygiene surface, not a scored seam — the momentum leg is accruing (C7).
+        setups["watch"] = _build_watch(cand, setups["buy"], align_map, profiles)
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "canada_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
