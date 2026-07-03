@@ -458,3 +458,37 @@ class TestNeverRaises:
             donor.donor_state(closes, sec_of)
         except Exception as e:
             pytest.fail(f"donor_state raised on all-NaN series: {e}")
+
+
+class TestFallbackFidelity:
+    """The pure-Python RSI-MACD fallback must be numerically IDENTICAL to
+    tuning_harness.rsi_macd — the registered Wave-5b/Wave-6 spec — so a
+    broken guarded import can never silently change the weekly-cross leg.
+    (Ship-review finding: an earlier adjust=False draft diverged on ~2% of
+    cross bars; this test pins the identity.)"""
+
+    def test_fallback_matches_tuning_harness_exactly(self):
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "research" / "signal_engine"))
+        try:
+            import tuning_harness as TH
+        except Exception:
+            import pytest
+            pytest.skip("tuning_harness not importable in this environment")
+        import numpy as np
+        import pandas as pd
+        from engine import donor
+
+        rng = np.random.default_rng(7)
+        c = pd.Series(
+            100 * np.exp(np.cumsum(rng.normal(0, 0.02, 400))),
+            index=pd.bdate_range("2023-01-02", periods=400),
+        )
+        m1, s1 = TH.rsi_macd(c)
+        m2, s2 = donor._rsi_macd_fallback(c)
+        assert float((m1 - m2).abs().max()) < 1e-9
+        assert float((s1 - s2).abs().max()) < 1e-9
+        x1 = ((m1 < s1) & (m1.shift(1) >= s1.shift(1))).fillna(False)
+        x2 = donor._xdn(m2, s2).fillna(False)
+        assert int((x1 != x2).sum()) == 0

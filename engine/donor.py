@@ -55,26 +55,32 @@ _MEMBER_MIN_BARS = 1500
 
 
 def _rsi(close: pd.Series, n: int = 14) -> pd.Series:
-    """Pure-Python RSI — used when tuning_harness is unavailable."""
+    """Pure-Python RSI — used when tuning_harness is unavailable.
+
+    IDENTICAL math to tuning_harness.rsi: up/dn clips smoothed with
+    ewm(alpha=1/n, min_periods=n) at the pandas DEFAULT adjust=True.
+    (An earlier draft used com=n-1/adjust=False, which diverges ~2% of
+    cross bars from the registered spec — caught in ship review.)
+    """
     delta = close.diff()
-    gain  = delta.clip(lower=0)
-    loss  = (-delta).clip(lower=0)
-    avg_g = gain.ewm(com=n - 1, min_periods=n, adjust=False).mean()
-    avg_l = loss.ewm(com=n - 1, min_periods=n, adjust=False).mean()
-    rs    = avg_g / avg_l.replace(0, np.nan)
+    up  = delta.clip(lower=0).ewm(alpha=1 / n, min_periods=n).mean()
+    dn  = (-delta.clip(upper=0)).ewm(alpha=1 / n, min_periods=n).mean()
+    rs  = up / dn.replace(0, np.nan)
     return 100 - 100 / (1 + rs)
 
 
 def _ema(s: pd.Series, n: int) -> pd.Series:
-    return s.ewm(span=n, adjust=False).mean()
+    # tuning_harness.ema: ewm(span=span, min_periods=span), default adjust=True
+    return s.ewm(span=n, min_periods=n).mean()
 
 
 def _rsi_macd_fallback(close: pd.Series):
     """Fallback RSI-MACD when tuning_harness is not importable.
 
-    Params mirror tuning_harness.rsi_macd exactly (RSI_LEN=14, FAST=14,
-    BASE=60, SIG=5) so the fallback never silently diverges from the
-    registered Wave-5b/Wave-6 spec.
+    Math and params mirror tuning_harness.rsi_macd (RSI_LEN=14, FAST=14,
+    BASE=60, SIG=5; adjust=True ewm throughout) — verified numerically
+    identical in tests/test_donor.py so the fallback cannot silently
+    diverge from the registered Wave-5b/Wave-6 spec.
     """
     r    = _rsi(close, n=14)
     macd = _ema(r, 14) - _ema(r, 60)

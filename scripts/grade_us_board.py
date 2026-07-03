@@ -365,6 +365,10 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     "validation_status": feat.get("validation_status"),
                     "vol_squeeze": feat.get("vol_squeeze"),
                     "dispersion_state": feat.get("dispersion_state"),
+                    # G6a donor-unwind rotation context (page-level, constant per as_of) —
+                    # must reach the graded frame or the ledger cannot stratify by it
+                    "donor_state": feat.get("donor_state"),
+                    "donor_sector": feat.get("donor_sector"),
                     "off_high": feat.get("off_high"),
                     "ret": nret,
                 }
@@ -512,6 +516,8 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                 "by_urgency": _slice_table(buy, "urgency", "excess_spy"),
                 "by_sector": _slice_table(buy, "sector", "excess_spy"),
                 "by_dispersion": _slice_table(buy, "dispersion_state", "excess_spy"),
+                # G6a donor-unwind rotation context — grades stratified by leader state
+                "by_donor_state": _slice_table(buy, "donor_state", "excess_spy"),
                 "mae_close_excess_spy": {
                     "median": round(float(buy["mae_close_excess_spy"].dropna().median()), 5)
                     if buy["mae_close_excess_spy"].notna().any() else None,
