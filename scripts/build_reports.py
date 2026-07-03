@@ -52,6 +52,31 @@ def _tag(key: str, en: str, zh: str) -> dict:
 # ---------------------------------------------------------------------------
 REPORTS: list[dict] = [
     {
+        "slug": "report_second_act",
+        "template": "report_second_act.html.j2",
+        "date": "2026-07-02",
+        "read_min": 45,
+        "title_en": "The Second Act",
+        "title_zh": "第二幕",
+        "dek_en": "The AI boom isn't ending — it's changing hands. Chips and memory had their "
+                  "run; the money now flows to power, cooling, optical networking, robots, and "
+                  "the payment rails underneath. A month-by-month map from July 2026 to December "
+                  "2027: what to own, when to buy it, what the Mag 7 are really worth at their "
+                  "cash-flow low, and exactly what would prove us wrong. The best buying window "
+                  "on the map: October 2026.",
+        "dek_zh": "AI 热潮没有结束 —— 而是在换手。芯片与存储已经跑完了自己的一程；资金正流向电力、散热、"
+                  "光模块、机器人，以及底层的支付轨道。这是一份 2026年7月 → 2027年12月 的逐月路线图："
+                  "该持有什么、何时买入、七巨头在现金流低谷处的真实价值，以及什么情况会证明我们错了。"
+                  "全图最佳买入窗口：2026年10月。",
+        "tags": [
+            _tag("ai", "AI", "AI"),
+            _tag("macro", "Macro", "宏观"),
+            _tag("equities", "Equities", "股票"),
+            _tag("crypto", "Crypto", "加密"),
+            _tag("china", "China", "中国"),
+        ],
+    },
+    {
         "slug": "report_ai_master_plan",
         "template": "report_ai_master_plan.html.j2",
         "date": "2026-07-01",
