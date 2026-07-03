@@ -57,6 +57,7 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     "prediction_markets": "polymarket", "treasury_auctions": "treasurydirect",
     "jodi": "jodi", "french": "french", "frbsf_sentiment": "frbsf",
     "bis": "bis", "uncertainty_indices": "uncertainty",
+    "federal_register": "federalregister",  # federalregister.gov — distinct host, runs in parallel
 }
 
 
@@ -142,6 +143,7 @@ def all_adapters() -> dict:
         ("polygon_news", "collectors.polygon_news", "PolygonNewsAdapter"),  # Polygon news-sentiment roll-up (existing POLYGON key) -> news_sentiment channel
         ("github_repos", "collectors.github_repos", "GithubReposAdapter"),  # GitHub star velocity (optional GITHUB_TOKEN) -> github_momentum channel
         ("sam_gov", "collectors.sam_gov", "SamGovAdapter"),               # SAM.gov pre-award solicitations by NAICS (theme_event radar leg); GATED on SAM_API_KEY -> 'blocked' without it
+        ("federal_register", "collectors.federal_register", "FederalRegisterAdapter"),  # Federal Register policy-doc velocity (keyless; two-stage AGENCY-SLUG x TERM filter; theme_event radar leg); degrades gracefully when absent
         ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
         ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
@@ -271,6 +273,7 @@ _SLOW = set(_QUIVER_KEYS) | {
     "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership", "cot",
     "openfda", "huggingface", "grants_gov", "clinicaltrials", "finnhub_altdata",
     "polygon_news", "github_repos", "sam_gov", "usaspending", "prediction_markets",
+    "federal_register",
 }
 
 
