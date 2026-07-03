@@ -1,0 +1,17 @@
+{
+  "fetched_at": "2026-07-03T08:26:46.666584",
+  "route": "wayback_page_walk",
+  "n_report_dates": 19,
+  "earliest_date": "2018-11-30",
+  "latest_date": "2019-08-31",
+  "n_tsx_rows_total": 38793,
+  "n_new_dates": 19,
+  "n_failed_dates": 28,
+  "n_page_snapshots": 20,
+  "n_page_failed": 1,
+  "n_dates_discovered": 47,
+  "n_dates_fetchable": 19,
+  "note": "Page-walk discovered 47 semi-monthly report dates 2018-11..2021-02, but Wayback captured the linked .xls files ONLY for the 2019-era snapshots; the 28 dates from 2020-03..2021-02 return 404 (files never crawled). Reachable panel = 19 dates 2018-11-30..2019-08-31. ZERO overlap with the name-level price panel (2021-06->). C5 phase-0 = ACCRUE-DATA (reports/c5-phase0.md).",
+  "panel_symbols_mapped_pct": 71.2,
+  "panel_symbols_unmapped_pct": 28.8
+}
