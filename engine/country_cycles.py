@@ -33,6 +33,7 @@ import logging
 
 import pandas as pd
 
+from engine import country_fx as cfx
 from engine import sector_cycles as sc
 from engine.inputs import yahoo_closes
 from lib import config
@@ -118,15 +119,18 @@ def _agg_accent(i: int, n: int) -> str:
 def _build_one(ticker: str, meta: dict, closes: pd.DataFrame, win_start: pd.Timestamp,
                *, kind: str, group: str, accent: str,
                closes_px: pd.DataFrame | None = None) -> dict | None:
-    """One market ETF -> its full cycle record, off the ETF's own USD close tape.
-    Reuses engine.sector_cycles._record_core (identical turn/phase/projection math).
+    """One market ETF -> its full cycle record.
 
-    W2.2: structure math runs on the ETF's USD close_price (from `closes_px`) when
-    present; RS-vs-SPY stays on the TR panel.  A ticker absent from the price panel is
-    stamped tr_fallback (declared close_price gap) — never silent.  NB: the USD-ETF price
-    basis is still USD-denominated (FX decomposition to a local-currency cycle is the
-    SEPARATE D4-W5 wave); W2.2 only removes the dividend-total-return inflation from the
-    structure math, not the FX confound."""
+    W3.9 (D4-W5b): for a SINGLE-COUNTRY ETF with a known FX pair the PRIMARY record is
+    now the **local-currency equity cycle** (the honest "is this market's equity cheap"),
+    with the USD-ETF cycle demoted to `rec['usd_record']` (the "USD view" drawer) and a
+    separate `rec['fx']` currency-cycle leg + per-turn `fx_share` attribution.  Blocs and
+    single-country ETFs whose local series can't be built stay USD-only (the pre-W3.9
+    behaviour) with an honest null-FX / usd-basis marker.
+
+    The USD cycle is still computed exactly as before (W2.2: structure on the ETF's USD
+    `close_price`, RS-vs-SPY on the TR panel; tr_fallback when the price panel lacks the
+    ticker).  W3.9 adds the local leg ON TOP; it never removes the USD leg."""
     full = closes[ticker].dropna() if ticker in closes else pd.Series(dtype=float)
     if len(full) < 300:
         log.warning("intl_cycles: %s too thin (%d rows) — skipped", ticker, len(full))
@@ -135,24 +139,179 @@ def _build_one(ticker: str, meta: dict, closes: pd.DataFrame, win_start: pd.Time
     # (Switzerland) but a wild EM (Brazil/Turkey) swings that much in weeks — scale the
     # threshold up with realised vol so the turn count stays an intermediate-cycle read,
     # not noise. Calm markets stay near the 14% baseline.
-    price = sc._price_series(closes_px, ticker, full)
-    core = sc._record_core(full, win_start, full.index[-1], pct=sc._zz_pct_for(full),
-                           price=price)
-    if core is None:
+    usd_price = sc._price_series(closes_px, ticker, full)
+    usd_core = sc._record_core(full, win_start, full.index[-1], pct=sc._zz_pct_for(full),
+                               price=usd_price)
+    if usd_core is None:
         return None
     flag = meta.get("flag", "")
     name = f"{flag} {meta['name']}".strip()
     name_zh = f"{flag} {meta['name_zh']}".strip() if meta.get("name_zh") else name
-    rec = dict(core)
-    rec.update({
+    ident = {
         "id": ticker.lower(), "ticker": ticker, "kind": kind,
         "name": name, "short": name, "name_zh": name_zh, "short_zh": name_zh,
         "group": group, "group_zh": GROUP_ZH.get(group, group), "accent": accent,
         "dev": meta.get("dev"), "dev_zh": DEV_ZH.get(meta.get("dev"), meta.get("dev")),
         "desc": meta.get("desc"),
-    })
-    sc._apply_leadership(rec, sc._leadership(closes, ticker))
+    }
+
+    # ── W3.9 FX decomposition (single-country ETFs only; blocs are null-FX per §5.4) ──
+    fxmeta = cfx.FX_REGISTRY.get(ticker) if kind == "sector" else None
+    local_rec = None
+    fx_leg = None
+    if fxmeta is not None:
+        try:
+            local_rec, fx_leg = _build_fx_decomposition(
+                ticker, fxmeta, full, usd_price, win_start)
+        except Exception as e:  # noqa: BLE001 — degrade to USD-only, never fatal
+            log.warning("intl_cycles: %s FX decomposition failed (%s) — USD-only", ticker, e)
+            local_rec = fx_leg = None
+
+    if local_rec is not None:
+        # LOCAL cycle is PRIMARY: the card/chart/position render off the top-level fields.
+        # The USD cycle is nested for the "USD view" toggle + the checker keeps its own
+        # (ticker, price) tape identity through `usd_record` (markets.html reads THAT).
+        rec = dict(local_rec)
+        rec.update(ident)
+        usd_nested = dict(usd_core)
+        usd_nested.update(ident)
+        sc._apply_leadership(usd_nested, sc._leadership(closes, ticker))
+        # markets.html + the cross-page checker read this nested USD record (basis 'price').
+        # Carry ticker/id so the consistency checker keys it as the (EWJ, price) tape — it
+        # then AGREES with markets.html's USD reading (same tape) and is DECLARED cross-tape
+        # against the local primary (EWJ, local_*), exactly as R3-M3 requires.
+        rec["usd_record"] = {
+            "id": ident["id"], "ticker": ident["ticker"], "kind": ident["kind"],
+            "price": usd_nested["price"], "osc": usd_nested["osc"],
+            "turns": usd_nested["turns"], "proj": usd_nested["proj"],
+            "basis": usd_nested.get("basis"), "now": usd_nested["now"],
+        }
+        rec["fx"] = fx_leg
+        rec["lc_source"] = local_rec.get("_lc_source")
+        rec.pop("_lc_source", None)
+        # RS-vs-SPY (a US-investor relative-strength read) stays a USD/TR concept — attach
+        # it to the PRIMARY now so the leadership rail + card RS chip keep working.
+        sc._apply_leadership(rec, sc._leadership(closes, ticker))
+    else:
+        # USD-only (blocs, or a single-country ETF whose local series couldn't be built).
+        rec = dict(usd_core)
+        rec.update(ident)
+        sc._apply_leadership(rec, sc._leadership(closes, ticker))
+        if kind == "sector":
+            # single-country ETF with no decomposition → disclosed null-FX + reason.
+            rec["fx"] = {"note": "USD basis — FX pair unavailable, currency not decomposed",
+                         "note_zh": "美元计价 — 缺汇率数据，未拆分货币"}
+            rec["lc_source"] = "none"
+        else:
+            # bloc: multi-currency, decomposition not defined (§5.4).
+            rec["fx"] = {"note": "multi-currency bloc — FX decomposition not defined",
+                         "note_zh": "多货币区域 — 未定义汇率拆分"}
+            rec["lc_source"] = None
     return rec
+
+
+def _build_fx_decomposition(ticker: str, fxmeta: dict,
+                            full: pd.Series, usd_price: pd.Series | None,
+                            win_start: pd.Timestamp,
+                            ) -> tuple[dict | None, dict | None]:
+    """Build the LOCAL-currency primary cycle record + the separate FX leg for one country.
+
+    Returns (local_rec, fx_leg).  local_rec is None when neither a native local index nor
+    a synthetic ETF/FX series can be constructed → the caller falls back to USD-only."""
+    # the structure basis for the ETF (close_price when present, else the TR series).
+    usd_struct = usd_price.dropna() if (usd_price is not None) else full.dropna()
+    fx = cfx.fx_ccy_per_usd(fxmeta)
+    local_px, lc_source = cfx.build_local_series(ticker, fxmeta, usd_struct, fx)
+    if local_px is None or lc_source == "none":
+        return None, None
+    local_px = local_px.dropna()
+    if local_px.empty or len(local_px[local_px.index >= win_start]) < 60:
+        return None, None
+
+    # ── PRIMARY: the local-currency equity cycle (same kernel, price basis) ──
+    last_ts = local_px.index[-1]
+    local_core = sc._record_core(local_px, win_start, last_ts,
+                                 pct=sc._zz_pct_for(local_px), price=local_px)
+    if local_core is None:
+        return None, None
+    local_core = dict(local_core)
+    # declare the tape: local_native (clean native index) vs local_synth (ETF×FX). This is
+    # the R3-M3 cross-tape basis label — it is what lets the consistency checker allow the
+    # local record to differ from the USD/markets record without flagging silent drift.
+    basis_label = "local_native" if lc_source == "native" else "local_synth"
+    local_core["basis"] = basis_label
+    local_core["now"]["basis"] = basis_label
+    local_core["_lc_source"] = lc_source
+
+    # ── the separate, graded FX-cycle leg (§5.2): the SAME kernel on the FX price line ──
+    fx_leg = None
+    if fx is not None and not fx.empty:
+        fx_win = fx[fx.index >= win_start]
+        fx_leg = {
+            "pair": fxmeta["pair"], "quote": "ccy_per_usd", "source": fxmeta["fx_source"],
+            "basis": "fx_spot", "lc_source": lc_source,
+        }
+        if len(fx_win) >= 60:
+            try:
+                fx_core = sc._record_core(fx, win_start, fx.index[-1],
+                                          pct=sc._zz_pct_for(fx), price=fx)
+            except Exception as e:  # noqa: BLE001
+                log.warning("intl_cycles: %s FX-leg cycle failed (%s)", ticker, e)
+                fx_core = None
+            if fx_core is not None:
+                fxn = fx_core["now"]
+                # a RISING ccy_per_usd = the currency WEAKENING → note the direction so the
+                # drawer reads "currency stretched/washed" in the right sense.
+                fx_leg.update({
+                    "cycle_pos": fxn.get("pos"), "cycle_pos_v2": fxn.get("pos_v2"),
+                    "cycle_phase": fxn.get("phase"), "cycle_phase_label": fxn.get("phaseLabel"),
+                    "leg_return_63d": _leg_return(fx, 63),
+                    "leg_return_252d": _leg_return(fx, 252),
+                    "price": fx_core["price"], "osc": fx_core["osc"],
+                    "turns": fx_core["turns"],
+                })
+        # HKD-style hard peg → a distance annotation instead of a decomposition (§5.4).
+        fx_leg["peg"] = cfx.peg_annotation(fxmeta, fx)
+
+    # ── per-turn equity-vs-FX attribution on the LOCAL turns (§5.3) ──
+    # Decompose over the ETF's own USD PRICE tape (structure basis) so the residual is
+    # FX (+ any ETF/index tracking gap when local is the native index) — the honest
+    # "how much of the USD move was currency" the card badges.
+    if fx is not None and not fx.empty:
+        _attach_turn_attribution(local_core, local_px, usd_struct, fx)
+    return local_core, fx_leg
+
+
+def _leg_return(s: pd.Series, n: int) -> float | None:
+    """Trailing n-bar % change of a level series (labeled FX contribution over a horizon)."""
+    s = s.dropna()
+    if len(s) <= n:
+        return None
+    return round((float(s.iloc[-1]) / float(s.iloc[-1 - n]) - 1.0) * 100.0, 1)
+
+
+def _attach_turn_attribution(local_core: dict, local_px: pd.Series,
+                             usd_px: pd.Series, fx: pd.Series) -> None:
+    """Attach `fx_share` / `fx_flag` to each LOCAL turn by decomposing the USD-tape move
+    over the leg since the prior turn (§5.3).  Mutates `local_core['turns']` in place and
+    stamps the latest currency-driven turn onto `now` for the card flag."""
+    turns = local_core.get("turns", [])
+    prev_ts = None
+    latest_flag = None
+    for t in turns:
+        cur_ts = pd.Timestamp(t["date"])
+        if prev_ts is not None:
+            attr = cfx.attribute_turn(local_px, usd_px, fx, prev_ts, cur_ts)
+            if attr is not None:
+                t.update(attr)
+                if attr.get("fx_flag"):
+                    latest_flag = attr
+        prev_ts = cur_ts
+    # surface the most-recent currency-driven turn on `now` so the card can render the
+    # one-glance chip without re-scanning turns JS-side.
+    nw = local_core.get("now", {})
+    nw["fx_driven_last"] = bool(latest_flag is not None)
+    nw["fx_share_last"] = latest_flag.get("fx_share") if latest_flag else None
 
 
 def _rank_rs(recs: list[dict]) -> None:

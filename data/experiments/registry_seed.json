@@ -926,6 +926,27 @@
       "state": "n_dates=2 @ 5d, wilson_ci_low=0.082, hit_rate=28.6% (ACCRUING). Need 23 more clusters.",
       "next_step": "When gate opens: remove _policy_usable grandfathered gate and promote to CONFIRMER per §4 W6.",
       "phase_hint": "W6 §3 gate"
+    },
+    {
+      "id": "country-fx-driven-turns",
+      "name": "Country cycles — do currency-driven turns behave differently?",
+      "kind": "track_record",
+      "priority": "medium",
+      "cadence": "daily",
+      "what": "W3.9 (D4-W5b/N4) study: each local-currency country turn carries fx_share (fraction of the co-incident USD-ETF move attributable to FX). A turn with fx_share>0.6 is currency-driven. Question: do currency-driven local-equity troughs/peaks have DIFFERENT forward behaviour (drawdown / mean-reversion) than equity-driven ones? Registers the fx_share stamp as the split variable; D5 grades once the forward log matures.",
+      "source": "engine/country_fx.py (attribute_turn) + engine/country_cycles.py",
+      "storage": "site/countrycyclesdata/country_cycles.json (turns[].fx_share/fx_flag)",
+      "track_json": "data/cycle_forward_log/country_cycles.parquet",
+      "hook": "track_record",
+      "claim_family": "country_cycles",
+      "started": "2026-07-02",
+      "come_back_on": "2026-10-01",
+      "come_back_note": "FX leg NOT added to the main forward log this wave (deferred, per W3.9 §2). Wire the fx_share split into the D5 country grader before grading.",
+      "maturation": "n>=30 currency-driven turns matured at 63d/126d; compare forward MDD split by fx_flag with a sign test / KS on the two distributions.",
+      "status": "registered",
+      "state": "W3.9 ship: fx_share stamped on every local turn (14% flagged >0.6 across 330 attributed turns at launch). No forward log for the FX leg yet (deferred).",
+      "next_step": "D5: split the country forward-outcome ledger by turns[].fx_flag; test whether currency-driven turns mean-revert differently.",
+      "phase_hint": "W3.9 FX decomposition"
     }
   ]
 }

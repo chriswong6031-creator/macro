@@ -75,10 +75,20 @@ def _load_country_cycles(site: Path) -> dict[str, dict]:
 
 
 def _extract_engine_record(sector: dict) -> dict:
-    """Extract only the fields markets_app.js needs from a country_cycles sector record."""
-    now = sector.get("now", {})
-    proj = sector.get("proj", {})
-    turns = sector.get("turns", [])
+    """Extract only the fields markets_app.js needs from a country_cycles sector record.
+
+    W3.9 basis decision: markets.html is the US-investor allocation surface (SPY-relative,
+    "what did owning this market do for a dollar holder") — so it consumes the **USD-ETF**
+    cycle, NOT the new local-currency primary.  When a country record carries a nested
+    `usd_record` (W3.9 FX decomposition), read THAT: it keeps markets on the `price` tape,
+    so the cross-page consistency checker sees country_cycles' usd_record and markets agree
+    on the same (ticker, price) identity, while the local record differs under a declared
+    `local_native`/`local_synth` label.  Pre-W3.9 records (no usd_record) read the top level
+    unchanged."""
+    src = sector.get("usd_record") or sector
+    now = src.get("now", {})
+    proj = src.get("proj", {})
+    turns = src.get("turns", [])
 
     # Confirmed turns: pull the last 6 major turns so the spark/history overlay works.
     major_turns = [t for t in turns if t.get("major", True)][-8:]
@@ -87,7 +97,9 @@ def _extract_engine_record(sector: dict) -> dict:
         "id":              sector.get("id"),
         "ticker":          sector.get("ticker"),
         "name":            sector.get("name"),
-        "basis":           sector.get("basis"),  # e.g. "price"
+        # basis from the USD source record (W3.9: the usd_record's "price", or the pre-W3.9
+        # top-level basis) — this is what the cross-page checker keys markets on.
+        "basis":           src.get("basis") or sector.get("basis"),
         "epoch":           sector.get("epoch"),  # may be None
         # ---- engine position (pos_v2 semantics, 0-100 oscillator) ----
         "pos_v2":          now.get("pos_v2"),
