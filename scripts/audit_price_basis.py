@@ -236,6 +236,14 @@ def _check_no_tr_in_structure() -> ac.Universe:
                 if "price" not in arg_names:
                     u.fail("_record_core", "missing the `price=` structure-basis param")
                 body_src = ast.get_source_segment(sc_src, rc) or ""
+                # W3.1 (#984): _record_core is a thin daily wrapper delegating to the
+                # record_series kernel — the `struct` seam + structure calls live there.
+                # Scan the wrapper and the kernel as ONE body so the contract still
+                # holds (a revert of the struct routing in either place still fails).
+                rs = next((n for n in ast.walk(tree)
+                           if isinstance(n, ast.FunctionDef) and n.name == "record_series"), None)
+                if rs is not None:
+                    body_src += "\n" + (ast.get_source_segment(sc_src, rs) or "")
                 # structure series is built as `struct`; the detrended osc + swings read it.
                 if "struct" not in body_src:
                     u.fail("_record_core", "no `struct` structure-basis series")

@@ -63,8 +63,8 @@ def net_liquidity_bn(
     :func:`load_net_liquidity_components` for the raw-parquet path which scales for you).
     Missing RRP/TGA contribute 0 — a missing drain must NOT annihilate the balance-sheet
     trend pre-history (the original #28 failure mode was the balance-sheet trend, not the
-    drain, going to zero).  The unit contract is asserted loudly: if WALCL looks like
-    trillions (max < 100) while RRP looks like billions, we have the #28 mixed-unit bug.
+    drain, going to zero).  The unit contract is asserted loudly on WALCL's OWN scale: a
+    WALCL-shaped series whose max is < 100 was scaled to trillions — the #28 mixed-unit bug.
     """
     walcl_bn = _as_series(walcl_bn)
     rrp = _as_series(rrp_bn).reindex(walcl_bn.index).fillna(0.0) if rrp_bn is not None \
@@ -129,28 +129,29 @@ def load_net_liquidity_components(
 
 
 def _assert_billions_scale(walcl_bn: pd.Series, rrp_bn: pd.Series) -> None:
-    """Catch the #28 mixed-unit subtraction LOUDLY.
+    """Catch the #28 mixed-unit subtraction LOUDLY — judged on WALCL's OWN scale.
 
-    Post-2008 WALCL is ~$4-9 TRILLION = 4,000-9,000 in BILLIONS.  The #28 bug scaled WALCL
-    by /1e6 (→ trillions, ~4-9) then subtracted a billions-scale RRP/TGA (tens-to-hundreds):
-    the balance-sheet term became numerically smaller than the drain, annihilating the
-    trend.  A billions-scale WALCL is in the THOUSANDS; a max < 100 means the caller scaled
-    to trillions.  This only fires on a WALCL-shaped series (max > 1) so a caller passing an
-    empty/degenerate series never trips it.  A pure-normalisation consumer never NaNs on the
-    mismatch, so a scale invariant is the only way to catch it."""
+    Post-2008 WALCL is ~$4-9 TRILLION = 4,000-9,000 in BILLIONS (and never below ~700 bn
+    back to the 2002 start of the FRED series).  The #28 bug scaled WALCL by /1e6
+    (→ trillions, ~0.7-9): a WALCL-shaped max in (1, 100) can ONLY be a trillions scaling.
+    The original tell additionally required a billions-scale drain (RRP max > 1.0) as the
+    contrast term — that reference went DARK when ON-RRP drained to ~$0-6 bn in 2026 (a
+    post-drain window has rrp max ≤ 1) and was always blind to ``rrp_bn=None``, letting a
+    trillions WALCL slip through unflagged.  WALCL's own scale is unambiguous, so the drain
+    is no longer consulted (``rrp_bn`` stays in the signature for call-site stability).
+    Still fires only on a WALCL-shaped series (max > 1) so an empty/degenerate fixture
+    never trips it.  A pure-normalisation consumer never NaNs on the mismatch, so a scale
+    invariant is the only way to catch it."""
     w = pd.to_numeric(walcl_bn, errors="coerce").dropna()
-    r = pd.to_numeric(rrp_bn, errors="coerce").dropna()
     if len(w) < 3:
         return  # too short to judge scale (golden-vector fixtures / tests)
     wmax = w.abs().max()
-    rmax = r.abs().max() if len(r) else 0.0
-    # WALCL in trillions (< 100) while the drain is billions-scale (tens+) → the #28 bug.
-    if 1.0 < wmax < 100.0 and rmax > 1.0:
+    # WALCL in trillions: max in (1, 100).  A correctly-scaled billions WALCL max is ≥ ~700.
+    if 1.0 < wmax < 100.0:
         raise ValueError(
             f"net_liquidity_bn mixed-unit bug (audit #28): WALCL max {wmax:.1f} looks like "
-            f"TRILLIONS while the drain max {rmax:.1f} is billions-scale. A billions-scale "
-            "balance sheet is in the THOUSANDS — scale WALCL by /1000 (millions→billions), "
-            "not /1e6.")
+            "TRILLIONS. A billions-scale balance sheet is in the THOUSANDS — scale WALCL "
+            "by /1000 (millions→billions), not /1e6.")
 
 
 # ═════════════════════════════════════════════════════════════════════════════

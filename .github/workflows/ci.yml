@@ -61,6 +61,23 @@ on:
       - "scripts/check_cycle_consistency.py"
       - "tests/test_cycle_consistency.py"
       - "tests/test_cycle_ontology.py"
+      # 2026-07-02 rot sweep (engine-render-guards job): these files broke silently on
+      # main because no CI job ran them. engine/** is broad on purpose — most of these
+      # tests pin engine contracts (display-only firewalls, unit guards, honesty layer).
+      - "engine/**"
+      - "scripts/build_site.py"
+      - "scripts/audit_price_basis.py"
+      - "research/signal_engine/walk_forward.py"
+      - "tests/test_canada_build.py"
+      - "tests/test_commodity_signals.py"
+      - "tests/test_fear_euphoria.py"
+      - "tests/test_froth_fragility.py"
+      - "tests/test_missing_tape.py"
+      - "tests/test_price_basis_flip.py"
+      - "tests/test_risk_lead_lag.py"
+      - "tests/test_anticipation.py"
+      - "tests/test_canon.py"
+      - "tests/test_whitehouse_w5.py"
   workflow_dispatch:
 
 permissions:
@@ -205,6 +222,31 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: grading_stats library tests (wilson_ci, fdr_bh, cone_coverage, china regression)
         run: python -m pytest tests/test_grading_stats.py -q
+
+  engine-render-guards:
+    # 2026-07-02 rot sweep: these test files silently broke on main because ci.yml only
+    # ran a targeted subset. They cover the template render guards (canada / fear↔euphoria /
+    # froth merged card / risk-state banner), the froth display-only firewall, the
+    # price-basis-flip audit, the risk-gauge honesty layer (base-rate → measured PIT
+    # probs, #887), GDELT missing-tape, the commodity MTF ladder (fitted bands, #981),
+    # the net-liquidity unit guard (drain-independent since RRP≈0), and the whitehouse
+    # qledger import guards (order-dependence cured at the walk_forward leaker).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests
+      - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
+        run: >
+          python -m pytest
+          tests/test_canada_build.py tests/test_commodity_signals.py
+          tests/test_fear_euphoria.py tests/test_froth_fragility.py
+          tests/test_missing_tape.py tests/test_price_basis_flip.py
+          tests/test_risk_lead_lag.py tests/test_anticipation.py
+          tests/test_canon.py tests/test_whitehouse_w5.py -q
 
   cycle-consistency:
     # W3.6 (R3-M3): the SAME instrument must show the SAME pos_v2/phase_v2 across every

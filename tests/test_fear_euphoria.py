@@ -153,16 +153,30 @@ def test_synthesis_absent_from_scoring_sources():
 
 
 # ---- 10/11. template render smoke + neutrality -------------------------------
+# Since #757 the panel is split in two: a compact card inside the merged
+# "Sentiment regime" section on the dashboard, and the full breakdown (legs +
+# positioning chip) on macro_signals.html.
 def _render_fe(latest, fear_euphoria):
     from jinja2 import Environment, FileSystemLoader
     src = (TEMPLATES / "dashboard.html.j2").read_text()
     macros = src[: src.index("{# coloured")]            # the help() + t() macros
-    start = src.index("<!-- ===== FEAR <-> EUPHORIA SYNTHESIS")
-    end = src.index("<!-- ======================= ACTION BOARD")
+    start = src.index("<!-- ===================== SENTIMENT REGIME")
+    end = src.index("<!-- ===================== CROSS-ASSET MACRO")
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
     return env.from_string(macros + src[start:end]).render(
-        latest=latest, fear_euphoria=fear_euphoria)
+        latest=latest, fear_euphoria=fear_euphoria, froth_fragility=None, mode="macro")
+
+
+def _render_fe_full(fear_euphoria):
+    from jinja2 import Environment, FileSystemLoader
+    src = (TEMPLATES / "macro_signals.html.j2").read_text()
+    macros = src[: src.index("<!DOCTYPE")]              # the t()/help()/kv() macros
+    start = src.index("{# ===================== FEAR <-> EUPHORIA (full)")
+    end = src.index("{# ===================== REGIME INTERNALS")
+    env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
+    env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
+    return env.from_string(macros + src[start:end]).render(fear_euphoria=fear_euphoria)
 
 
 _LATEST_MIN = {
@@ -183,19 +197,31 @@ _FE_MIN = {"fe_score": 12, "band": "Fear", "roro": 0.42, "roro_state": "risk-on"
 
 def test_render_smoke():
     html = _render_fe(_LATEST_MIN, _FE_MIN)
-    assert 'id="fear-euphoria"' in html
+    assert 'id="sentiment-regime"' in html
     assert "Fear ↔ Euphoria: regime synthesis" in html      # title EN
     assert "恐惧 ↔ 欣喜：周期综合" in html                    # title ZH
     for en, zh in [("Panic", "恐慌"), ("Fear", "恐惧"), ("Neutral", "中性"),
                    ("Greed", "贪婪"), ("Euphoria", "欣喜")]:   # all 5 bands, both langs
         assert en in html and zh in html, en
-    assert "positioning mixed" in html and "持仓信号混杂" in html   # chip, both langs
 
 
-def test_render_building_when_none():
-    html = _render_fe(_LATEST_MIN, None)
+def test_render_full_breakdown_smoke():
+    # the legs + positioning chip live on the macro_signals full-breakdown panel
+    html = _render_fe_full(_FE_MIN)
     assert 'id="fear-euphoria"' in html
-    assert "Building…" in html and "构建中…" in html
+    assert "full breakdown" in html and "完整拆解" in html
+    assert "Positioning vs price" in html and "持仓与价格" in html
+    assert "mixed" in html and "混杂" in html               # the chip, both langs
+    assert "VIX" in html                                    # the leg renders
+
+
+def test_render_absent_when_none():
+    # the Building… placeholder was retired with the #757 merge: when the
+    # synthesis is None the card (and the full panel) simply do not render
+    html = _render_fe(_LATEST_MIN, None)
+    assert 'id="sentiment-regime"' not in html
+    assert "Fear ↔ Euphoria" not in html
+    assert 'id="fear-euphoria"' not in _render_fe_full(None)
 
 
 def test_neutral_no_pos_neg():
@@ -277,7 +303,10 @@ def test_lex_completeness():
         assert any("一" <= ch <= "鿿" for ch in zh), key  # contains Han
 
 
-# ---- 13. complacency mirror (display-only euphoria-side block) ----------------
+# ---- 13. complacency surface (moved: FE-panel mirror -> risk-state banner) ----
+# The euphoria-side complacency mirror was folded out of the FE panel by the
+# #653/#757 redesigns; hidden-fragility now surfaces through the EARLY
+# RISK-STATE BANNER (engine/risk_state.py — complacency is the keystone leg).
 _COMPLACENCY_FRAGILE = {
     "calm": 2, "fragility": 2, "warning": True, "strong": True,
     "state": "hidden_fragility",
@@ -288,21 +317,40 @@ _COMPLACENCY_FRAGILE = {
 }
 
 
-def test_render_complacency_mirror():
-    latest = {**_LATEST_MIN,
-              "conditions": {**_LATEST_MIN["conditions"],
-                             "complacency": _COMPLACENCY_FRAGILE}}
-    html = _render_fe(latest, _FE_MIN)
-    assert "Complacency" in html and "自满" in html                  # bilingual header
-    assert "hidden fragility" in html and "隐性脆弱" in html          # warning state, both langs
-    assert "breadth not confirming" in html and "广度未确认" in html  # a weak-internals leg
-    assert "VIX low" in html and "HY credit widening" in html        # calm + credit legs
-    assert "never scored" in html                                    # display-only disclaimer
+def _render_risk_state_banner(risk_state):
+    from jinja2 import Environment, FileSystemLoader
+    src = (TEMPLATES / "dashboard.html.j2").read_text()
+    macros = src[: src.index("{# coloured")]
+    start = src.index("<!-- ============ EARLY RISK-STATE BANNER")
+    end = src.index("<!-- ============ MACRO NOWCAST")
+    env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
+    env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
+    return env.from_string(macros + src[start:end]).render(
+        latest={"risk_radar": None, "risk_state": risk_state})
+
+
+def test_complacency_surfaces_via_risk_state_banner():
+    from engine import risk_state as rs
+    intensity, en, zh = rs._leg_complacency({"complacency": _COMPLACENCY_FRAGILE})
+    assert intensity == 1.0                                          # keystone leg fires
+    assert "complacency=hidden_fragility" in en and "自满度" in zh    # bilingual detail
+    html = _render_risk_state_banner({
+        "state": "elevated", "score": 61.0, "alert": False,
+        "label_en": "Elevated", "label_zh": "偏高",
+        "headline_en": "Calm surface over weak internals.", "headline_zh": "表面平静，内部走弱。",
+        "drivers": [{"intensity": intensity, "detail_en": en, "detail_zh": zh}],
+        "reader_contract": "De-gross, do not chase.", "disclaimer": "Context, not alpha.",
+    })
+    assert 'id="risk-state"' in html
+    assert "complacency=hidden_fragility" in html and "自满度" in html
     assert 'class="pos"' not in html and 'class="neg"' not in html   # neutral (no good/bad)
 
 
-def test_render_complacency_absent_when_missing():
-    # no complacency block -> the mirror simply does not render, panel still fine
+def test_complacency_leg_absent_when_missing():
+    # no complacency state -> the keystone leg drops out (renormalized mean), and
+    # the FE card renders fine without any hidden-fragility text
+    from engine import risk_state as rs
+    assert rs._leg_complacency({}) == (None, None, None)
     html = _render_fe(_LATEST_MIN, _FE_MIN)
-    assert 'id="fear-euphoria"' in html
+    assert 'id="sentiment-regime"' in html
     assert "hidden fragility" not in html

@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import commodity_signals as S  # noqa: E402
 from engine import commodity_mtf as M  # noqa: E402
+from engine import cycles as C  # noqa: E402
 from lib import config  # noqa: E402
 
 CFG = config.load()["commodities"]
@@ -152,8 +153,12 @@ def test_mtf_ladder_shape_and_equity_preset() -> None:
     a = M.mtf_ladder(df["close"], df["high"])
     assert {"cycle", "mtf", "ladder"} <= set(a)
     assert {"D", "3D", "W", "2W", "ME"} <= set(a["mtf"])  # all five timeframes
-    # equity preset (36-42 trading-day daily cycle), NOT crypto's (56-70)
-    assert a["cycle"]["dc_band"] == (36, 42)
+    # equity preset (kind="equity"), NOT crypto's. Since W2.8 (#981) the band is
+    # the fitted override from data/regime/cycle_bands_fit.json when present
+    # (hand-constants 36-42 are only the fallback), so compare against the same
+    # resolver the engine uses rather than a frozen constant.
+    assert a["cycle"]["dc_band"] == tuple(C._preset("equity")["dc_band"])
+    assert a["cycle"]["dc_band"] != tuple(C._preset("crypto")["dc_band"])
 
 
 def test_mtf_ladder_short_series_omits_monthly() -> None:

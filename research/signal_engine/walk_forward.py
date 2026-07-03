@@ -90,8 +90,13 @@ import pandas as pd
 # same-dir siblings (confluence.py, diagnose_v2.py, ...) — mirror test_buyfilter's import path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-warnings.filterwarnings("ignore")
-logging.disable(logging.CRITICAL)
+if __name__ == "__main__":
+    # CLI-only silencers.  logging.disable() is PROCESS-GLOBAL state: at module level it
+    # leaked out of `import walk_forward` (tests/test_trial_registration_lint.py) and muted
+    # every logger for the rest of the pytest run — breaking any later test that asserts on
+    # emitted log records (e.g. test_whitehouse_w5's qledger import-guard tests).
+    warnings.filterwarnings("ignore")
+    logging.disable(logging.CRITICAL)
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data" / "stocks"

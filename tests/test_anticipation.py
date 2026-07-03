@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from engine import anticipation, forward_dist, velocity, vol_forecast  # noqa: E402
+from engine import anticipation, canon, forward_dist, velocity, vol_forecast  # noqa: E402
 
 STOCKS = Path("data/stocks")
 _NAMES = ["NVDA", "AAPL", "JPM", "XOM"]
@@ -153,16 +153,20 @@ def test_point_in_time_no_lookahead():
 
 def test_net_liquidity_mixed_unit_invariant():
     """Audit #28: net liquidity must be a CONSISTENT-UNITS 3-term billions series
-    (WALCL/1000 - RRP - TGA/1000). Two invariants that the OLD /1e6 (trillions)
-    construction VIOLATED:
+    (WALCL/1000 - RRP - TGA/1000).  Redesigned 2026-07: the original invariant used the
+    ON-RRP drain as the billions-scale reference ("WALCL-in-trillions < RRP-in-bn"),
+    which ROTTED when ON-RRP drained to ~$0-6bn — a trillions WALCL (~6.7) is no longer
+    smaller than the drain.  Scale is now judged ABSOLUTELY:
 
-      1. WALCL_bn — the Fed balance sheet, the dominant term — must be the LARGEST-
-         magnitude component (>= RRP_bn and >= TGA_bn in median). The old code put
-         WALCL in trillions (~6.7) making it SMALLER than a billions-scale RRP (~27),
-         which is the mixed-unit tell.
-      2. netliq.diff must NOT be (near-)perfectly correlated with -RRP.diff. Under the
-         old bug WALCL's daily change was ~1000x too small, so netliq velocity was a
-         pure -RRP proxy (corr ~1.0). Fixed, WALCL's balance-sheet trend contributes.
+      1. WALCL_bn must be THOUSANDS-scale (median > 1,000) — a trillions-scaled WALCL is
+         ~2-9, so this cannot rot however far the drain falls.  It must also remain the
+         largest-magnitude component (>= RRP_bn, >= TGA_bn in median).
+      2. netliq.diff must NOT be (near-)perfectly correlated with -RRP.diff.  NaN-safe:
+         a fully-drained flat RRP has a degenerate diff and an undefined corr — that is
+         a PASS (no proxy), not a failure.
+      3. Guard-the-guard: the PRODUCTION detector (canon._assert_billions_scale, via
+         canon.net_liquidity_bn) must REJECT the old /1e6 trillions construction —
+         independent of where the drain happens to sit.
     """
     idx = pd.bdate_range("2000-01-01", "2027-01-01")
     comps = anticipation._net_liquidity_bn(idx)
@@ -174,24 +178,29 @@ def test_net_liquidity_mixed_unit_invariant():
         print("skip test_net_liquidity_mixed_unit_invariant (no WALCL data)")
         return
 
-    # Invariant 1: WALCL is the dominant (largest) component in correct units.
+    # Invariant 1: WALCL in billions is ABSOLUTELY thousands-scale, and dominant.
+    assert mw > 1000, f"WALCL_bn median {mw:.1f} — trillions-scale mixup (audit #28)?"
     assert mw >= mr, f"WALCL_bn ({mw:.0f}) < RRP_bn ({mr:.0f}) — mixed-unit scaling!"
     assert mw >= mt, f"WALCL_bn ({mw:.0f}) < TGA_bn ({mt:.0f}) — mixed-unit scaling!"
 
-    # Invariant 2: netliq velocity is not a pure -RRP proxy.
+    # Invariant 2: netliq velocity is not a pure -RRP proxy (NaN corr ⇒ PASS).
     d_net = comps["netliq_bn"].reindex(win).diff()
     d_negrrp = (-comps["rrp_bn"].reindex(win).diff())
     corr = float(d_net.corr(d_negrrp))
-    assert corr < 0.99, f"netliq.diff is a pure -RRP proxy (corr {corr:.3f}) — WALCL annihilated!"
+    assert not (corr >= 0.99), \
+        f"netliq.diff is a pure -RRP proxy (corr {corr:.3f}) — WALCL annihilated!"
 
-    # Guard-the-guard: the OLD construction (WALCL /1e6, TGA dropped) MUST fail both.
+    # Guard-the-guard: the old trillions WALCL must be REJECTED by the production
+    # detector itself (drain-independent; try/except keeps the __main__ runner pytest-free).
     old_walcl_tn = comps["walcl_bn"] / 1000.0                 # bn/1000 == the old /1e6 trillions
-    old_netliq = old_walcl_tn - comps["rrp_bn"]               # TGA dropped, as before
-    assert float(old_walcl_tn.reindex(win).median()) < mr, "old WALCL(trillions) should be < RRP(bn)"
-    old_corr = float(old_netliq.reindex(win).diff().corr(d_negrrp))
-    assert old_corr > 0.99, f"old netliq should be a pure -RRP proxy (got corr {old_corr:.3f})"
+    try:
+        canon.net_liquidity_bn(old_walcl_tn, comps["rrp_bn"], comps["tga_bn"])
+    except ValueError as e:
+        assert "audit #28" in str(e), f"trillions WALCL rejected for the wrong reason: {e}"
+    else:
+        raise AssertionError("canon must reject a trillions-scale WALCL (audit #28 detector)")
     print(f"ok test_net_liquidity_mixed_unit_invariant "
-          f"(WALCL={mw:.0f} RRP={mr:.0f} TGA={mt:.0f} bn; corr new {corr:.2f} vs old {old_corr:.2f})")
+          f"(WALCL={mw:.0f} RRP={mr:.0f} TGA={mt:.0f} bn; corr {corr:.2f})")
 
 
 if __name__ == "__main__":
