@@ -60,11 +60,15 @@ def test_archetype_shape():
     fac = {"value": 1.0, "quality": 0.0, "profitability": 0.0,
            "payout": 0.0, "low_vol": 0.0, "low_beta": 0.0}
     a = SF._archetype(fac, 10, 5, 30)
-    for k in ("key", "label", "label_zh", "confidence", "conf_word", "why", "why_zh"):
-        assert k in a
+    # v2: new required fields in output
+    for k in ("key", "label", "label_zh", "confidence", "conf_word", "why", "why_zh",
+              "anchored", "v2_inputs"):
+        assert k in a, f"missing key '{k}' in archetype output"
     assert a["key"] in SF.ARCHETYPES
     assert 0.0 <= a["confidence"] <= 1.0
     assert a["conf_word"] in ("high", "moderate", "low")
+    assert isinstance(a["anchored"], bool)
+    assert isinstance(a["v2_inputs"], dict)
 
 
 def test_earnings_includes_sue_z():
@@ -132,6 +136,184 @@ def test_panels_smoke():
         fac = rec.get("factors")
         if fac and fac.get("fundamental_score") is not None:
             assert -100 <= fac["fundamental_score"] <= 100
+
+
+def test_archetype_v2_new_buckets():
+    """Known-fixture tests for each v2 bucket. Each fixture is designed to be
+    unambiguous — only one bucket should fire."""
+    base = {"value": 0.0, "quality": 0.0, "profitability": 0.0,
+            "payout": 0.0, "low_vol": 0.0, "low_beta": 0.0}
+
+    # --- distressed: Altman z < 1.81, non-approx ---
+    my_d = {"rev_cagr": 4.0, "eps_cagr": 2.0,
+            "altman": {"z": 1.2, "zone": "distress", "approx": False}}
+    a = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, my=my_d)
+    assert a["key"] == "distressed", f"expected distressed, got {a['key']}"
+    assert a["anchored"] is True
+
+    # --- distressed should NOT fire when approx=True (too incomplete for hard block) ---
+    my_d_approx = {"rev_cagr": 4.0, "eps_cagr": 2.0,
+                   "altman": {"z": 1.2, "zone": "distress", "approx": True}}
+    a_approx = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, my=my_d_approx)
+    assert a_approx["key"] != "distressed", "distressed must not fire on approx=True Altman"
+
+    # --- financial: sector-keyed, not ratio-keyed ---
+    a_fin = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Financials")
+    assert a_fin["key"] == "financial"
+    assert a_fin["anchored"] is True
+
+    # --- rate_sensitive: |rates beta| >= 0.40 ---
+    betas_pos = {"rates": 0.55, "raw": {"oil": 0.01}}
+    a_rs_pos = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, betas=betas_pos)
+    assert a_rs_pos["key"] == "rate_sensitive"
+    betas_neg = {"rates": -0.50, "raw": {"oil": 0.01}}
+    a_rs_neg = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, betas=betas_neg)
+    assert a_rs_neg["key"] == "rate_sensitive", "negative rates beta should also fire"
+
+    # --- commodity_sensitive: |oil beta raw| >= 0.35 ---
+    betas_oil = {"rates": 0.1, "raw": {"oil": 0.50}}
+    a_cs = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, betas=betas_oil)
+    assert a_cs["key"] == "commodity_sensitive"
+
+    # --- secular_growth: rev_cagr>=15 AND eps_cagr>=12 ---
+    my_sg = {"rev_cagr": 20.0, "eps_cagr": 15.0,
+             "altman": {"z": 4.0, "zone": "safe", "approx": False}}
+    a_sg = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, my=my_sg)
+    assert a_sg["key"] == "secular_growth"
+    assert a_sg["anchored"] is True
+
+    # --- broken_growth: rev_cagr>=10 AND eps_cagr<=0 ---
+    my_bg = {"rev_cagr": 12.0, "eps_cagr": -3.0,
+             "altman": {"z": 4.0, "zone": "safe", "approx": False}}
+    a_bg = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, my=my_bg)
+    assert a_bg["key"] == "broken_growth"
+    assert a_bg["anchored"] is True
+
+    # --- cyclical: Industrials sector, no defensive/quality overlay ---
+    a_cy = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Industrials")
+    assert a_cy["key"] == "cyclical"
+
+    # --- cyclical: Energy sector ---
+    a_cy_e = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Energy")
+    assert a_cy_e["key"] == "cyclical"
+
+    # --- cyclical does NOT fire when quality compounder overlay present ---
+    qc_fac = dict(base, quality=0.8, profitability=0.5)
+    a_no_cy = SF._archetype(qc_fac, ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Industrials")
+    assert a_no_cy["key"] != "cyclical", "quality overlay should block cyclical"
+
+
+def test_archetype_v2_precedence_determinism():
+    """Precedence is deterministic: multiple-match scenarios resolve to the highest-priority
+    bucket, and calling twice returns the same result (no stochastic element)."""
+    base = {"value": 0.0, "quality": 0.0, "profitability": 0.0,
+            "payout": 0.0, "low_vol": 0.0, "low_beta": 0.0}
+
+    # speculative_unprofitable beats financial (rule 1 > rule 3)
+    a1 = SF._archetype(base, ni=-100.0, net_margin=-10.0, nm_top_thr=20.0, sector="Financials")
+    assert a1["key"] == "speculative_unprofitable", \
+        f"speculative_unprofitable should beat financial; got {a1['key']}"
+
+    # financial beats rate_sensitive (rule 3 > rule 4)
+    betas_rs = {"rates": 0.7, "raw": {"oil": 0.01}}
+    a2 = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0,
+                       sector="Financials", betas=betas_rs)
+    assert a2["key"] == "financial", \
+        f"financial should beat rate_sensitive; got {a2['key']}"
+
+    # secular_growth beats cyclical (rule 6 > rule 8)
+    my_sg = {"rev_cagr": 20.0, "eps_cagr": 15.0,
+             "altman": {"z": 4.0, "zone": "safe", "approx": False}}
+    a3 = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0,
+                       sector="Industrials", my=my_sg)
+    assert a3["key"] == "secular_growth", \
+        f"secular_growth should beat cyclical; got {a3['key']}"
+
+    # Determinism: calling twice gives same key
+    a4a = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0,
+                        sector="Industrials", my=my_sg)
+    a4b = SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0,
+                        sector="Industrials", my=my_sg)
+    assert a4a["key"] == a4b["key"], "archetype is not deterministic"
+
+
+def test_archetype_v2_anchored_flag():
+    """anchored=True for all absolute-threshold v2 buckets; False for factor-z buckets."""
+    base = {"value": 0.0, "quality": 0.0, "profitability": 0.0,
+            "payout": 0.0, "low_vol": 0.0, "low_beta": 0.0}
+
+    # v2 anchored buckets
+    my_sg = {"rev_cagr": 20.0, "eps_cagr": 15.0, "altman": {"z": 4.0, "zone": "safe", "approx": False}}
+    cases_anchored = [
+        SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Financials"),       # financial
+        SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, sector="Industrials"),      # cyclical
+        SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0, my=my_sg),                 # secular_growth
+        SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0,
+                      betas={"rates": 0.7, "raw": {"oil": 0.01}}),                                # rate_sensitive
+    ]
+    for a in cases_anchored:
+        assert a["anchored"] is True, f"expected anchored=True for {a['key']}"
+
+    # v1 factor-z buckets should have anchored=False
+    cases_not_anchored = [
+        SF._archetype(dict(base, quality=0.8, profitability=0.5), ni=10.0, net_margin=5.0, nm_top_thr=20.0),  # quality_compounder
+        SF._archetype(dict(base, value=1.0), ni=10.0, net_margin=5.0, nm_top_thr=20.0),                       # deep_value
+        SF._archetype(dict(base, payout=0.8, low_vol=0.6, low_beta=0.5), ni=10.0, net_margin=5.0, nm_top_thr=20.0),  # dividend_defensive
+        SF._archetype(base, ni=10.0, net_margin=5.0, nm_top_thr=20.0),                                        # mixed
+    ]
+    for a in cases_not_anchored:
+        assert a["anchored"] is False, f"expected anchored=False for {a['key']}, got {a['anchored']}"
+
+
+def test_archetype_v2_known_compounder():
+    """A known secular compounder profile: high quality, strong multi-year CAGR,
+    above-threshold rev/eps growth. Should land in secular_growth (highest priority
+    growth bucket, beats quality_compounder)."""
+    # Profile: strong quality z-scores + secular CAGR above both thresholds
+    fac = {"value": -0.2, "quality": 0.9, "profitability": 0.8,
+           "payout": 0.1, "low_vol": 0.2, "low_beta": 0.1}
+    my = {"rev_cagr": 22.0, "eps_cagr": 18.0,
+          "altman": {"z": 4.5, "zone": "safe", "approx": False}}
+    a = SF._archetype(fac, ni=500.0, net_margin=25.0, nm_top_thr=20.0, my=my)
+    assert a["key"] == "secular_growth", \
+        f"compounder with strong CAGR should be secular_growth, got {a['key']}"
+
+
+def test_archetype_v2_known_bank():
+    """A known bank (Financials sector). Should land in financial regardless of ratios
+    (EDGAR inventory/gross_profit absent for banks)."""
+    fac = {"value": 0.3, "quality": 0.4, "profitability": 0.5,
+           "payout": 0.6, "low_vol": 0.3, "low_beta": 0.2}
+    a = SF._archetype(fac, ni=1000.0, net_margin=20.0, nm_top_thr=15.0,
+                      sector="Financials")
+    assert a["key"] == "financial"
+    assert a["anchored"] is True
+
+
+def test_archetype_v2_known_distressed():
+    """A known distressed name: Altman Z well below 1.81, non-approx, profitable."""
+    base = {"value": 0.0, "quality": 0.0, "profitability": 0.1,
+            "payout": 0.0, "low_vol": 0.0, "low_beta": 0.0}
+    my = {"rev_cagr": 3.0, "eps_cagr": 1.0,
+          "altman": {"z": 0.8, "zone": "distress", "approx": False}}
+    a = SF._archetype(base, ni=50.0, net_margin=3.0, nm_top_thr=15.0, my=my)
+    assert a["key"] == "distressed"
+    assert a["anchored"] is True
+    assert a["confidence"] > 0.0
+
+
+def test_archetype_v2_taxonomy_completeness():
+    """ARCHETYPE_TAXONOMY must equal ARCHETYPES and ARCHETYPE_PRECEDENCE must
+    cover every key in ARCHETYPES exactly once."""
+    assert SF.ARCHETYPE_TAXONOMY is SF.ARCHETYPES, "ARCHETYPE_TAXONOMY must alias ARCHETYPES"
+    prec_keys = SF.ARCHETYPE_PRECEDENCE
+    arch_keys = set(SF.ARCHETYPES.keys())
+    assert set(prec_keys) == arch_keys, (
+        f"ARCHETYPE_PRECEDENCE keys mismatch ARCHETYPES.\n"
+        f"  extra in precedence: {set(prec_keys) - arch_keys}\n"
+        f"  missing from precedence: {arch_keys - set(prec_keys)}"
+    )
+    assert len(prec_keys) == len(set(prec_keys)), "ARCHETYPE_PRECEDENCE has duplicate keys"
 
 
 def _run():
