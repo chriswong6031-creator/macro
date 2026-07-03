@@ -920,7 +920,14 @@ split/tighten/loosen proposals, human-approved; lifecycle transitions per §3.1)
 
 | date | wave | verdict | PR# | artifacts |
 |---|---|---|---|---|
-| 2026-07-03 | program birth | Masterplan authored (Fable), 6-lens red-team (32 upheld findings applied), merged | — | this doc |
+| 2026-07-03 | handoff | Session handoff written (account switch); next: review #1102/#1105, run massive+EDGAR backfills, Stage B | — | research/species/HANDOFF_2026-07-03.md |
+| 2026-07-03 | W0.6 | SHIPPED — massive stock_day capture machinery (smoke-tested, earliest 2025-01-02; FULL BACKFILL STILL TO RUN, ~4h, window rolls), revisions dispersion (revenue drift structurally unavailable in yfinance — documented), EDGAR quarterly script (10-name validation; full ~9min run pending), Polygon tier-1 500 | #1107 | collectors/massive_stock_day.py, scripts/backfill_massive_stock_day.py, scripts/backfill_edgar_quarterly.py |
+| 2026-07-03 | W0.7 | BUILT — 13-bucket archetype v2 (8 anchored) + PIT history (1,331 tickers FY2009–25) + phase-0 report (single-regime caveat); **PR HELD for orchestrator review** | #1105 | engine/stock_fundamentals.py, data/archetypes/history.parquet, research/species/W0_7_ARCHETYPE_REPORT.md |
+| 2026-07-03 | W0.4 | SHIPPED — cohort metrics v0 display-only: peer_washout/reclaim/macd_turn %, Rubber-Band Score, coverage law, RS-rank series (S7 dep); 1.9s runtime; live read: mean peer_washout 0.71 | #1104 | engine/cohort_metrics.py, data/cohort_metrics/ |
+| 2026-07-03 | W0.3 | SHIPPED — species registry v0, 17 species seeded truthfully, experiments-tab additive mirror (idempotent) | #1103 | engine/species_registry.py, data/species/registry.json |
+| 2026-07-03 | W0.5a | BUILT — regime_vector aggregator + rate_pressure + null-on-degraded + coherence registration; **PR HELD: adjudicate panic threshold 68.0 (shipped) vs LOUD 78.0 (§3.4 letter) before merge** | #1102 | engine/regime_vector.py, data/regime/regime_vector.parquet |
+| 2026-07-03 | W0.1a | SHIPPED — grading spine primitives: fwd_mfe, terminal-state partition (clean15_126/clean8_21, straddle→stop), cushion incidence (competing-risk), PIT membership in as_of_panel | #1100 | engine/grading.py |
+| 2026-07-03 | program birth | Masterplan authored (Fable), 6-lens red-team (32 upheld findings applied), merged | #1097 | this doc |
 
 ---
 
