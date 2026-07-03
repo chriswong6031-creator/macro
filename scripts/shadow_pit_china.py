@@ -331,6 +331,194 @@ def measure_revz_causality(board_date: str, sample: int = 300) -> dict:
     }
 
 
+# --------------------------------------------------------------------------- W1-A wsetup repaint tax
+def _wsetup_flags_live(close: pd.Series, asof: pd.Timestamp) -> dict | None:
+    """Compute W-tier setup flags on the panel truncated at asof (live / provisional view).
+
+    Returns {setup_live, macd_approaching_up, macd_bars_to_cross, stoch, stoch_cross_up}
+    or None when series is too short to grade.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from engine.setup_tier import w_setup  # late import to avoid circular at module load
+    s = pd.to_numeric(close.loc[:asof], errors="coerce").dropna()
+    if len(s) < 120:
+        return None
+    ws = w_setup(s)
+    if ws is None:
+        return None
+    w2 = ws.get("w2") or {}
+    return {
+        "setup_live": bool(ws.get("setup_live")),
+        "macd_approaching_up": bool(w2.get("macd_approaching_up", False)),
+        "macd_bars_to_cross": w2.get("macd_bars_to_cross"),
+        "stoch": w2.get("stoch"),
+        "stoch_cross_up": bool(w2.get("stoch_cross_up", False)),
+    }
+
+
+def _wsetup_flags_completed(close: pd.Series, asof: pd.Timestamp) -> dict | None:
+    """Compute W-tier setup flags on COMPLETED 2W buckets only (backtest view).
+
+    Drops the final 2W-FRI bucket if it is still accruing at asof (its label > asof),
+    matching the completed-bucket discipline used in measure_bucket_tax.
+    """
+    from engine.cycles import _tf_state as _tfs
+    from engine.setup_tier import _w1_cross_info, _base_range
+
+    s = pd.to_numeric(close.loc[:asof], errors="coerce").dropna()
+    if len(s) < 120:
+        return None
+
+    # 2W-FRI completed buckets: drop the partial final bucket
+    res = s.resample("2W-FRI")
+    last2w = res.last().dropna()
+    complete = last2w.index <= pd.Timestamp(asof)
+    last2w_comp = last2w[complete]
+    if len(last2w_comp) < 40:
+        return None
+    w2 = _tfs(last2w_comp)
+    if not w2:
+        return None
+
+    # 1W cross: use the completed weekly series (last bar on/before asof)
+    wk = s.resample("W-FRI").last().dropna()
+    wk_comp = wk[wk.index <= pd.Timestamp(asof)]
+    if len(wk_comp) < 30:
+        return None
+    w1_cross = _w1_cross_info(wk_comp)
+
+    stoch = w2.get("stoch")
+    from engine.setup_tier import W2_STOCH_WASHOUT, W1_FRESH_BARS, W2_MACD_IMMINENCE
+    cond_a = bool(
+        (stoch is not None and stoch <= W2_STOCH_WASHOUT)
+        or w2.get("stoch_cross_up")
+    )
+    btc = w2.get("macd_bars_to_cross")
+    cond_c = bool(
+        (w2.get("macd_approaching_up") and btc is not None and btc <= W2_MACD_IMMINENCE)
+        or w2.get("macd_cross_up")
+    )
+    cond_b = bool(
+        w1_cross.get("cross_date") is not None
+        and w1_cross.get("bars_since") is not None
+        and w1_cross["bars_since"] <= W1_FRESH_BARS
+        and w1_cross.get("from_washout")
+    )
+    setup_live = cond_a or cond_b or cond_c
+
+    return {
+        "setup_live": setup_live,
+        "macd_approaching_up": bool(w2.get("macd_approaching_up", False)),
+        "macd_bars_to_cross": btc,
+        "stoch": stoch,
+        "stoch_cross_up": bool(w2.get("stoch_cross_up", False)),
+    }
+
+
+def measure_wsetup_repaint(
+    asof_date: str | None = None,
+    sample: int = 100,
+    n_buckets: int = 8,
+) -> dict:
+    """W1-A PIT bucket tax for W-tier setup flags.
+
+    For the last ~n_buckets completed 2W buckets on ~sample sampled names,
+    compare w_setup computed with the partial (intraweek truncation at each
+    bucket boundary) vs the completed bucket. Reports:
+      - setup_live flip rate
+      - macd_approaching_up flip rate
+    Follows the measure_* function idiom from this module.  Measurement only;
+    changes no live signal or render path.
+    """
+    search = _search_closes()
+    try:
+        m = _members()
+        tickers = list(m.index)
+    except Exception:
+        tickers = list(search.columns)
+    tickers = [t for t in tickers if t in search.columns]
+    if len(tickers) > sample:
+        tickers = tickers[:sample]
+
+    # determine bucket cutpoints: last n_buckets completed 2W-FRI boundaries
+    asof = pd.Timestamp(asof_date) if asof_date else search.index.max()
+    # walk back n_buckets 2W-FRI dates before asof
+    all_2wfri = pd.date_range(end=asof, periods=n_buckets * 2 + 4, freq="2W-FRI")
+    buckets = [d for d in all_2wfri if d < asof][-n_buckets:]
+
+    if not buckets:
+        return {"available": False, "reason": "no completed 2W buckets before asof"}
+
+    flips_live = {"setup_live": 0, "macd_approaching_up": 0}
+    totals = {"setup_live": 0, "macd_approaching_up": 0}
+    n_graded = 0
+    per_bucket: list[dict] = []
+
+    for bucket_end in buckets:
+        b_str = str(bucket_end.date())
+        # "live" = panel truncated 1 day BEFORE the bucket closes (simulates partial bucket)
+        # "completed" = panel extends to bucket_end (the closed bucket)
+        intra_date = bucket_end - pd.Timedelta(days=7)  # ~halfway through the bucket
+        if intra_date >= bucket_end:
+            continue
+
+        sl_flips = ma_flips = bkt_n = 0
+        for t in tickers:
+            close_t = pd.to_numeric(search[t], errors="coerce").dropna()
+            if len(close_t) < 120:
+                continue
+            # skip if intra_date is before the series starts
+            if close_t.index[0] > intra_date:
+                continue
+            live = _wsetup_flags_live(close_t, intra_date)
+            completed = _wsetup_flags_completed(close_t, bucket_end)
+            if live is None or completed is None:
+                continue
+            bkt_n += 1
+            if live["setup_live"] != completed["setup_live"]:
+                sl_flips += 1
+                flips_live["setup_live"] += 1
+            if live["macd_approaching_up"] != completed["macd_approaching_up"]:
+                ma_flips += 1
+                flips_live["macd_approaching_up"] += 1
+            totals["setup_live"] += 1
+            totals["macd_approaching_up"] += 1
+
+        n_graded += bkt_n
+        per_bucket.append({
+            "bucket_end": b_str,
+            "n_names": bkt_n,
+            "setup_live_flips": sl_flips,
+            "macd_approaching_up_flips": ma_flips,
+            "setup_live_flip_rate": round(sl_flips / bkt_n, 4) if bkt_n else None,
+            "macd_approaching_flip_rate": round(ma_flips / bkt_n, 4) if bkt_n else None,
+        })
+
+    sl_rate = round(flips_live["setup_live"] / totals["setup_live"], 4) if totals["setup_live"] else None
+    ma_rate = round(flips_live["macd_approaching_up"] / totals["macd_approaching_up"], 4) if totals["macd_approaching_up"] else None
+    return {
+        "available": n_graded > 0,
+        "asof_date": str(asof.date()),
+        "n_buckets_measured": len(per_bucket),
+        "sample_size": sample,
+        "n_total_graded": n_graded,
+        "setup_live_flip_rate": sl_rate,
+        "macd_approaching_up_flip_rate": ma_rate,
+        "flips_setup_live": flips_live["setup_live"],
+        "flips_macd_approaching_up": flips_live["macd_approaching_up"],
+        "total_observations_setup_live": totals["setup_live"],
+        "total_observations_macd_approaching": totals["macd_approaching_up"],
+        "per_bucket": per_bucket,
+        "note": (
+            "W1-A PIT bucket repaint tax: compares setup_live and macd_approaching_up "
+            "computed mid-bucket (partial/live view) vs at bucket-end (completed-bucket "
+            "backtest view). Flip rate = fraction of name-bucket pairs where the flag "
+            "changed between the two views. High flip rate means a completed-bucket "
+            "backtest grades a DIFFERENT signal than users saw intraweek."
+        ),
+    }
+
+
 # --------------------------------------------------------------------------- driver
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -352,13 +540,18 @@ def main() -> None:
             "shadow_only": True,
             "board_dates": board_dates,
             "note": ("W1-CN leakage tax on the china standout board features — plane, "
-                     "bucket-completeness and price-vintage taxes. Nothing here changes a "
-                     "live path; measurement product only."),
+                     "bucket-completeness, price-vintage, and W1-A wsetup-repaint taxes. "
+                     "Nothing here changes a live path; measurement product only."),
         },
         "plane_tax": {},
         "bucket_tax": {},
         "revz_causality": {},
         "vintage_tax": measure_vintage_tax(n_vintages=args.vintages),
+        "wsetup_repaint": measure_wsetup_repaint(
+            asof_date=(board_dates[-1] if board_dates else None),
+            sample=100,
+            n_buckets=8,
+        ),
     }
     for d in board_dates:
         result["plane_tax"][d] = measure_plane_tax(d)
@@ -388,6 +581,13 @@ def _print_headline(r: dict) -> None:
               f"[>0.1%: {vt['revised_rate_gt_0.1pct']}] "
               f"(median {vt['revised_median_pct']}%, max {vt['revised_max_pct']}%, "
               f"{vt['n_vintage_pairs']} pairs, {vt['partial_bar_pairs_excluded']} partial-bar excluded)")
+    wsr = r.get("wsetup_repaint", {})
+    if wsr.get("available"):
+        print(f"  WSETUP REPAINT (W1-A): setup_live flip={wsr['setup_live_flip_rate']} "
+              f"({wsr['flips_setup_live']}/{wsr['total_observations_setup_live']}); "
+              f"macd_approaching flip={wsr['macd_approaching_up_flip_rate']} "
+              f"({wsr['flips_macd_approaching_up']}/{wsr['total_observations_macd_approaching']}); "
+              f"{wsr['n_buckets_measured']} buckets, n={wsr['sample_size']} names")
 
 
 def _append_doc(r: dict) -> None:
@@ -429,6 +629,18 @@ def _append_doc(r: dict) -> None:
             lines.append(f"- **rev_z** ({d}): causally clean live (both ends observed closes); "
                          f"replay fragility is screened-set churn **{rz['screened_set_churn']:.1%}** "
                          "(current ST/mktcap/membership snapshot vs as-of), not a value leak.\n")
+    wsr = r.get("wsetup_repaint", {})
+    if wsr.get("available"):
+        lines.append(
+            f"- **W1-A wsetup repaint tax** ({wsr['n_buckets_measured']} completed 2W buckets, "
+            f"n={wsr['sample_size']} names, {wsr['n_total_graded']} name-bucket obs): "
+            f"setup_live flips **{wsr['setup_live_flip_rate']:.1%}** "
+            f"({wsr['flips_setup_live']}/{wsr['total_observations_setup_live']}) mid-bucket vs "
+            f"completed; macd_approaching_up flips **{wsr['macd_approaching_up_flip_rate']:.1%}** "
+            f"({wsr['flips_macd_approaching_up']}/{wsr['total_observations_macd_approaching']}) "
+            "between partial and completed 2W bucket. A high rate means RIPENING shelf "
+            "membership is provisional intraweek (see F2 guardrails — O1 open item).\n"
+        )
     lines.append("\n**Verdict:** honest numbers, no demotion recommended on these alone — this "
                  "sizes the taxes so any future 'grade the cascade / washout' work replays on the "
                  "correct plane, persists bucket_end, and treats git panels as the vintage matrix.\n")

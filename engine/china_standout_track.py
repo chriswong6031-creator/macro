@@ -179,6 +179,9 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             # forward_log). Schema-union safe: old parquet rows missing this col read as NaN
             # (handled by pd.concat transparently). "bottoming" when sector qualifies; None otherwise.
             "sector_turn":  (r.get("sector_turn") or {}).get("state"),
+            # W1-B stage: lifecycle shelf (ENTRY / RAN_LATE / None) for board rows (rules 1-2).
+            # Schema-union safe: old parquet rows missing this col read as NaN via pd.concat.
+            "stage":        r.get("stage"),
         })
     if not out:
         return 0
@@ -416,6 +419,56 @@ def _slice_table(df: pd.DataFrame, by: str, col: str = "fwd") -> dict:
             "mean_excess": round(float(vals.mean()), 5),
         }
     return out
+
+
+def _ripening_path():
+    return config.data_dir() / _STORE / "ripening.parquet"
+
+
+def append_ripening(rows: list[dict], asof: str | None = None,
+                    lane: str | None = None) -> int:
+    """Append today's RIPENING names as a compact log (conversion grading in W6 needs this
+    history). Separate parquet from the main board so consumers of buy are unaffected.
+
+    Row schema: date, ticker, reasons (comma-joined str), imminence (macd_bars_to_cross or None),
+    w2_stoch, setup_live. Keep-FIRST per (date, ticker). Same asia-lane gate as append_board.
+    Best-effort — never raises.
+    """
+    if not rows or not asof:
+        return 0
+    if lane is not None and lane != "asia":
+        return 0
+    out = []
+    for r in rows:
+        tk = r.get("ticker")
+        if not tk:
+            continue
+        reasons = r.get("reasons") or []
+        out.append({
+            "date": str(asof),
+            "ticker": str(tk),
+            "reasons": ", ".join(reasons) if reasons else "",
+            "imminence": r.get("imminence"),
+            "w2_stoch": r.get("w2_stoch"),
+            "setup_live": True,
+        })
+    if not out:
+        return 0
+    try:
+        new = pd.DataFrame(out)
+        p = _ripening_path()
+        p.parent.mkdir(parents=True, exist_ok=True)
+        if p.exists():
+            prior = pd.read_parquet(p)
+            combined = pd.concat([prior, new], ignore_index=True).drop_duplicates(
+                subset=["date", "ticker"], keep="first")
+        else:
+            combined = new
+        combined.to_parquet(p, index=False)
+        return int(len(combined))
+    except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
+        log.warning("china standout ripening-track append failed: %s", e)
+        return 0
 
 
 def _wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
