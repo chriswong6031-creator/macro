@@ -4,7 +4,7 @@
 {# "?" affordance: hover/focus reveals a plain-language note. Native title can't
    switch on data-lang, so it carries both languages "EN · ZH" (.qm CSS in _vector_polish). #}
 {% macro qmark(en, zh='') -%}
-<span class="qm" tabindex="0" role="note" title="{{ en }}{% if zh %} · {{ zh }}{% endif %}">?</span>
+<span class="qm" tabindex="0" role="note" data-tip-en="{{ en }}"{% if zh %} data-tip-zh="{{ zh }}"{% endif %}>?</span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">

@@ -42,6 +42,11 @@ jobs:
       # page). Keeps the last-good site live instead of shipping an inconsistent menu.
       - name: guard — shared-nav pages must carry the Research mega-menu
         run: python3 scripts/check_nav_mega.py site
+      # Guard: no translated text in title= attributes (template source). The dual-span
+      # l-en/l-zh mechanism cannot operate inside attributes — bilingual tooltips must
+      # use data-tip-en/data-tip-zh + the theme.js popover instead.
+      - name: guard — no translated text in title attributes
+        run: python3 scripts/check_title_i18n.py templates
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/

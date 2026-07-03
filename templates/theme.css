@@ -936,3 +936,18 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
              font-weight:700; margin:0 3px 3px 0; }
 .rhmm-chip.q-Q2 { color:#1a1a1a; }
 @media (max-width:640px){ .rhmm-bars{ min-width:0; } }
+
+/* ---- i18n tooltip popover ([data-tip-en]/[data-tip-zh], wired in theme.js) --------
+   The replacement for bilingual title= attributes: ONE body-appended fixed-position
+   popover whose dual-span body follows the [data-lang] rules above — so only the
+   active language ever shows. Body-level + fixed → no card overflow clipping. */
+[data-tip-en] { cursor: help; }
+.i18n-tip-pop {
+  display: none; position: fixed; z-index: 9000;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 7px 10px; border-radius: 8px;
+  background: var(--panel); border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  font-size: 11px; font-weight: 500; line-height: 1.5; color: var(--text);
+  text-align: left; text-transform: none; letter-spacing: normal; white-space: normal;
+}
