@@ -1367,6 +1367,239 @@ def main(alpha: dict | None = None) -> dict | None:
                 overflow.append(r)
         return head + overflow
     eligible_rows = _diversify(eligible_rows)
+
+    # ── W1-B: W-tier setup layer wiring ───────────────────────────────────────────
+    # (1) Compute w_setup for the FULL closes-panel universe (>=200 bars).
+    #     Reuse the already-loaded closes from `uni`; do NOT re-read per name.
+    #     Profile: ~6ms/name × 1478 names ≈ 9s — well inside the 2-min budget.
+    #     Best-effort: failures degrade to None (no stage for that name), never fatal.
+    from engine.setup_tier import w_setup as _w_setup_fn, assign_stage as _assign_stage_fn
+    from engine.setup_tier import STAGE_ENTRY, STAGE_RAN_LATE, STAGE_RIPENING
+    _wsetup_by: dict[str, dict | None] = {}
+    _t0_wsetup = time.time()
+    for (_t, _close_w, _high_w, _name_w, _sector_w) in uni:
+        _c_w = _close_w.dropna() if _close_w is not None else None
+        if _c_w is None or len(_c_w) < 200:
+            continue
+        try:
+            _wsetup_by[_t] = _w_setup_fn(_c_w)
+        except Exception:  # noqa: BLE001 — additive; never fatal
+            _wsetup_by[_t] = None
+    log.info("W1-B w_setup: %d names scanned in %.0fs (%d non-None)",
+             len(_wsetup_by), time.time() - _t0_wsetup,
+             sum(1 for v in _wsetup_by.values() if v is not None))
+
+    # (2) Derive last_cross_info for rule-3 (NOT gate-eligible, recent cross <=15 sessions).
+    #     Source: sig_verdict["last"] gives the last buy marker date; we compute sessions_since
+    #     and pct_since from the close series in `uni`. Only compute for ineligible names.
+    _close_map: dict[str, pd.Series] = {t: c for (t, c, *_) in uni if c is not None}
+    _eligible_set = {r.get("ticker") for r in eligible_rows}
+
+    def _last_cross_info(ticker: str) -> dict | None:
+        """Extract last-cross info for rule-3: (cross_date, sessions_since, pct_since).
+        Only for ineligible names whose last signal_gate marker is a buy-type."""
+        sv = sig_verdict.get(ticker)
+        if not sv:
+            return None
+        last_m = sv.get("last") or {}
+        if last_m.get("type") not in ("buy", "rebuy"):
+            return None
+        cross_date_str = last_m.get("date")
+        if not cross_date_str:
+            return None
+        try:
+            cross_dt = pd.Timestamp(cross_date_str)
+            c = (_close_map.get(ticker) or pd.Series(dtype=float)).dropna()
+            after = c[c.index > cross_dt]
+            sessions_since = int(len(after))
+            if sessions_since > 15:
+                return None       # outside rule-3 window — no point computing pct
+            at_or_before = c[c.index <= cross_dt]
+            if len(at_or_before) == 0 or len(after) == 0:
+                return None
+            price_at_cross = float(at_or_before.iloc[-1])
+            spot = float(c.iloc[-1])
+            pct_since = round((spot / price_at_cross - 1) * 100, 1) if price_at_cross > 0 else None
+            return {"cross_date": cross_date_str, "sessions_since": sessions_since,
+                    "pct_since": pct_since}
+        except Exception:
+            return None
+
+    # (3) Assign lifecycle stage to each buy row (rules 1-2). ENTRY shelf preserves
+    #     the existing blend_sorted order UNCHANGED (F3 discipline: no rank change here).
+    #     Each buy row gains stage / sublabel / detail / why_ranked fields.
+    def _why_ranked(r: dict) -> str:
+        """Compact string of the actual blend inputs on this row — display only, no rank change."""
+        sig = r.get("signal") or {}
+        parts = []
+        tier = sig.get("tier_cascade") or sig.get("tier")
+        if tier:
+            parts.append(str(tier))
+        if r.get("washout_2w"):
+            parts.append("2W-washout")
+        cb = r.get("coiled") or {}
+        if cb.get("coiled"):
+            parts.append("coiled")
+        ext = r.get("extension") or {}
+        if ext.get("extended"):
+            ext_sc = ext.get("score")
+            parts.append(f"- ext {round(float(ext_sc), 2)}" if ext_sc is not None else "- ext")
+        return " + ".join(p for p in parts if not p.startswith("-")) + (
+            " " + " ".join(p for p in parts if p.startswith("-"))
+        ).rstrip() if parts else ""
+
+    for r in eligible_rows:
+        _t = r.get("ticker")
+        _sv = sig_verdict.get(_t) or {}
+        _es = entry_sig.get(_t) or {}
+        _es_status = _es.get("status")
+        _ext_flag = bool((r.get("extension") or {}).get("extended"))
+        _overext = _ext_flag or _es_status in ("extended", "topping")
+        _stage_res = _assign_stage_fn(
+            gate_eligible=bool(_sv.get("eligible")),
+            entry_status=_es_status,
+            overextended=_overext,
+            last_cross_info=None,         # rules 1-2 only; buy rows are gate-eligible
+            hold_state=_hold_state_cn.get(_t),
+            wsetup=_wsetup_by.get(_t),
+        )
+        r["stage"] = _stage_res["stage"]
+        r["stage_sublabel"] = _stage_res.get("sublabel")
+        r["stage_detail"] = _stage_res.get("detail") or {}
+        r["why_ranked"] = _why_ranked(r)
+
+    # After stage assignment: propagate muted_entry from stage_detail to the row dict
+    # so Jinja can suppress green banding without reading the nested detail dict.
+    # Per adjudicated design F6: rule-2 rows with entry_status in {buy_now, partial}
+    # are legitimate but must render muted (no green class, no Buy-now tooltip).
+    for r in eligible_rows:
+        _sd = r.get("stage_detail") or {}
+        if _sd.get("muted_entry"):
+            r["muted_entry"] = True
+
+    # (4) Build the RAN array (rule 3): NOT gate-eligible, last cross within 15 sessions.
+    #     Source: the full cand pool + sig_verdict; not the eligible_rows.
+    #     Sorted by recency (sessions_since ascending), capped at 15.
+    _ran_rows: list[dict] = []
+    for (_t, _close_w, _high_w, _name_w, _sector_w) in uni:
+        if _t in _eligible_set:
+            continue           # gate-eligible -> already on buy shelf, not here
+        _sv = sig_verdict.get(_t)
+        if not _sv:
+            continue
+        if _sv.get("eligible"):
+            continue           # only non-eligible names qualify for rule-3
+        _lci = _last_cross_info(_t)
+        if not _lci:
+            continue
+        _hold_s = _hold_state_cn.get(_t)
+        _stage_r = _assign_stage_fn(
+            gate_eligible=False, entry_status=None, overextended=False,
+            last_cross_info=_lci, hold_state=_hold_s, wsetup=_wsetup_by.get(_t),
+        )
+        if _stage_r.get("stage") != STAGE_RAN_LATE:
+            continue
+        _hold_summary = None
+        if _hold_s and _hold_s.get("state") in ("intact", "launched"):
+            _hold_summary = {
+                "state": _hold_s.get("state"),
+                "anchor": _hold_s.get("anchor"),
+                "maxup_pct": _hold_s.get("maxup_pct"),
+                "invalidation": _hold_s.get("invalidation"),
+            }
+        _ran_rows.append({
+            "ticker": _t, "name": _name_w or _t, "sector": _sector_w or "",
+            "cross_date": _lci["cross_date"],
+            "sessions_since": _lci["sessions_since"],
+            "pct_since": _lci.get("pct_since"),
+            "sublabel": _stage_r.get("sublabel"),
+            "basing_chip": (_stage_r.get("detail") or {}).get("basing_chip"),
+            "launched_chip": (_stage_r.get("detail") or {}).get("launched_chip"),
+            "hold_summary": _hold_summary,
+        })
+    _ran_rows.sort(key=lambda x: x.get("sessions_since") or 99)
+    _ran_rows = _ran_rows[:15]
+
+    # (5) Build the RIPENING array (rule 4): NOT gate-eligible, no recent cross, setup_live.
+    #     Screen the FULL closes panel universe (skip <200 bars). Sorted by imminence
+    #     (macd_bars_to_cross ascending, then washout depth). Capped at 24.
+    _ripening_rows: list[dict] = []
+    for (_t, _close_w, _high_w, _name_w, _sector_w) in uni:
+        if _t in _eligible_set:
+            continue           # already on buy shelf
+        _sv = sig_verdict.get(_t)
+        if _sv and _sv.get("eligible"):
+            continue           # gate-eligible -> not RIPENING
+        _lci2 = _last_cross_info(_t)
+        if _lci2:
+            continue           # recent cross -> rule-3 RAN_LATE territory, not RIPENING
+        _ws = _wsetup_by.get(_t)
+        if not _ws or not _ws.get("setup_live"):
+            continue
+        _w2 = _ws.get("w2") or {}
+        _btc = _w2.get("macd_bars_to_cross")
+        _stoch = _w2.get("stoch")
+        # imminence sort key: MACD bars to cross ascending (closer = more imminent),
+        # fallback = 999 (washout-only names sort after MACD-imminent names).
+        _imminence = float(_btc) if _btc is not None else (
+            float(_stoch) / 10.0 if _stoch is not None else 999.0)
+        _ripening_rows.append({
+            "ticker": _t, "name": _name_w or _t, "sector": _sector_w or "",
+            "reasons": _ws.get("setup_reasons") or [],
+            "imminence": _btc,            # macd_bars_to_cross; None for washout-only
+            "w2_stoch": _stoch,
+            "w2_macd_approaching": bool(_w2.get("macd_approaching_up")),
+            "w2_macd_cross_up": bool(_w2.get("macd_cross_up")),
+            "w1_cross_date": (_ws.get("w1_cross") or {}).get("cross_date"),
+            "w1_d_at_cross": (_ws.get("w1_cross") or {}).get("d_at_cross"),
+            "spot_pct_in_range": (_ws.get("base") or {}).get("spot_pct_in_range"),
+            "_sort_key": _imminence,
+        })
+    _ripening_rows.sort(key=lambda x: x.get("_sort_key") or 999)
+    for _rr in _ripening_rows:
+        _rr.pop("_sort_key", None)       # remove internal sort key before serialisation
+    _ripening_rows = _ripening_rows[:24]
+
+    # (6) Build-time INVARIANTS — fail loudly, stop the build so bugs are never silently shipped.
+    _n_missing_stage = sum(1 for r in eligible_rows if "stage" not in r)
+    assert _n_missing_stage == 0, (
+        f"W1-B invariant FAILED: {_n_missing_stage} buy rows are missing the 'stage' field. "
+        "Every buy row must have a stage (ENTRY, RAN_LATE, or None).")
+    # RENDER-LEVEL invariants (replacing the old input-level assert that crashed on
+    # buy_now+overextended — a LEGITIMATE combination per adjudicated design F6):
+    #   (i)  Every rule-2 RAN_LATE row has a sublabel.
+    #   (ii) Every rule-2 RAN_LATE row has stage=RAN_LATE.
+    #  (iii) Rule-2 rows with buy_now/partial entry_status have muted_entry=True
+    #        (so the template suppresses green banding — render-level guard, not input filter).
+    _r2_rows = [r for r in eligible_rows if r.get("stage") == STAGE_RAN_LATE]
+    _r2_no_sublabel = [r.get("ticker") for r in _r2_rows if not r.get("stage_sublabel")]
+    assert not _r2_no_sublabel, (
+        f"W1-B invariant FAILED: rule-2 RAN_LATE rows must have a sublabel. "
+        f"Violation: {_r2_no_sublabel}")
+    _r2_muted_missing = [
+        r.get("ticker") for r in _r2_rows
+        if (entry_sig.get(r.get("ticker")) or {}).get("status") in ("buy_now", "partial")
+        and not r.get("muted_entry")
+    ]
+    assert not _r2_muted_missing, (
+        f"W1-B invariant FAILED: rule-2 rows with buy_now/partial entry status must have "
+        f"muted_entry=True (render-level guard). Violation: {_r2_muted_missing}")
+    _elig_set_check = {r.get("ticker") for r in eligible_rows}
+    _rip_bad = [r["ticker"] for r in _ripening_rows if r["ticker"] in _elig_set_check]
+    assert not _rip_bad, (
+        f"W1-B invariant FAILED: ripening rows must never be gate-eligible. "
+        f"Violation: {_rip_bad}")
+    assert len(_ripening_rows) <= 24, (
+        f"W1-B invariant FAILED: ripening cap 24 exceeded ({len(_ripening_rows)})")
+    assert len(_ran_rows) <= 15, (
+        f"W1-B invariant FAILED: ran cap 15 exceeded ({len(_ran_rows)})")
+    _n_entry = sum(1 for r in eligible_rows if r.get("stage") == STAGE_ENTRY)
+    _n_ran_late = sum(1 for r in eligible_rows if r.get("stage") == STAGE_RAN_LATE)
+    log.info("W1-B stage partition: %d ENTRY + %d RAN_LATE + %d no-shelf (buy rows); "
+             "%d RIPENING + %d RAN (non-buy universe)",
+             _n_entry, _n_ran_late, len(eligible_rows) - _n_entry - _n_ran_late,
+             len(_ripening_rows), len(_ran_rows))
+
     if cand:
         as_of = (alpha or {}).get("as_of")
         # laggards watch-strip: weakest residual-alpha names, independent of the buy gate.
@@ -1505,10 +1738,29 @@ def main(alpha: dict | None = None) -> dict | None:
                 log.warning("W0.7 board-width guard: buy-count collapsed %d→%d (%.0f%% drop) — "
                             "stamping data_outage; banner will render",
                             _prev_buy_n, _new_buy_n, _drop_frac * 100)
+        # W1-B: attach RIPENING + RAN arrays to the artifact (new keys; buy unchanged).
+        # Downstream consumers of `buy` keep working untouched — these are additive arrays.
+        wide["ripening"] = _ripening_rows
+        wide["ran"] = _ran_rows
+        setups["ripening"] = _ripening_rows
+        setups["ran"] = _ran_rows
+        # W1-B ledger: log ripening set to data/china_standout_track/ripening.parquet
+        # (compact append: ticker, reasons, imminence, w2_stoch — W6 conversion grading).
+        try:
+            _rip_lane = os.environ.get("CN_LANE", "asia")
+            _rn = china_standout_track.append_ripening(
+                _ripening_rows, asof=as_of, lane=_rip_lane)
+            log.info("W1-B ripening ledger: appended %d names this run (total ledger rows=%d)",
+                     len(_ripening_rows), _rn)
+        except Exception as _re:  # noqa: BLE001 — ledger is additive, never fatal
+            log.warning("W1-B ripening ledger failed (%s)", _re)
         _standouts_path.write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
-        log.info("wrote china_standouts.json (%d buy of %d eligible / %d universe)",
-                 len(wide["buy"]), len(eligible_rows), len(cand))
+        log.info("wrote china_standouts.json (%d buy [%d ENTRY/%d RAN_LATE] / %d RIPENING / %d RAN"
+                 " / %d eligible / %d universe)",
+                 len(wide["buy"]), _n_entry, _n_ran_late,
+                 len(_ripening_rows), len(_ran_rows),
+                 len(eligible_rows), len(cand))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))
     return setups

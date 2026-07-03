@@ -281,6 +281,52 @@
   .nb-note { font-size:8.5px; line-height:1.3; margin-top:3px; padding:2px 5px; border-radius:6px;
              color:var(--muted); background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
   .nb-note-anticipation { color:var(--link); background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
+  /* ── W1-C: LIFECYCLE SHELF HEADERS + STAGE BADGES ──────────────────────── */
+  /* Shelf header — separates ENTRY / RIPENING / RAN shelves visually */
+  .nb-shelf-hdr { display:flex; align-items:center; gap:10px; margin:14px 0 6px;
+                  padding:0 0 7px; border-bottom:1px solid var(--line); }
+  .nb-shelf-hdr:first-of-type { margin-top:0; }
+  .nb-shelf-tag { font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+                  padding:2px 10px; border-radius:20px; flex:none; }
+  .nb-shelf-tag.st-entry  { color:#fff; background:var(--up); }
+  .nb-shelf-tag.st-ripe   { color:var(--warn); background:color-mix(in srgb,var(--warn) 18%,var(--panel));
+                              border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line)); }
+  .nb-shelf-tag.st-ran    { color:var(--muted); background:color-mix(in srgb,var(--muted) 10%,var(--panel));
+                              border:1px solid var(--line); }
+  .nb-shelf-expl { font-size:10.5px; color:var(--muted); line-height:1.4; }
+  /* Stage badge — top-left of each card (loudest element on the card) */
+  .nb-stage { display:inline-flex; align-items:center; font-size:8.5px; font-weight:800;
+              letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:9px;
+              white-space:nowrap; margin-bottom:3px; }
+  .nb-stage.stg-entry { color:#fff; background:var(--up);
+                         box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 60%,transparent); }
+  .nb-stage.stg-ran   { color:var(--muted); background:color-mix(in srgb,var(--muted) 12%,var(--panel));
+                          border:1px solid var(--line); }
+  /* why_ranked chip — small, beside rank indicator on ENTRY cards */
+  .nb-why { font-size:8px; color:var(--muted); padding:1px 5px; border-radius:6px;
+             border:1px solid var(--line); white-space:nowrap; cursor:help; }
+  /* RAN card: muted score, prominent detail string */
+  .nb-ran-detail { font-size:10px; color:var(--muted); line-height:1.35; margin:3px 0 1px;
+                   padding:4px 7px; border-radius:7px;
+                   background:color-mix(in srgb,var(--down) 7%,var(--panel));
+                   border:1px solid color-mix(in srgb,var(--down) 20%,var(--line)); }
+  /* RAN card modifier: de-emphasise score display */
+  .nb-stage-ran-card .nb-cscore { opacity:.45; }
+  /* ── RIPENING SHELF: compact cards (NOT full nbcard) ────────────────────── */
+  .nb-rip-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:7px; margin-top:8px; }
+  .nb-rip-card { background:var(--panel); border:1px solid var(--line); border-radius:9px;
+                 padding:8px 10px; display:flex; flex-direction:column; gap:3px; min-width:0;
+                 border-left:3px solid color-mix(in srgb,var(--warn) 55%,var(--line)); }
+  .nb-rip-top { display:flex; align-items:baseline; gap:5px; }
+  .nb-rip-tk { font-weight:800; font-size:13px; color:var(--text); }
+  .nb-rip-nm { font-size:9.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis;
+               white-space:nowrap; flex:1; min-width:0; }
+  .nb-rip-imm { font-size:8.5px; font-weight:800; color:var(--warn); flex:none; }
+  .nb-rip-chips { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+  .nb-rip-chip { font-size:8px; font-weight:700; padding:1px 5px; border-radius:6px; white-space:nowrap;
+                 color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel));
+                 border:1px solid color-mix(in srgb,var(--warn) 38%,var(--line)); }
+  .nb-rip-sec { font-size:9px; color:var(--muted); }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
@@ -1243,7 +1289,7 @@
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
       <span class="note" style="text-transform:none">· {{ t('washout → base → fresh turn · T1–T4 entry cascade', '洗盘 → 筑底 → 新转向 · T1–T4 入场级联') }}</span>
-      {{ help("A washout-to-base entry board — names that have been oversold, have formed a durable low, and are showing a <b>fresh 3D/2D momentum turn</b> (MACD-RSI × StochRSI confluence, graded T1 master confirmation → T4 earliest signal). The admission test is a <b>fresh cross at a low, not an extended breakout</b>. The 🌊 2W washout chip marks names where the 2-week StochRSI has just reclaimed the 20 line — a higher-timeframe washout turn that makes the base more durable. The ⚡ Coiled chip marks names in a compressed, cohort-washed base. <b>Three honest caveats:</b> (1) The validated quarterly within-sector <b>reversal basket edge is a separate product</b> — it is not what drives this board's ranking. (2) Board order is driven by cascade tier + washout/COILED context; the displayed 0–100 score is <b>buy-readiness, not a conviction-edge probability</b>. (3) Forward grades are <b>accruing</b> (board_track below) and will be published when picks mature (~21 sessions). Context to size and confirm — not a buy list.", "洗盘到筑底的入场看板 —— 超卖、已形成耐久低点、并出现<b>3日/2日动量新转向</b>（MACD-RSI × StochRSI 共振，评级 T1 主确认 → T4 最早信号）的个股。准入标准是<b>低位新交叉，而非延伸突破</b>。🌊 2周洗盘标记代表2周 StochRSI 刚从超卖区上穿20线 —— 高周期洗盘转向，令底部更耐久。⚡ 蓄势标记代表处于压缩、群体洗净底部的个股。<b>三条诚实说明：</b>（1）已验证的季度板块内<b>反转篮子优势是独立产品</b> —— 它并非驱动本看板排序的因素。（2）排序由级联层级＋洗盘/蓄势背景驱动；显示的0–100评分是<b>买入就绪度，而非信念优势概率</b>。（3）前瞻成绩正在<b>累积中</b>（见下方榜单成绩单），将在成熟后（约21个交易日）公布。用于定仓与确认的背景 —— 而非买入清单。") }}
+      {{ help("A washout-to-base entry board — names that have been oversold, have formed a durable low, and are showing a <b>fresh 3D/2D momentum turn</b> (MACD-RSI × StochRSI confluence, graded T1 master confirmation → T4 earliest signal). The admission test is a <b>fresh cross at a low, not an extended breakout</b>. The 🌊 2W washout chip marks names where the 2-week StochRSI has just reclaimed the 20 line — a higher-timeframe washout turn that makes the base more durable. The ⚡ Coiled chip marks names in a compressed, cohort-washed base. <b>Three honest caveats:</b> (1) The validated quarterly within-sector <b>reversal basket edge is a separate product</b> — it is not what drives this board's ranking. (2) Board order is driven by cascade tier + washout/COILED context; the displayed 0–100 score is <b>buy-readiness, not a conviction-edge probability</b>. (3) Forward grades are <b>accruing</b> (board_track below) and will be published when picks mature (~21 sessions). Context to size and confirm — not a buy list. <b>Three-shelf lifecycle (W1):</b> ENTRY = fresh turn inside a live setup (the only actionable shelf); RIPENING = setup forming but entry cascade not yet fired — watching, not acting; RAN/LATE = signal passed, shown for honesty only — do not chase.", "洗盘到筑底的入场看板 —— 超卖、已形成耐久低点、并出现<b>3日/2日动量新转向</b>（MACD-RSI × StochRSI 共振，评级 T1 主确认 → T4 最早信号）的个股。准入标准是<b>低位新交叉，而非延伸突破</b>。🌊 2周洗盘标记代表2周 StochRSI 刚从超卖区上穿20线 —— 高周期洗盘转向，令底部更耐久。⚡ 蓄势标记代表处于压缩、群体洗净底部的个股。<b>三条诚实说明：</b>（1）已验证的季度板块内<b>反转篮子优势是独立产品</b> —— 它并非驱动本看板排序的因素。（2）排序由级联层级＋洗盘/蓄势背景驱动；显示的0–100评分是<b>买入就绪度，而非信念优势概率</b>。（3）前瞻成绩正在<b>累积中</b>（见下方榜单成绩单），将在成熟后（约21个交易日）公布。用于定仓与确认的背景 —— 而非买入清单。<b>三段式生命周期（W1）：</b>ENTRY 入场＝新鲜转向在活跃形态中触发（唯一可操作板块）；RIPENING 待熟＝形态形成中但入场级联尚未触发——观察而非行动；RAN/LATE 信号已过＝仅出于诚实展示——不要追涨。") }}
     </h2>
     <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Names that have washed out, formed a base, and fired a fresh 3D/2D turn — MACD-RSI × StochRSI confluence tier T1 (master) through T4 (earliest). Ranked by cascade tier + washout/COILED context (not the displayed score). The 🌊 2W washout chip and ⚡ Coiled chip are rank bonuses that reward earlier, more durable setups. The displayed 0–100 score is buy-readiness (how set up the name is to rise from here), not a rank input. Three caveats on the board: (i) the validated A-share reversal edge is a separate quarterly basket product, not this board\'s ranking; (ii) forward grades are accruing and will publish when mature; (iii) a high score on a name whose entry gauge reads “hold” or “extended” means the setup looks good but entry timing is not yet there — size and confirm, not a buy list.', '经历洗盘、完成筑底、触发3日/2日新转向的个股 —— MACD-RSI × StochRSI 共振级别 T1（主确认）至 T4（最早信号）。按级联层级＋洗盘/蓄势背景排序（而非显示评分）。🌊 2周洗盘与⚡ 蓄势标记是排序加分项，奖励更早、更耐久的形态。显示的0–100评分是买入就绪度（该股从当前位置上行的准备程度），并非排序输入。关于本看板的三点说明：（i）已验证的A股反转优势是独立的季度篮子产品，并非本看板的排序依据；（ii）前瞻成绩正在累积，成熟后将公布；（iii）入场量表显示”观望”或”过热”时即便高分也表示形态良好但入场时机尚未到来 —— 用于定仓与确认，而非买入清单。') }}</p>
     {% if setups.qvix_regime %}{% set q = setups.qvix_regime %}
@@ -1274,10 +1320,32 @@
       <span class="muted" style="font-size:10.5px;display:block;margin-top:2px"><span class="l-en">{{ _do.get('reason','') }}</span><span class="l-zh">买入数量从 {{ _do.get('prev_n') }} 降至 {{ _do.get('new_n') }}（下降 {{ _do.get('drop_pct') }}%），超过40%阈值。可能原因：数据缺口/采集中断。本看板不完整，请谨慎参考。</span></span>
     </div>
     {% endif %}
+    {# ── W1-C: ENTRY SHELF ────────────────────────────────────────────────────
+       Only ENTRY cards may use BUY-family language. Stage badge is the loudest element.
+       Preserves existing blend_sorted order unchanged (F3 discipline). #}
+    {% set _entry_rows = setups.buy | selectattr('stage', 'equalto', 'ENTRY') | list %}
+    {% set _ran_late_rows = setups.buy | selectattr('stage', 'equalto', 'RAN_LATE') | list %}
+    {# Backward compat: if no rows were partitioned (pre-W1 artifact where 'stage' key absent or all None),
+       fall back to showing all buy rows on the ENTRY shelf so the board degrades gracefully. #}
+    {% if (_entry_rows | length == 0) and (_ran_late_rows | length == 0) and (setups.buy | length > 0) %}
+      {% set _entry_rows = setups.buy %}
+    {% endif %}
+    {# ── ENTRY shelf header #}
+    {% if _entry_rows or _ran_late_rows %}
+    <div class="nb-shelf-hdr">
+      <span class="nb-shelf-tag st-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
+      <span class="nb-shelf-expl"><span class="l-en">fresh turn inside a live setup — the actionable shelf. RIPENING and RAN shelves follow below.</span><span class="l-zh">活跃形态中的新鲜转向 — 可操作板块。RIPENING 待熟与 RAN 信号已过板块见下方。</span></span>
+    </div>
+    {% endif %}
     <div class="nbgrid" data-showmore-rows="3">
-    {% for n in setups.buy %}
+    {% for n in _entry_rows %}
       {% set _d = n.dir or 'caution' %}
       <a class="nbcard nb-{{ _d }}" href="china_lookup.html#{{ n.ticker }}">
+        {# W1-C stage badge — loudest element; green family for ENTRY #}
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="nb-stage stg-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
+          {% if n.get('why_ranked') %}<span class="nb-why" title="Why ranked here: {{ n.get('why_ranked','') }} · 此处排序原因">{{ n.get('why_ranked') }}</span>{% endif %}
+        </div>
         <div class="nb-top">
           <span class="nb-tk">{{ n.ticker }}</span>
           <span class="nb-nm">{{ nm(n.name) }}</span>
@@ -1375,6 +1443,154 @@
       </a>
     {% endfor %}
     </div>
+
+    {# ── W1-C: RAN / LATE SHELF (buy rows — rule 2) ──────────────────────────
+       These are gate-eligible names whose entry_signal says hold/extended/topping.
+       Signal is live but entry timing has passed. No BUY-family language.
+       Score is muted (opacity:0.45 via nb-stage-ran-card). #}
+    {% if _ran_late_rows %}
+    <div class="nb-shelf-hdr" style="margin-top:16px">
+      <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
+      <span class="nb-shelf-expl"><span class="l-en">signal live — entry passed; wait for pullback. Shown for honesty, not action — do not chase.</span><span class="l-zh">信号有效但入场时机已过；等待回调。出于诚实展示 — 不要追涨。</span></span>
+    </div>
+    <div class="nbgrid">
+    {% for n in _ran_late_rows %}
+      {% set _d = 'caution' %}
+      <a class="nbcard nb-{{ _d }} nb-stage-ran-card" href="china_lookup.html#{{ n.ticker }}">
+        {# W1-C stage badge — muted family for RAN_LATE #}
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="nb-stage stg-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
+        </div>
+        <div class="nb-top">
+          <span class="nb-tk">{{ n.ticker }}</span>
+          <span class="nb-nm">{{ nm(n.name) }}</span>
+          {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
+          {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+        </div>
+        {# Prominent detail string — what happened: sublabel from rule 2 #}
+        {% set _sl = n.get('stage_sublabel') %}
+        {% if _sl %}
+        <div class="nb-ran-detail"><span class="l-en">{{ _sl }}</span><span class="l-zh">信号有效但入场时机已过；等待回调</span></div>
+        {% endif %}
+        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}</span></span>{% endif %}{% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}</div>
+        {% set c = n.conviction %}
+        {% if c %}
+        <div class="nb-conv">
+          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Score muted — this name is on the RAN/LATE shelf: entry timing passed. · 评分已淡化 — 此股处于信号已过板块，入场时机已过。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
+          <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
+        </div>
+        {% set al = c.alignment %}
+        {% if al and al.line and n.align_tier in ['aligned','near'] %}
+        <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" title="{{ al.line }} · {{ al.line_zh }}">
+          <span class="nba-mark">{{ '🟡' if n.align_tier == 'near' else '🟢' }}</span>
+          <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
+          {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
+        </div>
+        {% endif %}
+        {% set es = n.entry_signal %}
+        {% if es %}
+        {% if n.get('muted_entry') %}
+        {# F6 adjudicated design: entry gauge was open (buy_now/partial) but name is overextended.
+           Extension beats the timing gauge — render a neutral muted line, no green class, no Buy-now.
+           Dual-span per i18n rules. #}
+        <div class="nb-entry nbe-wait_pullback" title="Entry gauge open but name is extended — not actionable here. Wait for pullback. · 入场量表打开但股票已延伸 — 当前不可操作，等待回调。">
+          <div class="nbe-head">
+            <span class="nbe-dot a1"></span>
+            <span class="nbe-status"><span class="l-en">gauge open — but extended; not actionable</span><span class="l-zh">量表打开 — 但已延伸；当前不可操作</span></span>
+          </div>
+        </div>
+        {% else %}
+        <div class="nb-entry nbe-{{ es.status }}" title="ENTRY timing (gauge 2) — {{ es.action }}">
+          <div class="nbe-head">
+            <span class="nbe-dot a{{ es.act_level }}"></span>
+            <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+          </div>
+        </div>
+        {% endif %}
+        {% endif %}
+        <div class="nb-axes">
+          {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
+          {% set a = c.axes[ax] %}
+          <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
+            <div class="axl">{{ t(lbl, lbl_zh) }}</div>
+            <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="nb-bot">
+          <span class="nb-state">{{ td(n.label or n.state) }}</span>
+        </div>
+      </a>
+    {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ── W1-C: RIPENING SHELF (non-buy universe, rule 4) ─────────────────────
+       Compact cards — ticker, name, sector, reason chips, imminence.
+       NOT entry signals. No BUY-family language anywhere. #}
+    {% set _rip = setups.get('ripening') or [] %}
+    {% if _rip %}
+    <div class="nb-shelf-hdr" style="margin-top:16px">
+      <span class="nb-shelf-tag st-ripe"><span class="l-en">RIPENING</span><span class="l-zh">待熟</span></span>
+      <span class="nb-shelf-expl"><span class="l-en">setups forming — NOT an entry signal; watching for the turn. Screened from the full closes universe.</span><span class="l-zh">形态形成中 — 非入场信号；等待转向。从全收盘价宇宙筛选。</span></span>
+    </div>
+    <div class="nb-rip-grid">
+    {% for r in _rip %}
+    <div class="nb-rip-card">
+      <div class="nb-rip-top">
+        <span class="nb-rip-tk">{{ r.get('ticker','') }}</span>
+        <span class="nb-rip-nm">{{ nm(r.get('name','')) }}</span>
+        {% if r.get('imminence') is not none %}<span class="nb-rip-imm" title="2W-MACD bars to cross · 2周MACD距交叉周期数">~{{ '%.1f'|format(r.get('imminence')) }}{{ t('W','周') }}</span>{% endif %}
+      </div>
+      <span class="nb-rip-sec">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</span>
+      {% set _rs = r.get('reasons') %}
+      {% if _rs %}
+      <div class="nb-rip-chips">
+        {% for reason in (_rs if _rs is iterable and _rs is not string else _rs.split(',')) %}
+        <span class="nb-rip-chip">{{ reason | trim }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if r.get('spot_pct_in_range') is not none %}<span style="font-size:8.5px;color:var(--muted)"><span class="l-en">range {{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span><span class="l-zh">区间位置{{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span></span>{% endif %}
+    </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ── W1-C: RAN array (non-buy universe, rule 3) ───────────────────────────
+       Names whose 3D/2D cross fired within 15 sessions but are now gate-ineligible.
+       Shown for honesty — do not chase. No BUY-family language. #}
+    {% set _ran = setups.get('ran') or [] %}
+    {% if _ran %}
+    <div class="nb-shelf-hdr" style="margin-top:16px">
+      <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
+      <span class="nb-shelf-expl"><span class="l-en">signal fired and aged out — shown for honesty, not action. Do not chase.</span><span class="l-zh">信号已触发并过期 — 出于诚实展示，不可追涨。</span></span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">
+    {% for r in _ran %}
+    <div style="display:flex;align-items:flex-start;gap:9px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:10.5px">
+      <div style="flex:none;min-width:90px">
+        <a href="china_lookup.html#{{ r.get('ticker','') }}" style="font-weight:800;color:var(--text)">{{ r.get('ticker','') }}</a>
+        <span class="muted" style="font-size:9px;display:block">{{ nm(r.get('name','')) }}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        {% set _rsl = r.get('sublabel') %}
+        {% if _rsl %}<span style="color:var(--muted)"><span class="l-en">{{ _rsl }}</span><span class="l-zh">{% if r.get('cross_date') %}信号触发于{{ r.get('cross_date') }}（{{ r.get('sessions_since',0) }}个交易日前），自那时起+{{ '%.1f'|format(r.get('pct_since',0)) }}%{% endif %}</span></span>{% endif %}
+        {% set _rbc = r.get('basing_chip') %}
+        {% if _rbc %}<span style="display:block;font-size:9px;color:var(--link);margin-top:2px"><span class="l-en">{{ _rbc }}</span><span class="l-zh">筑底中</span></span>{% endif %}
+        {% set _rlc = r.get('launched_chip') %}
+        {% if _rlc %}<span style="display:block;font-size:9px;color:var(--up);margin-top:2px"><span class="l-en">{{ _rlc }}</span><span class="l-zh">已突破</span></span>{% endif %}
+      </div>
+      <div style="flex:none;text-align:right;font-size:9px;color:var(--muted)">
+        <span>{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</span>
+        {% if r.get('sessions_since') is not none %}<span style="display:block">{{ r.get('sessions_since') }}{{ t(' sessions ago','个交易日前') }}</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+
     {% if setups.laggards %}
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
     <p style="margin:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:center">
