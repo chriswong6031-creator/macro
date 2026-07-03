@@ -354,6 +354,25 @@ def _fuse(rec: dict, mkt: dict, n_peers: int, trend: dict | None = None,
         score = min(score, 57); en, zh, _dir = _tier_for(score)
     if (stretched or (crowd and crowd["frac"] >= 0.34)) and score >= 58:
         score = min(score, 57); en, zh, _dir = _tier_for(score)
+
+    # W4.6 — fitted RISK-channel SIZE cap (additive, capped, traced). The ladder state's
+    # vol-residualized forward-drawdown multiplier (data/regime/ladder_risk_calibration.json)
+    # is a SIZE lever ONLY: a value < 1.0 shaves a bullish conviction toward neutral (deeper
+    # tail → size down); it NEVER lifts a score and never touches direction. Per the W4.6
+    # verdict every cell currently ships 1.0 (no risk-sizing signal survived FDR), so this is
+    # presently a no-op — but it is wired so a future price-basis re-fit binds automatically.
+    fam = rec.get("family") or ("us_sector" if rec.get("kind") == "sector" else None)
+    size_mult = 1.0
+    try:
+        from engine.cycles import risk_size_mult as _rsm
+        size_mult = float(_rsm(now.get("timing_state") or "", fam))
+    except Exception:  # noqa: BLE001
+        size_mult = 1.0
+    if size_mult < 1.0 and score > 50:
+        # shave the ABOVE-neutral portion of the score by the size multiplier (never below 50,
+        # never a lift). This is the size cap; direction (the sign around 50) is untouched.
+        score = int(round(50 + (score - 50) * size_mult))
+        en, zh, _dir = _tier_for(score)
     # bullish lead but lagging momentum → mark "early" (don't over-promise on a focus-lens leg)
     early = raw > 0 and mom_d.get("lead") == "lagging"
 
@@ -368,7 +387,8 @@ def _fuse(rec: dict, mkt: dict, n_peers: int, trend: dict | None = None,
                        "lead": round(lead, 2), "gate_factor": gate, "gate_eff": round(gate_eff, 2),
                        "macro_beta": round(float(beta), 2), "trend_pass": trend_pass,
                        "gated": round(gated, 2), "momentum": round(mom, 2),
-                       "raw": round(raw, 2), "weighting": "state→gate(regime×β + trend)→confirm"},
+                       "raw": round(raw, 2), "risk_size_mult": round(size_mult, 3),
+                       "weighting": "state→gate(regime×β + trend)→confirm→risk-size-cap"},
         "reasoning": trace,
     }
 
