@@ -12,7 +12,13 @@ import sys, glob, os, json
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import warnings, logging
-warnings.filterwarnings("ignore"); logging.disable(logging.CRITICAL)
+if __name__ == "__main__":
+    # CLI-only silencers.  logging.disable() is PROCESS-GLOBAL state: at module level it
+    # leaks out of any import of this file and mutes every logger for the rest of the
+    # process (order-dependent pytest flakes; bitten twice — see walk_forward.py and
+    # tests/test_no_module_level_logging_disable.py).
+    warnings.filterwarnings("ignore")
+    logging.disable(logging.CRITICAL)
 import numpy as np, pandas as pd
 from engine.cycles import cycle_state, mtf_snapshot, early_signals, ladder_state
 
