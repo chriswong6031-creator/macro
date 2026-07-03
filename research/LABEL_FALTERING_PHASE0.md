@@ -138,10 +138,99 @@ Ledger family `baskets_conviction_demotion` (1 declared design + budget 12).
 **NO-GO labels:** `reversal_noise_reimported` if the Sharpe-diff CI upper bound < 0
   (the modulation measurably hurts — the reversal literature wins), else `no_edge`.
 
-## 3 · Results
+## 3 · Results (run 2026-07-03, appended after the pre-registration commit)
 
-*(Appended after the run — empty at pre-registration commit.)*
+Full numbers: `data/strategies/baskets_calibration.json` → `abs_escape_fit` /
+`conviction_demotion_fit` / `rank_dd_modulation_fit`. Panel: 11 SPDR sectors,
+1998-12-22 → 2026-07-01; 12,854 sampled events, 8,591 in-set; in-set base
+P(dd21 < −8%) = 0.103.
+
+### B1 — `no_incremental_edge` (NO-GO, with an honest near-miss)
+
+| X (5d abs) | n_fired | hit P(dd<−8%) | lift CI | G1(b) paired t_dd | KILL t_ret | med fwd 21d abs ret |
+|---|---|---|---|---|---|---|
+| −3% | 461 | 0.219 | [1.61, 2.66] ✓ | **−1.99 ✗** | 1.13 (no kill) | +1.48% |
+| **−5% (primary)** | 148 | 0.338 | [2.15, 4.47] ✓ | **−1.97 ✗** | −0.10 (no kill) | +1.84% |
+| −7% | 79 | 0.418 | [2.55, 5.79] ✓ | −0.98 ✗ | 1.34 (no kill) | +2.11% |
+
+* G1(a) and G1(c) pass everywhere: fired events run 2–4× the base rate of deep forward
+  drawdowns, in both halves (primary: pre-2013 lift 2.71, post-2013 4.05).
+* **The KILL gate did NOT fire** — the escape leg is *not* a sell-the-bottom generator
+  (fired events' forward returns are statistically indistinguishable from same-day
+  in-set peers; primary-cell paired t = −0.10).
+* **G1(b) fails** — barely (−1.97/−1.99 vs the −2.0 bar at −5%/−3%). The same-day paired
+  severity test is the leg's *theme-level* claim: does firing pick out sectors that draw
+  down *worse than their same-day peers*? Answer: not measurably. The strong
+  unconditional lift is mostly "these are crash days" — on an all-boats day the unfired
+  in-set peers draw down almost as hard. The leg detects a **market state**, not a
+  theme-level distinction — and market-state drawdown risk is already a separately
+  measured channel (the macro `drawdown_risk` leg).
+* The median fired event still resolves **up** (+1.84% abs over the next 21d at the
+  primary cell) even though the deep-drawdown tail is 3× fatter — flipping a label to
+  `fading`/`trim` on this signal would exit the median event near the low while
+  protecting against the tail. That trade-off is a sizing question, not a labeling one.
+* By the pre-registered conjunction, verdict = `no_incremental_edge`. The gates were set
+  before the run; the near-miss does not promote. Any Phase-1 retry (e.g. a severity test
+  designed for cross-sectional differentiation, or an abs-escape leg feeding the sizing
+  throttle instead of the label) needs a fresh pre-registration.
+
+### B2 — `no_pit_history_accrue` (cannot run; accrual defined; proxy uninformative)
+
+* **PIT audit (programmatic, in the JSON):** `china_standout_track` = 3 days, no
+  conviction field; `signal_archive/baskets` = 10 days, no member fields; git history of
+  the rendered per-ticker stores = ~13 trading days (2026-06-13 → 2026-07-01) before the
+  R2 untracking, current-state + formula-drifted; R2 = current-state only.
+  **No usable PIT history exists — the real study cannot be run today.**
+* **Proxy kill-test: structurally uninformative, not negative.** In 27 years the
+  pre-registered collapse event (EW panel constructive AND member-median health ≤ 25)
+  fired **zero times** — the median health of 11 broad sector ETFs never collapses while
+  the panel itself is still constructive. The incident shape (a narrow theme whose
+  members crater while the theme print stays strong) has no analogue on broad sectors.
+  G2 concurs: the leg earned weight 0.0 in every fold. `proxy_no_signal`, carrying **no
+  evidential weight either way** for the real member-conviction question.
+* **Accrual (the deliverable):** archive daily, per basket and region — member
+  `conviction.potential` median, IQR, n_members, theme score, label — via
+  `engine.signal_archive` at render time. Re-run bar: ≥ 180 archived trading days
+  (~9 months → first adequately-powered read ≈ 2027-04), gates in §2 unchanged.
+
+### B3 — `no_edge` (NO-GO; SKIP_D keeps its rationale)
+
+Base book: Sharpe 0.552, MaxDD −33.9%, CAGR 6.99% (net 10 bps).
+
+| X (21d ret demotes) | Sharpe | MaxDD | CAGR | ΔSharpe CI | ΔDD CI (pp) | split-half ΔSharpe |
+|---|---|---|---|---|---|---|
+| −5% | 0.538 | −37.7% | 6.60% | [−0.077, −0.015, 0.052] | [−4.4, 0.3, 5.5] | −0.041 / +0.015 |
+| **−10% (primary)** | 0.553 | −33.9% | 6.99% | [−0.014, 0.001, 0.015] | [−1.2, 0.0, 1.4] | +0.010 / −0.009 |
+| −15% | 0.547 | −33.9% | 6.92% | [−0.018, −0.004, 0.004] | [−1.3, 0.0, 0.6] | 0.000 / −0.009 |
+
+The mechanism is clean: at deep thresholds the demotion almost never binds — a name
+ranked top-4 by 12−1 momentum *and* above its 200dma essentially never sits on a −10%
+trailing month, so the rule is redundant with the trend gate already in the book. At the
+shallow threshold it binds often enough to matter and **hurts** (deeper MaxDD, −0.39pp
+CAGR, ΔSharpe median −0.015) — the short-term-reversal noise re-imported, exactly the
+outcome `SKIP_D = 21` exists to avoid. No cell earns `ship_rank_modulation`;
+the −5% cell's degradation is directional but its CI includes 0, so the label is
+`no_edge` rather than `reversal_noise_reimported`.
+
+> **In plain English:** we tested three "obvious" fixes from the incident. (1) Flagging a
+> theme as fading because it fell hard in absolute terms does catch days with real crash
+> risk — but only because *everything* is crashing on those days; it can't tell you this
+> theme is worse than the others, and half the time the theme is higher a month later.
+> (2) We can't yet test whether collapsing member conviction predicts theme drawdowns,
+> because nobody has been writing that number down day by day — we now spec'd the ledger
+> to start accruing it. (3) Kicking a recent loser out of the allocation ranking either
+> does nothing (deep thresholds) or makes the book slightly worse (shallow) — the
+> one-month skip in the ranker is there for a reason and survives its challenge.
 
 ## 4 · Decision
 
-*(Appended after the run.)*
+**All three studies: do not wire.** `abs_escape_fit = no_incremental_edge`,
+`conviction_demotion_fit = no_pit_history_accrue`, `rank_dd_modulation_fit = no_edge` —
+recorded additively in `data/strategies/baskets_calibration.json`; trial families
+`baskets_abs_escape` / `baskets_conviction_demotion` / `baskets_rank_dd_mod` logged to
+the Trial Ledger. `_label()` / `_reco()` / `allocate()` are untouched, as pre-committed.
+
+Follow-ups this run motivates (each needs its own decision/pre-registration, not blind
+wiring): start the B2 conviction-median accrual in the render pipeline; consider a
+Phase-1 for the absolute-escape signal as a **book-level de-risk / sizing** input (where
+its market-state nature belongs) rather than a per-theme label flip.
