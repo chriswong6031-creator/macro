@@ -58,12 +58,17 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/whitehouse site/wh_banner.json site/whitehouse.html site/whdata 2>/dev/null || true
+          # data/qledger: the W5 adapter appends each activated alert's claim to the
+          # TRACKED data/qledger/claims.jsonl — it must ship with the alert, and any
+          # unstaged tracked change would abort the rebase below.
+          git add data/whitehouse data/qledger site/wh_banner.json site/whitehouse.html site/whdata 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no White House changes this run"
             exit 0
           fi
           git commit -m "whitehouse: alert update $(date -u +%FT%H:%MZ)"
           # --rebase inverts ours/theirs: -X theirs keeps OUR freshly-built WH artifacts
-          # on the rare conflict (matches the daily pipeline's convention).
-          git pull --rebase -X theirs origin main && git push
+          # on the rare conflict (matches the daily pipeline's convention). --autostash
+          # so a stray write to a tracked file outside the staged paths (the failure
+          # mode of a new build adapter) can never brick the publish again.
+          git pull --rebase --autostash -X theirs origin main && git push
