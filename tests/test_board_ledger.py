@@ -441,8 +441,10 @@ class TestPortStamps:
         keep-FIRST still enforced."""
         monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
 
-        legacy_cols = [c for c in bl._SCHEMA
-                       if c not in (*bl._PORT_STAMPS, *bl._GATE_STAMPS)]
+        # the TRUE pre-stamp 10-column schema, frozen — deriving from the live
+        # _SCHEMA made this test break every time the schema legitimately grows
+        legacy_cols = ["date", "market", "ticker", "board_pos", "group",
+                       "edge_z", "gate_tier", "align_tier", "entry_state", "close_asof"]
         legacy = pd.DataFrame([{
             "date": "2026-07-09", "market": "HK", "ticker": "0001.HK",
             "board_pos": 1, "group": "entry_open", "edge_z": 1.0,
@@ -588,3 +590,399 @@ class TestCA2PortStamps:
         assert df.loc["A.TO", "gate_tier"] == "none"     # string survives (truthy)
         assert df.loc["B.TO", "gate_tier"] == "T1"
         assert pd.isna(df.loc["C.TO", "gate_tier"])      # real null preserved
+
+
+# ---------------------------------------------------------------------------
+# 9. W0 Stage B-c: suspension rule preserved under new grade loop
+# ---------------------------------------------------------------------------
+class TestSuspensionUnderNewGradeLoop:
+    """Verify that the suspension-before-grading rule is preserved now that grade()
+    uses grading.forward_metrics instead of per-horizon grade_next_bar_return calls.
+    The rule is SACRED: suspended rows get no spine columns and are excluded from IC.
+    """
+
+    def test_suspended_rows_have_null_spine_cols(self, tmp_path, monkeypatch):
+        """A suspended call's spine columns (fwd_mfe_*, terminal_state_*, pcb) must
+        remain null after grade() runs — the suspension check runs BEFORE any grading."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [{"ticker": "SUSP2.HK", "group": "entry_open", "edge_z": 1.0,
+                  "close_asof": 100.0}]
+        bl.append_board(calls, "HK", asof="2026-07-01")
+
+        # 2 bars only → fill at bar[1], zero bars after fill → suspended
+        close_s = _make_close("2026-07-01", n=2, step=1.0)
+        bench_s = _make_bench("2026-07-01", n=2, step=0.5)
+        monkeypatch.setattr(bl, "_name_close", lambda m, t, ca_cache=None: close_s)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: bench_s)
+
+        g = bl.grade("HK")
+        assert g["n_suspended"] == 1
+
+        # All by_horizon rows for the suspended ticker must have fwd_ret=None
+        for h_key in g["by_horizon"]:
+            for r in g["by_horizon"][h_key]:
+                assert r["fwd_ret"] is None
+                assert r["suspended"] is True
+
+        # The parquet must also have null spine columns for this row
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        row = df[df["ticker"] == "SUSP2.HK"].iloc[0]
+        for col in bl._SPINE_COLS:
+            if col in df.columns:
+                assert row[col] is None or (
+                    isinstance(row[col], float) and np.isnan(row[col])
+                ) or pd.isna(row[col]), f"Expected null spine col {col} for suspended row"
+
+    def test_non_suspended_row_gets_fwd_mfe(self, tmp_path, monkeypatch):
+        """A matured, non-suspended row must have fwd_mfe_5 (and other MFE) populated."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [{"ticker": "LIVE2.HK", "group": "entry_open", "edge_z": 1.0,
+                  "close_asof": 100.0}]
+        bl.append_board(calls, "HK", asof="2026-07-01")
+
+        # 40 bars, ascending → definite positive MFE at all horizons
+        close_s = _make_close("2026-07-01", n=40, step=1.0)
+        bench_s = _make_bench("2026-07-01", n=40, step=0.0)
+        monkeypatch.setattr(bl, "_name_close", lambda m, t, ca_cache=None: close_s)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: bench_s)
+
+        bl.grade("HK")
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        row = df[df["ticker"] == "LIVE2.HK"].iloc[0]
+
+        # fwd_mfe_5 must be positive for an ascending series
+        assert "fwd_mfe_5" in df.columns
+        assert row["fwd_mfe_5"] is not None and float(row["fwd_mfe_5"]) > 0, (
+            "Expected positive fwd_mfe_5 for ascending close series"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 10. W0 Stage B-c: schema-union with legacy parquet (pre-spine-cols schema)
+# ---------------------------------------------------------------------------
+class TestSchemaUnionLegacy:
+    """Legacy parquets written before Stage B-c lack spine + regime columns.
+    After append_board or grade() runs, the schema must be silently extended with
+    null values for those new columns — no data loss, no crash.
+    """
+
+    def test_legacy_parquet_extended_by_append(self, tmp_path, monkeypatch):
+        """A parquet missing spine/regime cols must be extended silently by append_board."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        # Write a minimal legacy frame (only the original 15 columns, no B-c additions)
+        legacy_core_cols = [
+            "date", "market", "ticker", "board_pos", "group",
+            "edge_z", "gate_tier", "align_tier", "entry_state", "close_asof",
+            "washout_2w", "extended", "placement_flag", "hold_basing", "dt_compress",
+        ]
+        legacy = pd.DataFrame([{
+            "date": "2026-05-01", "market": "HK", "ticker": "OLD.HK",
+            "board_pos": 1, "group": "entry_open", "edge_z": 1.0,
+            "gate_tier": "T1", "align_tier": "aligned",
+            "entry_state": "open", "close_asof": 50.0,
+            "washout_2w": None, "extended": None, "placement_flag": None,
+            "hold_basing": None, "dt_compress": None,
+        }])[legacy_core_cols]
+        (tmp_path / "hk_board.parquet").parent.mkdir(parents=True, exist_ok=True)
+        legacy.to_parquet(tmp_path / "hk_board.parquet", index=False)
+
+        # Append a new row with the full schema
+        calls = [{"ticker": "NEW.HK", "group": "setting_up", "edge_z": 0.5,
+                  "close_asof": 80.0}]
+        n = bl.append_board(calls, "HK", asof="2026-05-02")
+        assert n == 2
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        # All _SCHEMA columns must now exist
+        for col in bl._SCHEMA:
+            assert col in df.columns, f"Missing column after schema union: {col}"
+
+        # The legacy row's new columns should be null
+        old_row = df[df["ticker"] == "OLD.HK"].iloc[0]
+        assert pd.isna(old_row["species_id"])
+        assert pd.isna(old_row["us_rate_pressure"])
+        assert pd.isna(old_row["fwd_mfe_5"])
+
+    def test_grade_extends_legacy_schema(self, tmp_path, monkeypatch):
+        """grade() must silently add missing spine/regime cols to a legacy parquet
+        and not crash on the schema union."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        # Write a minimal legacy frame
+        legacy = pd.DataFrame([{
+            "date": "2026-05-01", "market": "HK", "ticker": "LGCY.HK",
+            "board_pos": 1, "group": "entry_open", "edge_z": 1.0,
+            "gate_tier": "T1", "align_tier": "aligned",
+            "entry_state": "open", "close_asof": 50.0,
+        }])
+        (tmp_path / "hk_board.parquet").parent.mkdir(parents=True, exist_ok=True)
+        legacy.to_parquet(tmp_path / "hk_board.parquet", index=False)
+
+        close_s = _make_close("2026-05-01", n=30, step=1.0)
+        bench_s = _make_bench("2026-05-01", n=30, step=0.0)
+        monkeypatch.setattr(bl, "_name_close", lambda m, t, ca_cache=None: close_s)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: bench_s)
+
+        # grade() must not crash even on a legacy frame missing all B-c cols
+        g = bl.grade("HK")
+        assert g["available"] is True
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        # Spine and stamp columns must now exist (even if null)
+        for col in bl._SPINE_COLS:
+            assert col in df.columns, f"Missing spine col after grade(): {col}"
+        for col in bl._US_STAMP_COLS:
+            assert col in df.columns, f"Missing US stamp col after grade(): {col}"
+
+
+# ---------------------------------------------------------------------------
+# 11. W0 Stage B-c: US context stamps PIT + unstamped count
+# ---------------------------------------------------------------------------
+class TestUSRegimeStamps:
+    """Verify that:
+    - new rows get US regime stamp via _regime_stamp_for_date at append_board time
+    - grade() backfills null us_* rows from the persisted vector (null-only backfill)
+    - scorecard() reports n_unstamped (rows where US coverage was absent)
+    - rows already stamped are NOT overwritten by grade() backfill
+    """
+
+    def test_null_stamp_returned_when_no_vector_available(self, monkeypatch):
+        """If regime_vector.get_vector_for_date raises, _regime_stamp_for_date must
+        return a fully-null dict without crashing."""
+        import engine.board_ledger as _bl
+        from unittest.mock import patch
+
+        with patch("engine.regime_vector.get_vector_for_date",
+                   side_effect=FileNotFoundError("no parquet")):
+            stamp = _bl._regime_stamp_for_date("2026-07-01")
+
+        assert all(v is None for v in stamp.values())
+        # All 8 expected keys must be present
+        for key in _bl._US_STAMP_COLS:
+            assert key in stamp, f"Missing key {key} in null stamp"
+
+    def test_append_board_stamps_us_cols_on_new_rows(self, tmp_path, monkeypatch):
+        """New rows appended by append_board must carry the US regime stamp.
+        We verify that the us_* columns are populated (not all null) when the
+        mock returns a known stamp."""
+        from unittest.mock import patch
+
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        fake_stamp = {
+            "rate_pressure": "rising",
+            "quad_hard_label": "Q2",
+            "fused_risk_label": "risk_on",
+            "vol_regime": "low",
+            "risk_radar_state": "neutral",
+            "regime_vector_degraded": False,
+            "vector_asof": "2026-07-01",
+            "staleness_hours": 0.0,
+        }
+
+        with patch("engine.regime_vector.get_vector_for_date", return_value=fake_stamp):
+            bl.append_board(
+                [{"ticker": "0700.HK", "group": "entry_open", "edge_z": 1.0}],
+                "HK", asof="2026-07-01"
+            )
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        row = df.iloc[0]
+        assert row["us_rate_pressure"] == "rising"
+        assert row["us_quad_hard_label"] == "Q2"
+        assert row["vector_asof"] == "2026-07-01"
+
+    def test_grade_backfills_null_us_stamps_only(self, tmp_path, monkeypatch):
+        """grade() must backfill rows with all-null us_* cols from the persisted vector.
+        Rows that already have stamps must NOT be overwritten."""
+        from unittest.mock import patch
+
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        # Write two rows: one already-stamped, one null-stamped
+        already_stamped = {
+            "date": "2026-07-01", "market": "HK", "ticker": "STMP.HK",
+            "board_pos": 1, "group": "entry_open", "edge_z": 1.0, "close_asof": 100.0,
+            "us_rate_pressure": "existing_value",  # already has a stamp
+            "vector_asof": "2026-06-30",
+        }
+        null_stamped = {
+            "date": "2026-07-02", "market": "HK", "ticker": "NULL.HK",
+            "board_pos": 1, "group": "entry_open", "edge_z": 0.5, "close_asof": 50.0,
+            # no us_* cols → will be backfilled
+        }
+        # Create with union schema
+        cols = list(dict.fromkeys(bl._SCHEMA))
+        df_init = pd.DataFrame([already_stamped, null_stamped]).reindex(columns=cols)
+        (tmp_path / "hk_board.parquet").parent.mkdir(parents=True, exist_ok=True)
+        df_init.to_parquet(tmp_path / "hk_board.parquet", index=False)
+
+        fake_backfill = {
+            "rate_pressure": "backfilled",
+            "quad_hard_label": "Q3",
+            "fused_risk_label": "risk_off",
+            "vol_regime": "high",
+            "risk_radar_state": "alert",
+            "regime_vector_degraded": True,
+            "vector_asof": "2026-07-02",
+            "staleness_hours": 2.0,
+        }
+
+        close_s = _make_close("2026-07-01", n=30, step=1.0)
+        bench_s = _make_bench("2026-07-01", n=30, step=0.0)
+        monkeypatch.setattr(bl, "_name_close", lambda m, t, ca_cache=None: close_s)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: bench_s)
+
+        with patch("engine.regime_vector.get_vector_for_date", return_value=fake_backfill):
+            g = bl.grade("HK")
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+
+        # The already-stamped row must NOT be overwritten
+        row_stmp = df[df["ticker"] == "STMP.HK"].iloc[0]
+        assert row_stmp["us_rate_pressure"] == "existing_value", (
+            "grade() must not overwrite an existing stamp"
+        )
+        assert row_stmp["vector_asof"] == "2026-06-30"
+
+        # The null-stamped row should have been backfilled
+        row_null = df[df["ticker"] == "NULL.HK"].iloc[0]
+        assert row_null["us_rate_pressure"] == "backfilled", (
+            "grade() must backfill null us_* stamps"
+        )
+
+    def test_scorecard_reports_n_unstamped(self, tmp_path, monkeypatch):
+        """scorecard() must include n_unstamped in both the return dict and the note."""
+        from unittest.mock import patch
+
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        # Write rows with no US stamp coverage
+        calls = [{"ticker": f"T{i:02d}.HK", "group": "entry_open", "edge_z": float(i),
+                  "close_asof": 100.0} for i in range(3)]
+        bl.append_board(calls, "HK", asof="2026-07-01")
+
+        close_s = _make_close("2026-07-01", n=30, step=1.0)
+        bench_s = _make_bench("2026-07-01", n=30, step=0.0)
+        monkeypatch.setattr(bl, "_name_close", lambda m, t, ca_cache=None: close_s)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: bench_s)
+
+        # Simulate no coverage → backfill returns null stamp
+        with patch("engine.regime_vector.get_vector_for_date",
+                   side_effect=FileNotFoundError("no vector")):
+            sc = bl.scorecard("HK")
+
+        assert "n_unstamped" in sc, "scorecard() must return n_unstamped key"
+        assert "n_unstamped=" in sc.get("note", ""), "scorecard() note must include n_unstamped"
+
+
+# ---------------------------------------------------------------------------
+# 12. W0 Stage B-c: own-market primary stamp is documented null
+# ---------------------------------------------------------------------------
+class TestOwnMarketRegimeNull:
+    """own_market_regime must always be null (documented constraint).
+    own_market_regime_note must be a non-empty explanatory string.
+    """
+
+    def test_own_market_regime_null_on_new_rows(self, tmp_path, monkeypatch):
+        """All rows appended by append_board must have own_market_regime = null."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [
+            {"ticker": "0700.HK", "group": "entry_open", "edge_z": 1.0, "close_asof": 380.0},
+            {"ticker": "0005.HK", "group": "setting_up", "edge_z": 0.5, "close_asof": 62.0},
+        ]
+        bl.append_board(calls, "HK", asof="2026-07-01")
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        assert "own_market_regime" in df.columns
+        assert df["own_market_regime"].isna().all(), (
+            "own_market_regime must be null for all rows (documented constraint)"
+        )
+
+    def test_own_market_regime_note_non_empty(self, tmp_path, monkeypatch):
+        """own_market_regime_note must be a non-empty explanatory string on all rows."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [{"ticker": "RY.TO", "group": "entry_open", "edge_z": 1.1,
+                  "close_asof": 140.0}]
+        bl.append_board(calls, "CA", asof="2026-07-01")
+
+        df = pd.read_parquet(tmp_path / "ca_board.parquet")
+        assert "own_market_regime_note" in df.columns
+        note = str(df["own_market_regime_note"].iloc[0])
+        assert len(note) > 10, "own_market_regime_note must be a non-empty explanatory string"
+        # Must reference the documented constraint (non-PIT source reason)
+        assert "PIT" in note or "recomputed" in note or "regime_history" in note, (
+            "The note must document WHY own_market_regime is null"
+        )
+
+    def test_own_market_regime_null_constant_in_module(self):
+        """_OWN_REGIME_NOTE must be defined and non-empty."""
+        assert hasattr(bl, "_OWN_REGIME_NOTE")
+        assert isinstance(bl._OWN_REGIME_NOTE, str) and len(bl._OWN_REGIME_NOTE) > 20
+
+
+# ---------------------------------------------------------------------------
+# 13. W0 Stage B-c: keep-FIRST on re-append with new schema columns
+# ---------------------------------------------------------------------------
+class TestKeepFirstWithNewCols:
+    """keep-FIRST must be preserved when new rows are appended after the B-c schema
+    extension. An existing (date, ticker) row's original values must survive even if
+    the re-append carries different values for new columns.
+    """
+
+    def test_new_schema_cols_do_not_break_keep_first(self, tmp_path, monkeypatch):
+        """Re-appending the same (date, ticker) with different us_* stamp values must
+        not overwrite the original row (keep-FIRST per PIT integrity guarantee)."""
+        from unittest.mock import patch
+
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        fake_stamp_v1 = {
+            "rate_pressure": "low",
+            "quad_hard_label": "Q4",
+            "fused_risk_label": "risk_off",
+            "vol_regime": "high",
+            "risk_radar_state": "alert",
+            "regime_vector_degraded": False,
+            "vector_asof": "2026-07-01",
+            "staleness_hours": 0.0,
+        }
+
+        with patch("engine.regime_vector.get_vector_for_date", return_value=fake_stamp_v1):
+            bl.append_board(
+                [{"ticker": "KA.HK", "group": "entry_open", "edge_z": 2.0, "close_asof": 10.0}],
+                "HK", asof="2026-07-01"
+            )
+
+        # Now re-append with a completely different stamp — keep-FIRST must win
+        fake_stamp_v2 = {
+            "rate_pressure": "rising",
+            "quad_hard_label": "Q1",
+            "fused_risk_label": "risk_on",
+            "vol_regime": "low",
+            "risk_radar_state": "neutral",
+            "regime_vector_degraded": False,
+            "vector_asof": "2026-07-01",
+            "staleness_hours": 2.0,
+        }
+        with patch("engine.regime_vector.get_vector_for_date", return_value=fake_stamp_v2):
+            n = bl.append_board(
+                [{"ticker": "KA.HK", "group": "watch", "edge_z": 9.9, "close_asof": 999.0}],
+                "HK", asof="2026-07-01"
+            )
+        assert n == 1  # still 1 row (no duplicate)
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        row = df[df["ticker"] == "KA.HK"].iloc[0]
+
+        # Original values must be preserved
+        assert row["group"] == "entry_open"   # not "watch"
+        assert float(row["edge_z"]) == pytest.approx(2.0)  # not 9.9
+        assert row["us_rate_pressure"] == "low"   # v1 stamp preserved, not "rising"
+        assert row["us_quad_hard_label"] == "Q4"  # v1 stamp preserved, not "Q1"
