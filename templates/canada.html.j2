@@ -70,6 +70,12 @@
          background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
   .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
   .rk { font-size:12px; font-weight:800; color:var(--muted); }
+  /* ---- BRANCH-B rank pill (replaces the suppressed composite chip) + card lead ---- */
+  .rankpill { font-size:12px; font-weight:800; font-variant-numeric:tabular-nums;
+              min-width:26px; text-align:center; padding:1px 6px; border-radius:8px;
+              color:var(--muted); border:1px solid var(--line); background:var(--panel);
+              cursor:help; }
+  .nb-lead { font-size:11px; line-height:1.4; margin:5px 0 2px; color:var(--text); }
   /* ---- unified Conviction Profile on each standout card ---------------- */
   .nb-conv { display:flex; align-items:center; gap:7px; margin:7px 0 1px; }
   .nb-cscore { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
@@ -372,32 +378,74 @@
 </div>
 {% endif %}{# /macro-only sections #}
 
-<!-- ===== Standout stocks (alpha-led) — the TSX Stock Dashboard headline ===== -->
+<!-- ===== Standout stocks (BRANCH B ripe-list contract) — the TSX Stock Dashboard headline ===== -->
 {% if mode == 'stocks' and setups and setups.buy %}
+{# ---- stocks-mode health banner (deliverable 5): breadth cache (HKCA-13), board-ledger
+      failures, tailwind suppression — only degraded rows appear. ---- #}
+{% if stocks_health %}
+<div class="panel" style="border-color:color-mix(in srgb,var(--warn) 40%,var(--line))">
+  <div class="row" style="gap:8px">
+    <b style="color:var(--warn)">⚠ {{ t('Data health', '数据健康') }}</b>
+    <span class="muted small">{{ t('some board inputs are degraded — the affected axes are suppressed, not silently filled', '部分榜单输入已降级 — 受影响的轴已抑制，而非静默填充') }}</span>
+  </div>
+  <div class="row small" style="gap:6px; margin-top:6px">
+    {% for h in stocks_health %}
+    <span class="chip off">{{ t(h.en, h.zh) }} <b>· {{ h.status }}</b>{% if h.last and h.last != '—' %} <span class="muted">({{ h.last }})</span>{% endif %}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 <div class="panel">
-  <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
-    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('cycle-aligned across weekly · 3-day · daily (bottoming, not a falling knife) · each card carries the unified Conviction profile (cycle state caps the verdict)', '在周线·3日·日线上周期共振（筑底，而非接飞刀）· 每张卡片附带统一确信度画像（周期状态会封顶结论）') }}</span>{% endif %}
-    {{ help('Large-cap TSX names surfaced by sector rotation and confluence gating, with cycle entry as timing context. Each card carries the unified Conviction profile: four transparent axes (selection / entry / tailwind / quality) and one honest verdict. The price-cycle state is a HARD modifier — a name in a downtrend or topping reads \'strong name, wrong tape\', never \'Buy\'. The 0-100 score is a within-market percentile DISPLAY skin (not a probability). IMPORTANT: residual momentum on Canada is an UNVALIDATED context prior — it has not cleared Phase-0 and is pending the C7 keystone test (masterplan §4.1 C7). The trust badge says so. Context, not personalized advice.', '按板块轮动与多维共振筛选的大盘 TSX 个股，并以周期入场作为时机背景。每张卡片附带统一确信度画像：四条透明维度（选股／入场／顺风／质量）与一个诚实结论。价格周期状态是硬性修正项——处于下行或做顶的个股显示“强势但趋势不利”，而非“买入”。0-100 分是市场内百分位的展示皮肤（非概率）。重要提示：加拿大的残差动量为未经验证的背景先验——尚未通过 Phase-0，待 C7 关键测试验证（规划书 §4.1 C7）。信任徽标已注明。仅作背景，非个性化建议。') }}
+  <h2>{{ t('⚡ Standout TSX names — ripe-list screen', '⚡ 突出的 TSX 个股 — 成熟清单筛选') }}
+    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('cycle-aligned across weekly · 3-day · daily (bottoming, not a falling knife)', '在周线·3日·日线上周期共振（筑底，而非接飞刀）') }}</span>{% endif %}
+    {{ help('Board order (masterplan §5.0 ripe-list contract): hygiene → INCLUDE bottoming-alignment {PRIME, ARMED} → GROUP entry-open before setting-up → RANK within group by the residual-momentum SCREEN z. The 0-100 composite is SUPPRESSED here: the C7 momentum keystone landed ALL-ACCRUE in phase-0 (masterplan §4.1 Branch B), so no validated composite exists to sort by — the small rank pill (#1, #2…) is a within-group order, NOT a probability. The momentum leg is FDR-stable but DSR-short (re-test 2027-01); it is a SCREEN, honestly labeled per card. Timing groups and gates; the screen only ranks within a group. Context, not personalized advice.', '榜单顺序（规划书 §5.0 成熟清单契约）：卫生筛 → 纳入筑底共振 {PRIME, ARMED} → 分组：入场已开启优先于蓄势中 → 组内按残差动量筛选 z 排名。此处 0-100 综合分已抑制：C7 动量关键测试在 Phase-0 全部 ACCRUE（规划书 §4.1 分支 B），无经验证的综合分可排序——小排名徽章（#1、#2…）是组内顺序，而非概率。动量腿通过 FDR 但 DSR 不足（2027-01 复测）；它是筛选器，每张卡片如实标注。时机负责分组与门控；筛选仅在组内排名。仅作背景，非个性化建议。') }}
   </h2>
+  {# hard freshness gate banner (deliverable 4): tailwind axis suppressed when the
+     canada_search panel is >3 trading days staler than the board's own price date. #}
+  {% if setups.tailwind_suppressed %}
+  <p class="chip off" style="margin:2px 0 8px">{{ t('Basket-tailwind axis suppressed', '篮子顺风轴已抑制') }}{% if setups.tailwind_stale_days is not none %} — {{ t('panel', '面板') }} {{ setups.tailwind_stale_days }} {{ t('trading days stale', '个交易日陈旧') }}{% else %} — {{ t('panel missing', '面板缺失') }}{% endif %}</p>
+  {% endif %}
   <div class="cards" data-showmore-rows="3">
     {% for s in setups.buy %}
+    {# ---- BRANCH-B group divider: entry-open before setting-up ---- #}
+    {% if loop.first or s.group != setups.buy[loop.index0 - 1].group %}
+    <div style="grid-column:1/-1; margin:4px 0 -2px">
+      <span class="rk" style="text-transform:uppercase; letter-spacing:.05em">
+        {% if s.group == 'entry_open' %}🟢 {{ t('Entry open now', '入场已开启') }}{% else %}🟡 {{ t('Setting up — awaiting trigger', '蓄势中 — 待触发') }}{% endif %}
+      </span>
+    </div>
+    {% endif %}
     {% set c = s.conviction %}
     <div class="card">
       <div class="row" style="gap:8px">
+        {# BRANCH B: composite 0-100 chip is SUPPRESSED; a small rank pill takes its place.
+           The pill is a within-group order (#1, #2…), NOT a score/probability. #}
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#{{ s.board_pos }}</span>
         <a href="canada_stock.html#{{ s.ticker }}"><b>{{ s.name or s.ticker }}</b></a>
         <span class="muted small">{{ s.ticker }}</span>
         <span style="flex:1"></span>
         {% if s.label %}<span class="lad {{ 'up' if s.dir=='up' else ('down' if s.dir=='down' else 'flat') }}">{{ td(s.label) }}</span>{% endif %}
       </div>
+      {# mechanism-first card lead (§7.1): primary factor-beta driver + momentum SCREEN z
+         (accruing) + insider cluster + entry window — built from fields already on the row. #}
+      {% if s.lead_en %}<p class="nb-lead"><span class="l-en">{{ s.lead_en }}</span><span class="l-zh">{{ s.lead_zh or s.lead_en }}</span></p>{% endif %}
       <div class="row small muted" style="gap:10px; margin:5px 0">
-        {% if s.alpha is not none %}<span>α-z <b class="{{ 'pos' if s.alpha>=0 else 'neg' }}">{{ '%+.2f'|format(s.alpha) }}</b></span>{% endif %}
+        {% if s.alpha is not none %}<span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。">{{ t('mom screen', '动量筛选') }} <b class="{{ 'pos' if s.alpha>=0 else 'neg' }}">{{ '%+.2f'|format(s.alpha) }}</b></span>{% endif %}
         {% if s.sector_rank %}<span>#{{ s.sector_rank }}/{{ s.sector_n }} {{ td(s.sector) }}</span>{% endif %}
         {% if s.off_high is not none %}<span>{{ '%.0f'|format(s.off_high) }}% {{ t('off high', '距高点') }}</span>{% endif %}
       </div>
+      {# BRANCH-B tier badge line (replaces the composite score): honest one-liner, long
+         form in the title tooltip. C1 oil context chip + extension log-and-grade chip. #}
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。">{{ t('screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)', '筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）') }}</span>
+        {% if s.oil_tailwind %}<span class="nb-vchip vf-up" title="C1 phase-0: oil→XEG is the one ACCRUE (HAC t +2.75, FDR-pass, DSR-short); gold/copper NO-GO. Fires only when the overlay oil factor is risk-on AND this name loads primarily on oil. · C1 Phase-0：油→XEG 是唯一 ACCRUE（HAC t +2.75、通过 FDR、DSR 不足）；金/铜 NO-GO。仅当叠加油因子为风险偏好且该股主要负荷油时触发。">🛢 {{ t('oil regime tailwind — accruing (C1)', '油周期顺风 — 待验证 (C1)') }}</span>{% endif %}
+        {% if s.extended %}<span class="nb-vchip vf-exp" title="Extension log-and-grade — this name is stretched vs its 200d line (a risk-placement lens, NOT rank-affecting; phase-0 showed freshness does not cut drawdown). · 扩张记录评分 — 该股相对 200 日线偏离（风险定位视角，不影响排名；Phase-0 显示新鲜度不减回撤）。">📐 {{ t('extended', '偏离') }}{% if s.extended.ext_z is not none %} z{{ '%+.1f'|format(s.extended.ext_z) }}{% endif %}</span>{% endif %}
+      </div>
       {% if s.spark_svg %}{{ s.spark_svg | safe }}{% endif %}
       {% if c %}
+      {# composite 0-100 chip SUPPRESSED under Branch B — only the honest verdict text
+         remains (desaturation applies to the SCORE chip only, never the narrative). #}
       <div class="nb-conv">
-        {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">{{ c.score }}</span>{% endif %}
         <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
       </div>
       {% set al = c.alignment %}
@@ -414,8 +462,10 @@
       {% endif %}
       <div class="nb-axes">
         {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
-        {% set a = c.axes[ax] %}
-        <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
+        {# HARD freshness gate: when the tailwind panel is >3 trading days stale the
+           tailwind axis is SUPPRESSED (shown as no-data), never filled from stale prices. #}
+        {% set a = {'pct': none} if (ax == 'tailwind' and setups.tailwind_suppressed) else c.axes[ax] %}
+        <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if ax == 'tailwind' and setups.tailwind_suppressed %} — suppressed (panel stale){% elif a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
           <div class="axl">{{ t(lbl, lbl_zh) }}</div>
           <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
         </div>
@@ -460,7 +510,7 @@
     </div>
     {% endfor %}
   </div>
-  <p class="caveat" style="margin-top:8px">{{ t('Residual-momentum construction is shared with the validated US/China engines; the Canada-specific axis weights are HK-mirrored priors pending Phase-0 validation. The Conviction composite is displayed context, never the shipped sort key — the board rank stays the validated α leg.', '残差动量构造与经验证的美国／中国引擎共用；加拿大专属维度权重为对标香港的先验，待 Phase-0 验证。确信度综合分仅作情境展示，绝非出货排序键——榜单排名仍以已验证的 α 腿为准。') }}</p>
+  <p class="caveat" style="margin-top:8px">{{ t('BRANCH B (masterplan §4.1): the C7 momentum keystone landed all-ACCRUE in phase-0, so no validated composite exists — the CA board runs the ripe-list screen permanently. Cards are ranked WITHIN group by the residual-momentum SCREEN (FDR-stable, DSR-short; re-test 2027-01); the 0-100 composite is suppressed. Timing groups and gates; the screen ranks within a group. This is a planned honest-screen outcome, not a failure.', '分支 B（规划书 §4.1）：C7 动量关键测试在 Phase-0 全部 ACCRUE，无经验证综合分——加拿大榜单长期运行成熟清单筛选。卡片按组内残差动量筛选排名（通过 FDR、DSR 不足；2027-01 复测）；0-100 综合分已抑制。时机负责分组门控；筛选仅在组内排名。这是计划中的诚实筛选结果，而非失败。') }}</p>
 </div>
 {% endif %}
 

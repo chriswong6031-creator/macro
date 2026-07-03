@@ -407,6 +407,109 @@ def _build_sector_pages(env) -> int:
     return built
 
 
+def _board_asof(latest: dict) -> str:
+    """The board's own price date (the CA close the board was ranked on). Prefer the
+    engine's `latest.date`; fall back to the S&P/TSX benchmark's last close date."""
+    d = latest.get("date")
+    if d:
+        return str(d)
+    df = store.read("canada", config.load()["canada"]["yahoo"]["market_index"])
+    if df is not None and not df.empty:
+        return str(df.index.max().date())
+    return str(pd.Timestamp.utcnow().date())
+
+
+def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
+    """Log today's ranked Branch-B board to the standout-board forward ledger and grade
+    matured calls (masterplan §5.4). Returns health rows (empty when healthy).
+
+    Fail-open-LOUD: any failure yields a visible health row rather than a silent pass —
+    the board's scoreboard must never fail invisibly."""
+    rows = (setups or {}).get("buy") or []
+    if not rows:
+        return [{"en": "Board ledger (no ranked names to log)", "zh": "榜单账本（无可记录个股）",
+                 "status": "SKIP", "rows": 0, "last": "—"}]
+    asof = _board_asof(latest)
+    from scripts.build_canada_library import _ENTRY_STATE
+    calls = []
+    for r in rows:
+        es = r.get("entry_signal") or {}
+        sig = r.get("signal") or {}
+        calls.append({
+            "ticker": r.get("ticker"),
+            "group": r.get("group"),                       # 'entry_open' | 'setting_up'
+            "edge_z": r.get("alpha"),                      # momentum SCREEN z (accruing)
+            "gate_tier": sig.get("tier") or (r.get("conviction") or {}).get("gate_tier"),
+            "align_tier": r.get("align_tier"),
+            "entry_state": _ENTRY_STATE.get(es.get("status")),
+            "close_asof": r.get("price"),
+        })
+    health: list[dict] = []
+    try:
+        from engine import board_ledger
+        n = board_ledger.append_board(calls, market="CA", asof=asof)
+        if n <= 0:
+            health.append({"en": "Board ledger (append wrote 0 rows — see build log)",
+                           "zh": "榜单账本（写入 0 行 — 查看构建日志）",
+                           "status": "ERROR", "rows": 0, "last": asof})
+            log.error("CA board ledger: append_board wrote 0 rows for %s (%d calls)",
+                      asof, len(calls))
+        else:
+            log.info("CA board ledger: logged %d ranked names for %s (ledger=%d)",
+                     len(calls), asof, n)
+        # nightly grade of matured calls — 'accruing' until forward returns exist
+        g = board_ledger.grade("CA")
+        if g.get("available"):
+            setups["board_track"] = board_ledger.scorecard("CA")
+            log.info("CA board ledger: grade n_calls=%s n_graded=%s n_suspended=%s",
+                     g.get("n_calls"), g.get("n_graded"), g.get("n_suspended"))
+    except Exception as e:  # noqa: BLE001 — fail-open-LOUD (health row + log)
+        health.append({"en": "Board ledger (FAILED — see build log)",
+                       "zh": "榜单账本（失败 — 查看构建日志）",
+                       "status": "ERROR", "rows": 0, "last": asof})
+        log.error("CA board ledger failed (%s)", e)
+    return health
+
+
+def _tailwind_freshness_gate(setups: dict | None, latest: dict) -> dict | None:
+    """HARD freshness gate on the CA basket-tailwind axis (masterplan §2 principle 6):
+    the tailwind panel (canada_search closes) must be no more than 3 trading days
+    staler than the board's own price date. When it is, SUPPRESS the tailwind axis on
+    every card and surface a banner. Returns a health row when suppressed, else None.
+
+    Sets setups['tailwind_suppressed'] + setups['tailwind_stale_days'] so the template
+    can hide the tailwind axis + show the on-page banner."""
+    if not setups:
+        return None
+    board_date = pd.Timestamp(_board_asof(latest))
+    cp = config.data_dir() / "canada_search" / "closes.parquet"
+    if not cp.exists():
+        setups["tailwind_suppressed"] = True
+        setups["tailwind_stale_days"] = None
+        return {"en": "Basket-tailwind axis SUPPRESSED (canada_search panel missing)",
+                "zh": "篮子顺风轴已抑制（canada_search 面板缺失）",
+                "status": "SUPPRESSED", "rows": 0, "last": "—"}
+    try:
+        idx = pd.read_parquet(cp, columns=[]).index
+        tw_date = pd.Timestamp(idx.max())
+    except Exception as e:  # noqa: BLE001
+        log.warning("CA tailwind freshness: panel unreadable (%s)", e)
+        return None
+    # trading-day staleness ≈ business days between the two dates (calendar-day / weekend
+    # aware; holidays make this a slight over-count, which fails SAFE — suppress sooner).
+    stale_td = int(pd.bdate_range(tw_date, board_date).size - 1) if tw_date < board_date else 0
+    setups["tailwind_stale_days"] = stale_td
+    if stale_td > 3:
+        setups["tailwind_suppressed"] = True
+        log.error("CA tailwind freshness: panel %s is %d trading days staler than board %s "
+                  "— tailwind axis SUPPRESSED", tw_date.date(), stale_td, board_date.date())
+        return {"en": f"Basket-tailwind axis SUPPRESSED — panel {stale_td} trading days stale",
+                "zh": f"篮子顺风轴已抑制 — 面板落后 {stale_td} 个交易日",
+                "status": "SUPPRESSED", "rows": 0, "last": str(tw_date.date())}
+    setups["tailwind_suppressed"] = False
+    return None
+
+
 # ---- quad meanings (Canada framing) -------------------------------------------
 QUAD_MEANING = {
     "Goldilocks": ("growth ↑ inflation ↓ — tech / discretionary / banks lead",
@@ -520,11 +623,31 @@ def main() -> int:
         vm["setups"] = setups
 
         # enrich the alpha-led setups shortlist into "Standout individual stocks" cards
+        # AND apply the BRANCH-B ripe-list contract order (C7 verdict: all momentum
+        # trials ACCRUE → composite suppressed, board = grouped ripe-list, rank pill).
         try:
             from scripts.build_canada_library import compute_canada_standouts
-            vm["setups"] = compute_canada_standouts(setups)
+            vm["setups"] = compute_canada_standouts(setups, overlay=latest.get("overlay") or {})
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("canada standouts enrich failed (%s); using raw setups", e)
+
+        # ── BRANCH-B board ledger (masterplan §5.4) + hard freshness gate (§2.6) ──
+        # This is the board's SCOREBOARD: log the ranked board each render, grade it
+        # nightly. Fail-open-LOUD: a ledger failure surfaces a health row, never a crash.
+        vm.setdefault("board_health", [])
+        _cb = _canada_board_ledger(vm.get("setups"), latest)
+        if _cb:
+            vm["board_health"].extend(_cb)
+        _tw = _tailwind_freshness_gate(vm.get("setups"), latest)
+        if _tw:
+            vm["board_health"].append(_tw)
+        # Stocks-mode health banner (deliverable 5): the shared source health (which
+        # already carries the HKCA-13 breadth close-cache MISSING flag from _health_rows)
+        # PLUS the Branch-B board-ledger + tailwind-suppression rows. Only the DEGRADED
+        # rows surface as a banner so a clean board shows nothing.
+        _src_degraded = [h for h in (vm.get("health") or [])
+                         if str(h.get("status", "")).upper() not in ("OK", "FRESH", "HEALTHY", "?")]
+        vm["stocks_health"] = _src_degraded + vm["board_health"]
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
