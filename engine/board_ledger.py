@@ -747,8 +747,12 @@ def scorecard(market: str) -> dict:
                 sub = gf[(gf["date"] == d) & gf["excess_ret"].notna()]
                 if len(sub) >= MIN_NAMES_PER_DATE:
                     try:
-                        ic = float(sub["board_pos"].rank().corr(
-                            sub["excess_ret"].rank(), method="spearman"))
+                        # Spearman IC = Pearson of ranks (both sides already ranked).
+                        # NOT method="spearman": pandas routes that through scipy.stats,
+                        # which minimal-deps environments (ci.yml engine-render-guards)
+                        # don't install — the ImportError was swallowed below and the
+                        # scorecard silently reported rank_ic=None.
+                        ic = float(sub["board_pos"].rank().corr(sub["excess_ret"].rank()))
                         if np.isfinite(ic):
                             ics.append(ic)
                     except Exception:  # noqa: BLE001
