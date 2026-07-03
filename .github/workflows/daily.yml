@@ -612,6 +612,20 @@ jobs:
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_us_board --nightly || true
+      - name: Options-state stamp on board ledger (Options Alpha W1.3; context-only)
+        # Stamps the freshly-graded + accumulated retro_grades.parquet with the eight nullable
+        # opt_* options-state columns (PIT: only positioning data with as-of ≤ each fire's as_of).
+        # Sources pinned per ruling A6 (polygon_gex summary + chains). NEVER touches grading
+        # columns/logic (Setup-Species Stage B owns those; A9) — nullable schema-union only,
+        # mirroring the regime-stamp pattern. Write path data/us_board_ledger/ is already covered
+        # by the "commit engine outputs" step's `git add data/` below. Idempotent. Resilient.
+        run: python -m scripts.stamp_options_state || true
+      - name: Options entry-quality gate (Options Alpha W1.3; pre-registered, scored=false)
+        # Recomputes the S-IVR/S-DOI/S-WALL/S-VOI bucket counts/verdicts from the stamped ledger
+        # into data/options_entry/gate.json (ledger primitives only, A10). Cheap (seconds). No
+        # verdict until n≥30/bucket (doctrine §2.3); verdict flips require the pre-registered
+        # thresholds, never a code edit. Resilient.
+        run: python -m scripts.validate_options_entry || true
       - name: Calibration Hub (unified self-improvement observability; display-only)
         # Consolidates every Phase-C desk's track_record + the Trial Ledger into one
         # surface (data/calibration/summary.json + site/calibration.html). Runs after the
