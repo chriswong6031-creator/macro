@@ -24,6 +24,7 @@ from engine.validation import (  # noqa: E402
     newey_west_tstat, deflated_sharpe, bootstrap_effective_t,
     benjamini_hochberg, ret_moments, dsr_verdict,
 )
+from engine.trial_ledger import register_trials  # noqa: E402
 
 N_TRIALS_PROGRAM = 30          # masterplan §6 program-level DSR count
 ANCHORS = {"Feb": (2, 25), "May": (5, 28), "Aug": (8, 27), "Dec": (12, 3)}
@@ -255,6 +256,8 @@ def exploratory():
     return out
 
 
+@register_trials("cbank_phase0", budget=N_TRIALS_PROGRAM, basis="estimated",
+                 reason="masterplan §6 program-level DSR budget (both markets)")
 def main():
     import logging
     logging.disable(logging.CRITICAL)   # under __main__ only
