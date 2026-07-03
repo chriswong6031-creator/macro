@@ -1,10 +1,16 @@
 """engine/postcross.py — Post-cross lifecycle detector (BASED/ARMED/SHAKEN chips).
 
-HONESTY CONTRACT (verbatim, per masterplan Commit B spec):
-  W8-A verdict 2026-07-03: NO rank power (clean15 lift failed its gate);
-  ships as eligibility+display only; safety claim: stop5 -4/-5pp vs stale
-  complement, NI vs FRESH. OOS confirmation: W8-A-OOS/W8-B-OOS (see
-  DURABLE_BOTTOM_FRAMEWORK.md §8).
+HONESTY CONTRACT (updated 2026-07-03 after OOS adjudication — DURABLE_BOTTOM_FRAMEWORK.md §8):
+  * NO state has rank/ordering power, ever (W8-A clean15 lift failed its gate).
+  * ARMED: W8-A-OOS **FAILED** (deep-panel stop5 edge did not transfer to the 2,335-name
+    baskets panel: -0.40pp vs the -2pp gate, sign-unstable across halves). The ``armed``
+    field is computed and emitted ONLY for silent forward-ledger accrual — it must NOT
+    render a chip, drive eligibility on its own, or carry any displayed claim.
+  * SHAKEN: W8-B-OOS **PASSED all gates** (OOS stop5 42.5 vs FRESH 47.1 = -4.6pp, clean15
+    NI +1.6pp, sign-stable both ticker halves + both time halves; deep panel concurs
+    35.8 vs 40.3). Ships as display chip + Lane-R eligibility door.
+  * BASED: claim-free eligibility door (both panels show stale-based fires no riskier
+    than fresh: OOS stop5 45.3 vs 47.1). No displayed edge claim.
 
 What this module provides
 -------------------------

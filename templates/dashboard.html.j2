@@ -754,9 +754,8 @@
   .lane-recovery{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
   /* α laggard chip (alpha_entry=laggard, honest copy) */
   .ent-lag{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent);font-size:8px;font-weight:700;padding:1px 5px;border-radius:6px;white-space:nowrap}
-  /* W8-B postcross lifecycle chips (ARMED / SHAKEN) — display-only */
+  /* W8-B postcross lifecycle chip (SHAKEN; ARMED display removed per W8-A-OOS FAIL) */
   .nb-postcross{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
-  .pc-armed{background:color-mix(in srgb,var(--link) 12%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 30%,transparent)}
   .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
             padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
@@ -2504,16 +2503,17 @@
             {# W6-C HOLD chip — basing state after confluence anchor; calm on intact, muted on launched/broken #}
             {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" title="Base {{ _hd.get('days_basing',0) }}d · inv ${{ '%.2f'|format(_hd.get('invalidation',0)) }}{% if _hd.get('provisional') %} · est{% endif %} · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough. 基础期{{ _hd.get('days_basing',0) }}天 · 止损 ${{ '%.2f'|format(_hd.get('invalidation',0)) }}。仅供参考。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}
             {# W8 lane chip (Trend/Recovery) — admission lane for this name on the board #}
-            {% if n.get('lane') == 'recovery' %}<span class="nb-lane lane-recovery" title="Recovery lane (W8-C): counter-trend buyable — signal confluence confirmed (T1/T2/T3) and not extended. Safety: stop5 -4/-5pp, NI vs fresh. Display-only; no rank edge claimed. · 复苏通道（W8-C）：逆势可买入 — 信号共振确认（T1/T2/T3）且未过热。安全测试通过；仅供展示，不声称排序优势。"><span class="l-en">Recovery</span><span class="l-zh">复苏</span></span>
-            {% elif n.get('lane') == 'trend' %}<span class="nb-lane lane-trend" title="Trend lane — bottoming-aligned (weekly/3-day/daily cycle aligned to the upside). · 趋势通道 — 筑底共振（周线/3日/日线周期向上共振）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>{% endif %}
-            {# alpha_entry laggard chip: honest signal that this leader is running extended #}
-            {% if n.get('alpha_entry') == 'laggard' %}<span class="nb-ent ent-lag" title="α laggard — sector-neutral momentum is negative; this name is a sector laggard not a leader. Display context only. · α 落后 — 行业中性动量为负；该标的在板块内属落后者，非领头羊。仅供展示参考。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>{% endif %}
-            {# W8-B postcross lifecycle chip (BASED/ARMED/SHAKEN) — display-only.
-               W8-A verdict: NO rank power; ships as eligibility+display only; safety:
-               stop5 -4/-5pp vs stale complement, NI vs FRESH. OOS needed. #}
+            {# W8 lane + postcross chips. NO title= attributes — translated text never goes
+               in attributes (repo i18n rule); explanatory copy belongs in a popover (W2).
+               ARMED chip removed 2026-07-03: W8-A-OOS FAILED (stop5 edge did not transfer
+               OOS, sign-unstable) — armed fields still computed + emitted for silent
+               forward-ledger accrual, but nothing renders. SHAKEN confirmed both panels
+               (W8-B-OOS PASS: stop5 −4.6pp vs FRESH, NI clean15, sign-stable all splits). #}
+            {% if n.get('lane') == 'recovery' %}<span class="nb-lane lane-recovery"><span class="l-en">Recovery</span><span class="l-zh">复苏</span></span>
+            {% elif n.get('lane') == 'trend' %}<span class="nb-lane lane-trend"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>{% endif %}
+            {% if n.get('alpha_entry') == 'laggard' %}<span class="nb-ent ent-lag"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>{% endif %}
             {% set _pc = n.get('postcross') %}
-            {% if _pc and _pc.get('armed') %}<span class="nb-postcross pc-armed" title="RE-ARMED {{ _pc.get('armed','').upper() }} (W8-A display-only) — weekly RSI-MACD histogram is negative, net-rising and on track to cross zero within ~{{ _pc.get('wk_w2x','?') }} weeks. Historically lower stop-out vs stale complement; upside odds unchanged vs fresh crosses; narrow signal (n modest). W8-A verdict 2026-07-03: NO rank power — clean15 lift failed its gate; safety claim only. · 周线重新激活（W8-A 仅展示）— 周线RSI-MACD柱状图为负且净回升，预计约{{ _pc.get('wk_w2x','?') }}周内穿零。历史上比陈旧对照组止损概率更低；上行胜率与新鲜信号相当；信号窗口较窄（样本量适中）。W8-A结论：无排序能力。"><span class="l-en">↑ Re-armed {{ _pc.get('armed','').upper() }}</span><span class="l-zh">↑ 周线重激活 {{ _pc.get('armed','').upper() }}</span></span>
-            {% elif _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken" title="SHAKEN-RECOVERY (W8-B display-only) — new low after the 3D cross (shake-out) then recovery above midpoint with weekly histogram net-rising. Report-only cell; n &lt; pre-registration threshold in many markets; treat as context, not a signal. · 震仓复苏（W8-B 仅展示）— 3日叉后创新低（震仓）、反弹超过中位价位且周线柱状图净回升。仅报告级别，多数市场样本未达预注册门槛，视为情境参考而非信号。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}
+            {% if _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           {# Context line LEADS with the specific narrative basket (de-blurs "Technology"
