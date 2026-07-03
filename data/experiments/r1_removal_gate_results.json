@@ -1,0 +1,121 @@
+{
+  "stamp": {
+    "ext_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/amazing-blackburn-5d2027/data/hk_stocks_ext",
+    "closes_deep": {
+      "n_cols": 157,
+      "range": [
+        "1986-12-31",
+        "2026-06-18"
+      ]
+    },
+    "hk_stocks": {
+      "n_files": 157
+    },
+    "hk_stocks_ext": {
+      "n_files": 388,
+      "earliest_start": "2000-01-04"
+    },
+    "union_names": 545,
+    "union_range": [
+      "2000-01-03",
+      "2026-07-03"
+    ],
+    "hsi_range": [
+      "1986-12-31",
+      "2026-07-03"
+    ]
+  },
+  "coverage": {
+    "remove_total": 330,
+    "remove_in_union": 79,
+    "remove_not_in_union": 251,
+    "studiable_events": 76,
+    "studiable_tickers": 67
+  },
+  "trials": {
+    "H_REM@+5d": {
+      "label": "H_REM@+5d",
+      "k_episodes": 15,
+      "mean_b1": -5e-05,
+      "hac_t": -0.005,
+      "hac_p_1sided_neg": 0.4982,
+      "splithalf": {
+        "h1": 0.01926,
+        "h2": -0.01695,
+        "sign_stable": false
+      },
+      "t_eff": null,
+      "sharpe_monthlyscale": -0.0011,
+      "dsr": 0.0157,
+      "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+      "ci90": [
+        -0.01455,
+        0.01644
+      ]
+    },
+    "H_REM@+20d": {
+      "label": "H_REM@+20d",
+      "k_episodes": 15,
+      "mean_b1": -0.01316,
+      "hac_t": -1.692,
+      "hac_p_1sided_neg": 0.0453,
+      "splithalf": {
+        "h1": -0.00094,
+        "h2": -0.02386,
+        "sign_stable": true
+      },
+      "t_eff": null,
+      "sharpe_monthlyscale": -0.2022,
+      "dsr": 0.0021,
+      "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+      "ci90": [
+        -0.02982,
+        -0.00308
+      ]
+    }
+  },
+  "bh_fdr": {
+    "H_REM@+5d": {
+      "p": 0.4982,
+      "q": 0.4982,
+      "reject": false
+    },
+    "H_REM@+20d": {
+      "p": 0.0453,
+      "q": 0.0906,
+      "reject": true
+    }
+  },
+  "pre_window_descriptive": {
+    "n": 76,
+    "mean_pre_car": 0.00424,
+    "median_pre_car": 0.01789
+  },
+  "survivorship_bound_+20d": {
+    "k": 15,
+    "mean_b1": -0.07597,
+    "hac_t": -9.627,
+    "sign_flip_vs_raw": false
+  },
+  "gate": {
+    "hac_t_le_-2.0": false,
+    "splithalf_sign_stable": true,
+    "bh_fdr_reject_+20d": true,
+    "survivorship_no_sign_flip": true,
+    "powered": true
+  },
+  "verdict": "NO-GO (effect not incremental)",
+  "params": {
+    "trail": 63,
+    "horizons": [
+      5,
+      20
+    ],
+    "n_controls": 2,
+    "stale_sess": 5,
+    "n_trials_declared": 36,
+    "min_episodes_power": 12,
+    "phantom_car": -0.3,
+    "delist_monthly_2x": 0.005
+  }
+}
