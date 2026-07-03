@@ -23,6 +23,24 @@ import pytest
 import engine.board_ledger as bl
 
 
+@pytest.fixture(autouse=True)
+def _no_real_regime_vector(monkeypatch):
+    """Cut off the one real-data read in this module for every test.
+
+    append_board() and grade()'s backfill loop stamp rows via
+    engine.regime_vector.get_vector_for_date, which reads the persisted
+    data/regime/regime_vector.parquet when it exists. Results must not depend
+    on whether that file is present on the machine running the tests, so the
+    default here is the file-absent path (a null stamp). Tests that exercise
+    the stamping logic itself re-patch get_vector_for_date over this."""
+    import engine.regime_vector as rv
+
+    def _absent(*_a, **_k):
+        raise FileNotFoundError("hermetic tests: real regime_vector.parquet is off-limits")
+
+    monkeypatch.setattr(rv, "get_vector_for_date", _absent)
+
+
 # ---------------------------------------------------------------------------
 # Helpers to build synthetic close series and mock store access
 # ---------------------------------------------------------------------------
