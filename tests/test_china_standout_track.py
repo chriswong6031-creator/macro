@@ -271,3 +271,384 @@ def test_grade_w02a_stratification_keys_present(cn_store):
     # the T1/T2 strata actually populated (rows had both)
     if h21.get("by_tier"):
         assert "T1" in h21["by_tier"] or "T2" in h21["by_tier"]
+
+
+# ===========================================================================
+# W0 Stage B-d: CN-native spine axes, regime stamps, species/archetype,
+# dtype hardening tests
+# ===========================================================================
+
+def _mk_ohlc_with_path(dates, closes_fn, *, flat_t1=False):
+    """Build an OHLC frame where closes_fn(i) → close at bar i.
+    If flat_t1=True, bar index 1 (T+1) is a locked-limit bar (h==l==c).
+    """
+    closes = np.array([closes_fn(i) for i in range(len(dates))], dtype=float)
+    df = pd.DataFrame({
+        "close": closes,
+        "high": closes * 1.01,
+        "low": closes * 0.99,
+        "volume": np.full(len(closes), 1e6),
+    }, index=pd.DatetimeIndex(dates, name="Date"))
+    if flat_t1:
+        df.iloc[1, df.columns.get_loc("high")] = closes[1]
+        df.iloc[1, df.columns.get_loc("low")] = closes[1]
+    return df
+
+
+# ---------------------------------------------------------------------------
+# Scope-1: CN-native terminal state from T+1 HL2 fill
+# ---------------------------------------------------------------------------
+
+def test_cn_terminal_state_clean_liftoff(cn_store):
+    """A name that surges +20% within 21d from the T+1 fill → CLEAN_LIFTOFF (clean8_21)."""
+    tmp_path, dates = cn_store
+    # First 5 bars flat at 10, then shoot to 15 (>8%) on bar 5 → CLEAN_LIFTOFF
+    closes = np.full(len(dates), 10.0)
+    closes[5:] = 15.0  # +50% by bar 5 from T+1 fill
+    df = _mk_ohlc(dates, closes)
+    store.upsert("china_stocks", "699001.SS", df)
+    d0 = dates[0]
+    spine = t._cn_spine_axes("699001.SS", d0)
+    assert spine["fill_basis"] == "t1_hl2"
+    assert spine["terminal_state_clean8_21"] == "CLEAN_LIFTOFF", (
+        f"Expected CLEAN_LIFTOFF, got {spine['terminal_state_clean8_21']}"
+    )
+
+
+def test_cn_terminal_state_stopped(cn_store):
+    """A name that falls -6% on bar 2 from T+1 fill → STOPPED."""
+    tmp_path, dates = cn_store
+    closes = np.full(len(dates), 10.0)
+    closes[2] = 9.3   # < 10 * 0.95 = 9.5 → STOPPED at bar 2
+    df = _mk_ohlc(dates, closes)
+    store.upsert("china_stocks", "699002.SS", df)
+    d0 = dates[0]
+    spine = t._cn_spine_axes("699002.SS", d0)
+    assert spine["terminal_state_clean8_21"] == "STOPPED", (
+        f"Expected STOPPED, got {spine['terminal_state_clean8_21']}"
+    )
+
+
+def test_cn_terminal_state_cushioned_then_stopped(cn_store):
+    """A name that hits +7% (cushioned) then later drops to 94% → post_cushion_breach=True."""
+    tmp_path, dates = cn_store
+    # T+1 fill: bar 1, close ~10.0 (hl2)
+    # Bar 3 (T+3): close = 10.75 → +7.5% > CUSHION_BARRIER (1.05) → cushioned
+    # Bar 8 (T+8): close = 9.40 → < STOP_BARRIER (0.95) → stopped after cushion
+    closes = np.full(len(dates), 10.0)
+    closes[3] = 10.75  # cushion trigger
+    closes[4:8] = 10.5
+    closes[8:] = 9.4   # stop trigger after cushion
+    df = _mk_ohlc(dates, closes)
+    store.upsert("china_stocks", "699003.SS", df)
+    d0 = dates[0]
+    spine = t._cn_spine_axes("699003.SS", d0)
+    # terminal_state_clean8_21: cushioned then stopped within 21 bars → STOPPED
+    # (stop wins: barrier race checks stop first, cushion bar < stop bar)
+    assert spine["terminal_state_clean8_21"] == "STOPPED", (
+        f"Expected STOPPED (cushioned then stopped), got {spine['terminal_state_clean8_21']}"
+    )
+    # post_cushion_breach: cushioned (bar 3) then stop (bar 8 < fill price) → True
+    assert spine["post_cushion_breach"] is True, (
+        f"Expected post_cushion_breach=True, got {spine['post_cushion_breach']}"
+    )
+
+
+def test_cn_terminal_state_locked_limit_all_null(cn_store):
+    """A locked-limit T+1 bar (h==l==c) → all spine axes are None (unfillable)."""
+    tmp_path, dates = cn_store
+    closes = np.full(len(dates), 10.0)
+    closes[1:] = 10.8  # locked limit up: bar 1 high==low==close
+    df = _mk_ohlc(dates, closes, flat_at=1)   # existing fixture helper
+    store.upsert("china_stocks", "699004.SS", df)
+    d0 = dates[0]
+    spine = t._cn_spine_axes("699004.SS", d0)
+    # fill_basis is always set even for locked rows
+    assert spine["fill_basis"] == "t1_hl2"
+    # All axes null (unfillable)
+    assert spine["terminal_state_clean15_126"] is None
+    assert spine["terminal_state_clean8_21"] is None
+    assert spine["post_cushion_breach"] is None
+    for h in (5, 10, 21, 63):
+        assert spine[f"fwd_mfe_{h}"] is None, f"fwd_mfe_{h} should be None for locked-limit row"
+
+
+def test_cn_terminal_state_straddle_stop_wins(cn_store):
+    """Straddle tie: if stop and cushion both trigger on the same bar, stop wins → STOPPED."""
+    tmp_path, dates = cn_store
+    # This shouldn't happen since stop_mult=0.95 < cushion_mult=1.05, so a single close
+    # cannot simultaneously be ≤0.95 and ≥1.05. But test that stop check runs FIRST
+    # in the sequential scan (i.e., if close ≤ stop_b, it's STOPPED, not checked for cushion).
+    # Simulate: bar 3 drops to exactly stop_b = fill * 0.95
+    closes = np.full(len(dates), 10.0)
+    fill_approx = 10.0  # T+1 hl2 with equal h/l
+    closes[3] = fill_approx * 0.95  # exactly at stop barrier
+    df = _mk_ohlc(dates, closes)
+    store.upsert("china_stocks", "699005.SS", df)
+    d0 = dates[0]
+    spine = t._cn_spine_axes("699005.SS", d0)
+    # Close ≤ stop_b → STOPPED; the cushion check is never reached on this bar
+    assert spine["terminal_state_clean8_21"] == "STOPPED"
+
+
+# ---------------------------------------------------------------------------
+# Scope-1b: fwd_mfe from CN fill
+# ---------------------------------------------------------------------------
+
+def test_cn_fwd_mfe_correct(cn_store):
+    """fwd_mfe_5 is the max of the 5 bars after T+2, normalized to T+1 HL2 fill."""
+    tmp_path, dates = cn_store
+    # T+1 fill at bar 1: high=10.1, low=9.9 → hl2 fill = 10.0
+    # Bars T+2..T+6 (bars 2..6): closes = [11, 10, 9.5, 10.5, 10.2]
+    # max of bars 2..6 = 11 → fwd_mfe_5 = (11 / 10.0) - 1 = 0.10
+    closes = [10.0, 10.0, 11.0, 10.0, 9.5, 10.5, 10.2] + [10.2] * (len(dates) - 7)
+    df = _mk_ohlc(dates, closes)
+    store.upsert("china_stocks", "699010.SS", df)
+    d0 = dates[0]
+    spine = t._cn_spine_axes("699010.SS", d0)
+    fill = (df.loc[dates[1], "high"] + df.loc[dates[1], "low"]) / 2.0
+    expected_mfe5 = max(0.0, max(df.loc[dates[2:7], "close"]) / fill - 1.0)
+    assert spine["fwd_mfe_5"] == pytest.approx(expected_mfe5, abs=1e-9), (
+        f"Expected fwd_mfe_5={expected_mfe5}, got {spine['fwd_mfe_5']}"
+    )
+
+
+def test_cn_fwd_mfe_not_matured_returns_none(cn_store):
+    """fwd_mfe_63 is None when fewer than 63 bars are available after T+2."""
+    tmp_path, dates = cn_store
+    # cn_store has 130 bars; use a date near the end so mfe_63 can't mature.
+    closes = np.full(len(dates), 10.0)
+    df = _mk_ohlc(dates, closes)
+    store.upsert("china_stocks", "699011.SS", df)
+    # Use a d0 with only ~20 bars ahead → mfe_63 can't mature but mfe_5/10 can
+    d0 = dates[-25]
+    spine = t._cn_spine_axes("699011.SS", d0)
+    assert spine["fwd_mfe_63"] is None, "Expected None when mfe_63 can't mature"
+
+
+# ---------------------------------------------------------------------------
+# Scope-2: regime stamps via append_board + grade() backfill
+# ---------------------------------------------------------------------------
+
+def test_append_board_stamps_us_regime_columns(cn_store, monkeypatch):
+    """append_board stamps us_* regime columns on new rows using PIT get_vector_for_date."""
+    tmp_path, dates = cn_store
+    # Patch regime stamp to return a controlled value
+    fake_stamp = {
+        "us_rate_pressure": "neutral",
+        "us_quad_hard_label": "Q2",
+        "us_fused_risk_label": "green",
+        "us_vol_regime": "compressed",
+        "us_risk_radar_state": "risk_on",
+        "us_regime_vector_degraded": False,
+        "vector_asof": "2026-01-02",
+        "staleness_hours": 16.0,
+    }
+    monkeypatch.setattr(t, "_regime_stamp_for_date", lambda d: fake_stamp)
+    rows = [{"ticker": "699020.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
+             "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
+    t.append_board(rows, asof=str(dates[0].date()))
+    df = pd.read_parquet(t._store_path())
+    row = df.iloc[0]
+    assert str(row["us_rate_pressure"]) == "neutral"
+    assert str(row["us_quad_hard_label"]) == "Q2"
+    assert str(row["vector_asof"]) == "2026-01-02"
+    assert abs(float(row["staleness_hours"]) - 16.0) < 1e-6
+
+
+def test_grade_backfills_null_stamps_only(cn_store, monkeypatch):
+    """grade() backfills null us_* stamp cols from vector, but does NOT overwrite non-null stamps."""
+    tmp_path, dates = cn_store
+    # Append a row with null regime stamps (legacy row)
+    rows = [{"ticker": "699021.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
+             "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
+    monkeypatch.setattr(t, "_regime_stamp_for_date", lambda d: t._regime_stamp_null())
+    t.append_board(rows, asof=str(dates[0].date()))
+    # Now patch regime to return a real value for the grade() backfill
+    fake_stamp = {
+        "us_rate_pressure": "pressure",
+        "us_quad_hard_label": "Q3",
+        "us_fused_risk_label": "yellow",
+        "us_vol_regime": "elevated",
+        "us_risk_radar_state": "risk_off",
+        "us_regime_vector_degraded": False,
+        "vector_asof": "2026-01-01",
+        "staleness_hours": 8.0,
+    }
+    monkeypatch.setattr(t, "_regime_stamp_for_date", lambda d: fake_stamp)
+    # Set up price data so grade() can run
+    closes = 10.0 * (1.005 ** np.arange(len(dates)))
+    store.upsert("china_stocks", "699021.SS", _mk_ohlc(dates, closes))
+    store.upsert("china", t._BENCH, _mk_ohlc(dates, closes)[["close", "volume"]])
+    g = t.grade()
+    assert g["available"]
+    # Re-read to confirm backfill was written
+    df2 = pd.read_parquet(t._store_path())
+    row = df2.iloc[0]
+    assert str(row["us_rate_pressure"]) == "pressure", "Backfill should have populated null stamp"
+
+
+def test_grade_unstamped_count_reported(cn_store, monkeypatch):
+    """grade() reports n_unstamped (rows where us_rate_pressure is still null after backfill)."""
+    tmp_path, dates = cn_store
+    rows = [{"ticker": "699022.SS", "price": 10.0, "signal": {"tier_cascade": "T2"},
+             "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
+    # Both append and grade return null stamps → row stays unstamped
+    monkeypatch.setattr(t, "_regime_stamp_for_date", lambda d: t._regime_stamp_null())
+    t.append_board(rows, asof=str(dates[0].date()))
+    closes = 10.0 * (1.01 ** np.arange(len(dates)))
+    store.upsert("china_stocks", "699022.SS", _mk_ohlc(dates, closes))
+    store.upsert("china", t._BENCH, _mk_ohlc(dates, closes)[["close", "volume"]])
+    g = t.grade()
+    assert "n_unstamped" in g, "grade() must report n_unstamped"
+    assert g["n_unstamped"] >= 1, "Expected at least 1 unstamped row when vector unavailable"
+
+
+# ---------------------------------------------------------------------------
+# Scope-3: stratifier columns (species_id, archetype)
+# ---------------------------------------------------------------------------
+
+def test_stratifier_cols_present_and_nullable(cn_store):
+    """species_id and archetype are present in the parquet after append_board and are null."""
+    tmp_path, dates = cn_store
+    rows = [{"ticker": "699030.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
+             "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
+    t.append_board(rows, asof=str(dates[0].date()))
+    df = pd.read_parquet(t._store_path())
+    assert "species_id" in df.columns, "species_id column missing"
+    assert "archetype" in df.columns, "archetype column missing"
+    # Must be null (documented constraint — multiple species bind this ledger)
+    val_sid = df.iloc[0]["species_id"]
+    val_arch = df.iloc[0]["archetype"]
+    assert val_sid is None or pd.isna(val_sid), f"species_id must be null, got {val_sid!r}"
+    assert val_arch is None or pd.isna(val_arch), f"archetype must be null, got {val_arch!r}"
+
+
+def test_grade_includes_species_archetype_slice_tables(cn_store):
+    """grade() by_horizon blocks include by_species_id and by_archetype stratifiers."""
+    tmp_path, dates = cn_store
+    store.upsert("china", t._BENCH, _mk_ohlc(dates, 10.0 * (1.005 ** np.arange(len(dates))))[["close", "volume"]])
+    rows = []
+    for i in range(20):
+        tk = f"699031{i:02d}.SS"
+        store.upsert("china_stocks", tk, _mk_ohlc(dates, 10.0 * (1.02 ** np.arange(len(dates)))))
+        rows.append({"ticker": tk, "price": 10.0,
+                     "signal": {"tier_cascade": "T1"}, "setup": "reversal",
+                     "extension": {"extended": False}, "washout_2w": False})
+    t.append_board(rows, asof=str(dates[0].date()))
+    g = t.grade()
+    h21 = g.get("by_horizon", {}).get("21d", {})
+    assert "by_species_id" in h21, "by_species_id stratifier missing from grade() output"
+    assert "by_archetype" in h21, "by_archetype stratifier missing from grade() output"
+
+
+# ---------------------------------------------------------------------------
+# Scope-4: own-market regime documented null
+# ---------------------------------------------------------------------------
+
+def test_own_market_regime_is_null_with_note(cn_store):
+    """own_market_regime is always null; own_market_regime_note documents the constraint."""
+    tmp_path, dates = cn_store
+    rows = [{"ticker": "699040.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
+             "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
+    t.append_board(rows, asof=str(dates[0].date()))
+    df = pd.read_parquet(t._store_path())
+    row = df.iloc[0]
+    val = row.get("own_market_regime")
+    assert val is None or pd.isna(val), f"own_market_regime must be null, got {val!r}"
+    note = row.get("own_market_regime_note")
+    assert note and "recomputed" in str(note).lower(), (
+        f"own_market_regime_note must document the non-PIT constraint, got {note!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Scope-5: fill_basis provenance column
+# ---------------------------------------------------------------------------
+
+def test_fill_basis_column_always_t1_hl2(cn_store):
+    """fill_basis is always 't1_hl2' on new rows and after grade() write-back."""
+    tmp_path, dates = cn_store
+    rows = [{"ticker": "699050.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
+             "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
+    t.append_board(rows, asof=str(dates[0].date()))
+    df = pd.read_parquet(t._store_path())
+    assert str(df.iloc[0]["fill_basis"]) == "t1_hl2", (
+        f"fill_basis must be 't1_hl2', got {df.iloc[0]['fill_basis']!r}"
+    )
+    # Also present after grade() runs on live price data
+    closes = 10.0 * (1.01 ** np.arange(len(dates)))
+    store.upsert("china_stocks", "699050.SS", _mk_ohlc(dates, closes))
+    store.upsert("china", t._BENCH, _mk_ohlc(dates, closes)[["close", "volume"]])
+    t.grade()
+    df2 = pd.read_parquet(t._store_path())
+    assert str(df2.iloc[0]["fill_basis"]) == "t1_hl2"
+
+
+# ---------------------------------------------------------------------------
+# Scope-6: dtype hardening round-trip
+# ---------------------------------------------------------------------------
+
+def test_dtype_hardening_roundtrip(cn_store):
+    """Write all-null frame → read → string cell write must not raise TypeError.
+
+    Validates the _coerce_object_cols pattern: an all-NaN column loaded from parquet
+    is typed float64; pandas 3.x refuses string writes to it. _coerce_object_cols must
+    convert it to object dtype before any cell assignment.
+    """
+    tmp_path, dates = cn_store
+    # Write a minimal parquet with all spine/regime cols as NaN (float64 on reload)
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    schema = pa.schema([
+        pa.field("date", pa.string()),
+        pa.field("ticker", pa.string()),
+        pa.field("own_market_regime", pa.float64()),        # all-NaN → float64
+        pa.field("terminal_state_clean15_126", pa.float64()),
+        pa.field("post_cushion_breach", pa.float64()),
+        pa.field("fill_basis", pa.float64()),
+    ])
+    tbl = pa.table({
+        "date": ["2026-01-05"],
+        "ticker": ["699060.SS"],
+        "own_market_regime": [float("nan")],
+        "terminal_state_clean15_126": [float("nan")],
+        "post_cushion_breach": [float("nan")],
+        "fill_basis": [float("nan")],
+    }, schema=schema)
+    p = t._store_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pq.write_table(tbl, p)
+    # Now read and try to write a string — this is the exact pandas 3.x failure mode.
+    df = pd.read_parquet(p)
+    df = t._coerce_object_cols(df)
+    # Should not raise TypeError
+    try:
+        df.at[0, "own_market_regime"] = "null_documented"
+        df.at[0, "terminal_state_clean15_126"] = "CLEAN_LIFTOFF"
+        df.at[0, "post_cushion_breach"] = True
+        df.at[0, "fill_basis"] = "t1_hl2"
+    except TypeError as e:
+        pytest.fail(f"_coerce_object_cols did not prevent dtype TypeError: {e}")
+
+
+def test_schema_union_with_legacy_store(cn_store):
+    """append_board with a legacy parquet (missing spine/regime cols) performs schema union
+    without dropping existing columns or crashing."""
+    tmp_path, dates = cn_store
+    # Write a legacy minimal parquet (pre-B-d schema: only date + ticker + board_rank)
+    legacy = pd.DataFrame([{"date": "2025-12-01", "ticker": "699070.SS", "board_rank": 1}])
+    p = t._store_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    legacy.to_parquet(p, index=False)
+    # Now append a B-d row → schema union should preserve the legacy row + add new cols
+    rows = [{"ticker": "699071.SS", "price": 10.0, "signal": {"tier_cascade": "T1"},
+             "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
+    n = t.append_board(rows, asof=str(dates[0].date()))
+    assert n == 2, f"Expected 2 total rows after schema-union append, got {n}"
+    df = pd.read_parquet(p)
+    assert "fill_basis" in df.columns, "fill_basis missing from schema-union result"
+    # Legacy row should have null in new cols (NaN or None — both acceptable)
+    legacy_row = df[df["ticker"] == "699070.SS"].iloc[0]
+    val = legacy_row.get("fill_basis")
+    assert val is None or pd.isna(val), f"legacy row fill_basis should be null, got {val!r}"
