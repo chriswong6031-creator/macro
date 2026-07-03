@@ -20,6 +20,14 @@
   are real; but **P@1 board-order = 28.6% vs 71.4% under alpha-order of the same names** —
   the #1 slot is near-worst under current ordering. The P5/W2 rank fix (lane → state →
   alpha) is now *forward-measured*, not just audited. Wave-8 backtest still running.
+- **2026-07-03 (wave-8 verdicts, both panels)** — **W8-C: `_ALIGN_BAD_STATES` hard-block
+  unjustified (Lane R licensed).** **W8-A W-ARM: NOT PROMOTED** (clean15 gate fail deep;
+  stop5 edge did not transfer OOS — ARMED chip closed; the weekly trigger carries nothing
+  beyond basing). **W8-B SHAKEN: CONFIRMED on both panels** (deep 35.8 vs 40.3, OOS 42.5 vs
+  47.1 stop5, sign-stable all splits) — ships as chip + eligibility, no rank power. BASED
+  ships as claim-free eligibility door. All postcross states accrue silently in the forward
+  ledger. Full numbers: DURABLE_BOTTOM_FRAMEWORK.md §8. W1 in flight; scope-B merge shape
+  amended accordingly (drop ARMED display, keep SHAKEN + BASED door + ledger fields).
 
 ## 1. What the diagnostics established (the evidence base)
 
