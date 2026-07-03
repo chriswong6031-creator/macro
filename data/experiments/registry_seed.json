@@ -1181,6 +1181,21 @@
       "come_back_on": "2027-01-15",
       "come_back_note": "Re-run research/hk_h3_ah_discount.py. GO requires PRIMARY 3m DSR to cross 0.90 (currently 0.879) with rank-IC>0 both horizons, IC & excess HAC-t >= 2.0, dividend-neutral L/S same sign, split-half + pre/post-2021 sign stability, and survival on the inception-honest >=8-pair panel. Deeper panel / post-2021 dividend-tax-cycle resolution lifts t_eff (currently 125). Secondary 1y-delta DSR 0.914 clears 0.90 but is ACCRUE-capped by construction. NOT wired.",
       "pr": "w3(h3)"
+    },
+    {
+      "id": "hk-h4-reversal-phase0",
+      "title": "HK within-universe short-horizon reversal (expanded HSCI universe) -- phase-0",
+      "kind": "phase0_battery",
+      "hypothesis": "Deepest-quintile 63bd within-universe return-z on the bottom-half 63d-HKD-ADV cohort of the expanded HK union universe (545 names) earns positive HSI-relative 1-month forward returns (short-horizon reversal). Pre-registered research/H4_PREREG.md. RESULT: KILL -- L/S spread significantly NEGATIVE (-0.92%/mo, t_HAC -2.14, DSR 0.00, split-half sign-stable, eff-N 308): 1-month momentum, not reversal. Mega-cap control weakly-negative/insignificant (t -1.03) reproducing the known rev_st NO-GO; survivorship-bound does not flip the sign. Reversal leg refuted, NOT wired.",
+      "status": "closed",
+      "program": "hk_canada_stocks",
+      "wave": "W3",
+      "channel": "H4",
+      "phase": "KILL",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2027-01-03",
+      "come_back_note": "3M-formation/1M-hold reversal construction CLOSED (sign against, well-powered). Reopen ONLY if a distinct weekly-horizon (1-5 day) reversal is separately pre-registered on a true HK micro-cap panel.",
+      "pr": "w3(h4)"
     }
   ]
 }
