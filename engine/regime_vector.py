@@ -556,3 +556,98 @@ REGIME_VECTOR_VOCABULARY: dict[str, tuple[str, ...]] = {
     "vol_regime_warning": ("warning",),
     "vol_regime_stress": ("backwardation-stress",),
 }
+
+
+# ---------------------------------------------------------------------------
+# Point-in-time vector lookup (Stage B — track_record stamping)
+# ---------------------------------------------------------------------------
+
+# Columns extracted for track_record stamping (§3.4 spec).
+STAMP_COLUMNS: tuple[str, ...] = (
+    "rate_pressure",
+    "quad_hard_label",
+    "fused_risk_label",
+    "vol_regime",
+    "risk_radar_state",
+    "regime_vector_degraded",
+)
+
+
+def get_vector_for_date(
+    marker_date,
+    data_dir: "Path | None" = None,
+) -> dict:
+    """Return the persisted regime_vector row for a given marker_date.
+
+    Lookup priority (§3.4 stamping rules):
+      1. Exact date match in data/regime/regime_vector.parquet.
+      2. Most recent persisted date strictly before marker_date (carry-forward).
+      3. If no row covers the date at all → all stamp columns null,
+         vector_asof=None, staleness_hours=None.
+
+    Returns a flat dict with keys:
+      rate_pressure, quad_hard_label, fused_risk_label, vol_regime,
+      risk_radar_state, regime_vector_degraded,
+      vector_asof (ISO date str or None),
+      staleness_hours (float or None — 0.0 for exact match; hours behind
+        marker_date for a carry-forward; used to exclude stale stamps).
+
+    PIT-safe by construction: reads ONLY rows whose index date ≤ marker_date,
+    never recomputes from latest-state sources.
+    """
+    null_stamp = {
+        "rate_pressure": None,
+        "quad_hard_label": None,
+        "fused_risk_label": None,
+        "vol_regime": None,
+        "risk_radar_state": None,
+        "regime_vector_degraded": None,
+        "vector_asof": None,
+        "staleness_hours": None,
+    }
+
+    p = _parquet_path(data_dir)
+    if not p.exists():
+        return null_stamp
+
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("regime_vector.get_vector_for_date: could not read parquet (%s)", e)
+        return null_stamp
+
+    if df.empty:
+        return null_stamp
+
+    # Ensure the index is a DatetimeIndex
+    if not isinstance(df.index, pd.DatetimeIndex):
+        try:
+            df.index = pd.to_datetime(df.index)
+        except Exception:  # noqa: BLE001
+            return null_stamp
+
+    marker_ts = pd.Timestamp(marker_date).normalize()
+
+    # Filter to dates ≤ marker_date (PIT)
+    candidates = df[df.index <= marker_ts]
+    if candidates.empty:
+        return null_stamp
+
+    row = candidates.sort_index().iloc[-1]
+    row_date = candidates.sort_index().index[-1].normalize()
+
+    # Staleness (in hours, relative to the marker date)
+    staleness_hours = float((marker_ts - row_date).total_seconds() / 3600.0)
+    vector_asof = str(row_date.date())
+
+    stamp: dict = {"vector_asof": vector_asof, "staleness_hours": staleness_hours}
+    for col in STAMP_COLUMNS:
+        v = row.get(col) if hasattr(row, "get") else (
+            row[col] if col in row.index else None
+        )
+        # Coerce pandas NA/NaT to None; keep bool-as-int (persisted) honest
+        if v is not None and isinstance(v, float) and pd.isna(v):
+            v = None
+        stamp[col] = v
+
+    return stamp

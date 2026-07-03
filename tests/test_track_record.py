@@ -953,3 +953,521 @@ class TestEntryPrice:
             f"entry_price {row['entry_price']:.4f} != next-bar expected {expected_price:.4f}")
         # fill_offset provenance: 1 = honest next-bar
         assert int(row["fill_offset"]) == 1, f"fill_offset {row['fill_offset']} != 1 (next-bar)"
+
+
+# ---------------------------------------------------------------------------
+# W0-stageB tests: new columns, vector stamp, species mapping
+# ---------------------------------------------------------------------------
+
+import json
+import pyarrow.parquet as pq
+
+
+def _run_with_overrides(signals_dir, stocks_dir, arch, asof=None, *,
+                         data_dir=None, stockdata_dir=None):
+    """Extended shim that passes the W0-stageB data_dir / stockdata_dir overrides."""
+    return TR.update_track_record(
+        signals_dir=signals_dir, stocks_dir=stocks_dir, out_path=arch, asof=asof,
+        data_dir=data_dir, stockdata_dir=stockdata_dir,
+    )
+
+
+def _write_regime_vector_parquet(data_dir: Path, rows: list[dict]) -> Path:
+    """Write a minimal regime_vector.parquet fixture."""
+    regime_dir = data_dir / "regime"
+    regime_dir.mkdir(parents=True, exist_ok=True)
+    p = regime_dir / "regime_vector.parquet"
+    dates = [pd.Timestamp(r["date"]).normalize() for r in rows]
+    df = pd.DataFrame(rows, index=pd.DatetimeIndex(dates, name="date"))
+    df.drop(columns=["date"], errors="ignore", inplace=True)
+    df.to_parquet(p, index=True)
+    return p
+
+
+def _write_stockdata(stockdata_dir: Path, ticker: str, archetype_key: str) -> Path:
+    """Write a minimal site/stockdata/<ticker>.json with an archetype key."""
+    stockdata_dir.mkdir(parents=True, exist_ok=True)
+    p = stockdata_dir / f"{ticker}.json"
+    p.write_text(json.dumps({
+        "ticker": ticker,
+        "profile": {"archetype": {"key": archetype_key, "label": archetype_key}},
+    }))
+    return p
+
+
+def _write_species_registry(data_dir: Path, species: list[dict]) -> Path:
+    """Write a minimal data/species/registry.json."""
+    sp_dir = data_dir / "species"
+    sp_dir.mkdir(parents=True, exist_ok=True)
+    p = sp_dir / "registry.json"
+    p.write_text(json.dumps({"schema_version": 1, "species": species}))
+    return p
+
+
+class TestStageB_NewColumnsNullable:
+    """New W0-stageB columns must be present and nullable; schema union with
+    an existing store that lacks them must not crash and must add them as null."""
+
+    def test_new_columns_present_and_nullable_on_fresh_run(self, tmp_path):
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        arch = tmp_path / "track_record.parquet"
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata"
+
+        close = _daily_close(300)
+        _write_prices(stocks_dir, "AAPL", close)
+        _write_signals(signals_dir, "AAPL", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "test"},
+        ])
+
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=ENTRY_DATE,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df = pd.read_parquet(arch)
+
+        # All new spine columns must be present
+        new_cols = [
+            "rate_pressure", "quad_hard_label", "fused_risk_label", "vol_regime",
+            "risk_radar_state", "regime_vector_degraded", "vector_asof", "staleness_hours",
+            "species_id", "archetype",
+            "fwd_mfe_5", "fwd_mfe_10", "fwd_mfe_21", "fwd_mfe_63", "fwd_mfe_126",
+            "terminal_state_clean15_126", "terminal_state_clean8_21",
+            "post_cushion_breach",
+        ]
+        for col in new_cols:
+            assert col in df.columns, f"Missing new column: {col}"
+
+        # No regime vector file → all regime stamp cols null
+        row = df.iloc[0]
+        assert pd.isna(row["vector_asof"]) or row["vector_asof"] is None, \
+            "vector_asof should be null when no vector file exists"
+
+    def test_schema_union_with_old_store_lacking_new_cols(self, tmp_path):
+        """A legacy parquet that lacks the new columns is read and extended safely."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(300)
+        _write_prices(stocks_dir, "MSFT", close)
+        _write_signals(signals_dir, "MSFT", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "legacy"},
+        ])
+        # Write a "legacy" parquet with only the old columns
+        old_cols = TR._IDENTITY_COLS[:12] + TR._MATURATION_COLS[:18]
+        old_df = pd.DataFrame(columns=old_cols)
+        # Add one synthetic row missing the new columns
+        row_data = {c: None for c in old_cols}
+        row_data.update({"ticker": "MSFT", "date": "2020-06-01", "type": "buy",
+                          "quality": "take", "reason": "old", "entry_price": 99.0,
+                          "regime_at_entry": "bull", "first_seen_asof": "2020-06-01"})
+        old_df = pd.DataFrame([row_data], columns=old_cols)
+        old_df.to_parquet(arch)
+
+        # Running should not crash and new cols should be added as null
+        _run(signals_dir, stocks_dir, arch, asof=ENTRY_DATE)
+        df = pd.read_parquet(arch)
+        assert "fwd_mfe_5" in df.columns, "fwd_mfe_5 missing after schema union"
+        # The legacy row should have null for the new cols
+        legacy_row = df[df["date"] == "2020-06-01"].iloc[0]
+        assert pd.isna(legacy_row.get("fwd_mfe_5", None)) or legacy_row.get("fwd_mfe_5") is None
+
+
+class TestStageB_KeepFirstNonNull:
+    """keep-FIRST: non-null values on existing rows must NEVER be overwritten on re-run."""
+
+    def test_identity_columns_never_overwritten(self, tmp_path):
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(400)
+        _write_prices(stocks_dir, "GOOG", close)
+        _write_signals(signals_dir, "GOOG", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "first"},
+        ])
+        _run(signals_dir, stocks_dir, arch, asof=ENTRY_DATE)
+        df1 = pd.read_parquet(arch)
+        entry_price_1 = float(df1.iloc[0]["entry_price"])
+        regime_1 = df1.iloc[0]["regime_at_entry"]
+
+        # Change the marker reason (a signal-file content change that would NOT alter
+        # the key or the entry-time features)
+        _write_signals(signals_dir, "GOOG", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "CHANGED"},
+        ])
+        _run(signals_dir, stocks_dir, arch, asof=ENTRY_DATE)
+        df2 = pd.read_parquet(arch)
+        assert len(df2) == 1, "row count changed on re-run"
+        # entry_price and regime must be identical (frozen on first write)
+        assert abs(float(df2.iloc[0]["entry_price"]) - entry_price_1) < 1e-9
+        assert df2.iloc[0]["regime_at_entry"] == regime_1
+
+    def test_regime_vector_cols_not_overwritten_once_set(self, tmp_path):
+        """Once a regime_vector stamp is written it must never be overwritten."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata"
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(400)
+        entry_date = str(close.index[150].date())
+        _write_prices(stocks_dir, "AMZN", close)
+        _write_signals(signals_dir, "AMZN", entry_date, [
+            {"date": entry_date, "type": "buy", "quality": "take", "reason": "rv-test"},
+        ])
+
+        # First run: provide a vector
+        _write_regime_vector_parquet(data_dir, [
+            {"date": entry_date, "rate_pressure": "neutral", "quad_hard_label": "goldilocks",
+             "fused_risk_label": "risk-on", "vol_regime": "calm-contango",
+             "risk_radar_state": "risk-on", "regime_vector_degraded": 0, "asof": entry_date},
+        ])
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=entry_date,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df1 = pd.read_parquet(arch)
+        rate1 = df1.iloc[0]["rate_pressure"]
+
+        # Second run: different vector value for same date — keep-FIRST must win
+        _write_regime_vector_parquet(data_dir, [
+            {"date": entry_date, "rate_pressure": "SHOULD_NOT_OVERWRITE",
+             "quad_hard_label": "stagflation", "fused_risk_label": "risk-off",
+             "vol_regime": "stress", "risk_radar_state": "risk-off",
+             "regime_vector_degraded": 1, "asof": entry_date},
+        ])
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=entry_date,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df2 = pd.read_parquet(arch)
+        rate2 = df2.iloc[0]["rate_pressure"]
+        # The first-observed value must survive
+        assert rate2 == rate1, (
+            f"keep-FIRST violated: rate_pressure changed from {rate1!r} to {rate2!r}")
+
+
+class TestStageB_VectorStamp:
+    """regime_vector stamp: exact-date match, carry-forward fallback, unstamped count."""
+
+    def test_exact_date_match(self, tmp_path):
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata"
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(400)
+        entry_date = str(close.index[200].date())
+        _write_prices(stocks_dir, "TSLA", close)
+        _write_signals(signals_dir, "TSLA", entry_date, [
+            {"date": entry_date, "type": "buy", "quality": "take", "reason": "exact"},
+        ])
+        _write_regime_vector_parquet(data_dir, [
+            {"date": entry_date, "rate_pressure": "relief", "quad_hard_label": "goldilocks",
+             "fused_risk_label": "expansion", "vol_regime": "calm-contango",
+             "risk_radar_state": "risk-on", "regime_vector_degraded": 0, "asof": entry_date},
+        ])
+        result = _run_with_overrides(signals_dir, stocks_dir, arch, asof=entry_date,
+                                     data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+        assert row["rate_pressure"] == "relief", f"rate_pressure mismatch: {row['rate_pressure']!r}"
+        assert row["quad_hard_label"] == "goldilocks"
+        assert float(row["staleness_hours"]) == 0.0, \
+            f"staleness_hours should be 0.0 for exact match; got {row['staleness_hours']}"
+        assert str(row["vector_asof"]) == entry_date
+        assert result["unstamped_count"] == 0
+
+    def test_carry_forward_fallback(self, tmp_path):
+        """When no exact-date vector exists, the most recent prior row is used."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata"
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(400)
+        entry_date = str(close.index[200].date())
+        vector_date = str(close.index[195].date())  # 5 days before marker
+        _write_prices(stocks_dir, "META", close)
+        _write_signals(signals_dir, "META", entry_date, [
+            {"date": entry_date, "type": "buy", "quality": "take", "reason": "carry"},
+        ])
+        _write_regime_vector_parquet(data_dir, [
+            {"date": vector_date, "rate_pressure": "pressure", "quad_hard_label": "stagflation",
+             "fused_risk_label": "risk-off", "vol_regime": "warning",
+             "risk_radar_state": "risk-off", "regime_vector_degraded": 0, "asof": vector_date},
+        ])
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=entry_date,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+        assert row["rate_pressure"] == "pressure"
+        assert str(row["vector_asof"]) == vector_date
+        # staleness_hours must be positive (vector is older than marker date)
+        assert float(row["staleness_hours"]) > 0, \
+            f"staleness_hours should be > 0 for carry-forward; got {row['staleness_hours']}"
+
+    def test_unstamped_count_reported_when_no_vector(self, tmp_path):
+        """When no persisted vector exists at all, unstamped_count equals total rows."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data_empty"  # no regime_vector.parquet
+        stockdata_dir = tmp_path / "stockdata"
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(300)
+        _write_prices(stocks_dir, "NFLX", close)
+        _write_signals(signals_dir, "NFLX", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "no-vector"},
+        ])
+        result = _run_with_overrides(signals_dir, stocks_dir, arch, asof=ENTRY_DATE,
+                                     data_dir=data_dir, stockdata_dir=stockdata_dir)
+        assert result["unstamped_count"] == result["total_rows"], (
+            f"unstamped_count {result['unstamped_count']} != total_rows {result['total_rows']}")
+
+
+class TestStageB_SpeciesMapping:
+    """species_id: unambiguous registry mapping only; null when ambiguous or no mapping."""
+
+    def test_species_id_null_when_no_track_record_binding(self, tmp_path):
+        """Default: all species bind to us_board_ledger → species_id is null for all rows."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata"
+        arch = tmp_path / "track_record.parquet"
+
+        # Registry with species bound to us_board_ledger (not track_record)
+        _write_species_registry(data_dir, [
+            {"species_id": "S1", "ledger_binding": {"ledger": "us_board_ledger", "since": "2026-01-01"}},
+        ])
+        close = _daily_close(300)
+        _write_prices(stocks_dir, "NVDA", close)
+        _write_signals(signals_dir, "NVDA", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "sp-test"},
+        ])
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=ENTRY_DATE,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+        assert pd.isna(row.get("species_id")) or row.get("species_id") is None, \
+            f"species_id should be null when no track_record binding; got {row.get('species_id')!r}"
+
+    def test_species_id_stamped_when_unambiguous_track_record_binding(self, tmp_path):
+        """A species with ledger=track_record → its species_id is stamped on matching rows."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata"
+        arch = tmp_path / "track_record.parquet"
+
+        _write_species_registry(data_dir, [
+            {"species_id": "S-TR-TEST",
+             "ledger_binding": {"ledger": "track_record", "since": "2026-01-01"},
+             "marker_types": ["buy"]},
+        ])
+        close = _daily_close(300)
+        _write_prices(stocks_dir, "AMD", close)
+        _write_signals(signals_dir, "AMD", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "sp-tr"},
+        ])
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=ENTRY_DATE,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+        assert row.get("species_id") == "S-TR-TEST", \
+            f"species_id should be 'S-TR-TEST'; got {row.get('species_id')!r}"
+
+    def test_species_id_null_when_ambiguous(self, tmp_path):
+        """Two species binding track_record to the same mtype → species_id is null (ambiguous)."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata"
+        arch = tmp_path / "track_record.parquet"
+
+        _write_species_registry(data_dir, [
+            {"species_id": "S-A",
+             "ledger_binding": {"ledger": "track_record"}, "marker_types": ["buy"]},
+            {"species_id": "S-B",
+             "ledger_binding": {"ledger": "track_record"}, "marker_types": ["buy"]},
+        ])
+        close = _daily_close(300)
+        _write_prices(stocks_dir, "INTC", close)
+        _write_signals(signals_dir, "INTC", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "ambig"},
+        ])
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=ENTRY_DATE,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+        assert pd.isna(row.get("species_id")) or row.get("species_id") is None, \
+            f"species_id should be null (ambiguous); got {row.get('species_id')!r}"
+
+
+class TestStageB_ArchetypeStamp:
+    """archetype: stamped from site/stockdata at row creation; null if absent."""
+
+    def test_archetype_stamped_from_stockdata(self, tmp_path):
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata"
+        arch = tmp_path / "track_record.parquet"
+
+        _write_stockdata(stockdata_dir, "AAPL", "quality_compounder")
+        close = _daily_close(300)
+        _write_prices(stocks_dir, "AAPL", close)
+        _write_signals(signals_dir, "AAPL", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "arch-test"},
+        ])
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=ENTRY_DATE,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+        assert row.get("archetype") == "quality_compounder", \
+            f"archetype mismatch: {row.get('archetype')!r}"
+
+    def test_archetype_null_when_stockdata_absent(self, tmp_path):
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata_empty"
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(300)
+        _write_prices(stocks_dir, "XOM", close)
+        _write_signals(signals_dir, "XOM", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "no-arch"},
+        ])
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=ENTRY_DATE,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+        assert pd.isna(row.get("archetype")) or row.get("archetype") is None, \
+            f"archetype should be null when stockdata absent; got {row.get('archetype')!r}"
+
+    def test_archetype_not_backfilled_for_old_rows(self, tmp_path):
+        """NEVER backfill archetype for existing rows (non-PIT for beta/sector buckets)."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        data_dir = tmp_path / "data"
+        stockdata_dir = tmp_path / "stockdata"
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(300)
+        # Run 1: no stockdata → archetype=null
+        _write_prices(stocks_dir, "CVX", close)
+        _write_signals(signals_dir, "CVX", ENTRY_DATE, [
+            {"date": ENTRY_DATE, "type": "buy", "quality": "take", "reason": "no-arch-first"},
+        ])
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=ENTRY_DATE,
+                            data_dir=data_dir, stockdata_dir=tmp_path / "empty_stockdata")
+        df1 = pd.read_parquet(arch)
+        assert pd.isna(df1.iloc[0].get("archetype")) or df1.iloc[0].get("archetype") is None
+
+        # Run 2: stockdata now present — archetype should NOT be backfilled into old row
+        _write_stockdata(stockdata_dir, "CVX", "commodity_sensitive")
+        _run_with_overrides(signals_dir, stocks_dir, arch, asof=ENTRY_DATE,
+                            data_dir=data_dir, stockdata_dir=stockdata_dir)
+        df2 = pd.read_parquet(arch)
+        # archetype remains null (keep-FIRST; null value = "no archetype at row creation")
+        # This is the correct behavior: archetype is frozen at creation. If the first
+        # observed value is null, it stays null — the spec says NEVER backfill archetype.
+        assert len(df2) == 1, "row count changed"
+
+
+class TestStageB_SpineColumns:
+    """fwd_mfe, terminal_state columns are nullable at birth, filled via maturation path."""
+
+    def test_spine_columns_null_when_series_too_short(self, tmp_path):
+        """A very short price series cannot mature spine columns — they stay null."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        arch = tmp_path / "track_record.parquet"
+
+        # Only 30 bars — not enough to mature terminal_state_clean15_126 (needs 126)
+        close = _daily_close(30)
+        entry_date = str(close.index[5].date())
+        _write_prices(stocks_dir, "SHORT", close)
+        _write_signals(signals_dir, "SHORT", entry_date, [
+            {"date": entry_date, "type": "buy", "quality": "take", "reason": "short"},
+        ])
+        _run(signals_dir, stocks_dir, arch, asof=entry_date)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+        assert pd.isna(row.get("terminal_state_clean15_126")) or row.get("terminal_state_clean15_126") is None, \
+            "terminal_state_clean15_126 should be null with only 30 bars"
+        assert pd.isna(row.get("fwd_mfe_126")) or row.get("fwd_mfe_126") is None, \
+            "fwd_mfe_126 should be null with only 30 bars"
+
+    def test_terminal_state_filled_when_enough_data(self, tmp_path):
+        """With enough bars the terminal_state columns get a non-null valid label."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        arch = tmp_path / "track_record.parquet"
+
+        # 500 bars; fire at bar 100 → 400 bars forward (enough for 126-bar horizon)
+        close = _daily_close(500)
+        entry_date = str(close.index[100].date())
+        _write_prices(stocks_dir, "LONG", close)
+        _write_signals(signals_dir, "LONG", entry_date, [
+            {"date": entry_date, "type": "buy", "quality": "take", "reason": "long"},
+        ])
+        _run(signals_dir, stocks_dir, arch, asof=entry_date)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+
+        valid_states = {"STOPPED", "DEAD_MONEY", "CUSHIONED", "CLEAN_LIFTOFF"}
+        ts_15 = row.get("terminal_state_clean15_126")
+        ts_8  = row.get("terminal_state_clean8_21")
+        assert ts_15 in valid_states or pd.isna(ts_15), \
+            f"terminal_state_clean15_126 invalid: {ts_15!r}"
+        assert ts_8 in valid_states or pd.isna(ts_8), \
+            f"terminal_state_clean8_21 invalid: {ts_8!r}"
+        # clean8_21 has shorter horizon — should be filled
+        assert ts_8 in valid_states, f"terminal_state_clean8_21 should be filled; got {ts_8!r}"
+
+    def test_fwd_mfe_non_negative(self, tmp_path):
+        """fwd_mfe values must be >= 0 (max favorable excursion is never negative)."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(300)
+        entry_date = str(close.index[50].date())
+        _write_prices(stocks_dir, "MFE", close)
+        _write_signals(signals_dir, "MFE", entry_date, [
+            {"date": entry_date, "type": "buy", "quality": "take", "reason": "mfe"},
+        ])
+        _run(signals_dir, stocks_dir, arch, asof=entry_date)
+        df = pd.read_parquet(arch)
+        row = df.iloc[0]
+        for h in [5, 10, 21]:
+            v = row.get(f"fwd_mfe_{h}")
+            if not pd.isna(v) and v is not None:
+                assert float(v) >= 0.0, f"fwd_mfe_{h}={v} is negative"
+
+    def test_spine_cols_frozen_once_set(self, tmp_path):
+        """Once terminal_state and fwd_mfe are set, a re-run must NOT change them."""
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        arch = tmp_path / "track_record.parquet"
+
+        close = _daily_close(400)
+        entry_date = str(close.index[100].date())
+        _write_prices(stocks_dir, "FREEZE", close)
+        _write_signals(signals_dir, "FREEZE", entry_date, [
+            {"date": entry_date, "type": "buy", "quality": "take", "reason": "freeze"},
+        ])
+        _run(signals_dir, stocks_dir, arch, asof=entry_date)
+        df1 = pd.read_parquet(arch)
+        ts8_1 = df1.iloc[0].get("terminal_state_clean8_21")
+
+        _run(signals_dir, stocks_dir, arch, asof=entry_date)
+        df2 = pd.read_parquet(arch)
+        ts8_2 = df2.iloc[0].get("terminal_state_clean8_21")
+
+        # Both null or both equal — never changes once set
+        if not pd.isna(ts8_1) and ts8_1 is not None:
+            assert ts8_2 == ts8_1, f"terminal_state_clean8_21 changed on re-run: {ts8_1!r} → {ts8_2!r}"

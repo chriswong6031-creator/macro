@@ -244,6 +244,20 @@ jobs:
               tail -n 40 /tmp/sigv.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
           fi
           exit 0
+      - name: build signal track-record ledger (w0-stageB)
+        # Incremental + cheap (reads site/signals/ + data/stocks/ — both already
+        # written by the step above). Runs AFTER build_signal_quality so both
+        # site/signals/*.json and mtf_signals_latest.json are fresh. Resilient:
+        # any error is logged to stderr and the step exits 0 (never aborts deploy).
+        # data/signal_archive/track_record.parquet is git-tracked (un-ignored,
+        # w0-stageB) and is staged by the "commit engine outputs" step's
+        # `git add data/` below.
+        run: |
+          echo "::group::build_track_record"
+          python -m scripts.build_track_record 2>&1 | tee /tmp/tr.log
+          echo "::endgroup::"
+          python -m scripts.audit_sizes || echo "::warning::track_record size tripwire fired �� check data/quality/sizes_audit.json"
+          exit 0
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the
