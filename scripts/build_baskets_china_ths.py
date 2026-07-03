@@ -107,6 +107,40 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("basket_freeze[china_ths]: failed: %s", e)
 
+    # Emit a minimal latest.json for signal_archive accrual.
+    # Per-basket: id, ret_63d (≈perf['60d']['ret']), above_200d (EW basket vs 200d SMA).
+    # above_200d is computed here from the same closes used by the engine — no extra fetch.
+    try:
+        from engine.baskets_china import _closes as _cl_for_latest
+        _cl = _cl_for_latest()
+        _snap_baskets = []
+        for _b in data.get("baskets", []):
+            _bid = _b.get("id", "")
+            _ret63 = None
+            _perf = _b.get("perf") or {}
+            _p60 = _perf.get("60d") or {}
+            if _p60.get("ret") is not None:
+                _ret63 = round(float(_p60["ret"]), 4)
+            _above200 = None
+            _syms = [_m["symbol"] for _m in _b.get("members", []) if _m.get("symbol")]
+            _avail = [s for s in _syms if s in _cl.columns]
+            if _avail:
+                _series = _cl[_avail].mean(axis=1).dropna()
+                if len(_series) >= 200:
+                    _ma200 = _series.rolling(200).mean().iloc[-1]
+                    _above200 = bool(_series.iloc[-1] > _ma200)
+            _snap_baskets.append({"id": _bid, "ret_63d": _ret63, "above_200d": _above200})
+        _latest = {
+            "as_of": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "baskets": _snap_baskets,
+        }
+        _latest_path = config.data_dir() / "baskets_china_ths" / "latest.json"
+        _latest_path.parent.mkdir(parents=True, exist_ok=True)
+        _latest_path.write_text(json.dumps(_latest, separators=(",", ":")))
+        log.info("china THS baskets: wrote latest.json (%d baskets)", len(_snap_baskets))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china THS baskets: latest.json emit failed (%s)", e)
+
     return 0
 
 
