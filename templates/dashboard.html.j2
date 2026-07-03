@@ -784,6 +784,8 @@
   /* W8-B postcross lifecycle chip (SHAKEN; ARMED display removed per W8-A-OOS FAIL) */
   .nb-postcross{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
   .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  /* W9-A sector-capitulation safety marker (display-only; safety context, not a ranking signal) */
+  .nb-cohort-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 30%,transparent)}
   /* W2 merge note: chip explanatory copy uses the repo-standard data-tip-en/data-tip-zh
      + theme.js popover (check_title_i18n.py-guarded); the bespoke .nb-chip-pop is retired. */
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
@@ -2560,6 +2562,10 @@
             {% if n.get('alpha_entry') == 'laggard' %}<span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>{% endif %}
             {% set _pc = n.get('postcross') %}
             {% if _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}
+            {# W9-A sector-capitulation safety marker: shows when >= 40% of the sector cohort
+               is in washout at build time. SAFETY CONTEXT only — no rank/admission effect. #}
+            {% set _cc = n.get('cohort_capitulation') %}
+            {% if _cc and _cc.get('conditioned') %}<span class="nb-cohort-cap" data-tip-en="Sector capitulating — {{ '%.0f'|format((_cc.frac or 0) * 100) }}% of same-sector names in weekly StochRSI washout at build time. stop-out −2.7pp (deep panel) / −3.5pp (OOS), sign-stable all splits — safety context, not a ranking signal." data-tip-zh="板块承压出清——同板块 {{ '%.0f'|format((_cc.frac or 0) * 100) }}% 标的处于周线 StochRSI 洗盘区。止损率 −2.7pp（深历史面板）/−3.5pp（样本外），各分组符号一致——安全背景信息，非排名信号。"><span class="l-en">⚡ Sector cap.</span><span class="l-zh">⚡ 板块出清</span></span>{% endif %}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           {# Context line LEADS with the specific narrative basket (de-blurs "Technology"

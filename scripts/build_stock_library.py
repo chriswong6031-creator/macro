@@ -1692,7 +1692,10 @@ def main() -> int:
     # COILED wave-2 ranking bonus: compute cohort fractions once (cross-sectional, after loop),
     # then build per-ticker assess() dict. Both steps try/except guarded; failure -> empty dict.
     # Wave-4: merge COILED-FIRE fields into the assess dict (display chip only, NO rank change).
+    # W9-A: _coil_frac pre-initialized to {} so the cohort-capitulation annotation below is
+    # always guarded against a missing value (COILED block failure => empty dict => skip).
     coiled_by: dict[str, dict] = {}
+    _coil_frac: dict[str, float | None] = {}
     try:
         _coil_frac = coiled.cohort_fractions(_coil_d, _coil_sector)
         coiled_by = {
@@ -2020,6 +2023,21 @@ def main() -> int:
                         r["postcross"] = _pc_state
             except Exception as _pce:  # noqa: BLE001 — display-only; never fatal
                 pass
+            # W9-A SAFETY_ONLY: sector-capitulating cohort annotation for Lane-R / BASED / SHAKEN rows.
+            # When >= 40% of the same-sector cohort is in weekly StochRSI washout at build time,
+            # annotate with {frac, conditioned:True}. NO rank/admission effect — display chip only.
+            # Reuses _coil_frac (pre-initialized to {}; populated by coiled.cohort_fractions above)
+            # so no extra computation. Graceful: COILED block failure leaves _coil_frac={} → skip.
+            _is_recovery = (r.get("lane") == "recovery")
+            _pc_r = r.get("postcross") or {}
+            _is_based_shaken = bool(_pc_r.get("based") or _pc_r.get("shaken"))
+            if (_is_recovery or _is_based_shaken) and t in _coil_frac:
+                _cfrac = _coil_frac[t]
+                if _cfrac is not None:
+                    r["cohort_capitulation"] = {
+                        "frac": round(float(_cfrac), 3),
+                        "conditioned": bool(_cfrac >= 0.40),
+                    }
             # W3 evidence-stack: propagate evidence fields to ALL board rows (buy + watch).
             # ZERO ordering/admission impact — display chips + grader strata only.
             # Missing artifact => field absent, chip absent; never a neutral default.

@@ -247,6 +247,12 @@ def _row_features(r: dict) -> dict:
         "postcross_armed":  (r.get("postcross") or {}).get("armed"),   # 'strict'|'net'|None
         "postcross_shaken": bool((r.get("postcross") or {}).get("shaken")),
         "postcross_ticks":  _num((r.get("postcross") or {}).get("ticks_since_cross")),
+        # W9-A sector-capitulation safety annotation (conditioned=True when cohort_frac>=0.40;
+        # None pre-schema; only present on Lane-R / BASED / SHAKEN rows)
+        "cohort_capitulation_conditioned": (
+            bool((r.get("cohort_capitulation") or {}).get("conditioned"))
+            if r.get("cohort_capitulation") is not None else None
+        ),
         # W3 evidence-stack strata (display-only; forward IC under accrual; False/None pre-schema)
         "insider_cluster":      bool((r.get("insider_buyers") or 0) >= 2),
         "gex_confirm_verdict":  _dig(r, ("gex_confirm", "verdict"), default=None),
@@ -503,6 +509,8 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     "smartmoney_add":    feat.get("smartmoney_add"),
                     "has_stop_guidance": feat.get("has_stop_guidance"),
                     "confluence_k":      feat.get("confluence_k"),
+                    # W9-A cohort-capitulation safety annotation (None pre-schema)
+                    "cohort_capitulation_conditioned": feat.get("cohort_capitulation_conditioned"),
                     "ret": nret,
                     # W0.1 B-b spine columns (§5.1, §3.4)
                     f"fwd_mfe_{h}":      fwd_mfe,
@@ -746,6 +754,8 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                 "by_smartmoney":        _slice_table(buy, "smartmoney_add", "excess_spy"),
                 "by_stop_guidance":     _slice_table(buy, "has_stop_guidance", "excess_spy"),
                 "by_confluence_k":      _slice_table(buy, "confluence_k", "excess_spy"),
+                # W9-A cohort-capitulation safety annotation stratum (forward IC accruing; None pre-schema)
+                "by_cohort_conditioned": _slice_table(buy, "cohort_capitulation_conditioned", "excess_spy"),
                 "mae_close_excess_spy": {
                     "median": round(float(buy["mae_close_excess_spy"].dropna().median()), 5)
                     if buy["mae_close_excess_spy"].notna().any() else None,
