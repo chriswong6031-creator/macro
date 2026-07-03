@@ -102,31 +102,28 @@ mastermind-x.com, www.mastermind-x.com {
 # Needs a Cloudflare DNS A record: app -> 146.190.142.17 (proxied), SSL mode "Full".
 app.mastermind-x.com {
 	encode zstd gzip
+
+	# --- Terminal /data static serving (2026-07-03) ------------------------------
+	# Serve the terminal's static data JSONs DIRECTLY from disk at Caddy, bypassing
+	# Next.js: `next start` 404s public/ files added AFTER the build (verified live:
+	# a rsync'd NEW <SYM>.fund.json 404'd until rebuild), and the fundamentals
+	# pipeline rsyncs NEW per-symbol files daily (fund/opts/tx waves). Caddy's
+	# file_server has no build manifest — a new file serves on the next request.
+	# Cache headers set here (plain header: file_server emits no Cache-Control, so
+	# no defer needed). EdgeOne still RefreshHits until an owner console rule exists.
+	handle /data/* {
+		root * /opt/terminal/terminal/public
+		@manifest path /data/manifest.json
+		@rest {
+			path /data/*
+			not path /data/manifest.json
+		}
+		header @manifest Cache-Control "public, s-maxage=60, max-age=0, must-revalidate"
+		header @rest Cache-Control "public, s-maxage=300, max-age=0, must-revalidate"
+		file_server
+	}
+
 	reverse_proxy 127.0.0.1:3000
-
-	# --- Terminal /data edge caching (2026-07-03) -------------------------------
-	# Next.js serves public/ files with `max-age=0`, so EdgeOne revalidates EVERY
-	# /data/*.json fetch at this origin (RefreshHit). Give the terminal's static
-	# data JSONs a short shared-cache TTL (manifest shorter — it moves nightly +
-	# 5-min flagship patches). The ops are DEFERRED (block form `defer`) so they
-	# REPLACE the upstream header after the proxy response — a plain `header`
-	# here would double-emit Cache-Control alongside Next's max-age=0.
-	# NOTE: EdgeOne still RefreshHits until an owner console cache rule exists;
-	# this makes /data honestly cacheable at the edge + browser-revalidatable.
-	@tmanifest path /data/manifest.json
-	header @tmanifest {
-		Cache-Control "public, s-maxage=60, max-age=0, must-revalidate"
-		defer
-	}
-	@tdata {
-		path /data/*
-		not path /data/manifest.json
-	}
-	header @tdata {
-		Cache-Control "public, s-maxage=300, max-age=0, must-revalidate"
-		defer
-	}
-
 	header {
 		X-Robots-Tag "noindex, nofollow, noarchive"
 		-Server
