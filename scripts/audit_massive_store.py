@@ -1,0 +1,158 @@
+"""Coverage-continuity audit for the massive_stock_day whole-market OHLCV store.
+
+WHY THIS EXISTS (2026-07-03 incident): the store's committed _manifest.json claimed
+`latest_date: 2026-06-30` while the parquets held only 2025-01-02→2026-03-12 — a
+smoke test had advanced the v1 scalar resume state past a 110-day hole, and nothing
+watched the store's CONTENT.  audit_r2 checks only that a manifest object is fresh
+on R2 (Last-Modified), so a store that is freshly published yet full of holes sails
+through.  The Options-Alpha W1.1 agent tripped over the hole and had to route around
+the store entirely.  This audit is the content-level tripwire.
+
+WHAT IT CHECKS — ground truth is the ANCHOR PARQUETS, never the manifest:
+  FAIL (counts toward the collect.py governance gate, aborts at >5% of the universe):
+    - an anchor ticker (SPY/QQQ/AAPL/MSFT/IWM — maximally liquid, trade every US
+      session) is missing from the store or unreadable;
+    - CONTINUITY: an anchor has a run of more than cfg[massive_max_gap_bdays]
+      consecutive missing BUSINESS days between bars (holidays cost 1-2; the default
+      of 5 = a full missing week; the incident hole was ~75).  Anchor continuity is
+      equivalent to whole-store day continuity because each day is fetched as ONE
+      whole-market file — a day missing from SPY is a day missing from everyone.
+    - MANIFEST LIE: _manifest.json `latest_date` is more than
+      cfg[massive_manifest_ahead_bdays] business days AHEAD of what the anchors
+      actually hold — freshness claims the data cannot back (the incident signature).
+  FLAG (logged, never fatal — suite convention: staleness is a flag):
+    - the newest anchor bar is more than cfg[massive_stale_bdays] business days old;
+    - _manifest.json absent/unparsable while parquets exist.
+
+SKIP: a checkout without the parquet store (fewer than cfg[massive_min_files] files
+— e.g. CI runner checkouts hold only the two committed JSON files; the heavy store
+lives on the Mac main checkout + R2) is skipped entirely, never a failure — matching
+the audit_prices convention that an absent backing store never aborts a build.
+
+Deterministic, READ-ONLY over the store; writes only data/quality/massive_store_audit.json.
+Wired into scripts/collect.py run_quality_audits alongside prices/macro/universe.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from datetime import date
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from scripts import audit_common as ac
+
+log = logging.getLogger("audit.massive_store")
+
+STORE = "massive_stock_day"
+# Must-trade-daily names: any healthy whole-market day contains all of these.
+ANCHORS = ["SPY", "QQQ", "AAPL", "MSFT", "IWM"]
+
+
+def _read_dates(path: Path) -> pd.DatetimeIndex | None:
+    try:
+        return pd.to_datetime(pd.read_parquet(path, columns=[]).index).sort_values()
+    except Exception:   # noqa: BLE001 — unreadable = audit fail, handled by caller
+        return None
+
+
+def _max_missing_bday_run(idx: pd.DatetimeIndex) -> tuple[int, str]:
+    """Longest run of missing business days strictly between consecutive bars, and
+    the ISO date where the worst gap starts.  Weekends are free; holidays cost 1."""
+    if len(idx) < 2:
+        return 0, ""
+    d64 = idx.values.astype("datetime64[D]")
+    # busday_count over [a, b) includes a (always a bday here) and excludes b.
+    missing = np.busday_count(d64[:-1], d64[1:]) - 1
+    worst = int(missing.max())
+    where = str(d64[int(missing.argmax())]) if worst > 0 else ""
+    return worst, where
+
+
+def run(cfg: dict | None = None, asof: date | None = None,
+        out_dir: Path | None = None, data_dir: Path | None = None) -> dict:
+    """Audit the massive_stock_day store and persist
+    data/quality/massive_store_audit.json.  Never raises for a data issue — every
+    problem is a fail or a flag on the universe."""
+    cfg = cfg or ac.quality_cfg()
+    asof = asof or date.today()
+    data_dir = Path(data_dir) if data_dir is not None else ac.ROOT / "data"
+    store = data_dir / STORE
+
+    max_gap = int(cfg.get("massive_max_gap_bdays", 5))
+    stale_bd = int(cfg.get("massive_stale_bdays", 5))
+    ahead_bd = int(cfg.get("massive_manifest_ahead_bdays", 2))
+    min_files = int(cfg.get("massive_min_files", 100))
+
+    uni = ac.Universe(name=STORE)
+    n_parquets = len(list(store.glob("*.parquet"))) if store.is_dir() else 0
+    if n_parquets < min_files:
+        uni.skipped = True
+        uni.note = (f"store absent/partial ({n_parquets} parquets < {min_files}) — "
+                    "heavy store lives on the store host + R2, not in git checkouts")
+        log.info("[massive_store] skipped: %s", uni.note)
+        return ac.write_audit("massive_store", STORE, [uni], cfg, asof=asof,
+                              out_dir=out_dir)
+
+    # Members: the anchor tickers + the manifest contract. n is fixed so fail_pct is
+    # meaningful even when an anchor file is missing outright.
+    uni.n = len(ANCHORS) + 1
+    anchor_last: list[date] = []
+    for t in ANCHORS:
+        p = store / f"{t}.parquet"
+        if not p.exists():
+            uni.fail(t, "anchor parquet missing from a populated store")
+            continue
+        idx = _read_dates(p)
+        if idx is None or len(idx) == 0:
+            uni.fail(t, "anchor parquet unreadable/empty")
+            continue
+        anchor_last.append(idx[-1].date())
+        worst, where = _max_missing_bday_run(idx)
+        if worst > max_gap:
+            uni.fail(t, f"coverage hole: {worst} consecutive business days missing "
+                        f"after {where} (limit {max_gap}) — store content has a gap "
+                        "regardless of what the manifest claims")
+        age_bd = int(np.busday_count(idx[-1].date(), asof))
+        if age_bd > stale_bd:
+            uni.flag(t, "stale", f"newest bar {idx[-1].date()} is {age_bd} business "
+                                 f"days old (limit {stale_bd})")
+
+    # Manifest-lie detector: freshness claims must be backed by anchor content.
+    mf = store / "_manifest.json"
+    claimed: date | None = None
+    if mf.exists():
+        try:
+            claimed = date.fromisoformat(str(json.loads(mf.read_text())["latest_date"]))
+        except Exception:   # noqa: BLE001
+            uni.flag("_manifest", "unparsable", "manifest exists but latest_date "
+                                                "missing/unparsable")
+    else:
+        uni.flag("_manifest", "absent", "parquet store present but _manifest.json "
+                                        "missing — freshness beacon dark")
+    if claimed and anchor_last:
+        actual = max(anchor_last)
+        ahead = int(np.busday_count(actual, claimed)) if claimed > actual else 0
+        if ahead > ahead_bd:
+            uni.fail("_manifest",
+                     f"manifest claims latest_date={claimed} but the anchors' newest "
+                     f"bar is {actual} ({ahead} business days behind the claim, limit "
+                     f"{ahead_bd}) — freshness the store content cannot back "
+                     "(the 2026-07-03 incident signature)")
+
+    doc = ac.write_audit("massive_store", STORE, [uni], cfg, asof=asof, out_dir=out_dir)
+    if uni.n_failed:
+        log.error("[massive_store] %d/%d member(s) FAILED — %s",
+                  uni.n_failed, uni.n,
+                  "; ".join(f["name"] + ": " + f["reasons"][0] for f in uni.failed))
+    else:
+        log.info("[massive_store] clean — %d anchors continuous, manifest honest "
+                 "(%d parquets)", len(ANCHORS), n_parquets)
+    return doc
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    print(json.dumps(run(), indent=2))

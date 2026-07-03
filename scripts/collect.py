@@ -314,7 +314,7 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
     cfg = cfg or audit_common.quality_cfg()
     if audit_fns is None:
         from scripts import (audit_prices, audit_macro, audit_universe,
-                             audit_fred_groups, audit_price_basis)
+                             audit_fred_groups, audit_massive_store, audit_price_basis)
         audit_fns = [
             ("prices", lambda: audit_prices.run(cfg=cfg)),
             ("macro", lambda: audit_macro.run(cfg=cfg)),
@@ -324,6 +324,10 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
             # basis preservation, no-TR-in-structure AST scan, golden-fixture flip proof,
             # forward-log basis homogeneity, narrative epoch versioning.
             ("price_basis", lambda: audit_price_basis.run(cfg=cfg)),
+            # 2026-07-03 incident: manifest claimed freshness over a 110-day content
+            # hole. Anchor-parquet continuity + manifest-lie tripwire; skips itself on
+            # checkouts without the heavy store (CI runners).
+            ("massive_store", lambda: audit_massive_store.run(cfg=cfg)),
         ]
 
     docs: list[tuple[str, dict]] = []
