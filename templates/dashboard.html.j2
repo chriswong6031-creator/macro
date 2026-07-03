@@ -2741,12 +2741,11 @@
          W3 survivorship disclosure: n_skipped_no_price = names with no price / delisted
          that were silently excluded from graded outcomes (the win/loss mix is survivor-tilted). #}
       {% if us_board_outcomes and us_board_outcomes.get('rows') %}{% set _oc = us_board_outcomes %}
-      {% set _ubo_surv = _oc.get('survivorship') or {} %}
       <div class="board-outcomes">
         <div class="board-outcomes-hdr">
           <span class="board-outcomes-title">{{ t('Recently surfaced → outcome', '近期上榜 → 结果') }}</span>
           {% set _sm = _oc.get('summary') or {} %}
-          <span class="board-outcomes-sub">{{ t('names that left the buy board in the last 21 sessions', '21个交易日内离开买入榜的标的') }} · {{ t('as of', '截至') }} {{ _oc.get('as_of','') }}{% if _sm.get('n_running') is not none %} · <span class="az-up">{{ _sm.get('n_running') }} {{ t('running', '上涨') }}</span> · <span class="az-dn">{{ _sm.get('n_stopped') }} {{ t('stopped', '止损') }}</span>{% endif %}{% if _ubo_surv.get('n_skipped_no_price', 0) > 0 %} · <span class="muted" data-tip-en="{{ _ubo_surv.get('n_skipped_no_price') }} name(s) excluded: no usable price series (delisted / renamed). The win/loss mix is survivor-tilted." data-tip-zh="{{ _ubo_surv.get('n_skipped_no_price') }} 个标的因无价格数据（退市/改名）被排除。盈亏混合偏向幸存者。"><span class="l-en">{{ _ubo_surv.get('n_skipped_no_price') }} excluded: no price</span><span class="l-zh">{{ _ubo_surv.get('n_skipped_no_price') }} 个排除</span></span>{% endif %}</span>
+          <span class="board-outcomes-sub">{{ t('names that left the buy board in the last 21 sessions', '21个交易日内离开买入榜的标的') }} · {{ t('as of', '截至') }} {{ _oc.get('as_of','') }}{% if _sm.get('n_running') is not none %} · <span class="az-up">{{ _sm.get('n_running') }} {{ t('running', '上涨') }}</span> · <span class="az-dn">{{ _sm.get('n_stopped') }} {{ t('stopped', '止损') }}</span>{% endif %}{% if _sm.get('n_skipped_no_price') %} · ({{ _sm.get('n_skipped_no_price') }} {{ t('names excluded: no price / delisted', '个标的被排除：无价格/已退市') }}){% endif %}</span>
         </div>
         <table class="outcomes-tbl">
           <thead><tr>

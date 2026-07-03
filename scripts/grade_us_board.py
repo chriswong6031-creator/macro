@@ -70,6 +70,9 @@ SNAPSHOTS_JSONL = LEDGER_DIR / "snapshots.jsonl"
 TRACK_JSON = ROOT / "site" / "factordata" / "us_board_track.json"
 OUTCOMES_JSON = ROOT / "site" / "factordata" / "us_board_outcomes.json"
 
+# Number of board dates (not calendar days) to look back for the outcomes strip.
+OUTCOMES_LOOKBACK_BOARDS = 21
+
 HORIZONS = [5, 10, 21]
 LANES = ["buy", "watch", "laggards", "laggard"]
 K_LIST = [1, 3, 5, 10]
@@ -679,87 +682,6 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
 
 
 # --------------------------------------------------------------------------- #
-# surfaced-outcome strip (W2: "who was here and what happened?")
-# --------------------------------------------------------------------------- #
-
-
-def emit_outcomes(boards: list[dict], names: pd.DataFrame, track: dict,
-                  lookback: int = 21, cap: int = 15) -> dict:
-    """Build the 'Surfaced → outcome' strip for the dashboard.
-
-    For each ticker that was on the BUY board in the last `lookback` board dates
-    but is ABSENT from the most recent board, emit a row: {ticker, sector,
-    first_surfaced, surfaced_price, last_price, pct_since, days_on_board,
-    exit_date, status, lane}. Status = running/stopped/flat at ±2% boundary.
-    Missing prices => skip (never fabricate). Sorted by |pct_since| desc, capped
-    at `cap` rows.
-
-    The survivorship disclosure from the `track` JSON is included in the result:
-    n_skipped_no_price tells the strip how many names were silently excluded from
-    the graded outcomes so the display can say '(N excluded: no price/delisted)'.
-    """
-    if not boards:
-        return {"empty": True, "survivorship": track.get("survivorship", {})}
-    most_recent = boards[-1]
-    current_tickers = {r["ticker"] for r in (most_recent.get("rows") or [])
-                       if r.get("lane") == "buy"}
-    # collect recent-history buy appearances
-    recent_boards = boards[max(0, len(boards) - lookback):]
-    appearances: dict[str, list[dict]] = {}
-    for b in recent_boards:
-        for r in (b.get("rows") or []):
-            if r.get("lane") != "buy":
-                continue
-            t = r.get("ticker")
-            if t and t not in current_tickers:
-                appearances.setdefault(t, []).append({
-                    "as_of": b["as_of"],
-                    "sector": r.get("sector"),
-                    "lane": r.get("lane"),
-                })
-    if not appearances:
-        return {"empty": True, "survivorship": track.get("survivorship", {})}
-    rows = []
-    for tk, apps in appearances.items():
-        if tk not in names.columns:
-            continue
-        nser = names[tk].dropna()
-        if nser.empty:
-            continue
-        apps_sorted = sorted(apps, key=lambda x: x["as_of"])
-        first_as_of = pd.Timestamp(apps_sorted[0]["as_of"])
-        exit_as_of = pd.Timestamp(apps_sorted[-1]["as_of"])
-        entry_pos = _pos_after(nser.index, first_as_of)
-        if entry_pos is None or entry_pos >= len(nser):
-            continue
-        surfaced_price = float(nser.iloc[entry_pos])
-        last_price = float(nser.iloc[-1])
-        if surfaced_price <= 0:
-            continue
-        pct = round((last_price / surfaced_price - 1.0) * 100, 2)
-        status = "running" if pct > 2.0 else ("stopped" if pct < -2.0 else "flat")
-        rows.append({
-            "ticker": tk,
-            "sector": apps_sorted[0].get("sector"),
-            "first_surfaced": apps_sorted[0]["as_of"],
-            "surfaced_price": round(surfaced_price, 2),
-            "last_price": round(last_price, 2),
-            "pct_since": pct,
-            "days_on_board": len(apps),
-            "exit_date": apps_sorted[-1]["as_of"],
-            "status": status,
-            "lane": apps_sorted[-1].get("lane"),
-        })
-    rows.sort(key=lambda x: abs(x["pct_since"]), reverse=True)
-    rows = rows[:cap]
-    return {
-        "rows": rows,
-        "as_of": most_recent.get("as_of"),
-        "survivorship": track.get("survivorship", {}),
-    }
-
-
-# --------------------------------------------------------------------------- #
 # nightly snapshot
 # --------------------------------------------------------------------------- #
 def snapshot_today() -> str | None:
@@ -840,6 +762,185 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------- #
+# outcomes strip (W2)
+# --------------------------------------------------------------------------- #
+
+def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
+    """Build the 'recently surfaced → outcome' strip artifact.
+
+    Logic:
+    - Collect every ticker that appeared on the BUY lane within the last
+      OUTCOMES_LOOKBACK_BOARDS board dates.
+    - Find tickers that are ABSENT from the CURRENT (most-recent) buy board.
+    - For each such exited ticker, compute pct change from the close on their
+      first_surfaced date to the most-recent available close.
+    - Skip rows with missing prices (never fabricate) — but COUNT them: the broad
+      cache is current-membership only, so a name that left the board BECAUSE it
+      collapsed and got delisted is exactly the name with no price here. Silently
+      dropping it tilts the displayed win/loss mix toward survivors. The count is
+      emitted as summary.n_skipped_no_price so the strip header can disclose it.
+    - Sort by |pct_since| desc, cap at 15 rows.
+    - Include summary: n_running, n_stopped, median_pct, n_skipped_no_price.
+
+    Returns the dict to be serialised as us_board_outcomes.json.
+    Degrades to {"empty": True, ...} only when genuinely no exited names exist.
+    """
+    if not boards:
+        return {"empty": True, "as_of": str(dt.date.today()), "reason": "no boards"}
+
+    # Last OUTCOMES_LOOKBACK_BOARDS board snapshots (already sorted asc)
+    window = boards[-OUTCOMES_LOOKBACK_BOARDS:]
+    if not window:
+        return {"empty": True, "as_of": str(dt.date.today()), "reason": "window empty"}
+
+    current_board = window[-1]
+    current_as_of = current_board.get("as_of", "")
+    current_buy_tickers: set[str] = {
+        r["ticker"] for r in current_board.get("rows", [])
+        if r.get("lane") in ("buy", "laggards") or r.get("lane") == "buy"
+    }
+    # More precisely: only the "buy" lane per the invariants
+    current_buy_tickers = {
+        r["ticker"] for r in current_board.get("rows", [])
+        if r.get("lane") == "buy"
+    }
+
+    # Build a map: ticker -> {first_surfaced, sector, lane} from the window (buy lane only)
+    first_seen: dict[str, dict] = {}
+    for b in window:
+        as_of_str = b.get("as_of", "")
+        for r in b.get("rows", []):
+            if r.get("lane") != "buy":
+                continue
+            tk = r.get("ticker")
+            if not tk:
+                continue
+            if tk not in first_seen:
+                first_seen[tk] = {
+                    "first_surfaced": as_of_str,
+                    "sector": r.get("sector"),
+                    "lane": r.get("lane"),
+                }
+
+    # Find tickers that were in the window's buy lane but are NOT in the current buy board
+    exited = {tk: meta for tk, meta in first_seen.items() if tk not in current_buy_tickers}
+
+    if not exited:
+        return {
+            "empty": True,
+            "as_of": current_as_of,
+            "reason": "all window tickers still on the buy board",
+        }
+
+    # Price lookups: use the broad closes DataFrame (columns=ticker, index=DatetimeIndex)
+    last_price_date = names.index.max() if not names.empty else None
+    rows_out = []
+    # survivorship disclosure: exited names with no usable price path in the broad
+    # cache (missing column / all-NaN / series ends before first_surfaced) — likely
+    # delisted, i.e. the very outcomes the strip would otherwise hide.
+    skipped_no_price: list[str] = []
+    for tk, meta in exited.items():
+        if tk not in names.columns:
+            skipped_no_price.append(tk)
+            continue
+        ser = names[tk].dropna()
+        if ser.empty:
+            skipped_no_price.append(tk)
+            continue
+
+        first_surfaced_str = meta["first_surfaced"]
+        try:
+            first_dt = pd.Timestamp(first_surfaced_str)
+        except Exception:
+            continue
+
+        # Close on or after first_surfaced (next available bar at or after that date)
+        idx_first = ser.index.searchsorted(first_dt, side="left")
+        if idx_first >= len(ser):
+            skipped_no_price.append(tk)
+            continue
+        surfaced_price = float(ser.iloc[idx_first])
+        if surfaced_price <= 0:
+            continue
+
+        last_price = float(ser.iloc[-1])
+        pct_since = (last_price / surfaced_price - 1.0) * 100.0
+
+        # Determine exit_date: first board date in window where this ticker is absent
+        exit_date_str = current_as_of  # fallback: use current as_of as exit date
+        appeared_before = False
+        for b in window:
+            tickers_in_b_buy = {
+                r["ticker"] for r in b.get("rows", []) if r.get("lane") == "buy"
+            }
+            if tk in tickers_in_b_buy:
+                appeared_before = True
+            elif appeared_before:
+                exit_date_str = b.get("as_of", current_as_of)
+                break
+
+        # days_on_board: count of board dates the ticker appeared on the buy lane
+        days_on_board = sum(
+            1 for b in window
+            if any(r.get("ticker") == tk and r.get("lane") == "buy"
+                   for r in b.get("rows", []))
+        )
+
+        if pct_since > 2.0:
+            status = "running"
+        elif pct_since < -2.0:
+            status = "stopped"
+        else:
+            status = "flat"
+
+        rows_out.append({
+            "ticker": tk,
+            "sector": meta.get("sector") or "",
+            "first_surfaced": first_surfaced_str,
+            "surfaced_price": round(surfaced_price, 2),
+            "last_price": round(last_price, 2),
+            "pct_since": round(pct_since, 1),
+            "days_on_board": days_on_board,
+            "exit_date": exit_date_str,
+            "status": status,
+            "lane": meta.get("lane") or "buy",
+        })
+
+    if not rows_out:
+        return {
+            "empty": True,
+            "as_of": current_as_of,
+            "reason": "no exited tickers had price data",
+            "n_skipped_no_price": len(skipped_no_price),
+            "skipped_no_price": sorted(skipped_no_price)[:15],
+        }
+
+    # Sort by |pct_since| desc, cap at 15
+    rows_out.sort(key=lambda r: abs(r["pct_since"]), reverse=True)
+    rows_out = rows_out[:15]
+
+    pcts = [r["pct_since"] for r in rows_out]
+    n_running = sum(1 for r in rows_out if r["status"] == "running")
+    n_stopped = sum(1 for r in rows_out if r["status"] == "stopped")
+    median_pct = float(sorted(pcts)[len(pcts) // 2]) if pcts else 0.0
+
+    return {
+        "as_of": current_as_of,
+        "rows": rows_out,
+        "summary": {
+            "n_running": n_running,
+            "n_stopped": n_stopped,
+            "median_pct": round(median_pct, 1),
+            # names excluded for lack of any usable price path (see loop above) —
+            # rendered as "(N names excluded: no price / delisted)" in the strip
+            # header so the mix never silently reads as survivor-complete.
+            "n_skipped_no_price": len(skipped_no_price),
+            "skipped_no_price": sorted(skipped_no_price)[:15],
+        },
+    }
+
+
+# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> None:
@@ -878,14 +979,6 @@ def main() -> None:
     TRACK_JSON.write_text(json.dumps(track, indent=1, default=str))
     if not args.quiet:
         print(f"[track] wrote {TRACK_JSON.relative_to(ROOT)}")
-    # W2 surfaced-outcome strip: who left the buy board and what happened?
-    # Includes the survivorship disclosure from the track JSON.
-    if args.nightly:
-        outcomes = emit_outcomes(boards, names, track)
-        OUTCOMES_JSON.write_text(json.dumps(outcomes, separators=(",", ":"), default=str))
-        if not args.quiet:
-            n_out = len(outcomes.get("rows") or [])
-            print(f"[outcomes] {n_out} exited names in strip -> {OUTCOMES_JSON.relative_to(ROOT)}")
         surv = track.get("survivorship") or {}
         if surv.get("n_skipped_no_price"):
             print(f"[survivorship] {surv['n_skipped_no_price']} board tickers have no usable "
@@ -905,6 +998,24 @@ def main() -> None:
                       f"| corr(pos,exc)={bl.get('corr_position_excess')} "
                       f"rank_by={bl.get('rank_by_of_matured_boards')}")
 
+    # W2: outcomes strip — names that left the buy board within the last 21 board dates
+    try:
+        outcomes = emit_outcomes(boards, names)
+        OUTCOMES_JSON.parent.mkdir(parents=True, exist_ok=True)
+        OUTCOMES_JSON.write_text(json.dumps(outcomes, indent=1, default=str))
+        if not args.quiet:
+            if outcomes.get("empty"):
+                print(f"[outcomes] empty ({outcomes.get('reason','')}) — wrote {OUTCOMES_JSON.name}")
+            else:
+                smry = outcomes.get("summary", {})
+                print(f"[outcomes] {len(outcomes.get('rows', []))} exited names "
+                      f"(running={smry.get('n_running')} stopped={smry.get('n_stopped')} "
+                      f"median={smry.get('median_pct')}% "
+                      f"skipped_no_price={smry.get('n_skipped_no_price', 0)}) "
+                      f"→ {OUTCOMES_JSON.name}")
+    except Exception as _oe:  # noqa: BLE001 — outcomes strip is additive; never fatal
+        if not args.quiet:
+            print(f"[outcomes] skipped ({_oe})")
 
 
 if __name__ == "__main__":
