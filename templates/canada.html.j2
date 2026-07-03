@@ -242,6 +242,21 @@
     background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
   .nb-vchip.ev-earn { color:var(--link); border-color:color-mix(in srgb,var(--link) 42%,var(--line));
     background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
+  /* CA2 confluence tier badge — T1..T4 green (fresh cross), gate-none muted (ran, no cross). */
+  .nb-vchip.gate-tier { color:var(--up); border-color:color-mix(in srgb,var(--up) 50%,var(--line));
+    background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
+  .nb-vchip.gate-none { color:var(--muted); border-style:dotted;
+    border-color:color-mix(in srgb,var(--muted) 40%,var(--line)); }
+  /* CA2 confluence stat line in the desk header. */
+  .desk-hdr .dh-conf { font-size:12px; color:var(--muted); line-height:1.5; margin:6px 0 0; }
+  .desk-hdr .dh-conf b.pos { color:var(--up); }
+  .desk-hdr .dh-conf b.neg { color:var(--muted); }
+  /* CA2 sector-concentration banner — honest, not a re-rank. */
+  .chip.sec-conc { border-color:color-mix(in srgb,var(--warn) 35%,var(--line));
+    background:color-mix(in srgb,var(--warn) 6%,var(--panel)); font-size:12px; }
+  /* CA2 pullback-zone row inside the entry gauge (cool, a don't-chase reset range). */
+  .nbe-zone.nbe-pull { color:var(--g-cold); }
+  .nbe-zone.nbe-pull .nbe-px { color:var(--g-cold); }
   /* entry-window state drives the card accent (open-now warm / pullback cool / wait muted). */
   .card.ent-open { border-left:3px solid var(--up); }
   .card.ent-pullback { border-left:3px solid var(--g-cold); }
@@ -494,7 +509,27 @@
   <div class="desk-hdr">
     <p class="dh-is"><span class="l-en">A shortlist of TSX names that look ready — sorted by how buyable they are right now, with a public scoreboard below that grades every call.</span><span class="l-zh">一份看起来已就绪的 TSX 个股短名单 — 按“当前可买程度”排序，下方附公开记分牌，对每次入选前瞻评分。</span></p>
     <p class="dh-isnt"><span class="l-en">Not a guaranteed buy list. The ranking is a screen we're still testing, so the #1, #2… is just an order, not a score. Educational context, not personal advice.</span><span class="l-zh">并非稳赚的买入清单。此排名是仍在检验中的筛选，因此 #1、#2… 只是顺序、而非评分。仅为教育性背景，非个人投资建议。</span>{{ help('Technical: the C7 momentum keystone test came back all-ACCRUE in the July 2026 phase-0 run, so the 0-100 composite score is suppressed and the board shows a within-group order instead. The momentum leg is FDR-stable but DSR-short — a real screen, not yet a validated edge. Re-test January 2027.', '技术说明：C7 动量关键测试在 2026 年 7 月 Phase-0 全部为 ACCRUE，故 0-100 综合评分被抑制，榜单改为显示组内顺序。动量腿通过 FDR 但 DSR 不足 — 是真实筛选器，尚非经验证优势。2027 年 1 月复测。') }}</p>
+    {# CA2: CONFLUENCE stat — make a zero-cross tape VISIBLE. Counts board names with a
+       FRESH MACD-2D × StochRSI-3D confluence buy TODAY (r.signal.tier). "0 of N" reads
+       honestly when nothing crossed, rather than a silent all-None board. #}
+    {% if setups.confluence %}
+    <p class="dh-conf" data-tip-en="A board name is a confluence BUY today only when its MACD-2D × StochRSI-3D just crossed up fresh (signal_gate tier T1–T4). Most tapes have zero — that is normal and now visible, not hidden." data-tip-zh="仅当 MACD-2D × StochRSI-3D 今日新鲜金叉（signal_gate 层级 T1–T4）时，该股才算今日汇合买入。多数行情为零 — 属正常且现已可见。">
+      <span class="l-en">Confluence: <b class="{{ 'pos' if setups.confluence.crosses > 0 else 'neg' }}">{{ setups.confluence.crosses }}</b> buyable cross{{ '' if setups.confluence.crosses == 1 else 'es' }} today of {{ setups.confluence.board }} board names{% if setups.confluence.crosses == 0 %} — no fresh entry trigger on this tape{% endif %}.</span>
+      <span class="l-zh">汇合：{{ setups.confluence.board }} 只榜单个股中今日有 <b class="{{ 'pos' if setups.confluence.crosses > 0 else 'neg' }}">{{ setups.confluence.crosses }}</b> 只出现可买金叉{% if setups.confluence.crosses == 0 %} — 本行情无新鲜入场触发{% endif %}。</span>
+    </p>
+    {% endif %}
   </div>
+  {# CA2: SECTOR-CONCENTRATION banner (honesty, NOT forced diversification) — fires when
+     >60% of the board shares one sector. States the fact + the sector counts; no re-rank. #}
+  {% if setups.sector_concentration %}
+  {% set sc = setups.sector_concentration %}
+  <p class="chip off sec-conc" style="margin:2px 0 10px; display:block; line-height:1.6">
+    <span class="l-en">🧭 <b>{{ sc.n }}/{{ sc.total }}</b> picks are <b>{{ sc.sector }}</b> — the basing cohort is concentrated in this complex on this tape.
+      {% for s, n in sc.counts.items() %}<span class="muted">{{ s }} {{ n }}{{ '' if loop.last else ' ·' }}</span> {% endfor %}</span>
+    <span class="l-zh">🧭 <b>{{ sc.n }}/{{ sc.total }}</b> 只精选属于 <b>{{ sc.sector }}</b> — 本行情筑底队列集中于该板块。
+      {% for s, n in sc.counts.items() %}<span class="muted">{{ s }} {{ n }}{{ '' if loop.last else ' ·' }}</span> {% endfor %}</span>
+  </p>
+  {% endif %}
   {# ===== TRACK-RECORD panel (§7.4) — the desk's accountability centerpiece. Ships in
      'accruing' state with the honest first-stable-read date printed on the panel; flips to
      a scored hit-rate / rank-IC read once ≥5 IC-dates mature (≈ late-Aug 21d). ===== #}
@@ -563,6 +598,15 @@
          tier (accruing = dashed · oil-regime · insider · earnings-catalyst · extended),
          with a report-citing tooltip. Context/accruing legs, never rank inputs. ── #}
       <div class="nb-vf" style="margin-top:2px">
+        {# CA2 tier badge — the confluence T1→T4 verdict per name. A FRESH MACD-2D × StochRSI-3D
+           cross today reads T1..T4 (green); no fresh cross reads an honest "no confluence" chip
+           so the reader sees the gate RAN and found nothing, not a missing badge. #}
+        {% set _sig = s.signal %}
+        {% if _sig and _sig.tier %}
+        <span class="nb-vchip gate-tier gt-{{ _sig.tier|lower }}" data-tip-en="Confluence gate {{ _sig.tier }}{% if _sig.sub %} ({{ _sig.sub }}){% endif %} — a FRESH MACD-2D × StochRSI-3D buy cross fired today (signal_gate cascade). T1 = master/held take · T4 = earliest 2D-early. This is the entry-trigger tier, separate from the accruing momentum screen." data-tip-zh="汇合门槛 {{ _sig.tier }} — 今日出现新鲜 MACD-2D × StochRSI-3D 买入金叉（signal_gate 级联）。T1 = 主/持有 · T4 = 最早 2D。这是入场触发层级，独立于累积中的动量筛选。">🎯 {{ _sig.tier }}{% if _sig.sub %} · {{ _sig.sub }}{% endif %}</span>
+        {% elif _sig %}
+        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today ({{ _sig.reason or 'no fresh entry' }}). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（{{ _sig.reason or '无新鲜入场' }}）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ {{ t('no confluence cross', '无汇合金叉') }}</span>
+        {% endif %}
         <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。">{{ t('momentum screen · unproven', '动量筛选 · 未验证') }}</span>
         {% if s.oil_tailwind %}<span class="nb-vchip ev-oil" data-tip-en="C1 phase-0: oil→XEG is the one ACCRUE (HAC t +2.75, FDR-pass, DSR-short; reports/c1-canada-commodity-phase0.md); gold/copper NO-GO. Fires only when the overlay oil factor is risk-on AND this name loads primarily on oil." data-tip-zh="C1 Phase-0：油→XEG 是唯一 ACCRUE（HAC t +2.75、通过 FDR、DSR 不足）；金/铜 NO-GO。仅当叠加油因子为风险偏好且该股主要负荷油时触发。">🛢 {{ t('oil tailwind', '油价顺风') }}</span>{% endif %}
         {% if s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0 %}<span class="nb-vchip ev-insider" data-tip-en="Company insiders' own trades over the last {{ s.insider.window_days }} days: {{ s.insider.n_buys }} buys vs {{ s.insider.n_sells }} sells — a net buying signal. Shown as supporting context only; it does not affect the ranking." data-tip-zh="公司内部人在过去 {{ s.insider.window_days }} 天的交易：{{ s.insider.n_buys }} 笔买入 vs {{ s.insider.n_sells }} 笔卖出 — 净买入信号。仅作辅助参考，不影响排名。">👤 {{ t('insider buying', '内部人买入') }} {{ s.insider.n_buys }}/{{ s.insider.n_sells }}</span>{% endif %}
@@ -614,6 +658,30 @@
           <span class="nbe-px">${{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–${{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
           {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
         </div>
+        {% endif %}
+        {# CA2 port — PULLBACK ZONE (engine/pullback_zone): a don't-chase leader's concrete
+           pullback price range, enriching the entry window. Log-and-grade, close-only, no
+           rank effect. Presence-guarded (self-gates to None outside don't-chase territory). #}
+        {% set _pz = s.pullback_zone %}
+        {% if _pz and _pz.levels %}
+        <div class="nbe-zone nbe-pull" data-tip-en="Pullback zone (log-and-grade, not a rank input) — {{ _pz.headline_en }}" data-tip-zh="回撤区（记录评分，非排名输入）— {{ _pz.headline_zh }}">
+          <span class="nbe-lbl">{% if _pz.stance == 'chase' %}{{ t('Don\'t chase — reset', '勿追 — 回撤至') }}{% else %}{{ t('Pullback zone', '回撤区') }}{% endif %}</span>
+          <span class="nbe-px">{% for lv in _pz.levels %}${{ '%.2f'|format(lv.price) }}{% if lv.pull_pct is not none %} <span class="muted">({{ '%+.1f'|format(lv.pull_pct) }}%)</span>{% endif %}{{ '' if loop.last else ' · ' }}{% endfor %}</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      {# CA2 port chips — HOLD basing-state note + DANNYTRADES vol-compression. Both
+         log-and-grade context, never a rank/eligibility input (extension-demote idiom). #}
+      {% if s.hold or s.dt_contra %}
+      <div class="nb-vf">
+        {% set _hd = s.hold %}
+        {% if _hd and _hd.state %}
+        <span class="nb-vchip {{ 'vf-coil' if _hd.state == 'intact' else ('vf-up' if _hd.state == 'launched' else 'vf-down') }}" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor {{ _hd.anchor }} ({{ _hd.anchor_src }}): {{ _hd.days_basing }}d basing, invalidation ${{ _hd.invalidation }}{% if _hd.provisional %} · provisional{% endif %}. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 {{ _hd.anchor }} 的筑底状态：{{ _hd.days_basing }} 天筑底，失效价 ${{ _hd.invalidation }}。持仓背景，非排名输入。">{% if _hd.state == 'intact' %}🪨 {{ t('basing', '筑底中') }} {{ _hd.days_basing }}d{% elif _hd.state == 'launched' %}🚀 {{ t('launched', '已启动') }}{% else %}💔 {{ t('base broken', '筑底破位') }}{% endif %}</span>
+        {% endif %}
+        {% set _dt = s.dt_contra %}
+        {% if _dt and _dt.state and _dt.state != 'neutral' %}
+        <span class="nb-vchip {{ 'vf-down' if _dt.state == 'fade' else 'vf-coil' }}" data-tip-en="DannyTrades contrarian (log-and-grade, not a rank input) — {{ _dt.headline.en if _dt.headline else _dt.state }}. Extension band (Spearman −0.88) + whale-fade; the vol-compression / crowding read." data-tip-zh="DannyTrades 逆向（记录评分，非排名输入）— {{ _dt.headline.zh if _dt.headline else _dt.state }}。">{% if _dt.state == 'fade' %}🌡 {{ t('crowded — fade', '拥挤 — 谨防回吐') }}{% else %}💧 {{ t('washed — bounce', '超卖 — 反弹') }}{% endif %}</span>
         {% endif %}
       </div>
       {% endif %}

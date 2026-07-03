@@ -39,6 +39,11 @@ def _vm() -> dict:
         # group, board_pos (rank pill), lead_en/lead_zh, oil_tailwind. Composite is suppressed.
         "setups": {"branch": "B", "rank_basis": "momentum_screen_accruing",
                    "tailwind_suppressed": False, "tailwind_stale_days": 1,
+                   # CA2: confluence stat (zero-cross tape visible) + sector-concentration banner
+                   "confluence": {"crosses": 0, "board": 1},
+                   "sector_concentration": {"sector": "Materials", "n": 10, "total": 14,
+                                            "counts": {"Materials": 10, "Energy": 2,
+                                                       "Industrials": 1, "Utilities": 1}},
                    # W6 track-record panel (accruing state) + watch/laggard parity strips.
                    "board_track": {"market": "CA", "status": "accruing",
                                    "note": "no board calls logged yet",
@@ -57,6 +62,18 @@ def _vm() -> dict:
                             "earnings": {"next_date": "2026-07-10", "days_to": 7},
                             "lead_en": "Main driver: Financials sector · wait for the weekly turn",
                             "lead_zh": "主要驱动：Financials 板块 · 等待周线转向",
+                            # CA2: confluence gate verdict (RAN, no fresh cross → 'no confluence' badge)
+                            "signal": {"eligible": False, "tier": None, "sub": None,
+                                       "reason": "flat: cut", "tier_cascade": None},
+                            # CA2 port: hold basing-state note (close-only) + pullback zone
+                            "hold": {"state": "intact", "anchor": "2026-05-01", "anchor_src": "take",
+                                     "days_basing": 12, "invalidation": 38.4, "provisional": False},
+                            "pullback_zone": {"stance": "accumulate", "price": 44.0,
+                                              "levels": [{"label_en": "rising 50-day average",
+                                                          "label_zh": "上升50日均线",
+                                                          "price": 42.5, "pull_pct": -3.4}],
+                                              "headline_en": "Don't chase — accumulate on a pullback.",
+                                              "headline_zh": "勿追 — 回调时分批建仓。"},
                             "entry_signal": {"status": "wait_pullback", "buy_zone": {}}}]},
         "stocks_health": [], "board_health": [],
         "breadth": {"pct_above_50": 62.0, "pct_above_200": 71.0, "nh": 8, "nl": 2,
@@ -121,4 +138,25 @@ def test_canada_stocks_template_renders():
     assert "ev-earn" in html and "reports in" in html    # earnings-catalyst chip (days_to present)
     assert "ent-pullback" in html                        # entry-window card accent
     assert "Read the Canada AI brief" not in html        # AI-brief doorway presence-guarded (no CA brief)
+    # ── CA2 fix: gate-tier visibility + confluence stat + sector banner + close-only ports ──
+    assert "Confluence:" in html                          # desk-header confluence stat
+    assert "no fresh entry trigger" in html               # zero-cross tape reads honestly (0 of N)
+    assert "gate-none" in html and "no confluence cross" in html  # tier badge honest RAN-no-cross state
+    assert "sec-conc" in html and "picks are" in html     # sector-concentration banner (>60%)
+    assert "Materials" in html                            # the concentrated sector is named
+    assert "basing" in html                               # HOLD port chip (basing-state note)
+    assert "nbe-pull" in html                             # pullback-zone range enriches the entry window
     assert len(html) > 8000
+
+
+def test_canada_stocks_shows_real_tier_badge_when_cross_fires():
+    """When a board name has a FRESH confluence cross, the card must render its T1..T4 tier
+    badge (not the 'no confluence' state) — the gate-tier passthrough the CA2 fix restores."""
+    vm = _vm()
+    vm["setups"]["buy"][0]["signal"] = {"eligible": True, "tier": "T2", "sub": "master",
+                                        "reason": "held take", "tier_cascade": "T2"}
+    vm["setups"]["confluence"] = {"crosses": 1, "board": 1}
+    html = _env().get_template("canada.html.j2").render(**vm, mode="stocks")
+    assert "gate-tier" in html and ">🎯 T2" in html       # real tier badge on the card
+    assert "no confluence cross" not in html              # not the RAN-no-cross state
+    assert "buyable cross" in html                        # confluence stat present

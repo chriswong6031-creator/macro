@@ -454,6 +454,25 @@ def compute_canada_standouts(setups: dict | None, overlay: dict | None = None) -
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("canada extension signals unavailable (%s)", e)
         ext_map = {}
+    # ---- CA2 port: close-only entry-QUALITY engines (log-and-grade, NO rank effect) ----
+    # pullback_zone (price-range enriching the entry window) + hold (basing-state note) +
+    # dannytrades (vol-compression / contrarian). Mirrors the extension-demote idiom (#1072):
+    # each is a per-name CONTEXT chip stamped onto the row, never an eligibility/rank input.
+    # dannytrades needs OHLCV+volume, which the CA board universe (close-only canada_search
+    # panel) lacks — so assess() self-gates to None; the leg lights up only if CA ever gains
+    # a per-name OHLCV store (mirrors the US has_intraday presence-guard idiom).
+    try:
+        from engine import pullback_zone as _pullback_zone
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        _pullback_zone = None
+    try:
+        from engine import hold as _hold_engine
+    except Exception:  # noqa: BLE001
+        _hold_engine = None
+    try:
+        from engine import dannytrades_chip as _dt_chip
+    except Exception:  # noqa: BLE001
+        _dt_chip = None
     for r in setups["buy"]:
         t = r["ticker"]
         f = cd / f"{t.replace('=', '_').replace('^', '_')}.json"
@@ -470,6 +489,11 @@ def compute_canada_standouts(setups: dict | None, overlay: dict | None = None) -
                 # separate standouts artifact, not this page-facing setups list.
                 if rec.get("entry_signal"):
                     r.setdefault("entry_signal", rec["entry_signal"])
+                # confluence T1->T4 tier verdict — the card tier badge + the board ledger's
+                # gate_tier both read this. Written per-name in main(); read here so the
+                # page-facing board carries the REAL tier (not a shared-object side effect).
+                if rec.get("signal"):
+                    r["signal"] = rec["signal"]
                 # commodity/FX factor beta (the TSX signature) + insider context —
                 # patched onto the per-stock JSON in main(); the board row needs them
                 # for the mechanism lead + the C1 oil context chip.
@@ -498,6 +522,44 @@ def compute_canada_standouts(setups: dict | None, overlay: dict | None = None) -
         if ex and ex.get("grade") in ("parabolic", "stretched"):
             r["extended"] = {"grade": ex["grade"], "ext_z": ex.get("ext_z"),
                              "near_52wh": ex.get("near_52wh")}
+        # CA2 port — pullback zone (enriches the entry window with a concrete price range for
+        # a don't-chase leader) + hold (basing-state note vs its anchor) + dannytrades
+        # (vol-compression / contrarian). All close-only where possible, all log-and-grade:
+        # per-name context chips, NEVER a rank/eligibility input. Best-effort per row.
+        _series = closes[t].dropna() if (not closes.empty and t in closes.columns) else None
+        if _pullback_zone is not None and (r.get("price") is not None):
+            try:
+                _tk = {"price": r.get("price"), "off_52w_high_pct": r.get("off_high")}
+                # enrich with the 200/50d context from the per-stock JSON tech when present
+                _jf = cd / f"{t.replace('=', '_').replace('^', '_')}.json"
+                if _jf.exists():
+                    _jtech = (json.loads(_jf.read_text()) or {}).get("tech") or {}
+                    for _k in ("pct_vs_200dma", "pct_vs_50dma", "above50"):
+                        if _jtech.get(_k) is not None:
+                            _tk[_k] = _jtech[_k]
+                pz = _pullback_zone.compute(
+                    _tk, (r.get("extended") or {}).get("grade"),
+                    downtrend=(r.get("dir") == "down"))
+                if pz:
+                    r["pullback_zone"] = pz
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.debug("CA pullback-zone for %s failed (%s)", t, e)
+        if _hold_engine is not None and _series is not None:
+            try:
+                _hs = _hold_engine.hold_state(_series, last_cross_fallback=True)
+                if _hs:
+                    r["hold"] = _hs
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.debug("CA hold-state for %s failed (%s)", t, e)
+        if _dt_chip is not None and _series is not None:
+            try:
+                # close-only panel → high/low/volume absent → assess() self-gates to None.
+                # Lights up automatically the day CA gains a per-name OHLCV store.
+                dtc = _dt_chip.assess(_series, None, None, None)
+                if dtc:
+                    r["dt_contra"] = dtc
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.debug("CA dt-contra for %s failed (%s)", t, e)
         if not closes.empty and t in closes.columns:
             s = closes[t].dropna().tail(64).tolist()
             col = ("var(--up)" if r.get("dir") == "up"
@@ -509,7 +571,39 @@ def compute_canada_standouts(setups: dict | None, overlay: dict | None = None) -
     setups["buy"] = _branch_b_order(setups["buy"], overlay)
     setups["branch"] = "B"          # honest marker: ripe-list contract, composite suppressed
     setups["rank_basis"] = "momentum_screen_accruing"
+    # ---- CA2: CONFLUENCE stat + SECTOR-CONCENTRATION banner (both make the tape HONEST) ----
+    setups["confluence"] = _confluence_stat(setups["buy"])
+    _sc = _sector_concentration(setups["buy"])
+    if _sc:
+        setups["sector_concentration"] = _sc
     return setups
+
+
+def _confluence_stat(rows: list[dict]) -> dict:
+    """Count board names with an OPEN confluence buy today (a FRESH MACD-2D x StochRSI-3D
+    cross → signal_gate.is_buyable). The desk header prints "N buyable crosses today of M
+    board names" so an all-None (zero-cross) tape reads honestly as "0 of M" — VISIBLE, not
+    a silent blank. r['signal'] is the per-name compact verdict stamped in main()."""
+    return {"crosses": sum(1 for r in rows if signal_gate.is_buyable(r.get("signal"))),
+            "board": len(rows)}
+
+
+def _sector_concentration(rows: list[dict], threshold: float = 0.60) -> dict | None:
+    """When MORE than `threshold` of the board shares one sector, return the banner payload
+    (sector, n, total, per-sector counts) — honesty, NOT forced diversification: the basing
+    cohort clustering in (e.g.) the gold complex is a fact the reader should SEE. No re-rank.
+    None when the board is empty, unlabeled ('—') dominates, or no sector clears threshold."""
+    if not rows:
+        return None
+    counts: dict[str, int] = {}
+    for r in rows:
+        s = r.get("sector") or "—"
+        counts[s] = counts.get(s, 0) + 1
+    top_sec, top_n = max(counts.items(), key=lambda kv: kv[1])
+    if top_sec == "—" or (top_n / len(rows)) <= threshold:
+        return None
+    return {"sector": top_sec, "n": top_n, "total": len(rows),
+            "counts": dict(sorted(counts.items(), key=lambda kv: -kv[1]))}
 
 
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
@@ -653,6 +747,11 @@ def main(alpha: dict | None = None) -> dict | None:
         # It NEVER changes eligibility (alpha floor + alignment stay the inclusion gate); it only
         # adds the per-card tier badge and re-ranks WITHIN the existing buy list (below).
         sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        # Persist the display-safe confluence verdict onto the per-stock JSON so the page-
+        # facing standout board (compute_canada_standouts, run again in build_canada.py) can
+        # read the real T1->T4 tier per row — not rely on a shared-object side effect. The
+        # board's forward ledger (gate_tier) and the card tier badge both source from here.
+        rec["signal"] = signal_gate.compact(sig_verdict[ticker])
         if alpha_pt.get(ticker):
             rec["alpha"] = alpha_pt[ticker]
             sc = _setup_score(rec)

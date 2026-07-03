@@ -95,11 +95,14 @@ _SCHEMA = [
     "date", "market", "ticker", "board_pos", "group",
     "edge_z", "gate_tier", "align_tier", "entry_state", "close_asof",
     "washout_2w", "extended", "placement_flag",
+    "hold_basing", "dt_compress",
 ]
 
 # Optional CN-port stamp columns — nullable bool ('boolean' dtype in the store).
 # None means 'not stamped' (distinct from False = 'computed, absent').
-_PORT_STAMPS = ("washout_2w", "extended")
+# hold_basing / dt_compress are the CA2 close-only port stamps (#1072 idiom): the name is
+# in a basing hold vs its anchor / carries a dannytrades vol-compression read.
+_PORT_STAMPS = ("washout_2w", "extended", "hold_basing", "dt_compress")
 
 # Optional risk-gate stamp columns — same nullable-bool semantics as _PORT_STAMPS.
 _GATE_STAMPS = ("placement_flag",)
@@ -133,6 +136,8 @@ def append_board(
         extended      — CN-port stamp (bool, optional; None if omitted)
         placement_flag — H-PLC risk-gate stamp (bool, optional; None if omitted
                         or the placement store was degraded that render)
+        hold_basing   — CA2 close-only port stamp (bool, optional; None if omitted)
+        dt_compress   — CA2 close-only port stamp (bool, optional; None if omitted)
 
     Keep-FIRST per (date, ticker): a price already stamped for a given date is
     never overwritten — point-in-time integrity.
@@ -161,6 +166,8 @@ def append_board(
             "washout_2w": _bool_or_none(c.get("washout_2w")),
             "extended": _bool_or_none(c.get("extended")),
             "placement_flag": _bool_or_none(c.get("placement_flag")),
+            "hold_basing": _bool_or_none(c.get("hold_basing")),
+            "dt_compress": _bool_or_none(c.get("dt_compress")),
         })
     if not rows:
         return 0
