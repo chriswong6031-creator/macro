@@ -144,3 +144,14 @@ calibration/ab_risk_gate_divergence.jsonl
 data/hk_stocks_ext/*.parquet
 # (NOT R2) — not regenerable without re-scraping; critical H2a phase-0 evidence.
 # data/hk_shorts/ is intentionally NOT listed here; all files are committed.
+# ---- Slice G store decisions (2026-07-03) ------------------------------------
+# CIRO short-position panel: data/ciro_short/ is GIT-tracked (not R2).
+# ~114 report-dates x ~2,500 TSX rows = ~285k rows = ~14MB -- inside git threshold.
+# positions.parquet and coverage.json are intentionally committed so the CSPR
+# history (2021-10->) accrues in the repo. data/ciro_short/ is NOT gitignored.
+#
+# Canada insider -- new append-only store vs legacy blob:
+#   data/canada_insider/transactions.parquet -- GIT-tracked (new; accumulates history)
+#   data/canada_insider/insider.parquet      -- GIT-tracked (legacy; kept 1 month for
+#                                              migration safety, phase out 2026-08-03)
+# Both are small (<5MB), non-regenerable, git-tracked. Not gitignored.
