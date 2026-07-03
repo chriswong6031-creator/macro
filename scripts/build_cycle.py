@@ -250,6 +250,27 @@ def _fmt(v):
     return v
 
 
+def _regime_disagreement(meta: dict, by_id: dict) -> dict | None:
+    """W4.5 — compare curated ``regime_claim`` fields against the live engine quad.
+
+    Builds the narrative list (every curated cycle + the META regime block as a synthetic
+    "meta" narrative) and defers to ``regime_prior.disagreement_block``.  Returns None (no
+    banner) when the prior is unavailable, no claim contradicts, or anything raises — this
+    is a display-only reconciliation that must never fail the render (doctrine #7)."""
+    try:
+        from engine.regime_prior import disagreement_block, regime_prior
+        meta_regime = meta.get("regime") or {}
+        # each curated cycle is already a narrative dict (it carries id + optional regime_claim)
+        narratives: list[dict] = list(by_id.values())
+        # + the page's headline premise as the "meta" narrative
+        narratives.append({"id": "meta", "regime_claim": meta_regime.get("regime_claim")})
+        prior = regime_prior()
+        return disagreement_block(narratives, prior=prior)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_cycle: regime disagreement check failed (non-fatal): %s", exc)
+        return None
+
+
 def compute(root: Path) -> dict:
     """Build the whole ``window.CYCLE_ENGINE`` payload + a tolerance ledger.
 
@@ -345,12 +366,19 @@ def compute(root: Path) -> dict:
         }
         order.append(cid)
 
+    # W4.5 — reconcile curated regime_claim fields against the live engine quad.
+    #   narratives = every curated cycle (id + optional regime_claim) + the META regime
+    #   block as a synthetic "meta" narrative (the page's headline premise).  The check is
+    #   additive + non-fatal: a missing/broken prior yields no banner, never a build failure.
+    regime_disagreement = _regime_disagreement(meta, by_id)
+
     payload = {
         "version": 1,
-        "wave": "W3.3",
+        "wave": "W4.5",
         "as_of": meta.get("asOf"),
         "xDomain": meta.get("xDomain"),
         "regime": meta.get("regime"),
+        "regime_disagreement": regime_disagreement,
         "order": order,
         "cycles": engine,
         "census": {"cards": len(engine),
@@ -405,6 +433,11 @@ def main() -> int:
              payload["census"]["cards"], payload["census"]["measured_cards"],
              payload["census"]["frame_cards"], payload["census"]["dual_cards"],
              len(payload["tolerance_ledger"]))
+    rd = payload.get("regime_disagreement")
+    if rd:
+        log.warning("regime disagreement: %s (%d claims, %s)",
+                    rd.get("banner_en"), rd.get("n"),
+                    "provisional/soft" if rd.get("provisional") else "firm")
 
     # 2 · render the page shell ────────────────────────────────────────────────
     env = Environment(

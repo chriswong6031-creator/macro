@@ -20,9 +20,15 @@ Coverage (per wave spec acceptance):
       - emit() produces a valid JS file containing window.REGIME_PRIOR = {...};
       - The JSON body is parseable; schema=1; required keys present
 
-  (5) check_claims STUB
+  (5) check_claims
       - Returns [] when no narratives declare regime_claim
       - Returns a disagreement dict when a narrative's claimed quad != engine quad
+
+  (6) disagreement_block (W4.5 activation)
+      - None when nothing contradicts; block when claims disagree
+      - meta narrative is the primary; shared-claim count reported
+      - SOFTENING: low-confidence OR transitioning engine read → soft/amber; firm → red
+      - meta-as-narrative flows through from the curated seed
 
 All file-touching tests use tmp_path fixtures; no production data is modified.
 """
@@ -409,3 +415,128 @@ def test_check_claims_empty_narratives_list():
     prior = {"quad": "Q1", "sources": {"regime": {"asof": _today()}}}
     assert check_claims([], prior=prior) == []
     assert check_claims(None, prior=prior) == []
+
+
+# ---------------------------------------------------------------------------
+# (6) disagreement_block — W4.5 activation + softening
+
+def _firm_prior(quad: str = "Q1", asof: str | None = None) -> dict:
+    """A firm engine read (high confidence, not transitioning)."""
+    return {"quad": quad, "confidence": 0.72, "transition_state": "STABLE",
+            "liquidity": "expanding",
+            "sources": {"regime": {"asof": asof or _today()}}}
+
+
+def _provisional_prior(quad: str = "Q1", *, low_conf=True, transitioning=False) -> dict:
+    """A provisional engine read — low confidence and/or transitioning."""
+    return {"quad": quad,
+            "confidence": 0.33 if low_conf else 0.72,
+            "transition_state": "TRANSITIONING" if transitioning else "STABLE",
+            "liquidity": "expanding",
+            "sources": {"regime": {"asof": _today()}}}
+
+
+def test_disagreement_block_none_when_no_contradiction():
+    """No claim contradicts the engine quad → None (caller omits the key)."""
+    from engine.regime_prior import disagreement_block
+
+    narratives = [{"id": "a", "regime_claim": {"quad": "Q1", "as_of": _today()}}]
+    assert disagreement_block(narratives, prior=_firm_prior("Q1")) is None
+
+
+def test_disagreement_block_none_when_no_narratives():
+    """Empty / claimless narratives → None."""
+    from engine.regime_prior import disagreement_block
+
+    assert disagreement_block([], prior=_firm_prior()) is None
+    assert disagreement_block([{"id": "x"}], prior=_firm_prior()) is None
+
+
+def test_disagreement_block_firm_is_red():
+    """A firm engine read that disagrees → firm (red) banner, soft=False."""
+    from engine.regime_prior import disagreement_block
+
+    narratives = [{"id": "long-bonds", "regime_claim": {"quad": "Q3", "as_of": _days_ago(8)}}]
+    block = disagreement_block(narratives, prior=_firm_prior("Q1"))
+    assert block is not None
+    assert block["provisional"] is False
+    assert block["cls"] == "stale-red"
+    assert block["disagreements"][0]["soft"] is False
+    assert "Q3" in block["banner_en"] and "Q1" in block["banner_en"]
+    assert "provisional" not in block["banner_en"].lower()
+
+
+def test_disagreement_block_soft_when_low_confidence():
+    """A low-confidence engine read → soft (amber) banner with a caveat."""
+    from engine.regime_prior import disagreement_block
+
+    narratives = [{"id": "silver", "regime_claim": {"quad": "Q3", "as_of": _today()}}]
+    block = disagreement_block(narratives, prior=_provisional_prior("Q1", low_conf=True))
+    assert block["provisional"] is True
+    assert block["cls"] == "stale-amber"
+    assert block["disagreements"][0]["soft"] is True
+    assert "provisional" in block["banner_en"].lower()
+    assert "low confidence" in block["banner_en"].lower()
+    assert "暂定" in block["banner_zh"]
+
+
+def test_disagreement_block_soft_when_transitioning():
+    """A TRANSITIONING engine read → soft (amber), even at higher confidence."""
+    from engine.regime_prior import disagreement_block
+
+    narratives = [{"id": "em-equities", "regime_claim": {"quad": "Q3", "as_of": _today()}}]
+    block = disagreement_block(
+        narratives, prior=_provisional_prior("Q1", low_conf=False, transitioning=True))
+    assert block["provisional"] is True
+    assert block["cls"] == "stale-amber"
+    assert "transitioning" in block["banner_en"].lower()
+
+
+def test_disagreement_block_meta_is_primary_and_counts():
+    """The 'meta' narrative leads the summary; shared-claim count is reported."""
+    from engine.regime_prior import disagreement_block
+
+    narratives = [
+        {"id": "housing", "regime_claim": {"quad": "Q3", "as_of": _today()}},
+        {"id": "credit", "regime_claim": {"quad": "Q3", "as_of": _today()}},
+        {"id": "meta", "regime_claim": {"quad": "Q3", "as_of": _today()}},
+    ]
+    block = disagreement_block(narratives, prior=_firm_prior("Q1"))
+    assert block["primary_narrative_id"] == "meta"
+    assert block["n"] == 3
+    assert "3 curated notes assert Q3" in block["banner_en"]
+    assert block["claimed_quad"] == "Q3"
+
+
+def test_disagreement_block_low_confidence_missing_is_not_provisional():
+    """A missing confidence + STABLE state is NOT provisional (can't call a read weak
+    when its confidence is unreadable)."""
+    from engine.regime_prior import disagreement_block
+
+    prior = {"quad": "Q1", "transition_state": "STABLE",
+             "sources": {"regime": {"asof": _today()}}}   # no confidence key
+    narratives = [{"id": "meta", "regime_claim": {"quad": "Q3", "as_of": _today()}}]
+    block = disagreement_block(narratives, prior=prior)
+    assert block["provisional"] is False
+    assert block["cls"] == "stale-red"
+
+
+def test_meta_as_narrative_flows_from_curated_seed():
+    """The live cycle_data.js CYCLE_META.regime carries a Q3 regime_claim that, when passed
+    as the 'meta' narrative alongside a Q1 engine, produces a disagreement led by meta."""
+    from pathlib import Path
+    from engine.regime_prior import disagreement_block
+    from scripts._cycle_seed import load_seed
+
+    seed = load_seed(Path(__file__).resolve().parent.parent / "site" / "cycle_data.js")
+    meta_regime = seed["meta"].get("regime") or {}
+    assert meta_regime.get("regime_claim", {}).get("quad") == "Q3", \
+        "curated CYCLE_META.regime must carry the primary Q3 claim"
+
+    narratives = list(seed["cycles"])
+    narratives.append({"id": "meta", "regime_claim": meta_regime.get("regime_claim")})
+    block = disagreement_block(narratives, prior=_firm_prior("Q1"))
+    assert block is not None
+    assert block["primary_narrative_id"] == "meta"
+    # 12 per-cycle Q3 claims + the meta claim = 13 disagreements vs a Q1 engine
+    assert block["n"] == 13

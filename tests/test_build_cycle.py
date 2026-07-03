@@ -210,11 +210,45 @@ def test_emitted_js_is_valid_and_scripttag(tmp_path):
     assert "fetch(" not in txt                          # NEVER a runtime fetch
     body = txt.split("window.CYCLE_ENGINE = ", 1)[1].rsplit(";", 1)[0]
     parsed = json.loads(body)                           # valid JSON → valid JS literal
-    assert parsed["wave"] in ("W3.2", "W3.3")   # W3.3 bumps the wave stamp
+    assert parsed["wave"] in ("W3.2", "W3.3", "W4.5")   # W4.5 adds regime_disagreement
     assert parsed["cycles"] and parsed["order"]
+    assert "regime_disagreement" in parsed              # W4.5 key present (may be null)
     # W3.3: every card has a tripwires field (may be empty list)
     for cid, card in parsed["cycles"].items():
         assert "tripwires" in card, f"{cid} missing tripwires field"
+
+
+def test_regime_disagreement_wired_with_meta_narrative():
+    """W4.5: build_cycle wires check_claims via _regime_disagreement — the curated Q3 claims
+    (12 per-cycle + the META regime block) contradict a stubbed Q1 engine, and the META
+    narrative leads the summary.  Prior is stubbed so the test is data-independent."""
+    from unittest.mock import patch
+
+    firm_q1 = {"quad": "Q1", "confidence": 0.72, "transition_state": "STABLE",
+               "liquidity": "expanding", "sources": {"regime": {"asof": "2026-07-01"}}}
+    seed = _cycle_seed.load_seed(SEED_JS)
+    with patch("engine.regime_prior.regime_prior", return_value=firm_q1):
+        block = build_cycle._regime_disagreement(seed["meta"], seed["by_id"])
+    assert block is not None, "curated Q3 prose must contradict a Q1 engine"
+    assert block["primary_narrative_id"] == "meta"
+    assert block["claimed_quad"] == "Q3"
+    assert block["engine_quad"] == "Q1"
+    assert block["n"] == 13                              # 12 per-cycle + meta
+    assert block["cls"] == "stale-red"                   # firm engine read → red
+
+
+def test_regime_disagreement_softens_on_provisional_engine():
+    """A low-confidence / transitioning engine read softens the banner to amber."""
+    from unittest.mock import patch
+
+    provisional = {"quad": "Q1", "confidence": 0.327, "transition_state": "TRANSITIONING",
+                   "liquidity": "expanding", "sources": {"regime": {"asof": "2026-07-01"}}}
+    seed = _cycle_seed.load_seed(SEED_JS)
+    with patch("engine.regime_prior.regime_prior", return_value=provisional):
+        block = build_cycle._regime_disagreement(seed["meta"], seed["by_id"])
+    assert block["provisional"] is True
+    assert block["cls"] == "stale-amber"
+    assert "provisional" in block["banner_en"].lower()
 
 
 def test_committed_engine_js_parses_if_present():
