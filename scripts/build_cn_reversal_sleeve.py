@@ -47,6 +47,11 @@ log = logging.getLogger("build_cn_reversal_sleeve")
 
 _OUT = "cn_reversal_sleeve.json"
 _PAGE = "cn_reversal_sleeve.html"
+# Path to the committed W5-A re-derive stats JSON (emitted by
+# scripts/china_reversal_rederive_phase0.py after a completed run).  Loaded
+# defensively — a missing / corrupt file means the rederive block is omitted
+# from the page without crashing the build.
+_REDERIVE_STATS = config.ROOT / "research" / "china_alpha" / "w5" / "w5a_rederive_stats.json"
 _JUNK_SECTOR = "—"
 _ADV_FLOOR_YI = 0.5                 # matches engine.china_liquidity.ADV_FLOOR_YI (post-#791)
 
@@ -169,6 +174,31 @@ def _attach_context(members: list[dict], ctx: dict) -> None:
 
 
 # --------------------------------------------------------------------------- #
+#  W5-B: load the survivorship-honest re-derivation stats (display only)      #
+# --------------------------------------------------------------------------- #
+def _load_rederive_stats() -> dict | None:
+    """Load the W5-A re-derive stats JSON emitted by china_reversal_rederive_phase0.py.
+
+    Returns None when the file is absent or corrupt — the page omits the block
+    rather than crashing.  This is display-only metadata: it does NOT affect
+    membership, weights, sizing, or the ledger."""
+    if not _REDERIVE_STATS.exists():
+        log.debug("cn reversal sleeve: rederive stats absent (%s) — block omitted", _REDERIVE_STATS)
+        return None
+    try:
+        import json as _json
+        data = _json.loads(_REDERIVE_STATS.read_text())
+        # basic sanity: must have a verdict key
+        if "verdict" not in data:
+            log.warning("cn reversal sleeve: rederive stats missing 'verdict' key — block omitted")
+            return None
+        return data
+    except Exception as e:  # noqa: BLE001
+        log.warning("cn reversal sleeve: rederive stats unreadable (%s) — block omitted", e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
 #  compute                                                                     #
 # --------------------------------------------------------------------------- #
 def compute() -> dict:
@@ -184,8 +214,11 @@ def compute() -> dict:
                  "the real record."),
         "reference": sleeve.REFERENCE,
     }
+    # load the W5-B re-derive stats early so early-return paths also carry the key
+    rederive_stats = _load_rederive_stats()
     if plane is None:
-        return {**base, "status": "no_data", "note": "china_search plane missing"}
+        return {**base, "status": "no_data", "note": "china_search plane missing",
+                "rederive_stats": rederive_stats}
     closes, tkr_sector, tkr_name, tkr_name_zh, tkr_mktcap = plane
     adv_by = _adv_map(closes.columns)
     bench = _bench_series()
@@ -194,7 +227,8 @@ def compute() -> dict:
         closes, tkr_sector, tkr_name, tkr_name_zh=tkr_name_zh, tkr_mktcap=tkr_mktcap,
         adv_by=adv_by, adv_floor_yi=_ADV_FLOOR_YI)
     if membership is None:
-        return {**base, "status": "no_data", "note": "reversal membership unavailable"}
+        return {**base, "status": "no_data", "note": "reversal membership unavailable",
+                "rederive_stats": rederive_stats}
 
     # sleeve sizing (SLEEVE-level, never per-name) + member-context chips (display only)
     sizing = _sizing()
@@ -241,6 +275,7 @@ def compute() -> dict:
         "members": membership["members"],
         "n_members_with_context": n_with_ctx,
         "sizing": sizing,
+        "rederive_stats": rederive_stats,
         "backcast": bc,
         "ledger": {
             "rows": ledger_rows,

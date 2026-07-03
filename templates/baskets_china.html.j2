@@ -78,6 +78,23 @@
   footer { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
   .pfx { color:var(--muted); }
   .asof { font-size:12px; color:var(--muted); margin-left:auto; }
+  /* W5-B Reversal Sleeve strategy card */
+  .sleeve-strategy-card { border:1px solid color-mix(in srgb,var(--up) 35%,var(--line));
+    border-left:3px solid var(--up); border-radius:10px; background:var(--panel); padding:13px 15px;
+    margin:24px 0 0; max-width:720px; }
+  .sleeve-strategy-card .sc-head { font-size:14px; font-weight:700; margin:0 0 3px; }
+  .sleeve-strategy-card .sc-sub { font-size:12px; color:var(--muted); margin:0 0 8px; line-height:1.5; max-width:64ch; }
+  .sleeve-strategy-card .sc-stats { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
+  .sleeve-strategy-card .sc-stat { font-size:11.5px; color:var(--muted); padding:3px 9px;
+    border:1px solid var(--line); border-radius:7px; background:var(--bg); }
+  .sleeve-strategy-card .sc-stat b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .sleeve-strategy-card .sc-link { display:inline-block; font-size:12.5px; font-weight:650;
+    color:var(--up); text-decoration:none; margin-top:6px; }
+  .sleeve-strategy-card .sc-link:hover { text-decoration:underline; }
+  .sleeve-strategy-card .sc-note { font-size:11px; color:var(--muted); margin:5px 0 0; }
+  .sleeve-strategy-card .sc-tag { display:inline-block; font-size:10.5px; font-weight:700;
+    letter-spacing:.04em; border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+    color:var(--muted); margin-right:6px; vertical-align:2px; }
   /* ---- cross-market AI-semis confirmer chip (lite/THS page; display-only) ---- */
   .semis-chip { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; background:var(--panel2);
     border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:10px 0 0; font-size:12.5px; }
@@ -172,6 +189,30 @@
     <div id="cards"></div>
     <div id="details"></div>
   </div>
+
+  {# W5-B: Reversal Sleeve strategy card — linked product, CONFIRM verdict 2026-07-03 #}
+  {% if not lite %}
+  <div class="sleeve-strategy-card" id="reversal-sleeve-card">
+    <div class="sc-head"><span class="sc-tag">{{ t('VALIDATED EDGE','已验证优势') }}</span>{{ t('Reversal Sleeve','反转组合') }}</div>
+    <p class="sc-sub">{{ t(
+      'Monthly-rebalanced contrarian basket — a portfolio, NOT stock tips; high variance, size small. The validated A-share within-sector 3M reversal edge shipped at its own product unit (deepest quintile, no gate, equal-weight). Forward ledger is accruing; grades publish when rebalances mature.',
+      '按月再平衡的逆向篮子——这是一个组合，不是个股建议；高波动，宜小仓位。已验证的A股板块内3月反转优势以其自身产品单元交付（最深五分位、无门槛、等权重）。前瞻台账正在累积，再平衡成熟后发布成绩。') }}</p>
+    <div class="sc-stats">
+      {# rd_n_members is passed by the builder when available; falls back gracefully #}
+      {% if sleeve_stats %}
+      <span class="sc-stat">{{ t('members','成分') }} <b>{{ sleeve_stats.n_members }}</b></span>
+      <span class="sc-stat">{{ t('sleeve sizing','组合仓位') }} <b>×{{ '%.2f'|format(sleeve_stats.sleeve_factor) }}</b></span>
+      {% endif %}
+      <span class="sc-stat">{{ t('re-derived Sharpe (raw plane)','再推导夏普（原始面板）') }} <b>~0.57</b></span>
+      <span class="sc-stat">{{ t('+0.43%/reb universe-rel. (fill-realistic)','每再平衡+0.43%相对等权宇宙（真实成交）') }}</span>
+      <span class="sc-stat">{{ t('n','样本数') }} <b>349</b> {{ t('monthly rebalances','月度再平衡') }}</span>
+    </div>
+    <a class="sc-link" href="cn_reversal_sleeve.html">{{ t('→ Open Reversal Sleeve page','→ 打开反转组合页面') }}</a>
+    <p class="sc-note">{{ t(
+      'Upper bound on the available plane — both substrates are pure-survivor on the delisting axis; true out-of-sample number is at or below the re-derived stats. Gross of cost; high-turnover family. The forward ledger is the real record.',
+      '可用面板上的上界——两个底层数据库均在退市轴上为纯幸存者；真实样本外数值等于或低于再推导数据。成本前；高换手率品种。前瞻台账是真实记录。') }}</p>
+  </div>
+  {% endif %}
 
   <footer>
     {% if lite %}
