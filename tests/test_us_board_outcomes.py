@@ -17,7 +17,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.grade_us_board import build_track, grade_boards  # noqa: E402
+from scripts.grade_us_board import build_track, emit_outcomes, grade_boards  # noqa: E402
 from tests.test_grade_us_board import _minimal_grade_df  # noqa: E402
 
 
@@ -107,3 +107,63 @@ def test_grade_boards_skip_matches_survivorship_count():
     assert df.attrs["skipped_no_price"] == 2
     track = build_track(_minimal_grade_df(n=1), boards, names)
     assert track["survivorship"]["n_rows_skipped_no_price"] == 2
+
+
+# ---------------------------------------------------------------------------
+# emit_outcomes (W2 "recently surfaced → outcome" strip) — skip disclosure
+# ---------------------------------------------------------------------------
+# emit_outcomes() drops exited tickers with no usable price path (missing column /
+# all-NaN / series ends before first_surfaced). A name that left the buy board
+# BECAUSE it collapsed and got delisted is exactly such a name, so the count must
+# reach summary.n_skipped_no_price for the strip header's
+# "(N names excluded: no price / delisted)" note.
+
+def test_outcomes_summary_emits_skipped_count():
+    """An exited ticker missing from the closes cache is counted, not vanished."""
+    names = _names(AAA=100.0, BBB=90.0)
+    boards = [_board("2026-01-05", ["AAA", "BBB", "GONE"]),
+              _board("2026-01-06", ["AAA", "BBB", "GONE"]),
+              _board("2026-01-07", ["AAA"])]  # BBB + GONE exited
+    out = emit_outcomes(boards, names)
+    assert not out.get("empty"), f"expected rows, got: {out}"
+    assert any(r["ticker"] == "BBB" for r in out["rows"])
+    smry = out["summary"]
+    assert smry["n_skipped_no_price"] == 1
+    assert smry["skipped_no_price"] == ["GONE"]
+
+
+def test_outcomes_all_skipped_empty_path_carries_count():
+    """When EVERY exited name lacks prices the strip stays empty — but the
+    artifact must still disclose how many names were dropped, not imply zero."""
+    names = _names(AAA=100.0)
+    boards = [_board("2026-01-05", ["AAA", "GONE"]),
+              _board("2026-01-06", ["AAA", "GONE"]),
+              _board("2026-01-07", ["AAA"])]  # only GONE exited, and it has no price
+    out = emit_outcomes(boards, names)
+    assert out.get("empty") is True
+    assert out["reason"] == "no exited tickers had price data"
+    assert out["n_skipped_no_price"] == 1
+    assert out["skipped_no_price"] == ["GONE"]
+
+
+def test_outcomes_all_nan_series_counts_as_skipped():
+    """A cache column that exists but is all-NaN is unusable — same disclosure."""
+    names = _names(AAA=100.0, BBB=90.0, DEAD=np.nan)
+    boards = [_board("2026-01-05", ["AAA", "BBB", "DEAD"]),
+              _board("2026-01-06", ["AAA", "BBB", "DEAD"]),
+              _board("2026-01-07", ["AAA"])]
+    out = emit_outcomes(boards, names)
+    assert out["summary"]["n_skipped_no_price"] == 1
+    assert out["summary"]["skipped_no_price"] == ["DEAD"]
+
+
+def test_outcomes_zero_skips_is_explicit():
+    """Full price coverage => an explicit 0, so the template's guard can tell
+    'nothing excluded' apart from 'field not wired'."""
+    names = _names(AAA=100.0, BBB=90.0)
+    boards = [_board("2026-01-05", ["AAA", "BBB"]),
+              _board("2026-01-06", ["AAA", "BBB"]),
+              _board("2026-01-07", ["AAA"])]
+    out = emit_outcomes(boards, names)
+    assert out["summary"]["n_skipped_no_price"] == 0
+    assert out["summary"]["skipped_no_price"] == []
