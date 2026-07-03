@@ -1,15 +1,15 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-03T18:38:44.548631+00:00",
-  "posts_seen": 7,
-  "seen_total": 7,
+  "as_of": "2026-07-03T20:33:19.871169+00:00",
+  "posts_seen": 6,
+  "seen_total": 8,
   "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-07-03-one-year-later-president-trumps-working-families-tax-cuts-are-delivering-for-ame",
-      "importance": 0,
+      "id": "wh-2026-07-03-250th-anniversary-of-the-adoption-of-the-declaration-of-independence",
+      "importance": 5,
       "activated": false,
       "degraded_reason": "served_by:deepseek"
     }
