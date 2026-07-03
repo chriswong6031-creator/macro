@@ -582,11 +582,16 @@ def main() -> int:
     # per-strike open interest the Cboe path throws away (the one thing that can't be
     # backfilled — OI is point-in-time only). Foundation for the validate-gated GEX
     # drawdown leg. No-op without POLYGON_API_KEY. Additive, never fatal.
+    # W0.4: capture the result dict so the status write below makes missed days
+    # circuit-breaker-visible (the accrual ran before store.write_status previously,
+    # so any failure was invisible in run_status.json).
+    _polygon_gex_status: dict = {"status": "not_run"}
     try:
         from scripts.build_polygon_gex import accrue as accrue_polygon_gex
         log.info("=== accruing Polygon options OI (GEX foundation) ===")
-        accrue_polygon_gex(datetime.now(timezone.utc))
+        _polygon_gex_status = accrue_polygon_gex(datetime.now(timezone.utc))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
+        _polygon_gex_status = {"status": "failed", "error": str(e)}
         log.warning("Polygon GEX accrual step failed: %s", e)
 
     # Polygon intraday (hourly) US bars -> data/intraday/<T>.parquet, powering the 4H
@@ -598,6 +603,18 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("Polygon intraday accrual step failed: %s", e)
 
+    # W0.4: options-flow accrual status — build_options_flow runs in the render job
+    # (daily.yml render step, not here), but we record whether the S3 creds that power
+    # it are present so daily collect can surface the "creds absent" state as a
+    # circuit-breaker warning rather than a silent no-op.
+    _options_flow_status: dict = {"status": "not_run"}
+    try:
+        from collectors import massive_flatfiles as _mf
+        _options_flow_status = ({"status": "creds_present"}
+                                if _mf.enabled() else {"status": "no_creds"})
+    except Exception as e:  # noqa: BLE001
+        _options_flow_status = {"status": "check_failed", "error": str(e)}
+
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
     # merge: a partial --only run must not wipe the health of sources it skipped
@@ -605,6 +622,12 @@ def main() -> int:
     for r in results:
         sources[r.source] = {**asdict(r), "elapsed_sec": timings.get(r.source),
                              "checked_at": datetime.now(timezone.utc).isoformat()}
+    # W0.4: register additive accrual steps so their health is circuit-breaker-visible.
+    # These run outside the FetchResult loop above (they are not Adapter subclasses), so
+    # they would otherwise be invisible in run_status.json.
+    _now = datetime.now(timezone.utc).isoformat()
+    sources["polygon_gex_accrual"] = {**_polygon_gex_status, "checked_at": _now}
+    sources["options_flow_creds"] = {**_options_flow_status, "checked_at": _now}
     status["sources"] = sources
     status["circuit_breaker"], status["circuit_breaker_probe"] = update_breaker(
         results, status.get("circuit_breaker_probe"))
