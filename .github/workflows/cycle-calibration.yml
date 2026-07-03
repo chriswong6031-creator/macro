@@ -145,15 +145,33 @@ jobs:
       #     if [ ! -f scripts/check_cycle_tape_freshness.py ]; then exit 0; fi
       #     python -m scripts.check_cycle_tape_freshness --warn || true
 
-      # ── Slot: D5 hazard model freshness (planned, W4.2+) ───────────────────
-      # When merged: python -m scripts.check_hazard_model_freshness
-      # Semantics: LOG-AND-SKIP (>100d stale degrades to prior + writes warning;
-      #   never blocks lane).
-      # Estimated runtime: <1 min (stat check; no refit here).
-      # - name: "LOG | hazard model freshness (<100d stale) (planned W4.2)"
-      #   run: |
-      #     if [ ! -f scripts/check_hazard_model_freshness.py ]; then exit 0; fi
-      #     python -m scripts.check_hazard_model_freshness || true
+      # ── HARD: hazard fit gate-math tests (W4.2) ────────────────────────────
+      # Protects the skill-gate machinery: logistic gradient check, PAV monotonicity,
+      # walk-forward split integrity (no date overlap / expanding origin / embargo),
+      # gate math (synthetic PASS + synthetic PRIOR), BH-FDR, no-sklearn guard, and the
+      # price-basis EPOCH SANITY invariant (panel turns are close_price, not TR).
+      # Semantics: ABORT-LANE (hard failure).  Added: W4.2.  Guarded no-op pre-W4.2.
+      - name: "HARD | hazard fit gate-math tests (grad, PAV, walk-forward, FDR, epoch)"
+        run: |
+          if [ ! -f tests/test_cycle_hazard_fit.py ]; then
+            echo "tests/test_cycle_hazard_fit.py not present — skipping (pre-W4.2)"
+            exit 0
+          fi
+          python -m pytest tests/test_cycle_hazard_fit.py -q
+
+      # ── LOG: hazard model freshness / epoch integrity (W4.2) ───────────────
+      # Stat-check only (NO refit): a >100d-stale model or a lingering TR-epoch panel
+      # warns and downstream degrades to the KM prior.  The heavy monthly refit
+      # (scripts/fit_cycle_hazard) is a separate scheduled/manual step — not run here.
+      # Semantics: LOG-AND-SKIP (fail-open; warn-only, never blocks the lane).
+      # Estimated runtime: <1 min (stat check).  Guarded: no-op if the script is absent.
+      - name: "LOG | hazard model freshness (<100d stale, price epoch) (W4.2)"
+        run: |
+          if [ ! -f scripts/check_hazard_model_freshness.py ]; then
+            echo "scripts/check_hazard_model_freshness.py not present — skipping (pre-W4.2)"
+            exit 0
+          fi
+          python -m scripts.check_hazard_model_freshness || true
 
       # ── Failure summary ─────────────────────────────────────────────────────
       # Runs even when a HARD step above failed so CI gets a readable summary.

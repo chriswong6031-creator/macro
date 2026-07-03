@@ -76,6 +76,32 @@ panel. The quad-conditioned skill is labeled *revision-optimistic* until D6 vint
 a lagged-quad (+1m) robustness refit is itself a gate: `model.json.sensitivity.quad_lag1_delta_brier`
 must be small (< 0.005) or the macro-derived quad is dropped and market-price features kept.
 
+### HZ results (W4.2, 2026-07-03 — criteria above UNCHANGED)
+
+Fit artifact: `data/hazard/model_price_c4414dcb.json` (the actual path; the `judged by`
+column's `data/cycle_hazard/model.json` is the planned rename — the `ledger.<dir>.<h>`
+sub-keys match). Epoch corrected to **price-basis** turns first (see
+`W42_HAZARD_VERDICT.md §0`; y1 events 7,496 → 7,774). Gate scored on **leak-free
+out-of-fold** calibrated predictions vs the correctly-specified family-stratified KM
+(both a prior strawman-KM and a calibration-on-eval leak were caught and fixed).
+
+| id | result | date |
+|---|---|---|
+| **HZ-up-1m** | **PASS** — ΔBrier +0.0140, 90% CI [+0.0068, +0.0209], boot p=0.0012, sign 14/17 yrs, survives BH. Robust. | 2026-07-03 |
+| **HZ-up-3m** | **PRIOR** — ΔBrier +0.0071, CI [−0.0003, +0.0143] (touches 0), p=0.061. KM prior ships. | 2026-07-03 |
+| **HZ-up-6m** | **PRIOR** — ΔBrier +0.0002, CI [−0.0057, +0.0062], p=0.52 (no skill). KM prior ships. | 2026-07-03 |
+| **HZ-dn-1m** | **PASS** — ΔBrier +0.0141, CI [+0.0034, +0.0247], p=0.018, sign 11/17, BH. Solid. | 2026-07-03 |
+| **HZ-dn-3m** | **PASS (marginal)** — ΔBrier +0.0078, CI [+0.0005, +0.0155], p=0.036, sign 13/17, BH. | 2026-07-03 |
+| **HZ-dn-6m** | **PASS (marginal)** — ΔBrier +0.0042, CI [+0.0005, +0.0079], p=0.024, sign 12/17, BH. | 2026-07-03 |
+
+**Summary: 4 of 6 PASS, 2 PRIOR** — lands close to the pre-registered "most cells ship PRIOR"
+expectation; the 1-month cells are the robust wins. **Regime sub-gate:** `breadth_div`
+dropped for *absence* (not computed in the W4.1 panel); `quad_Q2`/`quad_Q4` (up) and
+`quad_Q3`/`liq_expanding` (down) fail their coefficient CI and are flagged DROP; zeroing them
+leaves the passing 1m cells unchanged (edge is not regime-carried). **Quad-lag robustness:**
+`quad_lag1_delta_brier` = 0.0002 (up) / 0.0029 (down), both < 0.005 → macro quad retained,
+quad-conditioned skill labeled *revision-optimistic* (P-D5-1). See `W42_HAZARD_VERDICT.md`.
+
 ---
 
 ## 3 · Cone-coverage / calibration gates (D2 §3.2–3.3, D5 §1.8, Wave W2.4)
