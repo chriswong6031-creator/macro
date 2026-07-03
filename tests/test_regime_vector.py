@@ -515,3 +515,60 @@ class TestBuildIntegration:
         result = rv.build({}, data_dir=tmp_path)
         assert result.get("rate_pressure") is None
         assert result.get("regime_vector_degraded") in (True, 1)
+
+
+# ---------------------------------------------------------------------------
+# 7. get_vector_for_date — PIT stamp lookup (W0-stageB)
+# ---------------------------------------------------------------------------
+class TestGetVectorForDate:
+    """The ledger stamp reader must be PIT: rows dated AFTER the marker date
+    are invisible; carry-forward records staleness; no store → all-null."""
+
+    def _persist(self, tmp_path, asof, rate_pressure="neutral"):
+        rv.persist({
+            "asof": asof,
+            "rate_pressure": rate_pressure,
+            "rate_pressure_candidate": rate_pressure,
+            "quad_hard_label": "Q1",
+            "regime_vector_degraded": 0,
+            "degraded_axes": json.dumps([]),
+        }, data_dir=tmp_path)
+
+    def test_exact_date_match(self, tmp_path):
+        (tmp_path / "regime").mkdir()
+        self._persist(tmp_path, "2026-07-01", "pressure")
+        stamp = rv.get_vector_for_date("2026-07-01", data_dir=tmp_path)
+        assert stamp["rate_pressure"] == "pressure"
+        assert stamp["vector_asof"] == "2026-07-01"
+        assert stamp["staleness_hours"] == 0.0
+
+    def test_carry_forward_records_staleness(self, tmp_path):
+        (tmp_path / "regime").mkdir()
+        self._persist(tmp_path, "2026-07-01", "relief")
+        stamp = rv.get_vector_for_date("2026-07-03", data_dir=tmp_path)
+        assert stamp["rate_pressure"] == "relief"
+        assert stamp["vector_asof"] == "2026-07-01"
+        assert stamp["staleness_hours"] == 48.0
+
+    def test_future_rows_are_invisible(self, tmp_path):
+        """PIT: a marker BEFORE every persisted date must get an all-null stamp —
+        the future vector row must never leak backward onto an older ledger row."""
+        (tmp_path / "regime").mkdir()
+        self._persist(tmp_path, "2026-07-02", "panic")
+        stamp = rv.get_vector_for_date("2026-06-30", data_dir=tmp_path)
+        assert stamp["rate_pressure"] is None
+        assert stamp["vector_asof"] is None
+        assert stamp["staleness_hours"] is None
+
+    def test_future_row_does_not_shadow_older_match(self, tmp_path):
+        (tmp_path / "regime").mkdir()
+        self._persist(tmp_path, "2026-07-01", "neutral")
+        self._persist(tmp_path, "2026-07-02", "panic")
+        stamp = rv.get_vector_for_date("2026-07-01", data_dir=tmp_path)
+        assert stamp["rate_pressure"] == "neutral"
+        assert stamp["vector_asof"] == "2026-07-01"
+
+    def test_missing_store_returns_all_null(self, tmp_path):
+        (tmp_path / "regime").mkdir()
+        stamp = rv.get_vector_for_date("2026-07-01", data_dir=tmp_path)
+        assert all(v is None for v in stamp.values())

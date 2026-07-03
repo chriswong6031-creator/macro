@@ -614,35 +614,14 @@ def _fill_maturation(
             _freeze("terminal_state_clean8_21", str(state8))
 
     # --- W0-stageB: post_cushion_breach flag (single-fire, §1.1) ---
-    # Computed only when the fire has at least 21 forward bars (clean8_21 matured).
-    # We use the clean8_21 horizon as the observation window for the breach check
-    # (the max of k_days in cushion_incidence defaults; 21 is the rotational horizon).
+    # Routed through grading.post_cushion_breach (one-grader law §1.2) — the
+    # per-row flag uses the IDENTICAL scan as cushion_incidence's breach rate,
+    # so a cushioned-then-stopped fire is True (below entry by definition),
+    # never silently dropped. Window = clean8_21 horizon (21, rotational).
     if _is_null(row.get("post_cushion_breach")):
-        fill_loc = grading.fill_index(close, date)
-        if fill_loc is not None and fill_loc + 21 < len(close):
-            ep = float(close.iloc[fill_loc])  # entry price (fill bar)
-            if ep > 0:
-                stop_b = ep * grading.STOP_BARRIER     # 0.95
-                cushion_b = ep * grading.CUSHION_BARRIER  # 1.05
-                fwd21 = close.iloc[fill_loc + 1: fill_loc + 22].to_numpy()
-                cushion_bar: int | None = None
-                stopped = False
-                for k_off, cl in enumerate(fwd21):
-                    if cl <= stop_b:
-                        stopped = True
-                        break
-                    if cushion_bar is None and cl >= cushion_b:
-                        cushion_bar = k_off
-                        # continue scanning
-                if cushion_bar is not None and not stopped:
-                    # fire was cushioned; check for breach below entry after cushion
-                    post = fwd21[cushion_bar + 1:]
-                    breach = any(float(c) < ep for c in post if np.isfinite(c))
-                    _freeze("post_cushion_breach", bool(breach))
-                elif not stopped:
-                    # no cushion reached within 21 bars AND not stopped — breach = None
-                    # (leave null; fire hasn't yet cushioned)
-                    pass
+        breach = grading.post_cushion_breach(close, date, horizon=21)
+        if breach is not None:
+            _freeze("post_cushion_breach", bool(breach))
 
     # --- trade-level metrics (entry markers only) ---
     if mtype in _ENTRY_TYPES:
