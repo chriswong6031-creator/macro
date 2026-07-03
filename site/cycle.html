@@ -364,9 +364,9 @@
 <script>try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}</script>
 <script>
 /* W4.5 regime-prior reconciliation banner — rendered after all data scripts load.
-   Staleness-only: curated prose (regimeNote) carries no machine-readable regime_claim
-   so contradiction-checking is not yet possible. Banner fires when curated prose asOf
-   is > 30 days old OR when the regime_prior itself is stale/partial.
+   Two layers: (0) CONTRADICTION — curated regime_claim quad vs the live engine quad
+   (from CYCLE_ENGINE.regime_disagreement, softened to amber when the engine read is
+   itself provisional); (1) prior stale/partial; (2) curated prose > 30 days old.
    Dual-span EN/zh — no t() in attributes. */
 (function(){
   try{
@@ -377,6 +377,11 @@
     var lang=(document.documentElement.getAttribute('data-lang')||'').slice(0,2).toLowerCase();
     var zh=lang==='zh';
     var msgs=[];
+    // 0. Contradiction: curated regime_claim quad vs live engine quad (W4.5 primary signal)
+    var rd=(window.CYCLE_ENGINE||{}).regime_disagreement;
+    if(rd&&rd.banner_en){
+      msgs.push({en:rd.banner_en,zh:rd.banner_zh,cls:rd.cls||'stale-red'});
+    }
     // 1. Prior itself stale/partial
     var ps=prior.status;
     if(ps==='stale'||ps==='partial'){

@@ -47,7 +47,12 @@
         "Restrictive Fed + strong dollar + 30–40% recession odds cap demand-sensitive " +
         "cyclicals; the cheap-liquidity tailwind that powered 2021-era booms is absent. " +
         "Oil is the swing factor: normalisation → soft-landing tailwind; a re-spike → " +
-        "stagflationary headwind across the board."
+        "stagflationary headwind across the board.",
+      // W4.5 contradiction check: the PRIMARY curated US-quad premise. "Late-cycle
+      // stagflation scare" (hot CPI + hawkish Fed + strong dollar) = Q3 Stagflation.
+      // Passed to regime_prior.check_claims() as the "meta" narrative; if the live
+      // engine reads a different quad, the page shows a reconciliation banner.
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "high" }
     }
   };
 
@@ -178,7 +183,8 @@
           "above ~1.5M SAAR through 2027 — a new leg up, not a rollover. A confirmed top implies " +
           "a downswing troughing ~2029–2032."
       },
-      regimeNote: "Headwind: high mortgage rates + a strong dollar pin affordability; the clock and the macro align bearishly."
+      regimeNote: "Headwind: high mortgage rates + a strong dollar pin affordability; the clock and the macro align bearishly.",
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "medium" }
     },
 
     /* ------------------------------------------------------- BUSINESS CYCLE -- */
@@ -218,7 +224,8 @@
           "peak; unemployment ≤4.5% and positive payrolls through 2027 refute the late-cycle " +
           "recession call (soft-landing extension)."
       },
-      regimeNote: "Headwind: late-cycle age + restrictive policy; the inventory upswing is cresting into a 2027 recession risk."
+      regimeNote: "Headwind: late-cycle age + restrictive policy; the inventory upswing is cresting into a 2027 recession risk.",
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "medium" }
     },
 
     /* ---------------------------------------------------------------- OIL --- */
@@ -302,7 +309,10 @@
           "a sustained break above ~$15,000/t confirms the up-leg isn't yet mature. Next secular high " +
           "likely 2029–2030."
       },
-      regimeNote: "Mixed: a strong dollar + recession odds cap the price, but the structural deficit floors downside."
+      regimeNote: "Mixed: a strong dollar + recession odds cap the price, but the structural deficit floors downside.",
+      // borderline (low conf): copper is only partly a US-quad story, but the strong-dollar +
+      // recession-odds framing here is an explicit US-macro premise → tag Q3.
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "low" }
     },
 
     /* ------------------------------------------------------------- URANIUM -- */
@@ -371,7 +381,8 @@
           "A sustained close below ~$3,300/oz breaks the secular-bull structure (a 2011-style top); " +
           "the bull path retests/exceeds ~$5,589 in 2027 (some see ~$6,000+)."
       },
-      regimeNote: "Mixed: sticky-high real rates are the near-term headwind; debasement + CB demand are the long floor."
+      regimeNote: "Mixed: sticky-high real rates are the near-term headwind; debasement + CB demand are the long floor.",
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "medium" }
     },
 
     /* ------------------------------------------------------------- BITCOIN -- */
@@ -408,7 +419,11 @@
           "A new ATH (> ~$126k) before the trough invalidates 'we're in the down-leg'; a decisive " +
           "break below the ~$64k halving level toward sub-$40k falsifies the 'shallow, ETF-cushioned' read."
       },
-      regimeNote: "Headwind: the priced-out-cuts, hiking-bias regime drains the liquidity that fuels crypto up-legs."
+      regimeNote: "Headwind: the priced-out-cuts, hiking-bias regime drains the liquidity that fuels crypto up-legs.",
+      // v2 note: bitcoin's TRUEST checkable claim is a LIQUIDITY one ("drains the liquidity"
+      // vs the engine's liquidity_overlay), not a quad one — a regime_claim.liquidity
+      // extension is natural future scope. For now the hiking-bias premise reads Q3.
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "medium" }
     },
 
     /* -------------------------------------------------------------- CREDIT -- */
@@ -447,7 +462,8 @@
           "HY OAS above ~500bp confirms the turn to stress; spreads holding ≤300bp with loan defaults " +
           "falling toward ~3.4% through 2027 falsifies 'late-cycle, turn imminent'."
       },
-      regimeNote: "Headwind building: the tightest part of the cycle, with the thinnest cushion against the regime's shocks."
+      regimeNote: "Headwind building: the tightest part of the cycle, with the thinnest cushion against the regime's shocks.",
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "medium" }
     },
 
     /* ------------------------------------------------------------ SHIPPING -- */
@@ -626,7 +642,8 @@
           "XBI rolling back below ~$120–125 with deteriorating IPO pricing means the window-open " +
           "expansion has stalled; a clean break above ~$175 confirms the next leg."
       },
-      regimeNote: "Headwind: the most rate-sensitive risk cycle — a hawkish Fed or a vol spike re-shuts the window."
+      regimeNote: "Headwind: the most rate-sensitive risk cycle — a hawkish Fed or a vol spike re-shuts the window.",
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "medium" }
     },
 
     /* ===================== EXPANSION — 8 more asset classes ================== */
@@ -670,7 +687,8 @@
           "A renewed energy shock or a failed long-bond auction pushing 30Y back above 5.2% / 10Y " +
           "above 4.9% (TLT below ~$83) voids the recovery and confirms the price downtrend intact."
       },
-      regimeNote: "Stagflation-tilted: long Treasurys are simultaneously an inflation victim and a recession hedge — duration is cheap, but the catalyst for a durable price peak (decisive disinflation or a growth scare) hasn't confirmed."
+      regimeNote: "Stagflation-tilted: long Treasurys are simultaneously an inflation victim and a recession hedge — duration is cheap, but the catalyst for a durable price peak (decisive disinflation or a growth scare) hasn't confirmed.",
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "high" }
     },
 
     /* ----------------------------------------------------------- US DOLLAR --- */
@@ -710,7 +728,10 @@
           "A weekly close back below ~97 (toward the ~96.2 low), or a dovish July-FOMC pivot plus " +
           "sub-4% CPI, confirms the secular downtrend resuming toward a fresh trough."
       },
-      regimeNote: "~15-yr framing (lows ~1980→1992→2008): the secular bull peaked Sep-2022 at 114.78; the 2025 plunge to ~96 suggests the multi-year down-leg is underway, with the ~101 bounce a hawkish-Fed counter-rally. (unverified) periodicity is a heuristic — recent legs ran 6–8yr."
+      regimeNote: "~15-yr framing (lows ~1980→1992→2008): the secular bull peaked Sep-2022 at 114.78; the 2025 plunge to ~96 suggests the multi-year down-leg is underway, with the ~101 bounce a hawkish-Fed counter-rally. (unverified) periodicity is a heuristic — recent legs ran 6–8yr.",
+      // borderline (low conf): the dollar's secular arc is FX-structural, but the "hawkish-Fed
+      // counter-rally" framing is an explicit US-quad premise → tag Q3.
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "low" }
     },
 
     /* ---------------------------------------------------------- NATURAL GAS -- */
@@ -828,7 +849,8 @@
         falsifier:
           "A decisive close back above ~$72/oz, or a Fed pivot to cuts, would argue the trough is already in."
       },
-      regimeNote: "Textbook headwind for silver's monetary leg: a hawkish, hike-biased Fed, DXY ~101 and rising real yields are unwinding the January parabola; a recession-driven dovish pivot is the variable that flips it. (unverified) exact trough inferred."
+      regimeNote: "Textbook headwind for silver's monetary leg: a hawkish, hike-biased Fed, DXY ~101 and rising real yields are unwinding the January parabola; a recession-driven dovish pivot is the variable that flips it. (unverified) exact trough inferred.",
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "high" }
     },
 
     /* --------------------------------------------------------- EM EQUITIES -- */
@@ -868,7 +890,8 @@
           "A clean break back above the ~1,809 high with the dollar rolling below ~99 and oil easing " +
           "would confirm the expansion is still intact rather than topping."
       },
-      regimeNote: "Structurally hostile regime for EM: hawkish Fed, DXY ~101, oil-shock 4.2% CPI, 30–40% recession odds — the classic strong-dollar/high-rate combo that marks EM tops. The cushion is a ~36–40% valuation discount; the risk is Taiwan+Korea concentration tying EM to the chip cycle."
+      regimeNote: "Structurally hostile regime for EM: hawkish Fed, DXY ~101, oil-shock 4.2% CPI, 30–40% recession odds — the classic strong-dollar/high-rate combo that marks EM tops. The cushion is a ~36–40% valuation discount; the risk is Taiwan+Korea concentration tying EM to the chip cycle.",
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "high" }
     },
 
     /* -------------------------------------------------------------- JAPAN --- */
@@ -952,7 +975,8 @@
           "Platinum reclaiming and holding above ~$1,900/oz (Pt/gold below ~2.2×) signals the " +
           "deficit-driven uptrend resumed; a break below ~$1,300 marks a deeper bust."
       },
-      regimeNote: "Net headwind: hawkish Fed, strong dollar and oil-shock CPI lift real yields (negative for non-yielding metals), while recession odds threaten cyclical auto/jewellery demand. The counterweight — a 4th straight deficit + depleted stocks + extreme cheapness vs gold — should make this downturn shallower than 2008 or 2014–16."
+      regimeNote: "Net headwind: hawkish Fed, strong dollar and oil-shock CPI lift real yields (negative for non-yielding metals), while recession odds threaten cyclical auto/jewellery demand. The counterweight — a 4th straight deficit + depleted stocks + extreme cheapness vs gold — should make this downturn shallower than 2008 or 2014–16.",
+      regime_claim: { quad: "Q3", as_of: "2026-06-25", conf: "high" }
     }
   ];
 })();

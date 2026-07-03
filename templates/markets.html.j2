@@ -100,10 +100,10 @@
 <script>try{document.getElementById('cyc-asof').textContent=(window.MARKET_META||{}).asOf||'';}catch(e){}</script>
 <script>
 /* W4.5 regime-prior reconciliation banner for markets.html.
-   Staleness-only: markets_data.js prose carries no machine-readable regime_claim
-   fields so contradiction-checking is not yet possible. Banner fires when the
-   regime_prior itself is stale/partial OR when MARKET_META.asOf is > 30 days old.
-   Dual-span EN/zh — no t() in attributes. */
+   Two layers: (0) CONTRADICTION — curated market regime_claim quad (us / hk carry a
+   US-quad premise) vs the live engine quad, from MARKETS_ENGINE.regime_disagreement,
+   softened to amber when the engine read is itself provisional; (1) prior stale/partial;
+   (2) MARKET_META.asOf > 30 days old. Dual-span EN/zh — no t() in attributes. */
 (function(){
   try{
     var host=document.getElementById('regime-prior-banner');
@@ -111,6 +111,11 @@
     var prior=window.REGIME_PRIOR||{};
     var meta=window.MARKET_META||{};
     var msgs=[];
+    // 0. Contradiction: curated market regime_claim vs live engine quad (W4.5 primary signal)
+    var rd=(window.MARKETS_ENGINE||{}).regime_disagreement;
+    if(rd&&rd.banner_en){
+      msgs.push({en:rd.banner_en,zh:rd.banner_zh,cls:rd.cls||'stale-red'});
+    }
     // 1. Prior itself stale/partial
     var ps=prior.status;
     if(ps==='stale'||ps==='partial'){
