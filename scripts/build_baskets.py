@@ -114,6 +114,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("group_flow lens failed: %s", e)
 
+    # SECTOR PULSE — compact per-theme rotation data product for Mastermind bot / Terminal.
+    # Reads theme_intel (already computed above) and writes basketdata/sector_pulse.json.
+    # Additive — never breaks the build.
+    try:
+        if data.get("theme_intel"):
+            from engine import sector_pulse as _sp
+            _sp.write_pulse(data["theme_intel"], "us", fdir)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector_pulse hook failed: %s", e)
+
     # THEME ROTATION DESK ADD-ONS (display-only context): ETF Pulse (style/risk/sector
     # rotation), vol-regime + CBOE put/call chip, and per-theme ATR extension. Each writes
     # its own basketdata/*.json, consumed client-side by site/theme_addons.js (the
