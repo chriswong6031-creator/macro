@@ -44,7 +44,12 @@
     '#nr-scorecard .nrc-btn{display:block;text-align:center;background:var(--accent,#5aa7ff);color:#fff;font-weight:650;' +
       'font-size:13px;padding:9px 12px;border-radius:9px;margin-top:auto}' +
     '#nr-scorecard .nrc-btn:hover{filter:brightness(1.08)}' +
-    '#nr-scorecard .nrc-honest{font-size:10.5px;color:var(--muted);margin-top:6px;text-align:center}';
+    '#nr-scorecard .nrc-honest{font-size:10.5px;color:var(--muted);margin-top:6px;text-align:center}' +
+    '#nr-scorecard .nrc-falter{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;' +
+      'padding:2px 8px;margin:4px 0 2px;border-radius:7px;background:rgba(239,68,68,.12);' +
+      'border:1px solid rgba(245,158,11,.6);color:var(--down,#ef4444)}' +
+    '#nr-scorecard .nrc-exp{font-size:10.5px;margin-top:8px;padding:2px 8px;display:inline-block;' +
+      'border-radius:7px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.45);color:#d97706}';
   document.head.appendChild(st);
 
   fetch('allocationdata/' + alloc + '?cb=' + Date.now())
@@ -56,6 +61,53 @@
       var dbar = h.durability_bar;
       var hurstZh = { trend: '趋势', 'mean-revert': '均值回归', mixed: '混合' };
       var viewZh = { broad: '广泛', narrowing: '收窄', narrow: '狭窄' };
+
+      // ---- A2: leader-health gate (display-only). The rank skips the most recent ~21
+      // sessions by construction (momentum lookbacks, skip_d=21), so the named "best place
+      // to allocate" can be breaking down short-term while still ranking #1. The baskets
+      // pages co-embed the theme intel (a top-level `const THEME`), so read it defensively:
+      // if it is unreachable or the leader is not covered, the hero renders unchanged.
+      var faltering = null;
+      try {
+        var TI = (typeof THEME !== 'undefined' && THEME) ? THEME : (window.THEME || null);
+        if (TI && (h.id || h.name)) {
+          var themes = TI.themes || [], thm = null, i;
+          for (i = 0; i < themes.length; i++) {
+            if (themes[i] && (themes[i].id === h.id || themes[i].name === h.name)) { thm = themes[i]; break; }
+          }
+          var lag = false, lags = TI.breadth_laggards || [];
+          for (i = 0; i < lags.length; i++) {
+            if (lags[i] && (lags[i].id === h.id || lags[i].name === h.name)) { lag = true; break; }
+          }
+          var ladder = (thm && thm.mtf) ? String(thm.mtf.ladder_state || '').toUpperCase() : '';
+          var reco = thm ? String(thm.reco || '').toLowerCase() : '';
+          if (lag || ladder === 'ROLLING OVER' || reco === 'hold' || reco === 'trim' || reco === 'avoid')
+            faltering = { lag: lag, ladder: ladder, reco: reco };
+        }
+      } catch (e) { faltering = null; }
+      var faltPill = faltering
+        ? '<div class="nrc-falter">' + L('LEADER FALTERING SHORT-TERM', '领涨主题短期走弱') + '</div>'
+        : '';
+      // narration append — descriptive, no forward verbs; the breadth parenthetical only
+      // when the leader really is on today's breadth-laggard board.
+      var narEn = (d.narration && d.narration.en) || '';
+      var narZh = (d.narration && d.narration.zh) || narEn;
+      if (faltering && narEn) {
+        narEn += ' Leader by trailing momentum — this rank excludes the most recent ~3 weeks by construction. Short-term it is breaking down' + (faltering.lag ? ' (worst breadth today)' : '') + '. Not an entry signal.';
+        narZh += ' 该排名基于跳过最近约3周的长期动量。短期正在走弱' + (faltering.lag ? '（今日广度最差）' : '') + '。非入场信号。';
+      }
+      // ---- A3: the payload's own backtest verdict — rendered, not buried. Only when the
+      // verdict says the absolute-trend gate did NOT validate on this market's history;
+      // degrades silently on older payloads without the field.
+      var expTag = '';
+      try {
+        var atg = d.backtest && d.backtest.verdict && d.backtest.verdict.absolute_trend_gate;
+        if (atg && /did_not_hold/i.test(String(atg))) {
+          expTag = '<div class="nrc-exp" title="' + esc(String(atg)) + '">' +
+            L('EXPERIMENTAL — the trend gate did not validate on this market’s history; display-only.',
+              '实验性 — 趋势闸门在本市场历史上未获验证；仅供展示。') + '</div>';
+        }
+      } catch (e2) { expTag = ''; }
 
       var chips = '';
       if (dbar != null) chips += '<span class="nrc-chip ' + (dbar >= 0.66 ? 'ok' : '') + '">' +
@@ -80,14 +132,16 @@
         '<div class="nrc-main">' +
           '<div class="nrc-lead">🔄 ' + L('Prevailing narrative — current best place to allocate',
                                           '主导叙事 — 当前最佳配置去向') + '</div>' +
+          faltPill +
           '<div class="nrc-name">' + esc(h.name) + '</div>' +
           '<div class="nrc-sub">' + L('Suggested', '建议') + ' <b>' + pct(h.weight) + '</b> · ' +
             L('cash', '现金') + ' ' + pct(a.cash != null ? a.cash : h.cash) + '</div>' +
           '<div class="nrc-chips">' + chips + '</div>' +
-          (d.narration ? '<p class="nrc-read"><span class="l-en">' + (d.narration.en || '') + '</span>' +
-            '<span class="l-zh">' + (d.narration.zh || d.narration.en || '') + '</span></p>' : '') +
+          (narEn ? '<p class="nrc-read"><span class="l-en">' + narEn + '</span>' +
+            '<span class="l-zh">' + narZh + '</span></p>' : '') +
           (book ? '<div class="nrc-book">' + book + '</div>' : '') +
           (handoff ? '<p class="nrc-read" style="margin-top:8px">' + handoff + '</p>' : '') +
+          expTag +
         '</div>' +
         '<div class="nrc-side">' +
           '<div class="nrc-g"><span class="k">' + L('Themes in uptrend', '上行趋势') + '</span>' +
