@@ -692,6 +692,14 @@
              background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
   .nb-dmnd.dmnd-rk { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line));
              background: color-mix(in srgb, var(--down) 11%, var(--panel)); }
+  /* G6a donor-sector context chip (display-only, US standouts header area) */
+  .nb-donor{display:flex;align-items:center;gap:7px;padding:5px 11px;margin:6px 0 4px;border-radius:8px;font-size:11px;border:1px solid var(--line);background:var(--panel2)}
+  .nb-donor.donor-cracking{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel2))}
+  .nb-donor.donor-intact{border-color:color-mix(in srgb,var(--up) 35%,var(--line));background:color-mix(in srgb,var(--up) 6%,var(--panel2))}
+  .nb-donor .donor-ic{font-size:12px;flex:none}
+  .nb-donor.donor-cracking .donor-ic{color:var(--warn)}
+  .nb-donor.donor-intact .donor-ic{color:var(--up)}
+  .nb-donor .donor-meta{font-size:9.5px;margin-left:auto}
   /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only, US standouts) */
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
   .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
@@ -2412,6 +2420,18 @@
         {{ t('Board', '榜单') }}: {{ _conc.n_names }} {{ t('names across', '个标的分布在') }} {{ _conc.n_sectors }} {{ t('sectors', '个行业') }} — {{ t('effective bets ≈', '有效押注 ≈') }} {{ _conc.n_sectors }}. {{ t('Top-2 sectors:', '前两大行业：') }} {{ '%d'|format((100 * _conc.top2_sector_share)|round|int) }}% {{ t('of board.', '的榜单。') }}{% if _conc.overflow_count %} {{ _conc.overflow_count }} {{ t('overflow names → watch strip.', '个溢出标的 → 观察名单。') }}{% endif %}
       </div>
       {% endif %}{% endif %}
+      {# G6a donor-sector context chip — market-wide rotation state, US only (display-only).
+         Rendered only when the donor object exists in us_standouts (set by build_stock_library).
+         'cracking' = fresh weekly RSI-MACD bearish cross on the top-126d-EW-return GICS sector
+         composite within the trailing 4 completed weeks, OR its 20d return < 0.
+         'intact' = neither leg fires. NOT a trade signal — context for entry sizing. #}
+      {% if _su and _su.donor and _su.donor.donor_sector %}{% set _don = _su.donor %}
+      <div class="nb-donor donor-{{ _don.state }}" title="{{ 'Rotation: the leading GICS sector (' + _don.donor_sector + ', top-126d equal-weight return across ' + (_don.n_sectors | string) + ' sectors) shows signs of cracking — a fresh weekly RSI-MACD bearish cross on its composite within the last 4 completed weeks, or its 20-day EW return has gone negative. Historically, stock entries during donor cracking have higher clean-exit rates (G6a, +5.96 pp deep / +5.81 pp baskets, episode LB +2.66 pp). DISPLAY-ONLY: does not change rankings, gates, or sizing. Context for your own entry-timing discipline.' if _don.state == 'cracking' else 'Rotation: the leading GICS sector (' + _don.donor_sector + ', top-126d equal-weight return across ' + (_don.n_sectors | string) + ' sectors) is intact — no fresh weekly RSI-MACD bearish cross in the last 4 completed weeks and its 20-day EW return is positive. The rotation leader is still running. DISPLAY-ONLY: context only, not a signal.' }} · {{ _don.state }} · {{ _don.donor_sector }} · as of {{ _don.asof }}">
+        <span class="donor-ic">{{ '⚠' if _don.state == 'cracking' else '✓' }}</span>
+        <b><span class="l-en">Rotation: leader {% if _don.state == 'cracking' %}cracking{% else %}intact{% endif %} ({{ _don.donor_sector }})</span><span class="l-zh">轮动：领先板块{% if _don.state == 'cracking' %}趋弱{% else %}稳健{% endif %}（{{ _don.donor_sector }}）</span></b>
+        <span class="donor-meta muted"><span class="l-en">display-only · G6a context</span><span class="l-zh">仅供参考 · G6a 情境</span></span>
+      </div>
+      {% endif %}
       <div class="nbgrid" data-showmore-rows="3">
       {% if _su %}
       {# BOTTOMING-ALIGNED board: shows only names whose weekly/3-day/daily cycles are

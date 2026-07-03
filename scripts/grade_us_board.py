@@ -193,6 +193,10 @@ def _row_features(r: dict) -> dict:
         # COILED-FIRE wave-4 display chip fields (forward-ledger; False/None pre-schema)
         "coiled_fire":       bool((r.get("coiled") or {}).get("fire")),
         "coiled_fire_ticks": (r.get("coiled") or {}).get("fire_ticks"),
+        # G6a donor-sector per-row (constant per as_of — from board-level donor object below)
+        # filled in _board_to_record after _row_features; None pre-schema
+        "donor_state":  None,
+        "donor_sector": None,
     }
 
 
@@ -244,6 +248,10 @@ def _board_to_record(d: dict) -> dict | None:
         return None
     disp = _dig(d, ("dispersion_regime", "state"), default=None)
     rank_by = d.get("rank_by")
+    # G6a donor-sector: page-level object, constant for all rows in this snapshot
+    _donor = d.get("donor") or {}
+    _donor_state_val  = _donor.get("state") if isinstance(_donor, dict) else None
+    _donor_sector_val = _donor.get("donor_sector") if isinstance(_donor, dict) else None
     rows = []
     for lane in LANES:
         lst = d.get(lane) or []
@@ -257,6 +265,9 @@ def _board_to_record(d: dict) -> dict | None:
             feat["lane"] = canon_lane
             feat["position"] = pos
             feat["dispersion_state"] = disp
+            # propagate page-level donor into each row for the grader
+            feat["donor_state"]  = _donor_state_val
+            feat["donor_sector"] = _donor_sector_val
             rows.append(feat)
     if not rows:
         return None
@@ -582,6 +593,10 @@ def snapshot_today() -> str | None:
     # store a trimmed record (lanes + the fields the grader reads) to keep the file lean
     trimmed = {"as_of": as_of, "rank_by": d.get("rank_by"),
                "dispersion_regime": {"state": _dig(d, ("dispersion_regime", "state"))}}
+    # G6a donor-sector: persist the page-level donor object into the snapshot so
+    # forward grades can stratify by rotation state (constant per as_of).
+    if d.get("donor"):
+        trimmed["donor"] = d["donor"]
     for lane in LANES:
         if lane in d:
             trimmed[lane] = d[lane]
