@@ -3,7 +3,6 @@
   "crash": false,
   "eligible": [
     "cn_ai_compute",
-    "cn_battery",
     "cn_brokers",
     "cn_consumer_elec",
     "cn_defense",

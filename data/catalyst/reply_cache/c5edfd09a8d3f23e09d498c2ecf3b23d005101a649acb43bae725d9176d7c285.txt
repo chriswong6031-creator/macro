@@ -1,0 +1,13 @@
+{
+  "tone_score": 0,
+  "guidance_direction": "on_hold",
+  "risk_delta": 0,
+  "shock_reversible": "unknown",
+  "confidence": "high",
+  "evidence": [
+    {"field": "tone_score", "quote_span": "The Committee decided to maintain the target range for the federal funds rate"},
+    {"field": "guidance_direction", "quote_span": "decided to maintain the target range"},
+    {"field": "risk_delta", "quote_span": "The Committee decided to maintain the target range"},
+    {"field": "confidence", "quote_span": "The Committee decided to maintain the target range"}
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-02",
+  "as_of": "2026-07-03",
   "desks": [
     {
       "name": "AI Desk",
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 132,
+      "open": 134,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -42,7 +42,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 95,
+      "open": 103,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -66,7 +66,7 @@
       "name": "Demand Chain",
       "slug": "demand_chain",
       "scored": 0,
-      "open": 8,
+      "open": 33,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -113,6 +113,12 @@
         "effective_n": 54
       },
       {
+        "family": "business_cycle_recession_signal",
+        "itemized": 0,
+        "declared": 45,
+        "effective_n": 45
+      },
+      {
         "family": "insider_phase1",
         "itemized": 0,
         "declared": 36,
@@ -153,6 +159,12 @@
         "itemized": 0,
         "declared": 18,
         "effective_n": 18
+      },
+      {
+        "family": "intl_bridge",
+        "itemized": 17,
+        "declared": 17,
+        "effective_n": 17
       },
       {
         "family": "provisional_cn_blend",
@@ -347,8 +359,8 @@
         "effective_n": 4
       }
     ],
-    "total_families": 44,
-    "total_effective_n": 930
+    "total_families": 46,
+    "total_effective_n": 992
   },
   "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
 }

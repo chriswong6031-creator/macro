@@ -2044,7 +2044,7 @@
     "degraded": false,
     "quad_prior_state": "risk-on",
     "risk_state_state": "neutral",
-    "risk_state_score": 28.1,
+    "risk_state_score": 28.4,
     "positioning_override": true,
     "favor_entries": false,
     "cap_leadership": false,

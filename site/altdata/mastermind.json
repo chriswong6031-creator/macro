@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-07-03",
-  "generated_utc": "2026-07-03T02:56:08.600473+00:00",
+  "generated_utc": "2026-07-03T07:37:49.721811+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties.",
   "regime_read": null,
   "brain_present": false,
@@ -92,7 +92,7 @@
         "special_situation"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 7.3,
+      "rs_vs_spy_60d": 4.7,
       "extended": false,
       "affiliations": [
         {
@@ -128,7 +128,7 @@
         "trump"
       ],
       "trump_linked": true,
-      "rs_vs_spy_60d": 0.4,
+      "rs_vs_spy_60d": 0.3,
       "extended": false,
       "affiliations": [
         {
@@ -174,7 +174,7 @@
         "special_situation"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 8.5,
+      "rs_vs_spy_60d": 9.9,
       "extended": false,
       "affiliations": [],
       "n_affiliated_actors": 0,
@@ -200,7 +200,7 @@
         "patent_cluster"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": -9.9,
+      "rs_vs_spy_60d": -8.1,
       "extended": false,
       "affiliations": [
         {
@@ -222,7 +222,7 @@
     },
     {
       "ticker": "MRK",
-      "signal_score": 57,
+      "signal_score": 58,
       "conviction": "high",
       "action": "WATCH",
       "direction": "neutral",
@@ -237,10 +237,55 @@
         "trump"
       ],
       "trump_linked": true,
-      "rs_vs_spy_60d": -9.4,
+      "rs_vs_spy_60d": -4.6,
       "extended": false,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "AAPL",
+      "signal_score": 56,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.4,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "patent_cluster",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": 8.7,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Dan Crenshaw",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Paul Pelosi",
+          "rel": "AFFILIATES_WITH",
+          "kind": "influencer"
+        },
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "AFFILIATES_WITH",
+          "kind": "politician"
+        },
+        {
+          "actor": "Warren Buffett",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 4,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -285,7 +330,7 @@
         "app_demand"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 19.0,
+      "rs_vs_spy_60d": 19.5,
       "extended": false,
       "affiliations": [
         {
@@ -316,55 +361,10 @@
         "special_situation"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 137.0,
+      "rs_vs_spy_60d": 114.3,
       "extended": true,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "AAPL",
-      "signal_score": 53,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.4,
-      "convergence_score": 3,
-      "channels": [
-        "affiliation",
-        "patent_cluster",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": 0.6,
-      "extended": false,
-      "affiliations": [
-        {
-          "actor": "Dan Crenshaw",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Paul Pelosi",
-          "rel": "AFFILIATES_WITH",
-          "kind": "influencer"
-        },
-        {
-          "actor": "Marjorie Taylor Greene",
-          "rel": "AFFILIATES_WITH",
-          "kind": "politician"
-        },
-        {
-          "actor": "Warren Buffett",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 4,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -386,7 +386,7 @@
         "news_sentiment"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 133.1,
+      "rs_vs_spy_60d": 109.4,
       "extended": true,
       "affiliations": [],
       "n_affiliated_actors": 0,
@@ -432,7 +432,7 @@
     },
     {
       "ticker": "GOOG",
-      "signal_score": 49,
+      "signal_score": 48,
       "conviction": "medium",
       "action": "WATCH",
       "direction": "neutral",
@@ -445,7 +445,7 @@
         "trump"
       ],
       "trump_linked": true,
-      "rs_vs_spy_60d": 7.1,
+      "rs_vs_spy_60d": 4.1,
       "extended": false,
       "affiliations": [
         {
@@ -771,7 +771,7 @@
     },
     {
       "ticker": "TSLA",
-      "signal_score": 42,
+      "signal_score": 40,
       "conviction": "medium",
       "action": "WATCH",
       "direction": "neutral",
@@ -784,7 +784,7 @@
         "special_situation"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 7.4,
+      "rs_vs_spy_60d": null,
       "extended": false,
       "affiliations": [
         {

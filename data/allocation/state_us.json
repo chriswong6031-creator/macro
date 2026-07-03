@@ -25,6 +25,7 @@
     "quantum_computing",
     "regional_banks",
     "reshoring",
+    "retail",
     "robotics_automation",
     "semicap_equipment",
     "space_economy",
@@ -42,9 +43,9 @@
   ],
   "held": [
     "memory_storage",
-    "ai_infra",
     "managed_care",
-    "space_economy"
+    "ai_infra",
+    "payments_fintech"
   ],
   "leader": "memory_storage",
   "names": {
