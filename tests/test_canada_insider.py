@@ -3,7 +3,8 @@
 Pure-function checks on the classification + summarisation (no network / no cache):
 open-market text -> buy/sell, issuer rows excluded as company buybacks, the trailing
 window filters old filings, the lean is computed from value-then-shares, and
-insider_map degrades to empty without a cache. CONTEXT, not a validated signal."""
+insider_map reads the long-form transactions store (migrating the legacy JSON-blob
+cache) and degrades to empty without one. CONTEXT, not a validated signal."""
 from __future__ import annotations
 
 import sys
@@ -101,18 +102,35 @@ def test_summarize_none_when_no_open_market_personal_rows():
 
 
 def test_insider_map_empty_without_cache(tmp_path, monkeypatch):
+    # patch BOTH stores: with only CACHE patched, _load_transactions() falls back
+    # to migrating the real data/canada_insider/insider.parquet on this machine
     monkeypatch.setattr(ci, "CACHE", tmp_path / "missing.parquet")
+    monkeypatch.setattr(ci, "_LEGACY_CACHE", tmp_path / "missing_legacy.parquet")
     assert ci.insider_map() == {}
 
 
 def test_insider_map_reads_cache(tmp_path, monkeypatch):
-    import json
-    cache = tmp_path / "insider.parquet"
+    cache = tmp_path / "transactions.parquet"
     monkeypatch.setattr(ci, "CACHE", cache)
+    monkeypatch.setattr(ci, "_LEGACY_CACHE", tmp_path / "missing_legacy.parquet")
     # a fresh in-window buy so the summary is non-empty regardless of run date
     recent = (pd.Timestamp.now() - pd.Timedelta(days=5)).strftime("%Y-%m-%d")
-    payload = json.dumps([_row(recent, "buy", shares=1000, value=20000, insider="A")])
-    pd.DataFrame([{"ticker": "RY.TO", "payload": payload, "asof": "2026-06-21"}]).to_parquet(cache)
+    row = {**_row(recent, "buy", shares=1000, value=20000, insider="A"), "ticker": "RY.TO"}
+    pd.DataFrame([row]).to_parquet(cache, index=False)
     m = ci.insider_map()
     assert "RY.TO" in m and m["RY.TO"]["lean"] == "buying"
-    assert m["RY.TO"]["asof"] == "2026-06-21"
+    assert m["RY.TO"]["asof"] == recent  # asof = latest transaction date
+
+
+def test_insider_map_migrates_legacy_blob_cache(tmp_path, monkeypatch):
+    import json
+    cache = tmp_path / "transactions.parquet"
+    legacy = tmp_path / "insider.parquet"
+    monkeypatch.setattr(ci, "CACHE", cache)
+    monkeypatch.setattr(ci, "_LEGACY_CACHE", legacy)
+    recent = (pd.Timestamp.now() - pd.Timedelta(days=5)).strftime("%Y-%m-%d")
+    payload = json.dumps([_row(recent, "buy", shares=1000, value=20000, insider="A")])
+    pd.DataFrame([{"ticker": "RY.TO", "payload": payload, "asof": recent}]).to_parquet(legacy)
+    m = ci.insider_map()
+    assert "RY.TO" in m and m["RY.TO"]["lean"] == "buying"
+    assert cache.exists()  # migration persisted the long-form store
