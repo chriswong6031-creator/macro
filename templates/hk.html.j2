@@ -278,9 +278,45 @@
   .nb-ax .axt { height: 3px; border-radius: 2px; background: var(--line); margin-top: 1px; overflow: hidden; }
   .nb-ax .axf { height: 100%; background: var(--g-cold); border-radius: 2px; }
   .nb-ax.ax-na .axf { background: transparent; }
-  .nb-cau { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
-  .nb-cau span { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
-                 color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel)); }
+  /* ---- Caution icon + popover (replaces old pill-row; ported from dashboard #1061) ---- */
+  .nb-cau { position: relative; display: inline-flex; margin-top: 4px; }
+  .nb-cau-btn {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 0 5px 0 4px; height: 18px; border-radius: 9px; border: none; cursor: pointer;
+    font-size: 9px; font-weight: 700; line-height: 1;
+    color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, var(--panel));
+    text-decoration: none;
+    animation: nb-cau-pulse 2.5s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { .nb-cau-btn { animation: none; } }
+  @keyframes nb-cau-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .55; }
+  }
+  .nb-cau-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 13px; height: 13px; border-radius: 50%; font-size: 8px; font-weight: 800;
+    background: var(--warn); color: var(--panel);
+  }
+  .nb-cau-pop {
+    display: none; position: absolute; z-index: 120; bottom: calc(100% + 5px); left: 0;
+    min-width: 180px; max-width: min(260px, calc(100vw - 24px));
+    padding: 7px 9px; border-radius: 8px;
+    background: var(--panel); border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line));
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    font-size: 10px; font-weight: 600; line-height: 1.45; color: var(--warn);
+    pointer-events: none;
+  }
+  .nb-cau-pop .cau-row { display: block; padding: 2px 0; }
+  .nb-cau-pop .cau-row + .cau-row { border-top: 1px solid color-mix(in srgb, var(--warn) 20%, var(--line)); padding-top: 4px; margin-top: 2px; }
+  /* Show on hover/focus (desktop) */
+  .nb-cau:hover .nb-cau-pop,
+  .nb-cau:focus-within .nb-cau-pop,
+  .nb-cau.nb-cau-open .nb-cau-pop { display: block; pointer-events: auto; }
+  /* Flip to below if near top of viewport (added by JS) */
+  .nb-cau.pop-below .nb-cau-pop { bottom: auto; top: calc(100% + 5px); }
+  /* Clamp to right edge */
+  .nb-cau.pop-right .nb-cau-pop { left: auto; right: 0; }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
   /* volatility black hole + honesty notes (HK overhaul, China-parity) */
   .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
@@ -629,7 +665,7 @@
         <div class="nb-vf">
           <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
         </div>{% endif %}
-        {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
+        {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
         {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
         <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
         {% endif %}
@@ -1666,5 +1702,41 @@
 <script src="charts.js"></script>
 <script src="tablesort.js"></script>
 <script src="timemachine.js"></script>
+<script>
+/* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
+   Also corrects popover position (flip above/below, clamp to right edge). */
+(function(){
+  function placePop(wrap){
+    var pop = wrap.querySelector('.nb-cau-pop');
+    if (!pop) return;
+    var r = wrap.getBoundingClientRect();
+    wrap.classList.toggle('pop-below', r.top < 180);
+    wrap.classList.toggle('pop-right', r.left > window.innerWidth - 200);
+  }
+  /* Tap the button → toggle open/closed */
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.nb-cau-btn');
+    if (btn){
+      e.preventDefault(); e.stopPropagation();
+      var wrap = btn.closest('.nb-cau');
+      if (!wrap) return;
+      var wasOpen = wrap.classList.contains('nb-cau-open');
+      /* close any other open popovers */
+      document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      if (!wasOpen){ placePop(wrap); wrap.classList.add('nb-cau-open'); }
+    } else {
+      /* outside tap: close all */
+      if (!e.target.closest('.nb-cau-pop')){
+        document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      }
+    }
+  }, true);
+  /* Also position-correct on hover (desktop) */
+  document.addEventListener('pointerover', function(e){
+    var wrap = e.target.closest && e.target.closest('.nb-cau');
+    if (wrap) placePop(wrap);
+  }, true);
+})();
+</script>
 </body>
 </html>
