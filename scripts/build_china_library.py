@@ -1389,6 +1389,27 @@ def main(alpha: dict | None = None) -> dict | None:
              len(_wsetup_by), time.time() - _t0_wsetup,
              sum(1 for v in _wsetup_by.values() if v is not None))
 
+    # ── W2-B: Narrative tags (computed once per build, best-effort) ───────────
+    # Calls build_narrative_tags() which loads closes + memberships + radar on
+    # its own; returns empty dicts on any missing artifact (never raises).
+    # Result is then joined per-name into buy and ripening rows below.
+    # DISPLAY/LEDGER ONLY — rank influence NOT wired in W2 (F4 / F3 discipline).
+    try:
+        from engine.china_narrative_tags import (
+            build_narrative_tags as _build_narr_tags,
+            ab_tier as _narr_ab_tier,
+        )
+        _narr_result = _build_narr_tags()
+        _narr_tags: dict = _narr_result.get("tags") or {}
+        log.info("W2-B narrative tags: %d tickers tagged (%d baskets, as_of %s)",
+                 _narr_result.get("n_tagged", 0), _narr_result.get("n_baskets", 0),
+                 _narr_result.get("as_of", "?"))
+    except Exception as _narr_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("W2-B narrative tags failed (%s) — board renders without narrative data",
+                    _narr_exc)
+        _narr_tags = {}
+        _narr_ab_tier = lambda stage, tag: None  # noqa: E731 — degraded stub
+
     # (2) Derive last_cross_info for rule-3 (NOT gate-eligible, recent cross <=15 sessions).
     #     Source: sig_verdict["last"] gives the last buy marker date; we compute sessions_since
     #     and pct_since from the close series in `uni`. Only compute for ineligible names.
@@ -1560,6 +1581,24 @@ def main(alpha: dict | None = None) -> dict | None:
         _rr.pop("_sort_key", None)       # remove internal sort key before serialisation
     _ripening_rows = _ripening_rows[:24]
 
+    # W2-B: attach narrative tags to RIPENING rows (display/ledger only — no rank change).
+    # Stage is implicitly RIPENING for all rows in this array.
+    for _rr in _ripening_rows:
+        _rr_ticker = _rr.get("ticker")
+        _rr_tag = _narr_tags.get(_rr_ticker) if _rr_ticker else None
+        if _rr_tag:
+            _rr["narrative"] = {
+                "theme":    _rr_tag.get("theme"),
+                "theme_zh": _rr_tag.get("theme_zh"),
+                "basket_id": _rr_tag.get("basket_id"),
+                "level":    _rr_tag.get("level"),
+                "rel20":    _rr_tag.get("rel20"),
+                "breadth":  _rr_tag.get("breadth"),
+                "source":   _rr_tag.get("source"),
+                "radar":    _rr_tag.get("radar"),
+            }
+        _rr["ab_tier"] = _narr_ab_tier("RIPENING", _rr_tag)
+
     # (6) Build-time INVARIANTS — fail loudly, stop the build so bugs are never silently shipped.
     _n_missing_stage = sum(1 for r in eligible_rows if "stage" not in r)
     assert _n_missing_stage == 0, (
@@ -1654,6 +1693,30 @@ def main(alpha: dict | None = None) -> dict | None:
             _sw_match = _YAHOO_TO_SW.get(_row_sector)
             if _sw_match and _sw_match in _sector_turn_by_sw:
                 r["sector_turn"] = _sector_turn_by_sw[_sw_match]
+            # W2-B NARRATIVE TAGS: attach per-name theme heat + radar join + A/B tier.
+            # DISPLAY/LEDGER ONLY — narrative NEVER affects _cn_bonus, blend_sorted, or admission.
+            # ab_tier is None for RAN_LATE rows (spec law: ENTRY/RIPENING only).
+            _nb_tag = _narr_tags.get(t) if t else None
+            if _nb_tag:
+                r["narrative"] = {
+                    "theme":    _nb_tag.get("theme"),
+                    "theme_zh": _nb_tag.get("theme_zh"),
+                    "basket_id": _nb_tag.get("basket_id"),
+                    "level":    _nb_tag.get("level"),
+                    "rel20":    _nb_tag.get("rel20"),
+                    "breadth":  _nb_tag.get("breadth"),
+                    "source":   _nb_tag.get("source"),
+                    "radar":    _nb_tag.get("radar"),
+                }
+            _nb_stage = r.get("stage")
+            r["ab_tier"] = _narr_ab_tier(_nb_stage, _nb_tag)
+        # W2-B order-invariance assertion: buy order must be unchanged by narrative tagging.
+        # Narrative is display/ledger only — it must never alter the ranked order.
+        _buy_tickers_pre  = [r.get("ticker") for r in eligible_rows[:110]]
+        _buy_tickers_post = [r.get("ticker") for r in wide["buy"]]
+        assert _buy_tickers_pre == _buy_tickers_post, (
+            "W2-B invariant FAILED: narrative tags altered the buy row order. "
+            f"Pre: {_buy_tickers_pre[:5]} ... Post: {_buy_tickers_post[:5]}")
         wide["eligible"] = len(eligible_rows)
         wide["universe"] = len(cand)
         wide["quality_screen"] = {           # honest report of what the screen actually did
