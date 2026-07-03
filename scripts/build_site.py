@@ -2827,6 +2827,15 @@ def main() -> int:
             us_standouts = json.loads(_us.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_standouts.json unreadable (%s)", e)
+    # W2 surfaced-outcome strip (written by grade_us_board.py --nightly).
+    # Absent on first run or before grade_us_board runs. Additive, never fatal.
+    us_board_outcomes = None
+    _ubo = site / "factordata" / "us_board_outcomes.json"
+    if _ubo.exists():
+        try:
+            us_board_outcomes = json.loads(_ubo.read_text())
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("us_board_outcomes.json unreadable (%s)", e)
 
     # W2 outcomes strip — names that left the buy board in the last 21 board dates,
     # with their pct return since first surfaced. Written by grade_us_board --nightly.
