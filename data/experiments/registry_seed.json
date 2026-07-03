@@ -1072,6 +1072,48 @@
       "state": "2026-07-03 W01A: backfill seeded full 2y window (2024-07-03 to 2026-07-02, ~500 trading dates, ~500 HK names/day). Nightly adapter live in Asia collect group. Gap tripwire active.",
       "next_step": "2026-09-30 progress check: if >=104 weekly cross-sections present, run H1 phase-0 (IC of southbound rank vs 21d/63d fwd return). Gate: IC > 0.05 with p < 0.10 on Spearman.",
       "phase_hint": "H1 (HKCA southbound panel)"
+    },
+    {
+      "id": "hk-shorts-positions-h2a",
+      "name": "H2a — SFC weekly short POSITIONS accrual (W1/Slice-F)",
+      "kind": "phase0",
+      "priority": "high",
+      "cadence": "weekly (SFC releases ~Friday T+7)",
+      "what": "SFC aggregated reportable short POSITIONS panel (>=0.02% of issued shares threshold, weekly, T+7 lag, archive 2012->). Collector: collectors/hk_shorts.py HkShortsPositionsAdapter. Store: data/hk_shorts/positions.parquet (cross-sectional weekly; git-tracked, NOT R2). Coverage gate (H2a eligibility): >=60 of 157 HK universe names. VERIFIED at launch: 153/157 (97.5%) — H2a ELIGIBLE. Phase-0 test at W3. CRITICAL: positions != turnover — never conflate with HkShortsTurnoverAdapter. pct_issued not stored (SFC does not publish issued-share counts); derive downstream.",
+      "source": "collectors/hk_shorts.py (HkShortsPositionsAdapter); coverage gate: data/hk_shorts/coverage.json",
+      "storage": "data/hk_shorts/positions.parquet (GIT, ~4M rows at full depth, ~20-30 MB compressed; not per-ticker, not regenerable)",
+      "track_json": "data/hk_shorts/coverage.json",
+      "hook": "phase0",
+      "claim_family": "hkca_h2a_short_positions",
+      "started": "2026-07-03",
+      "come_back_on": "2026-08-01",
+      "come_back_note": "Come back once ~4 weeks of incremental updates accrued. At W3 phase-0: rank names by shorted_shares / issued; test rank-IC vs 21d excess-vs-_HSI on HK standout board. Gate: coverage.json h2a_eligible=true (153/157 = 97.5%). If < 60 covered, H2a demotes to context chip.",
+      "maturation": "Phase-0 at W3: rank-IC on >=6 independent weekly cross-sections with >=50 names each at 21d horizon. DSR n_trials=30 + split-half sign stability.",
+      "status": "accruing",
+      "state": "Slice F shipped (PR hkca-w01a-hk-shorts): collectors/hk_shorts.py HkShortsPositionsAdapter wired. Coverage verified: 153/157 (97.5%) — H2a ELIGIBLE. Nothing wired to build/render.",
+      "next_step": "W3 phase-0: after panel stable, run rank-IC vs forward excess returns. Wire into build_hk_library only if phase-0 clears sign-stability gate.",
+      "phase_hint": "W1/Slice-F — HK/CA masterplan §3 H2a"
+    },
+    {
+      "id": "hk-shorts-turnover-accrual",
+      "name": "H2b — HKEX daily short-sell TURNOVER accrual (W1/Slice-F)",
+      "kind": "phase0",
+      "priority": "medium",
+      "cadence": "daily (trading days, Asia session)",
+      "what": "HKEX 'Short Selling Turnover (Main Board) up to day close today' daily accrual. Collector: collectors/hk_shorts.py HkShortsTurnoverAdapter. Source is TODAY-ONLY (no backfill possible) — accrue-forward from 2026-07-03. Store: data/hk_shorts/turnover.parquet (GIT, small cross-sectional daily). CRITICAL: turnover != positions. Holiday/weekend/pre-open fetch returns empty data — treated as success heartbeat, NOT circuit-breaker trip. Staleness: >3 trading days. Phase-0 test at W6 (~1y accrual).",
+      "source": "collectors/hk_shorts.py (HkShortsTurnoverAdapter)",
+      "storage": "data/hk_shorts/turnover.parquet (GIT, small cross-sectional daily; not per-ticker)",
+      "track_json": null,
+      "hook": "phase0",
+      "claim_family": "hkca_h2b_short_turnover",
+      "started": "2026-07-03",
+      "come_back_on": "2027-07-03",
+      "come_back_note": "Min-accrual gate: >=252 trading days needed before phase-0 IC test. Do NOT test early — no backfill available.",
+      "maturation": ">=252 trading days accrued. Phase-0 IC: rank-IC of daily turnover_zscore vs next-1d/5d excess-vs-_HSI. DSR n_trials=30 + split-half.",
+      "status": "accruing",
+      "state": "Slice F shipped (PR hkca-w01a-hk-shorts): collectors/hk_shorts.py HkShortsTurnoverAdapter wired. Accruing from 2026-07-03; today-only source, no backfill. Holiday/weekend heartbeat confirmed. Nothing wired to build/render.",
+      "next_step": "Accrue ~1y. At 2027-07-03: run turnover-zscore rank-IC. Wire only if phase-0 clears sign-stability gate.",
+      "phase_hint": "W1/Slice-F — HK/CA masterplan §3 H2b"
     }
   ]
 }
