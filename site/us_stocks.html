@@ -843,6 +843,10 @@
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
   .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
   .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 20%,transparent)}
+  /* W6-C HOLD tracker chip — basing state after entry anchor (display-only, US standouts) */
+  .nb-hold{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
+  .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
+  .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
             padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
             background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
@@ -1715,8 +1719,6 @@
         
           <a class="actitem ai-theme" href="basket/reshoring.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Reshoring & Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/industrial_distribution.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Industrial Distribution & Capital Goods</span><span class="l-zh">工业分销与资本品</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
-        
           <a class="actitem" href="basket/us_sector_comm.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Communications</span><span class="l-zh">通讯</span></b> <span class="muted">XLC</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-flat" title="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">· +12</span><span class="acttag"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></a>
         
           <a class="actitem" href="basket/us_sector_industrials.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Industrials</span><span class="l-zh">工业</span></b> <span class="muted">XLI</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" title="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -18</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a>
@@ -1729,40 +1731,40 @@
         
         <div class="lst-collapse lst-cap6 is-collapsed">
         
-          <a class="actitem ai-theme" href="basket/payments_fintech.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Payments & Fintech</span><span class="l-zh">支付与金融科技</span></b><span class="ai-book" title="In the narrative-rotation model book at 25% — clears the validated absolute-trend gate · 已在叙事轮动模型组合中，权重 25%，通过已验证的绝对趋势门槛">★25%</span><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
-        
           <a class="actitem ai-theme" href="basket/insurance.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/payments_fintech.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Payments & Fintech</span><span class="l-zh">支付与金融科技</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
           <a class="actitem ai-theme" href="basket/us_sector_health.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/big_pharma.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
-        
           <a class="actitem ai-theme" href="basket/obesity_glp1.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/big_pharma.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
           <a class="actitem ai-theme" href="basket/us_sector_financials.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
           <a class="actitem ai-theme" href="basket/managed_care.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Managed Care & Insurers</span><span class="l-zh">管理式医疗与保险</span></b><span class="ai-book" title="In the narrative-rotation model book at 25% — clears the validated absolute-trend gate · 已在叙事轮动模型组合中，权重 25%，通过已验证的绝对趋势门槛">★25%</span><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/cybersecurity.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/cybersecurity.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></b><span class="ai-book" title="In the narrative-rotation model book at 25% — clears the validated absolute-trend gate · 已在叙事轮动模型组合中，权重 25%，通过已验证的绝对趋势门槛">★25%</span><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
           <a class="actitem" href="basket/us_sector_discretionary.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
         
         
-          <a class="actitem ai-theme" href="basket/critical_minerals.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Critical Minerals & Rare Earths</span><span class="l-zh">关键矿产与稀土</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
-        
-          <a class="actitem ai-theme" href="basket/ai_neoclouds.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">AI Neoclouds & HPC Hosting</span><span class="l-zh">AI 新云与高性能算力托管</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/uranium_miners.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Uranium & Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
           <a class="actitem ai-theme" href="basket/nuclear_power.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Nuclear & SMR Power</span><span class="l-zh">核电与小型模块化反应堆</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
+          <a class="actitem ai-theme" href="basket/critical_minerals.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Critical Minerals & Rare Earths</span><span class="l-zh">关键矿产与稀土</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+        
           <a class="actitem ai-theme" href="basket/us_sector_energy.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Energy (Equal-Weight)</span><span class="l-zh">能源（等权）</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/energy_complex.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/ai_neoclouds.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">AI Neoclouds & HPC Hosting</span><span class="l-zh">AI 新云与高性能算力托管</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+        
+          <a class="actitem ai-theme" href="basket/quantum_computing.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
           <a class="actitem ai-theme" href="basket/data_center_power.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Data-Center Power & Cooling</span><span class="l-zh">数据中心电力与散热</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/non_ai_tech.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Non-AI Tech & Hardware</span><span class="l-zh">非AI科技与硬件</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
-        
-          <a class="actitem ai-theme" href="basket/ai_semiconductors.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">AI Semiconductors</span><span class="l-zh">AI半导体</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/energy_complex.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
           <a class="actitem" href="basket/us_sector_energy.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Energy</span><span class="l-zh">能源</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
         
@@ -1832,6 +1834,8 @@
           <div class="nb-top">
             <span class="nb-tk">REZI</span>
             <span class="nb-nm">Resideo Technologies, Inc.</span>
+            
+            
             
             
             <span class="nb-px" data-sym="REZI" data-mkt="us">$30.66</span>
@@ -1951,6 +1955,8 @@
             <span class="nb-nm">S+P Global Inc</span>
             <span class="sig-gate sig-early" title="2D MACD-RSI crossed + 3D StochRSI crossed — an EARLY tier (fires before the 3D master). Tier T2 · weight 0.8. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-07-01 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◑ <span class="l-en">early</span><span class="l-zh">提前</span> <span class="sig-w">T2·0.8</span></span>
             
+            
+            
             <span class="nb-px" data-sym="SPGI" data-mkt="us">$414.97</span>
           </div>
           
@@ -2069,6 +2075,8 @@
           <div class="nb-top">
             <span class="nb-tk">COIN</span>
             <span class="nb-nm">Coinbase</span>
+            
+            
             
             
             <span class="nb-px" data-sym="COIN" data-mkt="us">$165.48</span>
@@ -2200,6 +2208,8 @@
             <span class="nb-nm">Atmus Filtration Technologies Inc.</span>
             
             
+            
+            
             <span class="nb-px" data-sym="ATMU" data-mkt="us">$49.71</span>
           </div>
           
@@ -2326,6 +2336,8 @@
             <span class="nb-nm">Rithm Capital</span>
             <span class="sig-gate sig-pending" title="master confluence buy just fired; forward reclaim-and-hold confirmation pending. Tier T1 · weight 1.0. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-07-02 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◔ <span class="l-en">forming</span><span class="l-zh">形成中</span> <span class="sig-w">T1·1.0</span></span>
             
+            
+            
             <span class="nb-px" data-sym="RITM" data-mkt="us">$9.09</span>
           </div>
           
@@ -2433,6 +2445,8 @@
           <div class="nb-top">
             <span class="nb-tk">LRN</span>
             <span class="nb-nm">Stride, Inc.</span>
+            
+            
             
             
             <span class="nb-px" data-sym="LRN" data-mkt="us">$90.44</span>
@@ -2553,6 +2567,8 @@
             <span class="nb-nm">F&G Annuities & Life, Inc.</span>
             
             
+            
+            
             <span class="nb-px" data-sym="FG" data-mkt="us">$27.94</span>
           </div>
           
@@ -2660,6 +2676,8 @@
           <div class="nb-top">
             <span class="nb-tk">MSCI</span>
             <span class="nb-nm">MSCI Inc.</span>
+            
+            
             
             
             <span class="nb-px" data-sym="MSCI" data-mkt="us">$603.11</span>
@@ -2781,6 +2799,8 @@
             <span class="nb-nm">Covista Inc.</span>
             <span class="sig-gate sig-early" title="3D StochRSI already crossed and the 2D MACD-RSI cross is PROJECTED within ~1–2 days — an early PREDICTION, not yet confirmed. Tier T3 · weight 0.6. shallow pullback cross. ~0.09 2D-bars to the cross. PROVISIONAL — projected off the incomplete 2D bucket and may repaint when it completes: a measured 23.8% of US T3 fresh fires (41/172) and 15.1% of CN (8/53) vanish within 4 sessions (calibration/provisional_replay.json, W6 #22). ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-07-02 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。T3为暂定评级：基于未完成的2日K线桶预测，桶完成后可能重绘（实测美股23.8%、中国15.1%的T3新信号消失）。">⋯ <span class="l-en">approaching</span><span class="l-zh">临近</span> <span class="sig-w">T3·0.6</span> <span class="prov-flag" title="Provisional — may repaint. This T3 grade is projected off the INCOMPLETE 2-day bucket; when the bucket completes, a measured 23.8% of US T3 fresh fires (41/172) and 15.1% of CN (8/53) un-cross or veto-flicker within 4 sessions (calibration/provisional_replay.json, W6 #22). T1/T2 measured 5.3%/8.8% — below the flip criterion, unflagged. · 暂定 — 可能重绘：该T3评级基于未完成的2日K线桶预测；桶完成后，实测美股23.8%（41/172）、中国15.1%（8/53）的T3新信号在4个交易日内消失。"><span class="l-en">provisional</span><span class="l-zh">暂定</span></span></span>
             
+            
+            
             <span class="nb-px" data-sym="CVSA" data-mkt="us">$129.88</span>
           </div>
           
@@ -2888,6 +2908,8 @@
           <div class="nb-top">
             <span class="nb-tk">ELV</span>
             <span class="nb-nm">Elevance Health Inc</span>
+            
+            
             
             
             <span class="nb-px" data-sym="ELV" data-mkt="us">$416.19</span>
@@ -3016,6 +3038,8 @@
           <div class="nb-top">
             <span class="nb-tk">AAPL</span>
             <span class="nb-nm">Apple Inc</span>
+            
+            
             
             
             <span class="nb-px" data-sym="AAPL" data-mkt="us">$294.38</span>
@@ -3147,6 +3171,8 @@
             <span class="nb-nm">News Corp (Class B)</span>
             <span class="sig-gate sig-early" title="2D-MACD pre-cross advance-warning. ONE door — confirm sector/leadership + your stop before acting. · mixed · 2026-07-01 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">⋯ <span class="l-en">approaching</span><span class="l-zh">临近</span></span>
             
+            
+            
             <span class="nb-px" data-sym="NWS" data-mkt="us">$30.17</span>
           </div>
           
@@ -3274,6 +3300,8 @@
             <span class="nb-nm">Chesapeake Utilities Corp.</span>
             
             
+            
+            
             <span class="nb-px" data-sym="CPK" data-mkt="us">$125.00</span>
           </div>
           
@@ -3390,6 +3418,8 @@
           <div class="nb-top">
             <span class="nb-tk">PCG</span>
             <span class="nb-nm">P G + E Corp</span>
+            
+            
             
             
             <span class="nb-px" data-sym="PCG" data-mkt="us">$16.57</span>
@@ -3521,6 +3551,8 @@
             <span class="nb-nm">Omnicom Group</span>
             
             <span class="nb-coiled star"><span class="l-en">⚡ Coiled ★</span><span class="l-zh">⚡ 蓄势 ★</span></span>
+            
+            
             <span class="nb-px" data-sym="OMC" data-mkt="us">$76.11</span>
           </div>
           
@@ -3639,6 +3671,8 @@
             <span class="nb-nm">Ingevity, Corp.</span>
             
             
+            
+            
             <span class="nb-px" data-sym="NGVT" data-mkt="us">$72.49</span>
           </div>
           
@@ -3754,6 +3788,8 @@
           <div class="nb-top">
             <span class="nb-tk">WMB</span>
             <span class="nb-nm">Williams Cos Inc</span>
+            
+            
             
             
             <span class="nb-px" data-sym="WMB" data-mkt="us">$72.77</span>
@@ -3874,6 +3910,8 @@
             <span class="nb-nm">Xcel Energy Inc</span>
             
             
+            
+            
             <span class="nb-px" data-sym="XEL" data-mkt="us">$79.70</span>
           </div>
           
@@ -3981,6 +4019,8 @@
           <div class="nb-top">
             <span class="nb-tk">KAI</span>
             <span class="nb-nm">Kadant Inc.</span>
+            
+            
             
             
             <span class="nb-px" data-sym="KAI" data-mkt="us">$309.00</span>
@@ -4098,6 +4138,8 @@
           <div class="nb-top">
             <span class="nb-tk">FTV</span>
             <span class="nb-nm">Fortive</span>
+            
+            
             
             
             <span class="nb-px" data-sym="FTV" data-mkt="us">$62.65</span>
@@ -4228,6 +4270,8 @@
             <span class="nb-nm">Terreno Realty Corporation</span>
             
             
+            
+            
             <span class="nb-px" data-sym="TRNO" data-mkt="us">$67.33</span>
           </div>
           
@@ -4346,6 +4390,8 @@
             <span class="nb-nm">OGE Energy</span>
             
             
+            
+            
             <span class="nb-px" data-sym="OGE" data-mkt="us">$49.44</span>
           </div>
           
@@ -4462,6 +4508,8 @@
           <div class="nb-top">
             <span class="nb-tk">AEP</span>
             <span class="nb-nm">American Electric Power</span>
+            
+            
             
             
             <span class="nb-px" data-sym="AEP" data-mkt="us">$135.05</span>
@@ -4590,6 +4638,8 @@
           <div class="nb-top">
             <span class="nb-tk">CUBE</span>
             <span class="nb-nm">CubeSmart</span>
+            
+            
             
             
             <span class="nb-px" data-sym="CUBE" data-mkt="us">$40.98</span>
