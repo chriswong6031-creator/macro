@@ -1834,6 +1834,25 @@
       "come_back_note": "Verdict: (a) A-3M-reversal read-through NO-GO (rank-IC -0.007 t -0.28 at 3m; dividend-neutral L/S NEGATIVE t -1.01; the only positive number, +1.71% top-5 long-only, is TR-vs-price dividend drift + shared HK/China beta, not skill; survivorship-robust null). (b) A-1M-momentum lead ACCRUE/near-GO -- rank-IC +0.034 (t 1.67), same sign at ~2w, survives H-own-return C1 control (keep 80%, sign OK), FDR-reject, split-half + era stable, but IC-t 1.67<2.0, L/S-t 1.51<2.0, DSR 0.846<0.90 at budget 36. (c) double-cheap interaction NO-GO/REFUTED -- double cell +3.09% (t 3.08) does NOT beat H-discount-alone +3.00% (t 3.86); the A-washout adds nothing over H3 premium. NOTHING WIRED. Come-back leg = (b) only, as the matched panel deepens (25 pairs, one correlated basket, t_eff ~209). Report reports/hkca-x1-phase0.md; code research/hk_x1_atwin_readthrough.py; raw research/hk_x1_results.json.",
       "n_trials_program_dsr": 36,
       "pr": "hkca-w7pre-x1"
+    },
+    {
+      "id": "hkca-c1b-commodity-flip-protective",
+      "title": "C1b -- bearish commodity-flip PROTECTIVE demote-gate (CA)",
+      "kind": "phase0_backtest",
+      "hypothesis": "After oil (CL_F) enters a confirmed BEAR regime (C1 slope_z +/-0.5-hyst +20d episode def, reused verbatim), (P1 sector) XEG.TO de-rates vs _GSPTSE, and (P2 name, 5y) within CA Energy the HIGH oil-beta tercile underperforms the LOW tercile (protective differential, PIT oil-beta, no look-ahead). Demote-gate frame (H4 bar): HAC t <= -2.0 + BH-FDR + split-half same-sign-neg + N >= 8 => GO-for-demote.",
+      "result": "P1 ACCRUE: oil BEAR->XEG mean -1.16%/4w, HAC t -1.78 (short of the -2.0 demote bar), one-sided-neg p 0.038 FDR-reject, split-half same-sign-neg (-0.45%/-1.96%), P(de-rate) 0.93, DSR-protective 0.24; builds 2w->6w. Bit-identical to the C1 exploratory oil->XEG BEAR leg (positive control). P2 NON-DECISION: only 7 oil-bear flips fall in the 2021-06-> name panel, 5 non-overlapping 4w episodes < the newey_west n<8 floor AND the pre-reg N>=8 power floor; raw differential directionally protective (-1.8%/4w, -5.2%/6w, hit_neg 0.8 at 6w, split-half same-sign-neg) but not decision-grade. Zero GO-for-demote.",
+      "status": "accruing",
+      "program": "hk_canada_stocks",
+      "wave": "W7-pre",
+      "channel": "C1b",
+      "phase": "ACCRUE",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2028-01-15",
+      "come_back_note": "Re-run when the CA canada_search name panel lengthens (2021-06-> today; the P2 name tier is the power-starved leg -- 5 non-overlapping oil-bear episodes < the n<8 HAC floor). P1 sector tier is full-history and decision-grade now (ACCRUE, sign-mirror of the C1 oil->XEG long ACCRUE); revisit if the -1.78 4w t clears -2.0 as more oil-bear episodes accrue or if a longer/PIT CA name history becomes available. Survivorship on P2 biases the protective differential TOWARD zero (delisted high-beta losers absent), so measured |D| is a lower bound -- any future GO-for-demote is conservative. NO WIRING regardless of verdict.",
+      "n_trials_program_dsr": 36,
+      "prereg": "research/C1b_COMMODITY_FLIP_PROTECTIVE_PREREG.md",
+      "report": "reports/c1b-commodity-flip-protective-phase0.md",
+      "pr": "hkca-w7pre-c1b"
     }
   ]
 }
