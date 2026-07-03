@@ -1,4 +1,41 @@
 {
-  "seen": {},
-  "_note": "W5 baseline — no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
+  "seen": {
+    "https://www.whitehouse.gov/?p=44280": {
+      "id": "wh-2026-06-30-supreme-court-bolsters-president-trumps-push-to-eliminate-transgender-insanity",
+      "at": "2026-07-03T11:18:52.930776+00:00",
+      "activated": false,
+      "importance": 15
+    },
+    "https://www.whitehouse.gov/?p=44247": {
+      "id": "wh-2026-06-30-trump-administration-nepa-reforms-a-win-for-all-americans",
+      "at": "2026-07-03T11:19:36.520189+00:00",
+      "activated": true,
+      "importance": 78
+    },
+    "https://www.whitehouse.gov/?p=44225": {
+      "id": "wh-2026-06-29-declaration-of-emergency-and-authorization-for-temporary-duty-free-importation-o",
+      "at": "2026-07-03T11:20:23.138888+00:00",
+      "activated": true,
+      "importance": 68
+    },
+    "https://www.whitehouse.gov/?p=44222": {
+      "id": "wh-2026-06-29-fact-sheet-president-donald-j-trump-declares-an-emergency-and-authorizes-the-tem",
+      "at": "2026-07-03T11:21:30.842085+00:00",
+      "activated": true,
+      "importance": 65
+    },
+    "https://www.whitehouse.gov/?p=44220": {
+      "id": "wh-2026-06-29-fact-sheet-president-donald-j-trump-lowers-the-cost-of-living-by-promoting-the-f",
+      "at": "2026-07-03T11:21:50.436570+00:00",
+      "activated": false,
+      "importance": 50
+    },
+    "https://www.whitehouse.gov/?p=44226": {
+      "id": "wh-2026-06-29-lowering-the-cost-of-living-by-promoting-the-freedom-to-fix",
+      "at": "2026-07-03T11:22:29.907236+00:00",
+      "activated": true,
+      "importance": 60
+    }
+  },
+  "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
 }

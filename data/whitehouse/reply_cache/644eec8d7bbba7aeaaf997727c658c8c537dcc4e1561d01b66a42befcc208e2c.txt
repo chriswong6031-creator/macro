@@ -1,0 +1,106 @@
+{
+  "activate": true,
+  "importance": 78,
+  "banner_days": 5,
+  "tone": "tailwind",
+  "banner_title": "Trump's NEPA overhaul unlocks federal land & permits — tailwind for energy, construction, defense & data centers",
+  "banner_title_zh": "特朗普NEPA改革放开联邦土地和许可——能源、建筑、国防和数据中心获提振",
+  "summary": "The White House reported sweeping NEPA procedural reforms that dramatically shorten federal environmental reviews and expand categorical exclusions. Together with new coal leasing, accelerated drilling permits, and streamlined reviews for AI data centers, nuclear, defense supply chains, and critical minerals, the policy reshapes the regulatory landscape for capital-intensive projects.",
+  "summary_zh": "白宫报告了大规模的NEPA程序改革，大幅缩短联邦环境审查时间并扩大类别豁免。配合新的煤炭租赁、加速钻探许可，以及针对人工智能数据中心、核能、国防供应链和关键矿产的简化审查，该政策重塑了资本密集型项目的监管环境。",
+  "analysis": "The release consolidates one year of interagency reforms to the National Environmental Policy Act, the main federal permitting law. By adopting a 'categorical exclusions-first' approach, agencies can approve routine projects—from timber harvesting to invasive species control to advanced nuclear reactors—with little or no formal review. The Department of the Interior (DOI) alone implemented emergency procedures that can clear energy and critical mineral projects in under 28 days, while the Bureau of Land Management (BLM) approved more drilling permits this fiscal year than any in the past 15 years and opened 13.1 million additional acres for coal leasing.\n\nFor markets, the transmission mechanism is straightforward: shorter, more predictable permitting lowers the cost of capital, reduces carrying costs, and pulls forward revenue for companies that depend on federal land, right-of-way, or environmental approvals. Energy producers on federal acreage, mining companies, pipeline operators, and defense contractors all see a direct reduction in regulatory risk. The policy also explicitly targets bottlenecks for AI data center infrastructure and home construction, extending the tailwind to real estate and technology-adjacent sectors.\n\nThe most acute near-term impact is in coal and federal-lands oil & gas, where leasing and permit volumes are materially rising. Medium term, the categorical exclusion for advanced nuclear (already used five times) and the $4.5 billion in streamlined defense industrial base investments signal that sectors previously paralyzed by NEPA litigation—nuclear, critical minerals processing, military supply chains—now have a viable path to execution.\n\nKey uncertainty remains litigation risk: environmental groups have historically used NEPA lawsuits to delay projects, and the new rules could face court challenges. However, the administration’s emphasis on defensible categorical exclusions and interagency coordination suggests it has strengthened the legal footing. For now, the direction of travel is a durable tailwind for permit-driven industries.",
+  "sectors": [
+    {
+      "name": "Oil & Gas E&P (federal lands)",
+      "impact": "tailwind",
+      "rationale": "Faster drilling permit approvals and emergency NEPA procedures reduce time-to-first-production and compliance costs."
+    },
+    {
+      "name": "Coal",
+      "impact": "tailwind",
+      "rationale": "13.1 million new acres for coal leasing and 76 coal-related permits approved directly expand the resource base and market access."
+    },
+    {
+      "name": "Nuclear / Uranium",
+      "impact": "tailwind",
+      "rationale": "Categorical exclusion for advanced reactors cuts licensing delays, benefiting developers and fuel suppliers."
+    },
+    {
+      "name": "Construction & Engineering",
+      "impact": "tailwind",
+      "rationale": "Streamlined environmental reviews for infrastructure and defense projects accelerate contract awards and reduce overhead."
+    },
+    {
+      "name": "Homebuilders",
+      "impact": "tailwind",
+      "rationale": "Executive order guidance to remove NEPA barriers to homebuilding lowers land development risk and cost."
+    },
+    {
+      "name": "Data Center REITs / Infrastructure",
+      "impact": "tailwind",
+      "rationale": "Expedited permitting for data center infrastructure supports rapid capacity expansion to meet AI demand."
+    },
+    {
+      "name": "Defense & Aerospace",
+      "impact": "tailwind",
+      "rationale": "DOW streamlined reviews for $4.5B in critical mineral and defense industrial base projects, easing supply chain bottlenecks."
+    },
+    {
+      "name": "Metals & Mining",
+      "impact": "tailwind",
+      "rationale": "Emergency procedures for critical mineral projects and BLM acreage openings support domestic extraction and processing."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "ARCH",
+      "direction": "benefit",
+      "rationale": "Leading U.S. thermal/met coal producer directly exposed to expanded federal leasing and permit approvals."
+    },
+    {
+      "symbol": "BTU",
+      "direction": "benefit",
+      "rationale": "Peabody Energy operates federal-land coal mines; new acreage and permits enhance reserve life and volume potential."
+    },
+    {
+      "symbol": "COP",
+      "direction": "benefit",
+      "rationale": "ConocoPhillips has significant federal onshore and offshore acreage; faster APD approvals improve capital efficiency."
+    },
+    {
+      "symbol": "EOG",
+      "direction": "benefit",
+      "rationale": "Major U.S. oil producer with federal land exposure in the Delaware Basin; permitting speed reduces well-cycle times."
+    },
+    {
+      "symbol": "CCJ",
+      "direction": "benefit",
+      "rationale": "Cameco is a key uranium supplier; advanced reactor categorical exclusion signals growing U.S. nuclear demand."
+    },
+    {
+      "symbol": "UUUU",
+      "direction": "benefit",
+      "rationale": "Energy Fuels is a U.S. uranium and rare earths miner; critical mineral streamlining directly lowers its project risk."
+    },
+    {
+      "symbol": "MTZ",
+      "direction": "benefit",
+      "rationale": "MasTec builds energy and infrastructure; NEPA reforms reduce project delays and improve backlog conversion."
+    },
+    {
+      "symbol": "LMT",
+      "direction": "benefit",
+      "rationale": "Lockheed Martin benefits from $4.5B defense supply chain investments with faster environmental reviews for new capacity."
+    },
+    {
+      "symbol": "DLR",
+      "direction": "benefit",
+      "rationale": "Digital Realty builds data centers; explicit permitting acceleration for data center infrastructure supports growth."
+    },
+    {
+      "symbol": "DHI",
+      "direction": "benefit",
+      "rationale": "D.R. Horton faces lower land development costs and delays as NEPA barriers to home construction are removed."
+    }
+  ],
+  "confidence": "medium"
+}

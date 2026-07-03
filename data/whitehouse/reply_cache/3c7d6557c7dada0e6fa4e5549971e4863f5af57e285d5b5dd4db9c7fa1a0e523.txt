@@ -1,0 +1,56 @@
+{
+  "activate": true,
+  "importance": 60,
+  "banner_days": 3,
+  "tone": "tailwind",
+  "banner_title": "Aftermarket-parts deregulation: EPA to bypass CARB bottleneck, ease tampering rules — repair cost tailwind",
+  "banner_title_zh": "售后零件松绑：EPA绕开加州认证瓶颈，放宽防篡改执法 — 维修成本利好",
+  "summary": "The White House orders EPA to break California's monopoly on aftermarket emissions-part certification, encourage alternative certifiers, and deprioritize civil tampering enforcement against DIY repairs, aiming to lower vehicle fix costs and boost the aftermarket-parts industry.",
+  "summary_zh": "白宫指示环保署打破加州对售后排放零件认证的垄断，鼓励替代认证机构，并降低对自行维修民事执法的优先级，旨在降低车辆维修成本，推动汽车售后零件行业。",
+  "analysis": "This memorandum directly targets the costly and backlogged CARB certification process that has limited the supply of compliant aftermarket emissions parts. By pushing the EPA to accept new testing organizations and expedite approvals, it creates a faster, cheaper pathway for parts to reach the market, easing a multi-year bottleneck. Simultaneously, deprioritizing enforcement against individuals who fix their own vehicles in good faith removes legal risk that has suppressed demand for DIY repairs and independent shop services.\n\nThe transmission mechanism is straightforward: lower regulatory barriers expand the available range and reduce the cost of aftermarket parts, making repairs more affordable relative to new-car prices. That should increase the addressable market for parts retailers, distributors, and manufacturers, while putting modest competitive pressure on OEM-service pricing. The policy also signals a broader regulatory thaw under the current administration, which has already rolled back vehicle emissions rules.\n\nFor markets, the immediate beneficiaries are auto-parts retail chains and wholesale distributors that derive significant revenue from do-it-yourself and do-it-for-me repair demand. A faster certification pipeline could also reduce inventory write-downs and shrink lead times. The directive's real power depends on how swiftly the EPA acts and whether California challenges it in court, but the economic direction is clear.\n\nUncertainty centers on the 30-day guidance and the EPA's capacity to approve new certifiers quickly. If implementation bogs down, the tailwind may fade. However, the political signal of breaking CARB's stranglehold is powerful enough to lift sentiment in the aftermarket sector over the near term.",
+  "sectors": [
+    {
+      "name": "Automotive Aftermarket Retailers",
+      "impact": "tailwind",
+      "rationale": "Lower-cost, more widely available compliant parts and reduced DIY legal risk boost repair demand and foot traffic."
+    },
+    {
+      "name": "Aftermarket Parts Manufacturers & Distributors",
+      "impact": "tailwind",
+      "rationale": "Breaking CARB's certification bottleneck expands the market they can serve and slashes time-to-market for new parts."
+    },
+    {
+      "name": "Independent Auto Repair Shops",
+      "impact": "tailwind",
+      "rationale": "Removal of tampering overhang and cheaper parts supports their price-competitive position versus dealerships."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "AZO",
+      "direction": "benefit",
+      "rationale": "Largest US auto parts retailer; higher DIY/DIFM demand directly increases same-store sales."
+    },
+    {
+      "symbol": "ORLY",
+      "direction": "benefit",
+      "rationale": "Major aftermarket retailer with heavy exposure to professional installer customers, who benefit from cheaper compliant parts."
+    },
+    {
+      "symbol": "AAP",
+      "direction": "benefit",
+      "rationale": "Pure-play aftermarket retailer set to gain from reduced regulatory costs and greater parts availability."
+    },
+    {
+      "symbol": "DORM",
+      "directive": "benefit",
+      "rationale": "Leading supplier of replacement parts; faster certification could unlock new emissions-related product categories."
+    },
+    {
+      "symbol": "LKQ",
+      "direction": "benefit",
+      "rationale": "North America's largest alternative parts distributor stands to expand its certified emissions-part offerings."
+    }
+  ],
+  "confidence": "medium"
+}

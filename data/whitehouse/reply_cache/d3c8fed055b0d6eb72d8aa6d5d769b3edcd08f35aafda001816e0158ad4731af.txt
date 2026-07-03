@@ -1,0 +1,31 @@
+{
+  "activate": true,
+  "importance": 68,
+  "banner_days": 3,
+  "tone": "mixed",
+  "banner_title": "Trump duty-free Moroccan phosphate — US producers squeezed, farmers get cost relief",
+  "banner_title_zh": "特朗普对摩洛哥磷肥关税豁免——美国生产商受压，农户获成本缓解",
+  "summary": "President Trump invokes emergency powers to temporarily remove all duties on phosphate fertilizer imports from Morocco, aiming to offset global supply disruptions and cool farm input costs. The move benefits US farmers and food production but threatens domestic phosphate producers such as Mosaic.",
+  "summary_zh": "特朗普总统动用紧急权力，暂时取消对摩洛哥磷肥的所有进口关税，旨在缓解全球供应链中断并降低农资成本。此举有利于美国农户和粮食生产，但威胁到美盛等国内磷肥生产商。",
+  "analysis": "The proclamation uses Section 318 of the Tariff Act to suspend for up to 8 months all duties—including countervailing and anti-dumping duties—on Moroccan phosphate fertilizers. It responds to a declared emergency of insufficient domestic supply and global supply-chain disruptions. This immediately increases competitive supply in the US market, likely putting downward pressure on domestic phosphate prices (DAP/MAP). That lowers input costs for corn, soybean, and wheat growers, supporting farm margins and potentially easing food-price pressures. US phosphate producers, particularly The Mosaic Company, face headwinds: duty-free Moroccan imports will erode their pricing power and market share, compressing margins. The impact magnitude depends on how much Moroccan product actually flows in, but the signal is clearly negative for domestic mining/manufacturing. Key uncertainties: whether the emergency will be extended beyond 8 months, the volume of Moroccan imports permitted, and geopolitical reactions. The temporary nature limits long-term structural damage to domestic players, but near-term sentiment in fertilizer equities will be bearish.",
+  "sectors": [
+    {
+      "name": "Phosphate Fertilizer Producers",
+      "impact": "headwind",
+      "rationale": "Duty-free Moroccan imports increase competition and lower domestic phosphate prices, squeezing margins."
+    },
+    {
+      "name": "Agricultural Producers",
+      "impact": "tailwind",
+      "rationale": "Lower input costs directly support crop margins and help ensure a stable domestic food supply."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "MOS",
+      "direction": "hurt",
+      "rationale": "Largest US phosphate producer; faces direct margin compression from duty-free Moroccan competition."
+    }
+  ],
+  "confidence": "medium"
+}

@@ -1,0 +1,31 @@
+{
+  "activate": true,
+  "importance": 65,
+  "banner_days": 3,
+  "tone": "mixed",
+  "banner_title": "Trump lifts phosphate duties from Morocco — farm relief, domestic producers hit",
+  "banner_title_zh": "特朗普暂停摩洛哥磷酸盐关税——农场受益，国内生产商受损",
+  "summary": "President Trump declared an emergency to temporarily suspend anti-dumping and countervailing duties on Moroccan phosphate fertilizer for up to 8 months, aiming to boost supply and lower costs for US farmers. The move pressures domestic phosphate producers while offering relief to the agricultural sector.",
+  "summary_zh": "特朗普宣布紧急状态，临时中止对摩洛哥磷酸盐化肥的反倾销和反补贴税，最长8个月，以增加供应并降低美国农民成本。此举对国内磷酸盐生产商构成压力，同时为农业部门提供缓解。",
+  "analysis": "The proclamation suspends U.S. duties on phosphate fertilizer from Morocco, a key global supplier, for eight months or until the emergency ends. This directly increases the supply of competitively priced phosphate, which will likely drive down domestic prices. U.S. farmers, facing elevated input costs, stand to benefit from lower fertilizer bills, improving crop net margins.\n\nFor domestic producers, primarily Mosaic (MOS), the suspension undermines the protection they previously enjoyed under anti-dumping and countervailing duties. The company’s realized phosphate prices could come under pressure, squeezing margins at a time when the industry is already navigating demand uncertainty. The impact may be amplified if Moroccan imports surge quickly.\n\nThe transmission to food prices is indirect but notable: lower fertilizer costs can ease one of the key cost drivers for corn, soybeans, and other crops, potentially tempering food inflation over time. However, the lags are long, and the immediate market read will focus on the tug-of-war between agricultural beneficiaries and fertilizer producers.\n\nUncertainty revolves around the duration—eight months is temporary, but the emergency declaration signals potential for extension. The volume of Moroccan phosphate that actually enters the U.S. market will determine the price impact. Additionally, domestic producers may lobby for reinstatement or challenge the move.",
+  "sectors": [
+    {
+      "name": "Crop Producers & Agribusiness",
+      "impact": "tailwind",
+      "rationale": "Lower fertilizer costs improve farm profitability and may encourage expanded acreage."
+    },
+    {
+      "name": "U.S. Phosphate Fertilizer Producers",
+      "impact": "headwind",
+      "rationale": "Increased import competition erodes pricing power and margins."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "MOS",
+      "direction": "hurt",
+      "rationale": "Largest U.S. phosphate producer faces price pressure from duty-free Moroccan imports."
+    }
+  ],
+  "confidence": "high"
+}
