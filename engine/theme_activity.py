@@ -27,12 +27,27 @@ CROWDING sources (off-exchange short ratio, WSB) are deliberately NOT fused here
 asymmetry invariant: independent real-activity divergence UPGRADES ahead of price; crowding
 only ever trims).
 
+W0d extensions:
+  * run-rate surprise (rr_surprise) — DOES alter fused_obs_z BY DESIGN: a 30% intra-leg blend
+    inside the usaspending metric before the cross-sectional z (masterplan W0d; corr with the
+    YoY metric 0.319 = additive), zeroed during US fiscal-year-end surge months (Sep/Oct) via
+    the LAG-derived gate (R9b). The real invariant: this module's output stays on the
+    context-only radar path (radar is_context_only) — nothing here reaches stock_score,
+    spotlight, or regime.classify. The two extensions below ARE display-only and never
+    enter fused_obs_z/fused_accel:
+  * pipeline_to_award — count-based SAM→USAspending conversion context per basket; PIPELINE_LAG
+    is a labeled assumption, not backtested. Display detail only, never enters fused_obs_z.
+  * new_programs — first-ever NAICS/CFDA code appearance per basket, loaded from
+    data/theme_activity/program_ledger.parquet (written by collectors at run time). Binary
+    regime event, not a z-scored leg.
+
 This module owns the shared primitives (robust_z + source_accel + the YoY constants);
 engine/radar.py imports them. It does NOT import radar (no cycle). Display/context only.
 """
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -54,6 +69,30 @@ Z_CLAMP = 3.5            # winsorise robust-z (tight cross-section -> tiny MAD -
 NEWS_WEIGHT = 0.5        # the modeled-news leg carries a deliberately low fusion weight
 QUIVER_RECENT_D = 60     # Quiver event tables are forward-accumulating -> recent vs prior window
 QUIVER_PRIOR_D = 60      # (NOT YoY: those tables don't have a year of history yet)
+
+# --- W0d: run-rate surprise constants ----------------------------------------
+# Blend weight of rr_surprise_metric inside the usaspending leg metric (before cross-sectional z).
+# Zeroed via _rr_sept_gate() during the US fiscal-year-end surge window (Sep/Oct).
+# R9b: the gate derives from LAG_MONTHS — never hardcode calendar months.
+RR_WEIGHT = 0.30          # 30% rr_surprise, 70% YoY; correlation with YoY leg = 0.319 (additive)
+RUNRATE_TRAIL_M = 9       # trailing months for run-rate denominator (excludes recent window)
+# Minimum history (after lag drop) needed to compute rr_surprise = RECENT_MONTHS + RUNRATE_TRAIL_M
+_RR_MIN_HISTORY = RECENT_MONTHS + RUNRATE_TRAIL_M  # 12 months of usable data
+
+# US fiscal-year-end surge months: Sep (9) + Oct (10). Awards flood in on Sep 30 deadline and
+# get posted in Oct. rr_surprise fires a false positive every year in these months; gate it.
+_SEPT_SURGE_MONTHS = frozenset({9, 10})
+
+# --- W0d: pipeline-to-award constants ----------------------------------------
+# Labeled assumption: SAM solicitation -> USAspending award lag by basket category.
+# NOT backtested — 26 months of obligations history is insufficient to empirically validate.
+# Display context only; never enters fused_obs_z.
+PIPELINE_LAG_MONTHS: dict[str, int] = {
+    "defense": 12, "space_economy": 12, "nuclear_power": 18,
+    "ai_semiconductors": 9, "semicap_equipment": 9,
+    "critical_minerals": 12, "power_grid": 9,
+    "_default": 12,
+}
 
 # fusable spend/activity sources (crowding sources are handled separately, down-size only).
 # Two kinds: "wide" = a date-indexed [month x ticker] store series read YoY (usaspending);
@@ -106,6 +145,25 @@ def robust_z(values: list[float]) -> list[float]:
     return [0.0 if np.isnan(v) else float(np.clip((v - med) / scale, -Z_CLAMP, Z_CLAMP)) for v in arr]
 
 
+def _rr_sept_gate(monthly: pd.Series) -> float:
+    """Return the effective rr_surprise blend weight after the R9b September gate.
+
+    The US fiscal year ends Sep 30; obligations flood in during Sep–Oct and cause a false
+    rr_surprise spike every year.  Gate: zero RR_WEIGHT when the LAG-adjusted recent window
+    (the last RECENT_MONTHS rows of `monthly`, which has already had LAG_MONTHS dropped)
+    overlaps the surge months {9, 10}.
+
+    Derivation is PURELY from the LAG_MONTHS constant — no hardcoded calendar month numbers
+    appear here (R9b ruling).  The surge months set (_SEPT_SURGE_MONTHS) is defined once at
+    module level as the policy constant."""
+    if len(monthly) < RECENT_MONTHS:
+        return 0.0
+    recent_idx = monthly.index[-RECENT_MONTHS:]
+    if any(ts.month in _SEPT_SURGE_MONTHS for ts in recent_idx):
+        return 0.0
+    return RR_WEIGHT
+
+
 def source_accel(wide: pd.DataFrame, covered: list[str], *, signed: bool = False,
                  min_base: float = MIN_BASE_USD, recent_months: int = RECENT_MONTHS,
                  seasonal: bool = True) -> dict | None:
@@ -116,7 +174,13 @@ def source_accel(wide: pd.DataFrame, covered: list[str], *, signed: bool = False
     seasonal=True (federal CONTRACTS): prior = the SAME `recent_months` a year ago (kills the
     federal fiscal-year-end seasonality + award-posting lag). seasonal=False (lumpy/episodic
     GRANTS): prior = the immediately-preceding `recent_months` (sequential) — grants are
-    one-off events with no clean YoY base, so a year-ago window is usually empty."""
+    one-off events with no clean YoY base, so a year-ago window is usually empty.
+
+    W0d: for seasonal=True (usaspending obligations only), also computes rr_surprise — the
+    ratio of the recent window to the trailing RUNRATE_TRAIL_M month average.  This is a
+    step-change detector that is additive (corr with YoY=0.319) and blended at 30% inside
+    the returned metric.  The blend weight is zeroed by _rr_sept_gate() during Sep/Oct per
+    R9b.  rr_surprise and rr_surprise_metric are returned as extra keys for display."""
     cols = [c for c in covered if c in wide.columns]
     if len(cols) < MIN_COVERED:
         return None
@@ -140,9 +204,28 @@ def source_accel(wide: pd.DataFrame, covered: list[str], *, signed: bool = False
             return None
         accel = float(np.clip(recent / prior, *ACCEL_CLAMP))
         metric = float(np.log(accel))
-    return {"accel": None if accel is None else round(accel, 3),
-            "recent_3m_usd": round(recent, 0), "base_3m_usd": round(prior, 0),
-            "metric": float(metric), "n_covered": len(cols), "covered": cols}
+
+    result: dict = {"accel": None if accel is None else round(accel, 3),
+                    "recent_3m_usd": round(recent, 0), "base_3m_usd": round(prior, 0),
+                    "metric": float(metric), "n_covered": len(cols), "covered": cols}
+
+    # W0d: run-rate surprise — seasonal leg only, when sufficient trailing history exists.
+    # Blend (with September gate) inside metric BEFORE returning; do not add a separate SOURCES leg.
+    if seasonal and not signed and len(monthly) >= _RR_MIN_HISTORY:
+        trail_window = monthly.iloc[-(recent_months + RUNRATE_TRAIL_M):-recent_months]
+        trail_avg = float(trail_window.mean())  # per-month average over trailing 9 months
+        if trail_avg > 0 and trail_avg * recent_months >= min_base:
+            rr_raw = float(np.clip(recent / (trail_avg * recent_months), *ACCEL_CLAMP))
+            rr_metric = float(np.log(rr_raw))
+            rr_w = _rr_sept_gate(monthly)
+            result["rr_surprise"] = round(rr_raw, 3)
+            result["rr_surprise_metric"] = round(rr_metric, 4)
+            result["rr_sept_gated"] = rr_w == 0.0
+            if rr_w > 0.0:
+                # Blend inside the metric before cross-sectional z (R9b: zero during surge months)
+                result["metric"] = float((1.0 - rr_w) * metric + rr_w * rr_metric)
+
+    return result
 
 
 def _live_members(b: dict) -> list[str]:
@@ -293,11 +376,101 @@ def _theme_event_metric(src: dict, bid: str, *, frame: pd.DataFrame | None) -> d
             "n_covered": max(n_cov, int(recent)), "covered": covered}
 
 
+def pipeline_to_award_ratio(basket_id: str, members: list[str],
+                             opp_frame: pd.DataFrame | None,
+                             oblig_wide: pd.DataFrame | None,
+                             *, lag_months: int | None = None) -> dict | None:
+    """Count-based SAM->USAspending pipeline conversion context per basket.
+
+    Joins SAM solicitation counts (opp_frame, basket-indexed) at time T to the USAspending
+    obligation dollars that materialised approximately lag_months later for the same basket.
+    Returns a display-only dict — NEVER enters fused_obs_z (lag is a labeled assumption,
+    not backtested; per R9c, this is count-based because SAM dollar values are ~20-30%
+    populated on presolicitations).
+
+    Returns None when either input is absent, basket is not in opp_frame, or history is
+    too thin for the lag window."""
+    if opp_frame is None or oblig_wide is None:
+        return None
+    if opp_frame.empty or basket_id not in opp_frame.index:
+        return None
+    try:
+        opp_count = float(opp_frame.loc[basket_id, "recent_count"] or 0)
+    except (KeyError, TypeError, ValueError):
+        return None
+    if opp_count <= 0:
+        return None
+    lag = lag_months if lag_months is not None else PIPELINE_LAG_MONTHS.get(
+        basket_id, PIPELINE_LAG_MONTHS["_default"])
+    cols = [c for c in members if c in oblig_wide.columns]
+    if len(cols) < MIN_COVERED:
+        return None
+    monthly = oblig_wide[cols].sum(axis=1, min_count=1).dropna().sort_index()
+    # Slice the lagged award window: months that would correspond to the prior SAM 90d window
+    # offset by `lag` months back from the most-recent complete month.
+    # After LAG_MONTHS trim the usable tail is monthly[-1]; the lagged window is
+    # months[-(LAG_MONTHS + lag + RECENT_MONTHS):-(LAG_MONTHS + lag)] but we use the raw
+    # (un-trimmed) frame here so the slice is: months[-(lag + RECENT_MONTHS):-lag].
+    if len(monthly) < lag + RECENT_MONTHS + 1:
+        return None
+    lag_window = monthly.iloc[-(lag + RECENT_MONTHS):-lag]
+    if len(lag_window) < 2:
+        return None
+    award_usd = float(lag_window.sum())
+    if award_usd < MIN_BASE_USD:
+        return None
+    return {
+        "opp_count_recent": int(opp_count),
+        "award_usd_lagged": round(award_usd, 0),
+        "award_per_opp_usd": round(award_usd / opp_count, 0),
+        "lag_months_assumption": lag,
+        "n_cols": len(cols),
+    }
+
+
+def _load_new_program_events(root=None) -> dict[str, list[dict]]:
+    """Load the program ledger parquet (first-seen NAICS/CFDA per basket).
+
+    Returns {basket_id: [event, ...]} where each event has keys: naics_or_cfda, source,
+    first_seen_date, title.  The ledger is written by collectors (sam_gov / grants_gov) at
+    collect time; absent file -> returns {} gracefully (no error).
+
+    Limitation: collectors do not yet persist per-opportunity code identity (only aggregated
+    counts), so the ledger only populates once that collector-side hook is active.  This
+    function activates when the file appears — callers need not change."""
+    try:
+        data_dir = Path(root) if root else config.data_dir()
+        p = data_dir / "theme_activity" / "program_ledger.parquet"
+        if not p.exists():
+            return {}
+        df = pd.read_parquet(p)
+        if df.empty or "basket_id" not in df.columns:
+            return {}
+        result: dict[str, list[dict]] = {}
+        for _, row in df.iterrows():
+            bid = str(row["basket_id"])
+            result.setdefault(bid, []).append({
+                k: row[k] for k in df.columns if k != "basket_id"
+            })
+        return result
+    except Exception as e:  # noqa: BLE001
+        log.debug("program_ledger load failed: %s", e)
+        return {}
+
+
 def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = None,
                           root=None, news: bool = True, today=None) -> dict:
     """Per-basket fused real-activity observable. Returns {basket_id: {...}} for every
     basket with >=1 usable source. Two-pass: per-source raw metrics, then cross-sectional
-    robust-z + weight fusion. Pure-ish: inject sources_data for hermetic tests."""
+    robust-z + weight fusion. Pure-ish: inject sources_data for hermetic tests.
+
+    W0d extensions (NOTE: rr_surprise DOES enter fused_obs_z — it blends into the usaspending
+    leg metric at RR_WEIGHT before the cross-sectional z, by design; only pipeline_to_award and
+    new_programs are display-only and outside the fused paths):
+      out[bid]["primary"]["rr_surprise"]    — run-rate ratio (recent / trailing avg); None if gated
+      out[bid]["primary"]["rr_sept_gated"] — True if Sep/Oct gate zeroed rr blend this month
+      out[bid]["pipeline_to_award"]        — SAM->USAspending count context dict or None
+      out[bid]["new_programs"]             — list of first-seen NAICS/CFDA events (max 5)"""
     baskets = (baskets_payload or {}).get("baskets") or []
     if not baskets:
         return {}
@@ -313,6 +486,10 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
             events = news_flow.load_events(root=root)
         except Exception as e:  # noqa: BLE001
             log.debug("news events load failed: %s", e)
+
+    # W0d: load program ledger once (graceful absent)
+    new_prog_events = _load_new_program_events(root=root)
+
     raw: dict[str, dict] = {}
     for b in baskets:
         bid = b.get("id")
@@ -342,7 +519,7 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
         # require >=1 HARD source (spend / alt-data); the coarse news leg only ENRICHES a
         # basket that already has hard activity data — it never qualifies one on its own.
         if per_src:
-            raw[bid] = {"sources": per_src, "news": news_leg}
+            raw[bid] = {"sources": per_src, "news": news_leg, "members": members}
 
     if not raw:
         return {}
@@ -361,6 +538,7 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
     out: dict[str, dict] = {}
     for bid in bids:
         present = raw[bid]["sources"]
+        members = raw[bid]["members"]
         leg_list, num, den = [], 0.0, 0.0
         ln_accel_num, ln_accel_den = 0.0, 0.0
         for src in SOURCES:
@@ -396,6 +574,12 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
         else:
             obs_dir = 1 if fused_obs_z >= 0.75 else (-1 if fused_obs_z <= -0.75 else 0)
         primary = present.get("usaspending") or next(iter(present.values()), None)
+
+        # W0d: pipeline-to-award context (display-only; opp_frame from sam_presolicitation)
+        opp_frame = loaded.get("sam_presolicitation")
+        oblig_wide = loaded.get("usaspending")
+        pta = pipeline_to_award_ratio(bid, members, opp_frame, oblig_wide)
+
         out[bid] = {
             "fused_obs_z": round(fused_obs_z, 3),
             "fused_accel": None if fused_accel is None else round(fused_accel, 3),
@@ -405,7 +589,14 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
             "primary": None if primary is None else {
                 "accel": primary["accel"], "recent_3m_usd": primary["recent_3m_usd"],
                 "base_3m_usd": primary["base_3m_usd"], "n_covered": primary["n_covered"],
-                "covered": primary["covered"]},
+                "covered": primary["covered"],
+                # W0d: rr_surprise display fields (None when gated or absent)
+                "rr_surprise": primary.get("rr_surprise"),
+                "rr_sept_gated": primary.get("rr_sept_gated", False),
+            },
             "news": news_leg,
+            # W0d display-only extensions
+            "pipeline_to_award": pta,
+            "new_programs": new_prog_events.get(bid, [])[-5:],
         }
     return out
