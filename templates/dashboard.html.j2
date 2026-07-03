@@ -602,9 +602,45 @@
   .nb-ax .axt { height: 3px; border-radius: 2px; background: var(--line); margin-top: 1px; overflow: hidden; }
   .nb-ax .axf { height: 100%; background: var(--g-cold); border-radius: 2px; }
   .nb-ax.ax-na .axf { background: transparent; }
-  .nb-cau { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
-  .nb-cau span { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
-                 color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel)); }
+  /* ---- Caution icon + popover (replaces old pill-row) ---- */
+  .nb-cau { position: relative; display: inline-flex; margin-top: 4px; }
+  .nb-cau-btn {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 0 5px 0 4px; height: 18px; border-radius: 9px; border: none; cursor: pointer;
+    font-size: 9px; font-weight: 700; line-height: 1;
+    color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, var(--panel));
+    text-decoration: none;
+    animation: nb-cau-pulse 2.5s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { .nb-cau-btn { animation: none; } }
+  @keyframes nb-cau-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .55; }
+  }
+  .nb-cau-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 13px; height: 13px; border-radius: 50%; font-size: 8px; font-weight: 800;
+    background: var(--warn); color: var(--panel);
+  }
+  .nb-cau-pop {
+    display: none; position: absolute; z-index: 120; bottom: calc(100% + 5px); left: 0;
+    min-width: 180px; max-width: min(260px, calc(100vw - 24px));
+    padding: 7px 9px; border-radius: 8px;
+    background: var(--panel); border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line));
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    font-size: 10px; font-weight: 600; line-height: 1.45; color: var(--warn);
+    pointer-events: none;
+  }
+  .nb-cau-pop .cau-row { display: block; padding: 2px 0; }
+  .nb-cau-pop .cau-row + .cau-row { border-top: 1px solid color-mix(in srgb, var(--warn) 20%, var(--line)); padding-top: 4px; margin-top: 2px; }
+  /* Show on hover/focus (desktop) */
+  .nb-cau:hover .nb-cau-pop,
+  .nb-cau:focus-within .nb-cau-pop,
+  .nb-cau.nb-cau-open .nb-cau-pop { display: block; pointer-events: auto; }
+  /* Flip to below if near top of viewport (added by JS) */
+  .nb-cau.pop-below .nb-cau-pop { bottom: auto; top: calc(100% + 5px); }
+  /* Clamp to right edge */
+  .nb-cau.pop-right .nb-cau-pop { left: auto; right: 0; }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
   /* ---- Entry-timing gauge (the SECOND gauge: "buy now / wait / extended") ---- */
   .nb-entry { margin: 5px 0 1px; padding: 5px 7px; border-radius: 8px;
@@ -2575,7 +2611,7 @@
               {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" title="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal · 需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>
               {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" title="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal · 需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
           </div>
-          {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
+          {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
           {# only NAME-SPECIFIC notes here (e.g. favourable risk-cone); the generic
              percentile-rank caveat + edge-basis are hoisted to the one .nb-legend above. #}
           {% if c.notes %}{% for nt in c.notes if nt.kind != 'rank' %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
@@ -3135,6 +3171,42 @@ window.__CHART_SWAP__ = {
   document.addEventListener('pointerover', function(e){
     var h = e.target.closest && e.target.closest('.help');
     if (h) place(h);
+  }, true);
+})();
+</script>
+<script>
+/* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
+   Also corrects popover position (flip above/below, clamp to right edge). */
+(function(){
+  function placePop(wrap){
+    var pop = wrap.querySelector('.nb-cau-pop');
+    if (!pop) return;
+    var r = wrap.getBoundingClientRect();
+    wrap.classList.toggle('pop-below', r.top < 180);
+    wrap.classList.toggle('pop-right', r.left > window.innerWidth - 200);
+  }
+  /* Tap the button → toggle open/closed */
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.nb-cau-btn');
+    if (btn){
+      e.preventDefault(); e.stopPropagation();
+      var wrap = btn.closest('.nb-cau');
+      if (!wrap) return;
+      var wasOpen = wrap.classList.contains('nb-cau-open');
+      /* close any other open popovers */
+      document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      if (!wasOpen){ placePop(wrap); wrap.classList.add('nb-cau-open'); }
+    } else {
+      /* outside tap: close all */
+      if (!e.target.closest('.nb-cau-pop')){
+        document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      }
+    }
+  }, true);
+  /* Also position-correct on hover (desktop) */
+  document.addEventListener('pointerover', function(e){
+    var wrap = e.target.closest && e.target.closest('.nb-cau');
+    if (wrap) placePop(wrap);
   }, true);
 })();
 </script>
