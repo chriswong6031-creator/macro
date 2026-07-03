@@ -15,6 +15,18 @@ NEW=$(git -C "$APP_DIR" rev-parse FETCH_HEAD)
 CHANGED=$(git -C "$APP_DIR" diff --name-only "$OLD" "$NEW" 2>/dev/null || true)
 git -C "$APP_DIR" reset --hard -q FETCH_HEAD
 
+# Publish the served tree ATOMICALLY. `git reset --hard` above rewrites changed
+# files IN PLACE (truncate-then-write), so if Caddy's root were the git work-tree
+# it could hand out a 0-byte file mid-reset — and the CDN would cache that empty
+# 200 (the 2026-07-03 white-page incident: a blank us_stocks/macro/china served
+# for ~an hour from a poisoned EdgeOne edge entry). So the Caddy root is a SEPARATE
+# dir OUTSIDE the git tree (see Caddyfile: root /opt/macro/site.served), refreshed
+# here by rsync — whose per-file temp-write + rename() is atomic on the same
+# filesystem, so a concurrent read sees either the whole old file or the whole new
+# one, never a partial. --delete prunes pages removed upstream.
+mkdir -p "$APP_DIR/site.served"
+rsync -a --delete "$APP_DIR/site/" "$APP_DIR/site.served/"
+
 # Caddyfile: reinstall + validate + reload ONLY when it actually changed (a bad
 # config can never take the site down — reload is gated on `caddy validate`).
 if ! cmp -s "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile; then
