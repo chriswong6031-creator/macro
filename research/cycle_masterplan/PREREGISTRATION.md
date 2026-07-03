@@ -164,6 +164,13 @@ results commit). The STOP rule is binding and written before the run.
 | **LL-A** | some ordered pair's lagged Δphase-position leads | ≥1 pair×lag survives BH-FDR q=0.10 across ALL pairs×lags on the ≤2017 TRAIN cross-correlation (Δosc, block-bootstrap null band) | `leadlag_phase0.json` → `stageA.fdr_survivors` | 0.10 (FDR-controlled by construction) | `leadlag_A` (q=0.10) |
 | **LL-B** | knowing the leader's turn improves the follower's OOS hazard | for the frozen top-K=20 pairs: pooled OOS 3m Brier improvement ≥ 2% AND positive in ≥2/3 walk-forward year-blocks AND paired month-block bootstrap 90% CI on ΔBrier excludes 0 | `leadlag_phase0.json` → `stageB.{rel_brier_improvement, year_block_signs, ci90}` | ~0.05 | `leadlag_B` (q=0.10) |
 
+### W5.1 results (2026-07-03 — criteria above UNCHANGED, two-commit discipline observed)
+
+| id | criterion (verbatim, frozen) | result | judged by | date |
+|---|---|---|---|---|
+| **LL-A** | ≥1 pair×lag survives BH-FDR q=0.10 on ≤2017 TRAIN cross-correlation | **PASS** — 136 of 8,253 pair×lag tests survive BH-FDR (q=0.10). Top-20 frozen to `data/leadlag/frozen_pairs.json`. Stage A gate passes; proceed to Stage B. | `leadlag_phase0.json` → `stageA.n_fdr_survivors=136` | 2026-07-03 |
+| **LL-B** | pooled OOS 3m Brier improvement ≥ 2% AND positive in ≥2/3 year-blocks AND CI₉₀ excludes 0 | **NO-GO** — all three sub-criteria fail: rel improvement = +0.029% (bar ≥2%), CI₉₀ = [−0.261%, +0.288%] (includes 0), 3 of 9 year-blocks positive (bar ≥6). Verdict: STOP. Fallback: sync gauge shipped on `measurement.html` (T7). | `leadlag_phase0.json` → `stageB.pooled.{rel_brier_improvement=0.00029, n_year_blocks_positive=3, ci90=[-0.002607,0.002882]}` | 2026-07-03 |
+
 **STOP rule:** if LL-A yields no survivors OR LL-B fails → `verdict: NO-GO`, **do not build
 the interaction layer.** Ship instead the measured synchronization statistic (`sync = 1 −
 circ_var(2π·pos/100)`) validated as a conditioning state via the conditional-cell machinery

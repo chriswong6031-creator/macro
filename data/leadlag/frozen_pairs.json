@@ -1,0 +1,188 @@
+{
+  "frozen_at": "2026-07-03T15:50:27Z",
+  "train_cutoff": "2017-12-31",
+  "top_k": 20,
+  "n_fdr_survivors": 136,
+  "pairs": [
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801180",
+      "lag": 5,
+      "r": 0.7844,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801210",
+      "lag": 5,
+      "r": 0.7541,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801010",
+      "lag": 5,
+      "r": 0.735,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801030",
+      "lag": 5,
+      "r": 0.7341,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801130",
+      "lag": 5,
+      "r": 0.7316,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801140",
+      "lag": 5,
+      "r": 0.715,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801150",
+      "lag": 5,
+      "r": 0.6814,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801230",
+      "lag": 5,
+      "r": 0.6808,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801080",
+      "lag": 5,
+      "r": 0.6784,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801890",
+      "follower": "801130",
+      "lag": 6,
+      "r": 0.6604,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801730",
+      "follower": "801130",
+      "lag": 6,
+      "r": 0.651,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801200",
+      "lag": 5,
+      "r": 0.6492,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801880",
+      "follower": "801130",
+      "lag": 6,
+      "r": 0.6428,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801120",
+      "lag": 5,
+      "r": 0.6407,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801950",
+      "follower": "801110",
+      "lag": 5,
+      "r": 0.6399,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801890",
+      "follower": "801180",
+      "lag": 6,
+      "r": 0.6344,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801880",
+      "follower": "801180",
+      "lag": 6,
+      "r": 0.6327,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801710",
+      "follower": "801130",
+      "lag": 6,
+      "r": 0.6308,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801710",
+      "follower": "801080",
+      "lag": 6,
+      "r": 0.6301,
+      "p": 0.0005,
+      "fdr_survivor": true
+    },
+    {
+      "family": "cn_sector",
+      "leader": "801730",
+      "follower": "801180",
+      "lag": 6,
+      "r": 0.6262,
+      "p": 0.0005,
+      "fdr_survivor": true
+    }
+  ]
+}
