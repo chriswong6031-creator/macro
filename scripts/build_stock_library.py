@@ -52,6 +52,7 @@ from engine import options_ivspread  # noqa: E402  — Cremers-Weinbaum call−p
 from engine import demand_chain as dchain  # noqa: E402
 from engine import coiled  # noqa: E402  — wave-2-validated COILED ranking bonus (display/ranking only)
 from engine import donor  # noqa: E402  — G6a donor-sector context chip (display-only)
+from engine import hold as hold_engine  # noqa: E402  — W6-C HOLD tracker (basing state / invalidation)
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -1197,6 +1198,8 @@ def main() -> int:
     _coil_fire: dict[str, dict] = {}            # wave-4 COILED-FIRE marker per name (display only)
     # G6a donor-sector: collect per-name close series (same sector map as _coil_sector)
     _donor_closes: dict[str, "pd.Series"] = {}  # close series for donor composite
+    # W6-C HOLD tracker: per-name basing state (INTACT/LAUNCHED/BROKEN) + invalidation
+    _hold_state: dict[str, dict] = {}           # hold dict per name (None when no anchor)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -1205,6 +1208,18 @@ def main() -> int:
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned set (below).
         sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        # W6-C HOLD tracker: derive anchor from the §7 take/pending marker (open buy only),
+        # fall back to the last 3D cross. Additive + graceful: failure -> None entry.
+        try:
+            _sv = sig_verdict[ticker]
+            _last_m = _sv.get("last")
+            _is_buy = bool(_last_m and _last_m.get("type") in ("buy", "rebuy"))
+            _anchor = _last_m.get("date") if _is_buy else None
+            _hs = hold_engine.hold_state(close, anchor_date=_anchor, last_cross_fallback=True)
+            if _hs is not None:
+                _hold_state[ticker] = _hs
+        except Exception:
+            pass
         # COILED wave-2 ranking bonus: collect per-name inputs for cohort computation below.
         # All four lines are guarded as one block; failure leaves dicts empty for this name.
         # Wave-4: also collect fire_recent for the COILED-FIRE display chip (display only,
@@ -1459,6 +1474,9 @@ def main() -> int:
             "spark_svg": _spark_svg(list(close.tail(64).values),
                                     color=_SPARK_COLOR.get((rec.get("ladder") or {}).get("dir"), "var(--link)"))}
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
+        # W6-C HOLD: attach per-name basing state to the stockdata JSON (BLOCKED names get it too)
+        if _hold_state.get(ticker):
+            rec["hold"] = _hold_state[ticker]
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
@@ -1767,6 +1785,10 @@ def main() -> int:
             cb = coiled_by.get(t)                  # COILED wave-2 ranking bonus chip (display only)
             if cb and (cb.get("coiled") or cb.get("washout_ctx")):
                 r["coiled"] = cb
+            # W6-C HOLD: attach basing-state chip to standout rows (display-only, display after coiled)
+            _hd = _hold_state.get(t)
+            if _hd is not None:
+                r["hold"] = _hd
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
             # it is a first-class field available for the US-2 ledger study (depth vs
             # forward returns for FRESH-BUY rows). NOT a gate — we do NOT filter on it

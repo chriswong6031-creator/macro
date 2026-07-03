@@ -704,6 +704,10 @@
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
   .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
   .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 20%,transparent)}
+  /* W6-C HOLD tracker chip — basing state after entry anchor (display-only, US standouts) */
+  .nb-hold{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
+  .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
+  .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
             padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
             background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
@@ -2447,6 +2451,8 @@
             <span class="nb-nm">{{ n.name }}</span>
             {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
             {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}
+            {# W6-C HOLD chip — basing state after confluence anchor; calm on intact, muted on launched/broken #}
+            {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" title="Base {{ _hd.get('days_basing',0) }}d · inv ${{ '%.2f'|format(_hd.get('invalidation',0)) }}{% if _hd.get('provisional') %} · est{% endif %} · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough. 基础期{{ _hd.get('days_basing',0) }}天 · 止损 ${{ '%.2f'|format(_hd.get('invalidation',0)) }}。仅供参考。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           {# Context line LEADS with the specific narrative basket (de-blurs "Technology"
