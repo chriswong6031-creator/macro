@@ -1938,6 +1938,21 @@
       "come_back_note": "Re-evaluate after another ~60 daily sessions of the inst-seat leg accrue (n should reach ~200+, enough to test |t|>=2 gate). Pre-register the sign-split analysis (inst-seat-positive vs raw-negative) with the same measurement constitution (CSI300-relative, T+1 fill, pre/post-2024 splits, 2000-permutation placebo) before running.",
       "n_trials_program_dsr": 1,
       "pr": "w3(w3-c)"
+    },
+    {
+      "id": "ca-confluence-gate-calibration",
+      "name": "CA confluence-gate calibration (T3 demote-flag re-adjudication)",
+      "kind": "phase0_followup",
+      "priority": "med",
+      "cadence": "once",
+      "what": "Re-adjudicate the T3 DEMOTE-FLAG (name panel -1.47%/2w t -2.33 vs deep-ETF control sign-disagreement) against the live CA board ledger's first matured 21d cohort; regenerate the analysis script (lost to worktree cleanup; prereg + report preserved).",
+      "source": "reports/ca-gate-confluence-phase0.md",
+      "storage": "data/board_ledger/ca_board.parquet",
+      "started": "2026-07-03",
+      "come_back_on": "2026-08-24",
+      "come_back_note": "first live 21d cohort matured; decide CA_BUYABLE_TIERS - {T3} or clear the flag",
+      "maturation": "stable-negative T3 on live cohort => wire per-market demote; sign-flip/null => clear flag",
+      "status": "accruing"
     }
   ]
 }
