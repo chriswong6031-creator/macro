@@ -289,18 +289,20 @@ def test_track_record_empty():
 # --------------------------------------------------------------------------- #
 # Template render smoke + bilingual + absent-when-none
 # --------------------------------------------------------------------------- #
-def _render_card(froth_fragility):
-    # since #757 the card lives inside the merged "Sentiment regime" section
+def _render_card(froth_fragility, fear_euphoria=None):
     from jinja2 import Environment, FileSystemLoader
     from engine import i18n
     src = (TEMPLATES / "dashboard.html.j2").read_text()
     macros = src[: src.index("{# coloured")]
+    # #757 merged the standalone FROTH & FRAGILITY card into the SENTIMENT REGIME
+    # panel (froth + fear↔euphoria side by side); the next section is CROSS-ASSET MACRO.
     start = src.index("<!-- ===================== SENTIMENT REGIME")
     end = src.index("<!-- ===================== CROSS-ASSET MACRO")
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
     return env.from_string(macros + src[start:end]).render(
-        froth_fragility=froth_fragility, fear_euphoria=None, mode="macro", latest={})
+        froth_fragility=froth_fragility, fear_euphoria=fear_euphoria,
+        mode="macro", latest={})
 
 
 _FF_MIN = {
@@ -329,21 +331,29 @@ _FF_MIN = {
 
 
 def test_render_smoke_bilingual():
-    # the #757 merged card shows headline/quadrant/face scores + forward record;
-    # the per-leg Face A/B tables did not survive the merge (macro_signals is the
-    # full-breakdown page)
+    # #659 deliberately slimmed the card to a signal-only read (the Face A/B meters +
+    # per-leg table were dropped from the render; the backend still computes them) and
+    # #757 merged it into the "Sentiment regime" panel — assert THAT card's contract.
     html = _render_card(_FF_MIN)
     assert 'id="sentiment-regime"' in html
+    assert 'id="froth-fragility"' in html                            # gauge keeps its own anchor
     assert "Froth & Fragility" in html and "狂热与脆弱" in html       # title both langs
     assert "narrowing-top risk" in html and "顶部收窄风险" in html     # quadrant both langs
-    assert "Euphoria" in html and "欣喜" in html                     # face-A score row
-    assert "Fragility / distribution" in html and "脆弱／派发" in html # face-B score row
-    assert "accruing" in html and "积累中" in html                    # forward record both langs
-    assert "provisional" in html and "暂定" in html                  # accrual badge both langs
+    assert "Euphoria" in html and "欣喜" in html                      # face-A read both langs
+    assert "Fragility / distribution" in html and "脆弱／派发" in html # face-B read both langs
+    assert "Watch" in html and "关注" in html                         # headline band both langs
+    assert "provisional" in html and "暂定" in html                   # accrual badge both langs
+    assert "accruing" in html and "积累中" in html                    # forward-record line both langs
+    assert "sizing, not selection" in html and "而非选股" in html      # display-only doctrine both langs
     assert 'class="pos"' not in html and 'class="neg"' not in html   # euphoria not "good"/"bad"
 
 
 def test_render_absent_when_none():
     html = _render_card(None)
     assert 'id="sentiment-regime"' not in html
-    assert "狂热与脆弱" not in html      # (the EN title also sits in the comment marker)
+    assert 'id="froth-fragility"' not in html
+    assert "狂热与脆弱" not in html      # whole merged panel absent too
+    # the sibling Fear↔Euphoria lens alone must NOT resurrect the froth section
+    html = _render_card(None, fear_euphoria={"fe_score": 50, "band": "Neutral", "roro": None})
+    assert 'id="sentiment-regime"' in html
+    assert 'id="froth-fragility"' not in html
