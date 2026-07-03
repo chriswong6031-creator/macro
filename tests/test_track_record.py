@@ -1471,3 +1471,92 @@ class TestStageB_SpineColumns:
         # Both null or both equal — never changes once set
         if not pd.isna(ts8_1) and ts8_1 is not None:
             assert ts8_2 == ts8_1, f"terminal_state_clean8_21 changed on re-run: {ts8_1!r} → {ts8_2!r}"
+
+
+def _scripted_close(fwd_path: list[float], *, n_hist: int = 260,
+                    base: float = 100.0) -> tuple[pd.Series, str]:
+    """Flat series at ``base`` with a scripted forward path appended.
+
+    Returns ``(close, entry_date)`` where the marker at ``entry_date`` gets a
+    NEXT-BAR fill on the last flat bar (entry price == ``base``), so
+    ``fwd_path[i]`` is the close ``i + 1`` bars after the fill — the exact window
+    ``post_cushion_breach`` scans."""
+    idx = pd.bdate_range("2020-01-01", periods=n_hist + len(fwd_path))
+    close = pd.Series([base] * n_hist + list(fwd_path), index=idx, dtype=float)
+    entry_date = str(idx[n_hist - 2].date())  # fill lands on idx[n_hist - 1]
+    return close, entry_date
+
+
+class TestStageB_PostCushionBreach:
+    """END-TO-END: the ledger row's post_cushion_breach must carry the CANONICAL
+    grading semantics through _fill_maturation — a fire that cushions (+5%) and
+    then falls back below entry, including a full stop-out (−5%), is a breach
+    (True). Only never-cushioned fires stay null. Unit coverage of the grading
+    primitive itself lives in test_grading_spine_v2.TestPostCushionBreach; these
+    tests pin the WIRING into the append-only store, where a wrong value is
+    irreversible."""
+
+    def _run_path(self, tmp_path, fwd_path: list[float]):
+        stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
+        signals_dir = tmp_path / "signals"; signals_dir.mkdir()
+        arch = tmp_path / "track_record.parquet"
+
+        close, entry_date = _scripted_close(fwd_path)
+        _write_prices(stocks_dir, "PCB", close)
+        _write_signals(signals_dir, "PCB", entry_date, [
+            {"date": entry_date, "type": "buy", "quality": "take", "reason": "pcb"},
+        ])
+        _run(signals_dir, stocks_dir, arch, asof=str(close.index[-1].date()))
+        df = pd.read_parquet(arch)
+        return df[(df["ticker"] == "PCB") & (df["type"] == "buy")].iloc[0]
+
+    def test_cushioned_then_stopped_is_breach_true(self, tmp_path):
+        """Cushion at +6% on bar 4, stop-out at −6% on bar 9 — the worst cushioned
+        fire. Regression: the pre-review inline scan broke on the stop and left
+        this row null forever in the append-only ledger."""
+        fwd = [100.0, 100.0, 100.0, 106.0, 101.0, 101.0, 101.0, 101.0, 94.0] + [94.0] * 16
+        row = self._run_path(tmp_path, fwd)
+        assert not pd.isna(row["post_cushion_breach"]), \
+            "cushioned-then-stopped fire must be scored, not left null"
+        assert bool(row["post_cushion_breach"]) is True, \
+            "cushioned-then-stopped must be a post-cushion breach (True)"
+
+    def test_cushioned_no_breach_is_false(self, tmp_path):
+        """Cushion on bar 4, then holds above entry through the window → False."""
+        fwd = [100.0, 100.0, 100.0, 106.0] + [103.0] * 21
+        row = self._run_path(tmp_path, fwd)
+        assert not pd.isna(row["post_cushion_breach"]), \
+            "cushioned fire that matured must be scored"
+        assert bool(row["post_cushion_breach"]) is False, \
+            "cushioned fire that held above entry is not a breach"
+
+    def test_never_cushioned_is_null(self, tmp_path):
+        """Never reaches +5% inside the window → breach undefined → null."""
+        fwd = [101.0] * 25
+        row = self._run_path(tmp_path, fwd)
+        assert pd.isna(row["post_cushion_breach"]), \
+            "never-cushioned fire must stay null"
+
+    def test_stopped_before_cushion_is_null(self, tmp_path):
+        """Stops out before ever cushioning → not a post-cushion question → null."""
+        fwd = [100.0, 94.0] + [106.0] * 23
+        row = self._run_path(tmp_path, fwd)
+        assert pd.isna(row["post_cushion_breach"]), \
+            "stopped-before-cushion fire must stay null (never cushioned first)"
+
+    def test_ledger_row_matches_canonical_grader(self, tmp_path):
+        """The value frozen in the store equals both the single-fire primitive and
+        the aggregate grader on the identical fire — one definition end to end."""
+        from engine import grading
+
+        fwd = [100.0, 100.0, 100.0, 106.0, 101.0, 101.0, 101.0, 101.0, 94.0] + [94.0] * 16
+        close, entry_date = _scripted_close(fwd)
+
+        row = self._run_path(tmp_path, fwd)
+        single = grading.post_cushion_breach(close, entry_date, horizon=21)
+        agg = grading.cushion_incidence([(close, entry_date)], k_days=(5, 10, 21))
+
+        assert single is True
+        assert bool(row["post_cushion_breach"]) is True
+        assert agg["cushion_reached_count"] == 1
+        assert agg["post_cushion_breakeven_breach_rate"] == 100.0

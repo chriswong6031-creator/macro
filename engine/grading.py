@@ -402,6 +402,52 @@ def terminal_state(
     }
 
 
+def _cushion_stop_scan(
+    fwd_arr: np.ndarray, stop_b: float, cushion_b: float,
+) -> tuple[int | None, int | None]:
+    """First-passage scan over forward closes — the ONE definition shared by
+    ``cushion_incidence`` and ``post_cushion_breach`` so the aggregate rate and
+    the per-fire flag can never diverge.
+
+    Returns (cushion_bar, stop_bar), both 1-indexed bar offsets from the fill
+    bar, either possibly None. Straddle tie on a bar: stop wins (checked first).
+    The scan stops at the first stop-out bar; a cushion recorded on an EARLIER
+    bar survives, so cushion_bar < stop_bar encodes cushioned-then-stopped."""
+    cushion_bar: int | None = None
+    stop_bar: int | None = None
+    for bar_off, cl in enumerate(fwd_arr, start=1):
+        if not np.isfinite(cl):
+            continue
+        if cl <= stop_b:
+            stop_bar = bar_off
+            break
+        if cl >= cushion_b and cushion_bar is None:
+            cushion_bar = bar_off
+            # keep scanning: a LATER stop still matters for the breach flag
+    return cushion_bar, stop_bar
+
+
+def _breach_after_cushion(
+    fwd_arr: np.ndarray,
+    cushion_bar: int | None,
+    stop_bar: int | None,
+    entry_price: float,
+) -> bool | None:
+    """Post-cushion breakeven-breach verdict from a ``_cushion_stop_scan`` result.
+
+    None  — never cushioned inside the window (including stopped-before-cushion):
+            the breach question is not applicable.
+    True  — cushioned, then some later close fell back below entry. A stop-out
+            is definitionally below entry, so cushioned-then-stopped is True.
+    False — cushioned and every later close held at or above entry."""
+    if cushion_bar is None or (stop_bar is not None and stop_bar <= cushion_bar):
+        return None
+    for cl in fwd_arr[cushion_bar:]:  # 0-indexed array; cushion_bar is 1-indexed → next bar on
+        if np.isfinite(cl) and cl < entry_price:
+            return True
+    return False
+
+
 def cushion_incidence(
     fires: list[tuple[pd.Series, Any]],
     *,
@@ -469,20 +515,7 @@ def cushion_incidence(
         # Walk bars fill+1 .. fill+max_k
         fwd_arr = close.iloc[fill + 1: fill + max_k + 1].to_numpy()
 
-        cushion_bar: int | None = None  # first bar (1-indexed from fill) where cushion hit
-        stop_bar: int | None = None     # first bar (1-indexed from fill) where stop hit
-
-        for bar_off, cl in enumerate(fwd_arr, start=1):
-            if not np.isfinite(cl):
-                continue
-            # Straddle tie: stop wins
-            if cl <= stop_b:
-                stop_bar = bar_off
-                break
-            if cl >= cushion_b and cushion_bar is None:
-                cushion_bar = bar_off
-                # Do NOT break: continue scanning for stop-out on later bars
-                # (we need to detect post-cushion stop for the breakeven-breach metric)
+        cushion_bar, stop_bar = _cushion_stop_scan(fwd_arr, stop_b, cushion_b)
 
         # Accumulate into k-day bins (cumulative: once triggered, it stays triggered)
         for k in k_days:
@@ -494,14 +527,11 @@ def cushion_incidence(
                 k_stop[k] += 1
 
         # Post-cushion breakeven-breach: did price drop below entry_price after cushion?
-        if cushion_bar is not None and (stop_bar is None or stop_bar > cushion_bar):
-            # This fire was cushioned; check if it later breached entry_price
+        breach = _breach_after_cushion(fwd_arr, cushion_bar, stop_bar, entry_price)
+        if breach is not None:
             cushion_reached_count += 1
-            scan_start = cushion_bar  # bar offset (1-indexed); we scan from the NEXT bar
-            for cl in fwd_arr[scan_start:]:  # fwd_arr is 0-indexed; cushion_bar is 1-indexed
-                if np.isfinite(cl) and cl < entry_price:
-                    cushion_breach_count += 1
-                    break
+            if breach:
+                cushion_breach_count += 1
 
     # --- assemble output -------------------------------------------------------
     ci: dict[int, dict[str, Any]] = {}
@@ -567,30 +597,10 @@ def post_cushion_breach(
     if not np.isfinite(entry_price) or entry_price <= 0:
         return None
 
-    stop_b = entry_price * stop_mult
-    cushion_b = entry_price * cushion_mult
     fwd_arr = close.iloc[fill + 1: fill + horizon + 1].to_numpy()
-
-    cushion_bar: int | None = None
-    stop_bar: int | None = None
-    for bar_off, cl in enumerate(fwd_arr, start=1):
-        if not np.isfinite(cl):
-            continue
-        # Straddle tie: stop wins
-        if cl <= stop_b:
-            stop_bar = bar_off
-            break
-        if cl >= cushion_b and cushion_bar is None:
-            cushion_bar = bar_off
-            # keep scanning: a LATER stop still matters for the breach flag
-
-    if cushion_bar is None or (stop_bar is not None and stop_bar <= cushion_bar):
-        return None  # never cushioned (or stopped first) — flag not applicable
-
-    for cl in fwd_arr[cushion_bar:]:  # 0-indexed array; cushion_bar is 1-indexed → next bar on
-        if np.isfinite(cl) and cl < entry_price:
-            return True
-    return False
+    cushion_bar, stop_bar = _cushion_stop_scan(
+        fwd_arr, entry_price * stop_mult, entry_price * cushion_mult)
+    return _breach_after_cushion(fwd_arr, cushion_bar, stop_bar, entry_price)
 
 
 # --------------------------------------------------------------------------- #
