@@ -23,6 +23,7 @@ import pytest
 from collectors.federal_register import (
     FederalRegisterAdapter,
     _agency_slugs,
+    _normalize_doc_type,
     _reg_stage,
     velocity,
 )
@@ -344,6 +345,102 @@ class TestRegStage:
         stage, weight = _reg_stage("NOTICE", "Notice of funding opportunity")
         assert stage == "funding_notice"
         assert weight == 0.6
+
+
+# ---------------------------------------------------------------------------
+# 6b. DISCRIMINATING TESTS — real API label-form inputs (not code-form)
+#
+# The Federal Register API returns human-readable ``type`` labels in responses
+# (e.g. "PROPOSED RULE", "PRESIDENTIAL DOCUMENT") even though the query uses
+# code-form params (PRORULE, PRESDOCU).  These tests verify that _reg_stage
+# correctly handles the label form that actually appears in production data.
+# They FAIL on pre-fix code (which only matches code-form) and PASS after fix.
+# ---------------------------------------------------------------------------
+
+class TestRegStageRealApiLabels:
+    """Discriminating tests that feed real API label-form inputs to _reg_stage.
+
+    These test inputs mirror what the API actually returns in the ``type`` field
+    of each document (e.g. the committed data/federal_register/documents.parquet
+    contains 'PROPOSED RULE' and 'RULE', never 'PRORULE' or 'PRESDOCU').
+    """
+
+    def test_proposed_rule_label_maps_to_proposed_rule_stage(self):
+        """'PROPOSED RULE' (real API label) must produce stage='proposed_rule', weight=0.8.
+
+        Pre-fix, _reg_stage('PROPOSED RULE', ...) falls through all dtype checks
+        (none match the label) and returns the fallback 'notice' / 0.3 — wrong.
+        """
+        stage, weight = _reg_stage("PROPOSED RULE", "Proposed rule for nuclear safety")
+        assert stage == "proposed_rule", (
+            f"'PROPOSED RULE' label must map to stage='proposed_rule'; got {stage!r}. "
+            "Pre-fix fallthrough produces 'notice' — did the normalization fix land?"
+        )
+        assert weight == 0.8, f"Expected weight=0.8 for proposed_rule; got {weight}"
+
+    def test_presidential_document_label_maps_to_executive_order_stage(self):
+        """'PRESIDENTIAL DOCUMENT' (real API label) must produce stage='executive_order', weight=2.0.
+
+        Pre-fix, _reg_stage('PRESIDENTIAL DOCUMENT', ...) falls through all dtype checks
+        and returns the fallback 'notice' / 0.3 — wrong.
+        """
+        stage, weight = _reg_stage("PRESIDENTIAL DOCUMENT", "Executive Order 14000")
+        assert stage == "executive_order", (
+            f"'PRESIDENTIAL DOCUMENT' label must map to stage='executive_order'; got {stage!r}. "
+            "Pre-fix fallthrough produces 'notice' — did the normalization fix land?"
+        )
+        assert weight == 2.0, f"Expected weight=2.0 for executive_order; got {weight}"
+
+    def test_proposed_rule_label_case_insensitive(self):
+        """Label matching must be case-insensitive ('Proposed Rule' == 'PROPOSED RULE')."""
+        stage, weight = _reg_stage("Proposed Rule", "")
+        assert stage == "proposed_rule"
+        assert weight == 0.8
+
+    def test_rule_label_still_works(self):
+        """'RULE' label (already matches code) must still map correctly."""
+        stage, weight = _reg_stage("RULE", "Final rule.")
+        assert stage == "final_rule"
+        assert weight == 1.5
+
+    def test_notice_label_still_works(self):
+        """'NOTICE' label must still map to notice stage."""
+        stage, weight = _reg_stage("NOTICE", "")
+        assert stage == "notice"
+        assert weight == 0.3
+
+
+class TestNormalizeDocType:
+    """Unit tests for the _normalize_doc_type helper."""
+
+    def test_proposed_rule_to_prorule(self):
+        assert _normalize_doc_type("PROPOSED RULE") == "PRORULE"
+
+    def test_presidential_document_to_presdocu(self):
+        assert _normalize_doc_type("PRESIDENTIAL DOCUMENT") == "PRESDOCU"
+
+    def test_rule_stays_rule(self):
+        assert _normalize_doc_type("RULE") == "RULE"
+
+    def test_notice_stays_notice(self):
+        assert _normalize_doc_type("NOTICE") == "NOTICE"
+
+    def test_prorule_code_stays_prorule(self):
+        """Code-form input (already canonical) must be returned unchanged."""
+        assert _normalize_doc_type("PRORULE") == "PRORULE"
+
+    def test_presdocu_code_stays_presdocu(self):
+        assert _normalize_doc_type("PRESDOCU") == "PRESDOCU"
+
+    def test_unknown_uppercased(self):
+        """Unknown types are uppercased and returned as-is."""
+        assert _normalize_doc_type("some weird type") == "SOME WEIRD TYPE"
+
+    def test_case_insensitive_matching(self):
+        """Label matching must be case-insensitive."""
+        assert _normalize_doc_type("proposed rule") == "PRORULE"
+        assert _normalize_doc_type("Proposed Rule") == "PRORULE"
+        assert _normalize_doc_type("presidential document") == "PRESDOCU"
 
 
 # ---------------------------------------------------------------------------

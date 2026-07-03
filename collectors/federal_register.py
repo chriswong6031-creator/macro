@@ -42,12 +42,23 @@ FR_PRIOR_D = 90     # look-back window for "prior" velocity bucket (days)
 PAGE_SIZE = 1000    # API supports up to 1000 per page
 REQUEST_PAUSE = 0.5  # seconds between API calls (polite pace; no rate-limit headers)
 
-# Doc types: full set for thematic tracking
+# Doc types: full set for thematic tracking (API ``conditions[type][]`` filter codes)
 DOC_TYPES = ["RULE", "PRORULE", "NOTICE", "PRESDOCU"]
 
-# Regulatory stage taxonomy (type + action-text rules)
+# Map human-readable API ``type`` response labels -> canonical codes used in _STAGE_WEIGHTS.
+# The Federal Register API accepts CODE-form in query params but returns LABEL-form in responses.
+# E.g. querying ``conditions[type][]=PRORULE`` returns documents where ``type == "PROPOSED RULE"``.
+_LABEL_TO_CODE: dict[str, str] = {
+    "proposed rule":           "PRORULE",
+    "presidential document":   "PRESDOCU",
+    "rule":                    "RULE",
+    "notice":                  "NOTICE",
+}
+
+# Regulatory stage taxonomy (type + action-text rules).
+# Keys on canonical CODES (as normalised by _normalize_doc_type).
 _STAGE_WEIGHTS: list[tuple[str, str, str, float]] = [
-    # (doc_type, action_text_substring, reg_stage, weight)
+    # (doc_type_code, action_text_substring, reg_stage, weight)
     ("PRESDOCU", "",                        "executive_order",    2.0),
     ("RULE",     "interim final",           "interim_final_rule", 1.8),
     ("RULE",     "",                        "final_rule",         1.5),
@@ -57,6 +68,20 @@ _STAGE_WEIGHTS: list[tuple[str, str, str, float]] = [
     ("NOTICE",   "solicitation",            "funding_notice",     0.6),
     ("NOTICE",   "",                        "notice",             0.3),
 ]
+
+
+def _normalize_doc_type(raw: str) -> str:
+    """Normalize an API ``type`` field value to a canonical code.
+
+    The Federal Register API returns human-readable labels in response payloads
+    (e.g. ``"PROPOSED RULE"``, ``"PRESIDENTIAL DOCUMENT"``) while ``_STAGE_WEIGHTS``
+    and ``DOC_TYPES`` use short codes (``PRORULE``, ``PRESDOCU``).  This function
+    maps labels -> codes so ``_reg_stage`` works correctly on real API data.
+
+    Unknown values are returned uppercased and unchanged (safe fallthrough).
+    """
+    return _LABEL_TO_CODE.get(raw.lower().strip(), raw.upper().strip())
+
 
 # Fields to request from the API (minimises payload)
 _FIELDS = [
@@ -80,11 +105,16 @@ def _theme_map() -> dict[str, dict]:
 
 
 def _reg_stage(doc_type: str, action: str) -> tuple[str, float]:
-    """Derive (reg_stage, weight) from document type and action text."""
-    t = (doc_type or "").upper()
+    """Derive (reg_stage, weight) from document type and action text.
+
+    ``doc_type`` may be either the API label form (``"PROPOSED RULE"``,
+    ``"PRESIDENTIAL DOCUMENT"``) or the code form (``"PRORULE"``, ``"PRESDOCU"``).
+    ``_normalize_doc_type`` maps both to the canonical code before lookup.
+    """
+    t = _normalize_doc_type(doc_type or "")
     a = (action or "").lower()
     for dtype, kw, stage, w in _STAGE_WEIGHTS:
-        if dtype == t or (dtype == "" and t in ("RULE", "PRORULE", "NOTICE", "PRESDOCU")):
+        if dtype == t:
             if kw == "" or kw in a:
                 # Apply significance multiplier only at velocity(), not here
                 return stage, w
