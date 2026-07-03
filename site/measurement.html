@@ -34,6 +34,58 @@ body{margin:0;padding-top:24px}
 .mh-sh h2{font-size:1.15rem;font-weight:700;margin:0;color:var(--text,#e2e8f0)}
 .mh-sh .mh-sh-sub{font-size:.78rem;color:var(--muted,#8899aa)}
 
+/* ── Conditional cells section (W4.4) ───────────────────────────────────── */
+.cc-collapsible{border:1px solid var(--border,rgba(255,255,255,.1));border-radius:10px;
+  overflow:hidden;margin-bottom:24px}
+.cc-trigger{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;
+  background:color-mix(in srgb,var(--surface,#0f1629) 80%,var(--blue,#3b82f6) 20%);
+  user-select:none}
+.cc-trigger:hover{background:color-mix(in srgb,var(--surface,#0f1629) 70%,var(--blue,#3b82f6) 30%)}
+.cc-trigger-title{font-size:.95rem;font-weight:700;color:var(--text,#e2e8f0)}
+.cc-trigger-badge{font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:20px;
+  background:color-mix(in srgb,var(--warn,#f59e0b) 15%,transparent);
+  color:var(--warn,#f59e0b);border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 35%,transparent)}
+.cc-trigger-caret{margin-left:auto;font-size:.8rem;color:var(--muted,#8899aa);
+  transition:transform .2s}
+.cc-trigger[aria-expanded="true"] .cc-trigger-caret{transform:rotate(180deg)}
+.cc-body{display:none;padding:20px}
+.cc-body.open{display:block}
+.cc-caveat{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
+  border-radius:8px;padding:12px 16px;margin-bottom:20px;
+  font-size:.82rem;line-height:1.6;color:var(--text,#e2e8f0)}
+.cc-caveat strong{color:var(--warn,#f59e0b)}
+.cc-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.cc-sel-btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border,rgba(255,255,255,.1));
+  background:transparent;color:var(--muted,#8899aa);font-size:.78rem;cursor:pointer;transition:all .15s}
+.cc-sel-btn.on{background:var(--blue,#3b82f6);border-color:var(--blue,#3b82f6);color:#fff;font-weight:600}
+.cc-heat-wrap{overflow-x:auto}
+.cc-heat-table{border-collapse:collapse;width:100%;font-size:.78rem;min-width:520px}
+.cc-heat-table th{padding:7px 10px;text-align:left;font-weight:600;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.1));
+  white-space:nowrap}
+.cc-heat-table td{padding:6px 10px;border-bottom:1px solid var(--border,rgba(255,255,255,.06));
+  vertical-align:middle;white-space:nowrap}
+.cc-heat-table tr:last-child td{border-bottom:none}
+.cc-phase-hd td{font-weight:700;background:color-mix(in srgb,var(--surface,#0f1629) 95%,var(--blue,#3b82f6) 5%);
+  color:var(--text,#e2e8f0);padding:8px 10px}
+.cc-cell-val{font-weight:700}
+.cc-cell-pos{color:var(--green,#22c55e)}
+.cc-cell-neg{color:var(--red,#ef4444)}
+.cc-cell-neutral{color:var(--muted,#8899aa)}
+.cc-cell-collapsed{opacity:.45;font-style:italic}
+.cc-ci{font-size:.72rem;color:var(--muted,#8899aa)}
+.cc-ci-win{color:var(--text,#e2e8f0);font-weight:600}
+.cc-revopt{display:inline-block;font-size:.68rem;padding:1px 5px;border-radius:3px;
+  background:color-mix(in srgb,var(--warn,#f59e0b) 15%,transparent);
+  color:var(--warn,#f59e0b);margin-left:4px;vertical-align:middle}
+.cc-n{font-size:.72rem;color:var(--muted,#8899aa)}
+.cc-winner-mark{color:var(--green,#22c55e);font-size:.75rem;margin-left:3px}
+.cc-foot{margin-top:16px;font-size:.75rem;color:var(--muted,#8899aa);line-height:1.6;
+  border-top:1px solid var(--border,rgba(255,255,255,.1));padding-top:12px}
+.cc-pooled-row td{background:color-mix(in srgb,var(--blue,#3b82f6) 5%,transparent);
+  font-size:.72rem;color:var(--muted,#8899aa)}
+
 /* ── Engine tabs ─────────────────────────────────────────────────────────── */
 .mh-tabs{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}
 .mh-tab{padding:7px 14px;border-radius:7px;border:1px solid var(--border,rgba(255,255,255,.1));
@@ -1882,7 +1934,125 @@ body{margin:0;padding-top:24px}
   </section>
   
 
-  
+  <!-- W4.4: Conditional Forward-Return Cells — research surface only (ruling A7) -->
+  <section class="mh-section" id="cc-section">
+    <div class="mh-sh">
+      <h2>
+        <span class="l-en">Conditional Forward-Return Cells</span>
+        <span class="l-zh">条件前向收益单元格</span>
+      </h2>
+      <span class="mh-sh-sub">
+        <span class="l-en">Research surface only — ruling A7 · W4.4</span>
+        <span class="l-zh">仅供研究展示 — 规则 A7 · W4.4</span>
+      </span>
+    </div>
+
+    <div class="cc-collapsible" id="cc-wrap">
+      <div class="cc-trigger" role="button" tabindex="0" aria-expanded="false"
+           aria-controls="cc-body" id="cc-trig">
+        <span class="cc-trigger-title">
+          <span class="l-en">Phase × Quad conditional cells — James-Stein shrinkage, month-block bootstrap</span>
+          <span class="l-zh">阶段 × 象限条件单元格 — 詹姆斯-斯坦因收缩，月度分块自助法</span>
+        </span>
+        <span class="cc-trigger-badge">
+          <span class="l-en">RESEARCH ONLY</span><span class="l-zh">仅供研究</span>
+        </span>
+        <span class="cc-trigger-caret">▾</span>
+      </div>
+      <div class="cc-body" id="cc-body" role="region" aria-labelledby="cc-trig">
+
+        <div class="cc-caveat">
+          <strong>
+            <span class="l-en">⚠ Revision-optimistic (P-D5-1)</span>
+            <span class="l-zh">⚠ 修订乐观偏差（P-D5-1）</span>
+          </strong>
+          <span class="l-en">:
+            All quad-conditioned cells use macro-regime labels derived from <em>revised</em> data series
+            (no ALFRED point-in-time vintages). The apparent edge may shrink or reverse under real-time
+            quad labeling. These estimates are conditioning context, not forecasts.
+            No cell drives any trading card, conviction tilt, or badge (ruling A7 — DL-2 gate not yet run).
+          </span>
+          <span class="l-zh">：
+            所有象限条件单元格均使用来自<em>修订后</em>宏观数据系列的象限标签（无ALFRED历史时点版本）。
+            在实时象限标注下，表观优势可能缩小或反转。这些估计值是条件背景，而非预测。
+            任何单元格均不驱动任何交易卡、信念倾斜或徽章（规则A7——DL-2决策关卡尚未运行）。
+          </span>
+        </div>
+
+        <!-- Selector: family and outcome/horizon -->
+        <div class="cc-selector" id="cc-fam-sel" role="group">
+          <button class="cc-sel-btn on" data-fam="us_sector">
+            <span class="l-en">US Sectors</span><span class="l-zh">美国板块</span>
+          </button>
+          <button class="cc-sel-btn" data-fam="country">
+            <span class="l-en">Country ETFs</span><span class="l-zh">国家ETF</span>
+          </button>
+          <button class="cc-sel-btn" data-fam="cn_sector">
+            <span class="l-en">China Sectors</span><span class="l-zh">中国板块</span>
+          </button>
+        </div>
+        <div class="cc-selector" id="cc-oh-sel" role="group">
+          <button class="cc-sel-btn on" data-oh="forward_return|63d">
+            <span class="l-en">Fwd return 63d</span><span class="l-zh">前向收益 63日</span>
+          </button>
+          <button class="cc-sel-btn" data-oh="forward_return|126d">
+            <span class="l-en">Fwd return 126d</span><span class="l-zh">前向收益 126日</span>
+          </button>
+          <button class="cc-sel-btn" data-oh="vol_residualized_maxdd|63d">
+            <span class="l-en">Vol-resid. max-DD 63d</span><span class="l-zh">波动残差最大回撤 63日</span>
+          </button>
+          <button class="cc-sel-btn" data-oh="vol_residualized_maxdd|126d">
+            <span class="l-en">Vol-resid. max-DD 126d</span><span class="l-zh">波动残差最大回撤 126日</span>
+          </button>
+        </div>
+
+        <!-- Heat table — rendered by JS -->
+        <div class="cc-heat-wrap">
+          <table class="cc-heat-table" id="cc-heat-table">
+            <thead>
+              <tr>
+                <th><span class="l-en">Phase</span><span class="l-zh">阶段</span></th>
+                <th>Q1 <span class="l-en" style="font-weight:400;font-size:.7rem">(Goldilocks)</span><span class="l-zh" style="font-weight:400;font-size:.7rem">（金发）</span></th>
+                <th>Q2 <span class="l-en" style="font-weight:400;font-size:.7rem">(Reflation)</span><span class="l-zh" style="font-weight:400;font-size:.7rem">（再通胀）</span></th>
+                <th>Q3 <span class="l-en" style="font-weight:400;font-size:.7rem">(Stagflation)</span><span class="l-zh" style="font-weight:400;font-size:.7rem">（滞涨）</span></th>
+                <th>Q4 <span class="l-en" style="font-weight:400;font-size:.7rem">(Deflation)</span><span class="l-zh" style="font-weight:400;font-size:.7rem">（通缩）</span></th>
+                <th><span class="l-en">Phase pooled</span><span class="l-zh">阶段汇总</span></th>
+              </tr>
+            </thead>
+            <tbody id="cc-tbody">
+              <tr><td colspan="6" style="text-align:center;color:var(--muted,#8899aa);padding:20px">
+                <span class="l-en">Loading…</span><span class="l-zh">加载中…</span>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="cc-foot">
+          <span class="l-en">
+            <strong>How to read:</strong>
+            Each cell shows the James-Stein shrunk mean gap vs the phase-pooled baseline
+            (in log-return or vol-residualized drawdown units), with the 95% bootstrap CI on the gap.
+            <span class="cc-winner-mark">★</span> = CI excludes 0 (both bounds same sign).
+            <span class="cc-revopt">rev-opt</span> = revision-optimistic (all quad cells).
+            Collapsed cells (n_months &lt; 12) show the pooled estimate only.
+            All inference via whole-month date-block bootstrap (ruling A2) — no Wilson CI on n_eff.
+            Shrink weight: 0 = full shrinkage to pooled; 1 = raw estimate retained.
+          </span>
+          <span class="l-zh">
+            <strong>读法：</strong>
+            每格显示相对于阶段汇总基准的詹姆斯-斯坦因收缩均值差（对数收益率或波动残差最大回撤单位），
+            及差值的95%自助法置信区间。
+            <span class="cc-winner-mark">★</span> = 置信区间不含零（两个界同号）。
+            <span class="cc-revopt">修订乐观</span> = 修订乐观偏差（全部象限单元格）。
+            折叠单元格（n_months &lt; 12）仅显示汇总估计。
+            所有推断均通过整月日期分块自助法（规则A2）——不对n_eff使用Wilson置信区间。
+            收缩权重：0=完全收缩至汇总；1=保留原始估计。
+          </span>
+        </div>
+      </div><!-- .cc-body -->
+    </div><!-- .cc-collapsible -->
+  </section>
+
   <div class="mh-provenance">
     <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
     <div class="mh-prov-grid">
@@ -1924,6 +2094,7 @@ body{margin:0;padding-top:24px}
 </div>
 
 <script src="measurementdata/measurement_data.js"></script>
+<script src="condcelldata/cond_cells_data.js"></script>
 <script>
 (function(){
   "use strict";
@@ -1967,6 +2138,168 @@ body{margin:0;padding-top:24px}
     var sw = document.body.scrollWidth, vw = window.innerWidth;
     if(sw > vw + 4) console.warn('measurement.html: horizontal overflow at ' + vw + 'px (scrollWidth=' + sw + ')');
   }catch(e){}
+})();
+
+// ── W4.4 Conditional Cells — research surface (ruling A7) ─────────────────
+(function(){
+  'use strict';
+  var PHASES = ['Trough','Recovery','Expansion','Peak','Downturn'];
+  var QUADS  = ['Q1','Q2','Q3','Q4'];
+  var curFam = 'us_sector';
+  var curOH  = 'forward_return|63d';
+
+  // Collapsible toggle
+  var trig = document.getElementById('cc-trig');
+  var body = document.getElementById('cc-body');
+  if(trig && body){
+    function toggleCC(){
+      var open = body.classList.toggle('open');
+      trig.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    trig.addEventListener('click', toggleCC);
+    trig.addEventListener('keydown', function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggleCC(); }
+    });
+  }
+
+  // Selector wiring
+  function wireSelGroup(groupId, onChange){
+    var btns = document.querySelectorAll('#'+groupId+' .cc-sel-btn');
+    btns.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        btns.forEach(function(b){ b.classList.remove('on'); });
+        btn.classList.add('on');
+        onChange(btn.dataset.fam || btn.dataset.oh);
+        renderTable();
+      });
+    });
+  }
+  wireSelGroup('cc-fam-sel', function(v){ curFam = v; });
+  wireSelGroup('cc-oh-sel',  function(v){ curOH  = v; });
+
+  // Format a cell value as percentage string
+  function fmt(v, decimals){
+    if(v === null || v === undefined || isNaN(v)) return '—';
+    return (v >= 0 ? '+' : '') + (v * 100).toFixed(decimals !== undefined ? decimals : 1) + '%';
+  }
+
+  function ciStr(ci){
+    if(!ci) return '';
+    return '[' + fmt(ci[0], 1) + ', ' + fmt(ci[1], 1) + ']';
+  }
+
+  function isWinner(c){
+    var ci = c.boot_ci;
+    if(!ci) return false;
+    return (ci[0] > 0 && ci[1] > 0) || (ci[0] < 0 && ci[1] < 0);
+  }
+
+  function renderTable(){
+    var tbody = document.getElementById('cc-tbody');
+    if(!tbody) return;
+
+    if(typeof window.COND_CELLS === 'undefined'){
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted,#8899aa);padding:20px">' +
+        '<span class="l-en">Data not loaded</span><span class="l-zh">数据未加载</span></td></tr>';
+      return;
+    }
+
+    var parts = curOH.split('|');
+    var outcome = parts[0], h = parts[1];
+    var allCells = (window.COND_CELLS.cells[outcome] || {})[h] || [];
+
+    // Build lookup: phase → quad → cell
+    var lookup = {};
+    allCells.forEach(function(c){
+      if(c.family !== curFam) return;
+      if(!lookup[c.phase]) lookup[c.phase] = {};
+      lookup[c.phase][c.quad] = c;
+    });
+
+    var html = '';
+    PHASES.forEach(function(phase){
+      var pCells = lookup[phase] || {};
+      var pooled = pCells['pooled'];
+      html += '<tr class="cc-phase-hd"><td colspan="6">' +
+        '<span class="l-en">' + phase + '</span>' +
+        '<span class="l-zh">' + phaseZh(phase) + '</span>';
+      if(pooled){
+        html += ' <span class="cc-n">n=' + pooled.n_months + 'mo · ' +
+          '<span class="l-en">pooled</span><span class="l-zh">汇总</span>: ' +
+          fmt(pooled.shrunk_mean) + '</span>';
+      }
+      html += '</td></tr>';
+
+      html += '<tr>';
+      // Phase col (label only)
+      html += '<td style="color:var(--muted,#8899aa);font-size:.72rem">' +
+        '<span class="l-en">vs pooled</span><span class="l-zh">vs汇总</span></td>';
+
+      QUADS.forEach(function(q){
+        var c = pCells[q];
+        if(!c){
+          html += '<td class="cc-cell-neutral">—</td>';
+          return;
+        }
+        var win = isWinner(c);
+        var collapsed = c.collapsed;
+        var gapVal = (c.shrunk_mean !== null && pooled && pooled.shrunk_mean !== null)
+          ? c.shrunk_mean - pooled.shrunk_mean : null;
+        var valClass = (gapVal === null) ? 'cc-cell-neutral'
+          : (gapVal > 0.002) ? 'cc-cell-pos'
+          : (gapVal < -0.002) ? 'cc-cell-neg' : 'cc-cell-neutral';
+
+        html += '<td class="' + (collapsed ? 'cc-cell-collapsed' : '') + '">';
+        if(collapsed){
+          html += '<span class="cc-cell-neutral cc-n">' +
+            '<span class="l-en">collapsed (n&lt;12mo)</span>' +
+            '<span class="l-zh">折叠（n&lt;12月）</span></span>';
+        } else {
+          html += '<span class="cc-cell-val ' + valClass + '">' +
+            (gapVal !== null ? fmt(gapVal) : '—') +
+            '</span>';
+          if(win) html += '<span class="cc-winner-mark" title="CI excludes 0">★</span>';
+          html += '<span class="cc-revopt">rev-opt</span>';
+          if(c.boot_ci){
+            html += '<br><span class="cc-ci ' + (win ? 'cc-ci-win' : '') + '">' +
+              ciStr(c.boot_ci) + '</span>';
+          }
+          html += '<br><span class="cc-n">n=' + c.n_months + 'mo w=' + c.shrink_weight.toFixed(2) + '</span>';
+        }
+        html += '</td>';
+      });
+
+      // Pooled col
+      if(pooled){
+        html += '<td class="cc-pooled-row">' +
+          '<span>' + fmt(pooled.shrunk_mean) + '</span>' +
+          '<br><span class="cc-n">n=' + pooled.n_months + 'mo</span>';
+        html += '</td>';
+      } else {
+        html += '<td>—</td>';
+      }
+      html += '</tr>';
+    });
+
+    tbody.innerHTML = html;
+  }
+
+  function phaseZh(p){
+    var m = {'Trough':'谷底','Recovery':'复苏','Expansion':'扩张','Peak':'顶峰','Downturn':'下行'};
+    return m[p] || p;
+  }
+
+  // Initial render on load
+  if(typeof window.COND_CELLS !== 'undefined'){
+    renderTable();
+    console.log('W4.4 conditional cells loaded: epoch=' + window.COND_CELLS.epoch);
+  } else {
+    // Script may be deferred; render on DOMContentLoaded fallback
+    document.addEventListener('DOMContentLoaded', function(){
+      if(typeof window.COND_CELLS !== 'undefined') renderTable();
+      else console.error('measurement.html: window.COND_CELLS not loaded — check condcelldata/cond_cells_data.js');
+    });
+  }
 })();
 </script>
 <script defer data-whb data-root="" src="wh_banner.js"></script>

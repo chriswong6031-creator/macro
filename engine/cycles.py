@@ -90,6 +90,69 @@ def _load_fitted_bands() -> dict:
         return {}
 
 
+# ── W4.6 risk-channel binding calibration (data/regime/ladder_risk_calibration.json) ──
+# Additive SIZE multiplier per (ladder state x family) — NEVER a directional score.
+# Loaded lazily on the first ladder_state() call. When ABSENT the multiplier is 1.0 for
+# every state (byte-identical to today). When PRESENT it binds ONLY the cells that earned
+# a weight != 1.0 (FDR-survived, CI excludes null); everything else is 1.0. Per the W4.6
+# verdict the artifact currently ships ALL 1.0 (no risk-sizing signal survived) — so the
+# binding is presently a numeric no-op. The DIRECTIONAL LADDER_SCORE stays UNTOUCHED this
+# wave: direction was never validated and the axis-flip is W4.7's question.
+_RISK_CALIB: dict = {}
+_RISK_CALIB_LOADED: bool = False
+_RISK_CALIB_LOGGED: set = set()   # (family, state) pairs whose non-1.0 override was logged
+
+
+def _load_risk_calib() -> dict:
+    """Load ladder_risk_calibration.json -> {family: {state: mult}}. Returns {} on any
+    error (fallback to all-1.0). Mirrors _load_fitted_bands (W2.8)."""
+    try:
+        p = config.data_dir() / "regime" / "ladder_risk_calibration.json"
+        if not p.exists():
+            return {}
+        import json as _json
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        rsm = d.get("risk_size_mult") or {}
+        clamp = d.get("mult_clamp") or [0.5, 1.5]
+        out: dict = {}
+        for fam, states in rsm.items():
+            out[fam] = {}
+            for st, cell in states.items():
+                m = cell.get("risk_size_mult", 1.0) if isinstance(cell, dict) else float(cell)
+                out[fam][st] = float(min(max(m, clamp[0]), clamp[1]))
+        log.info("cycles: loaded ladder risk calibration from %s (validated=%s, any_bound=%s)",
+                 p, d.get("validated"), d.get("any_cell_bound"))
+        return out
+    except Exception as e:  # noqa: BLE001
+        log.debug("cycles: ladder risk calibration unavailable (%s) — using 1.0 for all states", e)
+        return {}
+
+
+# engine hazard-pool family tags -> calibration family keys (the artifact is keyed on the
+# keystone families us_sector/country). Unmapped families (basket/flagship) have no fitted
+# cells and fall through to 1.0.
+_RISK_FAMILY_ALIAS = {"sector": "us_sector", "us_sector": "us_sector",
+                      "country": "country", "equity": "us_sector"}
+
+
+def risk_size_mult(state: str, family: str | None) -> float:
+    """Fitted SIZE multiplier in [0.5,1.5] for (state, family). 1.0 when no artifact, no
+    family, or the cell did not earn a weight (null-cell discipline). Additive to sizing,
+    NEVER to the directional score. One-time log per non-1.0 (state,family)."""
+    global _RISK_CALIB, _RISK_CALIB_LOADED  # noqa: PLW0603
+    if not _RISK_CALIB_LOADED:
+        _RISK_CALIB = _load_risk_calib()
+        _RISK_CALIB_LOADED = True
+    fam = _RISK_FAMILY_ALIAS.get(family or "", family)
+    if not fam or fam not in _RISK_CALIB:
+        return 1.0
+    m = _RISK_CALIB[fam].get(state, 1.0)
+    if m != 1.0 and (fam, state) not in _RISK_CALIB_LOGGED:
+        log.info("cycles: %s/%s risk_size_mult override -> %.3fx (fitted, W4.6)", fam, state, m)
+        _RISK_CALIB_LOGGED.add((fam, state))
+    return m
+
+
 def _preset(kind: str) -> dict:
     """Return preset for `kind`, with dc_band / ic_band_w overridden by the fitted
     artifact when available. All other fields come from CYCLE_PRESETS.  Falls back
@@ -795,7 +858,7 @@ def regime_state(cyc: dict, mtf: dict) -> dict:
 def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                  liquidity: str | None = None,
                  macro_drag: float | None = None, macro_beta: float = 0.0,
-                 vol_regime: dict | None = None) -> dict:
+                 vol_regime: dict | None = None, family: str | None = None) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
     with a plain next-step line. The higher-timeframe regime (weekly + 3-day +
     investor cycle) gates and can RE-LABEL the daily signal: a daily buy setup
@@ -1393,7 +1456,11 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             "vol_regime_state": (vr_state if vr_on else None),
             "vol_regime_effect": vr_effect, "vol_regime_pen": vr_pen,
             "vol_regime_scored_active": bool((_vr or {}).get("scored_active")),
-            "vol_regime_line": vr_line, "vol_regime_line_zh": vr_line_zh}
+            "vol_regime_line": vr_line, "vol_regime_line_zh": vr_line_zh,
+            # W4.6: fitted RISK-channel SIZE multiplier (additive to sizing, never to the
+            # directional score). 1.0 when no artifact / no family / null cell — currently
+            # 1.0 for every cell (no risk-sizing signal survived the FDR gate).
+            "risk_size_mult": risk_size_mult(state, family)}
 
 
 # ----------------------------------------------------- signal age / strength ----
@@ -2171,7 +2238,7 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
             kind: str = "equity", liquidity: str | None = None,
             macro_drag: float | None = None, macro_beta: float = 0.0,
             vix_ctx: dict | None = None, vol_regime: dict | None = None,
-            price: pd.Series | None = None) -> dict:
+            price: pd.Series | None = None, family: str | None = None) -> dict:
     """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
     "neutral", from engine.regime.liquidity_overlay), threaded into the ladder as
     an orthogonal macro conviction modifier. None => no liquidity context (keeps
@@ -2208,7 +2275,8 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
     mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
     lad = ladder_state(cyc, mtf, early, liquidity=liquidity,
-                       macro_drag=macro_drag, macro_beta=macro_beta, vol_regime=vol_regime)
+                       macro_drag=macro_drag, macro_beta=macro_beta, vol_regime=vol_regime,
+                       family=family)
     wo = washout(struct, cyc, vix_ctx) if cyc else {}
     if lad:
         age = signal_age(struct, lad["state"], high, kind)

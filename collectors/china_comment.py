@@ -39,12 +39,18 @@ import logging
 import pandas as pd
 
 from lib import config
+from collectors import _drip
 from collectors.china_analyst import to_ticker, _num
 
 log = logging.getLogger("china_comment")
 
 OUT = config.data_dir() / "china_comment" / "detail.parquet"
 HIST = config.data_dir() / "china_comment" / "attention_hist.parquet"
+# Append-only PIT history for the full per-name snapshot (detail, not just attention).
+# Keyed by (asof, ticker); lets the engine back-test how inst_participation /
+# main_cost_gap / score moved across days. detail.parquet remains the unchanged
+# snapshot read by every existing consumer.
+DETAIL_HIST = config.data_dir() / "china_comment" / "detail_hist.parquet"
 
 
 def _col(cols: list, *needles: str):
@@ -156,6 +162,13 @@ def refresh() -> int:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     out.to_parquet(OUT, index=False)
     log.info("china comment: wrote %s (%d names, asof %s)", OUT, len(out), today)
+    # Append to the PIT detail history (additive; never overwrites the snapshot consumers read).
+    try:
+        hist_rows = out.to_dict("records")
+        _drip.append_snapshot(DETAIL_HIST, hist_rows, date_col="asof")
+        log.info("china comment: appended detail history %s (asof %s)", DETAIL_HIST, today)
+    except Exception as e:  # noqa: BLE001 — history is telemetry, never fatal
+        log.warning("china comment: detail history append failed (%s)", e)
     return len(out)
 
 

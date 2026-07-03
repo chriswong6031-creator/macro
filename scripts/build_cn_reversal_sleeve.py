@@ -41,6 +41,7 @@ from jinja2 import Environment, FileSystemLoader
 from engine import cn_reversal_sleeve as sleeve
 from engine import cn_reversal_sleeve_ledger as ledger
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger("build_cn_reversal_sleeve")
 
@@ -289,7 +290,7 @@ def render(payload: dict, site=None) -> None:
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     html = env.get_template("cn_reversal_sleeve.html.j2").render(d=payload, built=built)
-    (site / _PAGE).write_text(html)
+    write_page(site / _PAGE, html)
     log.info("wrote %s (%.0f KB)", site / _PAGE, (site / _PAGE).stat().st_size / 1024)
 
 

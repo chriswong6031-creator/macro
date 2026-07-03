@@ -24,6 +24,7 @@ import plotly.graph_objects as go
 
 from engine import china_allocation as ca
 from lib import config
+from lib.pages import write_page
 from scripts.build_vector import _html, PLOT, C
 
 log = logging.getLogger(__name__)
@@ -139,7 +140,7 @@ def build() -> str:
         env.globals.update(td=lambda en: en, tr=lambda en: en)
     html = env.get_template("china_allocation.html.j2").render(**vm, C=C)
     out = config.ROOT / "site" / "china_allocation.html"
-    out.write_text(html)
+    write_page(out, html)
 
     # compact card for the China macro index-health allocation button
     card = snap["card"]

@@ -7,21 +7,49 @@ vendor's insider product is US-SEC-only. The one free, programmatic path is
 yfinance's undocumented Yahoo `quoteSummary` endpoint: `get_insider_transactions()`
 returns SEDI-sourced, dated insider filings for many .TO names — no key, no auth.
 Verified live on yfinance 1.4.1 (~150-row cap per name, ~9/13 coverage on a liquid
-sample; ENB/ABX/BCE/CP came back empty — coverage is best-effort PER TICKER).
+sample; ENB/ABX/BCE/CP came back empty -- coverage is best-effort PER TICKER).
 
-We keep only PERSONAL OPEN-MARKET trades — rows whose text says "Acquisition /
+We keep only PERSONAL OPEN-MARKET trades -- rows whose text says "Acquisition /
 Disposition in the public market" filed by a person ("Director of Issuer", "Senior
-Officer of Issuer", …) — and DROP issuer rows (Position == "Issuer" = company
+Officer of Issuer", ...) -- and DROP issuer rows (Position == "Issuer" = company
 buybacks) and option exercises / grants / redemptions, then summarise the net
 buy/sell lean over a trailing window plus the most-recent filings.
 
-IMPORTANT — this is CONTEXT, NOT A SIGNAL. SEDI gives insiders up to ~5 calendar
+IMPORTANT -- this is CONTEXT, NOT A SIGNAL. SEDI gives insiders up to ~5 calendar
 days to file, so the trade is already days old when it publishes, and TSX insider
-breadth is thin — so net buying/selling is a conviction tell, not a timing trigger
+breadth is thin -- so net buying/selling is a conviction tell, not a timing trigger
 (no Phase-0 cross-sectional validation yet). Mirrors the best-effort drip-cache
 pattern of engine/canada_fundamentals.py (fetch_earnings / earnings_map); cached
 under data/canada_insider/. yfinance is pinned at 1.4.1 (these undocumented
 properties have regressed between versions).
+
+## Persistence (append-only fix -- Slice G, 2026-07-03)
+
+The previous cache used ONE row per ticker, storing the full payload as a JSON blob.
+Each re-fetch REPLACED the blob -- because yfinance caps at ~150 rows per name, any
+transaction older than the 150-row window was permanently lost after the next refresh
+cycle, so history evaporated.
+
+The new store is a **long-form transactions table**: one row per transaction.
+
+    data/canada_insider/transactions.parquet
+      columns: ticker, date, insider, role, personal (bool), action, shares, value,
+               insider_key, shares_key, value_key
+      dedup key: (ticker, date, insider_key, shares_key, value_key)
+
+Each incremental fetch appends new rows and deduplicates on the composite key, so
+history accumulates indefinitely even when yfinance only returns the most-recent
+~150 rows.
+
+**Backward compatibility**: the legacy `data/canada_insider/insider.parquet` (one
+JSON-blob row per ticker) is migrated to transactions.parquet on the first write.
+`insider_map()` returns the same dict shape as before -- callers in
+scripts/build_canada_library.py are unchanged.
+
+**Free-mirror spike (2026-07-03)**: canadianinsider.com and INK Research were probed
+for multi-year SEDI history.  Verdict: both are paid-only (2y/5y charting tiers);
+no free bulk download or programmatic API found. SEDI.ca is CAPTCHA-walled. C2 come-
+back date (~2028) stands.
 """
 from __future__ import annotations
 
@@ -35,10 +63,21 @@ from lib import config
 
 log = logging.getLogger("canada_insider")
 
-CACHE = config.data_dir() / "canada_insider" / "insider.parquet"
+# ---------------------------------------------------------------------------
+# Store paths
+# ---------------------------------------------------------------------------
 
-# Re-fetch a cached name when its snapshot is older than this (days). Recent filings
-# don't change, so a slow cadence is fine and keeps the per-build yfinance drip small.
+# Legacy blob-format cache (one JSON blob per ticker) -- auto-migrated on first write.
+# Kept for >=1 month to allow safe rollback; phase out 2026-08-03.
+_LEGACY_CACHE = config.data_dir() / "canada_insider" / "insider.parquet"
+
+# New append-only transactions store (one row per transaction, deduped).
+CACHE = config.data_dir() / "canada_insider" / "transactions.parquet"
+
+# Deduplication key -- tolerates None/NaN in insider/shares/value by coercing to str.
+_DEDUP_COLS = ("ticker", "date", "insider_key", "shares_key", "value_key")
+
+# Re-fetch a cached name when its most-recent transaction date is older than this.
 INSIDER_MAX_AGE_DAYS = 12
 
 # Defaults if the config block is absent (degrade-don't-crash).
@@ -48,29 +87,26 @@ _DEFAULTS = {"window_days": 180, "max_new_per_build": 40, "recent_n": 6, "min_sh
 def _cfg() -> dict:
     try:
         c = (config.load().get("canada", {}) or {}).get("insider", {}) or {}
-    except Exception:  # noqa: BLE001 — additive, never fatal
+    except Exception:  # noqa: BLE001
         c = {}
     return {**_DEFAULTS, **c}
 
 
 def _num(v):
     try:
-        if v in (None, "", "--", "—"):
+        if v in (None, "", "--", "\u2014"):
             return None
         f = float(v)
-        return f if f == f else None      # drop NaN
+        return f if f == f else None
     except (TypeError, ValueError):
         return None
 
 
 def _is_company(position: str) -> bool:
-    """True when the filer is the ISSUER itself (a buyback), not a person. yfinance
-    uses Position == "Issuer" for the company and "<role> of Issuer" for people."""
     return (position or "").strip().lower() == "issuer"
 
 
 def _role(position: str) -> str:
-    """Normalise the SEDI position string to a short role label."""
     p = (position or "").lower()
     if "director" in p:
         return "Director"
@@ -84,9 +120,6 @@ def _role(position: str) -> str:
 
 
 def _row_action(text: str) -> str:
-    """Classify a transaction by its yfinance free-text. Only OPEN-MARKET trades
-    ("…in the public market") count as buy/sell; everything else (option exercises,
-    grants, redemptions, issuer repurchases) is "other" and dropped from the lean."""
     t = (text or "").lower()
     if "public market" in t:
         if "acquisition" in t or "purchase" in t:
@@ -98,9 +131,7 @@ def _row_action(text: str) -> str:
 
 def _normalize_df(df) -> list[dict]:
     """Map a yfinance get_insider_transactions() DataFrame to a list of normalised
-    row dicts. Pure (no I/O) so it is unit-testable with a synthetic frame. Columns
-    seen on 1.4.1: Shares, Value, URL, Text, Insider, Position, Transaction,
-    Start Date, Ownership (the date can also arrive as the index)."""
+    row dicts. Pure (no I/O) so it is unit-testable with a synthetic frame."""
     if df is None or len(df) == 0:
         return []
     cols = {str(c).strip().lower(): c for c in df.columns}
@@ -138,8 +169,7 @@ def _normalize_df(df) -> list[dict]:
 
 def _summarize(rows: list[dict], window_days: int = 180, recent_n: int = 6,
                min_shares: float = 0, now: "pd.Timestamp | None" = None) -> dict | None:
-    """Net open-market personal-insider buy/sell lean over a trailing window, plus the
-    most-recent filings. Pure (no I/O). None when there is nothing to show."""
+    """Net open-market personal-insider buy/sell lean over a trailing window."""
     now = now if now is not None else pd.Timestamp.now()
     cut = (now - pd.Timedelta(days=window_days)).strftime("%Y-%m-%d")
     om = [r for r in rows
@@ -191,74 +221,184 @@ def _summarize(rows: list[dict], window_days: int = 180, recent_n: int = 6,
     }
 
 
-# ---------------------------------------------------------------- fetch (yfinance)
+# ---------------------------------------------------------------------------
+# Append-only store helpers
+# ---------------------------------------------------------------------------
 
-def fetch_insider(tickers: list[str], max_new: int | None = None) -> int:
-    """Drip yfinance get_insider_transactions() into data/canada_insider/, capped +
-    freshness-cached like fetch_earnings. Best-effort; one name down can't break the
-    batch. Empty results are cached too, so perennially-uncovered names don't burn the
-    per-build budget. Returns how many names were (re)fetched."""
+def _make_dedup_key(row: dict) -> tuple:
+    return (
+        str(row.get("ticker", "")),
+        str(row.get("date", "")),
+        str(row.get("insider") or "None"),
+        str(row.get("shares") or "None"),
+        str(row.get("value") or "None"),
+    )
+
+
+def _load_transactions() -> pd.DataFrame:
+    """Load the transactions store, migrating from legacy blob format if needed."""
+    if CACHE.exists():
+        try:
+            return pd.read_parquet(CACHE)
+        except Exception as e:  # noqa: BLE001
+            log.warning("canada_insider: transactions store read failed (%s), re-migrating", e)
+
+    if _LEGACY_CACHE.exists():
+        log.info("canada_insider: migrating legacy insider.parquet to transactions.parquet")
+        try:
+            legacy = pd.read_parquet(_LEGACY_CACHE)
+            all_rows: list[dict] = []
+            for _, r in legacy.iterrows():
+                ticker = str(r.get("ticker", ""))
+                try:
+                    rows = json.loads(r.get("payload") or "[]")
+                except (json.JSONDecodeError, TypeError):
+                    rows = []
+                for row in rows:
+                    row["ticker"] = ticker
+                    key = _make_dedup_key(row)
+                    all_rows.append({
+                        **row,
+                        "insider_key": key[2],
+                        "shares_key": key[3],
+                        "value_key": key[4],
+                    })
+            if all_rows:
+                df = pd.DataFrame(all_rows)
+                df = df.drop_duplicates(subset=list(_DEDUP_COLS))
+                CACHE.parent.mkdir(parents=True, exist_ok=True)
+                df.to_parquet(CACHE, index=False)
+                log.info("canada_insider: migrated %d rows from %d tickers",
+                         len(df), legacy["ticker"].nunique())
+                return df
+        except Exception as e:  # noqa: BLE001
+            log.warning("canada_insider: legacy migration failed: %s", e)
+
+    return pd.DataFrame(columns=[
+        "ticker", "date", "insider", "role", "personal", "action", "shares", "value",
+        "insider_key", "shares_key", "value_key",
+    ])
+
+
+def _save_transactions(df: pd.DataFrame) -> None:
+    df = df.drop_duplicates(subset=list(_DEDUP_COLS), keep="last")
+    CACHE.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(CACHE, index=False)
+
+
+def _latest_date_per_ticker(df: pd.DataFrame) -> dict:
+    if df.empty or "ticker" not in df.columns or "date" not in df.columns:
+        return {}
+    return (
+        df.dropna(subset=["date"])
+        .groupby("ticker")["date"]
+        .max()
+        .to_dict()
+    )
+
+
+# ---------------------------------------------------------------------------
+# fetch (yfinance) -- append-only
+# ---------------------------------------------------------------------------
+
+def fetch_insider(tickers: list, max_new=None) -> int:
+    """Drip yfinance get_insider_transactions() into the append-only transactions store.
+
+    Returns how many tickers were (re)fetched.
+    """
     import yfinance as yf
 
     cfg = _cfg()
     cap = int(max_new if max_new is not None else cfg["max_new_per_build"])
 
-    have: dict[str, dict] = {}
-    if CACHE.exists():
-        try:
-            df = pd.read_parquet(CACHE)
-            has_asof = "asof" in df.columns
-            for _, r in df.iterrows():
-                asof = str(r["asof"]) if has_asof and pd.notna(r["asof"]) else ""
-                have[r["ticker"]] = {"payload": r["payload"], "asof": asof}
-        except Exception as e:  # noqa: BLE001
-            log.warning("canada insider cache read failed: %s", e)
+    existing = _load_transactions()
+    latest_per_ticker = _latest_date_per_ticker(existing)
 
-    fresh_cut = (pd.Timestamp.now() - pd.Timedelta(days=INSIDER_MAX_AGE_DAYS)).strftime("%Y-%m-%d")
-    todo = [t for t in tickers if t.endswith(".TO")
-            and not (t in have and have[t]["asof"] >= fresh_cut)][:cap]
-    today = pd.Timestamp.now().strftime("%Y-%m-%d")
+    fresh_cut = (pd.Timestamp.now() - pd.Timedelta(days=INSIDER_MAX_AGE_DAYS)).strftime(
+        "%Y-%m-%d"
+    )
+    todo = [
+        t for t in tickers
+        if t.endswith(".TO")
+        and not (t in latest_per_ticker and latest_per_ticker[t] >= fresh_cut)
+    ][:cap]
+
+    if not todo:
+        return 0
+
+    existing_keys: set = set()
+    if not existing.empty:
+        for col in _DEDUP_COLS:
+            if col not in existing.columns:
+                existing[col] = "None"
+        existing_keys = set(
+            zip(
+                existing["ticker"].astype(str),
+                existing["date"].astype(str),
+                existing["insider_key"].astype(str),
+                existing["shares_key"].astype(str),
+                existing["value_key"].astype(str),
+            )
+        )
+
+    new_rows: list[dict] = []
     n = 0
     for t in todo:
         try:
-            df = yf.Ticker(t).get_insider_transactions()
-            rows = _normalize_df(df)
-            have[t] = {"payload": json.dumps(rows, default=str), "asof": today}
+            df_yf = yf.Ticker(t).get_insider_transactions()
+            rows = _normalize_df(df_yf)
+            for row in rows:
+                row["ticker"] = t
+                key = _make_dedup_key(row)
+                if key not in existing_keys:
+                    new_rows.append({
+                        **row,
+                        "insider_key": key[2],
+                        "shares_key": key[3],
+                        "value_key": key[4],
+                    })
+                    existing_keys.add(key)
             n += 1
             time.sleep(0.05)
-        except Exception as e:  # noqa: BLE001 — one name down can't break the batch
-            log.debug("canada insider %s failed: %s", t, e)
-    if n:
-        CACHE.parent.mkdir(parents=True, exist_ok=True)
-        rows_out = [{"ticker": t, "payload": v["payload"], "asof": v["asof"]}
-                    for t, v in have.items()]
-        pd.DataFrame(rows_out).to_parquet(CACHE)
+        except Exception as e:  # noqa: BLE001
+            log.debug("canada_insider %s failed: %s", t, e)
+
+    if new_rows:
+        combined = pd.concat(
+            [existing, pd.DataFrame(new_rows)],
+            ignore_index=True,
+        )
+        _save_transactions(combined)
+        log.info("canada_insider: appended %d new rows from %d tickers", len(new_rows), n)
+
     return n
 
 
-def insider_map() -> dict[str, dict]:
-    """{ticker: insider summary} from the cache, for the per-stock display. Empty when
-    the cache is absent (degrade-don't-crash). Names with no open-market personal
-    filings in the window are omitted (the panel simply hides)."""
-    if not CACHE.exists():
+def insider_map() -> dict:
+    """{ticker: insider summary} from the transactions store.
+
+    Returns the same shape as the legacy implementation so callers in
+    scripts/build_canada_library.py are unchanged.
+    """
+    df = _load_transactions()
+    if df.empty:
         return {}
-    try:
-        df = pd.read_parquet(CACHE)
-    except Exception as e:  # noqa: BLE001
-        log.warning("canada insider cache read failed: %s", e)
-        return {}
+
     cfg = _cfg()
     window, recent_n = int(cfg["window_days"]), int(cfg["recent_n"])
     min_shares = float(cfg["min_shares"] or 0)
-    has_asof = "asof" in df.columns
-    out: dict[str, dict] = {}
-    for _, r in df.iterrows():
-        try:
-            rows = json.loads(r["payload"])
-        except Exception:  # noqa: BLE001
-            continue
+
+    out: dict = {}
+    for ticker, grp in df.groupby("ticker"):
+        grp_clean = grp.drop(
+            columns=[c for c in ("insider_key", "shares_key", "value_key")
+                     if c in grp.columns],
+            errors="ignore",
+        )
+        rows = grp_clean.to_dict("records")
         summ = _summarize(rows, window_days=window, recent_n=recent_n, min_shares=min_shares)
         if summ:
-            summ["asof"] = str(r["asof"]) if has_asof and pd.notna(r["asof"]) else None
-            out[str(r["ticker"])] = summ
+            dates = [r.get("date", "") for r in rows if r.get("date")]
+            summ["asof"] = max(dates) if dates else None
+            out[str(ticker)] = summ
     return out

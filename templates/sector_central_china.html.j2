@@ -34,6 +34,21 @@
   .rg-on { color: var(--up); } .rg-off { color: var(--down); } .rg-mix { color: var(--warn); }
   .rg-bar { height: 7px; border-radius: 5px; margin-top: 7px; overflow: hidden; background: var(--line); }
   .rg-bar i { display: block; height: 100%; }
+  /* W0.4: regime-cap notice — shown when the gate pins the top tier unreachable */
+  .rg-cap-notice { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 9px;
+    font-size: 13px; line-height: 1.5; padding: 10px 14px; margin-top: 2px;
+    border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
+    border-left: 3px solid var(--warn); border-radius: 11px;
+    background: color-mix(in srgb, var(--warn) 6%, var(--panel)); color: var(--text); }
+  .rg-cap-notice .rg-cap-ic { flex: none; color: var(--warn); font-size: 15px; margin-top: 1px; }
+  .rg-cap-notice b { color: var(--warn); }
+  /* W0.4: staleness warning — shown when a regime-leg input file is overdue */
+  .rg-stale-notice { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 9px;
+    font-size: 12.5px; line-height: 1.5; padding: 9px 14px; margin-top: 2px;
+    border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line));
+    border-left: 3px solid var(--down); border-radius: 11px;
+    background: color-mix(in srgb, var(--down) 5%, var(--panel)); color: var(--text); }
+  .rg-stale-notice .rg-stale-ic { flex: none; color: var(--down); font-size: 15px; margin-top: 1px; }
   /* plain "new here?" orientation strip */
   .scc-howto { margin: 12px 0 2px; padding: 11px 14px; font-size: 13px; line-height: 1.55; color: var(--muted);
     background: color-mix(in srgb, var(--link) 6%, var(--panel)); border: 1px solid color-mix(in srgb, var(--link) 22%, var(--line));
@@ -361,7 +376,33 @@
     cells.push('<div class="rg-cell"><div class="rg-k">'+L('Flow & froth','资金与拥挤')+' · '+L('display','展示')+'</div>'+
       '<div class="rg-v" style="font-size:15px">'+(sb.net!=null?(sb.net>0?'+':'')+sb.net+' '+L('SB','南向'):'—')+'</div>'+
       '<div class="rg-d">'+L('margin','融资')+' '+(mg.pctile!=null?mg.pctile+'%ile':'—')+' · '+L('valn froth','估值拥挤')+' '+(flow.froth_anchor!=null?Math.round(flow.froth_anchor)+'%ile':'—')+'</div></div>');
-    document.getElementById('regime').innerHTML=head+cells.join('');
+
+    // W0.4: regime-cap notice — render whenever the gate pins any tier structurally unreachable.
+    // gate_caps_tier is set by engine.china_sector_central._regime_anchor() when gate < 0.29
+    // (the floor below which Accumulate is mathematically unreachable regardless of sector setup).
+    var capHtml = '';
+    if (M.gate_caps_tier) {
+      capHtml = '<div class="rg-cap-notice"><span class="rg-cap-ic">⚠</span><span>' +
+        L('Risk-off regime (gate ×' + (M.gate_factor != null ? M.gate_factor : '—') + ') currently caps all sector calls below <b>' + esc(M.gate_caps_tier) + '</b>. This is the genuine regime signal — not a data error. The cap lifts automatically when the credit/vol/margin de-risk blend falls below 0.60.',
+          '风险偏离状态（门控 ×' + (M.gate_factor != null ? M.gate_factor : '—') + '）当前将所有行业研判上限压低至<b>' + esc(M.gate_caps_tier) + '</b>以下。这是真实的体制信号，而非数据错误。当信用/波动率/融资降险综合值降至 0.60 以下时，上限将自动解除。') +
+        '</span></div>';
+    }
+
+    // W0.4: staleness warning — render when a regime-leg input file is overdue.
+    // any_stale and leg_stale are set by _regime_anchor() when a source parquet is too old.
+    var staleHtml = '';
+    if (M.any_stale) {
+      var ls = M.leg_stale || {};
+      var staleList = Object.keys(ls).filter(function(k){ return ls[k] != null && (
+        (k==='credit' && ls[k]>60) || (k!=='credit' && ls[k]>7)); });
+      var staleDesc = staleList.map(function(k){ return esc(k)+'('+ls[k]+'d)'; }).join(', ');
+      staleHtml = '<div class="rg-stale-notice"><span class="rg-stale-ic">⛔</span><span>' +
+        L('Stale regime input detected: ' + staleDesc + '. A frozen upstream collector may be silently pinning the gate. Check the collector logs.',
+          '检测到陈旧体制输入：' + esc(staleDesc) + '。上游收集器可能已停止更新，导致门控被固定。请检查收集器日志。') +
+        '</span></div>';
+    }
+
+    document.getElementById('regime').innerHTML = head + cells.join('') + capHtml + staleHtml;
   }
 
   /* ---- conviction card ---- */

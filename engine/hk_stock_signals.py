@@ -31,6 +31,13 @@ within the validated regime, not a selection-alpha buy list (trust_tier stays 's
 
 Pure functions over already-stored frames; every leg degrades to absent (never neutral)
 so a missing feed simply drops out of the blend.
+
+W4 note (screen-tier re-weight toward phase-0 evidence, 2026-07): the ``_EDGE_W`` master
+switch was re-weighted toward the A/H-value leg (H3 near-GO, DSR 0.879) and away from the
+southbound leg (H1 Δ-ranker NO-GO at delivery lag; its LEVEL stays only as context). This
+is NOT a validated scored seam — the HK board remains a LABELED SCREEN (trust_tier stays
+'screen'); nothing here graduates. See the ``_EDGE_W`` comment block for the citations and
+the pre-W4 baseline weights.
 """
 from __future__ import annotations
 
@@ -44,10 +51,34 @@ log = logging.getLogger(__name__)
 # regime-conditional leg weights for the unified edge (the MASTER SWITCH). Each row sums
 # to ~1 over the legs PRESENT for a name (renormalized); a name missing A/H value simply
 # re-weights across southbound + beta-neutral RS + regime-fit.
+#
+# W4 SCREEN-TIER RE-WEIGHT toward phase-0 evidence (2026-07) — this is NOT a validated
+# scored seam; it re-weights an already-labelled SCREEN toward the phase-0 verdicts, per
+# the HK_CANADA constitution (DSR>=0.90 is the ONLY door into a scored seam and nothing
+# here graduates). Two evidence citations drive the tilt:
+#   * ahv UP — the A/H-discount own-history tilt is the near-GO leg: real, sign-stable
+#     cross-sectional edge (rank-IC 0.055 @3m, HAC-t 2.23; top-5 H-leg excess +2.8%/3m,
+#     positive in both split-halves and both eras), falling just short of the door at
+#     DSR 0.879 < 0.90.  → reports/hkca-h3-phase0.md (ACCRUE).
+#   * sb DOWN — southbound as a Δ-RANKER is NO-GO at the real delivery lag (H1); only the
+#     LEVEL survives as a context input (kept on-card, not up-weighted as a ranker).
+#     → reports/hk-southbound-divergence-phase0.md / hk-southbound-h1-phase0.md (NO-GO).
+# Changes are MODERATE (a few points per row) and preserve BOTH regime-conditionality
+# (risk-off still leads with flow+value+cushions; risk-on with RS+amplifiers) AND the
+# leg-present renormalization in hk_edge().  Pre-W4 baseline kept inline for the audit:
+#     Risk-off {sb .38, ahv .28, bnrs .10, fit .24}
+#     Risk-on  {sb .30, ahv .14, bnrs .36, fit .20}
+#     neutral  {sb .34, ahv .22, bnrs .22, fit .22}
 _EDGE_W = {
-    "Risk-off": {"sb": 0.38, "ahv": 0.28, "bnrs": 0.10, "fit": 0.24},
-    "Risk-on":  {"sb": 0.30, "ahv": 0.14, "bnrs": 0.36, "fit": 0.20},
-    "neutral":  {"sb": 0.34, "ahv": 0.22, "bnrs": 0.22, "fit": 0.22},
+    # ahv +4 / sb −4: value leads defence in risk-off; the southbound leg stays material
+    # (LEVEL context) but no longer out-weighs the near-GO A/H value tilt.
+    "Risk-off": {"sb": 0.34, "ahv": 0.32, "bnrs": 0.10, "fit": 0.24},
+    # ahv +4 / sb −4: risk-on still leads with RS (bnrs .36 unchanged) — the tilt only
+    # moves the two structural-flow/value legs, preserving the regime character.
+    "Risk-on":  {"sb": 0.26, "ahv": 0.18, "bnrs": 0.36, "fit": 0.20},
+    # ahv +5 / sb −5: in the neutral tape the edge is flow + value; lean it toward the
+    # evidence-backed value leg.
+    "neutral":  {"sb": 0.29, "ahv": 0.27, "bnrs": 0.22, "fit": 0.22},
 }
 
 
@@ -228,3 +259,92 @@ def lottery_map(closes: pd.DataFrame) -> dict[str, float]:
     R = closes.sort_index().pct_change(fill_method=None).tail(21) * 100.0
     mx = R.max()
     return {t: round(float(v), 1) for t, v in mx.items() if pd.notna(v)}
+
+
+# ── SFC reportable short-position CONTEXT chip (H2a — ACCRUE-labelled) ─────────
+# Phase-0 verdict: LEVEL = ACCRUE, Δ4w = NO-GO (reports/h2a-phase0.md). On the PRIMARY
+# days-to-cover normalization the own-history short book points the RIGHT way — names with
+# a high days-to-cover percentile underperform the HSI over the next 4 weeks (Q5−Q1
+# −0.39%/4w, HAC-t −1.81, sign-stable in both split-halves) — but it is sub-threshold
+# (DSR 0.32 < 0.90, fails BH-FDR). Correct-signed, not decision-grade. So this is a CONTEXT
+# CHIP only ("shorts P82 (accruing)"), never a rank input. Primary metric per the report:
+#   days_to_cover = shorted_shares / mean(volume, 63 trading days, asof<=t)  [share-liquidity]
+#   signal        = own_history_percentile(days_to_cover, window=104 weeks, min_prior=52)
+_SFC_DTC_WINDOW_W = 104          # own-history percentile window (weeks) — H2a primary
+_SFC_DTC_MIN_PRIOR_W = 52        # min prior weeks before a percentile is meaningful
+_SFC_ADV_WIN_TD = 63             # trailing ADV window (trading days) — H2a primary
+_SFC_MAX_STALE_TD = 12           # freshness guard: suppress if latest SFC week > this stale
+
+
+def sfc_short_pressure(positions: pd.DataFrame | None,
+                       volume_by_ticker: dict[str, "pd.Series"] | None,
+                       *, asof: pd.Timestamp | str | None = None,
+                       max_stale_td: int = _SFC_MAX_STALE_TD) -> dict[str, dict]:
+    """Per covered HK name: current SFC days-to-cover own-history percentile — the H2a
+    context read (ACCRUE-labelled, NEVER a rank input).
+
+    ``positions`` = the ``hk_shorts/positions.parquet`` weekly panel (columns ``date``,
+    ``ticker``, ``shorted_shares``). ``volume_by_ticker`` = {ticker: daily SHARE-volume
+    Series (DatetimeIndex)} — used to build the trailing-63d ADV that normalizes the raw
+    short share count into days-to-cover. ``asof`` optionally clips both to a leak-safe date.
+
+    Returns {ticker: {"dtc": float, "pctile": 0..100, "as_of": "YYYY-MM-DD"}} — ONLY when
+    the latest SFC week is within ``max_stale_td`` trading days of ``asof`` (freshness guard;
+    the whole map is suppressed stale, matching the fail-closed contract). {} when the store
+    is missing, no ticker resolves, or the panel is stale. NO rank effect.
+    """
+    if positions is None or getattr(positions, "empty", True) or not volume_by_ticker:
+        return {}
+    if not {"date", "ticker", "shorted_shares"}.issubset(set(positions.columns)):
+        return {}
+    pos = positions[["date", "ticker", "shorted_shares"]].copy()
+    pos["date"] = pd.to_datetime(pos["date"], errors="coerce").astype("datetime64[ns]")
+    pos = pos.dropna(subset=["date"])
+    if asof is not None:
+        try:
+            pos = pos[pos["date"] <= pd.Timestamp(str(asof))]
+        except Exception:  # noqa: BLE001
+            pass
+    if pos.empty:
+        return {}
+    latest_week = pos["date"].max()
+    # FRESHNESS GUARD (fail-closed): if the newest SFC week is more than max_stale_td
+    # trading days behind the as-of date, the whole context is suppressed rather than
+    # shown stale (the H2a chip must never imply live short pressure off an old file).
+    ref = pd.Timestamp(str(asof)) if asof is not None else latest_week
+    stale_td = int(np.busday_count(latest_week.date(), ref.date())) if ref >= latest_week else 0
+    if stale_td > max_stale_td:
+        log.info("hk SFC short-pressure suppressed — latest week %s is %d trading days stale "
+                 "(> %d) vs %s", latest_week.date(), stale_td, max_stale_td, ref.date())
+        return {}
+
+    out: dict[str, dict] = {}
+    for t, sub in pos.groupby("ticker"):
+        vol = volume_by_ticker.get(t)
+        if vol is None or len(vol) < _SFC_ADV_WIN_TD:
+            continue
+        sub = sub.sort_values("date")[["date", "shorted_shares"]].reset_index(drop=True)
+        adv = pd.to_numeric(vol, errors="coerce").rolling(
+            _SFC_ADV_WIN_TD, min_periods=max(20, _SFC_ADV_WIN_TD // 3)).mean()
+        adv = adv.dropna()
+        if adv.empty:
+            continue
+        adv = adv.reset_index()
+        adv.columns = ["date", "adv63"]
+        adv["date"] = pd.to_datetime(adv["date"], errors="coerce").astype("datetime64[ns]")
+        try:
+            m = pd.merge_asof(sub, adv, on="date")          # ADV asof each short week
+        except Exception:  # noqa: BLE001
+            continue
+        m["dtc"] = m["shorted_shares"] / m["adv63"].replace(0.0, np.nan)
+        w = m["dtc"].dropna().tail(_SFC_DTC_WINDOW_W)
+        if len(w) < _SFC_DTC_MIN_PRIOR_W:
+            continue
+        last = float(w.iloc[-1])
+        if not np.isfinite(last):
+            continue
+        pctile = float((w < last).sum()) / float(len(w) - 1) * 100.0 if len(w) > 1 else 50.0
+        out[t] = {"dtc": round(last, 2),
+                  "pctile": int(round(float(np.clip(pctile, 0.0, 100.0)))),
+                  "as_of": latest_week.strftime("%Y-%m-%d")}
+    return out

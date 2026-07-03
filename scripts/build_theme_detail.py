@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger("build_theme_detail")
 
@@ -127,7 +128,7 @@ def build_detail_pages(data: dict, site: Path, env, region: str = "us") -> int:
         html = tmpl.render(detail_json=json.dumps(detail, separators=(",", ":"), default=str),
                            basket_name=b.get("name", bid), generated_utc=built,
                            back_href=detail["back"])
-        (out_dir / (bid + ".html")).write_text(html)
+        write_page(out_dir / (bid + ".html"), html)
         n += 1
     log.info("[%s] wrote %d theme detail pages -> site/%s/", region, n, out_name)
     return n

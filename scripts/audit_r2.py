@@ -53,7 +53,15 @@ from lib import config  # noqa: E402
 # Cloudflare's WAF 403s python-default User-Agents on the public r2.dev host.
 UA = "macro-audit/1.0"
 DEFAULT_BASE = "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
-DEFAULT_ANCHORS = ["stockdata", "chinastockdata"]  # US-evening lane + asia lane
+DEFAULT_ANCHORS = [
+    "stockdata",      # US-evening lane — canonical daily freshness beacon
+    "chinastockdata", # Asia-close lane — daily ~08:30 UTC
+    # hk_stocks_ext: expanded HSCI universe (~380 names) R2 store — per-ticker OHLCV.
+    # Added as a named anchor (pass --anchors hk_stocks_ext to include in the heartbeat
+    # once the first full backfill publish completes).  Not in DEFAULT yet: the initial
+    # backfill may take several nightly runs; only stable after the _manifest.json is
+    # first written by a successful --dirs hk_stocks_ext run.
+]
 # Both lanes republish daily (daily.yml 02:00 UTC + cron lag lands ~05-10 UTC;
 # asia-close 08:30 UTC), so the manifest's expected age at the 14:30 UTC heartbeat is
 # ~5-9h and the FIRST missed day shows ~29-33h. 26 trips on the first miss; a ~30h

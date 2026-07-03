@@ -26,6 +26,29 @@ def test_core_index_and_futures_symbols_always_in_universe(tmp_path):
         assert sym in uni, sym
 
 
+def test_btc_is_in_core_and_routes_to_yahoo(tmp_path):
+    # BTC trades 24/7, so it's kept in CORE (always fetched) and the Bitcoin Vector
+    # header links data-sym="BTC-USD". A crypto pair must route to Yahoo, never Polygon
+    # (crypto isn't entitled on the stocks plan) — pin both.
+    assert "BTC-USD" in blq.build_universe(tmp_path)
+    assert lq.is_us_symbol("BTC-USD") is False
+
+
+def test_symbols_override_builds_exact_universe(tmp_path):
+    # The hourly btc-live Action passes --symbols BTC-USD to refresh ONLY the crypto
+    # leg — the snapshot must contain exactly that, not the whole CORE+scrape universe.
+    (tmp_path / "big.html").write_text('<span data-sym="AAPL"><span data-sym="NVDA">')
+    snap = blq.build(tmp_path, offline=True, symbols=["BTC-USD"])
+    assert snap["meta"]["requested"] == 1          # exactly one symbol, CORE/scrape bypassed
+    # offline -> no resolved quotes, but the requested universe was BTC-only
+    assert "AAPL" not in snap["quotes"] and "NVDA" not in snap["quotes"]
+
+
+def test_validate_symbols_dedups_uppercases_and_rejects_junk():
+    got = blq._validate_symbols(["btc-usd", "BTC-USD", " eth-usd ", "';DROP", ""])
+    assert got == ["BTC-USD", "ETH-USD"]           # upper, de-duped, junk + empty dropped
+
+
 def test_universe_rejects_junk_and_dedups(tmp_path):
     (tmp_path / "a.html").write_text(
         'x <span class="nb-px" data-sym="AAPL"> '

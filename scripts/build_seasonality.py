@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_seasonality")
@@ -48,7 +49,7 @@ def main() -> int:
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(td=td, tr=tr, zip=zip)
     html = env.get_template("seasonality.html.j2").render(seas=seas, built=built)
-    (site / "seasonality.html").write_text(html)
+    write_page(site / "seasonality.html", html)
     log.info("wrote %s/seasonality.html (%d factors, %d KB)",
              site, len(seas["factors"]), len(html) // 1024)
     return 0

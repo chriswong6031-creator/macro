@@ -35,9 +35,30 @@ def _vm() -> dict:
                      "pctile": 80.0, "above200": True, "mtf_json": mtf, "entry": {"urgency": "now", "tag": "BUY NOW"}}],
         "actions": {"buy_now": [{"name": "Energy", "ticker": "XEG.TO"}], "buy_soon": [],
                     "take_profits": [], "hold": [], "avoid": []},
-        "setups": {"buy": [{"ticker": "TD.TO", "name": "TD Bank", "alpha": 1.8, "label": "UPTREND",
+        # Branch-B ripe-list row (the fields scripts/build_canada_library._branch_b_order stamps):
+        # group, board_pos (rank pill), lead_en/lead_zh, oil_tailwind. Composite is suppressed.
+        "setups": {"branch": "B", "rank_basis": "momentum_screen_accruing",
+                   "tailwind_suppressed": False, "tailwind_stale_days": 1,
+                   # W6 track-record panel (accruing state) + watch/laggard parity strips.
+                   "board_track": {"market": "CA", "status": "accruing",
+                                   "note": "no board calls logged yet",
+                                   "first_read_est": "2026-08-24"},
+                   "watch": [{"ticker": "CLS.TO", "name": "CELESTICA INC", "alpha": 2.38,
+                              "watch_reason": "knife", "block_reason": "weekly still falling",
+                              "block_reason_zh": "周线仍下行",
+                              "conviction": {"score": 61, "verdict": "Strong screen, no base",
+                                             "verdict_zh": "筛选强，尚未筑底"}}],
+                   "laggards": [{"ticker": "WSP.TO", "name": "WSP GLOBAL", "alpha": -2.52}],
+                   "buy": [{"ticker": "TD.TO", "name": "TD Bank", "alpha": 1.8, "label": "UPTREND",
                             "dir": "up", "sector_rank": 1, "sector_n": 9, "sector": "Financials",
-                            "off_high": -3.0, "spark_svg": "<svg></svg>"}]},
+                            "off_high": -3.0, "spark_svg": "<svg></svg>",
+                            "group": "setting_up", "board_pos": 1, "oil_tailwind": False,
+                            "insider": {"lean": "buying", "n_buys": 3, "n_sells": 0, "window_days": 180},
+                            "earnings": {"next_date": "2026-07-10", "days_to": 7},
+                            "lead_en": "Financials sector · momentum screen z +1.8 (accruing) · entry: wait for weekly trigger",
+                            "lead_zh": "Financials 板块 · 动量筛选 z +1.8（待验证） · 入场：等待周线触发",
+                            "entry_signal": {"status": "wait_pullback", "buy_zone": {}}}]},
+        "stocks_health": [], "board_health": [],
         "breadth": {"pct_above_50": 62.0, "pct_above_200": 71.0, "nh": 8, "nl": 2,
                     "net_nh": 6, "adv": 130, "dec": 80, "ad_trend": "up",
                     "pct50_chg20": 3.1, "n_members": 220, "state": "broad",
@@ -79,9 +100,25 @@ def test_canada_stocks_template_renders():
     # stocks mode = the new TSX Stock Dashboard: standout cards + show-more, no regime hero
     html = _env().get_template("canada.html.j2").render(**_vm(), mode="stocks")
     assert "TSX Stock Dashboard" in html
-    assert "Standout individual stocks" in html
+    assert "ripe-list screen" in html                   # Branch-B board header (C7 verdict)
     assert "TD Bank" in html                            # the standout setup renders here
+    # Branch B: composite 0-100 chip SUPPRESSED, rank pill + accruing screen badge present
+    assert "rankpill" in html and ">#1<" in html
+    assert "momentum-accruing" in html                  # W6 why-now evidence-tag chip (renamed)
+    assert 'class="nb-cscore' not in html               # composite score chip is gone
     assert 'data-showmore-rows=' in html                # the progressive reveal is wired (#888 row-capped)
     assert "Commodity / CAD" not in html                # overlay hero is macro-only
     assert "Housing & household-debt" not in html       # housing is macro-only
+    # ── W6 UX overhaul (§7): consolidated desk-header + accruing track-record panel +
+    #    watch/laggard parity strips + why-now evidence chips + entry-window card accent ──
+    assert 'class="desk-hdr"' in html                   # ONE "what this desk is / isn't" block
+    assert "Not a validated buy list" in html
+    assert 'class="trk"' in html and "ACCRUING" in html  # track-record centerpiece (accruing)
+    assert "2026-08-24" in html                          # honest first-stable-read date on the panel
+    assert 'class="watch-strip"' in html and "CLS.TO" in html   # strong-but-blocked watch strip
+    assert "Weakest screen (laggards)" in html and "WSP.TO" in html  # laggard/avoid strip
+    assert "ev-insider" in html                          # insider why-now chip
+    assert "ev-earn" in html and "reports in" in html    # earnings-catalyst chip (days_to present)
+    assert "ent-pullback" in html                        # entry-window card accent
+    assert "Read the Canada AI brief" not in html        # AI-brief doorway presence-guarded (no CA brief)
     assert len(html) > 8000

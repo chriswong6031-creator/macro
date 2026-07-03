@@ -700,6 +700,16 @@
 #result > details:nth-of-type(2) > summary { border-left-color: var(--up); }
 #result > details:nth-of-type(3) > summary { border-left-color: var(--link); }
 #result > details:nth-of-type(4) > summary { border-left-color: var(--muted); }
+  /* W6-C HOLD tracker panel (display-only — basing state / invalidation line) */
+  .hold-panel { margin:6px 0; padding:8px 12px; border-radius:8px; background:var(--panel2);
+               border-left:3px solid var(--muted); font-size:13px; color:var(--text); }
+  .hold-panel.hp-launched { border-left-color:var(--up);
+               background:color-mix(in srgb,var(--up) 8%,var(--panel2)); }
+  .hold-panel.hp-broken  { border-left-color:var(--down);
+               background:color-mix(in srgb,var(--down) 8%,var(--panel2)); }
+  .hold-panel .hp-head { font-weight:700; font-size:12.5px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .hold-panel .hp-inv  { font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .hold-panel .hp-prov { font-size:10.5px; color:var(--warn); margin-top:2px; }
 </style>
 </head>
 <body>
@@ -781,6 +791,7 @@
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
       </div>
@@ -1005,6 +1016,8 @@
       <div id="sv-decision"></div>
       <div id="sv-fingerprint"></div>
       <div id="sv-honesty"></div>
+      <!-- W6-C HOLD tracker — basing state / invalidation (display-only) -->
+      <div id="r_hold" style="display:none"></div>
       <!-- alt-data convergence — a live deep-context panel (not a fallback) -->
       <div id="r_altdata" class="macro-sens" style="display:none"></div>
       <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
@@ -1390,6 +1403,46 @@
       '<div class="muted" style="font-size:12px;margin-top:5px">' +
         esc(lz(a.detail.en, a.detail.zh)) + '</div>' +
       '<div class="ms-cav">' + esc(lz(a.caveat.en, a.caveat.zh)) + '</div>';
+    box.style.display = 'block';
+  }
+
+  // W6-C HOLD tracker — basing state after confluence anchor, with invalidation price.
+  // Display-only: INTACT = still basing (below +5% from anchor, no OB-persist);
+  // LAUNCHED = extended or overbought since anchor; BROKEN = closed below trough*0.97.
+  function renderHold(d) {
+    var box = el('r_hold'), h = d.hold;
+    if (!box) return;
+    if (!h) { box.style.display = 'none'; return; }
+    var st = h.state || 'intact';
+    var isZh = lang() === 'zh';
+    var stateLabel, stateClass;
+    if (st === 'launched') {
+      stateLabel = isZh ? '↑ 突破' : '↑ Launched';
+      stateClass  = 'hp-launched';
+    } else if (st === 'broken') {
+      stateLabel = isZh ? '✕ 破位' : '✕ Broken';
+      stateClass  = 'hp-broken';
+    } else {
+      stateLabel = isZh ? ('筑底 ' + h.days_basing + '天') : ('Base ' + h.days_basing + 'd');
+      stateClass  = '';
+    }
+    var anchorSrc = h.anchor_src === 'take' ?
+      (isZh ? '锚点: §7 买入标记' : 'Anchor: §7 take marker') :
+      (isZh ? '锚点: 3D RSI-MACD 交叉' : 'Anchor: 3D cross');
+    var invLine = h.invalidation != null ?
+      (isZh ? ('止损 $' + h.invalidation.toFixed(2) + ' (谷底×0.97)') :
+               ('Inv $' + h.invalidation.toFixed(2) + ' (trough×0.97)')) : '';
+    var prov = h.provisional ?
+      '<div class="hp-prov">' + (isZh ? '⚠ 最后3D周期桶未完成 — 可能重绘' : '⚠ last 3D bucket incomplete — may repaint') + '</div>' : '';
+    box.className = 'hold-panel' + (stateClass ? ' ' + stateClass : '');
+    box.innerHTML =
+      '<div class="hp-head"><b>' + esc(stateLabel) + '</b>' +
+        '<span class="muted" style="font-size:11px">' + esc(anchorSrc) + ' · ' + esc(h.anchor) + ' · ' +
+        (isZh ? h.days_basing + '天' : h.days_basing + 'd') + '</span>' +
+        '<span class="muted" style="font-size:10.5px;font-style:italic">' +
+        (isZh ? '仅供参考 · W6-C' : 'display-only · W6-C') + '</span></div>' +
+      (invLine ? '<div class="hp-inv">' + esc(invLine) + '</div>' : '') +
+      prov;
     box.style.display = 'block';
   }
 
@@ -2214,6 +2267,7 @@
     // (macro-sensitivity + dt-contra now fold into the view-model: evidence.macro +
     //  falsifiers — rendered by SV.mount above; the legacy renders run only on fallback.)
     renderAltData(d);   // alt-data is a deep context panel (not a competing verdict)
+    renderHold(d);      // W6-C HOLD tracker (basing state + invalidation, display-only)
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
@@ -2289,7 +2343,7 @@
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';
-    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
+    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_hold', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
       .forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
     if (afCtl) afCtl.close();
     hideFundamentals();
@@ -2437,7 +2491,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-07-03 10:13 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-07-03 15:12 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>

@@ -1,0 +1,71 @@
+name: btc-live
+# Hourly, 24/7 live BTC price + 24h change for the Bitcoin Vector page.
+#
+# WHY a dedicated job: the equity live layer (intraday-fastpath.yml + live-quotes.yml)
+# only runs on WEEKDAYS during / around US market hours — correct for stocks, but BTC
+# trades 24/7, so its price would go stale every night and all weekend. This refreshes
+# ONLY the crypto leg, every hour, always, and writes the SAME-ORIGIN snapshot the
+# browser already fetches (window.LIVE_SNAPSHOT_URL = "live/quotes.json", set in
+# site/live_config.js) — which otherwise has no producer.
+#
+# SCOPE: `--symbols BTC-USD` builds an exact-universe snapshot (no equity scrape /
+# conviction), so this changes ONLY the Bitcoin Vector header's live price+change.
+# Other pages are untouched (their symbols aren't in this snapshot -> live.js keeps
+# using overlay.json / the baked number, exactly as today). It does NOT recompute the
+# slow regime / allocation brain — that stays nightly by design (intraday noise must
+# not flip it); this is purely the price-change leaf.
+#
+# FEED: Yahoo `spark` (keyless; BTC-USD is a crypto pair -> never routed to Polygon).
+# Quotes are labelled >=15-min delayed by live.js (LIVE_DELAYED_MIN) — honest floor.
+#
+# CADENCE: hourly. site/live/quotes.json commits to main, so each run fires a Pages
+# deploy — the same accepted trade-off intraday-fastpath.yml already makes. live.js
+# treats a crypto quote as fresh for ~65 min (LIVE_CRYPTO_STALE_MIN) so an on-schedule
+# hourly quote reads live, and only a genuinely MISSED refresh shows a stale dot.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"   # top of every hour, 24/7 — BTC never closes
+
+permissions:
+  contents: write
+
+concurrency:
+  # Only the latest snapshot matters — cancel any in-flight run.
+  group: btc-live
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      # Quotes-only crypto leg: needs just requests (+ pyyaml for lib.config). No pandas/scipy.
+      - run: pip install requests pyyaml
+      - name: build BTC live snapshot (same-origin site/live/quotes.json)
+        run: python -m scripts.build_live_quotes --symbols BTC-USD --out site/live/quotes.json
+      - name: commit the crypto snapshot to main
+        run: |
+          set -euo pipefail
+          test -s site/live/quotes.json
+          git config user.name "dashboard-bot"
+          git config user.email "dashboard-bot@users.noreply.github.com"
+          # site/live/* is gitignored (a served-but-generated artifact, like site/stockdata) -> force-add.
+          # Stage ONLY the crypto snapshot; never anything else the checkout/pip step may have touched.
+          git add -f site/live/quotes.json
+          if git diff --cached --quiet; then echo "no BTC quote change"; exit 0; fi
+          git commit -m "live: BTC quote $(date -u +%FT%H:%MZ)"
+          # Rebase-retry against main: btc-live and intraday-fastpath can run at once, but
+          # they touch DIFFERENT files under site/live/, so -X theirs never loses a quote.
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then echo "pushed (attempt $i)"; exit 0; fi
+            git rebase --abort 2>/dev/null || true; echo "push attempt $i lost a race"; sleep $((i * 5))
+          done
+          echo "::warning::could not push BTC snapshot after 5 attempts (non-fatal)"

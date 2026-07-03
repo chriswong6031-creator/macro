@@ -182,3 +182,92 @@ def test_grade_end_to_end_publishes_conventions(cn_store):
     assert 0.0 <= h21["hit_vs_csi300"] <= 1.0
     assert h21["hit_ci"][0] <= h21["hit_vs_csi300"] <= h21["hit_ci"][1]
     assert g["n_graded"] > 0
+
+
+# ---------------------------------------------------------------------------
+# W0.2a — new append_board fields + grade() stratification tests
+# ---------------------------------------------------------------------------
+
+def test_append_board_w02a_new_fields_present(cn_store):
+    """W0.2a: append_board logs the new schema fields (ticks, provisional, ext_score,
+    washout_2w, hold_state, entry_status) via the schema-union pd.concat pattern."""
+    tmp_path, dates = cn_store
+    rows = [{
+        "ticker": "600001.SS",
+        "price": 10.0,
+        "signal": {"tier_cascade": "T1", "ticks": 3, "provisional": False},
+        "setup": "reversal",
+        "extension": {"extended": False, "score": 0.15},
+        "washout_2w": True,
+        "coiled": {"coiled": True, "star": False, "cohort": 0.7, "fire": False, "fire_ticks": None},
+        "hold": {"state": "intact"},
+        "entry_signal": {"status": "buy_now"},
+    }]
+    n = t.append_board(rows, asof=str(dates[0].date()))
+    assert n == 1
+    df = pd.read_parquet(t._store_path())
+    row = df.iloc[0]
+    assert int(row["ticks"]) == 3
+    assert bool(row["provisional"]) is False
+    assert abs(float(row["ext_score"]) - 0.15) < 1e-9
+    assert bool(row["washout_2w"]) is True
+    assert str(row["hold_state"]) == "intact"
+    assert str(row["entry_status"]) == "buy_now"
+
+
+def test_append_board_hold_state_none_when_absent(cn_store):
+    """W0.2a: hold_state is None (not a crash) when the row has no 'hold' key — the
+    placeholder schema survives missing values until W0.1 wires the real HOLD builder."""
+    tmp_path, dates = cn_store
+    rows = [{"ticker": "600002.SS", "price": 10.0, "signal": {"tier_cascade": "T2"},
+             "setup": "reversal", "extension": {"extended": False}, "washout_2w": False}]
+    t.append_board(rows, asof=str(dates[0].date()))
+    df = pd.read_parquet(t._store_path())
+    # hold_state must be None / NaN (not a KeyError or crash)
+    assert df.iloc[0].get("hold_state") is None or pd.isna(df.iloc[0].get("hold_state", None))
+
+
+def test_slice_table_stratifies_correctly(cn_store):
+    """W0.2a: _slice_table returns honest hit-stats per stratum; NaN grouping key → 'None'."""
+    import pandas as pd
+    g = pd.DataFrame({
+        "tier": ["T1", "T1", "T2", "T2", None],
+        "fwd": [0.05, 0.03, -0.01, 0.02, 0.01],
+    })
+    sliced = t._slice_table(g, "tier")
+    assert set(sliced.keys()) == {"T1", "T2", "None"}
+    assert sliced["T1"]["n"] == 2
+    assert sliced["T1"]["hit_rate"] == 1.0                # both T1 rows beat CSI300
+    assert sliced["T2"]["hit_rate"] == 0.5                # 1/2 T2 rows beat CSI300
+    assert 0.0 <= sliced["T2"]["wilson_lo"] <= sliced["T2"]["hit_rate"]
+
+
+def test_grade_w02a_stratification_keys_present(cn_store):
+    """W0.2a: grade() by_horizon blocks include by_tier, by_washout_2w, by_coiled,
+    by_hold_state, by_entry_status once the ledger matures (n >= _MIN_GRADED)."""
+    tmp_path, dates = cn_store
+    store.upsert("china", t._BENCH, _mk_ohlc(dates, 10.0 * (1.005 ** np.arange(len(dates))))[["close", "volume"]])
+    rows = []
+    for i in range(20):
+        tk = f"61{i:04d}.SS"
+        store.upsert("china_stocks", tk, _mk_ohlc(dates, 10.0 * ((1.02 if i < 10 else 1.001) ** np.arange(len(dates)))))
+        rows.append({
+            "ticker": tk, "price": 10.0,
+            "signal": {"tier_cascade": "T1" if i < 10 else "T2", "ticks": i, "provisional": False},
+            "setup": "reversal",
+            "extension": {"extended": i >= 15, "score": 0.8 if i >= 15 else 0.1},
+            "washout_2w": i < 10,
+            "coiled": {"coiled": i < 5, "star": False, "cohort": 0.5, "fire": False, "fire_ticks": None},
+            "entry_signal": {"status": "buy_now" if i < 15 else "extended"},
+        })
+    t.append_board(rows, asof=str(dates[0].date()))
+    g = t.grade()
+    h21 = g.get("by_horizon", {}).get("21d", {})
+    assert "by_tier" in h21, "by_tier stratification missing from grade() output"
+    assert "by_washout_2w" in h21, "by_washout_2w stratification missing"
+    assert "by_coiled" in h21, "by_coiled stratification missing"
+    assert "by_hold_state" in h21, "by_hold_state stratification missing"
+    assert "by_entry_status" in h21, "by_entry_status stratification missing"
+    # the T1/T2 strata actually populated (rows had both)
+    if h21.get("by_tier"):
+        assert "T1" in h21["by_tier"] or "T2" in h21["by_tier"]

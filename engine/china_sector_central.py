@@ -30,6 +30,8 @@ from __future__ import annotations
 
 import json
 import logging
+import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -44,6 +46,25 @@ log = logging.getLogger(__name__)
 # is flagged in the returned meta, never fatal.
 _SPINE_MIN_SECTORS = 4    # Shenwan L1 has ~10+ sectors; <4 = definitely truncated
 _SPINE_STALE_DAYS  = 3    # calendar days before flagging the spine asOf as stale
+
+# ── regime-leg staleness guard (W0.4) ────────────────────────────────────────
+# Maximum acceptable age (calendar days) for each de-risk leg's input data.
+# Thresholds reflect the natural release cadence of each series:
+#   credit: monthly TSF is released ~day 16 of the following month (up to 47d gap
+#           is normal).  Flag at 60d — almost 2 calendar months without an update
+#           would indicate a stale collector rather than a normal release lag.
+#   vol:    CSI 300 daily close — stale after 7 calendar days (≈5 trading days).
+#   margin: daily margin balance — stale after 7 calendar days (≈5 trading days).
+# A stale leg silently pins the gate at an extreme. The staleness check surfaces
+# this so an operator can diagnose a frozen upstream collector.
+_LEG_STALE_DAYS: dict[str, int] = {"credit": 60, "vol": 7, "margin": 7}
+
+# ── tier-cap threshold (W0.4) ────────────────────────────────────────────────
+# When gate_factor < this value the top conviction tier (Accumulate, score ≥ 72)
+# becomes structurally unreachable.  Derivation: max achievable score at gate g is
+# round((g + 0.15 + 1.0) / 2.0 * 100) ≈ 58 + 50g with best-case lead=1 + mom=0.3.
+# Solving 58 + 50g ≥ 72 → g ≥ 0.28.  We use 0.29 (with a small float margin).
+_GATE_ACCUMULATE_FLOOR = 0.29
 
 # conviction tiers (score 0–100, after gate + context)
 TIERS = [
@@ -69,10 +90,51 @@ _LEAD_ZH = {"leading": "领先", "lagging": "落后", "mid-pack": "中游"}
 # =========================================================================== #
 # market context — the validated regime GATE + display flow/froth context
 # =========================================================================== #
+def _regime_leg_staleness(legs: list[dict] | None) -> dict[str, int | None]:
+    """Return the calendar-day age of each de-risk leg's input data, keyed by leg name.
+
+    The age is read from the mtime of the source parquet file for each leg.  None means
+    the file could not be found (collector never ran or path changed).  Used by
+    _regime_anchor() to populate leg_stale and any_stale in the returned market context,
+    so the template can surface a warning banner when a frozen upstream silently pins the
+    gate. (W0.4)
+    """
+    data_dir = config.data_dir()
+    # Source files for each leg — matches china_strategies._margin_derisk / _credit_derisk /
+    # _vol_derisk.  Vol reads CSI-300 close from data/china/510300.SS.parquet (via the shared
+    # china store, NOT the yahoo store — china_masterminds._cnclose uses store.read("china", ...)).
+    _leg_paths: dict[str, Path] = {
+        "credit": data_dir / "china_credit" / "tsf.parquet",
+        "margin": data_dir / "china_margin" / "balance.parquet",
+        "vol": data_dir / "china" / "510300.SS.parquet",
+    }
+    ages: dict[str, int | None] = {}
+    now = time.time()
+    for key, path in _leg_paths.items():
+        try:
+            if path.exists():
+                ages[key] = int((now - path.stat().st_mtime) / 86400)
+            else:
+                ages[key] = None
+        except Exception:  # noqa: BLE001
+            ages[key] = None
+    return ages
+
+
 def _regime_anchor() -> dict:
     """The validated risk posture (china_masterminds.regime_state: credit/vol/margin blend) +
     the quad / liquidity context (data/china_regime/latest.json). Returns a normalized market
-    read with a risk-on scalar in [-1,+1] and a [0,1] gate factor for bullish convictions."""
+    read with a risk-on scalar in [-1,+1] and a [0,1] gate factor for bullish convictions.
+
+    W0.4 additions:
+    - leg_stale: {credit/vol/margin → age_days|None} so the template can warn when a
+      collector has stopped updating and is silently pinning a leg at an extreme.
+    - any_stale: True when any leg's input is older than its threshold (see _LEG_STALE_DAYS).
+    - gate_caps_tier: the name of the top conviction tier that becomes structurally
+      unreachable at the current gate (e.g. "Accumulate"), or None when all tiers are
+      reachable.  Displayed as a regime banner on the page so the user knows that calls
+      above this tier cannot appear regardless of individual sector setup.
+    """
     rs = None
     try:
         from engine.china_masterminds import regime_state
@@ -114,6 +176,32 @@ def _regime_anchor() -> dict:
         gate = min(1.0, gate * 1.1)
     gate = round(float(np.clip(gate, 0.2, 1.0)), 2)
 
+    # W0.4: staleness check — detect a frozen upstream that silently pins the gate.
+    leg_stale: dict[str, int | None] = {}
+    any_stale = False
+    try:
+        leg_stale = _regime_leg_staleness((rs or {}).get("legs"))
+        any_stale = any(
+            age is not None and age > _LEG_STALE_DAYS.get(k, 999)
+            for k, age in leg_stale.items()
+        )
+        if any_stale:
+            stale_names = [k for k, age in leg_stale.items()
+                           if age is not None and age > _LEG_STALE_DAYS.get(k, 999)]
+            log.warning(
+                "central: regime leg(s) stale: %s — gate may be frozen at %.2f",
+                stale_names, gate,
+            )
+    except Exception as e:  # noqa: BLE001
+        log.debug("central: leg staleness check failed: %s", e)
+
+    # W0.4: gate_caps_tier — surface which top tier is structurally blocked at this gate.
+    # At gate < _GATE_ACCUMULATE_FLOOR the Accumulate tier (score ≥ 72) is unreachable
+    # even with a perfect cycle state + validated pathway + maximum momentum confirmer.
+    gate_caps_tier: str | None = None
+    if gate < _GATE_ACCUMULATE_FLOOR:
+        gate_caps_tier = "Accumulate"
+
     tone = (rs or {}).get("tone")
     state_en = (rs or {}).get("state_en") or ("risk-off" if (risk_on or 0) < -0.2 else
                                               "risk-on" if (risk_on or 0) > 0.2 else "neutral")
@@ -124,6 +212,10 @@ def _regime_anchor() -> dict:
         "quad": quad, "quad_name": quad_name, "liquidity": liquidity,
         "growth_score": g_score, "inflation_score": i_score,
         "validated": True,
+        # W0.4 honesty fields
+        "leg_stale": leg_stale,
+        "any_stale": any_stale,
+        "gate_caps_tier": gate_caps_tier,
     }
 
 

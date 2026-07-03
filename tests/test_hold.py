@@ -109,6 +109,33 @@ class TestJNJShapeOBPersist:
         assert result["maxup_pct"] > 5.0, (
             f"maxup_pct must exceed 5.0 on +150% recovery. Got {result['maxup_pct']}")
 
+    def test_launched_via_ob_only_maxup_below_threshold(self):
+        """LAUNCHED must fire from the OB-persist leg ALONE when maxup <= 5%.
+
+        Construction: 300 oscillating warm bars → 60-bar steady rise 100→120
+        (a monotone uptrend pins the 3D StochRSI k/d at ~100 = OB) → anchor at
+        the LAST bar of the rise (the local high) → 15 fade bars 120→118.
+        Post-anchor price never exceeds the anchor close, so maxup = 0% <= 5%,
+        and the fade stays far above trough*0.97 (trough ~97 from the warm
+        segment) → not broken. The ONLY route to launched is ob_persist.
+        """
+        warm = np.linspace(100.0, 100.0, 300) + 3 * np.sin(np.linspace(0, 6 * np.pi, 300))
+        rise = np.linspace(100.0, 120.0, 60)   # steady uptrend → 3D stoch pinned >= 80
+        fade = np.linspace(120.0, 118.0, 15)   # drift down: maxup from anchor = 0%
+        v = np.concatenate([warm, rise, fade])
+        c = _series(v)
+        anchor_idx  = 300 + 60 - 1             # local high: last bar of the rise
+        anchor_date = c.index[anchor_idx]
+        result = H.hold_state(c, anchor_date=anchor_date, last_cross_fallback=False)
+        assert result is not None
+        assert result["maxup_pct"] <= 5.0, (
+            f"Fixture broken: maxup must stay <= 5% so only the OB leg can fire. "
+            f"Got {result['maxup_pct']}")
+        assert result["ob_persist"] is True, (
+            f"3D StochRSI pinned at OB into the anchor must set ob_persist. Got {result}")
+        assert result["state"] == "launched", (
+            f"OB-persist with maxup <= 5% must classify launched. Got {result}")
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # (b) KO-shape: fade below anchor price but above trough → intact;
@@ -260,6 +287,37 @@ class TestAnchorFallback:
         if result is not None:
             assert result["anchor_src"] in ("take", "cross"), (
                 f"anchor_src must be take or cross, got {result['anchor_src']}")
+
+    def test_cross_older_than_max_age_returns_none(self):
+        """Fallback cross > CROSS_MAX_AGE=45 trading days old → hold_state is None.
+
+        Construction: crash 100→55 then a 30-bar recovery fires a 3D RSI-MACD
+        cross-up; a 160-bar gentle steady rise follows (RSI plateaus, so the
+        RSI-MACD line decays below its signal — no new cross-up). The last
+        cross is therefore ~59 trading days old, past the 45-day gate.
+        Preconditions assert the fixture really contains an aged-out cross so
+        the None can only come from the age gate.
+        """
+        warm  = np.linspace(100.0, 100.0, 300) + 2 * np.sin(np.linspace(0, 4 * np.pi, 300))
+        crash = np.linspace(100.0, 55.0, 40)
+        recov = np.linspace(55.0, 85.0, 30)    # 3D RSI-MACD cross-up fires here
+        tail  = np.linspace(85.0, 95.0, 160)   # steady drift: no newer cross-up
+        v = np.concatenate([warm, crash, recov, tail])
+        c = _series(v)
+        # Preconditions: a cross exists and is genuinely older than the gate.
+        cross_date, _ = H._last_3d_cross(c)
+        assert cross_date is not None, "Fixture broken: no 3D cross detected at all"
+        age = int((c.index > cross_date).sum())
+        assert age > H.CROSS_MAX_AGE, (
+            f"Fixture broken: cross age {age} td must exceed CROSS_MAX_AGE="
+            f"{H.CROSS_MAX_AGE} for the gate to be exercised")
+        # Control: the same series WITH an explicit anchor resolves fine …
+        assert H.hold_state(c, anchor_date=cross_date, last_cross_fallback=False) is not None
+        # … so a None from the fallback path can only be the age gate.
+        result = H.hold_state(c, anchor_date=None, last_cross_fallback=True)
+        assert result is None, (
+            f"Cross {age} td old (> {H.CROSS_MAX_AGE}) must be rejected by the "
+            f"age gate → None. Got {result}")
 
     def test_explicit_anchor_in_future_returns_none(self):
         """anchor_date after the last close → no bars forward → days_basing = 0 is ok,

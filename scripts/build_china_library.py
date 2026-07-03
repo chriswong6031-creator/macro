@@ -41,6 +41,7 @@ from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CN_ALPHA_WEIGHT, dedupe_dual_class, setup_score  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alignment gate)
 from engine import coiled  # noqa: E402  — wave-3-validated COILED cohort-washout ranking bonus (CN gate: clean15 +7.33pp, stop5 −6.21pp better, n=10,784; display/ranking only; HK failed gate — CN only)
+from engine import hold as hold_engine  # noqa: E402  — W6-C HOLD tracker (CN port, W0.1); close-only, additive display chip; NEVER fed into _cn_bonus / blend_sorted
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -464,26 +465,48 @@ def _basket_tailwind_map() -> dict[str, dict]:
     """Per-ticker thematic-basket TAILWIND for the Conviction "upside" axis — the
     China parallel of build_stock_library._basket_tailwind_map(): the strongest
     A-share theme a name belongs to, scored by that basket's 20d return vs the
-    benchmark (CSI 300). Best-effort — any failure yields {} and the tailwind axis
-    is simply absent (the engine never reads a missing leg as neutral)."""
+    benchmark (CSI 300).
+
+    W0.5: extended to also consider THS concept baskets (compute_china_ths_baskets).
+    Takes the strongest |rel20| across curated+THS; the winning entry is labeled with
+    its source so the template can distinguish "theme: <name> (THS)" from a curated basket.
+    A build-time log counts board names with zero membership after the merge so the
+    603129-hole remains visible (both 300725 and 603129 live only in THS).
+
+    Best-effort — any failure yields {} and the tailwind axis is simply absent (the
+    engine never reads a missing leg as neutral)."""
     out: dict[str, dict] = {}
-    try:
-        from engine import baskets_china
-        data = baskets_china.compute_china_baskets() or {}
-        for b in (data.get("baskets") or []):
+
+    def _ingest(data: dict | None, source: str) -> None:
+        for b in (data or {}).get("baskets") or []:
             rel = ((b.get("perf") or {}).get("20d") or {}).get("rel")
             if rel is None:
                 continue
             rel20 = float(rel) * 100.0          # fraction -> percent
+            label = b.get("name") or ""
+            if source == "ths":
+                label = f"theme: {label} (THS)"
             for m in (b.get("members") or []):
                 sym = m.get("symbol")
                 if not sym:
                     continue
                 prev = out.get(sym)
                 if prev is None or abs(rel20) > abs(prev["rel20"]):
-                    out[sym] = {"name": b.get("name"), "rel20": rel20}
+                    out[sym] = {"name": label, "rel20": rel20, "source": source}
+
+    try:
+        from engine import baskets_china
+        _ingest(baskets_china.compute_china_baskets(), "curated")
+        _ingest(baskets_china.compute_china_ths_baskets(), "ths")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("china basket tailwind map unavailable (%s)", e)
+
+    # W0.5 honesty log: count how many board names still have zero theme membership
+    # after combining curated + THS (the 603129/300725 hole was the trigger).
+    # This runs at build time only — the log line surfaces gaps without failing the build.
+    _n_zero = sum(1 for sym in out if not out[sym].get("name"))
+    log.info("china tailwind map: %d names covered (curated+THS); "
+             "%d with zero membership", len(out), _n_zero)
     return out
 
 
@@ -786,6 +809,59 @@ def main(alpha: dict | None = None) -> dict | None:
         _anticipate = None
         _ant_gate = None
 
+    # W0.10 SECTOR FIRST-TICK-UP: load the latest forward_log rows; derive a
+    # Shenwan-L1 first-tick-up dict (phase=="Trough" AND osc_slope>0, the earliest
+    # non-lagged inflection per rotation-machinery.md §3.2). Joined to board names
+    # via an explicit Yahoo-sector → Shenwan-L1 approximation dict (taxonomies differ;
+    # marked approx:true). DISPLAY/LEDGER ONLY — never fed into _cn_bonus / blend_sorted.
+    # W0.10 taxonomy map: Yahoo GICS-style sector labels (board rows) → Shenwan L1 name.
+    # This is an approximation (the taxonomies diverge on edges); every join is marked
+    # approx:true so the template and grader can label it correctly. Sectors not listed
+    # here do not produce a sector_turn chip (the field is simply absent — no false read).
+    _YAHOO_TO_SW: dict[str, str] = {
+        "Healthcare":              "Pharma & Biotech",
+        "Technology":              "Computers",
+        "Basic Materials":         "Nonferrous Metals",    # broadest match; Steel is a sibling
+        "Industrials":             "Defense & Military",   # approx; Manufacturing in SW too
+        "Financial Services":      "Banks",
+        "Consumer Cyclical":       "Automobiles",          # approx; Retail is also Consumer
+        "Consumer Defensive":      "Food & Beverage",
+        "Communication Services":  "Media",
+        "Energy":                  "Oil & Petrochem",
+        "Real Estate":             "Real Estate",
+        "Utilities":               "Utilities",
+    }
+    _sector_turn_by_sw: dict[str, dict] = {}   # Shenwan L1 name → first-tick-up state dict
+    try:
+        _flog_p = config.data_dir() / "china_sector_cycles" / "forward_log.parquet"
+        if _flog_p.exists():
+            _flog = pd.read_parquet(_flog_p)
+            if not _flog.empty and "date" in _flog.columns:
+                _latest_date = _flog["date"].max()
+                _flog_latest = _flog[_flog["date"] == _latest_date].copy()
+                # first-tick-up: oscillator just turned positive from a Trough (no reversal required,
+                # the earliest non-lagged inflection available in forward_log — rotation-machinery §3.2)
+                _ftu = _flog_latest[
+                    (_flog_latest.get("phase") == "Trough") &
+                    (_flog_latest.get("osc_slope", 0.0) > 0) &
+                    (_flog_latest["kind"] == "sector")   # Shenwan L1 sectors only (kind==sector)
+                ]
+                for _, _row in _ftu.iterrows():
+                    _sw_name = str(_row.get("name") or "")
+                    if _sw_name:
+                        _sector_turn_by_sw[_sw_name] = {
+                            "state":     "bottoming",
+                            "osc_slope": float(_row.get("osc_slope") or 0.0),
+                            "signature": float(_row.get("signature") or 0.0),
+                            "asof":      str(_latest_date),
+                            "approx":    True,  # Yahoo→SW taxonomy join is approximate
+                        }
+                log.info("W0.10 sector first-tick-up: %d Shenwan L1 sectors qualify (Trough + osc_slope>0) "
+                         "as of %s: %s", len(_sector_turn_by_sw), _latest_date,
+                         list(_sector_turn_by_sw.keys()))
+    except Exception as _e10:  # noqa: BLE001 — additive, never fatal
+        log.warning("W0.10 sector first-tick-up load failed (%s)", _e10)
+
     # cross-sectional legs the unified Conviction Profile joins per name (engine/
     # stock_score): the VALIDATED A-share reversal z (the selection leg for CN) + the
     # strongest-theme basket tailwind. Both best-effort — a missing leg stays absent,
@@ -884,6 +960,7 @@ def main(alpha: dict | None = None) -> dict | None:
     _coil_div:    dict[str, bool]         = {}
     _coil_sector: dict[str, str | None]   = {}
     _coil_fire:   dict[str, dict]         = {}   # wave-4 COILED-FIRE display marker (CN, no rank change)
+    _hold_state_cn: dict[str, dict]       = {}   # W0.1 HOLD tracker (display/ledger only; never in _cn_bonus)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -892,6 +969,34 @@ def main(alpha: dict | None = None) -> dict | None:
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned buy list (below).
         sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        # W0.1 HOLD tracker (CN port): compute basing state after the confluence anchor. Close-only;
+        # anchor = the §7 take/pending buy-marker date when an open buy exists, else fall back to the
+        # most-recent 3D RSI-MACD cross-up (≤ CROSS_MAX_AGE=45 trading days old). CN-specific caveat:
+        # A-share names can be suspended >20 trading days — if the close series has a gap >20 bars
+        # AFTER the last candidate anchor the fallback is skipped (see _cn_suspension_gap below).
+        # DISPLAY/LEDGER ONLY — never fed into _cn_bonus() or blend_sorted. Stacks with washout/COILED.
+        try:
+            _sv_cn = sig_verdict[ticker]
+            _last_m_cn = _sv_cn.get("last")
+            _is_buy_cn = bool(_last_m_cn and _last_m_cn.get("type") in ("buy", "rebuy"))
+            _anchor_cn = _last_m_cn.get("date") if _is_buy_cn else None
+            # CN suspension guard: if the close series has a gap >20 trading days after the
+            # last candidate anchor (or the tail of the series), skip the fallback to avoid a
+            # stale cross anchoring a name that was simply suspended.
+            _use_fallback = True
+            if _anchor_cn is None:
+                _clean = close.dropna()
+                if len(_clean) >= 2:
+                    _gaps = _clean.index.to_series().diff().dt.days.fillna(0)
+                    _max_gap_td = int(_gaps.max())
+                    if _max_gap_td > 28:   # >20 trading days ≈ >28 calendar days — suspension
+                        _use_fallback = False
+            _hs_cn = hold_engine.hold_state(close, anchor_date=_anchor_cn,
+                                            last_cross_fallback=_use_fallback)
+            if _hs_cn is not None:
+                _hold_state_cn[ticker] = _hs_cn
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            pass
         # COILED wave-3 CN ranking bonus: collect per-name inputs for cohort computation below.
         # Wave-4: also collect fire_recent for the COILED-FIRE display chip (CN included per wave-4
         # ship record; HK NOT touched; display chip + forward-ledger only, NO rank/bonus change).
@@ -1016,6 +1121,9 @@ def main(alpha: dict | None = None) -> dict | None:
             "spark_svg": _spark_svg(
                 list(close.dropna().tail(64).values),
                 color=("var(--up)" if _dir == "up" else "var(--down)" if _dir == "down" else "var(--muted)"))}
+        # W0.1 HOLD: attach to per-stock JSON before the deferred write (mirrors US L1477-1479)
+        if _hold_state_cn.get(ticker):
+            rec["hold"] = _hold_state_cn[ticker]
         safe = _safe(ticker)
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
@@ -1059,6 +1167,16 @@ def main(alpha: dict | None = None) -> dict | None:
             log.info("china name-score grader: logged %d calls for %s (ledger=%d)", len(_calls), _asof, _n)
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("china name-score grader append failed (%s)", e)
+    # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-
+    # conviction stats (potential median/IQR/n + theme score/label) so the pre-registered
+    # demotion study can run once ≥180 trading days accrue. Write-only ledger, never fatal.
+    try:
+        from engine import conviction_accrual
+        _b2_asof = (alpha or {}).get("as_of")
+        if conviction_accrual.archive_member_conviction("china", profiles, asof=_b2_asof):
+            log.info("B2 conviction accrual: archived conviction_china for %s", _b2_asof)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("B2 conviction accrual (china) failed (%s)", e)
     for safe, rec in to_write:
         rec["view"] = stock_view.build_view(rec, "CN")   # canonical render model (rebuilt below once val/margin land)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
@@ -1290,6 +1408,19 @@ def main(alpha: dict | None = None) -> dict | None:
             _dt = _name_data_through(t)
             if _dt:
                 r["data_through"] = _dt
+            # W0.1 HOLD: attach basing-state to standout rows (display chip + ledger column)
+            # (mirrors US build_stock_library.py:L1788-1791; display/ledger only, not a rank input)
+            _hd_cn = _hold_state_cn.get(t)
+            if _hd_cn is not None:
+                r["hold"] = _hd_cn
+            # W0.10 SECTOR FIRST-TICK-UP: attach sector_turn to the row when the name's
+            # Yahoo-inferred Shenwan L1 sector is in first-tick-up state (Trough + osc_slope>0).
+            # DISPLAY/LEDGER ONLY — never touches _cn_bonus or blend_sorted.
+            # approx:true is propagated from the taxonomy map (Yahoo GICS ≠ Shenwan L1 exactly).
+            _row_sector = r.get("sector") or ""
+            _sw_match = _YAHOO_TO_SW.get(_row_sector)
+            if _sw_match and _sw_match in _sector_turn_by_sw:
+                r["sector_turn"] = _sector_turn_by_sw[_sw_match]
         wide["eligible"] = len(eligible_rows)
         wide["universe"] = len(cand)
         wide["quality_screen"] = {           # honest report of what the screen actually did
@@ -1345,7 +1476,36 @@ def main(alpha: dict | None = None) -> dict | None:
             log.info("china stocks sleeve chip: %s", wide["sleeve_chip"].get("label_en"))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("china stocks sleeve chip failed (%s)", e)
-        (site / "factordata" / "china_standouts.json").write_text(
+        # W0.7 BOARD-WIDTH GUARD: read the previous artifact's buy-count; if the new count dropped
+        # >40% day-over-day, stamp data_outage and log a WARNING — never publish a silently collapsed
+        # board as if it were a normal render (git history shows n=110→42→11→110 across 06-25..06-30).
+        # The banner is rendered by the template when data_outage.flag is true.
+        _standouts_path = site / "factordata" / "china_standouts.json"
+        _prev_buy_n: int | None = None
+        try:
+            if _standouts_path.exists():
+                _prev = json.loads(_standouts_path.read_text())
+                _prev_buy_n = len(_prev.get("buy") or [])
+        except Exception:  # noqa: BLE001 — guard must never block the write
+            pass
+        _new_buy_n = len(wide["buy"])
+        if _prev_buy_n is not None and _prev_buy_n > 0:
+            _drop_frac = (_prev_buy_n - _new_buy_n) / _prev_buy_n
+            if _drop_frac > 0.40:
+                wide["data_outage"] = {
+                    "flag": True,
+                    "prev_n": _prev_buy_n,
+                    "new_n": _new_buy_n,
+                    "drop_pct": round(_drop_frac * 100, 1),
+                    "reason": (f"buy-count collapsed {_prev_buy_n}→{_new_buy_n} "
+                               f"({_drop_frac*100:.0f}% drop, threshold 40%). "
+                               "Probable cause: data gap / collector outage. "
+                               "Board is INCOMPLETE — treat with caution."),
+                }
+                log.warning("W0.7 board-width guard: buy-count collapsed %d→%d (%.0f%% drop) — "
+                            "stamping data_outage; banner will render",
+                            _prev_buy_n, _new_buy_n, _drop_frac * 100)
+        _standouts_path.write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
         log.info("wrote china_standouts.json (%d buy of %d eligible / %d universe)",
                  len(wide["buy"]), len(eligible_rows), len(cand))

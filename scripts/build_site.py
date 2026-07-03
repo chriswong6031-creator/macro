@@ -29,6 +29,7 @@ from engine.i18n import t as T  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
 from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver: FE banner + contract (engine/run.py) call the SAME function so they can't drift
 from lib import config, store  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_site")
@@ -1780,7 +1781,7 @@ def build_etf_page(env: Environment, site: Path, generated: str,
     html = env.get_template("etfs.html.j2").render(
         accumulation=split["accumulation"], trims=split["trims"],
         generated_utc=generated)
-    (site / "etfs.html").write_text(html)
+    write_page(site / "etfs.html", html)
     # per-stock feed (built before the stock library so it can be attached there)
     outdir = site / "stockdata"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -1927,7 +1928,7 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     series = _load_factor_series()             # factor portfolio return series (degrade-never-raise)
     html = env.get_template("factors.html.j2").render(
         fac=fac, ic=ic, breadth=breadth, series=series, generated_utc=generated)
-    (site / "factors.html").write_text(html)
+    write_page(site / "factors.html", html)
     log.info("wrote factors.html (%d names, FY%s, ic=%s)", fac.get("n"), fac.get("fy"),
              "yes" if ic else "no")
     return fac
@@ -1946,7 +1947,7 @@ def build_signal_lab_page(env: Environment, site: Path, generated: str) -> None:
     payload = signal_lab.build_scorecard()
     payload["generated_utc"] = generated     # align with the rest of the site
     html = env.get_template("signal_lab.html.j2").render(**payload)
-    (site / "signal_lab.html").write_text(html)
+    write_page(site / "signal_lab.html", html)
     fdir = site / "factordata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "signal_lab.json").write_text(
@@ -1969,7 +1970,7 @@ def build_alerts_page(env: Environment, site: Path, generated: str) -> None:
     payload = alert_triage.build_triage()
     payload["generated_utc"] = generated     # align with the rest of the site
     html = env.get_template("alerts.html.j2").render(**payload)
-    (site / "alerts.html").write_text(html)
+    write_page(site / "alerts.html", html)
     fdir = site / "factordata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "alerts_triage.json").write_text(
@@ -2380,7 +2381,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
         html = tpl.render(s=s, state_styles=STATE_STYLES, calibration=calibration,
                           ladder_order=LADDER, state_display=STATE_DISPLAY,
                           alerts=feed, generated_utc=generated)
-        (outdir / f"{fund}.html").write_text(html)
+        write_page(outdir / f"{fund}.html", html)
         summaries[fund] = {"state": res["ladder"]["state"],
                            "label": res["ladder"]["label"],
                            "action": res["ladder"]["action"],
@@ -2474,7 +2475,7 @@ def build_advanced_page(env: Environment, site: Path, generated: str, latest: di
         holdings_threshold=config.load()["holdings"]["active_change_alert_pct"],
         flows_html=flows_html_table(),
     )
-    (site / "advanced.html").write_text(html)
+    write_page(site / "advanced.html", html)
     log.info("wrote advanced.html (%.0f KB)", (site / "advanced.html").stat().st_size / 1024)
     return cross_asset
 
@@ -3045,18 +3046,18 @@ def main() -> int:
     # dashboard out of index.html is what stops Home (-> index.html) from
     # regressing to the dashboard when build_vector doesn't run after this.
     out = site / "macro.html"
-    out.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="macro"))
+    write_page(out, env.get_template("dashboard.html.j2").render(**vm, mode="macro"))
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
 
     # Dedicated macro news feed. Uses the same context-only news/catalyst/sentiment
     # view model as the dashboard tab, but gives it a first-class reading surface.
     out_news = site / "news.html"
-    out_news.write_text(env.get_template("news.html.j2").render(**vm))
+    write_page(out_news, env.get_template("news.html.j2").render(**vm))
     log.info("wrote %s (%.0f KB)", out_news, out_news.stat().st_size / 1024)
 
     # US Stock Dashboard — same VM, the "looking for stocks" half of the split.
     out_st = site / "us_stocks.html"
-    out_st.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="stocks"))
+    write_page(out_st, env.get_template("dashboard.html.j2").render(**vm, mode="stocks"))
     log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
 
     # Macro Signals — the dense data page that holds every gauge OFFLOADED from
@@ -3065,7 +3066,7 @@ def main() -> int:
     # commodities tape, Fed liquidity, credit/breadth, VIX and positioning. Same VM,
     # display-only. Plus a machine-readable JSON the Brain / AI desks can consume.
     out_msig = site / "macro_signals.html"
-    out_msig.write_text(env.get_template("macro_signals.html.j2").render(**vm))
+    write_page(out_msig, env.get_template("macro_signals.html.j2").render(**vm))
     log.info("wrote %s (%.0f KB)", out_msig, out_msig.stat().st_size / 1024)
     try:
         _nh = {k: {kk: vv for kk, vv in (v or {}).items() if kk != "svg"}
@@ -3119,7 +3120,7 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, themes map optional
             log.error("themes heatmap failed: %s", e)
         out_hm = site / "sector_heatmap.html"
-        out_hm.write_text(env.get_template("sector_heatmap.html.j2").render())
+        write_page(out_hm, env.get_template("sector_heatmap.html.j2").render())
         log.info("wrote %s (%.0f KB)", out_hm, out_hm.stat().st_size / 1024)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("sector heatmap failed: %s", e)
@@ -3136,7 +3137,7 @@ def main() -> int:
         _hm_tmpl = env.get_template("market_heatmap.html.j2")
         for _m, _mk in _HM_MK.items():
             out_mh = site / f"{_m}_heatmap.html"
-            out_mh.write_text(_hm_tmpl.render(mk=_mk))
+            write_page(out_mh, _hm_tmpl.render(mk=_mk))
             log.info("wrote %s (%.0f KB)", out_mh, out_mh.stat().st_size / 1024)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("market heatmaps (cn/hk/ca) failed: %s", e)
@@ -3148,7 +3149,7 @@ def main() -> int:
         from scripts.build_subsector_rotation import build as build_subsector_rotation
         build_subsector_rotation(site, generated_utc=generated)
         out_sr = site / "subsector_rotation.html"
-        out_sr.write_text(env.get_template("subsector_rotation.html.j2").render())
+        write_page(out_sr, env.get_template("subsector_rotation.html.j2").render())
         log.info("wrote %s (%.0f KB)", out_sr, out_sr.stat().st_size / 1024)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("subsector rotation failed: %s", e)
@@ -3230,7 +3231,7 @@ def main() -> int:
         lifespan_rows=lifespan_rows,
     )
     out2 = site / "history.html"
-    out2.write_text(hist_html)
+    write_page(out2, hist_html)
     log.info("wrote %s (%.0f KB)", out2, out2.stat().st_size / 1024)
 
     # stock search: analyzer page + nightly library
@@ -3240,7 +3241,7 @@ def main() -> int:
         from engine.cycles import STATE_DISPLAY
         from engine import ticker_alerts as _ta
         sd_json = _json.dumps(STATE_DISPLAY)
-        (site / "stock.html").write_text(
+        write_page(site / "stock.html",
             env.get_template("stock.html.j2").render(
                 state_styles=STATE_STYLES, generated_utc=generated,
                 state_display_json=sd_json,
@@ -3279,7 +3280,7 @@ def main() -> int:
             sup = wl.get("supabase") or {}
             sup_cfg = ({"url": sup["url"], "anonKey": sup["anon_key"]}
                        if sup.get("url") and sup.get("anon_key") else None)
-            (site / "watchlist.html").write_text(
+            write_page(site / "watchlist.html",
                 env.get_template("watchlist.html.j2").render(
                     generated_utc=generated, state_display_json=sd_json,
                     supabase_cfg_json=_json.dumps(sup_cfg),

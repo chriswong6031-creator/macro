@@ -81,6 +81,12 @@
          background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
   .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
   .rk { font-size:12px; font-weight:800; color:var(--muted); }
+  /* ---- BRANCH-B rank pill (replaces the suppressed composite chip) + card lead ---- */
+  .rankpill { font-size:12px; font-weight:800; font-variant-numeric:tabular-nums;
+              min-width:26px; text-align:center; padding:1px 6px; border-radius:8px;
+              color:var(--muted); border:1px solid var(--line); background:var(--panel);
+              cursor:help; }
+  .nb-lead { font-size:11px; line-height:1.4; margin:5px 0 2px; color:var(--text); }
   /* ---- unified Conviction Profile on each standout card ---------------- */
   .nb-conv { display:flex; align-items:center; gap:7px; margin:7px 0 1px; }
   .nb-cscore { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
@@ -108,9 +114,45 @@
   .nb-ax .axt { height:3px; border-radius:2px; background:var(--line); margin-top:1px; overflow:hidden; }
   .nb-ax .axf { height:100%; background:var(--g-cold); border-radius:2px; }
   .nb-ax.ax-na .axf { background:transparent; }
-  .nb-cau { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
-  .nb-cau span { font-size:8.5px; font-weight:700; padding:0 4px; border-radius:6px;
-                 color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  /* ---- Caution icon + popover (replaces old pill-row; ported from dashboard #1061) ---- */
+  .nb-cau { position:relative; display:inline-flex; margin-top:4px; }
+  .nb-cau-btn {
+    display:inline-flex; align-items:center; gap:3px;
+    padding:0 5px 0 4px; height:18px; border-radius:9px; border:none; cursor:pointer;
+    font-size:9px; font-weight:700; line-height:1;
+    color:var(--warn); background:color-mix(in srgb,var(--warn) 14%,var(--panel));
+    text-decoration:none;
+    animation:nb-cau-pulse 2.5s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { .nb-cau-btn { animation:none; } }
+  @keyframes nb-cau-pulse {
+    0%, 100% { opacity:1; }
+    50%       { opacity:.55; }
+  }
+  .nb-cau-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:13px; height:13px; border-radius:50%; font-size:8px; font-weight:800;
+    background:var(--warn); color:var(--panel);
+  }
+  .nb-cau-pop {
+    display:none; position:absolute; z-index:120; bottom:calc(100% + 5px); left:0;
+    min-width:180px; max-width:min(260px, calc(100vw - 24px));
+    padding:7px 9px; border-radius:8px;
+    background:var(--panel); border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line));
+    box-shadow:0 4px 16px rgba(0,0,0,.18);
+    font-size:10px; font-weight:600; line-height:1.45; color:var(--warn);
+    pointer-events:none;
+  }
+  .nb-cau-pop .cau-row { display:block; padding:2px 0; }
+  .nb-cau-pop .cau-row + .cau-row { border-top:1px solid color-mix(in srgb,var(--warn) 20%,var(--line)); padding-top:4px; margin-top:2px; }
+  /* Show on hover/focus (desktop) */
+  .nb-cau:hover .nb-cau-pop,
+  .nb-cau:focus-within .nb-cau-pop,
+  .nb-cau.nb-cau-open .nb-cau-pop { display:block; pointer-events:auto; }
+  /* Flip to below if near top of viewport (added by JS) */
+  .nb-cau.pop-below .nb-cau-pop { bottom:auto; top:calc(100% + 5px); }
+  /* Clamp to right edge */
+  .nb-cau.pop-right .nb-cau-pop { left:auto; right:0; }
   .nb-tier { font-size:8px; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
   /* volatility black hole chip + honesty notes (Canada overhaul, mirrors china.html) */
   .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
@@ -672,6 +714,7 @@
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
       </div>
@@ -875,7 +918,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-30 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-03 10:59 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-30 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-03 15:57 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout TSX names ranked by sector-neutral residual momentum, with the cycle entry as timing context. Search any TSX stock from the box above; click a card for the full breakdown.</span><span class="l-zh">按板块中性残差动量排名的 TSX 个股精选，并以周期入场作为时机背景。可在上方搜索框查询任意 TSX 个股；点击卡片查看完整拆解。</span>
@@ -885,830 +928,66 @@
 
 
 
-<!-- ===== Standout stocks (alpha-led) — the TSX Stock Dashboard headline ===== -->
+<!-- ===== Standout stocks (BRANCH B ripe-list contract) — the TSX Stock Dashboard headline ===== -->
+
+
+
+<div class="panel" style="border-color:color-mix(in srgb,var(--warn) 40%,var(--line))">
+  <div class="row" style="gap:8px">
+    <b style="color:var(--warn)">⚠ <span class="l-en">Data health</span><span class="l-zh">数据健康</span></b>
+    <span class="muted small"><span class="l-en">some board inputs are degraded — the affected axes are suppressed, not silently filled</span><span class="l-zh">部分榜单输入已降级 — 受影响的轴已抑制，而非静默填充</span></span>
+  </div>
+  <div class="row small" style="gap:6px; margin-top:6px">
+    
+    <span class="chip off"><span class="l-en">Sector drill-down cache (MISSING -- run canada_breadth collector)</span><span class="l-zh">板块下钻缓存（缺失 -- 请运行 canada_breadth 收集器）</span> <b>· MISSING</b></span>
+    
+  </div>
+</div>
 
 <div class="panel">
-  <h2><span class="l-en">⚡ Standout individual stocks</span><span class="l-zh">⚡ 表现突出的个股</span>
-    <span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">14 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 14 <span class="l-en">cycle-aligned across weekly · 3-day · daily (bottoming, not a falling knife) · each card carries the unified Conviction profile (cycle state caps the verdict)</span><span class="l-zh">在周线·3日·日线上周期共振（筑底，而非接飞刀）· 每张卡片附带统一确信度画像（周期状态会封顶结论）</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Large-cap TSX names ranked by the VALIDATED sector-neutral residual-momentum leg (α, the positive-IC selection leg), with the cycle entry shown as timing context. Alpha-led like the US (Canada is momentum-persistent). Each card then carries the unified Conviction profile: four transparent axes (selection / entry / tailwind / quality) and one honest verdict. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read 'Buy', it reads 'strong name, wrong tape' — so this card and the stock's own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability). On Canada the selection leg is weak positive-IC CONTEXT and the axis weights are an unvalidated prior — the trust badge says so. Context, not personalized advice.</span><span class="l-zh">按已验证的板块中性残差动量腿（α，正 IC 选股腿）排名的大盘 TSX 个股，并以周期入场作为时机背景。与美国一样采用 α 主导（加拿大动量具持续性）。每张卡片再附带统一确信度画像：四条透明维度（选股／入场／顺风／质量）与一个诚实结论。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示"买入"，而显示"强势但趋势不利"——因此该卡片与个股自身页面永不矛盾。0-100 分是市场内百分位的展示皮肤（非概率）。在加拿大，选股腿为弱正 IC 背景，维度权重为未经验证的先验——信任徽标已注明。仅作背景，非个性化建议。</span></span></span>
+  <h2><span class="l-en">⚡ Standout TSX names — ripe-list screen</span><span class="l-zh">⚡ 突出的 TSX 个股 — 成熟清单筛选</span>
+    <span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">14 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 14 <span class="l-en">cycle-aligned across weekly · 3-day · daily (bottoming, not a falling knife)</span><span class="l-zh">在周线·3日·日线上周期共振（筑底，而非接飞刀）</span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Board order (masterplan §5.0 ripe-list contract): hygiene → INCLUDE bottoming-alignment {PRIME, ARMED} → GROUP entry-open before setting-up → RANK within group by the residual-momentum SCREEN z. The 0-100 composite is SUPPRESSED here: the C7 momentum keystone landed ALL-ACCRUE in phase-0 (masterplan §4.1 Branch B), so no validated composite exists to sort by — the small rank pill (#1, #2…) is a within-group order, NOT a probability. The momentum leg is FDR-stable but DSR-short (re-test 2027-01); it is a SCREEN, honestly labeled per card. Timing groups and gates; the screen only ranks within a group. Context, not personalized advice.</span><span class="l-zh">榜单顺序（规划书 §5.0 成熟清单契约）：卫生筛 → 纳入筑底共振 {PRIME, ARMED} → 分组：入场已开启优先于蓄势中 → 组内按残差动量筛选 z 排名。此处 0-100 综合分已抑制：C7 动量关键测试在 Phase-0 全部 ACCRUE（规划书 §4.1 分支 B），无经验证的综合分可排序——小排名徽章（#1、#2…）是组内顺序，而非概率。动量腿通过 FDR 但 DSR 不足（2027-01 复测）；它是筛选器，每张卡片如实标注。时机负责分组与门控；筛选仅在组内排名。仅作背景，非个性化建议。</span></span></span>
   </h2>
+  
+  
   <div class="cards" data-showmore-rows="3">
     
     
-    <div class="card">
-      <div class="row" style="gap:8px">
-        <a href="canada_stock.html#EFR.TO"><b>ENERGY FUELS INC.</b></a>
-        <span class="muted small">EFR.TO</span>
-        <span style="flex:1"></span>
-        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.92</b></span>
-        <span>#5/38 <span class="l-en">Energy</span><span class="l-zh">能源</span></span>
-        <span>-45% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-      </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.2 3.8,27.6 7.6,28.2 11.4,27.8 15.2,29.2 19.0,26.4 22.9,26.6 26.7,26.3 30.5,23.2 34.3,22.7 38.1,18.2 41.9,18.4 45.7,20.0 49.5,16.7 53.3,20.0 57.1,12.9 61.0,15.3 64.8,20.6 68.6,17.5 72.4,19.6 76.2,23.0 80.0,16.7 83.8,16.4 87.6,16.6 91.4,18.3 95.2,10.1 99.0,10.6 102.9,16.9 106.7,15.1 110.5,18.2 114.3,20.8 118.1,23.0 121.9,26.5 125.7,34.2 129.5,32.3 133.3,28.4 137.1,27.6 141.0,26.1 144.8,26.3 148.6,26.7 152.4,26.4 156.2,27.1 160.0,29.1 163.8,22.5 167.6,27.2 171.4,29.7 175.2,37.8 179.0,36.7 182.9,39.7 186.7,42.0 190.5,37.1 194.3,37.2 198.1,35.2 201.9,36.0 205.7,35.8 209.5,31.4 213.3,31.3 217.1,32.7 221.0,34.8 224.8,36.3 228.6,38.4 232.4,38.6 236.2,38.0 240.0,38.3 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,26.2 3.8,27.6 7.6,28.2 11.4,27.8 15.2,29.2 19.0,26.4 22.9,26.6 26.7,26.3 30.5,23.2 34.3,22.7 38.1,18.2 41.9,18.4 45.7,20.0 49.5,16.7 53.3,20.0 57.1,12.9 61.0,15.3 64.8,20.6 68.6,17.5 72.4,19.6 76.2,23.0 80.0,16.7 83.8,16.4 87.6,16.6 91.4,18.3 95.2,10.1 99.0,10.6 102.9,16.9 106.7,15.1 110.5,18.2 114.3,20.8 118.1,23.0 121.9,26.5 125.7,34.2 129.5,32.3 133.3,28.4 137.1,27.6 141.0,26.1 144.8,26.3 148.6,26.7 152.4,26.4 156.2,27.1 160.0,29.1 163.8,22.5 167.6,27.2 171.4,29.7 175.2,37.8 179.0,36.7 182.9,39.7 186.7,42.0 190.5,37.1 194.3,37.2 198.1,35.2 201.9,36.0 205.7,35.8 209.5,31.4 213.3,31.3 217.1,32.7 221.0,34.8 224.8,36.3 228.6,38.4 232.4,38.6 236.2,38.0 240.0,38.3" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="38.3" r="2.6" fill="var(--down)"/></svg>
-      
-      <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">47</span>
-        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-      </div>
-      
-      
-      
-      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线上行">
-        <span class="nba-mark">🟢</span>
-        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
-        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-      </div>
-      
-      <div class="nb-axes">
-        
-        
-        <div class="nb-ax" title="SEL 64/100">
-          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:64%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="ENT 50/100">
-          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-          <div class="axt"><div class="axf" style="width:50%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="TWD 35/100">
-          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-          <div class="axt"><div class="axf" style="width:35%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="QUAL — no data">
-          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-      </div>
-      
-      
-      
-      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~9+ trading days. Wait for support to hold, or for the next low to set up.">
-        <div class="nbe-head">
-          <span class="nbe-dot a1"></span>
-          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
-        </div>
-        
-        <div class="nbe-zone">
-          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$19.43–$20.02</span>
-          <span class="nbe-pct">-4.2%</span>
-        </div>
-        
-      </div>
-      
-      
-      
-      
-      <div class="nb-bot">
-        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.41 of the conviction-base size (forecast vol 53.4% · inverse-vol ×0.41 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.41×</span>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
-      
+    
+    <div style="grid-column:1/-1; margin:4px 0 -2px">
+      <span class="rk" style="text-transform:uppercase; letter-spacing:.05em">
+        🟡 <span class="l-en">Setting up — awaiting trigger</span><span class="l-zh">蓄势中 — 待触发</span>
+      </span>
     </div>
     
     
     <div class="card">
       <div class="row" style="gap:8px">
-        <a href="canada_stock.html#ASM.TO"><b>AVINO SILVER AND GOLD MINES LTD</b></a>
-        <span class="muted small">ASM.TO</span>
-        <span style="flex:1"></span>
-        <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="neg">-0.09</b></span>
-        <span>#34/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-        <span>-41% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-      </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,30.3 3.8,27.0 7.6,28.2 11.4,24.6 15.2,25.4 19.0,21.9 22.9,21.8 26.7,21.5 30.5,23.1 34.3,19.3 38.1,20.3 41.9,20.5 45.7,12.8 49.5,14.9 53.3,23.1 57.1,18.9 61.0,22.8 64.8,24.1 68.6,25.9 72.4,31.1 76.2,33.7 80.0,30.9 83.8,29.4 87.6,32.4 91.4,33.7 95.2,25.9 99.0,25.1 102.9,24.4 106.7,16.2 110.5,10.1 114.3,11.7 118.1,13.4 121.9,20.8 125.7,29.8 129.5,25.7 133.3,27.0 137.1,28.1 141.0,23.3 144.8,23.6 148.6,26.3 152.4,19.8 156.2,17.6 160.0,17.8 163.8,16.2 167.6,24.1 171.4,24.3 175.2,37.0 179.0,35.6 182.9,38.1 186.7,42.0 190.5,35.1 194.3,29.5 198.1,23.4 201.9,21.3 205.7,22.6 209.5,26.3 213.3,27.3 217.1,28.0 221.0,34.8 224.8,38.4 228.6,35.4 232.4,30.9 236.2,30.0 240.0,28.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.3 3.8,27.0 7.6,28.2 11.4,24.6 15.2,25.4 19.0,21.9 22.9,21.8 26.7,21.5 30.5,23.1 34.3,19.3 38.1,20.3 41.9,20.5 45.7,12.8 49.5,14.9 53.3,23.1 57.1,18.9 61.0,22.8 64.8,24.1 68.6,25.9 72.4,31.1 76.2,33.7 80.0,30.9 83.8,29.4 87.6,32.4 91.4,33.7 95.2,25.9 99.0,25.1 102.9,24.4 106.7,16.2 110.5,10.1 114.3,11.7 118.1,13.4 121.9,20.8 125.7,29.8 129.5,25.7 133.3,27.0 137.1,28.1 141.0,23.3 144.8,23.6 148.6,26.3 152.4,19.8 156.2,17.6 160.0,17.8 163.8,16.2 167.6,24.1 171.4,24.3 175.2,37.0 179.0,35.6 182.9,38.1 186.7,42.0 190.5,35.1 194.3,29.5 198.1,23.4 201.9,21.3 205.7,22.6 209.5,26.3 213.3,27.3 217.1,28.0 221.0,34.8 224.8,38.4 228.6,35.4 232.4,30.9 236.2,30.0 240.0,28.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="28.8" r="2.6" fill="var(--up)"/></svg>
-      
-      <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">45</span>
-        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-      </div>
-      
-      
-      
-      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
-        <span class="nba-mark">🟢</span>
-        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
-        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-      </div>
-      
-      <div class="nb-axes">
         
-        
-        <div class="nb-ax" title="SEL 49/100">
-          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:49%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="ENT 47/100">
-          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-          <div class="axt"><div class="axf" style="width:47%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="TWD — no data">
-          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="QUAL — no data">
-          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-      </div>
-      
-      
-      
-      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
-        <div class="nbe-head">
-          <span class="nbe-dot a1"></span>
-          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
-        </div>
-        
-        <div class="nbe-zone">
-          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$8.80–$8.84</span>
-          <span class="nbe-pct">-1.9%</span>
-        </div>
-        
-      </div>
-      
-      
-      
-      
-      <div class="nb-bot">
-        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.41 of the conviction-base size (forecast vol 53.7% · inverse-vol ×0.41 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.41×</span>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
-      
-    </div>
-    
-    
-    <div class="card">
-      <div class="row" style="gap:8px">
-        <a href="canada_stock.html#NGEX.TO"><b>NGEX MINERALS LTD</b></a>
-        <span class="muted small">NGEX.TO</span>
-        <span style="flex:1"></span>
-        <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.21</b></span>
-        <span>#25/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-        <span>-20% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-      </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,34.8 3.8,30.7 7.6,30.6 11.4,32.0 15.2,32.3 19.0,26.2 22.9,28.4 26.7,24.2 30.5,22.1 34.3,16.1 38.1,20.1 41.9,17.6 45.7,17.6 49.5,18.3 53.3,26.6 57.1,21.4 61.0,23.7 64.8,26.5 68.6,27.9 72.4,32.4 76.2,36.6 80.0,35.5 83.8,36.5 87.6,38.3 91.4,38.4 95.2,30.4 99.0,33.0 102.9,29.5 106.7,27.9 110.5,22.5 114.3,17.0 118.1,18.5 121.9,28.6 125.7,34.5 129.5,32.6 133.3,34.1 137.1,36.1 141.0,30.1 144.8,30.5 148.6,31.0 152.4,25.5 156.2,20.7 160.0,18.5 163.8,10.1 167.6,17.6 171.4,19.0 175.2,37.1 179.0,36.7 182.9,41.7 186.7,42.0 190.5,36.4 194.3,29.5 198.1,25.0 201.9,24.7 205.7,28.0 209.5,32.0 213.3,33.8 217.1,33.8 221.0,36.7 224.8,41.5 228.6,38.7 232.4,37.3 236.2,38.3 240.0,34.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,34.8 3.8,30.7 7.6,30.6 11.4,32.0 15.2,32.3 19.0,26.2 22.9,28.4 26.7,24.2 30.5,22.1 34.3,16.1 38.1,20.1 41.9,17.6 45.7,17.6 49.5,18.3 53.3,26.6 57.1,21.4 61.0,23.7 64.8,26.5 68.6,27.9 72.4,32.4 76.2,36.6 80.0,35.5 83.8,36.5 87.6,38.3 91.4,38.4 95.2,30.4 99.0,33.0 102.9,29.5 106.7,27.9 110.5,22.5 114.3,17.0 118.1,18.5 121.9,28.6 125.7,34.5 129.5,32.6 133.3,34.1 137.1,36.1 141.0,30.1 144.8,30.5 148.6,31.0 152.4,25.5 156.2,20.7 160.0,18.5 163.8,10.1 167.6,17.6 171.4,19.0 175.2,37.1 179.0,36.7 182.9,41.7 186.7,42.0 190.5,36.4 194.3,29.5 198.1,25.0 201.9,24.7 205.7,28.0 209.5,32.0 213.3,33.8 217.1,33.8 221.0,36.7 224.8,41.5 228.6,38.7 232.4,37.3 236.2,38.3 240.0,34.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.5" r="2.6" fill="var(--up)"/></svg>
-      
-      <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">45</span>
-        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-      </div>
-      
-      
-      
-      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily ≈ cross · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线临近上穿">
-        <span class="nba-mark">🟢</span>
-        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
-        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-      </div>
-      
-      <div class="nb-axes">
-        
-        
-        <div class="nb-ax" title="SEL 53/100">
-          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:53%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="ENT 50/100">
-          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-          <div class="axt"><div class="axf" style="width:50%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="TWD 35/100">
-          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-          <div class="axt"><div class="axf" style="width:35%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="QUAL — no data">
-          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-      </div>
-      
-      
-      
-      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
-        <div class="nbe-head">
-          <span class="nbe-dot a1"></span>
-          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
-        </div>
-        
-        <div class="nbe-zone">
-          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$25.13</span>
-          <span class="nbe-pct">-1.0%</span>
-        </div>
-        
-      </div>
-      
-      
-      
-      
-      <div class="nb-bot">
-        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.4 of the conviction-base size (forecast vol 58.9% · inverse-vol ×0.4 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.40×</span>
-      </div>
-      
-      
-      
-      
-      <div class="nb-vf">
-        <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
-      </div>
-      
-      <div class="nb-note nb-note-anticipation"><span class="l-en">ℹ Forward risk cone is favourable (≈25% median upside vs ≈12% average drawdown) — a constructive risk SHAPE the factor axes don't price.</span><span class="l-zh">ℹ 前瞻风险锥形态有利（中位上行约 25% 对平均回撤约 12%）——因子维度未计入的有利风险形态。</span></div>
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
-      
-    </div>
-    
-    
-    <div class="card">
-      <div class="row" style="gap:8px">
-        <a href="canada_stock.html#DSV.TO"><b>DISCOVERY SILVER CORP</b></a>
-        <span class="muted small">DSV.TO</span>
-        <span style="flex:1"></span>
-        <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.13</b></span>
-        <span>#30/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-        <span>-28% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-      </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,27.3 3.8,19.6 7.6,21.3 11.4,21.5 15.2,20.9 19.0,22.4 22.9,21.3 26.7,20.0 30.5,20.2 34.3,14.2 38.1,16.1 41.9,15.5 45.7,10.1 49.5,14.2 53.3,20.4 57.1,16.9 61.0,23.5 64.8,24.0 68.6,24.9 72.4,29.2 76.2,32.7 80.0,32.1 83.8,31.4 87.6,33.4 91.4,33.5 95.2,26.3 99.0,24.0 102.9,20.8 106.7,17.5 110.5,13.6 114.3,15.3 118.1,19.3 121.9,24.2 125.7,30.6 129.5,29.5 133.3,31.2 137.1,32.2 141.0,30.2 144.8,32.4 148.6,35.8 152.4,34.0 156.2,30.3 160.0,34.8 163.8,27.3 167.6,33.4 171.4,32.9 175.2,39.1 179.0,37.1 182.9,39.6 186.7,42.0 190.5,37.3 194.3,34.3 198.1,29.6 201.9,25.5 205.7,28.0 209.5,29.1 213.3,30.3 217.1,29.9 221.0,35.8 224.8,39.1 228.6,37.8 232.4,31.9 236.2,29.4 240.0,31.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,27.3 3.8,19.6 7.6,21.3 11.4,21.5 15.2,20.9 19.0,22.4 22.9,21.3 26.7,20.0 30.5,20.2 34.3,14.2 38.1,16.1 41.9,15.5 45.7,10.1 49.5,14.2 53.3,20.4 57.1,16.9 61.0,23.5 64.8,24.0 68.6,24.9 72.4,29.2 76.2,32.7 80.0,32.1 83.8,31.4 87.6,33.4 91.4,33.5 95.2,26.3 99.0,24.0 102.9,20.8 106.7,17.5 110.5,13.6 114.3,15.3 118.1,19.3 121.9,24.2 125.7,30.6 129.5,29.5 133.3,31.2 137.1,32.2 141.0,30.2 144.8,32.4 148.6,35.8 152.4,34.0 156.2,30.3 160.0,34.8 163.8,27.3 167.6,33.4 171.4,32.9 175.2,39.1 179.0,37.1 182.9,39.6 186.7,42.0 190.5,37.3 194.3,34.3 198.1,29.6 201.9,25.5 205.7,28.0 209.5,29.1 213.3,30.3 217.1,29.9 221.0,35.8 224.8,39.1 228.6,37.8 232.4,31.9 236.2,29.4 240.0,31.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="31.2" r="2.6" fill="var(--up)"/></svg>
-      
-      <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">44</span>
-        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-      </div>
-      
-      
-      
-      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
-        <span class="nba-mark">🟢</span>
-        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
-        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-      </div>
-      
-      <div class="nb-axes">
-        
-        
-        <div class="nb-ax" title="SEL 52/100">
-          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:52%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="ENT 50/100">
-          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-          <div class="axt"><div class="axf" style="width:50%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="TWD 35/100">
-          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-          <div class="axt"><div class="axf" style="width:35%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="QUAL — no data">
-          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-      </div>
-      
-      
-      
-      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
-        <div class="nbe-head">
-          <span class="nbe-dot a1"></span>
-          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
-        </div>
-        
-        <div class="nbe-zone">
-          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$8.20–$8.36</span>
-          <span class="nbe-pct">-2.4%</span>
-        </div>
-        
-      </div>
-      
-      
-      
-      
-      <div class="nb-bot">
-        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.4 of the conviction-base size (forecast vol 71.7% · inverse-vol ×0.4 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.40×</span>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
-      
-    </div>
-    
-    
-    <div class="card">
-      <div class="row" style="gap:8px">
-        <a href="canada_stock.html#DPM.TO"><b>DPM METALS INC</b></a>
-        <span class="muted small">DPM.TO</span>
-        <span style="flex:1"></span>
-        <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.66</b></span>
-        <span>#13/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-        <span>-22% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-      </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,23.9 3.8,17.7 7.6,18.5 11.4,18.0 15.2,15.9 19.0,14.9 22.9,14.2 26.7,12.0 30.5,10.1 34.3,11.0 38.1,15.9 41.9,16.8 45.7,13.5 49.5,16.1 53.3,22.7 57.1,21.1 61.0,23.3 64.8,23.5 68.6,25.5 72.4,28.1 76.2,30.9 80.0,31.2 83.8,31.7 87.6,34.2 91.4,35.0 95.2,28.4 99.0,29.3 102.9,27.4 106.7,26.6 110.5,26.4 114.3,26.0 118.1,27.4 121.9,33.0 125.7,37.2 129.5,33.6 133.3,31.6 137.1,31.4 141.0,26.5 144.8,27.1 148.6,31.1 152.4,32.7 156.2,29.7 160.0,33.0 163.8,30.5 167.6,27.4 171.4,25.2 175.2,33.8 179.0,33.5 182.9,35.4 186.7,42.0 190.5,34.5 194.3,33.4 198.1,26.7 201.9,23.5 205.7,28.2 209.5,32.3 213.3,31.8 217.1,27.0 221.0,28.5 224.8,33.3 228.6,32.8 232.4,30.2 236.2,30.9 240.0,30.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,23.9 3.8,17.7 7.6,18.5 11.4,18.0 15.2,15.9 19.0,14.9 22.9,14.2 26.7,12.0 30.5,10.1 34.3,11.0 38.1,15.9 41.9,16.8 45.7,13.5 49.5,16.1 53.3,22.7 57.1,21.1 61.0,23.3 64.8,23.5 68.6,25.5 72.4,28.1 76.2,30.9 80.0,31.2 83.8,31.7 87.6,34.2 91.4,35.0 95.2,28.4 99.0,29.3 102.9,27.4 106.7,26.6 110.5,26.4 114.3,26.0 118.1,27.4 121.9,33.0 125.7,37.2 129.5,33.6 133.3,31.6 137.1,31.4 141.0,26.5 144.8,27.1 148.6,31.1 152.4,32.7 156.2,29.7 160.0,33.0 163.8,30.5 167.6,27.4 171.4,25.2 175.2,33.8 179.0,33.5 182.9,35.4 186.7,42.0 190.5,34.5 194.3,33.4 198.1,26.7 201.9,23.5 205.7,28.2 209.5,32.3 213.3,31.8 217.1,27.0 221.0,28.5 224.8,33.3 228.6,32.8 232.4,30.2 236.2,30.9 240.0,30.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.2" r="2.6" fill="var(--up)"/></svg>
-      
-      <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">41</span>
-        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-      </div>
-      
-      
-      
-      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线上行">
-        <span class="nba-mark">🟢</span>
-        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
-        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-      </div>
-      
-      <div class="nb-axes">
-        
-        
-        <div class="nb-ax" title="SEL 60/100">
-          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:60%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="ENT 46/100">
-          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-          <div class="axt"><div class="axf" style="width:46%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="TWD 35/100">
-          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-          <div class="axt"><div class="axf" style="width:35%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="QUAL — no data">
-          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-      </div>
-      
-      
-      
-      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
-        <div class="nbe-head">
-          <span class="nbe-dot a1"></span>
-          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
-        </div>
-        
-        <div class="nbe-zone">
-          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$45.69–$45.92</span>
-          <span class="nbe-pct">-0.6%</span>
-        </div>
-        
-      </div>
-      
-      
-      
-      
-      <div class="nb-bot">
-        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.52 of the conviction-base size (forecast vol 42.6% · inverse-vol ×0.52 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.52×</span>
-      </div>
-      
-      
-      
-      
-      <div class="nb-vf">
-        <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
-      </div>
-      
-      
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
-      
-    </div>
-    
-    
-    <div class="card">
-      <div class="row" style="gap:8px">
-        <a href="canada_stock.html#OGC.TO"><b>OCEANAGOLD CORPORATION</b></a>
-        <span class="muted small">OGC.TO</span>
-        <span style="flex:1"></span>
-        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.37</b></span>
-        <span>#18/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-        <span>-39% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-      </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,18.0 3.8,13.8 7.6,15.7 11.4,17.0 15.2,14.3 19.0,13.1 22.9,11.4 26.7,10.4 30.5,10.8 34.3,10.1 38.1,14.3 41.9,13.5 45.7,10.1 49.5,11.5 53.3,14.4 57.1,12.1 61.0,16.3 64.8,15.7 68.6,17.7 72.4,22.1 76.2,24.8 80.0,22.2 83.8,24.3 87.6,25.6 91.4,26.7 95.2,19.6 99.0,23.7 102.9,18.5 106.7,16.0 110.5,11.4 114.3,10.5 118.1,13.2 121.9,19.8 125.7,25.2 129.5,23.6 133.3,25.4 137.1,27.1 141.0,21.5 144.8,21.6 148.6,25.5 152.4,25.6 156.2,22.9 160.0,27.8 163.8,26.0 167.6,29.4 171.4,28.4 175.2,36.5 179.0,35.1 182.9,38.7 186.7,42.0 190.5,38.1 194.3,34.6 198.1,29.4 201.9,26.7 205.7,29.2 209.5,32.9 213.3,34.6 217.1,33.3 221.0,37.3 224.8,39.5 228.6,38.1 232.4,38.1 236.2,36.9 240.0,37.2 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,18.0 3.8,13.8 7.6,15.7 11.4,17.0 15.2,14.3 19.0,13.1 22.9,11.4 26.7,10.4 30.5,10.8 34.3,10.1 38.1,14.3 41.9,13.5 45.7,10.1 49.5,11.5 53.3,14.4 57.1,12.1 61.0,16.3 64.8,15.7 68.6,17.7 72.4,22.1 76.2,24.8 80.0,22.2 83.8,24.3 87.6,25.6 91.4,26.7 95.2,19.6 99.0,23.7 102.9,18.5 106.7,16.0 110.5,11.4 114.3,10.5 118.1,13.2 121.9,19.8 125.7,25.2 129.5,23.6 133.3,25.4 137.1,27.1 141.0,21.5 144.8,21.6 148.6,25.5 152.4,25.6 156.2,22.9 160.0,27.8 163.8,26.0 167.6,29.4 171.4,28.4 175.2,36.5 179.0,35.1 182.9,38.7 186.7,42.0 190.5,38.1 194.3,34.6 198.1,29.4 201.9,26.7 205.7,29.2 209.5,32.9 213.3,34.6 217.1,33.3 221.0,37.3 224.8,39.5 228.6,38.1 232.4,38.1 236.2,36.9 240.0,37.2" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="37.2" r="2.6" fill="var(--down)"/></svg>
-      
-      <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">39</span>
-        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-      </div>
-      
-      
-      
-      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
-        <span class="nba-mark">🟢</span>
-        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
-        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-      </div>
-      
-      <div class="nb-axes">
-        
-        
-        <div class="nb-ax" title="SEL 56/100">
-          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:56%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="ENT 48/100">
-          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-          <div class="axt"><div class="axf" style="width:48%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="TWD 35/100">
-          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-          <div class="axt"><div class="axf" style="width:35%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="QUAL — no data">
-          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-      </div>
-      
-      
-      
-      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~9+ trading days. Wait for support to hold, or for the next low to set up.">
-        <div class="nbe-head">
-          <span class="nbe-dot a1"></span>
-          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
-        </div>
-        
-        <div class="nbe-zone">
-          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$33.56–$34.55</span>
-          <span class="nbe-pct">-4.2%</span>
-        </div>
-        
-      </div>
-      
-      
-      
-      
-      <div class="nb-bot">
-        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.58 of the conviction-base size (forecast vol 37.6% · inverse-vol ×0.58 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.58×</span>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
-      
-    </div>
-    
-    
-    <div class="card">
-      <div class="row" style="gap:8px">
-        <a href="canada_stock.html#EMA.TO"><b>EMERA INCORPORATED</b></a>
-        <span class="muted small">EMA.TO</span>
-        <span style="flex:1"></span>
-        <span class="lad up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.06</b></span>
-        <span>#5/14 <span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
-        <span>-1% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-      </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.6 3.8,31.5 7.6,27.8 11.4,28.9 15.2,26.6 19.0,28.6 22.9,27.2 26.7,24.8 30.5,32.1 34.3,33.2 38.1,33.6 41.9,34.0 45.7,34.3 49.5,38.9 53.3,40.0 57.1,42.0 61.0,35.9 64.8,34.8 68.6,35.0 72.4,32.4 76.2,34.2 80.0,31.9 83.8,30.1 87.6,32.8 91.4,32.2 95.2,33.8 99.0,34.3 102.9,30.8 106.7,33.4 110.5,32.3 114.3,30.7 118.1,31.6 121.9,34.5 125.7,30.2 129.5,29.7 133.3,26.6 137.1,23.9 141.0,22.6 144.8,22.4 148.6,20.2 152.4,27.2 156.2,30.1 160.0,38.5 163.8,35.6 167.6,37.2 171.4,32.8 175.2,29.6 179.0,33.9 182.9,30.2 186.7,26.6 190.5,27.0 194.3,23.3 198.1,21.1 201.9,22.8 205.7,25.2 209.5,24.7 213.3,24.5 217.1,23.6 221.0,18.6 224.8,14.5 228.6,13.4 232.4,10.1 236.2,12.4 240.0,14.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.6 3.8,31.5 7.6,27.8 11.4,28.9 15.2,26.6 19.0,28.6 22.9,27.2 26.7,24.8 30.5,32.1 34.3,33.2 38.1,33.6 41.9,34.0 45.7,34.3 49.5,38.9 53.3,40.0 57.1,42.0 61.0,35.9 64.8,34.8 68.6,35.0 72.4,32.4 76.2,34.2 80.0,31.9 83.8,30.1 87.6,32.8 91.4,32.2 95.2,33.8 99.0,34.3 102.9,30.8 106.7,33.4 110.5,32.3 114.3,30.7 118.1,31.6 121.9,34.5 125.7,30.2 129.5,29.7 133.3,26.6 137.1,23.9 141.0,22.6 144.8,22.4 148.6,20.2 152.4,27.2 156.2,30.1 160.0,38.5 163.8,35.6 167.6,37.2 171.4,32.8 175.2,29.6 179.0,33.9 182.9,30.2 186.7,26.6 190.5,27.0 194.3,23.3 198.1,21.1 201.9,22.8 205.7,25.2 209.5,24.7 213.3,24.5 217.1,23.6 221.0,18.6 224.8,14.5 228.6,13.4 232.4,10.1 236.2,12.4 240.0,14.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.9" r="2.6" fill="var(--up)"/></svg>
-      
-      <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">38</span>
-        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-      </div>
-      
-      
-      
-      <div class="nb-align" title="Weekly rising · 3-Day turn↑ · Daily rising · 周线周线上行 · 3日turn↑ · 日线上行">
-        <span class="nba-mark">🟢</span>
-        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
-        <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
-      </div>
-      
-      <div class="nb-axes">
-        
-        
-        <div class="nb-ax" title="SEL 51/100">
-          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:51%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="ENT 59/100">
-          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-          <div class="axt"><div class="axf" style="width:59%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="TWD 55/100">
-          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-          <div class="axt"><div class="axf" style="width:55%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="QUAL — no data">
-          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-      </div>
-      
-      
-      
-      <div class="nb-entry nbe-await_confluence" title="ENTRY timing (gauge 2) — when & at what price to buy. Confirmed cycle low — the entry window is open now, with a clear exit if it closes back below 70.38.">
-        <div class="nbe-head">
-          <span class="nbe-dot a1"></span>
-          <span class="nbe-status"><span class="l-en">Cycle turn — awaiting confluence cross</span><span class="l-zh">周期拐点 — 等待共振交叉确认</span></span>
-        </div>
-        
-        <div class="nbe-zone">
-          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$74.55–$75.23</span>
-          <span class="nbe-pct">-0.5%</span>
-        </div>
-        
-      </div>
-      
-      
-      
-      
-      <div class="nb-bot">
-        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×2.16 of the conviction-base size (forecast vol 10.2% · inverse-vol ×2.16 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 2.16×</span>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
-      
-    </div>
-    
-    
-    <div class="card">
-      <div class="row" style="gap:8px">
-        <a href="canada_stock.html#AG.TO"><b>FIRST MAJESTIC SILVER CORP</b></a>
-        <span class="muted small">AG.TO</span>
-        <span style="flex:1"></span>
-        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.78</b></span>
-        <span>#10/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-        <span>-45% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-      </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,19.6 3.8,16.9 7.6,17.9 11.4,19.7 15.2,20.3 19.0,22.2 22.9,23.3 26.7,23.4 30.5,22.8 34.3,20.1 38.1,21.7 41.9,22.3 45.7,20.6 49.5,20.7 53.3,26.3 57.1,23.3 61.0,25.5 64.8,24.6 68.6,24.8 72.4,28.6 76.2,30.5 80.0,28.3 83.8,27.7 87.6,29.2 91.4,30.3 95.2,22.3 99.0,21.5 102.9,19.4 106.7,12.7 110.5,10.1 114.3,10.9 118.1,15.9 121.9,24.6 125.7,30.8 129.5,26.6 133.3,26.4 137.1,28.0 141.0,24.7 144.8,24.6 148.6,26.9 152.4,23.5 156.2,21.5 160.0,22.4 163.8,21.9 167.6,26.2 171.4,26.3 175.2,36.9 179.0,36.3 182.9,38.9 186.7,42.0 190.5,37.2 194.3,34.1 198.1,29.2 201.9,26.9 205.7,29.9 209.5,31.8 213.3,32.5 217.1,32.9 221.0,37.6 224.8,39.4 228.6,37.7 232.4,36.0 236.2,36.3 240.0,35.8 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,19.6 3.8,16.9 7.6,17.9 11.4,19.7 15.2,20.3 19.0,22.2 22.9,23.3 26.7,23.4 30.5,22.8 34.3,20.1 38.1,21.7 41.9,22.3 45.7,20.6 49.5,20.7 53.3,26.3 57.1,23.3 61.0,25.5 64.8,24.6 68.6,24.8 72.4,28.6 76.2,30.5 80.0,28.3 83.8,27.7 87.6,29.2 91.4,30.3 95.2,22.3 99.0,21.5 102.9,19.4 106.7,12.7 110.5,10.1 114.3,10.9 118.1,15.9 121.9,24.6 125.7,30.8 129.5,26.6 133.3,26.4 137.1,28.0 141.0,24.7 144.8,24.6 148.6,26.9 152.4,23.5 156.2,21.5 160.0,22.4 163.8,21.9 167.6,26.2 171.4,26.3 175.2,36.9 179.0,36.3 182.9,38.9 186.7,42.0 190.5,37.2 194.3,34.1 198.1,29.2 201.9,26.9 205.7,29.9 209.5,31.8 213.3,32.5 217.1,32.9 221.0,37.6 224.8,39.4 228.6,37.7 232.4,36.0 236.2,36.3 240.0,35.8" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="35.8" r="2.6" fill="var(--down)"/></svg>
-      
-      <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">37</span>
-        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-      </div>
-      
-      
-      
-      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
-        <span class="nba-mark">🟢</span>
-        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
-        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-      </div>
-      
-      <div class="nb-axes">
-        
-        
-        <div class="nb-ax" title="SEL 62/100">
-          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:62%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="ENT 50/100">
-          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-          <div class="axt"><div class="axf" style="width:50%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="TWD 35/100">
-          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-          <div class="axt"><div class="axf" style="width:35%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="QUAL — no data">
-          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-      </div>
-      
-      
-      
-      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~9+ trading days. Wait for support to hold, or for the next low to set up.">
-        <div class="nbe-head">
-          <span class="nbe-dot a1"></span>
-          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
-        </div>
-        
-        <div class="nbe-zone">
-          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$22.50–$23.29</span>
-          <span class="nbe-pct">-4.9%</span>
-        </div>
-        
-      </div>
-      
-      
-      
-      
-      <div class="nb-bot">
-        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 45.5% · inverse-vol ×0.48 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
-      
-    </div>
-    
-    
-    <div class="card">
-      <div class="row" style="gap:8px">
-        <a href="canada_stock.html#EDR.TO"><b>ENDEAVOUR SILVER CORP.</b></a>
-        <span class="muted small">EDR.TO</span>
-        <span style="flex:1"></span>
-        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-      </div>
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.10</b></span>
-        <span>#31/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-        <span>-39% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-      </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.3 3.8,24.1 7.6,24.4 11.4,24.2 15.2,24.2 19.0,22.9 22.9,24.7 26.7,25.9 30.5,24.5 34.3,21.8 38.1,22.9 41.9,24.2 45.7,20.4 49.5,21.4 53.3,27.4 57.1,24.4 61.0,26.5 64.8,25.2 68.6,24.7 72.4,28.5 76.2,31.1 80.0,29.0 83.8,29.0 87.6,30.0 91.4,34.2 95.2,28.1 99.0,21.3 102.9,21.9 106.7,11.5 110.5,10.1 114.3,11.7 118.1,15.5 121.9,23.3 125.7,30.2 129.5,27.3 133.3,27.1 137.1,28.0 141.0,25.6 144.8,24.7 148.6,26.9 152.4,23.6 156.2,21.7 160.0,23.2 163.8,22.6 167.6,27.8 171.4,27.2 175.2,37.5 179.0,37.3 182.9,38.7 186.7,42.0 190.5,36.6 194.3,32.2 198.1,27.8 201.9,26.0 205.7,29.3 209.5,31.1 213.3,32.1 217.1,31.6 221.0,36.1 224.8,38.5 228.6,35.8 232.4,33.5 236.2,34.0 240.0,33.6 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,26.3 3.8,24.1 7.6,24.4 11.4,24.2 15.2,24.2 19.0,22.9 22.9,24.7 26.7,25.9 30.5,24.5 34.3,21.8 38.1,22.9 41.9,24.2 45.7,20.4 49.5,21.4 53.3,27.4 57.1,24.4 61.0,26.5 64.8,25.2 68.6,24.7 72.4,28.5 76.2,31.1 80.0,29.0 83.8,29.0 87.6,30.0 91.4,34.2 95.2,28.1 99.0,21.3 102.9,21.9 106.7,11.5 110.5,10.1 114.3,11.7 118.1,15.5 121.9,23.3 125.7,30.2 129.5,27.3 133.3,27.1 137.1,28.0 141.0,25.6 144.8,24.7 148.6,26.9 152.4,23.6 156.2,21.7 160.0,23.2 163.8,22.6 167.6,27.8 171.4,27.2 175.2,37.5 179.0,37.3 182.9,38.7 186.7,42.0 190.5,36.6 194.3,32.2 198.1,27.8 201.9,26.0 205.7,29.3 209.5,31.1 213.3,32.1 217.1,31.6 221.0,36.1 224.8,38.5 228.6,35.8 232.4,33.5 236.2,34.0 240.0,33.6" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="33.6" r="2.6" fill="var(--down)"/></svg>
-      
-      <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">37</span>
-        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-      </div>
-      
-      
-      
-      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
-        <span class="nba-mark">🟢</span>
-        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
-        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-      </div>
-      
-      <div class="nb-axes">
-        
-        
-        <div class="nb-ax" title="SEL 52/100">
-          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:52%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="ENT 48/100">
-          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-          <div class="axt"><div class="axf" style="width:48%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax" title="TWD 35/100">
-          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-          <div class="axt"><div class="axf" style="width:35%"></div></div>
-        </div>
-        
-        
-        <div class="nb-ax ax-na" title="QUAL — no data">
-          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-          <div class="axt"><div class="axf" style="width:0%"></div></div>
-        </div>
-        
-      </div>
-      
-      
-      
-      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~9+ trading days. Wait for support to hold, or for the next low to set up.">
-        <div class="nbe-head">
-          <span class="nbe-dot a1"></span>
-          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
-        </div>
-        
-        <div class="nbe-zone">
-          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$10.91–$11.34</span>
-          <span class="nbe-pct">-5.5%</span>
-        </div>
-        
-      </div>
-      
-      
-      
-      
-      <div class="nb-bot">
-        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.43 of the conviction-base size (forecast vol 51.3% · inverse-vol ×0.43 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.43×</span>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
-      
-    </div>
-    
-    
-    <div class="card">
-      <div class="row" style="gap:8px">
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#1</span>
         <a href="canada_stock.html#TIH.TO"><b>TOROMONT IND</b></a>
         <span class="muted small">TIH.TO</span>
         <span style="flex:1"></span>
         <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
       </div>
+      
+      <p class="nb-lead"><span class="l-en">CAD-beta -0.12 primary driver · momentum screen z +1.8 (accruing) · entry: pullback 224.00–231.20</span><span class="l-zh">主要驱动：加元-β -0.12 · 动量筛选 z +1.8（待验证） · 入场：回撤 224.00–231.20</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+1.79</b></span>
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+1.79</b></span>
         <span>#3/30 <span class="l-en">Industrials</span><span class="l-zh">工业</span></span>
         <span>-3% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
       </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,39.9 7.6,41.4 11.4,41.7 15.2,37.9 19.0,31.8 22.9,31.8 26.7,31.0 30.5,31.1 34.3,28.5 38.1,33.2 41.9,32.6 45.7,31.0 49.5,33.5 53.3,34.8 57.1,33.1 61.0,31.1 64.8,31.9 68.6,30.9 72.4,32.4 76.2,31.0 80.0,30.8 83.8,26.6 87.6,26.3 91.4,26.5 95.2,23.0 99.0,26.6 102.9,26.6 106.7,27.3 110.5,25.5 114.3,22.9 118.1,21.0 121.9,22.1 125.7,24.8 129.5,28.3 133.3,28.5 137.1,23.0 141.0,21.0 144.8,22.1 148.6,20.7 152.4,20.1 156.2,19.7 160.0,24.4 163.8,22.3 167.6,22.1 171.4,19.6 175.2,22.5 179.0,22.7 182.9,23.3 186.7,34.5 190.5,31.9 194.3,31.6 198.1,30.0 201.9,28.2 205.7,34.2 209.5,10.1 213.3,11.4 217.1,12.5 221.0,13.4 224.8,18.4 228.6,18.2 232.4,16.6 236.2,17.6 240.0,15.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,39.9 7.6,41.4 11.4,41.7 15.2,37.9 19.0,31.8 22.9,31.8 26.7,31.0 30.5,31.1 34.3,28.5 38.1,33.2 41.9,32.6 45.7,31.0 49.5,33.5 53.3,34.8 57.1,33.1 61.0,31.1 64.8,31.9 68.6,30.9 72.4,32.4 76.2,31.0 80.0,30.8 83.8,26.6 87.6,26.3 91.4,26.5 95.2,23.0 99.0,26.6 102.9,26.6 106.7,27.3 110.5,25.5 114.3,22.9 118.1,21.0 121.9,22.1 125.7,24.8 129.5,28.3 133.3,28.5 137.1,23.0 141.0,21.0 144.8,22.1 148.6,20.7 152.4,20.1 156.2,19.7 160.0,24.4 163.8,22.3 167.6,22.1 171.4,19.6 175.2,22.5 179.0,22.7 182.9,23.3 186.7,34.5 190.5,31.9 194.3,31.6 198.1,30.0 201.9,28.2 205.7,34.2 209.5,10.1 213.3,11.4 217.1,12.5 221.0,13.4 224.8,18.4 228.6,18.2 232.4,16.6 236.2,17.6 240.0,15.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="15.4" r="2.6" fill="var(--up)"/></svg>
       
+      
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">35</span>
         <span class="nb-verdict"><span class="l-en">Leader · poor entry — wait for a base</span><span class="l-zh">领先 · 入场点欠佳 — 等待筑底</span></span>
       </div>
       
@@ -1723,10 +1002,12 @@
       <div class="nb-axes">
         
         
+        
         <div class="nb-ax" title="SEL 75/100">
           <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
           <div class="axt"><div class="axf" style="width:75%"></div></div>
         </div>
+        
         
         
         <div class="nb-ax" title="ENT 47/100">
@@ -1735,10 +1016,12 @@
         </div>
         
         
+        
         <div class="nb-ax" title="TWD 56/100">
           <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
           <div class="axt"><div class="axf" style="width:56%"></div></div>
         </div>
+        
         
         
         <div class="nb-ax ax-na" title="QUAL — no data">
@@ -1779,27 +1062,247 @@
       </div>
       
       
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
     
+    
+    
     <div class="card">
       <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#2</span>
+        <a href="canada_stock.html#EFR.TO"><b>ENERGY FUELS INC.</b></a>
+        <span class="muted small">EFR.TO</span>
+        <span style="flex:1"></span>
+        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+      </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +0.38 primary driver · momentum screen z +0.9 (accruing) · entry: pullback 19.43–20.02</span><span class="l-zh">主要驱动：黄金-β +0.38 · 动量筛选 z +0.9（待验证） · 入场：回撤 19.43–20.02</span></p>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.92</b></span>
+        <span>#5/38 <span class="l-en">Energy</span><span class="l-zh">能源</span></span>
+        <span>-45% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+      </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.2 3.8,27.6 7.6,28.2 11.4,27.8 15.2,29.2 19.0,26.4 22.9,26.6 26.7,26.3 30.5,23.2 34.3,22.7 38.1,18.2 41.9,18.4 45.7,20.0 49.5,16.7 53.3,20.0 57.1,12.9 61.0,15.3 64.8,20.6 68.6,17.5 72.4,19.6 76.2,23.0 80.0,16.7 83.8,16.4 87.6,16.6 91.4,18.3 95.2,10.1 99.0,10.6 102.9,16.9 106.7,15.1 110.5,18.2 114.3,20.8 118.1,23.0 121.9,26.5 125.7,34.2 129.5,32.3 133.3,28.4 137.1,27.6 141.0,26.1 144.8,26.3 148.6,26.7 152.4,26.4 156.2,27.1 160.0,29.1 163.8,22.5 167.6,27.2 171.4,29.7 175.2,37.8 179.0,36.7 182.9,39.7 186.7,42.0 190.5,37.1 194.3,37.2 198.1,35.2 201.9,36.0 205.7,35.8 209.5,31.4 213.3,31.3 217.1,32.7 221.0,34.8 224.8,36.3 228.6,38.4 232.4,38.6 236.2,38.0 240.0,38.3 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,26.2 3.8,27.6 7.6,28.2 11.4,27.8 15.2,29.2 19.0,26.4 22.9,26.6 26.7,26.3 30.5,23.2 34.3,22.7 38.1,18.2 41.9,18.4 45.7,20.0 49.5,16.7 53.3,20.0 57.1,12.9 61.0,15.3 64.8,20.6 68.6,17.5 72.4,19.6 76.2,23.0 80.0,16.7 83.8,16.4 87.6,16.6 91.4,18.3 95.2,10.1 99.0,10.6 102.9,16.9 106.7,15.1 110.5,18.2 114.3,20.8 118.1,23.0 121.9,26.5 125.7,34.2 129.5,32.3 133.3,28.4 137.1,27.6 141.0,26.1 144.8,26.3 148.6,26.7 152.4,26.4 156.2,27.1 160.0,29.1 163.8,22.5 167.6,27.2 171.4,29.7 175.2,37.8 179.0,36.7 182.9,39.7 186.7,42.0 190.5,37.1 194.3,37.2 198.1,35.2 201.9,36.0 205.7,35.8 209.5,31.4 213.3,31.3 217.1,32.7 221.0,34.8 224.8,36.3 228.6,38.4 232.4,38.6 236.2,38.0 240.0,38.3" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="38.3" r="2.6" fill="var(--down)"/></svg>
+      
+      
+      <div class="nb-conv">
+        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+      </div>
+      
+      
+      
+      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线上行">
+        <span class="nba-mark">🟢</span>
+        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+      </div>
+      
+      <div class="nb-axes">
+        
+        
+        
+        <div class="nb-ax" title="SEL 64/100">
+          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+          <div class="axt"><div class="axf" style="width:64%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="ENT 50/100">
+          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+          <div class="axt"><div class="axf" style="width:50%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="TWD 35/100">
+          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="QUAL — no data">
+          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+      </div>
+      
+      
+      
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~9+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$19.43–$20.02</span>
+          <span class="nbe-pct">-4.2%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.41 of the conviction-base size (forecast vol 53.4% · inverse-vol ×0.41 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.41×</span>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
+      
+    </div>
+    
+    
+    
+    
+    <div class="card">
+      <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#3</span>
+        <a href="canada_stock.html#AG.TO"><b>FIRST MAJESTIC SILVER CORP</b></a>
+        <span class="muted small">AG.TO</span>
+        <span style="flex:1"></span>
+        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+      </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +1.12 primary driver · momentum screen z +0.8 (accruing) · entry: pullback 22.50–23.29</span><span class="l-zh">主要驱动：黄金-β +1.12 · 动量筛选 z +0.8（待验证） · 入场：回撤 22.50–23.29</span></p>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.78</b></span>
+        <span>#10/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+        <span>-45% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+      </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,19.6 3.8,16.9 7.6,17.9 11.4,19.7 15.2,20.3 19.0,22.2 22.9,23.3 26.7,23.4 30.5,22.8 34.3,20.1 38.1,21.7 41.9,22.3 45.7,20.6 49.5,20.7 53.3,26.3 57.1,23.3 61.0,25.5 64.8,24.6 68.6,24.8 72.4,28.6 76.2,30.5 80.0,28.3 83.8,27.7 87.6,29.2 91.4,30.3 95.2,22.3 99.0,21.5 102.9,19.4 106.7,12.7 110.5,10.1 114.3,10.9 118.1,15.9 121.9,24.6 125.7,30.8 129.5,26.6 133.3,26.4 137.1,28.0 141.0,24.7 144.8,24.6 148.6,26.9 152.4,23.5 156.2,21.5 160.0,22.4 163.8,21.9 167.6,26.2 171.4,26.3 175.2,36.9 179.0,36.3 182.9,38.9 186.7,42.0 190.5,37.2 194.3,34.1 198.1,29.2 201.9,26.9 205.7,29.9 209.5,31.8 213.3,32.5 217.1,32.9 221.0,37.6 224.8,39.4 228.6,37.7 232.4,36.0 236.2,36.3 240.0,35.8 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,19.6 3.8,16.9 7.6,17.9 11.4,19.7 15.2,20.3 19.0,22.2 22.9,23.3 26.7,23.4 30.5,22.8 34.3,20.1 38.1,21.7 41.9,22.3 45.7,20.6 49.5,20.7 53.3,26.3 57.1,23.3 61.0,25.5 64.8,24.6 68.6,24.8 72.4,28.6 76.2,30.5 80.0,28.3 83.8,27.7 87.6,29.2 91.4,30.3 95.2,22.3 99.0,21.5 102.9,19.4 106.7,12.7 110.5,10.1 114.3,10.9 118.1,15.9 121.9,24.6 125.7,30.8 129.5,26.6 133.3,26.4 137.1,28.0 141.0,24.7 144.8,24.6 148.6,26.9 152.4,23.5 156.2,21.5 160.0,22.4 163.8,21.9 167.6,26.2 171.4,26.3 175.2,36.9 179.0,36.3 182.9,38.9 186.7,42.0 190.5,37.2 194.3,34.1 198.1,29.2 201.9,26.9 205.7,29.9 209.5,31.8 213.3,32.5 217.1,32.9 221.0,37.6 224.8,39.4 228.6,37.7 232.4,36.0 236.2,36.3 240.0,35.8" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="35.8" r="2.6" fill="var(--down)"/></svg>
+      
+      
+      <div class="nb-conv">
+        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+      </div>
+      
+      
+      
+      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
+        <span class="nba-mark">🟢</span>
+        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+      </div>
+      
+      <div class="nb-axes">
+        
+        
+        
+        <div class="nb-ax" title="SEL 62/100">
+          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+          <div class="axt"><div class="axf" style="width:62%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="ENT 50/100">
+          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+          <div class="axt"><div class="axf" style="width:50%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="TWD 35/100">
+          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="QUAL — no data">
+          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+      </div>
+      
+      
+      
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~9+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$22.50–$23.29</span>
+          <span class="nbe-pct">-4.9%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 45.5% · inverse-vol ×0.48 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
+      
+    </div>
+    
+    
+    
+    
+    <div class="card">
+      <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#4</span>
         <a href="canada_stock.html#IAU.TO"><b>I 80 GOLD CORP</b></a>
         <span class="muted small">IAU.TO</span>
         <span style="flex:1"></span>
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +1.08 primary driver · momentum screen z +0.7 (accruing) · insider cluster 5 buyers/180d · entry: pullback 1.97–2.01</span><span class="l-zh">主要驱动：黄金-β +1.08 · 动量筛选 z +0.7（待验证） · 内部人买入 5人/180天 · 入场：回撤 1.97–2.01</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.68</b></span>
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.68</b></span>
         <span>#11/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
         <span>-28% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
       </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,28.2 3.8,19.5 7.6,13.0 11.4,15.9 15.2,13.7 19.0,10.1 22.9,11.5 26.7,11.5 30.5,12.3 34.3,15.9 38.1,20.2 41.9,22.4 45.7,15.2 49.5,11.5 53.3,22.4 57.1,23.9 61.0,26.0 64.8,25.3 68.6,24.6 72.4,31.1 76.2,35.5 80.0,32.6 83.8,31.8 87.6,34.0 91.4,36.9 95.2,24.6 99.0,32.6 102.9,24.6 106.7,23.1 110.5,21.7 114.3,26.8 118.1,25.3 121.9,32.6 125.7,35.5 129.5,34.0 133.3,31.8 137.1,28.9 141.0,23.9 144.8,18.8 148.6,26.0 152.4,21.0 156.2,18.1 160.0,18.8 163.8,18.8 167.6,27.5 171.4,23.9 175.2,36.2 179.0,40.5 182.9,38.4 186.7,42.0 190.5,35.5 194.3,31.1 198.1,22.4 201.9,23.1 205.7,24.6 209.5,22.4 213.3,26.8 217.1,26.8 221.0,34.7 224.8,36.9 228.6,39.1 232.4,34.0 236.2,32.6 240.0,31.8 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,28.2 3.8,19.5 7.6,13.0 11.4,15.9 15.2,13.7 19.0,10.1 22.9,11.5 26.7,11.5 30.5,12.3 34.3,15.9 38.1,20.2 41.9,22.4 45.7,15.2 49.5,11.5 53.3,22.4 57.1,23.9 61.0,26.0 64.8,25.3 68.6,24.6 72.4,31.1 76.2,35.5 80.0,32.6 83.8,31.8 87.6,34.0 91.4,36.9 95.2,24.6 99.0,32.6 102.9,24.6 106.7,23.1 110.5,21.7 114.3,26.8 118.1,25.3 121.9,32.6 125.7,35.5 129.5,34.0 133.3,31.8 137.1,28.9 141.0,23.9 144.8,18.8 148.6,26.0 152.4,21.0 156.2,18.1 160.0,18.8 163.8,18.8 167.6,27.5 171.4,23.9 175.2,36.2 179.0,40.5 182.9,38.4 186.7,42.0 190.5,35.5 194.3,31.1 198.1,22.4 201.9,23.1 205.7,24.6 209.5,22.4 213.3,26.8 217.1,26.8 221.0,34.7 224.8,36.9 228.6,39.1 232.4,34.0 236.2,32.6 240.0,31.8" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="31.8" r="2.6" fill="var(--down)"/></svg>
       
+      
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">31</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       
@@ -1814,10 +1317,12 @@
       <div class="nb-axes">
         
         
+        
         <div class="nb-ax" title="SEL 60/100">
           <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
           <div class="axt"><div class="axf" style="width:60%"></div></div>
         </div>
+        
         
         
         <div class="nb-ax" title="ENT 52/100">
@@ -1826,10 +1331,12 @@
         </div>
         
         
+        
         <div class="nb-ax ax-na" title="TWD — no data">
           <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
           <div class="axt"><div class="axf" style="width:0%"></div></div>
         </div>
+        
         
         
         <div class="nb-ax ax-na" title="QUAL — no data">
@@ -1867,33 +1374,45 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
     
+    
+    
     <div class="card">
       <div class="row" style="gap:8px">
-        <a href="canada_stock.html#KNT.TO"><b>K92 MINING INC</b></a>
-        <span class="muted small">KNT.TO</span>
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#5</span>
+        <a href="canada_stock.html#DPM.TO"><b>DPM METALS INC</b></a>
+        <span class="muted small">DPM.TO</span>
         <span style="flex:1"></span>
-        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+        <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
       </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +0.95 primary driver · momentum screen z +0.7 (accruing) · entry: pullback 45.69–45.92</span><span class="l-zh">主要驱动：黄金-β +0.95 · 动量筛选 z +0.7（待验证） · 入场：回撤 45.69–45.92</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="neg">-0.35</b></span>
-        <span>#39/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-        <span>-33% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.66</b></span>
+        <span>#13/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+        <span>-22% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
       </div>
-      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.4 3.8,26.3 7.6,27.1 11.4,28.8 15.2,28.1 19.0,24.6 22.9,25.8 26.7,25.6 30.5,21.2 34.3,17.7 38.1,20.4 41.9,20.0 45.7,13.7 49.5,16.7 53.3,21.1 57.1,17.2 61.0,19.8 64.8,20.3 68.6,22.8 72.4,27.1 76.2,27.4 80.0,25.4 83.8,27.3 87.6,29.9 91.4,28.9 95.2,21.4 99.0,24.5 102.9,18.0 106.7,13.9 110.5,10.1 114.3,11.1 118.1,14.4 121.9,20.8 125.7,26.6 129.5,26.9 133.3,28.0 137.1,28.0 141.0,23.4 144.8,23.8 148.6,30.8 152.4,29.8 156.2,21.7 160.0,26.7 163.8,27.7 167.6,32.0 171.4,30.2 175.2,38.1 179.0,35.0 182.9,38.5 186.7,42.0 190.5,37.0 194.3,35.7 198.1,30.3 201.9,29.3 205.7,32.2 209.5,33.2 213.3,32.1 217.1,31.6 221.0,37.4 224.8,40.0 228.6,39.0 232.4,37.5 236.2,37.3 240.0,37.4 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,31.4 3.8,26.3 7.6,27.1 11.4,28.8 15.2,28.1 19.0,24.6 22.9,25.8 26.7,25.6 30.5,21.2 34.3,17.7 38.1,20.4 41.9,20.0 45.7,13.7 49.5,16.7 53.3,21.1 57.1,17.2 61.0,19.8 64.8,20.3 68.6,22.8 72.4,27.1 76.2,27.4 80.0,25.4 83.8,27.3 87.6,29.9 91.4,28.9 95.2,21.4 99.0,24.5 102.9,18.0 106.7,13.9 110.5,10.1 114.3,11.1 118.1,14.4 121.9,20.8 125.7,26.6 129.5,26.9 133.3,28.0 137.1,28.0 141.0,23.4 144.8,23.8 148.6,30.8 152.4,29.8 156.2,21.7 160.0,26.7 163.8,27.7 167.6,32.0 171.4,30.2 175.2,38.1 179.0,35.0 182.9,38.5 186.7,42.0 190.5,37.0 194.3,35.7 198.1,30.3 201.9,29.3 205.7,32.2 209.5,33.2 213.3,32.1 217.1,31.6 221.0,37.4 224.8,40.0 228.6,39.0 232.4,37.5 236.2,37.3 240.0,37.4" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="37.4" r="2.6" fill="var(--down)"/></svg>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,23.9 3.8,17.7 7.6,18.5 11.4,18.0 15.2,15.9 19.0,14.9 22.9,14.2 26.7,12.0 30.5,10.1 34.3,11.0 38.1,15.9 41.9,16.8 45.7,13.5 49.5,16.1 53.3,22.7 57.1,21.1 61.0,23.3 64.8,23.5 68.6,25.5 72.4,28.1 76.2,30.9 80.0,31.2 83.8,31.7 87.6,34.2 91.4,35.0 95.2,28.4 99.0,29.3 102.9,27.4 106.7,26.6 110.5,26.4 114.3,26.0 118.1,27.4 121.9,33.0 125.7,37.2 129.5,33.6 133.3,31.6 137.1,31.4 141.0,26.5 144.8,27.1 148.6,31.1 152.4,32.7 156.2,29.7 160.0,33.0 163.8,30.5 167.6,27.4 171.4,25.2 175.2,33.8 179.0,33.5 182.9,35.4 186.7,42.0 190.5,34.5 194.3,33.4 198.1,26.7 201.9,23.5 205.7,28.2 209.5,32.3 213.3,31.8 217.1,27.0 221.0,28.5 224.8,33.3 228.6,32.8 232.4,30.2 236.2,30.9 240.0,30.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,23.9 3.8,17.7 7.6,18.5 11.4,18.0 15.2,15.9 19.0,14.9 22.9,14.2 26.7,12.0 30.5,10.1 34.3,11.0 38.1,15.9 41.9,16.8 45.7,13.5 49.5,16.1 53.3,22.7 57.1,21.1 61.0,23.3 64.8,23.5 68.6,25.5 72.4,28.1 76.2,30.9 80.0,31.2 83.8,31.7 87.6,34.2 91.4,35.0 95.2,28.4 99.0,29.3 102.9,27.4 106.7,26.6 110.5,26.4 114.3,26.0 118.1,27.4 121.9,33.0 125.7,37.2 129.5,33.6 133.3,31.6 137.1,31.4 141.0,26.5 144.8,27.1 148.6,31.1 152.4,32.7 156.2,29.7 160.0,33.0 163.8,30.5 167.6,27.4 171.4,25.2 175.2,33.8 179.0,33.5 182.9,35.4 186.7,42.0 190.5,34.5 194.3,33.4 198.1,26.7 201.9,23.5 205.7,28.2 209.5,32.3 213.3,31.8 217.1,27.0 221.0,28.5 224.8,33.3 228.6,32.8 232.4,30.2 236.2,30.9 240.0,30.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.2" r="2.6" fill="var(--up)"/></svg>
+      
       
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">31</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       
       
       
-      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily ≈ cross · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线临近上穿">
+      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线上行">
         <span class="nba-mark">🟢</span>
         <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
         <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
@@ -1902,10 +1421,119 @@
       <div class="nb-axes">
         
         
-        <div class="nb-ax" title="SEL 45/100">
+        
+        <div class="nb-ax" title="SEL 60/100">
           <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-          <div class="axt"><div class="axf" style="width:45%"></div></div>
+          <div class="axt"><div class="axf" style="width:60%"></div></div>
         </div>
+        
+        
+        
+        <div class="nb-ax" title="ENT 46/100">
+          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+          <div class="axt"><div class="axf" style="width:46%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="TWD 35/100">
+          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="QUAL — no data">
+          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+      </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$45.69–$45.92</span>
+          <span class="nbe-pct">-0.6%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.52 of the conviction-base size (forecast vol 42.6% · inverse-vol ×0.52 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.52×</span>
+      </div>
+      
+      
+      
+      
+      <div class="nb-vf">
+        <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
+      </div>
+      
+      
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
+      
+    </div>
+    
+    
+    
+    
+    <div class="card">
+      <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#6</span>
+        <a href="canada_stock.html#OGC.TO"><b>OCEANAGOLD CORPORATION</b></a>
+        <span class="muted small">OGC.TO</span>
+        <span style="flex:1"></span>
+        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+      </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +1.03 primary driver · momentum screen z +0.4 (accruing) · entry: pullback 33.56–34.55</span><span class="l-zh">主要驱动：黄金-β +1.03 · 动量筛选 z +0.4（待验证） · 入场：回撤 33.56–34.55</span></p>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.37</b></span>
+        <span>#18/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+        <span>-39% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+      </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,18.0 3.8,13.8 7.6,15.7 11.4,17.0 15.2,14.3 19.0,13.1 22.9,11.4 26.7,10.4 30.5,10.8 34.3,10.1 38.1,14.3 41.9,13.5 45.7,10.1 49.5,11.5 53.3,14.4 57.1,12.1 61.0,16.3 64.8,15.7 68.6,17.7 72.4,22.1 76.2,24.8 80.0,22.2 83.8,24.3 87.6,25.6 91.4,26.7 95.2,19.6 99.0,23.7 102.9,18.5 106.7,16.0 110.5,11.4 114.3,10.5 118.1,13.2 121.9,19.8 125.7,25.2 129.5,23.6 133.3,25.4 137.1,27.1 141.0,21.5 144.8,21.6 148.6,25.5 152.4,25.6 156.2,22.9 160.0,27.8 163.8,26.0 167.6,29.4 171.4,28.4 175.2,36.5 179.0,35.1 182.9,38.7 186.7,42.0 190.5,38.1 194.3,34.6 198.1,29.4 201.9,26.7 205.7,29.2 209.5,32.9 213.3,34.6 217.1,33.3 221.0,37.3 224.8,39.5 228.6,38.1 232.4,38.1 236.2,36.9 240.0,37.2 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,18.0 3.8,13.8 7.6,15.7 11.4,17.0 15.2,14.3 19.0,13.1 22.9,11.4 26.7,10.4 30.5,10.8 34.3,10.1 38.1,14.3 41.9,13.5 45.7,10.1 49.5,11.5 53.3,14.4 57.1,12.1 61.0,16.3 64.8,15.7 68.6,17.7 72.4,22.1 76.2,24.8 80.0,22.2 83.8,24.3 87.6,25.6 91.4,26.7 95.2,19.6 99.0,23.7 102.9,18.5 106.7,16.0 110.5,11.4 114.3,10.5 118.1,13.2 121.9,19.8 125.7,25.2 129.5,23.6 133.3,25.4 137.1,27.1 141.0,21.5 144.8,21.6 148.6,25.5 152.4,25.6 156.2,22.9 160.0,27.8 163.8,26.0 167.6,29.4 171.4,28.4 175.2,36.5 179.0,35.1 182.9,38.7 186.7,42.0 190.5,38.1 194.3,34.6 198.1,29.4 201.9,26.7 205.7,29.2 209.5,32.9 213.3,34.6 217.1,33.3 221.0,37.3 224.8,39.5 228.6,38.1 232.4,38.1 236.2,36.9 240.0,37.2" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="37.2" r="2.6" fill="var(--down)"/></svg>
+      
+      
+      <div class="nb-conv">
+        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+      </div>
+      
+      
+      
+      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
+        <span class="nba-mark">🟢</span>
+        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+      </div>
+      
+      <div class="nb-axes">
+        
+        
+        
+        <div class="nb-ax" title="SEL 56/100">
+          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+          <div class="axt"><div class="axf" style="width:56%"></div></div>
+        </div>
+        
         
         
         <div class="nb-ax" title="ENT 48/100">
@@ -1914,10 +1542,12 @@
         </div>
         
         
+        
         <div class="nb-ax" title="TWD 35/100">
           <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
           <div class="axt"><div class="axf" style="width:35%"></div></div>
         </div>
+        
         
         
         <div class="nb-ax ax-na" title="QUAL — no data">
@@ -1937,8 +1567,8 @@
         
         <div class="nbe-zone">
           <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-          <span class="nbe-px">$21.33–$21.79</span>
-          <span class="nbe-pct">-3.1%</span>
+          <span class="nbe-px">$33.56–$34.55</span>
+          <span class="nbe-pct">-4.2%</span>
         </div>
         
       </div>
@@ -1947,7 +1577,7 @@
       
       
       <div class="nb-bot">
-        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.67 of the conviction-base size (forecast vol 32.6% · inverse-vol ×0.67 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.67×</span>
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.58 of the conviction-base size (forecast vol 37.6% · inverse-vol ×0.58 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.58×</span>
       </div>
       
       
@@ -1955,27 +1585,39 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
     
+    
+    
     <div class="card">
       <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#7</span>
         <a href="canada_stock.html#SKE.TO"><b>SKEENA RESOURCES LIMITED</b></a>
         <span class="muted small">SKE.TO</span>
         <span style="flex:1"></span>
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +1.20 primary driver · momentum screen z +0.3 (accruing) · entry: pullback 35.35–36.58</span><span class="l-zh">主要驱动：黄金-β +1.20 · 动量筛选 z +0.3（待验证） · 入场：回撤 35.35–36.58</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.33</b></span>
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.33</b></span>
         <span>#20/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
         <span>-27% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
       </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,24.6 3.8,20.3 7.6,20.4 11.4,20.1 15.2,20.6 19.0,20.1 22.9,15.3 26.7,12.2 30.5,13.7 34.3,12.7 38.1,17.6 41.9,15.9 45.7,13.1 49.5,11.1 53.3,16.8 57.1,14.3 61.0,19.3 64.8,20.1 68.6,22.2 72.4,26.6 76.2,29.1 80.0,29.4 83.8,27.4 87.6,28.4 91.4,28.3 95.2,22.1 99.0,24.9 102.9,19.1 106.7,16.3 110.5,12.4 114.3,10.1 118.1,11.0 121.9,21.6 125.7,29.5 129.5,27.5 133.3,28.7 137.1,30.8 141.0,26.7 144.8,25.3 148.6,28.9 152.4,26.7 156.2,23.5 160.0,23.6 163.8,21.2 167.6,27.1 171.4,25.6 175.2,37.9 179.0,35.6 182.9,38.1 186.7,42.0 190.5,38.0 194.3,30.5 198.1,23.2 201.9,20.0 205.7,22.0 209.5,27.1 213.3,29.0 217.1,29.3 221.0,36.2 224.8,38.1 228.6,36.5 232.4,33.2 236.2,33.5 240.0,34.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,24.6 3.8,20.3 7.6,20.4 11.4,20.1 15.2,20.6 19.0,20.1 22.9,15.3 26.7,12.2 30.5,13.7 34.3,12.7 38.1,17.6 41.9,15.9 45.7,13.1 49.5,11.1 53.3,16.8 57.1,14.3 61.0,19.3 64.8,20.1 68.6,22.2 72.4,26.6 76.2,29.1 80.0,29.4 83.8,27.4 87.6,28.4 91.4,28.3 95.2,22.1 99.0,24.9 102.9,19.1 106.7,16.3 110.5,12.4 114.3,10.1 118.1,11.0 121.9,21.6 125.7,29.5 129.5,27.5 133.3,28.7 137.1,30.8 141.0,26.7 144.8,25.3 148.6,28.9 152.4,26.7 156.2,23.5 160.0,23.6 163.8,21.2 167.6,27.1 171.4,25.6 175.2,37.9 179.0,35.6 182.9,38.1 186.7,42.0 190.5,38.0 194.3,30.5 198.1,23.2 201.9,20.0 205.7,22.0 209.5,27.1 213.3,29.0 217.1,29.3 221.0,36.2 224.8,38.1 228.6,36.5 232.4,33.2 236.2,33.5 240.0,34.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.1" r="2.6" fill="var(--down)"/></svg>
       
+      
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">29</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       
@@ -1990,10 +1632,12 @@
       <div class="nb-axes">
         
         
+        
         <div class="nb-ax" title="SEL 55/100">
           <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
           <div class="axt"><div class="axf" style="width:55%"></div></div>
         </div>
+        
         
         
         <div class="nb-ax" title="ENT 44/100">
@@ -2002,10 +1646,12 @@
         </div>
         
         
+        
         <div class="nb-ax ax-na" title="TWD — no data">
           <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
           <div class="axt"><div class="axf" style="width:0%"></div></div>
         </div>
+        
         
         
         <div class="nb-ax ax-na" title="QUAL — no data">
@@ -2046,27 +1692,39 @@
       </div>
       
       
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
     
+    
+    
     <div class="card">
       <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#8</span>
         <a href="canada_stock.html#CCO.TO"><b>CAMECO CORP</b></a>
         <span class="muted small">CCO.TO</span>
         <span style="flex:1"></span>
         <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
       </div>
+      
+      <p class="nb-lead"><span class="l-en">CAD-beta +0.12 primary driver · momentum screen z +0.3 (accruing) · entry: pullback 139.10–141.80</span><span class="l-zh">主要驱动：加元-β +0.12 · 动量筛选 z +0.3（待验证） · 入场：回撤 139.10–141.80</span></p>
       <div class="row small muted" style="gap:10px; margin:5px 0">
-        <span>α-z <b class="pos">+0.30</b></span>
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.30</b></span>
         <span>#15/38 <span class="l-en">Energy</span><span class="l-zh">能源</span></span>
         <span>-20% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
       </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,27.1 3.8,24.7 7.6,23.0 11.4,25.2 15.2,25.7 19.0,19.8 22.9,20.5 26.7,19.7 30.5,19.6 34.3,20.3 38.1,17.3 41.9,16.3 45.7,16.1 49.5,13.4 53.3,20.7 57.1,10.1 61.0,12.8 64.8,14.7 68.6,14.0 72.4,20.9 76.2,23.1 80.0,14.7 83.8,17.4 87.6,19.3 91.4,23.2 95.2,13.3 99.0,18.5 102.9,20.3 106.7,16.7 110.5,20.2 114.3,21.6 118.1,24.8 121.9,29.7 125.7,34.3 129.5,33.8 133.3,32.0 137.1,32.4 141.0,29.9 144.8,28.6 148.6,29.2 152.4,26.0 156.2,24.3 160.0,23.5 163.8,14.8 167.6,20.6 171.4,21.5 175.2,32.8 179.0,30.6 182.9,34.1 186.7,42.0 190.5,37.6 194.3,35.2 198.1,28.3 201.9,27.3 205.7,28.7 209.5,27.8 213.3,27.3 217.1,26.8 221.0,24.4 224.8,26.8 228.6,30.6 232.4,29.7 236.2,30.6 240.0,32.4 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,27.1 3.8,24.7 7.6,23.0 11.4,25.2 15.2,25.7 19.0,19.8 22.9,20.5 26.7,19.7 30.5,19.6 34.3,20.3 38.1,17.3 41.9,16.3 45.7,16.1 49.5,13.4 53.3,20.7 57.1,10.1 61.0,12.8 64.8,14.7 68.6,14.0 72.4,20.9 76.2,23.1 80.0,14.7 83.8,17.4 87.6,19.3 91.4,23.2 95.2,13.3 99.0,18.5 102.9,20.3 106.7,16.7 110.5,20.2 114.3,21.6 118.1,24.8 121.9,29.7 125.7,34.3 129.5,33.8 133.3,32.0 137.1,32.4 141.0,29.9 144.8,28.6 148.6,29.2 152.4,26.0 156.2,24.3 160.0,23.5 163.8,14.8 167.6,20.6 171.4,21.5 175.2,32.8 179.0,30.6 182.9,34.1 186.7,42.0 190.5,37.6 194.3,35.2 198.1,28.3 201.9,27.3 205.7,28.7 209.5,27.8 213.3,27.3 217.1,26.8 221.0,24.4 224.8,26.8 228.6,30.6 232.4,29.7 236.2,30.6 240.0,32.4" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="32.4" r="2.6" fill="var(--down)"/></svg>
       
+      
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">28</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       
@@ -2081,10 +1739,12 @@
       <div class="nb-axes">
         
         
+        
         <div class="nb-ax" title="SEL 55/100">
           <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
           <div class="axt"><div class="axf" style="width:55%"></div></div>
         </div>
+        
         
         
         <div class="nb-ax" title="ENT 51/100">
@@ -2093,10 +1753,12 @@
         </div>
         
         
+        
         <div class="nb-ax" title="TWD 35/100">
           <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
           <div class="axt"><div class="axf" style="width:35%"></div></div>
         </div>
+        
         
         
         <div class="nb-ax ax-na" title="QUAL — no data">
@@ -2134,12 +1796,639 @@
       
       
       
-      <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
+      
+    </div>
+    
+    
+    
+    
+    <div class="card">
+      <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#9</span>
+        <a href="canada_stock.html#NGEX.TO"><b>NGEX MINERALS LTD</b></a>
+        <span class="muted small">NGEX.TO</span>
+        <span style="flex:1"></span>
+        <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+      </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +0.67 primary driver · momentum screen z +0.2 (accruing) · entry: pullback 25.13–25.13</span><span class="l-zh">主要驱动：黄金-β +0.67 · 动量筛选 z +0.2（待验证） · 入场：回撤 25.13–25.13</span></p>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.21</b></span>
+        <span>#25/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+        <span>-20% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+      </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,34.8 3.8,30.7 7.6,30.6 11.4,32.0 15.2,32.3 19.0,26.2 22.9,28.4 26.7,24.2 30.5,22.1 34.3,16.1 38.1,20.1 41.9,17.6 45.7,17.6 49.5,18.3 53.3,26.6 57.1,21.4 61.0,23.7 64.8,26.5 68.6,27.9 72.4,32.4 76.2,36.6 80.0,35.5 83.8,36.5 87.6,38.3 91.4,38.4 95.2,30.4 99.0,33.0 102.9,29.5 106.7,27.9 110.5,22.5 114.3,17.0 118.1,18.5 121.9,28.6 125.7,34.5 129.5,32.6 133.3,34.1 137.1,36.1 141.0,30.1 144.8,30.5 148.6,31.0 152.4,25.5 156.2,20.7 160.0,18.5 163.8,10.1 167.6,17.6 171.4,19.0 175.2,37.1 179.0,36.7 182.9,41.7 186.7,42.0 190.5,36.4 194.3,29.5 198.1,25.0 201.9,24.7 205.7,28.0 209.5,32.0 213.3,33.8 217.1,33.8 221.0,36.7 224.8,41.5 228.6,38.7 232.4,37.3 236.2,38.3 240.0,34.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,34.8 3.8,30.7 7.6,30.6 11.4,32.0 15.2,32.3 19.0,26.2 22.9,28.4 26.7,24.2 30.5,22.1 34.3,16.1 38.1,20.1 41.9,17.6 45.7,17.6 49.5,18.3 53.3,26.6 57.1,21.4 61.0,23.7 64.8,26.5 68.6,27.9 72.4,32.4 76.2,36.6 80.0,35.5 83.8,36.5 87.6,38.3 91.4,38.4 95.2,30.4 99.0,33.0 102.9,29.5 106.7,27.9 110.5,22.5 114.3,17.0 118.1,18.5 121.9,28.6 125.7,34.5 129.5,32.6 133.3,34.1 137.1,36.1 141.0,30.1 144.8,30.5 148.6,31.0 152.4,25.5 156.2,20.7 160.0,18.5 163.8,10.1 167.6,17.6 171.4,19.0 175.2,37.1 179.0,36.7 182.9,41.7 186.7,42.0 190.5,36.4 194.3,29.5 198.1,25.0 201.9,24.7 205.7,28.0 209.5,32.0 213.3,33.8 217.1,33.8 221.0,36.7 224.8,41.5 228.6,38.7 232.4,37.3 236.2,38.3 240.0,34.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.5" r="2.6" fill="var(--up)"/></svg>
+      
+      
+      <div class="nb-conv">
+        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+      </div>
+      
+      
+      
+      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily ≈ cross · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线临近上穿">
+        <span class="nba-mark">🟢</span>
+        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+      </div>
+      
+      <div class="nb-axes">
+        
+        
+        
+        <div class="nb-ax" title="SEL 53/100">
+          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+          <div class="axt"><div class="axf" style="width:53%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="ENT 50/100">
+          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+          <div class="axt"><div class="axf" style="width:50%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="TWD 35/100">
+          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="QUAL — no data">
+          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+      </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$25.13</span>
+          <span class="nbe-pct">-1.0%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.4 of the conviction-base size (forecast vol 58.9% · inverse-vol ×0.4 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.40×</span>
+      </div>
+      
+      
+      
+      
+      <div class="nb-vf">
+        <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
+      </div>
+      
+      <div class="nb-note nb-note-anticipation"><span class="l-en">ℹ Forward risk cone is favourable (≈25% median upside vs ≈12% average drawdown) — a constructive risk SHAPE the factor axes don't price.</span><span class="l-zh">ℹ 前瞻风险锥形态有利（中位上行约 25% 对平均回撤约 12%）——因子维度未计入的有利风险形态。</span></div>
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
+      
+    </div>
+    
+    
+    
+    
+    <div class="card">
+      <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#10</span>
+        <a href="canada_stock.html#DSV.TO"><b>DISCOVERY SILVER CORP</b></a>
+        <span class="muted small">DSV.TO</span>
+        <span style="flex:1"></span>
+        <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+      </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +1.31 primary driver · momentum screen z +0.1 (accruing) · entry: pullback 8.20–8.36</span><span class="l-zh">主要驱动：黄金-β +1.31 · 动量筛选 z +0.1（待验证） · 入场：回撤 8.20–8.36</span></p>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.13</b></span>
+        <span>#30/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+        <span>-28% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+      </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,27.3 3.8,19.6 7.6,21.3 11.4,21.5 15.2,20.9 19.0,22.4 22.9,21.3 26.7,20.0 30.5,20.2 34.3,14.2 38.1,16.1 41.9,15.5 45.7,10.1 49.5,14.2 53.3,20.4 57.1,16.9 61.0,23.5 64.8,24.0 68.6,24.9 72.4,29.2 76.2,32.7 80.0,32.1 83.8,31.4 87.6,33.4 91.4,33.5 95.2,26.3 99.0,24.0 102.9,20.8 106.7,17.5 110.5,13.6 114.3,15.3 118.1,19.3 121.9,24.2 125.7,30.6 129.5,29.5 133.3,31.2 137.1,32.2 141.0,30.2 144.8,32.4 148.6,35.8 152.4,34.0 156.2,30.3 160.0,34.8 163.8,27.3 167.6,33.4 171.4,32.9 175.2,39.1 179.0,37.1 182.9,39.6 186.7,42.0 190.5,37.3 194.3,34.3 198.1,29.6 201.9,25.5 205.7,28.0 209.5,29.1 213.3,30.3 217.1,29.9 221.0,35.8 224.8,39.1 228.6,37.8 232.4,31.9 236.2,29.4 240.0,31.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,27.3 3.8,19.6 7.6,21.3 11.4,21.5 15.2,20.9 19.0,22.4 22.9,21.3 26.7,20.0 30.5,20.2 34.3,14.2 38.1,16.1 41.9,15.5 45.7,10.1 49.5,14.2 53.3,20.4 57.1,16.9 61.0,23.5 64.8,24.0 68.6,24.9 72.4,29.2 76.2,32.7 80.0,32.1 83.8,31.4 87.6,33.4 91.4,33.5 95.2,26.3 99.0,24.0 102.9,20.8 106.7,17.5 110.5,13.6 114.3,15.3 118.1,19.3 121.9,24.2 125.7,30.6 129.5,29.5 133.3,31.2 137.1,32.2 141.0,30.2 144.8,32.4 148.6,35.8 152.4,34.0 156.2,30.3 160.0,34.8 163.8,27.3 167.6,33.4 171.4,32.9 175.2,39.1 179.0,37.1 182.9,39.6 186.7,42.0 190.5,37.3 194.3,34.3 198.1,29.6 201.9,25.5 205.7,28.0 209.5,29.1 213.3,30.3 217.1,29.9 221.0,35.8 224.8,39.1 228.6,37.8 232.4,31.9 236.2,29.4 240.0,31.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="31.2" r="2.6" fill="var(--up)"/></svg>
+      
+      
+      <div class="nb-conv">
+        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+      </div>
+      
+      
+      
+      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
+        <span class="nba-mark">🟢</span>
+        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+      </div>
+      
+      <div class="nb-axes">
+        
+        
+        
+        <div class="nb-ax" title="SEL 52/100">
+          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+          <div class="axt"><div class="axf" style="width:52%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="ENT 50/100">
+          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+          <div class="axt"><div class="axf" style="width:50%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="TWD 35/100">
+          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="QUAL — no data">
+          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+      </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$8.20–$8.36</span>
+          <span class="nbe-pct">-2.4%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.4 of the conviction-base size (forecast vol 71.7% · inverse-vol ×0.4 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.40×</span>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
+      
+    </div>
+    
+    
+    
+    
+    <div class="card">
+      <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#11</span>
+        <a href="canada_stock.html#EDR.TO"><b>ENDEAVOUR SILVER CORP.</b></a>
+        <span class="muted small">EDR.TO</span>
+        <span style="flex:1"></span>
+        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+      </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +1.09 primary driver · momentum screen z +0.1 (accruing) · entry: pullback 10.91–11.34</span><span class="l-zh">主要驱动：黄金-β +1.09 · 动量筛选 z +0.1（待验证） · 入场：回撤 10.91–11.34</span></p>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.10</b></span>
+        <span>#31/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+        <span>-39% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+      </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.3 3.8,24.1 7.6,24.4 11.4,24.2 15.2,24.2 19.0,22.9 22.9,24.7 26.7,25.9 30.5,24.5 34.3,21.8 38.1,22.9 41.9,24.2 45.7,20.4 49.5,21.4 53.3,27.4 57.1,24.4 61.0,26.5 64.8,25.2 68.6,24.7 72.4,28.5 76.2,31.1 80.0,29.0 83.8,29.0 87.6,30.0 91.4,34.2 95.2,28.1 99.0,21.3 102.9,21.9 106.7,11.5 110.5,10.1 114.3,11.7 118.1,15.5 121.9,23.3 125.7,30.2 129.5,27.3 133.3,27.1 137.1,28.0 141.0,25.6 144.8,24.7 148.6,26.9 152.4,23.6 156.2,21.7 160.0,23.2 163.8,22.6 167.6,27.8 171.4,27.2 175.2,37.5 179.0,37.3 182.9,38.7 186.7,42.0 190.5,36.6 194.3,32.2 198.1,27.8 201.9,26.0 205.7,29.3 209.5,31.1 213.3,32.1 217.1,31.6 221.0,36.1 224.8,38.5 228.6,35.8 232.4,33.5 236.2,34.0 240.0,33.6 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,26.3 3.8,24.1 7.6,24.4 11.4,24.2 15.2,24.2 19.0,22.9 22.9,24.7 26.7,25.9 30.5,24.5 34.3,21.8 38.1,22.9 41.9,24.2 45.7,20.4 49.5,21.4 53.3,27.4 57.1,24.4 61.0,26.5 64.8,25.2 68.6,24.7 72.4,28.5 76.2,31.1 80.0,29.0 83.8,29.0 87.6,30.0 91.4,34.2 95.2,28.1 99.0,21.3 102.9,21.9 106.7,11.5 110.5,10.1 114.3,11.7 118.1,15.5 121.9,23.3 125.7,30.2 129.5,27.3 133.3,27.1 137.1,28.0 141.0,25.6 144.8,24.7 148.6,26.9 152.4,23.6 156.2,21.7 160.0,23.2 163.8,22.6 167.6,27.8 171.4,27.2 175.2,37.5 179.0,37.3 182.9,38.7 186.7,42.0 190.5,36.6 194.3,32.2 198.1,27.8 201.9,26.0 205.7,29.3 209.5,31.1 213.3,32.1 217.1,31.6 221.0,36.1 224.8,38.5 228.6,35.8 232.4,33.5 236.2,34.0 240.0,33.6" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="33.6" r="2.6" fill="var(--down)"/></svg>
+      
+      
+      <div class="nb-conv">
+        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+      </div>
+      
+      
+      
+      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
+        <span class="nba-mark">🟢</span>
+        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+      </div>
+      
+      <div class="nb-axes">
+        
+        
+        
+        <div class="nb-ax" title="SEL 52/100">
+          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+          <div class="axt"><div class="axf" style="width:52%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="ENT 48/100">
+          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="TWD 35/100">
+          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="QUAL — no data">
+          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+      </div>
+      
+      
+      
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~9+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$10.91–$11.34</span>
+          <span class="nbe-pct">-5.5%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.43 of the conviction-base size (forecast vol 51.3% · inverse-vol ×0.43 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.43×</span>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
+      
+    </div>
+    
+    
+    
+    
+    <div class="card">
+      <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#12</span>
+        <a href="canada_stock.html#EMA.TO"><b>EMERA INCORPORATED</b></a>
+        <span class="muted small">EMA.TO</span>
+        <span style="flex:1"></span>
+        <span class="lad up"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
+      </div>
+      
+      <p class="nb-lead"><span class="l-en">Utilities sector · momentum screen z +0.1 (accruing) · entry: pullback 74.55–75.23</span><span class="l-zh">Utilities 板块 · 动量筛选 z +0.1（待验证） · 入场：回撤 74.55–75.23</span></p>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="pos">+0.06</b></span>
+        <span>#5/14 <span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
+        <span>-1% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+      </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.6 3.8,31.5 7.6,27.8 11.4,28.9 15.2,26.6 19.0,28.6 22.9,27.2 26.7,24.8 30.5,32.1 34.3,33.2 38.1,33.6 41.9,34.0 45.7,34.3 49.5,38.9 53.3,40.0 57.1,42.0 61.0,35.9 64.8,34.8 68.6,35.0 72.4,32.4 76.2,34.2 80.0,31.9 83.8,30.1 87.6,32.8 91.4,32.2 95.2,33.8 99.0,34.3 102.9,30.8 106.7,33.4 110.5,32.3 114.3,30.7 118.1,31.6 121.9,34.5 125.7,30.2 129.5,29.7 133.3,26.6 137.1,23.9 141.0,22.6 144.8,22.4 148.6,20.2 152.4,27.2 156.2,30.1 160.0,38.5 163.8,35.6 167.6,37.2 171.4,32.8 175.2,29.6 179.0,33.9 182.9,30.2 186.7,26.6 190.5,27.0 194.3,23.3 198.1,21.1 201.9,22.8 205.7,25.2 209.5,24.7 213.3,24.5 217.1,23.6 221.0,18.6 224.8,14.5 228.6,13.4 232.4,10.1 236.2,12.4 240.0,14.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.6 3.8,31.5 7.6,27.8 11.4,28.9 15.2,26.6 19.0,28.6 22.9,27.2 26.7,24.8 30.5,32.1 34.3,33.2 38.1,33.6 41.9,34.0 45.7,34.3 49.5,38.9 53.3,40.0 57.1,42.0 61.0,35.9 64.8,34.8 68.6,35.0 72.4,32.4 76.2,34.2 80.0,31.9 83.8,30.1 87.6,32.8 91.4,32.2 95.2,33.8 99.0,34.3 102.9,30.8 106.7,33.4 110.5,32.3 114.3,30.7 118.1,31.6 121.9,34.5 125.7,30.2 129.5,29.7 133.3,26.6 137.1,23.9 141.0,22.6 144.8,22.4 148.6,20.2 152.4,27.2 156.2,30.1 160.0,38.5 163.8,35.6 167.6,37.2 171.4,32.8 175.2,29.6 179.0,33.9 182.9,30.2 186.7,26.6 190.5,27.0 194.3,23.3 198.1,21.1 201.9,22.8 205.7,25.2 209.5,24.7 213.3,24.5 217.1,23.6 221.0,18.6 224.8,14.5 228.6,13.4 232.4,10.1 236.2,12.4 240.0,14.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.9" r="2.6" fill="var(--up)"/></svg>
+      
+      
+      <div class="nb-conv">
+        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+      </div>
+      
+      
+      
+      <div class="nb-align" title="Weekly rising · 3-Day turn↑ · Daily rising · 周线周线上行 · 3日turn↑ · 日线上行">
+        <span class="nba-mark">🟢</span>
+        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
+        <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
+      </div>
+      
+      <div class="nb-axes">
+        
+        
+        
+        <div class="nb-ax" title="SEL 51/100">
+          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+          <div class="axt"><div class="axf" style="width:51%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="ENT 59/100">
+          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+          <div class="axt"><div class="axf" style="width:59%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="TWD 55/100">
+          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+          <div class="axt"><div class="axf" style="width:55%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="QUAL — no data">
+          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+      </div>
+      
+      
+      
+      <div class="nb-entry nbe-await_confluence" title="ENTRY timing (gauge 2) — when & at what price to buy. Confirmed cycle low — the entry window is open now, with a clear exit if it closes back below 70.38.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Cycle turn — awaiting confluence cross</span><span class="l-zh">周期拐点 — 等待共振交叉确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$74.55–$75.23</span>
+          <span class="nbe-pct">-0.5%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×2.16 of the conviction-base size (forecast vol 10.2% · inverse-vol ×2.16 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 2.16×</span>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
+      
+    </div>
+    
+    
+    
+    
+    <div class="card">
+      <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#13</span>
+        <a href="canada_stock.html#ASM.TO"><b>AVINO SILVER AND GOLD MINES LTD</b></a>
+        <span class="muted small">ASM.TO</span>
+        <span style="flex:1"></span>
+        <span class="lad up"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+      </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +1.29 primary driver · momentum screen z -0.1 (accruing) · entry: pullback 8.80–8.84</span><span class="l-zh">主要驱动：黄金-β +1.29 · 动量筛选 z -0.1（待验证） · 入场：回撤 8.80–8.84</span></p>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="neg">-0.09</b></span>
+        <span>#34/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+        <span>-41% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+      </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,30.3 3.8,27.0 7.6,28.2 11.4,24.6 15.2,25.4 19.0,21.9 22.9,21.8 26.7,21.5 30.5,23.1 34.3,19.3 38.1,20.3 41.9,20.5 45.7,12.8 49.5,14.9 53.3,23.1 57.1,18.9 61.0,22.8 64.8,24.1 68.6,25.9 72.4,31.1 76.2,33.7 80.0,30.9 83.8,29.4 87.6,32.4 91.4,33.7 95.2,25.9 99.0,25.1 102.9,24.4 106.7,16.2 110.5,10.1 114.3,11.7 118.1,13.4 121.9,20.8 125.7,29.8 129.5,25.7 133.3,27.0 137.1,28.1 141.0,23.3 144.8,23.6 148.6,26.3 152.4,19.8 156.2,17.6 160.0,17.8 163.8,16.2 167.6,24.1 171.4,24.3 175.2,37.0 179.0,35.6 182.9,38.1 186.7,42.0 190.5,35.1 194.3,29.5 198.1,23.4 201.9,21.3 205.7,22.6 209.5,26.3 213.3,27.3 217.1,28.0 221.0,34.8 224.8,38.4 228.6,35.4 232.4,30.9 236.2,30.0 240.0,28.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.3 3.8,27.0 7.6,28.2 11.4,24.6 15.2,25.4 19.0,21.9 22.9,21.8 26.7,21.5 30.5,23.1 34.3,19.3 38.1,20.3 41.9,20.5 45.7,12.8 49.5,14.9 53.3,23.1 57.1,18.9 61.0,22.8 64.8,24.1 68.6,25.9 72.4,31.1 76.2,33.7 80.0,30.9 83.8,29.4 87.6,32.4 91.4,33.7 95.2,25.9 99.0,25.1 102.9,24.4 106.7,16.2 110.5,10.1 114.3,11.7 118.1,13.4 121.9,20.8 125.7,29.8 129.5,25.7 133.3,27.0 137.1,28.1 141.0,23.3 144.8,23.6 148.6,26.3 152.4,19.8 156.2,17.6 160.0,17.8 163.8,16.2 167.6,24.1 171.4,24.3 175.2,37.0 179.0,35.6 182.9,38.1 186.7,42.0 190.5,35.1 194.3,29.5 198.1,23.4 201.9,21.3 205.7,22.6 209.5,26.3 213.3,27.3 217.1,28.0 221.0,34.8 224.8,38.4 228.6,35.4 232.4,30.9 236.2,30.0 240.0,28.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="28.8" r="2.6" fill="var(--up)"/></svg>
+      
+      
+      <div class="nb-conv">
+        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+      </div>
+      
+      
+      
+      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线已上穿">
+        <span class="nba-mark">🟢</span>
+        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+      </div>
+      
+      <div class="nb-axes">
+        
+        
+        
+        <div class="nb-ax" title="SEL 49/100">
+          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+          <div class="axt"><div class="axf" style="width:49%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="ENT 47/100">
+          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+          <div class="axt"><div class="axf" style="width:47%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="TWD — no data">
+          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="QUAL — no data">
+          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+      </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$8.80–$8.84</span>
+          <span class="nbe-pct">-1.9%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.41 of the conviction-base size (forecast vol 53.7% · inverse-vol ×0.41 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.41×</span>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
+      
+    </div>
+    
+    
+    
+    
+    <div class="card">
+      <div class="row" style="gap:8px">
+        
+        <span class="rankpill" title="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order. · 组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#14</span>
+        <a href="canada_stock.html#KNT.TO"><b>K92 MINING INC</b></a>
+        <span class="muted small">KNT.TO</span>
+        <span style="flex:1"></span>
+        <span class="lad down"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+      </div>
+      
+      <p class="nb-lead"><span class="l-en">Gold-beta +0.90 primary driver · momentum screen z -0.3 (accruing) · entry: pullback 21.33–21.79</span><span class="l-zh">主要驱动：黄金-β +0.90 · 动量筛选 z -0.3（待验证） · 入场：回撤 21.33–21.79</span></p>
+      <div class="row small muted" style="gap:10px; margin:5px 0">
+        <span title="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE). · 残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。"><span class="l-en">mom screen</span><span class="l-zh">动量筛选</span> <b class="neg">-0.35</b></span>
+        <span>#39/60 <span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+        <span>-33% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+      </div>
+      
+      <div class="nb-vf" style="margin-top:2px">
+        <span class="nb-vchip" title="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md). · 动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。"><span class="l-en">screen — momentum prior ACCRUING (FDR-stable, DSR-short; re-test 2027-01)</span><span class="l-zh">筛选 — 动量先验待验证（通过 FDR、DSR 不足；2027-01 复测）</span></span>
+        
+        
+      </div>
+      <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.4 3.8,26.3 7.6,27.1 11.4,28.8 15.2,28.1 19.0,24.6 22.9,25.8 26.7,25.6 30.5,21.2 34.3,17.7 38.1,20.4 41.9,20.0 45.7,13.7 49.5,16.7 53.3,21.1 57.1,17.2 61.0,19.8 64.8,20.3 68.6,22.8 72.4,27.1 76.2,27.4 80.0,25.4 83.8,27.3 87.6,29.9 91.4,28.9 95.2,21.4 99.0,24.5 102.9,18.0 106.7,13.9 110.5,10.1 114.3,11.1 118.1,14.4 121.9,20.8 125.7,26.6 129.5,26.9 133.3,28.0 137.1,28.0 141.0,23.4 144.8,23.8 148.6,30.8 152.4,29.8 156.2,21.7 160.0,26.7 163.8,27.7 167.6,32.0 171.4,30.2 175.2,38.1 179.0,35.0 182.9,38.5 186.7,42.0 190.5,37.0 194.3,35.7 198.1,30.3 201.9,29.3 205.7,32.2 209.5,33.2 213.3,32.1 217.1,31.6 221.0,37.4 224.8,40.0 228.6,39.0 232.4,37.5 236.2,37.3 240.0,37.4 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,31.4 3.8,26.3 7.6,27.1 11.4,28.8 15.2,28.1 19.0,24.6 22.9,25.8 26.7,25.6 30.5,21.2 34.3,17.7 38.1,20.4 41.9,20.0 45.7,13.7 49.5,16.7 53.3,21.1 57.1,17.2 61.0,19.8 64.8,20.3 68.6,22.8 72.4,27.1 76.2,27.4 80.0,25.4 83.8,27.3 87.6,29.9 91.4,28.9 95.2,21.4 99.0,24.5 102.9,18.0 106.7,13.9 110.5,10.1 114.3,11.1 118.1,14.4 121.9,20.8 125.7,26.6 129.5,26.9 133.3,28.0 137.1,28.0 141.0,23.4 144.8,23.8 148.6,30.8 152.4,29.8 156.2,21.7 160.0,26.7 163.8,27.7 167.6,32.0 171.4,30.2 175.2,38.1 179.0,35.0 182.9,38.5 186.7,42.0 190.5,37.0 194.3,35.7 198.1,30.3 201.9,29.3 205.7,32.2 209.5,33.2 213.3,32.1 217.1,31.6 221.0,37.4 224.8,40.0 228.6,39.0 232.4,37.5 236.2,37.3 240.0,37.4" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="37.4" r="2.6" fill="var(--down)"/></svg>
+      
+      
+      <div class="nb-conv">
+        <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+      </div>
+      
+      
+      
+      <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily ≈ cross · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线临近上穿">
+        <span class="nba-mark">🟢</span>
+        <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+        <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+      </div>
+      
+      <div class="nb-axes">
+        
+        
+        
+        <div class="nb-ax" title="SEL 45/100">
+          <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+          <div class="axt"><div class="axf" style="width:45%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="ENT 48/100">
+          <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+          <div class="axt"><div class="axf" style="width:48%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax" title="TWD 35/100">
+          <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+          <div class="axt"><div class="axf" style="width:35%"></div></div>
+        </div>
+        
+        
+        
+        <div class="nb-ax ax-na" title="QUAL — no data">
+          <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+          <div class="axt"><div class="axf" style="width:0%"></div></div>
+        </div>
+        
+      </div>
+      
+      
+      
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~9+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$21.33–$21.79</span>
+          <span class="nbe-pct">-3.1%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.67 of the conviction-base size (forecast vol 32.6% · inverse-vol ×0.67 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.67×</span>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="nb-tier"><span class="l-en">SEDI insider collected + displayed, ACCRUING toward validation (~2028), not scored; residual-momentum prior UNVALIDATED pending Phase-0 C7 keystone test (masterplan §4.1 C7)</span><span class="l-zh">SEDI 内部人数据已采集并展示，积累验证中（~2028），暂不纳入评分；残差动量先验未经验证，待 Phase-0 C7 关键测试（规划书 §4.1 C7）</span></div>
       
     </div>
     
   </div>
-  <p class="caveat" style="margin-top:8px"><span class="l-en">Residual-momentum construction is shared with the validated US/China engines; the Canada-specific axis weights are HK-mirrored priors pending Phase-0 validation. The Conviction composite is displayed context, never the shipped sort key — the board rank stays the validated α leg.</span><span class="l-zh">残差动量构造与经验证的美国／中国引擎共用；加拿大专属维度权重为对标香港的先验，待 Phase-0 验证。确信度综合分仅作情境展示，绝非出货排序键——榜单排名仍以已验证的 α 腿为准。</span></p>
+  <p class="caveat" style="margin-top:8px"><span class="l-en">BRANCH B (masterplan §4.1): the C7 momentum keystone landed all-ACCRUE in phase-0, so no validated composite exists — the CA board runs the ripe-list screen permanently. Cards are ranked WITHIN group by the residual-momentum SCREEN (FDR-stable, DSR-short; re-test 2027-01); the 0-100 composite is suppressed. Timing groups and gates; the screen ranks within a group. This is a planned honest-screen outcome, not a failure.</span><span class="l-zh">分支 B（规划书 §4.1）：C7 动量关键测试在 Phase-0 全部 ACCRUE，无经验证综合分——加拿大榜单长期运行成熟清单筛选。卡片按组内残差动量筛选排名（通过 FDR、DSR 不足；2027-01 复测）；0-100 综合分已抑制。时机负责分组门控；筛选仅在组内排名。这是计划中的诚实筛选结果，而非失败。</span></p>
 </div>
 
 
@@ -2183,7 +2472,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-03 10:59 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-03 15:57 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
@@ -2204,6 +2493,42 @@
     if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
+</script>
+<script>
+/* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
+   Also corrects popover position (flip above/below, clamp to right edge). */
+(function(){
+  function placePop(wrap){
+    var pop = wrap.querySelector('.nb-cau-pop');
+    if (!pop) return;
+    var r = wrap.getBoundingClientRect();
+    wrap.classList.toggle('pop-below', r.top < 180);
+    wrap.classList.toggle('pop-right', r.left > window.innerWidth - 200);
+  }
+  /* Tap the button → toggle open/closed */
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.nb-cau-btn');
+    if (btn){
+      e.preventDefault(); e.stopPropagation();
+      var wrap = btn.closest('.nb-cau');
+      if (!wrap) return;
+      var wasOpen = wrap.classList.contains('nb-cau-open');
+      /* close any other open popovers */
+      document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      if (!wasOpen){ placePop(wrap); wrap.classList.add('nb-cau-open'); }
+    } else {
+      /* outside tap: close all */
+      if (!e.target.closest('.nb-cau-pop')){
+        document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      }
+    }
+  }, true);
+  /* Also position-correct on hover (desktop) */
+  document.addEventListener('pointerover', function(e){
+    var wrap = e.target.closest && e.target.closest('.nb-cau');
+    if (wrap) placePop(wrap);
+  }, true);
+})();
 </script>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>

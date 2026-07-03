@@ -2,6 +2,7 @@
 <html lang="en" class="cyc-page">
 
 <head>
+<script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
@@ -92,6 +93,7 @@
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
       </div>
@@ -321,6 +323,7 @@
         </div>
       </div>
       <div id="mkt-stale-banner"></div>
+      <div id="regime-prior-banner"></div>
       <div class="cyc-groups" id="cyc-groups" aria-label="Group filter"></div>
       <div class="cyc-chips" id="cyc-chips" aria-label="Market toggles"></div>
       <div id="cyc-chart" data-h="452" role="img" aria-label="Cross-market overlay chart"></div>
@@ -360,12 +363,60 @@
   <div class="cyc-cards" id="cyc-cards"></div>
 </div>
 
+<script src="regimedata/regime_prior.js"></script>
 <script src="markets_i18n.js?v=2"></script>
 <script src="markets_data.js?v=2"></script>
 <script src="marketsdata/markets_engine.js?v=1"></script>
 <script src="mm_charts.js?v=2"></script>
 <script src="markets_app.js?v=7"></script>
 <script>try{document.getElementById('cyc-asof').textContent=(window.MARKET_META||{}).asOf||'';}catch(e){}</script>
+<script>
+/* W4.5 regime-prior reconciliation banner for markets.html.
+   Staleness-only: markets_data.js prose carries no machine-readable regime_claim
+   fields so contradiction-checking is not yet possible. Banner fires when the
+   regime_prior itself is stale/partial OR when MARKET_META.asOf is > 30 days old.
+   Dual-span EN/zh — no t() in attributes. */
+(function(){
+  try{
+    var host=document.getElementById('regime-prior-banner');
+    if(!host)return;
+    var prior=window.REGIME_PRIOR||{};
+    var meta=window.MARKET_META||{};
+    var msgs=[];
+    // 1. Prior itself stale/partial
+    var ps=prior.status;
+    if(ps==='stale'||ps==='partial'){
+      var sources=prior.sources||{};
+      var staleSrcs=[];
+      for(var k in sources){if(sources[k]&&(sources[k].status==='stale'||sources[k].status==='unavailable'))staleSrcs.push(k);}
+      var enMsg='Regime data is '+ps+' ('+staleSrcs.join(', ')+') — some components may not reflect the latest build.';
+      var zhMsg='体制数据状态为'+ps+'（'+staleSrcs.join('、')+'）——部分组件可能未反映最新构建。';
+      msgs.push({en:enMsg,zh:zhMsg,cls:'stale-amber'});
+    }
+    // 2. Curated market prose staleness (>30d from MARKET_META.asOf)
+    var curatedAsOf=meta.asOf||null;
+    if(curatedAsOf){
+      var d=new Date(curatedAsOf+'T00:00:00Z');
+      var daysDiff=Math.round((Date.now()-d.getTime())/86400000);
+      if(daysDiff>30){
+        var cls2=daysDiff>60?'stale-red':'stale-amber';
+        var enMsg2='Market narrative notes last updated '+curatedAsOf+' ('+daysDiff+'d ago) — may not reflect the live regime ('+((prior.quad||'?'))+' '+((prior.liquidity||''))+').';
+        var zhMsg2='市场叙述最后更新于 '+curatedAsOf+'（已 '+daysDiff+' 天）——可能未反映实时体制（当前：'+(prior.quad||'?')+' '+(prior.liquidity||'')+'）。';
+        msgs.push({en:enMsg2,zh:zhMsg2,cls:cls2});
+      }
+    }
+    if(!msgs.length){host.innerHTML='';return;}
+    var html='';
+    msgs.forEach(function(m){
+      html+='<div class="stale-banner '+m.cls+'">'
+        +'<span class="l-en">'+m.en+'</span>'
+        +'<span class="l-zh">'+m.zh+'</span>'
+        +'</div>';
+    });
+    host.innerHTML=html;
+  }catch(e){}
+})();
+</script>
 <script>
 /* markets_data.js staleness banner — INTL-47.
    markets_data.js is a hand-curated static file; its MARKET_META.asOf is the

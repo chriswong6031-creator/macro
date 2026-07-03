@@ -137,9 +137,50 @@ def _extraction_model(cfg: dict) -> str:
 # --------------------------------------------------------------------------- #
 # pure helpers (no network) — independently unit-tested
 # --------------------------------------------------------------------------- #
+def _repair_json_text(t: str) -> str:
+    """Best-effort STRUCTURAL repair of almost-valid model JSON, used only as a
+    last resort after strict parsing fails. Fixes the JSON slips models actually
+    make: a stray/mismatched closing bracket (e.g. a spurious ``]`` after a scalar
+    value — the real failure that left a BTC brief 'unparseable'), brackets left
+    open by a truncated reply, and trailing commas. String contents are never
+    touched — quote/escape state is tracked so a ``]`` or ``,`` inside a value is
+    preserved verbatim."""
+    out: list[str] = []
+    stack: list[str] = []
+    in_str = esc = False
+    for ch in t:
+        if in_str:
+            out.append(ch)
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+            out.append(ch)
+        elif ch in "{[":
+            stack.append(ch)
+            out.append(ch)
+        elif ch in "}]":
+            if stack and ((ch == "}" and stack[-1] == "{") or (ch == "]" and stack[-1] == "[")):
+                stack.pop()
+                out.append(ch)
+            # else: a closer with no matching opener -> drop the stray char
+        else:
+            out.append(ch)
+    while stack:                                    # close whatever a truncation left open
+        out.append("}" if stack.pop() == "{" else "]")
+    return re.sub(r",(\s*[}\]])", r"\1", "".join(out))   # strip trailing commas
+
+
 def _extract_json(text: str) -> dict | None:
-    """Best-effort parse of a model reply into a dict. Tolerates ```json fences
-    and leading/trailing prose. Returns None on failure (never raises)."""
+    """Best-effort parse of a model reply into a dict. Tolerates ```json fences,
+    leading/trailing prose, and — as a last resort — light structural repair of
+    almost-valid JSON (stray brackets, truncation, trailing commas). Returns None
+    on failure (never raises)."""
     if not text:
         return None
     t = text.strip()
@@ -152,15 +193,21 @@ def _extract_json(text: str) -> dict | None:
         return obj if isinstance(obj, dict) else None
     except (ValueError, TypeError):
         pass
-    # fall back to the first balanced {...} block
+    # fall back to the first {...} block, then to a repaired version of it. The
+    # block runs to the last "}" when there is one, else to end-of-text so a
+    # TRUNCATED reply (opened but never closed) can still be repaired.
     start = t.find("{")
+    if start < 0:
+        return None
     end = t.rfind("}")
-    if 0 <= start < end:
+    block = t[start:end + 1] if end > start else t[start:]
+    for candidate in (block, _repair_json_text(block)):
         try:
-            obj = json.loads(t[start:end + 1])
-            return obj if isinstance(obj, dict) else None
+            obj = json.loads(candidate)
+            if isinstance(obj, dict):
+                return obj
         except (ValueError, TypeError):
-            return None
+            continue
     return None
 
 

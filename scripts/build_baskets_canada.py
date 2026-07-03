@@ -20,9 +20,106 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets_canada")
+
+STALE_TRADING_DAYS = 3     # §5.2 hard freshness gate: warn when basket prices > this old vs today
+# Oil-flip applies to resource sleeves ONLY (oil overlay factor). Precious Metals (gold/silver)
+# excluded on purpose — gold/copper transmission is NO-GO per the red-team reports (§4/§5.1).
+CA_RESOURCE_CATEGORIES = ("Energy", "Materials")
+
+
+def _ca_overlay() -> dict:
+    """The CA cross-asset overlay snapshot the builder already has — reused for the oil-flip flag."""
+    try:
+        from engine import canada_overlay as _cov
+        return _cov.snapshot() or {}
+    except Exception as e:  # noqa: BLE001
+        log.error("canada overlay snapshot failed: %s", e)
+        return {}
+
+
+def _ca_ignition(data: dict, overlay: dict) -> dict:
+    """Sector-ignition strip (engine.sector_ignition) + forward ledger. CA adds the oil-flip."""
+    try:
+        from engine.sector_ignition import compute_ignition
+        from engine.baskets_canada import _closes, member_closes_getter
+        closes = _closes()
+        getter = member_closes_getter(closes)
+        ign = compute_ignition(data.get("chart") or {}, data.get("baskets") or [],
+                               getter, market="ca", overlay=overlay,
+                               resource_categories=CA_RESOURCE_CATEGORIES)
+        try:
+            from engine import ignition_audit as _ia
+            from engine import basket_levels_persist as _blp
+            sc = _ia.snapshot_and_grade(
+                ign, "ca",
+                level_of=lambda bid: _blp.level_series("ca", bid),
+                bench_series=_blp.bench_series("ca"))
+            ign["scoreboard"] = sc
+        except Exception as e:  # noqa: BLE001
+            log.error("canada ignition ledger failed: %s", e)
+        return ign
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("canada ignition failed: %s", e)
+        return {"market": "ca", "items": [], "as_of": None, "has_southbound_leg": False}
+
+
+def _persist_ca_levels(data: dict) -> None:
+    try:
+        from engine import basket_levels_persist as _blp
+        _blp.persist(data, "ca")
+    except Exception as e:  # noqa: BLE001
+        log.error("canada basket-levels persist failed: %s", e)
+
+
+def _ca_provenance(data: dict) -> dict:
+    try:
+        from engine.baskets_canada import _membership
+        mem = _membership() or {}
+        curated = mem.get("curated")
+        bdict = mem.get("baskets") or {}
+        by_id = {}
+        for bid, b in (bdict.items() if isinstance(bdict, dict) else [(x["id"], x) for x in bdict]):
+            by_id[bid] = {"curated": curated, "created": b.get("created")}
+        return {"curated": curated, "by_id": by_id}
+    except Exception as e:  # noqa: BLE001
+        log.error("canada provenance failed: %s", e)
+        return {"curated": None, "by_id": {}}
+
+
+def _ca_freshness(data: dict) -> dict:
+    try:
+        import pandas as pd
+        asof = (data.get("chart") or {}).get("dates", [None])[-1] or data.get("as_of")
+        if not asof:
+            return {"as_of": None, "stale": False, "trading_days_old": None}
+        today = pd.Timestamp.utcnow().normalize().tz_localize(None)
+        n_bdays = int(len(pd.bdate_range(pd.Timestamp(asof), today))) - 1
+        return {"as_of": str(asof), "trading_days_old": max(0, n_bdays),
+                "stale": n_bdays > STALE_TRADING_DAYS, "threshold": STALE_TRADING_DAYS}
+    except Exception as e:  # noqa: BLE001
+        log.error("canada freshness failed: %s", e)
+        return {"as_of": None, "stale": False, "trading_days_old": None}
+
+
+def _ca_radar() -> dict:
+    try:
+        from engine import risk_radar_intl as _rri
+        snap = _rri.snapshot(_rri.CA_PROFILE)
+        if not snap or snap.get("state") is None:
+            return {}
+        dd = snap.get("drawdown_prob")
+        dd21 = dd.get("h21") if isinstance(dd, dict) else dd     # h21 scalar for the banner
+        return {"state": snap.get("state"), "market": "ca",
+                "dominant_scare": snap.get("dominant_scare"),
+                "drawdown_prob": dd21,
+                "asof": snap.get("asof")}
+    except Exception as e:  # noqa: BLE001
+        log.error("canada risk-radar strip failed: %s", e)
+        return {}
 
 
 def main() -> int:
@@ -62,6 +159,15 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error('canada narrative emergence failed: %s', e)
 
+    # W5 — persist basket level series, sector-ignition strip (+ oil-flip), forward ledger,
+    # provenance/freshness/risk-radar payloads. Additive, None-safe, guarded.
+    _persist_ca_levels(data)          # persist first so ignition grading reads the fresh series
+    overlay = _ca_overlay()
+    ignition = _ca_ignition(data, overlay)
+    provenance = _ca_provenance(data)
+    freshness = _ca_freshness(data)
+    radar = _ca_radar()
+
     fdir = site / "canadabasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
@@ -76,9 +182,13 @@ def main() -> int:
         baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(chart, separators=(",", ":")),
         theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
+        ignition_json=json.dumps(ignition, separators=(",", ":"), ensure_ascii=False),
+        provenance_json=json.dumps(provenance, separators=(",", ":"), ensure_ascii=False),
+        freshness_json=json.dumps(freshness, separators=(",", ":"), ensure_ascii=False),
+        radar_json=json.dumps(radar, separators=(",", ":"), ensure_ascii=False),
         bench_en="S&P/TSX", bench_zh="标普/TSX",
         generated_utc=built)
-    (site / "baskets_canada.html").write_text(html)
+    write_page(site / "baskets_canada.html", html)
     try:
         from scripts.build_theme_detail import build_detail_pages
         build_detail_pages(data, site, env, 'canada')
@@ -95,6 +205,24 @@ def main() -> int:
         (site / "lightweight-charts.js").write_text(lwc.read_text())
     log.info("wrote %s/baskets_canada.html (%d baskets, %d categories, %d KB)",
              site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
+
+    # W0 — FREEZE Canada basket levels + membership hashes (append-only, PIT).
+    # chart was popped from data above and is still in scope.
+    try:
+        from engine.basket_freeze import freeze_domain, FreezeSkipped
+        from engine.baskets_canada import _membership as _ca_mem, _closes as _ca_closes
+        _ca_mem_data = _ca_mem()
+        try:
+            _ca_cl = _ca_closes()
+        except Exception:  # noqa: BLE001
+            _ca_cl = None
+        _freeze_result = freeze_domain("canada", {"chart": chart}, _ca_cl, _ca_mem_data)
+        log.info("basket_freeze[canada]: %s", _freeze_result)
+    except FreezeSkipped as e:
+        log.error("basket_freeze[canada]: SKIPPED (churn guard): %s", e)
+    except Exception as e:  # noqa: BLE001
+        log.error("basket_freeze[canada]: failed: %s", e)
+
     return 0
 
 

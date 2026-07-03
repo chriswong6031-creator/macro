@@ -27,6 +27,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets_intl")
@@ -87,7 +88,7 @@ def main() -> int:
         theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
         bench_en="Intl ex-US", bench_zh="国际(除美)",
         generated_utc=built)
-    (site / "baskets_intl.html").write_text(html)
+    write_page(site / "baskets_intl.html", html)
     # per-theme detail pages (site/basket_intl/<id>.html) + the shared desk renderer
     try:
         from scripts.build_theme_detail import build_detail_pages

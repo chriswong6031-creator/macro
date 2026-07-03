@@ -100,7 +100,12 @@ class CanadaMacroAdapter(Adapter):
         date_col = raw.columns[0]          # observation_date (or DATE on older series)
         val_col = raw.columns[1]
         raw[val_col] = pd.to_numeric(raw[val_col], errors="coerce")
-        s = raw.dropna(subset=[val_col]).set_index(pd.to_datetime(raw[date_col]))[val_col]
+        # Drop rows with "." (FRED sentinel for missing data, e.g. weekends/holidays)
+        # BEFORE setting the index -- otherwise the dropna frame and the raw index have
+        # different lengths (observed for DGS2/DGS10 with ~550 NA rows: "Length mismatch:
+        # Expected 12517 rows, received array of length 13067").
+        clean = raw.dropna(subset=[val_col]).copy()
+        s = clean.set_index(pd.to_datetime(clean[date_col]))[val_col]
         if s.empty:
             raise ValueError(f"fred {fid}: no numeric rows")
         return pd.DataFrame({"_": s}).sort_index()

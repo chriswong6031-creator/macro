@@ -76,6 +76,32 @@ panel. The quad-conditioned skill is labeled *revision-optimistic* until D6 vint
 a lagged-quad (+1m) robustness refit is itself a gate: `model.json.sensitivity.quad_lag1_delta_brier`
 must be small (< 0.005) or the macro-derived quad is dropped and market-price features kept.
 
+### HZ results (W4.2, 2026-07-03 — criteria above UNCHANGED)
+
+Fit artifact: `data/hazard/model_price_c4414dcb.json` (the actual path; the `judged by`
+column's `data/cycle_hazard/model.json` is the planned rename — the `ledger.<dir>.<h>`
+sub-keys match). Epoch corrected to **price-basis** turns first (see
+`W42_HAZARD_VERDICT.md §0`; y1 events 7,496 → 7,774). Gate scored on **leak-free
+out-of-fold** calibrated predictions vs the correctly-specified family-stratified KM
+(both a prior strawman-KM and a calibration-on-eval leak were caught and fixed).
+
+| id | result | date |
+|---|---|---|
+| **HZ-up-1m** | **PASS** — ΔBrier +0.0140, 90% CI [+0.0068, +0.0209], boot p=0.0012, sign 14/17 yrs, survives BH. Robust. | 2026-07-03 |
+| **HZ-up-3m** | **PRIOR** — ΔBrier +0.0071, CI [−0.0003, +0.0143] (touches 0), p=0.061. KM prior ships. | 2026-07-03 |
+| **HZ-up-6m** | **PRIOR** — ΔBrier +0.0002, CI [−0.0057, +0.0062], p=0.52 (no skill). KM prior ships. | 2026-07-03 |
+| **HZ-dn-1m** | **PASS** — ΔBrier +0.0141, CI [+0.0034, +0.0247], p=0.018, sign 11/17, BH. Solid. | 2026-07-03 |
+| **HZ-dn-3m** | **PASS (marginal)** — ΔBrier +0.0078, CI [+0.0005, +0.0155], p=0.036, sign 13/17, BH. | 2026-07-03 |
+| **HZ-dn-6m** | **PASS (marginal)** — ΔBrier +0.0042, CI [+0.0005, +0.0079], p=0.024, sign 12/17, BH. | 2026-07-03 |
+
+**Summary: 4 of 6 PASS, 2 PRIOR** — lands close to the pre-registered "most cells ship PRIOR"
+expectation; the 1-month cells are the robust wins. **Regime sub-gate:** `breadth_div`
+dropped for *absence* (not computed in the W4.1 panel); `quad_Q2`/`quad_Q4` (up) and
+`quad_Q3`/`liq_expanding` (down) fail their coefficient CI and are flagged DROP; zeroing them
+leaves the passing 1m cells unchanged (edge is not regime-carried). **Quad-lag robustness:**
+`quad_lag1_delta_brier` = 0.0002 (up) / 0.0029 (down), both < 0.005 → macro quad retained,
+quad-conditioned skill labeled *revision-optimistic* (P-D5-1). See `W42_HAZARD_VERDICT.md`.
+
 ---
 
 ## 3 · Cone-coverage / calibration gates (D2 §3.2–3.3, D5 §1.8, Wave W2.4)
@@ -106,6 +132,24 @@ The binding metric is the **drawdown lens** — `score_metric(state) = mean_fwd_
 gate's KG-3 result is operationalized: if DECLINE's return-per-tail genuinely ranks above
 FRESH-BUY out-of-sample, BC-1 encodes it; if the keystone said NO-EDGE, BC-1 fails and the
 ladder ships as FRAME context, not a fitted score.
+
+**RESULTS (W4.6, 2026-07-03 — appended per A15; criteria above were NOT moved):**
+
+| id | criterion (verbatim, frozen) | result | judged by | date |
+|---|---|---|---|---|
+| **BC-1** | train→holdout rank-corr of the risk-adjusted score >0.5 AND n_eff≥40 AND FDR-survived AND CI excludes null | **FAIL** — train→holdout rank-corr of `mean_fwd_ret/\|dd_p10\|` per state = **−0.119** (bar >0.5; *negative* — the return-per-tail ordering INVERTS out-of-sample). Exactly the §6.5 pre-committed expectation. `validated=false`; the ladder ships as FRAME context, not a fitted score. | `data/regime/ladder_risk_calibration.json` → `bc1.{verdict,rank_corr_train_vs_holdout}` | 2026-07-03 |
+| **BC-2** | grep EN+zh+generated JS for "validated"/"已验证"; fail if the token appears without a backing artifact whose `validated==true` | **WIRED + PASSING** — implemented as `scripts/check_validated_claims.py` (+ `data/regime/validated_claims_allowlist.json`, 166 justified entries) rather than `test_no_unearned_validated.py`; runs as a HARD abort-lane step in `cycle-calibration.yml`. Whole-tree scan clean; selftest proves it fires on a synthetic unearned claim in EN and zh. NO unearned uses were found in the existing corpus (it was already disciplined). | the gate + its `--selftest` (CI hard step) | 2026-07-03 |
+
+**The re-scope actually applied (D2 §4.1 metric replaced per §6.5 item 2).** The `mean_fwd_ret/|dd_p10|`
+metric is denominator-dominated (ranks states by ambient vol). W4.6 re-scoped to the RISK channel:
+the binding metric is the **vol-residualized forward drawdown** `rdd = fwd_maxdd / trailing_63d_vol`,
+and the binding value is a **SIZE multiplier in [0.5,1.5]** (never a directional score). The disciplined
+verdict: after vol-residualization, **0 of 48 (state × family × horizon) cells survive BH-FDR q=0.10**
+within the `calibration` family (2 nominal pre-FDR hits = the ~2–3-by-luck rate this ledger fences).
+**Every cell ships `risk_size_mult=1.0` — there is no risk-sizing signal.** The raw
+`ladder_calibration.json` drawdown ordering was ambient-vol clustering. The directional `LADDER_SCORE`
+is UNTOUCHED this wave (its axis-flip is W4.7's question). Full verdict:
+`research/cycle_masterplan/W46_BINDING_CALIBRATION_VERDICT.md`.
 
 ---
 
@@ -141,6 +185,12 @@ surface only.
 Until DL-1/DL-2 pass, the corresponding outputs ship **as a research surface** (measurement
 page), never as a badge that sizes a position. D5-W8 novel features (provisional-turn
 classifier, leg-velocity) are **cut to research backlog** unless their own §7 gate passes.
+
+### DL-2 results (W4.4, 2026-07-03 — criteria above UNCHANGED)
+
+| id | criterion (verbatim, frozen) | result | judged by | date |
+|---|---|---|---|---|
+| **DL-2** | the fitted tilt improves sector_central walk-forward drawdown-adjusted conviction ordering vs the flat map, CI excluding 0 | **NOT RUN** — W4.4 delivers the cell estimates and CIs (research surface); the walk-forward conviction backtest is a downstream wave. Prerequisite met: 7 cells in fwd_ret/63d and 11 in fwd_ret/126d have CIs excluding the phase-pooled mean. All are `revision_optimistic=True` (P-D5-1). Ruling A7: cells ship as research surface on `measurement.html` only. No `tilt_config.json` is produced this wave. | `data/cycle_ontology/conditional_cells_20260703.json` → `verdict_summary` | 2026-07-03 |
 
 ---
 
@@ -196,6 +246,21 @@ feature simply does not ship.
 - 2026-07-02 — Ledger created at W0.4. KG-1..5 judged this wave (see
   `W04_KEYSTONE_VERDICT.md`); all downstream gates registered, criteria frozen. No
   amendments.
+- 2026-07-03 — **W4.4 results appended** (DL-2 gate status recorded; §6 results block).
+  DL-2 criterion unchanged. Implementation note: the conditional-cell builder derives `phase_v2`
+  from `pos_osc` + `direction` (using D1's ZONE_EHI/ZONE_ELO boundaries) since MTF MACD votes
+  are not available in the monthly panel. This is a PIT-pure simplification relative to the
+  full `classify_phase()`; future waves may upgrade to full phase classification if panel is
+  enriched. All 39 winning cells are `revision_optimistic=True` (P-D5-1).
+- 2026-07-03 — **W4.6 results appended** (BC-1 FAIL, BC-2 wired+passing; §4 results block).
+  No success criterion was moved. Two honest implementation notes recorded as findings, not
+  silent changes: (1) BC-1's *binding metric* was re-scoped per §6.5 item 2 from the
+  denominator-dominated `mean_fwd_ret/|dd_p10|` to the vol-residualized `fwd_maxdd/trailing_vol`
+  (the SUCCESS CRITERION — rank-corr>0.5, n_eff≥40, FDR, CI-excludes-null — was applied
+  unchanged; the return-channel metric was ALSO evaluated verbatim and recorded as FAIL). (2)
+  BC-2 was implemented as `scripts/check_validated_claims.py` + a justified allowlist rather
+  than the placeholder filename `tests/test_no_unearned_validated.py` named in the criterion;
+  the MECHANISM (grep EN+zh+generated JS; fail on an unbacked 'validated') is identical.
 
 ---
 

@@ -222,8 +222,8 @@ function renderTabs(el, opts, active, cb){
 }
 
 // ---- 01 table -------------------------------------------------------------
-let btblMode = localStorage.getItem('cnfw-btbl-mode')||'rel';
-let btblSort = JSON.parse(localStorage.getItem('cnfw-btbl-sort')||'{"col":"20d","dir":-1}');
+let btblMode = localStorage.getItem('cafw-btbl-mode')||'rel';
+let btblSort = JSON.parse(localStorage.getItem('cafw-btbl-sort')||'{"col":"20d","dir":-1}');
 function renderBTable(){
   const rows = Object.entries(CHART.baskets).map(([id,lv])=>{
     const b=(BASKETS.baskets||[]).find(x=>x.id===id); const rl=ratio(lv);
@@ -247,7 +247,7 @@ function renderBTable(){
   const tbl=document.getElementById('btable'); tbl.innerHTML=html;
   tbl.querySelectorAll('th[data-c]').forEach(h=>h.onclick=()=>{ const c=h.dataset.c;
     if(c===btblSort.col) btblSort.dir*=-1; else btblSort={col:c,dir:c==='name'?1:-1};
-    localStorage.setItem('cnfw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); });
+    localStorage.setItem('cafw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); });
   tbl.querySelectorAll('.bname[data-id]').forEach(n=>n.onclick=()=>openBasket(n.dataset.id));
 }
 
@@ -296,7 +296,7 @@ function initChartDefaults(){
 }
 
 // ---- 03 cards + details ---------------------------------------------------
-let bhz = localStorage.getItem('cnfw-hz')||'20d';
+let bhz = localStorage.getItem('cafw-hz')||'20d';
 function kpi(k,p){ const v=p?p.rel:null; return `<div class="kpi"><div class="v ${cls(v)}">${fmtPct(v)}</div><div class="k">${k} ${esc(VS())}</div></div>`; }
 function renderCards(){
   const el=document.getElementById('cards');
@@ -355,7 +355,7 @@ function renderStory(){
 }
 
 function renderModeTabs(){
-  renderTabs(document.getElementById('btbl-mode'), [['raw', LANG()==='zh'?'原始':'Raw'],['rel',VS()],['sigma','σ']], btblMode, v=>{ btblMode=v; localStorage.setItem('cnfw-btbl-mode',v); renderBTable(); });
+  renderTabs(document.getElementById('btbl-mode'), [['raw', LANG()==='zh'?'原始':'Raw'],['rel',VS()],['sigma','σ']], btblMode, v=>{ btblMode=v; localStorage.setItem('cafw-btbl-mode',v); renderBTable(); });
   renderTabs(document.getElementById('chart-modes'), [['rel',VS()],['abs', LANG()==='zh'?'绝对':'Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
 }
 
@@ -368,7 +368,7 @@ function boot(){
   rel.innerHTML=RANGES.map(([lab,v])=>`<button data-v="${v}" class="${v===chartRange?'on':''}">${lab}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N days">`;
   rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderChart(); });
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
-  renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cnfw-hz',v); renderCards(); renderDetails(); });
+  renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cafw-hz',v); renderCards(); renderDetails(); });
   initChartDefaults();
   renderStory(); renderBTable(); renderChart(); renderCards(); renderDetails(); deskBoot();
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);

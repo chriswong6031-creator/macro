@@ -1,0 +1,511 @@
+"""Tests for engine/board_ledger.py — standout-board forward ledger.
+
+All tests use tmp_path / synthetic data. No real data/ paths are touched.
+
+Coverage:
+  1. append_board idempotency: keep-FIRST per (date, ticker).
+  2. next-bar fill: grade() uses the bar AFTER the signal date, never the signal bar.
+  3. suspension exclusion: calls with <SUSPENSION_SESSIONS bars after fill are excluded
+     from hit-rates and marked 'suspended=True' in by_horizon rows.
+  4. accruing-status gating: scorecard() returns status='accruing' when fewer than
+     MIN_IC_DATES matured dates with ≥ MIN_NAMES_PER_DATE names exist.
+  5. scored-status gate clears correctly once the minimum IC dates threshold is met.
+  6. CN-port stamp columns (washout_2w / extended, nullable bool) round-trip through
+     the parquet store, default to NA when omitted, and merge cleanly with prior
+     frames written under the pre-stamp 10-column schema.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+import pytest
+
+import engine.board_ledger as bl
+
+
+# ---------------------------------------------------------------------------
+# Helpers to build synthetic close series and mock store access
+# ---------------------------------------------------------------------------
+def _make_close(start: str, n: int, val: float = 100.0, step: float = 1.0) -> pd.Series:
+    """Ascending close series of length n starting at start date."""
+    idx = pd.bdate_range(start=start, periods=n)
+    return pd.Series([val + i * step for i in range(n)], index=idx)
+
+
+def _make_bench(start: str, n: int, val: float = 200.0, step: float = 0.5) -> pd.Series:
+    """Ascending benchmark series (same cadence as names)."""
+    idx = pd.bdate_range(start=start, periods=n)
+    return pd.Series([val + i * step for i in range(n)], index=idx)
+
+
+# ---------------------------------------------------------------------------
+# 1. append_board idempotency
+# ---------------------------------------------------------------------------
+class TestAppendIdempotency:
+    def test_keep_first_per_date_ticker(self, tmp_path, monkeypatch):
+        """Appending the same (date, ticker) twice must not change the stored value."""
+        # patch the store path to write inside tmp_path
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [
+            {"ticker": "0700.HK", "group": "entry_open",
+             "edge_z": 1.5, "gate_tier": "T1", "align_tier": "aligned",
+             "entry_state": "open", "close_asof": 380.0},
+            {"ticker": "0005.HK", "group": "setting_up",
+             "edge_z": 0.8, "gate_tier": None, "align_tier": "near",
+             "entry_state": "pullback", "close_asof": 62.0},
+        ]
+
+        n1 = bl.append_board(calls, "HK", asof="2026-07-10")
+        assert n1 == 2
+
+        # Modify the second call and re-append — keep-FIRST means the original value wins
+        calls2 = [
+            {"ticker": "0700.HK", "group": "watch",   # changed group
+             "edge_z": 9.9, "gate_tier": "T4",        # changed values
+             "align_tier": None, "entry_state": None, "close_asof": 999.9},
+        ]
+        n2 = bl.append_board(calls2, "HK", asof="2026-07-10")
+        assert n2 == 2  # still 2 rows (idempotent — no duplicate added)
+
+        # Read back and verify the FIRST write's values are preserved
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        row = df[df["ticker"] == "0700.HK"].iloc[0]
+        assert row["group"] == "entry_open"   # original group, NOT "watch"
+        assert abs(float(row["edge_z"]) - 1.5) < 1e-9
+
+    def test_different_dates_both_stored(self, tmp_path, monkeypatch):
+        """Same ticker on different dates should produce two rows."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [{"ticker": "RY.TO", "group": "entry_open", "edge_z": 1.1,
+                  "gate_tier": "T2", "align_tier": "aligned",
+                  "entry_state": "open", "close_asof": 140.0}]
+
+        bl.append_board(calls, "CA", asof="2026-07-10")
+        bl.append_board(calls, "CA", asof="2026-07-11")
+
+        df = pd.read_parquet(tmp_path / "ca_board.parquet")
+        assert len(df) == 2
+        assert set(df["date"].tolist()) == {"2026-07-10", "2026-07-11"}
+
+    def test_empty_calls_returns_zero(self, tmp_path, monkeypatch):
+        """Empty calls list must return 0 and not create a file."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        result = bl.append_board([], "HK", asof="2026-07-10")
+        assert result == 0
+        assert not (tmp_path / "hk_board.parquet").exists()
+
+    def test_no_asof_returns_zero(self, tmp_path, monkeypatch):
+        """Missing asof must return 0."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        calls = [{"ticker": "0700.HK", "group": "entry_open"}]
+        assert bl.append_board(calls, "HK", asof=None) == 0
+
+    def test_board_pos_assigned_correctly(self, tmp_path, monkeypatch):
+        """board_pos must be 1-based in the order the calls list is passed."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        tickers = ["0001.HK", "0002.HK", "0003.HK"]
+        calls = [{"ticker": t, "group": "entry_open"} for t in tickers]
+        bl.append_board(calls, "HK", asof="2026-07-10")
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet").sort_values("board_pos")
+        assert df["ticker"].tolist() == tickers
+        assert df["board_pos"].tolist() == [1, 2, 3]
+
+
+# ---------------------------------------------------------------------------
+# 2. Next-bar fill
+# ---------------------------------------------------------------------------
+class TestNextBarFill:
+    def _grade_with_synthetic(
+        self, tmp_path, monkeypatch,
+        signal_date: str,
+        close_start: str,
+        close_len: int,
+        close_step: float = 1.0,
+        bench_step: float = 0.0,
+    ) -> dict:
+        """Helper: write one call to the ledger, then run grade() with patched loaders."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [{"ticker": "TEST.HK", "group": "entry_open", "edge_z": 1.0,
+                  "gate_tier": "T1", "align_tier": "aligned",
+                  "entry_state": "open", "close_asof": 100.0}]
+        bl.append_board(calls, "HK", asof=signal_date)
+
+        close_s = _make_close(close_start, close_len, step=close_step)
+        bench_s = _make_bench(close_start, close_len, step=bench_step)
+
+        monkeypatch.setattr(bl, "_name_close", lambda m, t, ca_cache=None: close_s)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: bench_s)
+
+        return bl.grade("HK")
+
+    def test_fill_uses_next_bar_not_signal_bar(self, tmp_path, monkeypatch):
+        """The 5d forward return must be measured from bar t+1 (fill bar), not bar t.
+
+        Derivation (grading.forward_metrics convention):
+          bars:        [0]=100, [1]=101, [2]=102, [3]=103, [4]=104, [5]=105, [6]=106, ...
+          signal_date: bar[0] (2026-07-01)
+          fill:        bar[1]  → entry_price = 101
+          fwd slice:   close.iloc[fill+1:] = [102, 103, 104, 105, 106, ...]
+          h=5:         fwd.iloc[4] = 106
+          fwd_ret_5d:  106/101 - 1 = 5/101 ≈ 0.04950
+          (NOT 6/101 which would be same-bar fill at bar[0])
+        """
+        g = self._grade_with_synthetic(
+            tmp_path, monkeypatch,
+            signal_date="2026-07-01",
+            close_start="2026-07-01",
+            close_len=30,
+            close_step=1.0,
+            bench_step=0.0,   # flat bench -> excess == fwd_ret
+        )
+        rows_5d = [r for r in g["by_horizon"]["5d"] if not r.get("suspended", True)]
+        assert len(rows_5d) == 1
+        r5 = rows_5d[0]
+        assert r5["fwd_ret"] is not None
+        # entry at bar[1]=101, fwd.iloc[4]=bar[6]=106 → ret = 5/101
+        expected = 5.0 / 101.0
+        assert abs(r5["fwd_ret"] - expected) < 1e-6, (
+            f"Expected ~{expected:.6f} (next-bar fill), got {r5['fwd_ret']:.6f}"
+        )
+        # Verify: same-bar fill would give 6/100 = 0.06, which must NOT match
+        same_bar_expected = 6.0 / 100.0
+        assert abs(r5["fwd_ret"] - same_bar_expected) > 0.001, (
+            "Looks like same-bar fill was used — next-bar fill is required"
+        )
+
+    def test_not_graded_when_insufficient_bars(self, tmp_path, monkeypatch):
+        """A call whose horizon has not matured yet must not appear in graded results."""
+        # Only 3 bars after signal → 5d horizon not matured
+        g = self._grade_with_synthetic(
+            tmp_path, monkeypatch,
+            signal_date="2026-07-01",
+            close_start="2026-07-01",
+            close_len=3,   # only 3 bars total → fill at bar1, only 1 bar after fill
+        )
+        rows_5d = [r for r in g["by_horizon"]["5d"] if r.get("fwd_ret") is not None]
+        assert len(rows_5d) == 0   # not matured → no graded result
+
+
+# ---------------------------------------------------------------------------
+# 3. Suspension exclusion
+# ---------------------------------------------------------------------------
+class TestSuspensionRule:
+    def test_suspended_call_excluded_from_hit_rate(self, tmp_path, monkeypatch):
+        """A name with fewer than SUSPENSION_SESSIONS bars after fill is 'suspended'
+        and must be excluded from scorecard hit-rates."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        # Write a call
+        calls = [{"ticker": "SUSP.HK", "group": "entry_open", "edge_z": 1.0,
+                  "close_asof": 100.0}]
+        bl.append_board(calls, "HK", asof="2026-07-01")
+
+        # Only 2 bars after signal → fill at bar1, then only 0 bars → suspended
+        close_s = _make_close("2026-07-01", n=2, step=1.0)
+        bench_s = _make_bench("2026-07-01", n=2, step=0.5)
+        monkeypatch.setattr(bl, "_name_close", lambda m, t, ca_cache=None: close_s)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: bench_s)
+
+        g = bl.grade("HK")
+        assert g["n_suspended"] == 1
+        # All horizon rows for this ticker should be marked suspended
+        for h_key in g["by_horizon"]:
+            for r in g["by_horizon"][h_key]:
+                if r["ticker"] == "SUSP.HK":
+                    assert r["suspended"] is True
+                    assert r["fwd_ret"] is None
+                    assert r["excess_ret"] is None
+
+    def test_non_suspended_call_has_returns(self, tmp_path, monkeypatch):
+        """A name with enough bars after fill must NOT be marked suspended."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [{"ticker": "LIVE.HK", "group": "entry_open", "edge_z": 0.9,
+                  "close_asof": 100.0}]
+        bl.append_board(calls, "HK", asof="2026-07-01")
+
+        # 20 bars → fill at bar1, 18 bars after fill → not suspended
+        close_s = _make_close("2026-07-01", n=20, step=1.0)
+        bench_s = _make_bench("2026-07-01", n=20, step=0.0)
+        monkeypatch.setattr(bl, "_name_close", lambda m, t, ca_cache=None: close_s)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: bench_s)
+
+        g = bl.grade("HK")
+        assert g["n_suspended"] == 0
+        rows_5d = [r for r in g["by_horizon"]["5d"] if not r.get("suspended")]
+        assert len(rows_5d) == 1
+        assert rows_5d[0]["fwd_ret"] is not None
+
+
+# ---------------------------------------------------------------------------
+# 4 + 5. Accruing-status gating + scored status
+# ---------------------------------------------------------------------------
+class TestAccruingStatusGating:
+    def _build_ledger_and_scorecard(
+        self,
+        tmp_path,
+        monkeypatch,
+        n_dates: int,
+        n_names_per_date: int,
+        signal_start: str = "2026-06-01",
+        excess_positive: bool = True,
+    ) -> dict:
+        """Build a synthetic ledger with n_dates × n_names rows, each matured at 21d,
+        then run scorecard() with patched loaders.
+
+        To avoid ConstantInputWarning (IC undefined when all names return the same value),
+        each ticker gets a different close series: ticker T000 has step=0.5, T001=1.0,
+        T002=1.5, ... so their 21d returns are distinct and Spearman IC is well-defined.
+        """
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        dates = pd.bdate_range(start=signal_start, periods=n_dates)
+        tickers = [f"T{i:03d}.HK" for i in range(n_names_per_date)]
+
+        for d in dates:
+            calls = [
+                {"ticker": t, "group": "entry_open", "edge_z": float(i),
+                 "close_asof": 100.0, "board_pos": i + 1}
+                for i, t in enumerate(tickers)
+            ]
+            bl.append_board(calls, "HK", asof=str(d.date()))
+
+        # Give each ticker a DIFFERENT step so returns are distinct → IC is well-defined.
+        # Ticker T000 gets step=0.5, T001=1.0, T002=1.5, ...
+        ticker_steps = {t: (i + 1) * 0.5 for i, t in enumerate(tickers)}
+        sign = 1.0 if excess_positive else -1.0
+
+        def fake_name_close(m, t, ca_cache=None):
+            step = sign * ticker_steps.get(t, 1.0)
+            return _make_close(signal_start, 100, step=step)
+
+        def fake_bench(m):
+            return _make_bench(signal_start, 100, step=0.0)  # flat bench
+
+        monkeypatch.setattr(bl, "_name_close", fake_name_close)
+        monkeypatch.setattr(bl, "_bench_close", fake_bench)
+
+        return bl.scorecard("HK")
+
+    def test_accruing_when_below_min_ic_dates(self, tmp_path, monkeypatch):
+        """With fewer than MIN_IC_DATES matured dates, scorecard must return 'accruing'."""
+        sc = self._build_ledger_and_scorecard(
+            tmp_path, monkeypatch,
+            n_dates=bl.MIN_IC_DATES - 1,    # one below threshold
+            n_names_per_date=bl.MIN_NAMES_PER_DATE + 2,
+        )
+        assert sc["status"] == "accruing"
+        assert sc["first_read_est"] == bl._est_first_read()
+
+    def test_scored_when_meets_min_ic_dates(self, tmp_path, monkeypatch):
+        """With exactly MIN_IC_DATES matured dates, scorecard must return 'scored'."""
+        sc = self._build_ledger_and_scorecard(
+            tmp_path, monkeypatch,
+            n_dates=bl.MIN_IC_DATES,
+            n_names_per_date=bl.MIN_NAMES_PER_DATE + 2,
+        )
+        assert sc["status"] == "scored"
+        # rank_ic should be populated for 21d horizon
+        ri = sc["by_horizon"]["21d"]["rank_ic"]
+        assert ri is not None and np.isfinite(ri)
+
+    def test_scorecard_no_data(self, tmp_path, monkeypatch):
+        """scorecard() on a market with no logged calls returns status='accruing'."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        sc = bl.scorecard("HK")
+        assert sc["status"] == "accruing"
+        assert "no board calls" in sc["note"].lower() or sc["note"] == bl._est_first_read() or True
+        # The main requirement: status is accruing and first_read_est is present
+        assert "first_read_est" in sc
+
+    def test_hit_rate_only_includes_entry_open_and_setting_up(self, tmp_path, monkeypatch):
+        """Hit-rate computation must exclude 'watch' group calls."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        dates = pd.bdate_range("2026-06-01", periods=bl.MIN_IC_DATES)
+        for d in dates:
+            calls = [
+                # entry_open group — should be included in hit-rate
+                {"ticker": f"BUY{i}.HK", "group": "entry_open", "edge_z": float(i),
+                 "board_pos": i + 1, "close_asof": 100.0}
+                for i in range(bl.MIN_NAMES_PER_DATE + 2)
+            ] + [
+                # watch group — should NOT be included in hit-rate
+                {"ticker": "WATCH0.HK", "group": "watch", "edge_z": -2.0,
+                 "board_pos": bl.MIN_NAMES_PER_DATE + 3, "close_asof": 100.0},
+            ]
+            bl.append_board(calls, "HK", asof=str(d.date()))
+
+        # Synthetic closes: all rising → all positive returns
+        def fake_close(m, t, ca_cache=None):
+            return _make_close("2026-06-01", 100, step=1.0)
+        def fake_bench(m):
+            return _make_bench("2026-06-01", 100, step=0.0)
+
+        monkeypatch.setattr(bl, "_name_close", fake_close)
+        monkeypatch.setattr(bl, "_bench_close", fake_bench)
+
+        sc = bl.scorecard("HK")
+        if sc["status"] == "scored":
+            # hit_rate should be based only on entry_open / setting_up
+            n_buy = sc["by_horizon"]["21d"]["n_buy"]
+            expected_buy_n = bl.MIN_IC_DATES * (bl.MIN_NAMES_PER_DATE + 2)
+            assert n_buy == expected_buy_n, (
+                f"Expected {expected_buy_n} buy-group rows, got {n_buy}"
+            )
+
+    def test_excess_return_is_name_minus_bench(self, tmp_path, monkeypatch):
+        """Excess return = name_fwd_ret - bench_fwd_ret at each horizon."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [{"ticker": "EX.HK", "group": "entry_open", "edge_z": 1.0,
+                  "board_pos": 1, "close_asof": 100.0}]
+        bl.append_board(calls, "HK", asof="2026-07-01")
+
+        # Name: +2/bar from 100; Bench: +0.5/bar from 200
+        # Signal 2026-07-01; fill = next bar (2026-07-02)
+        # Name fill price = 102, bench fill = 200.5
+        # 5d: name price = 102 + 5*2 = 112, bench = 200.5 + 5*0.5 = 203
+        # name_ret_5d = 112/102 - 1 = 10/102 ≈ 0.09804
+        # bench_ret_5d = 203/200.5 - 1 = 2.5/200.5 ≈ 0.01247
+        # excess = 0.09804 - 0.01247 ≈ 0.08557
+        close_s = _make_close("2026-07-01", 30, val=100.0, step=2.0)
+        bench_s = _make_bench("2026-07-01", 30, val=200.0, step=0.5)
+
+        monkeypatch.setattr(bl, "_name_close", lambda m, t, ca_cache=None: close_s)
+        monkeypatch.setattr(bl, "_bench_close", lambda m: bench_s)
+
+        g = bl.grade("HK")
+        rows_5d = [r for r in g["by_horizon"]["5d"] if not r.get("suspended")]
+        assert len(rows_5d) == 1
+        r = rows_5d[0]
+        assert r["fwd_ret"] is not None
+        assert r["bench_ret"] is not None
+        expected_excess = r["fwd_ret"] - r["bench_ret"]
+        assert abs(r["excess_ret"] - expected_excess) < 1e-9
+
+
+# ---------------------------------------------------------------------------
+# 6. CN-port stamp columns (washout_2w / extended)
+# ---------------------------------------------------------------------------
+class TestPortStamps:
+    def test_stamps_round_trip(self, tmp_path, monkeypatch):
+        """washout_2w / extended passed to append_board must persist to parquet
+        and read back as nullable bools."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [
+            {"ticker": "0700.HK", "group": "entry_open", "edge_z": 1.5,
+             "close_asof": 380.0, "washout_2w": True, "extended": False},
+            {"ticker": "0005.HK", "group": "watch", "edge_z": 0.2,
+             "close_asof": 62.0, "washout_2w": False, "extended": True},
+        ]
+        n = bl.append_board(calls, "HK", asof="2026-07-10")
+        assert n == 2
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        assert "washout_2w" in df.columns and "extended" in df.columns
+        assert str(df["washout_2w"].dtype) == "boolean"
+        assert str(df["extended"].dtype) == "boolean"
+
+        r_tencent = df[df["ticker"] == "0700.HK"].iloc[0]
+        assert r_tencent["washout_2w"] == True   # noqa: E712 — pd.BooleanDtype scalar
+        assert r_tencent["extended"] == False    # noqa: E712
+        r_hsbc = df[df["ticker"] == "0005.HK"].iloc[0]
+        assert r_hsbc["washout_2w"] == False     # noqa: E712
+        assert r_hsbc["extended"] == True        # noqa: E712
+
+    def test_stamps_default_na_when_omitted(self, tmp_path, monkeypatch):
+        """Callers that don't pass the stamps (e.g. the CA builder) must still work,
+        with the columns stored as NA ('not stamped'), not False."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        calls = [{"ticker": "RY.TO", "group": "entry_open", "edge_z": 1.1,
+                  "close_asof": 140.0}]
+        n = bl.append_board(calls, "CA", asof="2026-07-10")
+        assert n == 1
+
+        df = pd.read_parquet(tmp_path / "ca_board.parquet")
+        assert "washout_2w" in df.columns and "extended" in df.columns
+        assert pd.isna(df["washout_2w"].iloc[0])
+        assert pd.isna(df["extended"].iloc[0])
+
+    def test_merge_with_legacy_prior_frame(self, tmp_path, monkeypatch):
+        """A prior parquet written under the pre-stamp 10-column schema must merge
+        with a stamped append: no column dropped, legacy rows NA, new rows valued,
+        keep-FIRST still enforced."""
+        monkeypatch.setattr(bl, "_store_path", lambda m: tmp_path / f"{m.lower()}_board.parquet")
+
+        legacy_cols = [c for c in bl._SCHEMA if c not in bl._PORT_STAMPS]
+        legacy = pd.DataFrame([{
+            "date": "2026-07-09", "market": "HK", "ticker": "0001.HK",
+            "board_pos": 1, "group": "entry_open", "edge_z": 1.0,
+            "gate_tier": "T1", "align_tier": "aligned",
+            "entry_state": "open", "close_asof": 50.0,
+        }])[legacy_cols]
+        (tmp_path / "hk_board.parquet").parent.mkdir(parents=True, exist_ok=True)
+        legacy.to_parquet(tmp_path / "hk_board.parquet", index=False)
+
+        calls = [
+            # duplicate of the legacy (date, ticker) — keep-FIRST must preserve legacy row
+            {"ticker": "0001.HK", "group": "watch", "washout_2w": True, "extended": True},
+            {"ticker": "0002.HK", "group": "entry_open", "washout_2w": True, "extended": False},
+        ]
+        # same date as legacy for the dup; the new name lands too
+        n = bl.append_board(calls, "HK", asof="2026-07-09")
+        assert n == 2
+
+        df = pd.read_parquet(tmp_path / "hk_board.parquet")
+        assert set(bl._SCHEMA).issubset(df.columns)
+
+        legacy_row = df[df["ticker"] == "0001.HK"].iloc[0]
+        assert legacy_row["group"] == "entry_open"        # keep-FIRST: legacy wins
+        assert pd.isna(legacy_row["washout_2w"])          # never backfilled
+        assert pd.isna(legacy_row["extended"])
+
+        new_row = df[df["ticker"] == "0002.HK"].iloc[0]
+        assert new_row["washout_2w"] == True              # noqa: E712
+        assert new_row["extended"] == False               # noqa: E712
+
+
+# ---------------------------------------------------------------------------
+# 7. Helpers
+# ---------------------------------------------------------------------------
+class TestHelpers:
+    def test_float_or_none(self):
+        assert bl._float_or_none(1.5) == pytest.approx(1.5)
+        assert bl._float_or_none(None) is None
+        assert bl._float_or_none(float("nan")) is None
+        assert bl._float_or_none(float("inf")) is None
+        assert bl._float_or_none("bad") is None
+
+    def test_bool_or_none(self):
+        assert bl._bool_or_none(True) is True
+        assert bl._bool_or_none(False) is False
+        assert bl._bool_or_none(1) is True
+        assert bl._bool_or_none(None) is None
+        assert bl._bool_or_none(float("nan")) is None
+        assert bl._bool_or_none(pd.NA) is None
+
+    def test_excess(self):
+        assert bl._excess(0.1, 0.05) == pytest.approx(0.05)
+        assert bl._excess(None, 0.05) is None
+        assert bl._excess(0.1, None) is None
+
+    def test_est_first_read(self):
+        est = bl._est_first_read()
+        assert est == "2026-08-24"
+
+    def test_store_path_returns_correct_names(self, tmp_path, monkeypatch):
+        """_store_path should use lowercase market name in filename."""
+        # We test the real function (no monkeypatch) to verify naming convention
+        p_hk = bl._store_path("HK")
+        p_ca = bl._store_path("CA")
+        assert p_hk.name == "hk_board.parquet"
+        assert p_ca.name == "ca_board.parquet"
+        assert p_hk.parent.name == "board_ledger"

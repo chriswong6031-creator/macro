@@ -69,8 +69,14 @@ CORE_ETFS = ["SPY", "QQQ", "DIA", "IWM"]
 # kept in CORE so they're live regardless of when the site's data-sym is scraped.
 CORE_COMMODITIES = ["GC=F", "SI=F", "HG=F", "CL=F", "DX-Y.NYB"]
 CORE_FX = ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCNH=X"]
+# Crypto trades 24/7, so it's the one CORE leg that stays meaningful on nights and
+# weekends. Kept in CORE so the Bitcoin Vector header (data-sym="BTC-USD") is live
+# regardless of when the site's data-sym is scraped; routed to Yahoo spark (crypto
+# pair -> is_us_symbol False). The dedicated hourly btc-live Action keeps it fresh
+# 24/7 (see .github/workflows/btc-live.yml).
+CORE_CRYPTO = ["BTC-USD"]
 CORE_SYMBOLS = (US_INDEXES + US_FUTURES + INTL_INDEXES + CORE_ETFS
-                + CORE_COMMODITIES + CORE_FX)
+                + CORE_COMMODITIES + CORE_FX + CORE_CRYPTO)
 
 
 def scrape_site_symbols(site_dir: Path) -> list[str]:
@@ -165,11 +171,28 @@ def to_worker_quotes(raw: dict) -> dict:
     return out
 
 
+def _validate_symbols(syms: list[str]) -> list[str]:
+    """De-dupe, upper-case and charset-validate an explicit symbol list (same gate
+    build_universe applies) so a junk --symbols entry can never reach a feed."""
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for s in syms:
+        s = str(s).strip().upper()
+        if s and s not in seen and _SYMBOL_RE.match(s):
+            seen.add(s)
+            ordered.append(s)
+    return ordered
+
+
 def build(site_dir: Path, *, offline: bool = False, extra: list[str] | None = None,
-          cap: int = 800) -> dict:
+          cap: int = 800, symbols: list[str] | None = None) -> dict:
     now = datetime.now(timezone.utc)
     lcfg = config.load().get("live") or {}
-    universe = build_universe(site_dir, extra=extra, cap=cap)
+    # symbols= builds an EXACT-universe snapshot (bypasses CORE + site scrape +
+    # conviction) — used by the hourly 24/7 btc-live Action to refresh just the
+    # crypto leg cheaply, without re-touching the equity universe.
+    universe = (_validate_symbols(symbols) if symbols
+                else build_universe(site_dir, extra=extra, cap=cap))
     diag: dict = {}
     raw = live_quotes.fetch_quotes(universe, offline=offline, diag=diag)
     quotes = to_worker_quotes(raw)
@@ -199,12 +222,17 @@ def main() -> None:
     ap.add_argument("--site", default=None, help="built-site dir (default: config site_dir)")
     ap.add_argument("--offline", action="store_true", help="no network — empty snapshot")
     ap.add_argument("--max", type=int, default=800, help="universe cap")
+    ap.add_argument("--symbols", default=None,
+                    help="comma-separated EXACT universe (bypass CORE+scrape+conviction); "
+                         "e.g. 'BTC-USD' for the hourly crypto-only snapshot")
     args = ap.parse_args()
 
     site_dir = (Path(args.site) if args.site
                 else config.ROOT / config.load()["storage"]["site_dir"])
     extra = list((config.load().get("live") or {}).get("snapshot_extra") or [])
-    snap = build(site_dir, offline=args.offline, extra=extra, cap=args.max)
+    symbols = [s for s in (args.symbols or "").split(",") if s.strip()] or None
+    snap = build(site_dir, offline=args.offline, extra=extra, cap=args.max,
+                 symbols=symbols)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

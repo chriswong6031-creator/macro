@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import plotly.graph_objects as go  # noqa: E402
 
 from lib import config, store  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_china")
@@ -359,7 +360,7 @@ def _build_sector_pages(env) -> int:
                 continue
             s["holdings"].append({"ticker": tick, "ladder": h["ladder"], "cycle": h["cycle"],
                                   "mtf_json": json.dumps(h["mtf"])})
-        (outdir / f"{fund}.html").write_text(env.get_template("china_sector.html.j2").render(s=s))
+        write_page(outdir / f"{fund}.html", env.get_template("china_sector.html.j2").render(s=s))
         built += 1
     log.info("wrote %d china sector pages", built)
     return built
@@ -385,7 +386,7 @@ def _build_history(env, latest: dict, generated: str) -> None:
         latest=latest, generated_utc=generated,
         chart_regime=_chart_regime(px, hist) if not px.empty else "", chart_axes=_chart_axes(hist),
         lifespan_rows=rows)
-    (Path(config.load()["storage"]["site_dir"]) / "china_history.html").write_text(html)
+    write_page(Path(config.load()["storage"]["site_dir"]) / "china_history.html", html)
     log.info("wrote china_history.html (%d regime periods)", trans.get("n_segments", 0))
 
 
@@ -839,7 +840,7 @@ def main() -> int:
         # is recomputed and the heavy page CSS lives in exactly one template.
         tmpl = env.get_template("china.html.j2")
         html = tmpl.render(**vm, mode="macro")
-        (site / "china.html").write_text(html)
+        write_page(site / "china.html", html)
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a
             if src.exists():
@@ -850,14 +851,14 @@ def main() -> int:
         # China dashboard section, expanded into a searchable/filtered news surface.
         try:
             news_html = env.get_template("china_news.html.j2").render(**vm, mode="macro")
-            (site / "china_news.html").write_text(news_html)
+            write_page(site / "china_news.html", news_html)
             log.info("wrote %s/china_news.html (%d KB)", site, len(news_html) // 1024)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china news page render failed (%s); skipping", e)
 
         # A-share Stock Dashboard — same VM, the "looking for stocks" half.
         html_st = tmpl.render(**vm, mode="stocks")
-        (site / "china_stocks.html").write_text(html_st)
+        write_page(site / "china_stocks.html", html_st)
         log.info("wrote %s/china_stocks.html (%d KB)", site, len(html_st) // 1024)
         # landing-hub card stat (presence-gated by the .html existing)
         _su = vm.get("setups") or {}
@@ -875,7 +876,7 @@ def main() -> int:
             stock_html = env.get_template("china_lookup.html.j2").render(
                 state_display_json=json.dumps(STATE_DISPLAY, default=str),
                 generated_utc=vm["built"])
-            (site / "china_lookup.html").write_text(stock_html)
+            write_page(site / "china_lookup.html", stock_html)
             log.info("wrote %s/china_lookup.html + chinastockdata/", site)
         except Exception as e:  # noqa: BLE001 — search is additive, never fatal
             log.error("china stock search render failed (%s); skipping", e)

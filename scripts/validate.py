@@ -27,6 +27,7 @@ from engine.inputs import build_features, yahoo_closes  # noqa: E402
 from engine.regime import classify  # noqa: E402
 from engine.transition import compute_flags, state_machine  # noqa: E402
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 QUAD_COLORS = {"Q1": "#2e7d32", "Q2": "#f9a825", "Q3": "#c62828", "Q4": "#1565c0"}
 
@@ -172,7 +173,7 @@ def timeline_chart(f: pd.DataFrame, regime: pd.DataFrame, segments: pd.DataFrame
     if "MastermindX Inc" not in html:
         html = html.replace("</head>", _head + "</head>", 1)
         html = html.replace("</body>", _body + _footer + "</body>", 1)
-        out_html.write_text(html)
+        write_page(out_html, html)
 
 
 def main() -> None:

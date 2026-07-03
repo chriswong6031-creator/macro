@@ -28,8 +28,20 @@ log = logging.getLogger(__name__)
 
 _HORIZONS_D = (21, 63)                    # ~1 / 3 months
 _BUY_TIERS = ("primed", "setting_up")    # the tiers the user would actually act on
-# per-market per-name close store group
-_FWD_GROUP = {"US": "stocks", "CN": "china", "HK": "hk", "CA": "canada", "INTL": "intl"}
+# per-market per-name close store group. CN board tickers are per-name A-shares (.SS/.SZ)
+# in data/china_stocks; data/china holds only the ~30 index/ETF parquets. The original
+# mapping "CN" → "china" caused 0/N forward returns to resolve (all board tickers live in
+# china_stocks, not china) — n_graded stayed 0 forever (same root cause as the #791
+# china_standout_track bug, fixed W6-CN CN-1). CN now uses a tuple: read china_stocks
+# first (per-name OHLC), fall back to china (ETFs / bench). All other markets use a single
+# group string; _fwd_return handles both tuple and str via the resolution loop below.
+_FWD_GROUP: dict[str, str | tuple[str, ...]] = {
+    "US": "stocks",
+    "CN": ("china_stocks", "china"),    # W0.3 fix: per-name A-shares live in china_stocks
+    "HK": "hk",
+    "CA": "canada",
+    "INTL": "intl",
+}
 
 
 def _store_path(market: str):
@@ -84,7 +96,15 @@ def _fwd_return(market: str, ticker: str, d0: pd.Timestamp, h: int) -> float | N
     dead-name terminal close (US only for now — the dead-name store is US-side) so its loss
     is graded instead of vanishing."""
     try:
-        df = store.read(_FWD_GROUP.get((market or "CN").upper(), "china"), str(ticker))
+        # _FWD_GROUP may be a str (single group) or a tuple (ordered fallback list, first hit wins).
+        # CN uses ("china_stocks", "china") so per-name A-shares resolve before the ETF store.
+        _grp = _FWD_GROUP.get((market or "CN").upper(), "china")
+        _groups = (_grp,) if isinstance(_grp, str) else _grp
+        df = None
+        for _g in _groups:
+            df = store.read(_g, str(ticker))
+            if df is not None and "close" in df:
+                break
         s = pd.to_numeric(df["close"], errors="coerce").dropna() if (
             df is not None and "close" in df) else None
     except Exception:  # noqa: BLE001

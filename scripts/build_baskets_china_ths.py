@@ -26,6 +26,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets_china_ths")
@@ -81,7 +82,7 @@ def main() -> int:
         lite=True, basket_base="",
         bench_en="CSI 300", bench_zh="沪深300",
         generated_utc=built)
-    (site / "baskets_china_ths.html").write_text(html)
+    write_page(site / "baskets_china_ths.html", html)
     # the page uses the TradingView Lightweight Charts runtime (Apache-2.0); the curated china
     # build also ships it, but emit it here too so this page works even if built standalone.
     lwc = config.ROOT / "templates" / "lightweight-charts.js"
@@ -106,6 +107,36 @@ def main() -> int:
         log.error("basket_freeze[china_ths]: SKIPPED (churn guard): %s", e)
     except Exception as e:  # noqa: BLE001
         log.error("basket_freeze[china_ths]: failed: %s", e)
+
+    # Emit a minimal latest.json for signal_archive accrual.
+    # Per-basket: id, ret_60d (perf['60d']['ret'] — 60 TRADING days, engine HORIZONS),
+    # above_200d (the engine's own EW basket level vs its 200d SMA). Levels come from
+    # `chart` (popped above, still in scope) — the same series the page plots, no extra fetch.
+    try:
+        _lvl_map = chart.get("baskets", {}) if isinstance(chart, dict) else {}
+        _snap_baskets = []
+        for _b in data.get("baskets", []):
+            _bid = _b.get("id", "")
+            _ret60 = None
+            _perf = _b.get("perf") or {}
+            _p60 = _perf.get("60d") or {}
+            if _p60.get("ret") is not None:
+                _ret60 = round(float(_p60["ret"]), 4)
+            _above200 = None
+            _lvls = [v for v in (_lvl_map.get(_bid) or []) if v is not None]
+            if len(_lvls) >= 200:
+                _above200 = bool(_lvls[-1] > sum(_lvls[-200:]) / 200.0)
+            _snap_baskets.append({"id": _bid, "ret_60d": _ret60, "above_200d": _above200})
+        _latest = {
+            "as_of": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "baskets": _snap_baskets,
+        }
+        _latest_path = config.data_dir() / "baskets_china_ths" / "latest.json"
+        _latest_path.parent.mkdir(parents=True, exist_ok=True)
+        _latest_path.write_text(json.dumps(_latest, separators=(",", ":")))
+        log.info("china THS baskets: wrote latest.json (%d baskets)", len(_snap_baskets))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china THS baskets: latest.json emit failed (%s)", e)
 
     return 0
 

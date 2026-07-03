@@ -34,6 +34,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_reports")
@@ -197,7 +198,7 @@ def main() -> int:
     idx = env.get_template("reports.html.j2").render(
         reports=reports, all_tags=all_tags, active_section="research", active_page="reports",
     )
-    (site / "reports.html").write_text(idx)
+    write_page(site / "reports.html", idx)
     log.info("wrote %s/reports.html (%d reports, %d KB)", site, len(reports), len(idx) // 1024)
 
     # ---- one page per report ----
@@ -208,7 +209,7 @@ def main() -> int:
             report=r, reports=reports, prev_report=prev_r, next_report=next_r,
             active_section="research", active_page="reports",
         )
-        (site / f"{r['slug']}.html").write_text(html)
+        write_page(site / f"{r['slug']}.html", html)
         log.info("wrote %s/%s.html (%d KB)", site, r["slug"], len(html) // 1024)
 
     return 0

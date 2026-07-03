@@ -380,6 +380,10 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     "hold_days":       feat.get("hold_days"),
                     "hold_inv":        feat.get("hold_inv"),
                     "hold_anchor_src": feat.get("hold_anchor_src"),
+                    # W0.2b — tier_cascade was in _row_features but never emitted into the graded
+                    # record; add it here so aggregate() can stratify by T1/T2/T3/T4.
+                    # None on pre-schema boards (earliest revisions lacked the signal.tier_cascade field).
+                    "tier_cascade":    feat.get("tier_cascade"),
                     "ret": nret,
                 }
                 # excess vs SPY
@@ -530,6 +534,10 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
                 "by_donor_state": _slice_table(buy, "donor_state", "excess_spy"),
                 # W6-C HOLD tracker — grades stratified by basing state at board publication
                 "by_hold_state": _slice_table(buy, "hold_state", "excess_spy"),
+                # W0.2b — tier_cascade stratification (T1/T2/T3/T4). Was captured in
+                # _row_features but never emitted to the graded record or stratified.
+                # "None" = pre-schema boards lacking the signal.tier_cascade field.
+                "by_tier_cascade": _slice_table(buy, "tier_cascade", "excess_spy"),
                 "mae_close_excess_spy": {
                     "median": round(float(buy["mae_close_excess_spy"].dropna().median()), 5)
                     if buy["mae_close_excess_spy"].notna().any() else None,
@@ -624,6 +632,48 @@ def snapshot_today() -> str | None:
 
 
 # --------------------------------------------------------------------------- #
+# store management
+# --------------------------------------------------------------------------- #
+_DEDUP_KEYS = ["as_of", "ticker", "lane", "horizon"]
+
+
+def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
+    """Merge freshly-graded rows into the accumulated retro_grades.parquet store.
+
+    Strategy: read the existing store (if any), union with fresh rows, de-duplicate
+    on (as_of, ticker, lane, horizon) preferring the fresh row (it uses the latest
+    price cache), and write the result back.  The merged frame is returned so the
+    caller can pass it directly to build_track — guaranteeing the track is ALWAYS
+    built from the full accumulated history, never just from the rows that happened
+    to mature in this run.
+
+    If fresh is empty AND the store already exists, the store is returned as-is
+    (no write needed).  This is the key guard against the empty:true regression."""
+    LEDGER_DIR.mkdir(parents=True, exist_ok=True)
+    if RETRO_PARQUET.exists():
+        stored = pd.read_parquet(RETRO_PARQUET)
+    else:
+        stored = pd.DataFrame()
+
+    if fresh.empty:
+        return stored  # nothing new — return the accumulated store unchanged
+
+    if stored.empty:
+        merged = fresh.copy()
+    else:
+        # fresh rows take precedence: drop stored rows that overlap with fresh on
+        # the dedup key, then concat.
+        key_cols = [c for c in _DEDUP_KEYS if c in fresh.columns and c in stored.columns]
+        fresh_keys = set(map(tuple, fresh[key_cols].values.tolist()))
+        mask = stored.apply(lambda r: tuple(r[k] for k in key_cols) not in fresh_keys, axis=1)
+        merged = pd.concat([stored[mask], fresh], ignore_index=True)
+
+    # Preserve attrs (skipped_no_price from the fresh grading pass, not meaningful for full store)
+    merged.to_parquet(RETRO_PARQUET, index=False)
+    return merged
+
+
+# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> None:
@@ -646,13 +696,18 @@ def main() -> None:
 
     df = grade_boards(boards, names, etfs)
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
-    if not df.empty:
-        df.to_parquet(RETRO_PARQUET, index=False)
+    # Merge freshly-graded rows INTO the accumulated store, then always build the
+    # track from the full store.  This prevents the empty:true regression that fires
+    # whenever no *new* rows mature in a given nightly run (the store still holds
+    # all previously-graded rows and must not be discarded).
+    full_df = _merge_into_store(df)
     if not args.quiet:
-        print(f"[grade] {len(df)} matured rows -> {RETRO_PARQUET.name} "
-              f"(skipped {df.attrs.get('skipped_no_price', 0)} no-price rows)")
+        new_rows = len(df) if not df.empty else 0
+        print(f"[grade] {new_rows} new matured rows this run "
+              f"(skipped {df.attrs.get('skipped_no_price', 0)} no-price rows); "
+              f"store total -> {len(full_df)} rows in {RETRO_PARQUET.name}")
 
-    track = build_track(df, boards, names)
+    track = build_track(full_df, boards, names)
     TRACK_JSON.parent.mkdir(parents=True, exist_ok=True)
     TRACK_JSON.write_text(json.dumps(track, indent=1, default=str))
     if not args.quiet:

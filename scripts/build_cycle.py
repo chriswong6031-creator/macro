@@ -57,6 +57,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 from scripts._cycle_seed import load_seed  # noqa: E402
 
 log = logging.getLogger("build_cycle")
@@ -389,7 +390,15 @@ def main() -> int:
     site = root / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
 
-    # 1 · compute the engine payload (raises on structural / staleness errors) ──
+    # 1a · emit the shared regime prior artifact (W4.5 — additive, cheap, never fatal) ──
+    try:
+        from scripts.build_regime_prior import emit as _emit_prior
+        from lib import config as _cfg
+        _emit_prior(data_dir=_cfg.data_dir(), site_dir=site)
+    except Exception as _rp_exc:  # noqa: BLE001
+        log.warning("build_cycle: regime_prior emit failed (non-fatal): %s", _rp_exc)
+
+    # 1b · compute the engine payload (raises on structural / staleness errors) ──
     payload = compute(root)
     _write_engine_js(site, payload)
     log.info("cycle_engine.js: %d cards (%d measured, %d frame, %d dual); %d tolerance gaps",
@@ -408,7 +417,7 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
         env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     html = env.get_template("cycle.html.j2").render()
-    (site / "cycle.html").write_text(html, encoding="utf-8")
+    write_page(site / "cycle.html", html, encoding="utf-8")
 
     # 3 · copy the committed shell assets (cycle_data.js stays the curated seed) ─
     for asset in PAGE_ASSETS:

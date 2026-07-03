@@ -271,17 +271,207 @@ def _spark_svg(vals: list[float], color: str = "var(--link)", w: int = 240, h: i
             f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
 
 
-def compute_canada_standouts(setups: dict | None) -> dict | None:
-    """Enrich the alpha-led `setups.buy` shortlist into US-parity 'Standout
-    individual stocks' cards — adds per-stock price + off-52w-high + a compact
-    sparkline, and (re-)reads the unified Conviction Profile from the per-stock JSON
-    if main() did not already attach it. Best-effort: returns setups with each buy
-    row enriched. Mirrors build_stock_library's us_standouts enrichment."""
+# ---------------------------------------------------------------------------
+# Branch B — the ripe-list contract (masterplan §5.0), CA-permanent.
+#
+# C7 phase-0 verdict (reports/c7-canada-momentum-phase0.md): ALL four momentum
+# trials → ACCRUE (mom_res is FDR-stable q=0.0002 on the names panel but DSR-short
+# 0.37<0.90; mom_tot fails both). No C-leg GO'd, so masterplan §4.1 BRANCH B fires:
+# the CA board runs this exact order permanently and the 0-100 composite is
+# SUPPRESSED (replaced by a rank pill + an honest "screen — accruing" tier badge).
+#
+#   UNIVERSE = names passing hygiene + bottoming-alignment {PRIME, ARMED}(+backfill)
+#              — ALREADY applied upstream by rank_setups(align_map=...).
+#   GROUP    = entry_open (confluence-buyable ∧ in/near buy-zone) > setting_up
+#   RANK     = within group, residual-momentum z (the alpha leg) desc — labeled
+#              "screen — momentum prior ACCRUING", NEVER a validated composite.
+#   TIEBREAK = 63d ADV desc (proxy: off-high magnitude when ADV absent) — kept
+#              stable so a thin field never churns.
+# ---------------------------------------------------------------------------
+
+# entry_signal.status values that mean "entry window is open NOW" (green on the card).
+# Everything else on an aligned board row is "setting up" (awaiting the trigger).
+_ENTRY_OPEN_STATUS = {"buy_now", "partial"}
+# map status -> the ledger's compact entry_state vocabulary ('open'|'pullback'|'wait').
+_ENTRY_STATE = {
+    "buy_now": "open", "partial": "open",
+    "wait_pullback": "pullback", "hold": "pullback",
+    "buy_soon": "wait", "watch": "wait", "await_confluence": "wait",
+    "extended": "wait", "topping": "wait", "exit": "wait", "avoid": "wait",
+    "blocked": "wait",
+}
+
+
+def _row_group(r: dict) -> str:
+    """'entry_open' when the entry gauge reads an OPEN window (buy_now/partial),
+    else 'setting_up' (aligned, awaiting the trigger). The board is already
+    alignment-gated upstream, so no 'watch' bucket appears here."""
+    st = (r.get("entry_signal") or {}).get("status")
+    return "entry_open" if st in _ENTRY_OPEN_STATUS else "setting_up"
+
+
+def _oil_regime_on(overlay: dict | None) -> bool:
+    """C1 phase-0: oil→XEG is the ONE ACCRUE (HAC t +2.75, FDR-pass, DSR-short);
+    gold/copper are NO-GO. The oil context chip fires only when the overlay's oil
+    factor is positive/rising (risk-on contribution). Gold/copper: never."""
+    for f in (overlay or {}).get("factors") or []:
+        if f.get("key") == "oil":
+            return f.get("risk") == "on" or (f.get("z") or 0) > 0
+    return False
+
+
+def _lead_sentence(r: dict, oil_on: bool, zh: bool = False) -> str:
+    """Mechanism-first card lead (§7.1) built from fields already on the row.
+
+    Leads with the primary factor-beta driver (the TSX signature) + the momentum
+    SCREEN z (honestly labeled accruing) + insider cluster (if present) + the
+    entry window. No validated-edge language — the momentum leg is a screen."""
+    parts: list[str] = []
+    fb = r.get("factor_beta") or {}
+    prim = fb.get("primary")
+    sec = r.get("sector")
+    # 1) primary commodity/FX driver — the differentiated TSX exposure read
+    if prim:
+        lbl = (fb.get("primary_label_zh") if zh else fb.get("primary_label")) or prim
+        beta = fb.get(prim if prim != "usdcad" else "cad")
+        tail = (("" if not (oil_on and prim == "oil") else (" 顺风" if zh else " tailwind")))
+        if zh:
+            parts.append(f"主要驱动：{lbl}-β {beta:+.2f}{tail}" if beta is not None
+                         else f"主要驱动：{lbl}{tail}")
+        else:
+            parts.append(f"{lbl}-beta {beta:+.2f} primary driver{tail}" if beta is not None
+                         else f"{lbl} primary driver")
+    elif sec:
+        parts.append((f"{sec} 板块" if zh else f"{sec} sector"))
+    # 2) momentum SCREEN z — accruing, never a validated composite
+    az = r.get("alpha")
+    if az is not None:
+        parts.append((f"动量筛选 z {az:+.1f}（待验证）" if zh
+                      else f"momentum screen z {az:+.1f} (accruing)"))
+    # 3) insider cluster — context confirmer if present
+    ins = r.get("insider") or {}
+    nb = ins.get("distinct_buyers") or ins.get("n_buys")
+    if ins.get("lean") == "buying" and nb:
+        wd = ins.get("window_days") or 90
+        parts.append((f"内部人买入 {nb}人/{wd}天" if zh
+                      else f"insider cluster {nb} buyer{'s' if nb != 1 else ''}/{wd}d"))
+    # 4) entry window — from the entry gauge's buy-zone
+    es = r.get("entry_signal") or {}
+    st = es.get("status")
+    bz = es.get("buy_zone") or {}
+    if st in _ENTRY_OPEN_STATUS:
+        parts.append(("入场：现在开启" if zh else "entry: open now"))
+    elif bz.get("low") is not None and bz.get("high") is not None:
+        parts.append((f"入场：回撤 {bz['low']:.2f}–{bz['high']:.2f}" if zh
+                      else f"entry: pullback {bz['low']:.2f}–{bz['high']:.2f}"))
+    else:
+        parts.append(("入场：等待周线触发" if zh else "entry: wait for weekly trigger"))
+    return " · ".join(parts)
+
+
+def _branch_b_order(rows: list[dict], overlay: dict | None) -> list[dict]:
+    """Apply the ripe-list contract order (§5.0) and stamp per-row Branch-B fields:
+    group, board_pos (rank pill), oil_tailwind (C1 chip), lead_en/lead_zh.
+
+    Group entry_open before setting_up; within each group order by the momentum
+    SCREEN z (alpha) desc, tiebreak off-high magnitude (a pullback proxy for ADV,
+    stable). board_pos is a single 1-based rank across the whole ordered board so the
+    pill reads #1, #2, … top-to-bottom."""
+    oil_on = _oil_regime_on(overlay)
+
+    def _key(r):
+        grp = 0 if _row_group(r) == "entry_open" else 1
+        az = r.get("alpha")
+        # -az so higher momentum-screen z ranks first; None sorts last within group
+        return (grp, -(az if az is not None else -9.9), -abs(r.get("off_high") or 0.0))
+
+    ordered = sorted(rows, key=_key)
+    for pos, r in enumerate(ordered, start=1):
+        r["group"] = _row_group(r)
+        r["board_pos"] = pos
+        r["oil_tailwind"] = bool(oil_on and (r.get("factor_beta") or {}).get("primary") == "oil")
+        r["lead_en"] = _lead_sentence(r, oil_on, zh=False)
+        r["lead_zh"] = _lead_sentence(r, oil_on, zh=True)
+    return ordered
+
+
+# weekly states that mean the higher timeframe is still FALLING — a name blocked here
+# with a strong momentum screen is a falling-knife-style demote (edge, but no base yet).
+_KNIFE_WEEKLY = {"bear", "bear_falling", "falling", "down", "bear_down"}
+
+
+def _build_watch(cand: list, buys: list[dict], align_map: dict | None,
+                 profiles: dict | None, n: int = 8) -> list[dict]:
+    """Strong-but-blocked WATCH strip (W6 parity with HK's watch-strip).
+
+    A name reaches the watch strip when its residual-momentum SCREEN z clears the buy
+    floor (BUY_MIN) but the multi-timeframe bottoming-alignment gate held it OUT of the
+    buy list (weekly not turned / no fresh entry) — a real edge awaiting a base, NOT a
+    scored pick. Rows whose weekly is still falling are tagged watch_reason='knife' so
+    the card states why they were pushed off the entry groups. Ranked by screen z desc.
+
+    Pure re-selection over the already-scored candidate pool — no new network / IO."""
+    from engine.setups import BUY_MIN
+    am = align_map or {}
+    pf = profiles or {}
+    buy_ids = {r.get("ticker") for r in (buys or [])}
+    watch: list[dict] = []
+    for item in (cand or []):
+        r = item[1] if isinstance(item, (tuple, list)) else item
+        t = r.get("ticker")
+        if not t or t in buy_ids:
+            continue
+        a = r.get("alpha")
+        if a is None or a < BUY_MIN:          # strong momentum SCREEN only
+            continue
+        al = am.get(t) or {}
+        if al.get("aligned") or al.get("near"):
+            continue                          # not blocked → it is (near-)buyable, skip
+        wk = str(al.get("weekly") or "").lower()
+        knife = wk in _KNIFE_WEEKLY or ((al.get("knife") or 0.0) >= 0.66)
+        row = {
+            "ticker": t,
+            "name": r.get("name"),
+            "alpha": a,
+            "watch_reason": "knife" if knife else "blocked",
+            "block_reason": al.get("reason"),
+            "block_reason_zh": al.get("reason_zh"),
+        }
+        if pf.get(t):
+            _c = pf[t]
+            row["conviction"] = {
+                "score": _c.get("score"),
+                "verdict": _c.get("verdict"),
+                "verdict_zh": _c.get("verdict_zh"),
+            }
+        watch.append(row)
+    # knives first (they earned the loudest explanation), then by screen z descending.
+    watch.sort(key=lambda w: (0 if w["watch_reason"] == "knife" else 1, -(w["alpha"] or 0)))
+    return watch[:n]
+
+
+def compute_canada_standouts(setups: dict | None, overlay: dict | None = None) -> dict | None:
+    """Enrich the alpha-led `setups.buy` shortlist into the CA standout board and
+    apply the BRANCH-B ripe-list contract order (masterplan §5.0 + C7 verdict).
+
+    Adds per-stock price + off-52w-high + sparkline + the unified Conviction Profile
+    (kept for the honest desaturated context, NOT the sort key) + the commodity
+    factor-beta + insider context + the extension log-and-grade chip; then GROUPS
+    entry_open vs setting_up and RANKS within group by the residual-momentum SCREEN
+    z (the alpha leg, honestly labeled accruing). Best-effort per row."""
     if not setups or not setups.get("buy"):
         return setups
     site = config.ROOT / config.load()["storage"]["site_dir"]
     cd = site / "canadastockdata"
     closes, _, _ = _breadth_panel()
+    # extension log-and-grade signals (engine/extension) — a PER-NAME risk-placement
+    # read, NOT rank-affecting: it only stamps an 'extended' chip + a ledger column.
+    try:
+        from engine import extension
+        ext_map = extension.extension_signals(closes) if not closes.empty else {}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("canada extension signals unavailable (%s)", e)
+        ext_map = {}
     for r in setups["buy"]:
         t = r["ticker"]
         f = cd / f"{t.replace('=', '_').replace('^', '_')}.json"
@@ -294,21 +484,49 @@ def compute_canada_standouts(setups: dict | None) -> dict | None:
                 if r.get("conviction") is None and rec.get("conviction"):
                     r["conviction"] = rec["conviction"]
                 # the entry-timing gauge (WHEN to buy) so the card renders it AND the
-                # board can lead with open entries — main() attaches it only to the
+                # board can group by open entries — main() attaches it only to the
                 # separate standouts artifact, not this page-facing setups list.
                 if rec.get("entry_signal"):
                     r.setdefault("entry_signal", rec["entry_signal"])
+                # commodity/FX factor beta (the TSX signature) + insider context —
+                # patched onto the per-stock JSON in main(); the board row needs them
+                # for the mechanism lead + the C1 oil context chip.
+                if rec.get("factor_beta"):
+                    r["factor_beta"] = rec["factor_beta"]
+                if rec.get("insider"):
+                    r["insider"] = rec["insider"]
+                # earnings catalyst — next report date drives the "reports in Nd" why-now
+                # chip (W6 §7.4). Presence-guarded on the card; context, never a rank input.
+                if rec.get("earnings"):
+                    r["earnings"] = rec["earnings"]
+                    nd = rec["earnings"].get("next_date")
+                    if nd:
+                        try:
+                            _dt = (pd.Timestamp(nd).normalize()
+                                   - pd.Timestamp.utcnow().normalize()).days
+                            r["earnings"]["days_to"] = int(_dt) if _dt >= 0 else None
+                        except Exception:  # noqa: BLE001 — chip is optional
+                            pass
             except Exception:  # noqa: BLE001
                 pass
+        # extension demote as LOG-AND-GRADE: an 'extended' chip when the name is
+        # stretched/parabolic vs its 200d, never a rank change (Phase-0 showed
+        # freshness does NOT cut drawdown; extension.py docstring).
+        ex = ext_map.get(t)
+        if ex and ex.get("grade") in ("parabolic", "stretched"):
+            r["extended"] = {"grade": ex["grade"], "ext_z": ex.get("ext_z"),
+                             "near_52wh": ex.get("near_52wh")}
         if not closes.empty and t in closes.columns:
             s = closes[t].dropna().tail(64).tolist()
             col = ("var(--up)" if r.get("dir") == "up"
                    else "var(--down)" if r.get("dir") == "down" else "var(--muted)")
             r["spark_svg"] = _spark_svg(s, color=col)
-    # ENTRY-OPEN-FIRST: lead with names whose entry gauge reads "Buy zone — entry open
-    # now", then by the displayed conviction score (stable; the alpha/alignment rank
-    # settles ties). conviction + entry_signal are attached to each row above.
-    setups["buy"] = entry_open_first(setups["buy"])
+    # BRANCH B: group (entry_open > setting_up) then rank within group by the momentum
+    # SCREEN z. Replaces the entry_open_first composite sort — the composite is NOT the
+    # order under the zero-GO branch (masterplan §4.1 / §5.0).
+    setups["buy"] = _branch_b_order(setups["buy"], overlay)
+    setups["branch"] = "B"          # honest marker: ripe-list contract, composite suppressed
+    setups["rank_basis"] = "momentum_screen_accruing"
     return setups
 
 
@@ -551,6 +769,16 @@ def main(alpha: dict | None = None) -> dict | None:
                                                 asof=str(pd.Timestamp.utcnow().date()))
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("CA name-score grader append failed (%s)", e)
+    # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-
+    # conviction stats (potential median/IQR/n + theme score/label) so the pre-registered
+    # demotion study can run once ≥180 trading days accrue. Write-only ledger, never fatal.
+    try:
+        from engine import conviction_accrual
+        _b2_asof = (alpha or {}).get("as_of")
+        if conviction_accrual.archive_member_conviction("canada", profiles, asof=_b2_asof):
+            log.info("B2 conviction accrual: archived conviction_canada for %s", _b2_asof)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("B2 conviction accrual (canada) failed (%s)", e)
     for safe, rec in to_write.values():
         rec["view"] = stock_view.build_view(rec, "CA")   # canonical render model (rebuilt below once factor_beta lands)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
@@ -653,6 +881,12 @@ def main(alpha: dict | None = None) -> dict | None:
                 r["conviction"] = profiles[t]
         setups["eligible"] = eligible        # how many passed the alignment gate
         setups["universe"] = len(cand)
+        # WATCH strip (W6 parity with HK) — strong momentum-SCREEN z that the bottoming-
+        # alignment gate BLOCKED from the buy list (weekly still falling / no fresh turn):
+        # a real edge with no entry window yet. Names whose weekly is a falling knife are
+        # tagged so the watcher sees WHY they were held out of the entry groups. This is a
+        # SCREEN-hygiene surface, not a scored seam — the momentum leg is accruing (C7).
+        setups["watch"] = _build_watch(cand, setups["buy"], align_map, profiles)
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "canada_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))

@@ -63,6 +63,7 @@ from jinja2 import Environment, FileSystemLoader
 from engine import signal_gate
 from engine.group_context import GroupContext, READER_CONTRACT
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger("build_stock_board_v2")
 
@@ -541,7 +542,7 @@ def render(payload: dict, site=None) -> None:
                       autoescape=True)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     html = env.get_template("us_stocks_v2.html.j2").render(d=payload, built=built)
-    (site / "us_stocks_v2.html").write_text(html)
+    write_page(site / "us_stocks_v2.html", html)
     log.info("wrote %s (%.0f KB)", site / "us_stocks_v2.html",
              (site / "us_stocks_v2.html").stat().st_size / 1024)
 

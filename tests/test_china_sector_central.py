@@ -6,6 +6,8 @@ skips cleanly when the china_sectors plane is absent.
 from __future__ import annotations
 
 import json
+from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -126,3 +128,135 @@ def test_grader_roundtrip(tmp_path, monkeypatch):
     assert gr["available"] is True and gr["n_calls"] == n
     # nothing matured on day one → by_horizon present but accruing
     assert "by_horizon" in gr
+
+
+# ---- W0.4: gate-cap and staleness honesty tests ---- #
+
+def test_gate_caps_tier_set_when_gate_at_floor():
+    """_regime_anchor() must set gate_caps_tier='Accumulate' whenever gate is at the 0.2
+    floor.  Derivation: max achievable score at gate=0.2 is 68, below the Accumulate
+    threshold of 72 — so Accumulate is structurally unreachable and the honesty field must
+    name it.  This guards against silent suppression of the top conviction tier."""
+    # Patch regime_state to return extreme risk-off (tilt→1 → risk_on→−1 → gate floor=0.2)
+    # and latest.json to Q3/neutral (Q3 penalty would push gate below floor, clipped to 0.2).
+    fake_rs = {"tilt": 1.0, "blended": 1.0, "pct": 100,
+               "state_en": "Risk-off — de-risking", "state_zh": "风险偏离 — 降险中",
+               "tone": "off", "legs": [], "asof": "2026-07-03"}
+    import json as _json
+    fake_json_bytes = _json.dumps({"quad": "Q3", "quad_name": "Stagflation",
+                                   "liquidity_overlay": "neutral"}).encode()
+
+    # Patch both the regime_state import and the latest.json read
+    with patch("engine.china_sector_central.json") as mock_json, \
+         patch("engine.china_masterminds.regime_state", return_value=fake_rs):
+        # Make json.loads return our controlled dict regardless of what path is read
+        mock_json.loads.return_value = {"quad": "Q3", "quad_name": "Stagflation",
+                                        "liquidity_overlay": "neutral"}
+        from lib import config as cfg
+        # Also ensure the path is reported as existing via monkeypatching config.data_dir
+        # indirectly — we must patch the Path.exists so the json branch fires.
+        import unittest.mock as _mock
+        with _mock.patch.object(Path, "exists", return_value=True), \
+             _mock.patch.object(Path, "read_text", return_value=_json.dumps(
+                 {"quad": "Q3", "quad_name": "Stagflation", "liquidity_overlay": "neutral"})):
+            anc = cc._regime_anchor()
+
+    assert anc["gate_factor"] == 0.2, f"expected gate=0.2, got {anc['gate_factor']}"
+    assert anc.get("gate_caps_tier") == "Accumulate", (
+        f"gate_caps_tier should be 'Accumulate' when gate=0.2, got {anc.get('gate_caps_tier')!r}"
+    )
+
+
+def test_gate_caps_tier_none_when_gate_above_floor():
+    """_regime_anchor() must NOT set gate_caps_tier when the gate is high enough that
+    Accumulate (score ≥ 72) is reachable.  At gate ≥ 0.29 max_score ≥ 72."""
+    # risk_on = +0.4 → gate = clip(0.5 + 0.5*0.4) = 0.7, no quad/liq penalty → 0.7
+    fake_rs = {"tilt": -0.4, "blended": 0.3, "pct": 30,
+               "state_en": "Risk-on — leaning in", "state_zh": "风险偏好 — 加仓",
+               "tone": "on", "legs": [], "asof": "2026-07-03"}
+    import json as _json
+    import unittest.mock as _mock
+    with _mock.patch("engine.china_masterminds.regime_state", return_value=fake_rs), \
+         _mock.patch.object(Path, "exists", return_value=True), \
+         _mock.patch.object(Path, "read_text", return_value=_json.dumps(
+             {"quad": "Q1", "quad_name": "Goldilocks", "liquidity_overlay": "neutral"})):
+        anc = cc._regime_anchor()
+
+    assert anc["gate_factor"] >= 0.29, f"gate should be ≥ 0.29, got {anc['gate_factor']}"
+    assert anc.get("gate_caps_tier") is None, (
+        f"gate_caps_tier should be None when gate={anc['gate_factor']}, "
+        f"got {anc.get('gate_caps_tier')!r}"
+    )
+
+
+def test_staleness_constant_gate_and_stale_leg_fails():
+    """W0.4 sentinel: FAIL when gate_factor is constant across all calls for >=10 sessions
+    while any regime-leg input file is stale (overdue beyond its threshold).
+
+    A frozen upstream collector produces a gate stuck at one value for weeks without
+    any explicit error.  This test uses the LIVE calls.parquet and the LIVE input file
+    mtimes so it acts as an ongoing CI tripwire:
+    - TODAY (healthy): gate IS constant at 0.2, but input files are fresh → passes.
+    - FUTURE (broken): gate stays constant AND a file goes overdue → fails and alerts.
+
+    NOTE: the test only activates once >=10 sessions have been logged.  Before that it
+    skips (insufficient history to judge).
+    """
+    import time
+    import os
+    from lib import config
+
+    calls_p = config.data_dir() / "china_sector_central" / "calls.parquet"
+    if not calls_p.exists():
+        pytest.skip("calls.parquet not yet present")
+
+    df = pd.read_parquet(calls_p)
+    if df.empty or "gate_factor" not in df.columns or "date" not in df.columns:
+        pytest.skip("calls.parquet missing required columns")
+
+    n_sessions = df["date"].nunique()
+    if n_sessions < 10:
+        pytest.skip(f"only {n_sessions} sessions logged — need >=10 to activate the sentinel")
+
+    gate_values = df["gate_factor"].dropna().unique()
+    gate_is_constant = len(gate_values) == 1
+
+    # Compute actual age of each leg's source file
+    now = time.time()
+    leg_ages = cc._regime_leg_staleness(None)
+    any_stale = any(
+        age is not None and age > cc._LEG_STALE_DAYS.get(k, 999)
+        for k, age in leg_ages.items()
+    )
+
+    stale_legs = {k: age for k, age in leg_ages.items()
+                  if age is not None and age > cc._LEG_STALE_DAYS.get(k, 999)}
+
+    # The test FAILS exactly when both conditions are true simultaneously — this is the
+    # silent-freeze scenario that the W0.4 item exists to detect.
+    assert not (gate_is_constant and any_stale), (
+        f"gate_factor is constant at {gate_values[0] if len(gate_values)==1 else gate_values} "
+        f"across {n_sessions} sessions AND regime-leg input(s) are stale: {stale_legs} "
+        f"(thresholds: {cc._LEG_STALE_DAYS}) — "
+        "a frozen upstream collector is likely silently pinning the gate"
+    )
+
+
+def test_regime_anchor_returns_staleness_fields():
+    """_regime_anchor() must always return leg_stale, any_stale, and gate_caps_tier keys,
+    even when the regime_state call fails (degraded state).  Missing keys would silently
+    omit the honesty fields from the data emitted to the template."""
+    # Patch regime_state to raise so we exercise the failure path
+    import unittest.mock as _mock
+    import json as _json
+    with _mock.patch("engine.china_masterminds.regime_state", side_effect=RuntimeError("no data")), \
+         _mock.patch.object(Path, "exists", return_value=False):
+        anc = cc._regime_anchor()
+
+    assert "leg_stale" in anc, "leg_stale must always be present in _regime_anchor() output"
+    assert "any_stale" in anc, "any_stale must always be present in _regime_anchor() output"
+    assert "gate_caps_tier" in anc, "gate_caps_tier must always be present in _regime_anchor() output"
+    # with no regime data, gate defaults to 0.7 (>= 0.29) → no cap
+    assert anc.get("gate_caps_tier") is None, (
+        f"with no regime_state, gate=0.7 should not cap any tier; got {anc.get('gate_caps_tier')!r}"
+    )

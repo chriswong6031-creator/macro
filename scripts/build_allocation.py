@@ -25,6 +25,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_allocation")
@@ -150,7 +151,7 @@ def build_region(region: str, env, built: str, site) -> bool:
         act_now_json=json.dumps(act_now, separators=(",", ":"), default=str),
         standouts_json=json.dumps(standouts, separators=(",", ":")),
         generated_utc=built)
-    (site / page).write_text(html)
+    write_page(site / page, html)
     log.info("[%s] wrote %s (%d themes, headline=%s)", region, page,
              data.get("n_themes", 0), (data.get("headline") or {}).get("name", "—"))
     return True

@@ -20,6 +20,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_methodology")
@@ -53,7 +54,7 @@ def main() -> int:
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("methodology.html.j2").render(meth=meth, generated_utc=built)
-    (site / "methodology.html").write_text(html)
+    write_page(site / "methodology.html", html)
     log.info("wrote %s/methodology.html (%d KB)", site, len(html) // 1024)
     return 0
 

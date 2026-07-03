@@ -31,6 +31,7 @@ from jinja2 import Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_btc_strategy")
@@ -376,7 +377,7 @@ def main():
         env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     html = env.get_template("btc_strategy.html.j2").render(**ctx)
     out = ROOT / "site" / "btc_strategy.html"
-    out.write_text(html, encoding="utf-8")
+    write_page(out, html, encoding="utf-8")
     log.info("Built %s  (%.0f KB)", out, out.stat().st_size / 1024)
 
 

@@ -612,7 +612,7 @@ def record_series(full: pd.Series, *, win_start: pd.Timestamp, last_ts: pd.Times
         # analyze: structure math on `struct` (price), momentum/MACD on `full` (TR) — the
         # A13 substrate seam.  price=struct only when a distinct structure basis exists (a
         # tr_fallback series would just pass TR twice, a no-op that keeps the legacy path).
-        res = cycles.analyze(full, kind="equity",
+        res = cycles.analyze(full, kind="equity", family=family,
                              price=(struct if basis == "price" else None))
         lad = (res or {}).get("ladder") or {}
         mtf = (res or {}).get("mtf") or {}

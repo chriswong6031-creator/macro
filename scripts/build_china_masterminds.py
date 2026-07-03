@@ -17,6 +17,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from engine import china_masterminds as M
 from lib import config
+from lib.pages import write_page
 from scripts import _active_render as AR
 from scripts.build_vector import C
 
@@ -239,7 +240,7 @@ def build() -> str:
         ress.append(res)                        # keep alloc/asof for the emit contract
         html = env.get_template("mastermind_detail.html.j2").render(
             **_detail_vm(pk, res, built, regime), C=C)
-        (site / f"strategy_cnmm_{pk}.html").write_text(html)
+        write_page(site / f"strategy_cnmm_{pk}.html", html)
 
     asof = next((r.get("asof") for r in ress if r.get("asof")), None)
     snap = {"schema": "china_masterminds.latest.v2", "n": len(cards), "built": built,

@@ -14,6 +14,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ def build() -> dict | None:
     from engine import i18n
     env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
     html = env.get_template("china_policy_watch.html.j2").render(pw=vm)
-    (site / "china_policy_watch.html").write_text(html)
+    write_page(site / "china_policy_watch.html", html)
     for a in ASSETS:
         src = config.ROOT / "templates" / a
         if src.exists() and not (site / a).exists():

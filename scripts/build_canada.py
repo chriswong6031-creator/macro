@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import plotly.graph_objects as go  # noqa: E402
 
 from lib import config, store  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_canada")
@@ -150,6 +151,57 @@ def _lifespan_rows(quad: pd.Series) -> list[dict]:
     return rows
 
 
+def _check_closes_cache() -> dict | None:
+    """HKCA-13: canada_breadth/_closes_cache.parquet is gitignored rebuild-only.
+    In a fresh worktree (or after any worktree wipe) it is absent, which makes
+    the per-sector drill-down pages render with zero stock-level cards -- silently.
+    This check makes the absence VISIBLE in the health table at build time.
+    DO NOT rebuild the cache here; that belongs in the collect lane (canada_breadth)."""
+    cache = config.data_dir() / "canada_breadth" / "_closes_cache.parquet"
+    if not cache.exists():
+        log.error(
+            "HKCA-13: canada_breadth/_closes_cache.parquet is MISSING -- "
+            "sector drill-down pages will ship with empty stock-level cards.  "
+            "Fix: run scripts/collect.py --only canada_breadth to rebuild it."
+        )
+        return {
+            "en": "Sector drill-down cache (MISSING -- run canada_breadth collector)",
+            "zh": "板块下钻缓存（缺失 -- 请运行 canada_breadth 收集器）",
+            "status": "MISSING",
+            "rows": 0,
+            "last": "—",
+        }
+    try:
+        df = pd.read_parquet(cache)
+    except Exception as exc:  # noqa: BLE001
+        log.error("HKCA-13: canada_breadth/_closes_cache.parquet unreadable: %s", exc)
+        return {
+            "en": "Sector drill-down cache (UNREADABLE -- see build log)",
+            "zh": "板块下钻缓存（不可读 -- 查看构建日志）",
+            "status": "ERROR",
+            "rows": 0,
+            "last": "—",
+        }
+    if df.empty or df.shape[1] == 0:
+        log.error(
+            "HKCA-13: canada_breadth/_closes_cache.parquet exists but is empty "
+            "(%s) -- sector drill-down pages will ship hollow.  "
+            "Fix: run scripts/collect.py --only canada_breadth to rebuild it.",
+            cache,
+        )
+        return {
+            "en": "Sector drill-down cache (EMPTY -- run canada_breadth collector)",
+            "zh": "板块下钻缓存（为空 -- 请运行 canada_breadth 收集器）",
+            "status": "EMPTY",
+            "rows": 0,
+            "last": "—",
+        }
+    last_date = df.index.max().date() if hasattr(df.index, "max") else "?"
+    n_names = df.shape[1]
+    log.info("canada_breadth/_closes_cache.parquet: %d names, last=%s", n_names, last_date)
+    return None   # None = healthy; no warning row needed
+
+
 def _health_rows() -> list[dict]:
     sources = store.read_status().get("sources", {})
     labels = {"canada_prices": ("Prices / sectors", "价格 / 板块"),
@@ -162,6 +214,10 @@ def _health_rows() -> list[dict]:
             continue
         rows.append({"en": en, "zh": zh, "status": s.get("status", "?"),
                      "rows": s.get("rows", 0), "last": s.get("last_date") or "—"})
+    # HKCA-13: make a missing/empty _closes_cache.parquet visible in the health table.
+    cache_warn = _check_closes_cache()
+    if cache_warn is not None:
+        rows.append(cache_warn)
     return rows
 
 
@@ -297,7 +353,7 @@ def _build_history(env, latest: dict, generated: str) -> None:
         latest=latest, generated_utc=generated,
         chart_regime=_chart_regime(px, hist) if not px.empty else "", chart_axes=_chart_axes(hist),
         lifespan_rows=rows)
-    (Path(config.load()["storage"]["site_dir"]) / "canada_history.html").write_text(html)
+    write_page(Path(config.load()["storage"]["site_dir"]) / "canada_history.html", html)
     log.info("wrote canada_history.html (%d regime periods)", trans.get("n_segments", 0))
 
 
@@ -345,10 +401,117 @@ def _build_sector_pages(env) -> int:
                 continue
             s["holdings"].append({"ticker": tick, "ladder": h["ladder"], "cycle": h["cycle"],
                                   "mtf_json": json.dumps(h["mtf"])})
-        (outdir / f"{fund}.html").write_text(env.get_template("canada_sector.html.j2").render(s=s))
+        write_page(outdir / f"{fund}.html", env.get_template("canada_sector.html.j2").render(s=s))
         built += 1
     log.info("wrote %d canada sector pages", built)
     return built
+
+
+def _board_asof(latest: dict) -> str:
+    """The board's own price date (the CA close the board was ranked on). Prefer the
+    engine's `latest.date`; fall back to the S&P/TSX benchmark's last close date."""
+    d = latest.get("date")
+    if d:
+        return str(d)
+    df = store.read("canada", config.load()["canada"]["yahoo"]["market_index"])
+    if df is not None and not df.empty:
+        return str(df.index.max().date())
+    return str(pd.Timestamp.utcnow().date())
+
+
+def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
+    """Log today's ranked Branch-B board to the standout-board forward ledger and grade
+    matured calls (masterplan §5.4). Returns health rows (empty when healthy).
+
+    Fail-open-LOUD: any failure yields a visible health row rather than a silent pass —
+    the board's scoreboard must never fail invisibly."""
+    rows = (setups or {}).get("buy") or []
+    if not rows:
+        return [{"en": "Board ledger (no ranked names to log)", "zh": "榜单账本（无可记录个股）",
+                 "status": "SKIP", "rows": 0, "last": "—"}]
+    asof = _board_asof(latest)
+    from scripts.build_canada_library import _ENTRY_STATE
+    calls = []
+    for r in rows:
+        es = r.get("entry_signal") or {}
+        sig = r.get("signal") or {}
+        calls.append({
+            "ticker": r.get("ticker"),
+            "group": r.get("group"),                       # 'entry_open' | 'setting_up'
+            "edge_z": r.get("alpha"),                      # momentum SCREEN z (accruing)
+            "gate_tier": sig.get("tier") or (r.get("conviction") or {}).get("gate_tier"),
+            "align_tier": r.get("align_tier"),
+            "entry_state": _ENTRY_STATE.get(es.get("status")),
+            "close_asof": r.get("price"),
+        })
+    health: list[dict] = []
+    try:
+        from engine import board_ledger
+        n = board_ledger.append_board(calls, market="CA", asof=asof)
+        if n <= 0:
+            health.append({"en": "Board ledger (append wrote 0 rows — see build log)",
+                           "zh": "榜单账本（写入 0 行 — 查看构建日志）",
+                           "status": "ERROR", "rows": 0, "last": asof})
+            log.error("CA board ledger: append_board wrote 0 rows for %s (%d calls)",
+                      asof, len(calls))
+        else:
+            log.info("CA board ledger: logged %d ranked names for %s (ledger=%d)",
+                     len(calls), asof, n)
+        # nightly grade of matured calls — 'accruing' until forward returns exist. The
+        # track-record PANEL (W6, §7.4) ships in 'accruing' state from day one, so ALWAYS
+        # attach the scorecard (it self-reports status='accruing' with first_read_est until
+        # the MIN_IC_DATES gate is met ≈ 2026-08-24). This is the desk's accountability
+        # centerpiece — it must render honestly-empty, never be absent.
+        setups["board_track"] = board_ledger.scorecard("CA")
+        g = board_ledger.grade("CA")
+        if g.get("available"):
+            log.info("CA board ledger: grade n_calls=%s n_graded=%s n_suspended=%s",
+                     g.get("n_calls"), g.get("n_graded"), g.get("n_suspended"))
+    except Exception as e:  # noqa: BLE001 — fail-open-LOUD (health row + log)
+        health.append({"en": "Board ledger (FAILED — see build log)",
+                       "zh": "榜单账本（失败 — 查看构建日志）",
+                       "status": "ERROR", "rows": 0, "last": asof})
+        log.error("CA board ledger failed (%s)", e)
+    return health
+
+
+def _tailwind_freshness_gate(setups: dict | None, latest: dict) -> dict | None:
+    """HARD freshness gate on the CA basket-tailwind axis (masterplan §2 principle 6):
+    the tailwind panel (canada_search closes) must be no more than 3 trading days
+    staler than the board's own price date. When it is, SUPPRESS the tailwind axis on
+    every card and surface a banner. Returns a health row when suppressed, else None.
+
+    Sets setups['tailwind_suppressed'] + setups['tailwind_stale_days'] so the template
+    can hide the tailwind axis + show the on-page banner."""
+    if not setups:
+        return None
+    board_date = pd.Timestamp(_board_asof(latest))
+    cp = config.data_dir() / "canada_search" / "closes.parquet"
+    if not cp.exists():
+        setups["tailwind_suppressed"] = True
+        setups["tailwind_stale_days"] = None
+        return {"en": "Basket-tailwind axis SUPPRESSED (canada_search panel missing)",
+                "zh": "篮子顺风轴已抑制（canada_search 面板缺失）",
+                "status": "SUPPRESSED", "rows": 0, "last": "—"}
+    try:
+        idx = pd.read_parquet(cp, columns=[]).index
+        tw_date = pd.Timestamp(idx.max())
+    except Exception as e:  # noqa: BLE001
+        log.warning("CA tailwind freshness: panel unreadable (%s)", e)
+        return None
+    # trading-day staleness ≈ business days between the two dates (calendar-day / weekend
+    # aware; holidays make this a slight over-count, which fails SAFE — suppress sooner).
+    stale_td = int(pd.bdate_range(tw_date, board_date).size - 1) if tw_date < board_date else 0
+    setups["tailwind_stale_days"] = stale_td
+    if stale_td > 3:
+        setups["tailwind_suppressed"] = True
+        log.error("CA tailwind freshness: panel %s is %d trading days staler than board %s "
+                  "— tailwind axis SUPPRESSED", tw_date.date(), stale_td, board_date.date())
+        return {"en": f"Basket-tailwind axis SUPPRESSED — panel {stale_td} trading days stale",
+                "zh": f"篮子顺风轴已抑制 — 面板落后 {stale_td} 个交易日",
+                "status": "SUPPRESSED", "rows": 0, "last": str(tw_date.date())}
+    setups["tailwind_suppressed"] = False
+    return None
 
 
 # ---- quad meanings (Canada framing) -------------------------------------------
@@ -464,11 +627,38 @@ def main() -> int:
         vm["setups"] = setups
 
         # enrich the alpha-led setups shortlist into "Standout individual stocks" cards
+        # AND apply the BRANCH-B ripe-list contract order (C7 verdict: all momentum
+        # trials ACCRUE → composite suppressed, board = grouped ripe-list, rank pill).
         try:
             from scripts.build_canada_library import compute_canada_standouts
-            vm["setups"] = compute_canada_standouts(setups)
+            vm["setups"] = compute_canada_standouts(setups, overlay=latest.get("overlay") or {})
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("canada standouts enrich failed (%s); using raw setups", e)
+
+        # ── BRANCH-B board ledger (masterplan §5.4) + hard freshness gate (§2.6) ──
+        # This is the board's SCOREBOARD: log the ranked board each render, grade it
+        # nightly. Fail-open-LOUD: a ledger failure surfaces a health row, never a crash.
+        vm.setdefault("board_health", [])
+        _cb = _canada_board_ledger(vm.get("setups"), latest)
+        if _cb:
+            vm["board_health"].extend(_cb)
+        _tw = _tailwind_freshness_gate(vm.get("setups"), latest)
+        if _tw:
+            vm["board_health"].append(_tw)
+        # Stocks-mode health banner (deliverable 5): the shared source health (which
+        # already carries the HKCA-13 breadth close-cache MISSING flag from _health_rows)
+        # PLUS the Branch-B board-ledger + tailwind-suppression rows. Only the DEGRADED
+        # rows surface as a banner so a clean board shows nothing.
+        _src_degraded = [h for h in (vm.get("health") or [])
+                         if str(h.get("status", "")).upper() not in ("OK", "FRESH", "HEALTHY", "?")]
+        vm["stocks_health"] = _src_degraded + vm["board_health"]
+        # AI-brief doorway (W6 §7.5) — PRESENCE-GUARDED: only expose the link if a Canada
+        # AI-brief page actually exists in the site output. None ships today, so the
+        # template's {% if ca_aibrief_href %} keeps it hidden; the day a CA brief lands
+        # (canada_aibrief.html / aibrief_canada.html) this lights up automatically.
+        vm["ca_aibrief_href"] = next(
+            (n for n in ("canada_aibrief.html", "aibrief_canada.html")
+             if (site / n).exists()), None)
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
@@ -479,7 +669,7 @@ def main() -> int:
         # flag (macro / stocks) that selects which sections show. Mirrors China / HK.
         tmpl = env.get_template("canada.html.j2")
         html = tmpl.render(**vm, mode="macro")
-        (site / "canada.html").write_text(html)
+        write_page(site / "canada.html", html)
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a
             if src.exists():
@@ -488,7 +678,7 @@ def main() -> int:
 
         # TSX Stock Dashboard — same VM, the standout-names half (show-more card strip).
         html_st = tmpl.render(**vm, mode="stocks")
-        (site / "canada_stocks.html").write_text(html_st)
+        write_page(site / "canada_stocks.html", html_st)
         log.info("wrote %s/canada_stocks.html (%d KB)", site, len(html_st) // 1024)
         # landing-hub card stat (presence-gated by the .html existing)
         _su = vm.get("setups") or {}
@@ -506,7 +696,7 @@ def main() -> int:
             stock_html = env.get_template("canada_stock.html.j2").render(
                 state_display_json=json.dumps(STATE_DISPLAY, default=str),
                 generated_utc=vm["built"])
-            (site / "canada_stock.html").write_text(stock_html)
+            write_page(site / "canada_stock.html", stock_html)
             log.info("wrote %s/canada_stock.html + canadastockdata/", site)
         except Exception as e:  # noqa: BLE001 — search is additive, never fatal
             log.error("canada stock search render failed (%s); skipping", e)

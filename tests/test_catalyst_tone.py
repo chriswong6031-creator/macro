@@ -30,6 +30,19 @@ def test_extract_json():
     assert ct._extract_json('[1, 2, 3]') is None  # a list is not a record
 
 
+def test_extract_json_repairs_common_llm_slips():
+    # a stray/mismatched closing bracket after a scalar (the real BTC-brief failure):
+    # a spurious "]" where the model had no open array. json.loads chokes; repair recovers.
+    assert ct._extract_json('{"a": "x"], "b": [1, 2]}') == {"a": "x", "b": [1, 2]}
+    # a trailing comma before a closer
+    assert ct._extract_json('{"a": 1, "b": [1, 2,],}') == {"a": 1, "b": [1, 2]}
+    # a truncated reply (brackets left open) is closed off
+    assert ct._extract_json('{"a": 1, "b": [1, 2') == {"a": 1, "b": [1, 2]}
+    # a bracket that is part of STRING content must never be touched by the repair
+    assert ct._extract_json('{"a": "buy the dip [not advice]", "b": 2}') == \
+        {"a": "buy the dip [not advice]", "b": 2}
+
+
 def test_validate_clamps_and_enums():
     v = ct._validate({"tone_score": 5, "risk_delta": -9,
                       "guidance_direction": "TIGHTENING", "shock_reversible": "bogus",

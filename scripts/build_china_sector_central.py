@@ -22,6 +22,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_china_sector_central")
@@ -74,7 +75,7 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
         env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     html = env.get_template("sector_central_china.html.j2").render()
-    (site / "sector_central_china.html").write_text(html, encoding="utf-8")
+    write_page(site / "sector_central_china.html", html, encoding="utf-8")
 
     # the page embeds the cycle-map overlay → ensure its shared assets are present. The China
     # cycles DATA (sector_cycles_china_data.js) is written by build_china_sector_cycles, which

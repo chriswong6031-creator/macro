@@ -191,7 +191,110 @@
 </div>
   {# validated sleeve-size chip (rendered client-side; empty for markets without one) #}
   <div id="sleeve-chip"></div>
-  <section id="actnow-section" style="margin-top:6px">
+{% if ignition_json is defined -%}
+{# W5 sector-ignition + provenance/freshness + risk-radar strip (HK / Canada ONLY). GUARDED on ignition_json: china / us / intl builders never pass it, so their rendered pages stay byte-identical. Additive-conditional per the shared-partial pact. #}
+  <style>
+    .ign-hdr { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:10px 0 2px; font-size:12.5px; }
+    .ign-hdr .ign-asof { color:var(--muted); font-variant-numeric:tabular-nums; }
+    .ign-stale { font-size:11px; font-weight:700; padding:1px 8px; border-radius:7px;
+      background:rgba(250,204,21,.14); border:1px solid rgba(250,204,21,.45); color:var(--warn); }
+    .ign-radar { display:none; align-items:center; gap:9px; font-size:12.5px; padding:8px 12px;
+      border-radius:9px; margin:8px 0 4px; border:1px solid var(--line); background:var(--panel2); }
+    .ign-radar.on { display:flex; }
+    .ign-radar .rd-ic { font-size:15px; }
+    .ign-radar.elevated, .ign-radar.risk-off { background:rgba(248,113,113,.12); border-color:rgba(248,113,113,.4); }
+    .ign-radar b { font-weight:660; }
+    .ign-strip { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 12px; margin:6px 0 6px; }
+    .ign-note { font-size:11px; color:var(--muted); font-style:italic; margin:2px 0 9px; line-height:1.45; max-width:96ch; }
+    .ign-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; }
+    .ign-card { border:1px solid var(--line); border-left:3px solid var(--ic,#888); border-radius:9px; padding:9px 10px; background:var(--panel2); }
+    .ign-card .ic-top { display:flex; align-items:baseline; gap:8px; }
+    .ign-card .ic-rk { font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .ign-card .ic-nm { font-weight:640; font-size:12.5px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ign-card .ic-sc { font-size:16px; font-weight:720; font-variant-numeric:tabular-nums; }
+    .ign-state { font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:1px 6px; border-radius:6px; white-space:nowrap; }
+    .ign-state.igniting { color:var(--up); border:1px solid var(--up); }
+    .ign-state.running  { color:var(--warn); border:1px solid var(--warn); }
+    .ign-state.fading, .ign-state.idle { color:var(--muted); border:1px solid var(--line); }
+    .ign-chips { display:flex; flex-wrap:wrap; gap:3px 5px; margin-top:6px; }
+    .ign-chip { font-size:10px; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:5px; padding:0 5px; font-variant-numeric:tabular-nums; }
+    .ign-chip.on { color:var(--up); border-color:var(--up); }
+    .ign-prov { font-size:10px; color:var(--muted); margin-top:5px; opacity:.85; }
+    @media (max-width:680px){ .ign-cards { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; } .ign-card { padding:7px 8px; } }
+  </style>
+  <section id="ignition-section" style="margin-top:8px">
+    <div class="ign-hdr">
+      <h2 style="margin:0"><span class="idx">★</span>🔥 {{ t('Sector ignition', '板块点火') }}
+        <span class="sect-tag">{{ t('turn evidence · not trailing strength', '拐点证据 · 非追涨强度') }}</span></h2>
+      <span class="ign-asof">{{ t('basket prices as of', '篮子价格截至') }} <b id="ign-asof">—</b></span>
+      <span class="ign-stale" id="ign-stale" style="display:none"></span>
+    </div>
+    <div class="ign-radar" id="ign-radar"><span class="rd-ic">⚠️</span><span id="ign-radar-txt"></span></div>
+    <p class="ign-note">{{ t(
+      'Baskets ranked by TURN evidence — fresh breadth thrust (members newly crossing their 20-day line), relative-strength curvature (is RS turning up, not just high), and a weekly higher-timeframe confirm. Display-only, forward-graded, NOT validated: this is a descriptive read, not a buy signal, and its forward value is being scored in public. Narrow market — ignition is context, not a ranker.',
+      '篮子按拐点证据排名 — 新鲜广度推力（成分股刚上穿 20 日线）、相对强度曲率（RS 是否正在向上拐，而非仅仅偏高），以及周线高周期确认。仅供展示、前瞻打分、未经验证：这是描述性读数而非买入信号，其前瞻价值正在公开打分中。窄市场 — 点火为参考背景，非排序依据。') }}</p>
+    <p class="ign-note" id="ign-scoreboard"></p>
+    <div class="ign-strip"><div class="ign-cards" id="ign-cards"></div></div>
+  </section>
+  <script>
+  (function(){
+    var IGN = {{ ignition_json|safe }};
+    var IGN_PROV = {{ provenance_json|default('{}')|safe }};
+    var IGN_FRESH = {{ freshness_json|default('{}')|safe }};
+    var IGN_RADAR = {{ radar_json|default('{}')|safe }};
+    var LANGof = function(){ return document.documentElement.getAttribute('data-lang')||'en'; };
+    function nm(it){ return (LANGof()==='zh' && it.name_zh) ? it.name_zh : (it.name||it.id); }
+    function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+    var STLAB = { igniting:['Igniting','点火'], running:['Running','运行'], fading:['Fading','退潮'], idle:['Idle','静止'] };
+    function render(){
+      var zh = LANGof()==='zh';
+      // as-of + freshness gate
+      var asofEl=document.getElementById('ign-asof'); if(asofEl) asofEl.textContent = IGN.as_of || (IGN_FRESH.as_of||'—');
+      var st=document.getElementById('ign-stale');
+      if(st){ if(IGN_FRESH && IGN_FRESH.stale){ st.style.display='inline-block';
+          st.textContent = (zh?'篮子价格已过期 ':'basket prices ')+ (IGN_FRESH.trading_days_old!=null?IGN_FRESH.trading_days_old:'?') +(zh?' 个交易日':' trading days stale'); }
+        else st.style.display='none'; }
+      // risk-radar drawdown banner (presence-guarded)
+      var rd=document.getElementById('ign-radar'); var rdt=document.getElementById('ign-radar-txt');
+      if(rd && IGN_RADAR && IGN_RADAR.state && ['elevated','risk-off','caution','watch'].indexOf(IGN_RADAR.state)>=0){
+        rd.className='ign-radar on '+IGN_RADAR.state;
+        var dd = (IGN_RADAR.drawdown_prob!=null)? ' · '+(zh?'回撤概率':'drawdown odds')+' '+Math.round(IGN_RADAR.drawdown_prob*100)+'%' : '';
+        var scare = IGN_RADAR.dominant_scare? ' · '+esc(IGN_RADAR.dominant_scare):'';
+        rdt.innerHTML = '<b>'+(zh?'风险雷达':'Risk radar')+': '+esc(IGN_RADAR.state)+'</b>'+esc(scare)+dd+' — '+(zh?'展示性回撤风险背景':'display-only drawdown-risk context');
+      } else if(rd){ rd.className='ign-radar'; }
+      // scoreboard accruing line
+      var sb=document.getElementById('ign-scoreboard');
+      if(sb){ var sc=IGN.scoreboard||{}; var ng=sc.n_graded||0;
+        sb.textContent = ng>0 ? (zh?('评分板：已评 '+ng+' 项 · 4周命中精度 '+(sc.alert_precision_4w!=null?Math.round(sc.alert_precision_4w*100)+'%':'—'))
+                                   :('Scoreboard: '+ng+' graded · 4w alert precision '+(sc.alert_precision_4w!=null?Math.round(sc.alert_precision_4w*100)+'%':'—')))
+                              : (zh?'评分板积累中 — 首次读数约 2026 年 8 月（4 周窗口成熟）':'Scoreboard accruing — first read ~Aug 2026 (4-week window matures).'); }
+      // cards
+      var el=document.getElementById('ign-cards'); if(!el) return;
+      var PAL=['#4ade80','#facc15','#5aa7ff','#fb923c','#a78bfa','#2dd4bf','#f472b6','#38bdf8'];
+      var items=(IGN.items||[]).filter(function(i){return i.ignition_score!=null;});
+      if(!items.length){ el.innerHTML='<p class="ign-note">'+(zh?'暂无点火读数（数据不足）。':'No ignition reads yet (insufficient data).')+'</p>'; return; }
+      el.innerHTML = items.map(function(it,i){
+        var c=it.components||{}; var color=PAL[i%PAL.length];
+        var stl=STLAB[it.state]||[it.state,it.state]; var stt=zh?stl[1]:stl[0];
+        var chips=[];
+        if(c.breadth_thrust!=null) chips.push('<span class="ign-chip">'+(zh?'广度':'thrust')+' '+Math.round(c.breadth_thrust*100)+'% ('+(c.breadth_n?c.breadth_n[0]+'/'+c.breadth_n[1]:'')+')</span>');
+        if(c.rs_slope_change!=null) chips.push('<span class="ign-chip">RS↗ '+c.rs_slope_change.toFixed(2)+'</span>');
+        if(c.mtf_confirm!=null) chips.push('<span class="ign-chip">'+(zh?'周线':'wk')+' '+(c.mtf_ok?(zh?'确认':'ok'):(zh?'下破':'down'))+'</span>');
+        if(c.commodity_flip) chips.push('<span class="ign-chip on">'+(zh?'油价翻多':'oil flip')+'</span>');
+        var prov=IGN_PROV.by_id&&IGN_PROV.by_id[it.id]; var pl='';
+        if(prov&&prov.curated){ pl=(zh?'整理于 ':'curated ')+esc(prov.curated)+(zh?' — 描述性，非样本外':' — descriptive, not out-of-sample'); }
+        return '<div class="ign-card" style="--ic:'+color+'">'
+          +'<div class="ic-top"><span class="ic-rk">#'+(i+1)+'</span><span class="ic-nm">'+esc(nm(it))+'</span><span class="ic-sc">'+it.ignition_score.toFixed(2)+'</span></div>'
+          +'<div style="margin-top:4px"><span class="ign-state '+it.state+'">'+esc(stt)+'</span></div>'
+          +'<div class="ign-chips">'+chips.join('')+'</div>'
+          + (pl?'<div class="ign-prov">'+pl+'</div>':'') +'</div>';
+      }).join('');
+    }
+    if(document.readyState!=='loading') render(); else document.addEventListener('DOMContentLoaded',render);
+    document.addEventListener('langchange',render);
+  })();
+  </script>
+{% endif %}  <section id="actnow-section" style="margin-top:6px">
     <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
       <span class="sect-tag">{{ t('buy now · wait for a pullback · reduce / avoid', '立即买入 · 等待回调 · 减仓回避') }}</span></h2>
     <p class="sub">{{ t(

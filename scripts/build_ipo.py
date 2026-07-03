@@ -24,6 +24,7 @@ from engine import ipo_hk
 from engine import ipo_lockup as il
 from engine import ipo_radar as ir
 from lib import config
+from lib.pages import write_page
 from scripts.build_vector import _html, _dx, _plot_y, PLOT, C
 
 # bilingual maps (engine stays language-neutral; the build localises)
@@ -345,7 +346,7 @@ def build() -> str:
         env.globals.update(td=lambda en: en, tr=lambda en: en)
     html = env.get_template("ipo.html.j2").render(**vm, C=C)
     out = config.ROOT / "site" / "ipo.html"
-    out.write_text(html)
+    write_page(out, html)
 
     # landing-hub snapshot
     snap_out = {

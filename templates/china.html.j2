@@ -13,7 +13,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% if mode == 'stocks' %}{{ t('China A-Share Stock Dashboard', '中国A股个股看板') }}{% else %}{{ t('China A-Share Regime', '中国A股周期') }}{% endif %} — {{ latest.date }}</title>
-{% if mode == 'stocks' %}{% set seo_title = 'China A-Share Stock Dashboard — Signals and Sectors | Mastermind' %}{% set seo_desc = 'China A-share single-stock signals, sector rotation and regime context — reversal and low-vol reads on the mainland market, updated daily.' %}{% set seo_path = 'china_stocks.html' %}{% else %}{% set seo_title = 'China A-Share Market Dashboard — Regime, Sectors and Flows | Mastermind' %}{% set seo_desc = 'Track the China A-share market regime — sector rotation, capital-flow velocity, drawdown risk and cycle position on the mainland market.' %}{% set seo_path = 'china.html' %}{% endif %}
+{% if mode == 'stocks' %}{% set seo_title = 'China A-Share Stock Dashboard — Washout · Base · Fresh Turn | Mastermind' %}{% set seo_desc = 'China A-share washout-to-base entry board: names forming a durable low, with fresh 3D/2D confluence turns (T1–T4 cascade). Ranked by buy-readiness, updated daily.' %}{% set seo_path = 'china_stocks.html' %}{% else %}{% set seo_title = 'China A-Share Market Dashboard — Regime, Sectors and Flows | Mastermind' %}{% set seo_desc = 'Track the China A-share market regime — sector rotation, capital-flow velocity, drawdown risk and cycle position on the mainland market.' %}{% set seo_path = 'china.html' %}{% endif %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
@@ -130,6 +130,11 @@
   .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 20%,transparent)}
   .nb-ext { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap;
             background:color-mix(in srgb,var(--orange) 15%,transparent); color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 42%,transparent); }
+  /* W0.1 HOLD chip — basing state after confluence anchor (display-only, mirrors dashboard.html.j2) */
+  .nb-hold{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;border:1px solid var(--line);color:var(--muted)}
+  .nb-hold.hold-intact{color:var(--text);border-color:color-mix(in srgb,var(--text) 30%,transparent)}
+  .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 36%,transparent)}
+  .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 36%,transparent)}
   .nb-q { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap; border:1px solid var(--line); }
   .nb-q-strong { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,transparent); }
   .nb-q-avg { color:var(--muted); }
@@ -218,9 +223,49 @@
   .nb-ax .axt { height:3px; border-radius:2px; background:var(--line); margin-top:1px; overflow:hidden; }
   .nb-ax .axf { height:100%; background:var(--g-cold); border-radius:2px; }
   .nb-ax.ax-na .axf { background:transparent; }
-  .nb-cau { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
-  .nb-cau span { font-size:8.5px; font-weight:700; padding:0 4px; border-radius:6px;
-                 color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  /* ---- Caution icon + popover (replaces old pill-row; ported from dashboard #1061) ---- */
+  .nb-cau { position:relative; display:inline-flex; margin-top:4px; }
+  .nb-cau-btn {
+    display:inline-flex; align-items:center; gap:3px;
+    padding:0 5px 0 4px; height:18px; border-radius:9px; border:none; cursor:pointer;
+    font-size:9px; font-weight:700; line-height:1;
+    color:var(--warn); background:color-mix(in srgb,var(--warn) 14%,var(--panel));
+    text-decoration:none;
+    animation:nb-cau-pulse 2.5s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) { .nb-cau-btn { animation:none; } }
+  @keyframes nb-cau-pulse {
+    0%, 100% { opacity:1; }
+    50%       { opacity:.55; }
+  }
+  .nb-cau-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:13px; height:13px; border-radius:50%; font-size:8px; font-weight:800;
+    background:var(--warn); color:var(--panel);
+  }
+  .nb-cau-pop {
+    display:none; position:absolute; z-index:120; bottom:calc(100% + 5px); left:0;
+    min-width:180px; max-width:min(260px, calc(100vw - 24px));
+    padding:7px 9px; border-radius:8px;
+    background:var(--panel); border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line));
+    box-shadow:0 4px 16px rgba(0,0,0,.18);
+    font-size:10px; font-weight:600; line-height:1.45; color:var(--warn);
+    pointer-events:none;
+  }
+  .nb-cau-pop .cau-row { display:block; padding:2px 0; }
+  .nb-cau-pop .cau-row + .cau-row { border-top:1px solid color-mix(in srgb,var(--warn) 20%,var(--line)); padding-top:4px; margin-top:2px; }
+  /* Show on hover/focus (desktop) */
+  .nb-cau:hover .nb-cau-pop,
+  .nb-cau:focus-within .nb-cau-pop,
+  .nb-cau.nb-cau-open .nb-cau-pop { display:block; pointer-events:auto; }
+  /* Flip to below if near top of viewport (added by JS) */
+  .nb-cau.pop-below .nb-cau-pop { bottom:auto; top:calc(100% + 5px); }
+  /* Clamp to right edge */
+  .nb-cau.pop-right .nb-cau-pop { left:auto; right:0; }
+  /* The card clips overflow; release it while the popover is showing or the top of a
+     tall popover is cut off at the card edge */
+  a.nbcard:has(.nb-cau:hover), a.nbcard:has(.nb-cau:focus-within),
+  a.nbcard:has(.nb-cau-open) { overflow:visible; }
   /* (.nb-tier removed — the trust tier is now shown once in the shared .nb-legend) */
   /* volatility black hole + honesty notes (China overhaul) */
   .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
@@ -486,7 +531,7 @@
       <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
       {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span class="chip c-muted">{{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{% endif %}
     </div>
-    <p class="note" style="margin:8px 0 0;text-transform:none">{{ t('Where to look for A-shares — the validated mean-reversion setups, sector relative strength and residual-alpha context, filtered by the current macro regime.', '在哪里找 A 股 —— 已验证的均值回归形态、板块相对强度与残差阿尔法背景，按当前宏观周期过滤。') }}
+    <p class="note" style="margin:8px 0 0;text-transform:none">{{ t('Where to look for A-share entries — names that have washed out, formed a base, and are showing a fresh 3D/2D momentum turn (T1–T4 cascade). Rank is buy-readiness; washout and COILED context provide the setup confirmation.', '在哪里找 A 股入场 —— 经历洗盘、完成筑底、出现3日/2日动量新转向（T1–T4 级联）的个股。排序代表买入就绪度；洗盘与蓄势背景提供形态确认。') }}
       <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a></p>
   </div>
   {% endif %}
@@ -1197,10 +1242,10 @@
   {% if setups and setups.buy %}
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
-      <span class="note" style="text-transform:none">· {{ t('cycle-aligned bottoming · weekly + 3-day + daily turning up', '周期共振筑底 · 周线＋3日＋日线同向上行') }}</span>
-      {{ help("The actionable per-stock shortlist — the China parallel of the US 'Standout individual stocks' card strip. This is a MULTI-TIMEFRAME BOTTOMING-ALIGNMENT screen, not a deep-dip catch: a name is shown only when its <b>weekly</b> momentum is NOT still falling (basing, turning up, or already rising — never mid weekly bear leg), its <b>3-day</b> is at or nearing a bullish MACD cross, and its <b>daily</b> has just crossed up or is about to (1-2 bars) — or is already rising but not over-extended. A still-falling weekly name (a falling knife) is excluded by design even if its trailing relative strength is strong. Ranked by <b>alignment quality</b> (weekly-heaviest), with the A-share reversal / relative-strength leg only as a tiebreaker. A 🟡 <b>near-aligned</b> tag marks a backfill name (weekly OK + one lower timeframe turning, but not all three confirmed) shown only when too few names are fully aligned — treat it as a watch, not a confirmed entry. Context to size and confirm — not a buy list.", "可操作的个股精选名单 —— 美国“表现突出的个股”卡片的中国版。这是一套<b>多周期共振筑底</b>筛选，而非深跌抄底：仅当个股的<b>周线</b>动量不再下行（筑底、转向上行、或已上行——绝不处于周线空头段），<b>3日线</b>处于或临近看多 MACD 交叉，且<b>日线</b>刚刚上穿或即将上穿（1-2 根 K 线）——或已上行但未过度延伸时，才会显示。仍在下行的周线个股（接飞刀）即便趋势强度很高也按规则剔除。按<b>共振质量</b>排序（周线权重最高），A 股反转/相对强度仅作并列时的次级排序。🟡 <b>临近共振</b>标记表示补位个股（周线合格＋某一较低周期转向，但三周期尚未全部确认），仅在充分共振的名称过少时显示——视为观察项而非确认入场。用于定仓与确认的背景 —— 而非买入清单。") }}
+      <span class="note" style="text-transform:none">· {{ t('washout → base → fresh turn · T1–T4 entry cascade', '洗盘 → 筑底 → 新转向 · T1–T4 入场级联') }}</span>
+      {{ help("A washout-to-base entry board — names that have been oversold, have formed a durable low, and are showing a <b>fresh 3D/2D momentum turn</b> (MACD-RSI × StochRSI confluence, graded T1 master confirmation → T4 earliest signal). The admission test is a <b>fresh cross at a low, not an extended breakout</b>. The 🌊 2W washout chip marks names where the 2-week StochRSI has just reclaimed the 20 line — a higher-timeframe washout turn that makes the base more durable. The ⚡ Coiled chip marks names in a compressed, cohort-washed base. <b>Three honest caveats:</b> (1) The validated quarterly within-sector <b>reversal basket edge is a separate product</b> — it is not what drives this board's ranking. (2) Board order is driven by cascade tier + washout/COILED context; the displayed 0–100 score is <b>buy-readiness, not a conviction-edge probability</b>. (3) Forward grades are <b>accruing</b> (board_track below) and will be published when picks mature (~21 sessions). Context to size and confirm — not a buy list.", "洗盘到筑底的入场看板 —— 超卖、已形成耐久低点、并出现<b>3日/2日动量新转向</b>（MACD-RSI × StochRSI 共振，评级 T1 主确认 → T4 最早信号）的个股。准入标准是<b>低位新交叉，而非延伸突破</b>。🌊 2周洗盘标记代表2周 StochRSI 刚从超卖区上穿20线 —— 高周期洗盘转向，令底部更耐久。⚡ 蓄势标记代表处于压缩、群体洗净底部的个股。<b>三条诚实说明：</b>（1）已验证的季度板块内<b>反转篮子优势是独立产品</b> —— 它并非驱动本看板排序的因素。（2）排序由级联层级＋洗盘/蓄势背景驱动；显示的0–100评分是<b>买入就绪度，而非信念优势概率</b>。（3）前瞻成绩正在<b>累积中</b>（见下方榜单成绩单），将在成熟后（约21个交易日）公布。用于定仓与确认的背景 —— 而非买入清单。") }}
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Names whose weekly, 3-day and daily cycles are aligned to the upside — weekly not still falling, 3-day nearing a bullish cross, daily just crossed or about to. Ranked by alignment quality, weekly-heaviest. A per-card badge flags the MACD-RSI × StochRSI confluence tier (T1 master → T4 earliest) when one has fired — a confirmation read, not a separate filter. Each card carries the unified Conviction profile — four transparent axes (selection / entry / tailwind / quality) and one honest verdict; the cycle state caps the verdict, so a downtrend never reads “Buy”. A 🟡 near-aligned card is an unconfirmed backfill. A research shortlist to size and confirm, not a buy list.', '周线、3日与日线周期同向上行的个股 —— 周线不再下行、3日临近看多交叉、日线刚上穿或即将上穿。按共振质量排序，周线权重最高。卡片徽标在 MACD-RSI × StochRSI 共振触发时标注其层级（T1 主确认 → T4 最早）—— 仅为确认读数，而非额外过滤。每张卡片附带统一确信度画像 —— 四条透明维度（选股／入场／顺风／质量）与一个诚实结论；周期状态会封顶结论，下行趋势永不显示“买入”。🟡 临近共振卡片为未确认的补位项。用于研究、定仓与确认的名单，而非买入清单。') }}</p>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Names that have washed out, formed a base, and fired a fresh 3D/2D turn — MACD-RSI × StochRSI confluence tier T1 (master) through T4 (earliest). Ranked by cascade tier + washout/COILED context (not the displayed score). The 🌊 2W washout chip and ⚡ Coiled chip are rank bonuses that reward earlier, more durable setups. The displayed 0–100 score is buy-readiness (how set up the name is to rise from here), not a rank input. Three caveats on the board: (i) the validated A-share reversal edge is a separate quarterly basket product, not this board\'s ranking; (ii) forward grades are accruing and will publish when mature; (iii) a high score on a name whose entry gauge reads “hold” or “extended” means the setup looks good but entry timing is not yet there — size and confirm, not a buy list.', '经历洗盘、完成筑底、触发3日/2日新转向的个股 —— MACD-RSI × StochRSI 共振级别 T1（主确认）至 T4（最早信号）。按级联层级＋洗盘/蓄势背景排序（而非显示评分）。🌊 2周洗盘与⚡ 蓄势标记是排序加分项，奖励更早、更耐久的形态。显示的0–100评分是买入就绪度（该股从当前位置上行的准备程度），并非排序输入。关于本看板的三点说明：（i）已验证的A股反转优势是独立的季度篮子产品，并非本看板的排序依据；（ii）前瞻成绩正在累积，成熟后将公布；（iii）入场量表显示”观望”或”过热”时即便高分也表示形态良好但入场时机尚未到来 —— 用于定仓与确认，而非买入清单。') }}</p>
     {% if setups.qvix_regime %}{% set q = setups.qvix_regime %}
     <div style="margin:6px 0 9px;padding:7px 11px;border-radius:9px;font-size:11.5px;line-height:1.5;border:1px solid var(--line);border-left:3px solid {{ 'var(--warn)' if q.verdict=='caution' else ('var(--link)' if q.verdict=='confirm' else 'var(--muted)') }};background:color-mix(in srgb,{{ 'var(--warn)' if q.verdict=='caution' else 'var(--link)' }} 7%,var(--panel))">
       <span style="font-size:13px">{% if q.regime=='panic' %}🌀{% elif q.regime=='suppressed' %}🧊{% else %}〰{% endif %}</span>
@@ -1213,11 +1258,22 @@
     {% set _tt = (setups.buy[0].conviction or {}).trust_tier %}
     <div class="nb-legend">
       <span class="lg-k">{{ t('Reading the cards', '如何看卡片') }}</span>
-      <span><b>{{ t('Score', '评分') }}</b> = {{ t('buy-readiness 0–100 — how set up the name is to rise FROM HERE (penalised if it has already run); the verdict is the absolute act-now read', '买入就绪度 0–100 — 该股当前是否具备上行准备（若已大涨则扣分）；结论才是当下的绝对判断') }}</span>
+      <span><b>{{ t('Score', '评分') }}</b> = {{ t('buy-readiness 0–100 — how set up the name is to rise FROM HERE after its washout/base/turn (penalised if it has already run); NOT a conviction-edge probability', '买入就绪度 0–100 — 该股经历洗盘/筑底/转向后当前的上行准备程度（若已大涨则扣分）；并非信念优势概率') }}</span>
       <span class="lg-sep">·</span>
-      <span><b>{{ t('Two gauges', '两个量表') }}</b>: {{ t('Conviction (is it worth owning) + a separate Entry gauge (when & at what price)', '确信度（是否值得持有）＋ 独立的入场量表（何时、以何价）') }}</span>
+      <span><b>{{ t('Rank', '排序') }}</b>: {{ t('board order is cascade tier + washout/COILED context — the score is separate and does not drive rank', '榜单排序由级联层级＋洗盘/蓄势背景决定 —— 评分独立，不驱动排序') }}</span>
+      <span class="lg-sep">·</span>
+      <span><b>{{ t('Two gauges', '两个量表') }}</b>: {{ t('Conviction (setup quality) + a separate Entry gauge (when & at what price) — a high score with Entry = "hold" means the setup is real but timing is not yet there', '确信度（形态质量）＋ 独立的入场量表（何时、以何价）—— 高分但入场＝"观望"意味着形态真实但时机未到') }}</span>
       {% if _tt %}<span class="lg-sep">·</span><span><b>{{ t('Edge basis', '优势来源') }}</b>: <span class="l-en">{{ _tt.en }}</span><span class="l-zh">{{ _tt.zh }}</span></span>{% endif %}
     </div>
+    {# W0.7 DATA OUTAGE BANNER — rendered when the board-width guard stamps data_outage.flag=true
+       (buy-count dropped >40% day-over-day). Never rendered on a normal board. Dual-span i18n. #}
+    {% set _do = setups.get('data_outage') %}
+    {% if _do and _do.get('flag') %}
+    <div style="margin:6px 0 10px;padding:9px 13px;border-radius:9px;font-size:12px;line-height:1.5;border:1.5px solid var(--down);background:color-mix(in srgb,var(--down) 10%,var(--panel));color:var(--down)">
+      ⚠ <b><span class="l-en">data coverage degraded — board incomplete today</span><span class="l-zh">数据覆盖下降 — 今日看板不完整</span></b>
+      <span class="muted" style="font-size:10.5px;display:block;margin-top:2px"><span class="l-en">{{ _do.get('reason','') }}</span><span class="l-zh">买入数量从 {{ _do.get('prev_n') }} 降至 {{ _do.get('new_n') }}（下降 {{ _do.get('drop_pct') }}%），超过40%阈值。可能原因：数据缺口/采集中断。本看板不完整，请谨慎参考。</span></span>
+    </div>
+    {% endif %}
     <div class="nbgrid" data-showmore-rows="3">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
@@ -1228,12 +1284,12 @@
           {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
           {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
         </div>
-        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout" title="2-week StochRSI reclaimed the 20 line from oversold — a higher-timeframe washout reversal (likely washed out on the 2W &amp; 1M, so a more durable bottom). · 2周 StochRSI 从超卖区上穿20线 — 高周期洗盘反转（2周/月线大概率已洗净，底部更稳）。"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext" title="Already run — {{ n.extension.reason }}. Ranked LOWER on the board (anti-chase): in A-shares a confirmed breakout is often already extended and reverses. · 已大涨 — {{ n.extension.reason }}。已在榜单中降权（防追高）：A股确认突破往往已过热并回落。">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}{% if n.quality %}<span class="nb-q nb-q-{{ n.quality.band }}" title="Fundamental quality (sector-neutral composite, DISPLAY only — never in the ranking): ROE {{ n.quality.roe }}% · PE {{ n.quality.pe }} · Piotroski {{ n.quality.piotroski }}/9 · composite z {{ n.quality.z }}. Coverage is ~half the universe and A-share value/quality are weak edges, so this only helps weed obvious junk. · 基本面质量（行业中性合成，仅展示，不参与排序）：ROE {{ n.quality.roe }}% · PE {{ n.quality.pe }} · 皮氏 {{ n.quality.piotroski }}/9。覆盖约一半、A股价值/质量为弱因子，仅助剔除明显劣质股。">{{ {'strong':'Q ✓','avg':'Q ~','weak':'Q ✗'}.get(n.quality.band,'Q') }}</span>{% endif %}{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
+        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout" title="2-week StochRSI reclaimed the 20 line from oversold — a higher-timeframe washout reversal (likely washed out on the 2W &amp; 1M, so a more durable bottom). · 2周 StochRSI 从超卖区上穿20线 — 高周期洗盘反转（2周/月线大概率已洗净，底部更稳）。"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}{# W0.1 HOLD chip — basing state after anchor; display-only, never a rank input #}{% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" title="HOLD tracker (display-only) — W6-C basing state after the 3D confluence anchor. INTACT=basing ≤+5% · LAUNCHED=extended or overbought (3D k/d ≥80) · BROKEN=closed below trough×0.97. Anchor: {{ _hd.get('anchor','') }} ({{ _hd.get('anchor_src','') }}). Invalidation: {{ '%.2f'|format(_hd.get('invalidation',0)) }}. · W6-C 筑底追踪（仅展示）— 锚点后的筑底状态。INTACT=筑底≤+5%·LAUNCHED=已延伸/超买·BROKEN=收盘破位。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}{# W0.10 SECTOR FIRST-TICK-UP chip — display-only, never a rank input; approx:true = Yahoo→SW taxonomy join #}{% if n.get('sector_turn') and n.get('sector_turn').get('state') == 'bottoming' %}<span class="nb-coiled" title="Sector: bottoming, turning up (display-only, approx) — the Shenwan L1 sector for this name shows phase=Trough and osc_slope&gt;0 in the sector cycle forward_log as of {{ n.sector_turn.get('asof','') }}. The Yahoo→Shenwan taxonomy join is approximate (approx:true). DISPLAY/LEDGER ONLY — no rank change until the ledger matures (F3 discipline). · 板块：触底转上（仅展示，近似）— 该股所属申万一级行业在板块周期前瞻日志中显示 Trough + osc_slope&gt;0（截至 {{ n.sector_turn.get('asof','') }}）。Yahoo→申万分类近似匹配。仅展示/记录 —— 台账成熟前不调整排序（F3原则）。"><span class="l-en">↑ sector: bottoming</span><span class="l-zh">↑ 板块：触底</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext" title="Already run — {{ n.extension.reason }}. Ranked LOWER on the board (anti-chase): in A-shares a confirmed breakout is often already extended and reverses. · 已大涨 — {{ n.extension.reason }}。已在榜单中降权（防追高）：A股确认突破往往已过热并回落。">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}{% if n.quality %}<span class="nb-q nb-q-{{ n.quality.band }}" title="Fundamental quality (sector-neutral composite, DISPLAY only — never in the ranking): ROE {{ n.quality.roe }}% · PE {{ n.quality.pe }} · Piotroski {{ n.quality.piotroski }}/9 · composite z {{ n.quality.z }}. Coverage is ~half the universe and A-share value/quality are weak edges, so this only helps weed obvious junk. · 基本面质量（行业中性合成，仅展示，不参与排序）：ROE {{ n.quality.roe }}% · PE {{ n.quality.pe }} · 皮氏 {{ n.quality.piotroski }}/9。覆盖约一半、A股价值/质量为弱因子，仅助剔除明显劣质股。">{{ {'strong':'Q ✓','avg':'Q ~','weak':'Q ✗'}.get(n.quality.band,'Q') }}</span>{% endif %}{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
         {% set c = n.conviction %}
         {% if c %}
         <div class="nb-conv">
-          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Buy-readiness 0–100 — how set up this name is to rise FROM HERE: washout/turn confluence, entry timing and trend, PENALISED if it has already run (extended). Not a probability. The verdict beside it is the absolute act-now call, so a high score can still read 'wait'. · 买入就绪度 0–100 — 该股当前是否具备上行准备：洗盘/转向汇聚、入场时机与趋势，若已大涨（过热）则扣分。非概率。旁边的结论才是当下的绝对判断，故高分也可能显示“观望”。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
+          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context). · 买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
         {% set al = c.alignment %}
@@ -1289,6 +1345,10 @@
         <div class="nb-bot">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
           {% if n.confluence %}<span class="nb-conf" title="In BOTH validated screens — a deep-dip reversal candidate that is ALSO a low-vol defensive name (a structurally safer rebound). · 同时进入两条已验证筛选 —— 既是深跌反转候选又是低波防御股（结构上更稳健的反弹）。">🛡🔄 {{ t('safer rebound', '稳健反弹') }}</span>{% endif %}
+          {# W0.6 freshness: render signal.asof when it trails the board as_of, so the user sees the
+             signal is from an older bar — never mislead them into thinking the signal is from today #}
+          {% set _sig_asof = (n.signal or {}).get('asof') %}
+          {% if _sig_asof and setups.as_of and _sig_asof < setups.as_of %}<span class="muted" style="font-size:9px" title="The confluence signal was computed on {{ _sig_asof }} — one or more bars behind the board date ({{ setups.as_of }}). The underlying close data is current; the signal gate date lags when the 3D bucket is not yet complete on the board date. · 共振信号基于 {{ _sig_asof }}，落后于看板日期（{{ setups.as_of }}）一个或多个交易日。底层收盘数据为最新；当3日周期桶在看板日尚未收盘时，信号日期滞后。"><span class="l-en">signal as of {{ _sig_asof }}</span><span class="l-zh">信号截至 {{ _sig_asof }}</span></span>{% endif %}
           {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×{{ _rs.size_mult }} 相对确信度基准仓位（预测波动 {{ _rs.vol_ann_pct }}% · 逆波动 ×{{ _rs.inv_vol_mult }} · 区制 ×{{ _rs.regime_gross }}）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
         </div>
         {% if n.alpha is not none or n.alpha_entry %}
@@ -1308,7 +1368,7 @@
           <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>{% endif %}
           {% if c.risk and c.risk.components and c.risk.components.fragility %}<span class="nb-vchip vf-marg" title="Margin financing (融资余额) crowding — a surging leverage balance is the 2015 fire-sale mechanism; a contrarian RISK, sized down. | 融资余额拥挤 — 杠杆快速堆积即2015年踩踏机制；逆向风险，已减仓。">⚠ {{ t('Margin crowded','两融拥挤') }}</span>{% endif %}
         </div>{% endif %}
-        {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
+        {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
         {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
         {# trust tier hoisted to the one .nb-legend above the grid — no longer repeated per card #}
         {% endif %}
@@ -1321,7 +1381,7 @@
       {% for r in setups.laggards %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
     </p>
     {% endif %}
-    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Cycle entry + mean-reversion (the validated A-share effects), with residual relative strength as a light quality tiebreaker. Deep-history corrected: A-shares mean-revert — momentum is not an edge. A shortlist to size and confirm, not a buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '周期入场 + 均值回归（A股已验证的效应），残差相对强度仅作轻量质量加权。经深度历史校正：A股均值回归 —— 动量并非优势。用于定仓与确认的名单，而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>
+    <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Washout → base → fresh turn (T1–T4 cascade). Rank = cascade tier + washout/COILED context; displayed score = buy-readiness (not rank). The validated within-sector reversal basket edge is a separate product — it is not what drives this board. Forward grades are accruing (board_track above); first maturities ~21 sessions from ledger start.', '洗盘 → 筑底 → 新转向（T1–T4 级联）。排序＝级联层级＋洗盘/蓄势背景；显示评分＝买入就绪度（非排序）。已验证的板块内反转篮子优势是独立产品 —— 并非驱动本看板的因素。前瞻成绩正在累积（见上方榜单成绩单）；首批成熟约在账本开始后21个交易日。') }}</p>
 
     {# ── BOARD TRACK RECORD (honest forward ledger) ─────────────────────────────
        The board earns trust over time: this logs the ranked top-N each session and grades the
@@ -1863,6 +1923,42 @@ window.__CHART_SWAP__ = {
     if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
+</script>
+<script>
+/* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
+   Also corrects popover position (flip above/below, clamp to right edge). */
+(function(){
+  function placePop(wrap){
+    var pop = wrap.querySelector('.nb-cau-pop');
+    if (!pop) return;
+    var r = wrap.getBoundingClientRect();
+    wrap.classList.toggle('pop-below', r.top < 180);
+    wrap.classList.toggle('pop-right', r.left > window.innerWidth - 200);
+  }
+  /* Tap the button → toggle open/closed */
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.nb-cau-btn');
+    if (btn){
+      e.preventDefault(); e.stopPropagation();
+      var wrap = btn.closest('.nb-cau');
+      if (!wrap) return;
+      var wasOpen = wrap.classList.contains('nb-cau-open');
+      /* close any other open popovers */
+      document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      if (!wasOpen){ placePop(wrap); wrap.classList.add('nb-cau-open'); }
+    } else {
+      /* outside tap: close all */
+      if (!e.target.closest('.nb-cau-pop')){
+        document.querySelectorAll('.nb-cau.nb-cau-open').forEach(function(el){ el.classList.remove('nb-cau-open'); });
+      }
+    }
+  }, true);
+  /* Also position-correct on hover (desktop) */
+  document.addEventListener('pointerover', function(e){
+    var wrap = e.target.closest && e.target.closest('.nb-cau');
+    if (wrap) placePop(wrap);
+  }, true);
+})();
 </script>
 </body>
 </html>

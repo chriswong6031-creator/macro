@@ -27,12 +27,16 @@ import logging
 import pandas as pd
 
 from lib import config
+from collectors import _drip
 from collectors import tushare_client as tc
 
 log = logging.getLogger("tushare_moneyflow")
 
 OUT = config.data_dir() / "tushare" / "moneyflow.parquet"
 OUT_SECTOR = config.data_dir() / "tushare" / "moneyflow_sector.parquet"
+# Append-only PIT history files — existing consumers keep reading the snapshot files above.
+OUT_HIST = config.data_dir() / "tushare" / "moneyflow_hist.parquet"
+OUT_SECTOR_HIST = config.data_dir() / "tushare" / "moneyflow_sector_hist.parquet"
 _FIELDS = ("trade_date,ts_code,name,pct_change,close,net_amount,net_amount_rate,"
            "buy_elg_amount,buy_elg_amount_rate,buy_lg_amount,buy_lg_amount_rate")
 _FIELDS_IND = "trade_date,content_type,ts_code,name,net_amount,net_amount_rate,rank"
@@ -78,6 +82,12 @@ def refresh() -> int:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     out.to_parquet(OUT, index=False)
     log.info("tushare moneyflow: wrote %s (%d names, %s)", OUT, len(out), trade_date)
+    # Append to the PIT per-name history (additive; existing consumers keep reading OUT).
+    try:
+        _drip.append_snapshot(OUT_HIST, out.to_dict("records"), date_col="asof")
+        log.info("tushare moneyflow: appended history %s (asof %s)", OUT_HIST, today)
+    except Exception as e:  # noqa: BLE001 — history is telemetry, never fatal
+        log.warning("tushare moneyflow: name history append failed (%s)", e)
 
     # sector board flow (best-effort; absent just leaves the radar without the leg)
     try:
@@ -89,8 +99,20 @@ def refresh() -> int:
             sdf["asof"] = today
             skeep = ["sector_code", "name", "net_amount", "net_amount_rate",
                      "content_type", "rank", "trade_date", "asof"]
-            sdf[[c for c in skeep if c in sdf.columns]].to_parquet(OUT_SECTOR, index=False)
-            log.info("tushare moneyflow sector: wrote %s (%d boards)", OUT_SECTOR, len(sdf))
+            sout = sdf[[c for c in skeep if c in sdf.columns]]
+            sout.to_parquet(OUT_SECTOR, index=False)
+            log.info("tushare moneyflow sector: wrote %s (%d boards)", OUT_SECTOR, len(sout))
+            # Append to the PIT sector history (additive).
+            # _drip.append_snapshot dedupes on (date_col, "ticker"); alias sector_code
+            # → ticker in the history-only copy so the natural key is always present.
+            try:
+                sout_h = sout.copy()
+                sout_h["ticker"] = sout_h["sector_code"]
+                _drip.append_snapshot(OUT_SECTOR_HIST, sout_h.to_dict("records"), date_col="asof")
+                log.info("tushare moneyflow: appended sector history %s (asof %s)",
+                         OUT_SECTOR_HIST, today)
+            except Exception as se:  # noqa: BLE001 — history is telemetry, never fatal
+                log.warning("tushare moneyflow: sector history append failed (%s)", se)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("tushare moneyflow sector skipped (%s)", e)
     return len(out)

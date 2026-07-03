@@ -25,6 +25,7 @@ from plotly.subplots import make_subplots
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config, store  # noqa: E402
+from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_vector")
@@ -807,7 +808,7 @@ def build_landing(site: Path, vm: dict) -> None:
                     _bonds_state(), _us_stocks_state(), _strategies_state(), _crossasset_state(),
                     _market_stocks_state("china"), _market_stocks_state("hk"),
                     canada=_canada_state())
-    (site / "index.html").write_text(hub)
+    write_page(site / "index.html", hub)
     log.info("wrote landing hub -> index.html")
 
 
@@ -2140,7 +2141,7 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
         "chart_ethbtc": chart_ethbtc(eb["ratio"], eb.get("ma"), cfg) if eb else "",
     }
     html = env.get_template("vector_allocation.html.j2").render(**pvm, C=C)
-    (site / "vector_allocation.html").write_text(html)
+    write_page(site / "vector_allocation.html", html)
     log.info("wrote %s/vector_allocation.html (%d KB)", site, len(html) // 1024)
 
 
@@ -3026,7 +3027,7 @@ def main() -> int:
     env.filters["money1"] = lambda v: f"${v/1000:,.1f}K" if pd.notna(v) else "—"
     html = env.get_template("vector.html.j2").render(**vm, C=C)
     site = Path(config.load()["storage"]["site_dir"])
-    (site / "vector.html").write_text(html)
+    write_page(site / "vector.html", html)
     log.info("wrote %s/vector.html (%d KB)", site, len(html) // 1024)
     try:  # interactive Lightweight-Charts backtest feed — never break the build
         emit_risk_strategy_json(site, sig)
