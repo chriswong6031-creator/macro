@@ -435,14 +435,28 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
     for r in rows:
         es = r.get("entry_signal") or {}
         sig = r.get("signal") or {}
+        # gate_tier honesty: the confluence gate DID run for every board name (it is stamped
+        # per-name in build_canada_library.main). A tier of T1..T4 means a fresh cross today;
+        # its ABSENCE on a ran verdict is a real "no confluence buy this tape" — record it as
+        # the string 'none' so a zero-cross board is a LOGGED fact, not indistinguishable from
+        # "the gate never ran" (which would leave gate_tier null). Only a row with no verdict
+        # dict at all stays None.
+        _tier = sig.get("tier") or (r.get("conviction") or {}).get("gate_tier")
+        gate_tier = _tier or ("none" if sig else None)
         calls.append({
             "ticker": r.get("ticker"),
             "group": r.get("group"),                       # 'entry_open' | 'setting_up'
             "edge_z": r.get("alpha"),                      # momentum SCREEN z (accruing)
-            "gate_tier": sig.get("tier") or (r.get("conviction") or {}).get("gate_tier"),
+            "gate_tier": gate_tier,
             "align_tier": r.get("align_tier"),
             "entry_state": _ENTRY_STATE.get(es.get("status")),
             "close_asof": r.get("price"),
+            # CA2 close-only port stamps (log-and-grade, nullable-bool; None = not computed):
+            # extended (pullback-zone chase read OR extension grade), hold_basing (in a base
+            # vs its anchor), dt_compress (dannytrades vol-compression / non-neutral read).
+            "extended": (bool(r.get("extended")) or ((r.get("pullback_zone") or {}).get("stance") == "chase")) if (r.get("extended") or r.get("pullback_zone")) else None,
+            "hold_basing": ((r.get("hold") or {}).get("state") == "intact") if r.get("hold") else None,
+            "dt_compress": ((r.get("dt_contra") or {}).get("state") not in (None, "neutral")) if r.get("dt_contra") else None,
         })
     health: list[dict] = []
     try:

@@ -536,3 +536,55 @@ class TestPlacementFlagStamp:
         assert by["6651.HK"] == True        # noqa: E712 — pd.BooleanDtype scalar
         assert by["0700.HK"] == False       # noqa: E712
         assert pd.isna(by["0005.HK"]) and pd.isna(by["0388.HK"])
+
+
+# ---------------------------------------------------------------------------
+# 8. CA2 close-only port stamps (hold_basing / dt_compress, nullable bool)
+# ---------------------------------------------------------------------------
+class TestCA2PortStamps:
+    def test_ca2_stamps_round_trip_and_default_na(self, tmp_path, monkeypatch):
+        """hold_basing / dt_compress persist as nullable bools; omitted → NA (not stamped),
+        distinct from a computed False. Mirrors the CN-port stamp semantics (#1072 idiom)."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        calls = [
+            {"ticker": "IAU.TO", "group": "setting_up", "close_asof": 12.0,
+             "hold_basing": True, "dt_compress": False},
+            {"ticker": "AG.TO", "group": "setting_up", "close_asof": 9.0,
+             "hold_basing": False},                                   # dt_compress omitted → NA
+            {"ticker": "EFR.TO", "group": "setting_up", "close_asof": 5.0},  # both omitted → NA
+        ]
+        assert bl.append_board(calls, "CA", asof="2026-07-10") == 3
+        df = pd.read_parquet(tmp_path / "ca_board.parquet")
+        assert "hold_basing" in df.columns and "dt_compress" in df.columns
+        assert str(df["hold_basing"].dtype) == "boolean"
+        assert str(df["dt_compress"].dtype) == "boolean"
+        by_h = df.set_index("ticker")["hold_basing"]
+        by_d = df.set_index("ticker")["dt_compress"]
+        assert by_h["IAU.TO"] == True and by_h["AG.TO"] == False      # noqa: E712
+        assert pd.isna(by_h["EFR.TO"])                                # not computed
+        assert by_d["IAU.TO"] == False                               # noqa: E712 — computed absent
+        assert pd.isna(by_d["AG.TO"]) and pd.isna(by_d["EFR.TO"])    # not stamped
+
+    def test_ca2_stamps_are_registered_port_columns(self):
+        """The new stamps must be in the schema AND the nullable-bool coercion set, else they
+        would round-trip as object/NaN and break the boolean dtype guarantee."""
+        assert "hold_basing" in bl._SCHEMA and "dt_compress" in bl._SCHEMA
+        assert "hold_basing" in bl._PORT_STAMPS and "dt_compress" in bl._PORT_STAMPS
+
+    def test_gate_tier_none_string_survives_append(self, tmp_path, monkeypatch):
+        """CA2 honesty: a zero-cross tape logs gate_tier='none' (the gate RAN, found no
+        cross) — the 'or None' coercion in append_board must NOT swallow the truthy string,
+        so 'none' is distinguishable from a real null (gate never ran)."""
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        calls = [
+            {"ticker": "A.TO", "group": "setting_up", "gate_tier": "none"},   # ran, no cross
+            {"ticker": "B.TO", "group": "setting_up", "gate_tier": "T1"},     # fresh cross
+            {"ticker": "C.TO", "group": "setting_up", "gate_tier": None},     # never ran
+        ]
+        assert bl.append_board(calls, "CA", asof="2026-07-10") == 3
+        df = pd.read_parquet(tmp_path / "ca_board.parquet").set_index("ticker")
+        assert df.loc["A.TO", "gate_tier"] == "none"     # string survives (truthy)
+        assert df.loc["B.TO", "gate_tier"] == "T1"
+        assert pd.isna(df.loc["C.TO", "gate_tier"])      # real null preserved
