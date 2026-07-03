@@ -51,6 +51,7 @@ from engine import gex_confirm  # noqa: E402  — dealer-gamma verifier/confirme
 from engine import options_ivspread  # noqa: E402  — Cremers-Weinbaum call−put IV-spread confirmer
 from engine import demand_chain as dchain  # noqa: E402
 from engine import coiled  # noqa: E402  — wave-2-validated COILED ranking bonus (display/ranking only)
+from engine import donor  # noqa: E402  — G6a donor-sector context chip (display-only)
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -1194,6 +1195,8 @@ def main() -> int:
     _coil_div: dict[str, bool] = {}             # bullish divergence per name
     _coil_sector: dict[str, str | None] = {}    # sector per name (for cohort grouping)
     _coil_fire: dict[str, dict] = {}            # wave-4 COILED-FIRE marker per name (display only)
+    # G6a donor-sector: collect per-name close series (same sector map as _coil_sector)
+    _donor_closes: dict[str, "pd.Series"] = {}  # close series for donor composite
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -1212,6 +1215,9 @@ def main() -> int:
             _coil_div[ticker]    = coiled.bull_div(close)
             _coil_sector[ticker] = sector or None
             _coil_fire[ticker]   = coiled.fire_recent(close)
+            # G6a donor: retain close series for sector-mapped names (reuse _coil_sector)
+            if sector:
+                _donor_closes[ticker] = close
         except Exception:
             pass
         if fpanels.get(ticker):
@@ -1577,6 +1583,18 @@ def main() -> int:
     except Exception as _e:  # noqa: BLE001 — additive; board degrades gracefully without bonus
         log.warning("coiled bonus skipped (%s)", _e)
         coiled_by = {}
+    # G6a donor-sector context chip: compute once cross-sectionally after the loop.
+    # Uses the same sector map as the COILED bonus (_coil_sector).  DISPLAY-ONLY —
+    # never a gate, never changes ranking.  Additive + graceful: failure -> None.
+    _donor_ctx = None
+    try:
+        _donor_ctx = donor.donor_state(_donor_closes, _coil_sector)
+        if _donor_ctx:
+            log.info("donor context: sector=%s state=%s legs=%s",
+                     _donor_ctx.get("donor_sector"), _donor_ctx.get("state"),
+                     _donor_ctx.get("legs"))
+    except Exception as _de:  # noqa: BLE001
+        log.debug("donor_state skipped (%s)", _de)
     # cross-sectional "Top setups" — selection (sector-neutral residual alpha) ×
     # timing (cycle entry + reversal overlay), surfaced on the macro dashboard's
     # "Standout individual stocks" board (read by build_site one build later, since
@@ -1729,7 +1747,9 @@ def main() -> int:
                 "buy": [_tag(t, tier) for t, _, tier in buyable[:120]],
                 "watch": [row_by_t[t] for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
-                "concentration": _concentration_stat}
+                "concentration": _concentration_stat,
+                # G6a donor-sector: page-level context chip (not per-row; None when insufficient data)
+                "donor": _donor_ctx}
         eligible = len(aligned)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
