@@ -50,7 +50,9 @@ active; when the store is absent, the grader degrades to the old live-only path 
 prints a coverage note in the survivorship block.
 
 SPINE COLUMNS (W0.1 B-b — §3.4, §5.1 sub-task 2):
-  fwd_mfe_{5,10,21,63}    — max favorable excursion at each horizon (via grading)
+  fwd_mfe_{5,10,21,63}    — max favorable excursion (via grading); rows are
+    per-(as_of,ticker,lane,horizon), so each row populates ONLY its own
+    horizon's fwd_mfe_{h} column (the others stay null on that row)
   terminal_state_clean15_126, terminal_state_clean8_21  — per §1.1 partition
   post_cushion_breach      — per-fire flag at horizon=21 (grading primitive)
   rate_pressure, quad_hard_label, fused_risk_label, vol_regime, risk_radar_state,
@@ -87,7 +89,6 @@ from engine.grading import (  # noqa: E402
     LIFTOFF_HORIZON_126,
     LIFTOFF_15,
     LIFTOFF_8,
-    SPINE_HORIZONS,
 )
 from engine.regime_vector import get_vector_for_date  # noqa: E402
 
@@ -866,8 +867,11 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
 
     W0.1 B-b: schema-union — new spine columns (fwd_mfe_*, terminal_state_*,
     post_cushion_breach, regime stamp, species_id, archetype) are added to the
-    stored frame with NaN/None for legacy rows that predate this PR. keep-FIRST
-    semantics are preserved: stored non-null values are never overwritten by nulls.
+    stored frame with NaN/None for legacy rows that predate this PR. Merge is
+    keep-FRESH on the dedup key (as main always was): a fresh row replaces the
+    stored row wholesale — safe because a grade is a deterministic re-computation
+    from prices (a matured horizon can never regress to null). The PIT fire log
+    is snapshots.jsonl; this parquet is the derived grade store.
 
     If fresh is empty AND the store already exists, the store is returned as-is
     (no write needed).  This is the key guard against the empty:true regression."""

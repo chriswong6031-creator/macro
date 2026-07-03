@@ -555,7 +555,7 @@ def test_schema_union_legacy_rows_get_nulls(tmp_path, monkeypatch):
     assert new_rows["fwd_mfe_5"].notna().all(), "new rows should have non-null fwd_mfe_5"
 
 
-def test_schema_union_keep_first_protects_non_null(tmp_path, monkeypatch):
+def test_schema_union_keep_fresh_replaces_stored_row(tmp_path, monkeypatch):
     """W0.1 B-b: keep-FIRST — dedup on (as_of, ticker, lane, horizon) never overwrites
     stored non-null with null (fresh takes precedence on the full row)."""
     monkeypatch.setattr("scripts.grade_us_board.LEDGER_DIR", tmp_path)
