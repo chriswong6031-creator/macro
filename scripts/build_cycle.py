@@ -389,7 +389,15 @@ def main() -> int:
     site = root / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
 
-    # 1 · compute the engine payload (raises on structural / staleness errors) ──
+    # 1a · emit the shared regime prior artifact (W4.5 — additive, cheap, never fatal) ──
+    try:
+        from scripts.build_regime_prior import emit as _emit_prior
+        from lib import config as _cfg
+        _emit_prior(data_dir=_cfg.data_dir(), site_dir=site)
+    except Exception as _rp_exc:  # noqa: BLE001
+        log.warning("build_cycle: regime_prior emit failed (non-fatal): %s", _rp_exc)
+
+    # 1b · compute the engine payload (raises on structural / staleness errors) ──
     payload = compute(root)
     _write_engine_js(site, payload)
     log.info("cycle_engine.js: %d cards (%d measured, %d frame, %d dual); %d tolerance gaps",

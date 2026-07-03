@@ -1031,6 +1031,26 @@
       "state": "W2 report shipped. ACCRUE — pre-registered honest default. 4/5 gates pass (direction, drawdown separation, split-half, episodes>=4); GO-3 statistical power fails (t=1.10<1.5). Engine-ready regime spec in report §8. NOT wired to any board/engine.",
       "next_step": "None on in-tree data until 2028-01 window extension. If wired at W4 as an exposure conditioner, weight toward the agg_balance-quantile leg (carries the signal); keep spread leg for interpretability only.",
       "phase_hint": "W2 phase-0 battery H5"
+    },
+    {
+      "id": "market-state-pit",
+      "name": "Market-State PIT Accrual — daily snapshot for future feature promotion",
+      "kind": "track_record",
+      "priority": "medium",
+      "cadence": "daily",
+      "what": "Appends one row per day to data/regime/market_state_history.parquet (keep-first per date): quad, liquidity, ms_verdict, ms_score, vol_regime, bc_phase. market_state has no PIT history (latest.json overwritten nightly); accrual begins so it can become a model feature once n_days >= 250 trading days.",
+      "source": "scripts/build_regime_prior.py (_append_pit)",
+      "storage": "data/regime/market_state_history.parquet",
+      "track_json": null,
+      "hook": "build_regime_prior",
+      "started": "2026-07-03",
+      "come_back_on": "2027-05-01",
+      "come_back_note": "2027-05-01 (~250 trading days accrued); assess ms_verdict IC vs cycle turns",
+      "maturation": "n_rows >= 250 (keep-first calendar days) AND ms_verdict shows forward-IC signal vs cycle turns in hold-out; promote to model feature only if IC clears Newey-West t>=1.96 at 3m+ horizon.",
+      "status": "accruing",
+      "state": "0 rows (started 2026-07-03); verdict=accruing (display-prior only).",
+      "next_step": "Review at 250 rows; run IC of ms_verdict vs h=3/6m cycle-turn events in hazard panel.",
+      "phase_hint": "D5-W5 (regime-prior service)"
     }
   ]
 }

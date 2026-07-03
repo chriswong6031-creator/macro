@@ -186,6 +186,14 @@ def main() -> int:
     site = root / cfg["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
 
+    # ---- 0. Emit the shared regime prior artifact (W4.5 — additive, cheap, never fatal) ----
+    try:
+        from scripts.build_regime_prior import emit as _emit_prior
+        from lib import config as _cfg
+        _emit_prior(data_dir=_cfg.data_dir(), site_dir=site)
+    except Exception as _rp_exc:  # noqa: BLE001
+        log.warning("build_markets: regime_prior emit failed (non-fatal): %s", _rp_exc)
+
     # ---- 1. Load country_cycles engine data ----
     country_sectors = _load_country_cycles(site)
 
