@@ -28,6 +28,17 @@
   ships as claim-free eligibility door. All postcross states accrue silently in the forward
   ledger. Full numbers: DURABLE_BOTTOM_FRAMEWORK.md §8. W1 in flight; scope-B merge shape
   amended accordingly (drop ARMED display, keep SHAKEN + BASED door + ledger fields).
+- **2026-07-03 — W1 SHIPPED #1095** (implement → Opus adversarial review → orchestrator
+  merge-gate): Lane R dual-lane admission (knife + weekly-falling guarded — review catch),
+  alpha-within-lane ordering, `entry_open_first` removed as terminal sort, headline arbiter
+  (ELV fixture), `engine/postcross.py` (BASED/ARMED/SHAKEN detector, honesty contract in
+  docstring), lane+postcross strata into grade_us_board. Merge-gate surgery applied the OOS
+  verdicts: ARMED chip stripped (fields accrue silently), SHAKEN chip confirmed-copy, all
+  new chips' bilingual `title=` attrs removed (i18n rule), one mis-attributed claim deleted.
+  35/35 targeted tests; CI clean. **First Lane R names appear at the next nightly render.**
+  NEXT: W2 (running ledger strip + chip popovers via #1061 pattern + remaining arbiter
+  invariants), W3 evidence stack, W4 sector re-arm bus + tailwind inversion, W5 grading
+  maturity (P@k new-vs-old order on the live ledger is the program's success metric).
 
 ## 1. What the diagnostics established (the evidence base)
 
