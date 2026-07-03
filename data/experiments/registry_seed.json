@@ -1852,7 +1852,22 @@
       "n_trials_program_dsr": 36,
       "prereg": "research/C1b_COMMODITY_FLIP_PROTECTIVE_PREREG.md",
       "report": "reports/c1b-commodity-flip-protective-phase0.md",
-      "pr": "hkca-w7pre-c1b"
+      "pr": "hkca-w7pre-c1b",
+"id": "w2c-hc-readthrough",
+      "title": "W2-C -- Global-healthcare -> CN-pharma weekly read-through (phase-0)",
+      "kind": "phase0_verdict",
+      "hypothesis": "Global-healthcare narrative momentum (XLV 4w log-momentum; robustness XLV+IBB+XBI composite) leads next-week returns of the CN pharma complex -- the owner's 300725 tailwind ('healthcare breaking out worldwide'), tested as a direct methodological mirror of the VALIDATED global-AI-semis->CN-CPO weekly confirmer (#773, t=3.27). Targets: Shenwan L1 Pharma index 801150 (survivorship-clean, ~1300wk) + THS baskets innovative_rx/synbio/med_devices (~250wk). Weekly W-FRI, NW-HAC t (lags=4), SPY+CN-universe horse-race, full/pre-2024/2024+ splits. RESULT: NO-GO. XLV->801150 uni t=-0.48 full / -0.59 pre-2024 / -0.09 2024+ (mv HC t=-0.49); every THS pharma basket flat (all |t|<1.35, incl. ths_synbio = 300725's own basket); the XLV+IBB+XBI composite is flatter still (all |t|<=1.34). 2000-permutation null centers on 0 (mean 0.015, sd 0.99), real |t| at perm_p 0.085 -- unremarkable. Literal weekly-SIGN read: sign-hit 52.8% full (coin-flip), flips negative in 2024+. POSITIVE CONTROL fires: the SAME harness reproduces semis->ths_cpo t=3.08 full / 3.12 pre-2024, so the pharma null is a true negative, not a dead instrument. Mechanism reading: global-AI-semis->CPO is a hard supply-chain order-flow channel; 'global healthcare' has no comparable channel into policy/domestic-demand-driven A-share pharma. Pre-registered research/china_alpha/w2/W2C_HC_READTHROUGH.md + reports/c-hc-readthrough-phase0.md. NOTHING wired.",
+      "status": "closed_no_go",
+      "verdict": "NO-GO",
+      "program": "china_alpha",
+      "wave": "W2",
+      "channel": "W2-C",
+      "phase": "phase-0",
+      "registered_on": "2026-07-03",
+      "come_back_on": "2027-07-03",
+      "come_back_note": "CLOSED NO-GO on a well-powered, survivorship-clean deep index target -- do NOT re-run the same construction. Reopen ONLY if a materially different HC read-through channel is pre-registered: e.g. a CXO/CDMO-specific US-biotech-funding driver (XBI/biotech IPO+VC flow -> CN CXO order book) rather than a broad HC-tape momentum, or a policy-event-conditioned window (US FDA / global drug-approval cycles). Any reopen needs its own PREREG and must clear the same gate (uni full |t|>=3 AND pre-2024 |t|>=2 AND horse-race |t|>=2). The semis->CPO leg (#773) remains the ONE validated global->CN read-through; this leg does not join it.",
+      "n_trials_program_dsr": 1,
+      "pr": "w2(w2-c)"
     }
   ]
 }
