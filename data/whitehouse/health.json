@@ -1,47 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-03T11:22:30.077052+00:00",
+  "as_of": "2026-07-03T12:02:34.180388+00:00",
   "posts_seen": 6,
   "seen_total": 6,
-  "evaluated": 6,
-  "activated": 4,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-06-30-supreme-court-bolsters-president-trumps-push-to-eliminate-transgender-insanity",
-      "importance": 15,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-06-30-trump-administration-nepa-reforms-a-win-for-all-americans",
-      "importance": 78,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-06-29-declaration-of-emergency-and-authorization-for-temporary-duty-free-importation-o",
-      "importance": 68,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-06-29-fact-sheet-president-donald-j-trump-declares-an-emergency-and-authorizes-the-tem",
-      "importance": 65,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-06-29-fact-sheet-president-donald-j-trump-lowers-the-cost-of-living-by-promoting-the-f",
-      "importance": 50,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-06-29-lowering-the-cost-of-living-by-promoting-the-freedom-to-fix",
-      "importance": 60,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }
