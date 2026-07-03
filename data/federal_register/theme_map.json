@@ -1,0 +1,74 @@
+{
+  "nuclear_power": {
+    "terms": ["nuclear reactor", "small modular reactor", "nuclear fuel", "uranium enrichment"],
+    "agencies": ["nuclear-regulatory-commission", "energy-department"]
+  },
+  "ai_semiconductors": {
+    "terms": ["advanced computing", "artificial intelligence chip", "semiconductor export"],
+    "agencies": ["industry-and-security-bureau", "commerce-department"]
+  },
+  "semicap_equipment": {
+    "terms": ["semiconductor manufacturing equipment", "export controls semiconductor manufacturing", "wafer fabrication"],
+    "agencies": ["industry-and-security-bureau", "commerce-department"]
+  },
+  "defense_aerospace": {
+    "terms": ["defense acquisition", "DFARS", "defense procurement", "military specification", "ITAR"],
+    "agencies": ["defense-department", "state-department"]
+  },
+  "grid_electrification": {
+    "terms": ["grid interconnection", "transmission planning", "electric grid", "reliability standard"],
+    "agencies": ["federal-energy-regulatory-commission", "energy-department"]
+  },
+  "data_center_power": {
+    "terms": ["data center energy efficiency", "power usage effectiveness", "critical load infrastructure"],
+    "agencies": ["energy-department", "environmental-protection-agency"]
+  },
+  "rare_earth_critical_min": {
+    "terms": ["critical minerals", "rare earth", "battery materials", "lithium cobalt"],
+    "agencies": ["energy-department", "interior-department", "commerce-department"]
+  },
+  "copper_steel_electrify": {
+    "terms": ["copper", "steel", "aluminum tariff", "Section 232", "trade remedy metals"],
+    "agencies": ["commerce-department", "trade-representative-office"]
+  },
+  "solar": {
+    "terms": ["solar panel", "photovoltaic", "solar import", "antidumping solar"],
+    "agencies": ["international-trade-commission", "commerce-department"]
+  },
+  "memory_storage": {
+    "terms": ["high bandwidth memory", "NAND", "memory chip export", "data storage"],
+    "agencies": ["industry-and-security-bureau", "commerce-department"]
+  },
+  "glp1_obesity": {
+    "terms": ["GLP-1", "obesity drug", "semaglutide", "tirzepatide", "weight loss drug"],
+    "agencies": ["food-and-drug-administration"]
+  },
+  "medical_devices": {
+    "terms": ["medical device", "510k", "premarket approval", "Class III device"],
+    "agencies": ["food-and-drug-administration"]
+  },
+  "diagnostics_lifesci": {
+    "terms": ["in vitro diagnostic", "laboratory developed test", "clinical laboratory"],
+    "agencies": ["food-and-drug-administration", "centers-for-medicare-medicaid-services"]
+  },
+  "space_satellite": {
+    "terms": ["satellite", "launch vehicle", "space debris", "spectrum allocation", "orbital slot"],
+    "agencies": ["federal-communications-commission", "transportation-department"]
+  },
+  "robotics_automation": {
+    "terms": ["autonomous systems", "industrial robot", "collaborative robot", "automation safety"],
+    "agencies": ["occupational-safety-health-administration", "national-institute-standards-technology"]
+  },
+  "ag_fertilizer": {
+    "terms": ["fertilizer", "phosphate import", "agricultural input", "pesticide registration"],
+    "agencies": ["environmental-protection-agency", "agriculture-department"]
+  },
+  "cybersecurity": {
+    "terms": ["cybersecurity", "critical infrastructure protection", "zero trust", "software supply chain"],
+    "agencies": ["homeland-security-department", "cybersecurity-infrastructure-security-agency"]
+  },
+  "fintech_payments": {
+    "terms": ["digital payment", "stablecoin", "crypto regulation", "money transmission"],
+    "agencies": ["treasury-department", "financial-crimes-enforcement-network", "consumer-financial-protection-bureau"]
+  }
+}

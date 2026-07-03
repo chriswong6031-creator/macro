@@ -85,6 +85,10 @@ SOURCES: list[dict] = [
     # emits the parquet; absent -> theme_event loader returns None and the source is skipped).
     {"name": "sam_presolicitation", "kind": "theme_event", "group": "sam_gov", "series": "opp_velocity",
      "min_prior": 1.0, "weight": 0.5, "label_en": "Pre-award solicitations", "label_zh": "招标预告"},
+    # Federal Register policy-document velocity (keyless; collector runs nightly; absent -> silently skipped).
+    # Two-stage AGENCY-SLUG x TERM filter maps 18 config themes to FR RULE/PRORULE/NOTICE/PRESDOCU counts.
+    {"name": "fedreg_velocity", "kind": "theme_event", "group": "federal_register", "series": "reg_velocity",
+     "min_prior": 1.0, "weight": 0.5, "label_en": "Regulatory pipeline", "label_zh": "监管动态"},
 ]
 
 
