@@ -28,6 +28,7 @@ from engine.validation import (  # noqa: E402
     rank_ic, ic_summary, benjamini_hochberg, deflated_sharpe, dsr_verdict,
     bootstrap_effective_t, block_bootstrap_ci, ret_moments,
 )
+from engine.trial_ledger import TrialLedger  # noqa: E402
 
 DATA = ROOT / "data"
 HOLDINGS = DATA / "hk_southbound" / "holdings.parquet"
@@ -36,7 +37,9 @@ HSI_FILE = DATA / "hk" / "_HSI.parquet"
 HKMA_FILE = DATA / "hkma" / "interbank_liquidity.parquet"
 OUT = ROOT / "reports" / "hk-southbound-h1-phase0.md"
 
-N_TRIALS = 30          # program-level DSR count (masterplan §6)
+N_TRIALS = 30          # program-level DSR count (masterplan §6), ledger-declared floor
+FAMILY = "hk_h1_southbound_phase0"
+_LED = TrialLedger.with_declared_budget(N_TRIALS, FAMILY)
 COST_BPS = 20.0        # round-trip; matches residual_alpha_phase0 idiom order
 HORIZONS = {"1w": 5, "2w": 10, "4w": 20}   # sessions
 MAX_HALT = 5           # >5 consecutive missing sessions inside window ⇒ drop
@@ -212,7 +215,7 @@ def ls_stats(ls_ser: pd.Series, horizon_sessions: int):
     if mom:
         # per-period (weekly) Sharpe for DSR; trading_year=52 scales report only
         sr_wk = float(net.mean() / net.std()) if net.std() else 0.0
-        dsr = deflated_sharpe(sr_wk, mom[1], mom[2], mom[3], n_trials=N_TRIALS,
+        dsr = deflated_sharpe(sr_wk, mom[1], mom[2], mom[3], ledger=_LED, family=FAMILY,
                               trading_year=52, t_eff=te)
         if dsr:
             out["dsr"] = dsr["dsr"]

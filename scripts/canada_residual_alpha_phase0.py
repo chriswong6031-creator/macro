@@ -39,12 +39,14 @@ warnings.filterwarnings("ignore")
 from engine.validation import (benjamini_hochberg, block_bootstrap_ci,  # noqa: E402
                                deflated_sharpe, dsr_verdict, ic_summary,
                                rank_ic, ret_moments)
-from engine.trial_ledger import register_trials  # noqa: E402
+from engine.trial_ledger import TrialLedger, register_trials  # noqa: E402
 from lib import config  # noqa: E402
 from scripts.residual_alpha_phase0 import (COST_BPS, build_residuals,  # noqa: E402
                                            ew_peer, month_grid, signal_matrices)
 
-PROGRAM_N_TRIALS = 30           # masterplan §6 — every config across both markets
+PROGRAM_N_TRIALS = 30           # masterplan §6 — every config across both markets; ledger floor
+FAMILY = "canada_residual_alpha_phase0"
+_LED = TrialLedger.with_declared_budget(PROGRAM_N_TRIALS, FAMILY)
 # Acceptance target (masterplan §4.1): the fork must reproduce the LIVE HK harness.
 # The masterplan's pinned numbers (-0.22 full / -0.35 modern) were generated on the
 # OLD 73-name HK panel; data/hk_search/closes_deep.parquet was since expanded to 157
@@ -125,7 +127,7 @@ def _ls_stats(net):
     mom = ret_moments(net)
     if mom:
         dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3],
-                              n_trials=PROGRAM_N_TRIALS, trading_year=252)
+                              ledger=_LED, family=FAMILY, trading_year=252)
         if dsr:
             out["dsr"] = round(dsr["dsr"], 4)
             out["verdict"] = dsr_verdict(dsr["dsr"])
