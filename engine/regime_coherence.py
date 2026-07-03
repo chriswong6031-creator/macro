@@ -59,6 +59,19 @@ _CAUTIOUS_BANNER = {"RISK_OFF", "risk-off", "risk_off"}
 # a "materially cautious" live gate: below this the gate is de-grossing meaningfully.
 _GATE_CAUTIOUS_MAX = 0.90
 
+# W0.5a — regime_vector vocabulary registration (Setup-Species §3.4).
+# Enumerating these tokens here ensures the coherence module stays the SINGLE
+# authoritative alias map for all state vocabulary across the engine — the fix
+# for the RISK_OFF vs risk-off vs risk_off drift that §3.4 names as a hazard.
+# rate_pressure: the one new categorical state introduced by regime_vector.
+_RATE_PRESSURE_STATES = {"relief", "neutral", "pressure", "panic"}
+# vol_regime 4-state tokens (vol_regime._regime_label vocabulary)
+_VOL_REGIME_STATES = {"calm-contango", "normalizing", "warning",
+                      "backwardation-stress"}
+# A stress-level rate_pressure state (panic) is treated as an ADDITIONAL cautious signal
+# alongside the existing risk vocabulary — not a gate, but tracked in the coherence report.
+_RATE_PRESSURE_STRESS = {"panic", "pressure"}
+
 
 def _gross_tables_agree() -> dict:
     """(A) The three gross tables must match on the shared bands (single-source)."""
@@ -151,6 +164,18 @@ def assert_coherence(latest: dict, *, strict: bool | None = None) -> dict:
         loud.append(f"fused_risk={fused_label}")
     if rs_state in _CAUTIOUS_RS:
         loud.append(f"risk_state={rs_state}")
+    # W0.5a: track rate_pressure from regime_vector (vocabulary registered above).
+    # "panic" and "pressure" are stress signals; tracked, never a gate-stopper here.
+    rv = (latest or {}).get("regime_vector") or {}
+    rate_pressure = rv.get("rate_pressure")
+    if rate_pressure in _RATE_PRESSURE_STRESS:
+        loud.append(f"rate_pressure={rate_pressure}")
+    report["checks"]["rate_pressure"] = {
+        "state": rate_pressure,
+        "is_stress": bool(rate_pressure in _RATE_PRESSURE_STRESS),
+        "degraded": bool(rv.get("regime_vector_degraded")),
+        "known_tokens": sorted(_RATE_PRESSURE_STATES),
+    }
 
     stress_day = bool(loud)
     gate_is_cautious = (gate_factor is not None and gate_factor <= _GATE_CAUTIOUS_MAX)
