@@ -194,6 +194,11 @@
   #r_cal tr.cal-cur td:first-child { box-shadow:inset 3px 0 var(--warn); font-weight:700; }
   .cal-here { color:var(--warn); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
 {% include "_stock_decision.css.j2" %}
+  /* W0.8 — per-stock JSON cadence honesty banner */
+  .stale-banner { display:none; margin:6px 0 4px; padding:7px 12px; border-radius:8px;
+                  border-left:3px solid var(--warn); font-size:12.5px; line-height:1.5;
+                  background:color-mix(in srgb, var(--warn) 11%, var(--panel2));
+                  color:var(--text); }
 </style>
 </head>
 <body>
@@ -219,6 +224,8 @@
         <span style="flex:1"></span>
         <span id="r_asof" class="muted"></span>
       </div>
+      <!-- W0.8: per-stock JSON cadence honesty — shown when detail data trails the board by >1 session -->
+      <div id="r_stale_banner" class="stale-banner"></div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
       <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
       <div id="sv-decision"></div>
@@ -318,7 +325,8 @@
   var q = document.getElementById('q'), sugg = document.getElementById('sugg');
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
   var T = {
-    en: { asof: 'data through', notlib: 'NOT IN LIBRARY', detailmiss: 'DETAIL FILE MISSING',
+    en: { asof: 'data as of', notlib: 'NOT IN LIBRARY', detailmiss: 'DETAIL FILE MISSING',
+          stale_prefix: 'Detail data as of', stale_suffix: '— the board may be fresher. Score and signals on the board could differ.',
           notlibmsg: 'Not in the nightly library (broad A-share search universe + sector ETFs + indices). If this is a Shanghai/Shenzhen A-share, expand config.yml → china.search_universe or add it to that collector/cache.',
           detailmissmsg: 'This ticker is in the search index, but its detail JSON was not deployed. Rebuild the China library and force-add site/chinastockdata.',
           season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
@@ -340,6 +348,7 @@
           p_fin: 'Financing balance', p_chg: '20-day change', p_pct: '% of market cap',
           p_build: 'leverage building', p_unwind: 'de-leveraging' },
     zh: { asof: '数据截至', notlib: '不在库中', detailmiss: '详情文件缺失',
+          stale_prefix: '详情数据截至', stale_suffix: '——看板数据可能更新。看板上的评分和信号可能有所不同。',
           notlibmsg: '不在每晚更新的标的库中（广域 A 股搜索库 ＋ 板块 ETF ＋ 指数）。若这是沪深 A 股，可扩展 config.yml → china.search_universe，或加入该采集器/缓存。',
           detailmissmsg: '该标的已在搜索索引中，但详情 JSON 未部署。请重建中国标的库并强制加入 site/chinastockdata。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
@@ -518,6 +527,35 @@
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+
+    // W0.8 — per-stock JSON cadence honesty: warn when the detail file trails the board
+    // by more than one trading session (>1 calendar day, i.e. >1 business day gap, mapped
+    // roughly as >1 calendar day since A-share sessions are Mon–Fri).
+    // The detail JSON's `asof` is the date of the nightly build that wrote it; the board
+    // (china_standouts.json) has its own as_of. We have only the detail-file asof here,
+    // so we compare against today's date (the user's local date). A gap of 1 day is normal
+    // (yesterday's nightly still valid today); >1 day suggests a missed build cycle.
+    (function () {
+      var banner = document.getElementById('r_stale_banner');
+      if (!banner || !d.asof) return;
+      try {
+        var detailDate = new Date(d.asof);
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        detailDate.setHours(0, 0, 0, 0);
+        var diffDays = Math.round((today - detailDate) / 86400000);
+        if (diffDays > 1) {
+          // Dual-span bilingual pattern — matches the existing t() idiom for user-visible copy.
+          banner.innerHTML =
+            '⚠ <span class="l-en">' + L('stale_prefix') + ' <b>' + d.asof + '</b> ' + L('stale_suffix') + '</span>' +
+            '<span class="l-zh">' + L('stale_prefix') + ' <b>' + d.asof + '</b> ' + L('stale_suffix') + '</span>';
+          banner.style.display = 'block';
+        } else {
+          banner.style.display = 'none';
+          banner.innerHTML = '';
+        }
+      } catch (e) { banner.style.display = 'none'; }
+    })();
 
     // Unified decision-first layout from the canonical view-model (engine/stock_view).
     // Replaces the inline conviction hero + relative-strength / valuation-band / margin

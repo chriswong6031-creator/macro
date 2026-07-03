@@ -141,6 +141,7 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
         ext = r.get("extension") or {}
         sig = r.get("signal") or {}
         _cb = r.get("coiled") or {}
+        _es = r.get("entry_signal") or {}
         out.append({
             "date": str(asof), "ticker": str(tk), "board_rank": i + 1,
             "tier": sig.get("tier_cascade"),
@@ -158,6 +159,26 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             # Schema-union safe: old parquet rows missing these cols read as NaN (handled by concat).
             "coiled_fire":       bool(_cb.get("fire")),
             "coiled_fire_ticks": _cb.get("fire_ticks"),
+            # W0.2a — tier+stage-stratified grading fields (W0 ship record 2026-07-03).
+            # Schema-union safe: old parquet rows missing these cols read as NaN via pd.concat.
+            # ticks / provisional: native-TF ticks since cross (None for projected T3/T4 cross).
+            "ticks":        sig.get("ticks"),
+            "provisional":  bool(sig.get("provisional")) if sig.get("provisional") is not None else False,
+            # ext_score: extension score 0..1 at fire time (anti-chase anti-rank lever).
+            "ext_score":    float((ext.get("score")) or 0.0),
+            # washout_2w: explicit-name alias for the 2W StochRSI washout-reclaim flag
+            # (kept alongside legacy "washout" for backward compat with existing parquet).
+            "washout_2w":   bool(r.get("washout_2w")),
+            # hold_state: W6-C basing-state after confluence anchor. None until the HOLD builder
+            # port (W0.1) lands and begins populating rec["hold"] — wired here as a schema
+            # placeholder so the ledger schema is stable before the first real value arrives.
+            "hold_state":   (r.get("hold") or {}).get("state"),
+            # entry_status: confluence-gated "buyable now" flag from entry_signal.status.
+            "entry_status": _es.get("status"),
+            # sector_turn: W0.10 sector first-tick-up flag (phase==Trough & osc_slope>0 in
+            # forward_log). Schema-union safe: old parquet rows missing this col read as NaN
+            # (handled by pd.concat transparently). "bottoming" when sector qualifies; None otherwise.
+            "sector_turn":  (r.get("sector_turn") or {}).get("state"),
         })
     if not out:
         return 0
@@ -291,8 +312,30 @@ def grade() -> dict:
                 n_pinned += 1
             if ex is None:
                 continue
-            recs.append({"date": row["date"], "rank": row.get("board_rank"),
-                         "extended": bool(row.get("extended")), "fwd": ex})
+            # W0.2a — carry tier + flag columns into the grade record for stratification.
+            # Old rows pre-W0.2a have NaN for the new fields; _slice_table groups NaN → "None".
+            recs.append({
+                "date": row["date"], "rank": row.get("board_rank"),
+                "extended": bool(row.get("extended")), "fwd": ex,
+                # tier_cascade (T1/T2/T3/T4) — the primary stratification dimension.
+                "tier": row.get("tier"),
+                # washout_2w: prefer the explicit-name field (W0.2a schema); fall back to
+                # the legacy "washout" column so old ledger rows are still stratified.
+                "washout_2w": (
+                    row.get("washout_2w")
+                    if row.get("washout_2w") is not None
+                    else row.get("washout")
+                ),
+                # coiled: COILED cohort-washout flag (wave-3).
+                "coiled": row.get("coiled"),
+                # hold_state: W6-C basing state (None until W0.1 HOLD port populates it).
+                "hold_state": row.get("hold_state"),
+                # entry_status: confluence-gated entry gate label.
+                "entry_status": row.get("entry_status"),
+                # sector_turn: W0.10 sector first-tick-up state ("bottoming" or None).
+                # Old rows pre-W0.10 will show NaN here (grouped as "None" in _slice_table).
+                "sector_turn": row.get("sector_turn"),
+            })
         if len(recs) < _MIN_GRADED:
             out["by_horizon"][f"{h}d"] = {"n": len(recs), "note": "accruing"}
             continue
@@ -323,8 +366,55 @@ def grade() -> dict:
             "not_extended_fwd": round(float(non["fwd"].mean()), 4) if len(non) >= 5 else None,
             "n_extended": int(len(ext)),
             "n_pinned": int(n_pinned),
+            # W0.2a — tier+stage-stratified forward grading (F3 discipline; calibrates from ledger,
+            # never by fiat). Mirrors grade_us_board._slice_table idiom. "None" = column absent in
+            # pre-W0.2a rows (old ledger rows pre-schema will appear here until the ledger matures).
+            "by_tier":         _slice_table(g, "tier"),
+            "by_washout_2w":   _slice_table(g, "washout_2w"),
+            "by_coiled":       _slice_table(g, "coiled"),
+            "by_hold_state":   _slice_table(g, "hold_state"),
+            "by_entry_status": _slice_table(g, "entry_status"),
+            # W0.10 — sector first-tick-up stratification (display/ledger only; bonus/rank
+            # change ONLY after ledger matures per F3 discipline). "bottoming" vs None.
+            "by_sector_turn":  _slice_table(g, "sector_turn"),
         }
     out["n_graded"] = max((v.get("n", 0) for v in out["by_horizon"].values()), default=0)
+    return out
+
+
+def _slice_table(df: pd.DataFrame, by: str, col: str = "fwd") -> dict:
+    """Stratify a grade DataFrame by one column, returning per-stratum hit-stats.
+
+    Mirrors grade_us_board._slice_table (same idiom, same output schema). NaN values are
+    grouped under the key "None" so the JSON is always valid. Only strata with at least one
+    non-null `col` row are included — thin strata report their honest n.
+
+    Args:
+        df:  per-row grade DataFrame (output of the grade() inner loop — must have `col`).
+        by:  column name to stratify on (e.g. "tier", "washout_2w", "coiled").
+        col: excess column to compute hit-stats on (default "fwd" — CSI300-relative excess).
+    Returns:
+        dict keyed by stratum value (str); each value has {n, hit_rate, wilson_lo, wilson_hi,
+        median_excess, mean_excess} — honest small-sample stats with Wilson CI.
+    """
+    import math
+    out: dict = {}
+    for val, g in df.groupby(by, dropna=False):
+        key = "None" if (val is None or (isinstance(val, float) and math.isnan(val))) else str(val)
+        vals = g[col].dropna()
+        n = len(vals)
+        if n == 0:
+            continue
+        k = int((vals > 0).sum())
+        lo, hi = _wilson_ci(k, n)
+        out[key] = {
+            "n": n,
+            "hit_rate": round(k / n, 4),
+            "wilson_lo": round(lo, 4),
+            "wilson_hi": round(hi, 4),
+            "median_excess": round(float(vals.median()), 5),
+            "mean_excess": round(float(vals.mean()), 5),
+        }
     return out
 
 
