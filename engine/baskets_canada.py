@@ -60,3 +60,18 @@ def compute_canada_baskets() -> dict | None:
     bench = store.read("canada", mem.get("benchmark", BENCHMARK_DEFAULT))
     return compute_region_baskets(closes, mem, bench,
                                   lambda s: store.read("canada", s), name_key="name")
+
+
+def member_closes_getter(closes: pd.DataFrame | None):
+    """Return a callable(basket_dict) -> wide [Date × member-ticker] closes for the
+    sector-ignition layer (engine.sector_ignition). Read-path only; None-safe."""
+    def _get(b: dict) -> pd.DataFrame | None:
+        if closes is None or closes.empty:
+            return None
+        tickers = [m.get("ticker") or m.get("symbol") for m in (b.get("members") or [])
+                   if (m.get("ticker") or m.get("symbol"))]
+        present = [t for t in tickers if t in closes.columns]
+        if len(present) < 3:
+            return None
+        return closes[present]
+    return _get
