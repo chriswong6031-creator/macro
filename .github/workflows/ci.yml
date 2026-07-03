@@ -78,6 +78,13 @@ on:
       - "tests/test_anticipation.py"
       - "tests/test_canon.py"
       - "tests/test_whitehouse_w5.py"
+      # collector-registry tripwire (#1052 post-mortem): scripts/collect.py shipped as a
+      # 0-byte file and merged green because nothing here covered the collection entrypoint.
+      # lib/** is included because the registry import chain runs through lib.config/lib.store.
+      - "scripts/collect.py"
+      - "collectors/**"
+      - "lib/**"
+      - "tests/test_china_news.py"
   workflow_dispatch:
 
 permissions:
@@ -247,6 +254,31 @@ jobs:
           tests/test_missing_tape.py tests/test_price_basis_flip.py
           tests/test_risk_lead_lag.py tests/test_anticipation.py
           tests/test_canon.py tests/test_whitehouse_w5.py -q
+
+  collector-registry:
+    # 2026-07-03 (#1052 post-mortem): PR #1052's squash-merge shipped scripts/collect.py as
+    # a 0-BYTE file. An empty module imports fine and exits 0, so every scheduled collect
+    # run (daily / asia-close / weekly / backfill / intl_etf all invoke `python -m
+    # scripts.collect`) became a silent no-op until #1093 restored it — and the truncation
+    # merged GREEN because no CI job covered the collection entrypoint. This is the
+    # tripwire: tests/test_china_news.py imports all_adapters() from scripts.collect (and
+    # proves china_news registers even without akshare), and the breadth assert fails RED
+    # if the registry is emptied or gutted. 105 of ~132 adapters register under these
+    # minimal deps — the yfinance/akshare ones drop out by design via the registry's
+    # per-module try/except — so the >100 floor holds without heavyweight installs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyyaml requests
+      - name: china_news collector tests (incl. adapter-registered-without-akshare)
+        run: python -m pytest tests/test_china_news.py -q
+      - name: adapter registry must stay populated
+        run: |
+          python -c "from scripts.collect import all_adapters; n = len(all_adapters()); assert n > 100, f'adapter registry gutted: only {n} adapters registered'; print(f'{n} adapters registered')"
 
   cycle-consistency:
     # W3.6 (R3-M3): the SAME instrument must show the SAME pos_v2/phase_v2 across every
