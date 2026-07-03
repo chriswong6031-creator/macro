@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-02T12:49:05.556477+00:00",
+  "generated_at": "2026-07-03T10:49:22.941219+00:00",
   "grade_horizons": [
     5,
     21,
@@ -39,10 +39,10 @@
     },
     "china_news": {
       "5": {
-        "n_obs": 492,
-        "n_dates": 7,
+        "n_obs": 504,
+        "n_dates": 8,
         "hit_rate": null,
-        "excess_mean": 0.020491,
+        "excess_mean": 0.021532,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -59,10 +59,10 @@
     },
     "cn_importance_v0": {
       "5": {
-        "n_obs": 362,
-        "n_dates": 8,
+        "n_obs": 446,
+        "n_dates": 9,
         "hit_rate": null,
-        "excess_mean": 0.022139,
+        "excess_mean": 0.019957,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -79,10 +79,10 @@
     },
     "cn_importance_v0_pit": {
       "5": {
-        "n_obs": 362,
-        "n_dates": 8,
+        "n_obs": 446,
+        "n_dates": 9,
         "hit_rate": null,
-        "excess_mean": 0.022139,
+        "excess_mean": 0.019957,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -121,10 +121,10 @@
     },
     "china_news": {
       "5": {
-        "n_obs": 492,
-        "n_dates": 7,
+        "n_obs": 504,
+        "n_dates": 8,
         "hit_rate": null,
-        "excess_mean": 0.020491,
+        "excess_mean": 0.021532,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -141,10 +141,10 @@
     },
     "cn_importance_v0": {
       "5": {
-        "n_obs": 362,
-        "n_dates": 8,
+        "n_obs": 446,
+        "n_dates": 9,
         "hit_rate": null,
-        "excess_mean": 0.022139,
+        "excess_mean": 0.019957,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -161,10 +161,10 @@
     },
     "cn_importance_v0_pit": {
       "5": {
-        "n_obs": 362,
-        "n_dates": 8,
+        "n_obs": 446,
+        "n_dates": 9,
         "hit_rate": null,
-        "excess_mean": 0.022139,
+        "excess_mean": 0.019957,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -173,16 +173,16 @@
   "placebo_magnitude": {
     "5": {
       "covered_ticker": {
-        "n_grades": 158,
-        "mean_abs_excess": 0.06173
+        "n_grades": 160,
+        "mean_abs_excess": 0.061601
       },
       "fallback_no_ticker": {
         "n_grades": 120,
         "mean_abs_excess": 0.0
       },
       "overall": {
-        "n_grades": 278,
-        "mean_abs_excess": 0.035084
+        "n_grades": 280,
+        "mean_abs_excess": 0.0352
       }
     },
     "_meta": {
@@ -193,8 +193,8 @@
     }
   },
   "counts": {
-    "n_claims": 5125,
-    "n_grades": 2598,
+    "n_claims": 7937,
+    "n_grades": 2780,
     "n_placebo": 342,
     "n_rejected": 0
   },
@@ -231,8 +231,8 @@
     "china_news": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=7 < 25 required. State: ACCRUING. Need 18 more independent date clusters.",
-        "n_dates": 7,
+        "reason": "n_dates=8 < 25 required. State: ACCRUING. Need 17 more independent date clusters.",
+        "n_dates": 8,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -260,8 +260,8 @@
     "cn_importance_v0": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=8 < 25 required. State: ACCRUING. Need 17 more independent date clusters.",
-        "n_dates": 8,
+        "reason": "n_dates=9 < 25 required. State: ACCRUING. Need 16 more independent date clusters.",
+        "n_dates": 9,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -289,8 +289,8 @@
     "cn_importance_v0_pit": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=8 < 25 required. State: ACCRUING. Need 17 more independent date clusters.",
-        "n_dates": 8,
+        "reason": "n_dates=9 < 25 required. State: ACCRUING. Need 16 more independent date clusters.",
+        "n_dates": 9,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -432,5 +432,748 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-02T12:49:06.320540+00:00"
+  "ladder_states_at": "2026-07-03T10:49:24.279641+00:00",
+  "promotion_readiness": {
+    "altdata": {
+      "5": {
+        "n_dates": 5,
+        "needed": 25,
+        "wilson_ci_low": 0.463027,
+        "hit_rate": 0.56383,
+        "excess_mean": 0.004928,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": "2026-08-28",
+        "reason": "n_dates=5 < 25 required. State: ACCRUING. Need 20 more independent date clusters."
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      }
+    },
+    "china_intel": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='china_intel'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='china_intel'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='china_intel'"
+      }
+    },
+    "china_news": {
+      "5": {
+        "n_dates": 8,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": 0.021532,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": "2026-08-02",
+        "reason": "n_dates=8 < 25 required. State: ACCRUING. Need 17 more independent date clusters."
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      }
+    },
+    "china_policy": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='china_policy'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='china_policy'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='china_policy'"
+      }
+    },
+    "cn_importance_v0": {
+      "5": {
+        "n_dates": 9,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": 0.019957,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": "2026-07-28",
+        "reason": "n_dates=9 < 25 required. State: ACCRUING. Need 16 more independent date clusters."
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      }
+    },
+    "cn_importance_v0_pit": {
+      "5": {
+        "n_dates": 9,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": 0.019957,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": "2026-07-28",
+        "reason": "n_dates=9 < 25 required. State: ACCRUING. Need 16 more independent date clusters."
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      }
+    },
+    "communique_diff": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='communique_diff'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='communique_diff'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='communique_diff'"
+      }
+    },
+    "epu_gpr": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='epu_gpr'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='epu_gpr'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='epu_gpr'"
+      }
+    },
+    "extraction_8k": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='extraction_8k'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='extraction_8k'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='extraction_8k'"
+      }
+    },
+    "missing_tape": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='missing_tape'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='missing_tape'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='missing_tape'"
+      }
+    },
+    "news_llm": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='news_llm'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='news_llm'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='news_llm'"
+      }
+    },
+    "novelty_v0": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='novelty_v0'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='novelty_v0'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='novelty_v0'"
+      }
+    },
+    "policy_watch": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='policy_watch'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='policy_watch'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='policy_watch'"
+      }
+    },
+    "radar": {
+      "5": {
+        "n_dates": 7,
+        "needed": 25,
+        "wilson_ci_low": 0.505789,
+        "hit_rate": 0.536981,
+        "excess_mean": 0.007732,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": "2026-08-08",
+        "reason": "n_dates=7 < 25 required. State: ACCRUING. Need 18 more independent date clusters."
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      }
+    },
+    "sfed_sentiment": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='sfed_sentiment'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='sfed_sentiment'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='sfed_sentiment'"
+      }
+    },
+    "us_importance_v0": {
+      "5": {
+        "n_dates": 1,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": -0.01265,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": "2027-06-04",
+        "reason": "n_dates=1 < 25 required. State: ACCRUING. Need 24 more independent date clusters."
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      }
+    },
+    "us_importance_v0_pit": {
+      "5": {
+        "n_dates": 1,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": -0.01265,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": "2027-06-04",
+        "reason": "n_dates=1 < 25 required. State: ACCRUING. Need 24 more independent date clusters."
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters."
+      }
+    },
+    "whitehouse": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='whitehouse'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='whitehouse'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='whitehouse'"
+      }
+    },
+    "_duel_context": {
+      "altdata": {
+        "challenger_excess_mean_5d": 0.004928,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 5,
+        "wilson_ci_low_5d": 0.463027
+      },
+      "china_intel": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "china_news": {
+        "challenger_excess_mean_5d": 0.021532,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 8,
+        "wilson_ci_low_5d": null
+      },
+      "china_policy": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "cn_importance_v0": {
+        "challenger_excess_mean_5d": 0.019957,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 9,
+        "wilson_ci_low_5d": null
+      },
+      "cn_importance_v0_pit": {
+        "challenger_excess_mean_5d": 0.019957,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 9,
+        "wilson_ci_low_5d": null
+      },
+      "communique_diff": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "epu_gpr": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "extraction_8k": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "missing_tape": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "news_llm": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "novelty_v0": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "policy_watch": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "radar": {
+        "challenger_excess_mean_5d": 0.007732,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 7,
+        "wilson_ci_low_5d": 0.505789
+      },
+      "sfed_sentiment": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
+      "us_importance_v0": {
+        "challenger_excess_mean_5d": -0.01265,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 1,
+        "wilson_ci_low_5d": null
+      },
+      "us_importance_v0_pit": {
+        "challenger_excess_mean_5d": -0.01265,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 1,
+        "wilson_ci_low_5d": null
+      },
+      "whitehouse": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.061601,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      }
+    }
+  },
+  "promotion_readiness_at": "2026-07-03T10:49:27.321294+00:00"
 }
