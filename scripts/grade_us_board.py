@@ -70,9 +70,6 @@ SNAPSHOTS_JSONL = LEDGER_DIR / "snapshots.jsonl"
 TRACK_JSON = ROOT / "site" / "factordata" / "us_board_track.json"
 OUTCOMES_JSON = ROOT / "site" / "factordata" / "us_board_outcomes.json"
 
-# Number of board dates (not calendar days) to look back for the outcomes strip.
-OUTCOMES_LOOKBACK_BOARDS = 21
-
 HORIZONS = [5, 10, 21]
 LANES = ["buy", "watch", "laggards", "laggard"]
 K_LIST = [1, 3, 5, 10]
@@ -684,7 +681,6 @@ def build_track(df: pd.DataFrame, boards: list[dict], names: pd.DataFrame) -> di
 # --------------------------------------------------------------------------- #
 # surfaced-outcome strip (W2: "who was here and what happened?")
 # --------------------------------------------------------------------------- #
-OUTCOMES_JSON = ROOT / "site" / "factordata" / "us_board_outcomes.json"
 
 
 def emit_outcomes(boards: list[dict], names: pd.DataFrame, track: dict,
@@ -844,167 +840,6 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------- #
-# outcomes strip (W2)
-# --------------------------------------------------------------------------- #
-
-def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
-    """Build the 'recently surfaced → outcome' strip artifact.
-
-    Logic:
-    - Collect every ticker that appeared on the BUY lane within the last
-      OUTCOMES_LOOKBACK_BOARDS board dates.
-    - Find tickers that are ABSENT from the CURRENT (most-recent) buy board.
-    - For each such exited ticker, compute pct change from the close on their
-      first_surfaced date to the most-recent available close.
-    - Skip rows with missing prices (never fabricate).
-    - Sort by |pct_since| desc, cap at 15 rows.
-    - Include summary: n_running, n_stopped, median_pct.
-
-    Returns the dict to be serialised as us_board_outcomes.json.
-    Degrades to {"empty": True, ...} only when genuinely no exited names exist.
-    """
-    if not boards:
-        return {"empty": True, "as_of": str(dt.date.today()), "reason": "no boards"}
-
-    # Last OUTCOMES_LOOKBACK_BOARDS board snapshots (already sorted asc)
-    window = boards[-OUTCOMES_LOOKBACK_BOARDS:]
-    if not window:
-        return {"empty": True, "as_of": str(dt.date.today()), "reason": "window empty"}
-
-    current_board = window[-1]
-    current_as_of = current_board.get("as_of", "")
-    current_buy_tickers: set[str] = {
-        r["ticker"] for r in current_board.get("rows", [])
-        if r.get("lane") in ("buy", "laggards") or r.get("lane") == "buy"
-    }
-    # More precisely: only the "buy" lane per the invariants
-    current_buy_tickers = {
-        r["ticker"] for r in current_board.get("rows", [])
-        if r.get("lane") == "buy"
-    }
-
-    # Build a map: ticker -> {first_surfaced, sector, lane} from the window (buy lane only)
-    first_seen: dict[str, dict] = {}
-    for b in window:
-        as_of_str = b.get("as_of", "")
-        for r in b.get("rows", []):
-            if r.get("lane") != "buy":
-                continue
-            tk = r.get("ticker")
-            if not tk:
-                continue
-            if tk not in first_seen:
-                first_seen[tk] = {
-                    "first_surfaced": as_of_str,
-                    "sector": r.get("sector"),
-                    "lane": r.get("lane"),
-                }
-
-    # Find tickers that were in the window's buy lane but are NOT in the current buy board
-    exited = {tk: meta for tk, meta in first_seen.items() if tk not in current_buy_tickers}
-
-    if not exited:
-        return {
-            "empty": True,
-            "as_of": current_as_of,
-            "reason": "all window tickers still on the buy board",
-        }
-
-    # Price lookups: use the broad closes DataFrame (columns=ticker, index=DatetimeIndex)
-    last_price_date = names.index.max() if not names.empty else None
-    rows_out = []
-    for tk, meta in exited.items():
-        if tk not in names.columns:
-            continue
-        ser = names[tk].dropna()
-        if ser.empty:
-            continue
-
-        first_surfaced_str = meta["first_surfaced"]
-        try:
-            first_dt = pd.Timestamp(first_surfaced_str)
-        except Exception:
-            continue
-
-        # Close on or after first_surfaced (next available bar at or after that date)
-        idx_first = ser.index.searchsorted(first_dt, side="left")
-        if idx_first >= len(ser):
-            continue
-        surfaced_price = float(ser.iloc[idx_first])
-        if surfaced_price <= 0:
-            continue
-
-        last_price = float(ser.iloc[-1])
-        pct_since = (last_price / surfaced_price - 1.0) * 100.0
-
-        # Determine exit_date: first board date in window where this ticker is absent
-        exit_date_str = current_as_of  # fallback: use current as_of as exit date
-        appeared_before = False
-        for b in window:
-            tickers_in_b_buy = {
-                r["ticker"] for r in b.get("rows", []) if r.get("lane") == "buy"
-            }
-            if tk in tickers_in_b_buy:
-                appeared_before = True
-            elif appeared_before:
-                exit_date_str = b.get("as_of", current_as_of)
-                break
-
-        # days_on_board: count of board dates the ticker appeared on the buy lane
-        days_on_board = sum(
-            1 for b in window
-            if any(r.get("ticker") == tk and r.get("lane") == "buy"
-                   for r in b.get("rows", []))
-        )
-
-        if pct_since > 2.0:
-            status = "running"
-        elif pct_since < -2.0:
-            status = "stopped"
-        else:
-            status = "flat"
-
-        rows_out.append({
-            "ticker": tk,
-            "sector": meta.get("sector") or "",
-            "first_surfaced": first_surfaced_str,
-            "surfaced_price": round(surfaced_price, 2),
-            "last_price": round(last_price, 2),
-            "pct_since": round(pct_since, 1),
-            "days_on_board": days_on_board,
-            "exit_date": exit_date_str,
-            "status": status,
-            "lane": meta.get("lane") or "buy",
-        })
-
-    if not rows_out:
-        return {
-            "empty": True,
-            "as_of": current_as_of,
-            "reason": "no exited tickers had price data",
-        }
-
-    # Sort by |pct_since| desc, cap at 15
-    rows_out.sort(key=lambda r: abs(r["pct_since"]), reverse=True)
-    rows_out = rows_out[:15]
-
-    pcts = [r["pct_since"] for r in rows_out]
-    n_running = sum(1 for r in rows_out if r["status"] == "running")
-    n_stopped = sum(1 for r in rows_out if r["status"] == "stopped")
-    median_pct = float(sorted(pcts)[len(pcts) // 2]) if pcts else 0.0
-
-    return {
-        "as_of": current_as_of,
-        "rows": rows_out,
-        "summary": {
-            "n_running": n_running,
-            "n_stopped": n_stopped,
-            "median_pct": round(median_pct, 1),
-        },
-    }
-
-
-# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> None:
@@ -1070,22 +905,6 @@ def main() -> None:
                       f"| corr(pos,exc)={bl.get('corr_position_excess')} "
                       f"rank_by={bl.get('rank_by_of_matured_boards')}")
 
-    # W2: outcomes strip — names that left the buy board within the last 21 board dates
-    try:
-        outcomes = emit_outcomes(boards, names)
-        OUTCOMES_JSON.parent.mkdir(parents=True, exist_ok=True)
-        OUTCOMES_JSON.write_text(json.dumps(outcomes, indent=1, default=str))
-        if not args.quiet:
-            if outcomes.get("empty"):
-                print(f"[outcomes] empty ({outcomes.get('reason','')}) — wrote {OUTCOMES_JSON.name}")
-            else:
-                smry = outcomes.get("summary", {})
-                print(f"[outcomes] {len(outcomes.get('rows', []))} exited names "
-                      f"(running={smry.get('n_running')} stopped={smry.get('n_stopped')} "
-                      f"median={smry.get('median_pct')}%) → {OUTCOMES_JSON.name}")
-    except Exception as _oe:  # noqa: BLE001 — outcomes strip is additive; never fatal
-        if not args.quiet:
-            print(f"[outcomes] skipped ({_oe})")
 
 
 if __name__ == "__main__":
