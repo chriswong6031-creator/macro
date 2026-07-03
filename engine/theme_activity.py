@@ -27,10 +27,14 @@ CROWDING sources (off-exchange short ratio, WSB) are deliberately NOT fused here
 asymmetry invariant: independent real-activity divergence UPGRADES ahead of price; crowding
 only ever trims).
 
-W0d extensions (display-only, never alter fused_obs_z cross-sectional path):
-  * run-rate surprise (rr_surprise) — 30% intra-leg blend inside the usaspending metric before
-    cross-sectional z; zeroed during US fiscal-year-end surge months (Sep/Oct) via LAG-derived
-    gate (R9b). Exposed in primary dict for display.
+W0d extensions:
+  * run-rate surprise (rr_surprise) — DOES alter fused_obs_z BY DESIGN: a 30% intra-leg blend
+    inside the usaspending metric before the cross-sectional z (masterplan W0d; corr with the
+    YoY metric 0.319 = additive), zeroed during US fiscal-year-end surge months (Sep/Oct) via
+    the LAG-derived gate (R9b). The real invariant: this module's output stays on the
+    context-only radar path (radar is_context_only) — nothing here reaches stock_score,
+    spotlight, or regime.classify. The two extensions below ARE display-only and never
+    enter fused_obs_z/fused_accel:
   * pipeline_to_award — count-based SAM→USAspending conversion context per basket; PIPELINE_LAG
     is a labeled assumption, not backtested. Display detail only, never enters fused_obs_z.
   * new_programs — first-ever NAICS/CFDA code appearance per basket, loaded from
@@ -456,7 +460,9 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
     basket with >=1 usable source. Two-pass: per-source raw metrics, then cross-sectional
     robust-z + weight fusion. Pure-ish: inject sources_data for hermetic tests.
 
-    W0d display-only extensions (do not alter fused_obs_z or fused_accel paths):
+    W0d extensions (NOTE: rr_surprise DOES enter fused_obs_z — it blends into the usaspending
+    leg metric at RR_WEIGHT before the cross-sectional z, by design; only pipeline_to_award and
+    new_programs are display-only and outside the fused paths):
       out[bid]["primary"]["rr_surprise"]    — run-rate ratio (recent / trailing avg); None if gated
       out[bid]["primary"]["rr_sept_gated"] — True if Sep/Oct gate zeroed rr blend this month
       out[bid]["pipeline_to_award"]        — SAM->USAspending count context dict or None

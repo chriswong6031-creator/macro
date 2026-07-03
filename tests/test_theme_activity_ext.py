@@ -110,21 +110,47 @@ def test_rr_surprise_absent_when_history_too_short():
     assert "rr_surprise" in out2
 
 
+def _wide_asym(end_date: str) -> pd.DataFrame:
+    """Frame where the YoY accel DIFFERS from rr_surprise, so blend-weight assertions
+    discriminate (uniform fixtures make yoy==rr and any RR_WEIGHT passes trivially).
+
+    Trimmed series (16 usable months): [30M]*3 + [3M]*10 + [30M]*3
+      YoY: recent = 90M; year-ago window (iloc[-15:-12]) = 30+30+3 = 63M -> accel 90/63
+      rr:  trailing-9mo (iloc[-12:-3]) all 3M -> rr_raw = 90 / (3*3) = 10
+    Both tickers carry the same pattern (per-ticker ratios preserved, min_base cleared)."""
+    vals = [30 * M] * 3 + [3 * M] * 10 + [30 * M] * 3 + [3 * M] * ta.LAG_MONTHS
+    idx = pd.date_range(end=end_date, periods=len(vals), freq="MS")
+    return pd.DataFrame({"LMT": vals, "NOC": vals}, index=idx)
+
+
 def test_rr_blend_in_metric():
-    """The returned metric is blended when rr_w > 0: metric = 0.7*yoy_metric + 0.3*rr_metric."""
-    spec = {"LMT": (5 * M, 25 * M), "NOC": (5 * M, 25 * M)}
-    # Use non-Sept date so gate is open
-    wide = _wide_with_dates(spec, end_date="2026-05-01", n_complete=16)
+    """DISCRIMINATING blend test: yoy != rr, so a wrong RR_WEIGHT (or a missing blend)
+    fails.  Open gate (recent window Mar-May)."""
+    wide = _wide_asym(end_date="2026-08-01")  # trimmed ends May 2026; recent = Mar/Apr/May
     out = ta.source_accel(wide, ["LMT", "NOC"])
     assert out is not None
-    assert not out.get("rr_sept_gated", False), "Should not be gated in May"
-    # The metric must be the blended value, not identical to pure YoY
-    # YoY: recent=150M, prior=30M -> accel=5 -> yoy_metric=ln(5)
-    # rr: rr_surprise=5 -> rr_metric=ln(5)
-    # In this toy example both are equal so blend equals pure; verify the field exists
-    assert "rr_surprise_metric" in out
-    expected_blended = (1.0 - ta.RR_WEIGHT) * float(np.log(5.0)) + ta.RR_WEIGHT * float(np.log(5.0))
-    assert abs(out["metric"] - expected_blended) < 0.01
+    assert not out.get("rr_sept_gated", False), "Should not be gated in Mar-May window"
+    yoy_metric = float(np.log(90.0 / 63.0))
+    rr_metric = float(np.log(10.0))
+    assert abs(out["rr_surprise"] - 10.0) < 1e-6
+    expected = (1.0 - ta.RR_WEIGHT) * yoy_metric + ta.RR_WEIGHT * rr_metric
+    assert abs(out["metric"] - expected) < 1e-9, (
+        f"metric {out['metric']} != 0.7*yoy+0.3*rr {expected} — blend weight wrong or missing")
+    # and it must NOT equal pure YoY (that would mean the blend never fired)
+    assert abs(out["metric"] - yoy_metric) > 0.1
+
+
+def test_rr_sept_gate_blocks_blend_discriminating():
+    """DISCRIMINATING gate test: with yoy != rr, a gate failure (blend leaking through in
+    Sep/Oct) produces a metric visibly different from pure YoY — the uniform-fixture gate
+    tests cannot catch that leak because there yoy==rr makes blended==pure."""
+    wide = _wide_asym(end_date="2025-12-01")  # trimmed ends Sep 2025 -> gated
+    out = ta.source_accel(wide, ["LMT", "NOC"])
+    assert out is not None
+    assert out.get("rr_sept_gated") is True
+    yoy_metric = float(np.log(90.0 / 63.0))
+    assert abs(out["metric"] - yoy_metric) < 1e-9, (
+        f"metric {out['metric']} != pure YoY {yoy_metric} — rr blend LEAKED through the Sept gate")
 
 
 # ---------------------------------------------------------------------------
@@ -347,6 +373,31 @@ def test_new_programs_dedup_on_second_run(tmp_path):
     assert len(first) == 1
     second = sam_new_programs(opps, naics_map, seen_path)
     assert len(second) == 0, "Same NAICS must not be emitted twice"
+
+
+def test_new_programs_seen_reconstructed_from_ledger(tmp_path):
+    """A lost/corrupt naics_seen.json must NOT re-emit historical NAICS as fake new-program
+    events when the program ledger still holds them (PIT honesty: reconstruct, don't reset)."""
+    naics_map = {"336411": ["defense"]}
+    seen_path = tmp_path / "naics_seen.json"
+    ledger_path = tmp_path / "program_ledger.parquet"
+    pd.DataFrame([{"basket_id": "defense", "naics_or_cfda": "336411", "source": "sam_gov",
+                   "first_seen_date": "2026-01-05", "title": "old", "type": "presol"}]
+                 ).to_parquet(ledger_path, index=False)
+    opps = [{"naicsCode": "336411", "type": "presol", "title": "T", "postedDate": "2026-07-01"}]
+    # seen JSON absent entirely -> must recover from ledger, emit nothing
+    events = sam_new_programs(opps, naics_map, seen_path, ledger_path=ledger_path)
+    assert events == [], "ledger-known NAICS re-emitted after seen-JSON loss"
+    # corrupt JSON -> same recovery
+    seen_path.write_text("{not json")
+    events = sam_new_programs(opps, naics_map, seen_path, ledger_path=ledger_path)
+    assert events == [], "ledger-known NAICS re-emitted after seen-JSON corruption"
+    # a genuinely new NAICS still fires through the reconstructed set
+    seen_path.unlink()
+    opps2 = opps + [{"naicsCode": "541715", "type": "presol", "title": "N", "postedDate": "2026-07-02"}]
+    naics_map2 = {"336411": ["defense"], "541715": ["defense"]}
+    events = sam_new_programs(opps2, naics_map2, seen_path, ledger_path=ledger_path)
+    assert [e["naics_or_cfda"] for e in events] == ["541715"]
 
 
 def test_new_programs_new_naics_after_first_run(tmp_path):
