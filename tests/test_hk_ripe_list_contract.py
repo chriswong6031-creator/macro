@@ -126,3 +126,37 @@ def test_weekend_does_not_trip_gate(monkeypatch):
     _patch_panels(monkeypatch, card_max="2026-07-03", basket_max="2026-07-02")
     td = B._tailwind_staleness_td()
     assert td is not None and td <= B.FRESHNESS_MAX_STALE_TD
+
+
+# ---------------------------------------------------------------------------
+# FALLING-KNIFE DEMOTE (H4 phase-0 KILL — reports/h4-phase0.md): the deepest
+# trailing-3M-return quintile is pushed OUT of the entry groups onto the watch strip.
+# ---------------------------------------------------------------------------
+def test_falling_knife_demotes_deepest_quintile():
+    # board universe of 10 names, alpha (3M-return z) from -3 (deepest loser) up to +3.
+    enriched = [{"ticker": f"T{i}.HK", "alpha": a}
+                for i, a in enumerate(range(-3, 7))]           # -3,-2,...,+6 (n=10)
+    # entry candidates = all 10. The deepest quintile (P20 of -3..6 ~ -1.2) => T0,T1 (-3,-2).
+    buys = list(enriched)
+    keep, demoted, cut = B._falling_knife_demote(buys, enriched)
+    demoted_tks = {e["ticker"] for e in demoted}
+    # the two deepest 3M losers are demoted; nothing above the cut is touched
+    assert demoted_tks == {"T0.HK", "T1.HK"}, demoted_tks
+    assert cut is not None and cut < 0
+    assert all(e.get("alpha") > cut for e in keep)
+    # in-place tags carry the reason numbers for the watch-strip chip
+    assert all(e.get("knife_demoted") and e.get("knife_z") is not None for e in demoted)
+    # N-of-M accounting is exact (the required demonstration)
+    assert len(demoted) == 2 and len(keep) == 8
+
+
+def test_falling_knife_keeps_non_losers_and_is_a_noop_when_thin():
+    # a strong entry candidate (top alpha) is NEVER demoted
+    enriched = [{"ticker": f"T{i}.HK", "alpha": a} for i, a in enumerate(range(-3, 7))]
+    leader = {"ticker": "LEAD.HK", "alpha": 2.5}
+    keep, demoted, _ = B._falling_knife_demote([leader], enriched)
+    assert keep == [leader] and demoted == []
+    # thin cross-section (<5) => no quintile, no demote (fail-safe no-op)
+    thin = [{"ticker": "A.HK", "alpha": -9.0}, {"ticker": "B.HK", "alpha": 1.0}]
+    keep2, demoted2, cut2 = B._falling_knife_demote(list(thin), thin)
+    assert demoted2 == [] and cut2 is None and keep2 == thin

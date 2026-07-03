@@ -442,6 +442,10 @@
       background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
   .nb-flow .fl-val { color: var(--info); border-color: color-mix(in srgb, var(--info) 40%, var(--line));
       background: color-mix(in srgb, var(--info) 10%, var(--panel)); }
+  /* H2a SFC reportable-short CONTEXT chip (ACCRUE) — a high short book leans returns softer */
+  .nb-flow .fl-short { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 42%, var(--line));
+      background: color-mix(in srgb, var(--warn) 11%, var(--panel)); }
+  .nb-flow .fl-accrue { font-weight: 700; opacity: .72; }
   /* smart-money flows desk */
   .flows-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
   @media (max-width: 760px) { .flows-grid { grid-template-columns: 1fr; } }
@@ -464,6 +468,21 @@
   .watch-grid a:hover { border-color: var(--link); transform: translateY(-1px); }
   .watch-grid .wg-tk { font-weight: 800; font-size: 12.5px; }
   .watch-grid .wg-v { font-size: 10px; color: var(--muted); line-height: 1.3; }
+  /* falling-knife demote (H4 KILL) — deepest-3M loser pushed out of the entry groups */
+  .watch-grid a.wg-knife { border-color: color-mix(in srgb, var(--down) 34%, var(--line));
+      background: color-mix(in srgb, var(--down) 7%, var(--panel)); }
+  .watch-grid .wg-knife-chip { margin-top: 3px; font-size: 9px; font-weight: 800; line-height: 1.25;
+      color: var(--down); }
+  /* H5 peg-liquidity regime conditioner chip in the deskhero */
+  .desk-liq { margin-top: 9px; display: flex; flex-direction: column; gap: 3px; padding: 8px 11px;
+      border-radius: 9px; border: 1px solid var(--line); background: var(--panel); }
+  .desk-liq.lq-easy { border-color: color-mix(in srgb, var(--up) 34%, var(--line));
+      background: color-mix(in srgb, var(--up) 7%, var(--panel)); }
+  .desk-liq.lq-tight { border-color: color-mix(in srgb, var(--down) 34%, var(--line));
+      background: color-mix(in srgb, var(--down) 7%, var(--panel)); }
+  .desk-liq .lq-chip { font-size: 11.5px; font-weight: 700; }
+  .desk-liq .lq-accrue { font-weight: 600; opacity: .7; font-size: 10.5px; }
+  .desk-liq .lq-note { font-size: 10.5px; color: var(--muted); line-height: 1.35; }
   /* high-impact event-risk banner (macro) */
   .evbanner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
       padding: 10px 15px; border-radius: 11px; margin-bottom: 0;
@@ -560,6 +579,18 @@
           {% if setups and setups.cohort and setups.cohort.state %} · {{ t('leadership', '领先股') }} <b>{{ setups.cohort.state }}</b>{% endif %}
           — {{ t('a hot tape taxes a chase and caps size; it never gates the rank.', '过热行情会对追高征税并限制仓位；从不决定排名。') }}
         </div>
+        {# H5 PEG-LIQUIDITY REGIME conditioner (ACCRUE — reports/h5-peg-liquidity-phase0.md).
+           agg_balance-driven EASY/TIGHT label + one sizing-context sentence. Display + sizing
+           context ONLY — never a rank / direction call. #}
+        {% set _lq = setups.liquidity_regime if setups else None %}
+        {% if _lq and _lq.regime %}
+        <div class="desk-liq lq-{{ _lq.regime|lower }}" title="{{ _lq.sizing_note.en }} · {{ _lq.sizing_note.zh }}">
+          <span class="lq-chip">💧 {{ t('HK liquidity regime', '香港流动性状态') }}:
+            <b>{{ t('EASY', '宽松') if _lq.regime == 'EASY' else (t('TIGHT', '紧张') if _lq.regime == 'TIGHT' else t('NEUTRAL', '中性')) }}</b>
+            <span class="lq-accrue">({{ t('accruing conditioner', '累积中调节器') }})</span></span>
+          <span class="lq-note"><span class="l-en">{{ _lq.sizing_note.en }}</span><span class="l-zh">{{ _lq.sizing_note.zh }}</span></span>
+        </div>
+        {% endif %}
       </div>
       <div>
         {% if _nall %}
@@ -697,6 +728,12 @@
           {% if n.ah_value and n.ah_value.z is not none %}
           <span class="{{ 'fl-val' if n.ah_value.cheap else '' }}" title="A/H value: the H/HK line trades at a {{ n.ah_value.premium_pct }}% discount to its mainland A twin (value z {{ '%+.2f'|format(n.ah_value.z) }}). A high premium = H is the cheaper way to own the same company. · A/H 价值：港股 H 相对 A 股孪生折价 {{ n.ah_value.premium_pct }}%（z {{ '%+.2f'|format(n.ah_value.z) }}）。">A/H {{ '%+.1f'|format(n.ah_value.z) }}{% if n.ah_value.cheap %} · {{ t('cheap H', 'H 便宜') }}{% endif %}</span>
           {% endif %}
+          {# SFC reportable-short CONTEXT chip (H2a — ACCRUE-labelled, reports/h2a-phase0.md).
+             own-history days-to-cover percentile; correct-signed (high shorts -> softer fwd
+             returns) but sub-threshold (DSR 0.32), so it is CONTEXT, never a rank input. #}
+          {% if n.sfc_short and n.sfc_short.pctile is not none %}
+          <span class="{{ 'fl-short' if n.sfc_short.pctile >= 75 else '' }}" title="SFC reportable short positions: this name's days-to-cover (short shares / 63d ADV) sits at its own-history P{{ n.sfc_short.pctile }} (currently {{ n.sfc_short.dtc }} days, SFC week {{ n.sfc_short.as_of }}). Phase-0 H2a: a high short book leans forward returns SOFTER — but the edge is correct-signed and SUB-threshold (DSR 0.32 &lt; 0.90), so this is ACCRUING CONTEXT, not a rank input. · 证监会可报告淡仓：该股回补天数（淡仓股数／63日均量）处于自身历史 P{{ n.sfc_short.pctile }}（当前 {{ n.sfc_short.dtc }} 天，数据周 {{ n.sfc_short.as_of }}）。H2a 相位0：高淡仓使前瞻收益偏软 —— 但优势方向正确却低于门槛（DSR 0.32），故为累积背景，非排名输入。">🩳 {{ t('shorts', '淡仓') }} P{{ n.sfc_short.pctile }} <span class="fl-accrue">({{ t('accruing', '累积中') }})</span></span>
+          {% endif %}
         </div>
         {% endif %}
         {% if c %}
@@ -719,9 +756,17 @@
       <div class="watch-grid">
         {% for w in setups.watch %}
         {% set wc = w.conviction %}
-        <a href="hk_lookup.html#{{ w.ticker }}" title="{{ wc.verdict if wc else '' }}">
+        <a href="hk_lookup.html#{{ w.ticker }}" class="{{ 'wg-knife' if w.watch_reason == 'knife' else '' }}" title="{{ wc.verdict if wc else '' }}">
           <span class="wg-tk">{{ w.ticker }} {% if wc and wc.score is not none %}<span class="note" style="font-weight:600">· {{ wc.score }}</span>{% endif %}</span>
           <span class="wg-v">{{ w.name }}{% if wc %} — <span class="l-en">{{ wc.verdict }}</span><span class="l-zh">{{ wc.verdict_zh }}</span>{% endif %}</span>
+          {# FALLING-KNIFE reason chip (H4 phase-0 KILL — reports/h4-phase0.md). A deepest-
+             quintile 3M loser pushed OUT of the entry groups: they keep falling, not rebound. #}
+          {% if w.watch_reason == 'knife' %}
+          <span class="wg-knife-chip" title="Deepest-quintile trailing-3M loser (return z {{ w.knife_z }}). H4 phase-0 KILL: on this HK universe the deepest 3M losers KEEP FALLING (−0.92%/mo, t −2.14) — short-horizon momentum, not reversal — so this name is held OUT of the entry groups. Screen hygiene gate, not a validated seam. · 近3个月跌幅最深五分位（收益 z {{ w.knife_z }}）。H4 相位0 KILL：在该港股universe中，3个月跌幅最深者继续下跌（−0.92%/月，t −2.14）—— 短周期动量而非反转 —— 故该股被排除在入场组之外。筛选卫生门槛，非已验证seam。">
+            <span class="l-en">🔻 3M deepest losers keep falling in HK — phase-0 KILL 2026-07</span>
+            <span class="l-zh">🔻 港股3个月最深跌幅者继续下跌 —— 相位0 KILL 2026-07</span>
+          </span>
+          {% endif %}
         </a>
         {% endfor %}
       </div>
