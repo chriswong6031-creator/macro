@@ -5,6 +5,21 @@
 
 ---
 
+## 0. AMENDMENT (2026-07-03, pre-run) — next-CLOSE fill, not next-open
+
+**Surfaced before any statistical run:** the `data/hk_stocks/` panel's `open` column is
+NaN for ~0% of days 2019–2025 and only ~18% in 2026 (verified: `0001.HK.parquet` open
+non-null by year = 0.00 through 2024, 0.18 in 2026; in the H1 window only 22 of 492 days
+have >100 names with a valid open). **Close coverage is 100% (147/147 every window day).**
+The pre-registered next-**open** fill is therefore not executable on the only in-tree HK
+price panel. Amendment, committed before the run: **fill at the next-session CLOSE** —
+lag+0 = close of the 1st session strictly after Friday T; lag+1 = close of the 2nd session
+(the render-honest point a nightly-rendered, next-morning-read dashboard actually offers).
+The implementation-shortfall test (lag+0 vs lag+1) is preserved and is, if anything, more
+conservative: for a dashboard read the morning after the render, the lag+1 next-close is
+the honest earliest fill. Forward returns are close-to-close from the fill close. Everything
+else in this pre-reg stands. This is a data-availability amendment, not a result-dependent one.
+
 ## 1. Hypothesis
 
 **Mechanism (literature-strong):** an increase in mainland Southbound ownership of an HK-listed name is fast-decay *demand pressure* — buying by the Connect crowd pushes the name up over the following days/weeks. If real and tradable through our delivery vehicle, a cross-sectional rank of the change in Southbound ownership should positively predict forward HK-relative (vs HSI) returns.

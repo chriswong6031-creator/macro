@@ -1069,8 +1069,8 @@
       "come_back_note": "H1 phase-0 gate: ~104 weekly cross-sections needed (W3, ~2026-09-30). Full-power re-run come_back_on 2027-07-01 for 3-year panel. Check: holdings.parquet has >=500 dates for >=400 unique HK names. If yes, run H1 phase-0: IC of southbound-flow rank vs 21d/63d forward HK-relative return.",
       "maturation": "H1 phase-0 at ~104 weekly cross-sections (W3, ~2026-09-30); ACCRUE-lean until then. Full statistical power (n>=3y panel) ~2027-07-01. Do NOT wire to HKCA board before H1 phase-0 pass.",
       "status": "accruing",
-      "state": "2026-07-03 W01A: backfill seeded full 2y window (2024-07-03 to 2026-07-02, ~500 trading dates, ~500 HK names/day). Nightly adapter live in Asia collect group. Gap tripwire active.",
-      "next_step": "2026-09-30 progress check: if >=104 weekly cross-sections present, run H1 phase-0 (IC of southbound rank vs 21d/63d fwd return). Gate: IC > 0.05 with p < 0.10 on Spearman.",
+      "state": "2026-07-03 W01A: backfill seeded full 2y window (2024-07-03 to 2026-07-02, ~500 trading dates, ~500 HK names/day). Nightly adapter live in Asia collect group. Gap tripwire active. | 2026-07-03: H1 phase-0 read = NO-GO (context chip, not a ranker).",
+      "next_step": "2026-07-03 W3 H1 phase-0 RAN (n=89 weekly Fridays, 147-name holdings-price panel): VERDICT NO-GO - signal null at d4w and any faint lag+0 blip erased by the render lag; see reports/hk-southbound-h1-phase0.md. Panel keeps accruing for the full-power 2027-07 re-run. Do NOT wire; H1 = context chip only.",
       "phase_hint": "H1 (HKCA southbound panel)"
     },
     {
@@ -1144,6 +1144,27 @@
       "come_back_on": "2027-07-01",
       "come_back_note": "1-year checkpoint. Check depth: number of tickers with >= 100 personal open-market rows, date span per ticker, top-of-funnel coverage. Phase-0 gate: if median per-ticker depth >= 150 rows with a >= 2y span, proceed to signal design. Otherwise extend accrue by 1y (C2 come_back ~2028).",
       "pr": "w01a(ca-shorts-insider)"
+    },
+    {
+      "id": "hkca-h1-southbound-holdings",
+      "name": "H1 - Southbound holding-delta phase-0 (HK/CA sec3 H1)",
+      "kind": "phase0_backtest",
+      "priority": "medium",
+      "cadence": "annual (full-power re-run gate)",
+      "what": "HK/CA masterplan section 3 H1 flagship-mechanism thin test. 2 gated trials: d4w own_pct (primary) + d1w own_pct (secondary), weekly Friday cross-sections on the 147-name holdings-int-hk_stocks price panel (~78-85 usable xsec, 2024-07 to 2026-07). NEXT-BAR fills at next-session CLOSE (open col unusable in-tree - pre-reg section 0 amendment); lag+0 (disclosure) vs lag+1 (render-honest) side by side. HSI-excess fwd 1w/2w/4w. HAC IC t + quintile-LS DSR n_trials=30 + BH-FDR + split-half + suspension rule + survivorship -100pct dark-name bound. VERDICT: NO-GO. d4w IC null even at lag+0; the one faint blip (d4w.1w.lag0 IC=+0.009 HAC t=1.33) is fully erased by the 1-session render lag (shortfall +0.009); all DSR~0.01; BH no-reject (q=0.59/0.54). H1 = positioning-CONTEXT chip, never a next-morning ranker (execution-decay confirmed, red-team HK sec62). Exploratory H5 peg-liquidity: EASY-week d4w mean IC +0.036 vs TIGHT -0.005 (descriptive only). Effective-N ~ 2 regimes -> under-powered regardless.",
+      "source": "scripts/hk_h1_southbound_phase0.py",
+      "storage": "reports/hk-southbound-h1-phase0.md + .json",
+      "track_json": "reports/hk-southbound-h1-phase0.json",
+      "hook": "static",
+      "claim_family": "hkca_h1",
+      "started": "2026-07-03",
+      "come_back_on": "2027-07-01",
+      "come_back_note": "Full-power re-run at ~3y panel depth (n~156 weekly xsec). Re-run scripts/hk_h1_southbound_phase0 once holdings.parquet spans >=3y AND a broader/deeper HK price panel (ideally the expanded HSCI universe + usable open prices) exists. Gate unchanged: GO needs lag+1 HAC t>=2, DSR>=0.90, split-half same-sign, BH-reject.",
+      "maturation": "NO-GO at n~2 regimes (2026-07). Not wired. Context-chip only. Full statistical power ~2027-07 at >=3y depth.",
+      "status": "decided",
+      "state": "2026-07-03 W3: phase-0 ran, NO-GO. Signal accrues for 2027-07 re-run. No wiring.",
+      "next_step": "2027-07-01: re-run at >=3y depth on broader panel; re-check the gate.",
+      "phase_hint": "H1 (HKCA southbound holding-delta)"
     }
   ]
 }
