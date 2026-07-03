@@ -196,6 +196,91 @@ def ah_by_ticker() -> dict[str, dict]:
     return out
 
 
+
+# ---------------------------------------------------------------------------
+# Panel reader (masterplan §3 H3, W01A)
+# Read data/hk_ah_panel/ produced by scripts/build_ah_panel.py.
+# OPTIONAL: if panel not yet on disk, all functions return None/[].
+# Existing ah_basket / ah_by_ticker / ah_basket_series are UNCHANGED.
+# ---------------------------------------------------------------------------
+
+def _panel_premium():
+    """Wide A/H premium panel (date x H-ticker, fractional NOT percent)."""
+    path = config.data_dir() / "hk_ah_panel" / "premium.parquet"
+    if not path.exists():
+        return None
+    try:
+        df = pd.read_parquet(path)
+        df.index = pd.to_datetime(df.index)
+        return df.sort_index()
+    except Exception:
+        return None
+
+
+def _panel_pairs():
+    """Load pairs.json metadata. Returns empty list if not present."""
+    import json
+    path = config.data_dir() / "hk_ah_panel" / "pairs.json"
+    if not path.exists():
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def panel_equal_weight_basket():
+    """Equal-weight mean of all valid pair premiums from the deep 25-pair panel.
+    Values are FRACTIONAL (0.30 = 30%); returns None if panel unavailable."""
+    panel = _panel_premium()
+    if panel is None or panel.empty:
+        return None
+    basket = panel.mean(axis=1).dropna()
+    return basket if not basket.empty else None
+
+
+def panel_pair_premiums(h_tickers=None, since=None):
+    """Wide panel of per-pair premiums (fractional) from the deep store.
+    Optionally filtered to specific H-tickers or a start date."""
+    panel = _panel_premium()
+    if panel is None or panel.empty:
+        return None
+    if h_tickers:
+        cols = [c for c in h_tickers if c in panel.columns]
+        if not cols:
+            return None
+        panel = panel[cols]
+    if since:
+        panel = panel[panel.index >= pd.Timestamp(since)]
+    return panel if not panel.empty else None
+
+
+def panel_summary():
+    """Summary dict for the deep panel. Returns None if panel not built yet."""
+    panel = _panel_premium()
+    pairs = _panel_pairs()
+    if panel is None or panel.empty:
+        return None
+    cutoffs = {"2005": "2005-01-01", "2010": "2010-01-01",
+               "2015": "2015-01-01", "2020": "2020-01-01"}
+    depth = {}
+    for label, iso in cutoffs.items():
+        depth["pairs_reaching_" + label] = sum(
+            1 for m in pairs
+            if m.get("joint_start") and m["joint_start"] <= iso
+        )
+    latest_nonnan = panel.iloc[-1].dropna()
+    return {
+        "n_pairs_total": len(panel.columns),
+        "n_pairs_today": len(latest_nonnan),
+        "date_start": str(panel.index.min().date()),
+        "date_end": str(panel.index.max().date()),
+        "depth": depth,
+        "latest_mean_prem_pct": round(float(latest_nonnan.mean()) * 100, 1) if not latest_nonnan.empty else None,
+        "latest_median_prem_pct": round(float(latest_nonnan.median()) * 100, 1) if not latest_nonnan.empty else None,
+    }
+
 if __name__ == "__main__":
     res = ah_basket()
     if res is None:
@@ -207,3 +292,17 @@ if __name__ == "__main__":
         print(f"chart points: {len(res['chart']['dates'])}")
         for p in res["pairs"]:
             print(f"  {p['h']:>9}  {p['premium_pct']:>7}%  {p['name']}")
+
+    print("")
+    print("--- deep panel reader (new W01A store) ---")
+    summary = panel_summary()
+    if summary is None:
+        print("panel_summary(): None (data/hk_ah_panel/ not built yet)")
+    else:
+        print(f"panel: {summary['n_pairs_total']} pairs, "
+              f"{summary['date_start']} -> {summary['date_end']}")
+        print(f"today: {summary['n_pairs_today']} pairs, "
+              f"mean premium {summary['latest_mean_prem_pct']}%, "
+              f"median {summary['latest_median_prem_pct']}%")
+        for k, v in summary["depth"].items():
+            print(f"  {k}: {v} pairs")
