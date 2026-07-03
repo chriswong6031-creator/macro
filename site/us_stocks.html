@@ -613,10 +613,16 @@
     /* let the header wrap so the signal badge + price drop to a new line instead of being
        clipped by the card's overflow:hidden when the column is this narrow. */
     .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
+    /* 2-up columns are ~150px: the conviction row (score + edge%ile + verdict) would otherwise
+       crush the verdict into a ~30px column that wraps every word mid-character. Let the row
+       wrap and drop the verdict to its own full-width line (readable whole words). */
+    .nbgrid[data-showmore-rows] .nb-conv{ flex-wrap:wrap; row-gap:2px; }
+    .nbgrid[data-showmore-rows] .nb-verdict{ flex:1 0 100%; overflow-wrap:normal; word-break:normal; }
+    .nbgrid[data-showmore-rows] .nb-edge-pct{ font-size:8.5px; }
   }
   a.nbcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
             padding: 9px 11px 10px; border-left: 3px solid var(--muted);
-            display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow: hidden;
+            display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow: hidden;
             transition: transform .12s, box-shadow .12s, border-color .12s; }
   /* every flex/grid child may shrink below content width — kills horizontal bleed */
   a.nbcard > * { min-width: 0; max-width: 100%; }
@@ -647,7 +653,7 @@
   .nb-legend .lg-sep { color: var(--line); }
   .nb-spark { width: 100%; height: 42px; border-radius: 5px; }
   .nbcard .nch { background: transparent; margin: 4px 0 2px; }
-  .nb-bot { display: flex; align-items: center; gap: 6px; margin-top: 1px; font-size: 10px; }
+  .nb-bot { display: flex; align-items: center; flex-wrap: wrap; gap: 3px 6px; margin-top: 1px; font-size: 10px; }
   .nb-state { font-size: 10px; font-weight: 800; letter-spacing: .02em; padding: 1px 7px;
               border-radius: 8px; }
   .nb-up .nb-state { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
@@ -677,7 +683,7 @@
   .nb-comp.cmp-neg { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
   .nb-size { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
              padding: 0 5px; border-radius: 7px; background: var(--panel);
-             border: 1px solid var(--line); color: var(--muted); cursor: help; margin-left: auto; }
+             border: 1px solid var(--line); color: var(--muted); cursor: help; }
   .nb-size.sz-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
                    background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
   .nb-size.sz-dn { color: var(--warn, #c79a2e); border-color: color-mix(in srgb, var(--warn, #c79a2e) 42%, var(--line));
@@ -718,7 +724,7 @@
                      background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
   .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
-  .nb-conv { display: flex; align-items: center; gap: 7px; margin: 5px 0 1px; min-width: 0; }
+  .nb-conv { display: flex; align-items: center; gap: 7px; margin: 3px 0 1px; min-width: 0; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
                min-width: 30px; flex: none; text-align: center; padding: 1px 5px; border-radius: 8px;
                border: 1px solid var(--line); color: var(--ink); }
@@ -731,8 +737,12 @@
   .nb-verdict { font-size: 10.5px; font-weight: 700; line-height: 1.25; color: var(--ink);
                 flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
   .nb-val { flex: none; }
+  /* edge percentile: a small MUTED secondary rank. It had NO size rule and inherited ~15px,
+     out-sizing the verdict and crushing the conv row on 2-up mobile — pin it small. */
+  .nb-edge-pct { font-size: 9px; font-weight: 700; flex: none; white-space: nowrap;
+                 color: var(--muted); font-variant-numeric: tabular-nums; }
   /* multi-timeframe bottoming-alignment chip (weekly+3d+daily turning up) */
-  .nb-align { display: flex; align-items: center; gap: 5px; margin: 3px 0 1px; min-width: 0;
+  .nb-align { display: flex; align-items: center; gap: 5px; margin: 2px 0 1px; min-width: 0;
               font-size: 9.5px; font-weight: 700; letter-spacing: .01em;
               padding: 2px 7px; border-radius: 7px; border: 1px solid var(--line);
               color: var(--up); background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
@@ -740,14 +750,14 @@
   .nb-align .nba-line { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nb-align .nba-tag { margin-left: auto; flex: none; font-size: 8px; font-weight: 800;
                        text-transform: uppercase; letter-spacing: .04em; opacity: .85; }
-  .nb-axes { display: flex; gap: 4px; margin-top: 3px; }
+  .nb-axes { display: flex; gap: 4px; margin-top: 2px; }
   .nb-ax { flex: 1; }
   .nb-ax .axl { font-size: 8px; color: var(--muted); letter-spacing: .03em; }
   .nb-ax .axt { height: 3px; border-radius: 2px; background: var(--line); margin-top: 1px; overflow: hidden; }
   .nb-ax .axf { height: 100%; background: var(--g-cold); border-radius: 2px; }
   .nb-ax.ax-na .axf { background: transparent; }
   /* ---- Caution icon + popover (replaces old pill-row) ---- */
-  .nb-cau { position: relative; display: inline-flex; margin-top: 4px; }
+  .nb-cau { position: relative; display: inline-flex; margin-top: 3px; }
   .nb-cau-btn {
     display: inline-flex; align-items: center; gap: 3px;
     padding: 0 5px 0 4px; height: 18px; border-radius: 9px; border: none; cursor: pointer;
@@ -777,6 +787,8 @@
   }
   .nb-cau-pop .cau-row { display: block; padding: 2px 0; }
   .nb-cau-pop .cau-row + .cau-row { border-top: 1px solid color-mix(in srgb, var(--warn) 20%, var(--line)); padding-top: 4px; margin-top: 2px; }
+  /* display-only (unvalidated) folded rows — Options/IV positioning — read muted vs real cautions */
+  .nb-cau-pop .cau-row.cau-unval { color: var(--muted); font-weight: 500; }
   /* Show on hover/focus (desktop) */
   .nb-cau:hover .nb-cau-pop,
   .nb-cau:focus-within .nb-cau-pop,
@@ -791,7 +803,7 @@
   a.nbcard:has(.nb-cau-open) { overflow: visible; }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
   /* ---- Entry-timing gauge (the SECOND gauge: "buy now / wait / extended") ---- */
-  .nb-entry { margin: 5px 0 1px; padding: 5px 7px; border-radius: 8px;
+  .nb-entry { margin: 3px 0 1px; padding: 4px 7px; border-radius: 8px;
               background: var(--panel); border: 1px solid var(--line);
               border-left: 3px solid var(--muted); }
   .nbe-buy_now, .nbe-partial { border-left-color: var(--up);
@@ -830,14 +842,14 @@
   .nb-note-anticipation { color: var(--g-cold, var(--link));
              background: color-mix(in srgb, var(--link) 8%, var(--panel)); }
   /* per-leg EDGE basis chips (top-3 firing legs, tier-colored) */
-  .nb-basis { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+  .nb-basis { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
   .nbb { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
          border: 1px solid var(--line); font-variant-numeric: tabular-nums; color: var(--muted); }
   .nbb-validated { color: var(--up); border-color: color-mix(in srgb, var(--up) 35%, var(--line)); }
   .nbb-literature { color: var(--g-cold); border-color: color-mix(in srgb, var(--g-cold) 35%, var(--line)); }
   .nbb-screen { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
   /* the two new VERIFIERS — dealer-gamma "Options check" + the single-stock vol black hole */
-  .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
   .nb-vchip { font-size: 8.5px; font-weight: 800; padding: 0 5px; border-radius: 6px;
               border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
   .vf-confirm { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
@@ -2022,11 +2034,10 @@
           
           
           
+          
           <div class="nb-vf">
             
             
-            
-            <span class="nb-vchip vf-unval" data-tip-en="Options positioning — unvalidated, accruing history (gate not yet open). Shows caution only; not in score." data-tip-zh="期权仓位——未验证，历史积累中（门控尚未开放）。仅显示警示；不计入分数。">⚠ <span class="l-en">Options caution (unvalidated)</span><span class="l-zh">期权警示（未验证）</span></span>
             
             
             
@@ -2039,7 +2050,12 @@
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.72 of the conviction-base size (forecast vol 30.7% · inverse-vol ×0.72 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.72×</span>
             
           </div>
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Magnificent Seven) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（七巨头）正在恶化 — 已验证风险门槛：减仓。</span></span></div></div>
+          
+          
+          
+          
+          
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Magnificent Seven) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（七巨头）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+16.0% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +16.0%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           
           
@@ -2149,12 +2165,18 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.20</span>
             <span class="nb-rk">#116/195</span>
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.68 of the conviction-base size (forecast vol 32.2% · inverse-vol ×0.68 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.68×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -2274,12 +2296,18 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-up" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.18</span>
             <span class="nb-rk">#22/47</span>
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.61 of the conviction-base size (forecast vol 36.2% · inverse-vol ×0.61 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.61×</span>
             
           </div>
+          
+          
+          
+          
+          
           <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting warn</span><span class="l-zh">财务质量警示</span></span><span class="cau-row"><span class="l-en">Narrative basket (Communication Services (Equal-Weight)) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（通信服务（等权））已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span></div></div>
           
           
@@ -2398,13 +2426,19 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-up" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.32</span>
             <span class="nb-rk">#100/252</span>
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.56 of the conviction-base size (forecast vol 39.2% · inverse-vol ×0.56 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.56×</span>
             
           </div>
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting watch</span><span class="l-zh">财务质量关注</span></span></div></div>
+          
+          
+          
+          
+          
+          
           
           
           
@@ -2523,15 +2557,6 @@
           
           
           
-          <div class="nb-vf">
-            
-            
-            
-            <span class="nb-vchip vf-unval" data-tip-en="Options positioning — unvalidated, accruing history (gate not yet open). Shows caution only; not in score." data-tip-zh="期权仓位——未验证，历史积累中（门控尚未开放）。仅显示警示；不计入分数。">⚠ <span class="l-en">Options caution (unvalidated)</span><span class="l-zh">期权警示（未验证）</span></span>
-            
-            
-            
-          </div>
           
           <div class="nb-bot">
             <span class="nb-az az-up" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.58</span>
@@ -2540,6 +2565,11 @@
             
           </div>
           
+          
+          
+          
+          
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+6.8% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +6.8%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           
           
@@ -2657,12 +2687,18 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-up" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.62</span>
             <span class="nb-rk">#23/76</span>
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.66 of the conviction-base size (forecast vol 33.1% · inverse-vol ×0.66 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.66×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -2773,6 +2809,7 @@
           
           
           
+          
           <div class="nb-vf">
             
             
@@ -2788,6 +2825,11 @@
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.45 of the conviction-base size (forecast vol 49.2% · inverse-vol ×0.45 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.45×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -2907,13 +2949,19 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-up" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.02</span>
             <span class="nb-rk">#33/69</span>
             <span class="nb-size " data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.98 of the conviction-base size (forecast vol 22.5% · inverse-vol ×0.98 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.98×</span>
             
           </div>
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting watch</span><span class="l-zh">财务质量关注</span></span><span class="cau-row"><span class="l-en">Narrative basket (Energy (Equal-Weight)) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（能源（等权））正在恶化 — 已验证风险门槛：减仓。</span></span></div></div>
+          
+          
+          
+          
+          
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Energy (Equal-Weight)) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（能源（等权））正在恶化 — 已验证风险门槛：减仓。</span></span></div></div>
           
           
           
@@ -3032,6 +3080,7 @@
           
           
           
+          
           <div class="nb-vf">
             
             
@@ -3047,6 +3096,11 @@
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.87 of the conviction-base size (forecast vol 25.2% · inverse-vol ×0.87 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.87×</span>
             
           </div>
+          
+          
+          
+          
+          
           <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Communication Services (Equal-Weight)) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（通信服务（等权））已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span></div></div>
           
           
@@ -3166,15 +3220,6 @@
           
           
           
-          <div class="nb-vf">
-            
-            
-            
-            <span class="nb-vchip vf-unval" data-tip-en="Options positioning — unvalidated, accruing history (gate not yet open). Shows caution only; not in score." data-tip-zh="期权仓位——未验证，历史积累中（门控尚未开放）。仅显示警示；不计入分数。">⚠ <span class="l-en">Options caution (unvalidated)</span><span class="l-zh">期权警示（未验证）</span></span>
-            
-            
-            
-          </div>
           
           <div class="nb-bot">
             <span class="nb-az az-up" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.87</span>
@@ -3182,7 +3227,12 @@
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.47 of the conviction-base size (forecast vol 46.9% · inverse-vol ×0.47 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.47×</span>
             
           </div>
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting watch</span><span class="l-zh">财务质量关注</span></span><span class="cau-row"><span class="l-en">Narrative basket (Health Care (Equal-Weight)) is crowded / extended — cap size, don't add aggressively.</span><span class="l-zh">所属叙事篮子（医疗保健（等权））拥挤／过度拉伸 — 控制仓位，勿激进加仓。</span></span></div></div>
+          
+          
+          
+          
+          
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Health Care (Equal-Weight)) is crowded / extended — cap size, don't add aggressively.</span><span class="l-zh">所属叙事篮子（医疗保健（等权））拥挤／过度拉伸 — 控制仓位，勿激进加仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+15.4% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +15.4%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           
           
@@ -3292,12 +3342,18 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.08</span>
             <span class="nb-rk">#32/60</span>
             <span class="nb-size sz-up" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.24 of the conviction-base size (forecast vol 17.7% · inverse-vol ×1.24 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.24×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -3408,13 +3464,19 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -1.17</span>
             <span class="nb-rk">#216/254</span>
             <span class="nb-size sz-up" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.52 of the conviction-base size (forecast vol 14.4% · inverse-vol ×1.52 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.52×</span>
             
           </div>
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting watch</span><span class="l-zh">财务质量关注</span></span></div></div>
+          
+          
+          
+          
+          
+          
           
           
           
@@ -3532,6 +3594,7 @@
           
           
           
+          
           <div class="nb-vf">
             
             
@@ -3547,6 +3610,11 @@
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.57 of the conviction-base size (forecast vol 38.4% · inverse-vol ×0.57 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.57×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -3657,6 +3725,7 @@
           
           
           
+          
           <div class="nb-vf">
             
             
@@ -3672,6 +3741,11 @@
             <span class="nb-size sz-up" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.12 of the conviction-base size (forecast vol 19.7% · inverse-vol ×1.12 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.12×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -3782,6 +3856,7 @@
           
           
           
+          
           <div class="nb-vf">
             
             
@@ -3797,6 +3872,11 @@
             <span class="nb-size sz-up" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.26 of the conviction-base size (forecast vol 17.4% · inverse-vol ×1.26 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.26×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -3916,15 +3996,6 @@
           
           
           
-          <div class="nb-vf">
-            
-            
-            
-            <span class="nb-vchip vf-unval" data-tip-en="Options positioning — unvalidated, accruing history (gate not yet open). Shows caution only; not in score." data-tip-zh="期权仓位——未验证，历史积累中（门控尚未开放）。仅显示警示；不计入分数。">⚠ <span class="l-en">Options caution (unvalidated)</span><span class="l-zh">期权警示（未验证）</span></span>
-            
-            
-            
-          </div>
           
           <div class="nb-bot">
             <span class="nb-az az-up" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.91</span>
@@ -3932,7 +4003,12 @@
             <span class="nb-size sz-up" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.4 of the conviction-base size (forecast vol 15.7% · inverse-vol ×1.4 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.40×</span>
             
           </div>
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Power & Grid Buildout) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（电力与电网）正在恶化 — 已验证风险门槛：减仓。</span></span></div></div>
+          
+          
+          
+          
+          
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Power & Grid Buildout) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（电力与电网）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+11.2% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +11.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           
           
@@ -4051,14 +4127,6 @@
           
           
           
-          <div class="nb-vf">
-            
-            
-            
-            
-            <span class="nb-vchip vf-unval" data-tip-en="Options IV lean — Cremers-Weinbaum IV spread, unvalidated (accruing history, gate not open). Shows caution only." data-tip-zh="期权IV偏向——未验证（历史积累中，门控尚未开放）。仅显示警示。">⚠ <span class="l-en">IV caution (unvalidated)</span><span class="l-zh">IV警示（未验证）</span></span>
-            
-          </div>
           
           <div class="nb-bot">
             <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.03</span>
@@ -4068,7 +4136,12 @@
               <span class="nb-dmnd dmnd-up" data-tip-en="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · ai_datacenter +69% YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal" data-tip-zh="需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 <span class="l-en">demand ahead</span><span class="l-zh">需求领先</span></span>
               
           </div>
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Power & Grid Buildout) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（电力与电网）正在恶化 — 已验证风险门槛：减仓。</span></span></div></div>
+          
+          
+          
+          
+          
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Power & Grid Buildout) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（电力与电网）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -4.6 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -4.6 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
           
           
           
@@ -4178,12 +4251,18 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.62</span>
             <span class="nb-rk">#181/254</span>
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.82 of the conviction-base size (forecast vol 26.9% · inverse-vol ×0.82 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.82×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -4294,6 +4373,7 @@
           
           
           
+          
           <div class="nb-vf">
             
             
@@ -4309,6 +4389,11 @@
             <span class="nb-size " data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.02 of the conviction-base size (forecast vol 21.6% · inverse-vol ×1.02 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.02×</span>
             
           </div>
+          
+          
+          
+          
+          
           <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting warn</span><span class="l-zh">财务质量警示</span></span></div></div>
           
           
@@ -4419,6 +4504,7 @@
           
           
           
+          
           <div class="nb-vf">
             
             
@@ -4434,6 +4520,11 @@
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.71 of the conviction-base size (forecast vol 31.0% · inverse-vol ×0.71 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.71×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           <div class="nb-note nb-note-anticipation"><span class="l-en">ℹ Forward risk cone is favourable (≈19% median upside vs ≈6% average drawdown) — a constructive risk SHAPE the factor axes don't price.</span><span class="l-zh">ℹ 前瞻风险锥形态有利（中位上行约 19% 对平均回撤约 6%）——因子维度未计入的有利风险形态。</span></div>
@@ -4552,13 +4643,19 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.64</span>
             <span class="nb-rk">#181/252</span>
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.63 of the conviction-base size (forecast vol 34.8% · inverse-vol ×0.63 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.63×</span>
             
           </div>
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting watch</span><span class="l-zh">财务质量关注</span></span></div></div>
+          
+          
+          
+          
+          
+          
           
           
           
@@ -4668,12 +4765,18 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.88</span>
             <span class="nb-rk">#91/106</span>
             <span class="nb-size sz-up" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.11 of the conviction-base size (forecast vol 19.8% · inverse-vol ×1.11 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.11×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -4784,12 +4887,18 @@
           
           
           
+          
           <div class="nb-bot">
             <span class="nb-az az-up" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.14</span>
             <span class="nb-rk">#126/254</span>
             <span class="nb-size " data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.98 of the conviction-base size (forecast vol 22.4% · inverse-vol ×0.98 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.98×</span>
             
           </div>
+          
+          
+          
+          
+          
           
           
           
@@ -4909,16 +5018,6 @@
           
           
           
-          <div class="nb-vf">
-            
-            
-            
-            <span class="nb-vchip vf-unval" data-tip-en="Options positioning — unvalidated, accruing history (gate not yet open). Shows caution only; not in score." data-tip-zh="期权仓位——未验证，历史积累中（门控尚未开放）。仅显示警示；不计入分数。">⚠ <span class="l-en">Options caution (unvalidated)</span><span class="l-zh">期权警示（未验证）</span></span>
-            
-            
-            <span class="nb-vchip vf-unval" data-tip-en="Options IV lean — Cremers-Weinbaum IV spread, unvalidated (accruing history, gate not open). Shows caution only." data-tip-zh="期权IV偏向——未验证（历史积累中，门控尚未开放）。仅显示警示。">⚠ <span class="l-en">IV caution (unvalidated)</span><span class="l-zh">IV警示（未验证）</span></span>
-            
-          </div>
           
           <div class="nb-bot">
             <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -1.53</span>
@@ -4926,7 +5025,12 @@
             <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.4 of the conviction-base size (forecast vol 60.2% · inverse-vol ×0.4 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.40×</span>
             
           </div>
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Crypto & Digital Assets) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（加密与数字资产）正在恶化 — 已验证风险门槛：减仓。</span></span></div></div>
+          
+          
+          
+          
+          
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Crypto & Digital Assets) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（加密与数字资产）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.3% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.3%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -8.6 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -8.6 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
           
           
           
