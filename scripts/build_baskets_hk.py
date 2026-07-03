@@ -25,6 +25,91 @@ from lib.pages import write_page  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets_hk")
 
+STALE_TRADING_DAYS = 3     # §5.2 hard freshness gate: warn when basket prices > this old vs today
+
+
+def _hk_ignition(data: dict) -> dict:
+    """Sector-ignition strip (engine.sector_ignition) + forward ledger log/grade. Never fatal."""
+    try:
+        from engine.sector_ignition import compute_ignition
+        from engine.baskets_hk import _closes, member_closes_getter
+        closes = _closes()
+        getter = member_closes_getter(closes)
+        ign = compute_ignition(data.get("chart") or {}, data.get("baskets") or [],
+                               getter, market="hk", overlay=None)
+        try:
+            from engine import ignition_audit as _ia
+            from engine import basket_levels_persist as _blp
+            sc = _ia.snapshot_and_grade(
+                ign, "hk",
+                level_of=lambda bid: _blp.level_series("hk", bid),
+                bench_series=_blp.bench_series("hk"))
+            ign["scoreboard"] = sc
+        except Exception as e:  # noqa: BLE001
+            log.error("hk ignition ledger failed: %s", e)
+        return ign
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("hk ignition failed: %s", e)
+        return {"market": "hk", "items": [], "as_of": None, "has_southbound_leg": False}
+
+
+def _persist_hk_levels(data: dict) -> None:
+    try:
+        from engine import basket_levels_persist as _blp
+        _blp.persist(data, "hk")
+    except Exception as e:  # noqa: BLE001
+        log.error("hk basket-levels persist failed: %s", e)
+
+
+def _hk_provenance(data: dict) -> dict:
+    """Per-basket membership-provenance labels from data/baskets_hk/membership.json."""
+    try:
+        from engine.baskets_hk import _membership
+        mem = _membership() or {}
+        curated = mem.get("curated")
+        bdict = mem.get("baskets") or {}
+        by_id = {}
+        for bid, b in (bdict.items() if isinstance(bdict, dict) else [(x["id"], x) for x in bdict]):
+            by_id[bid] = {"curated": curated, "created": b.get("created")}
+        return {"curated": curated, "by_id": by_id}
+    except Exception as e:  # noqa: BLE001
+        log.error("hk provenance failed: %s", e)
+        return {"curated": None, "by_id": {}}
+
+
+def _hk_freshness(data: dict) -> dict:
+    """Basket price as-of date + stale flag (>3 trading days older than today)."""
+    try:
+        import pandas as pd
+        asof = (data.get("chart") or {}).get("dates", [None])[-1] or data.get("as_of")
+        if not asof:
+            return {"as_of": None, "stale": False, "trading_days_old": None}
+        today = pd.Timestamp.utcnow().normalize().tz_localize(None)
+        n_bdays = int(len(pd.bdate_range(pd.Timestamp(asof), today))) - 1
+        return {"as_of": str(asof), "trading_days_old": max(0, n_bdays),
+                "stale": n_bdays > STALE_TRADING_DAYS, "threshold": STALE_TRADING_DAYS}
+    except Exception as e:  # noqa: BLE001
+        log.error("hk freshness failed: %s", e)
+        return {"as_of": None, "stale": False, "trading_days_old": None}
+
+
+def _hk_radar() -> dict:
+    """Drawdown-risk banner from the HK risk_radar_intl snapshot (presence-guarded)."""
+    try:
+        from engine import risk_radar_intl as _rri
+        snap = _rri.snapshot(_rri.HK_PROFILE)
+        if not snap or snap.get("state") is None:
+            return {}
+        dd = snap.get("drawdown_prob")
+        dd21 = dd.get("h21") if isinstance(dd, dict) else dd     # h21 scalar for the banner
+        return {"state": snap.get("state"), "market": "hk",
+                "dominant_scare": snap.get("dominant_scare"),
+                "drawdown_prob": dd21,
+                "asof": snap.get("asof")}
+    except Exception as e:  # noqa: BLE001
+        log.error("hk risk-radar strip failed: %s", e)
+        return {}
+
 
 def main() -> int:
     site = config.ROOT / "site"
@@ -63,6 +148,15 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error('hk narrative emergence failed: %s', e)
 
+    # W5 — persist the per-basket EW level SERIES + 20d rel (the gap §5.2), then compute the
+    # sector-ignition strip, log+grade the ignition forward ledger, and build the desk-header
+    # provenance/freshness + risk-radar strip payloads. All additive, None-safe, guarded.
+    _persist_hk_levels(data)          # persist first so ignition grading reads the fresh series
+    ignition = _hk_ignition(data)
+    provenance = _hk_provenance(data)
+    freshness = _hk_freshness(data)
+    radar = _hk_radar()
+
     fdir = site / "hkbasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
@@ -77,6 +171,10 @@ def main() -> int:
         baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(chart, separators=(",", ":")),
         theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
+        ignition_json=json.dumps(ignition, separators=(",", ":"), ensure_ascii=False),
+        provenance_json=json.dumps(provenance, separators=(",", ":"), ensure_ascii=False),
+        freshness_json=json.dumps(freshness, separators=(",", ":"), ensure_ascii=False),
+        radar_json=json.dumps(radar, separators=(",", ":"), ensure_ascii=False),
         bench_en="Hang Seng", bench_zh="恒生指数",
         generated_utc=built)
     write_page(site / "baskets_hk.html", html)
