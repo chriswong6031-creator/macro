@@ -548,7 +548,7 @@
   .tr-tbl th:first-child, .tr-tbl td:first-child { text-align: left; }
   .tr-tbl th { color: var(--muted); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; }
 
-  /* (C) evidence-tag micro-style on the why-now chips — validated / accruing / context. */
+  /* (C) evidence-tag micro-style on the why-now chips — .et-validated / .et-accruing / .et-context. */
   .ev-tag { font-size: 7.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em;
       padding: 0 3px; border-radius: 4px; margin-left: 3px; vertical-align: middle; }
   .ev-tag.et-validated { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
@@ -700,7 +700,7 @@
       </div>
       <div class="dm-cell dm-isnt">
         <div class="dm-k">✕ {{ t('What it isn\'t', '它不是什么') }}</div>
-        <div class="dm-v">{{ t('A <b>validated buy list</b>. HK has no idiosyncratic selection alpha (residual momentum is dead on a 40-year panel), so nothing here says "Buy" and the scoreboard is still building — it proves, or refutes, this screen in public.', '一份<b>已验证的买入清单</b>。香港没有特异选股阿尔法（残差动量在40年面板上无效），故此处永不显示“买入”，且记分牌仍在积累 —— 它将在公开中验证或证伪这套筛选。') }}</div>
+        <div class="dm-v">{{ t('<b>Not a validated buy list</b>. HK has no idiosyncratic selection alpha (residual momentum is dead on a 40-year panel), so nothing here says "Buy" and the scoreboard is still building — it proves, or refutes, this screen in public.', '<b>不是已验证的买入清单</b>。香港没有特异选股阿尔法（残差动量在40年面板上无效），故此处永不显示“买入”，且记分牌仍在积累 —— 它将在公开中验证或证伪这套筛选。') }}</div>
       </div>
       <div class="dm-tierline">{{ t('<b>Trust tier: screen.</b> The live cycle state caps every verdict; the size chip is risk-budgeting context, never a rank input. Each card carries its own tier badge below.', '<b>信任等级：筛选。</b>实时周期状态封顶每个结论；仓位标签为风险预算背景，从不参与排名。每张卡片下方标注其自身等级。') }}
         <a href="hk.html" style="color:var(--link);font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></div>
@@ -814,7 +814,7 @@
         {% endif %}
         {% if n.southbound or n.ah_value %}
         <div class="nb-flow">
-          {# W6 evidence tags (§7.3): each why-now chip carries validated / accruing / context
+          {# W6 evidence tags (§7.3): each why-now chip carries an et-validated / et-accruing / et-context
              colour-coding + a tooltip citing its phase-0 report. A/H = the near-GO (DSR 0.879)
              → visual priority via fl-lead. SB flow decays at render lag (H1 NO-GO) → context. #}
           {% if n.southbound and n.southbound.accum_z is not none %}
