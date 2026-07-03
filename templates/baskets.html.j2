@@ -670,6 +670,16 @@ const RECO_COLOR = {
   avoid:      ['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444'],
 };
 const badge = (cls,c,en,zh)=>`<span class="${cls}" style="background:${c[0]};border:1px solid ${c[1]};color:${c[2]}">${L(en,zh)}</span>`;
+// A1 — display-only verb demotion: never render a green ACCUMULATE/ENTER chip when the
+// theme's own clean_entry texture is false (the act_now board already refuses these).
+// The payload reco is NOT mutated (alerts + downstream readers keep continuity) — only
+// what the chip says changes. Amber, descriptive, no forward verb. (Mirrors baskets_desk.js.)
+const RECO_NOENTRY = ['rgba(245,158,11,.16)','rgba(245,158,11,.55)','#d97706'];
+const recoNoEntry = t => (t.reco==='accumulate'||t.reco==='enter') && !(((t.textures||{}).clean_entry)||{}).flag;
+const recoChip = t => recoNoEntry(t)
+  ? `<span class="treco" style="background:${RECO_NOENTRY[0]};border:1px solid ${RECO_NOENTRY[1]};color:${RECO_NOENTRY[2]}" title="In favour, but no member has a clean entry — do not chase; wait for a setup.">${L('IN FAVOUR — NO ENTRY','看好但无干净入场')}</span>`
+  : badge('treco',RECO_COLOR[t.reco]||RECO_COLOR.hold,t.reco_en,t.reco_zh);
+const RECO_NOENTRY_WHY = () => L('In favour, but no member has a clean entry — do not chase; wait for a setup.','看好，但无成分股具备干净入场点 — 勿追，等待入场时机。');
 const COMP_COLOR = {trend:'#5aa7ff',breadth:'#4ade80',impulse:'#a78bfa',macro:'#2dd4bf',mtf:'#f0abfc',volhole:'#fbbf24',crowding:'#fb7185'};
 const COMP_LBL = {trend:['trend','趋势'],breadth:['breadth','广度'],impulse:['impulse','脉冲'],macro:['macro','宏观'],mtf:['MTF','多周期'],volhole:['vol-hole','波动洞'],crowding:['crowd','拥挤']};
 const COMP_POS = ['trend','breadth','impulse','macro','mtf','volhole'];
@@ -699,6 +709,18 @@ function _basketOf(id){ try{ return (((typeof BASKETS!=='undefined'&&BASKETS)||{
 function earlyCracks(t){
   const rr=(t.textures||{}).rollover_risk||{};
   return rr.band==='low' && (rr.reasons||[]).length>0 && t.rs_pctile!=null && t.rs_pctile>=0.9;
+}
+// A4 — absolute-drawdown "cracks" (descriptive): the fading guard is RELATIVE-only, so an
+// all-boats selloff can leave a constructive label on a basket that is falling hard in
+// absolute terms. This pill states the absolute tape; it complements (never replaces)
+// the relative early-cracks pill. Two legs: 5d abs return ≤ −3%, or the ±3% impulse
+// tape ≥6 down-movers outnumbering up-movers ≥3×. No forward verbs. (Mirrors baskets_desk.js.)
+function absCracks(t){
+  if(t.label!=='dominant'&&t.label!=='emerging') return null;
+  const p5=(((t.perf||{})['5d'])||{}).ret, im=t.impulse||{};
+  const leg5d=(p5!=null&&p5<=-0.03);
+  const legImp=((im.down3||0)>=6&&(im.down3||0)>=3*(im.up3||0));
+  return (leg5d||legImp)?{p5:p5,leg5d:leg5d,legImp:legImp,up3:im.up3||0,down3:im.down3||0}:null;
 }
 // The faster counter-textures that DISAGREE with a constructive label. Each entry is
 // [en, zh] — purely descriptive, computed from already-published payload fields.
@@ -756,6 +778,9 @@ function themeCard(t){
   const flags=[];
   if(ce.flag) flags.push(`<span class="tflag up">✦ ${L('clean entry','干净入场')}</span>`);
   if(rr.band==='high'||rr.band==='elevated') flags.push(`<span class="tflag ${rr.band==='high'?'dn':'wn'}">⚠ ${L('roll-over','回落风险')}</span>`);
+  // A4: absolute-drawdown cracks — muted amber, descriptive only (title carries the abs 5d %).
+  const ck=absCracks(t);
+  if(ck) flags.push(`<span class="tflag wn" style="opacity:.88" title="descriptive — the absolute tape, not a forecast: 5d ${ck.p5!=null?fmtPct(ck.p5):'—'} abs${ck.legImp?` · ±3% impulse ${ck.up3} up / ${ck.down3} down`:''}">▾ ${L('CRACKS — falling in absolute terms','裂痕 — 绝对价格下行')}</span>`);
   // backtested signal-strength chip — the validated risk reads stand out; title is plain
   // English (never L() inside an attribute — it leaks span markup into the tooltip text).
   if(ss&&ss.grade==='backtested') flags.push(`<span class="tflag dn" title="${esc(ss.en||'')} (HAC t ${ss.t_hac}, n ${ss.n})">🔬 ${L('backtested risk','已回测风险')}</span>`);
@@ -788,7 +813,7 @@ function themeCard(t){
     ${flipCaption(t)}
     <div class="subrow">
       <span>#${t.rank}</span>
-      ${badge('treco',rc,t.reco_en,t.reco_zh)}
+      ${recoChip(t)}
       <span class="${cls(r20)}">${fmtPct(r20)} 20d</span>
       <span class="spark">${sparkSvg(spk,{w:84,h:24,color:lc[2]})}</span>
     </div>
@@ -807,7 +832,7 @@ function themeCard(t){
       <span class="tpill">${L('adv/dec','涨/跌')} <b class="pos">${t.adv||0}</b>/<b class="neg">${t.dec||0}</b></span>
     </div>
     <details><summary>${L('why &amp; components','理由与分项')}</summary>
-      <div class="why">${L(esc(t.reco_why_en),esc(t.reco_why_zh))}</div>
+      <div class="why">${recoNoEntry(t)?RECO_NOENTRY_WHY():L(esc(t.reco_why_en),esc(t.reco_why_zh))}</div>
       ${contested?`<div class="why" style="opacity:.9">${L('Contested — faster textures disagreeing with the label (descriptive, not a forecast)','存在分歧 — 与标签相悖的更快纹理（描述性，非预测）')}: ${cTex.map(x=>L(esc(x[0]),esc(x[1]))).join(' · ')}</div>`:''}
       ${ss?`<div class="why" style="opacity:.82">${L('Signal grade','信号评级')}: <b>${esc(ss.grade)}</b> — ${L(esc(ss.en||''),esc(ss.zh||''))}</div>`:''}
       ${compLegend(t.components)}
