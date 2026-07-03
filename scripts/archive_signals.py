@@ -45,6 +45,7 @@ MANIFEST: list[tuple[str, str, str | None]] = [
     ("allocation_china",  "allocation/latest_china.json",  "as_of"),
     ("allocation_hk",     "allocation/latest_hk.json",     "as_of"),
     ("allocation_canada", "allocation/latest_canada.json", "as_of"),
+    ("baskets_china_ths", "baskets_china_ths/latest.json", "as_of"),  # per-theme THS state accrual
 ]
 
 
