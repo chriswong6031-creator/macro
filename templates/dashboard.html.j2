@@ -579,6 +579,18 @@
   .nb-spot.spot-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
                      background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
   .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
+  /* ---- sector-pulse heat chip on standout cards (DISPLAY-ONLY, no rank power) ---- */
+  .nb-pulse-heat { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 700;
+                   padding: 1px 6px; border-radius: 7px; white-space: nowrap; max-width: 9em;
+                   overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line);
+                   color: var(--muted); background: var(--panel); cursor: help; flex: none; }
+  .nb-pulse-heat.ph-heating { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+                              background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
+  .nb-pulse-heat.ph-hot { color: var(--up); border-color: color-mix(in srgb, var(--up) 55%, var(--line));
+                          background: color-mix(in srgb, var(--up) 15%, var(--panel)); font-weight: 800; }
+  .nb-pulse-heat.ph-cooling { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
+                              background: color-mix(in srgb, var(--down) 9%, var(--panel)); }
+  .nb-pulse-heat.ph-broken { color: var(--muted); border-color: var(--line); opacity: .75; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
   .nb-conv { display: flex; align-items: center; gap: 7px; margin: 3px 0 1px; min-width: 0; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -1170,6 +1182,25 @@
   body.page-macro #risk-state .rs-driver { display:flex; align-items:baseline; gap:8px; padding:3px 0; }
   body.page-macro #risk-state .rs-bar { height:6px; border-radius:3px; background:var(--rs); opacity:.85; }
   @keyframes rspulse { 0%,100% { box-shadow: 0 0 0 0 var(--rs-glow); } 50% { box-shadow: 0 0 16px 2px var(--rs-glow); } }
+  /* ---- Sector heat strip (macro-only, DISPLAY-ONLY) ---- */
+  .sh-strip { padding: 8px 14px 10px; }
+  .sh-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .sh-title { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+              color: var(--ink-2); }
+  .sh-asof { font-size: 10px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .sh-chips { display: flex; flex-wrap: wrap; gap: 5px 6px; align-items: center; }
+  .sh-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 20px;
+             font-size: 11px; font-weight: 700; border: 1px solid var(--line); color: var(--muted);
+             background: var(--panel2); text-decoration: none; white-space: nowrap;
+             transition: filter .1s; }
+  .sh-chip:hover { filter: brightness(1.07); border-color: currentColor; }
+  .sh-heat { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+             background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
+  .sh-cool { color: var(--down); border-color: color-mix(in srgb, var(--down) 30%, var(--line));
+             background: color-mix(in srgb, var(--down) 8%, var(--panel)); }
+  .sh-arr { font-size: 9px; flex: none; }
+  .sh-rk { font-size: 9px; opacity: .7; font-variant-numeric: tabular-nums; }
+  .sh-div { color: var(--muted); font-size: 12px; padding: 0 2px; }
   /* Market Risk Radar v2 (engine/risk_radar.py) — the PRIMARY top-of-page risk read. Floats above
      the regime hero (below the acute dislocation filter) and pulses when the gated loud banner fires. */
   body.page-macro #risk-radar { scroll-margin-top: 16px; border-left: 4px solid var(--rr); }
@@ -1941,6 +1972,44 @@
   </a>
 
 
+  {# ===================== SECTOR HEAT STRIP — compact one-row rotation read (macro only) =====================
+     DISPLAY-ONLY: shows up to 4 heating (▲) and 4 cooling/broken (▽) themes, each linking to
+     baskets.html#theme-<id>. Hidden when sector_heat is None (pulse unavailable). Never fatal.
+     i18n: dual l-en/l-zh spans; no translated text in attributes; data-tip-en/zh for tooltips.
+     Jinja key access: sector_heat is a Python dict — use .get() style via d.key (Jinja) or
+     the 'is defined' guard on every nested key to avoid crashes on missing keys. #}
+  {% if mode != 'stocks' and sector_heat %}
+  {% set _sh = sector_heat %}
+  <div class="panel span12 sh-strip" id="sector-heat">
+    <div class="sh-head">
+      <span class="sh-title"><span class="l-en">Sector heat</span><span class="l-zh">板块热度</span></span>
+      {{ help("Sector-pulse heat tier — describes the current rank/score trajectory of each US thematic basket (heating ▲ / hot / cooling ▽ / broken). DISPLAY-ONLY: carries no forward-return forecast. Derived from the sector-rotation scoring engine (engine.sector_pulse). Click a chip to open the basket page.", "板块脉冲热度——描述各美股主题篮子当前的排名/得分走势（升温▲／热门／降温▽／破位）。仅供展示，不代表前瞻收益预测。来源：板块轮动评分引擎（engine.sector_pulse）。点击标签可打开篮子页面。") }}
+      {% if _sh.get('as_of') %}<span class="sh-asof muted">{{ _sh.as_of }}</span>{% endif %}
+    </div>
+    <div class="sh-chips">
+      {% for _ht in (_sh.get('heating') or []) %}
+      <a class="sh-chip sh-heat" href="baskets.html#theme-{{ _ht.get('id')|e }}">
+        <span class="sh-arr">▲</span>
+        <span class="l-en">{{ _ht.get('name')|e }}</span>
+        <span class="l-zh">{{ (_ht.get('name_zh') or _ht.get('name'))|e }}</span>
+        {% if _ht.get('rank') is not none %}<span class="sh-rk">#{{ _ht.rank }}</span>{% endif %}
+      </a>
+      {% endfor %}
+      {% if (_sh.get('heating') or []) and (_sh.get('cooling') or []) %}
+      <span class="sh-div">·</span>
+      {% endif %}
+      {% for _ct in (_sh.get('cooling') or []) %}
+      <a class="sh-chip sh-cool" href="baskets.html#theme-{{ _ct.get('id')|e }}">
+        <span class="sh-arr">▽</span>
+        <span class="l-en">{{ _ct.get('name')|e }}</span>
+        <span class="l-zh">{{ (_ct.get('name_zh') or _ct.get('name'))|e }}</span>
+        {% if _ct.get('rank') is not none %}<span class="sh-rk">#{{ _ct.rank }}</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ===================== SENTIMENT REGIME — Froth & Fragility + Fear↔Euphoria (context-only lenses; collapsed by default) ===================== -->
   {% if mode != 'stocks' and (froth_fragility or fear_euphoria) %}
   {% set ff = froth_fragility %}
@@ -2618,6 +2687,15 @@
             {% if n.get('alpha_entry') == 'laggard' %}<span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>{% endif %}
             {% set _pc = n.get('postcross') %}
             {% if _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}
+            {# Sector-pulse heat chip — DISPLAY-ONLY, never in score/rank.
+               Shows only when the name belongs to a live theme with a non-idle heat tier.
+               Bilingual via l-en/l-zh; no translated text in attributes (check_title_i18n). #}
+            {% set _sph = n.get('sector_pulse') %}
+            {% if _sph and _sph.get('heat') and _sph.heat != 'idle' %}
+            {% set _heat_cls = {'heating':'ph-heating','hot':'ph-hot','cooling':'ph-cooling','broken':'ph-broken'}.get(_sph.heat, '') %}
+            {% set _heat_arrow = '▲' if _sph.heat in ('heating','hot') else '▽' %}
+            <span class="nb-pulse-heat {{ _heat_cls }}" data-tip-en="Sector theme heat: {{ _sph.heat }} — {{ _sph.get('theme_name','') }}. Rank {{ _sph.get('rank','?') }}/{{ _sph.get('n_themes','?') }}{% if _sph.get('rank_delta_5d') is not none %} ({{ '%+d'|format(_sph.rank_delta_5d) }} vs 5d ago){% endif %}. Display-only — no ranking power." data-tip-zh="板块主题热度：{{ _sph.heat }} — {{ _sph.get('theme_name_zh') or _sph.get('theme_name','') }}。排名 {{ _sph.get('rank','?') }}/{{ _sph.get('n_themes','?') }}。仅供展示，不影响排名。"><span class="l-en">{{ _heat_arrow }} {{ _sph.get('theme_name','') }}</span><span class="l-zh">{{ _heat_arrow }} {{ _sph.get('theme_name_zh') or _sph.get('theme_name','') }}</span></span>
+            {% endif %}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           {# Context line LEADS with the specific narrative basket (de-blurs "Technology"
