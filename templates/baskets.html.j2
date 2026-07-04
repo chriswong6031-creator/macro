@@ -221,7 +221,7 @@
   .heat-pill { font-size:9.5px; font-weight:700; letter-spacing:.04em; padding:1px 5px; border-radius:5px;
     white-space:nowrap; border:1px solid; margin-left:3px; }
   .heat-pill.heating { color:var(--up); border-color:var(--up); background:rgba(34,197,94,.10); }
-  .heat-pill.hot     { color:#f59e0b; border-color:#f59e0b;   background:rgba(245,158,11,.12); }
+  .heat-pill.hot     { color:var(--orange); border-color:var(--orange); background:color-mix(in srgb, var(--orange) 12%, transparent); }
   .heat-pill.cooling { color:var(--warn); border-color:var(--warn); background:rgba(251,146,60,.10); }
   .heat-pill.broken  { color:var(--down); border-color:var(--down); background:rgba(248,113,113,.10); opacity:.8; }
   .heat-dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0;
@@ -535,7 +535,8 @@ function actNowPulseBar(themes){
   const byHeat = h => themes.filter(t=>t.pulse_heat===h).sort((a,b)=>(a.rank||999)-(b.rank||999)).slice(0,3);
   const heating = byHeat('heating'), cooling = byHeat('cooling');
   if(!heating.length && !cooling.length) return '';
-  const links = arr => arr.map(t=>`<a href="basket/${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a>`).join(', ');
+  const BASE = window.BASKET_BASE||'basket/';
+  const links = arr => arr.map(t=>`<a href="${BASE}${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a>`).join(', ');
   const parts = [];
   if(heating.length) parts.push(`🔥 ${L('Heating','加热')}: ${links(heating)}`);
   if(cooling.length) parts.push(`❄ ${L('Cooling','降温')}: ${links(cooling)}`);
