@@ -90,12 +90,25 @@ def _meta_map() -> dict[str, dict]:
 def _regime() -> dict:
     """Calm/stress read from the engine's vol_regime (data/regime/latest.json).
     Momentum's forward edge decays in stress, so the page surfaces this and flags
-    reduced confidence — it does not silently kill the list."""
+    reduced confidence — it does not silently kill the list.
+
+    Migration (W1 PR2): try world_state.vol first; fall back to the legacy
+    direct read of data/regime/latest.json['vol_regime'].  Arithmetic is
+    unchanged — the field names and thresholds are identical.
+    """
     out = {"state": "unknown", "label": "Regime unknown", "label_zh": "市场状态未知",
            "vix": None, "risk_score": None, "calm": True}
     try:
-        d = json.loads((config.data_dir() / "regime" / "latest.json").read_text())
-        vr = d.get("vol_regime") or {}
+        # --- W1 PR2 migration path ---
+        from engine.neuralweb.read import load_world_state, get as ws_get
+        ws = load_world_state()
+        if ws is not None:
+            vr = ws.get("vol") or {}
+        else:
+            # Legacy fallback: direct read of data/regime/latest.json
+            d = json.loads((config.data_dir() / "regime" / "latest.json").read_text())
+            vr = d.get("vol_regime") or {}
+
         rs = vr.get("risk_score")
         vix = vr.get("vix")
         out["vix"] = vix

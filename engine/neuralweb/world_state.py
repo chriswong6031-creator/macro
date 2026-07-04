@@ -109,7 +109,13 @@ def _compose_radar(ms: dict) -> dict | None:
 
 
 def _compose_regime(reg: dict) -> dict:
-    """Extract the regime quad block; exactly the specified keys."""
+    """Extract the regime quad block; exactly the specified keys.
+
+    sector_rs is included so consumers that migrate from direct latest.json
+    reads (e.g. engine/etf_pulse.py) can consume the same data from
+    world_state without needing a separate file open.  The value is the
+    verbatim list produced by engine/sectors.py (or None if absent).
+    """
     freshness = reg.get("freshness")
     return {
         "quad": reg.get("quad"),
@@ -124,6 +130,8 @@ def _compose_regime(reg: dict) -> dict:
         "flip_margin": reg.get("flip_margin"),
         "liquidity_quality": reg.get("liquidity_quality"),
         "business_cycle": reg.get("business_cycle"),
+        "liquidity_overlay": reg.get("liquidity_overlay"),
+        "sector_rs": reg.get("sector_rs"),
         "freshness": freshness,
         "asof": reg.get("asof"),
         "schema_version": reg.get("schema_version"),

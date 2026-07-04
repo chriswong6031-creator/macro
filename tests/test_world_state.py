@@ -119,6 +119,10 @@ def _make_regime(root: Path) -> dict:
         "asof": "2026-07-01",
         "schema_version": 1,
         "liquidity_overlay": "expanding",
+        "sector_rs": [
+            {"ticker": "XLK", "rs": 0.9, "mom_20d_pct": 5.2, "mom_60d_pct": 18.0,
+             "above_200d_trend": True, "pctile_252d": 96.0, "rank": 1},
+        ],
         "risk_radar": {
             "schema": "risk_radar.v2",
             "asof": "2026-07-01",
@@ -603,3 +607,26 @@ def test_all_missing(tmp_path):
     # qi is always null, regardless
     assert payload["qi"] is None
     assert "qi_note" in payload
+
+
+# ---------------------------------------------------------------------------
+# Test 17: regime block carries sector_rs and liquidity_overlay (W1 PR2 addition)
+# ---------------------------------------------------------------------------
+
+def test_regime_block_carries_sector_rs_and_liquidity_overlay(tmp_path):
+    """_compose_regime now includes sector_rs and liquidity_overlay (added W1 PR2)."""
+    ms, reg, oracle, rs, at = _full_tree(tmp_path)
+    payload = build_world_state(root=tmp_path, now=_NOW)
+
+    regime = payload.get("regime")
+    assert regime is not None
+
+    # liquidity_overlay must be present in the regime block
+    assert "liquidity_overlay" in regime
+    assert regime["liquidity_overlay"] == "expanding"
+
+    # sector_rs must be present and match the fixture
+    assert "sector_rs" in regime
+    assert isinstance(regime["sector_rs"], list)
+    assert len(regime["sector_rs"]) >= 1
+    assert regime["sector_rs"][0]["ticker"] == "XLK"

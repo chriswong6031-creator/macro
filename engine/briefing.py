@@ -154,16 +154,52 @@ def macro_context(today: date | None = None) -> dict:
     """Assemble the regime / tape / catalyst frame the brain reads before the queue.
     The daily regime artifact (data/regime/latest.json) is the rich frame — quadrant,
     cycle, liquidity, Fed stance, and the plain-English posture. Best-effort: every
-    source is optional and degrades to a missing key."""
+    source is optional and degrades to a missing key.
+
+    Migration (W1 PR2): reads world_state first for the regime/radar sub-blocks;
+    falls back to the legacy direct read of data/regime/latest.json on any failure
+    or staleness.  risk_radar_raw is carried verbatim in world_state (same shape
+    as latest.json['risk_radar']), so the radar passthrough is behavior-preserving.
+    Fields that live only in latest.json (fed_stance, playbook, catalyst_tone) are
+    read from the raw file in both paths — they are not in world_state.
+    """
     ctx: dict = {}
+
+    # --- W1 PR2 migration: try world_state first ---
+    ws_used = False
+    try:
+        from engine.neuralweb.read import load_world_state
+        ws = load_world_state()
+        if ws is not None:
+            reg_block = ws.get("regime") or {}
+            quad_name = reg_block.get("quad_name")
+            label = reg_block.get("label")
+            if quad_name or label:
+                ctx["regime"] = quad_name or label
+                for src, dst in (("label", "quad"), ("cycle_tag", "cycle"),
+                                 ("liquidity_overlay", "liquidity"),
+                                 ("transition_state", "transition")):
+                    val = reg_block.get(src)
+                    if val is not None:
+                        ctx[dst] = val
+                ws_used = True
+    except Exception as e:  # noqa: BLE001 — context-only, never break the briefing
+        log.debug("briefing: world_state read failed (%s)", e)
+
+    # For fields NOT in world_state (fed_stance, playbook, catalyst_tone) and as
+    # fallback when world_state is absent — read latest.json directly.
     reg = _read("data/regime/latest.json") or _read("site/regime/latest.json")
     if isinstance(reg, dict):
-        ctx["regime"] = reg.get("quad_name") or reg.get("label") or reg.get("regime")
-        for src, dst in (("label", "quad"), ("cycle_tag", "cycle"),
-                         ("liquidity_overlay", "liquidity"),
-                         ("transition_state", "transition")):
-            if reg.get(src) is not None:
-                ctx[dst] = reg.get(src)
+        if not ws_used:
+            # Full legacy path: populate regime fields from raw file
+            ctx["regime"] = reg.get("quad_name") or reg.get("label") or reg.get("regime")
+            for src, dst in (("label", "quad"), ("cycle_tag", "cycle"),
+                             ("liquidity_overlay", "liquidity"),
+                             ("transition_state", "transition")):
+                if reg.get(src) is not None:
+                    ctx[dst] = reg.get(src)
+
+        # fed_stance, playbook, catalyst_tone are NOT in world_state — always from raw file.
         fed = reg.get("fed_stance")
         if isinstance(fed, dict) and (fed.get("label_en") or fed.get("stance")):
             ctx["fed_stance"] = fed.get("label_en") or fed.get("stance")
