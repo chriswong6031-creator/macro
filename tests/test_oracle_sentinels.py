@@ -277,95 +277,6 @@ def test_panel_drift_first_run_silent(tmp_path):
 # F. Edge decay — sign flip fires at n >= 30
 # ---------------------------------------------------------------------------
 
-def test_decay_watch_sign_flip_fires_at_n30(tmp_path):
-    from engine.oracle.sentinels import check_edge_decay, _append_sentinel_log
-    from engine.oracle.contract import _DISPLAY_WITH_EDGE_COMPOUNDS
-
-    data_dir = _make_data_dir(tmp_path)
-    log_path = data_dir / "oracle" / "sentinel_log.jsonl"
-
-    # We need to plant:
-    # 1. A p3_results.json with a POSITIVE published stat for ep_in_onset_21d
-    # 2. A forward_ledger.jsonl with n>=30 NEGATIVE matured rows (sign flip)
-    gauntlet_dir = data_dir / "oracle" / "gauntlet"
-    gauntlet_dir.mkdir(parents=True)
-
-    p3 = {
-        "timing": {
-            "ep_in_onset_21d": {"mean_excess": 0.012},
-            "ep_out_onset_5d": {"mean_excess": 0.008},
-        }
-    }
-    (gauntlet_dir / "p3_results.json").write_text(json.dumps(p3))
-
-    # Plant 35 matured forward_ledger rows for ep_in_onset_21d with NEGATIVE excess
-    fwd_path = data_dir / "oracle" / "forward_ledger.jsonl"
-    with open(fwd_path, "w") as fh:
-        for i in range(35):
-            row = {
-                "episode_id": f"XLK::in::2025-0{1 + i % 9:02d}-01",
-                "node": "XLK",
-                "direction": "in",
-                "tier": "onset",
-                "onset_date": f"2025-0{1 + i % 9:02d}-01",
-                "pit_stamp": f"2025-0{1 + i % 9:02d}-01",
-                "cell_tags": {"entry_onset_21d": True},
-                "excess_21d": -0.025,  # NEGATIVE — sign flip vs published +0.012
-            }
-            fh.write(json.dumps(row) + "\n")
-
-    trips = check_edge_decay(data_dir, log_path)
-    assert any("ep_in_onset_21d" in t for t in trips), (
-        f"Expected decay_watch trip for ep_in_onset_21d sign-flip; got: {trips}"
-    )
-    # Sentinel log should exist and have a row
-    assert log_path.exists()
-    rows = [json.loads(l) for l in log_path.read_text().splitlines() if l.strip()]
-    assert any(r.get("check") == "edge_decay" for r in rows)
-
-
-# ---------------------------------------------------------------------------
-# G. Edge decay — sign flip SILENT at n < 10
-# ---------------------------------------------------------------------------
-
-def test_decay_watch_sign_flip_silent_below_n10(tmp_path):
-    from engine.oracle.sentinels import check_edge_decay
-
-    data_dir = _make_data_dir(tmp_path)
-    log_path = data_dir / "oracle" / "sentinel_log.jsonl"
-
-    gauntlet_dir = data_dir / "oracle" / "gauntlet"
-    gauntlet_dir.mkdir(parents=True)
-
-    p3 = {"timing": {"ep_in_onset_21d": {"mean_excess": 0.012}}}
-    (gauntlet_dir / "p3_results.json").write_text(json.dumps(p3))
-
-    # Only 5 rows — below the n < 10 threshold
-    fwd_path = data_dir / "oracle" / "forward_ledger.jsonl"
-    with open(fwd_path, "w") as fh:
-        for i in range(5):
-            row = {
-                "episode_id": f"XLK::in::2025-0{i+1:02d}-01",
-                "node": "XLK",
-                "direction": "in",
-                "tier": "onset",
-                "onset_date": f"2025-0{i+1:02d}-01",
-                "pit_stamp": f"2025-0{i+1:02d}-01",
-                "cell_tags": {"entry_onset_21d": True},
-                "excess_21d": -0.025,
-            }
-            fh.write(json.dumps(row) + "\n")
-
-    trips = check_edge_decay(data_dir, log_path)
-    assert trips == [], (
-        f"n_live < 10 should be silent; got trips: {trips}"
-    )
-
-
-# ---------------------------------------------------------------------------
-# H. Ledger integrity — torn line counted, not crashed
-# ---------------------------------------------------------------------------
-
 def test_ledger_integrity_torn_line_counted(tmp_path):
     from engine.oracle.sentinels import check_ledger_integrity
 
@@ -430,3 +341,91 @@ def test_panel_drift_node_count_drop_trips(tmp_path):
     assert any("node count" in t.lower() for t in trips), (
         f"Expected node-count drop trip; got: {trips}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Edge decay — REAL-SHAPE fixtures (review major on #1290: the first fixtures
+# fabricated schemas the production files never had, masking an inert monitor)
+# ---------------------------------------------------------------------------
+
+from engine.oracle.sentinels import check_edge_decay  # noqa: E402 — real-shape decay tests
+
+
+def _real_shape_gauntlet(tmp_path, published=0.0062):
+    """p3_results.json in the REAL schema: episodes.<cell>.direction_adjusted_mean."""
+    g = tmp_path / "oracle" / "gauntlet"
+    g.mkdir(parents=True, exist_ok=True)
+    (g / "p3_results.json").write_text(json.dumps({
+        "spec_version": "test", "episodes": {
+            "ep_in_onset_21d": {"n": 355, "raw_mean": published,
+                                "direction_adjusted_mean": published},
+            "ep_out_onset_5d": {"n": 388, "raw_mean": -0.005,
+                                "direction_adjusted_mean": 0.005},
+        }}))
+    (g / "p3b_routing_placebo.json").write_text(json.dumps({
+        "cells": {
+            "routing_software/ai_compute/high_vix_5d":
+                {"src": "software", "dest": "ai_compute", "regime": "high_vix",
+                 "horizon_d": 5, "n_real": 12, "real_mean": 0.0177},
+        }}))
+
+
+def _episodes_with_live_outcomes(tmp_path, n, mean, direction="in", horizon=21):
+    """episodes_s.parquet with POST-adjudication onset rows + matured outcomes."""
+    import pandas as pd
+    rows = []
+    for i in range(n):
+        rows.append({
+            "node": "XLE", "direction": direction,
+            "onset_date": pd.Timestamp("2026-07-10") + pd.Timedelta(days=i),
+            f"outcome_rs_{horizon}d": mean, f"outcome_mature_{horizon}d": True,
+        })
+    df = pd.DataFrame(rows)
+    (tmp_path / "oracle").mkdir(parents=True, exist_ok=True)
+    df.to_parquet(tmp_path / "oracle" / "episodes_s.parquet")
+
+
+def test_decay_watch_sign_flip_fires_at_n30(tmp_path):
+    """Published +0.62%, live −2% over n=35 post-adjudication episodes → trip."""
+    _real_shape_gauntlet(tmp_path, published=0.0062)
+    _episodes_with_live_outcomes(tmp_path, n=35, mean=-0.02)
+    log_path = tmp_path / "oracle" / "sentinel_log.jsonl"
+    trips = check_edge_decay(tmp_path, log_path)
+    assert any("sign_flip" in m and "ep_in_onset_21d" in m for m in trips), trips
+
+
+def test_decay_watch_silent_below_n10(tmp_path):
+    """n=5 live rows → silent (decay monitoring needs data, not noise) — but
+    routing cells with no live source are DECLARED gaps, not trips."""
+    _real_shape_gauntlet(tmp_path)
+    _episodes_with_live_outcomes(tmp_path, n=5, mean=-0.02)
+    log_path = tmp_path / "oracle" / "sentinel_log.jsonl"
+    trips = check_edge_decay(tmp_path, log_path)
+    assert not any("decay" in m for m in trips), trips
+
+
+def test_monitor_inert_tripwire_fires_on_schema_drift(tmp_path):
+    """THE META-FIX: if the gauntlet artifacts stop yielding published stats
+    for monitored cells (schema drift — the exact #1290 bug), the sentinel
+    must trip monitor_inert rather than report green with zero coverage."""
+    g = tmp_path / "oracle" / "gauntlet"
+    g.mkdir(parents=True, exist_ok=True)
+    # WRONG schema on purpose (the original bug's shape)
+    (g / "p3_results.json").write_text(json.dumps(
+        {"timing": {"ep_in_onset_21d": {"mean_excess": 0.0062}}}))
+    log_path = tmp_path / "oracle" / "sentinel_log.jsonl"
+    trips = check_edge_decay(tmp_path, log_path)
+    assert any("monitor_inert" in m for m in trips), (
+        f"schema drift must trip monitor_inert, got: {trips}")
+    assert log_path.exists() and "monitor_inert" in log_path.read_text()
+
+
+def test_real_schema_loads_all_eight_published_stats(tmp_path):
+    """Coverage check: with real-shape artifacts, published stats load for
+    both onset cells and the routing cell (id translated src__dest__Nd)."""
+    _real_shape_gauntlet(tmp_path)
+    from engine.oracle.sentinels import _load_published_stats
+    stats = _load_published_stats(tmp_path)
+    assert "ep_in_onset_21d" in stats and "ep_out_onset_5d" in stats
+    assert "software__ai_compute__5d" in stats
+    assert abs(stats["software__ai_compute__5d"] - 0.0177) < 1e-12

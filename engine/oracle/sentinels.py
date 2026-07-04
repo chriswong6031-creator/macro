@@ -28,7 +28,7 @@ never blocks other steps).
 
 3. LEDGER INTEGRITY
    Parse trial_ledger.jsonl and live_ledger.jsonl line-by-line (skip-tolerant
-   per P1a torn-line law).  Count unparseable lines.  Any > 0 → sentinel row.
+   per tolerant-reader pattern (oracle_screen._load_trial_ledger)).  Count unparseable lines.  Any > 0 → sentinel row.
 
 Constitution bindings:
   - First run seeds sentinel_state.json silently (no alarm storm).
@@ -42,6 +42,8 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+import pandas as pd
 
 log = logging.getLogger(__name__)
 
@@ -306,10 +308,21 @@ def check_panel_drift(
 # 2. EDGE DECAY
 # ---------------------------------------------------------------------------
 
+def _read_json_tolerant(path: Path) -> dict | None:
+    """Read a JSON file; None on absence or corruption (sentinels never crash)."""
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("sentinels: could not read %s: %s", path.name, e)
+        return None
+
+
 def _load_jsonl_skip_tolerant(path: Path) -> tuple[list[dict], int]:
     """Parse a JSONL file line-by-line; return (rows, n_unparseable).
 
-    P1a torn-line law: skip unparseable lines, count them.
+    tolerant-reader pattern (oracle_screen._load_trial_ledger): skip unparseable lines, count them.
     """
     if not path.exists():
         return [], 0
@@ -362,43 +375,48 @@ def check_edge_decay(
         log.info("sentinels.edge_decay: no display_with_edge compounds found — skip")
         return []
 
-    # Load ledger rows (skip-tolerant)
-    fwd_path = data_dir / "oracle" / "forward_ledger.jsonl"
-    live_path = data_dir / "oracle" / "compounds" / "live_ledger.jsonl"
-
-    fwd_rows, _ = _load_jsonl_skip_tolerant(fwd_path)
-    live_rows, _ = _load_jsonl_skip_tolerant(live_path)
-    all_rows = fwd_rows + live_rows
-
-    # Published stats: read from gauntlet p3 results where available
-    # These are the P3/P3b adjudicated effect sizes for onset cells.
-    # For routing cells the published stat is the measured routing effect.
-    # We use the forward_ledger's mature rows as the live estimate source.
     published_stats = _load_published_stats(data_dir)
 
     trips: list[str] = []
 
+    # MONITOR-INERT TRIPWIRE (the meta-fix for the #1290 review major: the
+    # first decay monitor read invented schemas and reported green with zero
+    # coverage forever). If a monitored id has NO published stat, the monitor
+    # is inert for it — that is itself a sentinel trip, never a silent skip.
+    missing_pub = sorted(c for c in display_compounds if c not in published_stats)
+    if missing_pub:
+        msg = (f"monitor_inert: no published stat loaded for "
+               f"{len(missing_pub)}/{len(display_compounds)} monitored cells: "
+               f"{', '.join(missing_pub[:4])}{'…' if len(missing_pub) > 4 else ''}")
+        trips.append(msg)
+        _annotation(f"oracle_sentinels: {msg}")
+        _append_sentinel_log(
+            log_path, "edge_decay", "monitor_inert",
+            detail_en=(f"Decay monitor has NO published baseline for: "
+                       f"{', '.join(missing_pub)} — schema drift between the "
+                       f"gauntlet artifacts and the sentinel reader. The monitor "
+                       f"is blind for these cells until fixed."),
+            detail_zh=(f"衰减监视器缺少已发布基准：{', '.join(missing_pub)} — "
+                       f"哨兵读取器与回测产物的结构漂移，修复前对这些单元失明。"),
+        )
+
     for compound_id in sorted(display_compounds):
-        # Collect matured rows for this compound
-        # forward_ledger uses cell_tags to identify onset compounds
-        # live_ledger uses compound_id directly
-        matured = _get_matured_rows(compound_id, all_rows, fwd_rows)
+        matured = _get_matured_rows(compound_id, data_dir)
+        if matured is None:
+            # Declared gap (routing cells: aggregates only, no per-event live
+            # source yet) or unreadable store — recorded, not silently green.
+            log.info("sentinels.edge_decay: %s live_source=none (declared gap)", compound_id)
+            continue
         n_live = len(matured)
 
         if n_live < 10:
-            # Insufficient data — degrade silently
+            # Insufficient accrual — degrade silently (needs data, not noise)
             log.debug("sentinels.edge_decay: %s n_live=%d < 10 — skip", compound_id, n_live)
             continue
 
-        # Compute live mean excess
-        excesses = [r.get("excess") or r.get("excess_63d") or r.get("excess_21d")
-                    for r in matured]
-        excesses = [float(x) for x in excesses if x is not None]
-        if not excesses:
-            continue
-
+        # matured is a list of direction-adjusted floats (episodes-parquet source)
         import numpy as np  # local import; numpy already a dep
-        live_mean = float(np.mean(excesses))
+        live_mean = float(np.mean(matured))
 
         pub = published_stats.get(compound_id)
         if pub is None:
@@ -451,113 +469,87 @@ def check_edge_decay(
 
 
 def _load_published_stats(data_dir: Path) -> dict[str, float]:
-    """Return a dict compound_id → published effect size.
+    """compound_id → published effect, aligned to the REAL gauntlet schemas
+    (review major on #1290: the first version read invented keys —
+    p3['timing'][..]['mean_excess'] — and was inert against production data
+    while its fixtures passed. Shapes verified against the real files
+    2026-07-04):
 
-    Sources:
-      - gauntlet/p3_results.json for onset cells
-      - gauntlet/p3b_routing_placebo.json for routing cells
-    These are read-only from real data; missing → empty dict (degrade).
-    """
+      p3_results.json:   episodes.<cell_id>.direction_adjusted_mean
+                         (fallback raw_mean)
+      p3b_routing_placebo.json: cells['routing_<src>/<dest>/<regime>_<N>d']
+                         with fields src/dest/horizon_d/real_mean —
+                         reverse-mapped to the contract ids '<src>__<dest>__<N>d'.
+
+    NOTE the alias: the Constitution prose calls the onset cells
+    entry_onset_21d / exit_onset_5d; the code ids (contract.py, here) are
+    ep_in_onset_21d / ep_out_onset_5d. Same cells."""
     stats: dict[str, float] = {}
+    g = data_dir / "oracle" / "gauntlet"
 
-    # P3: onset cells — ep_in_onset_21d, ep_out_onset_5d
-    p3_path = data_dir / "oracle" / "gauntlet" / "p3_results.json"
-    if p3_path.exists():
-        try:
-            p3 = json.loads(p3_path.read_text())
-            # ep_in_onset_21d effect from the "timing" section
-            timing = p3.get("timing") or {}
-            ep_in = timing.get("ep_in_onset_21d") or {}
-            ep_out = timing.get("ep_out_onset_5d") or {}
-            if isinstance(ep_in.get("mean_excess"), (int, float)):
-                stats["ep_in_onset_21d"] = float(ep_in["mean_excess"])
-            if isinstance(ep_out.get("mean_excess"), (int, float)):
-                stats["ep_out_onset_5d"] = float(ep_out["mean_excess"])
-            # Also try top-level keys if structure differs
-            for key in ("ep_in_onset_21d", "ep_out_onset_5d"):
-                if key not in stats:
-                    v = p3.get(key)
-                    if isinstance(v, dict):
-                        me = v.get("mean_excess") or v.get("effect") or v.get("mean")
-                        if isinstance(me, (int, float)):
-                            stats[key] = float(me)
-                    elif isinstance(v, (int, float)):
-                        stats[key] = float(v)
-        except Exception as e:  # noqa: BLE001
-            log.warning("sentinels: could not read p3_results.json: %s", e)
+    p3 = _read_json_tolerant(g / "p3_results.json")
+    episodes = (p3 or {}).get("episodes") or {}
+    for cell_id, row in episodes.items():
+        if not isinstance(row, dict):
+            continue
+        v = row.get("direction_adjusted_mean")
+        if v is None:
+            v = row.get("raw_mean")
+        if isinstance(v, (int, float)):
+            stats[str(cell_id)] = float(v)
 
-    # P3b: routing cells
-    p3b_path = data_dir / "oracle" / "gauntlet" / "p3b_routing_placebo.json"
-    if p3b_path.exists():
-        try:
-            p3b = json.loads(p3b_path.read_text())
-            # Routing cell ids are like "software__ai_compute__5d"
-            cells = p3b.get("cells") or p3b.get("routing_cells") or {}
-            for cell_id, cell_data in cells.items():
-                if isinstance(cell_data, dict):
-                    me = (cell_data.get("mean_excess") or
-                          cell_data.get("effect") or
-                          cell_data.get("mean"))
-                    if isinstance(me, (int, float)):
-                        stats[cell_id] = float(me)
-                elif isinstance(cell_data, (int, float)):
-                    stats[cell_id] = float(cell_data)
-        except Exception as e:  # noqa: BLE001
-            log.warning("sentinels: could not read p3b_routing_placebo.json: %s", e)
-
+    p3b = _read_json_tolerant(g / "p3b_routing_placebo.json")
+    cells = (p3b or {}).get("cells") or {}
+    for _key, cell in cells.items():
+        if not isinstance(cell, dict):
+            continue
+        src, dest, h = cell.get("src"), cell.get("dest"), cell.get("horizon_d")
+        v = cell.get("real_mean")
+        if src and dest and h and isinstance(v, (int, float)):
+            stats[f"{src}__{dest}__{int(h)}d"] = float(v)
     return stats
+
+
+#: The live-evidence adjudication boundary: only episodes with onset AFTER the
+#: P3 adjudication date count as uncontaminated forward evidence for the
+#: display_with_edge onset cells.
+_ADJUDICATION_DATE = pd.Timestamp("2026-07-04")
 
 
 def _get_matured_rows(
     compound_id: str,
-    all_rows: list[dict],
-    fwd_rows: list[dict],
-) -> list[dict]:
-    """Get matured ledger rows relevant to a compound_id.
+    data_dir: Path,
+) -> list[float] | None:
+    """Direction-adjusted matured live outcomes for a display_with_edge cell.
 
-    For onset cells: match via cell_tags in forward_ledger rows.
-    For live_ledger: match via compound_id directly.
-    Only include outcome_mature=True rows (for live_ledger) or
-    forward_ledger rows which are always treated as matured at load time.
+    Onset cells (ep_in_onset_21d / ep_out_onset_5d): read from the nightly-
+    regenerated episodes_s.parquet — rows with onset_date > the adjudication
+    date and a matured outcome at the cell's horizon are exactly the accruing
+    forward evidence (PIT: the detector never sees its outcome).
+
+    Routing cells: **no per-event live source exists yet** — the routing
+    matrix stores aggregates only. Returns None with the gap DECLARED (the
+    caller records live_source='none' in the snapshot rather than silently
+    reporting zero rows as monitored-and-healthy).
     """
-    matched: list[dict] = []
+    if compound_id.startswith("ep_"):
+        try:
+            direction = "in" if compound_id.startswith("ep_in") else "out"
+            horizon = int(compound_id.rsplit("_", 1)[-1].rstrip("d"))
+            eps = pd.read_parquet(data_dir / "oracle" / "episodes_s.parquet")
+        except Exception:  # noqa: BLE001 — degrade, sentinel never crashes the night
+            return None
+        sub = eps[(eps["direction"] == direction)
+                  & (pd.to_datetime(eps["onset_date"]) > _ADJUDICATION_DATE)]
+        vcol, mcol = f"outcome_rs_{horizon}d", f"outcome_mature_{horizon}d"
+        if vcol not in sub.columns or mcol not in sub.columns:
+            return None
+        sub = sub[(sub[mcol] == True) & sub[vcol].notna()]  # noqa: E712
+        sign = 1.0 if direction == "in" else -1.0
+        return [sign * float(v) for v in sub[vcol].tolist()]
+    # routing cells: aggregates only — declared gap
+    return None
 
-    # forward_ledger rows: tagged by cell_tags dict
-    # ep_in_onset_21d: cell_tags contains {"entry_onset_21d": True}
-    # ep_out_onset_5d: cell_tags contains {"exit_onset_5d": True}
-    # Routing cells: not separately tagged in forward_ledger; use live_ledger
-    cell_tag_map = {
-        "ep_in_onset_21d": "entry_onset_21d",
-        "ep_out_onset_5d": "exit_onset_5d",
-    }
-    fwd_tag = cell_tag_map.get(compound_id)
-
-    for row in fwd_rows:
-        if fwd_tag:
-            ct = row.get("cell_tags") or {}
-            if ct.get(fwd_tag):
-                # Check if excess data present (matured)
-                exc = row.get("excess_21d") or row.get("excess")
-                if exc is not None:
-                    matched.append({"compound_id": compound_id,
-                                    "excess": exc,
-                                    "source": "forward_ledger"})
-
-    # live_ledger rows: direct compound_id match, outcome_mature=True
-    for row in all_rows:
-        if row.get("compound_id") == compound_id and row.get("outcome_mature") is True:
-            exc = row.get("excess_63d") or row.get("excess_21d")
-            if exc is not None:
-                matched.append({"compound_id": compound_id,
-                                 "excess": exc,
-                                 "source": "live_ledger"})
-
-    return matched
-
-
-# ---------------------------------------------------------------------------
-# 3. LEDGER INTEGRITY
-# ---------------------------------------------------------------------------
 
 def check_ledger_integrity(
     data_dir: Path,
@@ -592,7 +584,7 @@ def check_ledger_integrity(
                 log_path, "ledger_integrity", "error",
                 detail_en=(
                     f"Ledger integrity: {ledger_name} has {n_bad} unparseable line(s). "
-                    f"Lines were skipped (P1a torn-line law). Investigate for truncation."
+                    f"Lines were skipped (tolerant-reader pattern (oracle_screen._load_trial_ledger)). Investigate for truncation."
                 ),
                 detail_zh=(
                     f"账本完整性：{ledger_name} 有 {n_bad} 行无法解析。"
