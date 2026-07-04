@@ -49,13 +49,15 @@ _REG = {
             "producer": "engine/run.py",
             "tier": "infrastructure",
         },
-        "us-standouts": {
-            "producer": "engine/master_brain.py",
-            "tier": "shadow",
-        },
-        "sector-cycles": {
-            "producer": "engine/sector_cycles.py",
+        # Real registry key from config/synapse.yml (path: site/factordata/us_standouts.json)
+        "site-us-standouts": {
+            "producer": "scripts/build_stock_library.py",
             "tier": "display",
+        },
+        # Real registry key from config/synapse.yml (path: data/sector_cycles/forward_log.parquet)
+        "sector-cycles-forward-log": {
+            "producer": "scripts/build_sector_cycles.py",
+            "tier": "shadow",
         },
     },
 }
@@ -146,6 +148,19 @@ class TestBuildFeedsContract:
         the payload, the build_feeds extraction would re-create the incident:
             rr.get("state")  →  None
         because 'state' is no longer at the top level of rr.
+
+        Extended to mirror the FULL build_feeds.py guard
+        (scripts/build_feeds.py lines 91-100):
+
+            rr = latest.get("risk_radar")
+            if isinstance(rr, dict) and rr.get("state") is not None:
+                _write_json(out, "risk_radar.json", rr)
+
+        The write branch must NOT fire for a wrapper-shaped rr — the isinstance
+        check passes (it IS a dict) but the state check returns None, so the
+        guard correctly suppresses the write.  If a producer wraps the payload
+        instead of using sibling keys, the file is silently NOT written — which
+        is the "darkened feed" variant of the 2026-07-02 incident.
         """
         rr_payload = {"state": "caution", "asof": "2026-07-04"}
         # Wrong pattern: wrap the payload instead of adding sibling keys.
@@ -165,6 +180,16 @@ class TestBuildFeedsContract:
         assert rr.get("state") is None, (
             "A wrapper shape must make .get('state') return None — this is the "
             "incident pattern.  The positive test above proves sibling keys avoid it."
+        )
+
+        # Mirror the full build_feeds guard: the write branch must NOT fire.
+        # isinstance(rr, dict) is True (it's still a dict), but state is None
+        # so the combined condition is False — suppressing the write entirely.
+        write_would_fire = isinstance(rr, dict) and rr.get("state") is not None
+        assert not write_would_fire, (
+            "The full build_feeds guard (isinstance(rr, dict) and "
+            "rr.get('state') is not None) must evaluate to False for a "
+            "wrapper-shaped rr — confirming the write branch does not fire"
         )
 
     def test_nested_stamped_rr_in_stamped_latest(self):
@@ -243,7 +268,7 @@ class TestMastermindAnchors:
             "as_of": "2026-07-04",
             "board": [{"ticker": "NVDA", "rank": 1}],
         }
-        stamped = stamp(payload, artifact_id="us-standouts", registry=_REG, now=_NOW)
+        stamped = stamp(payload, artifact_id="site-us-standouts", registry=_REG, now=_NOW)
         result = _read_standouts_date(stamped)
         assert result == "2026-07-04", (
             f"_read_standouts_date got {result!r}; stamped keys: {list(stamped.keys())}"
@@ -255,7 +280,7 @@ class TestMastermindAnchors:
             "meta": {"asOf": "2026-07-04", "generated_utc": "2026-07-04T12:00:00Z"},
             "cycles": {},
         }
-        stamped = stamp(payload, artifact_id="sector-cycles", registry=_REG, now=_NOW)
+        stamped = stamp(payload, artifact_id="sector-cycles-forward-log", registry=_REG, now=_NOW)
         result = _read_sector_cycles_date(stamped)
         assert result == "2026-07-04", (
             f"_read_sector_cycles_date got {result!r}; stamped keys: {list(stamped.keys())}"
@@ -325,7 +350,7 @@ class TestTerminalConformance:
             "as_of": today_str,
             "board": [{"ticker": "NVDA", "rank": 1}],
         }
-        stamped = stamp(payload, artifact_id="us-standouts", registry=_REG, now=_NOW)
+        stamped = stamp(payload, artifact_id="site-us-standouts", registry=_REG, now=_NOW)
         artifact_path.write_text(json.dumps(stamped), encoding="utf-8")
 
         spec = {
@@ -379,7 +404,7 @@ class TestTerminalConformance:
 
         today_str = date.today().isoformat()
         payload = {"as_of": today_str, "board": []}
-        stamped = stamp(payload, artifact_id="us-standouts", registry=_REG, now=_NOW)
+        stamped = stamp(payload, artifact_id="site-us-standouts", registry=_REG, now=_NOW)
         artifact_path.write_text(json.dumps(stamped), encoding="utf-8")
 
         spec = {

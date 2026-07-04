@@ -106,9 +106,32 @@ def _compute_inputs_hash(payload_ex_envelope: dict) -> str:
 
 
 def _registry_defaults(artifact_id: str, registry: dict) -> dict:
-    """Extract envelope defaults from the registry entry for *artifact_id*."""
+    """Extract envelope defaults from the registry entry for *artifact_id*.
+
+    Raises
+    ------
+    KeyError
+        When *artifact_id* is not present in the registry's ``artifacts``
+        section.  Failing loudly here prevents silent propagation of empty
+        ``produced_by`` / ``tier`` values into published artifacts — a class
+        of mistake that would only surface at downstream consumers.
+
+        The error message lists up to five known ids so callers can spot typos
+        immediately without opening synapse.yml.
+    """
     artifacts = registry.get("artifacts", {})
-    entry = artifacts.get(artifact_id, {})
+    if artifact_id not in artifacts:
+        known = sorted(artifacts.keys())
+        sample = known[:5]
+        rest = len(known) - len(sample)
+        sample_str = ", ".join(repr(k) for k in sample)
+        if rest:
+            sample_str += f" … (+{rest} more)"
+        raise KeyError(
+            f"artifact_id {artifact_id!r} not in config/synapse.yml — "
+            f"register it first; known ids: {sample_str}"
+        )
+    entry = artifacts[artifact_id]
     return {
         "schema_version": _DEFAULT_SCHEMA_VERSION,
         "produced_by": entry.get("producer", ""),
@@ -206,10 +229,20 @@ def stamp_if_changed(
     """Stamp *payload* only when the data content has changed vs *prev_payload*.
 
     When the computed inputs_hash of *payload* matches the inputs_hash already
-    present in *prev_payload*, the previous envelope is preserved VERBATIM —
-    produced_at is not updated, and the artifact stays BYTE-IDENTICAL on disk.
-    This lets publish_r2's content-hash fast-path fire and prevents spurious
-    R2 uploads on unchanged data.
+    present in *prev_payload*, ``prev_payload`` is returned **verbatim** — the
+    exact same Python object, unchanged.  Returning the previous object rather
+    than rebuilding it guarantees byte-for-bit identity when the result is
+    later serialised with ``json.dumps(sort_keys=False)``, which is the path
+    that publish_r2.py (line 196) uses for its md5-based content-hash skip.
+    Any dict rebuild — even one that copies all keys faithfully — risks
+    reordering Python dict insertion order and producing different JSON bytes.
+
+    Consequence: even if the caller passes a key-reordered payload whose
+    content is identical to ``prev_payload``, ``stamp_if_changed`` returns
+    ``prev_payload`` verbatim (the hash matches because
+    ``_compute_inputs_hash`` uses ``sort_keys=True``).  The returned bytes are
+    the *previous* serialisation, not the caller's ordering.  Callers that
+    need the new key order must use ``stamp()`` directly.
 
     When data has changed (or prev_payload is None / has no inputs_hash), a
     fresh stamp is applied via stamp().
@@ -230,13 +263,13 @@ def stamp_if_changed(
     if prev_payload is not None:
         prev_hash = prev_payload.get("inputs_hash", "")
         if prev_hash == new_hash:
-            # Data unchanged — preserve the previous envelope verbatim.
-            # Rebuild the dict: current payload (minus envelope) + previous envelope fields.
-            result = dict(payload_ex)
-            for k in ENVELOPE_KEYS:
-                if k in prev_payload:
-                    result[k] = prev_payload[k]
-            return result
+            # Data unchanged — return prev_payload VERBATIM so the serialised
+            # bytes are bit-for-bit identical to the previous on-disk artifact.
+            # This is what lets publish_r2.py's md5-based content-hash skip fire
+            # (publish_r2.py:196).  Any dict-rebuild here — even one that copies
+            # the same keys — can reorder Python dict insertion order and produce
+            # different JSON bytes under json.dumps(sort_keys=False).
+            return prev_payload
 
     # Data changed or no previous version — apply a fresh stamp.
     return stamp(payload, artifact_id=artifact_id, registry=registry, now=now)

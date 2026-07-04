@@ -176,13 +176,56 @@ class TestStampIfChanged:
         assert result["inputs_hash"] == prev["inputs_hash"]
 
     def test_unchanged_byte_identical(self, base_payload):
+        """stamp_if_changed returns prev VERBATIM on hash match (same Python object).
+
+        Because the implementation returns prev_payload itself — not a copy —
+        json.dumps(result, sort_keys=False) is byte-for-bit identical to
+        json.dumps(prev, sort_keys=False).  This is what lets publish_r2.py's
+        md5-based content-hash skip (publish_r2.py:196) fire on unchanged data.
+        """
         prev = stamp(base_payload, artifact_id="test-artifact", registry=_REG, now=_NOW)
         later = datetime(2026, 7, 5, 0, 0, 0, tzinfo=timezone.utc)
         result = stamp_if_changed(
             base_payload, prev, artifact_id="test-artifact", registry=_REG, now=later
         )
-        # Serialize both — they should be identical dicts.
+        # dict equality holds
         assert result == prev
+        # byte identity holds because the same object is returned verbatim
+        assert result is prev, (
+            "stamp_if_changed must return prev_payload verbatim (same object) "
+            "on hash match so that json.dumps output is bit-for-bit identical"
+        )
+        # Confirm at the json.dumps level — the bytes match regardless of sort_keys
+        assert json.dumps(result, sort_keys=False) == json.dumps(prev, sort_keys=False)
+
+    def test_unchanged_reordered_payload_returns_prev_bytes(self, base_payload):
+        """Key-reordered payload with same content returns prev verbatim.
+
+        inputs_hash uses sort_keys=True so content-equal but key-reordered payloads
+        hash identically.  stamp_if_changed must return prev_payload verbatim (not
+        rebuilt with the new key order), so the on-disk bytes stay unchanged and
+        publish_r2.py's md5 skip fires.
+
+        Docstring caveat: the caller receives prev's byte ordering, not their own.
+        Callers that need the new ordering must call stamp() directly.
+        """
+        prev = stamp(base_payload, artifact_id="test-artifact", registry=_REG, now=_NOW)
+        # Build a content-equal payload in a DIFFERENT key order
+        reordered = {k: base_payload[k] for k in reversed(list(base_payload.keys()))}
+        assert list(reordered.keys()) != list(base_payload.keys()), (
+            "sanity: reordered must actually differ in insertion order"
+        )
+        later = datetime(2026, 7, 5, 0, 0, 0, tzinfo=timezone.utc)
+        result = stamp_if_changed(
+            reordered, prev, artifact_id="test-artifact", registry=_REG, now=later
+        )
+        # Must return prev verbatim — same object — despite the reordered input
+        assert result is prev, (
+            "stamp_if_changed returned a rebuilt dict instead of prev verbatim; "
+            "the reordered input triggered a dict rebuild which breaks byte identity"
+        )
+        # Byte-identity at the JSON level is guaranteed by the verbatim return
+        assert json.dumps(result, sort_keys=False) == json.dumps(prev, sort_keys=False)
 
     def test_changed_payload_gets_new_stamp(self, base_payload):
         prev = stamp(base_payload, artifact_id="test-artifact", registry=_REG, now=_NOW)
@@ -396,3 +439,52 @@ class TestImmutability:
         original_copy = dict(base_payload)
         stamp(base_payload, artifact_id="test-artifact", registry=_REG, now=_NOW)
         assert base_payload == original_copy
+
+
+# ---------------------------------------------------------------------------
+# 9. Unknown artifact_id must raise KeyError loudly (FIX 1)
+# ---------------------------------------------------------------------------
+
+class TestUnknownArtifactId:
+    """stamp() and write_sidecar() must raise KeyError for unregistered ids.
+
+    Silently returning empty produced_by / tier would propagate phantom envelope
+    values into published artifacts — a mistake detectable only at downstream
+    consumers.  Loud failure at call-time is the correct contract.
+    """
+
+    def test_stamp_bogus_id_raises_key_error(self, base_payload):
+        with pytest.raises(KeyError, match="not in config/synapse.yml"):
+            stamp(base_payload, artifact_id="bogus-does-not-exist", registry=_REG, now=_NOW)
+
+    def test_stamp_bogus_id_error_lists_known_ids(self, base_payload):
+        """The error message names known ids so callers can fix typos immediately."""
+        with pytest.raises(KeyError) as exc_info:
+            stamp(base_payload, artifact_id="typo-id", registry=_REG, now=_NOW)
+        msg = str(exc_info.value)
+        # Should mention at least one real id from _REG
+        assert "test-artifact" in msg or "regime-latest" in msg, (
+            f"KeyError message should list known ids; got: {msg!r}"
+        )
+
+    def test_stamp_known_id_does_not_raise(self, base_payload):
+        """Positive control: a registered id must not raise."""
+        result = stamp(base_payload, artifact_id="test-artifact", registry=_REG, now=_NOW)
+        assert result["produced_by"] == "engine/test_producer.py"
+
+    def test_write_sidecar_bogus_id_raises_key_error(self, tmp_path):
+        artifact = tmp_path / "data.parquet"
+        artifact.write_bytes(b"hello")
+        with pytest.raises(KeyError, match="not in config/synapse.yml"):
+            write_sidecar(
+                artifact, artifact_id="not-registered-anywhere", registry=_REG, now=_NOW
+            )
+
+    def test_write_sidecar_known_id_does_not_raise(self, tmp_path):
+        """Positive control: a registered id must not raise."""
+        artifact = tmp_path / "data.parquet"
+        artifact.write_bytes(b"hello")
+        path = write_sidecar(
+            artifact, artifact_id="test-artifact", registry=_REG, now=_NOW
+        )
+        assert path.exists()
