@@ -645,6 +645,12 @@ def get_vector_for_date(
         v = row.get(col) if hasattr(row, "get") else (
             row[col] if col in row.index else None
         )
+        # A parquet read yields numpy scalars (int64/float64/bool_). Coerce to
+        # native python so the stamp stays JSON-serializable: downstream ledgers
+        # json.dumps this dict (e.g. qledger claims.jsonl), and a leaked np.int64
+        # raises "Object of type int64 is not JSON serializable".
+        if v is not None and hasattr(v, "item"):
+            v = v.item()
         # Coerce pandas NA/NaT to None; keep bool-as-int (persisted) honest
         if v is not None and isinstance(v, float) and pd.isna(v):
             v = None
