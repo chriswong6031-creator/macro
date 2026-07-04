@@ -210,3 +210,64 @@ BH-FDR rejected: per trial ledger
 
 *Trial ledger: p3_trial_ledger.json (gitignored) — 109 trials enumerated before p-computation.*
 *Runtime: 114.71s*
+
+---
+
+## P3b — Routing placebo
+
+**Seed:** 20260704  **Draws:** 200  **Exclusion zone:** ±10 sessions  **Runtime:** 0.84s
+
+> Verdicts in this section are left as **PENDING ADJUDICATION**.
+> PASS rule (G1-routing): real cell mean > 95th percentile of 200 placebo means
+> (one-sided; sign = sign of real mean as stored in graph_m.json — see code comment).
+
+### 34 previously BH-rejected cells — placebo verdicts
+
+| trial_id | n_real | real_mean | placebo_mean | placebo_p95 | G1-routing pass |
+|---|---|---|---|---|---|
+| routing_ai_compute/energy_commodities/high_vix_10d | 20 | 0.999% | 0.032% | 1.088% | ✗ |
+| routing_ai_compute/energy_commodities/high_vix_15d | 20 | 0.932% | 0.002% | 1.145% | ✗ |
+| routing_ai_compute/energy_commodities/high_vix_5d | 20 | 0.529% | -0.061% | 1.093% | ✗ |
+| routing_ai_compute/healthcare_defensive/high_vix_5d | 20 | 0.017% | -0.046% | 0.643% | ✗ |
+| routing_consumer_staples_defensive/ai_compute/high_vix_10d | 13 | 0.074% | 0.045% | 1.424% | ✗ |
+| routing_consumer_staples_defensive/financials_rates/high_vix_10d | 13 | 0.668% | -0.032% | 1.279% | ✗ |
+| routing_consumer_staples_defensive/financials_rates/high_vix_15d | 13 | 0.552% | 0.002% | 1.528% | ✗ |
+| routing_consumer_staples_defensive/financials_rates/high_vix_5d | 13 | 0.943% | 0.066% | 1.362% | ✗ |
+| routing_consumer_staples_defensive/healthcare_defensive/high_vix_15d | 13 | 0.319% | -0.123% | 0.880% | ✗ |
+| routing_consumer_staples_defensive/healthcare_defensive/high_vix_5d | 13 | 0.610% | -0.095% | 0.777% | ✗ |
+| routing_consumer_staples_defensive/long_duration_growth/high_vix_5d | 13 | 0.066% | -0.247% | 0.841% | ✗ |
+| routing_consumer_staples_defensive/software/high_vix_10d | 13 | 0.158% | 0.056% | 1.231% | ✗ |
+| routing_energy_commodities/ai_compute/high_vix_10d | 12 | 1.061% | -0.020% | 1.110% | ✗ |
+| routing_energy_commodities/ai_compute/high_vix_15d | 12 | 0.121% | 0.111% | 1.354% | ✗ |
+| routing_energy_commodities/ai_compute/high_vix_5d | 12 | 0.232% | 0.036% | 1.394% | ✗ |
+| routing_energy_commodities/healthcare_defensive/high_vix_5d | 12 | 0.116% | -0.106% | 0.870% | ✗ |
+| routing_energy_commodities/long_duration_growth/high_vix_10d | 12 | 0.671% | -0.006% | 1.298% | ✗ |
+| routing_energy_commodities/long_duration_growth/high_vix_15d | 12 | 0.459% | -0.020% | 0.999% | ✗ |
+| routing_energy_commodities/long_duration_growth/high_vix_5d | 12 | 0.112% | -0.030% | 1.035% | ✗ |
+| routing_long_duration_growth/ai_compute/high_vix_5d | 16 | 0.616% | 0.092% | 0.943% | ✗ |
+| routing_long_duration_growth/consumer_staples_defensive/high_vix_15d | 16 | 0.026% | -0.089% | 0.830% | ✗ |
+| routing_long_duration_growth/energy_commodities/high_vix_5d | 16 | 0.168% | -0.110% | 1.355% | ✗ |
+| routing_long_duration_growth/financials_rates/high_vix_10d | 16 | 0.432% | 0.020% | 1.065% | ✗ |
+| routing_long_duration_growth/financials_rates/high_vix_15d | 16 | 0.271% | 0.026% | 1.337% | ✗ |
+| routing_long_duration_growth/healthcare_defensive/high_vix_10d | 16 | 0.377% | -0.083% | 0.735% | ✗ |
+| routing_long_duration_growth/healthcare_defensive/high_vix_15d | 16 | 0.480% | -0.047% | 0.869% | ✗ |
+| routing_long_duration_growth/healthcare_defensive/high_vix_5d | 16 | 0.454% | -0.038% | 0.752% | ✗ |
+| routing_long_duration_growth/software/high_vix_10d | 16 | 0.029% | 0.031% | 0.897% | ✗ |
+| routing_long_duration_growth/software/high_vix_15d | 16 | 0.190% | 0.026% | 0.813% | ✗ |
+| routing_long_duration_growth/software/high_vix_5d | 16 | 0.085% | 0.069% | 0.851% | ✗ |
+| routing_software/ai_compute/high_vix_10d | 16 | 1.791% | 0.057% | 1.036% | ✓ |
+| routing_software/ai_compute/high_vix_5d | 16 | 1.771% | 0.135% | 1.009% | ✓ |
+| routing_software/energy_commodities/high_vix_5d | 16 | 0.037% | -0.089% | 1.233% | ✗ |
+| routing_software/financials_rates/high_vix_15d | 16 | 0.952% | 0.115% | 1.383% | ✗ |
+
+**Of the 34 BH-rejected cells: 2 pass placebo.**
+
+### All sufficient cells — placebo summary
+
+| Metric | Value |
+|---|---|
+| Sufficient cells tested | 90 |
+| Pass G1-routing | 2 |
+| Fail G1-routing | 88 |
+
+> PENDING ADJUDICATION
