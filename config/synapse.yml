@@ -1,0 +1,1656 @@
+meta:
+  schema_version: 1
+  description: >
+    The signal-bus registry: one entry per cross-engine artifact that flows between
+    producers and consumers inside the Macro Dashboard engine. Every registered artifact
+    names its single authoritative producer, owner program, freshness SLA, storage
+    location, tier on the qual_ladder vocabulary, and the full consumer list derived from
+    the W0 census (workflow wf_67ace3c1 + wf_dd79661a red-team, 2026-07-04). This file
+    is PASSIVE in W0 — it names what exists; it does not yet enforce read-gating or stamp
+    envelopes (those follow in W1 and W2). The integrity gate (scripts/check_synapse_registry.py)
+    validates producer existence, field completeness, and enum membership on every CI run.
+  tier_vocabulary:
+    - display       # rendered, salience-eligible; NO arithmetic on scored surfaces
+    - shadow        # computed + claim-registered + graded nightly; never rendered as conviction
+    - confirmer     # passed §3 gate (n_dates>=25, Wilson CI > 0 vs matched control, etc.)
+    - scored        # composite re-validation + 63d OOS accrual passed
+    - infrastructure  # operational rail: bus, index, manifest — not a signal
+  article2_surfaces:
+    - alert_triage     # engine/alert_triage.py money-path
+    - board_ordering   # board rank / standout ordering surfaces
+    - top_setups       # discovery/top-setups page gating
+    - attention_queue  # missing-tape attention queue
+    - push_floor       # push-notification floor (notify.py)
+
+# ============================================================
+# DATA-PLANE ARTIFACTS (sorted by descending consumer_count)
+# ============================================================
+artifacts:
+
+  # --- 27 consumers ---
+  regime-latest:
+    path: data/regime/latest.json
+    format: json
+    producer: engine/run.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces:
+      - alert_triage
+      - board_ordering
+      - push_floor
+    consumers:
+      - engine/alert_triage.py
+      - engine/briefing.py
+      - engine/china_intel_analysis.py
+      - engine/china_intel_bus.py
+      - engine/china_sector_central.py
+      - engine/etf_pulse.py
+      - engine/holdings_signals.py
+      - engine/market_gamma.py
+      - engine/master_brain.py
+      - engine/radar_plus.py
+      - engine/regime_label.py
+      - engine/regime_prior.py
+      - engine/risk_brain.py
+      - engine/sector_central.py
+      - engine/vol_regime.py
+      - engine/vol_sentiment.py
+      - scripts/archive_signals.py
+      - scripts/build_canada_library.py
+      - scripts/build_china_library.py
+      - scripts/build_feeds.py
+      - scripts/build_hk_library.py
+      - scripts/build_impulse.py
+      - scripts/build_regime_prior.py
+      - scripts/build_site.py
+      - scripts/build_stock_library.py
+      - scripts/notify.py
+      - scripts/refresh_regime_if_stale.py
+    external_consumers:
+      - mastermind:anchor
+      - mastermind:vendored
+      - terminal:pull_macro_intel
+    qual_ladder_ref: null
+    notes: "Highest-consumer artifact in the bus (27 Python modules + 3 external). census confirmed 27 unique module files. Producer: engine/run.py:705 json.dump."
+
+  # --- 16 consumers ---
+  baskets-membership:
+    path: data/baskets/membership.json
+    format: json
+    producer: scripts/seed_us_sector_baskets.py
+    known_extra_writers:
+      - "scripts/promote_candidate.py — hand-curated edits to add/remove members; additive, idempotent"
+    owner_program: sector-pulse
+    cadence: weekly
+    storage: git
+    asof_field: seed_date
+    freshness_sla_hours: 192
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/demand_ledger.py
+      - engine/financial_news.py
+      - engine/froth_fragility.py
+      - engine/news_common.py
+      - engine/options_universe.py
+      - engine/sector_central.py
+      - engine/sector_cycles.py
+      - engine/sector_pulse.py
+      - engine/spotlight.py
+      - engine/theme_catalyst_binder.py
+      - scripts/basket_coherence_audit.py
+      - scripts/build_baskets.py
+      - scripts/build_demand.py
+      - scripts/build_gex_board.py
+      - scripts/build_stock_library.py
+      - scripts/fetch_basket_ohlcv.py
+    external_consumers: []
+    notes: "known_extra_writers: promote_candidate.py makes hand edits post-seed; both are additive/idempotent."
+
+  # --- 16 consumers ---
+  regime-history:
+    path: data/regime/regime_history.parquet
+    format: parquet
+    producer: engine/run.py
+    known_extra_writers:
+      - "engine/canada_run.py — writes data/canada_regime/regime_history.parquet (separate region path, not this path)"
+      - "engine/china_run.py — writes data/china_regime/regime_history.parquet (separate region path)"
+      - "engine/hk_run.py — writes data/hk_regime/regime_history.parquet (separate region path)"
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/alerts.py
+      - engine/board_ledger.py
+      - engine/regime_hmm.py
+      - engine/regime_one.py
+      - engine/regime_vector.py
+      - engine/signal_archive.py
+      - scripts/build_conditional_cells.py
+      - scripts/build_hazard_panel.py
+      - scripts/build_site.py
+      - scripts/calibrate_regime_hmm.py
+      - scripts/collinearity_phase0.py
+      - scripts/cross_asset_confirm_phase0.py
+      - scripts/quad_nfci_phase0.py
+      - scripts/refresh_regime_if_stale.py
+      - scripts/research_playbook.py
+      - scripts/validate_regime_fwd.py
+    external_consumers: []
+    notes: "extra_writers are per-region paths (canada/china/hk), NOT this US path. Producer line: engine/run.py:83 store_df.to_parquet."
+
+  # --- 15 consumers ---
+  breadth-breadth:
+    path: data/breadth/breadth.parquet
+    format: parquet
+    producer: collectors/breadth.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: collect
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/anticipation.py
+      - engine/basket_score.py
+      - engine/baskets_intl.py
+      - engine/froth_fragility.py
+      - engine/regime_vector.py
+      - scripts/anticipation_phase0.py
+      - scripts/build_anticipation.py
+      - scripts/build_baskets_intl.py
+      - scripts/build_canada.py
+      - scripts/build_china.py
+      - scripts/build_feeds.py
+      - scripts/build_hk.py
+      - scripts/build_site.py
+      - scripts/build_stock_library.py
+      - scripts/validate_timing_overlay.py
+    external_consumers: []
+    notes: "Producer: collectors/breadth.py BreadthAdapter (group='breadth') via collectors/base.py:run_adapter -> store.upsert -> data/breadth/breadth.parquet."
+
+  # --- 15 consumers ---
+  altdata-by-ticker:
+    path: data/altdata/by_ticker.json
+    format: json
+    producer: engine/altdata_signals.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/altdata_brain.py
+      - engine/altdata_confirmers.py
+      - engine/altdata_signals.py
+      - engine/briefing.py
+      - engine/foresight_earliness.py
+      - engine/intelligence.py
+      - engine/radar_plus.py
+      - engine/radar_ticker.py
+      - engine/signal_sanity.py
+      - scripts/build_briefing.py
+      - scripts/build_china_altdata.py
+      - scripts/build_china_news.py
+      - scripts/build_intelligence.py
+      - scripts/build_news.py
+      - scripts/build_stock_library.py
+    external_consumers: []
+    qual_ladder_ref: altdata.signal_score
+    notes: "engine/altdata_signals.py:72 writes both data/ and site/ copies. schema=altdata.by_ticker.v2."
+
+  # --- 12 consumers ---
+  qledger-claims:
+    path: data/qledger/claims.jsonl
+    format: jsonl
+    producer: engine/qledger.py
+    known_extra_writers:
+      - "scripts/backfill_qledger_us.py — historical backfill; additive append-only"
+      - "scripts/backfill_qledger_cn.py — CN historical backfill; additive append-only"
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/communique_diff.py
+      - engine/missing_tape.py
+      - engine/qledger_ui.py
+      - scripts/backfill_qledger_intel_hub.py
+      - scripts/build_alt_data.py
+      - scripts/build_intel_hub.py
+      - scripts/build_whitehouse.py
+      - scripts/grade_qledger.py
+      - scripts/report_importance_duel.py
+      - scripts/sample_qledger_placebo.py
+      - scripts/shadow_importance_v0.py
+      - scripts/shadow_importance_v0_pit.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: "QI-owned ledger. Producer: engine/qledger.py:326 append-only per-claim row. Backfill writers are additive only (never overwrite)."
+
+  # --- 11 consumers ---
+  breadth-sp1500-pit:
+    path: data/breadth/sp1500_pit_membership.parquet
+    format: parquet
+    producer: scripts/midsmall_pit.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/grading.py
+      - engine/group_flow.py
+      - engine/index_changes.py
+      - engine/intel_discovery.py
+      - scripts/backtest_strategies.py
+      - scripts/insider_phase0.py
+      - scripts/midsmall_pit.py
+      - scripts/name_direction_phase0.py
+      - scripts/research/gate0_survivorship.py
+      - scripts/validate_index_reconstitution.py
+      - scripts/validate_reversal_nonsurvivor.py
+    external_consumers: []
+    notes: "Producer: scripts/midsmall_pit.py:118 to_parquet. Run once offline to reconstruct S&P 400+600 PIT membership. Census listed collectors/sp1500_pit_collector.py which does not exist on origin/main; midsmall_pit.py is the verified writer."
+
+  # --- 10 consumers ---
+  qbus-items:
+    path: data/qbus/items.parquet
+    format: parquet
+    producer: engine/qbus.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_news_intel.py
+      - engine/communique_diff.py
+      - engine/financial_news.py
+      - engine/importance_v0.py
+      - engine/missing_tape_attention.py
+      - engine/news_vector.py
+      - scripts/audit_qbus.py
+      - scripts/recrawl_official_tape.py
+      - scripts/shadow_importance_v0.py
+      - scripts/shadow_importance_v0_pit.py
+    external_consumers: []
+    notes: "QI-owned rail, registered not modified (D2). Producer: engine/qbus.py:83 append to data/qbus/items.parquet, keep-FIRST on item_id."
+
+  # --- 8 consumers ---
+  radar-theses:
+    path: data/radar/theses.jsonl
+    format: jsonl
+    producer: engine/radar.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/ai_desk_scorer.py
+      - engine/hub_track_record.py
+      - engine/master_brain.py
+      - engine/qledger.py
+      - engine/radar_scorer.py
+      - scripts/backfill_qledger_us.py
+      - scripts/build_baskets.py
+      - scripts/build_radar_ic.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: "Producer: engine/radar.py:284 append, idempotent by id."
+
+  # --- 8 consumers ---
+  us-board-ledger-retro-grades:
+    path: data/us_board_ledger/retro_grades.parquet
+    format: parquet
+    producer: scripts/grade_us_board.py
+    known_extra_writers: []
+    owner_program: setup-species
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/board_ledger.py
+      - engine/china_standout_track.py
+      - engine/spine.py
+      - engine/track_record.py
+      - scripts/build_canada.py
+      - scripts/build_hk.py
+      - scripts/build_hk_library.py
+      - scripts/us_board_studies.py
+    external_consumers: []
+    notes: "Producer: scripts/grade_us_board.py:11 append-only per as_of, lane, ticker, horizon."
+
+  # --- 6 consumers ---
+  signal-archive-mtf:
+    path: data/signal_archive/mtf_signals_latest.json
+    format: json
+    producer: scripts/build_signal_quality.py
+    known_extra_writers: []
+    owner_program: setup-species
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces:
+      - board_ordering
+      - top_setups
+    consumers:
+      - engine/master_brain.py
+      - engine/run.py
+      - engine/sector_pulse.py
+      - engine/track_record.py
+      - scripts/build_track_record.py
+      - scripts/validate_signals.py
+    external_consumers: []
+    notes: "Producer: scripts/build_signal_quality.py:97 write_text. Brain-leaf for the signal engine."
+
+  # --- 6 consumers ---
+  vector-calibration:
+    path: data/vector/calibration.json
+    format: json
+    producer: scripts/calibrate_vector.py
+    known_extra_writers: []
+    owner_program: btc-vector
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: implicit
+    tier: scored
+    weights: measured
+    scored_path_surfaces:
+      - alert_triage
+      - board_ordering
+    consumers:
+      - engine/alert_triage.py
+      - engine/alerts.py
+      - engine/btc_alerts.py
+      - engine/btc_master.py
+      - scripts/build_vector.py
+      - scripts/calibrate_regime.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: "Scored tier: calibrate_vector.py runs after an OOS validation pass (backtest evidence in calibration.json itself). Producer: scripts/calibrate_vector.py:942 write_text after OOS pass."
+
+  # --- 6 consumers ---
+  market-state-latest:
+    path: data/market_state/latest.json
+    format: json
+    producer: engine/market_state.py
+    known_extra_writers:
+      - "scripts/build_site.py — calls market_state.persist() at line 1700; build_site is the runner, market_state.py is the author"
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: hand
+    scored_path_surfaces: []
+    consumers:
+      - engine/regime_prior.py
+      - engine/market_state_audit.py
+      - engine/market_state_tune.py
+      - scripts/build_index_leadership.py
+      - scripts/build_regime_prior.py
+      - scripts/refresh_regime_if_stale.py
+    external_consumers: []
+    notes: "weights=hand: composite uses docstring-declared weights 0.24/0.18/0.16/0.16/0.14/0.12 for its six sub-components. W3 measurement plan will replace hand weights with measured. Producer: engine/market_state.py:795 persist() called from scripts/build_site.py:1700."
+
+  # --- 6 consumers ---
+  cycle-ontology-falsifiers:
+    path: data/cycle_ontology/falsifiers.json
+    format: json
+    producer: engine/cycle_ontology.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/btc_regime_ledger.py
+      - engine/falsifier_tripwires.py
+      - scripts/_narrative_ttl.py
+      - scripts/build_cycle.py
+      - scripts/build_vector.py
+      - scripts/migrate_narrative_ttl.py
+    external_consumers: []
+    notes: "Written via cycle DSL compile step. on-demand cadence: recompile when cycle ontology changes."
+
+  # --- 5 consumers ---
+  spine-predictions:
+    path: data/spine/predictions.parquet
+    format: parquet
+    producer: engine/spine.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: spine.predictions.v1
+    tier: shadow
+    weights: none
+    scored_path_surfaces:
+      - alert_triage
+    consumers:
+      - engine/alert_triage.py
+      - engine/altdata_signals.py
+      - engine/desk_scorer.py
+      - engine/passport.py
+      - scripts/build_alt_data.py
+    external_consumers: []
+    notes: "Producer: engine/spine.py:132 append per build; SCHEMA=spine.predictions.v1."
+
+  # --- 5 consumers ---
+  risk-radar-forward-log:
+    path: data/risk_radar/forward_log.jsonl
+    format: jsonl
+    producer: engine/risk_radar_audit.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/risk_radar_audit.py
+      - engine/risk_radar_intl_audit.py
+      - engine/risk_radar_recovery.py
+      - engine/risk_radar_review.py
+      - engine/run.py
+    external_consumers: []
+    notes: "Producer: engine/risk_radar_audit.py:35 append, idempotent by as-of."
+
+  # --- 5 consumers ---
+  china-sector-cycles-forward-log:
+    path: data/china_sector_cycles/forward_log.parquet
+    format: parquet
+    producer: engine/china_sector_cycles.py
+    known_extra_writers:
+      - "engine/china_sector_cycles_grader.py — grader also appends grade rows to the same parquet"
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: china_sector_cycles.grader.v1
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_sector_cycles_grader.py
+      - scripts/backfill_forward_logs.py
+      - scripts/build_china_cycles_scorecard.py
+      - scripts/build_china_library.py
+      - scripts/keystone_position_gate_phase0.py
+    external_consumers: []
+    notes: "Census flags china_sector_cycles_grader.py as extra writer (it appends graded rows). keep-FIRST PIT contract on (date, id) enforces immutability."
+
+  # --- 4 consumers ---
+  altdata-theses:
+    path: data/altdata/theses.jsonl
+    format: jsonl
+    producer: engine/altdata_ledger.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: logged_at
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/qledger.py
+      - engine/spine.py
+      - scripts/backfill_qledger_us.py
+      - scripts/build_alt_data.py
+    external_consumers: []
+    qual_ladder_ref: altdata.action
+
+  # --- 4 consumers ---
+  sector-cycles-forward-log:
+    path: data/sector_cycles/forward_log.parquet
+    format: parquet
+    producer: scripts/build_sector_cycles.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/grading_stats.py
+      - scripts/grade_promises.py
+      - scripts/backfill_forward_logs.py
+      - scripts/build_measurement.py
+    external_consumers: []
+    notes: "Producer: scripts/build_sector_cycles.py:88 via engine/cycle_forward_log.py:append_forward_log('sector_cycles')."
+
+  # --- 4 consumers ---
+  country-cycles-forward-log:
+    path: data/country_cycles/forward_log.parquet
+    format: parquet
+    producer: scripts/build_country_cycles.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/grading_stats.py
+      - scripts/grade_promises.py
+      - scripts/backfill_forward_logs.py
+      - scripts/build_measurement.py
+    external_consumers: []
+    notes: "Producer: scripts/build_country_cycles.py:88 via engine/cycle_forward_log.py:append_forward_log('country_cycles')."
+
+  # --- 4 consumers ---
+  species-registry:
+    path: data/species/registry.json
+    format: json
+    producer: engine/species_registry.py
+    known_extra_writers:
+      - "scripts/backfill_forward_logs.py — additive merge of historical entries"
+    owner_program: setup-species
+    cadence: on-demand
+    storage: git
+    asof_field: authored
+    freshness_sla_hours: 8760
+    schema: species_registry.v1
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/board_ledger.py
+      - engine/qledger.py
+      - engine/track_record.py
+      - scripts/china_max_phase0.py
+    external_consumers: []
+    notes: "Producer: engine/species_registry.py:365 sync/write. Daily mirror: species_registry.sync() in daily.yml. Additive writes from backfill scripts do not overwrite existing entries."
+
+  # --- 4 consumers ---
+  hazard-model:
+    path: data/hazard/model_price_c4414dcb.json
+    format: json
+    producer: scripts/fit_cycle_hazard.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: implicit
+    tier: scored
+    weights: measured
+    scored_path_surfaces:
+      - board_ordering
+    consumers:
+      - engine/hazard_score.py
+      - scripts/build_conditional_cells.py
+      - engine/sector_cycles.py
+      - scripts/build_cycle.py
+    external_consumers: []
+    notes: "Scored tier: model refit via scripts/fit_cycle_hazard.py runs only after OOS validation pass. weights=measured (allocation_bootstrap in payload)."
+
+  # --- 4 consumers ---
+  regime-spvector-latest:
+    path: data/regime/spvector_latest.json
+    format: json
+    producer: scripts/build_spvector.py
+    known_extra_writers: []
+    owner_program: btc-vector
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_china_allocation.py
+      - scripts/build_ipo.py
+      - scripts/build_site.py
+      - scripts/build_vector.py
+    external_consumers: []
+    notes: "Producer: scripts/build_spvector.py:319 write_text."
+
+  # --- 4 consumers ---
+  experiments-registry-seed:
+    path: data/experiments/registry_seed.json
+    format: json
+    producer: engine/species_registry.py
+    known_extra_writers:
+      - "scripts/backfill_forward_logs.py — additive experiment entries from historical backfill"
+      - "scripts/build_measurement.py — measurement entries; additive, idempotent"
+    owner_program: setup-species
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: experiments_registry.v1
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/experiments_registry.py
+      - engine/falsifier_tripwires.py
+      - scripts/build_site.py
+    external_consumers: []
+    notes: "Three writers — engine/species_registry.py (daily mirror of species into the seed), backfill_forward_logs.py, build_measurement.py. All additive/idempotent; no single-writer enforcement — this is the rot class the masterplan targets in N1."
+
+  # --- 3 consumers ---
+  regime-base-effect-fwd:
+    path: data/regime/base_effect_fwd.jsonl
+    format: jsonl
+    producer: engine/run.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/regime_one.py
+      - scripts/refresh_regime_if_stale.py
+      - scripts/validate_regime_fwd.py
+    external_consumers: []
+    notes: "Producer: engine/run.py:187 append per daily build."
+
+  # --- 3 consumers ---
+  market-state-forward-log:
+    path: data/market_state/forward_log.jsonl
+    format: jsonl
+    producer: engine/market_state_audit.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/market_state_audit.py
+      - engine/market_state_tune.py
+      - scripts/build_site.py
+    external_consumers: []
+    notes: "Producer: engine/market_state_audit.py append, idempotent by as-of."
+
+  # --- 3 consumers ---
+  vol-regime-gate:
+    path: data/vol_regime/gate.json
+    format: json
+    producer: scripts/validate_vol_regime.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: on-demand
+    storage: gitignored-local
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: implicit
+    tier: scored
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/vol_regime.py
+      - scripts/build_vol_regime.py
+      - scripts/validate_gex.py
+    external_consumers: []
+    notes: "gitignored-local: gate.json is NOT git-tracked. Written on --persist flag during cycle-calibration workflow. Census note: vol-regime scored weight is ungated on CI clones (gap). Scored tier: writes only after --persist on a validation pass."
+
+  # --- 2 consumers ---
+  vol-regime-basket-overlay-gate:
+    path: data/vol_regime/basket_overlay_gate.json
+    format: json
+    producer: scripts/backtest_vol_overlay.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: implicit
+    tier: scored
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/vol_regime.py
+      - scripts/build_vol_regime.py
+    external_consumers: []
+    notes: "Scored tier: backtest_vol_overlay.py writes verdict gate only after OOS backtest pass."
+
+  # --- 4 consumers (gitignored-local) ---
+  regime-vector:
+    path: data/regime/regime_vector.parquet
+    format: parquet
+    producer: engine/regime_vector.py
+    known_extra_writers:
+      - "engine/run.py — calls regime_vector.py:487 and stores result at line 681; run.py is the orchestrator"
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: gitignored-local
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/board_ledger.py
+      - engine/china_standout_track.py
+      - engine/qledger.py
+      - scripts/grade_us_board.py
+    external_consumers: []
+    notes: "gitignored-local: NOT git-tracked per census audit. board_ledger, qledger, grade_us_board all require it — this is a gap since CI clones lack the file."
+
+  # --- 2 consumers ---
+  altdata-feed:
+    path: data/altdata/feed.json
+    format: json
+    producer: engine/altdata.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/theme_activity.py
+      - scripts/build_alt_data.py
+    external_consumers: []
+    qual_ladder_ref: altdata.action
+
+  # --- 2 consumers ---
+  radar-track-record:
+    path: data/radar/track_record.json
+    format: json
+    producer: engine/radar_scorer.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/master_brain.py
+      - engine/radar_ic.py
+    external_consumers: []
+
+  # --- 2 consumers ---
+  altdata-track-record:
+    path: data/altdata/track_record.json
+    format: json
+    producer: engine/altdata_ledger.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/master_brain.py
+      - scripts/build_alt_data.py
+    external_consumers: []
+    qual_ladder_ref: altdata.signal_score
+
+  # --- 2 consumers ---
+  archetypes-history:
+    path: data/archetypes/history.parquet
+    format: parquet
+    producer: engine/stock_fundamentals.py
+    known_extra_writers:
+      - "scripts/build_archetype_history.py — alternative builder path"
+    owner_program: engine-fix
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/stock_fundamentals.py
+      - scripts/build_archetype_history.py
+    external_consumers: []
+    notes: "Producer: engine/stock_fundamentals.py:1480 to_parquet write."
+
+  # --- 2 consumers ---
+  sector-central-calls:
+    path: data/sector_central/calls.parquet
+    format: parquet
+    producer: engine/sector_central.py
+    known_extra_writers:
+      - "scripts/build_sector_central.py — runner that calls sector_central and persists output"
+    owner_program: institutional-sector-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/sector_central_grader.py
+      - scripts/build_sector_central.py
+    external_consumers: []
+    notes: "Producer is engine/sector_central.py; build_sector_central.py is the runner/orchestrator. Census note: these are append calls per build."
+
+  # --- 2 consumers ---
+  china-sector-central-calls:
+    path: data/china_sector_central/calls.parquet
+    format: parquet
+    producer: engine/china_sector_central.py
+    known_extra_writers:
+      - "scripts/build_china_sector_central.py — runner that calls china_sector_central and persists output; additive append"
+    owner_program: institutional-sector-intelligence
+    cadence: asia-close
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_sector_central_grader.py
+      - scripts/build_china_sector_central.py
+    external_consumers: []
+    notes: "Producer is engine/china_sector_central.py; build_china_sector_central.py is the runner/orchestrator (same rot pattern as the US sector_central). Both append calls per build."
+
+# ============================================================
+# SITE-PLANE ARTIFACTS (sorted by descending consumer_count)
+# ============================================================
+
+  # --- 13 consumers ---
+  site-us-standouts:
+    path: site/factordata/us_standouts.json
+    format: json
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: us-stocks-prebreakout
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces:
+      - board_ordering
+      - top_setups
+    consumers:
+      - engine/intelligence.py
+      - engine/risk_brain.py
+      - engine/signal_sanity.py
+      - engine/stock_desk.py
+      - engine/subsector_confluence.py
+      - scripts/build_allocation.py
+      - scripts/build_site.py
+      - scripts/build_stock_board_v2.py
+      - scripts/build_theme_detail.py
+      - scripts/grade_us_board.py
+      - scripts/snapshot_shadow_book.py
+    external_consumers:
+      - mastermind:anchor
+      - mastermind:vendored
+      - terminal:screener
+    notes: "Producer: scripts/build_stock_library.py:2412 write_text. Mastermind anchor_1 contract; Terminal screener contract per export_signal_contracts.py:171."
+
+  # --- 11 consumers ---
+  site-baskets-json:
+    path: site/basketdata/baskets.json
+    format: json
+    producer: scripts/build_baskets.py
+    known_extra_writers:
+      - "scripts/build_baskets_canada.py — writes canadabasketdata/baskets.json (separate path)"
+      - "scripts/build_baskets_china.py — writes chinabasketdata/baskets.json (separate path)"
+      - "scripts/build_baskets_hk.py — writes hkbasketdata/baskets.json (separate path)"
+      - "scripts/build_baskets_intl.py — writes intlbasketdata/baskets.json (separate path)"
+    owner_program: sector-pulse
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces:
+      - board_ordering
+    consumers:
+      - engine/conviction_accrual.py
+      - engine/group_context.py
+      - engine/oracle/panel.py
+      - engine/oracle/timemachine.py
+      - engine/radar_ticker.py
+      - engine/sector_pulse.py
+      - scripts/build_allocation.py
+      - scripts/build_site.py
+      - scripts/build_vector.py
+    external_consumers:
+      - mastermind:vendored
+    notes: "known_extra_writers are SEPARATE regional paths (not this path). Producer: scripts/build_baskets.py:99."
+
+  # --- 9 consumers ---
+  site-altdata-mastermind:
+    path: site/altdata/mastermind.json
+    format: json
+    producer: engine/altdata_emit.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: altdata.mastermind.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/intelligence.py
+      - engine/radar_plus.py
+      - engine/radar_ticker.py
+      - engine/china_intel_analysis.py
+      - engine/china_intel_bus.py
+      - engine/signal_sanity.py
+      - scripts/build_intelligence.py
+    external_consumers:
+      - mastermind:vendored
+    qual_ladder_ref: altdata.signal_score
+    notes: "Producer: engine/altdata_emit.py:259 write_text. schema=altdata.mastermind.v1 inline constant at altdata_emit.py:65."
+
+  # --- 9 consumers ---
+  site-radar-json:
+    path: site/basketdata/radar.json
+    format: json
+    producer: scripts/build_baskets.py
+    known_extra_writers:
+      - "scripts/build_intelligence.py — _crosssurface_radar mutates the file in-place post-emit (census-flagged rot; neural-web masterplan targets this in N0)"
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/narrative_brain.py
+      - engine/radar_plus.py
+      - engine/radar_ticker.py
+      - engine/theme_validation.py
+      - scripts/build_radar_page.py
+      - scripts/build_radar_plus.py
+      - scripts/build_intelligence.py
+    external_consumers: []
+    notes: "known_extra_writers: scripts/build_intelligence.py (_crosssurface_radar) mutates the already-committed file in place — second-writer rot flagged by census. N0 plan: fold radar_plus into its producer."
+
+  # --- 8 consumers ---
+  site-altdata-by-ticker:
+    path: site/altdata/by_ticker.json
+    format: json
+    producer: engine/altdata_signals.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: altdata.by_ticker.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/intelligence.py
+      - engine/radar_plus.py
+      - engine/radar_ticker.py
+      - engine/foresight_earliness.py
+      - engine/altdata_confirmers.py
+      - collectors/quiver_watchlist.py
+      - scripts/build_stock_library.py
+      - scripts/build_intelligence.py
+    external_consumers: []
+    qual_ladder_ref: altdata.signal_score
+    notes: "Mirror of data/altdata/by_ticker.json. Producer: engine/altdata_signals.py:72 write_text mirrors to both data/ and site/."
+
+  # --- 6 consumers ---
+  site-signals-per-ticker:
+    path: site/signals/<SYM>.json
+    format: json
+    producer: scripts/build_signal_quality.py
+    known_extra_writers: []
+    owner_program: setup-species
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: jsonschema:research/signal_engine/SCHEMA.json
+    tier: display
+    weights: none
+    scored_path_surfaces:
+      - board_ordering
+      - top_setups
+    consumers:
+      - scripts/validate_signals.py
+      - scripts/build_track_record.py
+      - engine/track_record.py
+    external_consumers:
+      - terminal:chart_markers
+      - mastermind:vendored
+    notes: "Per-ticker placeholder path. The ONLY jsonschema-enforced artifact family (Draft202012). Producer: scripts/build_signal_quality.py:45 via engine/signal_gate.py:write_signal_file."
+
+  # --- 6 consumers ---
+  site-qledger-track-record:
+    path: site/qledger/track_record.json
+    format: json
+    producer: engine/qledger.py
+    known_extra_writers:
+      - "scripts/grade_qledger.py — reads + merges ladder_states into track_record.json at line 576"
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/experiments_registry.py
+      - engine/qledger_ui.py
+      - scripts/grade_qledger.py
+      - scripts/build_allocation.py
+      - scripts/build_alt_data.py
+    external_consumers:
+      - admin:console
+    notes: "Two writers: engine/qledger.py:979 (emit_track_record) and scripts/grade_qledger.py:576 (merges ladder_states). Both are additive/in-place-update, not clobber."
+
+  # --- 5 consumers ---
+  site-signal-gate:
+    path: site/factordata/signal_gate.json
+    format: json
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: us-stocks-prebreakout
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces:
+      - top_setups
+    consumers:
+      - engine/altdata_emit.py
+      - engine/intel_hub.py
+      - engine/whitehouse_brain.py
+      - scripts/build_congress.py
+      - scripts/build_discovery.py
+    external_consumers: []
+    notes: "Producer: scripts/build_stock_library.py:1833 write_text. Schema: {as_of, verdicts: {ticker: verdict}}."
+
+  # --- 5 consumers ---
+  site-regime-timeline:
+    path: site/regime_timeline.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_index_leadership.py
+      - scripts/export_signal_contracts.py
+    external_consumers:
+      - terminal:regime_banner
+      - mastermind:vendored
+    notes: "asof_field: null — as_of is the last entry of the dates array. Producer: scripts/build_site.py:2701 write_text."
+
+  # --- 5 consumers ---
+  site-sector-pulse:
+    path: site/basketdata/sector_pulse.json
+    format: json
+    producer: engine/sector_pulse.py
+    known_extra_writers: []
+    owner_program: sector-pulse
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+      - scripts/build_stock_library.py
+      - engine/oracle/live.py
+    external_consumers:
+      - mastermind:vendored
+      - terminal:pull_macro_intel
+    notes: "Producer: engine/sector_pulse.py:629 write_pulse. schema=1 integer version in payload."
+
+  # --- 4 consumers ---
+  site-radar-ticker:
+    path: site/basketdata/radar_ticker.json
+    format: json
+    producer: scripts/build_radar_plus.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/intelligence.py
+      - engine/intel_discovery.py
+      - engine/radar_ic.py
+      - engine/signal_sanity.py
+    external_consumers: []
+    notes: "Producer: scripts/build_radar_plus.py:3 via engine/radar_ticker.py:14."
+
+  # --- 4 consumers ---
+  site-intelligence-by-ticker:
+    path: site/intelligence/by_ticker.json
+    format: json
+    producer: scripts/build_intelligence.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/briefing.py
+      - scripts/build_briefing.py
+      - scripts/build_intel_hub.py
+    external_consumers:
+      - terminal:pull_macro_intel
+    notes: "Producer: scripts/build_intelligence.py:60 write_text. Merges news + altdata."
+
+  # --- 4 consumers ---
+  site-china-standouts:
+    path: site/factordata/china_standouts.json
+    format: json
+    producer: scripts/build_china_library.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces:
+      - board_ordering
+    consumers:
+      - scripts/build_china.py
+      - scripts/export_signal_contracts.py
+      - scripts/backfill_stock_open.py
+    external_consumers:
+      - mastermind:vendored
+    notes: "Producer: scripts/build_china_library.py:1865 write_text."
+
+  # --- 3 consumers ---
+  site-basket-oracle-state:
+    path: site/basketdata/oracle_state.json
+    format: json
+    producer: engine/oracle/live.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: oracle_state.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/oracle/alerts.py
+      - engine/oracle/tilt.py
+      - scripts/oracle_nightly.py
+    external_consumers: []
+    notes: "Producer: engine/oracle/live.py:395 write_text. schema=oracle_state.v1 inline constant at live.py:78."
+
+  # --- 3 consumers ---
+  site-basket-flow:
+    path: site/basketdata/flow.json
+    format: json
+    producer: scripts/build_baskets.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/ai_desk.py
+      - engine/expansion_gate.py
+    external_consumers:
+      - mastermind:vendored
+    notes: "Producer: scripts/build_baskets.py:113 via engine/group_flow.py."
+
+  # --- 3 consumers ---
+  site-allocation:
+    path: site/allocationdata/allocation.json
+    format: json
+    producer: scripts/build_allocation.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+    external_consumers:
+      - mastermind:vendored
+    notes: "Producer: scripts/build_allocation.py:134 write_text for US region."
+
+  # --- 3 consumers ---
+  site-ai-desk-us:
+    path: site/allocationdata/ai_desk_us.json
+    format: json
+    producer: scripts/build_allocation.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/narrative_emergence.py
+    external_consumers:
+      - mastermind:vendored
+    notes: "Producer: scripts/build_allocation.py:240 via ai_desk.ThematicDeskWriter."
+
+  # --- 3 consumers ---
+  site-china-intel-briefing:
+    path: site/china_intel/briefing.json
+    format: json
+    producer: engine/china_intel_bus.py
+    known_extra_writers: []
+    owner_program: china-alpha
+    cadence: asia-close
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: china_intel.briefing.v3
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/master_brain.py
+    external_consumers:
+      - mastermind:vendored
+    notes: "Producer: engine/china_intel_bus.py:335 write_text. schema=china_intel.briefing.v3 constant at china_intel_bus.py:25."
+    qual_ladder_ref: china_intel.news_dir
+
+  # --- 3 consumers ---
+  site-artifact-manifest:
+    path: site/factordata/contracts/artifact_manifest.json
+    format: json
+    producer: scripts/export_signal_contracts.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_utc
+    freshness_sla_hours: 30
+    schema: artifact_manifest.v1
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - tests/test_signal_contracts_wiring.py
+    external_consumers:
+      - terminal:artifact_conformance
+      - mastermind:vendored
+    notes: "Producer: scripts/export_signal_contracts.py:216 write_text. schema=artifact_manifest/v1."
+
+  # --- 3 consumers ---
+  site-golden-signals:
+    path: site/factordata/contracts/golden_signals.json
+    format: json
+    producer: scripts/export_signal_contracts.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_utc
+    freshness_sla_hours: 30
+    schema: none
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - tests/test_signal_contracts_wiring.py
+    external_consumers:
+      - terminal:golden_gate
+      - mastermind:vendored
+    notes: "Producer: scripts/export_signal_contracts.py:214 write_text. inputs_hash + signal snapshots for conformance."
+
+  # --- 3 consumers ---
+  site-marketdata-subsector-rotation:
+    path: site/marketdata/subsector_rotation.json
+    format: json
+    producer: scripts/build_subsector_rotation.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/group_context.py
+      - scripts/build_feeds.py
+    external_consumers: []
+    notes: "Producer: scripts/build_subsector_rotation.py:63 write_text."
+
+  # --- 2 consumers ---
+  site-foresight-cascade:
+    path: site/basketdata/foresight_cascade.json
+    format: json
+    producer: scripts/build_foresight.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:vendored
+    notes: "SINGLE authoritative writer enforced by test_build_theme_addons_no_foresight_write.py (CI gate). Previously build_theme_addons.py clobbered this; the regression test now blocks any second writer."
+    qual_ladder_ref: null
+
+  # --- 2 consumers ---
+  site-narrative-brain:
+    path: site/basketdata/narrative_brain.json
+    format: json
+    producer: engine/narrative_brain.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_radar_page.py
+    external_consumers: []
+    notes: "Producer: engine/narrative_brain.py:363 write_text."
+
+  # --- 2 consumers ---
+  site-member-context:
+    path: site/basketdata/member_context.json
+    format: json
+    producer: scripts/build_theme_addons.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_cn_reversal_sleeve.py
+    external_consumers: []
+    notes: "Producer: scripts/build_theme_addons.py:76 via engine/basket_member_context.py:231."
+
+  # --- 2 consumers ---
+  site-experiments:
+    path: site/marketdata/experiments.json
+    format: json
+    producer: engine/experiments_registry.py
+    known_extra_writers: []
+    owner_program: qualitative-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - admin/experiments.py
+      - engine/qledger.py
+    external_consumers:
+      - admin:console
+    notes: "Producer: engine/experiments_registry.py:310 write_text."
+
+  # --- 2 consumers ---
+  site-regime-prior-js:
+    path: site/regimedata/regime_prior.js
+    format: js
+    producer: scripts/build_regime_prior.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/cycle.html
+      - site/markets.html
+    external_consumers: []
+    notes: "JS data file (window.REGIME_PRIOR). Producer: scripts/build_regime_prior.py:77 write_text."
+
+  # --- 2 consumers ---
+  site-macro-signals:
+    path: site/macrodata/macro_signals.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - terminal:pull_macro_intel
+    notes: "Producer: scripts/build_site.py:3151 write_text."
+
+  # --- 2 consumers ---
+  site-factors:
+    path: site/factordata/factors.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: engine-fix
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/stock_fundamentals.py
+      - scripts/build_site.py
+    external_consumers: []
+    notes: "Producer: scripts/build_site.py:1961 write_text. Intra-build read-back pattern (build_site writes then reads back)."
+
+  # --- Feeds plane (R2) ---
+  feeds-plane:
+    path: site/feeds/
+    format: json
+    producer: scripts/build_feeds.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: none
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/publish_r2.py
+    external_consumers:
+      - mastermind:vendored
+      - terminal:pull_macro_intel
+    notes: >
+      Feeds plane composition: risk_radar.json (risk_radar sub-object extracted from
+      data/regime/latest.json — NOT wrapped; sibling keys preserved per the 2026-07-02
+      incident constraint); sector_breadth.json (freshly constructed from parquet);
+      event_calendar.json (freshly constructed); intl_spillover.json (freshly
+      constructed); subsector_rotation.json (byte-verbatim copy from site/marketdata/);
+      froth_fragility_log.jsonl (byte-verbatim copy); dislocation_state_log.parquet
+      (byte-verbatim copy); group_flow_validation_meta.json (byte-verbatim copy);
+      feeds_meta.json (manifest with schema_version=1 and generated_utc). All land in
+      site/feeds/ and are pushed to R2 via scripts/publish_r2.py. Byte-verbatim copies:
+      the source engine owns the schema; build_feeds.py never reshapes what it copies.
+      NOT present in the git tree at origin/main — gitignored locally, canonical on R2.
