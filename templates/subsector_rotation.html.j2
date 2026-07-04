@@ -327,6 +327,7 @@ function _setTier(tier){
       _pos = _dates.length - 1;
       _updateDateLabel();
       _draw();
+      _updateEpPanel();
       var ld = document.getElementById('tm-loading');
       if(ld) ld.style.display = 'none';
     });
@@ -486,7 +487,8 @@ function _draw(){
     _epFeed.episodes.forEach(function(ep){
       if(!ep.onset_date) return;
       var active = ep.onset_date <= dateStr &&
-                   (ep.exhausted_date ? ep.exhausted_date >= dateStr : ep.confirmed_date >= dateStr || true);
+                   (function(){ var end = ep.exhausted_date || ep.confirmed_date;
+                     return !end || end >= dateStr; })();  // mirrors _updateEpPanel end logic
       if(!active) return;
       // Determine stage
       var stage = 'onset';
@@ -513,11 +515,14 @@ function _draw(){
       for(var ti = 1; ti < trail.length; ti++){
         var alpha = 0.12 + 0.4 * (ti / trail.length);
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(' + (pt.az >= 0 ? '69,184,115' : '224,100,100') + ',' + alpha + ')';
+        // Use the theme tokens so zh mode (up=red) recolours trails WITH the dots
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = (pt.az >= 0 ? up : down);
         ctx.lineWidth = 1;
         ctx.moveTo(trail[ti-1].x, trail[ti-1].y);
         ctx.lineTo(trail[ti].x, trail[ti].y);
         ctx.stroke();
+        ctx.globalAlpha = 1;
       }
     }
 
@@ -596,7 +601,7 @@ function _updateEpPanel(){
     return '<div class="tm-ep-item '+dirClass+'">'
       + '<div class="tm-ep-node">'+esc(ep.node)+tierBadge+'</div>'
       + '<div>'+dirLabel
-      + ' <span class="tm-ep-badge '+stage+'">'+stage+'</span></div>'
+      + ' <span class="tm-ep-badge '+stage+'">'+({onset:'<span class="l-en">onset</span><span class="l-zh">初现</span>',confirmed:'<span class="l-en">confirmed</span><span class="l-zh">确认</span>',undeniable:'<span class="l-en">undeniable</span><span class="l-zh">确立</span>'}[stage]||stage)+'</span></div>'
       + (ep.paired_episode_id ? '<div class="tm-ep-pair"><span class="l-en">Pair: </span><span class="l-zh">配对：</span>'+esc(ep.paired_episode_id)+'</div>' : '')
       + '</div>';
   }).join('');
