@@ -246,6 +246,7 @@ artifacts:
     consumers:
       - engine/communique_diff.py
       - engine/missing_tape.py
+      - engine/neuralweb/query.py
       - engine/qledger_ui.py
       - scripts/backfill_qledger_intel_hub.py
       - scripts/build_alt_data.py
@@ -501,6 +502,7 @@ artifacts:
       - engine/alert_triage.py
       - engine/altdata_signals.py
       - engine/desk_scorer.py
+      - engine/neuralweb/query.py
       - engine/passport.py
       - scripts/build_alt_data.py
     external_consumers: []
@@ -548,6 +550,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/china_sector_cycles_grader.py
+      - engine/neuralweb/query.py
       - scripts/backfill_forward_logs.py
       - scripts/build_china_cycles_scorecard.py
       - scripts/build_china_library.py
@@ -595,6 +598,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/grading_stats.py
+      - engine/neuralweb/query.py
       - scripts/grade_promises.py
       - scripts/backfill_forward_logs.py
       - scripts/build_measurement.py
@@ -618,6 +622,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/grading_stats.py
+      - engine/neuralweb/query.py
       - scripts/grade_promises.py
       - scripts/backfill_forward_logs.py
       - scripts/build_measurement.py
@@ -1670,6 +1675,39 @@ artifacts:
       - scripts/build_site.py
     external_consumers: []
     notes: "Producer: scripts/build_site.py:1961 write_text. Intra-build read-back pattern (build_site writes then reads back)."
+
+  # --- Neural Web W2: spine query index ---
+  spine-index:
+    path: data/neuralweb/spine_index.parquet
+    format: parquet
+    producer: engine/neuralweb/query.py
+    known_extra_writers:
+      - "scripts/build_spine_index.py — thin CLI wrapper; calls write_index() defined in the producer; no independent write logic"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Read-side derived index: unions spine (data/spine/predictions.parquet),
+      track_record (data/track_record/track_record.parquet — gitignored-local),
+      HK board (data/board_ledger/hk_board.parquet — unregistered; sweep = PR2),
+      CA board (data/board_ledger/ca_board.parquet — unregistered; sweep = PR2),
+      CN board (data/china_standout_track/board.parquet — unregistered; sweep = PR2),
+      qledger claims+grades (data/qledger/claims.jsonl + grades.jsonl — joined
+      read-only via claim_id; qledger substrate ruling OPEN pending joint QI co-sign —
+      W6 monitor unfired, semantics frozen since #1180, both escape hatches verified),
+      sector_cycles + china_sector_cycles + country_cycles forward logs (graded rows only).
+      IDEMPOTENT FULL REBUILD nightly: derived view, not a forward ledger — overwriting
+      is correct. Envelope sidecar written alongside the parquet. Registration sweep for
+      the 21 currently-unregistered source ledgers (board_ledger, china_standout_track,
+      track_record) = PR2.
 
   # --- Feeds plane (R2) ---
   world-state:
