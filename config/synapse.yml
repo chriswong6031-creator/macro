@@ -61,6 +61,7 @@ artifacts:
       - engine/risk_brain.py
       - engine/sector_central.py
       - engine/vol_regime.py
+      - engine/neuralweb/world_state.py
       - engine/vol_sentiment.py
       - scripts/archive_signals.py
       - scripts/build_canada_library.py
@@ -172,6 +173,7 @@ artifacts:
     consumers:
       - engine/anticipation.py
       - engine/basket_score.py
+      - engine/neuralweb/world_state.py
       - engine/baskets_intl.py
       - engine/froth_fragility.py
       - engine/regime_vector.py
@@ -443,6 +445,7 @@ artifacts:
     weights: hand
     scored_path_surfaces: []
     consumers:
+      - engine/neuralweb/world_state.py
       - engine/regime_prior.py
       - engine/market_state_audit.py
       - engine/market_state_tune.py
@@ -1364,6 +1367,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - engine/neuralweb/world_state.py
       - engine/oracle/alerts.py
       - engine/oracle/tilt.py
       - scripts/oracle_nightly.py
@@ -1667,6 +1671,37 @@ artifacts:
     notes: "Producer: scripts/build_site.py:1961 write_text. Intra-build read-back pattern (build_site writes then reads back)."
 
   # --- Feeds plane (R2) ---
+  world-state:
+    path: data/neuralweb/world_state.json
+    format: json
+    producer: engine/neuralweb/world_state.py
+    known_extra_writers:
+      - "scripts/build_world_state.py — thin CLI wrapper; calls build_and_write() which is defined in the producer; no independent write logic"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_feeds.py
+    external_consumers: []
+    notes: >
+      Composed one-page truth (Neural Web N1 masterplan). Reads data/market_state/latest.json
+      (post-radar resolved verdict), data/regime/latest.json (regime quad, vol_regime,
+      risk_radar_raw verbatim, liquidity_overlay, freshness), data/breadth/breadth.parquet
+      (last-row breadth aggregates), site/basketdata/oracle_state.json (Oracle rotation
+      read-only summary), data/run_status.json (data-health stats), and
+      site/factordata/alerts_triage.json (alert census). Fail-open: each missing source
+      yields null for that sub-block plus an entry in the top-level gaps list. qi block is
+      null pending the joint QI border ruling (masterplan W1, QI W7). risk_radar_raw is
+      embedded verbatim (deep copy) so build_feeds migration preserves the 2026-07-02
+      incident contract. First producer adoption of the envelope stamp (produced_at = build
+      timestamp; per-block asofs live in sources). Consumers migrate in PR2.
+
   feeds-plane:
     path: site/feeds/
     format: json
