@@ -116,12 +116,6 @@
     if (nv.hype && nv.hype.stretched_share >= 0.4)
       caution += `⚠ ${L(Math.round(nv.hype.stretched_share * 100) + '% of the cohort is already stretched/parabolic.',
         '已有 ' + Math.round(nv.hype.stretched_share * 100) + '% 的组合处于拉伸／抛物状态。')}<br>`;
-    if (nv.attention_aligned)
-      caution += `🔭 ${L('Sits under a currently-hot macro narrative — elevated attention raises the bar.',
-        '处于当前热门宏观叙事之下 — 关注升温抬高门槛。')}`;
-    const cav = `<details class="ne-cav"><summary>${L('Why this is a watchlist, not a buy list', '为何这是观察清单而非买入清单')}</summary>`
-      + `<ul>` + (nv.caveats_en || []).map((c, i) =>
-        `<li>${L(esc(c), esc((nv.caveats_zh || [])[i] || c))}</li>`).join('') + `</ul></details>`;
     return `<div class="ne-card" id="ne-${esc(nv.signature)}">
       <div class="ne-hd">
         <div class="ne-name">${L(esc(nv.name_en), esc(nv.name_zh))}</div>
@@ -129,11 +123,9 @@
           <div class="ne-lab">${L(esc((nv.score_label || {}).en), esc((nv.score_label || {}).zh))}</div></div>
       </div>
       ${legBar(nv.legs || {})}
-      <div class="ne-why">${L(esc(nv.why_en), esc(nv.why_zh))}</div>
       <div class="ne-rec-h">${L('Where to look — clean entry first', '该看哪里 — 干净入场优先')}</div>
       <div class="ne-recs">${recs || '<small style="color:var(--muted)">' + L('no clean read', '无清晰读数') + '</small>'}</div>
       ${caution ? `<div class="ne-caution">${caution}</div>` : ''}
-      ${cav}
     </div>`;
   }
 
@@ -143,12 +135,8 @@
       const conf = d.ai_watch.confidence ? ` <small>(${esc(d.ai_watch.confidence)} ${L('confidence', '信心')})</small>` : '';
       html += `<div class="ne-watch">🧭 <b>${L('AI scout watch', 'AI 侦察观察')}</b>${conf}: ${L(esc(d.ai_watch.text), esc(d.ai_watch.text))}</div>`;
     }
-    if (d.attention && (d.attention.dominant || []).length) {
-      const tags = d.attention.dominant.map(t =>
-        `<span class="ne-tag">${esc(t.theme)} · ${t.n}</span>`).join('');
-      html += `<div class="ne-attn">${L('Macro attention now:', '当前宏观关注：')} ${tags}
-        <span style="flex-basis:100%;height:0"></span>
-        <span>${L(esc(d.attention.note_en), esc(d.attention.note_zh))}</span></div>`;
+    if (d.attention && d.attention.note_en) {
+      html += `<div class="ne-attn"><span>${L('Heavy macro attention raises the bar — hype tends to mark late.', '宏观关注升温会抬高门槛 — 炒作往往偏晚。')}</span></div>`;
     }
     return html;
   }
@@ -165,7 +153,7 @@
         sec.innerHTML = `<h2><span class="idx">★</span>🔥 ${L('Forming Narratives', '成形叙事')}
             <span class="sect-tag">${L('emerging themes our models see · ' + esc(d.market_en),
               '模型识别的新兴主题 · ' + esc(d.market_zh))}</span></h2>
-          <p class="ne-sub">${L(esc(d.note_en), esc(d.note_zh))}</p>
+          <p class="ne-sub">${L('Coherent, tightening groups of names not yet in a basket — a watchlist, not a buy list.', '尚未成篮的、共动收紧的个股群 — 观察清单，而非买入清单。')}</p>
           ${attnBar(d)}
           <div class="ne-grid">${d.narratives.map(card).join('')}</div>
           <p class="ne-note">${L(

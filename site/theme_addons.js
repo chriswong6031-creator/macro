@@ -125,8 +125,8 @@
         "</div>";
     }).join("");
     var explain = bi(
-      "How far the typical (median) stock in each theme has stretched ABOVE — or below — its 50-day trend, measured in ATR (one day's normal move). A high positive number means the theme is overbought and extended, so it carries more pullback risk; negative means it is trading below trend. It is a heat gauge, not a buy/sell signal.",
-      "每个主题中“典型”（中位数）个股相对其 50 日趋势向上（或向下）延展的幅度，以 ATR（一日的正常波动）为单位衡量。正值越高，说明该主题越超买、越延展，回调风险更大；负值表示位于趋势之下。这是过热温度计，并非买卖信号。");
+      "Median stock's stretch above (or below) its 50-day trend, in ATR — higher = more overbought and pullback-prone. A heat gauge, not a buy/sell signal.",
+      "各主题中位数个股相对 50 日趋势的延展幅度（以 ATR 计）。数值越高越超买、越易回调。这是过热温度计，并非买卖信号。");
     return sect("📏", "Theme stretch", "主题延展", null, null,
       '<p class="ta-explain">' + explain + "</p>" +
       '<div class="ta-scale"><span>' + bi("below trend", "趋势下方") + "</span><span>" + bi("on trend", "趋于趋势") +
@@ -176,8 +176,8 @@
         '<div class="ta-strip">' + pills + "</div></div>";
     }).join("");
     var explain = bi(
-      "When a theme runs hot the whole basket is extended, so the absolute 'don't-chase' brake fires on the theme's LEADER as readily as on a name that idiosyncratically spiked. This splits them: a LEADER is extended in-line with its theme and leads it on relative strength — the trade is to wait for a pullback, not to veto it; a name flagged CHASING is stretched far BEYOND its cohort (or parabolic vs its own history). And when the leaders' entry is gone, a TURNING-UP laggard — one that lagged the theme but whose relative strength has turned up over the last 10 days, with room left — is the rotation-down-the-quality-ladder alternative. Cohort context for the per-name flag — never scored.",
-      "当一个主题走热时，整个篮子都处于延展状态，于是绝对的“勿追高”刹车会像对待异常急涨的个股一样，对主题的领涨股同样触发。本面板将二者区分：领涨股的延展与主题同步且相对强度领先 —— 应等回调再进，而非否决；被标记为“追高”的个股则远超其同侪（或相对自身历史已呈抛物线）。而当领涨股的入场点已过，一只“转强”的落后股 —— 此前跑输主题、但近10个交易日相对强度已转升、且仍有空间 —— 便是沿质量梯队向下轮动的替代入场。仅为个股信号提供同侪背景，从不计分。");
+      "When a theme runs hot the whole basket is extended. This splits the names: a LEADER is extended in line with its theme and leads it on relative strength — wait for a pullback, don't veto it; a name flagged CHASING is stretched far beyond its cohort; a TURNING-UP laggard lagged the theme but its relative strength has turned up over 10 days, with room left. Cohort context only — never scored.",
+      "主题走热时整个篮子都在延展。本面板区分个股：领涨股与主题同步延展、相对强度领先 —— 等回调、勿否决；被标记为追高的个股远超同侪；转强的落后股此前跑输、但近10日相对强度已转升且仍有空间。仅为同侪背景，从不计分。");
     return sect("🏁", "Within-theme leaders", "主题内领涨", null, null,
       '<p class="ta-explain">' + explain + "</p>" +
       '<div class="ta-mc-legend"><span class="ta-mc-key ta-mc-lead">' + bi("leader · wait for pullback", "领涨 · 等回调") +
