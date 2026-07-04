@@ -137,6 +137,9 @@ lanes:
       - id: build_spine_index
         module: scripts.build_spine_index
         note: "neural-web W2 — spine query index (read-side union over all graded ledgers)"
+      - id: build_kernel_estimates
+        module: scripts.build_kernel_estimates
+        note: "neural-web W3 — reliability kernel estimates (engine × regime × horizon cells; display-first)"
       - id: altdata_brain
         module: engine.altdata_brain
       - id: build_alt_data_post

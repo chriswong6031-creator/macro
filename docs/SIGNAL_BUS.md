@@ -17,7 +17,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| neural-web | 5 |
+| neural-web | 6 |
 | options-alpha | 2 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
@@ -30,7 +30,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 42 |
-| infrastructure | 17 |
+| infrastructure | 18 |
 | scored | 4 |
 | shadow | 28 |
 
@@ -38,7 +38,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 88 |
+| git | 89 |
 | gitignored-local | 2 |
 | r2 | 1 |
 
@@ -124,7 +124,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
-| spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
+| spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 
 ### options-alpha
 
@@ -463,6 +464,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/index_leadership_track.py`
 - **extra writers:**
   - scripts/build_index_leadership.py — CLI runner; calls compute() then appends snapshot
+
+### kernel-estimates
+
+- **path:** `data/neuralweb/kernel_estimates.parquet`
+- **declared producer:** `engine/neuralweb/kernel.py`
+- **extra writers:**
+  - scripts/build_kernel_estimates.py — thin CLI wrapper; calls write_estimates() defined in the producer; no independent write logic
 
 ### market-state-latest
 
