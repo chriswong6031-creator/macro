@@ -258,6 +258,15 @@ jobs:
           echo "::endgroup::"
           python -m scripts.audit_sizes || echo "::warning::track_record size tripwire fired �� check data/quality/sizes_audit.json"
           exit 0
+      - name: export cross-repo signal contracts (golden_signals + artifact_manifest)
+        # Writes site/factordata/contracts/golden_signals.json + artifact_manifest.json --
+        # the oracle the Terminal's golden_gate.py + artifact_conformance.py consume as a
+        # conformance check (audit #7 #9). Runs after build_signal_quality (engine.canon is
+        # confirmed working) + after the china/hk OHLC cache restores. Window is FIXED
+        # (2015-2024) so output is deterministic and the step is cheap (~5s). Resilient.
+        run: |
+          python -m scripts.export_signal_contracts \
+            || echo "::warning::export_signal_contracts failed (non-fatal) -- keeping last committed contract"
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the
