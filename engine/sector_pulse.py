@@ -582,3 +582,34 @@ def write_pulse(ti: dict, region: str, out_dir: Any) -> None:
         log.info("sector_pulse: wrote %s (%d themes)", fname, len(rows))
     except Exception:  # noqa: BLE001
         log.warning("sector_pulse.write_pulse failed for region=%s", region, exc_info=True)
+
+
+def write_score_snapshot(ti: dict, region: str) -> None:
+    """Slim per-theme score snapshot → data/baskets_<region>/latest.json (US uses
+    data/baskets/latest.json, written by build_baskets' own writer — kept separate for
+    archive continuity). scripts.archive_signals snapshots these daily into the
+    'baskets_<region>' streams, which is where THIS module's rank/score velocity comes
+    from. Without the snapshot the regional streams never accrue and every regional
+    rank_delta_* stays None forever. Same slim shape as the US writer. Additive —
+    callers wrap in try/except; a failure can never break a build."""
+    try:
+        from lib import config as _cfg
+        slim = {"as_of": ti.get("as_of"), "themes": []}
+        for t in ti.get("themes") or []:
+            tx = t.get("textures") or {}
+            slim["themes"].append({
+                "id": t.get("id"), "name": t.get("name"), "score": t.get("score"),
+                "label": t.get("label"), "reco": t.get("reco"), "rank": t.get("rank"),
+                "net_ad": t.get("net_ad"), "components": t.get("components"),
+                "bull_days": (tx.get("bull_age") or {}).get("days"),
+                "overbought": (tx.get("overbought") or {}).get("value"),
+                "clean_entry": (tx.get("clean_entry") or {}).get("flag"),
+                "rollover": (tx.get("rollover_risk") or {}).get("risk"),
+            })
+        sub = "baskets" if region == "us" else f"baskets_{region}"
+        p = _cfg.data_dir() / sub / "latest.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(slim, separators=(",", ":"), default=str))
+        log.info("sector_pulse: wrote %s score snapshot (%d themes)", sub, len(slim["themes"]))
+    except Exception:  # noqa: BLE001
+        log.warning("sector_pulse.write_score_snapshot failed for region=%s", region, exc_info=True)
