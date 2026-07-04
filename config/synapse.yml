@@ -542,7 +542,7 @@ artifacts:
     producer: engine/risk_radar_review.py
     known_extra_writers: []
     owner_program: neural-web
-    cadence: weekly-engine
+    cadence: weekly
     storage: git
     asof_field: asof
     freshness_sla_hours: 200

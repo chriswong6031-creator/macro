@@ -325,14 +325,16 @@ def _check_by(asof, horizon: int) -> str | None:
 
 # --------------------------------------------------------------------------- Article-3 review
 # Evidence mapping:
-#   hits  = round(hit_rate * n_obs)  from qledger track_record.json by_family['altdata']['5']
-#   n     = n_obs (independent date-cluster observations at h=5d; qledger ACCRUING state)
+#   hits  = round(hit_rate * n_dates)  from qledger track_record.json by_family['altdata']['5']
+#   n     = n_dates (independent date-cluster observations at h=5d; qledger ACCRUING state)
 #   base_rate = 0.5  (sign-test base: direction call is correct above chance when hit_rate > 0.5)
 #   evidence_asof = track_record.generated_at date
 # Justification: the qledger grades each brain thesis on whether the subject ticker
 # outperformed SPY over h days (binary outcome). The base rate for a random direction call
-# is 0.5 (sign-test). Using qledger hit_rate as the realized precision and n_obs as the
+# is 0.5 (sign-test). Using qledger hit_rate as the realized precision and n_dates as the
 # sample size maps cleanly onto grant_authority's {hits, n, base_rate, evidence_asof}.
+# n_dates (not n_obs) is the correct sample-size unit: qledger de-duplicates raw rows into
+# independent date clusters before computing Wilson CI lower bounds.
 # Floors (min_n=25 dates = qledger GRADED_MIN_DATES; min_events=8 = Article-3 min-events
 # floor matching the can_force precedent).
 
@@ -664,8 +666,12 @@ def run(persist: bool = True, root=None, force: bool = False, call=None) -> dict
         if state is None:
             log.info("altdata_brain: no convergence substrate — nothing to reason over")
             return None
+        # Read prior actionable flag so transition events (authority_grant / authority_lapse)
+        # fire correctly when the Article-3 verdict changes between runs.
+        _prior = load(root)
+        _prev_granted: bool | None = _prior.get("actionable") if _prior else None
         # Pass root so Article-3 verdict reads the live track_record.json
-        brief = synthesize(state, cfg, call=call, root=root)
+        brief = synthesize(state, cfg, call=call, root=root, _prev_granted=_prev_granted)
         if persist:
             _persist(brief, root)
             _append_ledger(brief, root)
