@@ -20,9 +20,9 @@ Payload path: `site/basketdata/oracle_state.json`
 | Field | Rule |
 |---|---|
 | `asof` | ISO date string (`YYYY-MM-DD`) of the data point the payload describes. |
-| `max_age_hours` | 48 hours (contract constant, not a field). |
+| staleness | TRADING-DAY-AWARE (v1.1.0): `asof` at most 2 business days behind now, plus a 168h calendar hard cap. A fixed 48h failed every weekend/holiday (first E2E failed on July-4th weekend). |
 
-**Consumers MUST** treat any payload whose `asof` is older than 48 hours as **absent** and surface a staleness warning rather than stale data. Do not display a stale Oracle state as if it were current.
+**Consumers MUST** treat any payload whose `asof` is more than 2 trading days behind (or >168h calendar) as **absent** and surface a staleness warning rather than stale data. Do not display a stale Oracle state as if it were current.
 
 ---
 
@@ -108,7 +108,7 @@ The `lineage` field on each item provides the exact document anchor that establi
 
 ## The NEVER Guarantees
 
-> Additive-extension naming rule: because banned-implication checking is substring-based (err-toward-safety), additive field NAMES must avoid the substrings `forecast`, `predicted`, `target`, `expected_return`. A payload dated for the prior trading day has a practical freshness window of 24–48h (asof parses at UTC midnight).
+> Additive-extension naming rule: because banned-implication checking is substring-based (err-toward-safety), additive field NAMES must avoid the substrings `forecast`, `predicted`, `target`, `expected_return`. asof parses at UTC midnight; the trading-day rule makes weekend/holiday gaps first-class rather than accidental failures.
 
 Prohibitions (a) and (b) are enforced by `validate_payload()` in code; (c) defines a consumer-side DISPLAY OBLIGATION plus the semantics of the `survivorship_flagged` field (the flag's presence is data; honoring the watermark is the consumer's contractual duty):
 

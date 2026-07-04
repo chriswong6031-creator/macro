@@ -39,8 +39,9 @@ extension by parallel waves.
 
 STALENESS CONTRACT
 ------------------
-max_age_hours: 48 hours.  Consumers receiving asof > 48 h stale MUST treat the
-payload as absent and surface a staleness warning, not stale data.
+staleness: TRADING-DAY-AWARE — at most MAX_TRADING_DAYS=2 business days behind
+(plus a 168h calendar hard cap). Consumers receiving a stale payload MUST treat
+it as absent and surface a staleness warning, not stale data.
 """
 from __future__ import annotations
 
@@ -51,10 +52,16 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
-PAYLOAD_VERSION = "1.0.0"
+PAYLOAD_VERSION = "1.1.0"
 
 # Staleness contract: payloads older than this are invalid.
-MAX_AGE_HOURS: int = 48
+# Staleness is TRADING-DAY-AWARE (v1.0.1 fix): a fixed 48 calendar hours
+# fails every weekend (Friday data is legitimately ~72h old on Monday, worse
+# over holidays — the first real E2E run failed on July-4th weekend exactly
+# this way). Contract: asof may lag `now` by at most MAX_TRADING_DAYS
+# business days, with MAX_AGE_HOURS_HARD as an absolute calendar backstop.
+MAX_TRADING_DAYS: int = 2
+MAX_AGE_HOURS_HARD: int = 168  # 7 calendar days — the never-exceed backstop
 
 # Confidence taxonomy values (ordered weakest → strongest for reference).
 CONFIDENCE_CLASSES = frozenset({"validated", "display_with_edge", "exploratory", "descriptive"})
@@ -141,7 +148,7 @@ def classify_lineage(compound_id: str) -> dict[str, str]:
 
 REQUIRED_CORE: dict[str, Any] = {
     # Field name → (type_or_types, description, additional_constraints_dict)
-    "asof": (str, "ISO date YYYY-MM-DD of the payload data point.  max_age_hours=48."),
+    "asof": (str, "ISO date YYYY-MM-DD of the payload data point. Staleness: <=2 trading days behind, 168h hard cap."),
     "disclaimers": (dict, "Must contain display_only==True and error_rates dict with numeric values."),
     "active_episodes": (list, (
         "List of episode items.  Each item must contain: node (str), direction (str), "
@@ -192,10 +199,18 @@ def validate_payload(payload: Any, *, as_of_now: datetime | None = None) -> tupl
             asof_dt = datetime.fromisoformat(asof).replace(tzinfo=timezone.utc)
             now = as_of_now if as_of_now is not None else datetime.now(timezone.utc)
             age_hours = (now - asof_dt).total_seconds() / 3600
-            if age_hours > MAX_AGE_HOURS:
+            # trading-day-aware staleness: count business days strictly between
+            # asof and now (bdate_range includes both endpoints when they are
+            # business days — subtract the asof day itself).
+            import pandas as _pd
+            bdays_behind = max(
+                0, len(_pd.bdate_range(asof_dt.date(), now.date())) - 1)
+            if bdays_behind > MAX_TRADING_DAYS or age_hours > MAX_AGE_HOURS_HARD:
                 errors.append(
-                    f"STALE: 'asof' is {age_hours:.1f}h old; contract requires <= {MAX_AGE_HOURS}h. "
-                    f"Consumers must treat stale payloads as absent."
+                    f"STALE: 'asof' is {bdays_behind} trading days ({age_hours:.1f}h) old; "
+                    f"contract requires <= {MAX_TRADING_DAYS} trading days and "
+                    f"<= {MAX_AGE_HOURS_HARD}h hard cap. Consumers must treat stale "
+                    f"payloads as absent."
                 )
         except ValueError:
             errors.append(f"REQUIRED: 'asof' is not a valid ISO date string: {asof!r}")
