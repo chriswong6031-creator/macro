@@ -3221,6 +3221,22 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("subsector rotation failed: %s", e)
 
+    # China Subsector Rotation — A-share twin (同花顺 concepts + curated themes), reads the
+    # committed China basket JSONs. Additive, never fatal.
+    try:
+        from scripts.build_subsector_rotation_china import build as build_sr_china
+        build_sr_china(site, generated_utc=generated)
+        out_src = site / "subsector_rotation_china.html"
+        write_page(out_src, env.get_template("subsector_rotation_china.html.j2").render())
+        log.info("wrote %s (%.0f KB)", out_src, out_src.stat().st_size / 1024)
+        try:
+            from scripts.build_subsector_rotation_china_pages import build as build_src_pages
+            log.info("wrote %d China subsector detail pages", build_src_pages(site))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("China subsector detail pages failed: %s", e)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("China subsector rotation failed: %s", e)
+
     # Subsector Confluence — the ENTRY-NOW desk: each S&P-500 sub-industry (+ the curated
     # thematic baskets) as an equal-weight synthetic index, read through the T1-T4 confluence
     # cascade + the validated regime state machine, with a double-gated stock funnel and one

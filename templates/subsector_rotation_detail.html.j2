@@ -80,7 +80,7 @@
 </nav>
 
 <div class="wrap">
-  <a class="sd-back" href="../subsector_rotation.html">← {{ t('Subsector Rotation map', '子行业轮动图') }}</a>
+  <a class="sd-back" href="../{{ back_href | default('subsector_rotation.html') }}">← {{ t(back_en | default('Subsector Rotation map'), back_zh | default('子行业轮动图')) }}</a>
 
   <div class="sd-head">
     <div>
@@ -131,8 +131,8 @@
     <h2>{{ t('Member stocks', '成分股') }} <span style="color:var(--muted);font-weight:600;font-size:12px">({{ t('by 1-month return', '按1月涨跌') }})</span></h2>
     <div class="sd-mem">
       {% for m in members %}
-      <a class="sd-chip" href="../stock.html#{{ m.t|urlencode }}">
-        <span class="tk">{{ m.t }}</span>
+      <a class="sd-chip" href="../{{ stock_base | default('stock.html#') }}{{ m.t|urlencode }}">
+        <span class="tk">{{ m.name | default(m.t, true) }}</span>
         <span class="pc">
           <span class="{{ 'up' if (m['1M'] or 0) > 0 else ('dn' if (m['1M'] or 0) < 0 else '') }}"><i>1M</i>{{ fmt_pc(m['1M']) }}</span>
         </span>

@@ -12,7 +12,13 @@
  */
 (function () {
   'use strict';
-  var JSON_URL = 'marketdata/subsector_rotation.json';
+  // Per-region config (US default). A China/other page sets window.SR_CFG before this
+  // script loads to point at its own feed + detail dir + rotation page, so ONE renderer
+  // serves every market.
+  var CFG = (typeof window !== 'undefined' && window.SR_CFG) || {};
+  var JSON_URL = CFG.json || 'marketdata/subsector_rotation.json';
+  var DETAIL_DIR = CFG.detailDir || 'rotation/';
+  var PAGE_HREF = CFG.pageHref || 'subsector_rotation.html';
 
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
@@ -53,14 +59,14 @@
     var m={}; _data.subsectors.forEach(function(s){m[s.key]=s;});
     function dual(en,zh){return '<span class="l-en">'+esc(en)+'</span><span class="l-zh">'+esc(zh||en)+'</span>';}
     function chip(s){var v=s.perf&&s.perf['1W'];var q=QUAD[s.quadrant];
-      return '<a class="srx-chip" href="subsector_rotation.html"><span class="srx-q '+q.cls+'"></span>'
+      return '<a class="srx-chip" href="'+PAGE_HREF+'"><span class="srx-q '+q.cls+'"></span>'
         +'<b>'+dual(s.name,s.name_zh)+'</b><span class="srx-th">'+dual(s.theme,s.theme_zh)+'</span>'
         +'<span class="srx-pc '+pcCls(v)+'">'+fmtPc(v)+'</span></a>';}
     var em=(_data.highlights.emerging||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,5);
     var fa=(_data.highlights.fading||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,4);
     el.innerHTML='<div class="srx-hd"><span>🌀 '+L('Subsector rotation','子行业轮动')
       +'<i>'+L('Broad-universe · velocity','全市场 · 速度')+'</i></span>'
-      +'<a class="srx-more" href="subsector_rotation.html">'+L('full rotation map','完整轮动图')+' →</a></div>'
+      +'<a class="srx-more" href="'+PAGE_HREF+'">'+L('full rotation map','完整轮动图')+' →</a></div>'
       +'<div class="srx-cols">'
       +'<div class="srx-col"><span class="srx-lab up">▲ '+L('Emerging','升温')+'</span>'+em.map(chip).join('')+'</div>'
       +'<div class="srx-col"><span class="srx-lab dn">▼ '+L('Fading','退潮')+'</span>'+fa.map(chip).join('')+'</div>'
@@ -108,7 +114,7 @@
   function nameOf(it){return _unit==='themes'?themeOf(it):(isZh()?(it.name_zh||it.name):it.name);}
   function keyOf(it){return _unit==='themes'?it.theme:it.key;}
   // per-subsector detail page (themes have none). Relative to the rotation page.
-  function detailHref(k){return 'rotation/'+encodeURIComponent(k)+'.html';}
+  function detailHref(k){return DETAIL_DIR+encodeURIComponent(k)+'.html';}
   function hasDetail(){return _unit==='subsectors';}
 
   function render(root){
