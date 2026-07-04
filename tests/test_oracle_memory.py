@@ -393,6 +393,12 @@ class TestLeakageGuard:
             "node": "XLK",
             "direction": "in",
             "onset_date": query_onset,
+            # peak_accel_z mirrors ep_row.to_dict() on real data — exercises the
+            # query-side fallback AND makes LEAKY (accel 1.5, identical scalars,
+            # identical z-normalized ramp trajectory) the unambiguous nearest
+            # match, so this fixture's leaky test FAILS if the eligibility
+            # filter is removed (review nit: previously vacuous).
+            "peak_accel_z": 1.5,
             "cohesion_at_onset": 0.4,
             "breadth_at_onset": 0.5,
             "regime_vix_pctile": 0.35,

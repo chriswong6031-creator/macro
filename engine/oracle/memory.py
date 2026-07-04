@@ -206,7 +206,9 @@ def build_base_rates(
                 "duration_mean": float,
                 "duration_median": float,
                 "onset_to_confirmed_rate": float,  # S3: fraction that confirmed
-                "false_start_rate_10d": float,     # S3: fraction with DA +10d < 0
+                "false_start_rate_5d_proxy": float,  # S3 proxy: fraction with DA +5d < 0
+                #   (prereg S3 registered +10d; episodes store 5/21/63d horizons only —
+                #    the 5d proxy is DECLARED, never mislabeled as _10d)
               },
               ...
             ],
@@ -370,7 +372,7 @@ def _build_cell(
     # +10d is approximated from +5d and +21d or directly if available.
     # We use +21d as the proxy (closest matured window that captures D+10 behavior).
     # This is explicitly labeled as an approximation in the output.
-    cell["false_start_rate_10d"] = _false_start_rate(subset, sign)
+    cell["false_start_rate_5d_proxy"] = _false_start_rate(subset, sign)
 
     return cell
 
@@ -383,7 +385,7 @@ def _false_start_rate(subset: pd.DataFrame, sign: float) -> float | None:
     as the front-running proxy — it captures the immediate false-start signal
     where the episode reverses within the first week.
 
-    Label in output: 'false_start_rate_10d_proxy_5d' to be explicit.
+    Emitted as 'false_start_rate_5d_proxy' (prereg S3 registered +10d; 5d proxy declared).
     """
     if "outcome_rs_5d" not in subset.columns:
         return None
@@ -661,7 +663,8 @@ def find_analogues(
         return _empty_analogue_result(query_id, query_onset, query_dir, leakage_excluded, c)
 
     # ---- Extract query feature vector ----
-    query_accel_z_5d = float(query.get("accel_z_5d_at_onset", np.nan))
+    query_accel_z_5d = float(query.get("accel_z_5d_at_onset",
+                                    query.get("peak_accel_z", np.nan)))  # same fallback as analogues
     query_cohesion = _safe_float(query.get("cohesion_at_onset"))
     query_breadth = _safe_float(query.get("breadth_at_onset"))
     query_vix = _safe_float(query.get("regime_vix_pctile"))
