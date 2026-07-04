@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-03T23:31:11.593794+00:00",
-  "as_of": "2026-07-03",
+  "generated_utc": "2026-07-04T00:00:53.142536+00:00",
+  "as_of": "2026-07-04",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6199,8 +6199,8 @@
       },
       {
         "ticker": "MDLN",
-        "total_usd": 84993107.0,
-        "contracts": 27,
+        "total_usd": 84981107.0,
+        "contracts": 25,
         "agencies": 2,
         "accel_x": 0.98,
         "top_agency": "Department of Veterans Affairs"
@@ -6223,19 +6223,11 @@
       },
       {
         "ticker": "KBR",
-        "total_usd": 29525605.0,
-        "contracts": 9,
-        "agencies": 3,
-        "accel_x": 0.94,
-        "top_agency": "Department of Commerce"
-      },
-      {
-        "ticker": "GD",
-        "total_usd": 26528489.0,
+        "total_usd": 24525605.0,
         "contracts": 6,
-        "agencies": 4,
-        "accel_x": 0.27,
-        "top_agency": "Department of Health and Human Services"
+        "agencies": 2,
+        "accel_x": 0.68,
+        "top_agency": "Department of Commerce"
       },
       {
         "ticker": "MSFT",
@@ -6252,6 +6244,14 @@
         "agencies": 1,
         "accel_x": 0.36,
         "top_agency": "Social Security Administration"
+      },
+      {
+        "ticker": "GD",
+        "total_usd": 14524921.0,
+        "contracts": 5,
+        "agencies": 4,
+        "accel_x": 0.13,
+        "top_agency": "Department of Health and Human Services"
       },
       {
         "ticker": "SAIC",
@@ -6294,20 +6294,20 @@
         "top_agency": "Department of Veterans Affairs"
       },
       {
-        "ticker": "CDW",
-        "total_usd": 5438366.0,
-        "contracts": 25,
-        "agencies": 4,
-        "accel_x": 0.31,
-        "top_agency": "Department of Transportation"
-      },
-      {
         "ticker": "LUMN",
         "total_usd": 5236895.0,
         "contracts": 10,
         "agencies": 3,
         "accel_x": 68.61,
         "top_agency": "Department of Homeland Security"
+      },
+      {
+        "ticker": "MMS",
+        "total_usd": 4766557.0,
+        "contracts": 1,
+        "agencies": 1,
+        "accel_x": null,
+        "top_agency": "Office of Personnel Management"
       }
     ],
     "gov_grants": [
@@ -6471,7 +6471,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 18,
+        "count": 17,
         "items": "8.01"
       },
       {
@@ -6490,11 +6490,6 @@
         "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
-        "ticker": "BLD",
-        "count": 5,
-        "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
         "ticker": "PSKY",
         "count": 5,
         "items": "7.01, 8.01"
@@ -6505,6 +6500,11 @@
         "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
+        "ticker": "BLD",
+        "count": 4,
+        "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
+      },
+      {
         "ticker": "DELL",
         "count": 4,
         "items": "1.01, 2.03, 8.01"
@@ -6513,11 +6513,6 @@
         "ticker": "FOX",
         "count": 4,
         "items": "1.01, 2.03, 5.02, 7.01"
-      },
-      {
-        "ticker": "GOOGL",
-        "count": 4,
-        "items": "1.01, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "AES",
@@ -6565,6 +6560,11 @@
         "items": "7.01, 8.01"
       },
       {
+        "ticker": "GOOGL",
+        "count": 3,
+        "items": "1.01, 5.02"
+      },
+      {
         "ticker": "HON",
         "count": 3,
         "items": "1.01, 2.01, 5.02, 7.01, 8.01"
@@ -6573,11 +6573,6 @@
         "ticker": "HOOD",
         "count": 3,
         "items": "1.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "HUT",
-        "count": 3,
-        "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
         "ticker": "JPM",
@@ -6593,6 +6588,11 @@
         "ticker": "PLD",
         "count": 3,
         "items": "2.03, 5.02, 8.01"
+      },
+      {
+        "ticker": "PNW",
+        "count": 3,
+        "items": "5.02, 7.01, 8.01"
       }
     ],
     "special_situations": [
@@ -42378,7 +42378,7 @@
       },
       {
         "ticker": "GSK",
-        "phase3_starts": 9,
+        "phase3_starts": 7,
         "halts": 0,
         "hot": true,
         "sample": "A Study of Depemokimab in Participants of 6 to 11 Years of Age"
@@ -42649,6 +42649,13 @@
         "top_issue": "Energy/Nuclear"
       },
       {
+        "ticker": "ALHC",
+        "spend_usd": 0.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Medicare/Medicaid"
+      },
+      {
         "ticker": "BLMN",
         "spend_usd": 0.0,
         "filings": 2,
@@ -42675,13 +42682,6 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Natural Resources"
-      },
-      {
-        "ticker": "HUBB",
-        "spend_usd": 0.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Energy/Nuclear"
       }
     ],
     "offexchange": [
@@ -46030,7 +46030,7 @@
           "material_8k",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,675,625 reviews \u00b7 hf_model_momentum: +1.8% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,675,625 reviews \u00b7 hf_model_momentum: +1.8% model downloads \u00b7 material_8k: 3 material 8-Ks (items 1.01, 5.02) \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "HOOD",
@@ -46111,7 +46111,7 @@
           "fda_label_expansion",
           "special_situation"
         ],
-        "why": "clinical_phase3_start: 9 new Phase-3 \u00b7 fda_label_expansion: WELLCOVORIN \u00b7 special_situation: M&A / Divestitures"
+        "why": "clinical_phase3_start: 7 new Phase-3 \u00b7 fda_label_expansion: WELLCOVORIN \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "F",
