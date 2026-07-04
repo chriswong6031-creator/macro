@@ -237,9 +237,12 @@ _ENRICH_WINDOW_DAYS = 45   # only fetch primary doc for recent filings on increm
 
 # Dollar-amount regex: captures 'approximately $1.2 billion', '$450 million', '$3,200,000',
 # '$12.5M', numbers with decimal/comma thousands separators.
-# Order: billion-explicit first so 'billion' multiplier is captured correctly.
+# EVERY multiplier alternative is word-bounded (\b): without it '$5 mmBtu' reads as $5M,
+# '$10 millionaire' as $10M, '$4 bnb tokens' as $4B — and since the parser keeps the
+# LARGEST match, one spurious suffix hit would corrupt amount_usd → contract_dollar_z →
+# a false pre_drift flag on the graded ledger. '$X mmBtu' is common in energy 1.01 filings.
 _DOLLAR_RE = re.compile(
-    r"\$\s*([\d,]+(?:\.\d+)?)\s*(billion|million|bn|mm|m\b)?",
+    r"\$\s*([\d,]+(?:\.\d+)?)\s*(billion\b|million\b|bn\b|mm\b|m\b)?",
     re.IGNORECASE,
 )
 # Counterparty: 'with <Company Name>, Inc.' / 'between ... and <Company Name>'
@@ -380,19 +383,22 @@ def enrich_contract_amounts(
         cik = row.get("cik")
         acc = row.get("accession")
         if not cik or not acc:
-            df.at[idx_pos, "extraction_ok"] = False
+            df.at[idx_pos, "extraction_ok"] = False   # permanently unenrichable — no ids
             continue
         try:
             text = _fetch_primary_doc_text(int(cik), str(acc))
             time.sleep(pace_s)
         except Exception as e:  # noqa: BLE001
-            log.debug("edgar_8k enrich fetch failed %s %s: %s", row.get("ticker"), acc, e)
-            df.at[idx_pos, "extraction_ok"] = False
+            # TRANSIENT fetch failure (network/503/timeout): leave extraction_ok as NaN so
+            # the incremental mask retries next run — False is reserved for filings we
+            # actually READ and found no parseable $ in (a real coverage fact the ledger
+            # grades on; a sticky False here would silently shrink coverage forever).
+            log.debug("edgar_8k enrich fetch failed (retry-eligible) %s %s: %s",
+                      row.get("ticker"), acc, e)
             continue
 
         if not text:
-            df.at[idx_pos, "extraction_ok"] = False
-            continue
+            continue   # fetch returned nothing — also retry-eligible, not a coverage fact
 
         amount, ok = _parse_dollar_amounts(text)
         counterparty = _parse_counterparty(text) if ok else None

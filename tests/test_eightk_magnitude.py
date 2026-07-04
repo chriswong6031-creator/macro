@@ -97,6 +97,31 @@ class TestParseDollarAmounts:
         assert am_b != am_m   # would fail if multiplier were broken
         assert am_b > am_m
 
+    def test_suffix_overmatch_adversarial(self):
+        """Multiplier suffixes must be word-bounded: '$5 mmBtu' is NOT $5M (dollars per
+        million BTU -- common energy-1.01 boilerplate), '$10 millionaire' is NOT $10M,
+        '$4 bnb tokens' is NOT $4B.  Since the parser keeps the LARGEST match, a single
+        over-matched suffix would corrupt amount_usd -> contract_dollar_z -> a false
+        pre_drift flag on the graded ledger."""
+        for text in ("natural gas priced at $5 mmBtu under the agreement",
+                     "the $10 millionaire founder retains control",
+                     "purchase of $4 bnb tokens as consideration",
+                     "with a par value $0.01 per share"):
+            amount, ok = _parse_dollar_amounts(text)
+            assert amount is None and ok is False, f"over-match: {text!r} -> {amount}"
+        # the spurious hit must not shadow a real amount either
+        amount, ok = _parse_dollar_amounts(
+            "gas at $9 mmBtu; total contract value of $450 million")
+        assert ok is True and amount == 450_000_000.0
+
+    def test_legit_suffixes_still_match(self):
+        """The word-boundary fix must not break the legitimate suffix forms."""
+        cases = {"$450 million": 450e6, "$2.5 billion": 2.5e9, "$125MM": 125e6,
+                 "$12.5M in fees": 12.5e6, "$3,200,000": 3_200_000.0, "$7 bn": 7e9}
+        for text, want in cases.items():
+            amount, ok = _parse_dollar_amounts(text)
+            assert ok is True and amount == want, f"{text!r} -> {amount}, want {want}"
+
 
 # ===========================================================================
 # 2. _parse_counterparty
