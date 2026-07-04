@@ -195,21 +195,14 @@ def build_opposite_risk_map(rotation_groups: dict) -> dict[str, list[str]]:
 
 
 # ---------------------------------------------------------------------------
-# Leak-free weekly resample
+# Leak-free weekly resample + oscillators
+# — CANONICAL implementation now lives in engine/oracle/oscillators.py.
+#   Import from there to guarantee the panel and the gauntlet share one
+#   code path; local wrappers are thin passthroughs kept for call-site
+#   readability (no forked math).
 # ---------------------------------------------------------------------------
 
-def resample_weekly_leakfree(daily_close: pd.Series) -> pd.Series:
-    """Resample daily close to weekly bars (W-FRI) in a leak-free manner.
-
-    Convention: bar labeled at date i uses only closes dated <= i.
-    Standard pandas W-FRI resample labels each bar with the Friday close date
-    and aggregates closes from Mon-Fri of that week — satisfying the invariant
-    that bar at label-date i contains no close dated > i.
-
-    Right-edge-labeled (pandas W-FRI default), leak-free: the label is the last date IN the bar; truncation-invariance is the enforced property, verified by test: each bar's label IS the last trading day of the week,
-    so by construction all data in the bar predates or equals the label.
-    """
-    return daily_close.resample("W-FRI").last().dropna()
+from engine.oracle.oscillators import resample_weekly_leakfree
 
 
 def resample_monthly_leakfree(daily_close: pd.Series) -> pd.Series:

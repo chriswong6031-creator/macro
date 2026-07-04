@@ -10,31 +10,46 @@ Steps (in order):
                      weekly or on-demand).  ~3 min for Tier S.
   2. Graph update  — re-run build_oracle_graph.  ~2 min.
   3. Episodes      — re-run build_oracle_episodes.  ~15 s.
+  3b. Personality  — B1 per-node personality classification.  ~5 s.
   4. Memory        — write rotation_directive.json and memory_base_rates.json.
   5. Time Machine  — re-run build_oracle_timemachine (export feed).  ~30 s.
-  6. Oracle state  — build oracle_state.json (the bus payload).
-  7. Alerts        — diff vs prior state, append to oracle_alerts.jsonl.
+  6. Oracle state  — build oracle_state.json (the bus payload, includes A3
+                     rotation_tag and B1 personality per node/complex).
+  7. Alerts        — diff vs prior state, append to oracle_alerts.jsonl;
+                     fires oracle_regime_tag on A3 tag transitions.
   8. Directive     — write data/oracle/rotation_directive.json.
   9. Ledger        — append new detections to data/oracle/forward_ledger.jsonl
                      (keep-FIRST, PIT-stamped).
   10. Banner       — additive oracle entry into site/wh_banner.json when a
                      complex reaches confirmed tier with breadth >= floor.
+  11. Compound live accrual (W-B3) — evaluate every exploratory/screened/accruing
+                     compound on the LATEST panel date only; new fires → PIT keep-first
+                     rows in data/oracle/compounds/live_ledger.jsonl; mature outcomes
+                     auto-graded; registry live_n/live_effect updated;
+                     status screened→accruing on first live fire.
+  12. Promotion scan (W-B1) — flags compounds meeting the economic floor into
+                     data/oracle/promotion_queue.json (loud-error pattern;
+                     never auto-promotes).
 
 Usage
 -----
   python scripts/oracle_nightly.py [--data-dir PATH] [--site-dir PATH]
                                    [--skip-panel] [--skip-graph] [--skip-episodes]
+                                   [--skip-personality]
 
-  --skip-panel     skip the panel rebuild (use committed parquets)
-  --skip-graph     skip the graph rebuild (use committed graph_s.json)
-  --skip-episodes  skip the episode rebuild (use committed episodes)
-  --dry-run        run everything but write no files (for timing + smoke tests)
+  --skip-panel        skip the panel rebuild (use committed parquets)
+  --skip-graph        skip the graph rebuild (use committed graph_s.json)
+  --skip-episodes     skip the episode rebuild (use committed episodes)
+  --skip-personality  skip the B1 personality step (use committed personality.json)
+  --dry-run           run everything but write no files (for timing + smoke tests)
 
 R4 BINDING (ORACLE_GAUNTLET_P3_ADJUDICATION.md):
   - Nothing here ships a predictive claim.
   - Alerts embed the false-start rate from the gauntlet results.
   - Banner is gated on confirmed + breadth floor.
   - Tilt stays config-gated OFF.
+  - Personality classifications are DESCRIPTIVE/DISPLAY tier — statistical labels
+    from trailing history, never fed to scores, sizes, or gates.
 """
 from __future__ import annotations
 
@@ -130,6 +145,42 @@ def _step_episodes(data_dir: Path, dry_run: bool) -> bool:
     log.info("=== Step 3: Episodes rebuild (Tier S + M) ===")
     return _delegate("episodes", "scripts.build_oracle_episodes", data_dir, dry_run,
                      ["--tier", "all"])
+
+
+def _step_personality(data_dir: Path, dry_run: bool) -> bool:
+    """B1 — Per-node personality classification (descriptive/display tier).
+
+    Reads panel_s (falls back to panel_m), computes trend_persistence,
+    reversion_strength, rate_beta, idiosyncrasy per node, classifies each
+    into {mean_reverter, trender, rate_proxy, idiosyncratic, mixed}, and writes
+    data/oracle/personality.json.
+
+    This step runs AFTER episodes (step 3) and BEFORE oracle state (step 6) so
+    the personality map is ready to be folded into oracle_state.json.
+
+    Loud-error pattern: prints ::error:: and returns False on failure so the
+    pipeline continues; a personality failure is non-fatal (oracle state degrades
+    to personality=null for all nodes).
+    """
+    log.info("=== Step 3b: Personality (B1) ===")
+    try:
+        from engine.oracle.personality import build_personality, write_personality
+        payload = build_personality(data_dir=data_dir)
+        n_nodes = len(payload.get("nodes") or {})
+        if not dry_run:
+            write_personality(payload, data_dir=data_dir)
+        # Sample log: show a few representative nodes
+        nodes = payload.get("nodes") or {}
+        samples = [(n, v["personality"]) for n, v in list(nodes.items())[:6]]
+        log.info(
+            "personality: classified %d nodes. samples=%s",
+            n_nodes,
+            samples,
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: personality FAILED: {e}")
+        return False
 
 
 def _step_memory_base_rates(data_dir: Path, dry_run: bool) -> bool:
@@ -475,6 +526,297 @@ def _step_banner(oracle_state: dict, site_dir: Path, dry_run: bool) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# W-B3 Compound live accrual (Step 11)
+# ---------------------------------------------------------------------------
+
+def _step_compound_live_accrual(data_dir: Path, dry_run: bool) -> bool:
+    """W-B3: evaluate all exploratory/screened/accruing compounds on latest panel date.
+
+    New fires → PIT keep-first rows in live_ledger.jsonl.
+    Mature outcomes auto-graded on subsequent nights.
+    Registry live_n/live_effect updated.
+    status screened→accruing on first live fire.
+    """
+    log.info("=== Step 11: Compound live accrual (W-B3) ===")
+    try:
+        from engine.oracle.compounds import (
+            load_registry, update_compound_status,
+            get_entry_dates, augment_panel_with_derived,
+            STATUS_ACCRUING,
+        )
+
+        compounds_dir = data_dir / "oracle" / "compounds"
+        registry = load_registry(compounds_dir)
+
+        import json as _json
+        active_statuses = {"exploratory", "screened", "accruing"}
+        active_compounds = [c for c in registry if c.get("status") in active_statuses]
+        if not active_compounds:
+            log.info("compound_live_accrual: no active compounds to evaluate")
+            return True
+
+        live_ledger_path = compounds_dir / "live_ledger.jsonl"
+
+        # Load existing live_ledger to build seen keys (keep-first)
+        existing_fire_keys: set[str] = set()
+        if live_ledger_path.exists():
+            for line in live_ledger_path.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    r = _json.loads(line)
+                    k = f"{r.get('compound_id')}::{r.get('node')}::{r.get('fire_date')}"
+                    existing_fire_keys.add(k)
+                except Exception:  # noqa: BLE001
+                    pass
+
+        # Load panels for each tier needed
+        panels: dict[str, "pd.DataFrame"] = {}
+        episodes: dict[str, "pd.DataFrame"] = {}
+        rotation_groups: dict | None = None
+
+        _rg_path = data_dir / "oracle" / "rotation_groups.json"
+        rotation_groups = _json.loads(_rg_path.read_text()) if _rg_path.exists() else {"complexes": []}
+
+        def _get_panel(tier: str) -> "pd.DataFrame | None":
+            if tier not in panels:
+                p = data_dir / "oracle" / f"panel_{tier}.parquet"
+                if not p.exists():
+                    return None
+                import pandas as _pd
+                panels[tier] = _pd.read_parquet(p)
+            return panels[tier]
+
+        def _get_episodes(tier: str) -> "pd.DataFrame | None":
+            if tier not in episodes:
+                p = data_dir / "oracle" / f"episodes_{tier}.parquet"
+                if not p.exists():
+                    return None
+                import pandas as _pd
+                episodes[tier] = _pd.read_parquet(p)
+            return episodes[tier]
+
+        import pandas as pd
+        import numpy as np
+        from datetime import datetime, timezone
+
+        n_fired = 0
+        n_graded = 0
+
+        # Load SPY for outcome grading (tier s)
+        spy_path = data_dir / "yahoo" / "SPY.parquet"
+        spy = pd.read_parquet(spy_path)["close"] if spy_path.exists() else None
+
+        for compound in active_compounds:
+            cid = compound.get("id", "?")
+            tier = compound.get("universe", {}).get("tier", "s")
+            horizons = compound.get("horizons", [21, 63])
+
+            panel = _get_panel(tier)
+            eps = _get_episodes(tier)
+            if panel is None or eps is None:
+                log.debug("compound_live_accrual: missing panel/episodes for tier %s — skip %s", tier, cid)
+                continue
+
+            # Augment panel with derived columns
+            panel_aug = augment_panel_with_derived(panel.copy())
+
+            # Get the LATEST panel date only
+            all_dates = panel_aug.index.get_level_values("date").unique().sort_values()
+            if all_dates.empty:
+                continue
+            latest_date = all_dates[-1]
+
+            # Evaluate entry rule on full panel (we only care about latest date fires)
+            try:
+                entry_dates = get_entry_dates(compound, panel_aug, eps, rotation_groups)
+            except ValueError as e:
+                log.warning("compound_live_accrual: %s rule error: %s", cid, e)
+                continue
+
+            if "__blocked__" in entry_dates:
+                continue
+
+            # Check if latest_date fired for any node
+            new_fires = []
+            for node, dates in entry_dates.items():
+                if latest_date in dates:
+                    fire_key = f"{cid}::{node}::{latest_date.isoformat()}"
+                    if fire_key not in existing_fire_keys:
+                        new_fires.append({
+                            "compound_id": cid,
+                            "node": node,
+                            "fire_date": latest_date.isoformat(),
+                            "registered_at": datetime.now(timezone.utc).isoformat(),
+                            "outcome_mature": False,
+                            "excess_21d": None,
+                            "excess_63d": None,
+                        })
+                        existing_fire_keys.add(fire_key)
+
+            if new_fires and not dry_run:
+                live_ledger_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(live_ledger_path, "a") as fh:
+                    for row in new_fires:
+                        fh.write(_json.dumps(row, separators=(",", ":"), default=str) + "\n")
+                n_fired += len(new_fires)
+                log.info("compound_live_accrual: %s fired %d new times on %s",
+                         cid, len(new_fires), latest_date.isoformat())
+
+                # Flip screened → accruing on first live fire
+                if compound.get("status") == "screened":
+                    update_compound_status(compounds_dir, cid, STATUS_ACCRUING)
+                    log.info("compound_live_accrual: %s screened → accruing", cid)
+
+        # Outcome grading pass: re-read live_ledger, grade mature rows
+        if not dry_run and live_ledger_path.exists():
+            raw_lines = live_ledger_path.read_text().splitlines()
+            updated_lines = []
+            for line in raw_lines:
+                line_s = line.strip()
+                if not line_s:
+                    updated_lines.append(line)
+                    continue
+                try:
+                    row = _json.loads(line_s)
+                except Exception:  # noqa: BLE001
+                    updated_lines.append(line)
+                    continue
+
+                if row.get("outcome_mature") is True:
+                    updated_lines.append(line)
+                    continue
+
+                fire_date = pd.Timestamp(row["fire_date"])
+                cid = row["compound_id"]
+                node = row["node"]
+                comp = next((c for c in registry if c["id"] == cid), None)
+                if comp is None:
+                    updated_lines.append(line)
+                    continue
+
+                tier = comp.get("universe", {}).get("tier", "s")
+                horizons = comp.get("horizons", [21, 63])
+
+                panel_t = _get_panel(tier)
+                if panel_t is None:
+                    updated_lines.append(line)
+                    continue
+
+                try:
+                    node_panel = panel_t.xs(node, level="node")
+                except KeyError:
+                    updated_lines.append(line)
+                    continue
+
+                ret_series = node_panel["ret"].sort_index()
+                all_panel_dates = ret_series.index
+
+                # Entry executed at next close after fire_date
+                future = all_panel_dates[all_panel_dates > fire_date]
+                if len(future) == 0:
+                    updated_lines.append(line)
+                    continue
+                exec_date = future[0]
+
+                graded = False
+                price_level = (1 + ret_series.fillna(0)).cumprod()
+
+                for h in horizons:
+                    col = f"excess_{h}d"
+                    if row.get(col) is not None:
+                        continue
+                    exec_pos = all_panel_dates.searchsorted(exec_date)
+                    exit_pos = exec_pos + h
+                    if exit_pos >= len(all_panel_dates):
+                        continue
+                    exit_date = all_panel_dates[exit_pos]
+                    exec_price = price_level.get(exec_date, np.nan)
+                    exit_price = price_level.get(exit_date, np.nan)
+                    if np.isnan(exec_price) or np.isnan(exit_price) or exec_price == 0:
+                        continue
+
+                    node_ret = exit_price / exec_price - 1
+
+                    if tier == "s" and spy is not None:
+                        spy_l = (1 + spy.pct_change(fill_method=None).fillna(0)).cumprod()
+                        s_exec = spy_l.get(exec_date, np.nan)
+                        s_exit = spy_l.get(exit_date, np.nan)
+                        bench_ret = (s_exit / s_exec - 1) if not (np.isnan(s_exec) or np.isnan(s_exit) or s_exec == 0) else np.nan
+                    else:
+                        # tier m: use rs series
+                        if "rs" in node_panel.columns:
+                            rs_s = node_panel["rs"].sort_index()
+                            rs_level = (1 + rs_s.fillna(0)).cumprod()
+                            r_exec = rs_level.get(exec_date, np.nan)
+                            r_exit = rs_level.get(exit_date, np.nan)
+                            node_ret = (r_exit / r_exec - 1) if not (np.isnan(r_exec) or np.isnan(r_exit) or r_exec == 0) else np.nan
+                        bench_ret = 0.0
+
+                    excess = node_ret - bench_ret if not np.isnan(bench_ret) else np.nan
+                    if not np.isnan(excess):
+                        row[col] = float(excess)
+                        graded = True
+
+                # Mark mature only when ALL horizon windows have been graded
+                all_graded = all(row.get(f"excess_{h}d") is not None for h in horizons)
+                if all_graded:
+                    row["outcome_mature"] = True
+                    n_graded += 1
+
+                updated_lines.append(_json.dumps(row, separators=(",", ":"), default=str))
+
+            live_ledger_path.write_text("\n".join(updated_lines) + "\n")
+
+        # Update registry live_n / live_effect per compound
+        if not dry_run and live_ledger_path.exists():
+            live_rows = []
+            for line in live_ledger_path.read_text().splitlines():
+                line_s = line.strip()
+                if line_s:
+                    try:
+                        live_rows.append(_json.loads(line_s))
+                    except Exception:  # noqa: BLE001
+                        pass
+
+            registry_updated = load_registry(compounds_dir)
+            for compound in registry_updated:
+                cid = compound["id"]
+                mature = [r for r in live_rows
+                          if r.get("compound_id") == cid and r.get("outcome_mature") is True]
+                compound["live_n"] = len([r for r in live_rows if r.get("compound_id") == cid])
+                if mature:
+                    excesses = [r.get("excess_63d") for r in mature if r.get("excess_63d") is not None]
+                    compound["live_effect"] = float(np.mean(excesses)) if excesses else None
+
+            from engine.oracle.compounds import save_registry
+            save_registry(compounds_dir, registry_updated)
+
+        log.info("compound_live_accrual: %d new fires, %d rows graded this run",
+                 n_fired, n_graded)
+        return True
+
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: compound_live_accrual FAILED: {e}")
+        return False
+
+
+def _step_promotion_scan(data_dir: Path, dry_run: bool) -> bool:
+    """W-B1: Run promotion scan as the LAST nightly step (loud-error pattern)."""
+    log.info("=== Step 12: Promotion scan ===")
+    try:
+        from scripts.oracle_promotion_scan import run_promotion_scan
+        queue = run_promotion_scan(data_dir, dry_run=dry_run)
+        log.info("promotion_scan: search_width=%d candidates=%d",
+                 queue.get("search_width", 0), queue.get("n_candidates", 0))
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: promotion_scan FAILED: {e}")
+        return False
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -485,6 +827,8 @@ def main() -> int:
     p.add_argument("--skip-panel", action="store_true")
     p.add_argument("--skip-graph", action="store_true")
     p.add_argument("--skip-episodes", action="store_true")
+    p.add_argument("--skip-personality", action="store_true",
+                   help="Skip B1 personality step (use committed personality.json)")
     p.add_argument("--dry-run", action="store_true", help="Run all steps but write no files")
     args = p.parse_args()
 
@@ -518,6 +862,13 @@ def main() -> int:
     else:
         log.info("=== Step 3: Episodes SKIPPED (--skip-episodes) ===")
 
+    # --- Step 3b: Personality (B1) — AFTER episodes, BEFORE state ---
+    if not args.skip_personality:
+        if not _step_personality(data_dir, args.dry_run):
+            failures.append("personality")
+    else:
+        log.info("=== Step 3b: Personality SKIPPED (--skip-personality) ===")
+
     # --- Step 4: Memory ---
     if not _step_memory_base_rates(data_dir, args.dry_run):
         failures.append("memory_base_rates")
@@ -545,6 +896,14 @@ def main() -> int:
     # --- Step 10: Banner ---
     if not _step_banner(oracle_state, site_dir, args.dry_run):
         failures.append("banner")
+
+    # --- Step 11: Compound live accrual (W-B3) ---
+    if not _step_compound_live_accrual(data_dir, args.dry_run):
+        failures.append("compound_live_accrual")
+
+    # --- Step 12: Promotion scan (W-B1) ---
+    if not _step_promotion_scan(data_dir, args.dry_run):
+        failures.append("promotion_scan")
 
     elapsed = time.time() - t_total
     log.info(

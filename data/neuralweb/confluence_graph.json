@@ -7046,7 +7046,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=regime-vs-market_state kind=label-tension severity=tension a=quad=Q1 (growth regime) b=verdict=RISK_OFF"
+      "note": "pair_id=regime-vs-market_state kind=label-lag severity=note a=quad=Q1 (growth regime) | growth_score=0.333 inflation_score b=verdict=RISK_OFF"
     },
     {
       "src": "data/regime/latest.json:regime_vector",
@@ -7178,8 +7178,8 @@
   "contradiction_summary": {
     "n": 7,
     "by_severity": {
-      "tension": 6,
-      "note": 1
+      "note": 2,
+      "tension": 5
     },
     "top_pair_ids": [
       "regime-vs-market_state",
@@ -7194,16 +7194,16 @@
       "pair_id": "regime-vs-market_state",
       "a": {
         "artifact": "data/regime/latest.json",
-        "reading": "quad=Q1 (growth regime)"
+        "reading": "quad=Q1 (growth regime) | growth_score=0.333 inflation_score=-0.52 | flip_margin=0.05 transition_state=TRANSITIONING confidence=0.327"
       },
       "b": {
         "artifact": "data/market_state/latest.json",
         "reading": "verdict=RISK_OFF"
       },
-      "kind": "label-tension",
-      "severity": "tension",
+      "kind": "label-lag",
+      "severity": "note",
       "as_of": "2026-07-01",
-      "note": "Regime labels growth (Q1) while market_state signals RISK_OFF.  Common in early-phase growth scare or regime transition. Display-only context; not a gate.",
+      "note": "Quad label Q1/Goldilocks lags its own scale: flip_margin=0.05 toward growth flip, transition_state=TRANSITIONING — underlying scores (growth=0.333, inflation=-0.52) lean with the RISK_OFF verdict; the label has not flipped yet.  Not a live contradiction: the backend scale and market_state agree; the categorical label is the lagging component.  Display-only.",
       "display_only": true
     },
     {
@@ -7310,7 +7310,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-04T22:01:35Z",
-  "inputs_hash": "sha256:9a9b9b16de5cb547fb902c860babc4dd830a5ff4849fe86c2971e0d570b618c6",
+  "produced_at": "2026-07-04T23:00:35Z",
+  "inputs_hash": "sha256:54bd3cb7d287f598cfd0297b2d583df989d79eb28a570cf19add27e9348d5cb5",
   "tier": "display"
 }
