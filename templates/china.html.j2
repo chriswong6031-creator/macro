@@ -58,16 +58,6 @@
               color: color-mix(in srgb, var(--c, var(--muted)) 84%, var(--text)); }
   .tip .lad.up { --c: var(--up); } .tip .lad.down { --c: var(--down); } .tip .lad.warn { --c: var(--warn); }
   .tip .lad.orange { --c: var(--orange); } .tip .lad.info { --c: var(--info); } .tip .lad.muted { --c: var(--muted); }
-  /* residual-alpha entry tags (extended/pullback/intact/laggard) */
-  .alpha-entry { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
-                 border-radius:9px; text-transform:capitalize; border:1px solid var(--line);
-                 white-space:nowrap; }
-  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
-                 border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text);
-                 border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
-  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
-  .ae-laggard,.ae-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
   /* consolidated stock-screener: segmented mode toggle */
   .sb-seg { display:inline-flex; flex-wrap:wrap; gap:4px; padding:4px; border-radius:11px;
             background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
@@ -1779,42 +1769,7 @@
   </div>
   {% endif %}
 
-  <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
-  {% if alpha and alpha.top %}
-  <div class="panel span12" id="alpha-leaders">
-    <h2>{{ t('📊 Sector relative strength — read the mean-reversion flag', '📊 板块相对强度 — 关注均值回归标记') }}
-      <span class="note" style="text-transform:none">· {{ t('sector-neutral residual · vs CSI 300', '板块中性残差 · 相对沪深300') }}{% if alpha.n %} · {{ alpha.n }} {{ t('names', '只') }}{% endif %}</span>
-      {{ help("Each stock's return with its MARKET and SECTOR beta stripped — <b>sector-neutral residual relative strength</b> over a 12-1-month window (rank vs the whole A-share cross-section; +2 = top of the pack). <b>IMPORTANT — deep-history correction:</b> on ~35 years of A-share data this momentum is NOT a validated edge — A-shares MEAN-REVERT, so do not read 'high alpha = buy' (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). Read the <b>entry</b> flag instead: a leader that just spiked (“extended”) is a reversal RISK / fade candidate; a leader on a recent pullback (“pullback”) is the constructive MEAN-REVERSION entry — the validated effect. The alpha column is relative-strength CONTEXT (which names have shown strength), not a buy ranking.", "每只股票剔除其市场与板块贝塔后的收益 —— <b>板块中性残差相对强度</b>（12-1 个月；相对全 A 股横截面排名，+2＝最强一档）。<b>重要 —— 深度历史校正：</b>在约35年的A股数据上，该动量并非有效优势 —— A股<b>均值回归</b>，因此切勿把“高 alpha＝买入”（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。请改看<b>入场</b>标记：刚急涨的领先股（“extended”）是反转风险/做空候选；近期回调的领先股（“pullback”）才是有效的<b>均值回归</b>入场。alpha 列是相对强度<b>背景</b>（哪些个股表现出强势），并非买入排序。") }}
-    </h2>
-    <table class="sortable">
-      <thead><tr>
-        <th class="l">{{ t('Stock', '个股') }}</th>
-        <th class="l">{{ t('Sector', '板块') }}</th>
-        <th>{{ t('alpha z', '阿尔法 z') }}</th>
-        <th>{{ t('sector rank', '板块排名') }}</th>
-        <th>{{ t('idio ann', '年化残差') }}</th>
-        <th>{{ t('1-mo', '近一月') }}</th>
-        <th class="l">{{ t('entry', '入场') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for a in alpha.top[:16] %}
-      <tr>
-        <td class="l"><a href="china_lookup.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="note">{{ nm(a.name) }}</span></td>
-        <td class="l note">{{ t(a.sector, SECZH.get(a.sector, a.sector)) }}</td>
-        <td><b class="{{ 'pos' if (a.alpha or 0)>=0 else 'neg' }}">{{ '%+.2f'|format(a.alpha) if a.alpha is not none else '—' }}</b></td>
-        <td class="note">{{ a.sector_rank }}/{{ a.sector_n }}</td>
-        <td class="{{ 'pos' if (a.resid_ann or 0)>=0 else 'neg' }}">{{ '%+.0f'|format(a.resid_ann) ~ '%' if a.resid_ann is not none else '—' }}</td>
-        <td class="{{ 'pos' if (a.rev_1m or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(a.rev_1m) ~ '%' if a.rev_1m is not none else '—' }}</td>
-        <td class="l">{% if a.entry %}{% set _aez = {'pullback':'回调买点','extended':'急涨偏热','intact':'趋势完好','laggard':'落后','neutral':'中性'} %}<span class="alpha-entry ae-{{ a.entry }}">{{ t(a.entry, _aez.get(a.entry, a.entry)) }}</span>{% endif %}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    <p class="note" style="margin:6px 0 0;font-size:11px">{{ t('Sector-neutral residual relative strength. Deep-history corrected: A-share momentum is NOT a validated edge (35y, nothing clears FDR) — the robust effect is short-term REVERSAL, so the actionable read is the entry flag (pullback = mean-reversion buy; extended = fade risk), not the alpha ranking. Relative-strength context, not a buy list.', '板块中性残差相对强度。经深度历史校正：A股动量并非有效优势（35年，无一通过FDR）—— 稳健的效应是短期反转，因此可操作的解读是入场标记（pullback＝均值回归买入；extended＝做空风险），而非 alpha 排序。相对强度背景，而非买入清单。') }}</p>
-  </div>
-  {% endif %}
-
-  {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch, alpha leaders) #}
+  {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch) #}
 
   {% set I = internals or {} %}
 
