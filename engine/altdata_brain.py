@@ -34,6 +34,8 @@ from engine import ai_desk as _desk
 from engine import ai_desk_scorer as _scorer
 from engine.regime_label import quad_label          # regime stamp → by_regime track record
 from engine import altdata_picks
+from engine.neuralweb.constitution import grant_authority, GrantResult, AuthorityLevel
+from engine.neuralweb.governance import append_event
 
 log = logging.getLogger(__name__)
 
@@ -321,6 +323,138 @@ def _check_by(asof, horizon: int) -> str | None:
         return None
 
 
+# --------------------------------------------------------------------------- Article-3 review
+# Evidence mapping:
+#   hits  = round(hit_rate * n_obs)  from qledger track_record.json by_family['altdata']['5']
+#   n     = n_obs (independent date-cluster observations at h=5d; qledger ACCRUING state)
+#   base_rate = 0.5  (sign-test base: direction call is correct above chance when hit_rate > 0.5)
+#   evidence_asof = track_record.generated_at date
+# Justification: the qledger grades each brain thesis on whether the subject ticker
+# outperformed SPY over h days (binary outcome). The base rate for a random direction call
+# is 0.5 (sign-test). Using qledger hit_rate as the realized precision and n_obs as the
+# sample size maps cleanly onto grant_authority's {hits, n, base_rate, evidence_asof}.
+# Floors (min_n=25 dates = qledger GRADED_MIN_DATES; min_events=8 = Article-3 min-events
+# floor matching the can_force precedent).
+
+_ARTICLE3_FLOORS = {"min_n": 25, "min_events": 8}
+_ARTICLE3_BASE_RATE = 0.5   # sign-test base for direction calls
+
+
+def article3_actionable_verdict(root=None) -> GrantResult:
+    """Evaluate Article-3 gate for altdata_brain's actionable flag.
+
+    Reads qledger track_record.json (site/qledger/track_record.json) for the
+    'altdata' family at h=5d horizon.  Maps qledger evidence onto the
+    grant_authority() contract:
+      hits        = round(hit_rate * n_dates)  (direction-correct independent date clusters)
+      n           = n_dates                    (independent date clusters, qledger canonical)
+      base_rate   = 0.5                        (sign-test floor for direction calls)
+      evidence_asof = track_record generated_at date
+
+    n_dates (not n_obs) is the correct sample-size unit: qledger de-duplicates raw rows
+    into independent date clusters before computing Wilson CI lower bounds.  Using n_obs
+    would over-count correlated within-day observations.  The min_n floor of 25 matches
+    qledger's GRADED_MIN_DATES constant (the same 25-cluster floor the promotion gate uses).
+
+    Returns a GrantResult.  Never raises — returns refused with
+    reason='track_record_unavailable' when the data file is missing.
+    """
+    try:
+        tr_path = (Path(root) if root else config.ROOT) / "site" / "qledger" / "track_record.json"
+        if not tr_path.exists():
+            return GrantResult(
+                granted=False, lift_lb=None, wilson_lb=None,
+                reason="track_record_unavailable: site/qledger/track_record.json missing",
+                lapses_at=None,
+            )
+        tr = json.loads(tr_path.read_text())
+        cell = (tr.get("by_family") or {}).get("altdata", {}).get("5") or {}
+        # Use n_dates: independent date clusters (qledger canonical unit for Wilson CI)
+        n_dates = int(cell.get("n_dates") or 0)
+        hit_rate = cell.get("hit_rate")
+        generated_at = str(tr.get("generated_at") or "")
+        # evidence_asof: use date portion of generated_at
+        try:
+            evidence_asof = generated_at[:10]  # ISO date
+        except Exception:  # noqa: BLE001
+            evidence_asof = None
+        if hit_rate is None or n_dates == 0:
+            return GrantResult(
+                granted=False, lift_lb=None, wilson_lb=None,
+                reason="track_record_no_hit_rate: altdata family h=5d has null hit_rate or zero n_dates",
+                lapses_at=None,
+            )
+        hits = round(float(hit_rate) * n_dates)
+        evidence = {
+            "hits": hits,
+            "n": n_dates,
+            "base_rate": _ARTICLE3_BASE_RATE,
+            "evidence_asof": evidence_asof,
+        }
+        return grant_authority(
+            evidence,
+            floors=_ARTICLE3_FLOORS,
+            target_level=AuthorityLevel.A1_EXPLAIN,  # not A7; Article 1 is not implicated
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("altdata_brain: article3_actionable_verdict failed: %s", exc)
+        return GrantResult(
+            granted=False, lift_lb=None, wilson_lb=None,
+            reason=f"verdict_error: {exc}",
+            lapses_at=None,
+        )
+
+
+def _emit_article3_governance(prev_granted: bool | None, result: GrantResult, root=None) -> None:
+    """Append an article3_review governance event.  On transitions, also appends
+    authority_grant or authority_lapse.  Fail-open: never raises."""
+    now_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    append_event(
+        "article3_review",
+        "altdata_brain.actionable",
+        article=3,
+        authored_by="altdata_brain.article3_actionable_verdict",
+        evidence={
+            "granted": result.granted,
+            "lift_lb": result.lift_lb,
+            "wilson_lb": result.wilson_lb,
+            "reason": result.reason,
+            "lapses_at": result.lapses_at,
+            "floors": _ARTICLE3_FLOORS,
+            "base_rate": _ARTICLE3_BASE_RATE,
+        },
+        root=root,
+    )
+    if prev_granted is None:
+        return  # no transition info — first evaluation, review event is sufficient
+    if not prev_granted and result.granted:
+        # grant transition
+        append_event(
+            "authority_grant",
+            "altdata_brain.actionable",
+            article=3,
+            authored_by="altdata_brain.article3_actionable_verdict",
+            before={"granted": False},
+            after={"granted": True, "lapses_at": result.lapses_at},
+            evidence={"lift_lb": result.lift_lb, "reason": result.reason},
+            note="Article-3 evidence cleared; altdata_brain.actionable auto-re-granted",
+            root=root,
+        )
+    elif prev_granted and not result.granted:
+        # lapse transition
+        append_event(
+            "authority_lapse",
+            "altdata_brain.actionable",
+            article=3,
+            authored_by="altdata_brain.article3_actionable_verdict",
+            before={"granted": True},
+            after={"granted": False},
+            evidence={"reason": result.reason},
+            note="Article-3 evidence insufficient; actionable flag lapsed",
+            root=root,
+        )
+
+
 # --------------------------------------------------------------------------- synthesize
 def _build_user(state: dict) -> str:
     return ("Today's deterministic alt-data evidence pack (JSON). Produce your desk read per "
@@ -328,14 +462,38 @@ def _build_user(state: dict) -> str:
             "extended name.\n<evidence>\n" + json.dumps(state, indent=2, default=str) + "\n</evidence>")
 
 
-def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
+def synthesize(state: dict, cfg: dict | None = None, call=None,
+               root=None, _prev_granted: bool | None = None) -> dict:
     """Run the Opus analyst over the evidence pack. Always returns a record (degraded fields
-    flagged); never raises. `call` is injectable so tests run without a token."""
+    flagged); never raises. `call` is injectable so tests run without a token.
+
+    Article-3 review: the actionable flag and is_context_only are set by
+    article3_actionable_verdict() — not hardcoded.  The brief gains an additive
+    article3 block with the full verdict.  Governance events are emitted on
+    transitions (and on every call for the article3_review event type).
+    """
     cfg = cfg or _cfg()
     asof = state.get("as_of")
     cluster_index = {c["ticker"]: c for c in state.get("clusters", [])}
+
+    # Article-3 evaluation — evidence-driven, never hardcoded
+    a3 = article3_actionable_verdict(root=root)
+    try:
+        _emit_article3_governance(_prev_granted, a3, root=root)
+    except Exception as _gov_exc:  # noqa: BLE001 — governance failure never blocks synthesis
+        log.warning("altdata_brain: governance emit failed (fail-open): %s", _gov_exc)
+
     brief = {
-        "schema": SCHEMA, "is_context_only": False, "actionable": True,
+        "schema": SCHEMA,
+        "actionable": a3.granted,
+        "is_context_only": not a3.granted,
+        "article3": {
+            "granted": a3.granted,
+            "lift_lb": a3.lift_lb,
+            "reason": a3.reason,
+            "evidence_asof": None,   # populated below from the track_record path
+            "evaluated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        },
         "generated_at": datetime.now(timezone.utc).isoformat(), "state_asof": asof,
         "model": _reasoning_model(cfg),
         "regime_read": None, "regime_read_zh": None, "theses": [],
@@ -343,6 +501,15 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "confidence": "low", "n_clusters": state.get("n_clusters"),
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
     }
+    # Populate evidence_asof from lapses_at backtrack (governance transparency)
+    if a3.lapses_at:
+        try:
+            from datetime import timedelta
+            lapse_dt = datetime.fromisoformat(a3.lapses_at)
+            brief["article3"]["evidence_asof"] = (
+                lapse_dt - timedelta(days=120)).date().isoformat()
+        except Exception:  # noqa: BLE001
+            pass
     fn = call or _make_call(cfg)
     if fn is None:
         brief["degraded_reason"] = "no_client_or_token"
@@ -497,7 +664,8 @@ def run(persist: bool = True, root=None, force: bool = False, call=None) -> dict
         if state is None:
             log.info("altdata_brain: no convergence substrate — nothing to reason over")
             return None
-        brief = synthesize(state, cfg, call=call)
+        # Pass root so Article-3 verdict reads the live track_record.json
+        brief = synthesize(state, cfg, call=call, root=root)
         if persist:
             _persist(brief, root)
             _append_ledger(brief, root)

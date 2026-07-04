@@ -122,6 +122,45 @@ ARTICLES: dict[int, str] = {
 
 
 # ---------------------------------------------------------------------------
+# A6 lane definitions (standing law, ratified D4 2026-07-04, expanded W7a PR2)
+# ---------------------------------------------------------------------------
+
+A6_LANES: dict[str, str] = {
+    "i": (
+        "A6 Lane (i) — Bounded Deterministic Auto-Apply: "
+        "Clamped, do-no-harm-gated, pre-registered loops (market_state_tune, intl_tune, "
+        "Engine-Fix arming predicates) are hereby ratified as standing A6 approvals.  "
+        "Each auto-apply must log to the governance ledger (neuralweb.governance.v1) with "
+        "event_type='a6_auto_apply', lane='i', backtest evidence, and calibration_ref.  "
+        "Quarterly re-audit required: if the last apply is >180 calendar days old, a "
+        "governance WARNING entry is emitted and human re-audit is required before the "
+        "next auto-apply resumes."
+    ),
+    "ii": (
+        "A6 Lane (ii) — LLM-Proposed Parameter Change: "
+        "An Opus model proposes bounded parameter deltas; each proposal must be logged to "
+        "the governance ledger as event_type='a6_llm_proposed' with the pre-committed gate "
+        "BEFORE any apply decision.  The apply is executed only when a do-no-harm backtest "
+        "confirms improvement; the result (apply or reject) is also logged.  "
+        "Governance logging is fail-open: a logging failure never aborts the loop.  "
+        "risk_radar_review is the canonical lane-(ii) tenant (W7a PR2, 2026-07-04); "
+        "it arms via config.yml (risk_radar_review.enabled: true) and remains self-gated "
+        "behind min_graded=30 + F1 do-no-harm + hard clamps."
+    ),
+}
+
+A6_ARMING_PREDICATE_DOCTRINE: str = (
+    "Arming-Predicate Doctrine (ratified D4 2026-07-04, standing A6 law): "
+    "No env-flag safety switches.  Every flag-gated system declares an arming predicate "
+    "(evidence-floor + self-gates); systems auto-arm with governance notification when the "
+    "predicate holds.  Arming via config.yml (not _DEFAULTS) is the canonical mechanism — "
+    "the config file is the operator's committed intent, readable by every run.  "
+    "Source: research/ENGINE_FIX_MASTERPLAN.md §W4 + masterplan §4 A6 table row.  "
+    "Standing approval: Engine Fix auto-arm doctrine ratified as A6 lane-(i) precedent."
+)
+
+
+# ---------------------------------------------------------------------------
 # Article-2 perimeter (read from synapse.yml)
 # ---------------------------------------------------------------------------
 

@@ -534,6 +534,29 @@ artifacts:
     external_consumers: []
     notes: "Producer: engine/risk_radar_audit.py:35 append, idempotent by as-of."
 
+  # W7a PR2: risk_radar_review audit trail — registered here so the read-gate doesn't
+  # flag it as an unregistered write path.
+  risk-radar-review-log:
+    path: data/risk_radar/review_log.jsonl
+    format: jsonl
+    producer: engine/risk_radar_review.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: weekly-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 200
+    schema: risk_radar_review.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      A6 lane-(ii) audit trail: every Opus proposal + do-no-harm backtest verdict.
+      Append-only; one row per review run.  Governance events for proposals/applies/rejects
+      also land in data/neuralweb/governance.jsonl (neuralweb.governance.v1).
+
   # --- 5 consumers ---
   china-sector-cycles-forward-log:
     path: data/china_sector_cycles/forward_log.parquet
