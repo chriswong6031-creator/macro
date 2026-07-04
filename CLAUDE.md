@@ -15,6 +15,8 @@ The main session may run a frontier model (Fable/Opus). **Never let fan-outs inh
 
 Also set `effort: 'low'` on mechanical workflow stages; reserve high effort for verify/judge stages. Rule of thumb: **Sonnet builds, Opus reviews, Fable (main loop) plans/adjudicates/merges.**
 
+Enforcement: a PreToolUse hook (`.claude/hooks/model_routing_guard.py`, wired in `.claude/settings.json`) denies Agent/Task spawns without an explicit model, any `fable` spawn, and Workflow scripts whose `agent()` calls carry no `model:`/`agentType` routing. Model-pinned agent types are available: `builder` (sonnet) for build stages, `reviewer` (opus) for review stages — spawns using them pass the guard without a `model:` param.
+
 ## House laws (short list; details in research/ masterplans)
 
 - **Git:** branch off **fresh `origin/main`** (never reuse a squash-merged branch); finish via commit → push → PR → same-day squash-merge. Stash stack is repo-global — never bare `git stash`/`pop`. Main checkout is often occupied by other agents; work in worktrees, never touch main checkout's git state.
