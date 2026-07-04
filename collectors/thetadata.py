@@ -75,6 +75,15 @@ from typing import Iterator
 import pandas as pd
 import requests
 
+
+class _PaginationTruncated(Exception):
+    """Raised internally when a mid-stream page fetch fails.
+
+    Public methods catch this and return None (the INERT contract) so that partial
+    results are NEVER silently returned as complete data.  The caller logs one WARNING
+    naming the root / date-range / page number before raising.
+    """
+
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
@@ -152,6 +161,11 @@ def _paginate(session: requests.Session, path: str, params: dict) -> Iterator[li
     Pagination mechanics (from docs): header["next_page"] is a full URL string when more
     pages exist, or the string "null" / Python None on the final page.  Pages expire quickly
     so we follow sequentially without sleeping between requests.
+
+    FAILURE CONTRACT: any mid-stream page failure raises _PaginationTruncated.  Callers
+    MUST catch it and return None so that partial results are never silently returned as
+    complete data.  Only the first page (via _get) is allowed to return None cleanly (the
+    terminal-unreachable / permission-error case handled upstream).
     """
     data = _get(session, path, params)
     if data is None:
@@ -162,24 +176,30 @@ def _paginate(session: requests.Session, path: str, params: dict) -> Iterator[li
     # Follow next_page until "null"
     header = data.get("header") or {}
     next_url = header.get("next_page")
+    page_num = 1
     while next_url and str(next_url).lower() != "null":
         # next_page is a full URL like http://127.0.0.1:25510/v2/page/1
+        page_num += 1
         try:
             r = session.get(next_url, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT))
         except Exception as e:  # noqa: BLE001
-            log.warning("thetadata: pagination fetch error: %s", e)
-            break
+            log.warning("thetadata: pagination fetch error at page %d (%s %s): %s",
+                        page_num, path, params, e)
+            raise _PaginationTruncated(f"fetch error page {page_num}: {e}") from e
         if r.status_code == 477:
-            log.warning("thetadata: page expired (477) — pagination truncated")
-            break
+            log.warning("thetadata: page expired (477) at page %d (%s %s) — truncated",
+                        page_num, path, params)
+            raise _PaginationTruncated(f"HTTP 477 expired page at page {page_num}")
         if r.status_code != 200:
-            log.warning("thetadata: pagination HTTP %d — stopping", r.status_code)
-            break
+            log.warning("thetadata: pagination HTTP %d at page %d (%s %s) — truncated",
+                        r.status_code, page_num, path, params)
+            raise _PaginationTruncated(f"HTTP {r.status_code} at page {page_num}")
         try:
             data = r.json()
         except Exception as e:  # noqa: BLE001
-            log.warning("thetadata: pagination JSON parse error: %s", e)
-            break
+            log.warning("thetadata: pagination JSON parse error at page %d (%s %s): %s",
+                        page_num, path, params, e)
+            raise _PaginationTruncated(f"JSON parse error page {page_num}: {e}") from e
         rows = data.get("response") or []
         if rows:
             yield rows
@@ -239,32 +259,38 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
     }
     session = _session()
     rows_all: list[dict] = []
-    for page_rows in _paginate(session, "/v2/bulk_hist/option/eod", params):
-        # Each page_rows is a list of contract objects: {"ticks": [...], "contract": {...}}
-        for contract_obj in page_rows:
-            contract = contract_obj.get("contract", {})
-            root_val = contract.get("root", root)
-            exp_val = _to_date(contract.get("expiration"))
-            strike_val = (contract.get("strike") or 0) / STRIKE_DIVISOR
-            right_val = contract.get("right")
-            for tick in (contract_obj.get("ticks") or []):
-                if len(tick) < 17:
-                    continue
-                rows_all.append({
-                    "root": root_val,
-                    "expiration": exp_val,
-                    "strike": strike_val,
-                    "right": right_val,
-                    "date": _to_date(tick[16]),
-                    "open": tick[2],
-                    "high": tick[3],
-                    "low": tick[4],
-                    "close": tick[5],
-                    "volume": tick[6],
-                    "count": tick[7],
-                    "bid": tick[10],
-                    "ask": tick[14],
-                })
+    try:
+        for page_rows in _paginate(session, "/v2/bulk_hist/option/eod", params):
+            # Each page_rows is a list of contract objects: {"ticks": [...], "contract": {...}}
+            for contract_obj in page_rows:
+                contract = contract_obj.get("contract", {})
+                root_val = contract.get("root", root)
+                exp_val = _to_date(contract.get("expiration"))
+                strike_val = (contract.get("strike") or 0) / STRIKE_DIVISOR
+                right_val = contract.get("right")
+                for tick in (contract_obj.get("ticks") or []):
+                    if len(tick) < 17:
+                        continue
+                    rows_all.append({
+                        "root": root_val,
+                        "expiration": exp_val,
+                        "strike": strike_val,
+                        "right": right_val,
+                        "date": _to_date(tick[16]),
+                        "open": tick[2],
+                        "high": tick[3],
+                        "low": tick[4],
+                        "close": tick[5],
+                        "volume": tick[6],
+                        "count": tick[7],
+                        "bid": tick[10],
+                        "ask": tick[14],
+                    })
+    except _PaginationTruncated as e:
+        log.warning("thetadata: bulk_eod(%s, start=%s, end=%s) truncated at mid-stream page"
+                    " — returning None to avoid persisting partial data: %s",
+                    root, start_date, end_date, e)
+        return None
     if not rows_all:
         return pd.DataFrame()
     df = pd.DataFrame(rows_all)
@@ -306,30 +332,36 @@ def bulk_open_interest(root: str, exp: int | str | date, start_date: date | str 
                  .to_dict("records"))
     session = _session()
     rows_all: list[dict] = []
-    for c in contracts:
-        exp_int = int(c["expiration"].strftime("%Y%m%d")) if pd.notna(c["expiration"]) else 0
-        strike_int = int(round(c["strike"] * STRIKE_DIVISOR))
-        params = {
-            "root": c["root"],
-            "exp": exp_int,
-            "strike": strike_int,
-            "right": c["right"],
-            "start_date": _date_int(start_date),
-            "end_date": _date_int(end_date),
-            "use_csv": "false",
-        }
-        for page_rows in _paginate(session, "/v2/hist/option/open_interest", params):
-            for tick in page_rows:
-                if len(tick) < 3:
-                    continue
-                rows_all.append({
-                    "root": c["root"],
-                    "expiration": c["expiration"],
-                    "strike": c["strike"],
-                    "right": c["right"],
-                    "date": _to_date(tick[2]),
-                    "open_interest": tick[1],
-                })
+    try:
+        for c in contracts:
+            exp_int = int(c["expiration"].strftime("%Y%m%d")) if pd.notna(c["expiration"]) else 0
+            strike_int = int(round(c["strike"] * STRIKE_DIVISOR))
+            params = {
+                "root": c["root"],
+                "exp": exp_int,
+                "strike": strike_int,
+                "right": c["right"],
+                "start_date": _date_int(start_date),
+                "end_date": _date_int(end_date),
+                "use_csv": "false",
+            }
+            for page_rows in _paginate(session, "/v2/hist/option/open_interest", params):
+                for tick in page_rows:
+                    if len(tick) < 3:
+                        continue
+                    rows_all.append({
+                        "root": c["root"],
+                        "expiration": c["expiration"],
+                        "strike": c["strike"],
+                        "right": c["right"],
+                        "date": _to_date(tick[2]),
+                        "open_interest": tick[1],
+                    })
+    except _PaginationTruncated as e:
+        log.warning("thetadata: bulk_open_interest(%s, start=%s, end=%s) truncated at"
+                    " mid-stream page — returning None to avoid persisting partial data: %s",
+                    root, start_date, end_date, e)
+        return None
     if not rows_all:
         return pd.DataFrame()
     df = pd.DataFrame(rows_all)
@@ -372,45 +404,51 @@ def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
     }
     session = _session()
     rows_all: list[dict] = []
-    for page_rows in _paginate(session, path, params):
-        for contract_obj in page_rows:
-            contract = contract_obj.get("contract", {})
-            root_val = contract.get("root", root)
-            exp_val = _to_date(contract.get("expiration"))
-            strike_val = (contract.get("strike") or 0) / STRIKE_DIVISOR
-            right_val = contract.get("right")
-            for tick in (contract_obj.get("ticks") or []):
-                if order == 1:
-                    if len(tick) < 14:
-                        continue
-                    rows_all.append({
-                        "root": root_val,
-                        "expiration": exp_val,
-                        "strike": strike_val,
-                        "right": right_val,
-                        "date": _to_date(tick[13]),
-                        "bid": tick[1],
-                        "ask": tick[2],
-                        "delta": tick[3],
-                        "theta": tick[4],
-                        "vega": tick[5],
-                        "rho": tick[6],
-                        "epsilon": tick[7],
-                        "lambda_": tick[8],    # 'lambda' is a Python reserved word
-                        "implied_vol": tick[9],
-                        "iv_error": tick[10],
-                        "underlying_price": tick[12],
-                    })
-                else:
-                    # order 2/3: field layout TBD — store raw for now; formalize after probe
-                    rows_all.append({
-                        "root": root_val,
-                        "expiration": exp_val,
-                        "strike": strike_val,
-                        "right": right_val,
-                        "date": _to_date(tick[-1]) if tick else None,
-                        "raw_fields": tick,
-                    })
+    try:
+        for page_rows in _paginate(session, path, params):
+            for contract_obj in page_rows:
+                contract = contract_obj.get("contract", {})
+                root_val = contract.get("root", root)
+                exp_val = _to_date(contract.get("expiration"))
+                strike_val = (contract.get("strike") or 0) / STRIKE_DIVISOR
+                right_val = contract.get("right")
+                for tick in (contract_obj.get("ticks") or []):
+                    if order == 1:
+                        if len(tick) < 14:
+                            continue
+                        rows_all.append({
+                            "root": root_val,
+                            "expiration": exp_val,
+                            "strike": strike_val,
+                            "right": right_val,
+                            "date": _to_date(tick[13]),
+                            "bid": tick[1],
+                            "ask": tick[2],
+                            "delta": tick[3],
+                            "theta": tick[4],
+                            "vega": tick[5],
+                            "rho": tick[6],
+                            "epsilon": tick[7],
+                            "lambda_": tick[8],    # 'lambda' is a Python reserved word
+                            "implied_vol": tick[9],
+                            "iv_error": tick[10],
+                            "underlying_price": tick[12],
+                        })
+                    else:
+                        # order 2/3: field layout TBD — store raw for now; formalize after probe
+                        rows_all.append({
+                            "root": root_val,
+                            "expiration": exp_val,
+                            "strike": strike_val,
+                            "right": right_val,
+                            "date": _to_date(tick[-1]) if tick else None,
+                            "raw_fields": tick,
+                        })
+    except _PaginationTruncated as e:
+        log.warning("thetadata: bulk_greeks(%s, order=%d, start=%s, end=%s) truncated at"
+                    " mid-stream page — returning None to avoid persisting partial data: %s",
+                    root, order, start_date, end_date, e)
+        return None
     if not rows_all:
         return pd.DataFrame()
     df = pd.DataFrame(rows_all)
@@ -454,20 +492,26 @@ def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
     }
     session = _session()
     rows_all: list[dict] = []
-    for page_rows in _paginate(session, "/v2/hist/option/trade_quote", params):
-        for tick in page_rows:
-            if len(tick) < 24:
-                continue
-            rows_all.append({
-                "date": _to_date(tick[23]),
-                "ts_ms": tick[0],           # ms since midnight ET
-                "price": tick[9],
-                "size": tick[7],
-                "bid": tick[17],
-                "ask": tick[21],
-                "exchange": tick[8],
-                "condition_flags": tick[10],
-            })
+    try:
+        for page_rows in _paginate(session, "/v2/hist/option/trade_quote", params):
+            for tick in page_rows:
+                if len(tick) < 24:
+                    continue
+                rows_all.append({
+                    "date": _to_date(tick[23]),
+                    "ts_ms": tick[0],           # ms since midnight ET
+                    "price": tick[9],
+                    "size": tick[7],
+                    "bid": tick[17],
+                    "ask": tick[21],
+                    "exchange": tick[8],
+                    "condition_flags": tick[10],
+                })
+    except _PaginationTruncated as e:
+        log.warning("thetadata: trade_quote(%s, exp=%s, %s, strike=%s, start=%s, end=%s)"
+                    " truncated at mid-stream page — returning None: %s",
+                    root, exp, right, strike, start_date, end_date, e)
+        return None
     if not rows_all:
         return pd.DataFrame()
     df = pd.DataFrame(rows_all)

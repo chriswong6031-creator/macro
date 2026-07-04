@@ -75,9 +75,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -138,7 +139,10 @@ def _load_state() -> dict:
 
 
 def _save_state(state: dict) -> None:
-    _state_path().write_text(json.dumps(state, indent=2, sort_keys=True))
+    p = _state_path()
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, indent=2, sort_keys=True))
+    os.replace(tmp, p)
 
 
 def _is_completed(state: dict, root: str, year: int) -> bool:
@@ -167,7 +171,10 @@ def _write_manifest(state: dict) -> None:
         "per_root": per_root,
         "updated_at": pd.Timestamp.now("UTC").isoformat(),
     }
-    _manifest_path().write_text(json.dumps(manifest, indent=2))
+    p = _manifest_path()
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps(manifest, indent=2))
+    os.replace(tmp, p)
 
 
 # ── universe resolver ─────────────────────────────────────────────────────────
@@ -271,7 +278,7 @@ def _run_probe() -> None:
     while len(days) < 5:
         if d.weekday() < 5:
             days.append(d)
-        d = d.replace(day=d.day - 1) if d.day > 1 else date(d.year, d.month - 1 if d.month > 1 else 12, 28)
+        d -= timedelta(days=1)
     start = min(days)
     root = "SPY"
 

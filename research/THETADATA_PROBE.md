@@ -170,6 +170,7 @@ probe check command.  Resolve at first probe run and update `collectors/thetadat
 | A6 | IV via separate endpoint vs greeks | `curl "http://127.0.0.1:25510/v2/hist/option/implied_volatility?root=SPY&exp=...&strike=...&right=C&start_date=...&end_date=..."` | If separate IV endpoint provides additional fields, add `hist_iv()` method |
 | A7 | exp=0 behavior for bulk endpoints (day-by-day vs all-at-once) | Measure timing of `bulk_eod(root, 0, start, end)` vs per-expiry calls | Performance tuning of the backfill driver |
 | A8 | History depth: does Pro actually go to 2012? | `curl ".../bulk_hist/option/eod?root=SPY&exp=0&start_date=20120101&end_date=20120110"` | Sets realistic `DEFAULT_START` in backfill |
+| A9 | Password in JVM argv (security): `ThetaTerminal.jar` currently receives credentials as positional argv (`java -jar ThetaTerminal.jar <user> <pass>`), making the password visible in `ps aux`. | Verify at probe whether ThetaTerminal.jar supports a credentials file (e.g. a config JSON or `-Dtheta.creds=path`) instead of argv. If supported, update `scripts/run_theta_terminal.sh` to use the file path. | Removes password from process listing |
 
 ---
 

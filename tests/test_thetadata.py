@@ -234,6 +234,83 @@ class TestPagination:
         # No infinite loop; returns normally
         assert len(df) > 0
 
+    def test_page2_http_477_returns_none_not_partial(self, monkeypatch):
+        """Page 1 OK → page 2 HTTP 477 (expired page) ⇒ bulk_eod returns None, not a partial frame.
+
+        This is the BLOCKER fix: truncated pagination must be a failure, not a partial result.
+        """
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        page1 = _load("bulk_eod_page1.json")  # has 1 row + next_page URL
+
+        def _mock_get(session, path, params):
+            return page1
+
+        # second page returns HTTP 477 (expired page)
+        mock_resp2 = MagicMock()
+        mock_resp2.status_code = 477
+
+        mock_session = MagicMock()
+        mock_session.get.return_value = mock_resp2
+
+        monkeypatch.setattr(td, "_get", _mock_get)
+        monkeypatch.setattr(td, "_session", lambda: mock_session)
+
+        df = td.bulk_eod("SPY", 20260117, date(2026, 1, 1), date(2026, 1, 1))
+        # Must be None — not a 1-row partial DataFrame
+        assert df is None
+
+    def test_page2_timeout_returns_none_not_partial(self, monkeypatch):
+        """Page 1 OK → page 2 connection timeout ⇒ bulk_eod returns None, not a partial frame."""
+        import requests
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        page1 = _load("bulk_eod_page1.json")
+
+        def _mock_get(session, path, params):
+            return page1
+
+        mock_session = MagicMock()
+        mock_session.get.side_effect = requests.exceptions.Timeout("read timeout")
+
+        monkeypatch.setattr(td, "_get", _mock_get)
+        monkeypatch.setattr(td, "_session", lambda: mock_session)
+
+        df = td.bulk_eod("SPY", 20260117, date(2026, 1, 1), date(2026, 1, 1))
+        assert df is None
+
+    def test_happy_multipage_still_concatenates(self, monkeypatch):
+        """Happy multi-page path: page 1 + page 2 both succeed → rows are concatenated.
+
+        This is the existing two-page success test re-run against the real _paginate (not
+        monkeypatched) to confirm the truncation fix did not break the happy path.
+        """
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        page1 = _load("bulk_eod_page1.json")
+        page2 = _load("bulk_eod_page2.json")
+
+        def _mock_get(session, path, params):
+            return page1
+
+        mock_resp2 = MagicMock()
+        mock_resp2.status_code = 200
+        mock_resp2.json.return_value = page2
+
+        mock_session = MagicMock()
+        mock_session.get.return_value = mock_resp2
+
+        monkeypatch.setattr(td, "_get", _mock_get)
+        monkeypatch.setattr(td, "_session", lambda: mock_session)
+
+        df = td.bulk_eod("SPY", 20260117, date(2026, 1, 1), date(2026, 1, 1))
+        assert df is not None
+        assert len(df) == 2   # 1 row from page1 + 1 row from page2
+        assert set(df["right"]) == {"C", "P"}
+
 
 # ── 3. Offline / unreachable path ─────────────────────────────────────────────
 

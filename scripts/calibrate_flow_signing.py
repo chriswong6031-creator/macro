@@ -202,7 +202,7 @@ def _run_thetadata_source(universe: list[str], window: tuple[str, str]) -> dict:
         base = pd.Timestamp(day)
         trades["ts"] = base + pd.to_timedelta(trades["ts"], unit="ms")
 
-    trades = trades[trades["bid"] > 0][trades["ask"] >= trades["bid"]] if not trades.empty else trades
+    trades = trades[(trades["bid"] > 0) & (trades["ask"] >= trades["bid"])] if not trades.empty else trades
 
     if trades.empty:
         log.warning("thetadata_tape: no valid bid/ask trades for SPY %s", day)
