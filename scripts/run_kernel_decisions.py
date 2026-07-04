@@ -34,8 +34,15 @@ STANDING LAW (written into kernel_decisions.json):
 
 CADENCE GUARD:
   - Running before FIRST_BATCH_DUE exits 1 with a clear message.
-  - --dry-run-on-fixtures <fixture_dir> accepts ONLY a filesystem path that
-    does NOT contain the real parquet (enforced by path check against config.ROOT).
+  - --dry-run-on-fixtures <fixture_dir> accepts ONLY a filesystem path whose
+    kernel_estimates.parquet is NOT byte-identical to the real production parquet
+    (enforced by SHA-256 content hash, not just path equality — a byte-copy of
+    the real parquet to a decoy path is rejected).
+
+DRY-RUN ISOLATION:
+  All dry-run writes (kernel_decisions.json and trial_ledger.jsonl) are
+  redirected under <fixture_dir>/dry_run_scratch/ and NEVER touch the
+  production artifact paths. This makes dry-run fully non-destructive.
 
 ANTI-PEEKING ORDER (code-enforced, single function, no CLI flag to skip):
   Step 1: count eligible cells → N
@@ -51,6 +58,7 @@ Run:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import sys
@@ -58,6 +66,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 log = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Content-hash helper
+# ---------------------------------------------------------------------------
+
+def _sha256_file(path: Path) -> str | None:
+    """Return the hex SHA-256 digest of a file, or None if the file does not exist."""
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except FileNotFoundError:
+        return None
 
 # ---------------------------------------------------------------------------
 # PRE-REGISTERED DECISION RULE CONSTANTS (DO NOT MODIFY WITHOUT A NEW PR)
@@ -240,10 +260,26 @@ def _run_batch(
     if dry_run and fixture_dir is not None:
         real_estimates = (root / _REAL_ESTIMATES_REL).resolve()
         fixture_estimates = (fixture_dir / _REAL_ESTIMATES_REL).resolve()
+        # Path-equality check (original guard)
         if fixture_estimates == real_estimates:
             print(
                 "ERROR: --dry-run-on-fixtures path resolves to the real parquet. "
                 "Pass a fixture directory, not the production data root.",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+        # Content-hash check: reject byte-identical files even at different paths.
+        # This closes the decoy-copy bypass: cp real_estimates.parquet /tmp/decoy/
+        # and then --dry-run-on-fixtures /tmp/decoy would have passed the path
+        # check but evaluated the real data. We block it by comparing SHA-256.
+        real_hash = _sha256_file(real_estimates)
+        fixture_hash = _sha256_file(fixture_estimates)
+        if real_hash is not None and fixture_hash is not None and real_hash == fixture_hash:
+            print(
+                "ERROR: --dry-run-on-fixtures parquet is byte-identical to the "
+                "real kernel_estimates.parquet (SHA-256 match). "
+                "Fixture data must be synthetically constructed, not a copy of "
+                "the production parquet. Use tests/_fixtures/ for examples.",
                 file=sys.stderr,
             )
             raise SystemExit(1)
@@ -289,7 +325,18 @@ def _run_batch(
     # This is the anti-peeking enforcement: the budget is registered as the
     # number of cells we are about to test, BEFORE we compute any p-values.
     # A caller cannot skip this step by any CLI flag — it is a single function.
-    led = TrialLedger(path=root / "data" / "trial_ledger.jsonl", family=TRIAL_FAMILY)
+    #
+    # DRY-RUN ISOLATION: when dry_run=True all writes go under
+    # fixture_dir/dry_run_scratch/ — never to production paths.
+    if dry_run and fixture_dir is not None:
+        scratch_root = fixture_dir / "dry_run_scratch"
+        scratch_root.mkdir(parents=True, exist_ok=True)
+        ledger_path = scratch_root / "trial_ledger.jsonl"
+        ledger_path_str = str(ledger_path)  # absolute, clearly not production
+    else:
+        ledger_path = root / "data" / "trial_ledger.jsonl"
+        ledger_path_str = "data/trial_ledger.jsonl"
+    led = TrialLedger(path=ledger_path, family=TRIAL_FAMILY)
     led.log_declared_budget(
         max(n_eligible, 1),
         family=TRIAL_FAMILY,
@@ -303,7 +350,7 @@ def _run_batch(
     trial_ledger_ref = {
         "family": TRIAL_FAMILY,
         "budget_registered": max(n_eligible, 1),
-        "path": "data/trial_ledger.jsonl",
+        "path": ledger_path_str,
     }
     log.info(
         "kernel_decisions: trial ledger registered — family=%s budget=%d",
@@ -389,7 +436,11 @@ def _run_batch(
         ),
     }
 
-    out_path = root / _DECISIONS_REL
+    # DRY-RUN ISOLATION: write to scratch dir, not the production artifact path.
+    if dry_run and fixture_dir is not None:
+        out_path = scratch_root / "kernel_decisions.json"
+    else:
+        out_path = root / _DECISIONS_REL
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(
         json.dumps(payload, indent=2, default=str, ensure_ascii=False) + "\n",
@@ -484,9 +535,10 @@ def main(argv=None) -> int:
     fixture_dir: Path | None = None
     if dry_run:
         fixture_dir = Path(args.dry_run_on_fixtures).resolve()
-        # Enforce: fixture_dir must not be the real data dir
+        # Enforce: fixture_dir must not resolve to the real parquet — by path or by content.
         real_estimates = (repo_root / _REAL_ESTIMATES_REL).resolve()
         fixture_estimates = (fixture_dir / _REAL_ESTIMATES_REL).resolve()
+        # Path-equality check (catches same-directory usage)
         if fixture_estimates == real_estimates:
             print(
                 "ERROR: --dry-run-on-fixtures path resolves to the real parquet. "
@@ -494,6 +546,24 @@ def main(argv=None) -> int:
                 file=sys.stderr,
             )
             return 1
+        # Content-hash check (catches byte-copy of real parquet to a decoy path)
+        real_hash = _sha256_file(real_estimates)
+        fixture_hash = _sha256_file(fixture_estimates)
+        if real_hash is not None and fixture_hash is not None and real_hash == fixture_hash:
+            print(
+                "ERROR: --dry-run-on-fixtures parquet is byte-identical to the "
+                "real kernel_estimates.parquet (SHA-256 match). "
+                "Fixture data must be synthetically constructed, not a copy of "
+                "the production parquet. Use tests/_fixtures/ for examples.",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            f"DRY-RUN: reads from {fixture_dir}; "
+            f"writes isolated to {fixture_dir}/dry_run_scratch/ "
+            f"(production paths untouched).",
+            file=sys.stderr,
+        )
 
     try:
         result = _run_batch(repo_root, dry_run=dry_run, fixture_dir=fixture_dir)

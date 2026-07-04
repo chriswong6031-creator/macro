@@ -418,6 +418,37 @@ class TestDryRunPathEnforcement:
             f"expected exit 1 when fixture_dir == root; got code={exc.value.code}"
         )
 
+    def test_byte_copy_of_real_parquet_rejected(self, tmp_path):
+        """A byte-identical copy of the real parquet at a decoy path must be rejected.
+
+        This is the bypass that the original path-equality check missed: someone
+        copies kernel_estimates.parquet to /tmp/decoy/ and passes that as
+        --dry-run-on-fixtures. The content-hash guard (SHA-256) closes this.
+        """
+        import scripts.run_kernel_decisions as m
+        from scripts.run_kernel_decisions import _REAL_ESTIMATES_REL
+
+        # Arrange: "real" root has parquet A; decoy has byte-identical copy of A.
+        real_root = tmp_path / "real_root"
+        decoy_dir = tmp_path / "decoy"
+        _write_estimates(real_root, [_est_row(engine="real", n_eff=30, wilson_ci_low=0.4)])
+        # Make the decoy parquet byte-identical to the real one.
+        real_parquet = real_root / _REAL_ESTIMATES_REL
+        decoy_parquet = decoy_dir / _REAL_ESTIMATES_REL
+        decoy_parquet.parent.mkdir(parents=True, exist_ok=True)
+        decoy_parquet.write_bytes(real_parquet.read_bytes())
+
+        # Act: _run_batch with decoy fixture_dir must exit 1 via hash check.
+        with pytest.raises(SystemExit) as exc:
+            m._run_batch(
+                real_root,
+                dry_run=True,
+                fixture_dir=decoy_dir,  # different path, same bytes → rejected
+            )
+        assert exc.value.code == 1, (
+            f"expected exit 1 for byte-identical decoy parquet; got code={exc.value.code}"
+        )
+
     def test_different_fixture_dir_accepted(self, tmp_path):
         """_run_batch accepts a fixture_dir that is different from the real root."""
         import scripts.run_kernel_decisions as m
@@ -443,6 +474,47 @@ class TestDryRunPathEnforcement:
         )
         # Should succeed (1 eligible cell)
         assert result.get("n_eligible", 0) == 1
+
+    def test_dry_run_writes_to_scratch_not_production(self, tmp_path):
+        """Dry-run must not write to production artifact paths.
+
+        kernel_decisions.json and trial_ledger.jsonl must land under
+        fixture_dir/dry_run_scratch/, never under root/.
+        """
+        import scripts.run_kernel_decisions as m
+        from scripts.run_kernel_decisions import _DECISIONS_REL
+
+        real_root = tmp_path / "real_root"
+        fixture_dir = tmp_path / "fixture"
+
+        _write_estimates(fixture_dir, [_est_row(engine="iso", n_eff=30,
+                                                 wilson_ci_low=0.4, date_last="2026-07-01")])
+
+        m._run_batch(
+            real_root,
+            dry_run=True,
+            fixture_dir=fixture_dir,
+            _now_override="2026-10-01",
+        )
+
+        # Production artifacts must NOT exist under real_root
+        prod_decisions = real_root / _DECISIONS_REL
+        prod_ledger = real_root / "data" / "trial_ledger.jsonl"
+        assert not prod_decisions.exists(), (
+            "dry-run must not write kernel_decisions.json to the production path"
+        )
+        assert not prod_ledger.exists(), (
+            "dry-run must not write trial_ledger.jsonl to the production path"
+        )
+
+        # Scratch outputs must exist under fixture_dir/dry_run_scratch/
+        scratch = fixture_dir / "dry_run_scratch"
+        assert (scratch / "kernel_decisions.json").exists(), (
+            "dry-run must write kernel_decisions.json under fixture_dir/dry_run_scratch/"
+        )
+        assert (scratch / "trial_ledger.jsonl").exists(), (
+            "dry-run must write trial_ledger.jsonl under fixture_dir/dry_run_scratch/"
+        )
 
 
 # ---------------------------------------------------------------------------
