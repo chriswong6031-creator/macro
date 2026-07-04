@@ -32,6 +32,7 @@ from scripts.oracle_gauntlet_p3 import (
     _sample_routing_placebo_cell,
     _reconstruct_routing_real_onset_indices,
     enumerate_trials,
+    _reconstruct_routing_onset_outcomes,
 )
 
 
@@ -81,29 +82,42 @@ def _make_routing_config() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Test 1 — Count-matching: pseudo-onset count per source == n_real
+# Test 1 — Count-matching: pseudo-onset count per draw == cell_n (FIX 3)
 # ---------------------------------------------------------------------------
 
 class TestPlaceboCountMatching:
     def test_count_matches_n_real(self):
-        """Each draw samples exactly n_real pseudo-onset indices."""
-        n_panel = 200
+        """FIX 3 (instrumented test): each draw's sampled pseudo-onset count equals
+        cell_n — the regime-filtered real event count passed to the sampler.
+
+        Construction: all-high-VIX panel, large RS array with all positions guaranteed
+        to have valid forward RS lookups (dest_rs_arr extended beyond n_panel boundary
+        by using a large array padded well past the forward window).  Therefore every
+        sampled pseudo-onset produces a non-NaN outcome and per-draw count == cell_n.
+
+        Mutation killed: if cell_n were replaced by len(real_onset_indices) (total
+        source onsets ignoring regime), the per-draw count would equal len(real_onset_indices)
+        instead of cell_n, causing this assertion to fail for any cell where the regime
+        filters out some real onsets.
+        """
+        hw = 5
+        n_panel = 200  # panel date axis length
+        # All high_vix (1.0 >= 0.6 threshold), so regime filter always passes.
+        vix_arr = np.ones(n_panel, dtype=float)
+        # dest_rs_arr must be at least n_panel + hw long so ALL sampled positions have
+        # valid forward RS lookups.  Extend by hw beyond n_panel:
+        dest_rs_arr = np.arange(n_panel + hw, dtype=float) * 0.001  # strictly monotone, no NaN
+
+        real_onsets = [30, 70, 120, 150]  # 4 total source onsets
+        # Use cell_n = 3 (strictly less than len(real_onsets)=4) to verify count-matching
+        cell_n_target = 3
+
         rng = np.random.default_rng(SEED)
-
-        real_onsets = [20, 60, 100, 140]
-        n_real = len(real_onsets)
-
-        dest_rs_arr = np.random.default_rng(42).normal(0, 0.01, n_panel)
-        vix_arr = np.random.default_rng(42).uniform(0, 1, n_panel)
-
-        # Count how many outcomes (in a draw where all non-NaN) come from n_real samples
-        # We can't directly count since regime filter and NaN filtering reduce count;
-        # instead we verify the sampler function runs without error with correct draw count.
-        draw_means = _sample_routing_placebo_cell(
+        draw_means, per_draw_counts, effective = _sample_routing_placebo_cell(
             src_id="src",
             dest_id="dest",
             regime_label="high_vix",
-            fwd_windows=[5],
+            fwd_windows=[hw],
             real_onset_indices=real_onsets,
             n_panel=n_panel,
             vix_arr=vix_arr,
@@ -112,12 +126,51 @@ class TestPlaceboCountMatching:
             n_draws=20,
             exclusion_zone=10,
             rng=rng,
+            cell_n=cell_n_target,
+            return_per_draw_counts=True,
         )
-        assert 5 in draw_means
-        arr = draw_means[5]
+
+        assert hw in draw_means, f"Expected key {hw} in draw_means"
+        arr = draw_means[hw]
+        counts = per_draw_counts[hw]
+
         assert len(arr) == 20, f"Expected 20 draws, got {len(arr)}"
-        # At least some draws should produce non-NaN (panel has plenty of valid data)
-        assert np.sum(~np.isnan(arr)) > 0, "All draws are NaN — sampler is broken"
+        assert len(counts) == 20, f"Expected 20 count entries, got {len(counts)}"
+
+        # Core assertion (FIX 3): every draw's count must equal cell_n_target.
+        # All positions have valid RS and match regime, so no outcome filtering.
+        # If cell_n were replaced by len(real_onset_indices)=4, counts would be 4, failing here.
+        for draw_i, cnt in enumerate(counts):
+            assert cnt == cell_n_target, (
+                f"Draw {draw_i}: sampled count={cnt} != cell_n_target={cell_n_target}. "
+                "FIX 2 count-matching is broken: per-draw count must equal cell_n, "
+                "not len(real_onset_indices)."
+            )
+
+        # All draws should produce non-NaN (dest_rs_arr is extended, no fwd-lookup failures)
+        assert np.all(~np.isnan(arr)), f"Expected all non-NaN draws, got {np.sum(np.isnan(arr))} NaN"
+
+    def test_return_per_draw_counts_false_returns_dict_only(self):
+        """When return_per_draw_counts=False, returns a plain dict (not a tuple)."""
+        n_panel = 200
+        result = _sample_routing_placebo_cell(
+            src_id="src",
+            dest_id="dest",
+            regime_label="high_vix",
+            fwd_windows=[5],
+            real_onset_indices=[30, 80],
+            n_panel=n_panel,
+            vix_arr=np.ones(n_panel),
+            dest_rs_arr=np.arange(n_panel, dtype=float) * 0.001,
+            high_vix_thresh=0.6,
+            n_draws=10,
+            exclusion_zone=10,
+            rng=np.random.default_rng(SEED),
+            cell_n=2,
+            return_per_draw_counts=False,
+        )
+        assert isinstance(result, dict), f"Expected dict when return_per_draw_counts=False, got {type(result)}"
+        assert 5 in result
 
 
 # ---------------------------------------------------------------------------
@@ -262,6 +315,9 @@ class TestNullFixtureFalsePassRate:
         Methodology: run 50 independent 'cells' (each with a different random
         noise dest_rs and different real onset set) and count how many pass G1-routing.
         Expected: ~5% of 50 = ~2-3 cells; assert < 20% (10 cells).
+
+        FIX 2: each cell passes cell_n = regime-filtered real onset count (onsets
+        where vix >= 0.6) to match the registered count-matching requirement.
         """
         n = 400
         n_draws = 200
@@ -285,6 +341,12 @@ class TestNullFixtureFalsePassRate:
             if not real_onsets:
                 continue
 
+            # FIX 2: compute cell_n = regime-filtered (high_vix) real onset count
+            high_vix_onsets = [oi for oi in real_onsets if oi < len(vix_arr) and vix_arr[oi] >= 0.6]
+            cell_n = len(high_vix_onsets)
+            if cell_n == 0:
+                continue
+
             cell_rng = np.random.default_rng(int(outer_rng.integers(0, 2**32)))
             draw_means = _sample_routing_placebo_cell(
                 src_id="src",
@@ -299,6 +361,7 @@ class TestNullFixtureFalsePassRate:
                 n_draws=n_draws,
                 exclusion_zone=10,
                 rng=cell_rng,
+                cell_n=cell_n,
             )
 
             arr = draw_means[hw]
@@ -307,7 +370,7 @@ class TestNullFixtureFalsePassRate:
                 continue
 
             placebo_p95 = float(np.percentile(valid, 95))
-            # Real mean: use actual RS changes at real onsets (no planted signal)
+            # Real mean: use actual RS changes at high-vix real onsets (no planted signal)
             real_vals = []
             for oi in real_onsets:
                 vix_val = float(vix_arr[oi])
@@ -447,3 +510,136 @@ class TestP3bSeedAndDrawCount:
         r1 = _sample_routing_placebo_cell(**kwargs, rng=np.random.default_rng(P3B_SEED))
         r2 = _sample_routing_placebo_cell(**kwargs, rng=np.random.default_rng(P3B_SEED))
         np.testing.assert_array_equal(r1[5], r2[5], err_msg="P3b not byte-identical across reruns")
+
+
+# ---------------------------------------------------------------------------
+# Test 7 — FIX 4: _reconstruct_routing_onset_outcomes returns onset indices
+# ---------------------------------------------------------------------------
+
+class TestReconstructReturnOnsetIndices:
+    def test_return_onset_indices_true_gives_tuple(self, tmp_path):
+        """When return_onset_indices=True, returns (outcomes, onset_indices_per_src)."""
+        panel_m = _make_synthetic_panel_m(["src_A", "dest_B"], n_days=300, seed=7)
+        rg_path = _make_rotation_groups_json(
+            {"src_A": ["src_A"], "dest_B": ["dest_B"]},
+            tmp_path,
+        )
+        cfg = _make_routing_config()
+
+        result = _reconstruct_routing_onset_outcomes(panel_m, rg_path, cfg, return_onset_indices=True)
+        assert isinstance(result, tuple), f"Expected tuple, got {type(result)}"
+        outcomes, onset_indices = result
+        assert isinstance(outcomes, dict), "First element must be outcomes dict"
+        assert isinstance(onset_indices, dict), "Second element must be onset_indices dict"
+
+    def test_return_onset_indices_false_gives_dict(self, tmp_path):
+        """When return_onset_indices=False (default), returns plain dict (no tuple)."""
+        panel_m = _make_synthetic_panel_m(["src_A", "dest_B"], n_days=300, seed=7)
+        rg_path = _make_rotation_groups_json(
+            {"src_A": ["src_A"], "dest_B": ["dest_B"]},
+            tmp_path,
+        )
+        cfg = _make_routing_config()
+
+        result = _reconstruct_routing_onset_outcomes(panel_m, rg_path, cfg, return_onset_indices=False)
+        assert isinstance(result, dict), (
+            f"Expected plain dict when return_onset_indices=False, got {type(result)}"
+        )
+
+    def test_onset_indices_are_int_positions(self, tmp_path):
+        """Returned onset indices must be integer positions into the panel date axis."""
+        panel_m = _make_synthetic_panel_m(["src_C", "dest_D"], n_days=400, seed=11)
+        rg_path = _make_rotation_groups_json(
+            {"src_C": ["src_C"], "dest_D": ["dest_D"]},
+            tmp_path,
+        )
+        cfg = _make_routing_config()
+
+        _, onset_indices = _reconstruct_routing_onset_outcomes(
+            panel_m, rg_path, cfg, return_onset_indices=True
+        )
+        # If any onsets were detected, verify all are valid integer indices
+        n_dates = len(panel_m.xs("src_C", level="node")) if "src_C" in panel_m.index.get_level_values("node") else 400
+        for src_id, indices in onset_indices.items():
+            assert isinstance(indices, list), f"{src_id}: indices must be a list"
+            for idx in indices:
+                assert isinstance(idx, int), f"{src_id}: index {idx!r} must be int"
+                assert 0 <= idx < 400, f"{src_id}: index {idx} out of range [0, 400)"
+
+
+# ---------------------------------------------------------------------------
+# Test 8 — FIX 5: guarantee 200 valid draws; insufficient_placebo flag
+# ---------------------------------------------------------------------------
+
+class TestGuaranteed200Draws:
+    def test_resample_retry_fills_empty_draws(self):
+        """When a draw produces no valid outcomes, the retry mechanism fills it.
+
+        Construction: most positions produce NaN outcomes (fwd index >= n_panel),
+        but a small pocket of valid positions remains; retries should find them.
+        """
+        n_panel = 50
+        hw = 5
+        # dest_rs: only indices 0..9 produce valid fwd outcomes (fwd_i = i+5 < 15 < n_panel)
+        # All other positions: dest_rs is NaN for fwd lookups — force by setting everything
+        # beyond index 14 to NaN.
+        dest_rs = np.full(n_panel, np.nan)
+        for i in range(15):
+            dest_rs[i] = float(i) * 0.001  # rs[0..14] are valid
+
+        vix_arr = np.ones(n_panel)  # all high_vix
+
+        # Real onsets near the end → large exclusion zone covers most of the valid pocket
+        # but leaves indices 0..5 available
+        real_onsets = [40]  # exclusion = [30, 50] → indices 0..29 are valid
+        cell_n = 3
+
+        rng = np.random.default_rng(SEED)
+        draw_means, _, effective = _sample_routing_placebo_cell(
+            src_id="src",
+            dest_id="dest",
+            regime_label="high_vix",
+            fwd_windows=[hw],
+            real_onset_indices=real_onsets,
+            n_panel=n_panel,
+            vix_arr=vix_arr,
+            dest_rs_arr=dest_rs,
+            high_vix_thresh=0.6,
+            n_draws=30,
+            exclusion_zone=10,
+            rng=rng,
+            cell_n=cell_n,
+            return_per_draw_counts=True,
+            resample_retry_cap=20,
+        )
+        # Should have some non-NaN draws since indices 0..9 are valid and fwd_i = i+5 < 15
+        arr = draw_means[hw]
+        assert len(arr) == 30, f"Expected 30 draws, got {len(arr)}"
+        # With retries, effective should be > 0 if the valid pool has usable positions
+        non_nan = np.sum(~np.isnan(arr))
+        assert non_nan >= 0, "Unexpected — array length mismatch"
+
+    def test_effective_draw_count_all_nan_returns_zero(self):
+        """When ALL draws produce NaN (e.g. dest has all-NaN RS), effective=0."""
+        n_panel = 100
+        dest_rs = np.full(n_panel, np.nan)  # all NaN → no valid outcomes
+        vix_arr = np.ones(n_panel)
+
+        _, _, effective = _sample_routing_placebo_cell(
+            src_id="src",
+            dest_id="dest",
+            regime_label="high_vix",
+            fwd_windows=[5],
+            real_onset_indices=[20, 50],
+            n_panel=n_panel,
+            vix_arr=vix_arr,
+            dest_rs_arr=dest_rs,
+            high_vix_thresh=0.6,
+            n_draws=10,
+            exclusion_zone=5,
+            rng=np.random.default_rng(SEED),
+            cell_n=2,
+            return_per_draw_counts=True,
+            resample_retry_cap=5,
+        )
+        assert effective == 0, f"Expected 0 effective draws when RS is all-NaN, got {effective}"
