@@ -255,14 +255,19 @@ def write_manifest(
                 "PIT membership intervals honored (union of ALL intervals per "
                 "ticker), but restricted to names labelable today (current "
                 "SP1500 union) — NOT fully survivorship-clean; see "
-                "sector_label_caveat."
+                "sector_label_caveat. "
+                "C1/C4 columns (stochrsi_w_k/d, washout_w, cohesion_rebuild): "
+                "computed on ETF close = survivorship-CLEAN back to 1998; "
+                "cohesion_rebuild additionally requires cohesion_chg which is "
+                "member-derived (same NULL-before-2021 caveat as cohesion)."
             ),
             "tier_m": (
                 "Survivorship-FLAGGED: themes_tree.json is current-only (single commit "
                 "2026-06).  Subsector and theme EW indices are reconstructed from "
                 "today's member list — past composition unverified.  Basket nodes "
                 "honor PIT added-dates per member (declared hindsight 2023-05-09+). "
-                "NEVER promote a Tier-M backtest result without this watermark."
+                "NEVER promote a Tier-M backtest result without this watermark. "
+                "C1/C4 oscillator columns carry the same FLAGGED status."
             ),
         },
     }

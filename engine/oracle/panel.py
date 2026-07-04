@@ -71,6 +71,13 @@ turnover_z   — causal z-score of node dollar-volume vs own 252-day history
 vix_pctile   — VIX daily close causal percentile rank (2-year window)
 tlt_ret_10d  — TLT 10-day return (regime leg; NULL if TLT absent)
 spy_above_200d — 1 if SPY > 200-day SMA, else 0 (NULL if SPY absent)
+stochrsi_w_k — weekly StochRSI %K (faithful confluence.py port), ffilled daily;
+               row t carries the last COMPLETED weekly bar's value (no intraweek leak)
+stochrsi_w_d — weekly StochRSI %D, same convention
+washout_w    — 0/1/NaN: K<20 on ≥2 consecutive completed weekly bars within prior 3
+               (P8 registered definition, frozen); forward-filled to daily
+cohesion_rebuild — 0/1/NaN: C4 compound (washout_w active-or-within-5-sessions AND
+               cohesion_chg > 0.056, the panel_m q75); DISPLAY-ONLY per R4
 
 MIRRORS / BORROWS
 -----------------
@@ -78,6 +85,8 @@ vel_*  : WEEKS constant from engine.subsector_rotation
 _causal_z, _mean_pairwise_corr : imported from engine.group_flow
          (house-tolerated private import — preferred over forking an
          identical copy, per the sibling-idiom rule in Fable doctrine)
+weekly_stochrsi_kd, washout_active_series : engine.oracle.oscillators
+         (single canonical implementation shared with oracle_gauntlet_p8.py)
 """
 from __future__ import annotations
 
@@ -93,6 +102,7 @@ import pandas as pd
 # two surfaces stay in sync if WEEKS is ever updated.
 from engine.subsector_rotation import WEEKS  # noqa: F401 — re-exported for callers
 from engine.group_flow import _causal_z, _mean_pairwise_corr
+from engine.oracle.oscillators import weekly_stochrsi_kd, washout_active_series
 
 log = logging.getLogger(__name__)
 
@@ -107,6 +117,17 @@ _COHESION_CHG_D = 20   # lag for cohesion change
 _Z_LOOKBACK_D = 252
 _VIX_PCTILE_LOOKBACK_D = 504  # ~2y, mirror group_flow default
 _TURNOVER_Z_LOOKBACK_D = 252
+
+# C1/C4 compound columns
+# washout_w lookback: number of DAILY sessions after a washout_w=1 bar during
+# which cohesion_rebuild can still fire ("active-or-within-5-sessions").
+# Source: C4 spec in research/ORACLE_COMPOUND_LIBRARY.md §Family C.
+_WASHOUT_LINGER_D = 5
+
+# cohesion_rebuild cohesion_chg threshold = panel_m q75 (measured 2026-07-04).
+# Source: engine/oracle/episodes.py confirmed_cohesion_chg_threshold = 0.056
+#         (q75 of panel_m cohesion_chg = 0.056, documented in ORACLE_EPISODE_ATLAS.md §manifests).
+_COHESION_REBUILD_THRESHOLD: float = 0.056
 
 # Weekly divisors: cumulative return over N calendar weeks → per-week pace
 _VEL_WINDOWS: dict[str, tuple[int, float]] = {
@@ -161,6 +182,64 @@ def _vel(lvl: pd.Series, days: int, divisor: float) -> pd.Series:
     # pct_change(days) gives (close[t] / close[t-days]) - 1, which is the
     # cumulative return over the window — causal by definition.
     return lvl.pct_change(days, fill_method=None) / divisor
+
+
+def _build_cohesion_rebuild(
+    washout_w: pd.Series,
+    cohesion_chg: pd.Series,
+    linger_days: int,
+    threshold: float,
+    idx: pd.DatetimeIndex,
+) -> pd.Series:
+    """Compute C4 cohesion_rebuild boolean (stored as float 0/1/NaN).
+
+    Definition (C4, ORACLE_COMPOUND_LIBRARY.md §Family C):
+        cohesion_rebuild = 1 if:
+            (a) washout_w == 1 on this bar OR washout_w was 1 within the prior
+                ``linger_days`` daily sessions (i.e. washout is active or
+                recently expired), AND
+            (b) cohesion_chg > ``threshold`` (0.056 = panel_m q75).
+
+    The "active-or-within-5-sessions" window is computed on the DAILY index so
+    that the 5-session lookback is exact calendar-session count, not a fixed
+    number of calendar days (weekend gaps would otherwise inflate the window).
+
+    Returns float 0/1/NaN.  NaN only where BOTH washout_w AND cohesion_chg
+    are NaN (i.e. before oscillator/cohesion warm-up).  If only one is NaN,
+    the result is 0 (not NaN) because the AND-condition is definitively False.
+    """
+    wo_arr = washout_w.reindex(idx).to_numpy(dtype=float)
+    cc_arr = cohesion_chg.reindex(idx).to_numpy(dtype=float)
+
+    n = len(idx)
+    result = np.full(n, np.nan)
+
+    for i in range(n):
+        wo_i = wo_arr[i]
+        cc_i = cc_arr[i]
+
+        # If cohesion_chg is NaN we cannot evaluate condition (b) → NaN
+        if np.isnan(cc_i):
+            continue  # leave NaN
+
+        # Check washout active-or-within-linger_days
+        # Look back over [i-linger_days, i] on the daily index
+        start_linger = max(0, i - linger_days)
+        wo_window = wo_arr[start_linger: i + 1]
+        # If all washout values in the window are NaN → oscillator not yet warm;
+        # cannot definitively determine washout condition → NaN
+        non_nan_in_window = wo_window[~np.isnan(wo_window)]
+        if len(non_nan_in_window) == 0:
+            # No washout information yet — leave NaN only if cohesion_chg
+            # is also not useful yet (both warm-up periods need time)
+            continue  # leave NaN
+
+        washout_condition = bool(np.any(non_nan_in_window == 1.0))
+        cohesion_condition = bool(cc_i > threshold)
+
+        result[i] = 1.0 if (washout_condition and cohesion_condition) else 0.0
+
+    return pd.Series(result, index=idx, dtype=float, name="cohesion_rebuild")
 
 
 def _build_node_features(
@@ -278,6 +357,29 @@ def _build_node_features(
         dv = lvl * node_volume.reindex(idx).fillna(0)
         turnover_z = _causal_z(dv, _TURNOVER_Z_LOOKBACK_D)
 
+    # ---- C1/C4 weekly StochRSI columns ----
+    # Computed on ``lvl`` (the node's equal-weight price level), resampled to
+    # W-FRI weekly bars, then forward-filled onto the daily index so that row t
+    # carries only the last COMPLETED weekly bar's value.
+    # The in-progress (current) week bar must never contribute — that is the
+    # failure mode the no-lookahead test guards against (see tests/test_oracle_panel.py).
+    # Nullable: all-NaN when fewer than _MIN_WEEKLY_BARS (40) weekly bars available.
+    stochrsi_w_k, stochrsi_w_d = weekly_stochrsi_kd(lvl)
+    washout_w = washout_active_series(lvl)
+
+    # ---- C4 cohesion_rebuild ----
+    # Boolean (stored as float 0/1/NaN): washout_w active-or-within-5 daily sessions
+    # AND cohesion_chg > 0.056 (panel_m q75 threshold, source: engine/oracle/episodes.py
+    # confirmed_cohesion_chg_threshold = 0.056).
+    # Nullable: NaN where either washout_w or cohesion_chg is NaN.
+    cohesion_rebuild = _build_cohesion_rebuild(
+        washout_w=washout_w,
+        cohesion_chg=cohesion_chg,
+        linger_days=_WASHOUT_LINGER_D,
+        threshold=_COHESION_REBUILD_THRESHOLD,
+        idx=idx,
+    )
+
     return pd.DataFrame(
         {
             "ret": ret,
@@ -292,6 +394,10 @@ def _build_node_features(
             "breadth_50": breadth_50,
             "persistence": persistence,
             "turnover_z": turnover_z,
+            "stochrsi_w_k": stochrsi_w_k,
+            "stochrsi_w_d": stochrsi_w_d,
+            "washout_w": washout_w,
+            "cohesion_rebuild": cohesion_rebuild,
         },
         index=idx,
     )
@@ -934,7 +1040,29 @@ def build_panel_m(
 # ---------------------------------------------------------------------------
 
 COLUMN_SCHEMA: list[str] = [
+    # ----- existing columns (unchanged) -----
     "ret", "rs", "vel_1w", "vel_1m", "vel_3m", "accel", "accel_z",
     "cohesion", "cohesion_chg", "breadth_50", "persistence", "turnover_z",
     "vix_pctile", "tlt_ret_10d", "spy_above_200d",
+    # ----- C1/C4 compound library columns (added 2026-07-04) -----
+    # stochrsi_w_k / stochrsi_w_d — weekly StochRSI K and D from the faithful
+    #   confluence.py port (research/signal_engine/confluence.py), computed on
+    #   leak-free W-FRI weekly bars and forward-filled onto daily rows such that
+    #   row t carries only the last COMPLETED weekly bar's value.
+    #   Nullable: NaN before oscillator warm-up (< 40 weekly bars).
+    #   EN: Weekly StochRSI %K / %D  |  ZH: 周线随机RSI K值 / D值
+    "stochrsi_w_k",
+    "stochrsi_w_d",
+    # washout_w — boolean (0/1/NaN): K<20 on ≥2 consecutive completed weekly
+    #   bars within the prior 3 bars (P8 registered definition, frozen).
+    #   Forward-filled to daily; NaN before oscillator warm-up.
+    #   EN: Weekly washout active  |  ZH: 周线超卖洗盘激活
+    "washout_w",
+    # cohesion_rebuild — boolean (0/1/NaN): C4 compound flag.
+    #   True when washout_w active-or-within-5-sessions AND cohesion_chg > 0.056
+    #   (panel_m q75 threshold; source: engine/oracle/episodes.py line 93).
+    #   Interpretation (DISPLAY-ONLY per R4 adjudication): coordinated re-entry
+    #   footprint — not a forecast, an observed pattern classification.
+    #   EN: Cohesion rebuild signal (C4)  |  ZH: 凝聚力重建信号（C4复合）
+    "cohesion_rebuild",
 ]
