@@ -184,3 +184,6 @@ ObsidianBrain/
 # Mirror pattern: data/massive_stock_day/*.parquet above.
 data/oracle/*.parquet
 data/oracle/manifest.json
+# Oracle graph outputs (O1) — heavy JSON artifacts; published to R2 per D5
+data/oracle/graph_s.json
+data/oracle/graph_m.json

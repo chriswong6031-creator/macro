@@ -7,9 +7,11 @@ with the existing signal-contract key ``oracle`` in
 usage in ``research/entry_timing/`` — those are plain string tokens, not
 Python module references.
 
-Sub-modules shipped in P1b:
-  panel.py  — build_panel_s / build_panel_m  (the rotation panel substrate)
+Sub-modules shipped:
+  panel.py  — build_panel_s / build_panel_m  (the rotation panel substrate; P1b)
+  graph.py  — build_graph + edge estimation, stability ledger, lead-lag tensor,
+               flow-routing matrix, agglomerative clustering (P2a)
 
-Planned in later phases (stubs):
-  graph.py, episodes.py, memory.py, live.py
+Planned in later phases:
+  episodes.py, memory.py, live.py
 """
