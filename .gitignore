@@ -207,3 +207,5 @@ data/oracle/gauntlet/p3_trial_ledger.json
 # Oracle P8 gauntlet outputs — JSON artifacts gitignored; results MD is committed
 data/oracle/gauntlet/p8_results.json
 data/oracle/gauntlet/p8_trial_ledger.json
+# Oracle B1 personality output — heavy local artifact, mirrors panel_*.parquet pattern
+data/oracle/personality.json

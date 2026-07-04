@@ -13,7 +13,17 @@ OUTPUT SCHEMA (oracle_state.json)
   "regime": {
     "n_active_complexes": int,          # complexes with ≥1 active (non-exhausted) episode
     "breadth": float,                   # mean breadth_50 across panel nodes (latest row)
-    "vix_regime": float | null          # latest vix_pctile
+    "vix_regime": float | null,         # latest vix_pctile
+    "rotation_tag": {                   # A3 — ROTATION / LIQUIDATION / ACCUMULATION / quiet
+      "tag": str,                       # "rotation" | "liquidation" | "accumulation" | "quiet"
+      "tag_zh": str,                    # bilingual tag
+      "n_sources": int,                 # complexes with active OUT episodes at confirmed+ tier
+      "n_sinks": int,                   # complexes with active IN episodes at confirmed+ tier
+      "source_names": [str, ...],       # names of source complexes
+      "sink_names": [str, ...],         # names of sink complexes
+      "description_en": str,            # descriptive language only — NEVER forecast
+      "description_zh": str
+    }
   },
   "complexes": [
     {
@@ -23,7 +33,8 @@ OUTPUT SCHEMA (oracle_state.json)
       "state": str,                     # "active_in" | "active_out" | "quiet"
       "tier": str | null,               # detection tier of most-advanced episode
       "direction": str | null,          # "in" | "out" | null
-      "n_members_active": int
+      "n_members_active": int,
+      "personality": str | null         # B1 personality class if available
     }, ...
   ],
   "active_episodes": [
@@ -37,7 +48,8 @@ OUTPUT SCHEMA (oracle_state.json)
       "pair": str | null,               # paired episode_id if two_sided
       "survivorship_flagged": bool,
       "base_rate_context": dict | null, # from memory_base_rates.json if present
-      "analogues": list | null          # from memory_active_analogues.json if present
+      "analogues": list | null,         # from memory_active_analogues.json if present
+      "personality": str | null         # B1 personality class for this node if available
     }, ...
   ],
   "onset_watchlist": [str, ...],        # nodes with accel_z > WATCH_THRESHOLD but no active episode
@@ -56,6 +68,15 @@ R4 BINDING CONSTRAINTS (ORACLE_GAUNTLET_P3_ADJUDICATION.md)
 * onset_tier alerts MUST embed the false-start rate.
 * Banner remains gated on confirmed + breadth floor (D7).
 * Tilt stays config-gated OFF.
+* rotation_tag is DESCRIPTIVE/DISPLAY tier — all language describes what is observed
+  on the tape, never what will happen.
+
+A3 REGIME TAG CONFIG
+---------------------
+REGIME_CONFIRMED_FRACTION  — fraction of complex members that must have active
+  confirmed+ OUT/IN episodes for that complex to count as a source/sink.
+  Default 0.0 (any confirmed+ episode in the complex qualifies).
+REGIME_MIN_SOURCES / REGIME_MIN_SINKS — minimums for liquidation / accumulation.
 """
 from __future__ import annotations
 
@@ -76,6 +97,22 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 WATCH_ACCEL_Z = 0.8          # accel_z above this → onset_watchlist (no active episode)
 SCHEMA = "oracle_state.v1"
+
+# A3 regime-tag config (provenance-commented)
+# Fraction of complex members that must have a confirmed+ OUT/IN episode for
+# that complex to count as source/sink.  0.0 means ANY confirmed+ episode
+# in the complex qualifies (conservative: avoids missing a real rotation).
+# Source: spec A3 "confirmed+ tier covering ≥ a config fraction of members".
+# 0.0 DISABLES the fraction gate: required = max(1, int(n*0.0)) = 1, i.e. any
+# single confirmed member qualifies its complex as source/sink (intended v1
+# behavior — the tag is display-only and never gates). NOTE: a complex with
+# both confirmed-out and confirmed-in members counts as BOTH source and sink,
+# so intra-complex two-sided flow alone can yield the global "rotation" tag.
+REGIME_CONFIRMED_FRACTION: float = 0.0
+# Minimum number of source complexes to call "liquidation" (≥2 sources, 0 sinks)
+REGIME_LIQUIDATION_MIN_SOURCES: int = 2  # spec: "≥2 sources, 0 sinks"
+# Minimum number of sink complexes to call "accumulation" (≥2 sinks, 0 sources)
+REGIME_ACCUMULATION_MIN_SINKS: int = 2   # spec: "≥2 sinks, 0 sources"
 
 # Error-rate keys from gauntlet p3_results.json
 _ER_ONSET_TO_CONFIRMED = "onset_to_confirmed_rate_out"   # representative (out episodes)
@@ -190,8 +227,155 @@ def _error_rates_from_gauntlet(data_dir: Path) -> dict:
     }
 
 
+def _load_personality(data_dir: Path) -> dict:
+    """Load personality.json for B1 per-node personality classes.
+
+    Degrades to empty dict if not yet built (first run before personality step).
+    personality.json has schema oracle_personality.v1 with a "nodes" dict mapping
+    node_id → {personality, stats, ...}.  We extract just the class string.
+    """
+    p = data_dir / "oracle" / "personality.json"
+    d = _read_json(p)
+    if not isinstance(d, dict):
+        return {}
+    # Full payload format: {schema, nodes: {node: {personality: str, ...}}}
+    nodes = d.get("nodes")
+    if isinstance(nodes, dict):
+        return {str(k): v.get("personality") for k, v in nodes.items()
+                if isinstance(v, dict) and v.get("personality")}
+    # Flat fallback (legacy): node → personality string directly
+    return {str(k): v for k, v in d.items() if isinstance(v, str)}
+
+
+def _compute_regime_tag(
+    complexes_def: list[dict],
+    active_ep_map: dict[str, list[dict]],
+    confirmed_fraction: float = REGIME_CONFIRMED_FRACTION,
+    liquidation_min_sources: int = REGIME_LIQUIDATION_MIN_SOURCES,
+    accumulation_min_sinks: int = REGIME_ACCUMULATION_MIN_SINKS,
+) -> dict:
+    """A3 — Compute the ROTATION / LIQUIDATION / ACCUMULATION / quiet regime tag.
+
+    A complex is a SOURCE if it has ≥1 active confirmed+ OUT episode covering
+    ≥ confirmed_fraction of its members (default 0.0 → any confirmed+ OUT episode).
+    A complex is a SINK if it has ≥1 active confirmed+ IN episode (same rule).
+
+    Tags (mutually exclusive, evaluated in order):
+      "rotation"     — ≥1 source AND ≥1 sink
+      "liquidation"  — ≥2 sources, 0 sinks
+      "accumulation" — ≥2 sinks, 0 sources
+      "quiet"        — else
+
+    All language is DESCRIPTIVE only — no forecast claim.
+    Data source: active_ep_map (confirmed+ tier only per spec A3).
+    """
+    _confirmed_tiers = {"confirmed", "undeniable"}
+
+    source_complexes: list[str] = []
+    sink_complexes: list[str] = []
+    source_names: list[str] = []
+    sink_names: list[str] = []
+
+    for c in complexes_def:
+        cid = c.get("id", "")
+        cname = c.get("name", cid)
+        members = set(c.get("members") or [])
+        if not members:
+            continue
+
+        # Confirmed+ OUT episodes for members of this complex
+        out_members_with_confirmed = sum(
+            1 for m in members
+            if any(
+                e.get("direction") == "out" and e.get("tier") in _confirmed_tiers
+                for e in active_ep_map.get(m, [])
+            )
+        )
+        # Confirmed+ IN episodes for members of this complex
+        in_members_with_confirmed = sum(
+            1 for m in members
+            if any(
+                e.get("direction") == "in" and e.get("tier") in _confirmed_tiers
+                for e in active_ep_map.get(m, [])
+            )
+        )
+
+        required = max(1, int(len(members) * confirmed_fraction))
+        if out_members_with_confirmed >= required:
+            source_complexes.append(cid)
+            source_names.append(cname)
+        if in_members_with_confirmed >= required:
+            sink_complexes.append(cid)
+            sink_names.append(cname)
+
+    n_sources = len(source_complexes)
+    n_sinks = len(sink_complexes)
+
+    # Tag assignment — order matters (rotation > liquidation > accumulation > quiet)
+    if n_sources >= 1 and n_sinks >= 1:
+        tag = "rotation"
+        tag_zh = "轮动"
+        description_en = (
+            "Broad de-risking is visible in some sectors while re-risking is "
+            "observed simultaneously in others — a cross-sector rotation is "
+            "underway on the tape. Descriptive read from confirmed-tier episodes."
+        )
+        description_zh = (
+            "部分行业的相对强度正在下降，同时其他行业的相对强度正在上升——"
+            "行情面上正在发生跨行业轮动。基于确认层级事件的描述性读数。"
+        )
+    elif n_sources >= liquidation_min_sources and n_sinks == 0:
+        tag = "liquidation"
+        tag_zh = "流动性收缩"
+        description_en = (
+            f"Broad de-risking in progress: {n_sources} sector complexes are "
+            "showing confirmed outflow episodes with no offsetting inflow. "
+            "This describes what is observed on the tape — not a forecast."
+        )
+        description_zh = (
+            f"广泛去风险化正在进行：{n_sources} 个行业复合体出现确认流出信号，"
+            "且无对应的流入信号。描述行情面所观察到的情况，非预测。"
+        )
+    elif n_sinks >= accumulation_min_sinks and n_sources == 0:
+        tag = "accumulation"
+        tag_zh = "资金积累"
+        description_en = (
+            f"Broad re-risking observed: {n_sinks} sector complexes are "
+            "showing confirmed inflow episodes with no offsetting outflow. "
+            "This describes what is observed on the tape — not a forecast."
+        )
+        description_zh = (
+            f"广泛承险化正在进行：{n_sinks} 个行业复合体出现确认流入信号，"
+            "且无对应的流出信号。描述行情面所观察到的情况，非预测。"
+        )
+    else:
+        tag = "quiet"
+        tag_zh = "平静"
+        description_en = (
+            "No broad rotation pattern is currently detected at confirmed tier. "
+            "Descriptive read — confirmed-tier episode breadth is below the "
+            "rotation/liquidation/accumulation thresholds."
+        )
+        description_zh = (
+            "当前未在确认层级检测到广泛轮动形态。描述性读数——"
+            "确认层级事件宽度低于轮动/流动性收缩/资金积累阈值。"
+        )
+
+    return {
+        "tag": tag,
+        "tag_zh": tag_zh,
+        "n_sources": n_sources,
+        "n_sinks": n_sinks,
+        "source_names": source_names,
+        "sink_names": sink_names,
+        "description_en": description_en,
+        "description_zh": description_zh,
+    }
+
+
 def _complex_state(complex_def: dict, active_ep_nodes: set[str],
-                   active_ep_map: dict[str, list[dict]]) -> dict:
+                   active_ep_map: dict[str, list[dict]],
+                   personality_map: dict[str, str] | None = None) -> dict:
     """Summarize one complex's rotation state from active episodes."""
     members = set(complex_def.get("members") or [])
     active_in = [n for n in members if n in active_ep_nodes
@@ -224,6 +408,17 @@ def _complex_state(complex_def: dict, active_ep_nodes: set[str],
     else:
         state = "quiet"
 
+    # B1: personality of the complex's most active node (best-tier episode node)
+    personality: str | None = None
+    if personality_map:
+        # Try to find personality for the best-tier node, then any active node
+        all_active = list(active_out) + list(active_in)
+        for n in all_active:
+            p = personality_map.get(n)
+            if p:
+                personality = p
+                break
+
     return {
         "id": complex_def.get("id", ""),
         "name": complex_def.get("name", ""),
@@ -232,6 +427,7 @@ def _complex_state(complex_def: dict, active_ep_nodes: set[str],
         "tier": best_tier,
         "direction": best_dir,
         "n_members_active": n_active,
+        "personality": personality,
     }
 
 
@@ -287,6 +483,7 @@ def build_oracle_state(
         except Exception:  # noqa: BLE001
             pass
 
+
     # --- 3. Episodes ---
     ep = _load_episodes(data_dir)
     active_ep_df = _active_episodes(ep, as_of_ts) if ep is not None else pd.DataFrame()
@@ -312,11 +509,27 @@ def build_oracle_state(
 
     active_ep_nodes = set(active_ep_map.keys())
 
-    # --- 4. Complexes ---
+    # --- 4. Complexes + B1 personality map ---
     complexes_def = _load_rotation_groups(data_dir)
-    complexes_out = [_complex_state(c, active_ep_nodes, active_ep_map) for c in complexes_def]
+    personality_map = _load_personality(data_dir)
+    complexes_out = [
+        _complex_state(c, active_ep_nodes, active_ep_map, personality_map)
+        for c in complexes_def
+    ]
 
     n_active_complexes = sum(1 for c in complexes_out if c["state"] != "quiet")
+
+    # --- 4.5. A3 rotation tag (computed from active_ep_map + complexes_def) ---
+    try:
+        rotation_tag = _compute_regime_tag(complexes_def, active_ep_map)
+    except Exception:  # noqa: BLE001
+        log.warning("oracle_live: _compute_regime_tag failed — defaulting to quiet", exc_info=True)
+        rotation_tag = {
+            "tag": "quiet", "tag_zh": "平静", "n_sources": 0, "n_sinks": 0,
+            "source_names": [], "sink_names": [],
+            "description_en": "Regime tag unavailable (computation error).",
+            "description_zh": "制度标签不可用（计算错误）。",
+        }
 
     # --- 5. Active episodes (structured) ---
     base_rates_meta = _load_base_rates(data_dir)
@@ -333,6 +546,8 @@ def build_oracle_state(
             anl = None
             if analogues_meta is not None:
                 anl = analogues_meta.get(ep_item.get("episode_id") or "")
+            # B1: fold personality into active episode
+            node_personality = personality_map.get(node) if personality_map else None
             active_episodes_out.append({
                 "node": node,
                 "direction": ep_item["direction"],
@@ -344,6 +559,7 @@ def build_oracle_state(
                 "survivorship_flagged": ep_item["survivorship_flagged"],
                 "base_rate_context": br_ctx,
                 "analogues": anl,
+                "personality": node_personality,
             })
 
     # --- 6. Onset watchlist (panel accel_z > threshold, no active episode) ---
@@ -367,6 +583,7 @@ def build_oracle_state(
             "n_active_complexes": n_active_complexes,
             "breadth": round(breadth, 4) if breadth is not None else None,
             "vix_regime": round(vix_regime, 4) if vix_regime is not None else None,
+            "rotation_tag": rotation_tag,  # A3
         },
         "complexes": complexes_out,
         "active_episodes": active_episodes_out,
