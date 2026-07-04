@@ -134,6 +134,9 @@ lanes:
         args: [--nightly]
       - id: build_calibration
         module: scripts.build_calibration
+      - id: build_spine_index
+        module: scripts.build_spine_index
+        note: "neural-web W2 — spine query index (read-side union over all graded ledgers)"
       - id: altdata_brain
         module: engine.altdata_brain
       - id: build_alt_data_post

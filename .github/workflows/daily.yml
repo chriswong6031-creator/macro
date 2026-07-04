@@ -631,6 +631,18 @@ jobs:
         # surface (data/calibration/summary.json + site/calibration.html). Runs after the
         # deterministic scorers so it reads fresh track records; never feeds a score.
         run: python -m scripts.build_calibration || true
+      - name: build spine index (neural-web W2)
+        # Read-side union index over all graded ledgers: spine + track_record + HK/CA/CN
+        # boards + qledger claims⋈grades (read-only) + graded cycle rows. Writes
+        # data/neuralweb/spine_index.parquet + envelope sidecar. AFTER grade_us_board
+        # (all graders incl. qledger grading in collect have run); BEFORE radar_plus block.
+        # Exit 0 on partial gaps; 1 only on write failure. Resilient wrapper.
+        run: |
+          set +e
+          python -m scripts.build_spine_index > /tmp/spine_index.log 2>&1; rc=$?
+          cat /tmp/spine_index.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_spine_index::rc=$rc (non-fatal)"
+          exit 0
       - name: Alt-Data Brain (Claude-Opus convergence analyst; actionable + falsifiable)
         # Reads the deterministic weighted-convergence substrate + influence graph (written by
         # build_alt_data above) as an evidence pack and writes an ACTIONABLE scored read

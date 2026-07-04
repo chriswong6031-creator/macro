@@ -15,7 +15,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cycle-intelligence | 4 |
 | engine-fix | 15 |
 | institutional-sector-intelligence | 2 |
-| neural-web | 4 |
+| neural-web | 5 |
 | options-alpha | 2 |
 | oracle | 11 |
 | qualitative-intelligence | 14 |
@@ -28,7 +28,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 42 |
-| infrastructure | 15 |
+| infrastructure | 16 |
 | scored | 4 |
 | shadow | 6 |
 
@@ -36,7 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 64 |
+| git | 65 |
 | gitignored-local | 2 |
 | r2 | 1 |
 
@@ -53,7 +53,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| china-sector-cycles-forward-log | `data/china_sector_cycles/forward_log.parquet` | parquet | asia-close | shadow | 5 | 0 |
+| china-sector-cycles-forward-log | `data/china_sector_cycles/forward_log.parquet` | parquet | asia-close | shadow | 6 | 0 |
 | site-china-standouts | `site/factordata/china_standouts.json` | json | asia-close | display | 3 | 1 |
 | site-china-intel-briefing | `site/china_intel/briefing.json` | json | asia-close | display | 1 | 1 |
 
@@ -62,9 +62,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | cycle-ontology-falsifiers | `data/cycle_ontology/falsifiers.json` | json | on-demand | infrastructure | 6 | 0 |
-| country-cycles-forward-log | `data/country_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 4 | 0 |
+| country-cycles-forward-log | `data/country_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
+| sector-cycles-forward-log | `data/sector_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
 | hazard-model | `data/hazard/model_price_c4414dcb.json` | json | on-demand | scored | 4 | 0 |
-| sector-cycles-forward-log | `data/sector_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 4 | 0 |
 
 ### engine-fix
 
@@ -101,6 +101,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
+| spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 
 ### options-alpha
 
@@ -130,12 +131,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | altdata-by-ticker | `data/altdata/by_ticker.json` | json | daily-engine | display | 15 | 0 |
-| qledger-claims | `data/qledger/claims.jsonl` | jsonl | daily-engine | shadow | 12 | 0 |
+| qledger-claims | `data/qledger/claims.jsonl` | jsonl | daily-engine | shadow | 13 | 0 |
 | qbus-items | `data/qbus/items.parquet` | parquet | daily-engine | infrastructure | 10 | 0 |
 | site-altdata-by-ticker | `site/altdata/by_ticker.json` | json | daily-engine | display | 8 | 0 |
 | site-altdata-mastermind | `site/altdata/mastermind.json` | json | daily-engine | display | 7 | 1 |
 | site-qledger-track-record | `site/qledger/track_record.json` | json | daily-engine | display | 5 | 1 |
-| spine-predictions | `data/spine/predictions.parquet` | parquet | daily-engine | shadow | 5 | 0 |
+| spine-predictions | `data/spine/predictions.parquet` | parquet | daily-engine | shadow | 6 | 0 |
 | altdata-theses | `data/altdata/theses.jsonl` | jsonl | daily-engine | shadow | 4 | 0 |
 | site-intelligence-by-ticker | `site/intelligence/by_ticker.json` | json | daily-engine | display | 3 | 1 |
 | site-experiments | `site/marketdata/experiments.json` | json | daily-engine | display | 2 | 1 |
@@ -219,9 +220,9 @@ flowchart LR
     A_qledger_claims["qledger-claims"]
     C_engine_communique_diff_py["engine/communique_diff.py"]
     C_engine_missing_tape_py["engine/missing_tape.py"]
+    C_engine_neuralweb_query_py["engine/neuralweb/query.py"]
     C_engine_qledger_ui_py["engine/qledger_ui.py"]
-    C_scripts_backfill_qledger_intel_hub_py["scripts/backfill_qledger_intel_hub.py"]
-    OVF_qledger_claims["...+8 more"]
+    OVF_qledger_claims["...+9 more"]
     P_scripts_midsmall_pit_py(("scripts/midsmall_pit.py"))
     A_breadth_sp1500_pit["breadth-sp1500-pit"]
     C_engine_grading_py["engine/grading.py"]
@@ -307,8 +308,8 @@ flowchart LR
     P_engine_qledger_py --> A_qledger_claims
     A_qledger_claims --> C_engine_communique_diff_py
     A_qledger_claims --> C_engine_missing_tape_py
+    A_qledger_claims --> C_engine_neuralweb_query_py
     A_qledger_claims --> C_engine_qledger_ui_py
-    A_qledger_claims --> C_scripts_backfill_qledger_intel_hub_py
     A_qledger_claims --> OVF_qledger_claims
     P_scripts_midsmall_pit_py --> A_breadth_sp1500_pit
     A_breadth_sp1500_pit --> C_engine_grading_py
@@ -461,6 +462,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/species_registry.py`
 - **extra writers:**
   - scripts/backfill_forward_logs.py — additive merge of historical entries
+
+### spine-index
+
+- **path:** `data/neuralweb/spine_index.parquet`
+- **declared producer:** `engine/neuralweb/query.py`
+- **extra writers:**
+  - scripts/build_spine_index.py — thin CLI wrapper; calls write_index() defined in the producer; no independent write logic
 
 ### world-state
 

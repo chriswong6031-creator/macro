@@ -1,0 +1,1017 @@
+"""engine.neuralweb.query — The spine QUERY LAYER (Neural Web W2 PR1).
+
+READ-SIDE ONLY: one place answering "what did any engine claim, and what
+happened?" across every graded ledger in the Macro Dashboard suite.
+
+FEDERATION NOT MIGRATION
+------------------------
+No source ledger is modified.  qledger is joined read-only via claim_id.
+The substrate ruling (qledger → spine promotion) remains OPEN pending the
+joint QI co-sign.  Both sequencing escape hatches verified by scout
+(data/neuralweb/w2_scout.json):
+  - W6 promotion monitor has NOT fired (n_families_ready=0; earliest
+    projection 2026-08-29).
+  - qledger semantics frozen since #1180; only post-#1180 change is the
+    numpy coerce hotfix (#1225 — no schema change).
+
+CANONICAL COLUMNS
+-----------------
+Every row in the materialized index carries::
+
+    signal_id, engine, family, ledger, as_of, symbol, scope_type,
+    universe, horizon, direction, size_binding, fill_basis, score,
+    outcome_excess, outcome_graded, graded_at,
+    terminal_state_clean15_126, terminal_state_clean8_21,
+    fwd_mfe_5, fwd_mfe_10, fwd_mfe_21, fwd_mfe_63, fwd_mfe_126,
+    rate_pressure, quad_hard_label, fused_risk_label, vol_regime,
+    risk_radar_state, vector_asof, species_id, archetype
+
+Missing fields per source = NaN/None (honest sparsity, never fabricated).
+``fill_basis`` preserves provenance (e.g. "t1_hl2" for CN, "next_bar" for
+US/HK/CA post Stage B-e, "asof_legacy" for older qledger rows).
+``ledger`` is a source enum:
+  spine, track_record, board_hk, board_ca, board_cn, qledger,
+  cycles_us, cycles_china, cycles_country
+
+ADAPTERS (one per source — all fail-open)
+-----------------------------------------
+a) adapt_spine()         → ledger='spine'
+b) adapt_track_record()  → ledger='track_record' (gitignored-local; fail-open is load-bearing)
+c) adapt_board('hk')     → ledger='board_hk'
+d) adapt_board('ca')     → ledger='board_ca'
+e) adapt_china_board()   → ledger='board_cn'
+f) adapt_qledger()       → ledger='qledger'  (claims⋈grades join, read-only)
+g) adapt_forward_logs()  → ledger='cycles_*' (only graded rows)
+
+BUILD IDIOM
+-----------
+``write_index(root)`` is the single nightly entry point.  It is a FULL
+REBUILD (idempotent) — the index is a derived view, not a forward ledger, so
+there is no ledger-law tension from overwriting.  ``load_index(root)``
+reads the parquet.  ``query(...)`` filters in-memory (fast at today's ~5 MB
+scale).
+
+PIT GUARD (documented for callers)
+-----------------------------------
+``query(..., as_of_before=date)`` retains rows with ``as_of < date``; call
+this to restrict to signals that EXISTED before a cutoff.  Outcomes on those
+rows were graded AFTER ``as_of``; PIT-correct backtest replay MUST also
+supply ``graded_before=date`` to restrict to knowledge state at cutoff.  See
+``query()`` docstring.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import pandas as pd
+
+log = logging.getLogger(__name__)
+
+__all__ = [
+    "COLUMNS",
+    "LEDGER_ENUM",
+    "build_index",
+    "write_index",
+    "load_index",
+    "query",
+]
+
+# ---------------------------------------------------------------------------
+# Canonical column contract
+# ---------------------------------------------------------------------------
+
+COLUMNS: list[str] = [
+    # identity
+    "signal_id",
+    "engine",
+    "family",
+    "ledger",          # source enum (see LEDGER_ENUM)
+    "as_of",           # decision date (str "YYYY-MM-DD")
+    "symbol",          # name / sector / basket slug
+    "scope_type",      # entity | sector | basket | macro
+    "universe",
+    "horizon",         # trading-day horizon (int)
+    "direction",       # +1 long / -1 short / 0 context
+    "size_binding",    # True iff real money was sized
+    "fill_basis",      # fill convention provenance (see docstring)
+    "score",
+    # outcomes
+    "outcome_excess",
+    "outcome_graded",
+    "graded_at",
+    # terminal-state (from engine.grading vocabulary)
+    "terminal_state_clean15_126",
+    "terminal_state_clean8_21",
+    # fwd_mfe horizons — NaN where source does not carry them
+    "fwd_mfe_5",
+    "fwd_mfe_10",
+    "fwd_mfe_21",
+    "fwd_mfe_63",
+    "fwd_mfe_126",
+    # regime stamps (US primary on all lanes; HK/CA/CN have own_market_regime=null by design)
+    "rate_pressure",
+    "quad_hard_label",
+    "fused_risk_label",
+    "vol_regime",
+    "risk_radar_state",
+    "vector_asof",
+    # species
+    "species_id",
+    "archetype",
+]
+
+# Valid ledger values — used to name-space signal_id prefixes
+LEDGER_ENUM: tuple[str, ...] = (
+    "spine",
+    "track_record",
+    "board_hk",
+    "board_ca",
+    "board_cn",
+    "qledger",
+    "cycles_us",
+    "cycles_china",
+    "cycles_country",
+)
+
+# Regime stamp keys on qledger claims (from engine/qledger.py:_REGIME_STAMP_KEYS)
+_QLEDGER_REGIME_KEYS: tuple[str, ...] = (
+    "rate_pressure",
+    "quad_hard_label",
+    "fused_risk_label",
+    "vol_regime",
+    "risk_radar_state",
+    "regime_vector_degraded",
+    "vector_asof",
+    "staleness_hours",
+)
+
+# Regime key mapping from board_ledger / china_standout_track (us_ prefixed) to canonical
+_US_PREFIX_MAP: dict[str, str] = {
+    "us_rate_pressure":    "rate_pressure",
+    "us_quad_hard_label":  "quad_hard_label",
+    "us_fused_risk_label": "fused_risk_label",
+    "us_vol_regime":       "vol_regime",
+    "us_risk_radar_state": "risk_radar_state",
+    "us_regime_vector_degraded": "regime_vector_degraded",
+    "vector_asof":         "vector_asof",
+    "staleness_hours":     "staleness_hours",
+}
+
+# qledger grade horizon mapping onto SPINE_HORIZONS
+_QLEDGER_GRADE_HORIZONS: tuple[int, ...] = (5, 21, 63)
+_MFE_COL_FOR_H: dict[int, str] = {
+    5:   "fwd_mfe_5",
+    10:  "fwd_mfe_10",
+    21:  "fwd_mfe_21",
+    63:  "fwd_mfe_63",
+    126: "fwd_mfe_126",
+}
+
+
+# ---------------------------------------------------------------------------
+# Path helpers
+# ---------------------------------------------------------------------------
+
+def _data_dir(root: Path | str | None) -> Path:
+    if root is not None:
+        return Path(root) / "data"
+    from lib import config  # noqa: PLC0415
+    return config.data_dir()
+
+
+def _index_path(root: Path | str | None) -> Path:
+    p = _data_dir(root) / "neuralweb" / "spine_index.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+def _empty_df() -> pd.DataFrame:
+    """Return an empty DataFrame with the canonical columns."""
+    return pd.DataFrame({c: pd.Series(dtype="object") for c in COLUMNS})
+
+
+def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Add any missing canonical columns as NaN and reorder to COLUMNS."""
+    for c in COLUMNS:
+        if c not in df.columns:
+            df[c] = np.nan
+    return df[COLUMNS].copy()
+
+
+def _safe_float(val: Any) -> float | None:
+    try:
+        v = float(val)
+        return v if np.isfinite(v) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_str(val: Any) -> str | None:
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return None
+    return str(val)
+
+
+def _safe_bool(val: Any) -> bool | None:
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return None
+    return bool(val)
+
+
+def _str_date(val: Any) -> str | None:
+    if val is None:
+        return None
+    s = str(val)
+    # strip time component if present ("2026-01-01T..." → "2026-01-01")
+    return s[:10] if len(s) >= 10 else s
+
+
+# ---------------------------------------------------------------------------
+# ADAPTER a) spine
+# ---------------------------------------------------------------------------
+
+def adapt_spine(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt data/spine/predictions.parquet → ledger='spine'.
+
+    The spine parquet is the canonical carrier for the us_board + 7 desk
+    adapters.  Do NOT re-adapt those sources directly — that would double-count
+    rows already in the spine.
+
+    Returns (df, gap_notes).
+    """
+    gaps: list[str] = []
+    p = _data_dir(root) / "spine" / "predictions.parquet"
+    if not p.exists():
+        gaps.append("spine: data/spine/predictions.parquet absent — zero rows")
+        return _empty_df(), gaps
+    try:
+        raw = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"spine: read failed ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if raw.empty:
+        return _empty_df(), gaps
+
+    rows: list[dict] = []
+    for _, r in raw.iterrows():
+        sig = _safe_str(r.get("signal_id"))
+        if not sig:
+            continue
+        row: dict[str, Any] = {c: None for c in COLUMNS}
+        row["signal_id"]      = sig
+        row["engine"]         = _safe_str(r.get("engine"))
+        row["family"]         = _safe_str(r.get("family"))
+        row["ledger"]         = "spine"
+        row["as_of"]          = _str_date(r.get("as_of"))
+        row["symbol"]         = _safe_str(r.get("symbol"))
+        row["scope_type"]     = "entity"  # spine rows are per-ticker
+        row["universe"]       = _safe_str(r.get("universe"))
+        row["horizon"]        = r.get("horizon")
+        row["direction"]      = r.get("direction")
+        row["size_binding"]   = _safe_bool(r.get("size_binding"))
+        row["fill_basis"]     = "next_bar"
+        row["score"]          = _safe_float(r.get("score"))
+        row["outcome_excess"] = _safe_float(r.get("outcome_excess"))
+        row["outcome_graded"] = _safe_bool(r.get("outcome_graded"))
+        row["graded_at"]      = _str_date(r.get("graded_at"))
+        rows.append(row)
+
+    if not rows:
+        return _empty_df(), gaps
+
+    df = pd.DataFrame(rows)
+    return _ensure_columns(df), gaps
+
+
+# ---------------------------------------------------------------------------
+# ADAPTER b) track_record
+# ---------------------------------------------------------------------------
+
+def adapt_track_record(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt data/track_record/track_record.parquet → ledger='track_record'.
+
+    This file is gitignored-local and may be ABSENT in CI — fail-open is
+    load-bearing (the spine's degrade-never-raise law).
+
+    Returns (df, gap_notes).
+    """
+    gaps: list[str] = []
+    p = _data_dir(root) / "track_record" / "track_record.parquet"
+    if not p.exists():
+        gaps.append("track_record: data/track_record/track_record.parquet absent "
+                    "(gitignored-local — expected in CI) — zero rows")
+        return _empty_df(), gaps
+    try:
+        raw = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"track_record: read failed ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if raw.empty:
+        return _empty_df(), gaps
+
+    rows: list[dict] = []
+    for _, r in raw.iterrows():
+        ticker = _safe_str(r.get("ticker") or r.get("symbol"))
+        as_of  = _str_date(r.get("date") or r.get("as_of"))
+        if not ticker or not as_of:
+            continue
+        # track_record carries multiple horizons per row; emit one row per horizon
+        # SPINE_HORIZONS = (5, 10, 21, 63, 126)
+        for h in (5, 10, 21, 63, 126):
+            mfe_col = f"fwd_mfe_{h}"
+            # A row must carry at least the horizon column to be meaningful
+            if mfe_col not in r.index and f"fwd_ret_{h}" not in r.index:
+                continue
+            sig = f"track_record:{as_of}:{ticker}:{h}"
+            row: dict[str, Any] = {c: None for c in COLUMNS}
+            row["signal_id"]      = sig
+            row["engine"]         = "track_record"
+            row["family"]         = _safe_str(r.get("lane") or r.get("type") or "track_record")
+            row["ledger"]         = "track_record"
+            row["as_of"]          = as_of
+            row["symbol"]         = ticker
+            row["scope_type"]     = "entity"
+            row["universe"]       = _safe_str(r.get("universe") or "us_track_record")
+            row["horizon"]        = h
+            row["direction"]      = 1
+            row["size_binding"]   = _safe_bool(r.get("size_binding"))
+            row["fill_basis"]     = "next_bar"
+            row["score"]          = _safe_float(r.get("composite_z") or r.get("score"))
+            # fwd_mfe_H is the outcome column at this horizon
+            row[mfe_col]          = _safe_float(r.get(mfe_col))
+            # Also grab all fwd_mfe cols available
+            for hh in (5, 10, 21, 63, 126):
+                col = f"fwd_mfe_{hh}"
+                if col in r.index:
+                    row[col] = _safe_float(r.get(col))
+            # outcome_excess: use fwd_mfe for this horizon as proxy if present
+            row["outcome_excess"] = _safe_float(r.get(mfe_col))
+            row["outcome_graded"] = row["outcome_excess"] is not None
+            row["graded_at"]      = _str_date(r.get("graded_at"))
+            # terminal states
+            row["terminal_state_clean15_126"] = _safe_str(r.get("terminal_state_clean15_126"))
+            row["terminal_state_clean8_21"]   = _safe_str(r.get("terminal_state_clean8_21"))
+            # regime stamps (track_record uses us_* prefix or direct)
+            for src, dst in _US_PREFIX_MAP.items():
+                if dst in COLUMNS and src in r.index:
+                    row[dst] = _safe_str(r.get(src))
+            for k in ("rate_pressure", "quad_hard_label", "fused_risk_label",
+                      "vol_regime", "risk_radar_state", "vector_asof"):
+                if k in COLUMNS and k in r.index and row.get(k) is None:
+                    row[k] = _safe_str(r.get(k))
+            row["species_id"] = _safe_str(r.get("species_id"))
+            row["archetype"]  = _safe_str(r.get("archetype"))
+            rows.append(row)
+
+    if not rows:
+        return _empty_df(), gaps
+
+    df = pd.DataFrame(rows)
+    return _ensure_columns(df), gaps
+
+
+# ---------------------------------------------------------------------------
+# ADAPTER c/d) HK and CA board ledgers
+# ---------------------------------------------------------------------------
+
+def adapt_board(
+    market: str,
+    root: Path | str | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt data/board_ledger/{hk,ca}_board.parquet → ledger='board_{market}'.
+
+    market must be 'hk' or 'ca'.
+
+    Returns (df, gap_notes).
+    """
+    m = market.lower()
+    if m not in ("hk", "ca"):
+        raise ValueError(f"adapt_board: market must be 'hk' or 'ca', got {market!r}")
+    ledger_name = f"board_{m}"
+    gaps: list[str] = []
+    p = _data_dir(root) / "board_ledger" / f"{m}_board.parquet"
+    if not p.exists():
+        gaps.append(f"{ledger_name}: {p} absent — zero rows")
+        return _empty_df(), gaps
+    try:
+        raw = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"{ledger_name}: read failed ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if raw.empty:
+        return _empty_df(), gaps
+
+    rows: list[dict] = []
+    for _, r in raw.iterrows():
+        ticker = _safe_str(r.get("ticker"))
+        as_of  = _str_date(r.get("as_of") or r.get("date"))
+        if not ticker or not as_of:
+            continue
+        # Board ledger has one row per (as_of, ticker) with all horizons inline.
+        # Emit one index row per horizon that has a fwd_mfe column.
+        for h in (5, 10, 21, 63, 126):
+            mfe_col = f"fwd_mfe_{h}"
+            if mfe_col not in r.index:
+                continue
+            sig = f"{ledger_name}:{as_of}:{ticker}:{h}"
+            row: dict[str, Any] = {c: None for c in COLUMNS}
+            row["signal_id"]      = sig
+            row["engine"]         = f"{m}_board"
+            row["family"]         = f"{m}_board:{_safe_str(r.get('lane')) or 'buy'}"
+            row["ledger"]         = ledger_name
+            row["as_of"]          = as_of
+            row["symbol"]         = ticker
+            row["scope_type"]     = "entity"
+            row["universe"]       = f"{m}_stocks"
+            row["horizon"]        = h
+            row["direction"]      = 1
+            row["size_binding"]   = _safe_bool(r.get("size_binding"))
+            row["fill_basis"]     = "next_bar"
+            row["score"]          = _safe_float(r.get("composite_z") or r.get("score") or r.get("level"))
+            row["outcome_excess"] = _safe_float(r.get(mfe_col))
+            row["outcome_graded"] = row["outcome_excess"] is not None
+            row["graded_at"]      = _str_date(r.get("graded_at"))
+            row["terminal_state_clean15_126"] = _safe_str(r.get("terminal_state_clean15_126"))
+            row["terminal_state_clean8_21"]   = _safe_str(r.get("terminal_state_clean8_21"))
+            # all fwd_mfe
+            for hh in (5, 10, 21, 63, 126):
+                col = f"fwd_mfe_{hh}"
+                if col in r.index:
+                    row[col] = _safe_float(r.get(col))
+            # regime stamps (us_ prefixed — own_market_regime is null by design)
+            for src, dst in _US_PREFIX_MAP.items():
+                if dst in COLUMNS and src in r.index:
+                    row[dst] = _safe_str(r.get(src))
+            row["species_id"] = _safe_str(r.get("species_id"))
+            row["archetype"]  = _safe_str(r.get("archetype"))
+            rows.append(row)
+
+    if not rows:
+        return _empty_df(), gaps
+
+    df = pd.DataFrame(rows)
+    return _ensure_columns(df), gaps
+
+
+# ---------------------------------------------------------------------------
+# ADAPTER e) China standout board
+# ---------------------------------------------------------------------------
+
+def adapt_china_board(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt data/china_standout_track/board.parquet → ledger='board_cn'.
+
+    fill_basis='t1_hl2' is preserved as provenance (never pooled with US
+    next_bar fills without filtering on this column).
+
+    Returns (df, gap_notes).
+    """
+    gaps: list[str] = []
+    p = _data_dir(root) / "china_standout_track" / "board.parquet"
+    if not p.exists():
+        gaps.append("board_cn: data/china_standout_track/board.parquet absent — zero rows")
+        return _empty_df(), gaps
+    try:
+        raw = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"board_cn: read failed ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if raw.empty:
+        return _empty_df(), gaps
+
+    rows: list[dict] = []
+    for _, r in raw.iterrows():
+        ticker = _safe_str(r.get("ticker"))
+        as_of  = _str_date(r.get("date") or r.get("as_of"))
+        if not ticker or not as_of:
+            continue
+        fill_basis = _safe_str(r.get("fill_basis")) or "t1_hl2"
+        for h in (5, 10, 21, 63, 126):
+            mfe_col = f"fwd_mfe_{h}"
+            if mfe_col not in r.index:
+                continue
+            sig = f"board_cn:{as_of}:{ticker}:{h}"
+            row: dict[str, Any] = {c: None for c in COLUMNS}
+            row["signal_id"]      = sig
+            row["engine"]         = "cn_board"
+            row["family"]         = f"cn_board:{_safe_str(r.get('tier')) or 'tier'}"
+            row["ledger"]         = "board_cn"
+            row["as_of"]          = as_of
+            row["symbol"]         = ticker
+            row["scope_type"]     = "entity"
+            row["universe"]       = "cn_stocks"
+            row["horizon"]        = h
+            row["direction"]      = 1
+            row["size_binding"]   = _safe_bool(r.get("size_binding"))
+            row["fill_basis"]     = fill_basis
+            row["score"]          = _safe_float(r.get("score") or r.get("board_rank"))
+            row["outcome_excess"] = _safe_float(r.get(mfe_col))
+            row["outcome_graded"] = row["outcome_excess"] is not None
+            row["graded_at"]      = _str_date(r.get("graded_at"))
+            row["terminal_state_clean15_126"] = _safe_str(r.get("terminal_state_clean15_126"))
+            row["terminal_state_clean8_21"]   = _safe_str(r.get("terminal_state_clean8_21"))
+            for hh in (5, 10, 21, 63, 126):
+                col = f"fwd_mfe_{hh}"
+                if col in r.index:
+                    row[col] = _safe_float(r.get(col))
+            # regime stamps (us_ prefixed)
+            for src, dst in _US_PREFIX_MAP.items():
+                if dst in COLUMNS and src in r.index:
+                    row[dst] = _safe_str(r.get(src))
+            row["species_id"] = _safe_str(r.get("species_id"))
+            row["archetype"]  = _safe_str(r.get("archetype"))
+            rows.append(row)
+
+    if not rows:
+        return _empty_df(), gaps
+
+    df = pd.DataFrame(rows)
+    return _ensure_columns(df), gaps
+
+
+# ---------------------------------------------------------------------------
+# ADAPTER f) qledger claims ⋈ grades
+# ---------------------------------------------------------------------------
+
+def adapt_qledger(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt data/qledger/claims.jsonl ⋈ data/qledger/grades.jsonl → ledger='qledger'.
+
+    JOIN KEY: claim_id.
+    GRADE HORIZONS: (5, 21, 63) — no 10d or 126d rows exist in qledger.
+    Those fwd_mfe cells stay NaN in the index.
+
+    FILL CONVENTION: pre-Stage B-e rows carry fill_convention absent or
+    "asof_legacy"; post-Stage B-e rows carry "next_bar".  The fill_basis
+    column preserves this distinction so callers never pool conventions.
+
+    REGIME STAMPS: looked up dynamically from _REGIME_STAMP_KEYS at claim
+    registration time (engine/qledger.py:_regime_stamp_for_asof).  In this
+    ledger they arrive as top-level keys on the claim row (rate_pressure,
+    quad_hard_label, fused_risk_label, vol_regime, risk_radar_state,
+    regime_vector_degraded, vector_asof).
+
+    Qledger substrate ruling: READ-ONLY join pending joint QI co-sign.
+    signal_id namespace: 'qledger:<claim_id>:<grade_horizon>' — never
+    collides with spine or board namespaces.
+
+    Returns (df, gap_notes).
+    """
+    gaps: list[str] = []
+    data = _data_dir(root)
+    claims_path = data / "qledger" / "claims.jsonl"
+    grades_path = data / "qledger" / "grades.jsonl"
+
+    if not claims_path.exists():
+        gaps.append("qledger: data/qledger/claims.jsonl absent — zero rows")
+        return _empty_df(), gaps
+
+    # Load claims
+    try:
+        with claims_path.open(encoding="utf-8") as fh:
+            claims_raw = [json.loads(ln) for ln in fh if ln.strip()]
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"qledger: claims.jsonl read failed ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    # Load grades (may be absent — fail-open)
+    grades_by_claim: dict[str, list[dict]] = {}
+    if grades_path.exists():
+        try:
+            with grades_path.open(encoding="utf-8") as fh:
+                for ln in fh:
+                    if not ln.strip():
+                        continue
+                    g = json.loads(ln)
+                    cid = g.get("claim_id")
+                    if cid:
+                        grades_by_claim.setdefault(str(cid), []).append(g)
+        except Exception as e:  # noqa: BLE001
+            gaps.append(f"qledger: grades.jsonl read failed ({e}) — outcomes will be null")
+    else:
+        gaps.append("qledger: data/qledger/grades.jsonl absent — outcomes will be null")
+
+    rows: list[dict] = []
+    for claim in claims_raw:
+        cid = _safe_str(claim.get("claim_id"))
+        if not cid:
+            continue
+        desk   = _safe_str(claim.get("desk")) or "unknown"
+        asof   = _str_date(claim.get("asof"))
+        scope  = claim.get("scope") or {}
+        scope_key  = _safe_str(scope.get("key")) or ""
+        scope_type = _safe_str(scope.get("type")) or "entity"
+        horizon_d  = claim.get("horizon_d")
+        direction  = claim.get("direction")
+        family     = _safe_str(claim.get("claim_family")) or desk
+
+        # Each grade row is one (claim_id, grade_horizon) pair
+        grades_for_claim = grades_by_claim.get(cid, [])
+        if not grades_for_claim:
+            # Ungraded claim — one row with null outcomes; include for completeness
+            grades_for_claim = [{}]
+
+        for grade in grades_for_claim:
+            gh = grade.get("horizon_d") or grade.get("grade_horizon")
+            # signal_id is namespaced so it never collides across ledgers
+            sig = f"qledger:{cid}:{gh or 'open'}"
+
+            row: dict[str, Any] = {c: None for c in COLUMNS}
+            row["signal_id"]      = sig
+            row["engine"]         = desk
+            row["family"]         = family
+            row["ledger"]         = "qledger"
+            row["as_of"]          = asof
+            row["symbol"]         = scope_key
+            row["scope_type"]     = scope_type
+            row["universe"]       = "qledger"
+            row["horizon"]        = gh if gh is not None else horizon_d
+            row["direction"]      = direction
+            row["size_binding"]   = False  # qledger is never size-binding
+            # fill_basis: post Stage B-e = next_bar; legacy = asof_legacy
+            fill_conv = _safe_str(grade.get("fill_convention"))
+            row["fill_basis"]     = fill_conv or "asof_legacy"
+            row["score"]          = _safe_float(claim.get("edge_score") or claim.get("convergence_score"))
+
+            # outcomes from grade row
+            excess = _safe_float(grade.get("excess"))
+            hit    = grade.get("hit")
+            graded_at = _str_date(grade.get("graded_at"))
+            row["outcome_excess"] = excess
+            row["outcome_graded"] = (excess is not None and hit is not None)
+            row["graded_at"]      = graded_at
+
+            # Map grade horizon to fwd_mfe slot if it matches a SPINE horizon
+            if gh in _MFE_COL_FOR_H:
+                row[_MFE_COL_FOR_H[gh]] = excess
+
+            # Regime stamps — from claim row (stamped at registration time)
+            for k in ("rate_pressure", "quad_hard_label", "fused_risk_label",
+                      "vol_regime", "risk_radar_state", "vector_asof"):
+                if k in COLUMNS:
+                    row[k] = _safe_str(claim.get(k))
+
+            # species_id and archetype are null by design for qledger
+            row["species_id"] = None
+            row["archetype"]  = None
+
+            rows.append(row)
+
+    if not rows:
+        return _empty_df(), gaps
+
+    df = pd.DataFrame(rows)
+    return _ensure_columns(df), gaps
+
+
+# ---------------------------------------------------------------------------
+# ADAPTER g) Forward logs (cycle graders)
+# ---------------------------------------------------------------------------
+
+def adapt_forward_logs(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt sector/china/country cycle forward logs → ledger='cycles_*'.
+
+    ONLY rows carrying graded outcome fields are included.  Projection-only
+    rows (no outcome columns populated) are NOT claims-with-outcomes and are
+    skipped.  If a log has no graded rows, zero rows are contributed with a
+    note.
+
+    China sector cycles grader columns: drawdown_p{21,63}, return_p{21,63},
+    bench_ret_p{21,63}.  These do NOT map to fwd_mfe_* (different semantic:
+    max-drawdown probability, not max-favorable-excursion) and stay in
+    outcome_excess as None.  They are kept as additional context but the
+    canonical outcome fields remain null — honest sparsity, not fabrication.
+
+    US sector cycles and country cycles are graded via scripts/grade_promises.py
+    into separate scorecard JSON files (not appended to the forward log).
+    If those logs have no graded columns, zero rows are contributed.
+
+    Returns (df, gap_notes).
+    """
+    gaps: list[str] = []
+    data = _data_dir(root)
+
+    sources = [
+        ("sector_cycles",       "forward_log.parquet", "cycles_us",      "sector"),
+        ("china_sector_cycles", "forward_log.parquet", "cycles_china",   "sector"),
+        ("country_cycles",      "forward_log.parquet", "cycles_country", "sector"),
+    ]
+
+    all_rows: list[dict] = []
+
+    # graded outcome col patterns we look for
+    _GRADED_PATTERNS = ("drawdown_p", "return_p", "bench_ret_p", "fwd_ret", "excess", "grade")
+
+    for engine_dir, fname, ledger_name, scope_t in sources:
+        p = data / engine_dir / fname
+        if not p.exists():
+            gaps.append(f"{ledger_name}: {p} absent — zero rows")
+            continue
+        try:
+            df_log = pd.read_parquet(p)
+        except Exception as e:  # noqa: BLE001
+            gaps.append(f"{ledger_name}: read failed ({e}) — zero rows")
+            continue
+
+        if df_log.empty:
+            gaps.append(f"{ledger_name}: empty parquet — zero rows")
+            continue
+
+        # Find graded outcome columns
+        graded_cols = [c for c in df_log.columns
+                       if any(pat in c for pat in _GRADED_PATTERNS)]
+        if not graded_cols:
+            gaps.append(
+                f"{ledger_name}: no graded outcome columns found in {p} "
+                f"(cols={list(df_log.columns[:10])}...) — zero rows; "
+                "grade_promises produces separate scorecard JSONs for this engine"
+            )
+            continue
+
+        for _, r in df_log.iterrows():
+            date_val = _str_date(r.get("date") or r.get("as_of"))
+            sid_val  = _safe_str(r.get("id"))
+            if not date_val or not sid_val:
+                continue
+            # Only include rows where at least one graded col is non-null
+            has_outcome = any(
+                r.get(c) is not None and not (isinstance(r.get(c), float) and np.isnan(r.get(c)))
+                for c in graded_cols
+            )
+            if not has_outcome:
+                continue
+
+            sig = f"{ledger_name}:{date_val}:{sid_val}"
+            row: dict[str, Any] = {c: None for c in COLUMNS}
+            row["signal_id"]      = sig
+            row["engine"]         = engine_dir
+            row["family"]         = f"{engine_dir}:{_safe_str(r.get('signal')) or 'phase'}"
+            row["ledger"]         = ledger_name
+            row["as_of"]          = date_val
+            row["symbol"]         = sid_val
+            row["scope_type"]     = scope_t
+            row["universe"]       = f"{engine_dir}_universe"
+            row["horizon"]        = None  # cycle horizons are not spine trading-day horizons
+            row["direction"]      = 1 if _safe_str(r.get("signal")) == "BUY" else (
+                                    -1 if _safe_str(r.get("signal")) == "SELL" else 0)
+            row["size_binding"]   = False
+            row["fill_basis"]     = "cycle_projection"
+            row["score"]          = _safe_float(r.get("pos") or r.get("pos_v2"))
+            # outcome_excess: not applicable for cycle claims at this level
+            row["outcome_excess"] = None
+            row["outcome_graded"] = False  # cycle grading is at scorecard level, not row level
+            row["graded_at"]      = None
+            # no fwd_mfe for cycles — they use their own probability columns
+            # no regime stamps in forward log rows
+            all_rows.append(row)
+
+    if not all_rows:
+        return _empty_df(), gaps
+
+    result = pd.DataFrame(all_rows)
+    return _ensure_columns(result), gaps
+
+
+# ---------------------------------------------------------------------------
+# BUILD INDEX
+# ---------------------------------------------------------------------------
+
+def build_index(
+    root: Path | str | None = None,
+) -> tuple[pd.DataFrame, dict]:
+    """Run all adapters, union, dedup, sort, return (DataFrame, gaps dict).
+
+    The gaps dict maps adapter name → list of gap note strings (empty list
+    means clean).  A missing / corrupt source logs + contributes zero rows.
+
+    Dedup: signal_ids are namespaced by ledger prefix, so collisions across
+    ledgers are structurally prevented.  Within a ledger, signal_id should
+    be unique by construction (last-write-wins if somehow duplicated).
+
+    Returns (df, gaps).
+    """
+    gaps: dict[str, list[str]] = {}
+    frames: list[pd.DataFrame] = []
+
+    adapters = [
+        ("spine",          lambda: adapt_spine(root)),
+        ("track_record",   lambda: adapt_track_record(root)),
+        ("board_hk",       lambda: adapt_board("hk", root)),
+        ("board_ca",       lambda: adapt_board("ca", root)),
+        ("board_cn",       lambda: adapt_china_board(root)),
+        ("qledger",        lambda: adapt_qledger(root)),
+        ("forward_logs",   lambda: adapt_forward_logs(root)),
+    ]
+
+    for name, fn in adapters:
+        try:
+            df, gap_notes = fn()
+            gaps[name] = gap_notes
+            if not df.empty:
+                frames.append(df)
+        except Exception as e:  # noqa: BLE001
+            msg = f"{name}: adapter raised unexpectedly ({e}) — zero rows"
+            log.warning(msg)
+            gaps[name] = [msg]
+
+    if not frames:
+        log.warning("build_index: all adapters returned zero rows")
+        return _empty_df(), gaps
+
+    combined = pd.concat(frames, ignore_index=True)
+
+    # Dedup on signal_id + horizon: signal_ids are namespaced, so cross-ledger
+    # collisions are prevented.  Within a ledger, keep-last (most recent write).
+    combined = combined.drop_duplicates(
+        subset=["signal_id", "horizon"], keep="last"
+    ).reset_index(drop=True)
+
+    # Sort for deterministic output
+    combined = combined.sort_values(
+        ["ledger", "as_of", "symbol", "horizon"],
+        na_position="last",
+    ).reset_index(drop=True)
+
+    return combined, gaps
+
+
+# ---------------------------------------------------------------------------
+# WRITE + LOAD
+# ---------------------------------------------------------------------------
+
+def write_index(root: Path | str | None = None) -> dict:
+    """Build the spine index and write to data/neuralweb/spine_index.parquet.
+
+    Also writes the envelope sidecar via engine.neuralweb.envelope.write_sidecar.
+
+    IDEMPOTENT FULL REBUILD: the index is a derived view (not a forward ledger).
+    Overwriting on each nightly run is correct — there is no ledger-law tension
+    because the index is entirely re-derived from source ledgers every time.
+
+    Returns a stats dict with row/gap counts.
+    """
+    df, gaps = build_index(root)
+    out_path = _index_path(root)
+
+    try:
+        df.to_parquet(out_path, index=False)
+    except Exception as e:  # noqa: BLE001
+        log.error("write_index: to_parquet failed: %s", e)
+        raise
+
+    # Write the envelope sidecar
+    try:
+        from engine.neuralweb.envelope import write_sidecar  # noqa: PLC0415
+        write_sidecar(out_path, artifact_id="spine-index")
+    except Exception as e:  # noqa: BLE001
+        log.warning("write_index: sidecar write failed: %s", e)
+
+    # Build stats
+    per_ledger: dict[str, int] = {}
+    if not df.empty and "ledger" in df.columns:
+        for ldg, sub in df.groupby("ledger"):
+            per_ledger[str(ldg)] = len(sub)
+
+    total_gap_notes = sum(len(v) for v in gaps.values())
+    stats = {
+        "total_rows": len(df),
+        "per_ledger": per_ledger,
+        "gap_count": total_gap_notes,
+        "gaps": gaps,
+        "output_path": str(out_path),
+    }
+    log.info(
+        "write_index: %d rows from %d ledgers (%d gap notes)",
+        len(df), len(per_ledger), total_gap_notes,
+    )
+    return stats
+
+
+def load_index(root: Path | str | None = None) -> pd.DataFrame:
+    """Read data/neuralweb/spine_index.parquet. Returns empty frame if absent."""
+    p = _index_path(root)
+    if not p.exists():
+        return _empty_df()
+    try:
+        df = pd.read_parquet(p)
+        for c in COLUMNS:
+            if c not in df.columns:
+                df[c] = np.nan
+        return df[COLUMNS].copy()
+    except Exception as e:  # noqa: BLE001
+        log.warning("load_index: read failed: %s", e)
+        return _empty_df()
+
+
+# ---------------------------------------------------------------------------
+# QUERY
+# ---------------------------------------------------------------------------
+
+def query(
+    df: pd.DataFrame | None = None,
+    *,
+    engine: str | None = None,
+    family: str | None = None,
+    ledger: str | None = None,
+    regime: str | None = None,
+    horizon: int | None = None,
+    symbol: str | None = None,
+    scope_type: str | None = None,
+    as_of_before: str | None = None,
+    graded_before: str | None = None,
+    graded_only: bool = False,
+    root: Path | str | None = None,
+) -> pd.DataFrame:
+    """Filter the spine index by the given criteria.
+
+    Parameters
+    ----------
+    df:
+        Pre-loaded frame.  If None, ``load_index(root)`` is called.
+    engine:
+        Filter by engine name (exact match).
+    family:
+        Filter by family name (exact match).
+    ledger:
+        Filter by ledger enum value (exact match).
+    regime:
+        Filter by regime label.  Matches against quad_hard_label OR
+        fused_risk_label OR vol_regime OR risk_radar_state (any match
+        qualifies the row).
+    horizon:
+        Filter by horizon (int, exact).
+    symbol:
+        Filter by symbol (exact).
+    scope_type:
+        Filter by scope_type (entity | sector | basket | macro).
+    as_of_before:
+        PIT guard — retain rows where as_of < cutoff (ISO date str).
+        These rows EXISTED before the cutoff; their outcomes were graded AFTER.
+        For a PIT-correct backtest replaying knowledge state at cutoff, ALSO
+        supply ``graded_before`` to restrict to what was KNOWN at cutoff.
+    graded_before:
+        PIT knowledge-state guard — retain rows where graded_at < cutoff.
+        Use in tandem with as_of_before for PIT-correct backtest replay.
+        Rows where graded_at is null (ungraded) are retained unless
+        ``graded_only=True``.
+    graded_only:
+        If True, only retain rows with outcome_graded == True.
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered copy of the index (or subset thereof).
+    """
+    if df is None:
+        df = load_index(root)
+
+    if df.empty:
+        return df.copy()
+
+    mask = pd.Series([True] * len(df), index=df.index)
+
+    if engine is not None:
+        mask &= df["engine"].astype(str) == engine
+    if family is not None:
+        mask &= df["family"].astype(str) == family
+    if ledger is not None:
+        mask &= df["ledger"].astype(str) == ledger
+    if regime is not None:
+        reg_mask = (
+            (df["quad_hard_label"].astype(str) == regime) |
+            (df["fused_risk_label"].astype(str) == regime) |
+            (df["vol_regime"].astype(str) == regime) |
+            (df["risk_radar_state"].astype(str) == regime)
+        )
+        mask &= reg_mask
+    if horizon is not None:
+        mask &= pd.to_numeric(df["horizon"], errors="coerce") == int(horizon)
+    if symbol is not None:
+        mask &= df["symbol"].astype(str) == symbol
+    if scope_type is not None:
+        mask &= df["scope_type"].astype(str) == scope_type
+    if as_of_before is not None:
+        mask &= df["as_of"].astype(str) < as_of_before
+    if graded_before is not None:
+        # Rows with null graded_at are retained (not yet graded — may still be pre-cutoff)
+        null_graded = df["graded_at"].isna() | (df["graded_at"].astype(str) == "None")
+        mask &= null_graded | (df["graded_at"].astype(str) < graded_before)
+    if graded_only:
+        graded_col = df["outcome_graded"].fillna(False)
+        try:
+            graded_col = graded_col.astype(bool)
+        except (TypeError, ValueError):
+            graded_col = graded_col.map(lambda x: bool(x) if x is not None else False)
+        mask &= graded_col
+
+    return df[mask].copy().reset_index(drop=True)
