@@ -1,0 +1,871 @@
+{
+  "Aging Population & Longevity__in": {
+    "direction": "in",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "Agriculture & FoodTech__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "Biometrics__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "Commodities Energy__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "Crypto & Blockchain__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "Cybersecurity__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "Education Technology__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "FinTech__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "Hardware__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "Healthcare & Biotech__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "Healthy Food & Nutrition__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "Semiconductors__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "Software__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "Telecommunications__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "Wearables__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "XLE__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "XLK__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "XLV__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "__regime__": {
+    "breadth": 0.6107,
+    "n_active_complexes": 7
+  },
+  "agricultureindoorfarming__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "ai_infra__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "ai_neoclouds__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "ai_semiconductors__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "aiadssearch__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "aiagi__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "aiapplications__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "aicloud__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "aiedge__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "aienterprise__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "ainetworking__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "airobotics__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "automationlogistics__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "automationsoftware__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "autonomousavmobility__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "autonomousmachinevision__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "autonomoussoftware__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "big_pharma__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "bigdataanalyticsbi__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "bigdatainfrastructure__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "biometricsidentity__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "biometricssoftware__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "blockchainenterprise__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "blockchaininfrastructure__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "blockchainmining__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "blockchaintokenization__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "clouddatacenters__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "clouddevops__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "cloudedge__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "cloudhardware__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "cloudhsaas__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "cloudhybridcloud__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "cloudhyperscalers__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "cloudpaas__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "cloudserverless__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "commagrifertilizers__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "commagrigrains__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "commagrilivestock__in": {
+    "direction": "in",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "commagrisofts__in": {
+    "direction": "in",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "commenergyoil__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "commmetalsindustrial__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "commmetalsrecycling__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "cybersecurity__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "cybersecurityappsecurity__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "cybersecuritycloud__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "cybersecurityidentityiam__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "defensecyberdefense__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "defensespacetech__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "defensives__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "ecommercemarketplaces__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "ecommerceplatforms__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "ecommercesecondhand__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "educationinfrastructure__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "educationplatforms__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "energy_complex__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "energybasemajors__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "energybaseoilproduction__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "energybaseoilservices__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "energybaseutilities__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "energycleangeothermal__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "energycleanmaterials__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "entertainmentgaming__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "entertainmentinfrastructure__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "entertainmentmusic__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "environmentalairquality__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "environmentalwater__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "evscharging__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "evschips__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "evsselfdriving__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "evssuppliers__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "fintechexchanges__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": true
+  },
+  "fintechinsurance__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "fintechneobanks__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "fintechpayments__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "hardwaredatacenters__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "hardwareelectronics__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "hardwarenetworking__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "hardwarepcsdevices__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "hardwareservers__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "hardwarestorage__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "hardwaretelecom__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "healthcaredevices__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "healthcarediagnostics__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "healthcaregenomics__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "healthcareitdata__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "healthcaremetabolic__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "healthcarenextgen__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "healthcareoncology__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "healthcaretelemedicine__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "housing__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "insurance__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "iotedgedevices__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "iothardware__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "iotnetworking__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "iotsoftware__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "longevityagingpharma__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "longevityhealthcare__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "longevityhealthyaging__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "longevityseniorliving__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "mag7__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "memory_storage__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": true
+  },
+  "nanotechelectronics__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "nanotechmedicine__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "nanotechresearchtools__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "non_ai_tech__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "nutritionsupplements__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "obesity_glp1__in": {
+    "direction": "in",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "payments_fintech__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "quantumenablingtech__out": {
+    "direction": "out",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "realestatehealthcare__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "realestateittelecom__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "roboticsavmobility__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "roboticsconsumer__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "roboticsmachinevision__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "semisanalog__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "semiscompute__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "semisdesigntools__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "semisfoundries__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "semislithography__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "semismemory__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": true
+  },
+  "semiswireless__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "smarthomedevices__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "smarthomeenergy__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "smarthomevoiceai__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "socialadvertising__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "socialgaming__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "softwarecollaboration__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "softwarecrm__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "softwaredataanalytics__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": true
+  },
+  "softwaredesign__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "softwaredevops__out": {
+    "direction": "out",
+    "tier": "confirmed",
+    "two_sided": false
+  },
+  "softwareenterprise__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "softwaregaming__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "softwarehsaas__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "softwaresecurity__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "softwarevsaas__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "space_economy__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "spacedataanalytics__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "spaceinfrastructure__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "telecomcloudedge__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "telecomenterprise__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "telecomg__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "telecominfrastructure__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "transportationaircargo__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "travel__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "us_sector_comm__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "us_sector_energy__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "us_sector_health__in": {
+    "direction": "in",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "varealityenterprise__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "varealityhardware__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "varealityinfrastructure__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "wearablesimmersive__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "wearablesmedical__in": {
+    "direction": "in",
+    "tier": "onset",
+    "two_sided": false
+  },
+  "wearablessoftware__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  },
+  "wearablessport__out": {
+    "direction": "out",
+    "tier": "undeniable",
+    "two_sided": false
+  }
+}

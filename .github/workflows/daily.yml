@@ -778,6 +778,21 @@ jobs:
           # when window.DATA_BASE is set; no-op while empty. Last page-mutating pass so no
           # later builder strips the tag. See scripts/inject_data_base.py.
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+      - name: oracle nightly (state + alerts + directive + ledger + banner)
+        if: always()
+        # Oracle O4 live-wiring: reads committed panel/episode/graph artifacts (heavy
+        # re-builds run off-render via scripts/build_oracle_panel.py etc.), emits:
+        #   data/oracle/oracle_alerts.jsonl      alert event log (git add data/ covers)
+        #   data/oracle/alerts_state.json        diff-state for next run
+        #   data/oracle/rotation_directive.json  Mastermind context
+        #   data/oracle/memory_base_rates.json   base rates from gauntlet results
+        #   data/oracle/forward_ledger.jsonl     PIT keep-FIRST episode ledger
+        #   site/basketdata/oracle_state.json    the bus payload (git add site/ covers)
+        # Sentinel-gap check: all outputs land under data/ or site/ which are in the
+        # "git add data/ site/ reports/" below — NO new explicit git add needed.
+        # --skip-panel --skip-graph --skip-episodes: heavy rebuilds run separately off-render.
+        # Non-fatal: missing panel degrades gracefully; later builds use cached state.
+        run: python -m scripts.oracle_nightly --skip-panel --skip-graph --skip-episodes || echo "::warning::oracle_nightly failed (non-fatal — state and alerts degrade gracefully)"
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |
