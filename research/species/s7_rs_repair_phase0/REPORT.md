@@ -164,3 +164,33 @@ insufficient for the frozen significance bar.
 **What does NOT ship:** no engine wiring, no gate changes, no China port, no tier
 promotion. The only artifacts are this research package, the S7 registry entry, and
 the negative findings.
+
+## Appendix A — EXPLORATORY zone-quality addendum (dev-only, non-registered)
+
+Owner review (2026-07-04) challenged the event framing: a buy zone is a *state*, and a
+flat −5% race punishes a fire that is 4% early into a zone that held. Two metrics the
+frozen SPEC lacked, computed post-hoc on dev F1/P1 only (`addendum_zone_metrics.py`;
+holdout stays sealed — exploratory metrics do not fish in it):
+
+1. **fill-to-zone-low (40 sessions, intraday lows)** — how far below fill the zone
+   ultimately traded.
+2. **Vol-scaled symmetric race** — ±k close race, k = clamp(σ20d×√20, 5%, 15%) per
+   fire. Median k ≈ 7.5–9%: a flat −5% stop sits *inside* the noise band of the
+   typical washout name — a calibration fact relevant to board stop guidance.
+
+| dev F1/P1 | n | med zone-low 40d | zone held ≥−5% | zone held ≥−8% | vol-scaled stop-out |
+|---|---|---|---|---|---|
+| S7 cohort-rank repair | 1,123 | −5.1% | 49.2% | 67.1% | **32.9%** |
+| S7 cohort-rank deterioration | 2,353 | −5.9% | 43.3% | 62.2% | **41.1%** |
+| H-B computable baseline | 3,476 | −5.6% | 45.2% | 63.8% | 38.4% |
+| cohort≥40 | 1,873 | −5.0% | 50.0% | 67.2% | 34.7% |
+| TRIPLE-LOCK | 922 | −4.5% | 53.7% | 70.5% | 33.9% |
+| ALL dev F1 | 28,291 | −6.8% | 40.4% | 56.0% | 41.2% |
+
+Readings: (a) the S7 repair−deterioration gap **widens** from 5.7pp (flat race) to
+**8.2pp** under vol-scaled stops — the flat −5% was penalizing high-vol repair names;
+(b) triple-lock vs cohort-alone stays ~1pp on the vol-scaled race — the NO-GO stands
+through the zone lens; (c) repair fires sit measurably closer to the eventual zone
+bottom (median −5.1% vs −5.9%). Non-registered: these numbers inform the next
+registered read only. **Carry-forward:** pre-register the vol-scaled race as co-primary
+for the W0.4-gated S7 re-read (registered before that data is touched).
