@@ -62,6 +62,7 @@ artifacts:
       - engine/sector_central.py
       - engine/vol_regime.py
       - engine/neuralweb/world_state.py
+      - engine/neuralweb/read.py
       - engine/vol_sentiment.py
       - scripts/archive_signals.py
       - scripts/build_canada_library.py
@@ -1688,6 +1689,12 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_feeds.py
+      - scripts/notify.py
+      - scripts/build_impulse.py
+      - engine/etf_pulse.py
+      - engine/regime_label.py
+      - engine/briefing.py
+      - engine/neuralweb/read.py
     external_consumers: []
     notes: >
       Composed one-page truth (Neural Web N1 masterplan). Reads data/market_state/latest.json

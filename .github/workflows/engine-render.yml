@@ -129,6 +129,21 @@ jobs:
           run_py "§7 signal contract gate (validate_signals)"     scripts.validate_signals
           run_py "regime engine (engine.run)"                     engine.run
           exit 0
+      - name: build world state (neural-web W1 — express lane)
+        # Neural Web N1: recompose data/neuralweb/world_state.json from the
+        # freshly recomputed engine outputs (regime/latest.json was just
+        # updated by engine.run above).  O(50ms) — negligible on the render
+        # budget.  Resilient: a failure keeps the last committed world_state
+        # and never blocks the render.
+        # git add site/ in the commit step below does NOT cover data/neuralweb/;
+        # the express lane commits site/ only, so world_state.json is NOT
+        # committed here — it is a working-tree side-effect that gets discarded
+        # exactly like the other data/ writes (regime_history, ledger appends).
+        # The nightly daily.yml run recomputes and commits it under data/.
+        # This step exists so world_state is FRESH in memory for any builder
+        # that reads it during the render (the builders run after this step and
+        # read data/neuralweb/world_state.json from the working tree).
+        run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
       - name: re-render pages from the freshly recomputed engine output (resilient)
         # IDENTICAL to render.yml's render step — reads the engine output just recomputed above
         # (regime/latest.json + the MTF leaf, now in the working tree) and re-renders every page.

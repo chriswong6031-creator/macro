@@ -4462,6 +4462,180 @@
       "caveat": "Effective sample is tiny (~7 modern US recessions, ~3 point-in-time) — a recession-RISK timeline, not a crash oracle. Lead times are measured against NBER dates; see the validation report.",
       "caveat_zh": "有效样本极小（现代美国衰退约 7 次，可点对点回溯约 3 次）——这是衰退“风险”时间线，并非崩盘预言。领先时长以 NBER 日期为准，详见验证报告。"
     },
+    "liquidity_overlay": "expanding",
+    "sector_rs": [
+      {
+        "ticker": "SMH",
+        "rs": 0.8319834985086588,
+        "mom_20d_pct": -0.3,
+        "mom_60d_pct": 38.45,
+        "above_200d_trend": true,
+        "pctile_252d": 94.8,
+        "rank": 1
+      },
+      {
+        "ticker": "XLK",
+        "rs": 0.24890044074034426,
+        "mom_20d_pct": -4.75,
+        "mom_60d_pct": 19.91,
+        "above_200d_trend": true,
+        "pctile_252d": 93.7,
+        "rank": 2
+      },
+      {
+        "ticker": "MTUM",
+        "rs": 0.43995387498269023,
+        "mom_20d_pct": 2.35,
+        "mom_60d_pct": 17.04,
+        "above_200d_trend": true,
+        "pctile_252d": 96.0,
+        "rank": 3
+      },
+      {
+        "ticker": "IWM",
+        "rs": 0.4013623731557932,
+        "mom_20d_pct": 4.51,
+        "mom_60d_pct": 4.8,
+        "above_200d_trend": true,
+        "pctile_252d": 97.6,
+        "rank": 4
+      },
+      {
+        "ticker": "QUAL",
+        "rs": 0.2934858295579207,
+        "mom_20d_pct": 3.23,
+        "mom_60d_pct": -0.33,
+        "above_200d_trend": true,
+        "pctile_252d": 65.1,
+        "rank": 5
+      },
+      {
+        "ticker": "XLI",
+        "rs": 0.24586998258055878,
+        "mom_20d_pct": 7.2,
+        "mom_60d_pct": -1.58,
+        "above_200d_trend": true,
+        "pctile_252d": 79.4,
+        "rank": 6
+      },
+      {
+        "ticker": "RSP",
+        "rs": 0.2861644508521973,
+        "mom_20d_pct": 3.62,
+        "mom_60d_pct": -2.76,
+        "above_200d_trend": true,
+        "pctile_252d": 55.2,
+        "rank": 7
+      },
+      {
+        "ticker": "XLF",
+        "rs": 0.07345526451131773,
+        "mom_20d_pct": 8.52,
+        "mom_60d_pct": -2.96,
+        "above_200d_trend": false,
+        "pctile_252d": 19.8,
+        "rank": 8
+      },
+      {
+        "ticker": "XLV",
+        "rs": 0.21392940248468473,
+        "mom_20d_pct": 11.2,
+        "mom_60d_pct": -3.63,
+        "above_200d_trend": false,
+        "pctile_252d": 44.8,
+        "rank": 9
+      },
+      {
+        "ticker": "XLY",
+        "rs": 0.15834852337416638,
+        "mom_20d_pct": 2.23,
+        "mom_60d_pct": -4.31,
+        "above_200d_trend": false,
+        "pctile_252d": 9.9,
+        "rank": 10
+      },
+      {
+        "ticker": "XLRE",
+        "rs": 0.0592415786937416,
+        "mom_20d_pct": 4.11,
+        "mom_60d_pct": -6.52,
+        "above_200d_trend": false,
+        "pctile_252d": 19.4,
+        "rank": 11
+      },
+      {
+        "ticker": "USMV",
+        "rs": 0.12992115173901414,
+        "mom_20d_pct": 1.87,
+        "mom_60d_pct": -8.36,
+        "above_200d_trend": false,
+        "pctile_252d": 14.3,
+        "rank": 12
+      },
+      {
+        "ticker": "XLB",
+        "rs": 0.06841343031225028,
+        "mom_20d_pct": 0.98,
+        "mom_60d_pct": -10.24,
+        "above_200d_trend": false,
+        "pctile_252d": 38.5,
+        "rank": 13
+      },
+      {
+        "ticker": "XLP",
+        "rs": 0.11169813607723088,
+        "mom_20d_pct": 4.13,
+        "mom_60d_pct": -10.96,
+        "above_200d_trend": false,
+        "pctile_252d": 7.9,
+        "rank": 14
+      },
+      {
+        "ticker": "LQD",
+        "rs": 0.14543552572436688,
+        "mom_20d_pct": 1.52,
+        "mom_60d_pct": -11.36,
+        "above_200d_trend": false,
+        "pctile_252d": 6.0,
+        "rank": 15
+      },
+      {
+        "ticker": "XLC",
+        "rs": 0.14715189394274206,
+        "mom_20d_pct": -1.58,
+        "mom_60d_pct": -13.24,
+        "above_200d_trend": false,
+        "pctile_252d": 3.6,
+        "rank": 16
+      },
+      {
+        "ticker": "XLU",
+        "rs": 0.060032718128495303,
+        "mom_20d_pct": 4.26,
+        "mom_60d_pct": -14.32,
+        "above_200d_trend": false,
+        "pctile_252d": 7.9,
+        "rank": 17
+      },
+      {
+        "ticker": "XLE",
+        "rs": 0.07081366750932108,
+        "mom_20d_pct": -6.77,
+        "mom_60d_pct": -21.81,
+        "above_200d_trend": false,
+        "pctile_252d": 56.7,
+        "rank": 18
+      },
+      {
+        "ticker": "GC=F",
+        "rs": 5.45524028582157,
+        "mom_20d_pct": -7.93,
+        "mom_60d_pct": -22.81,
+        "above_200d_trend": false,
+        "pctile_252d": 17.9,
+        "rank": 19
+      }
+    ],
     "freshness": {
       "asof": "2026-07-01",
       "built_at": "2026-07-04T06:38:00Z",
@@ -4665,7 +4839,7 @@
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-07-04T16:23:03Z",
-  "inputs_hash": "sha256:609d0ae0bd3c9c1fcb5673787035fb635c25d38a24c45efe65cc7f240f8787f4",
+  "produced_at": "2026-07-04T16:37:01Z",
+  "inputs_hash": "sha256:f632c09a7204594d28fb2e6a5a5d6ff44304da3bc02f5c78d738877378e40bdb",
   "tier": "infrastructure"
 }
