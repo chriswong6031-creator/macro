@@ -433,7 +433,36 @@ def compute_china_scoreboard() -> dict | None:
     def enrich(rows):
         return [{**rec, **look.get(rec["ticker"], {})} for rec in rows]
     modes = {k: enrich(v) for k, v in raw.items()}
-    return {"as_of": rev.get("as_of") or lv.get("as_of") or al.get("as_of"), "modes": modes}
+
+    # Sector washout→turn context (owner request): a per-SECTOR map the board JS uses to
+    # highlight + push up names whose sector washed out along with them and is now turning
+    # (leg A: the sector composite's fresh 2D-MACD x 3D-StochRSI cross; leg B: washed peers
+    # basing/perking — decline velocity collapsed, slight uptick). Re-orders the DEFAULT
+    # view only: reports/china-reversal-gated.md falsified sector-state as a FILTER (its
+    # info is a small per-name tilt), so this never adds/removes rows and feeds nothing
+    # downstream. Best-effort — absent on any failure, never read as neutral.
+    sector_turn = None
+    try:
+        from engine.china_sector_turn import sector_turn_map
+        dd = config.data_dir()
+        cp = dd / "china_search" / "closes.parquet"
+        mp = dd / "china_search" / "members.parquet"
+        if cp.exists() and mp.exists():
+            closes = pd.read_parquet(cp)
+            members = pd.read_parquet(mp)
+            tkr_sector = {t: (s if s != JUNK_SECTOR else "—")
+                          for t, s in members["sector"].items()}
+            st = sector_turn_map(closes, tkr_sector)
+            sector_turn = st.get("sectors") or None
+            if sector_turn:
+                n_boost = sum(1 for r in sector_turn.values() if r.get("boost"))
+                log.info("china sector turn: %d sectors mapped, %d boosted",
+                         len(sector_turn), n_boost)
+    except Exception as e:  # noqa: BLE001 — additive display context, never fatal
+        log.warning("china sector turn unavailable (%s)", e)
+
+    return {"as_of": rev.get("as_of") or lv.get("as_of") or al.get("as_of"), "modes": modes,
+            "sector_turn": sector_turn}
 
 
 def _spark_svg(vals: list[float], color: str = "var(--link)",
