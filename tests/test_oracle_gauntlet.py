@@ -303,7 +303,21 @@ class TestPlaceboSampler:
             assert np.any(~excl[outside_lo: outside_hi + 1]), "Some positions outside zone should be available"
 
     def test_corrupted_sampler_fails_validity(self):
-        """A deliberately-corrupted sampler that seeds INSIDE episode spans must fail the exclusion check."""
+        """A deliberately-corrupted sampler that samples FROM excluded indices must fail the
+        post-hoc validity check; the real sampler must pass.
+
+        FIX 4: The original test only checked the exclusion mask directly but did not
+        exercise an actual corrupted *sampler* variant (one that draws indices from the
+        excluded set) nor verify that a post-hoc validity check fails on it.  This test
+        now:
+          1. Defines a post-hoc validity check: all sampled positions must be outside
+             the exclusion mask.
+          2. Runs a corrupted sampler variant that deliberately samples from the excluded
+             in-span indices.
+          3. Asserts the post-hoc check FAILS on the corrupted sample.
+          4. Runs the real sampler from the harness (using only valid_indices).
+          5. Asserts the post-hoc check PASSES on the real sample.
+        """
         nodes = ["A"]
         panel = _make_mini_panel(nodes, n_days=200)
         panel_dates = panel.index.get_level_values("date").unique().sort_values()
@@ -317,22 +331,42 @@ class TestPlaceboSampler:
 
         # Build exclusion mask
         excl = _build_exclusion_mask(dates_arr, [(onset_idx, exhaust_idx)], zone=10)
+        valid_indices = np.where(~excl)[0]
+        excluded_indices = np.where(excl)[0]
 
-        # Corrupted sampler: force-sample from inside the exclusion zone
-        # Pick an index known to be inside the zone
-        inside_idx = onset_idx + 3  # inside span
+        # Sanity: there must be excluded and valid indices
+        assert len(excluded_indices) > 0, "No excluded indices — test setup error"
+        assert len(valid_indices) > 0, "No valid indices — test setup error"
 
-        # Validity check: the sampled index should be excluded
-        assert excl[inside_idx], (
-            "VALIDITY CHECK FAILED: corrupted sampler chose an index inside the exclusion zone "
-            f"(idx={inside_idx}), but the exclusion mask says it is NOT excluded. "
-            "The sampler test must catch this."
+        # --- Post-hoc validity check: all sampled positions must be outside the exclusion mask ---
+        def validity_check_passes(sampled_positions: np.ndarray, excl_mask: np.ndarray) -> bool:
+            """Returns True iff ALL sampled positions are outside the exclusion mask."""
+            return bool(np.all(~excl_mask[sampled_positions]))
+
+        # --- Corrupted sampler: samples FROM excluded (in-span) indices ---
+        rng_corrupt = np.random.default_rng(42)
+        n_sample = min(5, len(excluded_indices))
+        corrupted_sample = rng_corrupt.choice(excluded_indices, size=n_sample, replace=False)
+
+        # Post-hoc check MUST FAIL on the corrupted sample
+        corrupt_passes = validity_check_passes(corrupted_sample, excl)
+        assert not corrupt_passes, (
+            f"Post-hoc validity check should FAIL for corrupted sampler "
+            f"(sampled from excluded indices {corrupted_sample}), but it passed. "
+            "The check is not discriminating correctly."
         )
 
-        # Verify that a valid sampler would reject this index
-        valid_indices = np.where(~excl)[0]
-        assert inside_idx not in valid_indices, (
-            f"Corrupted sample idx={inside_idx} should not appear in valid_indices"
+        # --- Real sampler: samples FROM valid_indices only ---
+        rng_real = np.random.default_rng(SEED)
+        n_sample_real = min(5, len(valid_indices))
+        real_sample = rng_real.choice(valid_indices, size=n_sample_real, replace=False)
+
+        # Post-hoc check MUST PASS on the real sample
+        real_passes = validity_check_passes(real_sample, excl)
+        assert real_passes, (
+            f"Post-hoc validity check should PASS for real sampler "
+            f"(sampled from valid_indices only: {real_sample}), but it failed. "
+            "Real sampler is broken — check _build_exclusion_mask or sampling logic."
         )
 
 

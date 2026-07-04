@@ -1,8 +1,8 @@
 # Oracle P3 Gauntlet — Results
 
 **Registration:** [ORACLE_GAUNTLET_P3_PREREG.md](ORACLE_GAUNTLET_P3_PREREG.md)
-**Seed:** 20260704  **Trials:** 49  **Runtime:** 104.06s
-**BH-FDR:** q=0.10, 0/49 trials rejected
+**Seed:** 20260704  **Trials:** 109  **Runtime:** 114.71s
+**BH-FDR:** q=0.10, 35/109 trials rejected
 
 > Verdicts in this document are left as **PENDING ADJUDICATION** — the orchestrator applies the pre-bound vocabulary per §3 of the registration.
 
@@ -29,7 +29,7 @@
 | ep_out_undeniable_21d | out | undeniable | 21d | 369 | 0.14% | -0.14% | 0.19% | [-0.52%, 0.20%] | 0.7735 | N | ✗ | ✗ | ✗ | ✗ |
 | ep_out_undeniable_63d | out | undeniable | 63d | 366 | -0.03% | 0.03% | 0.48% | [-0.49%, 0.59%] | 0.4690 | N | ✗ | ✗ | ✗ | ✗ |
 | ep_in_onset_5d | in | onset | 5d | 356 | 0.57% | 0.57% | 0.09% | [0.40%, 0.74%] | 0.0000 | N | ✓ | ✓ | ✓ | ✓ |
-| ep_in_onset_21d | in | onset | 21d | 355 | 0.62% | 0.62% | 0.27% | [0.13%, 1.16%] | 0.0075 | N | ✓ | ✓ | ✓ | ✓ |
+| ep_in_onset_21d | in | onset | 21d | 355 | 0.62% | 0.62% | 0.27% | [0.13%, 1.16%] | 0.0075 | Y | ✓ | ✓ | ✓ | ✓ |
 | ep_in_onset_63d | in | onset | 63d | 350 | 0.07% | 0.07% | 0.45% | [-0.61%, 0.82%] | 0.4335 | N | ✗ | ✗ | ✓ | ✗ |
 | ep_in_confirmed_5d | in | confirmed | 5d | 356 | 0.00% | 0.00% | 0.09% | [-0.20%, 0.23%] | 0.5100 | N | ✗ | ✗ | ✗ | ✗ |
 | ep_in_confirmed_21d | in | confirmed | 21d | 355 | -0.17% | -0.17% | 0.23% | [-0.70%, 0.42%] | 0.7210 | N | ✗ | ✗ | ✗ | ✗ |
@@ -46,12 +46,12 @@
 | P-EXIT | vix_low | -0.11% |
 | P-EXIT | spy_above_200 | -0.01% |
 | P-EXIT | spy_below_200 | -0.40% |
-| P-EXIT | G3 note | G3 fail: both vix_high(-0.0018) and vix_low(-0.0011) non-positive; G3 fail: both spy_above_200(-0.0001) and spy_below_200(-0.0040) non-positive |
+| P-EXIT | G3 note | G3 fail: larger stratum vix_high (n=250) has non-positive mean=-0.0018; G3 fail: larger stratum spy_above_200 (n=246) has non-positive mean=-0.0001 |
 | P-ENTRY | vix_high | -0.34% |
 | P-ENTRY | vix_low | -0.02% |
 | P-ENTRY | spy_above_200 | -0.03% |
 | P-ENTRY | spy_below_200 | -0.39% |
-| P-ENTRY | G3 note | G3 fail: both vix_high(-0.0034) and vix_low(-0.0002) non-positive; G3 fail: both spy_above_200(-0.0003) and spy_below_200(-0.0039) non-positive |
+| P-ENTRY | G3 note | G3 fail: larger stratum vix_low (n=191) has non-positive mean=-0.0002; G3 fail: larger stratum spy_above_200 (n=217) has non-positive mean=-0.0003 |
 
 ## G4 Era consistency — primary endpoints
 
@@ -110,43 +110,103 @@
 
 ## S4 Routing cells summary
 
-Total sufficient cells: 30
+Total routing trials (cells × 3 horizons): 90
 BH-FDR rejected: per trial ledger
 
-| routing_path | n | horizon | mean_fwd_rs | hit_rate | boot_p_approx | BH rejected |
+| trial_id | n | horizon | mean_fwd_rs | hit_rate | boot_p | BH rejected |
 |---|---|---|---|---|---|---|
-| ai_compute/software/high_vix | 12 | 5d | -0.23% | 0.3636 | 0.8759 | N |
-| ai_compute/healthcare_defensive/high_vix | 12 | 5d | 0.02% | 0.6364 | 0.1241 | N |
-| ai_compute/consumer_staples_defensive/high_vix | 12 | 5d | -0.81% | 0.2727 | 0.9584 | N |
-| ai_compute/energy_commodities/high_vix | 12 | 5d | 0.53% | 0.7273 | 0.0416 | N |
-| ai_compute/financials_rates/high_vix | 12 | 5d | -0.16% | 0.6364 | 0.1241 | N |
-| ai_compute/long_duration_growth/high_vix | 12 | 5d | -0.48% | 0.4545 | 0.7181 | N |
-| software/ai_compute/high_vix | 12 | 5d | 1.77% | 0.8333 | 0.0105 | N |
-| software/healthcare_defensive/high_vix | 12 | 5d | -0.37% | 0.4167 | 0.7181 | N |
-| software/consumer_staples_defensive/high_vix | 12 | 5d | -0.99% | 0.2500 | 0.9584 | N |
-| software/energy_commodities/high_vix | 12 | 5d | 0.04% | 0.5000 | 0.5000 | N |
-| software/financials_rates/high_vix | 12 | 5d | -0.46% | 0.3333 | 0.8759 | N |
-| software/long_duration_growth/high_vix | 12 | 5d | -0.89% | 0.3333 | 0.8759 | N |
-| consumer_staples_defensive/ai_compute/high_vix | 10 | 5d | -0.28% | 0.3000 | 0.8970 | N |
-| consumer_staples_defensive/software/high_vix | 10 | 5d | -0.21% | 0.4000 | 0.7365 | N |
-| consumer_staples_defensive/healthcare_defensive/high_vix | 10 | 5d | 0.61% | 0.8000 | 0.0289 | N |
-| consumer_staples_defensive/energy_commodities/high_vix | 10 | 5d | -0.02% | 0.5000 | 0.5000 | N |
-| consumer_staples_defensive/financials_rates/high_vix | 10 | 5d | 0.94% | 0.7000 | 0.1030 | N |
-| consumer_staples_defensive/long_duration_growth/high_vix | 10 | 5d | 0.07% | 0.6000 | 0.2635 | N |
-| energy_commodities/ai_compute/high_vix | 10 | 5d | 0.23% | 0.6000 | 0.2635 | N |
-| energy_commodities/software/high_vix | 10 | 5d | -0.12% | 0.4000 | 0.7365 | N |
-| energy_commodities/healthcare_defensive/high_vix | 10 | 5d | 0.12% | 0.3000 | 0.8970 | N |
-| energy_commodities/consumer_staples_defensive/high_vix | 10 | 5d | -0.30% | 0.4000 | 0.7365 | N |
-| energy_commodities/financials_rates/high_vix | 10 | 5d | -0.16% | 0.4000 | 0.7365 | N |
-| energy_commodities/long_duration_growth/high_vix | 10 | 5d | 0.11% | 0.6000 | 0.2635 | N |
-| long_duration_growth/ai_compute/high_vix | 10 | 5d | 0.62% | 0.6000 | 0.2635 | N |
-| long_duration_growth/software/high_vix | 10 | 5d | 0.09% | 0.5000 | 0.5000 | N |
-| long_duration_growth/healthcare_defensive/high_vix | 10 | 5d | 0.45% | 0.4000 | 0.7365 | N |
-| long_duration_growth/consumer_staples_defensive/high_vix | 10 | 5d | -1.20% | 0.0000 | 0.9992 | N |
-| long_duration_growth/energy_commodities/high_vix | 10 | 5d | 0.17% | 0.5000 | 0.5000 | N |
-| long_duration_growth/financials_rates/high_vix | 10 | 5d | -0.02% | 0.6000 | 0.2635 | N |
+| routing_ai_compute/software/high_vix_5d | 12 | 5d | -0.23% | 0.3636 | 1.0000 | N |
+| routing_ai_compute/software/high_vix_10d | 12 | 10d | -0.60% | 0.2727 | 1.0000 | N |
+| routing_ai_compute/software/high_vix_15d | 12 | 15d | -0.30% | 0.5455 | 1.0000 | N |
+| routing_ai_compute/healthcare_defensive/high_vix_5d | 12 | 5d | 0.02% | 0.6364 | 0.0000 | Y |
+| routing_ai_compute/healthcare_defensive/high_vix_10d | 12 | 10d | -0.06% | 0.6364 | 1.0000 | N |
+| routing_ai_compute/healthcare_defensive/high_vix_15d | 12 | 15d | -0.36% | 0.4545 | 1.0000 | N |
+| routing_ai_compute/consumer_staples_defensive/high_vix_5d | 12 | 5d | -0.81% | 0.2727 | 1.0000 | N |
+| routing_ai_compute/consumer_staples_defensive/high_vix_10d | 12 | 10d | -1.04% | 0.0909 | 1.0000 | N |
+| routing_ai_compute/consumer_staples_defensive/high_vix_15d | 12 | 15d | -0.80% | 0.2727 | 1.0000 | N |
+| routing_ai_compute/energy_commodities/high_vix_5d | 12 | 5d | 0.53% | 0.7273 | 0.0000 | Y |
+| routing_ai_compute/energy_commodities/high_vix_10d | 12 | 10d | 1.00% | 0.7273 | 0.0000 | Y |
+| routing_ai_compute/energy_commodities/high_vix_15d | 12 | 15d | 0.93% | 0.7273 | 0.0000 | Y |
+| routing_ai_compute/financials_rates/high_vix_5d | 12 | 5d | -0.16% | 0.6364 | 1.0000 | N |
+| routing_ai_compute/financials_rates/high_vix_10d | 12 | 10d | -0.69% | 0.1818 | 1.0000 | N |
+| routing_ai_compute/financials_rates/high_vix_15d | 12 | 15d | -0.64% | 0.3636 | 1.0000 | N |
+| routing_ai_compute/long_duration_growth/high_vix_5d | 12 | 5d | -0.48% | 0.4545 | 1.0000 | N |
+| routing_ai_compute/long_duration_growth/high_vix_10d | 12 | 10d | -0.25% | 0.4545 | 1.0000 | N |
+| routing_ai_compute/long_duration_growth/high_vix_15d | 12 | 15d | -0.31% | 0.5455 | 1.0000 | N |
+| routing_software/ai_compute/high_vix_5d | 12 | 5d | 1.77% | 0.8333 | 0.0000 | Y |
+| routing_software/ai_compute/high_vix_10d | 12 | 10d | 1.79% | 0.7500 | 0.0000 | Y |
+| routing_software/ai_compute/high_vix_15d | 12 | 15d | -0.14% | 0.5000 | 1.0000 | N |
+| routing_software/healthcare_defensive/high_vix_5d | 12 | 5d | -0.37% | 0.4167 | 1.0000 | N |
+| routing_software/healthcare_defensive/high_vix_10d | 12 | 10d | -0.82% | 0.2500 | 1.0000 | N |
+| routing_software/healthcare_defensive/high_vix_15d | 12 | 15d | -0.71% | 0.2500 | 1.0000 | N |
+| routing_software/consumer_staples_defensive/high_vix_5d | 12 | 5d | -0.99% | 0.2500 | 1.0000 | N |
+| routing_software/consumer_staples_defensive/high_vix_10d | 12 | 10d | -1.06% | 0.3333 | 1.0000 | N |
+| routing_software/consumer_staples_defensive/high_vix_15d | 12 | 15d | -0.95% | 0.2500 | 1.0000 | N |
+| routing_software/energy_commodities/high_vix_5d | 12 | 5d | 0.04% | 0.5000 | 0.0000 | Y |
+| routing_software/energy_commodities/high_vix_10d | 12 | 10d | -0.28% | 0.6667 | 1.0000 | N |
+| routing_software/energy_commodities/high_vix_15d | 12 | 15d | -0.79% | 0.5833 | 1.0000 | N |
+| routing_software/financials_rates/high_vix_5d | 12 | 5d | -0.46% | 0.3333 | 1.0000 | N |
+| routing_software/financials_rates/high_vix_10d | 12 | 10d | -0.42% | 0.2500 | 1.0000 | N |
+| routing_software/financials_rates/high_vix_15d | 12 | 15d | 0.95% | 0.7500 | 0.0000 | Y |
+| routing_software/long_duration_growth/high_vix_5d | 12 | 5d | -0.89% | 0.3333 | 1.0000 | N |
+| routing_software/long_duration_growth/high_vix_10d | 12 | 10d | -1.40% | 0.2500 | 1.0000 | N |
+| routing_software/long_duration_growth/high_vix_15d | 12 | 15d | -1.32% | 0.2500 | 1.0000 | N |
+| routing_consumer_staples_defensive/ai_compute/high_vix_5d | 10 | 5d | -0.28% | 0.3000 | 1.0000 | N |
+| routing_consumer_staples_defensive/ai_compute/high_vix_10d | 10 | 10d | 0.07% | 0.5000 | 0.0000 | Y |
+| routing_consumer_staples_defensive/ai_compute/high_vix_15d | 10 | 15d | -0.00% | 0.5000 | 1.0000 | N |
+| routing_consumer_staples_defensive/software/high_vix_5d | 10 | 5d | -0.21% | 0.4000 | 1.0000 | N |
+| routing_consumer_staples_defensive/software/high_vix_10d | 10 | 10d | 0.16% | 0.5000 | 0.0000 | Y |
+| routing_consumer_staples_defensive/software/high_vix_15d | 10 | 15d | -0.14% | 0.3000 | 1.0000 | N |
+| routing_consumer_staples_defensive/healthcare_defensive/high_vix_5d | 10 | 5d | 0.61% | 0.8000 | 0.0000 | Y |
+| routing_consumer_staples_defensive/healthcare_defensive/high_vix_10d | 10 | 10d | -0.05% | 0.5000 | 1.0000 | N |
+| routing_consumer_staples_defensive/healthcare_defensive/high_vix_15d | 10 | 15d | 0.32% | 0.4000 | 0.0000 | Y |
+| routing_consumer_staples_defensive/energy_commodities/high_vix_5d | 10 | 5d | -0.02% | 0.5000 | 1.0000 | N |
+| routing_consumer_staples_defensive/energy_commodities/high_vix_10d | 10 | 10d | -0.12% | 0.5000 | 1.0000 | N |
+| routing_consumer_staples_defensive/energy_commodities/high_vix_15d | 10 | 15d | -0.20% | 0.6000 | 1.0000 | N |
+| routing_consumer_staples_defensive/financials_rates/high_vix_5d | 10 | 5d | 0.94% | 0.7000 | 0.0000 | Y |
+| routing_consumer_staples_defensive/financials_rates/high_vix_10d | 10 | 10d | 0.67% | 0.5000 | 0.0000 | Y |
+| routing_consumer_staples_defensive/financials_rates/high_vix_15d | 10 | 15d | 0.55% | 0.6000 | 0.0000 | Y |
+| routing_consumer_staples_defensive/long_duration_growth/high_vix_5d | 10 | 5d | 0.07% | 0.6000 | 0.0000 | Y |
+| routing_consumer_staples_defensive/long_duration_growth/high_vix_10d | 10 | 10d | -0.96% | 0.2000 | 1.0000 | N |
+| routing_consumer_staples_defensive/long_duration_growth/high_vix_15d | 10 | 15d | -0.39% | 0.5000 | 1.0000 | N |
+| routing_energy_commodities/ai_compute/high_vix_5d | 10 | 5d | 0.23% | 0.6000 | 0.0000 | Y |
+| routing_energy_commodities/ai_compute/high_vix_10d | 10 | 10d | 1.06% | 0.8000 | 0.0000 | Y |
+| routing_energy_commodities/ai_compute/high_vix_15d | 10 | 15d | 0.12% | 0.8000 | 0.0000 | Y |
+| routing_energy_commodities/software/high_vix_5d | 10 | 5d | -0.12% | 0.4000 | 1.0000 | N |
+| routing_energy_commodities/software/high_vix_10d | 10 | 10d | -0.22% | 0.4000 | 1.0000 | N |
+| routing_energy_commodities/software/high_vix_15d | 10 | 15d | -0.52% | 0.3000 | 1.0000 | N |
+| routing_energy_commodities/healthcare_defensive/high_vix_5d | 10 | 5d | 0.12% | 0.3000 | 0.0000 | Y |
+| routing_energy_commodities/healthcare_defensive/high_vix_10d | 10 | 10d | -0.49% | 0.2000 | 1.0000 | N |
+| routing_energy_commodities/healthcare_defensive/high_vix_15d | 10 | 15d | -0.06% | 0.5000 | 1.0000 | N |
+| routing_energy_commodities/consumer_staples_defensive/high_vix_5d | 10 | 5d | -0.30% | 0.4000 | 1.0000 | N |
+| routing_energy_commodities/consumer_staples_defensive/high_vix_10d | 10 | 10d | -0.15% | 0.5000 | 1.0000 | N |
+| routing_energy_commodities/consumer_staples_defensive/high_vix_15d | 10 | 15d | -0.41% | 0.5000 | 1.0000 | N |
+| routing_energy_commodities/financials_rates/high_vix_5d | 10 | 5d | -0.16% | 0.4000 | 1.0000 | N |
+| routing_energy_commodities/financials_rates/high_vix_10d | 10 | 10d | -1.12% | 0.2000 | 1.0000 | N |
+| routing_energy_commodities/financials_rates/high_vix_15d | 10 | 15d | -1.33% | 0.3000 | 1.0000 | N |
+| routing_energy_commodities/long_duration_growth/high_vix_5d | 10 | 5d | 0.11% | 0.6000 | 0.0000 | Y |
+| routing_energy_commodities/long_duration_growth/high_vix_10d | 10 | 10d | 0.67% | 0.6000 | 0.0000 | Y |
+| routing_energy_commodities/long_duration_growth/high_vix_15d | 10 | 15d | 0.46% | 0.6000 | 0.0000 | Y |
+| routing_long_duration_growth/ai_compute/high_vix_5d | 10 | 5d | 0.62% | 0.6000 | 0.0000 | Y |
+| routing_long_duration_growth/ai_compute/high_vix_10d | 10 | 10d | -0.14% | 0.7000 | 1.0000 | N |
+| routing_long_duration_growth/ai_compute/high_vix_15d | 10 | 15d | -0.04% | 0.6000 | 1.0000 | N |
+| routing_long_duration_growth/software/high_vix_5d | 10 | 5d | 0.09% | 0.5000 | 0.0000 | Y |
+| routing_long_duration_growth/software/high_vix_10d | 10 | 10d | 0.03% | 0.5000 | 0.0000 | Y |
+| routing_long_duration_growth/software/high_vix_15d | 10 | 15d | 0.19% | 0.6000 | 0.0000 | Y |
+| routing_long_duration_growth/healthcare_defensive/high_vix_5d | 10 | 5d | 0.45% | 0.4000 | 0.0000 | Y |
+| routing_long_duration_growth/healthcare_defensive/high_vix_10d | 10 | 10d | 0.38% | 0.6000 | 0.0000 | Y |
+| routing_long_duration_growth/healthcare_defensive/high_vix_15d | 10 | 15d | 0.48% | 0.7000 | 0.0000 | Y |
+| routing_long_duration_growth/consumer_staples_defensive/high_vix_5d | 10 | 5d | -1.20% | 0.0000 | 1.0000 | N |
+| routing_long_duration_growth/consumer_staples_defensive/high_vix_10d | 10 | 10d | -0.27% | 0.5000 | 1.0000 | N |
+| routing_long_duration_growth/consumer_staples_defensive/high_vix_15d | 10 | 15d | 0.03% | 0.6000 | 0.0000 | Y |
+| routing_long_duration_growth/energy_commodities/high_vix_5d | 10 | 5d | 0.17% | 0.5000 | 0.0000 | Y |
+| routing_long_duration_growth/energy_commodities/high_vix_10d | 10 | 10d | -0.42% | 0.2000 | 1.0000 | N |
+| routing_long_duration_growth/energy_commodities/high_vix_15d | 10 | 15d | -0.22% | 0.3000 | 1.0000 | N |
+| routing_long_duration_growth/financials_rates/high_vix_5d | 10 | 5d | -0.02% | 0.6000 | 1.0000 | N |
+| routing_long_duration_growth/financials_rates/high_vix_10d | 10 | 10d | 0.43% | 0.7000 | 0.0000 | Y |
+| routing_long_duration_growth/financials_rates/high_vix_15d | 10 | 15d | 0.27% | 0.6000 | 0.0000 | Y |
 
 ---
 
-*Trial ledger: p3_trial_ledger.json (gitignored) — 49 trials enumerated before p-computation.*
-*Runtime: 104.06s*
+*Trial ledger: p3_trial_ledger.json (gitignored) — 109 trials enumerated before p-computation.*
+*Runtime: 114.71s*

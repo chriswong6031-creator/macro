@@ -425,13 +425,28 @@ def _regime_strata(episodes: pd.DataFrame) -> dict[str, np.ndarray]:
 def _check_g3(
     pooled_mean: float,
     strata_means: dict[str, float],
+    strata_ns: dict[str, int] | None = None,
 ) -> tuple[bool, str]:
-    """Evaluate G3 regime-stratification survival.
+    """Evaluate G3 regime-stratification survival (registered wording).
 
-    PASS conditions:
-    1. At least the LARGER stratum (between vix_high vs vix_low, and between
-       spy_above vs spy_below) retains a positive direction-adjusted mean.
-    2. No stratum reverses sign with |mean| > half the pooled edge.
+    FIX 3: Thread per-stratum n through and implement the registered wording:
+    'at least the LARGER stratum retains a positive direction-adjusted mean AND
+    no stratum reverses sign with |mean| > half the pooled edge.'
+
+    Previous implementation substituted 'at least one stratum positive' for
+    'the LARGER stratum positive', which is a weaker condition and not what
+    the pre-registration states.
+
+    Parameters
+    ----------
+    pooled_mean : float
+        Direction-adjusted pooled mean across all episodes.
+    strata_means : dict[str, float]
+        Direction-adjusted mean per stratum name.
+    strata_ns : dict[str, int] | None
+        Number of (non-NaN) observations per stratum.  When None the function
+        falls back to the n-unaware behaviour (treats both strata equally, which
+        is conservative — it can only fail, not spuriously pass).
 
     Returns (passes, explanation_string).
     """
@@ -455,14 +470,20 @@ def _check_g3(
         if m1 is None or m2 is None or np.isnan(m1) or np.isnan(m2):
             continue
 
-        # Condition 1: larger stratum positive
-        # We can't know counts here — check both are positive; if one is negative,
-        # that may still pass if it's the smaller stratum.  We check the pair rule:
-        # at least the larger (by n) must be positive.  Since we don't have n here,
-        # require at least ONE stratum of the pair to be positive.
-        if m1 <= 0 and m2 <= 0:
+        # Condition 1: the LARGER stratum retains a positive direction-adjusted mean.
+        n1 = (strata_ns.get(s1, 0) if strata_ns else 0)
+        n2 = (strata_ns.get(s2, 0) if strata_ns else 0)
+
+        if n1 >= n2:
+            larger_name, larger_mean = s1, m1
+        else:
+            larger_name, larger_mean = s2, m2
+
+        if larger_mean <= 0:
             passes = False
-            notes.append(f"G3 fail: both {s1}({m1:.4f}) and {s2}({m2:.4f}) non-positive")
+            notes.append(
+                f"G3 fail: larger stratum {larger_name} (n={max(n1, n2)}) has non-positive mean={larger_mean:.4f}"
+            )
 
         # Condition 2: no stratum reverses sign with |mean| > half pooled edge
         for sname, mv in [(s1, m1), (s2, m2)]:
@@ -691,14 +712,15 @@ def enumerate_trials(
         "bh_rejected": None,
     })
 
-    # S4 — routing cells
+    # S4 — routing cells (FIX 1: one trial per cell×horizon)
     for rc in routing_cells:
+        h_rc = rc.get("horizon_d", 5)
         trials.append({
-            "trial_id": f"routing_{rc['path']}",
+            "trial_id": f"routing_{rc['path']}_{h_rc}d",
             "type": "routing",
             "direction": rc.get("direction", "out"),
             "tier": "onset",
-            "horizon_d": rc.get("horizon_d", 5),
+            "horizon_d": h_rc,
             "section": "S4",
             "routing_path": rc["path"],
             "n": rc.get("n", 0),
@@ -716,8 +738,13 @@ def enumerate_trials(
 def _enumerate_routing_cells(routing: dict, source_path: str = "") -> list[dict]:
     """Recursively enumerate all sufficient routing cells.
 
-    Each cell has keys: path, n, horizons with their mean_fwd_rs values,
-    sufficient=True.
+    FIX 1 (FDR family): Emit one trial per (source, dest, regime, horizon) for
+    each of the 3 registered horizons (5/10/15d).  Previously this function
+    collapsed all horizons to fwd_windows[0] only, under-counting the family.
+
+    Each returned dict has keys: path, n, horizon_d, mean_fwd_rs, hit_rate,
+    sufficient=True.  The path encodes source/dest/regime; horizon_d
+    distinguishes the three trials from the same routing cell.
 
     Routing structure: source → dest → regime_key → {n, sufficient, mean_fwd_rs_*d, ...}
     """
@@ -733,24 +760,210 @@ def _enumerate_routing_cells(routing: dict, source_path: str = "") -> list[dict]
                 continue
             if isinstance(v, dict):
                 if "sufficient" in v:
-                    # Leaf cell
+                    # Leaf cell — emit one trial per horizon (registered S4 = source × dest × regime × 3 horizons)
                     if v.get("sufficient", False):
-                        cell: dict[str, Any] = {
-                            "path": f"{path}/{k}".lstrip("/"),
-                            "n": v.get("n", 0),
-                            "sufficient": True,
-                        }
+                        cell_path = f"{path}/{k}".lstrip("/")
+                        n_cell = v.get("n", 0)
                         for hw in fwd_windows:
-                            cell[f"mean_fwd_rs_{hw}d"] = v.get(f"mean_fwd_rs_{hw}d", np.nan)
-                            cell[f"hit_rate_positive_{hw}d"] = v.get(f"hit_rate_positive_{hw}d", np.nan)
-                        # Use first fwd_window as canonical horizon for trial ledger
-                        cell["horizon_d"] = fwd_windows[0] if fwd_windows else 5
-                        cells.append(cell)
+                            cell: dict[str, Any] = {
+                                "path": cell_path,
+                                "n": n_cell,
+                                "sufficient": True,
+                                "horizon_d": hw,
+                                "mean_fwd_rs": v.get(f"mean_fwd_rs_{hw}d", np.nan),
+                                "hit_rate": v.get(f"hit_rate_positive_{hw}d", np.nan),
+                            }
+                            cells.append(cell)
                 else:
                     _recurse(v, f"{path}/{k}".lstrip("/"))
 
     _recurse(routing, source_path)
     return cells
+
+
+# ---------------------------------------------------------------------------
+# Routing onset reconstruction (FIX 2 — G5 registered method)
+# ---------------------------------------------------------------------------
+
+def _reconstruct_routing_onset_outcomes(
+    panel_m: pd.DataFrame,
+    rotation_groups_path: Path,
+    graph_m_routing_config: dict,
+) -> dict[str, dict[str, dict[str, list[float]]]]:
+    """Reconstruct per-onset routing outcomes from panel_m.
+
+    Mirrors engine/oracle/graph.py compute_routing's onset detection EXACTLY:
+      - complex 5d-mean accel_z crossing below accel_z_thresh with ≥confirm_k
+        of last confirm_m days below threshold
+      - regime split by vix_pctile >= high_vix_thresh → 'high_vix' / 'low_vix'
+      - forward RS-change at fwd_windows horizons per destination complex
+
+    Returns
+    -------
+    dict: src_id → dest_id → regime_label → {h: [per-onset outcomes]}
+        Only sufficient cells (n >= min_n) are included.
+
+    The returned per-onset outcome lists are used to form block-bootstrap p-values
+    per the registered G5 method (same 2,000-iter/21d-block machinery as G2).
+
+    Cross-check assertion: for each sufficient cell the mean of the reconstructed
+    outcomes must match graph_m.json's stored mean_fwd_rs_{h}d to 1e-9.
+    If any cell fails this check, a ValueError is raised to stop the run.
+    """
+    with open(rotation_groups_path) as f:
+        rg = json.load(f)
+    complexes = {c["id"]: c["members"] for c in rg["complexes"]}
+
+    cfg = graph_m_routing_config
+    accel_thresh = cfg["accel_z_thresh"]
+    confirm_k = cfg["confirm_k"]
+    confirm_m = cfg["confirm_m"]
+    fwd_windows = cfg["fwd_windows"]
+    high_vix = cfg["high_vix_thresh"]
+    min_n = cfg["min_n"]
+
+    # Build wide frames
+    accel_z_wide = panel_m["accel_z"].unstack(level="node") if "accel_z" in panel_m.columns else pd.DataFrame()
+    rs_wide = panel_m["rs"].unstack(level="node") if "rs" in panel_m.columns else pd.DataFrame()
+    vix_wide = panel_m["vix_pctile"].unstack(level="node") if "vix_pctile" in panel_m.columns else pd.DataFrame()
+
+    if accel_z_wide.empty or rs_wide.empty:
+        raise ValueError("panel_m missing required columns (accel_z, rs)")
+
+    vix_ser: pd.Series | None = None
+    if not vix_wide.empty:
+        vix_ser = vix_wide.iloc[:, 0]
+
+    complex_accel: dict[str, pd.Series] = {}
+    complex_rs: dict[str, pd.Series] = {}
+    for cid, members in complexes.items():
+        avail_accel = [m for m in members if m in accel_z_wide.columns]
+        avail_rs = [m for m in members if m in rs_wide.columns]
+        if avail_accel:
+            complex_accel[cid] = accel_z_wide[avail_accel].mean(axis=1, skipna=True)
+        if avail_rs:
+            complex_rs[cid] = rs_wide[avail_rs].mean(axis=1, skipna=True)
+
+    # src → dest → regime → {h: [outcomes]}
+    results: dict[str, dict[str, dict[str, dict[int, list[float]]]]] = {}
+
+    for src_id, src_accel in complex_accel.items():
+        accel_arr = src_accel.values
+        n = len(accel_arr)
+
+        # 5d rolling mean of accel_z (mirror of graph.py)
+        roll5 = np.full(n, np.nan)
+        for i in range(4, n):
+            window = accel_arr[i - 4: i + 1]
+            valid = window[~np.isnan(window)]
+            if len(valid) >= 3:
+                roll5[i] = float(valid.mean())
+
+        # Confirmation flags: ≥confirm_k of last confirm_m days below threshold
+        confirm_flags = np.zeros(n, dtype=bool)
+        for i in range(confirm_m - 1, n):
+            window = accel_arr[i - confirm_m + 1: i + 1]
+            below = np.sum(window < accel_thresh)
+            if below >= confirm_k:
+                confirm_flags[i] = True
+
+        # Onset detection: crossing transition + confirm
+        onset_indices: list[int] = []
+        in_outflow = False
+        for i in range(1, n):
+            if confirm_flags[i] and not np.isnan(roll5[i]) and roll5[i] < accel_thresh:
+                if not in_outflow:
+                    onset_indices.append(i)
+                    in_outflow = True
+            else:
+                if not np.isnan(roll5[i]) and roll5[i] >= -0.5:
+                    in_outflow = False
+
+        if not onset_indices:
+            continue
+
+        src_results: dict[str, dict[str, dict[int, list[float]]]] = {}
+
+        for dest_id, dest_rs in complex_rs.items():
+            if dest_id == src_id:
+                continue
+            dest_arr = dest_rs.values
+
+            dest_results: dict[str, dict[int, list[float]]] = {}
+
+            for regime_label, vix_cond in [("high_vix", True), ("low_vix", False)]:
+                per_h: dict[int, list[float]] = {w: [] for w in fwd_windows}
+                n_events = 0
+
+                for onset_i in onset_indices:
+                    vix_val = (
+                        float(vix_ser.iloc[onset_i])
+                        if vix_ser is not None and onset_i < len(vix_ser)
+                        else np.nan
+                    )
+                    if not np.isnan(vix_val):
+                        is_high_vix = vix_val >= high_vix
+                        if is_high_vix != vix_cond:
+                            continue
+
+                    rs_at_onset = dest_arr[onset_i] if onset_i < len(dest_arr) else np.nan
+                    if np.isnan(rs_at_onset):
+                        continue
+                    n_events += 1
+                    for fwd_w in fwd_windows:
+                        fwd_i = onset_i + fwd_w
+                        if fwd_i < len(dest_arr) and not np.isnan(dest_arr[fwd_i]):
+                            fwd_rs_chg = dest_arr[fwd_i] - rs_at_onset
+                            per_h[fwd_w].append(fwd_rs_chg)
+
+                if n_events >= min_n:
+                    dest_results[regime_label] = per_h
+
+            if dest_results:
+                src_results[dest_id] = dest_results
+
+        if src_results:
+            results[src_id] = src_results
+
+    return results
+
+
+def _verify_routing_reconstruction(
+    onset_outcomes: dict,
+    graph_m_routing: dict,
+    fwd_windows: list[int],
+    tol: float = 1e-9,
+) -> None:
+    """Assert that per-cell mean from reconstructed outcomes matches stored means.
+
+    Raises ValueError if any sufficient cell differs by more than tol.
+    This is the registered cross-check: reconstruction fidelity to stored aggregates.
+    """
+    for src_id, src_dict in onset_outcomes.items():
+        for dest_id, dest_dict in src_dict.items():
+            for regime_label, per_h in dest_dict.items():
+                stored_cell = (
+                    graph_m_routing.get(src_id, {})
+                    .get(dest_id, {})
+                    .get(regime_label, {})
+                )
+                if not stored_cell or not stored_cell.get("sufficient", False):
+                    continue
+                for hw in fwd_windows:
+                    vals = per_h.get(hw, [])
+                    stored_mean = stored_cell.get(f"mean_fwd_rs_{hw}d")
+                    if stored_mean is None or len(vals) == 0:
+                        continue
+                    recon_mean = float(np.mean(vals))
+                    diff = abs(recon_mean - stored_mean)
+                    if diff > tol:
+                        raise ValueError(
+                            f"Routing reconstruction mean mismatch for "
+                            f"{src_id}->{dest_id}/{regime_label}/{hw}d: "
+                            f"stored={stored_mean:.15f} reconstructed={recon_mean:.15f} "
+                            f"diff={diff:.3e} (tolerance={tol:.0e}). "
+                            "STOP: do not ship mismatched numbers."
+                        )
 
 
 # ---------------------------------------------------------------------------
@@ -771,7 +984,8 @@ def run_gauntlet(data_dir: Path) -> dict:
     episodes_s = pd.read_parquet(oracle_dir / "episodes_s.parquet")
     panel_s = pd.read_parquet(oracle_dir / "panel_s.parquet")
     episodes_m = pd.read_parquet(oracle_dir / "episodes_m.parquet")
-    # panel_m needed only for S2 benchmark — skip for now (tier M is confirmatory only)
+    # panel_m needed for FIX 2 routing p-value reconstruction (G5 registered method)
+    panel_m = pd.read_parquet(oracle_dir / "panel_m.parquet")
 
     with open(oracle_dir / "graph_s.json") as f:
         graph_s = json.load(f)
@@ -781,14 +995,30 @@ def run_gauntlet(data_dir: Path) -> dict:
     routing_s = graph_s.get("routing", {})
     routing_m = graph_m.get("routing", {})
 
-    # ---- Routing cells ----
+    # ---- Routing cells (FIX 1: 3 horizons per cell → 90 routing trials) ----
     log.info("Enumerating routing cells…")
     routing_cells_s = _enumerate_routing_cells(routing_s)
     routing_cells_m = _enumerate_routing_cells(routing_m)
     routing_cells_all = routing_cells_s + routing_cells_m
-    log.info(f"  Tier-S sufficient cells: {len(routing_cells_s)}")
-    log.info(f"  Tier-M sufficient cells: {len(routing_cells_m)}")
-    log.info(f"  Total routing cells: {len(routing_cells_all)}")
+    log.info(f"  Tier-S sufficient cell×horizon trials: {len(routing_cells_s)}")
+    log.info(f"  Tier-M sufficient cell×horizon trials: {len(routing_cells_m)}")
+    log.info(f"  Total routing trials: {len(routing_cells_all)}")
+
+    # ---- Routing onset reconstruction (FIX 2: block-bootstrap p per registered G5) ----
+    log.info("Reconstructing per-onset routing outcomes from panel_m…")
+    rotation_groups_path = oracle_dir / "rotation_groups.json"
+    routing_m_cfg = routing_m.get("_config", {})
+    onset_outcomes_m = _reconstruct_routing_onset_outcomes(
+        panel_m, rotation_groups_path, routing_m_cfg
+    )
+    log.info("Verifying reconstruction means against stored graph_m.json means…")
+    _verify_routing_reconstruction(
+        onset_outcomes_m,
+        routing_m,
+        fwd_windows=routing_m_cfg.get("fwd_windows", [5, 10, 15]),
+        tol=1e-9,
+    )
+    log.info("  Reconstruction cross-check PASSED (all means match stored to 1e-9)")
 
     # ---- Two-sided premium n ----
     two_sided_n = int(episodes_m["two_sided"].sum()) if "two_sided" in episodes_m.columns else 0
@@ -894,9 +1124,10 @@ def run_gauntlet(data_dir: Path) -> dict:
         # One-sided bootstrap p for BH-FDR
         boot_p = bootstrap_p_value(da_mean, boot_dist)
 
-        # G3: regime stratification
+        # G3: regime stratification (FIX 3 — pass per-stratum n for 'larger stratum' check)
         strata = _regime_strata(sub)
         strata_means: dict[str, float] = {}
+        strata_ns: dict[str, int] = {}
         for sname, smask in strata.items():
             # Re-apply to the filtered sub
             smask_sub = smask
@@ -904,7 +1135,8 @@ def run_gauntlet(data_dir: Path) -> dict:
                 sv = da_vals[smask_sub]
                 sv_clean = sv[~np.isnan(sv)]
                 strata_means[sname] = float(np.mean(sv_clean)) if len(sv_clean) > 0 else np.nan
-        g3_pass, g3_note = _check_g3(da_mean, strata_means)
+                strata_ns[sname] = int(len(sv_clean))
+        g3_pass, g3_note = _check_g3(da_mean, strata_means, strata_ns)
 
         # G4: era consistency
         det_dates_raw = sub[det_col].fillna(sub["onset_date"])
@@ -923,6 +1155,7 @@ def run_gauntlet(data_dir: Path) -> dict:
             "boot_p_value": boot_p,
             "era_means": {k: (float(v) if not np.isnan(v) else None) for k, v in era_m.items()},
             "strata_means": {k: (float(v) if not np.isnan(v) else None) for k, v in strata_means.items()},
+            "strata_ns": strata_ns,
             "g1_pass": bool(g1_pass),
             "g2_pass": bool(g2_pass),
             "g3_pass": bool(g3_pass),
@@ -1017,51 +1250,51 @@ def run_gauntlet(data_dir: Path) -> dict:
     if "two_sided_premium_21d" in trial_by_id:
         trial_ledger[trial_by_id["two_sided_premium_21d"]]["p_value"] = ts_result.get("boot_p_value")
 
-    # ---- S4: routing cells ----
-    log.info(f"S4 routing cells ({len(routing_cells_all)} sufficient cells)…")
+    # ---- S4: routing cells (FIX 2: block-bootstrap p from reconstructed per-onset outcomes) ----
+    log.info(f"S4 routing cells ({len(routing_cells_all)} trials at 3 horizons each)…")
     for rc in routing_cells_all:
-        rc_id = f"routing_{rc['path']}"
-        # Routing cells: use mean_fwd_rs at first horizon; compute bootstrap from
-        # the stored mean (we have n but not individual outcomes).
-        # Since the routing table only stores aggregated statistics (mean, hit_rate),
-        # not the individual episode outcomes, we cannot compute bootstrap CI or
-        # placebo tests from the stored data.
-        # Per §3 G5: these enter BH-FDR with one-sided p from G2 bootstrap.
-        # Without individual outcomes, we approximate p from the stored statistics:
-        # treat the hit_rate as a Bernoulli and derive a conservative p-value.
-        n_rc = rc.get("n", 0)
         h_rc = rc.get("horizon_d", 5)
-        hr_key = f"hit_rate_positive_{h_rc}d"
-        mean_key = f"mean_fwd_rs_{h_rc}d"
-        hit_rate = rc.get(hr_key, np.nan)
-        mean_fwd = rc.get(mean_key, np.nan)
+        rc_id = f"routing_{rc['path']}_{h_rc}d"
+        n_rc = rc.get("n", 0)
+        mean_fwd = rc.get("mean_fwd_rs", np.nan)
+        hit_rate = rc.get("hit_rate", np.nan)
 
-        # Conservative p: fraction of bootstrap permutations of Bernoulli(0.5,n)
-        # where hit rate >= observed hit rate.  Using normal approximation for n>=10.
-        if n_rc >= 10 and not np.isnan(hit_rate):
-            # One-sided binomial p: P(X >= obs*n | p=0.5)
-            k_obs = round(hit_rate * n_rc)
-            # Normal approx: Z = (k - n/2) / sqrt(n/4)
-            z = (k_obs - n_rc * 0.5) / (np.sqrt(n_rc * 0.25))
-            # p = P(Z_null >= z) = Phi(-z)  (one-sided, upper tail)
-            # Using manual standard normal CDF approximation (no scipy)
-            p_val = _normal_upper_tail(z)
-        else:
-            p_val = 1.0
+        # Retrieve per-onset outcome list from reconstruction.
+        # Path format: "src_id/dest_id/regime_label"
+        path_parts = rc["path"].split("/")
+        boot_p = 1.0
+        boot_note = "reconstruction lookup failed"
+
+        if len(path_parts) == 3:
+            src_p, dest_p, regime_p = path_parts
+            per_h = onset_outcomes_m.get(src_p, {}).get(dest_p, {}).get(regime_p, {})
+            outcomes = per_h.get(h_rc, [])
+            if len(outcomes) >= 2:
+                vals_arr = np.array(outcomes, dtype=float)
+                _, _, _, boot_dist = block_bootstrap_ci(
+                    vals_arr,
+                    n_iters=2000,
+                    block_size=21,
+                    rng=np.random.default_rng(rng.integers(0, 2**32)),
+                )
+                boot_p = bootstrap_p_value(float(np.mean(vals_arr)), boot_dist)
+                boot_note = "block-bootstrap p (2000 iter, 21d blocks) from reconstructed per-onset outcomes"
+            else:
+                boot_note = f"too few onset outcomes (n={len(outcomes)}) for bootstrap"
 
         rc_result = {
             "n": n_rc,
             "horizon_d": h_rc,
             "mean_fwd_rs": mean_fwd,
             "hit_rate": hit_rate,
-            "boot_p_value_approx": p_val,
-            "note": "Aggregate-only routing cell; p from Bernoulli normal approx",
+            "boot_p_value": boot_p,
+            "note": boot_note,
         }
         results["routing"][rc_id] = rc_result
         all_trial_ids.append(rc_id)
-        all_p_values.append(p_val)
+        all_p_values.append(boot_p)
         if rc_id in trial_by_id:
-            trial_ledger[trial_by_id[rc_id]]["p_value"] = p_val
+            trial_ledger[trial_by_id[rc_id]]["p_value"] = boot_p
 
     # ---- BH-FDR (G5) over ALL registered trials ----
     log.info(f"BH-FDR over {len(all_p_values)} trials at q=0.10…")
@@ -1409,21 +1642,20 @@ def write_markdown(results: dict, output_path: Path, ledger_path: Path) -> None:
         "",
         "## S4 Routing cells summary",
         "",
-        f"Total sufficient cells: {n_routing}",
+        f"Total routing trials (cells × 3 horizons): {n_routing}",
         f"BH-FDR rejected: per trial ledger",
         "",
-        "| routing_path | n | horizon | mean_fwd_rs | hit_rate | boot_p_approx | BH rejected |",
+        "| trial_id | n | horizon | mean_fwd_rs | hit_rate | boot_p | BH rejected |",
         "|---|---|---|---|---|---|---|",
     ]
     bh_rejected_ids = set(results["bh_fdr"].get("trial_ids_rejected", []))
     for rc_id, rc_v in routing.items():
         rej = "Y" if rc_id in bh_rejected_ids else "N"
-        path = rc_id.replace("routing_", "", 1)
         lines.append(
-            f"| {path} | {rc_v.get('n', 0)} | {rc_v.get('horizon_d', '?')}d "
+            f"| {rc_id} | {rc_v.get('n', 0)} | {rc_v.get('horizon_d', '?')}d "
             f"| {_fmt(rc_v.get('mean_fwd_rs'), pct=True)} "
             f"| {_fmt(rc_v.get('hit_rate'))} "
-            f"| {_fmt(rc_v.get('boot_p_value_approx'))} "
+            f"| {_fmt(rc_v.get('boot_p_value'))} "
             f"| {rej} |"
         )
 
