@@ -550,3 +550,58 @@ class TestSeedRegistryValid:
         assert result["n_species"] >= 13, (
             f"Expected ≥13 species in the seed, found {result['n_species']}"
         )
+
+
+# ---------------------------------------------------------------------------
+# W1 regime-directive display wiring (§7)
+# ---------------------------------------------------------------------------
+class TestRegimeContextWiring:
+
+    def test_mirror_carries_live_regime_context(self, tmp_path, monkeypatch):
+        import engine.species_registry as sr
+        seed = {"experiments": []}
+        ep = tmp_path / "registry_seed.json"
+        ep.write_text(json.dumps(seed))
+        monkeypatch.setattr(
+            sr, "_live_regime_context",
+            lambda: "rate_pressure=neutral · favor_entries=True (vector asof 2026-07-04)")
+        reg = {"species": [{"species_id": "S1", "name": "X",
+                            "validation_status": "phase0",
+                            "deployment_status": "unshipped",
+                            "horizon_class": "positional",
+                            "mechanism": "m", "gating": {}, "ledger_binding": {}}]}
+        n = sr.mirror_to_experiments(reg, experiments_path=ep)
+        assert n == 1
+        out = json.loads(ep.read_text())
+        assert out["experiments"][0]["regime_context"].startswith("rate_pressure=neutral")
+
+    def test_context_change_triggers_update(self, tmp_path, monkeypatch):
+        import engine.species_registry as sr
+        ep = tmp_path / "registry_seed.json"
+        ep.write_text(json.dumps({"experiments": []}))
+        reg = {"species": [{"species_id": "S1", "name": "X",
+                            "validation_status": "phase0",
+                            "deployment_status": "unshipped",
+                            "horizon_class": "positional",
+                            "mechanism": "m", "gating": {}, "ledger_binding": {}}]}
+        monkeypatch.setattr(sr, "_live_regime_context", lambda: "A (vector asof d1)")
+        sr.mirror_to_experiments(reg, experiments_path=ep)
+        monkeypatch.setattr(sr, "_live_regime_context", lambda: "B (vector asof d2)")
+        n = sr.mirror_to_experiments(reg, experiments_path=ep)
+        assert n == 1   # context change alone must refresh the mirror row
+        out = json.loads(ep.read_text())
+        assert out["experiments"][0]["regime_context"].startswith("B")
+
+    def test_absent_vector_omits_field(self, tmp_path, monkeypatch):
+        import engine.species_registry as sr
+        ep = tmp_path / "registry_seed.json"
+        ep.write_text(json.dumps({"experiments": []}))
+        monkeypatch.setattr(sr, "_live_regime_context", lambda: None)
+        reg = {"species": [{"species_id": "S1", "name": "X",
+                            "validation_status": "phase0",
+                            "deployment_status": "unshipped",
+                            "horizon_class": "positional",
+                            "mechanism": "m", "gating": {}, "ledger_binding": {}}]}
+        sr.mirror_to_experiments(reg, experiments_path=ep)
+        out = json.loads(ep.read_text())
+        assert "regime_context" not in out["experiments"][0]

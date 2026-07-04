@@ -170,9 +170,12 @@ def _member_state(ticker: str, tier_from_json: Optional[str]) -> Optional[dict]:
     # reclaim: washed out AND above 10d MA (the bottom_radar._capitulation reclaim half)
     reclaim = (washout_bool is True) and above_ma
 
-    # MACD turn: fresh T1-T3 — try the pre-computed tier from subsector_confluence first;
-    # if the ticker wasn't in any subsector group, tier_from_json is None (unknown, not False)
-    macd_turn = (tier_from_json in FRESH_TIERS) if tier_from_json is not None else False
+    # MACD turn: fresh T1-T3 — try the pre-computed tier from subsector_confluence first.
+    # A ticker outside every subsector group has tier None = UNKNOWN, and stays None so
+    # the per-metric coverage gate excludes it from peer_macd_turn_pct (counting unknown
+    # as False would mechanically depress the metric across every widened cohort —
+    # W1 S1 interim widening adds ~1,070 unknown-tier names).
+    macd_turn = (tier_from_json in FRESH_TIERS) if tier_from_json is not None else None
 
     # drawdown from 252d high
     dd = _drawdown_252(close)
@@ -435,8 +438,37 @@ def load_tier_map() -> dict[str, Optional[str]]:
         return {}
 
 
-def load_sector_map() -> dict[str, str]:
-    """Read ticker→sector mapping from subsector_confluence.json.
+# W1 S1 interim widening (§7): GICS → cohort-vocabulary translation. The subsector
+# map speaks Yahoo-style sectors ("Basic Materials", "Consumer Cyclical"); the broad
+# GICS map speaks S&P style ("Materials", "Consumer Discretionary"). Widened names
+# MUST join their siblings' cohorts, not fragment into parallel same-meaning cohorts
+# (measured: only 147/428 strings agree raw).
+_GICS_TO_COHORT = {
+    "Materials": "Basic Materials",
+    "Consumer Discretionary": "Consumer Cyclical",
+    "Consumer Staples": "Consumer Defensive",
+    "Information Technology": "Technology",
+    "Health Care": "Healthcare",
+    "Financials": "Financial Services",
+    # identity for the rest
+    "Energy": "Energy", "Industrials": "Industrials", "Utilities": "Utilities",
+    "Real Estate": "Real Estate", "Communication Services": "Communication Services",
+}
+
+
+def load_sector_map(widen: bool = True) -> dict[str, str]:
+    """Read ticker→sector mapping from subsector_confluence.json, then (W1 S1
+    interim widening, §7) extend with ALREADY-PRICED names the subsector groups
+    don't carry.
+
+    Widening rules (the interim contract):
+      * candidates come from the broad GICS map (equity_factors._names_sectors);
+      * ONLY names present in the broad close cache are added ("already-priced
+        unmapped names only" — no new fetches, and unpriced names would crater
+        the ≥70% coverage law and null whole cohorts);
+      * sector strings translate into the existing cohort vocabulary
+        (_GICS_TO_COHORT) so widened names join their siblings' cohorts;
+      * subsector-mapped names always win (keep-FIRST — no re-mapping).
 
     Returns dict[ticker -> sector].
     """
@@ -453,9 +485,25 @@ def load_sector_map() -> dict[str, str]:
                 t = m.get("ticker")
                 if t:
                     sector_map[t] = sector
-        return sector_map
     except Exception:  # noqa: BLE001
         return {}
+    if not widen or not sector_map:
+        return sector_map
+    try:
+        from engine.equity_factors import _closes, _names_sectors  # noqa: PLC0415
+        priced = set(_closes("broad").columns)
+        n_before = len(sector_map)
+        for t, (_name, gics) in _names_sectors("broad").items():
+            if t in sector_map or t not in priced:
+                continue
+            cohort = _GICS_TO_COHORT.get(gics)
+            if cohort:
+                sector_map[t] = cohort
+        log.info("cohort_metrics: S1 interim widening %d -> %d names "
+                 "(already-priced only)", n_before, len(sector_map))
+    except Exception as exc:  # noqa: BLE001 — widening is additive, never fatal
+        log.warning("cohort_metrics: widening skipped (%s)", exc)
+    return sector_map
 
 
 def compute(
