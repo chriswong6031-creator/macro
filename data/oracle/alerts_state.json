@@ -91,7 +91,8 @@
   },
   "__regime__": {
     "breadth": 0.6107,
-    "n_active_complexes": 7
+    "n_active_complexes": 7,
+    "rotation_tag": "rotation"
   },
   "agricultureindoorfarming__out": {
     "direction": "out",
