@@ -49,6 +49,9 @@ compute_leadlag(complex_rs_chg, cfg) -> pd.DataFrame
 compute_routing(panel, complexes, cfg) -> dict
     Flow-routing matrix: for each complex outflow onset, fwd RS-change of others.
 
+compute_complex_edges(panel, complexes, cfg) -> pd.DataFrame
+    Complex-level edges: correlation between complex mean-RS-change series.
+
 compute_clusters(rs_change_wide, cfg) -> list[set[str]]
     Numpy agglomerative clustering on 1 - corr(RS-changes).
 
@@ -190,12 +193,28 @@ def _rolling_corr_pair(
     return result
 
 
+def _tail_corr(a: np.ndarray, b: np.ndarray, window: int, min_obs: int) -> float:
+    """Correlation over just the TRAILING `window` rows of two aligned arrays.
+
+    compute_edges only reports the latest 60d/120d correlation, so computing
+    the full rolling series per pair (O(days) corrcoef calls × ~62k Tier-M
+    pairs ≈ 1.5h) is wasted work — the tail slice gives the identical last
+    value in one call per pair (review perf fix on #1217)."""
+    xa, xb = a[-window:], b[-window:]
+    mask = ~(np.isnan(xa) | np.isnan(xb))
+    if mask.sum() < min_obs:
+        return float("nan")
+    xa_c, xb_c = xa[mask], xb[mask]
+    if xa_c.std() < 1e-12 or xb_c.std() < 1e-12:
+        return float("nan")
+    return float(np.corrcoef(xa_c, xb_c)[0, 1])
+
+
 def _full_corr_matrix(rs_chg_wide: pd.DataFrame, min_obs: int) -> pd.DataFrame:
     """Full-sample Pearson correlation matrix of RS-change columns.
 
-    Uses rank().corr() to avoid scipy for robustness; plain Pearson here
-    because RS-changes are approximately normal (not using rank to avoid
-    losing sign information at the margin).
+    Plain Pearson (pure numpy, no scipy): RS-changes are approximately
+    normal, and rank correlation would blur sign at the margin.
     """
     arr = rs_chg_wide.values
     n_nodes = arr.shape[1]
@@ -261,7 +280,6 @@ def compute_edges(
 
     nodes = rs_chg_wide.columns.tolist()
     arr = rs_chg_wide.values
-    n = arr.shape[0]
     n_nodes = len(nodes)
 
     rows = []
@@ -280,13 +298,10 @@ def compute_edges(
                 continue
             corr_full = float(np.corrcoef(xa, xb)[0, 1])
 
-            # 60d rolling — take last value
-            roll60 = _rolling_corr_pair(a, b, win_60, min_obs)
-            corr_60d_last = float(roll60[~np.isnan(roll60)][-1]) if np.any(~np.isnan(roll60)) else np.nan
-
-            # 120d rolling — take last value
-            roll120 = _rolling_corr_pair(a, b, win_120, min_obs)
-            corr_120d_last = float(roll120[~np.isnan(roll120)][-1]) if np.any(~np.isnan(roll120)) else np.nan
+            # Latest 60d / 120d correlation — trailing-window only (identical
+            # to the last rolling value at ~1/1300th the cost; see _tail_corr)
+            corr_60d_last = _tail_corr(a, b, win_60, min_obs)
+            corr_120d_last = _tail_corr(a, b, win_120, min_obs)
 
             rows.append({
                 "node_a": nodes[i],
@@ -569,7 +584,6 @@ def compute_routing(
         if avail_rs:
             complex_rs[cid] = rs_wide[avail_rs].mean(axis=1, skipna=True)
 
-    dates = accel_z_wide.index
     routing: dict[str, dict] = {}
 
     for src_id, src_accel in complex_accel.items():

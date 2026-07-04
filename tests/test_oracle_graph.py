@@ -608,3 +608,36 @@ def test_complex_series_missing_members():
     rs_chg = _make_rs_chg_wide(n=100, n_nodes=2, node_names=["A", "B"])
     result = _complex_rs_chg_series(rs_chg, ["X", "Y", "Z"])
     assert result.isna().all(), "All-missing members should produce all-NaN series"
+
+
+class TestStabilitySignGateIsolated:
+    def test_high_mean_corr_but_flipping_sign_is_unstable(self):
+        """Isolates the sign_consistency>=0.75 gate (review minor on #1217).
+
+        4 of 6 half-year windows perfectly correlated (+1), 2 perfectly
+        anti-correlated (−1): mean_corr ≈ +0.33 PASSES the |mean_corr|>=0.2
+        gate, sign_consistency = 4/6 ≈ 0.67 FAILS the 0.75 gate — so
+        stable=False here is attributable ONLY to sign consistency.  An
+        implementation that drops the sign_consistency term from `stable`
+        passes the rest of the suite but FAILS this test."""
+        from engine.oracle.graph import compute_edge_stability, CONFIG
+
+        win = CONFIG["STABILITY_HALF_YEAR_DAYS"]
+        rng = np.random.default_rng(11)
+        blocks = []
+        for w in range(6):
+            a = rng.normal(0, 1, win)
+            b = a.copy() if w not in (2, 4) else -a
+            blocks.append(np.column_stack([a, b]))
+        arr = np.vstack(blocks)
+        idx = pd.bdate_range("2020-01-01", periods=arr.shape[0], name="date")
+        wide = pd.DataFrame(arr, index=idx, columns=["A", "B"])
+
+        st = compute_edge_stability(wide, CONFIG)
+        row = st.loc[("A", "B")]  # MultiIndex (node_a, node_b)
+        assert abs(row["mean_corr"]) >= CONFIG["STABILITY_CORR_THRESH"], (
+            f"fixture broke: mean_corr {row['mean_corr']} must pass the corr gate "
+            "so the sign gate is what's being tested"
+        )
+        assert row["sign_consistency"] < 0.75
+        assert not row["stable"], "sign_consistency gate is not load-bearing"

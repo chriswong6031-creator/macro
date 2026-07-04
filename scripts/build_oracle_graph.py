@@ -29,7 +29,7 @@ Design notes
     _DATA_DIR_OVERRIDE → lib.config.data_dir() fallback, set once in main().
 * Only numpy + pandas; no scipy / sklearn / networkx.
 * For Tier M (354 nodes), pairwise edges are O(n^2) ~ 62k pairs — expect
-  a few minutes on a modern Mac.  Use --tier s for fast dev iterations.
+  measured ~6s for all 62k Tier-M pair edges after the tail-corr fix; the stability/cluster passes add O(n^2) work — expect a few minutes total on Tier-M.  Use --tier s for fast dev iterations.
 * Outputs are gitignored (graph_*.json are heavy; large panels + long history
   produce ~MB-sized JSON). They go to R2 in P7.
 """
