@@ -542,7 +542,7 @@ def _step_compound_live_accrual(data_dir: Path, dry_run: bool) -> bool:
         from engine.oracle.compounds import (
             load_registry, update_compound_status,
             get_entry_dates, augment_panel_with_derived,
-            STATUS_ACCRUING,
+            STATUS_ACCRUING, GRAMMAR_VERSION,
         )
 
         compounds_dir = data_dir / "oracle" / "compounds"
@@ -557,7 +557,9 @@ def _step_compound_live_accrual(data_dir: Path, dry_run: bool) -> bool:
 
         live_ledger_path = compounds_dir / "live_ledger.jsonl"
 
-        # Load existing live_ledger to build seen keys (keep-first)
+        # Load existing live_ledger to build seen keys (keep-first).
+        # The key now includes GRAMMAR_VERSION so that an evaluator semantics
+        # change forces new rows rather than being silently suppressed.
         existing_fire_keys: set[str] = set()
         if live_ledger_path.exists():
             for line in live_ledger_path.read_text().splitlines():
@@ -566,7 +568,7 @@ def _step_compound_live_accrual(data_dir: Path, dry_run: bool) -> bool:
                     continue
                 try:
                     r = _json.loads(line)
-                    k = f"{r.get('compound_id')}::{r.get('node')}::{r.get('fire_date')}"
+                    k = f"{r.get('compound_id')}::{r.get('node')}::{r.get('fire_date')}::grammar={r.get('grammar_version', '1.0.0')}"
                     existing_fire_keys.add(k)
                 except Exception:  # noqa: BLE001
                     pass
@@ -642,12 +644,13 @@ def _step_compound_live_accrual(data_dir: Path, dry_run: bool) -> bool:
             new_fires = []
             for node, dates in entry_dates.items():
                 if latest_date in dates:
-                    fire_key = f"{cid}::{node}::{latest_date.isoformat()}"
+                    fire_key = f"{cid}::{node}::{latest_date.isoformat()}::grammar={GRAMMAR_VERSION}"
                     if fire_key not in existing_fire_keys:
                         new_fires.append({
                             "compound_id": cid,
                             "node": node,
                             "fire_date": latest_date.isoformat(),
+                            "grammar_version": GRAMMAR_VERSION,
                             "registered_at": datetime.now(timezone.utc).isoformat(),
                             "outcome_mature": False,
                             "excess_21d": None,
@@ -816,6 +819,31 @@ def _step_promotion_scan(data_dir: Path, dry_run: bool) -> bool:
         return False
 
 
+def _step_sentinels(data_dir: Path, dry_run: bool) -> bool:
+    """W-B4: Health & decay sentinels — nightly step 13.
+
+    Loud-error pattern: ::error:: annotations on any trip; never blocks other steps.
+    First run seeds sentinel_state.json silently (no alarm storm).
+    Three checks:
+      1. Panel drift   — schema/null-rate/node-count/date-range regression
+      2. Edge decay    — live realized stats vs published display_with_edge effects
+      3. Ledger integrity — unparseable JSONL lines (P1a torn-line law)
+    """
+    log.info("=== Step 13: Sentinels (W-B4) ===")
+    try:
+        from engine.oracle.sentinels import run_sentinels
+        ok = run_sentinels(data_dir, dry_run=dry_run)
+        if ok:
+            log.info("sentinels: all checks clean")
+        else:
+            # Trips already annotated inside run_sentinels; nonzero exit follows
+            _annotation("oracle_nightly: sentinels step 13 detected trip(s) — see sentinel_log.jsonl")
+        return ok
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: sentinels FAILED: {e}")
+        return False
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -904,6 +932,10 @@ def main() -> int:
     # --- Step 12: Promotion scan (W-B1) ---
     if not _step_promotion_scan(data_dir, args.dry_run):
         failures.append("promotion_scan")
+
+    # --- Step 13: Sentinels (W-B4) — append-only at END per additive-only law ---
+    if not _step_sentinels(data_dir, args.dry_run):
+        failures.append("sentinels")
 
     elapsed = time.time() - t_total
     log.info(
