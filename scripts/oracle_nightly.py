@@ -10,10 +10,13 @@ Steps (in order):
                      weekly or on-demand).  ~3 min for Tier S.
   2. Graph update  — re-run build_oracle_graph.  ~2 min.
   3. Episodes      — re-run build_oracle_episodes.  ~15 s.
+  3b. Personality  — B1 per-node personality classification.  ~5 s.
   4. Memory        — write rotation_directive.json and memory_base_rates.json.
   5. Time Machine  — re-run build_oracle_timemachine (export feed).  ~30 s.
-  6. Oracle state  — build oracle_state.json (the bus payload).
-  7. Alerts        — diff vs prior state, append to oracle_alerts.jsonl.
+  6. Oracle state  — build oracle_state.json (the bus payload, includes A3
+                     rotation_tag and B1 personality per node/complex).
+  7. Alerts        — diff vs prior state, append to oracle_alerts.jsonl;
+                     fires oracle_regime_tag on A3 tag transitions.
   8. Directive     — write data/oracle/rotation_directive.json.
   9. Ledger        — append new detections to data/oracle/forward_ledger.jsonl
                      (keep-FIRST, PIT-stamped).
@@ -24,17 +27,21 @@ Usage
 -----
   python scripts/oracle_nightly.py [--data-dir PATH] [--site-dir PATH]
                                    [--skip-panel] [--skip-graph] [--skip-episodes]
+                                   [--skip-personality]
 
-  --skip-panel     skip the panel rebuild (use committed parquets)
-  --skip-graph     skip the graph rebuild (use committed graph_s.json)
-  --skip-episodes  skip the episode rebuild (use committed episodes)
-  --dry-run        run everything but write no files (for timing + smoke tests)
+  --skip-panel        skip the panel rebuild (use committed parquets)
+  --skip-graph        skip the graph rebuild (use committed graph_s.json)
+  --skip-episodes     skip the episode rebuild (use committed episodes)
+  --skip-personality  skip the B1 personality step (use committed personality.json)
+  --dry-run           run everything but write no files (for timing + smoke tests)
 
 R4 BINDING (ORACLE_GAUNTLET_P3_ADJUDICATION.md):
   - Nothing here ships a predictive claim.
   - Alerts embed the false-start rate from the gauntlet results.
   - Banner is gated on confirmed + breadth floor.
   - Tilt stays config-gated OFF.
+  - Personality classifications are DESCRIPTIVE/DISPLAY tier — statistical labels
+    from trailing history, never fed to scores, sizes, or gates.
 """
 from __future__ import annotations
 
@@ -130,6 +137,42 @@ def _step_episodes(data_dir: Path, dry_run: bool) -> bool:
     log.info("=== Step 3: Episodes rebuild (Tier S + M) ===")
     return _delegate("episodes", "scripts.build_oracle_episodes", data_dir, dry_run,
                      ["--tier", "all"])
+
+
+def _step_personality(data_dir: Path, dry_run: bool) -> bool:
+    """B1 — Per-node personality classification (descriptive/display tier).
+
+    Reads panel_s (falls back to panel_m), computes trend_persistence,
+    reversion_strength, rate_beta, idiosyncrasy per node, classifies each
+    into {mean_reverter, trender, rate_proxy, idiosyncratic, mixed}, and writes
+    data/oracle/personality.json.
+
+    This step runs AFTER episodes (step 3) and BEFORE oracle state (step 6) so
+    the personality map is ready to be folded into oracle_state.json.
+
+    Loud-error pattern: prints ::error:: and returns False on failure so the
+    pipeline continues; a personality failure is non-fatal (oracle state degrades
+    to personality=null for all nodes).
+    """
+    log.info("=== Step 3b: Personality (B1) ===")
+    try:
+        from engine.oracle.personality import build_personality, write_personality
+        payload = build_personality(data_dir=data_dir)
+        n_nodes = len(payload.get("nodes") or {})
+        if not dry_run:
+            write_personality(payload, data_dir=data_dir)
+        # Sample log: show a few representative nodes
+        nodes = payload.get("nodes") or {}
+        samples = [(n, v["personality"]) for n, v in list(nodes.items())[:6]]
+        log.info(
+            "personality: classified %d nodes. samples=%s",
+            n_nodes,
+            samples,
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: personality FAILED: {e}")
+        return False
 
 
 def _step_memory_base_rates(data_dir: Path, dry_run: bool) -> bool:
@@ -464,6 +507,8 @@ def main() -> int:
     p.add_argument("--skip-panel", action="store_true")
     p.add_argument("--skip-graph", action="store_true")
     p.add_argument("--skip-episodes", action="store_true")
+    p.add_argument("--skip-personality", action="store_true",
+                   help="Skip B1 personality step (use committed personality.json)")
     p.add_argument("--dry-run", action="store_true", help="Run all steps but write no files")
     args = p.parse_args()
 
@@ -496,6 +541,13 @@ def main() -> int:
             failures.append("episodes")
     else:
         log.info("=== Step 3: Episodes SKIPPED (--skip-episodes) ===")
+
+    # --- Step 3b: Personality (B1) — AFTER episodes, BEFORE state ---
+    if not args.skip_personality:
+        if not _step_personality(data_dir, args.dry_run):
+            failures.append("personality")
+    else:
+        log.info("=== Step 3b: Personality SKIPPED (--skip-personality) ===")
 
     # --- Step 4: Memory ---
     if not _step_memory_base_rates(data_dir, args.dry_run):

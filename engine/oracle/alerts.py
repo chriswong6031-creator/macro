@@ -5,18 +5,23 @@ MIRRORS engine.subsector_rotation_alerts EXACTLY:
   jsonl + KEEP_DAYS, recent().
 
 Event types (R4-bound — see ORACLE_GAUNTLET_P3_ADJUDICATION.md):
-  oracle_onset      — node newly enters an episode at onset tier.
-                      Severity: minor.
-                      MUST embed the false-start rate in the detail text (R4 mandate).
-  oracle_confirmed  — onset episode advances to confirmed tier.
-                      Severity: minor.
-  oracle_rollover   — a leader (active_out episode at confirmed/undeniable tier) node
-                      newly exhausts / rolls over. THIS IS THE LOUDEST EXIT SURFACE.
-                      Severity: high.
-  oracle_two_sided  — a two-sided rotation is confirmed (both legs active).
-                      Severity: high.
-  oracle_regime     — breadth aggregate crosses the ORACLE_CFG floor.
-                      Severity: high.
+  oracle_onset         — node newly enters an episode at onset tier.
+                         Severity: minor.
+                         MUST embed the false-start rate in the detail text (R4 mandate).
+  oracle_confirmed     — onset episode advances to confirmed tier.
+                         Severity: minor.
+  oracle_rollover      — a leader (active_out episode at confirmed/undeniable tier) node
+                         newly exhausts / rolls over. THIS IS THE LOUDEST EXIT SURFACE.
+                         Severity: high.
+  oracle_two_sided     — a two-sided rotation is confirmed (both legs active).
+                         Severity: high.
+  oracle_regime        — breadth aggregate crosses the ORACLE_CFG floor.
+                         Severity: high.
+  oracle_regime_tag    — A3 regime tag transitions (rotation→liquidation, quiet→rotation,
+                         etc.).  Idempotent id = tag_pair:date_bucket.
+                         Severity: high.
+                         All language is DESCRIPTIVE — describes what is observed on the
+                         tape; never a forecast or instruction.
 
 All bilingual: headline/detail + _zh variants.
 FIRST-RUN SILENT SEED: when no prior state exists, write state without emitting events.
@@ -275,6 +280,75 @@ def compute_events(oracle_state: dict, prior: dict | None) -> list[dict]:
             hl_zh, det_zh,
         ))
 
+    # --- oracle_regime_tag: A3 rotation tag transitions (idempotent id = tag_pair:bucket) ---
+    rotation_tag = regime.get("rotation_tag") or {}
+    cur_tag = rotation_tag.get("tag")
+    prior_tag = prior.get("__regime__", {}).get("rotation_tag")
+    if cur_tag and cur_tag != prior_tag:
+        # Tag transition detected — fire once per (tag_pair, date_bucket)
+        # Idempotent id encodes BOTH from- and to-tag so same-day re-runs are deduped
+        _from = prior_tag or "none"
+        _to = cur_tag
+        tag_pair = f"{_from}_to_{_to}"
+
+        n_sources = rotation_tag.get("n_sources", 0)
+        n_sinks = rotation_tag.get("n_sinks", 0)
+        source_names = rotation_tag.get("source_names") or []
+        sink_names = rotation_tag.get("sink_names") or []
+
+        # Human-readable tag labels for bilingual output
+        _tag_labels = {
+            "rotation": ("rotation", "轮动"),
+            "liquidation": ("liquidation", "流动性收缩"),
+            "accumulation": ("accumulation", "资金积累"),
+            "quiet": ("quiet", "平静"),
+        }
+        to_label_en, to_label_zh = _tag_labels.get(_to, (_to, _to))
+        from_label_en, from_label_zh = _tag_labels.get(_from, (_from, _from))
+
+        hl = f"Oracle regime tag: {from_label_en} → {to_label_en}"
+        hl_zh = f"Oracle 制度标签变化: {from_label_zh} → {to_label_zh}"
+
+        # Descriptive detail — rotation_tag.description_en carries the full
+        # descriptive text; we also surface the source/sink names.
+        desc_en = rotation_tag.get("description_en", "")
+        desc_zh = rotation_tag.get("description_zh", "")
+        sources_str = ", ".join(source_names[:4]) if source_names else "none"
+        sinks_str = ", ".join(sink_names[:4]) if sink_names else "none"
+        det = (
+            f"Oracle regime tag changed from {from_label_en} to {to_label_en}. "
+            f"Sources (confirmed outflow complexes, n={n_sources}): {sources_str}. "
+            f"Sinks (confirmed inflow complexes, n={n_sinks}): {sinks_str}. "
+            f"{desc_en} Descriptive read only — not a forecast."
+        )
+        sources_str_zh = ", ".join(source_names[:4]) if source_names else "无"
+        sinks_str_zh = ", ".join(sink_names[:4]) if sink_names else "无"
+        det_zh = (
+            f"Oracle 制度标签从 {from_label_zh} 变为 {to_label_zh}。"
+            f"流出复合体（n={n_sources}）：{sources_str_zh}。"
+            f"流入复合体（n={n_sinks}）：{sinks_str_zh}。"
+            f"{desc_zh} 描述性读数——非预测。"
+        )
+
+        # Use a SYNTHETIC node key "regime_tag" so _ev builds the correct id
+        ev = _ev(
+            "regime_tag", ts, "oracle_regime_tag", "high", hl, det,
+            {
+                "from_tag": _from,
+                "to_tag": _to,
+                "n_sources": n_sources,
+                "n_sinks": n_sinks,
+                "source_names": source_names,
+                "sink_names": sink_names,
+            },
+            hl_zh, det_zh,
+        )
+        # Override id to be tag_pair:bucket (unique per (from, to, bucket))
+        ts_obj = pd.Timestamp(ts)
+        bucket = ts_obj.strftime("%Y-%m-%d")
+        ev["id"] = f"oracle:{REGION}:oracle_regime_tag:{tag_pair}:{bucket}"
+        out.append(ev)
+
     return out
 
 
@@ -293,11 +367,13 @@ def _snapshot(oracle_state: dict) -> dict:
                 "direction": ep.get("direction"),
                 "two_sided": ep.get("two_sided", False),
             }
-    # Persist regime for breadth-crossing event
+    # Persist regime for breadth-crossing event and A3 rotation_tag transition
     regime = oracle_state.get("regime") or {}
+    rotation_tag = regime.get("rotation_tag") or {}
     snap["__regime__"] = {
         "breadth": regime.get("breadth"),
         "n_active_complexes": regime.get("n_active_complexes"),
+        "rotation_tag": rotation_tag.get("tag"),  # A3: persist tag for next-run diff
     }
     return snap
 
