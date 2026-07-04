@@ -174,3 +174,6 @@ data/massive_options_day/
 #   data/canada_insider/insider.parquet      -- GIT-tracked (legacy; kept 1 month for
 #                                              migration safety, phase out 2026-08-03)
 # Both are small (<5MB), non-regenerable, git-tracked. Not gitignored.
+
+# ObsidianBrain vault (own git repo; view over memory/ + research/, lives inside this folder)
+ObsidianBrain/
