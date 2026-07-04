@@ -177,3 +177,10 @@ data/massive_options_day/
 
 # ObsidianBrain vault (own git repo; view over memory/ + research/, lives inside this folder)
 ObsidianBrain/
+
+# Oracle rotation panel parquets (O0 — built off-render on Mac, published to R2).
+# manifest.json MAY be committed in a later PR once it stabilises; for now it is
+# also excluded to avoid stale snapshots in git.
+# Mirror pattern: data/massive_stock_day/*.parquet above.
+data/oracle/*.parquet
+data/oracle/manifest.json
