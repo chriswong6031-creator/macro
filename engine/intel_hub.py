@@ -31,6 +31,9 @@ from lib import config
 log = logging.getLogger(__name__)
 
 SCHEMA = "intel_hub.command.v2"   # v2: ranked by edge-remaining/opportunity (not desk agreement)
+# v3: price-trajectory spine + T1-T4 entry gate. Stamped into hub.json AND each track-record
+# snapshot row so the forward grader can segment the pre/post-inversion-fix era.
+ENGINE_VERSION = "hub-v3-trajectory"
 
 DISCLAIMER = (
     "Context only. A central command that fuses five independent desks — news flow, "
@@ -230,11 +233,13 @@ def _dirs(v: dict, policy: dict | None) -> dict:
 # neutral 0.5 when a name has no priced-in inputs (e.g. news-only).
 # --------------------------------------------------------------------------- #
 def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None,
-                    discovery: dict | None = None) -> dict:
+                    discovery: dict | None = None, traj: dict | None = None) -> dict:
     radar = v.get("radar") or {}
     standout = v.get("standout") or {}
     alt = v.get("alt") or {}
     news = v.get("news") or {}
+    traj = traj or {}
+    rolling_over = bool(traj.get("rolling_over"))
     comps: list[tuple[float, float, str]] = []   # (weight, score, driver)
 
     lc = (radar.get("lifecycle") or "").lower()
@@ -243,7 +248,12 @@ def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None,
 
     wbp = _f(radar.get("within_basket_pct"))
     if wbp is not None and radar.get("state") in _POS_RADAR:
-        comps.append((0.8, _clamp01(1.0 - wbp),
+        # a basket laggard reads as "room to run" ONLY if the name isn't itself broken.
+        # A rolling-over laggard has no room — the drawdown is the tape pricing it down,
+        # not an opportunity — so the room credit is killed (0) and flagged as a drag.
+        room = 0.0 if rolling_over else _clamp01(1.0 - wbp)
+        comps.append((0.8, room,
+                      "broken laggard (no room)" if rolling_over else
                       "basket laggard (room)" if wbp < 0.4 else "basket leader (priced-in)"))
 
     lab = (standout.get("label") or "").upper()
@@ -251,9 +261,19 @@ def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None,
         le = next((s for k, s in _LABEL_EDGE if k in lab), 0.5)
         comps.append((0.9, le, f"buy-board {lab.lower()}"))
 
+    # off-high drawdown discount: prefer the buy-board's value, fall back to the shared
+    # trajectory spine (yahoo-adjusted) so the discount is ALWAYS live for a name with
+    # price history — not silently absent because the name isn't on the buy-board.
     oh = _f(standout.get("off_high"))
+    if oh is None:
+        oh_frac = _f(traj.get("off_high_252"))
+        oh = oh_frac * 100.0 if oh_frac is not None else None   # spine is a fraction; buy-board is pct
     if oh is not None:                                 # 0 = at highs (priced), −22%+ = room
-        comps.append((0.6, _clamp01(0.15 + (-oh) / 22.0),
+        # a rolling-over name's drawdown is NOT room — it is a falling knife, so the
+        # off-high "room" credit is capped low rather than rewarding the crash.
+        oh_score = 0.1 if rolling_over else _clamp01(0.15 + (-oh) / 22.0)
+        comps.append((0.6, oh_score,
+                      f"{oh:.0f}% off high (falling)" if rolling_over else
                       f"{oh:.0f}% off high" if oh < -2 else "at the highs"))
 
     # crowding discount — a loud, high-magnitude, accelerating tape is already paid for
@@ -271,6 +291,8 @@ def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None,
     rs = _f(alt.get("rs_vs_spy_60d"))
     if rs is None:
         rs = _f(radar.get("rs_vs_spy_60d"))
+    if rs is None:
+        rs = _f(traj.get("rs_vs_spy_60d"))              # shared spine fallback — always live w/ price
     if rs is not None:
         comps.append((0.7, _clamp01(1.0 - max(rs, 0.0) / 40.0) if rs > 0 else 1.0,
                       f"RS {rs:+.0f}% vs SPY"))
@@ -329,10 +351,19 @@ def _leading_gap(v: dict, dirs: dict) -> dict:
     return {"lead_up": lead_up, "lag_up": lag_up, "gap": lead_up - lag_up, "lag_present": lag_present}
 
 
-def _stage(edge: float, gap: int, lean: int, flags: list, n_components: int, lag_present: int) -> str:
+def _stage(edge: float, gap: int, lean: int, flags: list, n_components: int, lag_present: int,
+           rolling_over: bool = False) -> str:
     """Place the name on the idea lifecycle. The hub ranks edge-remaining, so this label is
     the headline read: emerging/early = where the edge is; consensus/exhausted = already
-    priced; distribution = desks lean down and price is rolling over."""
+    priced; distribution = desks lean down and price is rolling over; FALTERING = the price
+    is rolling over (deep off-high, falling, below the 50d) regardless of what the desks lean."""
+    # PRICE VETO — a name whose own price is rolling over can NEVER be an emerging/early edge,
+    # no matter how bullish the desks read. It is faltering (bullish-but-broken) or, if the
+    # desks also lean down, distribution/exhausted. This is the anti-inversion floor.
+    if rolling_over:
+        if lean < 0:
+            return "exhausted" if edge < 0.30 else "distribution"
+        return "faltering"
     if "crowded_top" in flags:                            # loud top — fade regardless of net lean
         return "exhausted"
     if lean < 0:                                          # desks lean DOWN
@@ -355,7 +386,8 @@ def _stage(edge: float, gap: int, lean: int, flags: list, n_components: int, lag
 # The per-ticker dossier — composite conviction + 2nd/3rd-order flags
 # --------------------------------------------------------------------------- #
 def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = None,
-             discovery: dict | None = None) -> dict:
+             discovery: dict | None = None, traj: dict | None = None,
+             entry_gate: dict | None = None) -> dict:
     news = v.get("news") or {}
     alt = v.get("alt") or {}
     radar = v.get("radar") or {}
@@ -363,6 +395,8 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
     sectors = news.get("sectors") or []
     policy = _policy_for(t, sectors, pidx)
     dirs = _dirs(v, policy)
+    traj = traj or {}
+    rolling_over = bool(traj.get("rolling_over"))
 
     # a low-conviction policy facet must contribute NOTHING — it must not inflate
     # composite (via len(present)) nor appear in source_mix / n_facets.
@@ -420,7 +454,7 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
 
     # ── V2: edge-remaining + leading-gap → opportunity (the new ranking key) ──
     gap = _leading_gap(v, dirs)
-    edge = _edge_remaining(v, dirs, nv, catalyst, discovery)
+    edge = _edge_remaining(v, dirs, nv, catalyst, discovery, traj)
     signal_core = _f(brain.get("strength")) or 0.0            # genuine magnitude, NOT agreement
     if discovery:                                             # BOUNDED boost — discovery never SUBSTITUTES for signal
         dlift = (_f(discovery.get("disc_score")) or 0.0) * 0.7
@@ -430,7 +464,11 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
     opportunity = round(min(100.0, 100.0 * signal_core * fals_pen * edge["score"] * gap_mult), 1)
     # the lifecycle gate uses NON-discovery evidence (n_base) so a single off-tape discovery
     # feed cannot, by itself, label a name 'emerging' or push it into the actionable cohort.
-    stage = _stage(edge["score"], gap["gap"], lean, flags, edge["n_base"], gap["lag_present"])
+    # rolling_over is the price VETO — a broken name can never read emerging/early.
+    stage = _stage(edge["score"], gap["gap"], lean, flags, edge["n_base"], gap["lag_present"],
+                   rolling_over=rolling_over)
+    if rolling_over and "faltering" not in flags:
+        flags.append("faltering")
     if stage in ("emerging", "early") and "confirmed_trend" in flags:
         flags.remove("confirmed_trend")                       # pre-consensus ⇒ not a confirmed consensus
     if stage == "emerging":
@@ -449,6 +487,7 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
         "composite_conviction": composite, "lean": lean,
         "opportunity_score": opportunity, "edge_remaining": edge["score"],
         "edge_drivers": edge["drivers"], "edge_components": edge["n_components"], "stage": stage,
+        "entry_gate": entry_gate, "trajectory": traj or None,
         "leading_gap": gap["gap"], "lead_up": gap["lead_up"], "lag_up": gap["lag_up"],
         "lag_present": gap["lag_present"], "catalyst": catalyst, "discovery": discovery,
         "n_confirm": n_confirm, "n_dissent": n_dissent, "n_facets": len(present),
@@ -616,6 +655,41 @@ def _discovery_dossier(cand: dict, catalyst: dict | None) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# ENTRY GATE — the owner's validated T1-T4 confluence buy verdict per name.
+# A ⚡ prime-entry badge (is_buyable) + a flat-sell flag the hero list gates on.
+# Reads the pre-built site/factordata/signal_gate.json (slim buy_signal verdicts);
+# computes on demand from the yahoo close for a surfaced name absent from it.
+# --------------------------------------------------------------------------- #
+def _load_gate_index() -> dict:
+    """The pre-built T1-T4 confluence verdicts: {TICKER: buy_signal}. Degrade-safe."""
+    d = _read("site/factordata/signal_gate.json") or {}
+    return d.get("verdicts") or {}
+
+
+def _entry_gate(t: str, gate_index: dict, traj_closes=None) -> dict | None:
+    """The validated-confluence entry verdict for a name. Uses the pre-built verdict when
+    present; else computes on demand from the yahoo close series. Returns a compact badge
+    dict {eligible, tier, buyable, flat_sell} or None when neither path has price.
+
+    flat_sell = the gate says NOT a buy (ineligible / no fresh confluence) — the exact
+    condition the hero list must EXCLUDE (SMCI/AVGO/MPWR/NVDA all read flat_sell)."""
+    from engine import signal_gate as SG
+    v = gate_index.get(t)
+    if v is None and traj_closes is not None and len(traj_closes) >= 60:
+        try:
+            full = SG.gate(t, traj_closes)
+            v = SG.buy_signal(full)
+        except Exception:  # noqa: BLE001
+            v = None
+    if v is None:
+        return None
+    buyable = SG.is_buyable(v)
+    eligible = bool(v.get("eligible"))
+    return {"eligible": eligible, "tier": v.get("tier_cascade"),
+            "buyable": buyable, "flat_sell": not eligible}
+
+
+# --------------------------------------------------------------------------- #
 # build
 # --------------------------------------------------------------------------- #
 def _diversify_by_source(items: list, n: int, per_source: int, src) -> list:
@@ -651,8 +725,21 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     vel = load_velocity(tickers, today)
     cidx = _catalyst_index(special, today)
     didx = (discovery or {}).get("by_ticker") or {}
+    # PRICE-TRAJECTORY spine + validated entry gate — the anti-inversion pair. Load the
+    # yahoo close ONCE per name (reused for both the trajectory read and any on-demand gate),
+    # so a rolling-over / broken name can be vetoed out of the hero list and stage.
+    from engine.trajectory import _yahoo_closes, snapshot as _traj_snap
+    gate_index = _load_gate_index()
 
-    dossiers = [_dossier(t, v, pidx, vel, cidx.get(t), didx.get(t)) for t, v in tickers.items()]
+    def _price_read(t: str):
+        closes = _yahoo_closes(t, config.ROOT)
+        traj = _traj_snap(t, config.ROOT, closes=closes) if closes is not None else None
+        egate = _entry_gate(t, gate_index, closes)
+        return traj, egate
+
+    _pr = {t: _price_read(t) for t in tickers}
+    dossiers = [_dossier(t, v, pidx, vel, cidx.get(t), didx.get(t),
+                         traj=_pr[t][0], entry_gate=_pr[t][1]) for t, v in tickers.items()]
     # DISCOVERY: inject OFF-desk candidates (not in any feeder's universe) as their own dossiers.
     # Bound the injection to the strongest few (off_desk is disc-sorted) so a large lagging-
     # confirmer feed (e.g. insider clusters) can't flood the ranked command list; the rest still
@@ -666,8 +753,23 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     # to the top and PROMOTES the early, leading-desk-ahead, not-yet-priced names.
     dossiers.sort(key=lambda d: (d["opportunity_score"], d["composite_conviction"]), reverse=True)
 
-    emerging_hero = [d for d in dossiers if d["stage"] in ("emerging", "early")]
-    exhausted = [d for d in dossiers if d["stage"] in ("exhausted", "distribution")]
+    # HERO GATE — a name can headline the "Emerging edge" hero ONLY if BOTH hold:
+    #   (a) its price is NOT rolling over (the trajectory veto — enforced in _stage too), AND
+    #   (b) the owner's validated T1-T4 confluence gate AFFIRMATIVELY reads eligible.
+    # Absence of evidence is NOT admission: a name with no gate verdict and no price
+    # history (e.g. a crashed small-cap outside every price store) must not headline on
+    # the strength of what we can't see — it stays in the ranked command list with its
+    # honest stage, but the flagship hero strip demands positive confirmation.
+    def _hero_ok(d: dict) -> bool:
+        if (d.get("trajectory") or {}).get("rolling_over"):
+            return False
+        eg = d.get("entry_gate")
+        if not eg or eg.get("flat_sell") or not eg.get("eligible"):
+            return False
+        return True
+
+    emerging_hero = [d for d in dossiers if d["stage"] in ("emerging", "early") and _hero_ok(d)]
+    exhausted = [d for d in dossiers if d["stage"] in ("exhausted", "distribution", "faltering")]
     catalysts = sorted((d for d in dossiers if "catalyst" in d["flags"]),
                        key=lambda d: ((d.get("catalyst") or {}).get("days_since")
                                       if (d.get("catalyst") or {}).get("days_since") is not None else 9999))
@@ -696,7 +798,8 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
                        if d["stage"] in ("emerging", "early") and d["leading_gap"] >= 0
                        and d["opportunity_score"] >= 35)
     return {
-        "schema": SCHEMA, "is_context_only": True, "as_of": today.isoformat(),
+        "schema": SCHEMA, "engine_version": ENGINE_VERSION,
+        "is_context_only": True, "as_of": today.isoformat(),
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "macro_context": mc,
         "desks": {                                          # cross-desk status board
@@ -721,7 +824,8 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         # lightweight per-name rows for the falsifiable track-record (ALL names, not just the
         # top — the cross-sectional IC must see the whole ranking). Stripped before site write.
         "track_rows": [{"t": d["ticker"], "opp": d["opportunity_score"],
-                        "edge": d["edge_remaining"], "stage": d["stage"], "lean": d["lean"]}
+                        "edge": d["edge_remaining"], "stage": d["stage"], "lean": d["lean"],
+                        "engine_version": ENGINE_VERSION}
                        for d in dossiers],
         "discovery": _diversify_by_source(
             discovery_list, 14, 5, src=lambda d: (d.get("discovery") or {}).get("source")),
@@ -748,7 +852,7 @@ def _compact(d: dict) -> dict:
     return {k: d[k] for k in ("ticker", "name", "composite_conviction", "opportunity_score",
                               "edge_remaining", "edge_drivers", "stage", "leading_gap", "lean",
                               "n_confirm", "flags", "read", "sectors", "falsifier", "catalyst",
-                              "discovery")
+                              "discovery", "entry_gate", "trajectory")
             if k in d}
 
 

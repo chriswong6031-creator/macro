@@ -410,6 +410,105 @@ def test_discovery_section_diversified_across_sources():
     assert "ACT" in [d["ticker"] for d in sec]              # surfaced despite 20 stronger insiders
 
 
+# --------------------------------------------------------------------------- #
+# 7. Trajectory spine — the anti-inversion price veto (T3)
+# --------------------------------------------------------------------------- #
+def test_stage_rolling_over_never_emerging():
+    # a maximally-bullish edge/gap that WOULD stage 'emerging' is vetoed to 'faltering'
+    # the moment the price is rolling over.
+    assert H._stage(0.9, 2, 1, [], 3, 2, rolling_over=False) == "emerging"
+    assert H._stage(0.9, 2, 1, [], 3, 2, rolling_over=True) == "faltering"
+
+
+def test_stage_rolling_over_down_lean_is_distribution():
+    # rolling over AND desks lean down → distribution (or exhausted if no edge), not faltering
+    assert H._stage(0.6, 0, -1, [], 2, 1, rolling_over=True) == "distribution"
+    assert H._stage(0.1, 0, -1, [], 2, 1, rolling_over=True) == "exhausted"
+
+
+def test_edge_remaining_kills_room_on_rolling_over_laggard():
+    # a basket laggard (wbp low) that is rolling over must NOT get the "room" credit
+    v = {"radar": {"state": "POSITIVE_DIVERGENCE", "lifecycle": "forming", "within_basket_pct": 0.1},
+         "standout": {"off_high": -40}}
+    healthy = H._edge_remaining(v, {}, {}, None, traj={"rolling_over": False})
+    broken = H._edge_remaining(v, {}, {}, None, traj={"rolling_over": True})
+    assert broken["score"] < healthy["score"]                 # broken laggard has less edge, not more
+    assert any("no room" in d or "falling" in d for d in broken["drivers"])
+
+
+def test_edge_remaining_off_high_falls_back_to_trajectory():
+    # no buy-board off_high, but the spine supplies a drawdown → the discount is still live
+    v = {"news": {"n_recent": 0}}                              # no standout facet at all
+    with_traj = H._edge_remaining(v, {}, {}, None, traj={"off_high_252": -0.30, "rolling_over": False})
+    assert any("off high" in d for d in with_traj["drivers"]) or with_traj["n_components"] >= 1
+
+
+def test_hero_gate_excludes_rolling_over(monkeypatch):
+    # a name the desks read as a leading edge, but whose price is rolling over, must NOT
+    # appear in the emerging hero list — the trajectory veto governs.
+    b = _bundle({"BROKE": _news("neutral", n=0)}, [_sig("BROKE", 82)],
+                [_radar("BROKE", "POSITIVE_DIVERGENCE", edge=82, lifecycle="forming", wbp=0.1)],
+                [_so("BROKE", label="BOTTOMING", off_high=-50)])
+    monkeypatch.setattr("engine.trajectory._yahoo_closes", lambda t, root: [1.0] * 300)
+    monkeypatch.setattr("engine.trajectory.snapshot",
+                        lambda t, *a, **k: {"rolling_over": True, "off_high_252": -0.5,
+                                            "rs_vs_spy_60d": -10.0, "basing": False})
+    monkeypatch.setattr(H, "_entry_gate", lambda t, gi, closes=None: None)
+    hub = H.build(b, None, {}, today=_TODAY)
+    d = next(x for x in hub["command"] if x["ticker"] == "BROKE")
+    assert d["stage"] == "faltering"
+    assert "faltering" in d["flags"]
+    assert "BROKE" not in [x["ticker"] for x in hub["emerging"]]   # vetoed out of the hero
+    assert "BROKE" in [x["ticker"] for x in hub["exhausted"]]      # lands in the fade/faltering panel
+
+
+def test_hero_gate_excludes_flat_sell(monkeypatch):
+    # a not-rolling-over name that the validated T1-T4 gate reads as flat-sell is still
+    # excluded from the hero (badge (b): signal_gate must not be a flat sell).
+    b = _bundle({"SELL": _news("neutral", n=0)}, [_sig("SELL", 82)],
+                [_radar("SELL", "POSITIVE_DIVERGENCE", edge=82, lifecycle="forming", wbp=0.1)],
+                [_so("SELL", label="BOTTOMING", off_high=-10)])
+    monkeypatch.setattr("engine.trajectory._yahoo_closes", lambda t, root: [1.0] * 300)
+    monkeypatch.setattr("engine.trajectory.snapshot",
+                        lambda t, *a, **k: {"rolling_over": False, "off_high_252": -0.10,
+                                            "rs_vs_spy_60d": 2.0, "basing": False})
+    monkeypatch.setattr(H, "_entry_gate",
+                        lambda t, gi, closes=None: {"eligible": False, "tier": None,
+                                                    "buyable": False, "flat_sell": True})
+    hub = H.build(b, None, {}, today=_TODAY)
+    assert "SELL" not in [x["ticker"] for x in hub["emerging"]]    # flat-sell → not a hero
+
+
+def test_hero_gate_requires_affirmative_verdict(monkeypatch):
+    # absence of evidence is NOT admission: a name with NO gate verdict and no price
+    # history (crashed small-cap outside every price store) must not headline the hero
+    # strip on the strength of what we can't see. It keeps its command-list row.
+    b = _bundle({"DARK": _news("neutral", n=0)}, [_sig("DARK", 82)],
+                [_radar("DARK", "POSITIVE_DIVERGENCE", edge=82, lifecycle="forming", wbp=0.1)],
+                [_so("DARK", label="BOTTOMING", off_high=-10)])
+    monkeypatch.setattr("engine.trajectory.snapshot", lambda t, *a, **k: None)  # no price
+    monkeypatch.setattr(H, "_entry_gate", lambda t, gi, closes=None: None)      # no verdict
+    hub = H.build(b, None, {}, today=_TODAY)
+    assert "DARK" not in [x["ticker"] for x in hub["emerging"]]   # no affirmative evidence → no hero
+    assert "DARK" in [x["ticker"] for x in hub["command"]]        # still ranked honestly
+
+
+def test_entry_gate_badge_on_dossier(monkeypatch):
+    b = _bundle({"BUY": _news("pos")}, [_sig("BUY", 80)])
+    monkeypatch.setattr("engine.trajectory._yahoo_closes", lambda t, root: [1.0] * 300)
+    monkeypatch.setattr("engine.trajectory.snapshot", lambda t, *a, **k: None)
+    monkeypatch.setattr(H, "_entry_gate",
+                        lambda t, gi, closes=None: {"eligible": True, "tier": "T1",
+                                                    "buyable": True, "flat_sell": False})
+    d = H.build(b, None, {}, today=_TODAY)["command"][0]
+    assert d["entry_gate"]["buyable"] is True and d["entry_gate"]["tier"] == "T1"
+
+
+def test_engine_version_stamped():
+    hub = H.build(_bundle({"X": _news("pos")}, [_sig("X", 70)]), None, {}, today=_TODAY)
+    assert hub["engine_version"] == "hub-v3-trajectory"
+
+
 if __name__ == "__main__":
     import inspect
     g = dict(globals())

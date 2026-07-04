@@ -85,8 +85,11 @@ def snapshot(track_rows: list | None, today: date | str | None = None,
             t = (r.get("t") or "").upper()
             if not t or f"{today_str}|{t}" in existing:
                 continue
-            new.append({"date": today_str, "t": t, "opp": r.get("opp"),
-                        "edge": r.get("edge"), "stage": r.get("stage"), "lean": r.get("lean")})
+            row = {"date": today_str, "t": t, "opp": r.get("opp"),
+                   "edge": r.get("edge"), "stage": r.get("stage"), "lean": r.get("lean")}
+            if r.get("engine_version"):        # additive era-stamp — old rows stay valid without it
+                row["engine_version"] = r.get("engine_version")
+            new.append(row)
             existing.add(f"{today_str}|{t}")
         if not new:
             return 0

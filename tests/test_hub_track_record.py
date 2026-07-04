@@ -33,6 +33,18 @@ def test_snapshot_idempotent(tmp_path):
     assert H.snapshot(rows, _OLD + timedelta(days=1), root=tmp_path) == len(rows)
 
 
+def test_snapshot_persists_engine_version(tmp_path):
+    import json
+    rows = [{"t": "AAA", "opp": 60, "edge": 0.6, "stage": "emerging", "lean": 1,
+             "engine_version": "hub-v3-trajectory"},
+            {"t": "BBB", "opp": 20, "edge": 0.2, "stage": "exhausted", "lean": 1}]  # no version
+    H.snapshot(rows, _OLD, root=tmp_path)
+    written = [json.loads(l) for l in H._path(tmp_path).read_text().splitlines()]
+    by = {r["t"]: r for r in written}
+    assert by["AAA"]["engine_version"] == "hub-v3-trajectory"  # era-stamp carried through
+    assert "engine_version" not in by["BBB"]                    # additive — old rows stay valid
+
+
 def test_compute_accruing_when_empty(tmp_path):
     out = H.compute(_NOW, root=tmp_path)
     assert out["schema"] == H.SCHEMA and out["n_snapshots"] == 0
