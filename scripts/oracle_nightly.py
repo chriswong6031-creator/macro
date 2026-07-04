@@ -242,19 +242,40 @@ def _step_timemachine(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
 
 
 def _step_oracle_state(data_dir: Path, site_dir: Path, dry_run: bool) -> dict | None:
-    """Build oracle_state.json (the bus payload)."""
+    """Build oracle_state.json (the bus payload).
+
+    Runs validate_payload() IMMEDIATELY BEFORE writing.  A failing payload is
+    NEVER written (loud ::error:: annotations, prior file preserved, failure
+    recorded so main() returns nonzero exit).
+    """
     log.info("=== Step 6: Oracle state ===")
     try:
         from engine.oracle.live import build_oracle_state, write_oracle_state
+        from engine.oracle.contract import validate_payload
         state = build_oracle_state(data_dir=data_dir)
+
+        # --- Red Queen contract validation (IMMEDIATELY BEFORE WRITE) ---
+        ok, errs = validate_payload(state)
+        if not ok:
+            for err in errs:
+                _annotation(f"oracle_nightly: PAYLOAD_INVALID — {err}")
+            _annotation(
+                f"oracle_nightly: oracle_state REJECTED by contract validator "
+                f"({len(errs)} error(s)); prior file preserved, NOT overwriting."
+            )
+            # Return None so the failure is recorded and triggers nonzero exit.
+            return None
+
         if not dry_run:
             write_oracle_state(state, out_dir=site_dir / "basketdata")
         log.info(
-            "oracle_state.json: asof=%s, %d active_episodes, %d watchlist, %d active_complexes",
+            "oracle_state.json: asof=%s, %d active_episodes, %d watchlist, %d active_complexes, "
+            "payload_version=%s",
             state.get("asof"),
             len(state.get("active_episodes") or []),
             len(state.get("onset_watchlist") or []),
             (state.get("regime") or {}).get("n_active_complexes", 0),
+            state.get("payload_version", "unstamped"),
         )
         return state
     except Exception as e:  # noqa: BLE001

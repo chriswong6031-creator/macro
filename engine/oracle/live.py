@@ -593,6 +593,17 @@ def build_oracle_state(
             "error_rates": error_rates,
         },
     }
+
+    # Stamp payload_version + per-episode confidence_class / lineage (additive).
+    # Parallel waves (A3 regime_tag, B1 personality) may have already added fields;
+    # stamp_payload is tolerant and will not overwrite.
+    try:
+        from engine.oracle.contract import stamp_payload
+        stamp_payload(payload)
+    except Exception:  # noqa: BLE001
+        log.warning("oracle_live: contract.stamp_payload failed — payload ships without stamps",
+                    exc_info=True)
+
     return payload
 
 
