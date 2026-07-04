@@ -91,6 +91,12 @@ on:
       - "collectors/**"
       - "lib/**"
       - "tests/test_china_news.py"
+      # sector_pulse wiring tripwire (#1193 post-mortem): PR #1170 injected sector_pulse
+      # into build_stock_library.py; an unrelated refactor 90 min later silently deleted
+      # the block and merged green because nothing here covered the builder. The wiring
+      # test pins producer (AST) + template consumer, so the builder must trigger CI.
+      - "scripts/build_stock_library.py"
+      - "tests/test_sector_pulse_wiring.py"
   workflow_dispatch:
 
 permissions:
@@ -325,7 +331,8 @@ jobs:
           tests/test_missing_tape.py tests/test_price_basis_flip.py
           tests/test_risk_lead_lag.py tests/test_anticipation.py
           tests/test_canon.py tests/test_whitehouse_w5.py
-          tests/test_board_ledger.py tests/test_grade_us_board.py -q
+          tests/test_board_ledger.py tests/test_grade_us_board.py
+          tests/test_sector_pulse_wiring.py -q
 
   collector-registry:
     # 2026-07-03 (#1052 post-mortem): PR #1052's squash-merge shipped scripts/collect.py as
