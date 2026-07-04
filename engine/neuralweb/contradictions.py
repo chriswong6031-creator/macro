@@ -377,8 +377,8 @@ def _pair_c_oracle_vs_sector_central(
                     as_of=as_of,
                     note=(
                         f"Oracle marks complex '{cx_id}' as {cx_direction} while "
-                        f"sector_central shows mostly Constructive/Accumulate calls "
-                        f"({n_bullish}/{n_total} matched members).  "
+                        f"sector_central shows plurality Constructive/Accumulate calls "
+                        f"({n_bullish}/{n_total} matched members, rest Neutral/mixed).  "
                         "Rotation vs sector-level signal disagree.  "
                         "Display-only; both are context signals."
                     ),

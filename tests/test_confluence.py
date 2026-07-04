@@ -684,9 +684,10 @@ class TestEdges:
         xy = [e for e in confirms
               if ("eng_x" in e["src"] and "eng_y" in e["dst"])
               or ("eng_y" in e["src"] and "eng_x" in e["dst"])]
-        if len(xy) == 0:
-            # If no edge at all for n=5 below floor that's also acceptable
-            return
+        assert len(xy) >= 1, (
+            f"Expected confirms edge with lift=null for n=5 below MIN_N floor; "
+            f"got confirms={confirms}"
+        )
         edge = xy[0]
         assert edge["n"] == 5
         assert edge["lift"] is None, f"Expected lift=null for n<10; got {edge['lift']}"
