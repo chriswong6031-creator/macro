@@ -81,8 +81,12 @@ def main() -> int:
         log.error("member_context import failed: %s", e)
 
     # Thematic Foresight Desk (research/THEMATIC_FORESIGHT_DESK.md): drip the keyless EDGAR
-    # bottleneck-language sweep (cached / stale-guarded), then emit the per-theme cascade +
-    # its two legs for the panel. write_ledger=False — engine/run.py owns the forward ledgers.
+    # bottleneck-language sweep (cached / stale-guarded), then emit the two input legs for
+    # the panel. write_ledger=False — engine/run.py owns the forward ledgers.
+    # NOTE: foresight_cascade.json is NOT written here. scripts.build_foresight is the
+    # sole owner of that artifact (it adds the `health` key and policy-calendar enrichment).
+    # In daily.yml, build_foresight runs serially BEFORE this script's parallel band —
+    # if that ordering ever changes, re-evaluate ownership here.
     try:
         from collectors.edgar_fts import fetch_bottleneck_hits
         fetch_bottleneck_hits()                 # drip + cached; network failure is non-fatal
@@ -91,18 +95,14 @@ def main() -> int:
     try:
         from engine.theme_revisions import compute_theme_revisions
         from engine.bottleneck import compute_bottleneck
-        from engine.foresight_cascade import compute_foresight_cascade
         rv = compute_theme_revisions(write_ledger=False)
         bn = compute_bottleneck(write_ledger=False)
         if _dump(fdir, "theme_revisions.json", rv):
             wrote.append("theme_revisions")
         if _dump(fdir, "bottleneck.json", bn):
             wrote.append("bottleneck")
-        if _dump(fdir, "foresight_cascade.json",
-                 compute_foresight_cascade(bn, rv, write_ledger=False)):
-            wrote.append("foresight_cascade")
     except Exception as e:  # noqa: BLE001
-        log.error("foresight_cascade failed: %s", e)
+        log.error("theme_revisions/bottleneck failed: %s", e)
 
     # W1c — 8-K Item 1.01/2.03 contract-dollar magnitude + pre-drift panel.
     # Runs incremental enrichment (filings <= 45d old, unprocessed rows only) first,
