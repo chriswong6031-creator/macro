@@ -45,7 +45,10 @@ jobs:
           python -m scripts.build_commodities
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/commodity site/commodities.html
+          # W6a SENTINEL STAGING LAW: commodity_shock reflex writes to data/reflexes/
+          # when it fires. Stage alongside data/commodity so the firing record is
+          # never left as unstaged tracked changes.
+          git add data/commodity data/reflexes/ site/commodities.html
           git diff --cached --quiet && exit 0
           git commit -m "commodity: shock alert $(date -u +%FT%H:%MZ)"
           for i in 1 2 3 4 5; do

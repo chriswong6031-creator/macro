@@ -70,6 +70,11 @@ jobs:
           # + the (maybe) refreshed regime as-of + Market State snapshot that the page reads its date from.
           git add -f site/live/overlay.json site/live/risk_state.json site/live_config.js
           git add -f data/regime/latest.json data/market_state/latest.json
+          # W6a SENTINEL STAGING LAW: regime_stale_selfheal writes to data/reflexes/
+          # when it fires. Stage the directory so a self-heal firing commit is never
+          # left as unstaged tracked changes (which would cause git pull --rebase to
+          # abort with "unstaged changes" and silently lose the data).
+          git add -f data/reflexes/ 2>/dev/null || true
           # Discard the forward-grading byproducts engine.run also touches (regime_history.parquet,
           # regime_one.json, base_effect_fwd.jsonl, *_log.jsonl, *_log.parquet ...). The NIGHTLY build is
           # their canonical once-per-session writer; committing them from a 30-min fast path would append

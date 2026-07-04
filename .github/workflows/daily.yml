@@ -795,6 +795,18 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.notify
+      - name: push priority alerts (W6a — config-gated OFF; no-op until operator enables)
+        # Neural Web W6a: push high-priority alerts above `alert_push.threshold` (default 60)
+        # through Telegram/Discord with a dedup window (`alert_push.window_hours`).
+        # Gate: `alert_push.enabled: false` in config.yml — a pure no-op until an operator
+        # explicitly flips it (Article-2 event: priority inputs may never be raised by a model).
+        # Dedup store: data/alert_triage/push_sent.jsonl (single-writer, append-only).
+        # Resilient: always exits 0 — a dispatch error never blocks the daily build.
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m scripts.push_alerts || echo "::warning::push_alerts failed (non-fatal — push spine is gated off by default)"
       - name: archive signal layer (append-only point-in-time model outputs; resilient)
         # LAST data-producing step: append today's latest.json / bond_health.json /
         # regime_snap.json / forex + commodity reads to data/signal_archive/<label>.parquet

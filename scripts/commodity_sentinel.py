@@ -119,6 +119,38 @@ def main() -> int:
     fresh = [e for e in changed_events if e["id"] not in have]
     if fresh:
         commodity_alerts.write_events(fresh + existing)
+
+    # W6a MIRROR: record each fresh shock event as a reflex firing.
+    # Single-writer law: ONLY the commodity-sentinel lane calls this.
+    # The append is additive — existing notify behavior is unchanged.
+    for e in fresh:
+        try:
+            from engine.neuralweb.reflexes import record_firing  # noqa: PLC0415
+            c = e.get("context") or {}
+            state = c.get("state", "")
+            # shock = bearish risk-appetite signal (direction=-1);
+            # recovery / normal state transitions are context (direction=0).
+            direction = -1 if "shock" in state.lower() else 0
+            record_firing("commodity_shock", {
+                "ts": e.get("ts", now_iso),
+                "trigger_type": "price_state_machine",
+                "trigger_key": e.get("id", ""),
+                "action_taken": "append_events",
+                "scope_type": "macro",
+                "scope_key": c.get("asset", e.get("asset", "commodity")),
+                "direction": direction,
+                "horizon_d": 1,   # intraday sentinel — short horizon
+                "asof": (e.get("ts") or now_iso)[:10],
+                "extra": {
+                    "headline": e.get("headline", ""),
+                    "state": state,
+                    "price": c.get("price"),
+                    "chg_pct": c.get("chg_pct"),
+                },
+            })
+        except Exception as ex:  # noqa: BLE001 — firings append must never fail the sentinel
+            log.warning("W6a record_firing skipped (non-fatal): %s", ex)
+
     for e in fresh:
         _notify(e)
     return CHANGED

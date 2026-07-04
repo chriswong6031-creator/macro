@@ -2515,6 +2515,113 @@ artifacts:
       Absent Oracle graph files (gitignored/Mac-local) → stable/leads edges empty + gap
       noted; graph always produced. zero behavior-changing consumers today.
 
+  # Neural Web W6a: reflex firings ledgers (two mirroring + patterned stub)
+  # -----------------------------------------------------------------------
+  # Pattern entry covering all future data/reflexes/<NAME>/firings.jsonl paths.
+  # The <NAME> placeholder (uppercase) causes the validator to skip the file-
+  # existence check (matches _PLACEHOLDER_RE = r"<[A-Z_]+>"), which is correct
+  # since firings.jsonl is created lazily on first reflex firing.
+  reflex-firings-pattern:
+    path: data/reflexes/<NAME>/firings.jsonl
+    format: jsonl
+    producer: engine/neuralweb/reflexes.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/query.py
+    notes: >
+      Pattern entry for the W6a reflex firings ledgers.  Each reflex with
+      migration_status=mirroring owns one single-writer JSONL at
+      data/reflexes/<name>/firings.jsonl.  Producer: engine.neuralweb.reflexes
+      .record_firing(), called ONLY by the reflex's own workflow lane (single-
+      writer law).  Consumer: engine.neuralweb.query.adapt_reflexes() folds
+      these streams into the spine index as ungraded-honest rows
+      (ledger='reflexes', outcome_graded=False).  Currently mirroring:
+      regime_stale_selfheal (intraday-fastpath lane) and commodity_shock
+      (commodity-sentinel lane).  See config/reflexes.yml for the full
+      registry of 12 registered-only + 2 mirroring = 14 total reflexes.
+
+  reflex-firings-regime-selfheal:
+    path: data/reflexes/regime_stale_selfheal/firings.jsonl
+    format: jsonl
+    producer: scripts/refresh_regime_if_stale.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/query.py
+    notes: >
+      W6a migration: regime_stale_selfheal firings.jsonl.  Written by
+      scripts/refresh_regime_if_stale.py ONLY when the self-heal actually fires
+      (regime was stale and was refreshed).  Infrastructure tier: direction=0,
+      not gradeable.  Staged by intraday-fastpath.yml commit step under
+      data/reflexes/ glob.
+
+  reflex-firings-commodity-shock:
+    path: data/reflexes/commodity_shock/firings.jsonl
+    format: jsonl
+    producer: scripts/commodity_sentinel.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/query.py
+    notes: >
+      W6a migration: commodity_shock firings.jsonl.  Written by
+      scripts/commodity_sentinel.py ONLY when a fresh shock event passes the
+      id-dedup check (i.e. a genuine new state-transition event).  Shadow tier:
+      direction=-1 for shock states, 0 for recovery/normal.  Graded at 1d/5d
+      horizon vs commodity ETF bench (n<25 today — pre-gauntlet).  Staged by
+      commodity-sentinel.yml commit step under data/reflexes/ glob.
+
+  reflex-push-dedup-store:
+    path: data/alert_triage/push_sent.jsonl
+    format: jsonl
+    producer: engine/alert_triage.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: sent_at
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/alert_triage.py
+    notes: >
+      W6a: push_priority_alerts() dedup store.  Single-writer (alert_triage
+      only).  Append-only JSONL keyed by (source, type, asset, sent_at).
+      CONFIG-GATED: the writer function is enabled only when alert_push.enabled
+      =true in config.yml (default false — W6a ships gated OFF).  Article-2
+      surface: enabling requires operator + gauntlet design ruling.
+      Article-2 note: push_sent.jsonl is a dedup store read by no scoring
+      surface; push_priority_alerts() never raises a score. scored_path_surfaces
+      left empty ([]) to reflect actual behavior.
+
   feeds-plane:
     path: site/feeds/
     format: json
