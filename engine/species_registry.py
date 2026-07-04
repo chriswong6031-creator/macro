@@ -314,6 +314,41 @@ def upsert_species(registry: dict[str, Any], entry: dict[str, Any]) -> dict[str,
 # Experiments-tab mirror (§3.1)
 # ---------------------------------------------------------------------------
 
+def _live_regime_context() -> str | None:
+    """W1 regime-directive display wiring (§7): the persisted daily regime_vector's
+    latest row, compacted for the species mirror. The radar's favor_entries /
+    cap_leadership directives and the de-escalation verdict are carried onto
+    regime_one's fused verdict but acted on by NO species surface — this line makes
+    them visible as CONTEXT beside every species entry (display-only, §1.3: nothing
+    ranks or sizes off it). None when the persisted vector is absent (e.g. a fresh
+    checkout before the first nightly)."""
+    try:
+        import pandas as pd  # noqa: PLC0415
+        p = _ROOT / "data" / "regime" / "regime_vector.parquet"
+        if not p.exists():
+            return None
+        row = pd.read_parquet(p).sort_index().iloc[-1]
+
+        def _f(k):
+            v = row.get(k)
+            return None if (v is None or (isinstance(v, float) and pd.isna(v))) else v
+
+        asof = str(row.name.date()) if hasattr(row.name, "date") else str(row.name)
+        parts = [
+            f"rate_pressure={_f('rate_pressure')}",
+            f"quad={_f('quad_hard_label')}",
+            f"vol={_f('vol_regime')}",
+            f"radar={_f('risk_radar_state')}",
+            f"favor_entries={_f('favor_entries')}",
+            f"cap_leadership={_f('cap_leadership')}",
+            f"deescalation={_f('deescalation_eligible')}",
+        ]
+        return " · ".join(parts) + f" (vector asof {asof})"
+    except Exception as exc:  # noqa: BLE001 — display context, never fatal
+        log.debug("species mirror: regime context unavailable (%s)", exc)
+        return None
+
+
 def mirror_to_experiments(
     registry: dict[str, Any],
     experiments_path: Path | None = None,
@@ -344,6 +379,7 @@ def mirror_to_experiments(
     experiments: list[dict] = seed.get("experiments", [])
     existing_by_id: dict[str, int] = {e.get("id"): i for i, e in enumerate(experiments)}
 
+    regime_context = _live_regime_context()
     changed = 0
     for entry in registry.get("species", []):
         sid = entry.get("species_id")
@@ -376,13 +412,18 @@ def mirror_to_experiments(
             "phase_hint": f"horizon={entry.get('horizon_class')} "
                           f"deployment={entry.get('deployment_status')}",
         }
+        # W1 regime-directive display wiring: same live line on every species entry
+        # (the monthly review reads which weather the ledgers are accruing under).
+        if regime_context is not None:
+            new_exp["regime_context"] = regime_context
 
         if exp_id in existing_by_id:
             existing = experiments[existing_by_id[exp_id]]
             # Only update if content actually differs
             differs = any(
                 existing.get(k) != new_exp.get(k)
-                for k in ("status", "come_back_on", "phase_hint", "priority")
+                for k in ("status", "come_back_on", "phase_hint", "priority",
+                          "regime_context")
             )
             if differs:
                 # Merge: update only mirror-owned keys; preserve any extra curator fields
