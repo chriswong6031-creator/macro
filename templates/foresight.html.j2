@@ -258,6 +258,30 @@
                background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--panel)); }
   .fx-rsub { font-weight:700; } .fx-rsec { font-size:10px; color:var(--muted); }
   .fx-rscar { font-weight:800; color:var(--g-hot); cursor:help; }
+  /* W1a — Narrative-to-Money Divergence board */
+  .fx-div-board { border:1px solid var(--line); border-left:5px solid var(--info); border-radius:14px; padding:16px 18px 12px; margin:18px 0; background:var(--panel); }
+  .fx-div-h { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .fx-div-t { font-size:14.5px; font-weight:800; color:var(--text); cursor:help; }
+  .fx-div-sub { font-size:11.5px; color:var(--muted); }
+  .fx-div-thin { color:var(--warn); font-size:12.5px; font-weight:700; padding:8px 0; }
+  .fx-div-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(175px,1fr)); gap:10px; margin:8px 0 12px; }
+  .fx-div-card { border:1px solid var(--line); border-left:4px solid var(--c,var(--line)); border-radius:10px; padding:10px 11px 8px; background:color-mix(in srgb,var(--c,var(--panel)) 7%,var(--panel)); }
+  .q-hidden_opportunity { --c:var(--up); }
+  .q-confirmed          { --c:var(--info); }
+  .q-hype_risk          { --c:var(--down); }
+  .q-ignore             { opacity:0.55; }
+  .fx-div-name { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px; }
+  .fx-div-quad { font-size:12px; font-weight:800; color:var(--c,var(--text)); margin-bottom:6px; }
+  .fx-div-expired { font-size:10px; font-weight:800; color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,transparent); border-radius:4px; padding:2px 5px; margin-bottom:5px; display:inline-block; }
+  .fx-div-bars { display:flex; flex-direction:column; gap:3px; margin:4px 0; }
+  .fx-div-bar-row { display:flex; align-items:center; gap:5px; font-size:9.5px; }
+  .fx-div-bar-lbl { width:26px; color:var(--muted); font-weight:700; flex-shrink:0; }
+  .fx-div-bar-wrap { flex:1; height:5px; background:color-mix(in srgb,var(--line) 60%,transparent); border-radius:3px; overflow:hidden; }
+  .fx-div-bar-n { display:block; height:100%; background:var(--warn); border-radius:3px; }
+  .fx-div-bar-m { display:block; height:100%; background:var(--up); border-radius:3px; }
+  .fx-div-bar-val { width:26px; color:var(--muted); font-size:9.5px; text-align:right; flex-shrink:0; }
+  .fx-div-legs { font-size:9.5px; color:var(--muted); margin-top:5px; }
+  .fx-div-foot { font-size:10.5px; color:var(--muted); line-height:1.55; margin-top:8px; border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); padding-top:7px; }
 {% endblock %}
 
 {% block content %}
@@ -407,6 +431,39 @@
       <div class="fx-ai-foot">{{ analyst.disclaimer }} {{ t('The deterministic monitor re-checks each thesis against its convergence every build and flags BROKEN before the tape confirms. The model is FORBIDDEN to forecast a price.', '确定性监视器每次构建都依据其共振重新核验每个论点，并在行情确认前标记失效。模型被禁止预测价格。') }}</div>
     </div>
     {% endif %}
+  </div>
+  {% endif %}
+
+  {# ---- W1a: Narrative-to-Money Divergence board (display-only, forward-graded) ---- #}
+  {% if divergence_board %}
+  <div class="fx-div-board">
+    <div class="fx-div-h">
+      <span class="fx-div-t" data-tip-en="Per-theme rank-percentile of narrative legs (news velocity + EDGAR language) vs money legs (federal spend + revision breadth). HIDDEN-OPPORTUNITY = money rising, narrative quiet — the logged front-run claim." data-tip-zh="每主题叙事腿（新闻速度+EDGAR语言）与资金腿（联邦支出+修正广度）的百分位排名。隐藏机会=资金上升、叙事平静——已记录的前沿主张。">{{ t('Narrative ↔ Money Divergence', '叙事 ↔ 资金背离') }}</span>
+      <span class="fx-div-sub">{{ t('percentile-rank each side cross-sectionally', '各维度跨主题百分位排名') }} · {{ divergence_board.n_cross_section }} {{ t('themes in cross-section', '主题入截面') }}</span>
+    </div>
+    {% if divergence_board.thin_cross_section %}
+    <div class="fx-div-thin">{{ t('Cross-section too thin for reliable ranks', '跨截面样本量不足') }} (n={{ divergence_board.n_cross_section }} &lt; 6) — {{ t('accruing', '累积中') }}</div>
+    {% else %}
+    <div class="fx-div-grid">
+      {% for it in divergence_board.items %}{% if not it.excluded %}
+      <div class="fx-div-card q-{{ it.quadrant | replace('-','_') if it.quadrant else 'none' }}">
+        <div class="fx-div-name">{{ it.name or it.theme }}</div>
+        <div class="fx-div-quad">{% if it.quadrant %}{{ it.quadrant.replace('-',' ').upper() }}{% else %}—{% endif %}</div>
+        {% if it.transition == 'hidden→confirmed' %}
+        <div class="fx-div-expired">⚑ {{ t('FRONT-RUNNING EXPIRED', '早期优势已消失') }}</div>
+        {% endif %}
+        {% if it.narrative_pct is not none and it.money_pct is not none %}
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl">{{ t('narr','叙事') }}</span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:{{ (it.narrative_pct * 100) | round | int }}%"></span></span><span class="fx-div-bar-val">{{ (it.narrative_pct * 100) | round | int }}%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl">{{ t('$','资金') }}</span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:{{ (it.money_pct * 100) | round | int }}%"></span></span><span class="fx-div-bar-val">{{ (it.money_pct * 100) | round | int }}%</span></div>
+        </div>
+        {% endif %}
+        <div class="fx-div-legs">{{ it.n_narrative_legs_live }} {{ t('narr leg(s)', '叙事腿') }} · {{ it.n_money_legs_live }} {{ t('$ leg(s)', '资金腿') }}</div>
+      </div>
+      {% endif %}{% endfor %}
+    </div>
+    {% endif %}
+    <div class="fx-div-foot">{{ t('Display-only. Quadrant thresholds (0.60/0.60) PROVISIONAL — pending forward-graded ledger significance. HIDDEN-OPPORTUNITY = money rising, narrative quiet — the logged claim accrues to data/foresight/divergence_log.jsonl and grades at 60d (catch-up) + 90d (SPY-excess). CONFIRMED transition = narrative catches up = exit-of-earliness event.', '仅供展示。象限阈值（0.60/0.60）暂定——待前向评分账本显著性确认。隐藏机会=资金上升、叙事平静——记录的主张累积至divergence_log.jsonl并在60天（追赶）+90天（超额收益）评分。确认转换=叙事跟上=早期优势结束事件。') }}</div>
   </div>
   {% endif %}
 
