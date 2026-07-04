@@ -397,7 +397,7 @@ def compute_divergence_board(
 
     # ── Pass 4: quadrant labels + transition detection ─────────────────────
     # Read last-known quadrant per theme from the ledger for transition detection.
-    last_quadrant: dict[str, str] = {}
+    last_quadrant: dict[str, tuple[str, str]] = {}   # theme -> (asof, quadrant)
     ledger_path = (Path(root) if root else config.data_dir()) / "foresight" / "divergence_log.jsonl"
     if ledger_path.exists():
         for line in ledger_path.read_text().splitlines():
@@ -574,7 +574,7 @@ def grade_divergence_ledger(
         except Exception:  # noqa: BLE001
             continue
 
-    today_ts = pd.Timestamp(today) if today else pd.Timestamp.utcnow().normalize()
+    today_ts = pd.Timestamp(today) if today else pd.Timestamp.now(tz='UTC').tz_localize(None).normalize()
     CATCHUP_DAYS = 60
     RETURN_DAYS = 90
 
