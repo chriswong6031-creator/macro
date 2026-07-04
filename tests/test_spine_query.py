@@ -67,13 +67,17 @@ def _make_spine(tmp_path: Path) -> Path:
 
 
 def _make_track_record(tmp_path: Path) -> Path:
-    """Write a minimal track_record parquet."""
+    """Write a minimal track_record parquet at the canonical signal_archive path.
+
+    Uses the real schema from data/signal_archive/track_record.parquet:
+    regime columns are unprefixed (quad_hard_label, vol_regime, etc.) not us_*-prefixed.
+    The adapter also accepts us_*-prefixed via _US_PREFIX_MAP for backward compat.
+    """
     rows = [
         {
             "ticker": "MSFT",
             "date": "2026-01-02",
-            "lane": "buy",
-            "composite_z": 1.2,
+            "type": "buy",
             "fwd_mfe_5": 0.01,
             "fwd_mfe_10": 0.02,
             "fwd_mfe_21": 0.03,
@@ -81,11 +85,12 @@ def _make_track_record(tmp_path: Path) -> Path:
             "fwd_mfe_126": 0.08,
             "terminal_state_clean15_126": "CLEAN_LIFTOFF",
             "terminal_state_clean8_21": "CUSHIONED",
-            "us_quad_hard_label": "quad1",
-            "us_vol_regime": "low",
+            # real schema uses unprefixed regime columns
+            "quad_hard_label": "quad1",
+            "vol_regime": "low",
         }
     ]
-    p = tmp_path / "data" / "track_record"
+    p = tmp_path / "data" / "signal_archive"
     p.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_parquet(p / "track_record.parquet", index=False)
     return p / "track_record.parquet"
@@ -218,6 +223,42 @@ def test_adapt_spine_correct_mapping(tmp_path):
 # (2) adapt_track_record — fail-open when absent (positive-control 1)
 # ---------------------------------------------------------------------------
 
+def test_adapt_track_record_reads_signal_archive_path(tmp_path):
+    """adapt_track_record must read from data/signal_archive/track_record.parquet.
+
+    Regression guard for the path bug fixed in W2: the old code read
+    data/track_record/track_record.parquet which no producer ever writes,
+    causing all US track-record rows to silently drop from the index.
+
+    This test writes a fixture at the OLD (wrong) path and verifies adapt_track_record
+    returns empty (path not found), then writes at the CORRECT path and verifies
+    non-empty rows are returned.
+    """
+    # Step 1: write ONLY at the old (wrong) path → should get empty + gap note
+    old_path = tmp_path / "data" / "track_record"
+    old_path.mkdir(parents=True, exist_ok=True)
+    import pandas as _pd
+    _pd.DataFrame([{"ticker": "AAPL", "date": "2026-01-01", "fwd_mfe_5": 0.01}]).to_parquet(
+        old_path / "track_record.parquet", index=False
+    )
+    df_wrong, gaps_wrong = Q.adapt_track_record(root=tmp_path)
+    assert df_wrong.empty, (
+        "adapt_track_record must NOT read data/track_record/track_record.parquet — "
+        "that path has no producer; reading it would silently use stale/wrong data"
+    )
+    assert any("signal_archive" in g for g in gaps_wrong), (
+        f"gap note must cite data/signal_archive path; got: {gaps_wrong}"
+    )
+
+    # Step 2: write at the CORRECT path → non-empty frame
+    _make_track_record(tmp_path)  # writes to data/signal_archive/
+    df_correct, gaps_correct = Q.adapt_track_record(root=tmp_path)
+    assert not df_correct.empty, (
+        "adapt_track_record must read data/signal_archive/track_record.parquet"
+    )
+    assert list(df_correct.columns) == Q.COLUMNS
+
+
 def test_adapt_track_record_fail_open_when_absent(tmp_path):
     """When track_record.parquet is absent, adapt_track_record must return
     an empty frame and a gap note — never raise."""
@@ -232,6 +273,12 @@ def test_adapt_track_record_fail_open_when_absent(tmp_path):
 
 
 def test_adapt_track_record_correct_mapping(tmp_path):
+    """adapt_track_record maps real signal_archive schema columns correctly.
+
+    Real schema uses unprefixed regime columns (quad_hard_label, vol_regime etc.)
+    not us_*-prefixed.  The _US_PREFIX_MAP fallback is retained for backward compat
+    with any rows that may carry the us_* prefix.
+    """
     _make_track_record(tmp_path)
     df, gaps = Q.adapt_track_record(root=tmp_path)
     assert not df.empty
@@ -244,8 +291,14 @@ def test_adapt_track_record_correct_mapping(tmp_path):
     assert row["ledger"] == "track_record"
     assert row["symbol"] == "MSFT"
     assert row["terminal_state_clean15_126"] == "CLEAN_LIFTOFF"
-    # Regime stamp mapping: us_quad_hard_label → quad_hard_label
-    assert row["quad_hard_label"] == "quad1"
+    # Real schema: regime column is unprefixed quad_hard_label (not us_*-prefixed)
+    assert row["quad_hard_label"] == "quad1", (
+        f"quad_hard_label must map from unprefixed column; got {row['quad_hard_label']!r}"
+    )
+    # family should come from 'type' column (real schema has no 'lane' column)
+    assert row["family"] == "buy", (
+        f"family must fall back to 'type' column when 'lane' absent; got {row['family']!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
