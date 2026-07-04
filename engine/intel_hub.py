@@ -628,7 +628,9 @@ def _catalyst_index(special: dict | None, today: date) -> dict:
     return out
 
 
-def _discovery_dossier(cand: dict, catalyst: dict | None) -> dict:
+def _discovery_dossier(cand: dict, catalyst: dict | None,
+                       traj: dict | None = None,
+                       entry_gate: dict | None = None) -> dict:
     """A dossier for an OFF-desk discovery candidate — a name not in any feeder's universe,
     surfaced purely by a leading scan (radar QUIET-accumulating / federal velocity)."""
     t = (cand.get("ticker") or "").upper()
@@ -643,6 +645,7 @@ def _discovery_dossier(cand: dict, catalyst: dict | None) -> dict:
         "opportunity_score": opp, "edge_remaining": edge,
         "edge_drivers": [cand.get("reason") or "off-desk leading signal"],
         "edge_components": 1, "stage": "discovery",
+        "entry_gate": entry_gate, "trajectory": traj or None,
         "leading_gap": 1, "lead_up": 1, "lag_up": 0, "lag_present": 0,
         "catalyst": catalyst, "discovery": cand,
         "n_confirm": 1, "n_dissent": 0, "n_facets": 0, "agreement": 1.0,
@@ -746,7 +749,15 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     # live in the Discovery section via the candidate feed.
     off = [c for c in ((discovery or {}).get("off_desk") or [])
            if (c.get("ticker") or "").upper() not in tickers][:_OFF_DESK_INJECT]
-    dossiers += [_discovery_dossier(c, cidx.get((c.get("ticker") or "").upper())) for c in off]
+    # Extend _pr with off-desk tickers so the discovery dossier gets trajectory + entry_gate.
+    for c in off:
+        ot = (c.get("ticker") or "").upper()
+        if ot and ot not in _pr:
+            _pr[ot] = _price_read(ot)
+    dossiers += [_discovery_dossier(c, cidx.get((c.get("ticker") or "").upper()),
+                                    traj=_pr.get((c.get("ticker") or "").upper(), (None, None))[0],
+                                    entry_gate=_pr.get((c.get("ticker") or "").upper(), (None, None))[1])
+                 for c in off]
     _peer_confirm(dossiers)                              # 3rd-order: theme-wide vs isolated
     # V2 RANKING: opportunity = signal × edge-remaining × leading-gap. Tie-break on
     # composite conviction. This DEMOTES the confirmed/consensus cohort the v1 sort floated
@@ -797,6 +808,22 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     n_actionable = sum(1 for d in dossiers[:top]
                        if d["stage"] in ("emerging", "early") and d["leading_gap"] >= 0
                        and d["opportunity_score"] >= 35)
+    # T5 COVERAGE TRIPWIRE — count command-list names lacking price data so silent
+    # veto-escapes are visible in hub.json (not just a silent None trajectory).
+    command_dossiers = dossiers[:top]
+    n_command = len(command_dossiers)
+    n_with_trajectory = sum(1 for d in command_dossiers if d.get("trajectory") is not None)
+    n_without_trajectory = n_command - n_with_trajectory
+    if n_without_trajectory > 0:
+        tickers_no_price = [d["ticker"] for d in command_dossiers
+                            if d.get("trajectory") is None]
+        log.warning("hub coverage: %d/%d command names lack price data (veto-escapes): %s",
+                    n_without_trajectory, n_command, tickers_no_price)
+    _coverage = {
+        "command_names": n_command,
+        "with_trajectory": n_with_trajectory,
+        "without_trajectory": n_without_trajectory,
+    }
     return {
         "schema": SCHEMA, "engine_version": ENGINE_VERSION,
         "is_context_only": True, "as_of": today.isoformat(),
@@ -812,6 +839,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         },
         "n_universe": len(dossiers), "n_actionable": n_actionable, "n_emerging": n_emerging,
         "n_discovery": n_discovery_total,
+        "coverage": _coverage,
         "counts": {"emerging": n_emerging, "early": n_early, "exhausted": len(exhausted),
                    "catalyst": len(catalysts), "discovery": n_discovery_total,
                    "discovery_off_desk": (discovery or {}).get("n_off_desk", 0),

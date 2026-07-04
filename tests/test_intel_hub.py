@@ -509,6 +509,46 @@ def test_engine_version_stamped():
     assert hub["engine_version"] == "hub-v3-trajectory"
 
 
+# --------------------------------------------------------------------------- #
+# 10. Coverage tripwire — counter present and internally consistent
+# --------------------------------------------------------------------------- #
+def test_coverage_counter_present_in_hub():
+    """hub.json must carry coverage:{command_names, with_trajectory, without_trajectory}
+    so silent veto-escapes are visible.  The counter is additive-only consistent:
+    with + without == command_names."""
+    hub = H.build(_bundle({"X": _news("pos")}, [_sig("X", 70)]), None, {}, today=_TODAY)
+    cov = hub.get("coverage")
+    assert cov is not None, "coverage block missing from hub output"
+    assert "command_names" in cov
+    assert "with_trajectory" in cov
+    assert "without_trajectory" in cov
+    assert cov["with_trajectory"] + cov["without_trajectory"] == cov["command_names"]
+
+
+def test_coverage_counter_reflects_missing_price(monkeypatch):
+    """Names lacking price data increment without_trajectory; with_trajectory stays 0."""
+    monkeypatch.setattr("engine.trajectory.snapshot", lambda t, *a, **k: None)
+    hub = H.build(_bundle({"NOPRICE": _news("pos")}, [_sig("NOPRICE", 75)]), None, {}, today=_TODAY)
+    cov = hub["coverage"]
+    # The command list has NOPRICE; it has no trajectory data
+    assert cov["command_names"] >= 1
+    assert cov["without_trajectory"] >= 1
+
+
+def test_coverage_counter_with_price(monkeypatch):
+    """Names WITH price data increment with_trajectory."""
+    # _yahoo_closes must return non-None so snapshot is called
+    monkeypatch.setattr("engine.trajectory._yahoo_closes", lambda t, root: [1.0] * 300)
+    monkeypatch.setattr(
+        "engine.trajectory.snapshot",
+        lambda t, *a, **k: {"rolling_over": False, "off_high_252": -0.10,
+                             "rs_vs_spy_60d": 2.0, "basing": False}
+    )
+    hub = H.build(_bundle({"HASPRX": _news("pos")}, [_sig("HASPRX", 75)]), None, {}, today=_TODAY)
+    cov = hub["coverage"]
+    assert cov["with_trajectory"] >= 1
+
+
 if __name__ == "__main__":
     import inspect
     g = dict(globals())
