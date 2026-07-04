@@ -32,6 +32,7 @@ import json
 import logging
 import math
 from datetime import date, datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -41,6 +42,7 @@ import pandas as pd
 # has the breadth-cache fallback so subjects beyond the ~153 yahoo parquets are
 # still scorable; `_level_asof`/`close_at`/`covers` share it.
 from engine.ai_desk import _GICS_ETF, _level_asof
+from engine import ai_desk as _aidesk  # module ref: tests monkeypatch ai_desk._close_series
 from engine.ai_desk_scorer import _close_at, _covers
 from lib import config
 
@@ -216,19 +218,47 @@ def _validate_claim(claim: dict) -> tuple[bool, str]:
     return True, ""
 
 
-def register(claim: dict, root: Path | str | None = None,
-             *, dedupe: bool = True) -> dict:
-    """Register ONE claim. Validates against the schema, stamps `claim_id`,
-    `timestamp`, and `status`, then appends to data/qledger/claims.jsonl.
+# W0 Stage B-e (§3.4): the US regime_vector stamp keys carried on every claim row.
+# qledger is a US-lane desk/family ledger → US vector is the PRIMARY stamp
+# (same convention as track_record #1139 and grade_us_board #1142).
+_REGIME_STAMP_KEYS = (
+    "rate_pressure", "quad_hard_label", "fused_risk_label", "vol_regime",
+    "risk_radar_state", "regime_vector_degraded", "vector_asof",
+    "staleness_hours",
+)
 
-    Returns the stored claim dict (with `status` in {open, rejected}). Rejected
-    claims ARE persisted (audit trail for the D4 dark-fraction report) but never
-    graded. Registration is idempotent by claim_id when `dedupe=True`.
 
-    The `is_placebo` slot (D3) rides through untouched — B3's sampler registers
-    placebo claims via this same call.
+@lru_cache(maxsize=512)
+def _regime_stamp_cached(asof: str) -> tuple:
+    null = {k: None for k in _REGIME_STAMP_KEYS}
+    if not asof:
+        return tuple(null.items())
+    try:
+        from engine.regime_vector import get_vector_for_date  # noqa: PLC0415
+        raw = get_vector_for_date(asof)
+        out = {k: raw.get(k) for k in _REGIME_STAMP_KEYS}
+        return tuple(out.items())
+    except Exception as exc:  # noqa: BLE001
+        log.debug("regime stamp lookup failed for %s: %s", asof, exc)
+        return tuple(null.items())
+
+
+def _regime_stamp_for_asof(asof: str) -> dict:
+    """PIT US regime_vector stamp for a claim's asof date (§3.4).
+
+    Reads ONLY the persisted daily vector (data/regime/regime_vector.parquet,
+    last committed row with date ≤ asof) — never recomputes from latest-state
+    sources. All-None stamp when the vector is absent or covers no such date.
+    Cached per asof-date string: a 2,800-claim batch on one asof costs one
+    parquet read, not 2,800.
     """
-    root = _root(root)
+    return dict(_regime_stamp_cached(asof))
+
+
+def _prepare_claim(claim: dict) -> dict:
+    """Validate + stamp ONE claim into its stored form (shared by register()
+    and register_batch(); extracted so batch registration is semantically
+    identical to N single calls)."""
     ok, reason = _validate_claim(claim)
 
     scope = claim.get("scope") if isinstance(claim.get("scope"), dict) else {}
@@ -259,6 +289,41 @@ def register(claim: dict, root: Path | str | None = None,
     stored.setdefault("control", None)
     stored.pop("salt", None)
 
+    # W0 Stage B-e (§3.4): US regime_vector PIT stamp at registration time.
+    if stored.get("vector_asof") is None:
+        stamp = _regime_stamp_for_asof(str(claim.get("asof") or ""))
+        for k, v in stamp.items():
+            if stored.get(k) is None:
+                stored[k] = v
+    # Schema consistency across the five Stage-B ledgers. Nothing in
+    # data/species/registry.json binds ledger="qledger" (qualitative desk
+    # ledger, desk/family granularity) → both are null today by design.
+    stored.setdefault("species_id", None)
+    stored.setdefault("archetype", None)
+    return stored
+
+
+def register(claim: dict, root: Path | str | None = None,
+             *, dedupe: bool = True) -> dict:
+    """Register ONE claim. Validates against the schema, stamps `claim_id`,
+    `timestamp`, and `status`, then appends to data/qledger/claims.jsonl.
+
+    Returns the stored claim dict (with `status` in {open, rejected}). Rejected
+    claims ARE persisted (audit trail for the D4 dark-fraction report) but never
+    graded. Registration is idempotent by claim_id when `dedupe=True`.
+
+    The `is_placebo` slot (D3) rides through untouched — B3's sampler registers
+    placebo claims via this same call.
+
+    COST NOTE (W0 Stage B-e): the dedupe scan re-reads the whole claims file —
+    O(file) PER CALL. Loop-callers must use register_batch() (one read, one
+    write for the whole batch); at ~2,800 calls/day the loop pattern was
+    quadratic in ledger size.
+    """
+    root = _root(root)
+    stored = _prepare_claim(claim)
+    cid = stored["claim_id"]
+
     p = root.joinpath(*_CLAIMS_FILE)
     p.parent.mkdir(parents=True, exist_ok=True)
 
@@ -270,6 +335,95 @@ def register(claim: dict, root: Path | str | None = None,
     with p.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(stored, ensure_ascii=False) + "\n")
     return stored
+
+
+def register_batch(claims: Iterable[dict], root: Path | str | None = None,
+                   *, dedupe: bool = True) -> list[dict]:
+    """Register MANY claims with ONE store read and ONE append write
+    (§5.1 sub-task 3 / §5.2 — required before any volume increase).
+
+    Semantically identical to calling register() once per claim, including
+    idempotent dedupe by claim_id (keep-FIRST: the store's existing row wins;
+    within the batch, the first occurrence of a claim_id wins and later
+    duplicates return that stored row).
+
+    Per-claim error isolation: a claim whose preparation raises yields
+    {"status": "error", "error": "..."} in its result slot; the rest of the
+    batch still registers (a batch with one invalid claim never loses the
+    valid ones — schema-invalid claims don't raise, they persist as
+    status="rejected" exactly as register() does).
+
+    Returns one stored dict per input claim, in input order.
+    """
+    root = _root(root)
+    p = root.joinpath(*_CLAIMS_FILE)
+    p.parent.mkdir(parents=True, exist_ok=True)
+
+    existing_by_id: dict[str, dict] = {}
+    if dedupe:
+        for c in load_claims(root):          # ONE read for the whole batch
+            existing_by_id.setdefault(str(c.get("claim_id")), c)
+
+    results: list[dict] = []
+    new_rows: list[dict] = []
+    for claim in claims:
+        try:
+            stored = _prepare_claim(claim)
+        except Exception as exc:  # noqa: BLE001 — isolate, never sink the batch
+            log.warning("register_batch: claim preparation failed: %s", exc)
+            results.append({"status": "error", "error": str(exc)})
+            continue
+        cid = stored["claim_id"]
+        if dedupe and cid in existing_by_id:
+            results.append(existing_by_id[cid])
+            continue
+        new_rows.append(stored)
+        if dedupe:
+            existing_by_id[cid] = stored
+        results.append(stored)
+
+    if new_rows:
+        with p.open("a", encoding="utf-8") as fh:  # ONE write for the batch
+            for row in new_rows:
+                fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return results
+
+
+def backfill_regime_stamps(root: Path | str | None = None) -> dict:
+    """§3.4 backfill: fill missing regime stamps on existing claim rows ONLY
+    from the persisted daily vector for dates it covers (PIT-safe by
+    construction) — never reconstructed from latest-state sources.
+
+    Fill-null-only (keep-FIRST): an existing non-null value is never altered.
+    Atomic rewrite, and only when at least one row gained a stamp. Returns
+    {n_claims, n_backfilled, n_unstamped} — the nightly runner prints the
+    residual unstamped count (§3.4 requires it visible).
+    """
+    root = _root(root)
+    p = root.joinpath(*_CLAIMS_FILE)
+    claims = _read_jsonl(p)
+    if not claims:
+        return {"n_claims": 0, "n_backfilled": 0, "n_unstamped": 0}
+
+    n_backfilled = 0
+    for c in claims:
+        if c.get("vector_asof") is None:
+            stamp = _regime_stamp_for_asof(str(c.get("asof") or ""))
+            if stamp.get("vector_asof") is not None:
+                for k, v in stamp.items():
+                    if c.get(k) is None:
+                        c[k] = v
+                n_backfilled += 1
+
+    n_unstamped = sum(1 for c in claims if c.get("vector_asof") is None)
+    if n_backfilled:
+        tmp = p.with_name(p.name + ".tmp")
+        with tmp.open("w", encoding="utf-8") as fh:
+            for c in claims:
+                fh.write(json.dumps(c, ensure_ascii=False) + "\n")
+        tmp.replace(p)
+    return {"n_claims": len(claims), "n_backfilled": n_backfilled,
+            "n_unstamped": n_unstamped}
 
 
 def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
@@ -362,21 +516,78 @@ def load_grades(root: Path | str | None = None) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
-# forward relative return — reuse the radar/ai_desk price math exactly
+# forward relative return — grading fill semantics (W0 Stage B-e)
 # --------------------------------------------------------------------------- #
-def _fwd_ret(ticker: str, root: Path, start_date: str, horizon_d: int) -> float | None:
-    """Total return of `ticker` over `horizon_d` calendar days from start_date.
-    Entry = close ON/BEFORE start_date; exit = close ON/BEFORE start+horizon_d.
-    None when price unavailable — same rule as radar_ic._fwd_rel_return, but
-    returns the RAW return (excess is computed against bench/control at the
-    grader level so both legs share one entry)."""
+# THE STAMPED DISCONTINUITY (§5.1 sub-task 3): before Stage B-e, _fwd_ret used
+# asof-entry semantics (entry = close ON/BEFORE the claim's asof — the same-bar
+# convention the measurement law bans: it flatters mean-reversion claims by
+# filling at the trough close). From Stage B-e on, entry = the first close
+# STRICTLY AFTER the entry date (the one-grader next-bar convention; the exit
+# window is anchored at the fill so the horizon length is preserved).
+#
+# The convention change is a GRADE-HISTORY DISCONTINUITY and is stamped, never
+# silent: every new grade row carries fill_convention="next_bar" +
+# entry_fill_date; rows already in grades.jsonl lack the field and are read as
+# "asof_legacy". Legacy graded values are NEVER rewritten (keep-FIRST).
+# compute_track_record() reports row counts per convention.
+FILL_NEXT_BAR = "next_bar"
+FILL_ASOF_LEGACY = "asof_legacy"
+
+
+def _fill_entry(ticker: str, root: Path,
+                entry_date: str) -> tuple[float | None, pd.Timestamp | None]:
+    """Next-bar fill: (entry_price, fill_ts) = first close STRICTLY AFTER
+    entry_date. (None, None) when the series is absent or has no later bar."""
     try:
-        end_ts = (pd.Timestamp(start_date) +
-                  pd.Timedelta(days=horizon_d)).strftime("%Y-%m-%d")
-        e0 = _level_asof(ticker, root, start_date)
-        e1 = _close_at(ticker, root, end_ts)
-        if None in (e0, e1) or not e0:
+        s = _aidesk._close_series(ticker, root)
+        if s is None or s.empty:
+            return None, None
+        fwd = s[s.index > pd.Timestamp(entry_date)]
+        if not len(fwd):
+            return None, None
+        return float(fwd.iloc[0]), fwd.index[0]
+    except Exception as e:  # noqa: BLE001
+        log.debug("_fill_entry(%s,%s): %s", ticker, entry_date, e)
+        return None, None
+
+
+def _fwd_ret(ticker: str, root: Path, start_date: str, horizon_d: int,
+             *, fill_convention: str = FILL_NEXT_BAR) -> float | None:
+    """Total return of `ticker` over `horizon_d` calendar days.
+
+    next_bar (default, Stage B-e): entry = first close STRICTLY AFTER
+    start_date; exit = close ON/BEFORE fill+horizon_d, and only when the
+    series actually covers the exit day (never grade a shortened window).
+
+    asof_legacy: the pre-Stage-B-e math (entry = close ON/BEFORE start_date;
+    exit = close ON/BEFORE start+horizon_d) — kept ONLY so tests and audits
+    can reproduce how legacy grade rows were computed. No production path
+    grades with it anymore.
+
+    None when price unavailable. Returns the RAW return (excess is computed
+    against bench/control at the grader level so both legs share one entry).
+    """
+    try:
+        if fill_convention == FILL_ASOF_LEGACY:
+            end_ts = (pd.Timestamp(start_date) +
+                      pd.Timedelta(days=horizon_d)).strftime("%Y-%m-%d")
+            e0 = _level_asof(ticker, root, start_date)
+            e1 = _close_at(ticker, root, end_ts)
+            if None in (e0, e1) or not e0:
+                return None
+            return round(e1 / e0 - 1.0, 6)
+
+        e0, fill_ts = _fill_entry(ticker, root, start_date)
+        if e0 is None or not e0 or fill_ts is None:
             return None
+        s = _aidesk._close_series(ticker, root)
+        end_ts = fill_ts + pd.Timedelta(days=horizon_d)
+        if s.index.max() < end_ts:
+            return None            # exit day not covered yet — not matured
+        w = s[s.index <= end_ts]
+        if not len(w):
+            return None
+        e1 = float(w.iloc[-1])
         return round(e1 / e0 - 1.0, 6)
     except Exception as e:  # noqa: BLE001
         log.debug("_fwd_ret(%s,%s,%s): %s", ticker, start_date, horizon_d, e)
@@ -447,7 +658,13 @@ def grade_claim(claim: dict, root: Path | str | None = None,
 
     A grade row (grades.jsonl schema):
       {claim_id, horizon_d, graded_at, subject_ret, bench_ret, control_ret,
-       excess, hit, embargo_applied}
+       excess, hit, embargo_applied, fill_convention, entry_fill_date}
+
+    W0 Stage B-e: rows grade under the next-bar fill convention and say so
+    (fill_convention="next_bar" + the subject leg's entry_fill_date). Rows
+    written before Stage B-e lack the field and are read as "asof_legacy";
+    their graded values are never rewritten (keep-FIRST — the discontinuity
+    is stamped, not silent).
 
     * `excess` = subject_ret - bench_ret (the primary leg).
     * `control_ret` = matched sector-control return (null when no control), for
@@ -493,6 +710,7 @@ def grade_claim(claim: dict, root: Path | str | None = None,
             hit = excess < 0
         else:                       # salience-only: no directional hit
             hit = None
+        _, fill_ts = _fill_entry(subject, root, start)
         rows.append({
             "claim_id": claim.get("claim_id"),
             "horizon_d": h,
@@ -503,6 +721,10 @@ def grade_claim(claim: dict, root: Path | str | None = None,
             "excess": excess,
             "hit": hit,
             "embargo_applied": embargo_applied,
+            # W0 Stage B-e: the stamped fill convention (see module note)
+            "fill_convention": FILL_NEXT_BAR,
+            "entry_fill_date": (str(fill_ts.date()) if fill_ts is not None
+                                else None),
         })
     return rows
 
@@ -698,6 +920,14 @@ def compute_track_record(root: Path | str | None = None) -> dict:
 
     n_placebo = sum(1 for c in claims if c.get("is_placebo"))
     n_rejected = sum(1 for c in claims if c.get("status") == STATUS_REJECTED)
+    # W0 Stage B-e honesty lines: the stamped fill-convention split (rows
+    # lacking the field predate the next-bar migration = asof_legacy) and the
+    # §3.4 residual regime-unstamped claim count.
+    conv_counts: dict[str, int] = {}
+    for g in grades:
+        k = str(g.get("fill_convention") or FILL_ASOF_LEGACY)
+        conv_counts[k] = conv_counts.get(k, 0) + 1
+    n_unstamped = sum(1 for c in claims if c.get("vector_asof") is None)
     return {
         "generated_at": _now_iso(),
         "grade_horizons": list(GRADE_HORIZONS),
@@ -710,6 +940,8 @@ def compute_track_record(root: Path | str | None = None) -> dict:
             "n_grades": len(grades),
             "n_placebo": n_placebo,
             "n_rejected": n_rejected,     # the D4 dark-fraction numerator
+            "grades_by_fill_convention": conv_counts,   # stamped discontinuity
+            "n_claims_unstamped_regime": n_unstamped,   # §3.4 residual
         },
     }
 
