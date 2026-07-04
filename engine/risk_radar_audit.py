@@ -76,6 +76,13 @@ def _entry_from_snapshot(snap: dict) -> dict | None:
         "traj_intensity": (snap.get("trajectory") or {}).get("intensity"),
         "traj_off_peak": (snap.get("trajectory") or {}).get("off_peak"),
         "traj_odds_now": (snap.get("trajectory") or {}).get("odds_now"),
+        # W1-S3 enabling fields (§8 ruling 2026-07-04): the DE-ESCALATION verdict and
+        # dislocation switch were never logged, so S3's retro-derivation had a ZERO-day
+        # overlap window for its pre-registered reconstruction check (→ moved to W3+).
+        # Logging them from today makes the check possible when the window matures.
+        "deescalation_eligible": (snap.get("deescalation") or {}).get("eligible"),
+        "deescalation_reason": (snap.get("deescalation") or {}).get("reason"),
+        "dislocation_active": snap.get("dislocation_active"),
         "logged_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "graded": None,
     }
