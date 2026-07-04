@@ -14,6 +14,37 @@ joint QI co-sign.  Both sequencing escape hatches verified by scout
   - qledger semantics frozen since #1180; only post-#1180 change is the
     numpy coerce hotfix (#1225 — no schema change).
 
+DOUBLE-COUNT PREVENTION
+-----------------------
+``adapt_spine()`` explicitly EXCLUDES engines that are also natively
+adapted via another adapter (see ``_SPINE_EXCLUDED_ENGINES``).  The
+altdata_conv engine is the canonical example: its signals live in BOTH
+``data/spine/predictions.parquet`` (engine='altdata_conv', horizon=63,
+outcome_graded=False, graded_at=null) AND ``data/qledger/claims.jsonl``
+(desk='altdata', horizon=5, with actual grades where available).
+``adapt_qledger()`` is the authoritative path for altdata — it carries the
+real grade data.  Including altdata_conv from the spine would produce
+133 duplicate economic events under two ledger namespaces with conflicting
+horizons and graded status.
+
+PIT CORRECTNESS FOR GRADED_AT
+------------------------------
+``data/spine/predictions.parquet`` carries ``graded_at`` as a column that
+is NULL for every row in the current build (0 of 1086 rows populated),
+including all 952 rows with ``outcome_graded=True``.  Because the graded_at
+timestamp cannot be known from the spine parquet alone, ``adapt_spine()``
+backfills it from ``as_of + horizon`` calendar days for graded rows — a
+conservative lower bound (the grade could not have been computed before the
+horizon elapsed).
+
+``query(graded_before=cutoff)`` enforces: rows with ``outcome_graded=True``
+AND ``graded_at`` still null (i.e. graded-but-timestampless, which can only
+happen if the adapter backfill was bypassed) are EXCLUDED from the result.
+This is the safe direction for PIT replay — a graded row with no timestamp
+is a look-ahead hazard, not a pre-cutoff observation.  Ungraded rows
+(``outcome_graded=False``) with null graded_at are retained (they have not
+yet been graded; they are legitimately pre-cutoff candidates).
+
 CANONICAL COLUMNS
 -----------------
 Every row in the materialized index carries::
@@ -137,6 +168,16 @@ LEDGER_ENUM: tuple[str, ...] = (
     "cycles_country",
 )
 
+# ---------------------------------------------------------------------------
+# Double-count prevention: engines excluded from adapt_spine()
+# ---------------------------------------------------------------------------
+# These engines have rows in data/spine/predictions.parquet AND are also
+# adapted by a dedicated adapter (adapt_qledger for altdata_conv).  The
+# dedicated adapter is authoritative — it carries actual grade data.
+# Excluding them here prevents 133 events from appearing under two ledger
+# namespaces with conflicting horizons and graded status.
+_SPINE_EXCLUDED_ENGINES: frozenset[str] = frozenset({"altdata_conv"})
+
 # Regime stamp keys on qledger claims (from engine/qledger.py:_REGIME_STAMP_KEYS)
 _QLEDGER_REGIME_KEYS: tuple[str, ...] = (
     "rate_pressure",
@@ -245,8 +286,22 @@ def adapt_spine(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]
     adapters.  Do NOT re-adapt those sources directly — that would double-count
     rows already in the spine.
 
+    DOUBLE-COUNT GUARD: rows whose engine is in ``_SPINE_EXCLUDED_ENGINES``
+    are skipped.  Specifically, engine='altdata_conv' rows are excluded because
+    the same economic events are adapted from data/qledger/claims.jsonl via
+    ``adapt_qledger()`` (which carries the actual grade data and correct
+    horizon=5 vs the spine's stale horizon=63/ungraded copy).
+
+    GRADED_AT BACKFILL: data/spine/predictions.parquet carries graded_at=null
+    for every row (0 of 1086 populated in the current build).  For rows with
+    outcome_graded=True, this adapter synthesises graded_at = as_of + horizon
+    calendar days as a conservative lower bound.  This prevents the query
+    layer's graded_before filter from being a no-op for the entire spine ledger
+    (which would be a silent PIT look-ahead leak).
+
     Returns (df, gap_notes).
     """
+    import datetime  # noqa: PLC0415  (local import — avoid module-level cost)
     gaps: list[str] = []
     p = _data_dir(root) / "spine" / "predictions.parquet"
     if not p.exists():
@@ -261,14 +316,20 @@ def adapt_spine(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]
     if raw.empty:
         return _empty_df(), gaps
 
+    excluded = 0
     rows: list[dict] = []
     for _, r in raw.iterrows():
         sig = _safe_str(r.get("signal_id"))
         if not sig:
             continue
+        engine_val = _safe_str(r.get("engine")) or ""
+        # DOUBLE-COUNT GUARD: skip engines adapted by a dedicated adapter
+        if engine_val in _SPINE_EXCLUDED_ENGINES:
+            excluded += 1
+            continue
         row: dict[str, Any] = {c: None for c in COLUMNS}
         row["signal_id"]      = sig
-        row["engine"]         = _safe_str(r.get("engine"))
+        row["engine"]         = engine_val
         row["family"]         = _safe_str(r.get("family"))
         row["ledger"]         = "spine"
         row["as_of"]          = _str_date(r.get("as_of"))
@@ -282,8 +343,30 @@ def adapt_spine(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]
         row["score"]          = _safe_float(r.get("score"))
         row["outcome_excess"] = _safe_float(r.get("outcome_excess"))
         row["outcome_graded"] = _safe_bool(r.get("outcome_graded"))
-        row["graded_at"]      = _str_date(r.get("graded_at"))
+
+        # GRADED_AT BACKFILL: spine parquet has graded_at=null for all rows.
+        # For graded rows (outcome_graded=True), synthesise graded_at from
+        # as_of + horizon days so graded_before filters work correctly.
+        raw_graded_at = _str_date(r.get("graded_at"))
+        if raw_graded_at is None and _safe_bool(r.get("outcome_graded")):
+            asof_str = row["as_of"]
+            h = r.get("horizon")
+            if asof_str and h is not None:
+                try:
+                    asof_dt = datetime.date.fromisoformat(str(asof_str))
+                    graded_dt = asof_dt + datetime.timedelta(days=int(h))
+                    raw_graded_at = graded_dt.isoformat()
+                except (ValueError, TypeError, OverflowError):
+                    pass  # leave null; query filter will exclude graded+timestampless rows
+        row["graded_at"] = raw_graded_at
         rows.append(row)
+
+    if excluded:
+        gaps.append(
+            f"spine: excluded {excluded} rows with engine in "
+            f"{sorted(_SPINE_EXCLUDED_ENGINES)} — adapted by dedicated adapters "
+            f"(adapt_qledger); see _SPINE_EXCLUDED_ENGINES"
+        )
 
     if not rows:
         return _empty_df(), gaps
@@ -555,11 +638,15 @@ def adapt_qledger(root: Path | str | None = None) -> tuple[pd.DataFrame, list[st
     "asof_legacy"; post-Stage B-e rows carry "next_bar".  The fill_basis
     column preserves this distinction so callers never pool conventions.
 
-    REGIME STAMPS: looked up dynamically from _REGIME_STAMP_KEYS at claim
-    registration time (engine/qledger.py:_regime_stamp_for_asof).  In this
-    ledger they arrive as top-level keys on the claim row (rate_pressure,
-    quad_hard_label, fused_risk_label, vol_regime, risk_radar_state,
-    regime_vector_degraded, vector_asof).
+    REGIME STAMPS: written at claim registration time by
+    engine/qledger.py:_regime_stamp_for_asof.  However, the real claims.jsonl
+    data (7937 rows as of this build) does NOT carry regime fields at the top
+    level or nested — all 7937 rows have null rate_pressure / quad_hard_label /
+    fused_risk_label / vol_regime / risk_radar_state.  The adapter reads these
+    keys defensively (claim.get(k) → null if absent) and carries the nulls
+    honestly.  Consequence: query(regime=...) never matches any qledger row;
+    regime-conditioned calibration against qledger is a functional gap until the
+    claims store is backfilled.  Not data corruption — honest nulls.
 
     Qledger substrate ruling: READ-ONLY join pending joint QI co-sign.
     signal_id namespace: 'qledger:<claim_id>:<grade_horizon>' — never
@@ -962,8 +1049,19 @@ def query(
     graded_before:
         PIT knowledge-state guard — retain rows where graded_at < cutoff.
         Use in tandem with as_of_before for PIT-correct backtest replay.
-        Rows where graded_at is null (ungraded) are retained unless
-        ``graded_only=True``.
+
+        Null-graded_at handling (two cases):
+        - ``outcome_graded=False`` (ungraded): retained.  These rows existed
+          before the cutoff and have not yet been graded; they are legitimately
+          pre-cutoff candidates.
+        - ``outcome_graded=True`` (graded, but timestamp absent): EXCLUDED.
+          A graded row with no timestamp cannot be placed on the timeline;
+          retaining it is a look-ahead hazard.  Adapters must supply
+          graded_at for graded rows (adapt_spine() backfills as_of+horizon;
+          other adapters read graded_at from the source record).
+
+        Note: ``graded_only=True`` additionally removes all ungraded rows
+        regardless of their graded_at.
     graded_only:
         If True, only retain rows with outcome_graded == True.
 
@@ -1003,9 +1101,28 @@ def query(
     if as_of_before is not None:
         mask &= df["as_of"].astype(str) < as_of_before
     if graded_before is not None:
-        # Rows with null graded_at are retained (not yet graded — may still be pre-cutoff)
-        null_graded = df["graded_at"].isna() | (df["graded_at"].astype(str) == "None")
-        mask &= null_graded | (df["graded_at"].astype(str) < graded_before)
+        # PIT knowledge-state guard.
+        #
+        # Three cases for a row with null graded_at:
+        #   (a) outcome_graded=False → the row is genuinely ungraded.  It existed
+        #       before the cutoff and is legitimately pre-cutoff.  RETAIN.
+        #   (b) outcome_graded=True, graded_at null → the row is graded but its
+        #       grading timestamp was not recorded.  Passing it through the filter
+        #       unconditionally is a look-ahead leak (we don't know WHEN it was
+        #       graded — it may have been graded after the cutoff).  EXCLUDE.
+        #       Note: adapt_spine() backfills graded_at = as_of+horizon for spine
+        #       rows, so case (b) only arises if a new adapter omits the backfill.
+        #
+        # Rows with a known graded_at pass only if graded_at < cutoff (strict).
+        null_graded_at = df["graded_at"].isna() | (df["graded_at"].astype(str).isin({"None", "nan", ""}))
+        is_graded = df["outcome_graded"].fillna(False).map(
+            lambda x: bool(x) if x is not None else False
+        )
+        # Retain if: has timestamp AND it's before cutoff
+        has_timestamp_before = (~null_graded_at) & (df["graded_at"].astype(str) < graded_before)
+        # Retain ungraded rows with no timestamp (legitimately pre-cutoff)
+        ungraded_no_timestamp = null_graded_at & (~is_graded)
+        mask &= has_timestamp_before | ungraded_no_timestamp
     if graded_only:
         graded_col = df["outcome_graded"].fillna(False)
         try:

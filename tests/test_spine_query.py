@@ -19,6 +19,9 @@ Coverage:
   (14) query — scope_type filtering
   (15) query — regime matching (any of the four regime columns)
   (16) adapt_qledger — scope_type derived from scope shape (entity vs sector)
+  (17) BLOCKER-1: altdata_conv excluded from spine; one economic event per symbol+as_of
+  (18) BLOCKER-2: graded_before excludes graded rows with null graded_at (PIT leak guard)
+  (19) adapt_spine — graded_at backfilled as as_of+horizon for graded rows
 """
 from __future__ import annotations
 
@@ -542,4 +545,331 @@ def test_query_regime_matches_any_column(tmp_path):
     assert combined_mask.all(), (
         f"regime filter must only return rows matching the regime; violations: "
         f"{result[~combined_mask][['signal_id','quad_hard_label','vol_regime']]}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Helper: spine fixture with altdata_conv rows (for BLOCKER-1 tests)
+# ---------------------------------------------------------------------------
+
+def _make_spine_with_altdata_conv(tmp_path: Path) -> Path:
+    """Write spine predictions.parquet that includes altdata_conv rows for NVDA and META
+    at the same as_of/symbol as the qledger altdata claims fixture.
+
+    This reproduces the real-world double-count: spine has altdata_conv rows and qledger
+    has desk='altdata' claims for the same economic events.
+    """
+    rows = [
+        # Normal us_board row (not excluded)
+        {
+            "signal_id": "spine:2026-01-01:AAPL:21",
+            "engine": "us_board",
+            "version": "v1",
+            "family": "us_board:buy",
+            "as_of": "2026-01-01",
+            "symbol": "AAPL",
+            "universe": "us_1500",
+            "horizon": 21,
+            "score": 1.5,
+            "size_binding": True,
+            "direction": 1,
+            "event_key": "AAPL:2026-01-01",
+            "outcome_excess": 0.04,
+            "outcome_graded": True,
+            "graded_at": None,
+            "meta": "{}",
+        },
+        # altdata_conv row — same symbol+as_of as qledger altdata claim below
+        {
+            "signal_id": "altdata_conv:2026-01-05-NVDA-altconv",
+            "engine": "altdata_conv",
+            "version": "v1",
+            "family": "altdata_conv",
+            "as_of": "2026-01-05",  # same as_of as qledger claim
+            "symbol": "NVDA",       # same symbol as qledger claim
+            "universe": "us_altdata",
+            "horizon": 63,          # different horizon than qledger (5)
+            "score": 0.9,
+            "size_binding": False,
+            "direction": 1,
+            "event_key": "NVDA:2026-01-05",
+            "outcome_excess": None,
+            "outcome_graded": False,  # ungraded in spine
+            "graded_at": None,
+            "meta": "{}",
+        },
+    ]
+    p = tmp_path / "data" / "spine"
+    p.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_parquet(p / "predictions.parquet", index=False)
+    return p / "predictions.parquet"
+
+
+def _make_qledger_altdata(tmp_path: Path) -> tuple[Path, Path]:
+    """Write qledger claims+grades with desk='altdata' for NVDA at 2026-01-05.
+
+    This is the authoritative source for the altdata_conv event — it carries
+    an actual grade (horizon=5, graded) while the spine copy is horizon=63/ungraded.
+    """
+    p = tmp_path / "data" / "qledger"
+    p.mkdir(parents=True, exist_ok=True)
+
+    claim = {
+        "claim_id": "altdata_nvda_20260105_001",
+        "desk": "altdata",
+        "asof": "2026-01-05",
+        "scope": {"type": "entity", "key": "NVDA"},
+        "direction": 1,
+        "horizon_d": 5,
+        "claim_family": "altdata",
+        "status": "graded",
+        "timestamp_quality": "CRAWL_BOUNDED",
+        "is_placebo": False,
+        "convergence_score": 3.0,
+    }
+    grade = {
+        "claim_id": "altdata_nvda_20260105_001",
+        "horizon_d": 5,
+        "graded_at": "2026-01-12T10:00:00+00:00",
+        "subject_ret": 0.07,
+        "bench_ret": 0.01,
+        "control_ret": None,
+        "excess": 0.06,
+        "hit": True,
+        "embargo_applied": True,
+        "fill_convention": "next_bar",
+    }
+
+    claims_path = p / "claims.jsonl"
+    grades_path = p / "grades.jsonl"
+    claims_path.write_text(json.dumps(claim) + "\n", encoding="utf-8")
+    grades_path.write_text(json.dumps(grade) + "\n", encoding="utf-8")
+    return claims_path, grades_path
+
+
+# ---------------------------------------------------------------------------
+# (17) BLOCKER-1: altdata_conv excluded from spine; one row per economic event
+# ---------------------------------------------------------------------------
+
+def test_no_double_count_altdata_conv(tmp_path):
+    """BLOCKER-1: altdata_conv rows from spine must NOT appear in the index
+    when qledger carries the same economic event.
+
+    The real-world double-count: spine has altdata_conv row for NVDA@2026-01-05
+    with horizon=63/ungraded; qledger has desk='altdata' claim for the same
+    event with horizon=5/graded.  The combined index must contain ONE row for
+    this economic event, not two.
+
+    This test is the discrimination check that test_build_index_union_no_collision
+    fails to provide: signal_id uniqueness is trivially true by namespacing; the
+    real risk is duplicate *economic events* (same symbol+as_of) across ledgers.
+    """
+    _make_spine_with_altdata_conv(tmp_path)
+    _make_qledger_altdata(tmp_path)
+
+    # Step 1: adapt_spine must exclude altdata_conv rows
+    spine_df, spine_gaps = Q.adapt_spine(root=tmp_path)
+    altdata_in_spine = spine_df[spine_df["engine"] == "altdata_conv"]
+    assert len(altdata_in_spine) == 0, (
+        f"adapt_spine must exclude altdata_conv rows; found {len(altdata_in_spine)}: "
+        f"{altdata_in_spine[['signal_id','engine']].to_dict('records')}"
+    )
+    # At least one gap note about the exclusion
+    assert any("altdata_conv" in n or "excluded" in n for n in spine_gaps), (
+        f"adapt_spine must log a gap note for excluded engines; gaps: {spine_gaps}"
+    )
+
+    # Step 2: qledger must carry the NVDA@2026-01-05 event
+    qledger_df, _ = Q.adapt_qledger(root=tmp_path)
+    nvda_qledger = qledger_df[
+        (qledger_df["symbol"] == "NVDA") & (qledger_df["as_of"] == "2026-01-05")
+    ]
+    assert len(nvda_qledger) >= 1, "qledger must carry NVDA@2026-01-05 altdata claim"
+
+    # Step 3: build_index must carry NVDA@2026-01-05 exactly ONCE (from qledger)
+    combined, _ = Q.build_index(root=tmp_path)
+    nvda_rows = combined[
+        (combined["symbol"] == "NVDA") & (combined["as_of"] == "2026-01-05")
+    ]
+    assert len(nvda_rows) == 1, (
+        f"NVDA@2026-01-05 must appear exactly once in the index (not double-counted); "
+        f"found {len(nvda_rows)} rows:\n{nvda_rows[['signal_id','ledger','horizon','outcome_graded']]}"
+    )
+    # The surviving row must be the qledger copy (graded, horizon=5)
+    row = nvda_rows.iloc[0]
+    assert row["ledger"] == "qledger", (
+        f"surviving NVDA@2026-01-05 row must be from qledger (authoritative); got ledger={row['ledger']!r}"
+    )
+    assert row["outcome_graded"] == True, (  # noqa: E712
+        "qledger NVDA row must be graded (horizon=5 grade exists)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# (18) BLOCKER-2: graded_before excludes graded rows with null graded_at
+# ---------------------------------------------------------------------------
+
+def test_graded_before_excludes_graded_null_graded_at(tmp_path):
+    """BLOCKER-2: graded_before must NOT pass rows that are graded
+    (outcome_graded=True) but have no graded_at timestamp.
+
+    The pre-fix behavior was a look-ahead leak: every graded spine row passed
+    ANY graded_before filter because graded_at was null and null was treated
+    as 'not yet graded' (retain unconditionally).
+
+    This test directly exercises that boundary: construct a frame with one
+    graded row missing graded_at and verify graded_before excludes it.
+    Positive control: an ungraded row with null graded_at must still pass.
+    """
+    # Build a minimal index frame with two rows:
+    # Row A: outcome_graded=True, graded_at=None  → must be EXCLUDED by graded_before
+    # Row B: outcome_graded=False, graded_at=None → must be RETAINED by graded_before
+    rows = [
+        {
+            "signal_id": "test:graded_no_ts:AAPL:21",
+            "engine": "us_board",
+            "family": "us_board:buy",
+            "ledger": "spine",
+            "as_of": "2026-01-01",
+            "symbol": "AAPL",
+            "scope_type": "entity",
+            "universe": "us_1500",
+            "horizon": 21,
+            "direction": 1,
+            "size_binding": True,
+            "fill_basis": "next_bar",
+            "score": 1.5,
+            "outcome_excess": 0.04,
+            "outcome_graded": True,   # GRADED
+            "graded_at": None,        # BUT NO TIMESTAMP — look-ahead hazard
+        },
+        {
+            "signal_id": "test:ungraded_no_ts:MSFT:63",
+            "engine": "us_board",
+            "family": "us_board:watch",
+            "ledger": "spine",
+            "as_of": "2026-01-02",
+            "symbol": "MSFT",
+            "scope_type": "entity",
+            "universe": "us_1500",
+            "horizon": 63,
+            "direction": 1,
+            "size_binding": False,
+            "fill_basis": "next_bar",
+            "score": 0.5,
+            "outcome_excess": None,
+            "outcome_graded": False,  # UNGRADED
+            "graded_at": None,        # null graded_at is expected for ungraded rows
+        },
+    ]
+    # Fill missing COLUMNS to keep _ensure_columns happy
+    for row in rows:
+        for c in Q.COLUMNS:
+            row.setdefault(c, None)
+
+    df = pd.DataFrame(rows)[Q.COLUMNS]
+
+    # graded_before="2099-12-31" is a far-future cutoff: if null-graded-at were
+    # retained unconditionally (pre-fix behavior), BOTH rows would pass.
+    # Post-fix: Row A (graded, null graded_at) must be EXCLUDED; Row B must pass.
+    result = Q.query(df, graded_before="2099-12-31")
+
+    sids = set(result["signal_id"].tolist())
+    assert "test:graded_no_ts:AAPL:21" not in sids, (
+        "graded_before must EXCLUDE a row that is outcome_graded=True but graded_at=null "
+        "(this is the PIT look-ahead leak the blocker describes)"
+    )
+    assert "test:ungraded_no_ts:MSFT:63" in sids, (
+        "graded_before must RETAIN an ungraded row with null graded_at "
+        "(it is legitimately pre-cutoff; outcome not yet known)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# (19) adapt_spine — graded_at backfilled as as_of+horizon for graded rows
+# ---------------------------------------------------------------------------
+
+def _make_spine_null_graded_at(tmp_path: Path) -> Path:
+    """Write spine predictions.parquet with outcome_graded=True but graded_at=null.
+
+    This reproduces the real spine parquet's graded_at=null pattern (0 of 1086
+    rows have graded_at populated in the current build).
+    """
+    rows = [
+        {
+            "signal_id": "spine:2026-03-01:IBM:21",
+            "engine": "us_board",
+            "version": "v1",
+            "family": "us_board:buy",
+            "as_of": "2026-03-01",
+            "symbol": "IBM",
+            "universe": "us_1500",
+            "horizon": 21,
+            "score": 0.8,
+            "size_binding": True,
+            "direction": 1,
+            "event_key": "IBM:2026-03-01",
+            "outcome_excess": 0.02,
+            "outcome_graded": True,   # graded
+            "graded_at": None,        # but NO timestamp — mirrors real spine
+            "meta": "{}",
+        },
+        {
+            "signal_id": "spine:2026-03-01:GE:63",
+            "engine": "us_board",
+            "version": "v1",
+            "family": "us_board:watch",
+            "as_of": "2026-03-01",
+            "symbol": "GE",
+            "universe": "us_1500",
+            "horizon": 63,
+            "score": 0.3,
+            "size_binding": False,
+            "direction": 1,
+            "event_key": "GE:2026-03-01",
+            "outcome_excess": None,
+            "outcome_graded": False,  # ungraded — graded_at stays null
+            "graded_at": None,
+            "meta": "{}",
+        },
+    ]
+    p = tmp_path / "data" / "spine"
+    p.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_parquet(p / "predictions.parquet", index=False)
+    return p / "predictions.parquet"
+
+
+def test_adapt_spine_graded_at_backfill(tmp_path):
+    """adapt_spine must synthesise graded_at = as_of + horizon days for spine rows
+    that are outcome_graded=True but have graded_at=null.
+
+    The real spine parquet has graded_at=null for all 1086 rows including all 952
+    graded rows.  Without this backfill, graded_before filters are a no-op for
+    the entire spine ledger.
+
+    Also verifies: ungraded rows with null graded_at are NOT backfilled (they
+    are legitimately pre-cutoff; their outcome is genuinely unknown).
+    """
+    _make_spine_null_graded_at(tmp_path)
+    df, gaps = Q.adapt_spine(root=tmp_path)
+
+    # IBM: outcome_graded=True, graded_at=None → backfill = 2026-03-01 + 21 = 2026-03-22
+    ibm = df[df["symbol"] == "IBM"]
+    assert len(ibm) == 1, f"expected 1 IBM row, got {len(ibm)}"
+    ibm_row = ibm.iloc[0]
+    assert ibm_row["outcome_graded"] == True, "IBM row must be graded"  # noqa: E712
+    assert ibm_row["graded_at"] is not None, (
+        "adapt_spine must backfill graded_at for graded rows with null graded_at"
+    )
+    assert str(ibm_row["graded_at"]) == "2026-03-22", (
+        f"graded_at backfill expected '2026-03-22' (2026-03-01 + 21d), got {ibm_row['graded_at']!r}"
+    )
+
+    # GE: outcome_graded=False, graded_at=None → must remain null (not backfilled)
+    ge = df[df["symbol"] == "GE"]
+    assert len(ge) == 1, f"expected 1 GE row, got {len(ge)}"
+    ge_row = ge.iloc[0]
+    assert ge_row["outcome_graded"] == False, "GE row must be ungraded"  # noqa: E712
+    assert ge_row["graded_at"] is None or str(ge_row["graded_at"]) in ("None", "nan", ""), (
+        f"ungraded rows must NOT have graded_at backfilled; got {ge_row['graded_at']!r}"
     )
