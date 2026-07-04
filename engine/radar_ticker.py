@@ -22,6 +22,7 @@ from datetime import date, datetime, timezone
 
 from lib import config
 from engine import radar_plus as rp
+from engine import trajectory
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +51,10 @@ def _attr_note(t, state, basket_name, pct) -> str:
         return f"{t} leads the {basket_name} basket ({pos}) and the theme is confirmed — the move is priced."
     if state == "NEGATIVE_DIVERGENCE":
         return f"{t} has led the {basket_name} basket ({pos}) but the theme's activity is fading — distribution risk."
+    if state == "BROKEN_LAGGARD":
+        return (f"{t} is the worst of the {basket_name} basket ({pos}) but its own price is rolling over "
+                f"(deep off its high, down on the month, below the 50-day) — a broken laggard, not an "
+                f"unpriced one. The theme is bullish; this name is not participating.")
     return f"{t} lags a fading {basket_name} basket ({pos}) — confirmed weak."
 
 
@@ -86,9 +91,21 @@ def _basket_attributed(existing: set, today: date) -> list:
             if not t or t in existing:
                 continue
             pct = i / (n - 1)                            # 0 = worst performer in basket, 1 = best
+            # PRICE-TRAJECTORY spine: the "unpriced laggard in a hot theme" read is only
+            # honest when the laggard is not itself BROKEN. A name that has crashed off its
+            # own high and is still falling is not a bullish laggard with room — it is a
+            # broken laggard. Consult the shared spine (yahoo-adjusted price) before labeling.
+            traj = trajectory.snapshot(t)
+            rs = traj.get("rs_vs_spy_60d") if traj else None
+            rolling_over = bool(traj and traj.get("rolling_over"))
             if bullish:
                 if pct <= 0.30:
-                    mstate, lc, depth = "POSITIVE_DIVERGENCE", "forming", (0.30 - pct) / 0.30
+                    if rolling_over:
+                        # honest downgrade — NOT in _POS_RADAR, lifecycle 'fading' (low edge),
+                        # state carries no 'DIVERGENCE' substring so the divergence surfaces skip it.
+                        mstate, lc, depth = "BROKEN_LAGGARD", "fading", 0.0
+                    else:
+                        mstate, lc, depth = "POSITIVE_DIVERGENCE", "forming", (0.30 - pct) / 0.30
                 elif pct >= 0.75:
                     mstate, lc, depth = "CONFIRMED_UP", "mature", 0.3
                 else:
@@ -104,7 +121,7 @@ def _basket_attributed(existing: set, today: date) -> list:
             existing.add(t)
             out.append({
                 "ticker": t, "state": mstate, "lifecycle": lc, "edge_score": edge,
-                "signal_score": None, "rs_vs_spy_60d": None,
+                "signal_score": None, "rs_vs_spy_60d": rs,
                 "within_basket_pct": round(pct, 2), "basket": f.get("basket"),
                 "basket_name": bname, "basket_state": state, "source": "basket_attributed",
                 "channels": [], "affiliations": [],
