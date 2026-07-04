@@ -705,6 +705,10 @@ def record_series(full: pd.Series, *, win_start: pd.Timestamp, last_ts: pd.Times
                 ladder_state=ladder_state,
                 dc_phase=dc_phase,
                 failed_cycle=failed_cycle,
+                # confirmed uptrend: above the long-term trend AND oscillator still rising.
+                # Softens the ("Peak", buy-ladder) cells from "countertrend/topping" to a
+                # "don't-chase / extended" HOLD (a stretched-but-rising uptrend is not topping).
+                trend_up=bool(above200 and osc_slope > 0),
             )
             stance = rs_out["stance"]
             divergence = rs_out["divergence"]

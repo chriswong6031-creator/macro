@@ -103,6 +103,8 @@
   .conflu b.high { color: var(--up); } .conflu b.moderate { color: var(--warn); }
   /* grader */
   .grader { margin-top: 26px; border: 1px solid var(--line); border-radius: 13px; padding: 14px 16px; background: var(--panel); }
+  /* in-board variant: the accuracy footer of the conviction scoreboard — hugs the board, subtler frame */
+  .grader.grader-inboard { margin-top: 12px; background: var(--panel2, var(--panel)); border-style: dashed; }
   .grader h2 { font-size: 15px; margin: 0 0 4px; }
   .gr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
   .gr-cell { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--panel2, transparent); }
@@ -275,6 +277,10 @@
   </div>
   <div id="board" class="board"></div>
 
+  {# self-grader lives WITH the conviction board it measures — the realized-accuracy footer of the
+     scoreboard, not a lone panel orphaned at the page bottom. #}
+  <div id="grader" class="grader grader-inboard" hidden></div>
+
   {# ===== SECTOR-ETF FLOW — multi-window creation/redemption flow, server-rendered =====
      Built in scripts/build_sector_central._flows_section_html from collectors.sponsors. #}
   {% if flows_html %}{{ flows_html | safe }}{% endif %}
@@ -285,8 +291,6 @@
     <span class="scc-section-sub"><span class="l-en">Coincident color (display context, capped in the read above) · Expand for the full 503-name treemap</span><span class="l-zh">同步色（展示背景，已在上方研判中受限计入）· 展开查看全部503只树图</span></span>
   </div>
   <div id="heatmap-scorecard"></div>
-
-  <div id="grader" class="grader" hidden></div>
 
   {# ===== INDEX LEADERSHIP ROTATION — moved to the foot of the page. Which universe leads
      (large / small / tech / thematic), the rising-star accelerator, and the macro drivers behind
