@@ -18,11 +18,40 @@ Every source read is fail-open: a missing, corrupt, or unreadable artifact yield
 records for that pair plus a gap entry.  detect_contradictions() always returns a list
 (never raises).
 
+FLIP-AWARE LABEL-LAG RULE (operator feedback 2026-07-04)
+---------------------------------------------------------
+For pairs where a categorical LABEL proxies a continuous backend scale (pair-a: regime
+quad; any analogous label pair), an opposing signal against the label is NOT necessarily
+a contradiction when the underlying scale is already near the boundary.
+
+The regime quad is the argmax of (growth_score, inflation_score) but the backend carries
+a continuous scale.  When the quad label is near a flip:
+
+  NEAR-BOUNDARY (label-lag, kind='label-lag', severity='note'):
+    Triggered when EITHER:
+      • transition_state is 'TRANSITIONING' or 'RATCHETED-TRANSITION', OR
+      • flip_margin < NEAR_FLIP_MARGIN_THRESHOLD (heuristic: 0.15 z-score units;
+        flip_margin is |z| − z_threshold for the most fragile supporting component;
+        at z_threshold ≈ 0.45 a margin of 0.15 ≈ 1/3 of the threshold; live example:
+        flip_margin=0.05 on 2026-07-04 when the pair fired — well inside boundary).
+
+    Reading: "quad label Q1/Goldilocks lags its own scale: flip_margin=X toward
+    <flip_condition target>, transition_state=Y — underlying scores lean with the
+    RISK_OFF verdict, label has not flipped yet."
+
+  DEEP-IN-QUAD (directional-opposition, kind='directional-opposition', severity='tension'):
+    Only when regime is NOT near the boundary (flip_margin >= threshold AND
+    transition_state is 'STABLE' or 'WEAKENING').  This is the genuinely informative case.
+
+Scale fields (growth_score, inflation_score, flip_margin, transition_state, confidence)
+are ALWAYS included in pair-a's a.reading so the graph/world_state surfaces the scale
+rather than just the label.
+
 SIX v1 PAIRS
 ------------
 a. regime quad vs market_state verdict
    Q1/Q2 growth labels vs RISK_OFF/caution verdicts from world_state.json (which
-   carries both resolved).
+   carries both resolved).  Flip-aware: see above.
 
 b. regime_vector growth trend vs risk_radar scare severity
    Rising growth (growth_score > 0 AND Q1/Q2) while a growth scare is 'caution'
@@ -51,7 +80,7 @@ RECORD SCHEMA
   "pair_id":  str,            # e.g. "regime-vs-market_state"
   "a": {"artifact": str, "reading": str},
   "b": {"artifact": str, "reading": str},
-  "kind":     "directional-opposition" | "label-tension",
+  "kind":     "directional-opposition" | "label-tension" | "label-lag",
   "severity": "note" | "tension",
   "as_of":    str,            # ISO date of the most recent artifact
   "note":     str,
@@ -93,6 +122,18 @@ _BEARISH_DIRECTIONS = {"out", "decelerating"}
 _SC_BULLISH_LABELS = {"Constructive", "Accumulate"}
 # Sector_central labels considered bearish
 _SC_BEARISH_LABELS = {"Reduce", "Cautious"}
+
+# Flip-aware label-lag rule (pair-a, operator feedback 2026-07-04).
+# flip_margin is |z| − z_threshold for the most fragile supporting component
+# (z-score units; z_threshold ≈ 0.45 in current engine config).
+# A margin below this threshold means the quad label is dangerously close to
+# flipping — the label is proxying a scale that already leans the other way.
+# Heuristic: 0.15 ≈ 1/3 of the z_threshold; live episode (2026-07-04) had
+# flip_margin=0.05 (well inside the boundary).
+_NEAR_FLIP_MARGIN_THRESHOLD: float = 0.15
+
+# transition_state values that indicate the regime is near a flip
+_NEAR_FLIP_TRANSITION_STATES = {"TRANSITIONING", "RATCHETED-TRANSITION"}
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +179,21 @@ def _record(
     }
 
 
+def _is_near_flip(flip_margin: float | None, transition_state: str | None) -> bool:
+    """Return True when the regime quad label is near a boundary flip.
+
+    Triggered when EITHER the regime engine is already flagging a transition
+    OR the most fragile supporting component is within _NEAR_FLIP_MARGIN_THRESHOLD
+    of its flip threshold (z-score units).  A label opposing market_state in this
+    state is a label-lag (note), not a genuine directional contradiction (tension).
+    """
+    if transition_state in _NEAR_FLIP_TRANSITION_STATES:
+        return True
+    if flip_margin is not None and flip_margin < _NEAR_FLIP_MARGIN_THRESHOLD:
+        return True
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Pair detectors
 # ---------------------------------------------------------------------------
@@ -146,7 +202,13 @@ def _pair_a_regime_vs_market_state(
     world_state: dict,
     gaps: list[str],
 ) -> list[dict]:
-    """Pair A: regime quad (Q1/Q2 = growth) vs market_state verdict (RISK_OFF/caution)."""
+    """Pair A: regime quad (Q1/Q2 = growth) vs market_state verdict (RISK_OFF/caution).
+
+    Flip-aware (operator feedback 2026-07-04): the regime quad is the argmax of a
+    continuous backend scale.  When the scale is near a flip boundary the label lags
+    — an opposing verdict is a label-lag (kind='label-lag', severity='note'), not a
+    tension.  The scale fields ride in a.reading regardless of which branch fires.
+    """
     records: list[dict] = []
     try:
         regime = world_state.get("regime") or {}
@@ -161,21 +223,67 @@ def _pair_a_regime_vs_market_state(
             return records
 
         if quad in _GROWTH_QUADS and verdict in _RISK_OFF_VERDICTS:
-            records.append(_record(
-                pair_id="regime-vs-market_state",
-                a_artifact="data/regime/latest.json",
-                a_reading=f"quad={quad} (growth regime)",
-                b_artifact="data/market_state/latest.json",
-                b_reading=f"verdict={verdict}",
-                kind="label-tension",
-                severity="tension",
-                as_of=str(as_of),
-                note=(
-                    f"Regime labels growth ({quad}) while market_state signals "
-                    f"{verdict}.  Common in early-phase growth scare or regime transition. "
-                    "Display-only context; not a gate."
-                ),
-            ))
+            # Always pull the scale fields for the reading
+            growth_score = regime.get("growth_score")
+            inflation_score = regime.get("inflation_score")
+            flip_margin = regime.get("flip_margin")
+            transition_state = regime.get("transition_state")
+            confidence = regime.get("confidence")
+            _fc_raw = regime.get("flip_condition")
+            flip_condition: dict = _fc_raw if isinstance(_fc_raw, dict) else {}
+            flip_target = flip_condition.get("axis") or "unknown"
+
+            # Build a rich reading that exposes the underlying scale, not just the label
+            scale_reading = (
+                f"quad={quad} (growth regime) | "
+                f"growth_score={growth_score} inflation_score={inflation_score} | "
+                f"flip_margin={flip_margin} transition_state={transition_state} "
+                f"confidence={confidence}"
+            )
+
+            near_flip = _is_near_flip(flip_margin, transition_state)
+
+            if near_flip:
+                # The label is lagging its own scale — the underlying backend agrees
+                # with the RISK_OFF verdict.  Not a genuine contradiction.
+                records.append(_record(
+                    pair_id="regime-vs-market_state",
+                    a_artifact="data/regime/latest.json",
+                    a_reading=scale_reading,
+                    b_artifact="data/market_state/latest.json",
+                    b_reading=f"verdict={verdict}",
+                    kind="label-lag",
+                    severity="note",
+                    as_of=str(as_of),
+                    note=(
+                        f"Quad label {quad}/Goldilocks lags its own scale: "
+                        f"flip_margin={flip_margin} toward {flip_target} flip, "
+                        f"transition_state={transition_state} — underlying scores "
+                        f"(growth={growth_score}, inflation={inflation_score}) "
+                        f"lean with the {verdict} verdict; the label has not flipped yet.  "
+                        "Not a live contradiction: the backend scale and market_state agree; "
+                        "the categorical label is the lagging component.  Display-only."
+                    ),
+                ))
+            else:
+                # Deep-in-quad: the label is well-supported and the opposition is real
+                records.append(_record(
+                    pair_id="regime-vs-market_state",
+                    a_artifact="data/regime/latest.json",
+                    a_reading=scale_reading,
+                    b_artifact="data/market_state/latest.json",
+                    b_reading=f"verdict={verdict}",
+                    kind="directional-opposition",
+                    severity="tension",
+                    as_of=str(as_of),
+                    note=(
+                        f"Regime labels growth ({quad}) while market_state signals "
+                        f"{verdict}.  flip_margin={flip_margin} (>{_NEAR_FLIP_MARGIN_THRESHOLD}) "
+                        f"and transition_state={transition_state} — quad is deep and stable; "
+                        "this opposition is the genuinely informative case, not a label lag.  "
+                        "Display-only context; not a gate."
+                    ),
+                ))
     except Exception as exc:  # noqa: BLE001
         log.warning("contradictions pair-a failed: %s", exc)
         gaps.append(f"pair-a: {exc}")
@@ -559,10 +667,19 @@ def detect_contradictions(
         log.debug("contradictions: world_state.json absent — falling back to direct reads")
         regime_raw = _read_json(data_dir / "regime" / "latest.json") or {}
         ms_raw = _read_json(data_dir / "market_state" / "latest.json") or {}
+        # Include scale fields so pair-a flip-aware logic works on the fallback path
+        # (flip_margin, transition_state, confidence, inflation_score are present in
+        # regime/latest.json when the regime engine has run; absent is handled by .get())
+        _fc_raw = regime_raw.get("flip_condition")
         world_state = {
             "regime": {
                 "quad": regime_raw.get("quad"),
                 "growth_score": regime_raw.get("growth_score"),
+                "inflation_score": regime_raw.get("inflation_score"),
+                "flip_margin": regime_raw.get("flip_margin"),
+                "transition_state": regime_raw.get("transition_state"),
+                "confidence": regime_raw.get("confidence"),
+                "flip_condition": _fc_raw if isinstance(_fc_raw, dict) else None,
                 "asof": regime_raw.get("asof"),
             },
             "verdict": {
