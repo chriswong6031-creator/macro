@@ -2653,3 +2653,36 @@ artifacts:
       site/feeds/ and are pushed to R2 via scripts/publish_r2.py. Byte-verbatim copies:
       the source engine owns the schema; build_feeds.py never reshapes what it copies.
       NOT present in the git tree at origin/main — gitignored locally, canonical on R2.
+
+
+  # --- 0 consumers (tier infrastructure, W7a) ---
+  governance-ledger:
+    path: data/neuralweb/governance.jsonl
+    format: jsonl
+    producer: engine/neuralweb/governance.py
+    known_extra_writers:
+      - "engine/risk_radar_intl_audit.py — authority_grant / authority_lapse events when can_force changes"
+      - "engine/market_state_tune.py — a6_auto_apply lane-i events on every tune() call"
+      - "engine/risk_radar_intl_tune.py — a6_auto_apply lane-i events on every tune() call"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 9999
+    schema: neuralweb.governance.v1
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      W7a: Neural Web constitutional governance ledger.  Append-only JSONL — one event
+      per consequential authority-state transition (authority_grant, authority_lapse,
+      tier_promotion/demotion, a6_auto_apply, a6_llm_proposed, config_arm/disarm,
+      operator_override, article3_review).  Single-writer discipline: each event type
+      has exactly one designated writer module (documented in engine/neuralweb/governance.py
+      module docstring and the known_extra_writers list above).  The ledger itself has NO
+      authority — reading it for display or quarterly re-audit never changes engine behavior.
+      All writers run inside the engine lane (serially), so no concurrent-write race.
+      Estimated append rate: 5-20 events per quarter.  Schema version bumped on breaking
+      field changes; backward-incompatible reader must gate on schema field.

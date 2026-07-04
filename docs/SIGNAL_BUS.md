@@ -17,7 +17,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| neural-web | 13 |
+| neural-web | 14 |
 | options-alpha | 2 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
@@ -30,7 +30,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 43 |
-| infrastructure | 22 |
+| infrastructure | 23 |
 | scored | 4 |
 | shadow | 30 |
 
@@ -38,7 +38,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 96 |
+| git | 97 |
 | gitignored-local | 2 |
 | r2 | 1 |
 
@@ -131,6 +131,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 0 | 0 |
+| governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 0 | 0 |
 | kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
 
@@ -463,6 +464,15 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/backfill_forward_logs.py — additive experiment entries from historical backfill
   - scripts/build_measurement.py — measurement entries; additive, idempotent
+
+### governance-ledger
+
+- **path:** `data/neuralweb/governance.jsonl`
+- **declared producer:** `engine/neuralweb/governance.py`
+- **extra writers:**
+  - engine/risk_radar_intl_audit.py — authority_grant / authority_lapse events when can_force changes
+  - engine/market_state_tune.py — a6_auto_apply lane-i events on every tune() call
+  - engine/risk_radar_intl_tune.py — a6_auto_apply lane-i events on every tune() call
 
 ### hub-signal-snapshots
 

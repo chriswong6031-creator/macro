@@ -86,6 +86,35 @@ def _log_review(key: str, root, record: dict) -> None:
         pass
 
 
+def _append_governance_a6(key: str, root, decision: str, n_graded: int,
+                           brier_cur: float, brier_cand: float) -> None:
+    """Append a6_auto_apply governance event for this market's intl radar tune. Fail-open."""
+    try:
+        from engine.neuralweb.governance import append_event  # type: ignore[import]
+        calib_ref = f"data/risk_radar_intl/{key}_calibration.json"
+        append_event(
+            "a6_auto_apply",
+            calib_ref,
+            article=6,
+            authored_by="risk_radar_intl_tune",
+            evidence={
+                "market": key,
+                "n_graded": n_graded,
+                "do_no_harm_evidence": {
+                    "brier_before": round(brier_cur, 4),
+                    "brier_after": round(brier_cand, 4),
+                    "improves": brier_cand <= brier_cur + 1e-9,
+                },
+            },
+            after={"action": decision, "lane": "i", "engine": "risk_radar_intl_tune",
+                   "calibration_ref": calib_ref},
+            note="ratified standing A6 lane-i; quarterly re-audit required",
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("risk_radar_intl_tune(%s): governance append failed: %s", key, exc)
+
+
 def tune(profile, root=None) -> dict:
     """One bounded calibration step for `profile`. Returns a status dict; never raises."""
     key = profile.key
@@ -123,6 +152,8 @@ def tune(profile, root=None) -> dict:
                "brier": {"current": round(brier_cur, 4), "candidate": round(brier_cand, 4)},
                "realized": realized}
         _log_review(key, root, rec)
+        # A6 lane-(i) governance event — ratified standing approval; fail-open
+        _append_governance_a6(key, root, decision, len(rows), brier_cur, brier_cand)
         return {"status": decision, "n_graded": len(rows),
                 "brier": rec["brier"], "realized": realized}
     except Exception as e:  # noqa: BLE001

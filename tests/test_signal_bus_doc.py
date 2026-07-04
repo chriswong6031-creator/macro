@@ -4,7 +4,7 @@ tests/test_signal_bus_doc.py — Freshness gate + determinism + coverage tests f
 (a) Regenerating into a temp file yields EXACTLY the committed bytes — the doc cannot drift
     from the registry.
 (b) Determinism: two consecutive generate() calls return identical strings.
-(c) All 99 artifact ids appear in the generated content.
+(c) All 100 artifact ids appear in the generated content.
 (d) Mermaid block is syntactically plausible: balanced backtick fences and starts 'flowchart'.
 """
 from __future__ import annotations
@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 99, (
-        f"Expected 99 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 100, (
+        f"Expected 100 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
     )
     content = generate(_SYNAPSE_YML)
