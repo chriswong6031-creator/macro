@@ -1,3 +1,4 @@
+{% import "_desk_grader_panel.html.j2" as dg %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
@@ -445,6 +446,10 @@
     </div>{% endfor %}
   </div>
   {% endif %}
+
+  {# ── UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d, level+velocity, leave-tracking) ── #}
+  {{ dg.styles() }}
+  {{ dg.panel(hub.desk_grader) }}
 
   <footer class="hf">
     {{ t('Built', '生成于') }} <time datetime="{{ built }}">{{ built[:16].replace('T',' ') }}</time> UTC ·

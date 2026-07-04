@@ -1,4 +1,5 @@
 {% extends "report_base.html.j2" %}
+{% import "_desk_grader_panel.html.j2" as dg %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
@@ -459,6 +460,10 @@
         '数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · Finnhub · Hugging Face · GitHub + 精选影响力图谱。公开记录替代数据；可操作轴由可证伪战绩校准，而非假定正确。') }}</p>
     </div>
   </section>
+
+  {# ── UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d, level+velocity, leave-tracking) ── #}
+  {{ dg.styles() }}
+  {{ dg.panel(desk_grader) }}
 
   {# ---------- NEWS CROSS-SURFACE (additive; client-fetched — no server coupling) ---------- #}
   <section class="sid-sec">

@@ -56,6 +56,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader  # noqa: E402
 
+from engine import desk_grader  # noqa: E402
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
@@ -608,6 +609,24 @@ def main() -> int:
             "as_of": (feed[0]["report_date"] if feed else asof.isoformat()),
         }
 
+        # UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d) — snapshot today's surfaced watchlist
+        # (ranked by composite; grade forward returns from the REPORT date, not the trade date),
+        # diff for departures, grade matured names. Degrade-safe.
+        grader = {}
+        try:
+            desk_grader.seed_notes()
+            surfaced = items[:WATCH_TABLE_CAP]
+            rows = [{"ticker": a.get("ticker"), "rank": i + 1, "score": a.get("composite"),
+                     "lean": 1, "gate_tier": a.get("gate_tier"), "covered": a.get("covered"),
+                     "unconfirmed": a.get("unconfirmed")}
+                    for i, a in enumerate(surfaced)]
+            rep = desk_grader.snapshot_desk("congress", rows, asof)
+            grader = desk_grader.compute("congress", asof)
+            log.info("desk_grader (congress): +%d snap, %d departed, %d live",
+                     rep.get("n_new", 0), rep.get("n_departed", 0), grader.get("n_snapshots_live", 0))
+        except Exception as e:  # noqa: BLE001
+            log.warning("desk_grader (congress) step failed: %s", e)
+
         built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
         try:
@@ -615,7 +634,7 @@ def main() -> int:
                 summary=summary, items=items[:WATCH_TABLE_CAP], n_shown=min(len(items), WATCH_TABLE_CAP),
                 feed=feed[:FEED_CAP], window_days=ROLLOFF_DAYS, generated_utc=built,
                 weights={"cluster": W_CLUSTER, "technical": W_TECHNICAL, "zone": W_ZONE},
-                member_leaderboard=member_leaderboard,
+                member_leaderboard=member_leaderboard, desk_grader=grader,
                 active_section="research", active_page="congress_trades",
             )
         except Exception as e:  # noqa: BLE001

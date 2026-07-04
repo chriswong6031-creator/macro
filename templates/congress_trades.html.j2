@@ -1,4 +1,5 @@
 {% extends "report_base.html.j2" %}
+{% import "_desk_grader_panel.html.j2" as dg %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
@@ -209,6 +210,10 @@
     '胜率 = 每位议员超越标普概率。通过经验贝叶斯（κ=8）向基准收缩（39.3%）。"proven" 层级需≥8笔有效交易且收缩胜率超基准；"watch" = 3–7笔；"limited" = 不足3笔。超额收益为开放式（从交易日至 Quiver 快照），作为方向性信号处理，而非校准后的 alpha。12个月数据窗口对多数议员统计效力有限。') }}</p>
 </div>
 {% endif %}
+
+{# ── UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d, level+velocity, leave-tracking) ── #}
+{{ dg.styles() }}
+{{ dg.panel(desk_grader) }}
 
 {# ---------------- the raw disclosure feed ---------------- #}
 <div class="cg-card">

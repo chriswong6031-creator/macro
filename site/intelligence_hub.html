@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -476,7 +477,7 @@
 
 <div class="hub-wrap">
   <header class="hh">
-    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-07-04T20:21:07.265744+00:00">2026-07-04</time></span>
+    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-07-04T20:23:54.284229+00:00">2026-07-04</time></span>
     <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></h1>
     <p><span class="l-en">Ranked by EDGE REMAINING — genuine signal × how much of the move is still ahead × a leading desk firing before the crowd — not by how many desks agree (agreement is a lagging, consensus condition). The hero is what is EMERGING: a leading desk positioning into a quiet tape with room to run. The crowd-favourite that has already run is demoted on purpose. Context only, never a trade trigger.</span><span class="l-zh">按「剩余空间」排序 —— 真实信号 × 行情尚未走完的幅度 × 领先信号台抢在人群之前发动 —— 而非看多少台一致（一致性是滞后的共识状态）。主推「萌芽」机会：领先信号台在安静的盘面中悄悄建仓、仍有上行空间。已经跑完的人群宠儿被刻意下调。仅供参考，绝非交易触发。</span></p>
   </header>
@@ -1678,8 +1679,196 @@
   </div>
   
 
+  
+  <style>
+  .dg-wrap{border:1px solid rgba(128,128,128,.18);border-radius:14px;padding:16px 18px;background:color-mix(in srgb,var(--panel,#161a22) 60%,transparent)}
+  .dg-h2{font-size:16px;margin:0 0 10px;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+  .dg-note{font-size:11.5px;font-weight:400;opacity:.6}
+  .dg-lead{font-size:13px;line-height:1.55;padding:10px 12px;border-radius:9px;background:color-mix(in srgb,var(--info,#4a9eff) 9%,transparent);margin-bottom:12px}
+  .dg-lead-alarm{background:color-mix(in srgb,var(--down,#e5484d) 14%,transparent)}
+  .dg-counts{display:block;margin-top:4px;font-size:11px;opacity:.6}
+  .dg-tblwrap{overflow-x:auto}
+  .dg-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  .dg-tbl th,.dg-tbl td{padding:6px 9px;text-align:left;border-bottom:1px solid rgba(128,128,128,.12)}
+  .dg-tbl th.num,.dg-tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .dg-tbl thead th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;opacity:.7;font-weight:600}
+  .dg-row-alarm{background:color-mix(in srgb,var(--down,#e5484d) 10%,transparent)}
+  .dg-pos{color:var(--up,#30a46c)}.dg-neg{color:var(--down,#e5484d)}
+  .mut2{opacity:.55}
+  .dg-badge{font-size:10.5px;padding:2px 7px;border-radius:20px;white-space:nowrap}
+  .dg-proven{background:color-mix(in srgb,var(--up,#30a46c) 20%,transparent);color:var(--up,#30a46c)}
+  .dg-measuring{background:color-mix(in srgb,var(--muted,#8b95a5) 20%,transparent);color:var(--muted,#8b95a5)}
+  .dg-alarm{background:color-mix(in srgb,var(--down,#e5484d) 22%,transparent);color:var(--down,#e5484d);font-weight:700}
+  .dg-fine,.dg-disc{font-size:11px;opacity:.55;line-height:1.5;margin:8px 0 0}
+  .dg-sub{margin-top:14px}
+  .dg-sub h3{font-size:13px;margin:0 0 7px}.dg-sub h3 small{font-weight:400;opacity:.6}
+  .dg-ev{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;margin:3px 0}
+  .dg-ev-h{font-weight:700;min-width:34px}.dg-ev-tag{padding:2px 8px;border-radius:7px;background:rgba(128,128,128,.1)}
+  .dg-findings,.dg-notes{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
+  .dg-find{font-size:12.5px;line-height:1.5;display:flex;gap:7px;padding:6px 9px;border-radius:8px;background:rgba(128,128,128,.07)}
+  .dg-find.dg-alarm{background:color-mix(in srgb,var(--down,#e5484d) 11%,transparent)}
+  .dg-find.dg-warn{background:color-mix(in srgb,var(--warn,#f5a623) 11%,transparent)}
+  .dg-sev{flex:0 0 auto}
+  .dg-notes li{font-size:12px;line-height:1.5;padding:5px 0;border-top:1px solid rgba(128,128,128,.1)}
+  .dg-nd{display:inline-block;min-width:78px;opacity:.5;font-variant-numeric:tabular-nums;font-size:11px}
+</style>
+  
+<section class="dg-wrap" style="margin-top:22px">
+  <h2 class="dg-h2">📊
+    <span class="l-en">Desk scorecard — is this desk beating the market?</span><span class="l-zh">研究台记分卡 —— 本台是否跑赢大盘？</span>
+    <span class="dg-note">
+      <span class="l-en">every name this desk surfaces is graded against realized SPY-relative forward returns · context-only</span>
+      <span class="l-zh">本台每个入选标的均以实际相对标普前瞻收益评分 · 仅作参考</span></span>
+  </h2>
+
+  
+  <div class="dg-lead ">
+    <b><span class="l-en">Measuring</span><span class="l-zh">测量中</span></b> —
+      <span class="l-en">matured observations accruing; no horizon has cleared the significance bar yet.</span>
+      <span class="l-zh">到期观测持续累积；尚无周期通过显著性检验。</span>
+    
+    <span class="dg-counts">
+      <span class="l-en">63,120 live snapshots · 1,755 departures tracked</span>
+      <span class="l-zh">63,120 条在册快照 · 已追踪 1,755 次离场</span></span>
+  </div>
+
+  
+  
+  <div class="dg-tblwrap">
+  <table class="dg-tbl"><thead><tr>
+    <th><span class="l-en">Horizon</span><span class="l-zh">周期</span></th>
+    <th class="num"><span class="l-en">n</span><span class="l-zh">样本</span></th>
+    <th class="num" data-tip-en="Cross-sectional rank-IC of the desk's SCORE LEVEL vs forward return (daily-HAC where mature, else pooled~)" data-tip-zh="本台评分水平与前瞻收益的横截面秩相关（成熟时用日度HAC，否则合并~）"><span class="l-en">IC · level</span><span class="l-zh">IC · 水平</span></th>
+    <th class="num" data-tip-en="Rank-IC of the desk's SCORE VELOCITY (Δscore over 5 snapshots) vs forward return — the owner's hypothesis" data-tip-zh="本台评分速度（5次快照的Δ分）与前瞻收益的秩相关——即所有者假设"><span class="l-en">IC · velocity</span><span class="l-zh">IC · 速度</span></th>
+    <th class="num" data-tip-en="Mean SPY-relative forward return while the name is ON the desk" data-tip-zh="标的在台期间的平均相对标普前瞻收益"><span class="l-en">on-desk</span><span class="l-zh">在台</span></th>
+    <th class="num" data-tip-en="Mean SPY-relative forward return AFTER the name left the desk — did dropping it turn out correct?" data-tip-zh="标的离台后的平均相对标普前瞻收益——剔除是否正确？"><span class="l-en">departed</span><span class="l-zh">离台</span></th>
+    <th class="num" data-tip-en="Share of surfaced names with usable yahoo-adjusted prices at this horizon (breadth cache deliberately excluded — split-corrupted)" data-tip-zh="该周期有可用雅虎复权价的入选标的占比（刻意排除拆股损坏的breadth缓存）"><span class="l-en">coverage</span><span class="l-zh">覆盖</span></th>
+    <th><span class="l-en">status</span><span class="l-zh">状态</span></th>
+  </tr></thead><tbody>
+    
+    <tr class="">
+      <td><b>5</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+      <td class="num">1575</td>
+      <td class="num dg-neg">-0.120~</td>
+      <td class="num ">—</td>
+      <td class="num dg-pos">+0.9%</td>
+      <td class="num dg-neg">-1.1%</td>
+      <td class="num mut2">3.7%</td>
+      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+    </tr>
+    
+    <tr class="">
+      <td><b>10</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+      <td class="num">0</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num mut2">0.0%</td>
+      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+    </tr>
+    
+    <tr class="">
+      <td><b>20</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+      <td class="num">0</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num mut2">—</td>
+      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+    </tr>
+    
+    <tr class="">
+      <td><b>30</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+      <td class="num">0</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num mut2">—</td>
+      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+    </tr>
+    
+    <tr class="">
+      <td><b>60</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+      <td class="num">0</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num mut2">—</td>
+      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+    </tr>
+    
+    <tr class="">
+      <td><b>90</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+      <td class="num">0</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num ">—</td>
+      <td class="num mut2">—</td>
+      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+    </tr>
+    
+  </tbody></table>
+  </div>
+  <p class="dg-fine">
+    <span class="l-en">~ = provisional pooled IC (single cross-section); the daily Newey-West HAC IC that the "proven" gate trusts needs ≥6 grading dates. Velocity IC = the change in the desk's own score, the owner's second axis.</span>
+    <span class="l-zh">~ = 暂定合并信息系数（单一横截面）；"已验证"门槛所依赖的日度 Newey-West HAC 信息系数需≥6个评分日。速度信息系数 = 本台评分自身的变化，即所有者的第二维度。</span></p>
+
+  
+  
+  
+  
+  
+
+  
+  
+  <div class="dg-sub">
+    <h3><span class="l-en">Auto-findings</span><span class="l-zh">自动结论</span>
+      <small><span class="l-en">— derived from the stats each run, to improve this desk's engine</span><span class="l-zh">—— 每次运行从统计中导出，用于改进本台引擎</span></small></h3>
+    <ul class="dg-findings">
+      
+      <li class="dg-find dg-insight">
+        <span class="dg-sev">●</span>
+        <span class="l-en">5d: departed names (-1.1% avg) underperform on-desk names (+0.9%) — DROPS ARE CORRECT; the desk sheds names before they lag.</span><span class="l-zh">5d: departed names (-1.1% avg) underperform on-desk names (+0.9%) — DROPS ARE CORRECT; the desk sheds names before they lag.</span></li>
+      
+      <li class="dg-find dg-warn">
+        <span class="dg-sev">▲</span>
+        <span class="l-en">5d: 'exhausted' (+2.8%) outperforms 'emerging' (-1.8%) — possible residual inversion in the lifecycle staging.</span><span class="l-zh">5d: 'exhausted' (+2.8%) outperforms 'emerging' (-1.8%) — possible residual inversion in the lifecycle staging.</span></li>
+      
+    </ul>
+  </div>
+  
+
+  
+  
+  <div class="dg-sub">
+    <h3><span class="l-en">Notes &amp; lessons</span><span class="l-zh">笔记与经验</span>
+      <small><span class="l-en">— what we've learned, so the desk's engine keeps improving as data accrues</span><span class="l-zh">—— 已学到的经验，使本台引擎随数据累积持续改进</span></small></h3>
+    <ul class="dg-notes">
+      
+      <li><span class="dg-nd">2026-07-04</span>
+        <span class="l-en">2026-07-04 inversion finding: the OLD hub engine was anti-predictive — pooled opportunity IC ~-0.09 @5d, and 'exhausted' names (+1.84% avg fwd) BEAT 'emerging' (-0.77%). The hub-v3-trajectory overhaul is the fix under test; this grader's engine_version A/B is the experiment that proves whether it worked.</span><span class="l-zh">2026-07-04 inversion finding: the OLD hub engine was anti-predictive — pooled opportunity IC ~-0.09 @5d, and 'exhausted' names (+1.84% avg fwd) BEAT 'emerging' (-0.77%). The hub-v3-trajectory overhaul is the fix under test; this grader's engine_version A/B is the experiment that proves whether it worked.</span></li>
+      
+      <li><span class="dg-nd">2026-07-04</span>
+        <span class="l-en">PRICE LESSON: grade off data/yahoo/<T>.parquet adjusted closes ONLY. The S&P-1500 breadth close cache (data/breadth/_closes_cache.parquet) is SPLIT-CORRUPTED — using it silently poisons every RS / forward-return number. A name missing from yahoo is a coverage skip here, never a wrong return.</span><span class="l-zh">PRICE LESSON: grade off data/yahoo/<T>.parquet adjusted closes ONLY. The S&P-1500 breadth close cache (data/breadth/_closes_cache.parquet) is SPLIT-CORRUPTED — using it silently poisons every RS / forward-return number. A name missing from yahoo is a coverage skip here, never a wrong return.</span></li>
+      
+      <li><span class="dg-nd">2026-07-04</span>
+        <span class="l-en">NOTE on the engine_version A/B: the historical hub ledger carries NO engine_version stamp (all ~63k rows pre-date the stamp), so the pre/post-overhaul split only begins accruing from 2026-07-04 forward. Until enough hub-v3-trajectory rows mature, the A/B reads one-sided; that is expected, not a bug.</span><span class="l-zh">NOTE on the engine_version A/B: the historical hub ledger carries NO engine_version stamp (all ~63k rows pre-date the stamp), so the pre/post-overhaul split only begins accruing from 2026-07-04 forward. Until enough hub-v3-trajectory rows mature, the A/B reads one-sided; that is expected, not a bug.</span></li>
+      
+    </ul>
+  </div>
+  
+
+  <p class="dg-disc">A falsifiable scorecard of this desk's own surfaced names — its ranking score (level AND velocity) graded against realized SPY-relative forward returns at 5/10/20/30/60/90 trading days, split on-desk vs after-leaving. A signal is 'proven' only past n>=40 with a significant Newey-West t of the right sign; a significant negative IC is an 'alarm'. Context-only — nothing here sizes a position.</p>
+</section>
+
+
   <footer class="hf">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-07-04T20:21:07.265744+00:00">2026-07-04 20:21</time> UTC ·
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-07-04T20:23:54.284229+00:00">2026-07-04 20:23</time> UTC ·
     Context only. A central command that fuses five independent desks — news flow, alt-data smart-money, the divergence radar, the factor buy-board, and policy intent — into one reasoned read per name. Composite conviction rewards INDEPENDENT agreement across desks and is docked by an unanswered falsifier; the second/third-order flags name the setup. The bot sizes through its own risk framework; nothing here sizes alone.
   </footer>
 </div>
