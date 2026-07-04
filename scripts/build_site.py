@@ -3211,6 +3211,13 @@ def main() -> int:
         out_sr = site / "subsector_rotation.html"
         write_page(out_sr, env.get_template("subsector_rotation.html.j2").render())
         log.info("wrote %s (%.0f KB)", out_sr, out_sr.stat().st_size / 1024)
+        # per-subsector detail pages (site/rotation/<key>.html) — additive, data-driven.
+        try:
+            from scripts.build_subsector_rotation_pages import build as build_sr_pages
+            n_pages = build_sr_pages(site)
+            log.info("wrote %d subsector detail pages", n_pages)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("subsector detail pages failed: %s", e)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("subsector rotation failed: %s", e)
 
