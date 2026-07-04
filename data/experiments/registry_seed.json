@@ -1722,9 +1722,9 @@
       "source": "engine/species_registry.py",
       "storage": "data/species/registry.json",
       "started": "2026-07-03",
-      "come_back_on": "2026-10-01",
-      "come_back_note": "W5+ phase-0. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names). Completion date populates come_back_on definitively.",
-      "maturation": "W5+ phase-0. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names). Completion date populates come_back_on definitively.",
+      "come_back_on": "2026-07-03",
+      "come_back_note": "W5+ phase-0. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names). Completion date populates come_back_on definitively. GATE CLEARED: backfill completed 2026-07-03 — 54,853 ticker-quarters, 1,331 tickers, FY2009-2027, 0 failures (data/edgar/statements_quarterly.parquet).",
+      "maturation": "W5+ phase-0. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names). Completion date populates come_back_on definitively. GATE CLEARED: backfill completed 2026-07-03 — 54,853 ticker-quarters, 1,331 tickers, FY2009-2027, 0 failures (data/edgar/statements_quarterly.parquet).",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Financials excluded throughout. Gated on EDGAR re-crawl completion.",
       "phase_hint": "horizon=positional deployment=unshipped"
@@ -1739,9 +1739,9 @@
       "source": "engine/species_registry.py",
       "storage": "data/species/registry.json",
       "started": "2026-07-03",
-      "come_back_on": "2026-10-01",
-      "come_back_note": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on.",
-      "maturation": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on.",
+      "come_back_on": "2026-07-03",
+      "come_back_note": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on. GATE CLEARED: backfill completed 2026-07-03 — same store as S10 (data/edgar/statements_quarterly.parquet).",
+      "maturation": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on. GATE CLEARED: backfill completed 2026-07-03 — same store as S10 (data/edgar/statements_quarterly.parquet).",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Debt-funded buyback detection required. Gated on EDGAR re-crawl.",
       "phase_hint": "horizon=positional deployment=unshipped"
@@ -1987,6 +1987,25 @@
       "come_back_note": "W5-B CONFIRM integration shipped 2026-07-03. Re-check the 2024+ weakness (29-reb tail -0.772%/reb) against the forward ledger once >=21d grades mature (~2026-07-29): if ledger corroborates a regime break, revisit sleeve sizing; if noise, full-depth CONFIRM stands. The residual survivorship bias (pure-survivor plane on delisting axis) is an F9/W1 substrate repair (PIT membership store retaining delisted-name terminal returns) -- until it lands every reversal number on the page stays labeled an upper bound.",
       "n_trials_program_dsr": 0,
       "pr": "w5(w5-b)"
+    },
+    {
+      "id": "sector-pulse-heat-archive",
+      "name": "Sector Pulse — heat-tier kill-test, archive confirmation lane (W6)",
+      "kind": "phase0_verdict",
+      "priority": "medium",
+      "cadence": "daily (engine.signal_archive 'baskets' snapshot per build; forward grades accrue automatically)",
+      "what": "Phase-0 kill-test of the sector_pulse heat tiers (heating/hot/cooling/broken vs same-day idle, 21d primary, HAC-t + BH q<=0.10) on the 27y SPDR-sector proxy (11 ETFs, 1998-12-22 → 2026-07-01): heating REFUTED (rel21 t_HAC 0.067), hot REFUTED (t -0.879), cooling REFUTED (dd21 t -0.747); broken CONFIRMED measurable (dd21 t_HAC -4.339, mean -0.41pp vs idle, n=1266 sampled days, BH q=0.0). Verdict controls ONLY the displayed grade (backtested vs descriptive/unconfirmed) via sector_pulse._heat_strength — heat never binds a score, reco or weight. Board-width caveat: ±3 ranks ≈27% of the 11-wide proxy board vs ≈6.5% of the 46-wide live board, so the proxy UNDER-fires the rank-delta legs — the accruing archive lane (heat reconstructed from the REAL shipped signal-archive snapshots) is the confirmation substrate that can confirm/deny the proxy verdict on the live board.",
+      "source": "scripts/calibrate_sector_pulse_heat.py (PR #1185, sector_pulse W6)",
+      "storage": "data/signal_archive/baskets.parquet (accruing stream, started 2026-06-18) + data/strategies/sector_pulse_heat.json (verdict artifact, archive block records accrual)",
+      "surfaced": "site/basketdata/sector_pulse.json heat_strength/heat_grades (grade strings on every theme row) + macro.html sector-heat strip; consumers: Mastermind bot, Terminal",
+      "started": "2026-06-18",
+      "come_back_on": "2026-11-01",
+      "come_back_note": ">=90 archived sessions (~4.5 months from 2026-06-18) before the archive lane can confirm/deny the proxy verdict — grading needs each snapshot to age 21 sessions on top of accrual, so do not re-run early.",
+      "maturation": ">=90 archived sessions in the signal_archive 'baskets' stream with >=21 subsequent sessions of basket tape per snapshot; archive-lane HAC-t on the same pre-registered per-tier claims. Confirms/denies: broken dd-edge holding on the live 46-wide board, heating/hot/cooling staying refuted at real board width.",
+      "status": "accruing",
+      "state": "Phase-0 verdict SHIPPED (#1185): GO=grades_upgraded — heating/hot/cooling graded descriptive/unconfirmed, broken graded backtested. Archive lane as of 2026-07-02: 10 snapshots, 161 heat rows (2026-06-18 → 2026-07-02), 0 gradeable at 21d yet.",
+      "next_step": "python -m scripts.calibrate_sector_pulse_heat — regrades automatically from the accrued archive lane; check whether the broken dd21 edge reproduces on the live board and whether any refuted tier (heating/hot/cooling) turns measurable at 46-wide rank-delta firing rates.",
+      "phase_hint": "sector_pulse W6 — proxy verdict shipped, archive confirmation accruing"
     }
   ]
 }
