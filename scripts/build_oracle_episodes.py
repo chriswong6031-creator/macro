@@ -117,7 +117,7 @@ def _build_tier(tier: str, rotation_groups: dict | None) -> pd.DataFrame:
         len(episodes),
         (episodes["direction"] == "in").sum(),
         (episodes["direction"] == "out").sum(),
-        episodes["two_sided"].sum(),
+        (episodes["two_sided"] == True).sum(),  # noqa: E712 — NA-safe
     )
 
     out_path = _oracle_dir() / f"episodes_{tier}.parquet"
@@ -218,13 +218,16 @@ def _write_atlas(eps_s: pd.DataFrame, eps_m: pd.DataFrame, manifest_s: dict | No
     else:
         n_in = (eps_s["direction"] == "in").sum()
         n_out = (eps_s["direction"] == "out").sum()
-        n_2s = eps_s["two_sided"].sum()
+        pairing_unavailable = bool(eps_s.get("pairing_unavailable", pd.Series(dtype=bool)).any())
+        n_2s = (eps_s["two_sided"] == True).sum()  # noqa: E712 — NA-safe
         n_confirmed = eps_s["confirmed_date"].notna().sum()
         n_undeniable = eps_s["undeniable_date"].notna().sum()
         n_exhausted = eps_s["exhausted_date"].notna().sum()
         lines += [
             f"**Episodes:** {len(eps_s)} total ({n_in} IN / {n_out} OUT)",
-            f"**Two-sided pairs:** {n_2s}",
+            (f"**Two-sided pairs:** UNAVAILABLE — rotation_groups.json absent/unparseable; "
+             f"pairing requires the complex backbone (no relationship-free fallback)"
+             if pairing_unavailable else f"**Two-sided pairs:** {n_2s}"),
             f"**Tier breakdown:** onset={len(eps_s)}, confirmed={n_confirmed}, "
             f"undeniable={n_undeniable}, exhausted={n_exhausted} (open={len(eps_s)-n_exhausted})",
             "",
@@ -267,7 +270,9 @@ def _write_atlas(eps_s: pd.DataFrame, eps_m: pd.DataFrame, manifest_s: dict | No
         n_exhausted = eps_m["exhausted_date"].notna().sum()
         lines += [
             f"**Episodes:** {len(eps_m)} total ({n_in} IN / {n_out} OUT)",
-            f"**Two-sided pairs:** {n_2s}",
+            (f"**Two-sided pairs:** UNAVAILABLE — rotation_groups.json absent/unparseable; "
+             f"pairing requires the complex backbone (no relationship-free fallback)"
+             if pairing_unavailable else f"**Two-sided pairs:** {n_2s}"),
             f"**Tier breakdown:** onset={len(eps_m)}, confirmed={n_confirmed}, "
             f"undeniable={n_undeniable}, exhausted={n_exhausted} (open={len(eps_m)-n_exhausted})",
             "",

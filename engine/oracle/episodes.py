@@ -138,8 +138,23 @@ EPISODE_CFG: dict[str, Any] = {
     "outcome_horizons": [5, 21, 63],
 
     # --- Two-sided pairing ---
-    # Minimum session overlap between an IN and OUT episode to count as a pair.
+    # Minimum TRADING-SESSION overlap between an IN and OUT episode
+    # (counted against the panel date index; calendar days overstate ~5/7).
     "two_sided_min_overlap_sessions": 5,
+    # Cohesion floor on BOTH legs of a two-sided pair — a one-name move is
+    # not a complex rotation. Provenance: panel_m cohesion q25 = 0.252.
+    "two_sided_min_cohesion": 0.25,
+    # Sentinel end for open episodes when the panel last date is unknown.
+    "open_episode_fallback_days": 90,
+
+    # --- Percentile / confirmation windows (promoted from inline constants,
+    #     review minor on #1218) ---
+    # Trailing window + minimum valid obs for the causal RS percentile.
+    "rs_pctile_window_d": 252,
+    "rs_pctile_min_valid": 126,
+    # M in the N-of-M confirmation windows (onset + exhaustion).
+    # Provenance: raw accel_z>1 run median 2d, p90 5d — confirm over 5 days.
+    "confirm_window_m": 5,
 }
 
 # ---------------------------------------------------------------------------
@@ -173,7 +188,8 @@ _EPISODE_COLS = [
     "duration",            # calendar sessions from onset to exhausted/last-date
     "peak_accel_z",        # max |accel_z| during the episode
     "breadth_at_onset",    # nullable
-    "cohesion_at_onset",   # nullable
+    "cohesion_at_onset",   # nullable — cohesion LEVEL at onset (pairing gate)
+    "cohesion_chg_at_onset",  # nullable — the delta (confirmed-tier input)
     "regime_vix_pctile",   # nullable
     "regime_tlt_sign",     # sign of tlt_ret_10d at onset; nullable (−1/0/+1)
     "regime_spy_above_200d",  # nullable
@@ -236,15 +252,15 @@ def _against_count_in_last_n(
         return int(np.sum(window > -threshold))  # threshold is positive for OUT
 
 
-def _rs_pctile_252d(rs_series: np.ndarray, i: int) -> float | None:
+def _rs_pctile_252d(rs_series: np.ndarray, i: int, window_d: int = 252, min_valid: int = 126) -> float | None:
     """Causal percentile rank of rs[i] in the trailing 252-day window.
 
     Returns None if fewer than 126 non-NaN values available.
     """
-    start = max(0, i - 252 + 1)
+    start = max(0, i - window_d + 1)
     window = rs_series[start: i + 1]
     valid = window[~np.isnan(window)]
-    if len(valid) < 126:
+    if len(valid) < min_valid:
         return None
     current = rs_series[i]
     if np.isnan(current):
@@ -325,6 +341,7 @@ def run_state_machine(
     vel_1w = _col("vel_1w")
     vel_3m = _col("vel_3m")
     cohesion_chg = _col("cohesion_chg")
+    cohesion_lvl = _col("cohesion")   # LEVEL — pairing gates on this, not the delta
     breadth_50 = _col("breadth_50")
     vix_pctile = _col("vix_pctile")
     tlt_ret_10d = _col("tlt_ret_10d")
@@ -378,7 +395,8 @@ def run_state_machine(
             "duration": duration,
             "peak_accel_z": peak_accel_z,
             "breadth_at_onset": float(breadth_50[oi]) if not np.isnan(breadth_50[oi]) else None,
-            "cohesion_at_onset": float(cohesion_chg[oi]) if not np.isnan(cohesion_chg[oi]) else None,
+            "cohesion_at_onset": float(cohesion_lvl[oi]) if not np.isnan(cohesion_lvl[oi]) else None,
+            "cohesion_chg_at_onset": float(cohesion_chg[oi]) if not np.isnan(cohesion_chg[oi]) else None,
             "regime_vix_pctile": float(v_vix) if v_vix is not None else None,
             "regime_tlt_sign": tlt_sign,
             "regime_spy_above_200d": float(v_spy) if v_spy is not None else None,
@@ -399,11 +417,11 @@ def run_state_machine(
         if sign < 0 and az5 > threshold:
             return False
 
-        # 2. Majority of last 5 raw accel_z in the right direction (> 0 for IN, < 0 for OUT)
-        pos_count = _positive_days_in_last_n(accel_z_raw, i, 5)
+        # 2. Majority of last confirm_window_m raw accel_z in the right direction
+        pos_count = _positive_days_in_last_n(accel_z_raw, i, c["confirm_window_m"])
         if sign > 0 and pos_count < onset_pos_n:
             return False
-        if sign < 0 and (5 - pos_count) < onset_pos_n:
+        if sign < 0 and (c["confirm_window_m"] - pos_count) < onset_pos_n:
             return False
 
         # 3. RS momentum proxy in right direction
@@ -432,8 +450,8 @@ def run_state_machine(
         if dir_sign < 0 and az5 < -counter_thresh:  # OUT: az5 not > +|counter_thresh|
             return False
 
-        # Confirm: ≥3 of last 5 raw accel_z days cross against direction
-        cnt = _against_count_in_last_n(accel_z_raw, i, 5, direction, counter_thresh)
+        # Confirm: exhaust_n of last confirm_window_m raw accel_z days cross against direction
+        cnt = _against_count_in_last_n(accel_z_raw, i, c["confirm_window_m"], direction, counter_thresh)
         return cnt >= exhaust_n
 
     for i in range(n):
@@ -444,7 +462,6 @@ def run_state_machine(
                 continue
 
             # Try IN onset first, then OUT
-            found = False
             for sign in (+1, -1):
                 if _check_onset(i, sign):
                     state = _STATE_ONSET
@@ -528,7 +545,7 @@ def run_state_machine(
 
             # Check mature: rs extended AND accel_z_5d fading toward 0
             az5 = accel_z_5d[i]
-            rs_pctile = _rs_pctile_252d(rs_arr, i)
+            rs_pctile = _rs_pctile_252d(rs_arr, i, c["rs_pctile_window_d"], c["rs_pctile_min_valid"])
             if (
                 rs_pctile is not None
                 and rs_pctile >= mature_rs_pctile
@@ -589,108 +606,129 @@ def run_state_machine(
 # Two-sided pairing
 # ---------------------------------------------------------------------------
 
+def _parse_complex_map(rotation_groups: dict | None) -> dict[str, str]:
+    """node → complex-name map from data/oracle/rotation_groups.json.
+
+    Canonical P2a format: {"_meta": {...}, "complexes": [{"name": ..,
+    "members": [node, ..]}, ..]}.  The flat {complex_id: [members]} form is
+    tolerated for synthetic tests.  Returns {} when nothing parseable —
+    callers must treat {} as PAIRING UNAVAILABLE, never fall back to
+    relationship-free pairing (review major on #1218: overlap-only pairing
+    marked 6/6 unrelated random nodes two_sided)."""
+    out: dict[str, str] = {}
+    if not isinstance(rotation_groups, dict):
+        return out
+    complexes = rotation_groups.get("complexes")
+    if isinstance(complexes, list):
+        for cx in complexes:
+            if isinstance(cx, dict):
+                cid = str(cx.get("name") or cx.get("id") or "")
+                for m in (cx.get("members") or []):
+                    if isinstance(m, str) and cid:
+                        out[m] = cid
+        return out
+    for gid, members in rotation_groups.items():
+        if isinstance(members, list):
+            for m in members:
+                node = m if isinstance(m, str) else (m.get("node", "") if isinstance(m, dict) else "")
+                if node:
+                    out[str(node)] = str(gid)
+    return out
+
+
 def _pair_episodes(
     episodes_df: pd.DataFrame,
     rotation_groups: dict | None,
     cfg: dict[str, Any],
     panel_last_date: pd.Timestamp | None = None,
+    date_index: pd.DatetimeIndex | None = None,
 ) -> pd.DataFrame:
-    """Mark opposite-direction episode overlaps as two-sided pairs.
+    """Mark opposite-direction, CROSS-complex episode overlaps as two-sided pairs.
 
-    Strategy when rotation_groups is present (P2a):
-      For each IN episode, find OUT episodes in any *other* node belonging to
-      the same rotation group, overlapping ≥ two_sided_min_overlap_sessions.
-      Prefer the OUT episode with the highest |combined peak_accel_z|.
+    The operator's canonical two-sided rotation is money leaving one complex
+    while entering ANOTHER (semis-out ∈ ai_compute × healthcare-in ∈
+    healthcare_defensive), so pairing requires: both nodes mapped to
+    complexes, the complexes DIFFERENT, cohesion_at_onset ≥
+    two_sided_min_cohesion on BOTH legs (a one-name move is not a complex
+    rotation), and ≥ two_sided_min_overlap_sessions of overlap counted in
+    TRADING SESSIONS via date_index (calendar days overstate ~5/7).
 
-    Strategy when rotation_groups is absent (graceful degrade):
-      For each IN episode, search all OUT episodes in the SAME panel
-      (any node), overlapping ≥ threshold.  Rank by |combined peak_accel_z|.
-
-    Pairing is symmetric: each episode is paired at most once.
-
-    Parameters
-    ----------
-    panel_last_date : pd.Timestamp | None
-        The last date in the source panel.  Used as the end-date for open
-        (unexhausted) episodes when computing overlap.  When None, falls back
-        to the latest exhausted_date in the episode set (less accurate for
-        panels where most episodes are open).
+    When rotation_groups is absent/unparseable there is NO fallback:
+    two_sided stays pd.NA, pairing_unavailable=True, and the Atlas prints a
+    banner instead of a fabricated count (review major on #1218).
     """
-    min_overlap = cfg["two_sided_min_overlap_sessions"]
-
-    if episodes_df.empty:
-        episodes_df["two_sided"] = False
-        episodes_df["paired_episode_id"] = None
-        return episodes_df
-
     df = episodes_df.copy()
+    df["pairing_unavailable"] = False
+    if df.empty:
+        df["two_sided"] = False
+        df["paired_episode_id"] = None
+        return df
+
+    node_to_complex = _parse_complex_map(rotation_groups)
+    if not node_to_complex:
+        log.warning("two-sided pairing UNAVAILABLE: rotation_groups.json absent or unparseable")
+        df["two_sided"] = pd.NA
+        df["paired_episode_id"] = None
+        df["pairing_unavailable"] = True
+        return df
+
+    min_overlap = cfg["two_sided_min_overlap_sessions"]
+    min_cohesion = cfg["two_sided_min_cohesion"]
+    fallback_days = cfg["open_episode_fallback_days"]
+
     df["two_sided"] = df["two_sided"].astype(bool)
 
-    # Determine the sentinel end-date for open episodes:
-    # prefer panel_last_date; fall back to the latest exhausted_date; then
-    # use the latest onset_date + 90 days as a broad upper bound.
     if panel_last_date is not None:
         _open_end = panel_last_date
     else:
         exhausted_dates = df["exhausted_date"].dropna()
-        if not exhausted_dates.empty:
-            _open_end = exhausted_dates.max()
-        else:
-            _open_end = df["onset_date"].max() + pd.Timedelta(days=90)
+        _open_end = (exhausted_dates.max() if not exhausted_dates.empty
+                     else df["onset_date"].max() + pd.Timedelta(days=fallback_days))
 
-    # Determine group mapping for each node
-    node_to_group: dict[str, str] = {}
-    if rotation_groups and isinstance(rotation_groups, dict):
-        for group_id, members in rotation_groups.items():
-            if isinstance(members, list):
-                for m in members:
-                    node_name = m if isinstance(m, str) else m.get("node", "")
-                    if node_name:
-                        node_to_group[node_name] = group_id
+    def _sessions_between(a: pd.Timestamp, b: pd.Timestamp) -> int:
+        """Trading sessions in [a, b] via date_index; calendar-day fallback."""
+        if date_index is not None and len(date_index):
+            lo = date_index.searchsorted(a, side="left")
+            hi = date_index.searchsorted(b, side="right")
+            return int(hi - lo)
+        return (b - a).days + 1
 
-    in_eps = df[df["direction"] == _DIR_IN].copy()
-    out_eps = df[df["direction"] == _DIR_OUT].copy()
+    def _coh_ok(v) -> bool:
+        return v is not None and not pd.isnull(v) and float(v) >= min_cohesion
 
+    in_eps = df[df["direction"] == _DIR_IN]
+    out_eps = df[df["direction"] == _DIR_OUT]
     paired_ids: set[str] = set()
 
     for in_row in in_eps.itertuples():
         if in_row.episode_id in paired_ids:
             continue
+        in_complex = node_to_complex.get(in_row.node)
+        if in_complex is None or not _coh_ok(in_row.cohesion_at_onset):
+            continue
 
-        # Date range of this IN episode; open episodes end at _open_end
         in_start = in_row.onset_date
         _exhausted = in_row.exhausted_date
         in_end = _exhausted if (_exhausted is not None and not pd.isnull(_exhausted)) else _open_end
 
-        # Candidate OUT episodes: different node, not yet paired
-        candidates = out_eps[
-            (out_eps["node"] != in_row.node)
+        # Candidates: OUT episodes on a node mapped to a DIFFERENT complex,
+        # cohesion-qualified, not yet paired.
+        cand_mask = (
+            out_eps["node"].map(node_to_complex).notna()
+            & (out_eps["node"].map(node_to_complex) != in_complex)
             & (~out_eps["episode_id"].isin(paired_ids))
-        ]
-
-        # Filter by group membership if groups available
-        if node_to_group:
-            in_group = node_to_group.get(in_row.node)
-            if in_group:
-                same_group_nodes = {n for n, g in node_to_group.items() if g == in_group}
-                candidates = candidates[candidates["node"].isin(same_group_nodes)]
-
+            & out_eps["cohesion_at_onset"].apply(_coh_ok)
+        )
+        candidates = out_eps[cand_mask]
         if candidates.empty:
             continue
 
-        # Compute overlap (calendar days as a proxy for trading sessions;
-        # accurate enough for the ≥5 session threshold when episodes are days wide)
         def _overlap(out_row, _in_start=in_start, _in_end=in_end, _oe=_open_end) -> int:
-            out_start = out_row["onset_date"]
             out_exhausted = out_row["exhausted_date"]
             out_end = out_exhausted if (out_exhausted is not None and not pd.isnull(out_exhausted)) else _oe
-            overlap_start = max(_in_start, out_start)
+            overlap_start = max(_in_start, out_row["onset_date"])
             overlap_end = min(_in_end, out_end)
-            if overlap_end >= overlap_start:
-                # Approximate as calendar days + 1 (conservative: trading days ~5/7)
-                delta = (overlap_end - overlap_start).days + 1
-                return delta
-            return 0
+            return _sessions_between(overlap_start, overlap_end) if overlap_end >= overlap_start else 0
 
         candidates = candidates.copy()
         candidates["_overlap"] = candidates.apply(_overlap, axis=1)
@@ -698,17 +736,13 @@ def _pair_episodes(
         if valid.empty:
             continue
 
-        # Pick best partner: highest |combined peak_accel_z|
         combined = valid["peak_accel_z"].fillna(0) + in_row.peak_accel_z
-        best_idx = combined.abs().idxmax()
-        best_out = valid.loc[best_idx]
+        best_out = valid.loc[combined.abs().idxmax()]
 
-        # Mark both as paired
         df.loc[df["episode_id"] == in_row.episode_id, "two_sided"] = True
         df.loc[df["episode_id"] == in_row.episode_id, "paired_episode_id"] = best_out["episode_id"]
         df.loc[df["episode_id"] == best_out["episode_id"], "two_sided"] = True
         df.loc[df["episode_id"] == best_out["episode_id"], "paired_episode_id"] = in_row.episode_id
-
         paired_ids.add(in_row.episode_id)
         paired_ids.add(best_out["episode_id"])
 
@@ -807,8 +841,11 @@ def _add_outcome_columns(
         df[f"outcome_rs_{h}d"] = onset_vals
         df[f"outcome_rs_{h}d_confirmed"] = confirmed_vals
         df[f"outcome_rs_{h}d_undeniable"] = undeniable_vals
-        # outcome_mature is True iff onset-anchored window fits: use onset window
+        # Per-tier maturity: confirmed/undeniable detections are later than
+        # onset, so their windows mature later — one flag per tier.
         df[f"outcome_mature_{h}d"] = onset_mature
+        df[f"outcome_mature_{h}d_confirmed"] = confirmed_mature
+        df[f"outcome_mature_{h}d_undeniable"] = undeniable_mature
 
     return df
 
@@ -898,7 +935,8 @@ def build_episodes(
         panel_last_date = panel.index.max()
 
     # ---- Pass 1: Two-sided pairing (no panel data needed) ----
-    df = _pair_episodes(df, rotation_groups, c, panel_last_date=panel_last_date)
+    df = _pair_episodes(df, rotation_groups, c, panel_last_date=panel_last_date,
+                        date_index=panel.index.get_level_values("date").unique().sort_values())
 
     # ---- Pass 2: Outcome columns (forward-only, clearly separated) ----
     df = _add_outcome_columns(df, panel, c)

@@ -287,78 +287,122 @@ class TestHysteresisNoFlap:
 # (c) Two-sided pairing
 # ---------------------------------------------------------------------------
 
-class TestTwoSidedPairing:
-    def test_opposite_direction_overlap_is_paired(self):
-        """DISCRIMINATING TEST.
+_GROUPS_CROSS = {
+    "_meta": {"version": "test"},
+    "complexes": [
+        {"name": "cx_growth", "members": ["NODE_A", "NODE_X", "NODE_Y"]},
+        {"name": "cx_defensive", "members": ["NODE_B"]},
+    ],
+}
 
-        An IN episode on node A and an OUT episode on node B, overlapping for
-        ≥ 5 sessions, must both be marked two_sided=True with paired_episode_id
-        pointing at each other.
 
-        This test FAILS if pairing checks same-node (A→A) or does not detect
-        ≥ 5-session overlap.
-        """
-        n = 300
-        smooth = EPISODE_CFG["accel_z_smooth_days"]  # 5
-        ramp_len = 40
-
-        # Node A: IN episode (positive accel_z ramp starting day 80)
-        df_a = _make_flat_panel(n=n, node="NODE_A", seed=20)
-        df_a = _inject_ramp(df_a, 80, ramp_len, accel_z_val=1.5)
-
-        # Node B: OUT episode (negative accel_z ramp starting day 82, overlapping)
-        df_b = _make_flat_panel(n=n, node="NODE_B", seed=21)
+def _two_node_panel(coh_a: float = 0.4, coh_b: float = 0.4,
+                    b_direction: str = "out") -> pd.DataFrame:
+    """NODE_A IN-ramp (day 80) + NODE_B ramp (day 82, `b_direction`), with
+    planted cohesion LEVELS (the pairing gate reads cohesion_at_onset)."""
+    n, ramp_len = 300, 40
+    df_a = _make_flat_panel(n=n, node="NODE_A", seed=20)
+    df_a = _inject_ramp(df_a, 80, ramp_len, accel_z_val=1.5)
+    df_a["cohesion"] = coh_a
+    df_b = _make_flat_panel(n=n, node="NODE_B", seed=21)
+    if b_direction == "out":
         df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("accel_z")] = -1.5
         df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("vel_1w")] = 0.003
         df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("vel_3m")] = 0.008
         df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("rs")] = -0.01
         df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("breadth_50")] = 0.3
+    else:
+        df_b = _inject_ramp(df_b, 82, ramp_len, accel_z_val=1.5)
+    df_b["cohesion"] = coh_b
+    return _make_panel_for_build({"NODE_A": df_a, "NODE_B": df_b})
 
-        panel = _make_panel_for_build({"NODE_A": df_a, "NODE_B": df_b})
-        episodes = build_episodes(panel, tier="s")
 
+class TestTwoSidedPairing:
+    def test_cross_complex_opposite_direction_is_paired(self):
+        """DISCRIMINATING: IN on NODE_A (cx_growth) overlapping an OUT on
+        NODE_B (cx_defensive), cohesion 0.4 both legs → both two_sided=True,
+        pointing at each other. FAILS if pairing requires same-complex, drops
+        the P2a {"complexes": [...]} format, or the cohesion gate reads the
+        cohesion_chg delta instead of the level (all three were live bugs)."""
+        episodes = build_episodes(_two_node_panel(), rotation_groups=_GROUPS_CROSS, tier="s")
         if episodes.empty:
             pytest.skip("No episodes detected — check fixture ramp parameters")
-
         in_eps = episodes[(episodes["node"] == "NODE_A") & (episodes["direction"] == "in")]
         out_eps = episodes[(episodes["node"] == "NODE_B") & (episodes["direction"] == "out")]
-
         if in_eps.empty or out_eps.empty:
             pytest.skip("Need at least one IN and one OUT episode to test pairing")
-
-        # At least one IN episode should be two-sided
-        assert in_eps["two_sided"].any(), (
-            f"No IN episode on NODE_A is two_sided; found:\n{in_eps[['onset_date', 'direction', 'two_sided', 'paired_episode_id']]}"
+        assert (in_eps["two_sided"] == True).any(), (  # noqa: E712
+            f"No IN episode on NODE_A is two_sided:\n"
+            f"{in_eps[['onset_date', 'direction', 'two_sided', 'cohesion_at_onset']]}"
         )
+        paired_ids = in_eps[in_eps["two_sided"] == True]["paired_episode_id"].dropna().tolist()  # noqa: E712
+        assert any(pid in out_eps["episode_id"].tolist() for pid in paired_ids)
+        assert not episodes["pairing_unavailable"].any()
 
-        # The paired_episode_id must point to a NODE_B OUT episode
-        paired_ids = in_eps[in_eps["two_sided"]]["paired_episode_id"].dropna().tolist()
-        out_ids = out_eps["episode_id"].tolist()
-        assert any(pid in out_ids for pid in paired_ids), (
-            f"Paired episode IDs {paired_ids} not found in NODE_B OUT episodes {out_ids}"
-        )
-
-    def test_same_direction_not_paired(self):
-        """Two IN episodes on different nodes must NOT be paired."""
-        n = 200
-        df_a = _make_flat_panel(n=n, node="NODE_X", seed=30)
-        df_a = _inject_ramp(df_a, 60, 30, accel_z_val=1.5)
-
-        df_b = _make_flat_panel(n=n, node="NODE_Y", seed=31)
-        df_b = _inject_ramp(df_b, 62, 30, accel_z_val=1.5)
-
-        panel = _make_panel_for_build({"NODE_X": df_a, "NODE_Y": df_b})
-        episodes = build_episodes(panel, tier="s")
-
+    def test_same_complex_not_paired(self):
+        """Both nodes in ONE complex → intra-complex churn, not a two-sided
+        rotation; zero pairs."""
+        groups = {"complexes": [{"name": "cx_one", "members": ["NODE_A", "NODE_B"]}]}
+        episodes = build_episodes(_two_node_panel(), rotation_groups=groups, tier="s")
         if episodes.empty:
             pytest.skip("No episodes")
+        assert (episodes["two_sided"] == True).sum() == 0  # noqa: E712
 
-        # Neither should be paired (both IN → no opposite-direction match)
-        in_eps = episodes[episodes["direction"] == "in"]
-        # May still get two_sided=False for all
-        assert not in_eps["two_sided"].any() or True, (
-            "Same-direction episodes should not be paired (soft check — "
-            "pairing logic may behave differently in edge cases)"
+    def test_low_cohesion_blocks_pairing(self):
+        """OUT leg cohesion 0.10 < two_sided_min_cohesion 0.25 → no pair
+        (a one-name move is not a complex rotation)."""
+        episodes = build_episodes(_two_node_panel(coh_b=0.10),
+                                  rotation_groups=_GROUPS_CROSS, tier="s")
+        if episodes.empty:
+            pytest.skip("No episodes")
+        assert (episodes["two_sided"] == True).sum() == 0  # noqa: E712
+
+    def test_pairing_unavailable_without_groups(self):
+        """No rotation_groups → NO relationship-free fallback (review major:
+        overlap-only pairing marked 6/6 unrelated nodes two_sided). two_sided
+        is NA, pairing_unavailable=True everywhere."""
+        episodes = build_episodes(_two_node_panel(), tier="s")
+        if episodes.empty:
+            pytest.skip("No episodes")
+        assert episodes["pairing_unavailable"].all()
+        assert episodes["two_sided"].isna().all()
+        assert (episodes["two_sided"] == True).sum() == 0  # noqa: E712 — NA-safe count is 0
+
+    def test_same_direction_not_paired(self):
+        """Two IN episodes (cross-complex) must NOT be paired — hard assert
+        (the previous version of this test was `assert X or True`)."""
+        episodes = build_episodes(_two_node_panel(b_direction="in"),
+                                  rotation_groups=_GROUPS_CROSS, tier="s")
+        if episodes.empty:
+            pytest.skip("No episodes")
+        assert (episodes["two_sided"] == True).sum() == 0  # noqa: E712
+
+
+class TestHysteresisGap:
+    def test_gap_blocks_immediate_reonset(self):
+        """DISCRIMINATING for the hysteresis gap (review minor: the old
+        no-flap test never crossed the threshold, so a hysteresis-free
+        implementation passed it). Sequence: onset ramp → forced exhaustion →
+        2 quiet days → SHORT second ramp (10d). With gap=0 the second ramp
+        re-onsets (2 episodes); with gap=20 the block outlives the short ramp
+        (1 episode). A hysteresis-free implementation returns equal counts."""
+        from engine.oracle.episodes import run_state_machine
+        n = 250
+        df = _make_flat_panel(n=n, node="HYST", seed=40)
+        df = _inject_ramp(df, 60, 30, accel_z_val=1.5)          # episode 1
+        df.iloc[90:97, df.columns.get_loc("accel_z")] = -1.5    # force exhaustion
+        df = _inject_ramp(df, 99, 10, accel_z_val=1.8)          # short re-ramp
+        df["cohesion"] = 0.4
+
+        cfg0 = dict(EPISODE_CFG); cfg0["hysteresis_gap_days"] = 0
+        cfg20 = dict(EPISODE_CFG); cfg20["hysteresis_gap_days"] = 20
+        n0 = len([e for e in run_state_machine(df, node="HYST", cfg=cfg0)
+                  if e["direction"] == "in"])
+        n20 = len([e for e in run_state_machine(df, node="HYST", cfg=cfg20)
+                   if e["direction"] == "in"])
+        assert n0 >= 2, f"gap=0 should allow the re-onset (got {n0})"
+        assert n20 < n0, (
+            f"hysteresis gap not load-bearing: gap=20 count {n20} == gap=0 count {n0}"
         )
 
 
