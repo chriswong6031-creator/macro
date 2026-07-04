@@ -1266,7 +1266,9 @@
       dnaHTML(s) +
       fxDrawerHTML(s) +
       pathwayHTML(s) +
-      '<div class="cyc-grp cyc-grp-3">' +
+      // full-width: the legs list is the panel footer. As a 1/3 grid cell it stranded itself
+      // bottom-left with dead whitespace whenever the optional fx/pathway drawers were absent.
+      '<div class="cyc-grp cyc-grp-full">' +
         '<div class="cyc-lbl">' + L("Cycle legs — tap for the story", "周期区段 — 点击查看故事") + '</div>' +
         '<div class="sc-legs">' + legsHTML(s) + '</div>' +
       '</div>';
