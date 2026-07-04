@@ -1364,6 +1364,8 @@
         {# W2-B: A/B-tier badge next to why_ranked; narrative chip below (display-only) #}
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span class="nb-stage stg-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
+          {% set _cs = (n.get('stage_detail') or {}).get('cross_sessions_since') %}
+          {% if _cs is not none %}<span class="nb-why" data-tip-en="Gate cross fired {{ _cs }} session(s) ago — the fresh-window reason this name is on the ENTRY shelf" data-tip-zh="信号交叉于{{ _cs }}个交易日前触发 — 新鲜窗口，故列入入场板块">✚ <span class="l-en">crossed {{ _cs }}s ago</span><span class="l-zh">{{ _cs }}日前交叉</span></span>{% endif %}
           {% if n.get('why_ranked') %}<span class="nb-why" data-tip-en="Why ranked here: {{ n.get('why_ranked','') }}" data-tip-zh="此处排序原因">{{ n.get('why_ranked') }}</span>{% endif %}
           {% if n.get('ab_tier') == 'A' %}<span class="nb-atier" data-tip-en="A-tier: setup + narrative confluence — the owner playbook strongest case; display-only, forward grades accruing" data-tip-zh="A级：技术形态与叙事共振 — 操作手册中最强案例；仅展示，前瞻评级积累中">A</span>{% elif n.get('ab_tier') == 'B' %}<span class="nb-atier tier-b" data-tip-en="B-tier: setup qualifies but no current narrative heat confirmation" data-tip-zh="B级：形态合格但无当前叙事热度确认">B</span>{% endif %}
         </div>
@@ -1475,7 +1477,7 @@
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal live — entry passed; wait for pullback. Shown for honesty, not action — do not chase.</span><span class="l-zh">信号有效但入场时机已过；等待回调。出于诚实展示 — 不要追涨。</span></span>
     </div>
-    <div class="nbgrid">
+    <div class="nbgrid" data-showmore-rows="3">
     {% for n in _ran_late_rows %}
       {% set _d = 'caution' %}
       <a class="nbcard nb-{{ _d }} nb-stage-ran-card" href="china_lookup.html#{{ n.ticker }}">
@@ -1492,7 +1494,7 @@
         {# Prominent detail string — what happened: sublabel from rule 2 #}
         {% set _sl = n.get('stage_sublabel') %}
         {% if _sl %}
-        <div class="nb-ran-detail"><span class="l-en">{{ _sl }}</span><span class="l-zh">信号有效但入场时机已过；等待回调</span></div>
+        <div class="nb-ran-detail"><span class="l-en">{{ _sl }}</span><span class="l-zh">{{ n.get('stage_sublabel_zh') or '信号有效但入场时机已过；等待回调' }}</span></div>
         {% endif %}
         <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}</span></span>{% endif %}{% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}</div>
         {% set c = n.conviction %}
@@ -1557,7 +1559,7 @@
       <span class="nb-shelf-tag st-ripe"><span class="l-en">RIPENING</span><span class="l-zh">待熟</span></span>
       <span class="nb-shelf-expl"><span class="l-en">setups forming — NOT an entry signal; watching for the turn. Screened from the full closes universe.</span><span class="l-zh">形态形成中 — 非入场信号；等待转向。从全收盘价宇宙筛选。</span></span>
     </div>
-    <div class="nb-rip-grid">
+    <div class="nb-rip-grid" data-showmore-rows="3">
     {% for r in _rip %}
     <div class="nb-rip-card">
       <div class="nb-rip-top">
@@ -1592,7 +1594,7 @@
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal fired and aged out — shown for honesty, not action. Do not chase.</span><span class="l-zh">信号已触发并过期 — 出于诚实展示，不可追涨。</span></span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">
+    <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px" data-showmore="8">
     {% for r in _ran %}
     <div style="display:flex;align-items:flex-start;gap:9px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:10.5px">
       <div style="flex:none;min-width:90px">

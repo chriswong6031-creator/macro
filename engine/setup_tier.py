@@ -41,6 +41,7 @@ W1_FRESH_BARS = 3          # 1W cross is "fresh" within this many weekly bars
 W1_WASHOUT_D = 25.0        # d < this at cross = deep washout zone
 W2_STOCH_WASHOUT = 35.0    # 2W stoch <= this = washout state
 W2_MACD_IMMINENCE = 10.0   # bars_to_cross <= this (in 2W bars) = imminent
+FRESH_CROSS_SESSIONS = 5   # gate cross within this many sessions = the entry window is OPEN
 
 # Stage labels
 STAGE_ENTRY = "ENTRY"
@@ -224,11 +225,30 @@ def assign_stage(
 ) -> dict:
     """Assign the lifecycle stage for one name from existing gate / entry / W-setup signals.
 
-    Implements EXACTLY the masterplan F1/W1 stage rules 1-5:
+    Gate-eligible rows (rules 1-2). The T1-T4 confluence cross IS this board's entry
+    definition, so a FRESH cross (<= FRESH_CROSS_SESSIONS) means the window is OPEN —
+    the daily-cycle gauge may not overrule it. The daily ladder flips any fresh-buy
+    reading to TOP WATCH / "extended" on daily RSI>70, and the first breakout thrust
+    off a base (an A-share limit-up especially) trivially trips that — which had the
+    board demoting exactly the freshest base breakouts to RAN_LATE while stale,
+    already-run names sat on ENTRY. Precedence, adjudicated:
 
-    Rule 1 — gate-eligible AND entry_status in {buy_now, partial} -> ENTRY
-    Rule 2 — gate-eligible BUT entry_status == hold OR overextended -> RAN_LATE
-              sublabel: "signal live - entry passed; wait for pullback"
+    Rule 2a — overextended (the A-share price-extension read, extension_read) -> RAN_LATE.
+              F6 ruling preserved: TRUE extension beats everything, incl. a fresh cross.
+              muted_entry=True when the entry gauge was nominally open (buy_now/partial).
+    Rule 2b — entry_status in {exit, avoid, blocked} (cycle failed / rolling over)
+              -> RAN_LATE with a stand-aside sublabel, never "entry passed".
+    Rule 1a — fresh gate cross (last_cross_info.sessions_since <= FRESH_CROSS_SESSIONS)
+              -> ENTRY. detail carries cross age so the card can show freshness.
+    Rule 1  — entry_status in {buy_now, partial} -> ENTRY (pullback/re-entry window
+              inside a live signal).
+    Rule 2c — remaining wait states (hold / extended / topping / watch / buy_soon /
+              await_confluence / wait_pullback) -> RAN_LATE
+              sublabel: "signal live — entry passed; wait for pullback" (or the cross
+              age when known). entry_status None with no fresh cross stays shelf-less.
+
+    Non-eligible rows (rules 3-5), unchanged:
+
     Rule 3 — NOT gate-eligible, last 2D/3D cross within 15 ticks -> RAN_LATE
               sublabel: "signal fired <date> (N sessions ago), +X% since"
               if hold_state says basing-intact, append re-entry chip
@@ -243,11 +263,12 @@ def assign_stage(
     entry_status : str | None
         From entry_signal.assess()["status"] — e.g. "buy_now", "partial", "hold", etc.
     overextended : bool
-        True when the name is in an extended/overbought state (alignment.overextended
-        or entry_status in {"extended", "topping"}).
+        True when the name has ALREADY RUN in price terms (china_signals.extension_read
+        .extended — the validated A-share anti-chase read). NOT the daily-RSI gauge.
     last_cross_info : dict | None
         Keys: cross_date (str), sessions_since (int), pct_since (float).
-        Rule 3 fires when sessions_since <= 15.
+        Rule 1a fires when sessions_since <= FRESH_CROSS_SESSIONS (eligible rows);
+        rule 3 fires when sessions_since <= 15 (non-eligible rows).
     hold_state : dict | None
         From engine.hold.hold_state(). Keys: state, anchor.
         Rule 3 may append a basing-intact chip.
@@ -256,47 +277,94 @@ def assign_stage(
 
     Returns
     -------
-    dict with keys: stage, sublabel, detail
+    dict with keys: stage, sublabel, sublabel_zh, detail
     """
-    # ── Rule 1: gate-eligible + actionable entry (ONLY when NOT overextended) ───
-    if gate_eligible and entry_status in ("buy_now", "partial") and not overextended:
-        return {
-            "stage": STAGE_ENTRY,
-            "sublabel": None,
-            "detail": {"entry_status": entry_status},
-        }
+    if gate_eligible:
+        _ci = last_cross_info or {}
+        _sess = _ci.get("sessions_since")
+        _cross_fresh = _sess is not None and _sess <= FRESH_CROSS_SESSIONS
 
-    # ── Rule 2: gate-eligible but extended / hold / overextended ─────────────
-    # Fires when gate is live but the entry is NOT immediately actionable:
-    #   - overextended flag (alignment.overextended in the spec) — F6 ruling: extension
-    #     beats the timing gauge, even when entry_status is buy_now or partial
-    #   - entry_status == "hold" (the explicit spec case)
-    #   - entry_status not in {buy_now, partial} (extended, topping, etc.)
-    #
-    # Adjudicated design (F6): a buy_now/partial + overextended row is a LEGITIMATE
-    # input that routes here.  We emit muted_entry=True in the detail dict so the
-    # template can suppress green banding without rewriting the entry_signal block.
-    # Sublabel varies by whether the entry gauge was nominally open:
-    if gate_eligible and (
-        overextended
-        or entry_status == "hold"
-        or entry_status not in ("buy_now", "partial", None)
-    ):
-        _muted = overextended and entry_status in ("buy_now", "partial")
-        _sublabel = (
-            "entry gauge open — but extended; wait for pullback"
-            if _muted
-            else "signal live — entry passed; wait for pullback"
-        )
-        return {
-            "stage": STAGE_RAN_LATE,
-            "sublabel": _sublabel,
-            "detail": {
-                "entry_status": entry_status,
-                "overextended": overextended,
-                "muted_entry": _muted,
-            },
-        }
+        # ── Rule 2a: TRUE price extension beats everything (F6) ─────────────
+        if overextended:
+            _muted = entry_status in ("buy_now", "partial")
+            return {
+                "stage": STAGE_RAN_LATE,
+                "sublabel": ("entry gauge open — but extended; wait for pullback"
+                             if _muted
+                             else "extended — has already run; wait for pullback"),
+                "sublabel_zh": ("入场量表打开 — 但已过度延伸；等待回调"
+                                if _muted else "已大幅上涨 — 等待回调"),
+                "detail": {
+                    "entry_status": entry_status,
+                    "overextended": True,
+                    "muted_entry": _muted,
+                },
+            }
+
+        # ── Rule 2b: failed / rolling-over cycle — stand aside, not "entry passed"
+        if entry_status in ("exit", "avoid", "blocked"):
+            return {
+                "stage": STAGE_RAN_LATE,
+                "sublabel": "cycle failed / rolling over — stand aside",
+                "sublabel_zh": "周期失败/掉头向下 — 观望",
+                "detail": {
+                    "entry_status": entry_status,
+                    "overextended": False,
+                    "muted_entry": False,
+                },
+            }
+
+        # ── Rule 1a: fresh gate cross = the entry window is OPEN ────────────
+        # The cross is the board's own entry definition; a not-price-extended name
+        # whose cross fired within FRESH_CROSS_SESSIONS is ENTRY regardless of the
+        # daily-cycle gauge (whose RSI>70 gate mislabels the first base-breakout
+        # thrust as "extended").
+        if _cross_fresh:
+            return {
+                "stage": STAGE_ENTRY,
+                "sublabel": None,
+                "detail": {
+                    "entry_status": entry_status,
+                    "cross_date": _ci.get("cross_date"),
+                    "cross_sessions_since": _sess,
+                    "pct_since": _ci.get("pct_since"),
+                    "fresh_cross": True,
+                },
+            }
+
+        # ── Rule 1: entry gauge open (pullback / re-entry inside a live signal)
+        if entry_status in ("buy_now", "partial"):
+            return {
+                "stage": STAGE_ENTRY,
+                "sublabel": None,
+                "detail": {"entry_status": entry_status},
+            }
+
+        # ── Rule 2c: remaining wait states — entry window not open ──────────
+        if entry_status is not None:
+            if _sess is not None:
+                _pct = _ci.get("pct_since")
+                _pct_str = f", +{round(_pct, 1)}%" if _pct is not None else ""
+                _sublabel = (f"signal fired {_ci.get('cross_date', 'unknown')} "
+                             f"({_sess} sessions ago{_pct_str}) — entry passed; wait for pullback")
+                _sublabel_zh = (f"信号于{_ci.get('cross_date', '')}触发（{_sess}个交易日前）；"
+                                "入场时机已过，等待回调")
+            else:
+                _sublabel = "signal live — entry passed; wait for pullback"
+                _sublabel_zh = "信号有效但入场时机已过；等待回调"
+            return {
+                "stage": STAGE_RAN_LATE,
+                "sublabel": _sublabel,
+                "sublabel_zh": _sublabel_zh,
+                "detail": {
+                    "entry_status": entry_status,
+                    "overextended": False,
+                    "muted_entry": False,
+                    "cross_sessions_since": _sess,
+                },
+            }
+        # entry_status None + no fresh cross: shelf-less (pre-existing behavior)
+        return {"stage": STAGE_NONE, "sublabel": None, "detail": {}}
 
     # ── Rule 3: NOT gate-eligible, recent cross (within 15 sessions) ─────────
     if not gate_eligible and last_cross_info:
