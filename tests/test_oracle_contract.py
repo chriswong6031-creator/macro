@@ -21,7 +21,7 @@ import pytest
 from engine.oracle.contract import (
     BANNED_IMPLICATION_KEYS,
     CONFIDENCE_CLASSES,
-    MAX_AGE_HOURS,
+    MAX_AGE_HOURS_HARD,
     PAYLOAD_VERSION,
     classify_lineage,
     stamp_payload,
@@ -35,7 +35,7 @@ from engine.oracle.contract import (
 
 _FRESH_ASOF = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-_STALE_ASOF = (datetime.now(timezone.utc) - timedelta(hours=MAX_AGE_HOURS + 1)).strftime(
+_STALE_ASOF = (datetime.now(timezone.utc) - timedelta(hours=MAX_AGE_HOURS_HARD + 1)).strftime(
     "%Y-%m-%d"
 )
 
@@ -288,15 +288,19 @@ def test_fresh_asof_passes():
 
 def test_stale_check_uses_provided_now():
     """validate_payload's as_of_now parameter overrides wall-clock."""
-    # Use an asof 24h ago — this would pass normally (< 48h)
-    past_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%d")
-    payload = _valid_payload(asof=past_24h)
-    # But supply a "now" that is 30h after that, making it stale relative to our clock
-    fake_now = datetime.now(timezone.utc) + timedelta(hours=30)
+    # asof = today — fresh against the real wall clock
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    payload = _valid_payload(asof=today)
+    # Supply a "now" 10 days ahead: >2 trading days behind AND beyond the
+    # 168h hard cap (v1.1.0 trading-day-aware rules) → stale via override only
+    fake_now = datetime.now(timezone.utc) + timedelta(days=10)
     ok, errs = validate_payload(payload, as_of_now=fake_now)
-    # 24h past asof + 30h advance = 54h > 48h → stale
     assert not ok
     assert any("STALE" in e or "stale" in e.lower() for e in errs)
+    # and against the REAL clock the same payload is fresh — proving the
+    # override (not wall-clock) drove the verdict
+    ok2, _ = validate_payload(payload)
+    assert ok2
 
 
 # ---------------------------------------------------------------------------
@@ -489,3 +493,25 @@ def test_onset_alert_requires_conversion_rate_too():
     ok, errs = validate_payload(payload)
     assert not ok
     assert any("onset_to_confirmed_conversion" in e for e in errs)
+
+
+def test_staleness_is_trading_day_aware():
+    """v1.1.0 fix: Friday's payload evaluated on Sunday (~60 calendar hours,
+    1 trading day) must PASS; the same payload 3+ trading days behind must
+    FAIL; anything beyond the 168h hard cap fails regardless of bdays."""
+    from datetime import datetime, timezone
+    payload = _valid_payload()
+    payload["asof"] = "2026-07-02"  # Thursday
+    # Sunday 2026-07-05: 1 bday behind (Fri 07-03) → PASS despite ~74h
+    ok, errs = validate_payload(
+        payload, as_of_now=datetime(2026, 7, 5, 18, 0, tzinfo=timezone.utc))
+    assert ok, f"weekend gap must not trip staleness: {errs}"
+    # Wednesday 2026-07-08: 3 bdays behind → FAIL
+    ok2, errs2 = validate_payload(
+        payload, as_of_now=datetime(2026, 7, 8, 18, 0, tzinfo=timezone.utc))
+    assert not ok2 and any("STALE" in e for e in errs2)
+    # hard cap: 8 calendar days (even if a long holiday chain kept bdays low
+    # this must fail) — construct via the 168h cap
+    ok3, errs3 = validate_payload(
+        payload, as_of_now=datetime(2026, 7, 11, 18, 0, tzinfo=timezone.utc))
+    assert not ok3 and any("STALE" in e for e in errs3)
