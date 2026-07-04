@@ -207,11 +207,15 @@ def _build_cell(
     # --- n_raw: raw row count before dedup ---
     n_raw = int(len(rows))
 
-    # --- n_eff: distinct (engine, symbol, as_of) triples ---
+    # --- n_eff: distinct (symbol, as_of) pairs within this horizon cell ---
     # One FIRE = one observation per cell horizon (rows are already horizon-filtered).
     # Within the same cell, a symbol-date appearing multiple times is one event.
-    dedup_keys = rows[["symbol", "as_of"]].drop_duplicates()
-    n_eff = int(len(dedup_keys))
+    # rows_deduped keeps the FIRST occurrence per (symbol, as_of) so that the
+    # Wilson CI numerator (hits) and denominator (n_eff) come from the same
+    # population — mixing pre-dedup numerator with deduped denominator would
+    # give phat = hits/n_eff where hits > n_eff is possible under heavy co-firing.
+    rows_deduped = rows.drop_duplicates(subset=["symbol", "as_of"])
+    n_eff = int(len(rows_deduped))
 
     # --- signed outcomes (direction-aware) ---
     outcome_excess = pd.to_numeric(rows["outcome_excess"], errors="coerce")
@@ -242,8 +246,13 @@ def _build_cell(
     noise = NOISE_ASOF_LEGACY * frac_legacy if frac_legacy > 0 else 0.0
 
     # --- Wilson CI lower bound ---
-    # Hits = count of positive signed outcomes (signal fired correctly)
-    hits = int((signed_finite > 0).sum())
+    # Hits MUST be counted on the SAME deduped population used for n_eff.
+    # Using pre-dedup signed_finite would give hits > n_eff under heavy same-day
+    # co-firing, producing phat > 1 and sqrt(negative) inside the Wilson formula.
+    deduped_excess = pd.to_numeric(rows_deduped["outcome_excess"], errors="coerce")
+    deduped_direction = rows_deduped["direction"]
+    signed_deduped = _signed_outcome_series(deduped_excess, deduped_direction)
+    hits = int((signed_deduped[np.isfinite(signed_deduped)] > 0).sum())
     ci_low: float | None = None
     if n_eff >= WILSON_MIN_N:
         ci_low = _wilson_ci_low(hits, n_eff)
@@ -357,6 +366,12 @@ def build_estimates(
                 cell_rows.append(cell)
 
             # --- Marginal cell ('__all__') — always emitted ---
+            # NOTE: while the spine has zero regime stamps, __all__ and __unstamped__
+            # are byte-identical cells for every engine. Each duplicate doubles its
+            # horizon's weight in the pooling family denominator, slightly inflating
+            # family precision vs a de-duplicated family. This is the intended thin-
+            # stamp behavior: both cells carry the same sign/value so family_mean is
+            # unchanged; the inflation will correct itself as real stamps split them.
             if not h_df.empty:
                 cell = _build_cell(engine, MARGINAL_BUCKET, h, h_df)
                 cell_rows.append(cell)
@@ -403,22 +418,21 @@ def build_estimates(
     family_arming: dict[str, dict] = {}
     for engine_name in engines:
         eng_df = graded[graded["engine"] == engine_name].copy()
-        # Build event list — collapse per (symbol, as_of) key for arming
+        # Build event list — collapse per (symbol, as_of) key for arming.
+        # signed outcomes reuse _signed_outcome_series (the same helper used in
+        # _build_cell) to avoid a second reimplementation of the sign convention.
+        eng_excess = pd.to_numeric(eng_df["outcome_excess"], errors="coerce")
+        eng_signed = _signed_outcome_series(eng_excess, eng_df["direction"])
+        finite_eng = np.isfinite(eng_signed)
         events: list[dict] = []
-        for _, row in eng_df.iterrows():
-            oe = row.get("outcome_excess")
-            if not (isinstance(oe, (int, float)) and np.isfinite(float(oe))):
+        for idx_i, is_finite in enumerate(finite_eng):
+            if not is_finite:
                 continue
-            direction_val = row.get("direction")
-            # signed outcome for arming
-            d = 1 if direction_val is None else (
-                float(direction_val) if not pd.isna(direction_val) else 1
-            )
-            so = float(oe) if d == 0 else float(oe) * (1 if d > 0 else -1)
+            row = eng_df.iloc[idx_i]
             events.append({
                 "key": str(row.get("family") or engine_name),
                 "event_key": f"{row.get('symbol', '')}:{row.get('as_of', '')}",
-                "outcome": so,
+                "outcome": float(eng_signed.iloc[idx_i]),
                 "as_of": str(row.get("as_of") or ""),
             })
         arm_status = pooling.arming(events)

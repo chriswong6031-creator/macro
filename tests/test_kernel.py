@@ -369,6 +369,49 @@ def test_wilson_ci_computable_above_min_n(tmp_path):
     )
 
 
+def test_wilson_ci_population_consistency_under_cofire(tmp_path):
+    """REGRESSION: Wilson CI hits and n_eff must come from the same deduped population.
+
+    When n_raw > n_eff (same-day co-fires), a pre-dedup hits count can exceed n_eff,
+    giving phat > 1 and NaN (sqrt of negative) inside the Wilson formula. This test
+    constructs a cell where n_raw=2*n_eff (every event co-fires twice, all positive)
+    and asserts: (a) n_eff < n_raw, (b) wilson_ci_low is a finite float <= 1.0,
+    (c) hits implied by the CI is consistent with n_eff not n_raw.
+    """
+    from engine.neuralweb.kernel import WILSON_MIN_N, MARGINAL_BUCKET
+    n_events = WILSON_MIN_N + 3  # 15 distinct (symbol, as_of) pairs
+    rows: list[dict] = []
+    for i in range(1, n_events + 1):
+        # Two co-firing rows for every (symbol, as_of): idx=0 and idx=1
+        rows.append(_row(
+            engine="eng_cofire", as_of=f"2026-01-{i:02d}", symbol=f"CF{i}",
+            horizon=21, outcome_excess=0.04, quad_hard_label=None, idx=0,
+        ))
+        rows.append(_row(
+            engine="eng_cofire", as_of=f"2026-01-{i:02d}", symbol=f"CF{i}",
+            horizon=21, outcome_excess=0.04, quad_hard_label=None, idx=1,
+        ))
+    _write_index(tmp_path, rows)
+
+    from engine.neuralweb.kernel import build_estimates
+    df, _ = build_estimates(tmp_path)
+    cell = df[(df["engine"] == "eng_cofire") & (df["regime"] == MARGINAL_BUCKET)]
+    assert len(cell) == 1, "expected one __all__ cell"
+
+    row = cell.iloc[0]
+    assert row["n_raw"] == 2 * n_events, f"n_raw should be {2*n_events}; got {row['n_raw']}"
+    assert row["n_eff"] == n_events, f"n_eff should be {n_events}; got {row['n_eff']}"
+
+    ci = row["wilson_ci_low"]
+    assert ci is not None, "wilson_ci_low must not be None when n_eff >= WILSON_MIN_N"
+    assert isinstance(ci, float) and math.isfinite(ci), (
+        f"wilson_ci_low must be finite (pre-dedup hits > n_eff yields NaN); got {ci}"
+    )
+    assert 0.0 <= ci <= 1.0, (
+        f"wilson_ci_low must be in [0, 1]; got {ci} — phat > 1 would give negative sqrt"
+    )
+
+
 # ---------------------------------------------------------------------------
 # (6) Noise discount for asof_legacy fill_basis
 # ---------------------------------------------------------------------------
