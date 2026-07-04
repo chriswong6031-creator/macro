@@ -245,11 +245,18 @@ def validate_payload(payload: Any, *, as_of_now: datetime | None = None) -> tupl
                     # Degrade safely — if error_rates is not a dict (already flagged above),
                     # treat as empty so we still report the onset-alert constraint.
                     fsr = _er.get("false_start_rate") if isinstance(_er, dict) else None
-                    if fsr is None:
+                    o2c = _er.get("onset_to_confirmed_conversion") if isinstance(_er, dict) else None
+                    # R4 requires BOTH S3 error rates on onset-tier surfaces
+                    # (review minor on #1283: conversion rate was unenforced).
+                    if fsr is None or o2c is None:
+                        missing = [n for n, v in
+                                   (("false_start_rate", fsr),
+                                    ("onset_to_confirmed_conversion", o2c)) if v is None]
                         errors.append(
                             f"active_episodes[{i}] (onset tier, alert-class): "
-                            "disclaimers.error_rates.false_start_rate must be numeric — "
-                            "onset alerts must carry error-rate context (NEVER guarantee b)"
+                            f"disclaimers.error_rates.{{{', '.join(missing)}}} must be "
+                            "numeric — onset alerts must carry BOTH S3 error rates "
+                            "(NEVER guarantee b / R4)"
                         )
                         break  # report once, not per episode
 

@@ -108,7 +108,9 @@ The `lineage` field on each item provides the exact document anchor that establi
 
 ## The NEVER Guarantees
 
-These are contract-level prohibitions enforced by `validate_payload()` in code:
+> Additive-extension naming rule: because banned-implication checking is substring-based (err-toward-safety), additive field NAMES must avoid the substrings `forecast`, `predicted`, `target`, `expected_return`. A payload dated for the prior trading day has a practical freshness window of 24–48h (asof parses at UTC midnight).
+
+Prohibitions (a) and (b) are enforced by `validate_payload()` in code; (c) defines a consumer-side DISPLAY OBLIGATION plus the semantics of the `survivorship_flagged` field (the flag's presence is data; honoring the watermark is the consumer's contractual duty):
 
 **(a) No forecast without validated lineage.**
 Any payload key containing the substrings `"forecast"`, `"predicted"`, `"target"`, or `"expected_return"` is an error unless the containing item has `confidence_class == "validated"`. Since no endpoint is currently validated, these keys must not appear in any payload.

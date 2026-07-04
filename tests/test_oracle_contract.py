@@ -478,3 +478,14 @@ def test_nightly_writes_on_valid_payload(tmp_path, monkeypatch):
     assert written.exists()
     loaded = json.loads(written.read_text())
     assert loaded["asof"] == _FRESH_ASOF
+
+
+def test_onset_alert_requires_conversion_rate_too():
+    """R4 requires BOTH S3 error rates on onset surfaces (review minor on
+    #1283): false_start_rate present but onset_to_confirmed_conversion null
+    must FAIL validation."""
+    payload = _valid_payload()
+    payload["disclaimers"]["error_rates"]["onset_to_confirmed_conversion"] = None
+    ok, errs = validate_payload(payload)
+    assert not ok
+    assert any("onset_to_confirmed_conversion" in e for e in errs)
