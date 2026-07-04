@@ -131,7 +131,12 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/
+          # site/qledger: the qledger grader (scripts/collect.py -> grade_qledger)
+          # writes the TRACKED site/qledger/track_record.json (un-ignored by #1139).
+          # Left unstaged it blocks `git pull --rebase` ("unstaged changes") and the
+          # whole data push silently dies after 5 attempts — 07-03/07-04 collections
+          # were lost exactly this way (the sentinel staging-gap pattern).
+          git add data/ site/qledger/
           if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
           # best-effort push: losing a race with a concurrent push must NOT fail the
