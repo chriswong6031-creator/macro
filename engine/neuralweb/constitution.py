@@ -217,6 +217,7 @@ def grant_authority(
     evidence: dict[str, Any],
     *,
     floors: dict[str, int],
+    target_level: "AuthorityLevel | None" = None,
     now: datetime | None = None,
     max_staleness_days: int = 120,
 ) -> GrantResult:
@@ -232,6 +233,10 @@ def grant_authority(
     floors : dict with keys:
         min_n       : int — minimum total graded calls required (e.g. 30)
         min_events  : int — minimum loud-state calls required (e.g. 8)
+    target_level : AuthorityLevel | None
+        Optional target authority level.  If A7_ORIGINATE, the grant is refused
+        unconditionally BEFORE any evidence evaluation (Article 1 — Origination Ban).
+        Hard-coded refusal; no amount of evidence can override this.
     now : datetime | None
         Current time (UTC).  Defaults to datetime.now(timezone.utc).
     max_staleness_days : int
@@ -247,7 +252,19 @@ def grant_authority(
              everywhere because wilson_lb <= point_estimate always; zero grant-more
              cases across all k/n/base sweep, verified by tests)
           3. evidence_asof within max_staleness_days
+        Always refused when target_level is A7_ORIGINATE (Article 1 unconditional ban).
     """
+    # Article 1 — Origination Ban: A7 is refused unconditionally, before any evidence
+    # evaluation.  No amount of evidence, sample size, or Wilson lift can override this.
+    if target_level is AuthorityLevel.A7_ORIGINATE:
+        return GrantResult(
+            granted=False,
+            lift_lb=None,
+            wilson_lb=None,
+            reason="article-1-origination-ban: A7/ORIGINATE is permanently refused",
+            lapses_at=None,
+        )
+
     if now is None:
         now = datetime.now(timezone.utc)
 

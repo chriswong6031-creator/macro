@@ -16,10 +16,9 @@ global lock.
 
 NEVER-RAISE CONTRACT
 --------------------
-append_event() catches all exceptions, writes a _write_error key inside the
-row if serialisation succeeded but writing failed, and NEVER propagates the
-exception to the caller.  A governance-logging failure must never abort the
-lane that generated it.
+append_event() catches all exceptions, logs a warning via the module logger,
+and returns False — it NEVER propagates the exception to the caller.
+A governance-logging failure must never abort the lane that generated it.
 
 EVENT-TYPE VOCABULARY
 ---------------------
@@ -51,7 +50,6 @@ Optional on all rows:
     evidence        dict — evidence package at decision time
     root            str  — project root used by the writer (for test isolation)
     note            str  — free-form annotation
-    _write_error    str  — populated only when the write failed (never raised)
 """
 from __future__ import annotations
 
