@@ -82,7 +82,12 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-warnings.filterwarnings("ignore")
+
+if __name__ == "__main__":
+    # CLI-only silencer.  The warnings filter list is PROCESS-GLOBAL state: at module
+    # level it leaks out of a bare import and mutes warnings for the rest of the
+    # pytest run (walk_forward.py idiom).
+    warnings.filterwarnings("ignore")
 
 from lib import config, store  # noqa: E402
 
