@@ -80,13 +80,26 @@ def main() -> int:
         fetch_shortages()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("fda_shortages drip failed (non-fatal): %s", e)
+    # W1b: policy catalyst calendar — pre-compute before the cascade so policy_reg can be
+    # passed in directly (avoids double-loading the parquet inside the cascade lazy-load).
+    # Non-fatal: cascade degrades gracefully if policy_calendar fails.
+    try:
+        from engine.policy_calendar import compute_policy_calendar
+        policy_calendar = compute_policy_calendar()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("policy_calendar failed (non-fatal): %s", e)
+        policy_calendar = None
     try:
         from engine.foresight_cascade import compute_foresight_cascade
         # write_ledger=True so the daily build accrues the forward-grading record (deduped by
         # theme+asof, so calling alongside engine/run.py's leaf is idempotent). inputs_out
         # captures the resolved sub-objects for reuse by the shadow pass below.
         cascade_inputs: dict = {}
-        cascade = compute_foresight_cascade(write_ledger=True, inputs_out=cascade_inputs)
+        cascade = compute_foresight_cascade(
+            write_ledger=True,
+            inputs_out=cascade_inputs,
+            policy_reg=policy_calendar,
+        )
     except Exception as e:  # noqa: BLE001
         log.warning("foresight cascade unavailable — skipping page: %s", e)
         return 0
@@ -284,6 +297,7 @@ def main() -> int:
             analyst=analyst,
             monitor=monitor,
             health=health,
+            policy_calendar=policy_calendar,
             asof=cascade.get("asof"),
             generated_utc=built,
             nav_prefix="",

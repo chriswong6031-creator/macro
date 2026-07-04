@@ -684,6 +684,116 @@
   </div>
   {% endif %}
 
+  {# ---- W1b: Policy Catalyst Calendar + Pipeline (Regulatory-Action Convergence) ---- #}
+  {% if policy_calendar and policy_calendar.themes %}
+  <div class="fx-panel fx-policy-cal">
+    <h2>{{ t('Policy catalyst calendar — regulatory-action convergence', '政策催化日历——监管行动收敛') }}</h2>
+    <div class="sub">{{ t(
+      '<b>Display-only · Dated-structured evidence class.</b> Federal Register PRORULE/RULE events are hard, dated, known-in-advance — publication-date-stamped the day they appear, weeks-to-months before money lands and before financial media narrates. <b>Entity-list additions</b> (BIS / Industry &amp; Security Bureau) are supply-chain-rewiring events directly relevant to semis/minerals themes. <b>Empirical PRORULE→RULE latency</b> is measured via Regulation Identifier Number (RIN) join across the 2015-to-date backfill — never modeled. Forward-graded: every upcoming-event flag seeds a ledger row today.',
+      '<b>仅供展示·有日期结构化证据类。</b>联邦公报 PRORULE/RULE 事件具有硬性日期且提前可知——在资金落地及金融媒体报道之前数周至数月，以发布日期为时点戳记。<b>实体清单新增</b>（BIS/工业与安全局）是直接影响半导体/矿产主题的供应链重组事件。<b>实证 PRORULE→RULE 时滞</b>通过对2015年至今回填数据的监管标识符（RIN）关联测量——从不建模。前瞻评分：每个即将发生的事件标记当日植入账本。') }}
+    </div>
+
+    {# ---- Upcoming dated events strip ---- #}
+    {% set upcoming = policy_calendar.upcoming_events %}
+    {% if upcoming %}
+    <h3 class="fx-sub-h">{{ t('Upcoming comment-close / rule-effective events', '即将到期的意见征集截止/规则生效事项') }}</h3>
+    <table class="fx-pol-tbl">
+      <thead><tr>
+        <th>{{ t('Days', '天') }}</th>
+        <th>{{ t('Date', '日期') }}</th>
+        <th>{{ t('Theme', '主题') }}</th>
+        <th>{{ t('Type', '类型') }}</th>
+        <th>{{ t('Title', '标题') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for ev in upcoming[:20] %}
+      <tr class="{% if ev.days_away is not none and ev.days_away <= 7 %}pol-urgent{% elif ev.days_away is not none and ev.days_away <= 30 %}pol-soon{% endif %}">
+        <td class="num"><b>{{ ev.days_away if ev.days_away is not none else '—' }}</b></td>
+        <td>{{ ev.date }}</td>
+        <td><span class="chip2 chip-sm">{{ ev.basket_id }}</span></td>
+        <td><span class="fx-rstage stg-{{ ev.reg_stage }}">{{ ev.reg_stage }}</span></td>
+        <td class="pol-title">{{ ev.title }}</td>
+      </tr>
+      {% endfor %}
+      {% if upcoming|length > 20 %}
+      <tr><td colspan="5" class="pol-more">{{ t('… and', '…还有') }} {{ upcoming|length - 20 }} {{ t('more', '条') }}</td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# ---- Entity-list sub-signal ---- #}
+    {% set el_events = policy_calendar.entity_list_events %}
+    {% if el_events %}
+    <h3 class="fx-sub-h">{{ t('BIS entity-list supply-chain events (semis / minerals / AI)', 'BIS实体清单供应链事件（半导体/矿产/AI）') }}</h3>
+    <div class="sub">{{ t('BIS = Bureau of Industry and Security (U.S. Commerce Dept). Entity-list additions restrict export of controlled technology — a dated supply-chain-rewiring event for ai_semiconductors, semicap_equipment, rare_earth_critical_min, memory_storage themes. Recent = last 60 days.', 'BIS = 美国商务部工业与安全局。实体清单新增限制受控技术出口，是ai_semiconductors、semicap_equipment、rare_earth_critical_min、memory_storage主题的有日期供应链重组事件。近期 = 过去60天。') }}</div>
+    <table class="fx-pol-tbl">
+      <thead><tr>
+        <th>{{ t('Date', '日期') }}</th>
+        <th>{{ t('Status', '状态') }}</th>
+        <th>{{ t('Title', '标题') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for ev in el_events[:15] %}
+      <tr>
+        <td>{{ ev.date }}</td>
+        <td>{% if ev.is_upcoming %}<span class="pol-badge upcoming">{{ t('Upcoming', '即将') }}</span>{% else %}<span class="pol-badge recent">{{ t('Recent', '近期') }}</span>{% endif %}</td>
+        <td class="pol-title">{{ ev.title }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# ---- Per-theme pipeline chips ---- #}
+    <h3 class="fx-sub-h">{{ t('Per-theme pipeline status', '各主题管线状态') }}</h3>
+    <div class="fx-pol-chips">
+    {% for basket_id, tr in policy_calendar.themes.items() %}
+    {% if tr.prorule_inflow_60d or tr.rule_finalization_60d or tr.days_to_next_comment_close is not none %}
+    <div class="pol-chip">
+      <span class="pol-basket">{{ basket_id }}</span>
+      {% if tr.days_to_next_comment_close is not none %}
+      <span class="chip2 chip-sm">{{ t('comment close', '意见截止') }} {{ tr.days_to_next_comment_close }}{{ t('d', '天') }}</span>
+      {% endif %}
+      {% if tr.prorule_inflow_60d %}<span class="chip2 chip-sm">{{ tr.prorule_inflow_60d }} {{ t('PRORULE 60d', '拟议规则60天') }}</span>{% endif %}
+      {% if tr.rule_finalization_60d %}<span class="chip2 chip-sm">{{ tr.rule_finalization_60d }} {{ t('RULE 60d', '最终规则60天') }}</span>{% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+    </div>
+
+    {# ---- Empirical PRORULE→RULE latency ---- #}
+    {% set lat = policy_calendar.latency_summary %}
+    {% if lat %}
+    <h3 class="fx-sub-h">{{ t('Empirical PRORULE→RULE latency (R1 — measured, not modeled)', '实证 PRORULE→RULE 时滞（R1——实测，非建模）') }}</h3>
+    <div class="sub">{{ t('Latency measured via Regulation Identifier Number (RIN) join across the 2015→2026 Federal Register backfill. Open PRORULE rows (no matching RULE yet) are excluded from the median — counted separately as still-pending. This is a distribution measurement, never a latency score.', '时滞通过2015→2026联邦公报回填数据的监管标识符（RIN）关联实测。尚无匹配最终规则的开放PRORULE行从中位数中排除——单独计为仍待决。这是分布测量，绝非时滞评分。') }}</div>
+    <table class="fx-pol-tbl">
+      <thead><tr>
+        <th>{{ t('Theme', '主题') }}</th>
+        <th class="num">{{ t('Median days', '中位天数') }}</th>
+        <th class="num">{{ t('P25', 'P25') }}</th>
+        <th class="num">{{ t('P75', 'P75') }}</th>
+        <th class="num">{{ t('n (matched)', 'n（匹配）') }}</th>
+        <th class="num">{{ t('n open', 'n待决') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for basket, ls in lat.items() %}
+      <tr>
+        <td><span class="chip2 chip-sm">{{ basket }}</span></td>
+        <td class="num">{% if ls.median_days is not none %}<b>{{ ls.median_days }}</b>{% else %}—{% endif %}</td>
+        <td class="num">{{ ls.p25_days if ls.p25_days is not none else '—' }}</td>
+        <td class="num">{{ ls.p75_days if ls.p75_days is not none else '—' }}</td>
+        <td class="num">{{ ls.n }}</td>
+        <td class="num">{{ ls.n_open }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="sub">{{ t('Latency = publication_date(RULE) − publication_date(PRORULE) for the same RIN. One PRORULE may produce multiple RULE amendments; earliest RULE taken per RIN/basket pair. Source: Federal Register API, 2015–present.', '时滞 = 同一RIN的规则发布日期 − 拟议规则发布日期。一条PRORULE可能产生多条规则修订；每个RIN/主题对取最早规则。来源：联邦公报API，2015年至今。') }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {# ---- forward-graded track record ---- #}
   <div class="fx-panel">
     <h2>{{ t('Forward-graded track record', '前瞻评分记录') }}</h2>
