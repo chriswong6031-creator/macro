@@ -477,3 +477,38 @@ class TestS1InterimWidening:
         assert st["macd_turn"] is None
         st2 = cm._member_state("KNOWN", "T4")   # known but not fresh → False
         assert st2["macd_turn"] is False
+
+
+# ---------------------------------------------------------------------------
+# W1.5 (§7) — massive-store fallback with split guard
+# ---------------------------------------------------------------------------
+class TestW15MassiveFallback:
+
+    def _massive(self, tmp_path, monkeypatch, ticker, closes):
+        import engine.cohort_metrics as cm
+        from lib import config as _config
+        msd = tmp_path / "massive_stock_day"
+        msd.mkdir(parents=True, exist_ok=True)
+        idx = pd.bdate_range("2024-01-01", periods=len(closes))
+        pd.DataFrame({"close": closes}, index=idx).to_parquet(msd / f"{ticker}.parquet")
+        monkeypatch.setattr(_config, "data_dir", lambda: tmp_path)
+        # adjusted stores miss the name → fallback path exercises
+        monkeypatch.setattr(cm.basket_index, "_load_member_ohlcv", lambda t: None)
+        return cm
+
+    def test_fallback_serves_clean_series(self, tmp_path, monkeypatch):
+        cm = self._massive(tmp_path, monkeypatch, "NEWCO",
+                           list(np.linspace(100, 120, 320)))
+        c = cm._close("NEWCO")
+        assert c is not None and len(c) == 320
+
+    def test_split_guard_marks_uncovered(self, tmp_path, monkeypatch):
+        """A raw 4:1 split (unadjusted store) must yield None — honestly
+        uncovered, never a fabricated capitulation."""
+        closes = list(np.linspace(100, 110, 160)) + list(np.linspace(27.5, 30, 160))
+        cm = self._massive(tmp_path, monkeypatch, "SPLITCO", closes)
+        assert cm._close("SPLITCO") is None
+
+    def test_absent_everywhere_is_none(self, tmp_path, monkeypatch):
+        cm = self._massive(tmp_path, monkeypatch, "OTHER", [100.0] * 10)
+        assert cm._close("GHOST") is None
