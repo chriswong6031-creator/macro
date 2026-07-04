@@ -293,22 +293,38 @@ def test_emit_det_conviction_no_double_count(tmp_path):
 
 def test_emit_det_extended_clamp_from_rs(tmp_path):
     """(b) Deterministic extended flag: rs > _EXTENDED_PP triggers the −15 dock even with
-    no brain, and rs <= _EXTENDED_PP does not."""
+    no brain, and rs <= _EXTENDED_PP does not.
+
+    RS is now computed DIRECTLY from yahoo parquets (not from the picks list).
+    We build yahoo parquets where EXT outperforms SPY by ~40pp and NON by ~10pp.
+    """
+    import pandas as pd
+    yahoo = tmp_path / "data" / "yahoo"
+    yahoo.mkdir(parents=True)
+    idx = pd.date_range("2025-01-01", periods=200, freq="B")
+    # SPY: flat
+    spy_p = [100.0] * 200
+    pd.DataFrame({"close": spy_p}, index=idx).to_parquet(yahoo / "SPY.parquet")
+    # EXT: up +40% over 60 days (from bar 140 onward) → RS ≈ +40pp
+    ext_p = [50.0] * 140 + [50.0 * (1 + i * 0.40 / 60) for i in range(60)]
+    pd.DataFrame({"close": ext_p}, index=idx).to_parquet(yahoo / "EXT.parquet")
+    # NON: up +10% over 60 days → RS ≈ +10pp
+    non_p = [50.0] * 140 + [50.0 * (1 + i * 0.10 / 60) for i in range(60)]
+    pd.DataFrame({"close": non_p}, index=idx).to_parquet(yahoo / "NON.parquet")
+
     by_ticker = {"as_of": "x", "tickers": {
         "EXT": {"ticker": "EXT", "convergence_score": 3, "weighted_score": 1.5,
                 "channels": ["a", "b", "c"], "trump_linked": False},
         "NON": {"ticker": "NON", "convergence_score": 3, "weighted_score": 1.5,
                 "channels": ["a", "b", "c"], "trump_linked": False},
     }}
-    # Supply rs via the picks artifact (rs_by map in build_mastermind)
-    picks_ext  = {"picks": [{"ticker": "EXT", "rs_vs_spy_60d": 40.0},
-                             {"ticker": "NON", "rs_vs_spy_60d": 10.0}]}
-    out = EM.build_mastermind(by_ticker, {}, {}, picks_ext, {}, root=tmp_path, top=10)
-    by_tk = {s["ticker"]: s for s in out["signals"]}
-    assert by_tk["EXT"]["extended"] is True,  "rs=40 > 35 → extended must be True"
-    assert by_tk["NON"]["extended"] is False, "rs=10 ≤ 35 → extended must be False"
-    # EXT gets the −15 dock; NON does not — so EXT must score lower.
-    # (The exact gap also includes the rs-confirm bonus difference, so we test direction only.)
+    out = EM.build_mastermind(by_ticker, {}, {}, {"picks": []}, {}, root=tmp_path, top=10)
+    # EXT may be rolling_over (recently strong) or in signals — check both lists
+    all_sigs = out["signals"] + out.get("broken_signals", [])
+    by_tk = {s["ticker"]: s for s in all_sigs}
+    assert by_tk["EXT"]["extended"] is True,  f"rs={by_tk['EXT']['rs_vs_spy_60d']} > 35 → extended must be True"
+    assert by_tk["NON"]["extended"] is False, f"rs={by_tk['NON']['rs_vs_spy_60d']} ≤ 35 → extended must be False"
+    # EXT gets the −15 dock; NON does not — so EXT must score lower (same weighted base).
     assert by_tk["EXT"]["signal_score"] < by_tk["NON"]["signal_score"], (
         f"extended name must score lower; got EXT={by_tk['EXT']['signal_score']}, NON={by_tk['NON']['signal_score']}")
     # Verify the -15 dock fires in isolation via _signal_score (same rs → isolates the extended flag)
