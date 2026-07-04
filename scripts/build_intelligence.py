@@ -5,6 +5,14 @@ Merges two already-built per-ticker artifacts into ONE the Mastermind bot pulls:
   • site/altdata/mastermind.json    (Signal Intelligence Desk — scored alt-data signal)
   • site/altdata/by_ticker.json     (alt-data v2 substrate, fallback for unscored names)
 
+Single-writer fix (neural-web W0 PR5):
+  Previously this module called _crosssurface_radar(), which mutated
+  site/basketdata/radar.json in-place after build_baskets had already written it.
+  That was second-writer rot (census-flagged).  The fix: build_intelligence now
+  writes site/basketdata/radar_news.json as its OWN artifact (keyed by basket_id →
+  {headlines: [...]}).  radar_panel.js fetches both radar.json and radar_news.json
+  and merges headlines client-side.  radar.json is never touched here.
+
 Run AFTER build_news + build_alt_data + the Alt-Data Brain (so both per-ticker
 surfaces exist). Standalone, degrade-safe — missing inputs just yield empty
 sub-objects; never breaks the build.
@@ -26,29 +34,34 @@ from engine import intelligence  # noqa: E402
 log = logging.getLogger(__name__)
 
 
-def _crosssurface_radar(site) -> None:
-    """Cross-surface: add a per-flag `headlines` field to the Divergence Radar from the
-    financial-news basket sections — display-only context, NEVER fused into the radar's
-    z-score (it leaves the existing news-velocity `news` leg untouched). Degrade-safe."""
-    radar_p = site / "basketdata" / "radar.json"
+def _build_radar_news(site) -> None:
+    """Write site/basketdata/radar_news.json: per-basket-id news headlines sourced
+    from site/news/financial.json.  This is build_intelligence's OWN artifact —
+    radar.json is NEVER touched here (single-writer discipline).
+    Degrade-safe: missing inputs silently yield an empty output."""
     fin_p = site / "news" / "financial.json"
-    if not (radar_p.exists() and fin_p.exists()):
+    out_p = site / "basketdata" / "radar_news.json"
+    if not fin_p.exists():
         return
     try:
-        radar = json.loads(radar_p.read_text())
-        baskets = (json.loads(fin_p.read_text()) or {}).get("baskets", {}) or {}
-        n = 0
-        for f in radar.get("flags", []):
-            hs = (baskets.get(f.get("basket"), {}) or {}).get("headlines", []) or []
-            f["headlines"] = [{"title": h.get("title"), "url": h.get("url"),
-                               "source": h.get("source") or h.get("domain"),
-                               "sentiment": h.get("sentiment")} for h in hs[:3]]
-            n += bool(f["headlines"])
-        radar_p.write_text(json.dumps(radar, default=str))
-        log.info("radar cross-surface: news headlines added to %d/%d flags",
-                 n, len(radar.get("flags", [])))
+        baskets_news = (json.loads(fin_p.read_text()) or {}).get("baskets", {}) or {}
+        radar_news: dict[str, dict] = {}
+        for basket_id, bdata in baskets_news.items():
+            hs = (bdata or {}).get("headlines", []) or []
+            if hs:
+                radar_news[basket_id] = {
+                    "headlines": [
+                        {"title": h.get("title"), "url": h.get("url"),
+                         "source": h.get("source") or h.get("domain"),
+                         "sentiment": h.get("sentiment")}
+                        for h in hs[:3]
+                    ]
+                }
+        (site / "basketdata").mkdir(parents=True, exist_ok=True)
+        out_p.write_text(json.dumps({"baskets": radar_news}, default=str))
+        log.info("radar_news.json written: %d baskets with headlines", len(radar_news))
     except Exception as e:  # noqa: BLE001
-        log.warning("radar cross-surface failed (%s)", e)
+        log.warning("radar_news build failed (%s)", e)
 
 
 def build(write: bool = True) -> dict:
@@ -60,7 +73,7 @@ def build(write: bool = True) -> dict:
         (outdir / "by_ticker.json").write_text(json.dumps(vm, default=str))
         log.info("built site/intelligence/by_ticker.json — %d tickers (%d with both news+alt)",
                  vm.get("n_tickers", 0), vm.get("n_with_both", 0))
-        _crosssurface_radar(site)
+        _build_radar_news(site)
     return vm
 
 

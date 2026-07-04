@@ -67,8 +67,20 @@ def _basket_attributed(existing: set, today: date) -> list:
     the theme's activity is up carries the UNPRICED divergence; a leader has already moved.
     Uses each member's ret_20d ranked WITHIN the basket (no SPY benchmark needed). The edge
     is the basket's, discounted by how it's attributed. Context-only; weaker than a direct
-    alt signal (source='basket_attributed')."""
+    alt signal (source='basket_attributed').
+
+    Single-writer note (W0 PR5): edge_score lives in radar_enriched.json (written by
+    build_radar_plus), not in radar.json. Load enriched edge index first; fall back to
+    the inline flag field for one cycle of backward compat (pre-fix runs)."""
     radar = rp._load("site/basketdata/radar.json") or {}
+    # Build basket→edge_score from radar_enriched.json (canonical post W0 PR5).
+    # Fall back to flag-inline edge_score for pre-fix runs where enriched file is absent.
+    enriched_raw = rp._load("site/basketdata/radar_enriched.json") or {}
+    enriched_edge: dict[str, int] = {
+        ef.get("basket"): int(ef.get("edge_score") or 0)
+        for ef in (enriched_raw.get("flags") or [])
+        if ef.get("basket") and ef.get("edge_score") is not None
+    }
     baskets = rp._load("site/basketdata/baskets.json") or {}
     bmem = {b.get("id"): (b.get("members") or []) for b in (baskets.get("baskets") or [])}
     out = []
@@ -83,7 +95,9 @@ def _basket_attributed(existing: set, today: date) -> list:
             continue
         ranked = sorted(members, key=lambda m: m["ret_20d"])
         n = len(ranked)
-        bedge = float(f.get("edge_score") or 0)
+        basket_id = f.get("basket", "")
+        # Use enriched edge_score when available; fall back to inline (legacy/first-run).
+        bedge = float(enriched_edge.get(basket_id) if enriched_edge else (f.get("edge_score") or 0))
         bname = f.get("name") or f.get("basket")
         bullish = state in ("POSITIVE_DIVERGENCE", "CONFIRMED_UP")
         for i, m in enumerate(ranked):
@@ -122,7 +136,7 @@ def _basket_attributed(existing: set, today: date) -> list:
             out.append({
                 "ticker": t, "state": mstate, "lifecycle": lc, "edge_score": edge,
                 "signal_score": None, "rs_vs_spy_60d": rs,
-                "within_basket_pct": round(pct, 2), "basket": f.get("basket"),
+                "within_basket_pct": round(pct, 2), "basket": basket_id,
                 "basket_name": bname, "basket_state": state, "source": "basket_attributed",
                 "channels": [], "affiliations": [],
                 "note": _attr_note(t, mstate, bname, pct),

@@ -174,8 +174,12 @@ def snapshot(today: date | str | None = None, root: Path | None = None) -> int:
 
         new_rows: list[dict] = []
 
-        # -- per-basket from radar.json --
+        # -- per-basket: hypotheses from radar.json; edge_score from radar_enriched.json --
+        # Single-writer fix (neural-web W0 PR5): build_radar_plus now writes edge_score to
+        # radar_enriched.json, not radar.json.  Fallback to radar.json edge_score for one
+        # cycle of backward compatibility (legacy runs where radar_enriched.json is absent).
         radar_p = root / "site" / "basketdata" / "radar.json"
+        enriched_p = root / "site" / "basketdata" / "radar_enriched.json"
         if radar_p.exists():
             try:
                 rd = json.loads(radar_p.read_text())
@@ -187,14 +191,28 @@ def snapshot(today: date | str | None = None, root: Path | None = None) -> int:
                     for h in rd.get("hypotheses", [])
                     if h.get("horizon_d") and h.get("subject")
                 }
+                # Build basket→edge_score from radar_enriched.json (canonical post W0 PR5);
+                # fall back to radar.json flag.edge_score for pre-fix runs.
+                enriched_edge: dict[str, int] = {}
+                if enriched_p.exists():
+                    try:
+                        ed = json.loads(enriched_p.read_text())
+                        for ef in ed.get("flags", []):
+                            bid = ef.get("basket", "")
+                            es = ef.get("edge_score")
+                            if bid and es is not None:
+                                enriched_edge[bid] = int(es)
+                    except Exception as _ee:  # noqa: BLE001
+                        log.debug("snapshot: radar_enriched.json parse error: %s", _ee)
                 for flag in rd.get("flags", []):
                     state = flag.get("state", "")
                     if state == "QUIET":
                         continue
-                    es = flag.get("edge_score")
+                    basket_id = flag.get("basket", "")
+                    # Prefer enriched edge_score; fall back to inline (legacy/first-run).
+                    es = enriched_edge.get(basket_id) if enriched_edge else flag.get("edge_score")
                     if es is None:
                         continue
-                    basket_id = flag.get("basket", "")
                     proxy = _proxy_for(basket_id, mem)
                     if not proxy:
                         continue
