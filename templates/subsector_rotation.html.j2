@@ -20,6 +20,60 @@
   .sr-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
   .sr-head .sub { color:var(--muted); font-size:12.5px; margin-top:5px; max-width:80ch; line-height:1.5; }
   .sr-foot { color:var(--muted); font-size:11px; margin:16px 2px 0; line-height:1.6; }
+
+  /* ── Time Machine ── */
+  .tm-section { margin:40px 2px 0; }
+  .tm-section h2 { font-size:18px; font-weight:800; letter-spacing:-.01em; margin:0 0 4px; }
+  .tm-sub { color:var(--muted); font-size:12.5px; margin-bottom:18px; }
+  .tm-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-bottom:12px; }
+  .tm-tier-btns { display:flex; gap:4px; }
+  .tm-tier-btn { padding:4px 11px; border-radius:20px; border:1px solid var(--line); background:transparent;
+    color:var(--muted); font:inherit; font-size:12px; cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
+  .tm-tier-btn.active { background:var(--text); color:var(--bg); border-color:var(--text); }
+  .tm-play-btn { width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:transparent;
+    color:var(--text); font:inherit; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .tm-play-btn:hover { background:var(--panel2); }
+  .tm-speed-sel { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:6px;
+    padding:3px 7px; font:inherit; font-size:12px; cursor:pointer; }
+  .tm-date-lbl { font-size:13px; font-weight:600; min-width:80px; }
+  .tm-slider-wrap { width:100%; margin-bottom:8px; }
+  .tm-slider { width:100%; accent-color:var(--up); }
+  .tm-scatter-wrap { display:flex; flex-wrap:wrap; gap:12px; }
+  .tm-canvas-box { flex:1 1 340px; min-width:280px; position:relative; }
+  .tm-canvas-box canvas { width:100%; height:auto; display:block; border-radius:8px;
+    border:1px solid var(--line); background:var(--panel); }
+  .tm-scatter-label { position:absolute; font-size:10px; color:var(--muted); pointer-events:none; }
+  .tm-scatter-label.q-tl { top:6px; left:8px; }
+  .tm-scatter-label.q-tr { top:6px; right:8px; text-align:right; }
+  .tm-scatter-label.q-bl { bottom:6px; left:8px; }
+  .tm-scatter-label.q-br { bottom:6px; right:8px; text-align:right; }
+  .tm-episodes-panel { flex:0 0 240px; min-width:220px; max-height:380px; overflow-y:auto; }
+  .tm-ep-hd { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--muted); margin:0 0 8px; }
+  .tm-ep-item { margin-bottom:8px; padding:7px 10px; border-radius:6px; background:var(--panel2);
+    border:1px solid var(--line); font-size:12px; line-height:1.5; }
+  .tm-ep-dir-in  { border-left:3px solid var(--up); }
+  .tm-ep-dir-out { border-left:3px solid var(--down); }
+  .tm-ep-node { font-weight:600; }
+  .tm-ep-badge { display:inline-block; font-size:10px; font-weight:600; text-transform:uppercase;
+    padding:1px 5px; border-radius:4px; margin-left:4px; vertical-align:middle;
+    background:color-mix(in srgb, var(--muted) 15%, transparent); color:var(--muted); }
+  .tm-ep-badge.onset     { background:color-mix(in srgb, var(--warn) 18%, transparent); color:var(--warn); }
+  .tm-ep-badge.confirmed { background:color-mix(in srgb, var(--up) 18%, transparent); color:var(--up); }
+  .tm-ep-badge.undeniable{ background:color-mix(in srgb, var(--up) 30%, transparent); color:var(--up); }
+  .tm-ep-pair { font-size:11px; color:var(--muted); margin-top:2px; }
+  .tm-ep-empty { color:var(--muted); font-size:12px; }
+  .tm-presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .tm-preset-btn { padding:4px 10px; border-radius:16px; border:1px solid var(--line); background:transparent;
+    color:var(--muted); font:inherit; font-size:11.5px; cursor:pointer; transition:background .15s,color .15s; }
+  .tm-preset-btn:hover { background:var(--panel2); color:var(--text); }
+  .tm-watermark { font-size:11px; color:var(--muted); margin-top:6px; }
+  .tm-loading { color:var(--muted); font-size:13px; padding:32px 0; text-align:center; }
+  .tm-quadrant-line { stroke:var(--line,#2a2f3a); stroke-width:1; stroke-dasharray:4,3; }
+  @media (max-width:520px) {
+    .tm-scatter-wrap { flex-direction:column; }
+    .tm-episodes-panel { max-height:220px; }
+  }
 </style>
 </head>
 <body>
@@ -63,6 +117,72 @@
   </div>
 </div>
 
+<!-- ── Oracle Time Machine ──────────────────────────────────────────────────── -->
+<div class="wrap">
+  <section class="tm-section" id="tm-section" aria-label="Time Machine">
+    <h2>⏱ {{ t('Rotation Time Machine', '轮动时光机') }}</h2>
+    <p class="tm-sub">{{ t(
+      'Replay the full history of sector &amp; subsector relative rotation. Each dot is a sector or subsector; horizontal axis = relative strength (right = stronger vs peers), vertical = whether that strength is heating up or cooling (up = accelerating). Trails show the last 10 sessions. Episode annotations mark measured rotation events from the catalog. No predictive claim — this replays measured history.',
+      '回放板块与子行业相对轮动的完整历史。每个点代表一个板块或子行业；横轴 = 相对强度（越靠右越强），纵轴 = 该强度是在升温还是降温（越靠上越热）。轨迹显示近10个交易周期。情节注释标记了来自数据库的实际轮动事件。无预测性主张——仅回放实测历史。'
+    ) }}</p>
+
+    <!-- Preset playlist -->
+    <div class="tm-presets" id="tm-presets">
+      <span class="tm-ep-hd l-en">Famous episodes</span>
+      <span class="tm-ep-hd l-zh">经典轮动片段</span>
+    </div>
+
+    <!-- Tier toggle + playback controls -->
+    <div class="tm-controls">
+      <div class="tm-tier-btns" role="group">
+        <button class="tm-tier-btn active" data-tier="s" id="tm-btn-s">
+          <span class="l-en">Sectors 1998→</span><span class="l-zh">板块 1998→</span>
+        </button>
+        <button class="tm-tier-btn" data-tier="m" id="tm-btn-m">
+          <span class="l-en">Subsectors+Themes 2022→</span><span class="l-zh">子行业+主题 2022→</span>
+        </button>
+      </div>
+      <button class="tm-play-btn" id="tm-play" aria-label="Play / Pause">▶</button>
+      <select class="tm-speed-sel" id="tm-speed" aria-label="Playback speed">
+        <option value="1">1×</option>
+        <option value="2">2×</option>
+        <option value="4">4×</option>
+      </select>
+      <span class="tm-date-lbl" id="tm-date-lbl">—</span>
+    </div>
+
+    <!-- Slider -->
+    <div class="tm-slider-wrap">
+      <input type="range" class="tm-slider" id="tm-slider" min="0" max="0" value="0" aria-label="Date scrubber">
+    </div>
+
+    <!-- Survivorship watermark (Tier M only) -->
+    <p class="tm-watermark" id="tm-watermark" style="display:none">
+      <span class="l-en">Membership as of 2026-06 — historical composition approximated</span>
+      <span class="l-zh">成员截至2026年6月 — 历史成份为近似估算</span>
+    </p>
+
+    <!-- Scatter + episodes panel -->
+    <div class="tm-scatter-wrap">
+      <div class="tm-canvas-box" id="tm-canvas-box">
+        <div class="tm-loading" id="tm-loading">
+          <span class="l-en">Loading Time Machine…</span><span class="l-zh">正在加载时光机…</span>
+        </div>
+        <!-- canvas injected by JS -->
+        <!-- Quadrant labels injected by JS -->
+      </div>
+      <div class="tm-episodes-panel" id="tm-ep-panel">
+        <div class="tm-ep-hd">
+          <span class="l-en">Active episodes</span><span class="l-zh">当前活跃情节</span>
+        </div>
+        <div id="tm-ep-list"><span class="tm-ep-empty">
+          <span class="l-en">—</span><span class="l-zh">—</span>
+        </span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>
@@ -70,5 +190,528 @@
 
 <script src="theme.js"></script>
 <script src="subsector_rotation.js"></script>
+<script>
+/* Oracle Time Machine — inline JS for subsector_rotation.html
+ * Lazy-loads from oracledata/ (IntersectionObserver); canvas-based RRG scatter.
+ * No new JS dependencies.  All color tokens from CSS custom properties so
+ * theme/lang switches apply instantly.
+ */
+(function(){
+'use strict';
+
+var BASE  = 'oracledata/';
+var MANI  = BASE + 'tm_manifest.json';
+var EP    = BASE + 'tm_episodes.json';
+
+/* ── state ── */
+var _manifest = null, _epFeed = null;
+var _tier = 's';
+var _registry = null;        // active tier registry
+var _chunks = {};            // cache: "2022M01" -> chunk data
+var _dates = [];             // merged sorted date list for active tier
+var _chunkMeta = [];         // manifest chunks for active tier
+var _pos = 0;                // current date index
+var _playing = false;
+var _playTimer = null;
+var _canvas = null, _ctx = null;
+var _canvW = 0, _canvH = 0;
+var _manifest_loaded = false;
+var _ep_loaded = false;
+var _TRAIL = 10;             // trail length in frames
+
+/* ── helpers ── */
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+function L(r){return r ? (isZh() && r.label_zh ? r.label_zh : r.label_en) : '';}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v));}
+
+/* ── boot via IntersectionObserver ── */
+document.addEventListener('DOMContentLoaded', function(){
+  var sec = document.getElementById('tm-section');
+  if(!sec) return;
+  if(!('IntersectionObserver' in window)){
+    _init();
+    return;
+  }
+  var obs = new IntersectionObserver(function(entries){
+    if(entries[0].isIntersecting){ obs.disconnect(); _init(); }
+  }, {rootMargin:'200px'});
+  obs.observe(sec);
+});
+
+function _init(){
+  _setupCanvas();
+  Promise.all([
+    fetch(MANI, {cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error('manifest');return r.json();}),
+    fetch(EP,   {cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error('episodes');return r.json();})
+  ]).then(function(results){
+    _manifest = results[0];
+    _epFeed   = results[1];
+    _buildPresets();
+    _setTier('s');
+    _wireControls();
+  }).catch(function(e){
+    var ld = document.getElementById('tm-loading');
+    if(ld) ld.innerHTML = '<span class="l-en">Could not load Time Machine data.</span><span class="l-zh">无法加载时光机数据。</span>';
+  });
+}
+
+/* ── canvas setup ── */
+function _setupCanvas(){
+  var box = document.getElementById('tm-canvas-box');
+  if(!box) return;
+  var ld = document.getElementById('tm-loading');
+  var cvs = document.createElement('canvas');
+  cvs.id = 'tm-canvas';
+  cvs.setAttribute('aria-label', 'Rotation scatter chart');
+  _canvas = cvs;
+  _ctx = cvs.getContext('2d');
+  if(ld) box.insertBefore(cvs, ld); else box.appendChild(cvs);
+
+  /* Quadrant labels */
+  var labels = [
+    {cls:'q-tl tm-scatter-label', en:'Improving', zh:'改善'},
+    {cls:'q-tr tm-scatter-label', en:'Leading',   zh:'领先'},
+    {cls:'q-bl tm-scatter-label', en:'Lagging',   zh:'落后'},
+    {cls:'q-br tm-scatter-label', en:'Weakening', zh:'走弱'}
+  ];
+  labels.forEach(function(l){
+    var sp = document.createElement('span');
+    sp.className = l.cls;
+    sp.innerHTML = '<span class="l-en">'+esc(l.en)+'</span><span class="l-zh">'+esc(l.zh)+'</span>';
+    box.appendChild(sp);
+  });
+
+  _resizeCanvas();
+  window.addEventListener('resize', _resizeCanvas);
+}
+
+function _resizeCanvas(){
+  if(!_canvas) return;
+  var box = document.getElementById('tm-canvas-box');
+  if(!box) return;
+  var w = box.clientWidth || 340;
+  var h = Math.round(w * 0.72);
+  _canvW = w; _canvH = h;
+  var dpr = window.devicePixelRatio || 1;
+  _canvas.width  = w * dpr;
+  _canvas.height = h * dpr;
+  _canvas.style.width  = w + 'px';
+  _canvas.style.height = h + 'px';
+  if(_ctx) _ctx.scale(dpr, dpr);
+  _draw();
+}
+
+/* ── tier management ── */
+function _setTier(tier){
+  _tier = tier;
+  if(!_manifest) return;
+  var info = _manifest.tiers[tier];
+  if(!info) return;
+  _registry = _manifest.registry[tier];
+  _chunkMeta = info.chunks || [];
+  // Build full sorted date list from chunk metadata
+  _dates = [];
+  _chunkMeta.forEach(function(c){ /* actual dates loaded on demand */ });
+  // Prime date list from chunk meta (conservative: use chunk date ranges)
+  // Actual dates are loaded per-chunk
+  _chunks = {};
+  _pos = 0;
+
+  // Load first chunk to populate slider
+  _loadChunkForPos(0, function(){
+    _buildDateList(function(){
+      var slider = document.getElementById('tm-slider');
+      if(slider){ slider.max = Math.max(0, _dates.length - 1); slider.value = _dates.length - 1; }
+      _pos = _dates.length - 1;
+      _updateDateLabel();
+      _draw();
+      _updateEpPanel();
+      var ld = document.getElementById('tm-loading');
+      if(ld) ld.style.display = 'none';
+    });
+  });
+
+  // Watermark
+  var wm = document.getElementById('tm-watermark');
+  if(wm) wm.style.display = (tier === 'm') ? '' : 'none';
+
+  // Tier buttons
+  document.querySelectorAll('.tm-tier-btn').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-tier') === tier);
+  });
+}
+
+function _buildDateList(cb){
+  // Load all chunks sequentially to build complete date list
+  var allDates = [];
+  var i = 0;
+  function next(){
+    if(i >= _chunkMeta.length){ _dates = allDates; if(cb) cb(); return; }
+    var meta = _chunkMeta[i++];
+    _getChunk(meta.key, function(chunk){
+      if(chunk && chunk.dates) chunk.dates.forEach(function(d){ allDates.push(d); });
+      next();
+    });
+  }
+  next();
+}
+
+/* ── chunk loader ── */
+function _getChunk(periodKey, cb){
+  if(_chunks[periodKey]){ cb(_chunks[periodKey]); return; }
+  var meta = _chunkMeta.filter(function(c){ return c.key === periodKey; })[0];
+  if(!meta){ cb(null); return; }
+  fetch(BASE + meta.file, {cache:'no-cache'})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){ _chunks[periodKey] = d || {}; cb(_chunks[periodKey]); })
+    .catch(function(){ _chunks[periodKey] = {}; cb({}); });
+}
+
+function _loadChunkForPos(pos, cb){
+  if(!_dates.length){
+    // No dates yet; load the last chunk (most recent) first
+    if(_chunkMeta.length){
+      var meta = _chunkMeta[_chunkMeta.length - 1];
+      _getChunk(meta.key, cb || function(){});
+    } else { if(cb) cb(); }
+    return;
+  }
+  var dateStr = _dates[pos];
+  var ym = dateStr.slice(0, 7).replace('-', _tier === 's' ? '-' : '-');
+  // Find chunk whose date_from <= dateStr <= date_to
+  var meta = _chunkMeta.filter(function(c){ return c.date_from <= dateStr && dateStr <= c.date_to; })[0];
+  if(!meta) meta = _chunkMeta[_chunkMeta.length - 1];
+  if(meta) _getChunk(meta.key, cb || function(){}); else if(cb) cb();
+}
+
+/* ── drawing ── */
+function _getNodePoints(dateStr){
+  if(!_registry || !dateStr) return [];
+  // Find which chunk owns this date
+  var meta = _chunkMeta.filter(function(c){
+    return c.date_from <= dateStr && dateStr <= c.date_to;
+  })[0];
+  if(!meta) return [];
+  var chunk = _chunks[meta.key];
+  if(!chunk || !chunk.dates) return [];
+  var dateIdx = chunk.dates.indexOf(dateStr);
+  if(dateIdx < 0) return [];
+  var pts = [];
+  _registry.forEach(function(reg){
+    var arr = chunk.data && chunk.data[String(reg.id)];
+    if(!arr || dateIdx >= arr.length) return;
+    var v = arr[dateIdx];
+    if(!v) return;
+    var rs = v[0], az = v[1];
+    if(rs == null || az == null) return;
+    pts.push({id: reg.id, name: reg.name, name_zh: reg.name_zh, tier: reg.tier, theme: reg.theme, rs: rs, az: az});
+  });
+  return pts;
+}
+
+function _draw(){
+  if(!_ctx || !_canvW) return;
+  var W = _canvW, H = _canvH;
+  var ctx = _ctx;
+  ctx.clearRect(0, 0, W, H);
+
+  var bg     = cssVar('--panel') || '#181b21';
+  var line   = cssVar('--line')  || '#2a2f3a';
+  var muted  = cssVar('--muted') || '#8b93a1';
+  var up     = cssVar('--up')    || '#45b873';
+  var down   = cssVar('--down')  || '#e06464';
+  var txt    = cssVar('--text')  || '#d7dce3';
+
+  // Padding
+  var PAD = {l:40, r:20, t:20, b:30};
+  var pw = W - PAD.l - PAD.r;
+  var ph = H - PAD.t - PAD.b;
+
+  // Background
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Determine axis ranges from current visible points
+  var allPts = _getNodePoints(_dates[_pos]);
+  if(!allPts.length){
+    ctx.fillStyle = muted;
+    ctx.font = '13px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Loading…', W/2, H/2);
+    return;
+  }
+
+  var rsVals  = allPts.map(function(p){return p.rs;});
+  var azVals  = allPts.map(function(p){return p.az;});
+  var rsMax = Math.max(0.15, Math.max.apply(null, rsVals.map(Math.abs)) * 1.2);
+  var azMax = Math.max(1.5,  Math.max.apply(null, azVals.map(Math.abs)) * 1.2);
+
+  function toX(rs){ return PAD.l + (rs / rsMax + 1) / 2 * pw; }
+  function toY(az){ return PAD.t + (1 - (az / azMax + 1) / 2) * ph; }
+
+  // Quadrant fill
+  var cx = toX(0), cy = toY(0);
+  ctx.globalAlpha = 0.04;
+  ctx.fillStyle = up;
+  ctx.fillRect(cx, PAD.t, W - PAD.r - cx, ph / 2);           // TR: leading
+  ctx.fillRect(PAD.l, PAD.t, cx - PAD.l, ph / 2);             // TL: improving
+  ctx.globalAlpha = 0.04;
+  ctx.fillStyle = down;
+  ctx.fillRect(cx, cy, W - PAD.r - cx, H - PAD.b - cy);       // BR: weakening
+  ctx.fillRect(PAD.l, cy, cx - PAD.l, H - PAD.b - cy);         // BL: lagging
+  ctx.globalAlpha = 1;
+
+  // Grid lines (center cross)
+  ctx.strokeStyle = line;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(cx, PAD.t); ctx.lineTo(cx, H - PAD.b); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD.l, cy); ctx.lineTo(W - PAD.r, cy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Axis labels
+  ctx.fillStyle = muted;
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('RS', W/2, H - 4);
+  ctx.save(); ctx.translate(10, H/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Accel', 0, 0);
+  ctx.restore();
+
+  // Build active episodes index for this date
+  var dateStr = _dates[_pos];
+  var activeEpNodes = {};   // node -> {dir, stage}
+  if(_epFeed && _epFeed.episodes){
+    _epFeed.episodes.forEach(function(ep){
+      if(!ep.onset_date) return;
+      var active = ep.onset_date <= dateStr &&
+                   (function(){ var end = ep.exhausted_date || ep.confirmed_date;
+                     return !end || end >= dateStr; })();  // mirrors _updateEpPanel end logic
+      if(!active) return;
+      // Determine stage
+      var stage = 'onset';
+      if(ep.undeniable_date && ep.undeniable_date <= dateStr) stage = 'undeniable';
+      else if(ep.confirmed_date && ep.confirmed_date <= dateStr) stage = 'confirmed';
+      if(!activeEpNodes[ep.node] || stage === 'undeniable') {
+        activeEpNodes[ep.node] = {dir: ep.direction, stage: stage, ep: ep};
+      }
+    });
+  }
+
+  // Draw trails + dots
+  var TRAIL = _TRAIL;
+  allPts.forEach(function(pt){
+    // Collect trail
+    var trail = [];
+    for(var t = Math.max(0, _pos - TRAIL); t <= _pos; t++){
+      var tp = _getNodePoints(_dates[t]).filter(function(p){return p.id===pt.id;})[0];
+      if(tp) trail.push({x: toX(tp.rs), y: toY(tp.az)});
+    }
+
+    // Draw trail
+    if(trail.length > 1){
+      for(var ti = 1; ti < trail.length; ti++){
+        var alpha = 0.12 + 0.4 * (ti / trail.length);
+        ctx.beginPath();
+        // Use the theme tokens so zh mode (up=red) recolours trails WITH the dots
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = (pt.az >= 0 ? up : down);
+        ctx.lineWidth = 1;
+        ctx.moveTo(trail[ti-1].x, trail[ti-1].y);
+        ctx.lineTo(trail[ti].x, trail[ti].y);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Dot
+    var ep = activeEpNodes[pt.name];
+    var dotR = 4;
+    var dotColor = pt.az >= 0 ? up : down;
+    ctx.beginPath();
+    ctx.arc(toX(pt.rs), toY(pt.az), dotR, 0, Math.PI * 2);
+    ctx.fillStyle = dotColor;
+    ctx.globalAlpha = 0.85;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Episode ring
+    if(ep){
+      var ringColor = ep.dir === 'in' ? up : down;
+      ctx.beginPath();
+      ctx.arc(toX(pt.rs), toY(pt.az), dotR + 3, 0, Math.PI * 2);
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth = ep.stage === 'undeniable' ? 2.5 : (ep.stage === 'confirmed' ? 1.8 : 1.2);
+      ctx.stroke();
+    }
+  });
+
+  // Node labels for tier-s (11 nodes, label all)
+  if(_tier === 's'){
+    ctx.fillStyle = txt;
+    ctx.font = '10px Inter, sans-serif';
+    ctx.globalAlpha = 0.8;
+    allPts.forEach(function(pt){
+      ctx.textAlign = pt.rs >= 0 ? 'left' : 'right';
+      var name = isZh() && pt.name_zh ? pt.name_zh : pt.name;
+      ctx.fillText(name, toX(pt.rs) + (pt.rs >= 0 ? 6 : -6), toY(pt.az) + 4);
+    });
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ── episode side panel ── */
+function _updateEpPanel(){
+  var el = document.getElementById('tm-ep-list');
+  if(!el || !_epFeed) return;
+  var dateStr = _dates[_pos];
+  if(!dateStr){ el.innerHTML = '<span class="tm-ep-empty"><span class="l-en">—</span><span class="l-zh">—</span></span>'; return; }
+
+  var active = [];
+  _epFeed.episodes.forEach(function(ep){
+    if(!ep.onset_date) return;
+    if(ep.onset_date > dateStr) return;
+    var end = ep.exhausted_date || ep.confirmed_date;
+    if(end && end < dateStr) return;
+    active.push(ep);
+  });
+
+  if(!active.length){
+    el.innerHTML = '<span class="tm-ep-empty"><span class="l-en">No episodes on this date</span><span class="l-zh">此日期暂无情节</span></span>';
+    return;
+  }
+
+  // Sort: in first then out, then by onset_date desc
+  active.sort(function(a,b){ return (a.direction==='in'?0:1) - (b.direction==='in'?0:1) || (b.onset_date||'').localeCompare(a.onset_date||''); });
+  active = active.slice(0, 20);
+
+  var html = active.map(function(ep){
+    var stage = 'onset';
+    if(ep.undeniable_date && ep.undeniable_date <= dateStr) stage = 'undeniable';
+    else if(ep.confirmed_date && ep.confirmed_date <= dateStr) stage = 'confirmed';
+    var dirClass = ep.direction === 'in' ? 'tm-ep-dir-in' : 'tm-ep-dir-out';
+    var dirLabel = ep.direction === 'in'
+      ? '<span class="l-en">Rotating in</span><span class="l-zh">轮入</span>'
+      : '<span class="l-en">Rotating out</span><span class="l-zh">轮出</span>';
+    var tierBadge = ep.tier === 's'
+      ? '<span class="tm-ep-badge"><span class="l-en">sector</span><span class="l-zh">板块</span></span>'
+      : '';
+    return '<div class="tm-ep-item '+dirClass+'">'
+      + '<div class="tm-ep-node">'+esc(ep.node)+tierBadge+'</div>'
+      + '<div>'+dirLabel
+      + ' <span class="tm-ep-badge '+stage+'">'+({onset:'<span class="l-en">onset</span><span class="l-zh">初现</span>',confirmed:'<span class="l-en">confirmed</span><span class="l-zh">确认</span>',undeniable:'<span class="l-en">undeniable</span><span class="l-zh">确立</span>'}[stage]||stage)+'</span></div>'
+      + (ep.paired_episode_id ? '<div class="tm-ep-pair"><span class="l-en">Pair: </span><span class="l-zh">配对：</span>'+esc(ep.paired_episode_id)+'</div>' : '')
+      + '</div>';
+  }).join('');
+  el.innerHTML = html;
+}
+
+/* ── preset playlist ── */
+function _buildPresets(){
+  var strip = document.getElementById('tm-presets');
+  if(!strip || !_epFeed || !_epFeed.presets) return;
+  // Remove loading text, keep heading
+  strip.innerHTML = '<span class="tm-ep-hd l-en">Famous episodes</span><span class="tm-ep-hd l-zh">经典轮动片段</span>';
+  _epFeed.presets.forEach(function(preset){
+    var btn = document.createElement('button');
+    btn.className = 'tm-preset-btn';
+    btn.innerHTML = '<span class="l-en">'+esc(preset.label_en)+'</span>'
+      + '<span class="l-zh">'+esc(preset.label_zh)+'</span>';
+    btn.addEventListener('click', function(){
+      _activatePreset(preset);
+    });
+    strip.appendChild(btn);
+  });
+}
+
+function _activatePreset(preset){
+  var tier = preset.tier || 's';
+  // Switch tier if needed
+  if(tier !== _tier){
+    _setTier(tier);
+    // Wait for dates to load before seeking
+    var attempts = 0;
+    var iv = setInterval(function(){
+      if(_dates.length || attempts++ > 20){ clearInterval(iv); _seekToPreset(preset); }
+    }, 150);
+  } else {
+    _seekToPreset(preset);
+  }
+}
+
+function _seekToPreset(preset){
+  if(!_dates.length) return;
+  // Seek to date_from
+  var target = preset.date_from;
+  var idx = _dates.indexOf(target);
+  if(idx < 0){
+    // Find closest date
+    idx = _dates.length - 1;
+    for(var i = 0; i < _dates.length; i++){
+      if(_dates[i] >= target){ idx = i; break; }
+    }
+  }
+  _pos = idx;
+  var slider = document.getElementById('tm-slider');
+  if(slider) slider.value = _pos;
+  _updateDateLabel();
+  _loadChunkForPos(_pos, function(){ _draw(); _updateEpPanel(); });
+}
+
+/* ── controls ── */
+function _updateDateLabel(){
+  var el = document.getElementById('tm-date-lbl');
+  if(el) el.textContent = _dates[_pos] || '—';
+}
+
+function _wireControls(){
+  /* tier buttons */
+  document.querySelectorAll('.tm-tier-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      _setTier(btn.getAttribute('data-tier'));
+    });
+  });
+
+  /* play/pause */
+  var playBtn = document.getElementById('tm-play');
+  if(playBtn){
+    playBtn.addEventListener('click', function(){
+      _playing = !_playing;
+      playBtn.textContent = _playing ? '⏸' : '▶';
+      if(_playing) _tick();
+    });
+  }
+
+  /* slider */
+  var slider = document.getElementById('tm-slider');
+  if(slider){
+    slider.addEventListener('input', function(){
+      _pos = parseInt(slider.value, 10);
+      _updateDateLabel();
+      _loadChunkForPos(_pos, function(){ _draw(); _updateEpPanel(); });
+    });
+  }
+}
+
+function _tick(){
+  if(!_playing) return;
+  var speed = parseInt((document.getElementById('tm-speed') || {}).value || 1, 10);
+  _pos = Math.min(_dates.length - 1, _pos + 1);
+  if(_pos >= _dates.length - 1){ _playing = false; var p = document.getElementById('tm-play'); if(p) p.textContent = '▶'; }
+  var slider = document.getElementById('tm-slider');
+  if(slider) slider.value = _pos;
+  _updateDateLabel();
+  _loadChunkForPos(_pos, function(){ _draw(); _updateEpPanel(); });
+  if(_playing) _playTimer = setTimeout(_tick, Math.max(80, Math.round(300 / speed)));
+}
+
+/* ── theme/lang change: redraw ── */
+var _themeObs = new MutationObserver(function(){ _draw(); });
+_themeObs.observe(document.documentElement, {attributes:true, attributeFilter:['data-theme','data-lang']});
+
+})();
+</script>
 </body>
 </html>
