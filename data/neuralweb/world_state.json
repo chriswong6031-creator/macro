@@ -4811,7 +4811,7 @@
   },
   "alerts": {
     "asof": "2026-07-01",
-    "generated_utc": "2026-07-04 20:43",
+    "generated_utc": "2026-07-04 21:37",
     "total": 60,
     "critical": 2,
     "major": 58,
@@ -4831,8 +4831,8 @@
   "contradictions": {
     "n": 7,
     "by_severity": {
-      "tension": 6,
-      "note": 1
+      "note": 2,
+      "tension": 5
     },
     "top_pair_ids": [
       "regime-vs-market_state",
@@ -4856,7 +4856,7 @@
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-07-04T22:01:47Z",
-  "inputs_hash": "sha256:29f9a896ca4ac99a8c5c5460cbfcff263c856defd7a8449aa89724e45bcf6722",
+  "produced_at": "2026-07-04T23:00:39Z",
+  "inputs_hash": "sha256:20ea1b2f46e9b45282154437e750b5ef620ee2811de9afff9d2089b999a61aa4",
   "tier": "infrastructure"
 }

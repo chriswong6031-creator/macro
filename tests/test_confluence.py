@@ -3,20 +3,23 @@
 Tests
 -----
 Contradictions detector (engine/neuralweb/contradictions.py):
-  1.  pair_a_positive       — regime Q1 + RISK_OFF verdict → record
+  1.  pair_a_positive       — regime Q1 + RISK_OFF verdict (deep-in-quad) → tension record
   2.  pair_a_negative       — regime Q1 + NEUTRAL verdict → no record
-  3.  pair_b_positive       — rising growth + growth scare caution → record
-  4.  pair_b_negative       — rising growth + calm scare → no record
-  5.  pair_c_positive       — oracle bullish + sc majority bearish → record
-  6.  pair_c_negative       — oracle bullish + sc majority bullish → no record
-  7.  pair_d_positive       — low vol + RISK_OFF → record
-  8.  pair_d_negative       — normal vol + RISK_OFF → no record
-  9.  pair_e_positive       — briefing with divergences → summary record
-  10. pair_e_negative       — briefing with 0 divergences → no record
-  11. pair_f_positive       — cross_asset_confirm verdict=diverge → record
-  12. pair_f_negative       — cross_asset_confirm verdict=confirm → no record
-  13. pairs_fail_open       — all inputs missing → empty records + gaps, no raise
-  14. severity_vocab        — no record carries severity='critical'
+  3.  pair_a_near_boundary_label_lag — Q1 + RISK_OFF near flip → label-lag note (NOT tension)
+  4.  pair_a_deep_quad_tension — Q1 + RISK_OFF deep-in (high conf, large margin) → tension
+  5.  pair_a_near_boundary_risk_on — Q1 + RISK_ON near flip → no record
+  6.  pair_b_positive       — rising growth + growth scare caution → record
+  7.  pair_b_negative       — rising growth + calm scare → no record
+  8.  pair_c_positive       — oracle bullish + sc majority bearish → record
+  9.  pair_c_negative       — oracle bullish + sc majority bullish → no record
+  10. pair_d_positive       — low vol + RISK_OFF → record
+  11. pair_d_negative       — normal vol + RISK_OFF → no record
+  12. pair_e_positive       — briefing with divergences → summary record
+  13. pair_e_negative       — briefing with 0 divergences → no record
+  14. pair_f_positive       — cross_asset_confirm verdict=diverge → record
+  15. pair_f_negative       — cross_asset_confirm verdict=confirm → no record
+  16. pairs_fail_open       — all inputs missing → empty records + gaps, no raise
+  17. severity_vocab        — no record carries severity='critical'
 
 Confluence graph (engine/neuralweb/confluence.py):
   15. graph_schema          — output has required schema/tier/display_only fields
@@ -78,13 +81,30 @@ def _make_world_state(
     vol_regime: str = "normalizing",
     rr_state: str = "caution",
     rr_dominant: str = "growth",
+    # Scale fields for flip-aware pair-a logic (operator feedback 2026-07-04).
+    # Defaults represent a deep-in-quad, stable regime (NOT near a flip).
+    flip_margin: float | None = 0.60,
+    transition_state: str | None = "STABLE",
+    confidence: float | None = 0.75,
+    inflation_score: float | None = -0.2,
+    flip_condition: dict | None = None,
 ) -> dict:
+    regime_block: dict = {
+        "quad": quad,
+        "growth_score": growth_score,
+        "inflation_score": inflation_score,
+        "asof": "2026-07-01",
+    }
+    if flip_margin is not None:
+        regime_block["flip_margin"] = flip_margin
+    if transition_state is not None:
+        regime_block["transition_state"] = transition_state
+    if confidence is not None:
+        regime_block["confidence"] = confidence
+    if flip_condition is not None:
+        regime_block["flip_condition"] = flip_condition
     ws = {
-        "regime": {
-            "quad": quad,
-            "growth_score": growth_score,
-            "asof": "2026-07-01",
-        },
+        "regime": regime_block,
         "verdict": {
             "verdict": verdict,
             "asof": "2026-07-01",
@@ -228,19 +248,26 @@ from engine.neuralweb.confluence import build_graph, build_and_write  # noqa: E4
 # ===========================================================================
 
 class TestPairA:
-    """Pair A: regime quad vs market_state verdict."""
+    """Pair A: regime quad vs market_state verdict (flip-aware since operator feedback)."""
 
     def test_pair_a_positive(self, tmp_path):
-        """Q1 + RISK_OFF → one tension record."""
-        _make_world_state(tmp_path, quad="Q1", verdict="RISK_OFF")
+        """Q1 + RISK_OFF (deep-in-quad, stable) → one tension record."""
+        # Deep-in-quad: large flip_margin + STABLE transition → genuine directional-opposition
+        _make_world_state(
+            tmp_path, quad="Q1", verdict="RISK_OFF",
+            flip_margin=0.60, transition_state="STABLE", confidence=0.80,
+        )
         _make_regime_latest(tmp_path)
         _make_market_state(tmp_path)
         records, gaps = detect_contradictions(root=tmp_path)
         a_records = [r for r in records if r["pair_id"] == "regime-vs-market_state"]
-        assert len(a_records) >= 1, "Expected pair-a record for Q1+RISK_OFF"
+        assert len(a_records) >= 1, "Expected pair-a record for Q1+RISK_OFF deep-in-quad"
         r = a_records[0]
         assert r["severity"] in ("note", "tension")
         assert r["display_only"] is True
+        # Scale fields must appear in the reading
+        assert "flip_margin" in r["a"]["reading"]
+        assert "transition_state" in r["a"]["reading"]
 
     def test_pair_a_negative(self, tmp_path):
         """Q1 + NEUTRAL verdict → no pair-a record."""
@@ -250,6 +277,81 @@ class TestPairA:
         records, _ = detect_contradictions(root=tmp_path)
         a_records = [r for r in records if r["pair_id"] == "regime-vs-market_state"]
         assert len(a_records) == 0, f"Unexpected pair-a records: {a_records}"
+
+    def test_pair_a_near_boundary_label_lag(self, tmp_path):
+        """Near-boundary Q1 + RISK_OFF → label-lag note, NOT tension.
+
+        Reproduces the operator-reported episode (2026-07-04): quad Q1 (Goldilocks)
+        while market_state=RISK_OFF, but flip_margin=0.05 and transition_state=TRANSITIONING
+        — the backend scale was already leaning toward Stagflation; the label lagged.
+        """
+        _make_world_state(
+            tmp_path, quad="Q1", verdict="RISK_OFF",
+            flip_margin=0.05, transition_state="TRANSITIONING",
+            confidence=0.327, growth_score=0.333, inflation_score=-0.52,
+            flip_condition={"axis": "growth", "component": "copper_gold",
+                            "z": 0.5, "threshold": 0.45, "margin": 0.05},
+        )
+        _make_regime_latest(tmp_path)
+        _make_market_state(tmp_path)
+        records, _ = detect_contradictions(root=tmp_path)
+        a_records = [r for r in records if r["pair_id"] == "regime-vs-market_state"]
+        assert len(a_records) == 1, f"Expected exactly one pair-a record; got {a_records}"
+        r = a_records[0]
+        assert r["kind"] == "label-lag", (
+            f"Expected kind='label-lag' for near-boundary regime; got kind={r['kind']!r}"
+        )
+        assert r["severity"] == "note", (
+            f"Expected severity='note' for label-lag; got {r['severity']!r}"
+        )
+        assert r["display_only"] is True
+        # Scale fields must be present in the reading
+        assert "flip_margin" in r["a"]["reading"]
+        assert "transition_state" in r["a"]["reading"]
+        # Note must describe the label-lag situation
+        assert "lag" in r["note"].lower() or "lags" in r["note"].lower()
+
+    def test_pair_a_deep_quad_tension(self, tmp_path):
+        """Deep-in Q1 (high confidence, large margin) + RISK_OFF → tension (genuine case).
+
+        When flip_margin is large and transition_state is STABLE the opposing verdict
+        is genuinely informative — the quad is well-supported and market_state disagrees.
+        """
+        _make_world_state(
+            tmp_path, quad="Q1", verdict="RISK_OFF",
+            flip_margin=0.55, transition_state="STABLE",
+            confidence=0.82, growth_score=0.45, inflation_score=-0.15,
+            flip_condition={"axis": "growth", "component": "copper_gold",
+                            "z": 1.0, "threshold": 0.45, "margin": 0.55},
+        )
+        _make_regime_latest(tmp_path)
+        _make_market_state(tmp_path)
+        records, _ = detect_contradictions(root=tmp_path)
+        a_records = [r for r in records if r["pair_id"] == "regime-vs-market_state"]
+        assert len(a_records) == 1, f"Expected exactly one pair-a record; got {a_records}"
+        r = a_records[0]
+        assert r["kind"] == "directional-opposition", (
+            f"Expected kind='directional-opposition' for deep-in-quad; got {r['kind']!r}"
+        )
+        assert r["severity"] == "tension", (
+            f"Expected severity='tension' for deep-in-quad genuine case; got {r['severity']!r}"
+        )
+        assert r["display_only"] is True
+        assert "flip_margin" in r["a"]["reading"]
+
+    def test_pair_a_near_boundary_risk_on(self, tmp_path):
+        """Near-boundary Q1 + RISK_ON verdict → no record (no opposition to detect)."""
+        _make_world_state(
+            tmp_path, quad="Q1", verdict="RISK_ON",
+            flip_margin=0.05, transition_state="TRANSITIONING",
+        )
+        _make_regime_latest(tmp_path)
+        _make_market_state(tmp_path, verdict="RISK_ON")
+        records, _ = detect_contradictions(root=tmp_path)
+        a_records = [r for r in records if r["pair_id"] == "regime-vs-market_state"]
+        assert len(a_records) == 0, (
+            f"Near-boundary Q1 + RISK_ON should produce no pair-a record; got {a_records}"
+        )
 
 
 class TestPairB:
