@@ -356,7 +356,7 @@
       {% if s.material_8k %}
       <div class="sid-card"><h3>📄 {{ t('Material 8-K clusters','重大8-K集群') }} <span class="mut" style="font-size:11px;">30d</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Count','数量') }}</th><th>{{ t('Items','条目') }}</th></tr></thead>
-        <tbody>{% for r in s.material_8k[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.count }}</td><td class="mut">{{ r.items }}</td></tr>{% endfor %}</tbody></table></div>
+        <tbody>{% for r in s.material_8k[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.count }}</td><td class="mut">{{ r['items'] }}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.unusual_options %}
