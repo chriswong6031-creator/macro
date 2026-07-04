@@ -6,7 +6,7 @@
 
 **Provenance.** Operator brain dump 2026-07-04 (+ ChatGPT "Neural Web" plan as context) → Fable adjudication → 8-agent census (workflow `wf_67ace3c1`, all claims file-evidenced) → draft → **5-lens adversarial red-team (workflow `wf_dd79661a`: epistemics, ops, census-fidelity, program-collisions, operator-ambition) → this v2, with 4 blockers and ~14 majors folded in.**
 
-**STATUS: at operator STOP. Nothing dispatched.**
+**STATUS: EXECUTING (D1–D8 ruled 2026-07-04)**
 
 ---
 
@@ -171,5 +171,8 @@ Dependency: D7 → W0 → W1 → W2 → W3 → {W4 ∥ W6→W6b} → W7a → W7b
 - **D7 — Immediate hygiene dispatch:** Terminal-feed unfreeze, #1193 sector-pulse restore, foresight double-writer, export_signal_contracts wiring — standalone fast PRs this week. *(Recommended: yes.)*
 - **D8 — Cortex model ruling:** frontier Opus-class pinned for the cortex/governance role (third-party default retained only for narration fallback). *(Recommended: yes — the governance organ should not think on a third-party discount model.)*
 
+**Rulings received 2026-07-04 (operator):** D1 — adopted; D7 dispatched same day. D2 — ratified as stated (joint with QI). D3 — ratified. D4 — ratified (Articles 1–3 + the Ladder). D5 — ratified (validate-first). D6 — internal operator HQ; customer flagship ships as the premium SaaS surface. D7 — yes; note the #1193 sector-pulse restore had already landed via #1236, so three items were dispatched (Terminal intel/v1 R2 leg, foresight_cascade single-writer, export_signal_contracts nightly wiring). D8 — ratified: the cortex is pinned to a frontier Opus-class model; the third-party default is retained for narration fallback only.
+
 ## 11. Status log
 - 2026-07-04 — Masterplan authored (Fable): operator brain dump + ChatGPT plan adjudicated + 8-agent census (`wf_67ace3c1`) → draft → 5-lens red-team (`wf_dd79661a`) → v2 with 4 blockers + ~14 majors folded (perimeter-by-surface Article 2; A6 two-lane ruling; spine federation replacing migration; Oracle read-only consumption; validate-first conductor; reflex JSONL ledger law; latency honesty + push tier; agentic cortex runtime + probation; hypothesis-metabolism machinery + anti-mining rules; HQ split). Supersedes `CENTRAL_BRAIN_BRAINSTORM_BY_FABLE.md` (CORTEX). **At operator STOP.**
+- 2026-07-04 — **Operator rulings D1–D8 received; program adopted.** All recommendations adopted; D6 ruled: internal HQ + premium customer flagship. D7 dispatched same day (#1193 restore had already landed via #1236). Program status: **EXECUTING — D7 → W0.**
