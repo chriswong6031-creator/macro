@@ -1237,24 +1237,6 @@
   {% endif %}
 
   {% if mode != 'stocks' %}
-  {% if market_tiles %}
-  <!-- ======================= LIVE MARKET TAPE ======================= -->
-  <div class="panel span12" id="market-tape">
-    <h2 style="margin-bottom:10px">{{ t('Market tape', '市场行情') }}
-      {{ help('The headline cross-asset levels in one glance — indices, rates, the dollar, oil and volatility — each with its 1-day move. A quick orientation; the read and the why live in the panels below.', '一眼看尽关键跨资产水平 — 指数、利率、美元、原油与波动率 — 各附单日变动。用于快速定位；解读与原因见下方面板。') }}
-    </h2>
-    <div class="mtiles">
-      {% for tl in market_tiles %}
-      <div class="mtile">
-        <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
-        <div class="mtile-val">{{ tl.level }}</div>
-        <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} ({{ tl.pct }})</div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
   <!-- ======================= HEADER ======================= -->
   <div class="panel span12" id="regime-radar">
   <input type="checkbox" id="ms-alerts-toggle" class="ms-alerts-cb" hidden aria-hidden="true">
@@ -1922,6 +1904,54 @@
   </div>
   {% endif %}
 
+
+  {# Week ahead — surfaces the full macro_catalysts calendar (only catalysts[0] was shown
+     before, as a one-liner in the news board) plus what Polymarket is pricing for the Fed.
+     Context-only: scheduled dates say WHEN volatility is likely, never which way. #}
+  {% if mode != 'stocks' and (macro_catalysts or (prediction_markets and prediction_markets.events)) %}
+  <style id="cal-css">
+  #week-ahead .cal-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+  #week-ahead .cal-ev{flex:1 1 0;min-width:124px;border:1px solid var(--line);border-left:3px solid var(--muted);
+    border-radius:8px;padding:8px 11px;background:var(--panel2)}
+  #week-ahead .cal-ev.cal-high{border-left-color:var(--down)}
+  #week-ahead .cal-ev.cal-med{border-left-color:var(--warn)}
+  #week-ahead .cal-date{font-family:ui-monospace,"SF Mono",monospace;font-size:11px;font-weight:700;color:var(--text)}
+  #week-ahead .cal-lbl{font-size:12.5px;font-weight:600;margin:3px 0 2px;line-height:1.25}
+  #week-ahead .cal-meta{font-size:10.5px;color:var(--muted)}
+  #week-ahead .cal-pm{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-top:11px;
+    padding-top:10px;border-top:1px solid var(--line);font-size:12px}
+  #week-ahead .cal-pm-src{font-family:ui-monospace,"SF Mono",monospace;font-size:10px;font-weight:700;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  #week-ahead .cal-pm b{font-variant-numeric:tabular-nums}
+  @media(max-width:700px){ #week-ahead .cal-ev{min-width:150px} }
+  </style>
+  <div class="panel span12" id="week-ahead">
+    <h2 style="margin-bottom:10px">{{ t('Week ahead — scheduled catalysts', '未来一周 — 日程催化') }}
+      {{ help('The scheduled US macro releases and Treasury auctions on the calendar over the next ~2 weeks, with typical market impact (red = high). Context only — the dates are known in advance, so they tell you WHEN volatility is likely, not which way.', '未来约两周日程上的美国宏观数据与国债拍卖，附典型市场影响（红=高影响）。仅供参考 — 日期为已知，提示波动“何时”可能出现，而非方向。') }}
+    </h2>
+    {% if macro_catalysts %}
+    {% set _mos = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+    <div class="cal-row">
+      {% for c in macro_catalysts[:8] %}
+      <div class="cal-ev cal-{{ c.impact }}">
+        <div class="cal-date">{{ _mos[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
+        <div class="cal-lbl">{{ c.label }}</div>
+        <div class="cal-meta">{% if c.time_et %}{{ c.time_et }} ET{% endif %}{% if c.impact == 'high' %} · {{ t('high impact','高影响') }}{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if prediction_markets and prediction_markets.events %}
+    <div class="cal-pm">
+      <span class="cal-pm-src">{{ t('Priced · Polymarket','市场定价 · Polymarket') }}</span>
+      {% for e in prediction_markets.events[:2] %}{% set _top = (e.outcomes|sort(attribute='prob',reverse=true))|first %}
+      <span class="cal-pm-ev">{{ t(e.label_en, e.label_zh) }}: <b>{{ _top.outcome }} {{ _top.prob }}%</b>{% if _top.chg_pp is not none and _top.chg_pp != 0 %} <span class="{{ 'pos' if _top.chg_pp > 0 else 'neg' }}" style="font-size:11px">{{ '%+.1f'|format(_top.chg_pp) }}pp</span>{% endif %}</span>
+      {% endfor %}
+      {{ help('What traders are pricing on Polymarket for the next Fed decision and 2026 rate cuts — a market-implied probability, not a forecast. Context only.', 'Polymarket 上交易者对下次美联储决议及 2026 年降息次数的定价 — 市场隐含概率，并非预测。仅供参考。') }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 
   {# Market heatmap — compact "at a glance" scorecard; the Expand button opens the
      full S&P 500 treemap in an in-page overlay (rendered by heatmap.js). #}
