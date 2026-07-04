@@ -136,6 +136,40 @@
   table.scf tbody tr:last-child td { border-bottom: none; }
   table.scf tr.scf-net td { border-top: 2px solid var(--line); font-weight: 700; background: color-mix(in srgb, var(--line) 22%, transparent); }
   table.scf tr.scf-net td.scf-s b { color: var(--text); }
+  /* ===== index leadership rotation strip (moved from subsectors.html) ===== */
+  .lead-wrap { border: 1px solid var(--line); border-radius: 13px; background: var(--panel); padding: 13px 15px; margin: 8px 0 18px; }
+  .lead-wrap:empty { display: none; }
+  .lead-wrap .num { font-variant-numeric: tabular-nums; }
+  .lead-wrap .pos { color: var(--up); } .lead-wrap .neg { color: var(--down); }
+  .lead-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .lead-head h2 { font-size: 15px; font-weight: 800; margin: 0; letter-spacing: -.01em; }
+  .lead-head .asof { color: var(--muted); font-size: 11px; margin-left: auto; }
+  .lead-hero { display: flex; flex-wrap: wrap; gap: 12px 30px; margin-bottom: 12px; }
+  .lead-hero .lbl { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+  .lead-hero .big { font-size: 17px; font-weight: 800; margin-top: 2px; }
+  .lead-hero .big .las { font-size: 12px; font-weight: 700; color: var(--up); margin-left: 6px; }
+  .lead-hero .why { color: var(--muted); font-size: 11.5px; margin-top: 1px; max-width: 52ch; }
+  .lead-star .big { color: var(--up); }
+  table.lead-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  table.lead-tbl th { text-align: right; color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .03em; padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.lead-tbl th:first-child, table.lead-tbl td:first-child { text-align: left; }
+  table.lead-tbl td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.lead-tbl tr.star td { background: color-mix(in srgb, var(--up) 9%, transparent); }
+  table.lead-tbl td.u { font-weight: 700; } table.lead-tbl td.b { font-weight: 800; }
+  .qp { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 9px; border: 1px solid; }
+  .lead-drivers .dh { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .lead-regime { font-size: 11.5px; line-height: 1.5; margin: 0 0 9px; color: var(--text); }
+  .lead-regime .rg-cav { color: var(--muted); }
+  .lead-drivers .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); gap: 8px; }
+  .lead-drivers .chip { border: 1px solid var(--line); border-left-width: 3px; border-radius: 9px; padding: 7px 10px; background: var(--bg); }
+  .lead-drivers .chip.up { border-left-color: var(--up); } .lead-drivers .chip.dn { border-left-color: var(--down); }
+  .lead-drivers .chip .ct { font-weight: 700; font-size: 11.5px; }
+  .lead-drivers .chip .cv { font-size: 11px; margin-top: 2px; line-height: 1.35; }
+  .lead-drivers .chip .cm { color: var(--muted); font-size: 10.5px; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .lead-macro { font-size: 12px; margin: -4px 0 12px; color: var(--text); }
+  .lead-track { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .lead-track .tr-badge { font-weight: 700; font-size: 10.5px; padding: 1px 8px; border-radius: 9px; border: 1px solid; }
+  .lead-track .tr-txt { font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -156,12 +190,18 @@
 
   <div id="regime" class="regime"></div>
   <div class="scc-rail">
+    <a href="#scc-leadership">🧭 <span class="l-en">Leadership</span><span class="l-zh">领导轮动</span></a>
     <a href="#sc-cyclemap">🌀 <span class="l-en">Cycle map</span><span class="l-zh">周期图谱</span></a>
     <a href="#sc-board">🧠 <span class="l-en">Conviction board</span><span class="l-zh">信念研判</span></a>
     <a href="#sc-flows">💸 <span class="l-en">Sector flow</span><span class="l-zh">板块资金流</span></a>
     <a href="#sc-heatmap">🔥 <span class="l-en">Market heat</span><span class="l-zh">市场热度</span></a>
     <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets &amp; Rotation</span><span class="l-zh">主题篮子与轮动</span> →</a>
   </div>
+
+  {# ===== INDEX LEADERSHIP ROTATION — moved here from subsectors.html. Which universe leads
+     (large / small / tech / thematic), the rising-star accelerator, and the macro drivers behind
+     it. Rendered client-side from marketdata/index_leadership.json by the inline script at the foot. #}
+  <div id="scc-leadership" class="lead-wrap"></div>
 
   {# ===== UNIVERSE TOGGLE — the page-level Sectors⇄Baskets switch. Drives BOTH the cycle
      map and the conviction board (linkTabs() wires both ways); raised out of the chart
@@ -423,5 +463,94 @@
 <script src="theme.js"></script>
 <script src="live_config.js"></script>
 <script src="risk_state_live.js"></script>
+{# ===== INDEX LEADERSHIP ROTATION strip — moved from subsectors.html. Self-contained IIFE that
+   fetches marketdata/index_leadership.json (built by scripts/build_index_leadership.py) and renders
+   the rising-star + LAS table + macro drivers into #scc-leadership. Bilingual via .l-en/.l-zh. #}
+<script>
+(function () {
+  'use strict';
+  var L = function (en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh == null ? en : zh) + '</span>'; };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function num(x, d) { return (x == null || isNaN(x)) ? '–' : Number(x).toFixed(d == null ? 0 : d); }
+  function signed(x, d) { if (x == null || isNaN(x)) return '<span class="num">–</span>'; var v = Number(x); return '<span class="num ' + (v >= 0 ? 'pos' : 'neg') + '">' + (v >= 0 ? '+' : '') + v.toFixed(d == null ? 1 : d) + '</span>'; }
+  function quadInfo(q) { return ({ leading: ['Leading', '领先', 'var(--up)'], improving: ['Improving', '改善', 'var(--info)'], weakening: ['Weakening', '走弱', 'var(--orange)'], lagging: ['Lagging', '落后', 'var(--down)'] })[q] || ['—', '—', 'var(--muted)']; }
+  function quadPill(q) { var i = quadInfo(q); return '<span class="qp" style="color:' + i[2] + ';border-color:' + i[2] + '">' + L(i[0], i[1]) + '</span>'; }
+  function wrapTbls(root) {
+    if (!root) return;
+    root.querySelectorAll('table').forEach(function (t) {
+      if (t.closest('.tbl-scroll') || !t.parentNode) return;
+      var w = document.createElement('div'); w.className = 'tbl-scroll';
+      t.parentNode.insertBefore(w, t); w.appendChild(t);
+    });
+  }
+  function trackBox(tr) {
+    if (!tr) return '';
+    var vcol = tr.verdict === 'validated' ? 'var(--up)' : tr.verdict === 'measuring' ? 'var(--info)' : 'var(--muted)';
+    var vlab = tr.verdict === 'validated' ? L('Validated', '已验证') : tr.verdict === 'measuring' ? L('Measuring', '测量中') : L('Accruing', '积累中');
+    var days = tr.n_days || 0;
+    var h = '<div class="lead-track"><span class="tr-badge" style="color:' + vcol + ';border-color:' + vcol + '">📊 ' + L('Forward track record', '前瞻战绩') + ': ' + vlab + '</span> '
+      + '<span class="tr-txt">' + L((tr.n_snapshots || 0) + ' calls logged over ' + days + (days === 1 ? ' day' : ' days'), (tr.n_snapshots || 0) + ' 条记录，历时 ' + days + ' 天') + '</span>';
+    var h21 = (tr.horizons || {})['21'];
+    if (tr.any_matured && h21 && h21.n_matured) {
+      var bs = h21.by_stage || {}, parts = [];
+      ['running', 'coiling', 'coiling_primed'].forEach(function (st) { if (bs[st] && bs[st].hit_rate != null) parts.push((st === 'coiling_primed' ? 'coil✓' : st) + ' ' + Math.round(bs[st].hit_rate * 100) + '% (' + bs[st].n + ')'); });
+      if (parts.length) h += ' · <span class="tr-txt">' + L('21d hit-rate: ', '21日命中率：') + parts.join(', ') + '</span>';
+    } else {
+      h += ' · <span class="tr-txt" style="color:var(--muted)">' + L('grades mature at 5 / 10 / 21 / 63d — measured, not asserted', '5 / 10 / 21 / 63 日后成熟评级——实测而非断言') + '</span>';
+    }
+    return h + '</div>';
+  }
+  function leadershipStrip(d) {
+    var el = document.getElementById('scc-leadership'); if (!el) return;
+    if (!d || !d.ok) { el.innerHTML = ''; return; }
+    var star = d.rising_star, ln = d.leader_now, T = d.tabs || {};
+    var order = ['subsectors', 'nasdaq', 'russell', 'baskets'].filter(function (t) { return T[t]; });
+    var whyTxt = (star && star.why && star.why.length) ? star.why.map(function (w) { return w.leg; }).join(' · ') : L('mixed legs', '综合');
+    var lnQuad = ln ? (T[ln.tab] || {}).quadrant : null;
+    var lnNote = (lnQuad === 'weakening' || lnQuad === 'lagging') ? L(' · but weakening', ' · 但走弱') : '';
+    var hero = '<div class="lead-hero">';
+    if (star) hero += '<div class="lead-star"><div class="lbl">⭐ ' + L('Rising star', '上升之星') + '</div><div class="big">' + L(star.label[0], star.label[1]) + ' <span class="las">LAS ' + (star.las >= 0 ? '+' : '') + num(star.las, 2) + '</span></div><div class="why">' + L('leadership accelerating fastest — ', '领导加速最快——') + esc(whyTxt) + '</div></div>';
+    if (ln) hero += '<div class="lead-leader"><div class="lbl">' + L('Leader now', '当前领导') + '</div><div class="big">' + L(ln.label[0], ln.label[1]) + '</div><div class="why">' + L('highest RS level', '相对强弱水平最高') + lnNote + '</div></div>';
+    hero += '</div>';
+    var rows = order.map(function (t) {
+      var v = T[t], isStar = star && star.tab === t;
+      return '<tr' + (isStar ? ' class="star"' : '') + '><td class="u">' + (isStar ? '⭐ ' : '') + L(v.label[0], v.label[1]) + '</td>'
+        + '<td class="b">' + (v.las >= 0 ? '+' : '') + num(v.las, 2) + '</td>'
+        + '<td>' + num(v.rs_ratio, 2) + '</td>'
+        + '<td>' + signed(v.rs_mom, 2) + '</td>'
+        + '<td style="text-align:right">' + quadPill(v.quadrant) + '</td>'
+        + '<td>' + signed(v.breadth_thrust != null ? v.breadth_thrust * 100 : null, 1) + '</td>'
+        + '<td>' + (v.participation != null ? num(v.participation * 100, 0) + '%' : '–') + '</td></tr>';
+    }).join('');
+    var tbl = '<table class="lead-tbl"><thead><tr><th>' + L('Universe', '指数域') + '</th><th>LAS</th><th>' + L('RS level', 'RS水平') + '</th><th>' + L('RS mom', 'RS动量') + '</th><th>' + L('Quadrant', '象限') + '</th><th>' + L('Breadth thrust', '广度推力') + '</th><th>' + L('Particip.', '参与度') + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    var chips = ((d.drivers && d.drivers.ratios) || []).map(function (r) {
+      var up = r.rising;
+      return '<div class="chip ' + (up ? 'up' : 'dn') + '"><div class="ct">' + L(r.label_en, r.label_zh) + '</div>'
+        + '<div class="cv">' + (up ? '▲ ' : '▼ ') + L(r.read_en, r.read_zh) + '</div>'
+        + '<div class="cm">20d ' + signed(r.mom20, 1) + ' · 60d ' + signed(r.mom60, 1) + (r.pctile != null ? ' · ' + L('pctile', '分位') + ' ' + num(r.pctile, 0) : '') + '</div></div>';
+    }).join('');
+    var rg = d.regime, regLine = '';
+    if (rg) {
+      var liqZh = ({ expanding: '扩张', contracting: '收缩', neutral: '中性', unknown: '未知' })[rg.liquidity] || rg.liquidity;
+      var liqTxt = rg.liquidity ? ' · ' + L('liquidity ' + rg.liquidity, '流动性' + liqZh) : '';
+      regLine = '<div class="lead-regime">🌐 ' + L('Regime backdrop', '宏观象限') + ': <b>' + esc(rg.quad) + ' ' + L(rg.name_en, rg.name_zh) + '</b> (' + L(rg.axes_en, rg.axes_zh) + ')' + liqTxt
+        + ' → ' + L('expected tilt: ', '预期倾向：') + L(rg.tilt_en, rg.tilt_zh) + '. <span class="rg-cav">' + L('Odds-tilt, not a rule — compare to what is actually leading.', '仅为概率倾向，非规则——请对照上方实际领涨。') + '</span></div>';
+    }
+    var drivers = (chips || regLine) ? '<div class="lead-drivers"><div class="dh">' + L('Why — leadership drivers (macro cause + observable ratios)', '为什么——领导驱动（宏观成因 + 可观测比率）') + '</div>' + regLine + (chips ? '<div class="chips">' + chips + '</div>' : '') + '</div>' : '';
+    var mac = d.macro, macLine = '';
+    if (mac) {
+      var dot = mac.color === 'red' ? '🔴' : mac.color === 'yellow' ? '🟡' : mac.color === 'green' ? '🟢' : '⚪';
+      var held = mac.severity === 'risk_off' ? L(' — coil calls held back (let washouts confirm)', ' — 蓄势信号已收敛（待清洗确认）') : '';
+      macLine = '<div class="lead-macro">' + L('Macro backdrop', '宏观背景') + ': ' + dot + ' ' + L(mac.label_en || mac.verdict || '—', mac.label_zh || mac.verdict || '—') + (mac.score != null ? ' <span style="color:var(--muted)">(' + mac.score + '/100)</span>' : '') + held + '</div>';
+    }
+    el.innerHTML = '<div class="lead-head"><h2>🧭 ' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + macLine + tbl + drivers + trackBox(d.track_record);
+    wrapTbls(el);
+  }
+  fetch('marketdata/index_leadership.json', { cache: 'no-cache' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(leadershipStrip);
+})();
+</script>
 </body>
 </html>
