@@ -209,6 +209,12 @@ def build() -> dict:
     else:
         log.info("feed sector_breadth.json: parquet not yet collected — skipped")
 
+    # 9. world_state — Neural Web N1 composed blackboard (byte-verbatim copy).
+    #    The envelope sibling keys are already in-place on the source JSON, so
+    #    a verbatim copy preserves the full contract shape unchanged.
+    ws = data / "neuralweb" / "world_state.json"
+    copy(ws, "world_state.json", _asof_of(_read_json(ws)), "data/neuralweb/world_state.json")
+
     _write_json(out, "feeds_meta.json", {
         "schema_version": SCHEMA_VERSION,
         "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),

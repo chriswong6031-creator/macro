@@ -15,7 +15,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cycle-intelligence | 4 |
 | engine-fix | 15 |
 | institutional-sector-intelligence | 2 |
-| neural-web | 3 |
+| neural-web | 4 |
 | options-alpha | 2 |
 | oracle | 11 |
 | qualitative-intelligence | 14 |
@@ -28,7 +28,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 42 |
-| infrastructure | 14 |
+| infrastructure | 15 |
 | scored | 4 |
 | shadow | 6 |
 
@@ -36,7 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 63 |
+| git | 64 |
 | gitignored-local | 2 |
 | r2 | 1 |
 
@@ -70,11 +70,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 27 | 3 |
+| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 28 | 3 |
+| breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 16 | 0 |
 | regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 16 | 0 |
-| breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 15 | 0 |
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
-| market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 6 | 0 |
+| market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 7 | 0 |
 | risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 5 | 0 |
 | regime-vector | `data/regime/regime_vector.parquet` | parquet | daily-engine | infrastructure | 4 | 0 |
 | site-regime-timeline | `site/regime_timeline.json` | json | daily-engine | display | 2 | 2 |
@@ -100,6 +100,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
+| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 1 | 0 |
 
 ### options-alpha
 
@@ -115,9 +116,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | radar-theses | `data/radar/theses.jsonl` | jsonl | daily-engine | display | 8 | 0 |
 | site-radar-json | `site/basketdata/radar.json` | json | daily-engine | display | 7 | 0 |
 | site-basketdata-radar-enriched | `site/basketdata/radar_enriched.json` | json | daily-engine | display | 6 | 0 |
+| site-basket-oracle-state | `site/basketdata/oracle_state.json` | json | daily-engine | display | 4 | 0 |
 | site-radar-ticker | `site/basketdata/radar_ticker.json` | json | daily-engine | display | 4 | 0 |
 | site-basket-flow | `site/basketdata/flow.json` | json | daily-engine | display | 2 | 1 |
-| site-basket-oracle-state | `site/basketdata/oracle_state.json` | json | daily-engine | display | 3 | 0 |
 | radar-track-record | `data/radar/track_record.json` | json | daily-engine | display | 2 | 0 |
 | site-marketdata-subsector-rotation | `site/marketdata/subsector_rotation.json` | json | daily-engine | display | 2 | 0 |
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
@@ -180,7 +181,7 @@ flowchart LR
     C_engine_briefing_py["engine/briefing.py"]
     C_engine_china_intel_analysis_py["engine/china_intel_analysis.py"]
     C_engine_china_intel_bus_py["engine/china_intel_bus.py"]
-    OVF_regime_latest["...+26 more"]
+    OVF_regime_latest["...+27 more"]
     P_scripts_seed_us_sector_baskets_py(("scripts/seed_us_sector_baskets.py"))
     A_baskets_membership["baskets-membership"]
     C_engine_demand_ledger_py["engine/demand_ledger.py"]
@@ -188,6 +189,13 @@ flowchart LR
     C_engine_froth_fragility_py["engine/froth_fragility.py"]
     C_engine_news_common_py["engine/news_common.py"]
     OVF_baskets_membership["...+12 more"]
+    P_collectors_breadth_py(("collectors/breadth.py"))
+    A_breadth_breadth["breadth-breadth"]
+    C_engine_anticipation_py["engine/anticipation.py"]
+    C_engine_basket_score_py["engine/basket_score.py"]
+    C_engine_neuralweb_world_state_py["engine/neuralweb/world_state.py"]
+    C_engine_baskets_intl_py["engine/baskets_intl.py"]
+    OVF_breadth_breadth["...+12 more"]
     A_regime_history["regime-history"]
     C_engine_alerts_py["engine/alerts.py"]
     C_engine_board_ledger_py["engine/board_ledger.py"]
@@ -200,12 +208,6 @@ flowchart LR
     C_engine_altdata_confirmers_py["engine/altdata_confirmers.py"]
     C_engine_altdata_signals_py["engine/altdata_signals.py"]
     OVF_altdata_by_ticker["...+11 more"]
-    P_collectors_breadth_py(("collectors/breadth.py"))
-    A_breadth_breadth["breadth-breadth"]
-    C_engine_anticipation_py["engine/anticipation.py"]
-    C_engine_basket_score_py["engine/basket_score.py"]
-    C_engine_baskets_intl_py["engine/baskets_intl.py"]
-    OVF_breadth_breadth["...+11 more"]
     P_scripts_build_stock_library_py(("scripts/build_stock_library.py"))
     A_site_us_standouts["site-us-standouts"]
     C_engine_intelligence_py["engine/intelligence.py"]
@@ -260,10 +262,12 @@ flowchart LR
     C_engine_spine_py["engine/spine.py"]
     C_engine_track_record_py["engine/track_record.py"]
     OVF_us_board_ledger_retro_grades["...+4 more"]
-    A_site_radar_json["site-radar-json"]
-    C_engine_narrative_brain_py["engine/narrative_brain.py"]
-    C_engine_theme_validation_py["engine/theme_validation.py"]
-    OVF_site_radar_json["...+3 more"]
+    P_engine_market_state_py(("engine/market_state.py"))
+    A_market_state_latest["market-state-latest"]
+    C_engine_regime_prior_py["engine/regime_prior.py"]
+    C_engine_market_state_audit_py["engine/market_state_audit.py"]
+    C_engine_market_state_tune_py["engine/market_state_tune.py"]
+    OVF_market_state_latest["...+3 more"]
     P_engine_run_py --> A_regime_latest
     A_regime_latest --> C_engine_alert_triage_py
     A_regime_latest --> C_engine_briefing_py
@@ -276,6 +280,12 @@ flowchart LR
     A_baskets_membership --> C_engine_froth_fragility_py
     A_baskets_membership --> C_engine_news_common_py
     A_baskets_membership --> OVF_baskets_membership
+    P_collectors_breadth_py --> A_breadth_breadth
+    A_breadth_breadth --> C_engine_anticipation_py
+    A_breadth_breadth --> C_engine_basket_score_py
+    A_breadth_breadth --> C_engine_neuralweb_world_state_py
+    A_breadth_breadth --> C_engine_baskets_intl_py
+    A_breadth_breadth --> OVF_breadth_breadth
     P_engine_run_py --> A_regime_history
     A_regime_history --> C_engine_alerts_py
     A_regime_history --> C_engine_board_ledger_py
@@ -288,12 +298,6 @@ flowchart LR
     A_altdata_by_ticker --> C_engine_altdata_signals_py
     A_altdata_by_ticker --> C_engine_briefing_py
     A_altdata_by_ticker --> OVF_altdata_by_ticker
-    P_collectors_breadth_py --> A_breadth_breadth
-    A_breadth_breadth --> C_engine_anticipation_py
-    A_breadth_breadth --> C_engine_basket_score_py
-    A_breadth_breadth --> C_engine_baskets_intl_py
-    A_breadth_breadth --> C_engine_froth_fragility_py
-    A_breadth_breadth --> OVF_breadth_breadth
     P_scripts_build_stock_library_py --> A_site_us_standouts
     A_site_us_standouts --> C_engine_intelligence_py
     A_site_us_standouts --> C_engine_risk_brain_py
@@ -348,12 +352,12 @@ flowchart LR
     A_us_board_ledger_retro_grades --> C_engine_spine_py
     A_us_board_ledger_retro_grades --> C_engine_track_record_py
     A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
-    P_scripts_build_baskets_py --> A_site_radar_json
-    A_site_radar_json --> C_engine_narrative_brain_py
-    A_site_radar_json --> C_engine_radar_plus_py
-    A_site_radar_json --> C_engine_radar_ticker_py
-    A_site_radar_json --> C_engine_theme_validation_py
-    A_site_radar_json --> OVF_site_radar_json
+    P_engine_market_state_py --> A_market_state_latest
+    A_market_state_latest --> C_engine_neuralweb_world_state_py
+    A_market_state_latest --> C_engine_regime_prior_py
+    A_market_state_latest --> C_engine_market_state_audit_py
+    A_market_state_latest --> C_engine_market_state_tune_py
+    A_market_state_latest --> OVF_market_state_latest
 ```
 
 ## Appendix — Known Extra Writers
@@ -457,3 +461,10 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/species_registry.py`
 - **extra writers:**
   - scripts/backfill_forward_logs.py — additive merge of historical entries
+
+### world-state
+
+- **path:** `data/neuralweb/world_state.json`
+- **declared producer:** `engine/neuralweb/world_state.py`
+- **extra writers:**
+  - scripts/build_world_state.py — thin CLI wrapper; calls build_and_write() which is defined in the producer; no independent write logic
