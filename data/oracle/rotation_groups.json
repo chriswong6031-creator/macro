@@ -1,0 +1,166 @@
+{
+  "_meta": {
+    "version": "1",
+    "created": "2026-07-04",
+    "note": "VERSION 1 — Fable adjudicates membership later. Node keys must match panel_m node names exactly. Members listed here are panel_m nodes; panel_s ETF nodes are mapped separately in graph.py COMPLEX_ETF_MAP.",
+    "adjudication_note": "This map is the HAND-NAMED backbone. The graph builder computes DATA-DERIVED clusters independently and reconciles them against this map — disagreements are surfaced as signal, never auto-resolved."
+  },
+  "complexes": [
+    {
+      "id": "ai_compute",
+      "name": "AI Compute Complex",
+      "name_zh": "AI算力复合体",
+      "risk_sign": "risk_on",
+      "members": [
+        "aicompute",
+        "ai_semiconductors",
+        "semismemory",
+        "memory_storage",
+        "ai_infra",
+        "data_center_power",
+        "hardwaredatacenters",
+        "clouddatacenters",
+        "power_grid",
+        "nuclear_power",
+        "semicap_equipment",
+        "aienergy"
+      ],
+      "rationale": "The physical layer of AI: compute silicon, memory, datacenter infrastructure, and the power/grid buildout feeding it. Co-move as a risk-on cluster driven by AI capex cycles. Semis lead, power-grid/nuclear are the lagging infrastructure tail."
+    },
+    {
+      "id": "software",
+      "name": "Software & Cloud",
+      "name_zh": "软件与云计算",
+      "risk_sign": "risk_on",
+      "members": [
+        "non_ai_software",
+        "ai_software",
+        "softwareenterprise",
+        "softwarevsaas",
+        "softwarehsaas",
+        "softwarecrm",
+        "softwaresecurity",
+        "softwaredataanalytics",
+        "softwaredevops",
+        "softwarecollaboration",
+        "softwaredesign",
+        "cloudpaas",
+        "cloudhsaas",
+        "cloudhyperscalers",
+        "ai_neoclouds",
+        "ai_agents",
+        "aienterprise",
+        "aiapplications"
+      ],
+      "rationale": "Enterprise software and cloud platforms: longer-duration growth assets that benefit from declining rates and expanding AI monetization. Tend to lag semis into risk-off and recover faster in early risk-on re-entries."
+    },
+    {
+      "id": "healthcare_defensive",
+      "name": "Healthcare & Biotech Defensive",
+      "name_zh": "医疗防御性复合体",
+      "risk_sign": "risk_off",
+      "members": [
+        "us_sector_health",
+        "big_pharma",
+        "managed_care",
+        "healthcaretherapeutics",
+        "healthcareoncology",
+        "healthcarediagnostics",
+        "healthcaredevices",
+        "healthcaregenomics",
+        "healthcaremetabolic",
+        "obesity_glp1",
+        "longevityagingpharma",
+        "longevityhealthcare"
+      ],
+      "rationale": "Healthcare is the textbook defensive: relatively inelastic revenues, low beta, inverse correlation to growth/semis in late-cycle/risk-off regimes. Biotech adds speculative volatility within the cluster but the sector-ETF leg anchors defensive character. GLP-1/obesity is an idiosyncratic within-sector growth story."
+    },
+    {
+      "id": "consumer_staples_defensive",
+      "name": "Consumer Staples Defensive",
+      "name_zh": "消费必需品防御性复合体",
+      "risk_sign": "risk_off",
+      "members": [
+        "us_sector_staples",
+        "consumerfood",
+        "consumerhousehold",
+        "defensives"
+      ],
+      "rationale": "Classic late-cycle defensive rotation destination. Pricing power, inelastic demand, high dividend yield. Inverse to discretionary and tech in vol-regime transitions. The basket 'defensives' aggregates this cluster at a higher level."
+    },
+    {
+      "id": "energy_commodities",
+      "name": "Energy & Commodities Complex",
+      "name_zh": "能源与大宗商品复合体",
+      "risk_sign": "mixed",
+      "members": [
+        "us_sector_energy",
+        "energy_complex",
+        "energybasemajors",
+        "energybaseoilproduction",
+        "energybaseoilrefining",
+        "energybaseoilservices",
+        "commenergyoil",
+        "commenergygaslng",
+        "commenergyuranium",
+        "uranium_miners",
+        "critical_minerals",
+        "commmetalsgold",
+        "commmetalsindustrial",
+        "commmetalsprecious",
+        "us_sector_materials",
+        "Commodities Energy",
+        "Commodities Metals"
+      ],
+      "rationale": "Energy and materials move on commodity price cycles driven by supply/demand and USD regime. Mixed risk_sign: oil/energy leads risk-on in mid-cycle but gold/defensives metals hedge risk-off. The cluster is coherent as 'real-asset / inflation-hedge' complex even though intra-cluster correlations are regime-dependent."
+    },
+    {
+      "id": "financials_rates",
+      "name": "Financials & Rate Sensitives",
+      "name_zh": "金融与利率敏感复合体",
+      "risk_sign": "mixed",
+      "members": [
+        "us_sector_financials",
+        "regional_banks",
+        "insurance",
+        "fintechexchanges",
+        "fintechlending",
+        "payments_fintech"
+      ],
+      "rationale": "Banks and financials benefit from steeper yield curves and strong credit cycles (risk_on) but invert sharply in credit stress / yield curve inversion (risk_off). Rate-sensitive: strong lead-lag relationship with TLT. Fintech is a growth hybrid within the cluster."
+    },
+    {
+      "id": "long_duration_growth",
+      "name": "Long-Duration Growth & Real Estate",
+      "name_zh": "长久期成长与房地产复合体",
+      "risk_sign": "risk_off",
+      "members": [
+        "us_sector_realestate",
+        "us_sector_utilities",
+        "realestatehousing",
+        "realestateoffice",
+        "realestatetourism",
+        "energybaseutilities",
+        "energycleanutilities",
+        "housing"
+      ],
+      "rationale": "REITs and utilities are textbook long-duration assets: high dividend yield, bond-like behavior, inversely correlated with interest rates. Cluster together in risk-off/falling-rate regimes. Utilities have additional defensive character; REITs add credit-spread sensitivity."
+    },
+    {
+      "id": "short_duration_value",
+      "name": "Short-Duration Value & Industrials",
+      "name_zh": "短久期价值与工业复合体",
+      "risk_sign": "risk_on",
+      "members": [
+        "us_sector_industrials",
+        "us_sector_materials",
+        "reshoring",
+        "industrial_distribution",
+        "retail",
+        "robotics_automation",
+        "defense"
+      ],
+      "rationale": "Cyclical value names: industrials, materials, and domestic-facing businesses that benefit from nominal GDP acceleration and infrastructure spend. Shorter duration than software/growth; re-rate faster in early-cycle upturns. Defense is idiosyncratic but co-moves with industrials capex."
+    }
+  ]
+}
