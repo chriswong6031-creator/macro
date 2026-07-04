@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-03",
+  "as_of": "2026-07-04",
   "desks": [
     {
       "name": "AI Desk",
@@ -42,7 +42,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 103,
+      "open": 104,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 0,
-      "open": 76,
+      "open": 79,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -119,6 +119,18 @@
         "effective_n": 45
       },
       {
+        "family": "coiled_ca_phase0",
+        "itemized": 0,
+        "declared": 40,
+        "effective_n": 40
+      },
+      {
+        "family": "c1b_commodity_flip_protective_phase0",
+        "itemized": 0,
+        "declared": 36,
+        "effective_n": 36
+      },
+      {
         "family": "insider_phase1",
         "itemized": 0,
         "declared": 36,
@@ -173,14 +185,38 @@
         "effective_n": 16
       },
       {
+        "family": "sector_pulse_heat",
+        "itemized": 12,
+        "declared": 16,
+        "effective_n": 16
+      },
+      {
         "family": "active_commodity_lev_phase0",
         "itemized": 0,
         "declared": 15,
         "effective_n": 15
       },
       {
+        "family": "baskets_abs_escape",
+        "itemized": 3,
+        "declared": 12,
+        "effective_n": 12
+      },
+      {
         "family": "baskets_breadth_divergence",
         "itemized": 1,
+        "declared": 12,
+        "effective_n": 12
+      },
+      {
+        "family": "baskets_conviction_demotion",
+        "itemized": 1,
+        "declared": 12,
+        "effective_n": 12
+      },
+      {
+        "family": "baskets_rank_dd_mod",
+        "itemized": 3,
         "declared": 12,
         "effective_n": 12
       },
@@ -357,10 +393,16 @@
         "itemized": 4,
         "declared": 4,
         "effective_n": 4
+      },
+      {
+        "family": "s13_reversal_sleeve",
+        "itemized": 2,
+        "declared": 0,
+        "effective_n": 2
       }
     ],
-    "total_families": 46,
-    "total_effective_n": 992
+    "total_families": 53,
+    "total_effective_n": 1122
   },
   "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
 }

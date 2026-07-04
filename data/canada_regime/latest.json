@@ -247,10 +247,10 @@
       "boc_rate": 2.25,
       "goc_2y": 2.73,
       "goc_10y": 3.37,
-      "us_2y": null,
-      "us_10y": null,
-      "goc_minus_ust_2y": null,
-      "goc_minus_ust_10y": null,
+      "us_2y": 4.17,
+      "us_10y": 4.48,
+      "goc_minus_ust_2y": -1.44,
+      "goc_minus_ust_10y": -1.11,
       "goc_curve_2s10s": 0.64
     },
     "asof": "2026-06-30"

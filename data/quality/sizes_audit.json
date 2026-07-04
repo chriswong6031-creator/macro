@@ -1,0 +1,16 @@
+{
+  "checks": [
+    {
+      "path": "data/signal_archive/track_record.parquet",
+      "exists": true,
+      "warn_mb": 20,
+      "fail_mb": 50,
+      "size_mb": 9.526,
+      "row_count": 55398,
+      "verdict": "OK"
+    }
+  ],
+  "n_fail": 0,
+  "n_warn": 0,
+  "pass_all": true
+}
