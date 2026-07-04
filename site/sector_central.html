@@ -99,6 +99,8 @@
   .conflu b.high { color: var(--up); } .conflu b.moderate { color: var(--warn); }
   /* grader */
   .grader { margin-top: 26px; border: 1px solid var(--line); border-radius: 13px; padding: 14px 16px; background: var(--panel); }
+  /* in-board variant: the accuracy footer of the conviction scoreboard — hugs the board, subtler frame */
+  .grader.grader-inboard { margin-top: 12px; background: var(--panel2, var(--panel)); border-style: dashed; }
   .grader h2 { font-size: 15px; margin: 0 0 4px; }
   .gr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
   .gr-cell { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--panel2, transparent); }
@@ -132,6 +134,40 @@
   table.scf tbody tr:last-child td { border-bottom: none; }
   table.scf tr.scf-net td { border-top: 2px solid var(--line); font-weight: 700; background: color-mix(in srgb, var(--line) 22%, transparent); }
   table.scf tr.scf-net td.scf-s b { color: var(--text); }
+  /* ===== index leadership rotation strip (moved from subsectors.html) ===== */
+  .lead-wrap { border: 1px solid var(--line); border-radius: 13px; background: var(--panel); padding: 13px 15px; margin: 8px 0 18px; }
+  .lead-wrap:empty { display: none; }
+  .lead-wrap .num { font-variant-numeric: tabular-nums; }
+  .lead-wrap .pos { color: var(--up); } .lead-wrap .neg { color: var(--down); }
+  .lead-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .lead-head h2 { font-size: 15px; font-weight: 800; margin: 0; letter-spacing: -.01em; }
+  .lead-head .asof { color: var(--muted); font-size: 11px; margin-left: auto; }
+  .lead-hero { display: flex; flex-wrap: wrap; gap: 12px 30px; margin-bottom: 12px; }
+  .lead-hero .lbl { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+  .lead-hero .big { font-size: 17px; font-weight: 800; margin-top: 2px; }
+  .lead-hero .big .las { font-size: 12px; font-weight: 700; color: var(--up); margin-left: 6px; }
+  .lead-hero .why { color: var(--muted); font-size: 11.5px; margin-top: 1px; max-width: 52ch; }
+  .lead-star .big { color: var(--up); }
+  table.lead-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  table.lead-tbl th { text-align: right; color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .03em; padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.lead-tbl th:first-child, table.lead-tbl td:first-child { text-align: left; }
+  table.lead-tbl td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  table.lead-tbl tr.star td { background: color-mix(in srgb, var(--up) 9%, transparent); }
+  table.lead-tbl td.u { font-weight: 700; } table.lead-tbl td.b { font-weight: 800; }
+  .qp { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 9px; border: 1px solid; }
+  .lead-drivers .dh { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .lead-regime { font-size: 11.5px; line-height: 1.5; margin: 0 0 9px; color: var(--text); }
+  .lead-regime .rg-cav { color: var(--muted); }
+  .lead-drivers .chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); gap: 8px; }
+  .lead-drivers .chip { border: 1px solid var(--line); border-left-width: 3px; border-radius: 9px; padding: 7px 10px; background: var(--bg); }
+  .lead-drivers .chip.up { border-left-color: var(--up); } .lead-drivers .chip.dn { border-left-color: var(--down); }
+  .lead-drivers .chip .ct { font-weight: 700; font-size: 11.5px; }
+  .lead-drivers .chip .cv { font-size: 11px; margin-top: 2px; line-height: 1.35; }
+  .lead-drivers .chip .cm { color: var(--muted); font-size: 10.5px; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .lead-macro { font-size: 12px; margin: -4px 0 12px; color: var(--text); }
+  .lead-track { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .lead-track .tr-badge { font-weight: 700; font-size: 10.5px; padding: 1px 8px; border-radius: 9px; border: 1px solid; }
+  .lead-track .tr-txt { font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -178,7 +214,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
-            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
             <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
           </div>
         </div>
@@ -193,13 +229,14 @@
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
-        <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
             <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
           </div>
         </div>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -431,6 +468,7 @@
     <a href="#sc-board">🧠 <span class="l-en">Conviction board</span><span class="l-zh">信念研判</span></a>
     <a href="#sc-flows">💸 <span class="l-en">Sector flow</span><span class="l-zh">板块资金流</span></a>
     <a href="#sc-heatmap">🔥 <span class="l-en">Market heat</span><span class="l-zh">市场热度</span></a>
+    <a href="#scc-leadership">🧭 <span class="l-en">Leadership</span><span class="l-zh">领导轮动</span></a>
     <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets &amp; Rotation</span><span class="l-zh">主题篮子与轮动</span> →</a>
   </div>
 
@@ -508,6 +546,9 @@
   <div id="board" class="board"></div>
 
   
+  <div id="grader" class="grader grader-inboard" hidden></div>
+
+  
   <div class='scc-section-h' id='sc-flows'><h2><span class='l-en'>Where sector-ETF money is flowing</span><span class='l-zh'>板块 ETF 资金流向何处</span></h2><span class='scc-section-sub'><span class='l-en'>Multi-day creation/redemption flow across the 11 sector SPDRs — read the rotation, not the daily noise</span><span class='l-zh'>覆盖 11 个板块 SPDR 的多日申购／赎回资金流 — 看轮动趋势，而非单日噪声</span></span></div><div class='scf-wrap'><table class='scf'><thead><tr><th class='scf-s'><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class='scf-c'>1D</th><th class='scf-c'>3D</th><th class='scf-c'>1W</th><th class='scf-c'>2W</th><th class='scf-c'>1M</th></tr></thead><tbody><tr><td class='scf-s'><b>XLI</b> <span class='muted'><span class="l-en">Industrials</span><span class="l-zh">Industrials</span></span></td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 52%, transparent)'>+$536M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 46%, transparent)'>+$525M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 27%, transparent)'>+$275M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 52%, transparent)'>+$1.1B</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 52%, transparent)'>+$1.4B</td></tr><tr><td class='scf-s'><b>XLB</b> <span class='muted'><span class="l-en">Materials</span><span class="l-zh">Materials</span></span></td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 11%, transparent)'>−$56M</td><td class='scf-c neg' style=''>−$5M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 9%, transparent)'>−$35M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 15%, transparent)'>+$218M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 16%, transparent)'>+$311M</td></tr><tr><td class='scf-s'><b>XLRE</b> <span class='muted'><span class="l-en">Real Estate</span><span class="l-zh">Real Estate</span></span></td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 8%, transparent)'>+$20M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 14%, transparent)'>+$104M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 12%, transparent)'>+$77M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 13%, transparent)'>+$171M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 15%, transparent)'>+$281M</td></tr><tr><td class='scf-s'><b>XLV</b> <span class='muted'><span class="l-en">Health Care</span><span class="l-zh">Health Care</span></span></td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 21%, transparent)'>+$173M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 21%, transparent)'>+$196M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 42%, transparent)'>+$470M</td><td class='scf-c pos' style=''>+$7M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 13%, transparent)'>+$224M</td></tr><tr><td class='scf-s'><b>XLF</b> <span class='muted'><span class="l-en">Financials</span><span class="l-zh">Financials</span></span></td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 29%, transparent)'>+$266M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 52%, transparent)'>+$602M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 52%, transparent)'>+$595M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 16%, transparent)'>+$229M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 13%, transparent)'>+$217M</td></tr><tr><td class='scf-s'><b>XLU</b> <span class='muted'><span class="l-en">Utilities</span><span class="l-zh">Utilities</span></span></td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 26%, transparent)'>−$237M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 11%, transparent)'>−$72M</td><td class='scf-c pos' style=''>+$11M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 10%, transparent)'>−$82M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 12%, transparent)'>+$170M</td></tr><tr><td class='scf-s'><b>XLY</b> <span class='muted'><span class="l-en">Consumer Discretionary</span><span class="l-zh">Consumer Discretionary</span></span></td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 24%, transparent)'>+$211M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 18%, transparent)'>+$162M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 9%, transparent)'>+$35M</td><td class='scf-c pos' style=''>+$10M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 9%, transparent)'>−$77M</td></tr><tr><td class='scf-s'><b>XLE</b> <span class='muted'><span class="l-en">Energy</span><span class="l-zh">Energy</span></span></td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 11%, transparent)'>−$59M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 13%, transparent)'>−$91M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 7%, transparent)'>−$18M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 26%, transparent)'>−$465M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 14%, transparent)'>−$239M</td></tr><tr><td class='scf-s'><b>XLP</b> <span class='muted'><span class="l-en">Consumer Staples</span><span class="l-zh">Consumer Staples</span></span></td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 12%, transparent)'>−$75M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 18%, transparent)'>−$159M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 8%, transparent)'>−$29M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 28%, transparent)'>−$516M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 21%, transparent)'>−$464M</td></tr><tr><td class='scf-s'><b>XLC</b> <span class='muted'><span class="l-en">Communications</span><span class="l-zh">Communications</span></span></td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 11%, transparent)'>−$59M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 20%, transparent)'>+$184M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 32%, transparent)'>−$331M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 32%, transparent)'>−$593M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 28%, transparent)'>−$655M</td></tr><tr><td class='scf-s'><b>XLK</b> <span class='muted'><span class="l-en">Technology</span><span class="l-zh">Technology</span></span></td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 8%, transparent)'>−$28M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 49%, transparent)'>−$562M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 13%, transparent)'>−$90M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 46%, transparent)'>−$919M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 40%, transparent)'>−$1.0B</td></tr><tr class='scf-net'><td class='scf-s'><b><span class="l-en">Net · 11 sector ETFs</span><span class="l-zh">净额 · 11 个板块 ETF</span></b></td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 52%, transparent)'>+$694M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 52%, transparent)'>+$885M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 52%, transparent)'>+$960M</td><td class='scf-c neg' style='background:color-mix(in srgb, var(--down) 44%, transparent)'>−$877M</td><td class='scf-c pos' style='background:color-mix(in srgb, var(--up) 10%, transparent)'>+$117M</td></tr></tbody></table><p class='muted sm' style='margin:8px 2px 0'><span class="l-en">As of 2026-06-30 · net creation/redemption flow (ΔShares × NAV) summed over each window · positive = money in. Windows cap at the 13 trading days collected so far (history builds from June 2026), so the wider windows can coincide until more accrues. Display-only.</span><span class="l-zh">截至 2026-06-30 · 各时间窗内份额申购／赎回净额（份额变动 × 资产净值）求和 · 正值 = 资金流入。各窗口取目前已采集的 13 个交易日（历史自 2026 年 6 月起累积），故在数据充足前较宽的窗口可能重合。仅作展示。</span></p></div>
 
   
@@ -517,7 +558,8 @@
   </div>
   <div id="heatmap-scorecard"></div>
 
-  <div id="grader" class="grader" hidden></div>
+  
+  <div id="scc-leadership" class="lead-wrap"></div>
 
   <footer>
     <span class="l-en">Read-only analytics — not investment advice. Conviction is a gated-confluence read: the cycle state leads; the macro regime and the
@@ -686,5 +728,92 @@
 <script src="theme.js"></script>
 <script src="live_config.js"></script>
 <script src="risk_state_live.js"></script>
+
+<script>
+(function () {
+  'use strict';
+  var L = function (en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh == null ? en : zh) + '</span>'; };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function num(x, d) { return (x == null || isNaN(x)) ? '–' : Number(x).toFixed(d == null ? 0 : d); }
+  function signed(x, d) { if (x == null || isNaN(x)) return '<span class="num">–</span>'; var v = Number(x); return '<span class="num ' + (v >= 0 ? 'pos' : 'neg') + '">' + (v >= 0 ? '+' : '') + v.toFixed(d == null ? 1 : d) + '</span>'; }
+  function quadInfo(q) { return ({ leading: ['Leading', '领先', 'var(--up)'], improving: ['Improving', '改善', 'var(--info)'], weakening: ['Weakening', '走弱', 'var(--orange)'], lagging: ['Lagging', '落后', 'var(--down)'] })[q] || ['—', '—', 'var(--muted)']; }
+  function quadPill(q) { var i = quadInfo(q); return '<span class="qp" style="color:' + i[2] + ';border-color:' + i[2] + '">' + L(i[0], i[1]) + '</span>'; }
+  function wrapTbls(root) {
+    if (!root) return;
+    root.querySelectorAll('table').forEach(function (t) {
+      if (t.closest('.tbl-scroll') || !t.parentNode) return;
+      var w = document.createElement('div'); w.className = 'tbl-scroll';
+      t.parentNode.insertBefore(w, t); w.appendChild(t);
+    });
+  }
+  function trackBox(tr) {
+    if (!tr) return '';
+    var vcol = tr.verdict === 'validated' ? 'var(--up)' : tr.verdict === 'measuring' ? 'var(--info)' : 'var(--muted)';
+    var vlab = tr.verdict === 'validated' ? L('Validated', '已验证') : tr.verdict === 'measuring' ? L('Measuring', '测量中') : L('Accruing', '积累中');
+    var days = tr.n_days || 0;
+    var h = '<div class="lead-track"><span class="tr-badge" style="color:' + vcol + ';border-color:' + vcol + '">📊 ' + L('Forward track record', '前瞻战绩') + ': ' + vlab + '</span> '
+      + '<span class="tr-txt">' + L((tr.n_snapshots || 0) + ' calls logged over ' + days + (days === 1 ? ' day' : ' days'), (tr.n_snapshots || 0) + ' 条记录，历时 ' + days + ' 天') + '</span>';
+    var h21 = (tr.horizons || {})['21'];
+    if (tr.any_matured && h21 && h21.n_matured) {
+      var bs = h21.by_stage || {}, parts = [];
+      ['running', 'coiling', 'coiling_primed'].forEach(function (st) { if (bs[st] && bs[st].hit_rate != null) parts.push((st === 'coiling_primed' ? 'coil✓' : st) + ' ' + Math.round(bs[st].hit_rate * 100) + '% (' + bs[st].n + ')'); });
+      if (parts.length) h += ' · <span class="tr-txt">' + L('21d hit-rate: ', '21日命中率：') + parts.join(', ') + '</span>';
+    } else {
+      h += ' · <span class="tr-txt" style="color:var(--muted)">' + L('grades mature at 5 / 10 / 21 / 63d — measured, not asserted', '5 / 10 / 21 / 63 日后成熟评级——实测而非断言') + '</span>';
+    }
+    return h + '</div>';
+  }
+  function leadershipStrip(d) {
+    var el = document.getElementById('scc-leadership'); if (!el) return;
+    if (!d || !d.ok) { el.innerHTML = ''; return; }
+    var star = d.rising_star, ln = d.leader_now, T = d.tabs || {};
+    var order = ['subsectors', 'nasdaq', 'russell', 'baskets'].filter(function (t) { return T[t]; });
+    var whyTxt = (star && star.why && star.why.length) ? star.why.map(function (w) { return w.leg; }).join(' · ') : L('mixed legs', '综合');
+    var lnQuad = ln ? (T[ln.tab] || {}).quadrant : null;
+    var lnNote = (lnQuad === 'weakening' || lnQuad === 'lagging') ? L(' · but weakening', ' · 但走弱') : '';
+    var hero = '<div class="lead-hero">';
+    if (star) hero += '<div class="lead-star"><div class="lbl">⭐ ' + L('Rising star', '上升之星') + '</div><div class="big">' + L(star.label[0], star.label[1]) + ' <span class="las">LAS ' + (star.las >= 0 ? '+' : '') + num(star.las, 2) + '</span></div><div class="why">' + L('leadership accelerating fastest — ', '领导加速最快——') + esc(whyTxt) + '</div></div>';
+    if (ln) hero += '<div class="lead-leader"><div class="lbl">' + L('Leader now', '当前领导') + '</div><div class="big">' + L(ln.label[0], ln.label[1]) + '</div><div class="why">' + L('highest RS level', '相对强弱水平最高') + lnNote + '</div></div>';
+    hero += '</div>';
+    var rows = order.map(function (t) {
+      var v = T[t], isStar = star && star.tab === t;
+      return '<tr' + (isStar ? ' class="star"' : '') + '><td class="u">' + (isStar ? '⭐ ' : '') + L(v.label[0], v.label[1]) + '</td>'
+        + '<td class="b">' + (v.las >= 0 ? '+' : '') + num(v.las, 2) + '</td>'
+        + '<td>' + num(v.rs_ratio, 2) + '</td>'
+        + '<td>' + signed(v.rs_mom, 2) + '</td>'
+        + '<td style="text-align:right">' + quadPill(v.quadrant) + '</td>'
+        + '<td>' + signed(v.breadth_thrust != null ? v.breadth_thrust * 100 : null, 1) + '</td>'
+        + '<td>' + (v.participation != null ? num(v.participation * 100, 0) + '%' : '–') + '</td></tr>';
+    }).join('');
+    var tbl = '<table class="lead-tbl"><thead><tr><th>' + L('Universe', '指数域') + '</th><th>LAS</th><th>' + L('RS level', 'RS水平') + '</th><th>' + L('RS mom', 'RS动量') + '</th><th>' + L('Quadrant', '象限') + '</th><th>' + L('Breadth thrust', '广度推力') + '</th><th>' + L('Particip.', '参与度') + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    var chips = ((d.drivers && d.drivers.ratios) || []).map(function (r) {
+      var up = r.rising;
+      return '<div class="chip ' + (up ? 'up' : 'dn') + '"><div class="ct">' + L(r.label_en, r.label_zh) + '</div>'
+        + '<div class="cv">' + (up ? '▲ ' : '▼ ') + L(r.read_en, r.read_zh) + '</div>'
+        + '<div class="cm">20d ' + signed(r.mom20, 1) + ' · 60d ' + signed(r.mom60, 1) + (r.pctile != null ? ' · ' + L('pctile', '分位') + ' ' + num(r.pctile, 0) : '') + '</div></div>';
+    }).join('');
+    var rg = d.regime, regLine = '';
+    if (rg) {
+      var liqZh = ({ expanding: '扩张', contracting: '收缩', neutral: '中性', unknown: '未知' })[rg.liquidity] || rg.liquidity;
+      var liqTxt = rg.liquidity ? ' · ' + L('liquidity ' + rg.liquidity, '流动性' + liqZh) : '';
+      regLine = '<div class="lead-regime">🌐 ' + L('Regime backdrop', '宏观象限') + ': <b>' + esc(rg.quad) + ' ' + L(rg.name_en, rg.name_zh) + '</b> (' + L(rg.axes_en, rg.axes_zh) + ')' + liqTxt
+        + ' → ' + L('expected tilt: ', '预期倾向：') + L(rg.tilt_en, rg.tilt_zh) + '. <span class="rg-cav">' + L('Odds-tilt, not a rule — compare to what is actually leading.', '仅为概率倾向，非规则——请对照上方实际领涨。') + '</span></div>';
+    }
+    var drivers = (chips || regLine) ? '<div class="lead-drivers"><div class="dh">' + L('Why — leadership drivers (macro cause + observable ratios)', '为什么——领导驱动（宏观成因 + 可观测比率）') + '</div>' + regLine + (chips ? '<div class="chips">' + chips + '</div>' : '') + '</div>' : '';
+    var mac = d.macro, macLine = '';
+    if (mac) {
+      var dot = mac.color === 'red' ? '🔴' : mac.color === 'yellow' ? '🟡' : mac.color === 'green' ? '🟢' : '⚪';
+      var held = mac.severity === 'risk_off' ? L(' — coil calls held back (let washouts confirm)', ' — 蓄势信号已收敛（待清洗确认）') : '';
+      macLine = '<div class="lead-macro">' + L('Macro backdrop', '宏观背景') + ': ' + dot + ' ' + L(mac.label_en || mac.verdict || '—', mac.label_zh || mac.verdict || '—') + (mac.score != null ? ' <span style="color:var(--muted)">(' + mac.score + '/100)</span>' : '') + held + '</div>';
+    }
+    el.innerHTML = '<div class="lead-head"><h2>🧭 ' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + macLine + tbl + drivers + trackBox(d.track_record);
+    wrapTbls(el);
+  }
+  fetch('marketdata/index_leadership.json', { cache: 'no-cache' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(leadershipStrip);
+})();
+</script>
 </body>
 </html>

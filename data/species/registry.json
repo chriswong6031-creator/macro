@@ -376,7 +376,7 @@
       "gating": {
         "come_back_on": "2026-10-01",
         "cadence": "quarterly",
-        "maturation": "W1 retro-derivation: (i) rebuild historical de-escalation/dislocation state series via risk_radar's full-history subscore path; (ii) recompute historical C2 fires from prices; (iii) stamp derivation='retro-recomputed'; (iv) Opus reconstruction check passes on overlap window. If reconstruction check fails, S3 moves to W3+. Come-back: 2026-10-01."
+        "maturation": "W1 RULING 2026-07-04: moved to W3+ per the pre-registered fallback — the reconstruction check's overlap window DOES NOT EXIST (forward_log: 7 days of states, ZERO logged de-escalation verdicts). Retro-deriving without a verification window is the exact un-checked reconstruction the gate prohibits. ENABLING FIX SHIPPED: deescalation_eligible/reason + dislocation_active now logged in every forward_log row, so the overlap window accrues from 2026-07-04; the W3 retro-derivation runs when ~60+ overlap days exist (≈2026-10-01, unchanged come-back) and the Opus reconstruction check becomes decidable."
       },
       "trial_count": 3
     },
@@ -529,9 +529,9 @@
         "flip_criteria": "Primary: (failed2 × COILED) vs COILED alone on OOS basket panel, episode-clustered p-value, BH-FDR q≤0.10, n≥300 per side, both halves sign-stable. Secondary: standalone inversion. Clean kill is acceptable and closes the graveyard row properly."
       },
       "gating": {
-        "come_back_on": "2026-10-01",
-        "cadence": "quarterly",
-        "maturation": "W1 phase-0 on OOS basket panel. Interaction marginal primary. Expectations low."
+        "come_back_on": "2026-08-01",
+        "cadence": "monthly",
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S6_REPORT.md): PASSED both variants — failed2×COILED clean8_21 spread +4.29pp (m2d_s3d, q=0.032) / +3.79pp (base3d, q=0.080), n floors met, both halves positive, per-name majority 52-53%; failed2 side ALSO stops out less within COILED (−4.9pp m2d_s3d). Standalone form buys liftoff with WORSE stop-outs — interaction only, as registered. OOS came in stronger than in-sample. CONSTRAINT: spreads below the ≥5pp §1.2 promotion floor → DISPLAY-CHIP CANDIDACY ONLY; monthly review decides chip wiring; near-miss ledger accrues the forward read."
       },
       "trial_count": 2
     },
@@ -569,7 +569,9 @@
       "market_scope": ["US"],
       "adjacent_falsified": [
         {"idea": "rs_low: RS-vs-SPY at 126d low — H6∧rs_low was dilutive (36.8 vs 39.3 H6-only)", "source": "§4 S7 adjacent evidence (a)", "mechanical_difference": "S7 is RS SLOPE vs cohort, not RS LEVEL vs market; different sign direction from the graveyard entry"},
-        {"idea": "US residual momentum as modern-era alpha (DSR≈0.001, Sharpe −0.29 modern era)", "source": "§1.6 reports/residual-alpha-phase0", "mechanical_difference": "S7 is a washout-fire stratifier, not a cross-sectional ranking signal"}
+        {"idea": "US residual momentum as modern-era alpha (DSR≈0.001, Sharpe −0.29 modern era)", "source": "§1.6 reports/residual-alpha-phase0", "mechanical_difference": "S7 is a washout-fire stratifier, not a cross-sectional ranking signal"},
+        {"idea": "RS-vs-SPY 20d slope repair on bottom fires (external Codex backtest's headline RS leg)", "source": "research/species/s7_rs_repair_phase0/REPORT.md §7 P-B", "mechanical_difference": "market-relative slope, not within-cohort rank slope. Phase-0: dev null/pointwise-worse; 2025-26 holdout SIGNIFICANTLY worse (stop-out Δ +7.4pp, 90% CI [+2.0,+13.2] excludes 0). The cohort-rank form kept the repair sign; the market-relative form is anti-signal."},
+        {"idea": "Triple-lock conjunction tier (cohort_frac>=40 AND rs_spy-repair AND within-15%-of-60d-low) as a required entry gate", "source": "research/species/s7_rs_repair_phase0/REPORT.md §4 H-B / §7 P-C", "mechanical_difference": "S7 is a stratifier on COILED arming, not a conjunction gate. Failed pre-registered dev bars (5.1pp < 8pp vs subset baseline; 0.7pp < 3pp vs best pair); holdout significantly WORSE than cohort-alone (+11.7pp, CI excludes 0) — the anti-signal rs_spy leg poisons the conjunction."}
       ],
       "fixtures": [],
       "ledger_binding": {
@@ -580,9 +582,9 @@
       "gating": {
         "come_back_on": "2026-10-01",
         "cadence": "quarterly",
-        "maturation": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible."
+        "maturation": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible. || 2026-07-04 phase-0 EXECUTED (research/species/s7_rs_repair_phase0, brought forward from W3 on external-evidence grounds): REPAIR sign supported on dev 2022-24 F1/P1 (stop-out Δ −5.7pp, 90% CI [−8.7,−1.9]; clean8_21 Δ +8.8pp CI [+4.6,+11.8]; rs_low promotion bar MET; within-month permutation placebo p≈0.000) but MIXED on 2025-26 holdout (Δ −2.7pp spans 0 at n=725; signs held on both primaries; rs_low bar flipped) → stays phase0 per frozen rule. Re-read on W0.4 series + come_back_on; in-harness rank approximation used, production series may differ."
       },
-      "trial_count": 2
+      "trial_count": 3
     },
     {
       "species_id": "S8",
@@ -862,7 +864,7 @@
       },
       "regime_scope": {
         "hypothesized_supportive": ["rotation-active", "breadth improving"],
-        "hypothesized_hostile": ["mega-cap-dominance regime (2024–26 sign flip)"],
+        "hypothesized_hostile": ["mega-cap-dominance — MEASURED W1 phase-0: 2024-01→2026-06 sleeve excess −11.8%/yr (t −2.42) vs pre-flip +5.7%/yr DSR 0.981; hostile cell LIVE at phase-0 date"],
         "learnable_projection": {
           "axes": ["sector_rotation", "breadth"],
           "cells": ["rotation-active", "mega-cap-dominance", "risk-off"],
@@ -882,9 +884,9 @@
         "flip_criteria": "Safety-net axes (stop-out, dead-money, cushion incidence at rotational horizons) PLUS sleeve-level excess-vs-SPY (CN-2 pattern). Pre-registered kill criteria: modern-era decay + mega-cap sign flip. assert_no_gate() must remain enforced."
       },
       "gating": {
-        "come_back_on": "2026-10-01",
+        "come_back_on": "2026-08-01",
         "cadence": "monthly",
-        "maturation": "W1 phase-0 on existing deep panel. Runs NOW. Pre-registered kill criteria must be checked: modern-era decay (IC −0.011, t −2.4) and 2024–26 mega-cap sign flip. Tencent trap analogue: watch for single-name concentration in the quintile."
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S13_REPORT.md): PASSED as the 3M-formation construction (PIT-era +0.49%/mo excess, DSR 0.991 SURVIVES; modern era +0.34%/mo DSR 0.908 marginal); 1M variant CLOSED (modern DSR 0.760 fails). K2 TRIGGERED: mega-cap flip measured (2024–26 −11.8%/yr) → REGIME-SCOPED, hostile cell live — no surface may imply current tradability. K3 clean (top name 3.1%), K4 sign sanity passed (IC −0.011). Survivorship bound: 69.4% member-price coverage — positives are optimistic; re-confirm on the massive-store panel before promotion past display. Monthly review re-reads the regime cell."
       },
       "trial_count": 3
     }

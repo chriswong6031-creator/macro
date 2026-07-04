@@ -1,0 +1,158 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% set nav_prefix = '../' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ sub.name }} — {{ sub.theme }} · Subsector Rotation</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="../theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:24px 0 28px; }
+  a { text-decoration:none; color:inherit; }
+  .wrap { padding:16px 20px; }
+  @media (min-width:1100px){ .wrap{ padding:18px max(48px,calc((100vw - 1160px)/2)); } }
+  .sd-back { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700;
+             color:var(--link); margin:6px 2px 14px; }
+  .sd-head { display:flex; flex-wrap:wrap; align-items:flex-start; gap:10px 18px; margin:0 2px 6px; }
+  .sd-head h1 { font-size:26px; margin:0; font-weight:800; letter-spacing:-.02em; }
+  .sd-theme { font-size:13px; color:var(--muted); margin-top:3px; }
+  .sd-theme b { color:var(--text); font-weight:700; }
+  .sd-q { font-size:12px; font-weight:800; padding:4px 11px; border-radius:8px; white-space:nowrap;
+          align-self:center; }
+  .sd-q.q-lead{color:var(--up);background:color-mix(in srgb,var(--up) 15%,transparent);}
+  .sd-q.q-weak{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,transparent);}
+  .sd-q.q-impr{color:var(--link);background:color-mix(in srgb,var(--link) 15%,transparent);}
+  .sd-q.q-lag{color:var(--down);background:color-mix(in srgb,var(--down) 15%,transparent);}
+  .sd-lede { font-size:13.5px; color:var(--muted); max-width:78ch; line-height:1.55; margin:8px 2px 18px; }
+  .sd-lede b { color:var(--text); }
+  .sd-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .sd-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:13px 14px; }
+  .sd-card .lab { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+                  color:var(--muted); }
+  .sd-card .val { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:5px; }
+  .sd-card .sub { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  .up{color:var(--up);} .dn{color:var(--down);}
+  .sd-sec { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:16px; }
+  .sd-sec h2 { font-size:14px; font-weight:800; margin:0 0 12px; }
+  .sd-perf { display:flex; flex-wrap:wrap; gap:10px; }
+  .sd-perf .sp { display:flex; flex-direction:column; align-items:center; min-width:60px; padding:8px 10px;
+                 background:var(--panel2); border:1px solid var(--line); border-radius:10px; }
+  .sd-perf .sp i { font-style:normal; font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; }
+  .sd-perf .sp b { font-size:15px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:3px; }
+  .sd-mem { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
+  .sd-chip { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 11px;
+             background:var(--panel2); border:1px solid var(--line); border-radius:10px; transition:border-color .12s,background .12s; }
+  .sd-chip:hover { border-color:color-mix(in srgb,var(--link) 55%,var(--line)); background:color-mix(in srgb,var(--link) 6%,transparent); }
+  .sd-chip .tk { font-weight:800; font-size:13px; }
+  .sd-chip .pc { font-size:11.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .sd-chip .pc i { font-style:normal; color:var(--muted); font-weight:600; margin-right:3px; }
+  .sd-foot { color:var(--muted); font-size:11px; margin:8px 2px 0; line-height:1.6; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+    {% include "_navlinks.html.j2" %}
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="../mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
+    <a class="ai-brief-link" href="../aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <a class="sd-back" href="../{{ back_href | default('subsector_rotation.html') }}">← {{ t(back_en | default('Subsector Rotation map'), back_zh | default('子行业轮动图')) }}</a>
+
+  <div class="sd-head">
+    <div>
+      <h1>{{ t(sub.name, sub.name_zh) }}</h1>
+      <div class="sd-theme">{{ t('Theme', '主题') }}: <b>{{ t(sub.theme, sub.theme_zh) }}</b> · {{ sub.n_members }} {{ t('stocks', '只成分股') }}
+        · {{ t('heat rank', '热度排名') }} #{{ sub.rank }}{{ ' / ' ~ n_total }}</div>
+    </div>
+    <span class="sd-q {{ q_cls }}">{{ t(q_en, q_zh) }} · {{ t(qx_en, qx_zh) }}</span>
+  </div>
+
+  <div class="sd-lede">{{ t(lede_en, lede_zh) }}</div>
+
+  <div class="sd-grid">
+    <div class="sd-card">
+      <div class="lab">{{ t('Strength vs. market', '相对大盘强度') }}</div>
+      <div class="val {{ 'up' if sub.rs_ratio > 0 else ('dn' if sub.rs_ratio < 0 else '') }}">{{ '%+.2f'|format(sub.rs_ratio) }}</div>
+      <div class="sub">{{ t('positive = stronger than the median subsector', '正值 = 强于中位数子行业') }}</div>
+    </div>
+    <div class="sd-card">
+      <div class="lab">{{ t('Trend (velocity)', '趋势（速度）') }}</div>
+      <div class="val {{ 'up' if sub.rs_mom > 0 else ('dn' if sub.rs_mom < 0 else '') }}">{{ '%+.2f'|format(sub.rs_mom) }}</div>
+      <div class="sub">{{ t('rate of change of relative strength — heating (+) or cooling (−)', '相对强度的变化速度 — 升温 (+) 或降温 (−)') }}</div>
+    </div>
+    <div class="sd-card">
+      <div class="lab">{{ t('Acceleration', '加速度') }}</div>
+      <div class="val {{ 'up' if (sub.accel or 0) > 0 else ('dn' if (sub.accel or 0) < 0 else '') }}">{{ ('%+.1f'|format(sub.accel)) if sub.accel is not none else '—' }}</div>
+      <div class="sub">{{ t('latest weekly pace vs the 3-month pace', '最近一周节奏 vs 三个月节奏') }}</div>
+    </div>
+    <div class="sd-card">
+      <div class="lab">{{ t('Heat score', '热度评分') }}</div>
+      <div class="val {{ 'up' if sub.emerging_score > 0 else ('dn' if sub.emerging_score < 0 else '') }}">{{ '%+.2f'|format(sub.emerging_score) }}</div>
+      <div class="sub">{{ t('velocity + acceleration + recent strength, blended', '速度 + 加速度 + 近期强度的综合') }}</div>
+    </div>
+  </div>
+
+  <div class="sd-sec">
+    <h2>{{ t('Performance', '各周期表现') }}</h2>
+    <div class="sd-perf">
+      {% for h, lab_en, lab_zh in perf_rows %}
+      {% set v = sub.perf.get(h) %}
+      <div class="sp"><i>{{ t(lab_en, lab_zh) }}</i><b class="{{ 'up' if (v or 0) > 0 else ('dn' if (v or 0) < 0 else '') }}">{{ fmt_pc(v) }}</b></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if members %}
+  <div class="sd-sec">
+    <h2>{{ t('Member stocks', '成分股') }} <span style="color:var(--muted);font-weight:600;font-size:12px">({{ t('by 1-month return', '按1月涨跌') }})</span></h2>
+    <div class="sd-mem">
+      {% for m in members %}
+      <a class="sd-chip" href="../{{ stock_base | default('stock.html#') }}{{ m.t|urlencode }}">
+        <span class="tk">{{ m.name | default(m.t, true) }}</span>
+        <span class="pc">
+          <span class="{{ 'up' if (m['1M'] or 0) > 0 else ('dn' if (m['1M'] or 0) < 0 else '') }}"><i>1M</i>{{ fmt_pc(m['1M']) }}</span>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="sd-foot">
+    {{ t('Part of the broad-universe theme → subsector rotation map. Relative strength is measured cross-sectionally vs the median subsector; trend and acceleration measure the VELOCITY of relative strength, not nominal return. Member returns are point-in-time snapshots. Research context only — not investment advice.',
+          '来自全市场「主题 → 子行业」轮动图。相对强度以横截面方式相对中位数子行业衡量；趋势与加速度衡量的是相对强度的变化速度，而非名义涨跌。成分股涨跌为快照。仅供研究参考，非投资建议。') }}
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
+
+<script src="../theme.js"></script>
+</body>
+</html>

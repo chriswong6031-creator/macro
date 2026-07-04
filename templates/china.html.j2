@@ -1,8 +1,8 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
-{% macro help(en, zh='') -%}
-<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{% macro help(en, zh='', cls='') -%}
+<span class="help{% if cls %} {{ cls }}{% endif %}">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
 {%- endmacro %}
 {% macro nm(name) -%}
 {% set p = (name or '').split(' / ') %}<span class="l-en">{{ p[0] }}</span><span class="l-zh">{{ p[1] if p|length > 1 else p[0] }}</span>
@@ -44,6 +44,7 @@
   th .help .tip, .help.below .tip { bottom: auto; top: 150%; }
   .help.edge-right .tip { left: auto; right: 0; transform: none; }
   .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  .help.wide .tip { width: min(92vw, 372px); }
   /* structured tooltip building blocks (tables / scale bars / tinted rows) */
   .tip p { margin: 0 0 6px; } .tip p:last-child { margin-bottom: 0; } .tip b { color: var(--text); }
   .tip table { width: 100%; margin: 7px 0 2px; font-size: 11.5px; border-collapse: collapse; }
@@ -58,16 +59,6 @@
               color: color-mix(in srgb, var(--c, var(--muted)) 84%, var(--text)); }
   .tip .lad.up { --c: var(--up); } .tip .lad.down { --c: var(--down); } .tip .lad.warn { --c: var(--warn); }
   .tip .lad.orange { --c: var(--orange); } .tip .lad.info { --c: var(--info); } .tip .lad.muted { --c: var(--muted); }
-  /* residual-alpha entry tags (extended/pullback/intact/laggard) */
-  .alpha-entry { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
-                 border-radius:9px; text-transform:capitalize; border:1px solid var(--line);
-                 white-space:nowrap; }
-  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
-                 border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text);
-                 border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
-  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
-  .ae-laggard,.ae-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
   /* consolidated stock-screener: segmented mode toggle */
   .sb-seg { display:inline-flex; flex-wrap:wrap; gap:4px; padding:4px; border-radius:11px;
             background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
@@ -85,6 +76,18 @@
   .sb-table th.sorted { color:var(--text); }
   .sb-table .sarrow { font-size:9px; opacity:.32; margin-left:3px; font-weight:700; }
   .sb-table th.sorted .sarrow { opacity:.9; color:var(--link); }
+  /* sector washout→turn boost: row tint + chip (display re-rank only, never a filter) */
+  .sb-table tr.sbt2 td { background:color-mix(in srgb,var(--up) 9%,transparent); }
+  .sb-table tr.sbt1 td { background:color-mix(in srgb,var(--up) 4.5%,transparent); }
+  .sb-table tr.sbt2 td:first-child { box-shadow:inset 3px 0 0 var(--up); }
+  .sb-table tr.sbt1 td:first-child { box-shadow:inset 3px 0 0 color-mix(in srgb,var(--up) 45%,transparent); }
+  .sbt-chip { display:inline-block; font-size:9px; font-weight:700; line-height:1.5;
+              padding:0 6px; border-radius:999px; margin-left:6px; white-space:nowrap;
+              background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up);
+              border:1px solid color-mix(in srgb,var(--up) 35%,transparent); vertical-align:1px; }
+  .sbt-chip.soft { background:color-mix(in srgb,var(--up) 7%,transparent);
+              color:color-mix(in srgb,var(--up) 72%,var(--muted)); }
+  .sbt-legend { margin:0 0 10px; font-size:11px; text-transform:none; }
   /* ---- standout-stock cards (ported from the US dashboard) ------------------- */
   .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:10px; margin-top:11px; }
   /* mobile: pack the standout cards 2-up so the list doesn't scroll on and on (paired with the
@@ -1306,9 +1309,9 @@
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
       <span class="note" style="text-transform:none">· {{ t('washout → base → fresh turn · T1–T4 entry cascade', '洗盘 → 筑底 → 新转向 · T1–T4 入场级联') }}</span>
-      {{ help("A washout-to-base entry board — names that have been oversold, have formed a durable low, and are showing a <b>fresh 3D/2D momentum turn</b> (MACD-RSI × StochRSI confluence, graded T1 master confirmation → T4 earliest signal). The admission test is a <b>fresh cross at a low, not an extended breakout</b>. The 🌊 2W washout chip marks names where the 2-week StochRSI has just reclaimed the 20 line — a higher-timeframe washout turn that makes the base more durable. The ⚡ Coiled chip marks names in a compressed, cohort-washed base. <b>Three honest caveats:</b> (1) The validated A-share quarterly within-sector <b>reversal basket edge is a separate product</b> — it is not what drives this board's ranking. (2) Board order is driven by cascade tier + washout/COILED context; the displayed 0–100 score is <b>buy-readiness, not a conviction-edge probability</b>. (3) Forward grades are <b>accruing</b> (board_track below) and will be published when picks mature (~21 sessions). Context to size and confirm — not a buy list. <b>Three-shelf lifecycle (W1):</b> ENTRY = fresh turn inside a live setup (the only actionable shelf); RIPENING = setup forming but entry cascade not yet fired — watching, not acting; RAN/LATE = signal passed, shown for honesty only — do not chase. <b>Narrative confluence (W2, display-only):</b> The 🔥/≈ theme chip shows the hottest THS/curated concept basket a name belongs to (20d relative performance vs CSI300 + breadth of members above their 20d MA) — a descriptive positioning lens, not a buy trigger. A-tier = technical setup meets narrative heat (theme HOT or radar global-AI confirmer validated/partial); forward grades are accruing and will calibrate whether narrative-tagged names outperform untagged ones.", "洗盘到筑底的入场看板 —— 超卖、已形成耐久低点、并出现<b>3日/2日动量新转向</b>（MACD-RSI × StochRSI 共振，评级 T1 主确认 → T4 最早信号）的个股。准入标准是<b>低位新交叉，而非延伸突破</b>。🌊 2周洗盘标记代表2周 StochRSI 刚从超卖区上穿20线 —— 高周期洗盘转向，令底部更耐久。⚡ 蓄势标记代表处于压缩、群体洗净底部的个股。<b>三条诚实说明：</b>（1）已验证的A股季度板块内<b>反转篮子优势是独立产品</b> —— 它并非驱动本看板排序的因素。（2）排序由级联层级＋洗盘/蓄势背景驱动；显示的0–100评分是<b>买入就绪度，而非信念优势概率</b>。（3）前瞻成绩正在<b>累积中</b>（见下方榜单成绩单），将在成熟后（约21个交易日）公布。用于定仓与确认的背景 —— 而非买入清单。<b>三段式生命周期（W1）：</b>ENTRY 入场＝新鲜转向在活跃形态中触发（唯一可操作板块）；RIPENING 待熟＝形态形成中但入场级联尚未触发——观察而非行动；RAN/LATE 信号已过＝仅出于诚实展示——不要追涨。<b>叙事共振（W2，仅展示）：</b>🔥/≈ 主题标签显示该股所属最热概念篮子（相对CSI300的20日超额收益＋成员广度） —— 描述性定仓视角，非买入触发器。A级＝技术形态与叙事热度共振（主题HOT或雷达全球AI确认者已验证/部分验证）；前瞻评级正在积累，将校准有叙事标签的名称是否优于无标签者。") }}
+      {{ help("<b>Washout → base → fresh turn.</b> Admission is a fresh <b>MACD-RSI × StochRSI cross at a low</b> (graded T1 master → T4 earliest) — not an extended breakout.<p>🌊 <b>2W washout</b>: the 2-week StochRSI reclaimed 20 → a more durable base. ⚡ <b>Coiled</b>: a compressed, cohort-washed base.</p><span class='lad up'><b>ENTRY</b> · fresh turn in a live setup — the only actionable shelf.</span><span class='lad info'><b>RIPENING</b> · setup forming, cascade not yet fired — watch, don’t act.</span><span class='lad muted'><b>RAN / LATE</b> · signal already passed — shown for honesty, don’t chase.</span><p><b>Rank</b> = cascade tier + washout/Coiled context; the <b>0–100 score is buy-readiness, not an edge probability</b>. The validated A-share reversal basket is a separate product; forward grades are accruing (~21 sessions). Context to size and confirm — <b>not a buy list</b>.</p>", "<b>洗盘 → 筑底 → 新转向。</b>准入＝低位出现<b>MACD-RSI × StochRSI 新交叉</b>（评级 T1 主确认 → T4 最早信号）—— 而非延伸突破。<p>🌊 <b>2周洗盘</b>：2周 StochRSI 收复 20 → 底部更耐久。⚡ <b>蓄势</b>：压缩、群体洗净的底部。</p><span class='lad up'><b>ENTRY 入场</b> · 活跃形态中的新鲜转向 —— 唯一可操作板块。</span><span class='lad info'><b>RIPENING 待熟</b> · 形态形成、级联未触发 —— 观察，勿动。</span><span class='lad muted'><b>RAN / LATE 已过</b> · 信号已过 —— 仅为诚实展示，勿追。</span><p><b>排序</b>＝级联层级＋洗盘/蓄势背景；<b>0–100 评分是买入就绪度，而非优势概率</b>。已验证的 A 股反转篮子是独立产品；前瞻成绩正在累积（约 21 个交易日）。用于定仓与确认 —— <b>而非买入清单</b>。</p>", "wide") }}
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Names that have washed out, formed a base, and fired a fresh 3D/2D turn — MACD-RSI × StochRSI confluence tier T1 (master) through T4 (earliest). Ranked by cascade tier + washout/COILED context (not the displayed score). The 🌊 2W washout chip and ⚡ Coiled chip are rank bonuses that reward earlier, more durable setups. The displayed 0–100 score is buy-readiness (how set up the name is to rise from here), not a rank input. Three caveats on the board: (i) the validated A-share reversal edge is a separate quarterly basket product, not this board\'s ranking; (ii) forward grades are accruing and will publish when mature; (iii) a high score on a name whose entry gauge reads “hold” or “extended” means the setup looks good but entry timing is not yet there — size and confirm, not a buy list.', '经历洗盘、完成筑底、触发3日/2日新转向的个股 —— MACD-RSI × StochRSI 共振级别 T1（主确认）至 T4（最早信号）。按级联层级＋洗盘/蓄势背景排序（而非显示评分）。🌊 2周洗盘与⚡ 蓄势标记是排序加分项，奖励更早、更耐久的形态。显示的0–100评分是买入就绪度（该股从当前位置上行的准备程度），并非排序输入。关于本看板的三点说明：（i）已验证的A股反转优势是独立的季度篮子产品，并非本看板的排序依据；（ii）前瞻成绩正在累积，成熟后将公布；（iii）入场量表显示”观望”或”过热”时即便高分也表示形态良好但入场时机尚未到来 —— 用于定仓与确认，而非买入清单。') }}</p>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Washout → base → fresh 3D/2D turn (T1 master → T4 earliest). Ordered by cascade tier + washout/⚡ Coiled context — the 0–100 score is buy-readiness, not the rank. Not a buy list.', '洗盘 → 筑底 → 3日/2日新转向（T1 主确认 → T4 最早）。按级联层级＋洗盘/⚡ 蓄势背景排序 —— 0–100 评分是买入就绪度，并非排序。而非买入清单。') }}</p>
     {% if setups.qvix_regime %}{% set q = setups.qvix_regime %}
     <div style="margin:6px 0 9px;padding:7px 11px;border-radius:9px;font-size:11.5px;line-height:1.5;border:1px solid var(--line);border-left:3px solid {{ 'var(--warn)' if q.verdict=='caution' else ('var(--link)' if q.verdict=='confirm' else 'var(--muted)') }};background:color-mix(in srgb,{{ 'var(--warn)' if q.verdict=='caution' else 'var(--link)' }} 7%,var(--panel))">
       <span style="font-size:13px">{% if q.regime=='panic' %}🌀{% elif q.regime=='suppressed' %}🧊{% else %}〰{% endif %}</span>
@@ -1362,6 +1365,8 @@
         {# W2-B: A/B-tier badge next to why_ranked; narrative chip below (display-only) #}
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span class="nb-stage stg-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
+          {% set _cs = (n.get('stage_detail') or {}).get('cross_sessions_since') %}
+          {% if _cs is not none %}<span class="nb-why" data-tip-en="Gate cross fired {{ _cs }} session(s) ago — the fresh-window reason this name is on the ENTRY shelf" data-tip-zh="信号交叉于{{ _cs }}个交易日前触发 — 新鲜窗口，故列入入场板块">✚ <span class="l-en">crossed {{ _cs }}s ago</span><span class="l-zh">{{ _cs }}日前交叉</span></span>{% endif %}
           {% if n.get('why_ranked') %}<span class="nb-why" data-tip-en="Why ranked here: {{ n.get('why_ranked','') }}" data-tip-zh="此处排序原因">{{ n.get('why_ranked') }}</span>{% endif %}
           {% if n.get('ab_tier') == 'A' %}<span class="nb-atier" data-tip-en="A-tier: setup + narrative confluence — the owner playbook strongest case; display-only, forward grades accruing" data-tip-zh="A级：技术形态与叙事共振 — 操作手册中最强案例；仅展示，前瞻评级积累中">A</span>{% elif n.get('ab_tier') == 'B' %}<span class="nb-atier tier-b" data-tip-en="B-tier: setup qualifies but no current narrative heat confirmation" data-tip-zh="B级：形态合格但无当前叙事热度确认">B</span>{% endif %}
         </div>
@@ -1473,7 +1478,7 @@
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal live — entry passed; wait for pullback. Shown for honesty, not action — do not chase.</span><span class="l-zh">信号有效但入场时机已过；等待回调。出于诚实展示 — 不要追涨。</span></span>
     </div>
-    <div class="nbgrid">
+    <div class="nbgrid" data-showmore-rows="3">
     {% for n in _ran_late_rows %}
       {% set _d = 'caution' %}
       <a class="nbcard nb-{{ _d }} nb-stage-ran-card" href="china_lookup.html#{{ n.ticker }}">
@@ -1490,7 +1495,7 @@
         {# Prominent detail string — what happened: sublabel from rule 2 #}
         {% set _sl = n.get('stage_sublabel') %}
         {% if _sl %}
-        <div class="nb-ran-detail"><span class="l-en">{{ _sl }}</span><span class="l-zh">信号有效但入场时机已过；等待回调</span></div>
+        <div class="nb-ran-detail"><span class="l-en">{{ _sl }}</span><span class="l-zh">{{ n.get('stage_sublabel_zh') or '信号有效但入场时机已过；等待回调' }}</span></div>
         {% endif %}
         <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}</span></span>{% endif %}{% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}</div>
         {% set c = n.conviction %}
@@ -1555,7 +1560,7 @@
       <span class="nb-shelf-tag st-ripe"><span class="l-en">RIPENING</span><span class="l-zh">待熟</span></span>
       <span class="nb-shelf-expl"><span class="l-en">setups forming — NOT an entry signal; watching for the turn. Screened from the full closes universe.</span><span class="l-zh">形态形成中 — 非入场信号；等待转向。从全收盘价宇宙筛选。</span></span>
     </div>
-    <div class="nb-rip-grid">
+    <div class="nb-rip-grid" data-showmore-rows="3">
     {% for r in _rip %}
     <div class="nb-rip-card">
       <div class="nb-rip-top">
@@ -1590,7 +1595,7 @@
       <span class="nb-shelf-tag st-ran"><span class="l-en">RAN / LATE</span><span class="l-zh">信号已过</span></span>
       <span class="nb-shelf-expl"><span class="l-en">signal fired and aged out — shown for honesty, not action. Do not chase.</span><span class="l-zh">信号已触发并过期 — 出于诚实展示，不可追涨。</span></span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">
+    <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px" data-showmore="8">
     {% for r in _ran %}
     <div style="display:flex;align-items:flex-start;gap:9px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:10.5px">
       <div style="flex:none;min-width:90px">
@@ -1663,22 +1668,25 @@
   <div class="panel span12" id="stock-screener">
     <h2>{{ t('🎯 Stock screener — one board, two validated lenses', '🎯 选股面板 — 一板双镜') }}
       <span class="note" style="text-transform:none">· {{ t('switch the lens; the table re-sorts', '切换视角；表格随之重排') }}{% if scoreboard.as_of %} · {{ scoreboard.as_of }}{% endif %}</span>
-      {{ help("The scattered single-signal screens, consolidated into ONE switchable board. Two validated lenses — flip between them with the toggle: <b>Mean-reversion</b> = the deepest 3-month within-sector dips (the one robust, FDR-surviving A-share edge: cross-sectional Sharpe 0.58; a high-variance contrarian signal that buys into weakness). <b>Low-vol defensive</b> = the lowest-volatility names (market-like returns, shallower drawdowns → higher Sharpe; a risk-REDUCING tilt, not a return-maximizer). Click any column to sort. Context to size and confirm — NOT a buy list.", "把分散的单一信号筛选合并为一块可切换的面板。两种已验证视角 —— 用开关切换：<b>均值回归</b>＝板块内近3月跌幅最深者（A股唯一稳健、通过FDR的优势：横截面夏普0.58；高波动逆向信号，买入弱势）。<b>防御低波</b>＝波动率最低的个股（收益与市场相近、回撤更浅→更高夏普；降低风险的倾向，而非收益最大化）。点击任意列排序。用于定仓与确认的背景 —— 而非买入清单。") }}
+      {{ help("<b>Scattered single-signal screens, consolidated into one switchable board.</b> Two validated A-share lenses:<span class='lad info'><b>🔄 Mean-reversion</b> — the deepest 3-month within-sector dips; the one FDR-surviving edge (Sharpe 0.58). High-variance, buys weakness.</span><span class='lad up'><b>🛡 Low-vol defensive</b> — the lowest-volatility names; market-like return, shallower drawdowns (Sharpe 0.98 vs 0.88). A risk-reducing tilt.</span><p><b>▲ Sector-turn boost</b>: rows whose sector washed out with the name and is now turning (a fresh 2D-MACD × 3D-StochRSI cross, or peers basing) are tinted and float to the top of the default order. A <b>display re-rank, never a filter</b> — sector-state gating was falsified (china-reversal-gated.md).</p><p>Click any column for the pure sort. Context to size and confirm — <b>not a buy list</b>.</p>", "<b>把分散的单一信号筛选合并为一块可切换的面板。</b>两种已验证的 A 股视角：<span class='lad info'><b>🔄 均值回归</b> —— 板块内近 3 月跌幅最深者；唯一通过 FDR 的优势（夏普 0.58）。高波动、买入弱势。</span><span class='lad up'><b>🛡 防御低波</b> —— 波动率最低者；收益与市场相近、回撤更浅（夏普 0.98 对 0.88）。降低风险的倾向。</span><p><b>▲ 板块转向提升</b>：若某股所在板块随其一同洗盘、且正在转向（板块合成指数刚出现 2D-MACD × 3D-StochRSI 新交叉，或同板块个股筑底），该行会着色并浮至默认排序顶部。<b>仅为展示层重排、绝非过滤</b> —— 板块状态作为门槛已被证伪（china-reversal-gated.md）。</p><p>点击任意列即为纯排序。用于定仓与确认 —— <b>而非买入清单</b>。</p>", "wide") }}
     </h2>
     <div class="sb-seg" role="tablist" aria-label="screener mode">
       <button role="tab" data-mode="reversal" aria-selected="true">{{ t('🔄 Mean-reversion', '🔄 均值回归') }}</button>
       <button role="tab" data-mode="lowvol" aria-selected="false">{{ t('🛡 Low-vol defensive', '🛡 防御低波') }}</button>
     </div>
     <p class="note sb-cap" id="sb-cap"><!-- per-mode caption injected by JS --></p>
+    <p class="note sbt-legend" id="sbt-legend" style="display:none"><!-- sector-turn legend injected by JS when any sector is boosted --></p>
     <table class="sb-table"><thead id="sb-head"></thead><tbody id="sb-body"></tbody></table>
     <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Validated A-share effects only: short-term within-sector REVERSAL (Sharpe 0.58) and the LOW-VOL defensive tilt (Sharpe 0.98 vs 0.88 market). Classic momentum / value / quality were tested over ~35 years and do NOT clear FDR on A-shares. A research surface to size and confirm — not a confident buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '仅采用已验证的A股效应：短期板块内反转（夏普0.58）与低波防御倾向（夏普0.98 对 市场0.88）。经典动量／价值／质量在约35年里测试均未通过FDR。用于定仓与确认的研究面板 —— 而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>
     <script type="application/json" id="sb-data">{{ scoreboard.modes | tojson }}</script>
     <script type="application/json" id="sb-seczh">{{ SECZH | tojson }}</script>
+    <script type="application/json" id="sb-turn">{{ (scoreboard.get('sector_turn') or {}) | tojson }}</script>
     <script>
     (function () {
-      var DATA, SECZH;
+      var DATA, SECZH, TURN;
       try { DATA = JSON.parse(document.getElementById('sb-data').textContent); } catch (e) { return; }
       try { SECZH = JSON.parse(document.getElementById('sb-seczh').textContent); } catch (e) { SECZH = {}; }
+      try { TURN = JSON.parse(document.getElementById('sb-turn').textContent) || {}; } catch (e) { TURN = {}; }
       var head = document.getElementById('sb-head'), body = document.getElementById('sb-body'),
           cap = document.getElementById('sb-cap'),
           seg = document.querySelector('#stock-screener .sb-seg');
@@ -1688,11 +1696,33 @@
       function cls(v) { return v >= 0 ? 'pos' : 'neg'; }
       function nm(name) { var p = String(name || '').split(' / '); return bl(p[0], p[1] || p[0]); }
       function ladDir(d) { return d === 'up' ? 'up' : (d === 'down' ? 'down' : 'flat'); }
+      // sector washout→turn boost (per-sector map built by engine/china_sector_turn):
+      // leg A = the sector composite washed out AND just fired the validated 2D-MACD x
+      // 3D-StochRSI turn; leg B = the sector's washed-out peers have stopped falling
+      // (decline velocity collapsed / slight uptick). Re-ranks the DEFAULT view + tints
+      // rows; an explicit column click always gives the pure sort (never a filter).
+      function turnOf(r) { return (r.sector && TURN[r.sector]) || null; }
+      function boostOf(r) { var t = turnOf(r); return t ? (t.boost || 0) : 0; }
+      function turnChips(r) {
+        var t = turnOf(r), out = '';
+        if (!t) return out;
+        if (t.leg_turn) {
+          var proj = t.turn && t.turn.tier === 'T3';
+          out += ' <span class="sbt-chip">▲ ' + (proj
+            ? bl('sector turning (proj)', '板块转向临近（预测）')
+            : bl('sector turned 2D×3D', '板块2D×3D已转向')) + '</span>';
+        }
+        if (t.leg_peers) {
+          out += ' <span class="sbt-chip soft">' + bl('peers basing', '同板块筑底')
+               + ' ' + t.peers.based_n + '/' + t.peers.washed_n + '</span>';
+        }
+        return out;
+      }
       var COL = {
         stock: { en: 'Stock', zh: '个股', l: true, key: function (r) { return r.ticker; },
           cell: function (r) { return '<a href="china_lookup.html#' + r.ticker + '"><b>' + r.ticker + '</b></a> <span class="note">' + nm(r.name) + '</span>'; } },
         sector: { en: 'Sector', zh: '板块', l: true, key: function (r) { return r.sector || ''; },
-          cell: function (r) { return '<span class="note">' + bl(r.sector || '—', SECZH[r.sector] || r.sector || '—') + '</span>'; } },
+          cell: function (r) { return '<span class="note">' + bl(r.sector || '—', SECZH[r.sector] || r.sector || '—') + '</span>' + turnChips(r); } },
         price: { en: 'Price', zh: '价格', key: function (r) { return r.price; },
           cell: function (r) { return r.price != null ? r.price.toFixed(2) : '—'; } },
         cycle: { en: 'Cycle', zh: '周期', l: true, key: null,
@@ -1712,14 +1742,21 @@
       };
       var MODES = {
         reversal: { cols: ['stock', 'sector', 'price', 'ret3m', 'revz', 'srank', 'mcap', 'cycle'],
-          cap: bl('The most beaten-down names vs their sector over 3 months — the validated A-share edge (within-sector reversal, Sharpe 0.58). A high-variance contrarian signal that buys into weakness; size small, not a buy list.', '近3个月相对其板块跌幅最深的个股 —— 已验证的A股优势（板块内反转，夏普0.58）。高波动逆向信号，买入弱势；宜小仓位，而非买入清单。') },
+          cap: bl('The deepest 3-month within-sector dips — the validated A-share reversal edge (Sharpe 0.58). High-variance, buys weakness; size small, not a buy list.', '板块内近 3 月跌幅最深者 —— 已验证的 A 股反转优势（夏普 0.58）。高波动、买入弱势；宜小仓位，而非买入清单。') },
         lowvol: { cols: ['stock', 'sector', 'price', 'vol', 'beta', 'mcap', 'cycle'],
-          cap: bl('The lowest-volatility names — historically market-like returns with shallower drawdowns (the validated defensive tilt, Sharpe 0.98 vs 0.88 market). For risk-aware exposure, not return maximization.', '波动率最低的个股 —— 历史上收益与市场相近但回撤更浅（已验证的防御倾向，夏普0.98 对 市场0.88）。用于风险可控的敞口，而非收益最大化。') },
+          cap: bl('The lowest-volatility names — market-like returns with shallower drawdowns (the validated defensive tilt, Sharpe 0.98 vs 0.88). Risk-aware exposure, not return maximization.', '波动率最低者 —— 收益与市场相近但回撤更浅（已验证的防御倾向，夏普 0.98 对 0.88）。风险可控的敞口，而非收益最大化。') },
       };
-      var cur = 'reversal', sortCol = null, sortDir = 'desc';
+      var cur = 'reversal', sortCol = null, sortDir = 'desc', userSorted = false;
+      var legend = document.getElementById('sbt-legend');
       function render() {
         var spec = MODES[cur], cols = spec.cols.map(function (c) { return COL[c]; });
         cap.innerHTML = spec.cap;
+        // sector-turn legend: only when a shown sector actually carries a boost
+        var anyBoost = (DATA[cur] || []).some(function (r) { return boostOf(r) > 0; });
+        if (legend) {
+          legend.style.display = anyBoost ? '' : 'none';
+          if (anyBoost) legend.innerHTML = '<span class="sbt-chip">▲ ' + bl('sector turned', '板块已转向') + '</span> ' + bl('= the name’s sector washed out with it and just fired the validated 2D-MACD × 3D-StochRSI turn.', '＝该股所在板块随其一同洗盘，且刚在已验证的 2D-MACD × 3D-StochRSI 上转向。') + ' <span class="sbt-chip soft">' + bl('peers basing', '同板块筑底') + '</span> ' + bl('= the sector’s washed-out peers have stopped falling (velocity collapsed, some ticking up).', '＝板块内洗盘个股大多已止跌（下跌骤减、部分回升）。') + ' ' + bl('Boosted rows float to the top of the default order — click any column for the pure sort. A display re-rank, never a filter.', '仅提升默认排序（点击任意列即为纯排序）。展示层重排、绝非过滤。');
+        }
         // header
         var hh = '<tr>';
         cols.forEach(function (c, i) {
@@ -1731,11 +1768,14 @@
         });
         hh += '</tr>';
         head.innerHTML = hh;
-        // rows
+        // rows — DEFAULT order pushes sector-turn boosted names to the top (boost desc,
+        // then the mode's default key inside each group); an explicit header click gives
+        // the pure single-column sort with no boost.
         var rows = DATA[cur] ? DATA[cur].slice() : [];
         if (sortCol !== null && cols[sortCol] && cols[sortCol].key) {
           var kf = cols[sortCol].key, sgnd = sortDir === 'desc' ? -1 : 1;
           rows.sort(function (a, b) {
+            if (!userSorted) { var db = boostOf(b) - boostOf(a); if (db) return db; }
             var va = kf(a), vb = kf(b);
             if (va == null) va = -Infinity; if (vb == null) vb = -Infinity;
             if (typeof va === 'string' || typeof vb === 'string')
@@ -1745,7 +1785,8 @@
         }
         var bb = '';
         rows.forEach(function (r) {
-          bb += '<tr>' + cols.map(function (c) {
+          var bcls = boostOf(r);  // tint follows the boost even under a user sort
+          bb += '<tr' + (bcls ? ' class="sbt' + bcls + '"' : '') + '>' + cols.map(function (c) {
             return '<td class="' + (c.l ? 'l' : '') + '">' + c.cell(r) + '</td>';
           }).join('') + '</tr>';
         });
@@ -1755,7 +1796,7 @@
       function setMode(m) {
         cur = m;
         var cols = MODES[cur].cols.map(function (c) { return COL[c]; });
-        sortCol = null; sortDir = 'desc';
+        sortCol = null; sortDir = 'desc'; userSorted = false;
         cols.forEach(function (c, i) { if (c.def && sortCol === null) { sortCol = i; sortDir = c.def; } });
         Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) {
           b.setAttribute('aria-selected', b.getAttribute('data-mode') === m ? 'true' : 'false');
@@ -1771,6 +1812,7 @@
         var i = parseInt(th.getAttribute('data-i'), 10);
         if (sortCol === i) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
         else { sortCol = i; sortDir = 'desc'; }
+        userSorted = true;
         render();
       });
       setMode('reversal');
@@ -1779,42 +1821,7 @@
   </div>
   {% endif %}
 
-  <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
-  {% if alpha and alpha.top %}
-  <div class="panel span12" id="alpha-leaders">
-    <h2>{{ t('📊 Sector relative strength — read the mean-reversion flag', '📊 板块相对强度 — 关注均值回归标记') }}
-      <span class="note" style="text-transform:none">· {{ t('sector-neutral residual · vs CSI 300', '板块中性残差 · 相对沪深300') }}{% if alpha.n %} · {{ alpha.n }} {{ t('names', '只') }}{% endif %}</span>
-      {{ help("Each stock's return with its MARKET and SECTOR beta stripped — <b>sector-neutral residual relative strength</b> over a 12-1-month window (rank vs the whole A-share cross-section; +2 = top of the pack). <b>IMPORTANT — deep-history correction:</b> on ~35 years of A-share data this momentum is NOT a validated edge — A-shares MEAN-REVERT, so do not read 'high alpha = buy' (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). Read the <b>entry</b> flag instead: a leader that just spiked (“extended”) is a reversal RISK / fade candidate; a leader on a recent pullback (“pullback”) is the constructive MEAN-REVERSION entry — the validated effect. The alpha column is relative-strength CONTEXT (which names have shown strength), not a buy ranking.", "每只股票剔除其市场与板块贝塔后的收益 —— <b>板块中性残差相对强度</b>（12-1 个月；相对全 A 股横截面排名，+2＝最强一档）。<b>重要 —— 深度历史校正：</b>在约35年的A股数据上，该动量并非有效优势 —— A股<b>均值回归</b>，因此切勿把“高 alpha＝买入”（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。请改看<b>入场</b>标记：刚急涨的领先股（“extended”）是反转风险/做空候选；近期回调的领先股（“pullback”）才是有效的<b>均值回归</b>入场。alpha 列是相对强度<b>背景</b>（哪些个股表现出强势），并非买入排序。") }}
-    </h2>
-    <table class="sortable">
-      <thead><tr>
-        <th class="l">{{ t('Stock', '个股') }}</th>
-        <th class="l">{{ t('Sector', '板块') }}</th>
-        <th>{{ t('alpha z', '阿尔法 z') }}</th>
-        <th>{{ t('sector rank', '板块排名') }}</th>
-        <th>{{ t('idio ann', '年化残差') }}</th>
-        <th>{{ t('1-mo', '近一月') }}</th>
-        <th class="l">{{ t('entry', '入场') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for a in alpha.top[:16] %}
-      <tr>
-        <td class="l"><a href="china_lookup.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="note">{{ nm(a.name) }}</span></td>
-        <td class="l note">{{ t(a.sector, SECZH.get(a.sector, a.sector)) }}</td>
-        <td><b class="{{ 'pos' if (a.alpha or 0)>=0 else 'neg' }}">{{ '%+.2f'|format(a.alpha) if a.alpha is not none else '—' }}</b></td>
-        <td class="note">{{ a.sector_rank }}/{{ a.sector_n }}</td>
-        <td class="{{ 'pos' if (a.resid_ann or 0)>=0 else 'neg' }}">{{ '%+.0f'|format(a.resid_ann) ~ '%' if a.resid_ann is not none else '—' }}</td>
-        <td class="{{ 'pos' if (a.rev_1m or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(a.rev_1m) ~ '%' if a.rev_1m is not none else '—' }}</td>
-        <td class="l">{% if a.entry %}{% set _aez = {'pullback':'回调买点','extended':'急涨偏热','intact':'趋势完好','laggard':'落后','neutral':'中性'} %}<span class="alpha-entry ae-{{ a.entry }}">{{ t(a.entry, _aez.get(a.entry, a.entry)) }}</span>{% endif %}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    <p class="note" style="margin:6px 0 0;font-size:11px">{{ t('Sector-neutral residual relative strength. Deep-history corrected: A-share momentum is NOT a validated edge (35y, nothing clears FDR) — the robust effect is short-term REVERSAL, so the actionable read is the entry flag (pullback = mean-reversion buy; extended = fade risk), not the alpha ranking. Relative-strength context, not a buy list.', '板块中性残差相对强度。经深度历史校正：A股动量并非有效优势（35年，无一通过FDR）—— 稳健的效应是短期反转，因此可操作的解读是入场标记（pullback＝均值回归买入；extended＝做空风险），而非 alpha 排序。相对强度背景，而非买入清单。') }}</p>
-  </div>
-  {% endif %}
-
-  {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch, alpha leaders) #}
+  {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch) #}
 
   {% set I = internals or {} %}
 

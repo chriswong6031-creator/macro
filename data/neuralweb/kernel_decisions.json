@@ -1,0 +1,22 @@
+{
+  "batch_id": null,
+  "run_at": null,
+  "alpha": 0.1,
+  "trial_family": "reliability_kernel",
+  "decision_rule": {
+    "n_eff_floor": 25,
+    "staleness_days": 380,
+    "test": "one_sided_sign_test",
+    "h0": 0.5,
+    "fdr_correction": "benjamini_hochberg",
+    "alpha": 0.1,
+    "family_scope": "all_eligible_cells_one_family_per_batch"
+  },
+  "n_eligible": 0,
+  "n_survivors": 0,
+  "survivors": [],
+  "trial_ledger_ref": null,
+  "next_batch_due": "2026-10-01",
+  "note": "no decision batch has run; first batch due 2026-10-01; estimates are display-only",
+  "standing_law": "Only cells present in survivors[] may EVER feed a behavior-changing consumer. Each consumer hookup additionally requires its own PR + registry event. This field is structural enforcement of the display-first law — it is not documentation."
+}

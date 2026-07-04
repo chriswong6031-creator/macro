@@ -58,6 +58,12 @@ DEFAULT_DIRS = [
 # Dirs whose source lives under data/ rather than site/ (per-ticker parquet stores
 # that are never rendered into site/ — published straight from the data plane).
 _DATA_DIRS = {"hk_stocks_ext", "massive_stock_day"}
+# A data-dir tree with fewer files than this is a PARTIAL CHECKOUT (the parquets are
+# gitignored — a CI runner checkout holds just the committed _manifest.json +
+# _backfill_state.json), not the store. Syncing it would overwrite R2's full-history
+# objects with 2-file stubs; refuse instead. Only the store host (the Mac main
+# checkout, where the backfill materialises the parquets) may publish these dirs.
+_DATA_DIR_MIN_FILES = 100
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}
 
@@ -115,6 +121,32 @@ def _remote_manifest(s3, bucket: str, d: str) -> dict | None:
         return None
 
 
+def _data_dir_syncable(d: str, n_files: int) -> tuple[bool, str]:
+    """May this dir's local tree be synced to R2?  Data-dir stores (parquets under
+    data/<dir>, gitignored) exist in full ONLY on the store host — a CI runner
+    checkout holds just the committed JSON stubs, and syncing those would overwrite
+    the R2 store's full-history objects.  Site dirs are always syncable."""
+    if d in _DATA_DIRS and n_files < _DATA_DIR_MIN_FILES:
+        return False, (f"only {n_files} file(s) locally (< {_DATA_DIR_MIN_FILES}) — "
+                       "partial checkout, the parquet store is not materialised here")
+    return True, ""
+
+
+def _manifest_doc(d: str, base: Path, names: list[str]) -> dict:
+    """The manifest object to put for dir `d`.  Data-dir stores keep their own
+    collector-written _manifest.json (freshness + coverage/anchor blocks — see
+    collectors/massive_stock_day._write_manifest); the file-list put would clobber
+    it on R2, losing the coverage evidence audit_r2's content probe reads — so it
+    is embedded under "store" instead."""
+    doc: dict = {"dir": d, "count": len(names), "files": names}
+    if d in _DATA_DIRS:
+        try:
+            doc["store"] = json.loads((base / "_manifest.json").read_text())
+        except Exception:  # noqa: BLE001 — no/unparsable local store manifest: plain list
+            pass
+    return doc
+
+
 def _manifest_ok(new_count: int, remote: dict | None, floor: float = 0.5) -> tuple[bool, str]:
     """May a freshly-built manifest replace `remote`? Bulk consumers sync AND PRUNE
     against this list, so a partial-tree invocation must never clobber it: replacing
@@ -150,6 +182,13 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
             log.info("%s: absent — skip", d)
             continue
         files = [p for p in base.rglob("*") if p.is_file()]
+        ok, why = _data_dir_syncable(d, len(files))
+        if not ok:
+            log.error("%s: %s — refusing to sync so the R2 copy isn't clobbered; "
+                      "publish from the store host instead.", d, why)
+            print(f"::warning title=publish_r2 partial data-dir::{d}: {why} — dir "
+                  "skipped", flush=True)
+            continue
         remote = _remote_etags(s3, bucket, d + "/")
         todo = []
         for p in files:
@@ -192,7 +231,7 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
             continue
         log.info("%s: manifest put — %s", d, why)
         s3.put_object(Bucket=bucket, Key=f"{d}/_manifest.json",
-                      Body=json.dumps({"dir": d, "count": len(names), "files": names}).encode(),
+                      Body=json.dumps(_manifest_doc(d, base, names)).encode(),
                       ContentType="application/json")
     log.info("R2 publish done: %d uploaded, %d unchanged (bucket=%s)", up, skip, bucket)
     return 0

@@ -23,6 +23,24 @@ import pytest
 import engine.board_ledger as bl
 
 
+@pytest.fixture(autouse=True)
+def _no_real_regime_vector(monkeypatch):
+    """Cut off the one real-data read in this module for every test.
+
+    append_board() and grade()'s backfill loop stamp rows via
+    engine.regime_vector.get_vector_for_date, which reads the persisted
+    data/regime/regime_vector.parquet when it exists. Results must not depend
+    on whether that file is present on the machine running the tests, so the
+    default here is the file-absent path (a null stamp). Tests that exercise
+    the stamping logic itself re-patch get_vector_for_date over this."""
+    import engine.regime_vector as rv
+
+    def _absent(*_a, **_k):
+        raise FileNotFoundError("hermetic tests: real regime_vector.parquet is off-limits")
+
+    monkeypatch.setattr(rv, "get_vector_for_date", _absent)
+
+
 # ---------------------------------------------------------------------------
 # Helpers to build synthetic close series and mock store access
 # ---------------------------------------------------------------------------
@@ -986,3 +1004,47 @@ class TestKeepFirstWithNewCols:
         assert float(row["edge_z"]) == pytest.approx(2.0)  # not 9.9
         assert row["us_rate_pressure"] == "low"   # v1 stamp preserved, not "rising"
         assert row["us_quad_hard_label"] == "Q4"  # v1 stamp preserved, not "Q1"
+
+
+# ---------------------------------------------------------------------------
+# W0.2 Stage C — near-miss fields on the append path
+# ---------------------------------------------------------------------------
+class TestNearMissFields:
+
+    def test_taxonomy_reason_and_knife_fields_persist(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        n = bl.append_board([{
+            "ticker": "0001.HK", "group": "watch",
+            "primary_rejection_reason": "knife_demote",
+            "knife_demoted": True, "knife_z": -1.83,
+            "block_reason": "weekly still falling",
+        }], market="HK", asof="2026-07-06")
+        assert n == 1
+        row = pd.read_parquet(tmp_path / "hk_board.parquet").iloc[0]
+        assert row["primary_rejection_reason"] == "knife_demote"
+        assert bool(row["knife_demoted"]) is True
+        assert float(row["knife_z"]) == -1.83
+        assert row["block_reason"] == "weekly still falling"
+
+    def test_non_taxonomy_reason_nulled_loudly(self, tmp_path, monkeypatch, caplog):
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        import logging
+        with caplog.at_level(logging.WARNING):
+            bl.append_board([{
+                "ticker": "AC.TO", "group": "watch",
+                "primary_rejection_reason": "not_in_the_closed_set",
+            }], market="CA", asof="2026-07-06")
+        row = pd.read_parquet(tmp_path / "ca_board.parquet").iloc[0]
+        assert pd.isna(row["primary_rejection_reason"])
+        assert any("non-taxonomy" in r.message for r in caplog.records)
+
+    def test_entry_rows_get_null_near_miss_fields(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bl, "_store_path",
+                            lambda m: tmp_path / f"{m.lower()}_board.parquet")
+        bl.append_board([{"ticker": "0005.HK", "group": "entry_open",
+                          "edge_z": 1.0}], market="HK", asof="2026-07-06")
+        row = pd.read_parquet(tmp_path / "hk_board.parquet").iloc[0]
+        assert pd.isna(row["primary_rejection_reason"])
+        assert pd.isna(row["knife_z"])

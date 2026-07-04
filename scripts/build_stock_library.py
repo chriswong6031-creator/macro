@@ -623,6 +623,38 @@ def _json_safe(o):
     return o
 
 
+# Urgency values that read as actionable on the board. A blocked signal must never
+# carry any of these (check_board_contradictions.py invariant (b) asserts the
+# artifact side; this is the builder side).
+_ACTIONABLE_URGENCIES = ("now", "imminent")
+
+
+def _enforce_blocked_buy_invariant(buy_rows: list[dict]) -> int:
+    """W6-US invariant (b): a BUY row whose signal.last.quality == 'block' must not
+    carry actionable urgency, and its label must carry the '(blocked)' marker.
+
+    Downgrades urgency in _ACTIONABLE_URGENCIES → 'caution'. The original pass only
+    downgraded 'now'; 'imminent' slipped through and shipped rows with
+    label='BOTTOMING (blocked)' + urgency='imminent' (REZI/NGVT/ATMU/PCG, 2026-07),
+    tripping the pages.yml deploy gate. Mutates rows in place; returns rows touched.
+    """
+    touched = 0
+    for _r in buy_rows:
+        _last = (_r.get("signal") or {}).get("last") or {}
+        if _last.get("quality") != "block":
+            continue
+        touched += 1
+        if _r.get("urgency") in _ACTIONABLE_URGENCIES:
+            _r["urgency"] = "caution"
+        _lbl = _r.get("label")
+        if _lbl and "(blocked)" not in str(_lbl):
+            _r["label"] = f"{_lbl} (blocked)"
+        _lbl_zh = _r.get("label_zh")
+        if _lbl_zh and "（受阻）" not in str(_lbl_zh):
+            _r["label_zh"] = f"{_lbl_zh}（受阻）"
+    return touched
+
+
 def _basket_membership_map() -> dict[str, list[dict]]:
     """All active thematic basket memberships per ticker — for the detail page.
     Reads membership.json (no live performance data needed). Returns
@@ -685,8 +717,17 @@ def _spotlight_context() -> dict:
     alloc_by_id = _basket_alloc_map(theme_by_id)
     log.info("spotlight context: %d scored themes · %d sector stages · %d basket alloc states",
              len(theme_by_id), len(sector_by_etf), len(alloc_by_id))
+    # Oracle dark-tilt channel — {} unless config oracle.tilt_enabled (R4: default off).
+    try:
+        from engine.oracle.tilt import oracle_tilt_by_etf
+        oracle_by_etf = oracle_tilt_by_etf()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("oracle tilt channel unavailable (%s)", e)
+        oracle_by_etf = {}
+    if oracle_by_etf:
+        log.info("spotlight context: oracle tilt ENABLED for %d sector ETFs", len(oracle_by_etf))
     return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf,
-            "alloc_by_id": alloc_by_id, "unmapped": set()}
+            "alloc_by_id": alloc_by_id, "oracle_tilt_by_etf": oracle_by_etf, "unmapped": set()}
 
 
 def _basket_alloc_map(theme_by_id: dict) -> dict:
@@ -740,8 +781,9 @@ def _spotlight_for(sector: str | None, memberships: list[dict] | None,
     if sec and etf is None:
         ctx.setdefault("unmapped", set()).add(sec)
     sector_row = (ctx.get("sector_by_etf") or {}).get(etf) if etf else None
+    oracle_t = ((ctx.get("oracle_tilt_by_etf") or {}).get(etf)) if etf else None
     return _sp.compute(memberships, ctx.get("theme_by_id") or {},
-                       sector_etf=etf, sector_row=sector_row)
+                       sector_etf=etf, sector_row=sector_row, oracle_t=oracle_t)
 
 
 def main() -> int:
@@ -918,6 +960,45 @@ def main() -> int:
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
     bsk_mem = _basket_membership_map()          # all active basket memberships (display-only)
     spotlight_ctx = _spotlight_context()        # theme intel + sector stage for the spotlight tilt
+    # Sector Pulse — per-ticker theme-heat context for the stockdata JSON and standout cards.
+    # Computed ONCE here: build_pulse + ticker_themes, then looked up per name.
+    # DISPLAY-ONLY; additive + never-fatal (pulse failure cannot break the stockdata build).
+    _sector_pulse_map: "dict[str, dict]" = {}   # ticker → compact pulse block (or absent)
+    _sector_pulse_as_of: "str | None" = None
+    try:
+        from engine.sector_pulse import build_pulse as _sp_build, ticker_themes as _sp_themes
+        _sp_payload = _sp_build("us")
+        if _sp_payload:
+            _sector_pulse_as_of = _sp_payload.get("as_of")
+            _sp_n_themes = _sp_payload.get("n_themes")
+            # Index pulse rows by theme id for O(1) lookup below
+            _sp_by_id: "dict[str, dict]" = {r["id"]: r for r in (_sp_payload.get("themes") or [])}
+            # Map each ticker → list of theme ids it belongs to (point-in-time)
+            _sp_tk_map = _sp_themes("us")
+            for _sp_tick, _sp_ids in _sp_tk_map.items():
+                if not _sp_ids:
+                    continue
+                # Best = lowest rank number (highest position) among all of the ticker's themes
+                _sp_cands = [_sp_by_id[tid] for tid in _sp_ids if tid in _sp_by_id]
+                if not _sp_cands:
+                    continue
+                _sp_best = min(_sp_cands, key=lambda r: (r["rank"] is None, r["rank"] or 9999))
+                _sector_pulse_map[_sp_tick] = {
+                    "as_of": _sector_pulse_as_of,
+                    "theme_id": _sp_best.get("id"),
+                    "theme_name": _sp_best.get("name"),
+                    "theme_name_zh": _sp_best.get("name_zh"),
+                    "heat": _sp_best.get("heat"),
+                    "label": _sp_best.get("label"),
+                    "reco": _sp_best.get("reco"),
+                    "rank": _sp_best.get("rank"),
+                    "n_themes": _sp_n_themes,
+                    "rank_delta_5d": _sp_best.get("rank_delta_5d"),
+                    "theme_ids": list(_sp_ids),
+                }
+        log.info("sector_pulse: %d tickers mapped to themes", len(_sector_pulse_map))
+    except Exception as _spe:  # noqa: BLE001 — additive; pulse failure must not break the build
+        log.warning("sector_pulse precompute skipped (%s)", _spe)
     # per-stock Macro-sensitivity context (rate-beta tier + duration + live-regime
     # head/tailwind + inflation label) — reads factor_betas.json (written by build_site
     # just before this) + data/transmission/latest.json (the Rate & Inflation Transmission
@@ -937,6 +1018,31 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("alt-data context unavailable (%s)", e)
         altdata_ctx = {}
+    # W0c — Government-funding exposure chip (engine/gov_exposure.py).
+    # DISPLAY-ONLY; evidence_tier=fingerprint (annual XBRL + monthly awards lag);
+    # score_cap=60.  Absent data or ticker not in USAspending coverage → no chip.
+    # R9a caveat (curated-alias matching) + R9e caveat (price-live mktcap vs lagged
+    # awards) are rendered on-page in stock.html.j2.
+    _gov_obs:  "pd.DataFrame | None" = None
+    _gov_gl:   "pd.DataFrame | None" = None
+    _gov_mktcap: dict[str, float] = {}
+    try:
+        from engine import gov_exposure as _gov_exp
+        _obs_p = config.data_dir() / "usaspending" / "obligations.parquet"
+        _gl_p  = config.data_dir() / "usaspending" / "grants_loans.parquet"
+        if _obs_p.exists():
+            _gov_obs = pd.read_parquet(_obs_p)
+        if _gl_p.exists():
+            _gov_gl = pd.read_parquet(_gl_p)
+        _fj_p = site / "factordata" / "factors.json"
+        if _fj_p.exists():
+            for _fr in (json.loads(_fj_p.read_text()) or {}).get("table", []):
+                _t = _fr.get("ticker")
+                _mc = _fr.get("mktcap_bn")
+                if _t and _mc:
+                    _gov_mktcap[_t] = float(_mc) * 1e9  # factors.json is in $B
+    except Exception as _gve:  # noqa: BLE001 — additive, never fatal
+        log.warning("gov_exposure preload skipped (%s)", _gve)
     # W3 evidence-stack: news burst (DISPLAY-ONLY; 17-ticker coverage today).
     # site/news/by_ticker.json schema: {schema, is_context_only, asof, tickers}.
     # Absent file or missing ticker => chip absent.
@@ -1473,6 +1579,17 @@ def main() -> int:
                     rec["altdata"] = ad
             except Exception as e:  # noqa: BLE001 — additive, never fatal
                 log.warning("alt-data chip for %s failed (%s)", ticker, e)
+        # ---- Government-funding exposure chip (W0c, display-only) -----------
+        # Fingerprint-class (annual XBRL lag + monthly awards lag); score_cap=60.
+        # R9a/R9e caveats rendered in template via data-tip-en/data-tip-zh.
+        if _gov_obs is not None and _gov_mktcap:
+            try:
+                _ge = _gov_exp.funding_to_mktcap(
+                    ticker, _gov_obs, _gov_gl, _gov_mktcap)
+                if _ge:
+                    rec["gov_exposure"] = _ge
+            except Exception as _gee:  # noqa: BLE001 — additive, never fatal
+                log.warning("gov_exposure chip for %s failed (%s)", ticker, _gee)
         # ---- DannyTrades CONTRARIAN read (display-only) -----------------------
         # extension flag (decile Spearman −0.88) + whale-fade; needs full OHLCV+volume
         # (data/stocks names only — others silently skip). See research/DANNYTRADES_PHASE0.md.
@@ -1493,6 +1610,14 @@ def main() -> int:
         # W6-C HOLD: attach per-name basing state to the stockdata JSON (BLOCKED names get it too)
         if _hold_state.get(ticker):
             rec["hold"] = _hold_state[ticker]
+        # Sector Pulse — top-level block in each stockdata JSON (DISPLAY-ONLY, never scored).
+        # Null/absent when the ticker maps to no live theme. Never fatal.
+        try:
+            _sp_row = _sector_pulse_map.get(ticker) or _sector_pulse_map.get(ticker.upper())
+            if _sp_row:
+                rec["sector_pulse"] = _sp_row
+        except Exception as _spe2:  # noqa: BLE001 — additive; must not break the stockdata build
+            pass
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
@@ -1586,6 +1711,29 @@ def main() -> int:
         except Exception as _w3e:  # noqa: BLE001 — W3 evidence is additive, never fatal
             log.warning("W3 evidence collection for %s failed (%s)", ticker, _w3e)
         built += 1
+    # ---- W0.2 Stage C: US signal_gate NEAR-MISS capture (masterplan §5.2 move 2) ----
+    # signal_gate.gate() annotates verdicts that failed EXACTLY ONE Appendix-A
+    # condition (freshness_expired / not_topped_veto — the two signal_gate-emitted
+    # taxonomy reasons). Log them to the track-record ledger where they mature under
+    # the same one-grader as fires ("grade rejections as predictions", §5.2 move 3).
+    # Fail-open LOUD: capture failure never breaks the render but always logs.
+    try:
+        from engine import track_record as _tr
+        _near = []
+        for _t, _v in sig_verdict.items():
+            _r = (_v or {}).get("near_miss_reason")
+            if _r:
+                _near.append({
+                    "ticker": _t,
+                    "date": str(_v.get("asof") or alpha_asof or ""),
+                    "primary_rejection_reason": _r,
+                    "reason_detail": _v.get("reason"),
+                })
+        if _near:
+            _nm_out = _tr.log_near_misses(_near)
+            log.info("near-miss capture: %s", _nm_out)
+    except Exception as _nme:  # noqa: BLE001
+        log.warning("near-miss capture failed (%s) — fires unaffected", _nme)
     # surface any GICS sector strings the spotlight sector-channel couldn't bridge to an SPDR
     # ETF (the theme channel still fires for these names) so the alias map can be widened.
     _unmapped = spotlight_ctx.get("unmapped") if spotlight_ctx else None
@@ -1991,6 +2139,11 @@ def main() -> int:
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
+            # Sector Pulse heat chip (DISPLAY-ONLY, never scores/ranks). Propagated from the
+            # per-ticker pulse map built above; absent when the ticker is not in any live theme.
+            _sp_r = _sector_pulse_map.get(t) or _sector_pulse_map.get((t or "").upper())
+            if _sp_r:
+                r["sector_pulse"] = _sp_r
             cb = coiled_by.get(t)                  # COILED wave-2 ranking bonus chip (display only)
             if cb and (cb.get("coiled") or cb.get("washout_ctx")):
                 r["coiled"] = cb
@@ -2019,6 +2172,22 @@ def main() -> int:
                     if _pc_state.get("based"):
                         r["postcross"] = _pc_state
             except Exception as _pce:  # noqa: BLE001 — display-only; never fatal
+                pass
+            # W9-A SAFETY_ONLY annotation (2026-07-03, #1143): when a BASED or Lane-R row
+            # sits inside a sector-wide capitulation (cohort washout fraction >= 0.40 at
+            # build time), attach a "sector_capitulating" marker for the safety chip.
+            # NO rank/admission effect — display-only context, sign-stable stop-reduction
+            # signal (−2.7pp stocks / −3.5pp baskets) but clean15 sub-threshold (+0.54pp).
+            # Cohort fraction = fraction of GICS-sector peers with weekly StochRSI D < 30;
+            # uses the same _coil_frac computed above (H6 cohort washout, leak-free).
+            try:
+                _is_based_row = bool(r.get("postcross", {}).get("based"))
+                _is_recovery_row = r.get("lane") == "recovery"
+                if _is_based_row or _is_recovery_row:
+                    _w9a_frac = _coil_frac.get(t)
+                    if _w9a_frac is not None and _w9a_frac >= 0.40:
+                        r["sector_capitulating"] = {"cohort_frac": round(float(_w9a_frac), 3)}
+            except Exception as _w9ae:  # noqa: BLE001 — display-only; never fatal
                 pass
             # W3 evidence-stack: propagate evidence fields to ALL board rows (buy + watch).
             # ZERO ordering/admission impact — display chips + grader strata only.
@@ -2178,11 +2347,18 @@ def main() -> int:
                         _ra["label"] = "Hold — entry aged" if not _ext_extended_a else "Hold — extended"
                         _ra["label_zh"] = "持有—入场信号陈旧" if not _ext_extended_a else "持有—已过热"
                     _arbiter_downgrade_count += 1
-                # Rule 2: urgency=imminent with blocked/BOTTOMING state
-                if _ra.get("urgency") == "imminent" and _state_a in _BOTM_STATES:
+                # Rule 2: urgency=imminent with blocked signal or BOTTOMING state.
+                # The blocked-quality leg was missing until 2026-07 (rule text said
+                # "blocked" but the code only checked _BOTM_STATES): HOLD/TURN-SIGNALED
+                # rows with quality=block kept urgency=imminent, then invariant (b)
+                # suffixed their label '(blocked)' → deploy-gate contradiction.
+                _blocked_a = (_sig_a.get("last") or {}).get("quality") == "block"
+                if _ra.get("urgency") == "imminent" and (_state_a in _BOTM_STATES or _blocked_a):
                     _ra["urgency"] = "caution"
                     if not _ra.get("arbiter_note"):
-                        _ra["arbiter_note"] = f"urgency imminent downgraded (state={_state_a})"
+                        _why2 = (f"state={_state_a}" if _state_a in _BOTM_STATES
+                                 else "blocked signal")
+                        _ra["arbiter_note"] = f"urgency imminent downgraded ({_why2})"
                     _arbiter_downgrade_count += 1
                 # Rule 3 (W2): band high/constructive while verdict is lagging/no-clear-edge
                 # → demote band one step so the visual band reflects the conviction read.
@@ -2224,24 +2400,10 @@ def main() -> int:
                 + "; ".join(_band_verdict_violations))
 
         # (b) BUY label with blocked signal: downgrade label+urgency so a row labeled
-        #     BUY/FRESH never shows urgency='now' when signal.last.quality=='block'.
-        #     We mutate the row (not just log) so the invariant enforces itself in the artifact.
-        _blocked_buy_count = 0
-        for _r in wide["buy"]:
-            _sig3 = _r.get("signal") or {}
-            _last3 = _sig3.get("last") or {}
-            if _last3.get("quality") == "block":
-                _blocked_buy_count += 1
-                # downgrade urgency from "now" to "caution" if present
-                if _r.get("urgency") == "now":
-                    _r["urgency"] = "caution"
-                # downgrade label: prefix with "(blocked)" marker
-                _lbl3 = _r.get("label")
-                if _lbl3 and "(blocked)" not in str(_lbl3):
-                    _r["label"] = f"{_lbl3} (blocked)"
-                _lbl3_zh = _r.get("label_zh")
-                if _lbl3_zh:
-                    _r["label_zh"] = f"{_lbl3_zh}（受阻）"
+        #     BUY/FRESH never shows actionable urgency (now/imminent) when
+        #     signal.last.quality=='block'. We mutate the row (not just log) so the
+        #     invariant enforces itself in the artifact (see _enforce_blocked_buy_invariant).
+        _blocked_buy_count = _enforce_blocked_buy_invariant(wide["buy"])
         if _blocked_buy_count:
             log.warning("W6-US invariant (b): %d BUY rows have signal.last.quality=block — "
                         "urgency downgraded to caution, label suffixed (blocked)",

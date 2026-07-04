@@ -78,13 +78,40 @@ FRESH_TIERS = ("T1", "T2", "T3")
 # ── helpers ────────────────────────────────────────────────────────────────────
 
 def _close(ticker: str) -> Optional[pd.Series]:
-    """Load close series for ticker; return None on any failure or absence."""
+    """Load close series for ticker; return None on any failure or absence.
+
+    W1.5 (§7): falls back to the massive whole-market store
+    (data/massive_stock_day/<T>.parquet, ~20k names × 5y) when the adjusted
+    stores don't carry the name. The massive closes are RAW (unadjusted)
+    day-aggregate prints — a split inside the lookback would fabricate a
+    capitulation — so the fallback carries a hard SPLIT GUARD: any
+    close-to-close jump beyond ±ln(1.8) marks the series None (not-covered).
+    Split-suspect names stay honestly uncovered (the ≥70% coverage law counts
+    them) instead of poisoning cohort state. Per-TF warm-up verification is
+    inherent: every state function returns None below its own depth
+    requirement (washout_ctx ≥308 bars, etc.) and coverage_pct says so.
+    """
     try:
         df = basket_index._load_member_ohlcv(ticker)
-        if df is None or "close" not in df.columns:
+        if df is not None and "close" in df.columns:
+            c = df["close"].dropna()
+            if len(c) > 0:
+                return c
+    except Exception:  # noqa: BLE001
+        pass
+    # --- W1.5 massive-store fallback (unadjusted; split-guarded) ---
+    try:
+        from lib import config as _config  # noqa: PLC0415
+        fp = Path(_config.data_dir()) / "massive_stock_day" / f"{ticker}.parquet"
+        if not fp.exists():
             return None
-        c = df["close"].dropna()
-        return c if len(c) > 0 else None
+        c = pd.read_parquet(fp)["close"].dropna().sort_index()
+        if len(c) < 2:
+            return None
+        r = np.abs(np.log(c.values[1:] / c.values[:-1]))
+        if np.nanmax(r) > np.log(1.8):
+            return None            # split-suspect — uncovered, never poisoned
+        return c
     except Exception:  # noqa: BLE001
         return None
 
@@ -170,9 +197,12 @@ def _member_state(ticker: str, tier_from_json: Optional[str]) -> Optional[dict]:
     # reclaim: washed out AND above 10d MA (the bottom_radar._capitulation reclaim half)
     reclaim = (washout_bool is True) and above_ma
 
-    # MACD turn: fresh T1-T3 — try the pre-computed tier from subsector_confluence first;
-    # if the ticker wasn't in any subsector group, tier_from_json is None (unknown, not False)
-    macd_turn = (tier_from_json in FRESH_TIERS) if tier_from_json is not None else False
+    # MACD turn: fresh T1-T3 — try the pre-computed tier from subsector_confluence first.
+    # A ticker outside every subsector group has tier None = UNKNOWN, and stays None so
+    # the per-metric coverage gate excludes it from peer_macd_turn_pct (counting unknown
+    # as False would mechanically depress the metric across every widened cohort —
+    # W1 S1 interim widening adds ~1,070 unknown-tier names).
+    macd_turn = (tier_from_json in FRESH_TIERS) if tier_from_json is not None else None
 
     # drawdown from 252d high
     dd = _drawdown_252(close)
@@ -435,8 +465,37 @@ def load_tier_map() -> dict[str, Optional[str]]:
         return {}
 
 
-def load_sector_map() -> dict[str, str]:
-    """Read ticker→sector mapping from subsector_confluence.json.
+# W1 S1 interim widening (§7): GICS → cohort-vocabulary translation. The subsector
+# map speaks Yahoo-style sectors ("Basic Materials", "Consumer Cyclical"); the broad
+# GICS map speaks S&P style ("Materials", "Consumer Discretionary"). Widened names
+# MUST join their siblings' cohorts, not fragment into parallel same-meaning cohorts
+# (measured: only 147/428 strings agree raw).
+_GICS_TO_COHORT = {
+    "Materials": "Basic Materials",
+    "Consumer Discretionary": "Consumer Cyclical",
+    "Consumer Staples": "Consumer Defensive",
+    "Information Technology": "Technology",
+    "Health Care": "Healthcare",
+    "Financials": "Financial Services",
+    # identity for the rest
+    "Energy": "Energy", "Industrials": "Industrials", "Utilities": "Utilities",
+    "Real Estate": "Real Estate", "Communication Services": "Communication Services",
+}
+
+
+def load_sector_map(widen: bool = True) -> dict[str, str]:
+    """Read ticker→sector mapping from subsector_confluence.json, then (W1 S1
+    interim widening, §7) extend with ALREADY-PRICED names the subsector groups
+    don't carry.
+
+    Widening rules (the interim contract):
+      * candidates come from the broad GICS map (equity_factors._names_sectors);
+      * ONLY names present in the broad close cache are added ("already-priced
+        unmapped names only" — no new fetches, and unpriced names would crater
+        the ≥70% coverage law and null whole cohorts);
+      * sector strings translate into the existing cohort vocabulary
+        (_GICS_TO_COHORT) so widened names join their siblings' cohorts;
+      * subsector-mapped names always win (keep-FIRST — no re-mapping).
 
     Returns dict[ticker -> sector].
     """
@@ -453,9 +512,34 @@ def load_sector_map() -> dict[str, str]:
                 t = m.get("ticker")
                 if t:
                     sector_map[t] = sector
-        return sector_map
     except Exception:  # noqa: BLE001
         return {}
+    if not widen or not sector_map:
+        return sector_map
+    try:
+        from engine.equity_factors import _closes, _names_sectors  # noqa: PLC0415
+        priced = set(_closes("broad").columns)
+        # W1.5: the massive whole-market store extends "already-priced" to every
+        # name it carries (the split guard in _close() governs actual coverage).
+        try:
+            from lib import config as _config  # noqa: PLC0415
+            msd = Path(_config.data_dir()) / "massive_stock_day"
+            if msd.is_dir():
+                priced |= {f.stem for f in msd.glob("*.parquet")}
+        except Exception:  # noqa: BLE001
+            pass
+        n_before = len(sector_map)
+        for t, (_name, gics) in _names_sectors("broad").items():
+            if t in sector_map or t not in priced:
+                continue
+            cohort = _GICS_TO_COHORT.get(gics)
+            if cohort:
+                sector_map[t] = cohort
+        log.info("cohort_metrics: S1 interim widening %d -> %d names "
+                 "(already-priced only)", n_before, len(sector_map))
+    except Exception as exc:  # noqa: BLE001 — widening is additive, never fatal
+        log.warning("cohort_metrics: widening skipped (%s)", exc)
+    return sector_map
 
 
 def compute(

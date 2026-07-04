@@ -12,11 +12,30 @@ Senate) and turns it into a COPY-SIGNAL watchlist:
   * SCORE — every name is ranked by a composite of three sub-scores:
       1. CLUSTER  — the politician signal: distinct-member breadth, recency-weighted net-buy bias,
                     aggregate disclosed size, freshness, bipartisan bonus.
+                    Freshness is now keyed on TransactionDate (the actual trade), NOT ReportDate
+                    (the filing). A trade disclosed recently but executed months ago scores
+                    correctly: its economic age determines its weight.
       2. TECHNICAL — the engine read from this name's own ``site/stockdata/<T>.json`` (conviction
                     band/size + the daily tech block); hard vetoes (cycle-blocked / parabolic /
                     avoid bucket) floor it low.
       3. BUYABLE-ZONE ("act now?") — is the name's SECTOR (regime ``sector_rs``) and THEME
                     (allocation ``ranks``) leading, and is the trend constructive?
+
+FRESHNESS FIX (W1-S13 T2): _decay now runs on TransactionDate. A filing_lag_days column
+(ReportDate − TransactionDate) is computed per trade; lags > 45 d are flagged "late ⚠️"
+(STOCK Act limit). Transaction age (days since TransactionDate) is surfaced as a provenance
+chip, and a tx-age downweight depresses trades > TX_AGE_STALE_DAYS.
+
+MEMBER RELIABILITY (W1-S13 T1/T3): engine/congress_members.py computes per-member shrunk
+hit-rate (empirical-Bayes toward pooled 39.3% baseline). A small member_quality term is
+added to the cluster score (weight W_MEMBER_QUALITY). Every surfaced row gets a member-tier
+chip ("hit 62% · n=24 · proven").
+
+PROVENANCE HONESTY (W1-S13 T4): ETF tickers are flagged (visible chip, reduced but NOT
+removed). Single-member tickers are flagged. Stale tickers (latest tx > 90 d) are flagged.
+
+ENTRY BADGE (W1-S13 T5): tickers with a T1/T2/T3 signal-gate verdict are badged ⚡ with
+their tier. The gate store is site/factordata/signal_gate.json.
 
 DOCTRINE (CLAUDE.md / the desk): the politician cluster GENERATES the idea; the engine + zone
 lenses CONFIRM it. A name five members bought that is extended / below its 200d / cycle-blocked
@@ -37,6 +56,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader  # noqa: E402
 
+from engine import desk_grader  # noqa: E402
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
@@ -45,14 +65,28 @@ log = logging.getLogger("build_congress")
 
 # --- strategy knobs (in-code defaults; mirror Mastermind's congress_strategy.yml) -----------
 ROLLOFF_DAYS = 182          # a ticker falls off ~half a year after its latest disclosure
-HALFLIFE_DAYS = 45          # disclosure weight halves every N days (recency decay)
+HALFLIFE_DAYS = 45          # disclosure weight halves every N days (recency decay — on TransactionDate)
 MIN_DISTINCT_MEMBERS = 2    # >= this many distinct members in-window → "important"
 W_CLUSTER, W_TECHNICAL, W_ZONE = 0.40, 0.35, 0.25     # composite weights
+W_MEMBER_QUALITY = 0.05     # small additive boost to cluster for proven members (modest — 12mo of data only)
 MEMBERS_SATURATE_AT = 5
 AMOUNT_SATURATE_USD = 500_000.0
 ACT_MIN_ZONE, ACT_MIN_TECH = 55.0, 45.0
 WATCH_TABLE_CAP = 80        # rows rendered in the watchlist table
 FEED_CAP = 50               # rows rendered in the recent-disclosure feed
+LATE_FILING_DAYS = 45       # STOCK Act filing deadline; lag > this → ⚠️
+TX_AGE_STALE_DAYS = 90      # transaction age > this → "stale" provenance flag + downweight
+TX_AGE_DOWNWEIGHT = 0.80    # multiply cluster by this for pure-stale tickers (all trades > TX_AGE_STALE_DAYS)
+
+# Known ETF tickers present in congressional disclosure data.
+# TickerType='Stock' is unreliable (XLV is filed as 'Stock'), so we use a hardcoded set.
+KNOWN_ETFS = frozenset({
+    "EFA", "HYG", "IWM", "KRE", "SLV", "TLT", "XLP", "XLU", "XLV",
+    # extend with additional ETFs if they appear in future data:
+    "SPY", "QQQ", "DIA", "GLD", "VTI", "VOO", "EEM", "XLF", "XLK",
+    "XLY", "XLE", "XLI", "XLB", "XLRE", "XLC", "GDX", "XBI", "IBB",
+    "ARKK", "ARKG", "ARKW", "SOXX", "SMH", "XHB", "XRT", "KBE",
+})
 
 # sector → the sector-ETF the regime's RS table ranks (ported from Mastermind portfolio/lenses.py)
 SECTOR_ETF = {
@@ -72,12 +106,18 @@ def _clamp(x: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, x))
 
 
-def _decay(report_date, asof) -> float:
-    """Recency weight in (0,1]: 1.0 for a disclosure reported today, halving every HALFLIFE_DAYS."""
-    if report_date is None:
+def _decay(transaction_date, asof) -> float:
+    """Recency weight in (0,1]: 1.0 for a trade executed today, halving every HALFLIFE_DAYS.
+
+    FRESHNESS FIX (W1-S13 T2): keyed on TransactionDate (when the trade actually occurred),
+    NOT ReportDate (when the filing was submitted). Using ReportDate was an inversion: an
+    old trade disclosed recently would score maximally fresh, giving STOCK-Act-slow filers
+    an unearned recency bonus on stale positions.
+    """
+    if transaction_date is None:
         return 1.0
     try:
-        age = max(0, (asof - report_date).days)
+        age = max(0, (asof - transaction_date).days)
         return 0.5 ** (age / HALFLIFE_DAYS)
     except Exception:  # noqa: BLE001
         return 1.0
@@ -128,35 +168,65 @@ def _chamber(house) -> str:
 # data load
 # ---------------------------------------------------------------------------
 def _load_window(asof):
-    """Normalized in-window disclosures grouped by ticker: {ticker: [rows]}, plus the full feed."""
+    """Normalized in-window disclosures grouped by ticker: {ticker: [rows]}, plus the full feed.
+
+    FRESHNESS FIX (W1-S13 T2): window membership and decay are now keyed on TransactionDate
+    (the actual trade date). Previously the window cutoff used ReportDate, meaning a
+    6-month-old trade filed late could still appear "fresh". The rolloff now correctly expires
+    from the TransactionDate — the economic event — not the paperwork date.
+
+    Added fields per row:
+      filing_lag_days  int|None  — ReportDate − TransactionDate in calendar days
+      late_filing      bool      — filing_lag_days > LATE_FILING_DAYS (STOCK Act limit)
+      tx_age_days      int|None  — days from TransactionDate to asof (how old is the trade?)
+      _td              date      — TransactionDate as date (used for decay + window)
+    """
     import pandas as pd
     p = config.data_dir() / "quiver" / "congress.parquet"
     df = pd.read_parquet(p)
     df["_rd"] = pd.to_datetime(df.get("ReportDate"), errors="coerce")
     df["_td"] = pd.to_datetime(df.get("TransactionDate"), errors="coerce")
     cutoff = pd.Timestamp(asof) - pd.Timedelta(days=ROLLOFF_DAYS)
+    asof_ts = pd.Timestamp(asof)
     rows = []
     for r in df.to_dict("records"):
         rd = r.get("_rd")
+        td = r.get("_td")
         tk = str(r.get("Ticker") or "").strip().upper()
         if not tk or tk in ("-", "N/A", "NONE", "NAN"):
             continue
         low, high, mid = _amount_range(r.get("Range"), r.get("Amount"))
         rd_date = rd.date() if rd is not None and not pd.isna(rd) else None
-        td = r.get("_td")
+        td_date = td.date() if td is not None and not pd.isna(td) else None
+        # Filing lag
+        filing_lag = None
+        late_filing = False
+        if rd_date is not None and td_date is not None:
+            filing_lag = (rd_date - td_date).days
+            late_filing = filing_lag > LATE_FILING_DAYS
+        # Transaction age
+        tx_age = None
+        if td_date is not None:
+            tx_age = (asof - td_date).days
         rows.append({
             "ticker": tk,
             "representative": str(r.get("Representative") or "").strip(),
+            "bio_guide_id": str(r.get("BioGuideID") or "").strip(),
             "party": _party(r.get("Party")),
             "chamber": _chamber(r.get("House")),
             "side": _side(r.get("Transaction")),
             "amount_low": low, "amount_high": high, "amount_mid": mid,
             "report_date": rd_date.isoformat() if rd_date else None,
             "_rd": rd_date,
-            "transaction_date": td.date().isoformat() if (td is not None and not pd.isna(td)) else None,
+            "transaction_date": td_date.isoformat() if td_date else None,
+            "_td": td_date,
+            "filing_lag_days": filing_lag,
+            "late_filing": late_filing,
+            "tx_age_days": tx_age,
             "excess_return": _f(r.get("ExcessReturn")),
         })
-    in_window = [r for r in rows if r["_rd"] is not None and r["_rd"] >= cutoff.date()]
+    # Window: keyed on TransactionDate now (was ReportDate)
+    in_window = [r for r in rows if r["_td"] is not None and r["_td"] >= cutoff.date()]
     by_ticker: dict[str, list] = {}
     for r in in_window:
         by_ticker.setdefault(r["ticker"], []).append(r)
@@ -297,16 +367,25 @@ def _engine_read(sd: dict, sector_rs: dict, alloc_ranks: dict, n_themes: int) ->
 # ---------------------------------------------------------------------------
 # cluster aggregation + composite score
 # ---------------------------------------------------------------------------
-def _aggregate(ticker: str, trades: list, asof) -> dict:
+def _aggregate(ticker: str, trades: list, asof, member_stats: dict | None = None) -> dict:
+    """Aggregate a list of in-window trades for one ticker into a cluster dict.
+
+    FRESHNESS FIX (W1-S13 T2): _decay is now called with t["_td"] (TransactionDate).
+    MEMBER QUALITY (W1-S13 T3): a small member_quality additive is mixed into cluster.
+    PROVENANCE HONESTY (W1-S13 T4): is_etf, single_member, all_stale flags computed here.
+    """
     from datetime import date as _date
     members = sorted({t["representative"] for t in trades if t["representative"]})
     buys = [t for t in trades if t["side"] == "buy"]
     sells = [t for t in trades if t["side"] == "sell"]
     buy_parties = sorted({t["party"] for t in buys if t["party"] in ("D", "R", "I")})
     buy_notional = sum((t["amount_mid"] or 0.0) for t in buys)
-    w_buy = sum(_decay(t["_rd"], asof) for t in buys)
-    w_sell = sum(_decay(t["_rd"], asof) for t in sells)
-    recency = max((_decay(t["_rd"], asof) for t in trades), default=0.0)
+
+    # FRESHNESS FIX: decay on TransactionDate (_td), not ReportDate (_rd)
+    w_buy  = sum(_decay(t["_td"], asof) for t in buys)
+    w_sell = sum(_decay(t["_td"], asof) for t in sells)
+    recency = max((_decay(t["_td"], asof) for t in trades), default=0.0)
+
     rds = [t["_rd"] for t in trades if t["_rd"]]
     last_report = max(rds) if rds else None
     bipartisan = len([p for p in buy_parties if p in ("D", "R")]) >= 2
@@ -319,17 +398,58 @@ def _aggregate(ticker: str, trades: list, asof) -> dict:
     if bipartisan:
         cluster += 8.0
 
+    # MEMBER QUALITY additive (T3): average quality of members who traded this ticker
+    # Weight is small (W_MEMBER_QUALITY) to avoid overfitting 12 months of data.
+    if member_stats:
+        bio_ids = [t.get("bio_guide_id", "") for t in trades]
+        qualities = [member_stats[b].member_quality for b in bio_ids
+                     if b and b in member_stats]
+        if qualities:
+            avg_quality = sum(qualities) / len(qualities)
+            cluster += W_MEMBER_QUALITY * 100.0 * (avg_quality - 0.5)
+
+    # TX-AGE STALE downweight (T4): if EVERY trade in window is > TX_AGE_STALE_DAYS old,
+    # apply a modest downweight so 5-month-old trades stop dominating.
+    tds = [t["_td"] for t in trades if t["_td"]]
+    latest_tx = max(tds) if tds else None
+    latest_tx_age = (asof - latest_tx).days if latest_tx else None
+    all_stale = bool(latest_tx_age is not None and latest_tx_age > TX_AGE_STALE_DAYS)
+    if all_stale:
+        cluster *= TX_AGE_DOWNWEIGHT
+
     expiry = (last_report + timedelta(days=ROLLOFF_DAYS)) if last_report else None
     days_left = (expiry - asof).days if expiry else None
 
+    # Provenance flags (T4)
+    is_etf = ticker in KNOWN_ETFS
+    single_member = n_distinct == 1
+
+    # Late-filing flag: any trade in this ticker had a late disclosure
+    any_late_filing = any(t.get("late_filing", False) for t in trades)
+
+    # Filing lag stats for display
+    lags = [t["filing_lag_days"] for t in trades if t.get("filing_lag_days") is not None]
+    median_lag = None
+    if lags:
+        median_lag = sorted(lags)[len(lags) // 2]
+
+    # Member detail with reliability chip data (T3)
     by_member: dict[str, dict] = {}
     for t in sorted(trades, key=lambda x: x["report_date"] or "", reverse=True):
         m = t["representative"]
         if not m:
             continue
-        rec = by_member.setdefault(m, {"representative": m, "party": t["party"], "chamber": t["chamber"],
-                                       "n": 0, "last_side": t["side"], "last_report": t["report_date"],
-                                       "notional": 0.0})
+        bio_id = t.get("bio_guide_id", "")
+        ms = member_stats.get(bio_id) if member_stats else None
+        rec = by_member.setdefault(m, {
+            "representative": m, "party": t["party"], "chamber": t["chamber"],
+            "n": 0, "last_side": t["side"], "last_report": t["report_date"],
+            "notional": 0.0,
+            # member reliability chip (T3)
+            "member_tier": ms.tier if ms else None,
+            "member_shrunk_hit": ms.shrunk_hit_rate if ms else None,
+            "member_n_eff": ms.n_eff_valid if ms else None,
+        })
         rec["n"] += 1
         rec["notional"] += (t["amount_mid"] or 0.0)
 
@@ -342,10 +462,23 @@ def _aggregate(ticker: str, trades: list, asof) -> dict:
         "last_report": last_report.isoformat() if last_report else None,
         "expires": expiry.isoformat() if expiry else None, "days_left": days_left,
         "recency": round(recency, 3), "cluster_score": round(_clamp(cluster), 1),
+        # T2 provenance
+        "latest_tx_age": latest_tx_age,
+        "all_stale": all_stale,
+        "any_late_filing": any_late_filing,
+        "median_lag_days": median_lag,
+        # T4 provenance
+        "is_etf": is_etf,
+        "single_member": single_member,
     }
 
 
-def _score(agg: dict, eng: dict) -> dict:
+def _score(agg: dict, eng: dict, gate_verdict: dict | None = None) -> dict:
+    """Compute composite score and attach provenance / entry-badge fields.
+
+    gate_verdict (T5): if not None, must be a signal_gate verdict dict; a T1/T2/T3 tier
+    triggers the ⚡ prime-entry badge.
+    """
     cluster = agg["cluster_score"]
     tech, zone = eng.get("technical"), eng.get("zone")
     covered = eng.get("covered", False)
@@ -374,13 +507,24 @@ def _score(agg: dict, eng: dict) -> dict:
 
     act_now = bool(covered and tech is not None and zone is not None and zone >= ACT_MIN_ZONE
                    and tech >= ACT_MIN_TECH and not (eng.get("blocked") or eng.get("downtrend") or eng.get("extended")))
+
+    # T5 — entry badge from signal_gate
+    gate_tier = None
+    if gate_verdict is not None:
+        t = gate_verdict.get("tier_cascade")
+        if t in ("T1", "T2", "T3"):
+            gate_tier = t
+
     return {**agg, "name": None, "composite": round(composite, 1), "act_now": act_now,
             "unconfirmed": unconfirmed,
             "technical_score": tech, "zone_score": zone, "covered": covered,
             "band": eng.get("band"), "verdict": eng.get("verdict"), "timing": eng.get("timing"),
             "sector_dir": eng.get("sector_dir"), "theme_dir": eng.get("theme_dir"),
             "trend_dir": eng.get("trend_dir"), "extended": eng.get("extended"),
-            "downtrend": eng.get("downtrend"), "blocked": eng.get("blocked"), "price": eng.get("price")}
+            "downtrend": eng.get("downtrend"), "blocked": eng.get("blocked"), "price": eng.get("price"),
+            # T5 entry badge
+            "gate_tier": gate_tier,
+            }
 
 
 # ---------------------------------------------------------------------------
@@ -388,9 +532,31 @@ def _score(agg: dict, eng: dict) -> dict:
 # ---------------------------------------------------------------------------
 def main() -> int:
     try:
+        import pandas as pd
+        from engine.congress_members import compute as _compute_members, leaderboard as _leaderboard
+        from engine.signal_gate import is_buyable  # noqa: F401 — used indirectly via gate_verdicts
+
         site = config.ROOT / "site"
         asof = datetime.now(timezone.utc).date()
         by_ticker, feed, n_total = _load_window(asof)
+
+        # --- T1: per-member reliability stats (computed over full parquet, not just in-window) ---
+        member_stats: dict = {}
+        try:
+            df_full = pd.read_parquet(config.data_dir() / "quiver" / "congress.parquet")
+            member_stats = _compute_members(df_full, asof=asof)
+            log.info("member_stats: %d members computed", len(member_stats))
+        except Exception as e:  # noqa: BLE001
+            log.warning("member_stats computation failed (%s) — continuing without reliability", e)
+
+        # --- T5: signal gate verdicts ---
+        gate_verdicts: dict = {}
+        try:
+            sg = json.loads((site / "factordata" / "signal_gate.json").read_text())
+            gate_verdicts = sg.get("verdicts") or {}
+            log.info("signal_gate: %d tickers loaded", len(gate_verdicts))
+        except Exception as e:  # noqa: BLE001
+            log.warning("signal_gate load failed (%s) — no entry badges", e)
 
         # scoring substrates (regime sector RS + theme allocation ranks), guarded
         sector_rs: dict = {}
@@ -411,10 +577,11 @@ def main() -> int:
 
         items = []
         for tk, trades in by_ticker.items():
-            agg = _aggregate(tk, trades, asof)
+            agg = _aggregate(tk, trades, asof, member_stats=member_stats)
             sd = _stockdata(tk, site)
             eng = _engine_read(sd, sector_rs, alloc_ranks, n_themes)
-            row = _score(agg, eng)
+            gate_v = gate_verdicts.get(tk)
+            row = _score(agg, eng, gate_verdict=gate_v)
             row["name"] = sd.get("name")
             items.append(row)
         # Covered rows always rank above unconfirmed (uncovered) rows; within each bucket sort by
@@ -424,6 +591,13 @@ def main() -> int:
         # attach company names to the recent-disclosure feed too
         for r in feed[:FEED_CAP]:
             r["name"] = _stockdata(r["ticker"], site).get("name")
+
+        # --- T3: member leaderboard ---
+        member_leaderboard = []
+        try:
+            member_leaderboard = _leaderboard(member_stats, top_n=20)
+        except Exception as e:  # noqa: BLE001
+            log.warning("member leaderboard failed (%s)", e)
 
         summary = {
             "n_disclosures_window": sum(len(v) for v in by_ticker.values()),
@@ -435,6 +609,24 @@ def main() -> int:
             "as_of": (feed[0]["report_date"] if feed else asof.isoformat()),
         }
 
+        # UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d) — snapshot today's surfaced watchlist
+        # (ranked by composite; grade forward returns from the REPORT date, not the trade date),
+        # diff for departures, grade matured names. Degrade-safe.
+        grader = {}
+        try:
+            desk_grader.seed_notes()
+            surfaced = items[:WATCH_TABLE_CAP]
+            rows = [{"ticker": a.get("ticker"), "rank": i + 1, "score": a.get("composite"),
+                     "lean": 1, "gate_tier": a.get("gate_tier"), "covered": a.get("covered"),
+                     "unconfirmed": a.get("unconfirmed")}
+                    for i, a in enumerate(surfaced)]
+            rep = desk_grader.snapshot_desk("congress", rows, asof)
+            grader = desk_grader.compute("congress", asof)
+            log.info("desk_grader (congress): +%d snap, %d departed, %d live",
+                     rep.get("n_new", 0), rep.get("n_departed", 0), grader.get("n_snapshots_live", 0))
+        except Exception as e:  # noqa: BLE001
+            log.warning("desk_grader (congress) step failed: %s", e)
+
         built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
         try:
@@ -442,6 +634,7 @@ def main() -> int:
                 summary=summary, items=items[:WATCH_TABLE_CAP], n_shown=min(len(items), WATCH_TABLE_CAP),
                 feed=feed[:FEED_CAP], window_days=ROLLOFF_DAYS, generated_utc=built,
                 weights={"cluster": W_CLUSTER, "technical": W_TECHNICAL, "zone": W_ZONE},
+                member_leaderboard=member_leaderboard, desk_grader=grader,
                 active_section="research", active_page="congress_trades",
             )
         except Exception as e:  # noqa: BLE001

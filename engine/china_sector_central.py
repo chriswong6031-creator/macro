@@ -251,6 +251,19 @@ def market_context() -> dict:
 # =========================================================================== #
 # per-sector / per-basket confluence
 # =========================================================================== #
+def _rolling_over(now: dict) -> bool:
+    """Fast-rollover detector (parity with engine.sector_central._rolling_over). The slow 5-phase
+    label lags a sharp multi-week rollover, so a name down hard off a recent high can still read
+    'Trending'. When the oscillator slope is clearly DOWN, the daily timing ladder is in decline,
+    AND the canonical (detrended) position is stretched, the name is topping/rolling regardless of
+    a still-positive weekly MACD. Keys only off fields the cycle record already carries."""
+    slope = now.get("osc_slope") or 0.0
+    pv2 = now.get("pos_v2")
+    hi = (pv2 if pv2 is not None else (now.get("pos") or 0)) >= 68.0
+    timing = (now.get("timing_state") or "").upper()
+    return bool(slope < -3.0 and hi and timing in ("DECLINE", "ROLLING OVER"))
+
+
 def _state_score(now: dict) -> tuple[float, dict]:
     """Where-are-we, from the validated washout↔euphoria signature + the cycle phase direction.
     Returns a setup score in [-1,+1] (washed-out + turning up = +1) + a descriptor."""
@@ -261,9 +274,15 @@ def _state_score(now: dict) -> tuple[float, dict]:
     phase_dir = {"Trough": 0.5, "Recovery": 0.6, "Expansion": 0.25,
                  "Peak": -0.4, "Downturn": -0.55}.get(phase, 0.0)
     score = float(np.clip(0.6 * setup + 0.4 * phase_dir, -1, 1))
+    # fast-rollover override: don't let a lagging 'Trending' phase read a rolling-over name UP
+    # (de-rate to cautious, never a lift). See _rolling_over.
+    rolling = _rolling_over(now)
+    if rolling:
+        score = float(np.clip(min(score, -0.25), -1, 1))
     sig_d = now.get("signature") or {}
     return score, {"signature": sig, "phase": phase,
-                   "label": sig_d.get("label"), "label_zh": sig_d.get("label_zh")}
+                   "label": sig_d.get("label"), "label_zh": sig_d.get("label_zh"),
+                   "rolling": rolling}
 
 
 def _forward_tilt(rec: dict) -> tuple[float | None, dict | None]:
@@ -399,12 +418,20 @@ def _trace(state_d, fwd_d, mkt, mom_d, crowd, early, euphoric) -> list[dict]:
     t = []
     sig = state_d.get("signature")
     if sig is not None:
-        stance = "bullish" if sig <= 35 else "bearish" if sig >= 65 else "neutral"
-        ph = state_d.get("phase")
-        t.append({"layer": "Cycle state", "tier": "validated", "stance": stance,
-                  "en": f"{state_d.get('label') or '—'} (signature {sig:.0f}/100), phase {ph}",
-                  "zh": f"{state_d.get('label_zh') or state_d.get('label') or '—'}"
-                        f"（特征 {sig:.0f}/100），阶段 {_PHASE_ZH.get(ph, ph or '—')}"})
+        if state_d.get("rolling"):
+            # the slow phase label lags; the fast signals say it has rolled over → surface that
+            # instead of the stale 'Trending' read.
+            t.append({"layer": "Cycle state", "tier": "validated", "stance": "bearish",
+                      "en": f"Rolling over (signature {sig:.0f}/100) — oscillator falling, "
+                            "daily ladder in decline (slow phase label lags)",
+                      "zh": f"回落中（特征 {sig:.0f}/100）— 振荡指标下行、日线阶梯走弱（慢速阶段标签滞后）"})
+        else:
+            stance = "bullish" if sig <= 35 else "bearish" if sig >= 65 else "neutral"
+            ph = state_d.get("phase")
+            t.append({"layer": "Cycle state", "tier": "validated", "stance": stance,
+                      "en": f"{state_d.get('label') or '—'} (signature {sig:.0f}/100), phase {ph}",
+                      "zh": f"{state_d.get('label_zh') or state_d.get('label') or '—'}"
+                            f"（特征 {sig:.0f}/100），阶段 {_PHASE_ZH.get(ph, ph or '—')}"})
     if fwd_d and fwd_d.get("cond_rate") is not None:
         cr, br = round(fwd_d["cond_rate"] * 100), round(fwd_d["base_rate"] * 100)
         stance = "bullish" if fwd_d.get("lift", 0) > 0.03 else "bearish" if fwd_d.get("lift", 0) < -0.03 else "neutral"
@@ -526,13 +553,16 @@ def compute() -> dict | None:
 def _carry(rec: dict) -> dict:
     """Carry the identity + a compact cycle snapshot from the cycle record onto the central row."""
     now = rec.get("now") or {}
+    # override the (lagging) slow label when the fast signals show a rollover, so the card chip
+    # matches the de-rated conviction instead of reading 'Trending'.
+    phase_label = "Rolling over" if _rolling_over(now) else now.get("phaseLabel")
     return {
         "id": rec.get("id"), "ticker": rec.get("ticker"), "kind": rec.get("kind"),
         "basket_id": rec.get("basket_id"), "shenwan_code": rec.get("shenwan_code"),
         "name": rec.get("name"), "name_zh": rec.get("name_zh"),
         "group": rec.get("group"), "group_zh": rec.get("group_zh"), "accent": rec.get("accent"),
         "etf_proxy": rec.get("etf_proxy"),
-        "cycle": {"phase": now.get("phase"), "phaseLabel": now.get("phaseLabel"),
+        "cycle": {"phase": now.get("phase"), "phaseLabel": phase_label,
                   "pos": now.get("pos"), "proj": rec.get("proj"),
                   "rs_rank": now.get("rs_rank"), "above200d": now.get("above200d")},
     }

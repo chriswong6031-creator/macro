@@ -723,6 +723,18 @@
   .nb-spot.spot-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
                      background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
   .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
+  /* ---- sector-pulse heat chip on standout cards (DISPLAY-ONLY, no rank power) ---- */
+  .nb-pulse-heat { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 700;
+                   padding: 1px 6px; border-radius: 7px; white-space: nowrap; max-width: 9em;
+                   overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line);
+                   color: var(--muted); background: var(--panel); cursor: help; flex: none; }
+  .nb-pulse-heat.ph-heating { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+                              background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
+  .nb-pulse-heat.ph-hot { color: var(--up); border-color: color-mix(in srgb, var(--up) 55%, var(--line));
+                          background: color-mix(in srgb, var(--up) 15%, var(--panel)); font-weight: 800; }
+  .nb-pulse-heat.ph-cooling { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
+                              background: color-mix(in srgb, var(--down) 9%, var(--panel)); }
+  .nb-pulse-heat.ph-broken { color: var(--muted); border-color: var(--line); opacity: .75; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
   .nb-conv { display: flex; align-items: center; gap: 7px; margin: 3px 0 1px; min-width: 0; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -970,6 +982,9 @@
   .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
   .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
   .idx-trend { margin-top: 3px; color: var(--muted); }
+  .idx-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .idx-tkr { font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 5px; }
+  .idx-chg { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; white-space: nowrap; }
   .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
   .idx-risk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   @media (max-width: 900px) { .idx-risk { grid-template-columns: 1fr; } }
@@ -1311,6 +1326,25 @@
   body.page-macro #risk-state .rs-driver { display:flex; align-items:baseline; gap:8px; padding:3px 0; }
   body.page-macro #risk-state .rs-bar { height:6px; border-radius:3px; background:var(--rs); opacity:.85; }
   @keyframes rspulse { 0%,100% { box-shadow: 0 0 0 0 var(--rs-glow); } 50% { box-shadow: 0 0 16px 2px var(--rs-glow); } }
+  /* ---- Sector heat strip (macro-only, DISPLAY-ONLY) ---- */
+  .sh-strip { padding: 8px 14px 10px; }
+  .sh-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .sh-title { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+              color: var(--ink-2); }
+  .sh-asof { font-size: 10px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .sh-chips { display: flex; flex-wrap: wrap; gap: 5px 6px; align-items: center; }
+  .sh-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 20px;
+             font-size: 11px; font-weight: 700; border: 1px solid var(--line); color: var(--muted);
+             background: var(--panel2); text-decoration: none; white-space: nowrap;
+             transition: filter .1s; }
+  .sh-chip:hover { filter: brightness(1.07); border-color: currentColor; }
+  .sh-heat { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+             background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
+  .sh-cool { color: var(--down); border-color: color-mix(in srgb, var(--down) 30%, var(--line));
+             background: color-mix(in srgb, var(--down) 8%, var(--panel)); }
+  .sh-arr { font-size: 9px; flex: none; }
+  .sh-rk { font-size: 9px; opacity: .7; font-variant-numeric: tabular-nums; }
+  .sh-div { color: var(--muted); font-size: 12px; padding: 0 2px; }
   /* Market Risk Radar v2 (engine/risk_radar.py) — the PRIMARY top-of-page risk read. Floats above
      the regime hero (below the acute dislocation filter) and pulses when the gated loud banner fires. */
   body.page-macro #risk-radar { scroll-margin-top: 16px; border-left: 4px solid var(--rr); }
@@ -1371,7 +1405,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
-            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
             <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
           </div>
         </div>
@@ -1386,13 +1420,14 @@
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
-        <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
             <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
           </div>
         </div>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -1786,11 +1821,21 @@
       <div class="actcol act-buy">
         <div class="acth">🟢 <span class="l-en">BUY ZONE — confirmed now</span><span class="l-zh">买入区 — 已确认</span></div>
         
+          <a class="actitem ai-theme" href="basket/insurance.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/payments_fintech.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Payments & Fintech</span><span class="l-zh">支付与金融科技</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/us_sector_health.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/big_pharma.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/us_sector_financials.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
           <a class="actitem ai-theme" href="basket/us_sector_realestate.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Real Estate (Equal-Weight)</span><span class="l-zh">房地产（等权）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/us_sector_industrials.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Industrials (Equal-Weight)</span><span class="l-zh">工业（等权）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/us_sector_utilities.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Utilities (Equal-Weight)</span><span class="l-zh">公用事业（等权）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/us_sector_staples.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Consumer Staples (Equal-Weight)</span><span class="l-zh">必需消费（等权）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/us_sector_industrials.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Industrials (Equal-Weight)</span><span class="l-zh">工业（等权）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
           <a class="actitem" href="basket/us_sector_financials.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Financials</span><span class="l-zh">金融</span></b> <span class="muted">XLF</span><span class="actage">⏱ <span class="l-en">1d ago</span><span class="l-zh">1天前</span></span><span class="eqmini eq-up" title="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +54</span><span class="acttag"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></a>
         
@@ -1824,21 +1869,21 @@
         
         <div class="lst-collapse lst-cap6 is-collapsed">
         
-          <a class="actitem ai-theme" href="basket/insurance.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
-        
-          <a class="actitem ai-theme" href="basket/payments_fintech.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Payments & Fintech</span><span class="l-zh">支付与金融科技</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
-        
-          <a class="actitem ai-theme" href="basket/us_sector_health.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
-        
           <a class="actitem ai-theme" href="basket/obesity_glp1.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
-        
-          <a class="actitem ai-theme" href="basket/big_pharma.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
-        
-          <a class="actitem ai-theme" href="basket/us_sector_financials.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
           <a class="actitem ai-theme" href="basket/managed_care.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Managed Care & Insurers</span><span class="l-zh">管理式医疗与保险</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the validated absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过已验证的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
           <a class="actitem ai-theme" href="basket/cybersecurity.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the validated absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过已验证的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/regional_banks.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/travel.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Travel & Experiences</span><span class="l-zh">旅行与体验</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/industrial_distribution.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Industrial Distribution & Capital Goods</span><span class="l-zh">工业分销与资本品</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/housing.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+        
+          <a class="actitem ai-theme" href="basket/defensives.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Defensives</span><span class="l-zh">防御板块</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
           <a class="actitem" href="basket/us_sector_discretionary.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
         
@@ -1895,7 +1940,7 @@
       </div>
       
       
-      <div class="nb-disp disp-lean_in" data-tip-en="Cross-sectional dispersion regime — the read for WHEN stock-selection tends to pay. When names fan out (high dispersion / low pairwise correlation) selection historically earns more; a macro-driven tape (low dispersion / high correlation) mutes it. DISPLAY-ONLY: the state does NOT move the book's gross (live ×1.0). The suggested tilt (shadow ×1.2) is a hand-picked prior with no measured edge on this universe and would gross UP into high-VIX stress — clamped off until a survivorship-clean selection-IR edge is measured (US_BOARD_MEASUREMENT §Study 3). Dispersion percentile 0.77 · avg pairwise corr 0.17." data-tip-zh="横截面离散度状态 — 仅供参考，不影响仓位。">
+      <div class="nb-disp disp-lean_in" data-tip-en="Cross-sectional dispersion regime — the read for WHEN stock-selection tends to pay. When names fan out (high dispersion / low pairwise correlation) selection historically earns more; a macro-driven tape (low dispersion / high correlation) mutes it. DISPLAY-ONLY: the state does NOT move the book's gross (live ×1.0). The suggested tilt (shadow ×1.2) is a hand-picked prior with no measured edge on this universe and would gross UP into high-VIX stress — clamped off until a survivorship-clean selection-IR edge is measured (US_BOARD_MEASUREMENT §Study 3). Dispersion percentile 0.75 · avg pairwise corr 0.17." data-tip-zh="横截面离散度状态 — 仅供参考，不影响仓位。">
         <span class="disp-ic">🎯</span>
         <b><span class="l-en">Selection pays — high dispersion</span><span class="l-zh">选股有效 — 高离散度</span></b>
         <span class="disp-meta"><span class="l-en">context</span><span class="l-zh">参考</span> · <span class="l-en">avg corr</span><span class="l-zh">平均相关</span> 0.17 · <span class="disp-shadow" title="shadow prior — not applied to sizing"><span class="l-en">suggested</span><span class="l-zh">建议倾向</span> ×1.2</span></span>
@@ -1935,6 +1980,13 @@
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
             
             
+            
+            
+            
+            
+            
+            
+            <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Technology (Equal-Weight). Rank 32/46. Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 信息技术（等权）。排名 32/46。仅供展示，不影响排名。"><span class="l-en">▽ Technology (Equal-Weight)</span><span class="l-zh">▽ 信息技术（等权）</span></span>
             
             <span class="nb-px" data-sym="AAPL" data-mkt="us">$294.38</span>
           </div>
@@ -2022,7 +2074,7 @@
             
           </div>
           
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.4</span><span class="nbb nbb-literature">revisions +0.5</span></div>
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.4</span><span class="nbb nbb-literature">revisions +0.6</span></div>
           
           
           
@@ -2055,7 +2107,7 @@
           
           
           
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Magnificent Seven) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（七巨头）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+16.0% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +16.0%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Magnificent Seven) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（七巨头）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+15.8% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +15.8%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           
           
@@ -2076,6 +2128,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="CVSA" data-mkt="us">$129.88</span>
           </div>
           
@@ -2089,7 +2144,7 @@
             
             <span class="nb-cscore band-constructive" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">54</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 71%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 70%ile</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -2197,6 +2252,13 @@
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
             
             
+            
+            
+            
+            
+            
+            
+            <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Communication Services (Equal-Weight). Rank 33/46. Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 通信服务（等权）。排名 33/46。仅供展示，不影响排名。"><span class="l-en">▽ Communication Services (Equal-Weight)</span><span class="l-zh">▽ 通信服务（等权）</span></span>
             
             <span class="nb-px" data-sym="OMC" data-mkt="us">$76.11</span>
           </div>
@@ -2326,6 +2388,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 3d · inv $25.99 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期3天 · 止损 $25.99。仅供参考。"><span class="l-en">Base 3d</span><span class="l-zh">筑底3天</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -2459,6 +2524,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="FTV" data-mkt="us">$62.65</span>
           </div>
           
@@ -2479,7 +2547,7 @@
           
           <div class="nb-conv">
             
-            <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">39</span>
+            <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">40</span>
             
             <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 81%ile</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
@@ -2569,7 +2637,154 @@
           
           
           
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+6.8% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +6.8%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+6.7% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +6.7%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+          
+          
+          
+        </a>
+      
+        
+        
+        <a class="nbcard nb-up" href="stock.html#SPGI">
+          <div class="nb-top">
+            <span class="nb-tk">SPGI</span>
+            <span class="nb-nm">S+P Global Inc</span>
+            <span class="sig-gate sig-early" data-tip-en="2D MACD-RSI crossed + 3D StochRSI crossed — an EARLY tier (fires before the 3D master). Tier T2 · weight 0.8. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-07-01" data-tip-zh="加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◑ <span class="l-en">early</span><span class="l-zh">提前</span> <span class="sig-w">T2·0.8</span></span>
+            
+            
+            <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $362.62 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $362.62。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
+            
+            <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
+            
+            
+            
+            
+            
+            
+            
+            <span class="nb-pulse-heat ph-hot" data-tip-en="Sector theme heat: hot — Financials (Equal-Weight). Rank 6/46. Display-only — no ranking power." data-tip-zh="板块主题热度：hot — 金融（等权）。排名 6/46。仅供展示，不影响排名。"><span class="l-en">▲ Financials (Equal-Weight)</span><span class="l-zh">▲ 金融（等权）</span></span>
+            
+            <span class="nb-px" data-sym="SPGI" data-mkt="us">$414.97</span>
+          </div>
+          
+          
+          
+            
+            
+            
+            
+          <div class="nb-sub">
+            <span class="nb-spot nb-spot-link spot-up" data-href="basket/us_sector_financials.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×1.08) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Financials (Equal-Weight) (ACCUMULATE). Sector: Financials — improving. Open the theme →"><span>🔥</span><span class="sp-tag l-en">Financials (Equal-Weight)</span><span class="sp-tag l-zh">金融（等权）</span><span>▲</span></span>
+            
+            
+            <span class="nb-gics"><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span class="nb-offh">-25.8% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
+          </div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,20.3 3.8,20.3 7.6,17.8 11.4,16.5 15.2,18.2 19.0,15.3 22.9,20.7 26.7,24.5 30.5,18.2 34.3,20.3 38.1,18.0 41.9,15.3 45.7,12.9 49.5,12.8 53.3,12.0 57.1,10.1 61.0,14.4 64.8,15.3 68.6,15.2 72.4,16.8 76.2,16.9 80.0,17.7 83.8,20.0 87.6,20.5 91.4,20.9 95.2,21.0 99.0,18.8 102.9,22.5 106.7,22.1 110.5,20.8 114.3,28.3 118.1,29.5 121.9,29.8 125.7,23.7 129.5,26.7 133.3,23.8 137.1,24.4 141.0,23.6 144.8,25.8 148.6,24.4 152.4,23.6 156.2,20.4 160.0,18.5 163.8,32.9 167.6,35.0 171.4,31.8 175.2,30.1 179.0,33.1 182.9,29.9 186.7,29.3 190.5,34.6 194.3,32.3 198.1,30.2 201.9,26.5 205.7,32.7 209.5,35.6 213.3,37.0 217.1,40.0 221.0,39.1 224.8,42.0 228.6,36.7 232.4,36.5 236.2,37.1 240.0,24.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,20.3 3.8,20.3 7.6,17.8 11.4,16.5 15.2,18.2 19.0,15.3 22.9,20.7 26.7,24.5 30.5,18.2 34.3,20.3 38.1,18.0 41.9,15.3 45.7,12.9 49.5,12.8 53.3,12.0 57.1,10.1 61.0,14.4 64.8,15.3 68.6,15.2 72.4,16.8 76.2,16.9 80.0,17.7 83.8,20.0 87.6,20.5 91.4,20.9 95.2,21.0 99.0,18.8 102.9,22.5 106.7,22.1 110.5,20.8 114.3,28.3 118.1,29.5 121.9,29.8 125.7,23.7 129.5,26.7 133.3,23.8 137.1,24.4 141.0,23.6 144.8,25.8 148.6,24.4 152.4,23.6 156.2,20.4 160.0,18.5 163.8,32.9 167.6,35.0 171.4,31.8 175.2,30.1 179.0,33.1 182.9,29.9 186.7,29.3 190.5,34.6 194.3,32.3 198.1,30.2 201.9,26.5 205.7,32.7 209.5,35.6 213.3,37.0 217.1,40.0 221.0,39.1 224.8,42.0 228.6,36.7 232.4,36.5 236.2,37.1 240.0,24.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.3" r="2.6" fill="var(--up)"/></svg>
+          
+          <div class="nb-conv">
+            
+            <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">73</span>
+            
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 62%ile</span>
+            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" data-tip-en="Weekly rising · 3-Day turn↑ · Daily crossed up" data-tip-zh="周线周线上行 · 3日turn↑ · 日线已上穿">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
+            <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-partial" title="ENTRY timing (gauge 2) — when & at what price to buy. The daily turn is already in — a low formed ~4 day(s) ago @ 373.83 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.">
+            <div class="nbe-head">
+              <span class="nbe-dot a3"></span>
+              <span class="nbe-status"><span class="l-en">Partial entry — half size now</span><span class="l-zh">部分入场 — 当前可建半仓</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$401.90–$415.00</span>
+              <span class="nbe-pct">-1.6%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 19<span class="l-en"></span><span class="l-zh">天</span>/23–44</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:43%"></span></span>
+              
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 46/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:46%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 54/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:54%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 53/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 50/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:50%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.6</span><span class="nbb nbb-literature">revisions +0.1</span></div>
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            
+            
+            
+            
+            <span class="nb-vchip vf-exp" data-tip-en="Volatility black hole · BBWP 62.0 — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal." data-tip-zh="波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -1.45</span>
+            <span class="nb-rk">#231/254</span>
+            <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.45 of the conviction-base size (forecast vol 49.2% · inverse-vol ×0.45 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.45×</span>
+            
+          </div>
+          
+          
+          
+          
+          
+          
           
           
           
@@ -2587,6 +2802,9 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 11d · inv $61.71 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期11天 · 止损 $61.71。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -2611,7 +2829,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">42</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 78%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 77%ile</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -2707,137 +2925,6 @@
       
         
         
-        <a class="nbcard nb-up" href="stock.html#SPGI">
-          <div class="nb-top">
-            <span class="nb-tk">SPGI</span>
-            <span class="nb-nm">S+P Global Inc</span>
-            <span class="sig-gate sig-early" data-tip-en="2D MACD-RSI crossed + 3D StochRSI crossed — an EARLY tier (fires before the 3D master). Tier T2 · weight 0.8. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-07-01" data-tip-zh="加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◑ <span class="l-en">early</span><span class="l-zh">提前</span> <span class="sig-w">T2·0.8</span></span>
-            
-            
-            <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $362.62 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $362.62。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
-            
-            <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
-            <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
-            
-            
-            <span class="nb-px" data-sym="SPGI" data-mkt="us">$414.97</span>
-          </div>
-          
-          
-          
-          <div class="nb-sub"><span><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span class="nb-offh">-25.8% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
-          
-          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,20.3 3.8,20.3 7.6,17.8 11.4,16.5 15.2,18.2 19.0,15.3 22.9,20.7 26.7,24.5 30.5,18.2 34.3,20.3 38.1,18.0 41.9,15.3 45.7,12.9 49.5,12.8 53.3,12.0 57.1,10.1 61.0,14.4 64.8,15.3 68.6,15.2 72.4,16.8 76.2,16.9 80.0,17.7 83.8,20.0 87.6,20.5 91.4,20.9 95.2,21.0 99.0,18.8 102.9,22.5 106.7,22.1 110.5,20.8 114.3,28.3 118.1,29.5 121.9,29.8 125.7,23.7 129.5,26.7 133.3,23.8 137.1,24.4 141.0,23.6 144.8,25.8 148.6,24.4 152.4,23.6 156.2,20.4 160.0,18.5 163.8,32.9 167.6,35.0 171.4,31.8 175.2,30.1 179.0,33.1 182.9,29.9 186.7,29.3 190.5,34.6 194.3,32.3 198.1,30.2 201.9,26.5 205.7,32.7 209.5,35.6 213.3,37.0 217.1,40.0 221.0,39.1 224.8,42.0 228.6,36.7 232.4,36.5 236.2,37.1 240.0,24.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,20.3 3.8,20.3 7.6,17.8 11.4,16.5 15.2,18.2 19.0,15.3 22.9,20.7 26.7,24.5 30.5,18.2 34.3,20.3 38.1,18.0 41.9,15.3 45.7,12.9 49.5,12.8 53.3,12.0 57.1,10.1 61.0,14.4 64.8,15.3 68.6,15.2 72.4,16.8 76.2,16.9 80.0,17.7 83.8,20.0 87.6,20.5 91.4,20.9 95.2,21.0 99.0,18.8 102.9,22.5 106.7,22.1 110.5,20.8 114.3,28.3 118.1,29.5 121.9,29.8 125.7,23.7 129.5,26.7 133.3,23.8 137.1,24.4 141.0,23.6 144.8,25.8 148.6,24.4 152.4,23.6 156.2,20.4 160.0,18.5 163.8,32.9 167.6,35.0 171.4,31.8 175.2,30.1 179.0,33.1 182.9,29.9 186.7,29.3 190.5,34.6 194.3,32.3 198.1,30.2 201.9,26.5 205.7,32.7 209.5,35.6 213.3,37.0 217.1,40.0 221.0,39.1 224.8,42.0 228.6,36.7 232.4,36.5 236.2,37.1 240.0,24.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.3" r="2.6" fill="var(--up)"/></svg>
-          
-          <div class="nb-conv">
-            
-            <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">79</span>
-            
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 61%ile</span>
-            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-            
-          </div>
-          
-          
-          
-          <div class="nb-align" data-tip-en="Weekly rising · 3-Day turn↑ · Daily crossed up" data-tip-zh="周线周线上行 · 3日turn↑ · 日线已上穿">
-            <span class="nba-mark">🟢</span>
-            <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
-            <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
-          </div>
-          
-          
-          
-          <div class="nb-entry nbe-partial" title="ENTRY timing (gauge 2) — when & at what price to buy. The daily turn is already in — a low formed ~4 day(s) ago @ 373.83 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.">
-            <div class="nbe-head">
-              <span class="nbe-dot a3"></span>
-              <span class="nbe-status"><span class="l-en">Partial entry — half size now</span><span class="l-zh">部分入场 — 当前可建半仓</span></span>
-            </div>
-            
-            <div class="nbe-zone">
-              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-              <span class="nbe-px">$401.90–$415.00</span>
-              <span class="nbe-pct">-1.6%</span>
-            </div>
-            
-            
-            <div class="nbe-cyc">
-              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 19<span class="l-en"></span><span class="l-zh">天</span>/23–44</span>
-              <span class="nbe-bar"><span class="nbe-bf" style="width:43%"></span></span>
-              
-            </div>
-            
-          </div>
-          
-          <div class="nb-axes">
-            
-            
-            <div class="nb-ax" title="SEL 46/100">
-              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:46%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="ENT 54/100">
-              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-              <div class="axt"><div class="axf" style="width:54%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="TWD 51/100">
-              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:51%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="QUAL 50/100">
-              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-              <div class="axt"><div class="axf" style="width:50%"></div></div>
-            </div>
-            
-          </div>
-          
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.6</span><span class="nbb nbb-literature">revisions +0.1</span></div>
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          <div class="nb-vf">
-            
-            
-            
-            
-            
-            <span class="nb-vchip vf-exp" data-tip-en="Volatility black hole · BBWP 62.0 — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal." data-tip-zh="波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
-          </div>
-          
-          <div class="nb-bot">
-            <span class="nb-az az-dn" data-tip-en="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page." data-tip-zh="行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -1.45</span>
-            <span class="nb-rk">#231/254</span>
-            <span class="nb-size sz-dn" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.45 of the conviction-base size (forecast vol 49.2% · inverse-vol ×0.45 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.45×</span>
-            
-          </div>
-          
-          
-          
-          
-          
-          
-          
-          
-          
-        </a>
-      
-        
-        
         <a class="nbcard nb-up" href="stock.html#WMB">
           <div class="nb-top">
             <span class="nb-tk">WMB</span>
@@ -2850,6 +2937,13 @@
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
             
             
+            
+            
+            
+            
+            
+            
+            <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — US Energy Complex. Rank 38/46 (-15 vs 5d ago). Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 美国能源综合。排名 38/46。仅供展示，不影响排名。"><span class="l-en">▽ US Energy Complex</span><span class="l-zh">▽ 美国能源综合</span></span>
             
             <span class="nb-px" data-sym="WMB" data-mkt="us">$72.77</span>
           </div>
@@ -2873,7 +2967,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">41</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 78%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 77%ile</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -2937,7 +3031,7 @@
             
           </div>
           
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.4</span><span class="nbb nbb-literature">revisions -0.3</span></div>
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.4</span><span class="nbb nbb-literature">revisions -0.2</span></div>
           
           
           
@@ -2981,6 +3075,13 @@
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
             
             
+            
+            
+            
+            
+            
+            
+            <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Communication Services (Equal-Weight). Rank 33/46. Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 通信服务（等权）。排名 33/46。仅供展示，不影响排名。"><span class="l-en">▽ Communication Services (Equal-Weight)</span><span class="l-zh">▽ 通信服务（等权）</span></span>
             
             <span class="nb-px" data-sym="NWS" data-mkt="us">$30.17</span>
           </div>
@@ -3122,6 +3223,13 @@
             
             
             
+            
+            
+            
+            
+            
+            <span class="nb-pulse-heat ph-hot" data-tip-en="Sector theme heat: hot — Health Care (Equal-Weight). Rank 3/46. Display-only — no ranking power." data-tip-zh="板块主题热度：hot — 医疗保健（等权）。排名 3/46。仅供展示，不影响排名。"><span class="l-en">▲ Health Care (Equal-Weight)</span><span class="l-zh">▲ 医疗保健（等权）</span></span>
+            
             <span class="nb-px" data-sym="ELV" data-mkt="us">$416.19</span>
           </div>
           
@@ -3132,7 +3240,7 @@
             
             
           <div class="nb-sub">
-            <span class="nb-spot nb-spot-link spot-up" data-href="basket/us_sector_health.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×1.04) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Health Care (Equal-Weight) (HOLD). Sector: Health Care — improving. Open the theme →"><span>🔥</span><span class="sp-tag l-en">Health Care (Equal-Weight)</span><span class="sp-tag l-zh">医疗保健（等权）</span><span>▲</span></span>
+            <span class="nb-spot nb-spot-link spot-up" data-href="basket/us_sector_health.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×1.09) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Health Care (Equal-Weight) (ACCUMULATE). Sector: Health Care — improving. Open the theme →"><span>🔥</span><span class="sp-tag l-en">Health Care (Equal-Weight)</span><span class="sp-tag l-zh">医疗保健（等权）</span><span>▲</span></span>
             
             
             <span class="nb-gics"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span><span class="nb-offh">-1.5% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
@@ -3142,7 +3250,7 @@
           
           <div class="nb-conv">
             
-            <span class="nb-cscore band-constructive" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">52</span>
+            <span class="nb-cscore band-constructive" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">47</span>
             
             <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 73%ile</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
@@ -3195,9 +3303,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 51/100">
+            <div class="nb-ax" title="TWD 53/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:51%"></div></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
             </div>
             
             
@@ -3232,7 +3340,7 @@
           
           
           
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Health Care (Equal-Weight)) is crowded / extended — cap size, don't add aggressively.</span><span class="l-zh">所属叙事篮子（医疗保健（等权））拥挤／过度拉伸 — 控制仓位，勿激进加仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+15.4% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +15.4%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Health Care (Equal-Weight)) is crowded / extended — cap size, don't add aggressively.</span><span class="l-zh">所属叙事篮子（医疗保健（等权））拥挤／过度拉伸 — 控制仓位，勿激进加仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+15.0% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +15.0%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           
           
@@ -3253,12 +3361,24 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="XEL" data-mkt="us">$79.70</span>
           </div>
           
           
           
-          <div class="nb-sub"><span><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span><span class="nb-offh">-3.6% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+            
+            
+            
+            
+          <div class="nb-sub">
+            <span class="nb-spot nb-spot-link spot-up" data-href="basket/us_sector_utilities.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×1.07) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Utilities (Equal-Weight) (ACCUMULATE). Sector: Utilities — improving. Open the theme →"><span>🔥</span><span class="sp-tag l-en">Utilities (Equal-Weight)</span><span class="sp-tag l-zh">公用事业（等权）</span><span>▲</span></span>
+            
+            
+            <span class="nb-gics"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span><span class="nb-offh">-3.6% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
+          </div>
           
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,27.2 3.8,25.9 7.6,20.9 11.4,22.6 15.2,21.8 19.0,17.4 22.9,11.0 26.7,12.9 30.5,22.3 34.3,25.3 38.1,31.1 41.9,19.4 45.7,19.2 49.5,22.9 53.3,29.0 57.1,33.7 61.0,27.0 64.8,28.6 68.6,27.4 72.4,27.0 76.2,30.2 80.0,10.1 83.8,11.9 87.6,18.8 91.4,17.4 95.2,21.8 99.0,22.4 102.9,27.5 106.7,21.5 110.5,25.0 114.3,24.9 118.1,24.3 121.9,34.6 125.7,33.8 129.5,25.8 133.3,25.2 137.1,23.5 141.0,19.2 144.8,20.7 148.6,19.6 152.4,28.1 156.2,26.9 160.0,42.0 163.8,34.9 167.6,37.2 171.4,35.4 175.2,29.2 179.0,36.1 182.9,34.9 186.7,33.8 190.5,32.9 194.3,28.3 198.1,24.7 201.9,26.5 205.7,34.0 209.5,34.3 213.3,27.4 217.1,19.9 221.0,14.3 224.8,12.9 228.6,10.6 232.4,11.8 236.2,20.1 240.0,23.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,27.2 3.8,25.9 7.6,20.9 11.4,22.6 15.2,21.8 19.0,17.4 22.9,11.0 26.7,12.9 30.5,22.3 34.3,25.3 38.1,31.1 41.9,19.4 45.7,19.2 49.5,22.9 53.3,29.0 57.1,33.7 61.0,27.0 64.8,28.6 68.6,27.4 72.4,27.0 76.2,30.2 80.0,10.1 83.8,11.9 87.6,18.8 91.4,17.4 95.2,21.8 99.0,22.4 102.9,27.5 106.7,21.5 110.5,25.0 114.3,24.9 118.1,24.3 121.9,34.6 125.7,33.8 129.5,25.8 133.3,25.2 137.1,23.5 141.0,19.2 144.8,20.7 148.6,19.6 152.4,28.1 156.2,26.9 160.0,42.0 163.8,34.9 167.6,37.2 171.4,35.4 175.2,29.2 179.0,36.1 182.9,34.9 186.7,33.8 190.5,32.9 194.3,28.3 198.1,24.7 201.9,26.5 205.7,34.0 209.5,34.3 213.3,27.4 217.1,19.9 221.0,14.3 224.8,12.9 228.6,10.6 232.4,11.8 236.2,20.1 240.0,23.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.0" r="2.6" fill="var(--up)"/></svg>
           
@@ -3266,7 +3386,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">41</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 71%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 72%ile</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -3317,9 +3437,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 51/100">
+            <div class="nb-ax" title="TWD 53/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:51%"></div></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
             </div>
             
             
@@ -3373,6 +3493,9 @@
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
+            
+            
+            
             
             
             <span class="nb-px" data-sym="RITM" data-mkt="us">$9.09</span>
@@ -3494,6 +3617,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 11d · inv $44.33 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期11天 · 止损 $44.33。仅供参考。"><span class="l-en">Base 11d</span><span class="l-zh">筑底11天</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -3636,6 +3762,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="CPK" data-mkt="us">$125.00</span>
           </div>
           
@@ -3649,7 +3778,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">45</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 62%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 63%ile</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -3713,7 +3842,7 @@
             
           </div>
           
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.4</span><span class="nbb nbb-literature">revisions -0.3</span></div>
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.4</span><span class="nbb nbb-literature">revisions -0.2</span></div>
           
           
           
@@ -3767,6 +3896,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="TRNO" data-mkt="us">$67.33</span>
           </div>
           
@@ -3780,7 +3912,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">39</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 61%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 62%ile</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -3898,6 +4030,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="AEP" data-mkt="us">$135.05</span>
           </div>
           
@@ -3920,7 +4055,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">37</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 60%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 59%ile</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -3959,9 +4094,9 @@
           <div class="nb-axes">
             
             
-            <div class="nb-ax" title="SEL 55/100">
+            <div class="nb-ax" title="SEL 54/100">
               <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:55%"></div></div>
+              <div class="axt"><div class="axf" style="width:54%"></div></div>
             </div>
             
             
@@ -4008,7 +4143,7 @@
           
           
           
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Power & Grid Buildout) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（电力与电网）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+11.2% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +11.2%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Power & Grid Buildout) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（电力与电网）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+11.0% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +11.0%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           
           
@@ -4029,6 +4164,9 @@
             
             
             <span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>
+            
+            
+            
             <span class="nb-px" data-sym="PCG" data-mkt="us">$16.57</span>
           </div>
           
@@ -4162,6 +4300,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="FG" data-mkt="us">$27.94</span>
           </div>
           
@@ -4284,6 +4425,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="OGE" data-mkt="us">$49.44</span>
           </div>
           
@@ -4297,7 +4441,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">39</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 45%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 46%ile</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -4415,6 +4559,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="LRN" data-mkt="us">$90.44</span>
           </div>
           
@@ -4428,7 +4575,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">62</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 42%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 43%ile</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4546,6 +4693,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="KAI" data-mkt="us">$309.00</span>
           </div>
           
@@ -4567,7 +4717,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">41</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 38%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 39%ile</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4606,9 +4756,9 @@
           <div class="nb-axes">
             
             
-            <div class="nb-ax" title="SEL 34/100">
+            <div class="nb-ax" title="SEL 35/100">
               <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:34%"></div></div>
+              <div class="axt"><div class="axf" style="width:35%"></div></div>
             </div>
             
             
@@ -4676,6 +4826,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="CUBE" data-mkt="us">$40.98</span>
           </div>
           
@@ -4689,7 +4842,7 @@
             
             <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">36</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 24%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 25%ile</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4753,7 +4906,7 @@
             
           </div>
           
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.6</span><span class="nbb nbb-literature">revisions -0.6</span></div>
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.6</span><span class="nbb nbb-literature">revisions -0.5</span></div>
           
           
           
@@ -4798,20 +4951,36 @@
             
             
             
+            
+            
+            
+            
+            
+            <span class="nb-pulse-heat ph-hot" data-tip-en="Sector theme heat: hot — Financials (Equal-Weight). Rank 6/46. Display-only — no ranking power." data-tip-zh="板块主题热度：hot — 金融（等权）。排名 6/46。仅供展示，不影响排名。"><span class="l-en">▲ Financials (Equal-Weight)</span><span class="l-zh">▲ 金融（等权）</span></span>
+            
             <span class="nb-px" data-sym="MSCI" data-mkt="us">$603.11</span>
           </div>
           
           
           
-          <div class="nb-sub"><span><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span class="nb-offh">-6.3% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+            
+            
+            
+            
+          <div class="nb-sub">
+            <span class="nb-spot nb-spot-link spot-up" data-href="basket/us_sector_financials.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×1.08) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Financials (Equal-Weight) (ACCUMULATE). Sector: Financials — improving. Open the theme →"><span>🔥</span><span class="sp-tag l-en">Financials (Equal-Weight)</span><span class="sp-tag l-zh">金融（等权）</span><span>▲</span></span>
+            
+            
+            <span class="nb-gics"><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span class="nb-offh">-6.3% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
+          </div>
           
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.9 3.8,39.6 7.6,39.0 11.4,38.9 15.2,36.0 19.0,39.3 22.9,42.0 26.7,37.3 30.5,39.3 34.3,35.1 38.1,33.7 41.9,32.7 45.7,33.1 49.5,24.3 53.3,21.2 57.1,24.1 61.0,25.6 64.8,26.1 68.6,25.0 72.4,24.1 76.2,26.0 80.0,26.8 83.8,28.7 87.6,29.1 91.4,28.7 95.2,26.9 99.0,27.8 102.9,28.0 106.7,29.0 110.5,32.0 114.3,32.3 118.1,34.1 121.9,27.5 125.7,29.4 129.5,28.1 133.3,28.0 137.1,26.2 141.0,26.2 144.8,21.9 148.6,15.1 152.4,13.7 156.2,10.1 160.0,14.0 163.8,18.9 167.6,17.4 171.4,18.4 175.2,22.0 179.0,20.7 182.9,20.4 186.7,24.5 190.5,23.1 194.3,19.6 198.1,20.5 201.9,23.8 205.7,28.4 209.5,28.5 213.3,28.3 217.1,29.5 221.0,39.1 224.8,36.1 228.6,35.2 232.4,34.6 236.2,28.1 240.0,22.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.9 3.8,39.6 7.6,39.0 11.4,38.9 15.2,36.0 19.0,39.3 22.9,42.0 26.7,37.3 30.5,39.3 34.3,35.1 38.1,33.7 41.9,32.7 45.7,33.1 49.5,24.3 53.3,21.2 57.1,24.1 61.0,25.6 64.8,26.1 68.6,25.0 72.4,24.1 76.2,26.0 80.0,26.8 83.8,28.7 87.6,29.1 91.4,28.7 95.2,26.9 99.0,27.8 102.9,28.0 106.7,29.0 110.5,32.0 114.3,32.3 118.1,34.1 121.9,27.5 125.7,29.4 129.5,28.1 133.3,28.0 137.1,26.2 141.0,26.2 144.8,21.9 148.6,15.1 152.4,13.7 156.2,10.1 160.0,14.0 163.8,18.9 167.6,17.4 171.4,18.4 175.2,22.0 179.0,20.7 182.9,20.4 186.7,24.5 190.5,23.1 194.3,19.6 198.1,20.5 201.9,23.8 205.7,28.4 209.5,28.5 213.3,28.3 217.1,29.5 221.0,39.1 224.8,36.1 228.6,35.2 232.4,34.6 236.2,28.1 240.0,22.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.0" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
             
-            <span class="nb-cscore band-constructive" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">56</span>
+            <span class="nb-cscore band-constructive" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">51</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 23%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 25%ile</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -4862,9 +5031,9 @@
             </div>
             
             
-            <div class="nb-ax" title="TWD 51/100">
+            <div class="nb-ax" title="TWD 53/100">
               <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:51%"></div></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
             </div>
             
             
@@ -4920,6 +5089,13 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
+            
+            
+            <span class="nb-pulse-heat ph-hot" data-tip-en="Sector theme heat: hot — Financials (Equal-Weight). Rank 6/46. Display-only — no ranking power." data-tip-zh="板块主题热度：hot — 金融（等权）。排名 6/46。仅供展示，不影响排名。"><span class="l-en">▲ Financials (Equal-Weight)</span><span class="l-zh">▲ 金融（等权）</span></span>
+            
             <span class="nb-px" data-sym="COIN" data-mkt="us">$165.48</span>
           </div>
           
@@ -4940,9 +5116,9 @@
           
           <div class="nb-conv">
             
-            <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">69</span>
+            <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">67</span>
             
-            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 20%ile</span>
+            <span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。"><span class="l-en">edge</span><span class="l-zh">优势</span> 16%ile</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4981,9 +5157,9 @@
           <div class="nb-axes">
             
             
-            <div class="nb-ax" title="SEL 35/100">
+            <div class="nb-ax" title="SEL 33/100">
               <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:35%"></div></div>
+              <div class="axt"><div class="axf" style="width:33%"></div></div>
             </div>
             
             
@@ -5006,7 +5182,7 @@
             
           </div>
           
-          <div class="nb-basis"><span class="nbb nbb-literature">revisions -0.8</span><span class="nbb nbb-context">momentum -1.5</span></div>
+          <div class="nb-basis"><span class="nbb nbb-literature">revisions -1.1</span><span class="nbb nbb-context">momentum -1.5</span></div>
           
           
           
@@ -5030,7 +5206,7 @@
           
           
           
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Crypto & Digital Assets) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（加密与数字资产）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.3% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.3%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -8.6 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -8.6 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
+          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (3)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">3</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Crypto & Digital Assets) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（加密与数字资产）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+7.0% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +7.0%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span><span class="cau-row cau-unval"><span class="l-en">Options IV lean — puts richer than calls by -8.6 vol pts vs peers — protection strongly bid (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向 — 看跌比看涨贵 -8.6 个波动点（相对同业） — 保护性看跌被大力买入（未验证 · 不计入评分）</span></span></div></div>
           
           
           
@@ -5039,6 +5215,146 @@
       
       </div>
       
+      
+      <div class="board-outcomes">
+        <div class="board-outcomes-hdr">
+          <span class="board-outcomes-title"><span class="l-en">Recently surfaced → outcome</span><span class="l-zh">近期上榜 → 结果</span></span>
+          
+          <span class="board-outcomes-sub"><span class="l-en">names that left the buy board in the last 21 sessions</span><span class="l-zh">21个交易日内离开买入榜的标的</span> · <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-02 · <span class="az-up">11 <span class="l-en">running</span><span class="l-zh">上涨</span></span> · <span class="az-dn">4 <span class="l-en">stopped</span><span class="l-zh">止损</span></span></span>
+        </div>
+        <table class="outcomes-tbl">
+          <thead><tr>
+            <th><span class="l-en">Stock</span><span class="l-zh">个股</span></th>
+            <th><span class="l-en">Sector</span><span class="l-zh">行业</span></th>
+            <th><span class="l-en">Surfaced</span><span class="l-zh">上榜日</span></th>
+            <th class="r"><span class="l-en">Return</span><span class="l-zh">涨跌</span></th>
+            <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+          </tr></thead>
+          <tbody>
+          
+          <tr>
+            <td><a href="stock.html#APD" style="font-weight:700;text-decoration:none">APD</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Materials</span><span class="l-zh">原材料</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-up">+7.8%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#GKOS" style="font-weight:700;text-decoration:none">GKOS</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
+            <td class="muted" style="font-size:10.5px">2026-07-01</td>
+            <td class="r"><span class="oc-pct az-up">+7.8%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#P" style="font-weight:700;text-decoration:none">P</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-dn">-7.7%</span></td>
+            <td><span class="oc-dot stopped"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#ETN" style="font-weight:700;text-decoration:none">ETN</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-dn">-6.5%</span></td>
+            <td><span class="oc-dot stopped"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#AIG" style="font-weight:700;text-decoration:none">AIG</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Financials</span><span class="l-zh">金融</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-up">+6.5%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#PRGO" style="font-weight:700;text-decoration:none">PRGO</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-up">+6.1%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#IFF" style="font-weight:700;text-decoration:none">IFF</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Materials</span><span class="l-zh">原材料</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-up">+5.8%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#ITT" style="font-weight:700;text-decoration:none">ITT</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-dn">-5.5%</span></td>
+            <td><span class="oc-dot stopped"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#VIR" style="font-weight:700;text-decoration:none">VIR</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
+            <td class="muted" style="font-size:10.5px">2026-07-01</td>
+            <td class="r"><span class="oc-pct az-up">+5.0%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#HL" style="font-weight:700;text-decoration:none">HL</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Materials</span><span class="l-zh">原材料</span></td>
+            <td class="muted" style="font-size:10.5px">2026-07-01</td>
+            <td class="r"><span class="oc-pct az-up">+4.7%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#KMT" style="font-weight:700;text-decoration:none">KMT</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-dn">-4.5%</span></td>
+            <td><span class="oc-dot stopped"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#NEOG" style="font-weight:700;text-decoration:none">NEOG</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-up">+3.9%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#WDAY" style="font-weight:700;text-decoration:none">WDAY</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
+            <td class="muted" style="font-size:10.5px">2026-07-01</td>
+            <td class="r"><span class="oc-pct az-up">+3.9%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#FNF" style="font-weight:700;text-decoration:none">FNF</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Financials</span><span class="l-zh">金融</span></td>
+            <td class="muted" style="font-size:10.5px">2026-06-30</td>
+            <td class="r"><span class="oc-pct az-up">+3.6%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          <tr>
+            <td><a href="stock.html#PRDO" style="font-weight:700;text-decoration:none">PRDO</a></td>
+            <td class="muted" style="font-size:10.5px"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td>
+            <td class="muted" style="font-size:10.5px">2026-07-01</td>
+            <td class="r"><span class="oc-pct az-up">+3.5%</span></td>
+            <td><span class="oc-dot running"></span></td>
+          </tr>
+          
+          </tbody>
+        </table>
+      </div>
       
       
       <div class="topsetups">

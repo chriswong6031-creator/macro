@@ -1560,3 +1560,99 @@ class TestStageB_PostCushionBreach:
         assert bool(row["post_cushion_breach"]) is True
         assert agg["cushion_reached_count"] == 1
         assert agg["post_cushion_breakeven_breach_rate"] == 100.0
+
+
+# ---------------------------------------------------------------------------
+# W0.2 Stage C — near-miss capture (log_near_misses + maturation pass)
+# ---------------------------------------------------------------------------
+class TestNearMissCapture:
+
+    def _dirs(self, tmp_path):
+        signals = tmp_path / "signals"; signals.mkdir()
+        stocks = tmp_path / "stocks"; stocks.mkdir()
+        arch = tmp_path / "track_record.parquet"
+        return signals, stocks, arch
+
+    def _log(self, tmp_path, stocks, arch, near):
+        return TR.log_near_misses(
+            near, repo_root=tmp_path, out_path=arch, stocks_dir=stocks,
+            data_dir=tmp_path / "data", stockdata_dir=tmp_path / "stockdata")
+
+    def test_near_miss_row_logged_and_matured(self, tmp_path):
+        _, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "AAPL", _daily_close(400))
+        out = self._log(tmp_path, stocks, arch,
+                        [{"ticker": "AAPL", "date": ENTRY_DATE,
+                          "primary_rejection_reason": "freshness_expired",
+                          "reason_detail": "held but risen for many days"}])
+        assert out["n_new"] == 1 and out["n_rejected_reason"] == 0
+        df = pd.read_parquet(arch)
+        row = df[df["type"] == TR.NEAR_MISS_TYPE].iloc[0]
+        assert row["ticker"] == "AAPL"
+        assert row["primary_rejection_reason"] == "freshness_expired"
+        assert row["reason_detail"].startswith("held but")
+        # graded as a prediction: forward cols filled (400-bar series matured)
+        assert pd.notna(row["fwd_mdd_20"])
+        assert pd.notna(row["entry_price"])
+
+    def test_non_taxonomy_reason_rejected(self, tmp_path):
+        _, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "AAPL", _daily_close(400))
+        out = self._log(tmp_path, stocks, arch,
+                        [{"ticker": "AAPL", "date": ENTRY_DATE,
+                          "primary_rejection_reason": "made_up_reason"}])
+        assert out["n_new"] == 0 and out["n_rejected_reason"] == 1
+        assert not arch.exists()   # nothing written
+
+    def test_keep_first_on_duplicate(self, tmp_path):
+        _, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "AAPL", _daily_close(400))
+        nm = [{"ticker": "AAPL", "date": ENTRY_DATE,
+               "primary_rejection_reason": "not_topped_veto"}]
+        self._log(tmp_path, stocks, arch, nm)
+        first = pd.read_parquet(arch)
+        out2 = self._log(tmp_path, stocks, arch, nm)
+        assert out2["n_duplicate"] == 1 and out2["n_new"] == 0
+        second = pd.read_parquet(arch)
+        assert len(first) == len(second) == 1
+
+    def test_hygiene_screen_never_graded(self, tmp_path):
+        _, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "AAPL", _daily_close(400))
+        self._log(tmp_path, stocks, arch,
+                  [{"ticker": "AAPL", "date": ENTRY_DATE,
+                    "primary_rejection_reason": "hygiene_screen"}])
+        row = pd.read_parquet(arch).iloc[0]
+        assert row["primary_rejection_reason"] == "hygiene_screen"
+        assert pd.isna(row["fwd_mdd_20"])   # captured, never graded (Appendix A)
+
+    def test_update_run_matures_stored_near_miss(self, tmp_path):
+        """A near-miss logged while immature must gain its forward columns from
+        update_track_record's Stage-C pass once the price store matures."""
+        signals, stocks, arch = self._dirs(tmp_path)
+        short = _daily_close(260)             # ENTRY_DATE ~bar 252: fwd_mdd_20 immature
+        _write_prices(stocks, "AAPL", short)
+        self._log(tmp_path, stocks, arch,
+                  [{"ticker": "AAPL", "date": ENTRY_DATE,
+                    "primary_rejection_reason": "freshness_expired"}])
+        row0 = pd.read_parquet(arch).iloc[0]
+        assert pd.isna(row0["fwd_mdd_20"])    # not yet matured
+        _write_prices(stocks, "AAPL", _daily_close(400))   # store matures
+        # any marker file gets the run going; the Stage-C pass matures near-misses
+        _write_signals(signals, "MSFT", ENTRY_DATE,
+                       [{"date": ENTRY_DATE, "type": "buy", "quality": "take"}])
+        _write_prices(stocks, "MSFT", _daily_close(400))
+        _run(signals, stocks, arch, asof="2022-06-01")
+        row1 = pd.read_parquet(arch)
+        row1 = row1[row1["type"] == TR.NEAR_MISS_TYPE].iloc[0]
+        assert pd.notna(row1["fwd_mdd_20"])   # matured by the Stage-C pass
+
+    def test_fire_rows_unaffected_by_near_miss_columns(self, tmp_path):
+        signals, stocks, arch = self._dirs(tmp_path)
+        _write_prices(stocks, "NVDA", _daily_close(400))
+        _write_signals(signals, "NVDA", ENTRY_DATE,
+                       [{"date": ENTRY_DATE, "type": "buy", "quality": "take"}])
+        _run(signals, stocks, arch, asof="2022-06-01")
+        row = pd.read_parquet(arch).iloc[0]
+        assert pd.isna(row["primary_rejection_reason"])
+        assert pd.isna(row["reason_detail"])

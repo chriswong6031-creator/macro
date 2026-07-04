@@ -154,16 +154,43 @@ def _risk_leg() -> dict | None:
 
 
 def _sector_leg() -> dict | None:
-    """Reuse the regime engine's sector RS (already computed, same as the rest of the site)."""
-    p = config.data_dir() / "regime" / "latest.json"
-    if not p.exists():
-        return None
+    """Reuse the regime engine's sector RS (already computed, same as the rest of the site).
+
+    Migration (W1 PR2): try world_state.regime.sector_rs first (sector_rs was
+    added to _compose_regime() in W1 PR2); fall back to the legacy direct read
+    of data/regime/latest.json.  Output is behavior-preserving — identical dict
+    shape when world_state and latest.json are in sync.
+
+    NOTE on sector_rs in world_state: the W1 PR2 adjudication chose to add
+    sector_rs to _compose_regime() because latest.json already carries it and
+    etf_pulse reads nothing else from the file in this function.  This avoids
+    leaving etf_pulse on the raw store just for one field.
+    """
+    # --- W1 PR2 migration path ---
     try:
-        reg = json.loads(p.read_text())
+        from engine.neuralweb.read import load_world_state
+        ws = load_world_state()
     except Exception:  # noqa: BLE001
-        return None
+        ws = None
+
+    if ws is not None:
+        reg_block = ws.get("regime") or {}
+        sector_rs = reg_block.get("sector_rs")
+        as_of = reg_block.get("asof")
+    else:
+        # Legacy fallback: direct read of data/regime/latest.json
+        p = config.data_dir() / "regime" / "latest.json"
+        if not p.exists():
+            return None
+        try:
+            reg = json.loads(p.read_text())
+        except Exception:  # noqa: BLE001
+            return None
+        sector_rs = reg.get("sector_rs")
+        as_of = reg.get("date")
+
     rows = []
-    for r in (reg.get("sector_rs") or []):
+    for r in (sector_rs or []):
         t = r.get("ticker")
         if t not in _SECTOR_ETFS:
             continue
@@ -179,7 +206,7 @@ def _sector_leg() -> dict | None:
     rows.sort(key=lambda x: (x["mom_60d"] is None, -(x["mom_60d"] or -1e9)))
     for k, x in enumerate(rows, 1):
         x["rank"] = k
-    return {"as_of": reg.get("date"), "rows": rows,
+    return {"as_of": as_of, "rows": rows,
             "leaders": [x["ticker"] for x in rows[:3]],
             "laggards": [x["ticker"] for x in rows[-3:]]}
 

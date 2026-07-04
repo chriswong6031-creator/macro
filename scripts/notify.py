@@ -34,6 +34,53 @@ SEV_EMOJI = {"act": "🚨", "warn": "⚠️", "info": "ℹ️"}
 
 
 def load_latest() -> dict | None:
+    """Return the regime quad dict that build_message() expects.
+
+    Migration (W1 PR2): try world_state first; fall back to the legacy
+    direct read of data/regime/latest.json.  build_message() accesses keys
+    that live in world_state.regime plus a few extras (sector_rs, playbook,
+    alerts, preference_check, flip_condition) that are top-level in
+    latest.json.  When world_state is fresh we build a compatible dict from
+    its sub-blocks; otherwise we return latest.json verbatim exactly as before.
+    """
+    from engine.neuralweb.read import load_world_state, get as ws_get
+    ws = load_world_state()
+    if ws is not None:
+        reg_block = ws.get("regime") or {}
+        # build_message() reads a flat dict; reconstruct it from world_state blocks.
+        # Keys required: quad, quad_name, label, confidence, liquidity_overlay,
+        # cycle_tag, transition_state, growth_score, inflation_score, date,
+        # sector_rs, playbook, alerts, preference_check, flip_condition.
+        # sector_rs lives in ws.regime (added in W1 PR2 _compose_regime).
+        # playbook / alerts / preference_check / flip_condition are NOT in world_state
+        # (they are latest.json-only fields) — fall back to raw file for those.
+        # Full legacy fallback is cheap so we only skip it if ALL needed fields present.
+        quad = reg_block.get("quad")
+        if quad is not None:
+            p = config.data_dir() / "regime" / "latest.json"
+            raw: dict = {}
+            if p.exists():
+                try:
+                    with open(p) as f:
+                        raw = json.load(f)
+                except Exception:  # noqa: BLE001
+                    pass
+            # Overlay world_state regime fields; keep raw file for non-regime fields.
+            merged: dict = dict(raw)
+            merged["quad"] = reg_block.get("quad")
+            merged["quad_name"] = reg_block.get("quad_name")
+            merged["label"] = reg_block.get("label")
+            merged["confidence"] = reg_block.get("confidence")
+            merged["liquidity_overlay"] = reg_block.get("liquidity_overlay")
+            merged["cycle_tag"] = reg_block.get("cycle_tag")
+            merged["transition_state"] = reg_block.get("transition_state")
+            merged["growth_score"] = reg_block.get("growth_score")
+            merged["inflation_score"] = reg_block.get("inflation_score")
+            if reg_block.get("sector_rs") is not None:
+                merged["sector_rs"] = reg_block.get("sector_rs")
+            return merged
+
+    # Legacy fallback: direct read of data/regime/latest.json
     p = config.data_dir() / "regime" / "latest.json"
     if not p.exists():
         return None

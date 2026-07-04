@@ -4,9 +4,10 @@ invocation (checkout holding only a dir's few git-committed files) must never
 replace the full one. Pure-helper tests — no boto3/creds needed."""
 from __future__ import annotations
 
+import json
 import sys
 
-from scripts.publish_r2 import _manifest_ok, main
+from scripts.publish_r2 import _data_dir_syncable, _manifest_doc, _manifest_ok, main
 
 
 def test_no_remote_manifest_allows_put():
@@ -47,6 +48,42 @@ def test_floor_boundary():
 def test_growth_always_allowed():
     ok, _ = _manifest_ok(6000, {"count": 5000})
     assert ok
+
+
+def test_partial_data_dir_tree_refused():
+    # 2026-07-03 postmortem: a CI runner checkout holds only the two committed JSON
+    # stubs of massive_stock_day (parquets are gitignored) — syncing it would clobber
+    # the R2 store's full-history objects.
+    ok, why = _data_dir_syncable("massive_stock_day", 2)
+    assert not ok and "partial checkout" in why
+
+
+def test_full_data_dir_tree_syncable():
+    assert _data_dir_syncable("massive_stock_day", 14906)[0]
+    assert _data_dir_syncable("hk_stocks_ext", 380)[0]
+
+
+def test_site_dirs_never_refused():
+    # The guard is data-dir-only: site trees are built fresh each run and may be small.
+    assert _data_dir_syncable("stockdata", 2)[0]
+
+
+def test_manifest_doc_embeds_store_manifest_for_data_dirs(tmp_path):
+    store = {"store": "massive_stock_day", "latest_date": "2026-07-02",
+             "coverage": {"max_missing_run_weekdays": 0}}
+    (tmp_path / "_manifest.json").write_text(json.dumps(store))
+    doc = _manifest_doc("massive_stock_day", tmp_path, ["SPY.parquet"])
+    assert doc["count"] == 1 and doc["store"] == store
+
+
+def test_manifest_doc_plain_for_site_dirs(tmp_path):
+    doc = _manifest_doc("stockdata", tmp_path, ["SPY.json"])
+    assert "store" not in doc
+
+
+def test_manifest_doc_survives_missing_store_manifest(tmp_path):
+    doc = _manifest_doc("massive_stock_day", tmp_path, ["SPY.parquet"])
+    assert "store" not in doc and doc["files"] == ["SPY.parquet"]
 
 
 def test_cli_flags_reach_publish(monkeypatch):

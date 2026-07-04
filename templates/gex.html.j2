@@ -284,6 +284,11 @@
   .fl-h { font-size:12px; color:var(--muted); font-weight:600; }
   .fl-sec ul { margin:6px 0 0; padding-left:18px; } .fl-sec li { font-size:12px; line-height:1.55; margin:3px 0; font-variant-numeric:tabular-nums; }
   .fl-foot { font-size:11px; color:var(--muted); font-style:italic; margin-top:11px; line-height:1.5; }
+  /* W0.7: IVR low-confidence caveat chip — replaces rich/cheap label while history is building */
+  .ivr-building { display:inline-block; font-size:11px; background:var(--panel2); border:1px dashed var(--orange,#f97316); border-radius:6px; padding:1px 6px; color:var(--orange,#f97316); font-style:italic; cursor:default; vertical-align:middle; }
+  /* W0.7: flow-card accruing state — shown instead of blank when flow JSON is absent */
+  .fl-accruing { border-left-color:var(--muted) !important; opacity:.75; }
+  .fl-accruing-msg { font-size:12px; color:var(--muted); font-style:italic; margin-top:8px; line-height:1.5; }
 </style>
 </head>
 <body class="page-gex">

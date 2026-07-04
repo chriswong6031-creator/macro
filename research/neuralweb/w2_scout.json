@@ -1,0 +1,392 @@
+{
+ "ledgers": {
+  "ledgers": [
+   {
+    "name": "US Standout Board Ledger (track_record.parquet)",
+    "path": "data/signal_archive/track_record.parquet",
+    "format": "parquet",
+    "owner_program": "setup-species",
+    "schema_summary": "as_of (marker date), ticker, lane (buy/watch/laggard), species_id (nullable), archetype (nullable), composite_z (score), fwd_ret_20/60/180, fwd_mdd_20/60/180, fwd_mfe_5/10/21/63/126, terminal_state_clean15_126, terminal_state_clean8_21, us_quad_hard_label, us_fused_risk_label, us_vol_regime, us_risk_radar_state (regime stamps via get_vector_for_date), survivorship tag",
+    "shared_axes_present": "fwd_mfe horizons (5,10,21,63,126) present; terminal_state_clean15_126 and terminal_state_clean8_21 present; regime stamps (us_quad_hard_label, us_fused_risk_label, us_vol_regime, us_risk_radar_state) present; species_id present (nullable \u2014 unambiguous mtype\u2192species_id mapping only)",
+    "federation_status": "federated",
+    "grader": "engine/grading.py forward_metrics (one-grader law); engine/track_record.py update_track_record; results adapt into data/spine/predictions.parquet via engine/spine.py:adapt_us_board",
+    "synapse_registered": "us-board-ledger-retro-grades (data/us_board_ledger/retro_grades.parquet is the graded store; synapse.yml line ~240)"
+   },
+   {
+    "name": "China Standout Board Ledger",
+    "path": "data/china_standout_track/board.parquet",
+    "format": "parquet",
+    "owner_program": "china-alpha / setup-species",
+    "schema_summary": "date (as_of), ticker, board_rank, tier, setup, extended, washout, level (as-of close), fill_basis=t1_hl2, fwd_mfe_5/10/21/63 (from T+1 HL2 fill), terminal_state_clean15_126, terminal_state_clean8_21, post_cushion_breach, species_id (nullable), archetype (nullable), own_market_regime (null \u2014 PIT constraint documented), us_* context stamps (us_rate_pressure, us_quad_hard_label, us_fused_risk_label, us_vol_regime, us_risk_radar_state, us_regime_vector_degraded), vector_asof, staleness_hours",
+    "shared_axes_present": "fwd_mfe horizons (5,10,21,63) present; terminal_state_clean15_126 and terminal_state_clean8_21 present; regime stamps (us context stamps) present; species_id present (null by design \u2014 board rows don't disambiguate which species fired, per engine/china_standout_track.py:68)",
+    "federation_status": "federated",
+    "grader": "engine/china_standout_track.py grade(); CN-native _cn_fwd_mfe and _cn_terminal_state (shared barrier constants from engine/grading.py); CSI300-relative excess vs 510300.SS",
+    "synapse_registered": "MISSING \u2014 no synapse.yml artifact entry for data/china_standout_track/board.parquet; the retro_grades entry covers only the US board"
+   },
+   {
+    "name": "HK & Canada Board Ledger",
+    "path": "data/hk_board_ledger/board.parquet + data/ca_board_ledger/board.parquet (per-market stores via engine/board_ledger.py)",
+    "format": "parquet",
+    "owner_program": "hk-canada / setup-species",
+    "schema_summary": "as_of, ticker, lane, level, fill (next-bar convention via grading.fill_index), fwd_mfe_5/10/21/63, terminal_state_clean15_126, terminal_state_clean8_21, post_cushion_breach, species_id (null \u2014 no species in registry.json binds to this ledger), archetype (null), own_market_regime (null \u2014 PIT constraint), us_* context stamps (us_rate_pressure, us_quad_hard_label, us_fused_risk_label, us_vol_regime, us_risk_radar_state, us_regime_vector_degraded), vector_asof, staleness_hours",
+    "shared_axes_present": "fwd_mfe horizons (5,10,21,63) present; terminal_state_clean15_126 and terminal_state_clean8_21 present; regime stamps (us context stamps) present; species_id present but null (no binding species). own_market_regime null \u2014 HK/CA PIT regime not available",
+    "federation_status": "federated",
+    "grader": "engine/board_ledger.py grade(); engine/grading.forward_metrics (one-grader law); CSI300-relative / SPY-relative depending on market",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entries for data/hk_board_ledger/ or data/ca_board_ledger/"
+   },
+   {
+    "name": "US Sector Central Calls Ledger",
+    "path": "data/sector_central/calls.parquet",
+    "format": "parquet",
+    "owner_program": "institutional-sector-intelligence",
+    "schema_summary": "date (as_of), id (sector/basket), conviction_score (0\u2013100), direction tier (Accumulate/Constructive/Neutral/Cautious/Reduce), as-of price level; graded fields: fwd_ret_21/63/126, excess_spy per horizon, hit (directional), rank_ic per horizon",
+    "shared_axes_present": "No fwd_mfe horizons; no terminal_state; no species_id; regime stamps not embedded in the ledger row (regime consumed at call time but not PIT-stamped in parquet). The calls.parquet holds the raw conviction call; grading is computed fresh each run by engine/sector_central_grader.py",
+    "federation_status": "unfederated",
+    "grader": "engine/sector_central_grader.py grade(); engine/grading for fill convention; SPY-relative excess; horizons 21/63/126d",
+    "synapse_registered": "sector-central-calls (synapse.yml, tier=display)"
+   },
+   {
+    "name": "China Sector Central Calls Ledger",
+    "path": "data/china_sector_central/calls.parquet",
+    "format": "parquet",
+    "owner_program": "institutional-sector-intelligence / china-alpha",
+    "schema_summary": "date (as_of), id (Shenwan L1 sector), conviction_score, direction tier; graded by engine/china_sector_central_grader.py: CSI300-relative forward excess at 21/63/126d",
+    "shared_axes_present": "No fwd_mfe horizons; no terminal_state; no species_id; no PIT regime stamps in row. Same unfederated pattern as US sector_central.",
+    "federation_status": "unfederated",
+    "grader": "engine/china_sector_central_grader.py; CSI300-relative via 510300.SS; horizons 21/63/126d",
+    "synapse_registered": "china-sector-central-calls (synapse.yml, tier=display)"
+   },
+   {
+    "name": "US Sector Cycles Forward Log",
+    "path": "data/sector_cycles/forward_log.parquet",
+    "format": "parquet",
+    "owner_program": "cycle-intelligence",
+    "schema_summary": "date, id (sector/basket slug), kind, name, phase (5-phase), pos (0\u2013100 oscillator), osc_slope, signal (BUY/SELL/None), timing_state, above200d, rs_63d, proj_next/proj_central/proj_lo/proj_hi (turn projections), pos_v2, phase_v2, stance, divergence, overdue (ontology W1.6), hazard_1m_p/3m_p/6m_p + hazard_*_src (W4.3 hazard model)",
+    "shared_axes_present": "No fwd_mfe horizons in the log itself (cycle forward return is graded separately by scripts/grade_promises.py + engine/grading_stats.py); no terminal_state; no species_id; no regime stamps in row. Hazard columns are cycle-domain turn-probability, not spine fwd_mfe.",
+    "federation_status": "unfederated",
+    "grader": "scripts/grade_promises.py + engine/grading_stats.py (cycle drawdown/return grading); the forward log itself is PIT-stamped but not spine-federated",
+    "synapse_registered": "sector-cycles-forward-log (synapse.yml, tier=shadow)"
+   },
+   {
+    "name": "China Sector Cycles Forward Log",
+    "path": "data/china_sector_cycles/forward_log.parquet",
+    "format": "parquet",
+    "owner_program": "china-alpha / cycle-intelligence",
+    "schema_summary": "date, id, phase, pos, signal, timing_state (baseline cols from sector_cycles schema); graded outcome cols appended by engine/china_sector_cycles_grader.py: drawdown_p21/p63, return_p21/p63, bench_ret_p21/p63 (CSI300-relative). Grader appends grade rows to the SAME parquet (producer + grader share the file).",
+    "shared_axes_present": "No fwd_mfe horizons (uses its own drawdown_p/return_p grain); no terminal_state; no species_id; no regime stamps in row. Schema = china_sector_cycles.grader.v1 (only registered ledger with a named schema in the census).",
+    "federation_status": "unfederated",
+    "grader": "engine/china_sector_cycles_grader.py; CSI300-relative; drawdown + return channels separately graded at 21d/63d; grader RETURNS {} on missing input (never raises)",
+    "synapse_registered": "china-sector-cycles-forward-log (synapse.yml, schema=china_sector_cycles.grader.v1, tier=shadow)"
+   },
+   {
+    "name": "Country Cycles Forward Log",
+    "path": "data/country_cycles/forward_log.parquet",
+    "format": "parquet",
+    "owner_program": "cycle-intelligence",
+    "schema_summary": "Same schema as US sector_cycles forward_log (shared via engine/cycle_forward_log.py): date, id, kind, phase, pos, osc_slope, signal, timing_state, above200d, rs_63d, proj_*, stance, hazard_1m_p/3m_p/6m_p. Country-level (EWJ, EWZ, EEM, etc.) rather than sector.",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Hazard columns present. Same unfederated pattern as US sector_cycles.",
+    "federation_status": "unfederated",
+    "grader": "scripts/grade_promises.py + engine/grading_stats.py (shared with US sector cycles); SPY-relative or index-relative depending on country",
+    "synapse_registered": "country-cycles-forward-log (synapse.yml, tier=shadow)"
+   },
+   {
+    "name": "qledger claims + grades",
+    "path": "data/qledger/claims.jsonl + data/qledger/grades.jsonl",
+    "format": "jsonl",
+    "owner_program": "qualitative-intelligence",
+    "schema_summary": "claims.jsonl: desk, asof, scope={type, key}, direction (+1/-1/0), horizon_d, timestamp_quality, bench, control, falsifier, check_by, entry_levels, claim_id, status (open/graded/rejected), species_id (null \u2014 qledger is desk/family granularity), archetype (null), regime_vector stamp fields (us_quad_hard_label, us_fused_risk_label, us_vol_regime, us_risk_radar_state from _regime_stamp_for_asof). grades.jsonl: per-horizon (5/21/63d capped by horizon_d) realized excess vs bench, Wilson CI, matched-control excess, grade_horizon, outcome",
+    "shared_axes_present": "fwd_mfe horizons: GRADE_HORIZONS=(5,21,63) present in grades.jsonl \u2014 structurally aligned but horizon vocabulary is 'grade at each horizon \u2264 horizon_d' rather than the spine's fixed fwd_mfe_{H} columns; terminal_state: ABSENT; species_id: present (null by design \u2014 ledger='qledger' has no registry binding); regime stamps: present via _regime_stamp_for_asof at registration time",
+    "federation_status": "adapted",
+    "grader": "scripts/grade_qledger.py + engine/qledger.py grade(); Wilson CI + matched-control excess; multi-horizon; promotion ladder UNGRADED\u2192ACCRUING\u2192GRADED. Rows join spine query layer via engine/spine (adapter not yet wired for qledger \u2014 D2 joint ruling with QI W6 pending)",
+    "synapse_registered": "qledger-claims (synapse.yml, tier=shadow)"
+   },
+   {
+    "name": "Spine Predictions",
+    "path": "data/spine/predictions.parquet",
+    "format": "parquet",
+    "owner_program": "qualitative-intelligence / durable-bottom",
+    "schema_summary": "signal_id, engine, version, family, as_of, symbol, universe, horizon, score, size_binding, direction, event_key, outcome_excess, outcome_graded, meta (JSON). Schema = spine.predictions.v1. Populated by engine/spine.py:rebuild_from_adapters() which calls adapt_us_board (data/us_board_ledger/retro_grades.parquet), adapt_altdata (data/altdata/{theses,scored}.jsonl), adapt_desk_scorer (7 desks' scored.jsonl). The spine is the QUERY LAYER \u2014 read-side index over federated ledgers.",
+    "shared_axes_present": "This IS the shared-axis aggregation layer. No per-row fwd_mfe (outcome_excess carries the graded return); no terminal_state (meta carries it per-adapter); no species_id column (family encodes engine/desk); regime stamps not in spine rows (they live in the source ledger rows)",
+    "federation_status": "federated",
+    "grader": "engine/grading.py (via source adapters); engine/spine.py graded_rows() + measured_ic() for IC aggregation; alert_triage reads spine for IC-based severity caps",
+    "synapse_registered": "spine-predictions (synapse.yml, schema=spine.predictions.v1, tier=shadow)"
+   },
+   {
+    "name": "Risk Radar Forward Log",
+    "path": "data/risk_radar/forward_log.jsonl",
+    "format": "jsonl",
+    "owner_program": "engine-fix / oracle",
+    "schema_summary": "as_of, state (normal/elevated/risk-off), score, scare_types list, radar_override bool, corroborators list; graded fields appended: h5/h10/h21 hit (SPY drawdown \u22655% within H business days), precision/recall/fp_rate per horizon, per-corroborator attribution (which corroborators co-occur with true positives)",
+    "shared_axes_present": "No fwd_mfe horizons (uses own h5/h10/h21 drawdown-hit scheme); no terminal_state; no species_id; no regime stamps in row. Self-contained grading loop.",
+    "federation_status": "unfederated",
+    "grader": "engine/risk_radar_audit.py; deterministic SPY close grading at 5/10/21 business-day horizons; DD_THRESHOLDS=(0.05, 0.08)",
+    "synapse_registered": "risk-radar-forward-log (synapse.yml, tier=display)"
+   },
+   {
+    "name": "Market State Forward Log",
+    "path": "data/market_state/forward_log.jsonl",
+    "format": "jsonl",
+    "owner_program": "engine-fix",
+    "schema_summary": "as_of, verdict (RISK_OFF/normal), score (0\u2013100), corroborators list; graded: h5/h10/h21 SPY drawdown hit, per-corroborator precision attribution (conjunction, two_plus_scares, complacency, breadth_div, drawdown_band, systemic_stress, turning_point)",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Parallel structure to risk_radar forward_log \u2014 both use the same 5/10/21 business-day SPY drawdown grading convention.",
+    "federation_status": "unfederated",
+    "grader": "engine/market_state_audit.py; deterministic SPY close grading; corroborator attribution \u2014 consumed by engine/market_state_tune.py for weight retuning",
+    "synapse_registered": "market-state-forward-log (synapse.yml, tier=display)"
+   },
+   {
+    "name": "AI Desk Ledger (theses + scored + track_record)",
+    "path": "data/ai_desk/theses.jsonl + data/ai_desk/scored.jsonl + data/ai_desk/track_record.json",
+    "format": "jsonl + json",
+    "owner_program": "qualitative-intelligence / ai-desk",
+    "schema_summary": "theses.jsonl: id, desk='ai_desk', subject, state_asof, entry_levels, falsifier={check, threshold, bench, op}, check_by, conviction (low/medium/high), lean (overweight/avoid), logged_at, is_placebo. scored.jsonl: id, outcome (hit/miss/unscored/expired), realized (rel_return), directionally_correct. track_record.json: schema=ai_desk_track_record.v1, n, hit_rate, dir_accuracy, by_conviction breakdown",
+    "shared_axes_present": "No fwd_mfe horizons; no terminal_state; no species_id; regime stamp not embedded in thesis rows. Outcomes adapt into spine via engine/spine.py:adapt_desk_scorer (family='desk:ai_desk'). Shared chassis: engine/desk_scorer.py",
+    "federation_status": "adapted",
+    "grader": "engine/ai_desk_scorer.py (thin binding) \u2192 engine/desk_scorer.py _score_one; rel_return falsifier; POOL_DESKS cross-desk pooling; spine adapter wired",
+    "synapse_registered": "radar-theses entry covers data/radar/theses.jsonl; ai_desk theses are in synapse only indirectly via altdata-theses and site-ai-desk-us. No direct data/ai_desk/theses.jsonl entry \u2014 MISSING from synapse.yml"
+   },
+   {
+    "name": "Policy Intent Desk Ledger",
+    "path": "data/policy_intent/theses.jsonl + data/policy_intent/scored.jsonl + data/policy_intent/track_record.json",
+    "format": "jsonl + json",
+    "owner_program": "qualitative-intelligence / policy-watch",
+    "schema_summary": "Same desk_scorer chassis as ai_desk: id, desk='policy_intent', subject, state_asof, entry_levels, falsifier, check_by, conviction, lean, logged_at. SCHEMA=policy_intent_desk.v1. Thesis lens='realpolitik'. Scorable subject tickers mapped to proxy ETFs (GLD\u2192GDXJ, etc.)",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Spine-adapted via adapt_desk_scorer family='desk:policy_intent'.",
+    "federation_status": "adapted",
+    "grader": "engine/ai_desk_scorer.py evaluators via engine/desk_scorer.py; rel_return falsifier; same scoring chassis as ai_desk",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/policy_intent/"
+   },
+   {
+    "name": "Radar + Narrative Brain Ledger",
+    "path": "data/radar/theses.jsonl + data/radar/scored.jsonl + data/radar/track_record.json + data/narrative_brain/theses.jsonl + data/narrative_brain/scored.jsonl",
+    "format": "jsonl + json",
+    "owner_program": "oracle",
+    "schema_summary": "radar: POSITIVE_DIVERGENCE watches, subject=sector ETF, state_asof=logged_at date, rel_return falsifier vs SPY over horizon. narrative_brain: durability ENTER/AVOID calls. Both share the ai_desk_scorer evaluators (scored by engine/radar_scorer.py across DESKS=('radar','narrative_brain')). track_record.json: schema=implicit, n/hit_rate/dir_accuracy",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Spine-adapted via adapt_desk_scorer family='desk:radar' and 'desk:narrative_brain'.",
+    "federation_status": "adapted",
+    "grader": "engine/radar_scorer.py _score_desk(); uses engine/ai_desk_scorer evaluators; rel_return vs SPY; _state_asof resolves from logged_at or id prefix",
+    "synapse_registered": "radar-theses (data/radar/theses.jsonl, synapse.yml, tier=display); radar-track-record (data/radar/track_record.json, synapse.yml, tier=display). narrative_brain NOT separately registered."
+   },
+   {
+    "name": "Stock Desk Ledger",
+    "path": "data/stock_desk/theses.jsonl + data/stock_desk/scored.jsonl + data/stock_desk/track_record.json",
+    "format": "jsonl + json",
+    "owner_program": "qualitative-intelligence / ai-desk",
+    "schema_summary": "Same desk_scorer chassis. SCHEMA=stock_desk.v1. Per-name directional theses from master_brain's per-stock analysis. Writes site/stockdata/ai_desk_track.json as output. Spine-adapted via adapt_desk_scorer family='desk:stock_desk'.",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Spine-adapted.",
+    "federation_status": "adapted",
+    "grader": "engine/desk_scorer.py via engine/stock_desk.py score(); same chassis",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/stock_desk/"
+   },
+   {
+    "name": "Demand Chain Ledger",
+    "path": "data/demand_chain/theses.jsonl + data/demand_chain/scored.jsonl + data/demand_chain/track_record.json",
+    "format": "jsonl + json",
+    "owner_program": "qualitative-intelligence / demand-desk",
+    "schema_summary": "RULE-DERIVED (no LLM) theses: divergence \u2208 {ahead_of_consensus, consensus_at_risk} on leading chains (ai_datacenter); vintage=chain:ticker:fy:divergence (dedup key); rel_return falsifier vs SPY over chain horizon; SCHEMA=demand_chain_track_record.v1; conviction always 'low' (unproven signal). Spine-adapted via adapt_desk_scorer family='desk:demand_chain'.",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; regime stamp stamped at build time via engine/regime_label.quad_label into thesis 'regime' field. Spine-adapted.",
+    "federation_status": "adapted",
+    "grader": "engine/ai_desk_scorer.py evaluators via engine/demand_ledger.py score(); rel_return \u00b15% band falsifier",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/demand_chain/"
+   },
+   {
+    "name": "Thematic Desk Ledger",
+    "path": "data/thematic_desk/theses.jsonl + data/thematic_desk/scored.jsonl + data/thematic_desk/track_record.json",
+    "format": "jsonl + json",
+    "owner_program": "qualitative-intelligence / oracle",
+    "schema_summary": "Per-theme LLM theses from engine/thematic_desk.py; subject=basket ETF proxy; SCHEMA=thematic_desk.v1; same falsifier chassis as ai_desk (rel_return vs SPY). Spine-adapted via adapt_desk_scorer family='desk:thematic_desk'.",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Spine-adapted.",
+    "federation_status": "adapted",
+    "grader": "engine/desk_scorer.py via engine/thematic_desk.py score(); same chassis",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/thematic_desk/"
+   },
+   {
+    "name": "Master Brain Ledger",
+    "path": "data/master_brain/theses.jsonl + data/master_brain/scored.jsonl + data/master_brain/track_record.json",
+    "format": "jsonl + json",
+    "owner_program": "qualitative-intelligence / engine-fix",
+    "schema_summary": "Cross-asset leans from engine/master_brain.py flagship; SCHEMA=master_brain_track_record.v1. Same desk_scorer chassis: per-asset directional leans, rel_return falsifier, check_by. Calibration note emphasizes tiny sample / accountability-not-validated-edge framing.",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. NOT in POOL_DESKS (engine/desk_scorer.py:49) or adapt_desk_scorer \u2014 this ledger does NOT flow into the spine via the standard desk adapter.",
+    "federation_status": "unfederated",
+    "grader": "engine/master_brain_scorer.py (thin binding) \u2192 engine/desk_scorer.py; same evaluators as ai_desk",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/master_brain/"
+   },
+   {
+    "name": "Alt-data Convergence Ledger",
+    "path": "data/altdata/theses.jsonl + data/altdata/scored.jsonl + data/altdata/track_record.json",
+    "format": "jsonl + json",
+    "owner_program": "qualitative-intelligence",
+    "schema_summary": "Per-name alt-data convergence theses (\u22652 independent channels co-firing); SCHEMA=altdata_track_record.v1; HORIZON_D=63; THRESHOLD=-0.05; BENCH=SPY; channels list, convergence_score, state_asof, entry_levels. scored.jsonl: outcome, realized (rel_return). track_record.json: aggregated hit-rate. Spine-adapted via engine/spine.py:adapt_altdata (event_key=thesis id for same-event collapse).",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps in thesis rows. Spine adapter wired and carries channels list for same-event penalty (#23).",
+    "federation_status": "adapted",
+    "grader": "engine/altdata_ledger.py using engine/ai_desk_scorer evaluators; rel_return vs SPY over 63d horizon; \u00b15% band falsifier",
+    "synapse_registered": "altdata-theses (data/altdata/theses.jsonl, synapse.yml, tier=shadow); altdata-track-record (data/altdata/track_record.json, synapse.yml, tier=display)"
+   },
+   {
+    "name": "Foresight Cascade Forward Log",
+    "path": "data/foresight/log.jsonl + data/glut_watch/log.jsonl",
+    "format": "jsonl",
+    "owner_program": "oracle / foresight-desk",
+    "schema_summary": "Per-theme per-stage daily log: theme, stage (PRECIPICE/BROADENING/RE-RATING/WATCH/GLUT-EXIT), members (PIT snapshot), asof, stage-specific numeric fields (bottleneck_band, revision_breadth, etc.). graded by engine/foresight_grader.py: per-stage\u00d7per-horizon (30/60/90d) EW member excess vs SPY, hit/miss, Wilson CI, BY-FDR gate on 90d canonical horizon.",
+    "shared_axes_present": "No fwd_mfe horizons (uses its own 30/60/90d grading); no terminal_state; no species_id; no regime stamps. PIT membership in log = core rigor guarantee. NOT in spine adapters.",
+    "federation_status": "unfederated",
+    "grader": "engine/foresight_grader.py grade_ledger_rows(); survivorship-free (uses data/edgar/dead_name_prices.parquet); PIT members; BY-FDR on 90d; sign-test per theme. Also: engine/foresight_shadow.py grade_shadow() for shadow-threshold ledger (data/foresight/shadow_log.jsonl)",
+    "synapse_registered": "site-foresight-cascade (site/allocationdata/foresight_cascade.json, output artifact); the input log files data/foresight/log.jsonl and data/glut_watch/log.jsonl are NOT registered in synapse.yml"
+   },
+   {
+    "name": "BTC Override Ledger",
+    "path": "data/vector/override_ledger.jsonl + data/vector/override_scored.json",
+    "format": "jsonl + json",
+    "owner_program": "btc-vector",
+    "schema_summary": "SCHEMA=btc_override_ledger.v1; per-date stamp of midterm_blackout override sub-claims (v1 frozen set); graded by score(): fwd_ret and fwd_mdd over horizon_days=90 from BTC close. override_scored.json: per-claim hit/miss, overall summary. MONITORING ONLY \u2014 zero allocation authority.",
+    "shared_axes_present": "No fwd_mfe spine columns; no terminal_state; no species_id; no regime stamps. Uses own fwd_ret/_forward_max_drawdown helpers. NOT adapted into spine.",
+    "federation_status": "unfederated",
+    "grader": "engine/btc_override_ledger.py score(); own _forward_return and _forward_max_drawdown helpers on BTC close series",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/vector/override_ledger.jsonl"
+   },
+   {
+    "name": "BTC Regime Ledger",
+    "path": "data/vector/regime_ledger.jsonl + data/vector/regime_scored.jsonl + data/vector/regime_falsifiers.json",
+    "format": "jsonl",
+    "owner_program": "btc-vector",
+    "schema_summary": "SCHEMA=btc_regime_ledger.v1 (implicit); per-date BTC regime stance stamp; graded at HORIZON_DAYS=90: fwd_ret via _forward_return, fwd_mdd via _forward_max_drawdown; falsifier_status(): per-tier FRAGILE/OK/INELIGIBLE_PENDING \u2014 a tripped falsifier zeros the tier's weight in the display scorecard. CONTEXT-ONLY.",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps (IS the regime ledger). Own grading convention. NOT adapted into spine.",
+    "federation_status": "unfederated",
+    "grader": "engine/btc_regime_ledger.py score() and falsifier_status(); own forward_return/max_drawdown helpers; auto-demotion on falsifier trip",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/vector/regime_ledger.jsonl"
+   },
+   {
+    "name": "BTC Impulse Ledger",
+    "path": "data/vector/impulse_ledger.jsonl",
+    "format": "jsonl",
+    "owner_program": "btc-vector",
+    "schema_summary": "Per-date stamp: down_score, down_ladder, down_act, up_score, up_ladder, up_act, fires={d2,d3,u1}, btc_close; graded outcome (after LABEL_H=3 trading days): fwd_min_pct, fwd_max_pct, down_hit (DOWN leg preceded \u22125%/3d move?), up_hit. One row per asof (idempotent).",
+    "shared_axes_present": "No fwd_mfe spine columns; no terminal_state; no species_id; no regime stamps. Own 3-day BTC-only forward grading.",
+    "federation_status": "unfederated",
+    "grader": "engine/btc_impulse_ledger.py (stamp + grade in same module); LABEL_H=3, LABEL_THR=0.05; BTC close from data/btc/ store",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/vector/impulse_ledger.jsonl"
+   },
+   {
+    "name": "China Radar Ledger",
+    "path": "data/china_radar/ledger.parquet",
+    "format": "parquet",
+    "owner_program": "china-alpha",
+    "schema_summary": "SCHEMA=china_radar_ledger.v1; event_id, fired_date, pair (sector vs CSI300), signal_key, sector_etf, sector_en, sector_zh, sign, rs_at_fire, signal_value; keep-FIRST per (pair, month). Graded: CSI300-relative sector return over HORIZON_DAYS=90; hit/miss. Honest accountability \u2014 never a trade.",
+    "shared_axes_present": "No fwd_mfe spine columns; no terminal_state; no species_id; no regime stamps. Own 90-day CSI300-relative grading. NOT adapted into spine.",
+    "federation_status": "unfederated",
+    "grader": "engine/china_radar_ledger.py resolve() method; _fwd_rel() computes CSI300-relative return at 90d via data/china_sector_index ETF closes",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/china_radar/ledger.parquet"
+   },
+   {
+    "name": "CN Reversal Sleeve Ledger",
+    "path": "data/cn_reversal_sleeve_track/sleeve.parquet",
+    "format": "parquet",
+    "owner_program": "china-alpha",
+    "schema_summary": "Per-rebalance portfolio ledger: rebalance_date, ticker (EW members), fill_basis=t1_hl2, entry_price, graded: CSI300-relative EW member mean excess at HORIZON_D=21d; portfolio-level (sleeve) mean excess per rebalance, Wilson CI hit-rate over rebalances. _MIN_GRADED=4 rebalances before any number publishes. BENCH=510300.SS.",
+    "shared_axes_present": "No fwd_mfe spine columns; no terminal_state; no species_id; no regime stamps. CN T+1 HL2 fill convention (matches china_standout_track). NOT adapted into spine.",
+    "federation_status": "unfederated",
+    "grader": "engine/cn_reversal_sleeve_ledger.py grade(); CSI300-relative portfolio-level grading; locked-limit-excluded rows null; fill_basis stamped",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/cn_reversal_sleeve_track/"
+   },
+   {
+    "name": "US Signal Track Record (signal_archive)",
+    "path": "data/signal_archive/track_record.parquet",
+    "format": "parquet",
+    "owner_program": "setup-species / engine-fix",
+    "schema_summary": "Per-signal-type per-name outcome log: marker_date, ticker, marker_type (take/block/watch\u2026), species_id (unambiguous mtype\u2192species_id only), archetype, composite_z, entry_price (next-bar fill T+1), fwd_ret_20/60/180, fwd_mdd_20/60/180, fwd_mfe_5/10/21/63/126, terminal_state_clean15_126, terminal_state_clean8_21, fwd_mdd_60_samebar (shadow same-bar column for bias measurement), survivorship tag, regime stamps (us_quad_hard_label, us_fused_risk_label, us_vol_regime, us_risk_radar_state). CHARTER \u00a72b: DRAWDOWN / entry-quality framing only \u2014 not return-alpha.",
+    "shared_axes_present": "fwd_mfe horizons (5,10,21,63,126) present (SPINE_HORIZONS); terminal_state_clean15_126 and terminal_state_clean8_21 present; species_id present (unambiguous mtype mapping from registry); regime stamps present (PIT vector lookup). Full shared-axis set. Adapts into spine via adapt_us_board if routed through grade_us_board.",
+    "federation_status": "federated",
+    "grader": "engine/track_record.py update_track_record(); engine/grading.forward_metrics (one-grader law, SPINE_HORIZONS, next-bar fill, survivorship-aware via engine/universe_history.py)",
+    "synapse_registered": "signal-archive-mtf (data/signal_archive/mtf_signals_latest.json registered; the track_record.parquet itself is NOT separately registered in synapse.yml \u2014 MISSING)"
+   },
+   {
+    "name": "Foresight Earliness Log",
+    "path": "data/foresight/earliness_log.jsonl",
+    "format": "jsonl",
+    "owner_program": "oracle / foresight-desk",
+    "schema_summary": "Per-theme per-day attention scores: theme, asof, earliness (0\u20131, 1=least attended), legs={coverage_arrival, news_flow, ownership_breadth, tape_extension}, n_legs_live. Append-only, deduped by (theme, date). Accrues for future forward-grading (engine/foresight_earliness.py docstring: 'for future forward-grading').",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Grading not yet implemented \u2014 log accruing, grader is future work.",
+    "federation_status": "unfederated",
+    "grader": "UNGRADED \u2014 log accruing but no grader wired (engine/foresight_earliness.py writes the log; no grade() function exists yet for this store)",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/foresight/earliness_log.jsonl"
+   },
+   {
+    "name": "Intl Bridge Ledger",
+    "path": "data/intl_bridge/ledger.json",
+    "format": "json",
+    "owner_program": "intl-fix",
+    "schema_summary": "Pre-registered claim grid (CLAIMS: 60 configs across C1\u2013C8 channels \u00d7 direction \u00d7 target \u00d7 horizon) + BACKFILL rows from already-run evidence (3 phase-0 reports, forex calibration, lead-lag screen, risk_radar_intl validation). Each row: id, channel, hypothesis, direction (de-risk/add-tilt), target, horizons, verdict, validation_ref, weight_cap. Multiple-testing budget logged via engine/trial_ledger.py family='intl_bridge' (declared N at generation).",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Uses its own de-risk (drawdown 21/42d) and add-tilt (return 21/63d) horizon vocabulary. NOT adapted into spine.",
+    "federation_status": "unfederated",
+    "grader": "scripts/intl_phase0.py harness (--grade flag); results fed into engine/signal_lab.py for display; engine/trial_ledger.py tracks declared-N for Deflated Sharpe",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/intl_bridge/ledger.json"
+   },
+   {
+    "name": "Subsector Rotation Track Record",
+    "path": "data/subsector_rotation/snapshots.jsonl",
+    "format": "jsonl",
+    "owner_program": "oracle / setup-species",
+    "schema_summary": "SCHEMA=subsector_rotation.track_record.v1; per-subsector daily snapshot: date, key, score (emerging_score), stage (emerging/fading/neutral), lean, members (PIT frozen). Graded by compute(): EW member mean SPY-relative forward return at 5/10/21/63d; emerging_score rank-IC (Spearman + Newey-West HAC t); by-stage hit-rate. 'proven' requires matured n AND significant HAC-t.",
+    "shared_axes_present": "No fwd_mfe spine columns; no terminal_state; no species_id; no regime stamps. Members frozen PIT. Own 5/10/21/63d SPY-relative grading.",
+    "federation_status": "unfederated",
+    "grader": "engine/subsector_track_record.py compute(); uses engine/ai_desk_scorer price helpers; SPY-relative; Newey-West HAC t via engine/validation.ic_summary",
+    "synapse_registered": "site-marketdata-subsector-rotation (site output registered); data/subsector_rotation/snapshots.jsonl NOT registered in synapse.yml \u2014 MISSING"
+   },
+   {
+    "name": "Index Leadership Track Record",
+    "path": "data/index_leadership/snapshots.jsonl",
+    "format": "jsonl",
+    "owner_program": "oracle / setup-species",
+    "schema_summary": "SCHEMA=index_leadership.track_record.v1; per-claim-type (RUNNING vs COILING) daily snapshot: date, subsector_key, claim_type, score, members (PIT). Graded by compute(): EW member mean SPY-relative forward return at 5/10/21/63d; per claim-type IC; claim_types graded separately (different bets). 'proven' requires matured n AND significant HAC-t.",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. PIT members. Own 5/10/21/63d SPY-relative grading.",
+    "federation_status": "unfederated",
+    "grader": "engine/index_leadership_track.py compute(); same price + stats helpers as subsector_track_record; RUNNING and COILING graded separately",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/index_leadership/snapshots.jsonl"
+   },
+   {
+    "name": "Intelligence Hub Signal Track Record",
+    "path": "data/hub/signal_snapshots.jsonl",
+    "format": "jsonl",
+    "owner_program": "qualitative-intelligence / intel-hub",
+    "schema_summary": "SCHEMA=intel_hub.track_record.v1; per-name daily snapshot: date, ticker, opportunity, edge_remaining, stage, lean. Graded: opportunity/edge_remaining IC (Spearman + Newey-West HAC t) at 5/10/21/63d; by-stage mean forward SPY-relative return + hit-rate. 'proven' requires n AND significant HAC-t with expected sign.",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Own 5/10/21/63d SPY-relative grading pattern (Pattern B shared with subsector_track_record and index_leadership_track).",
+    "federation_status": "unfederated",
+    "grader": "engine/hub_track_record.py compute(); Newey-West HAC t via engine/validation.ic_summary; SPY-relative",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/hub/signal_snapshots.jsonl"
+   },
+   {
+    "name": "Name Potential Score Ledger (multi-market)",
+    "path": "data/name_score/<market>_calls.parquet + data/china_name_score/calls.parquet (CN legacy)",
+    "format": "parquet",
+    "owner_program": "china-alpha / setup-species",
+    "schema_summary": "Per-name per-date POTENTIAL score call: ticker, score, tier (primed/setting_up/\u2026), fuel, trigger, level (as-of close). Graded by grade(market): forward return at 21/63d vs market benchmark; buy-tier (primed/setting_up) hit-rate; cross-sectional rank-IC. CN: CSI300-relative via data/china_stocks fallback to data/china. 'proven' when positive stable rank-IC.",
+    "shared_axes_present": "No fwd_mfe; no terminal_state; no species_id; no regime stamps. Market-aware via _FWD_GROUP. Own 21/63d market-relative grading.",
+    "federation_status": "unfederated",
+    "grader": "engine/name_score_grader.py grade(market); engine/grading shared fill convention; per-market price group resolution",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/name_score/ or data/china_name_score/"
+   },
+   {
+    "name": "Trial Ledger (multiple-testing budget)",
+    "path": "data/trial_ledger.jsonl",
+    "format": "jsonl",
+    "owner_program": "engine-fix / validation",
+    "schema_summary": "Multiple-testing accountability: family (signal/strategy family), config_hash (SHA1 of config at generation), n (declared budget), logged_at. effective_n(family) = distinct config count (deduplicated by content hash). Consumed by engine/validation.deflated_sharpe() for DSR haircut. NOT a forward-outcome ledger \u2014 it tracks N-trials spent, not claims vs outcomes.",
+    "shared_axes_present": "N/A \u2014 this is a testing-budget ledger, not a prediction-outcome ledger. No fwd_mfe; no terminal_state; no species_id; no direction. Exempt from spine federation.",
+    "federation_status": "exempt-candidate",
+    "grader": "N/A \u2014 ledger counts configs at generation; DSR haircut consumer is engine/validation.deflated_sharpe(); no outcome grader",
+    "synapse_registered": "MISSING \u2014 no synapse.yml entry for data/trial_ledger.jsonl"
+   }
+  ],
+  "notes": "The masterplan (research/NEURAL_WEB_MASTERPLAN_BY_FABLE.md \u00a75.3 census bullet, line 55) states '~24 systems / ~40 stores / 9 schema families'. This inventory finds 30 distinct named ledgers/systems (counting master_brain separately from the 7-desk pool, and counting the trial_ledger as an exempt-candidate), reconciling as follows:\n\nTHE FIVE STAGE-B FEDERATED LEDGERS (PRs #1139\u2013#1180, confirmed by masterplan \u00a7N2):\n1. US Standout Board (data/signal_archive/track_record.parquet via engine/track_record.py + data/us_board_ledger/retro_grades.parquet via scripts/grade_us_board.py)\n2. China Standout Board (data/china_standout_track/board.parquet via engine/china_standout_track.py)\n3. HK & Canada Board (data/hk_board_ledger/board.parquet + data/ca_board_ledger/board.parquet via engine/board_ledger.py)\n4. US Sector Central Calls \u2014 NOT federated (unfederated; no spine axes; graded by sector_central_grader.py)\n5. Spine Predictions (data/spine/predictions.parquet \u2014 the query layer itself)\n\nThe census count of '~24 systems' appears to count logical systems rather than physical stores, and likely excludes the trial_ledger (not a prediction ledger), the earliness log (ungraded), and the foresight shadow_log (sub-ledger of the foresight system). The 24 count maps roughly to: 5 federated board/sector ledgers + 3 cycle forward logs (US/CN/country) + 2 radar+market-state forward logs + 7 desk_scorer desks (ai_desk, policy_intent, radar/narrative_brain, stock_desk, demand_chain, thematic_desk, master_brain) + 3 BTC ledgers (override/regime/impulse) + altdata convergence + foresight cascade + China radar + CN reversal sleeve + intl_bridge = ~25 (master_brain and narrative_brain counted as separate from their desk family, foresight earliness excluded as ungraded).\n\nDESK_SCORER FAMILY STRAGGLERS (confirmed from engine/desk_scorer.py:POOL_DESKS and engine/spine.py:_DESK_SCORED):\n- POOL_DESKS = (ai_desk, policy_intent, radar, stock_desk, demand_chain, narrative_brain, thematic_desk) \u2014 7 desks\n- All 7 are spine-adapted via adapt_desk_scorer (family='desk:{name}')\n- master_brain_scorer uses the same chassis but is NOT in POOL_DESKS and NOT in _DESK_SCORED \u2014 it is unfederated\n- Of the 7 pooled desks: only radar-theses and altdata-theses/track-record have synapse.yml entries; the remaining 5 (ai_desk, policy_intent, stock_desk, demand_chain, thematic_desk) are MISSING from synapse.yml\n\nSYNAPSE REGISTRATION GAPS (items with claim\u2192outcome grading NOT registered):\n- data/china_standout_track/board.parquet \u2014 MISSING\n- data/hk_board_ledger/ and data/ca_board_ledger/ \u2014 MISSING  \n- data/ai_desk/{theses,scored,track_record} \u2014 MISSING\n- data/policy_intent/ \u2014 MISSING\n- data/stock_desk/ \u2014 MISSING\n- data/demand_chain/ \u2014 MISSING\n- data/thematic_desk/ \u2014 MISSING\n- data/master_brain/ \u2014 MISSING\n- data/vector/override_ledger.jsonl \u2014 MISSING\n- data/vector/regime_ledger.jsonl \u2014 MISSING\n- data/vector/impulse_ledger.jsonl \u2014 MISSING\n- data/china_radar/ledger.parquet \u2014 MISSING\n- data/cn_reversal_sleeve_track/sleeve.parquet \u2014 MISSING\n- data/signal_archive/track_record.parquet \u2014 MISSING (only mtf_signals_latest registered)\n- data/foresight/log.jsonl + data/glut_watch/log.jsonl \u2014 MISSING\n- data/foresight/earliness_log.jsonl \u2014 MISSING\n- data/intl_bridge/ledger.json \u2014 MISSING\n- data/subsector_rotation/snapshots.jsonl \u2014 MISSING\n- data/index_leadership/snapshots.jsonl \u2014 MISSING\n- data/hub/signal_snapshots.jsonl \u2014 MISSING\n- data/name_score/ \u2014 MISSING\n- data/trial_ledger.jsonl \u2014 MISSING\n\nThe 9 schema families identified: (1) spine.predictions.v1, (2) china_sector_cycles.grader.v1, (3) desk_scorer family (ai_desk_track_record.v1, master_brain_track_record.v1, demand_chain_track_record.v1, altdata_track_record.v1, stock_desk.v1, thematic_desk.v1, policy_intent_desk.v1 \u2014 same chassis), (4) btc_override_ledger.v1, (5) forward_log (cycle/risk_radar/market_state jsonl family), (6) china_standout_track / board_ledger parquet family (shared fwd_mfe+terminal_state+regime columns), (7) track_record.parquet (US signal archive + us_board_ledger/retro_grades), (8) qledger claims+grades jsonl, (9) intl_bridge ledger. The 9 families match the census count exactly."
+ },
+ "fed": {
+  "stage_b_mechanics": "Stage B (PRs #1139\u2013#1180) federates five decision-facing ledgers by threading shared axes through each store's existing file \u2014 no store is migrated or replaced. The one-grader law is enforced: every ledger calls engine.grading.forward_metrics (engine/grading.py:175) for all horizons in one pass rather than per-horizon helpers, so fill convention and window arithmetic are identical across stores.\n\nThe one shared grader module is engine/grading.py. Its __all__ (lines 77\u201393) exports the complete shared vocabulary:\n\nSPINE_HORIZONS = (5, 10, 21, 63, 126) \u2014 the fwd_mfe horizon set (grading.py:140).\nfwd_mfe_{H} columns \u2014 max favorable excursion per horizon from forward_metrics() (grading.py:181\u2013238).\nTerminalState constants \u2014 STOPPED / DEAD_MONEY / CUSHIONED / CLEAN_LIFTOFF (grading.py:253\u2013262); barrier constants STOP_BARRIER=0.95, CUSHION_BARRIER=1.05, LIFTOFF_15=1.15, LIFTOFF_8=1.08, LIFTOFF_HORIZON_126=126, LIFTOFF_HORIZON_21=21 (grading.py:129\u2013134) are imported by every store so definitions are shared even when the fill path differs (CN T+1 HL2 vs US next-bar).\nterminal_state_clean15_126, terminal_state_clean8_21, post_cushion_breach \u2014 the per-fire partition columns written by every store.\nRegime stamp keys from _REGIME_STAMP_KEYS (qledger.py:246\u2013249): rate_pressure, quad_hard_label, fused_risk_label, vol_regime, risk_radar_state, regime_vector_degraded, vector_asof, staleness_hours. US stamp is primary on all US-lane stores. HK/CA/CN stores prefix us_* and set own_market_regime=null with a documented constraint (no PIT-append HK/CA/CN regime history exists yet). track_record.py IDENTITY_COLS (lines 101\u2013114) lists the exact column spelling.\nspecies_id / archetype \u2014 nullable on all stores; non-null only where species_registry.json has an unambiguous one-to-one binding to that ledger.\n\nThe five federated stores and their per-store fill rules:\n1. engine/track_record.py (Stage B-a, PR #1139): US next-bar fill via grading.fill_index; store at data/track_record/ (gitignored-local). Key (ticker, date, type).\n2. scripts/grade_us_board.py (Stage B-b, PR #1142): pre-computed retro_grades.parquet at data/us_board_ledger/retro_grades.parquet (77 KB); already next-bar-filled and excess-vs-SPY graded; read by spine.adapt_us_board (spine.py:255).\n3. engine/board_ledger.py (Stage B-c, PR #1147): HK/CA boards; grading.fill_index for next-bar convention; suspended rows (no valid print within 5 sessions) keep spine cols null \u2014 suspension rule is the HK-native fill rule preserved per-store.\n4. engine/china_standout_track.py (Stage B-d, PR #1151): CN T+1 HL2 fill (locked-limit-excluded rows get null spine axes); barrier constants imported from engine.grading but applied on the CN-native fill path; fill_basis=\"t1_hl2\" provenance column on every row.\n5. engine/qledger.py (Stage B-e, PR #1180): register_batch() stamps regime vector at claim time (qledger.py:314\u2013324); stores species_id=null/archetype=null by default; grader appends fill_convention=\"next_bar\" + entry_fill_date on every grade row (qledger.py:555, 747).\n\nThe shared schema is defined in engine/grading.py (SPINE_HORIZONS, TerminalState constants, barrier values) and engine/track_record.py (IDENTITY_COLS and MATURATION_COLS column lists with comments). engine/board_ledger.py:168\u2013190 and engine/china_standout_track.py:119\u2013151 show the per-store column lists that must be a superset of the shared axes. qledger.py:246\u2013249 holds _REGIME_STAMP_KEYS. spine.py:COLUMNS (lines 84\u201390) is the read-side canonical schema for the materialized parquet index.",
+  "qledger_adapter": "The existing qledger\u2192spine adapter is engine/spine.py:adapt_desk_scorer (lines 347\u2013392) for the desk_scorer family of qualitative desks. It maps each desk's scored.jsonl (7 desks listed in _DESK_SCORED, lines 334\u2013343: ai_desk, policy_intent, radar, stock_desk, demand_chain, narrative_brain, thematic_desk) into SpinePrediction rows with family=\"desk:{name}\", horizon=63, direction=1, size_binding=False, universe=\"desks\". Hit/miss verdicts become outcome_excess= \u00b1|realized| with sign encoding. The key join via signal_id=\"desk:{name}:{sid}\".\n\nThis adapter maps ONLY the desk scorer's scored.jsonl rows \u2014 the qualitative desk verdict layer. It does NOT adapt the qledger's own claims.jsonl + grades.jsonl directly into the spine. The qledger's grade rows carry a different schema: {claim_id, horizon_d, excess, hit, bench_ret, control_ret, fill_convention, entry_fill_date} keyed by claim_id (qledger.py:680\u2013750). The spine SpinePrediction rows carry {signal_id, engine, family, as_of, symbol, horizon, score, direction, outcome_excess, outcome_graded} (spine.py:COLUMNS lines 84\u201390).\n\nThe mapping between the two schemas: qledger claim_id is the qledger's stable identifier (desk|asof|scope_key|horizon_d|direction hash, qledger.py:129\u2013134), while spine.signal_id for desk scorer rows uses \"{engine}:{as_of}:{symbol}:{horizon}\" (spine.py:14). The join key for a W2 query layer would be (as_of / asof, symbol / scope.key, horizon_d / horizon, desk / engine) \u2014 there is no single foreign key today bridging claims.jsonl rows to spine predictions.parquet rows.\n\nLimits: (1) The adapt_desk_scorer adapter covers only the 7 desks in _DESK_SCORED; the claims from backfill_qledger_us.py (altdata, radar, policy desks) and backfill_qledger_intel_hub.py are NOT adapted into the spine \u2014 they live only in claims.jsonl/grades.jsonl. (2) qledger grades at horizons {5,21,63} (GRADE_HORIZONS, qledger.py:87) while the spine's SPINE_HORIZONS are (5,10,21,63,126) \u2014 no 10d or 126d grade row exists in qledger. (3) qledger does NOT write fwd_mfe_* or terminal_state_* columns \u2014 those Stage B axes exist only in the five parquet/jsonl stores above, not in qledger grades. (4) qledger's entry anchor is next_bar (post Stage B-e) but older rows carry fill_convention=\"asof_legacy\" (qledger.py:555, 593) \u2014 a documented discontinuity.",
+  "query_requirements": "A W2 query layer answering \"what did engine X claim in regime Y at horizon H, and what happened\" needs:\n\nJOIN KEYS PER LEDGER\n- spine (data/spine/predictions.parquet): primary key signal_id; join fields: engine, family, as_of (date str), symbol, horizon (int), direction.\n- track_record (data/track_record/track_record.parquet, gitignored-local): key (ticker, date, type); join via (ticker\u2261symbol, date\u2261as_of, horizon from _SPINE_HORIZONS (5,10,21,63,126)).\n- us_board_ledger/retro_grades.parquet (77 KB): key (as_of, lane, ticker, horizon); already adapted into spine via adapt_us_board \u2014 no additional join needed if spine is kept current.\n- board_ledger (data/board_ledger/{hk,ca}_board.parquet): key (date\u2261as_of, ticker\u2261symbol); spine cols are in the parquet directly post Stage B-c; query layer reads these directly.\n- china_standout_track: key (date\u2261as_of, ticker\u2261symbol); fill_basis=\"t1_hl2\" must be preserved as a partition column so cross-market readers never conflate CN fills with US/HK fills.\n- qledger claims/grades (data/qledger/claims.jsonl 7,937 rows/4.3 MB + grades.jsonl 617 KB): join key claim_id bridges claims\u2192grades; join to other ledgers requires (asof\u2261as_of, scope.key\u2261symbol, horizon_d\u2261horizon, desk\u2261engine-family). No direct foreign key today.\n- forward_logs (china_sector_cycles 20 KB, sector_cycles 18 KB, country_cycles 13 KB, market_state 948 B, risk_radar 4.1 KB): these carry aggregate/sector-level claims not per-ticker; query layer must handle scope_type=sector/basket/macro in addition to entity.\n\nHORIZON NORMALIZATION\n- Spine SPINE_HORIZONS: (5, 10, 21, 63, 126) \u2014 trading days (grading.py:140).\n- qledger GRADE_HORIZONS: (5, 21, 63) \u2014 calendar days but with next-bar fill convention; the 21d and 63d are comparable to spine's 21/63 after the Stage B-e fill migration, but the missing 10d and 126d mean qledger rows cannot populate those cells. The W2 layer must mark qledger rows as horizon_coverage={5,21,63} and leave fwd_mfe_10, fwd_mfe_126, terminal_state_* null rather than fabricating values.\n- track_record native horizons: 20/60/180 trading days (pre-Stage B maturation cols) plus the new SPINE_HORIZONS (5,10,21,63,126) post Stage B-a. The 20/60/180 columns do NOT map to spine horizons \u2014 the query layer must either drop them or expose them separately as track_record-native, never aliased as fwd_ret_21 or fwd_ret_63.\n- CN T+1 HL2 fill: china_standout_track records fill_basis=\"t1_hl2\"; the query layer must carry fill_basis as a first-class column and never aggregate CN rows with US/HK rows in a fill-convention-mixed pool.\n\nOUTCOME VOCABULARY MAPPING\n- Spine: outcome_excess = signed next-bar-filled forward excess return vs benchmark; direction encodes sign safety; outcome_graded=bool.\n- qledger: excess = subject_ret \u2212 bench_ret; hit=bool|None (null for salience-only direction=0); state chip UNGRADED/ACCRUING/GRADED.\n- track_record: outcome = win/loss/still_held; fwd_mdd_{20,60,180}; fwd_ret_{20,60,180}; fwd_mfe_{5,10,21,63,126}; terminal_state_clean15_126/clean8_21.\n- Reconciliation: the query layer must expose outcome_excess (the common signed-excess vocabulary) as the canonical outcome column and carry provenance: outcome_source in {\"spine_adapter\",\"qledger_grade\",\"track_record_maturation\",\"board_ledger_grade\",\"cn_track_maturation\",\"forward_log_grade\"}.\n- Terminal state vocabulary is STOPPED/DEAD_MONEY/CUSHIONED/CLEAN_LIFTOFF from engine.grading.TerminalState (grading.py:253\u2013262); exists only in track_record, board_ledger, and china_standout_track \u2014 not in qledger or spine proper.\n\nPIT CONSTRAINTS\n- Keep-FIRST per (as_of, symbol, ledger) is the universal PIT law (stated in board_ledger, china_standout_track, track_record docstrings). The query layer must enforce this on any cross-ledger union.\n- qledger regime stamps are written at registration time from the persisted data/regime/regime_vector.parquet last-row-with-date\u2264asof (qledger.py:268\u2013277) \u2014 PIT by design. track_record uses the same source. board_ledger and china_standout_track use get_vector_for_date on the same persisted file.\n- own_market_regime is null for all HK/CA/CN rows today \u2014 a documented constraint, not a bug. The query layer must surface this nullity rather than silently forward-filling.\n- The track_record parquet is gitignored-local (synapse.yml note line 831) \u2014 it will not be present in CI or on a fresh clone. The query layer must degrade to an empty frame for that store (consistent with the spine's degrade-never-raise law, spine.py:148).\n- qledger discontinuity: grade rows before Stage B-e lack fill_convention and carry asof-bar fills (qledger.py:555, 686\u2013687). The query layer must expose fill_convention per row, never silently pool next_bar and asof_legacy rows in the same IC calculation.",
+  "recommendations": "Recommendation: materialized Parquet index, built by a new engine/neuralweb/query.py reader library that writes data/neuralweb/spine_index.parquet nightly as part of the engine lane (after grading, before render).\n\nDESIGN\n\nThe W2 query layer is a two-part deliverable:\n1. engine/neuralweb/query.py \u2014 a pure-read library (no imports from the nightly runner or render layers, mirroring the spine.py and neuralweb/read.py pattern). Public API: build_index(root) \u2192 pd.DataFrame; load_index(root) \u2192 pd.DataFrame; query(engine=None, regime=None, horizon=None, as_of_before=None) \u2192 pd.DataFrame. build_index runs all adapters, unions the five federated stores, and writes the materialized parquet. load_index reads it.\n\n2. data/neuralweb/spine_index.parquet \u2014 the materialized cross-ledger index. Canonical columns (superset of spine.COLUMNS with provenance extensions):\n   signal_id, engine, family, ledger (source enum), as_of, symbol, universe, horizon, direction, size_binding, fill_basis, score, outcome_excess, outcome_graded, graded_at, terminal_state_clean15_126, terminal_state_clean8_21, fwd_mfe_5, fwd_mfe_10, fwd_mfe_21, fwd_mfe_63, fwd_mfe_126, outcome_source, rate_pressure, quad_hard_label, fused_risk_label, vol_regime, risk_radar_state, vector_asof, species_id, archetype, event_key.\n\nWHY MATERIALIZED PARQUET, NOT ON-DEMAND READER\n\nAn on-demand reader that unions five stores on every call costs O(file reads \u00d7 callers). The qledger claims.jsonl is 4.3 MB JSONL (7,937 rows), grades.jsonl is 617 KB \u2014 both must be fully scanned and joined on every call. The spine/predictions.parquet is 33 KB; retro_grades is 77 KB; forward_logs are 10\u201320 KB each. Total raw data at today's scale: ~6 MB across six stores. At the current accrual rate (one year of daily rows across ~5 ledgers), the index reaches ~3\u20135 MB as parquet (columnar compression on repeated string columns is typically 5\u201310\u00d7). Materialized parquet: one read < 5 MB for any downstream consumer; on-demand union: 6 MB JSONL parse + 5 parquet reads on every N3/N4 call. The parquet wins.\n\nREFRESH CADENCE\n\nNightly, in the engine lane, after scripts/grade_qledger.py and after the forward_log graders (the two jobs that advance outcome columns). Placement in daily.yml: after grade_qledger and grade_us_board steps, before scripts/build_reliability_kernel.py (W3). This matches the pattern of world_state.json (engine lane, engine/neuralweb/world_state.py) and spine.py's rebuild_from_adapters step.\n\nLANE PLACEMENT\n\nEngine lane (not render lane): the index is a graded-data artifact, not a display artifact. It writes to data/neuralweb/spine_index.parquet (git-tracked, mirroring spine/predictions.parquet). synapse.yml entry: owner_program=neural-web, producer=engine/neuralweb/query.py, cadence=daily-engine, tier=infrastructure, consumers={engine/neuralweb/reliability_kernel.py, engine/neuralweb/graph.py, engine/passport.py, engine/alert_triage.py}.\n\nEXPECTED SIZE\n\nAt today's data: ~5\u20138 MB parquet (the qledger's 7,937 claims dominate; each other ledger contributes hundreds to low thousands of rows; columnar compression on the string regime columns and repeated engine/family values yields 5\u201310\u00d7 compression on the ~6 MB raw total). At 3 years of daily accrual: ~15\u201325 MB. Fits in git (no R2 needed at this scale).\n\nTRACK_RECORD GITIGNORED CAVEAT\n\nThe track_record parquet is gitignored-local (confirmed in synapse.yml). build_index must call adapt_track_record in a try/except that yields an empty frame on missing file, stamped in the index metadata so N3 can flag the cold-start cell. This matches the spine.py degrade-never-raise law (spine.py:148)."
+ },
+ "qi": {
+  "w6_monitor_status": "The W6 promotion monitor lives in scripts/grade_qledger.py as a \"POST-STEP\" embedded in the nightly grading job (lines 14-30 of the module docstring, confirmed). It is ARMED: wired into scripts/collect.py (collect.py calls run_as_collect_step, which calls run_readiness_post_step after emit_ladder_states), and daily.yml:134-139 confirms the collect step runs nightly and stages site/qledger/track_record.json.\n\nWhat it watches: after every nightly grade run it calls compute_promotion_readiness() over every family in config/qual_ladder.yml. It evaluates promotion_check() (\u00a73 gate: n_dates>=25 independent clusters + Wilson CI lower bound > 0 vs matched control) at each of the three GRADE_HORIZONS (5/21/63d). It writes results to site/qledger/track_record.json[\"promotion_readiness\"] and data/qledger/run_status.json[\"w6_readiness\"], and fires a one-shot Telegram/Discord alert on first-cross ready=True, deduplicated via data/qledger/readiness_alerts_fired.json.\n\nHas it FIRED? NO. Evidence: (1) data/qledger/readiness_alerts_fired.json does not exist on origin/main (git show returns FILE_NOT_FOUND \u2014 the file is only written on first-cross). (2) site/qledger/track_record.json[\"promotion_readiness\"] (generated_at 2026-07-04T11:05:29Z) shows n_families_ready=0 across all 19 claim families at all horizons. (3) data/qledger/run_status.json (both the origin/main version at 2026-07-04T11:05Z and the local version at 2026-07-03) confirm w6_readiness.n_families_ready=0, w6_readiness.families_ready=[]. The furthest-along family is altdata at 5d horizon with n_dates=5/25 needed (projected_ready_date: 2026-08-29); all other families are at UNGRADED (n_dates=0).",
+  "qledger_semantics_stability": "Semantically stable enough for a read-side adapter NOW, with one caveat noted below.\n\nThe stageB migration (#1180, commit a458b66636) landed on origin/main and was the last schema-touching change to qledger.py. The git log for engine/qledger.py on origin/main shows exactly 5 commits: #916 (W1 contract), #937 (placebo fix), #951 (W3 passport/ladder), #1180 (stageB register_batch + next-bar fill migration), #1225 (numpy coerce hotfix). The most recent commit on origin/main for qledger.py is 7e4dc1bdf1 (#1225), a narrow bug-fix (added _json_default serializer to all three json.dumps call sites in register, register_batch, and backfill_regime_stamps \u2014 no schema change).\n\nThe diff between stageB (#1180) and current origin/main is entirely additive and non-breaking: the only change to the claim/grade store schema is the _json_default coercion function added after #1180 landed. Fill semantics, claim schema, grade schema, GRADE_HORIZONS, promotion_check() logic, and the FILL_NEXT_BAR/FILL_ASOF_LEGACY discontinuity marker are all frozen. The stamped discontinuity is stable and documented (module lines 541-555): pre-stageB rows carry fill_convention absent/asof_legacy; post-stageB rows carry fill_convention=\"next_bar\". A read-side adapter reading these fields as-is gets the correct split.\n\nOne in-flight item: engine/qledger.py on the current branch (w1-s13-phase0) is listed as modified in git status. This is the working branch and the modification is unrelated to qledger semantics (the branch is a species pre-registration branch); origin/main is the source of truth and is frozen.",
+  "sequencing_recommendation": "W2 CAN proceed now with qledger read-only via the existing adapter, deferring any substrate ruling. The masterplan N2 sequencing rule states: \"any substrate ruling is a joint ruling co-signed with the QI program record, sequenced after QI's armed W6 promotion monitor fires OR with qledger semantics frozen meanwhile.\" Both escape hatches apply simultaneously:\n\n(1) The monitor has not fired (NO promotion event recorded) and the earliest family (altdata@5d) is projected ready 2026-08-29 \u2014 at least 7+ weeks away. The \"after W6 fires\" path does not block W2 now.\n\n(2) qledger semantics ARE frozen: the schema, fill conventions, grade model, and ladder vocabulary have had zero structural changes since #1180 landed (the only post-#1180 commit is a one-line json serialization bug-fix). The \"OR semantics frozen\" clause is satisfied.\n\nConcrete scope that is safe for W2 immediately: (a) build the read-side query layer as a pure reader over data/qledger/claims.jsonl + data/qledger/grades.jsonl using the existing column contracts (claim_id, claim_family, asof, direction, horizon_d, fill_convention, entry_fill_date, regime stamps); (b) join qledger rows via the existing adapter pattern (same one the W1 builders use); (c) add the synapse.yml entry for qledger (federated/adapted). Nothing in W2 writes to qledger or changes its ladder vocabulary \u2014 both of those are joint-ruling territory that remains deferred until the QI program co-signs (which the masterplan says happens when W6 fires or at a joint session, not unilaterally). The read-only query layer is the exact deliverable the masterplan specifies and is unblocked."
+ }
+}

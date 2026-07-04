@@ -87,11 +87,30 @@
       } catch (e) {}
       bar.parentNode && bar.parentNode.removeChild(bar);
       document.documentElement.classList.remove("whb-on");
+      if (close._whbResize) window.removeEventListener("resize", close._whbResize);
     });
     bar.appendChild(close);
 
     document.body.insertBefore(bar, document.body.firstChild);
     document.documentElement.classList.add("whb-on");
+
+    // Full-bleed: break the bar out of whatever padding/margin the host page sets on
+    // <body> so it hugs the very top and both edges of the viewport — no white gutter.
+    // Pages differ wildly (0, 18, 24, 28px tops; viewport-derived side gutters), so we
+    // read the resolved values and cancel them with negative margins. Recomputed on
+    // resize because some pages size gutters off the viewport (max(18px,(100vw-W)/2)).
+    var onResize = function () {
+      try {
+        var cs = window.getComputedStyle(document.body);
+        var v = function (p) { return parseFloat(cs[p]) || 0; };
+        bar.style.marginTop = -(v("paddingTop") + v("marginTop")) + "px";
+        bar.style.marginLeft = -(v("paddingLeft") + v("marginLeft")) + "px";
+        bar.style.marginRight = -(v("paddingRight") + v("marginRight")) + "px";
+      } catch (e) {}
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    close._whbResize = onResize; // so dismissal can detach the listener
 
     // Scale scroll DURATION to content width so reading pace (~px/sec) stays constant
     // whether one alert or six are live — a fixed duration blurs a long tape past too fast.

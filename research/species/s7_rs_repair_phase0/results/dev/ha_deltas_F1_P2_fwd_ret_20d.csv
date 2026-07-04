@@ -1,0 +1,2 @@
+stratum,n_fires,n_valid,n_episodes,point,ci_lo,ci_hi,verdict
+rs_spy_slope20: repair - deterioration,10225,10225,382,0.001950452139412473,-0.0013394198584733674,0.004914703148258637,spans 0

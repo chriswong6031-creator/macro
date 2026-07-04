@@ -14,6 +14,8 @@ on:
       - "scripts/check_board_contradictions.py"
       # title-i18n guard: bilingual/CJK text must never sit in a title= attribute.
       - "scripts/check_title_i18n.py"
+      # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
+      - "scripts/check_conflict_markers.py"
       - "templates/**"
       - ".github/workflows/ci.yml"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
@@ -89,6 +91,36 @@ on:
       - "collectors/**"
       - "lib/**"
       - "tests/test_china_news.py"
+      # sector_pulse wiring tripwire (#1193 post-mortem): PR #1170 injected sector_pulse
+      # into build_stock_library.py; an unrelated refactor 90 min later silently deleted
+      # the block and merged green because nothing here covered the builder. The wiring
+      # test pins producer (AST) + template consumer, so the builder must trigger CI.
+      - "scripts/build_stock_library.py"
+      - "tests/test_sector_pulse_wiring.py"
+      # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
+      # the test file must re-prove the conformance check still holds.
+      - ".github/workflows/**"
+      - "config/dag.yml"
+      - "scripts/check_dag_conformance.py"
+      - "tests/test_dag_conformance.py"
+      # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
+      # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
+      - "config/synapse.yml"
+      - "scripts/check_synapse_reads.py"
+      - "data/neuralweb/read_gate_baseline.json"
+      - "tests/test_synapse_read_gate.py"
+      # neural-web program (W0): synapse.yml registry, gen_signal_bus_doc generator,
+      # committed SIGNAL_BUS.md, and the three test files must all trigger the gate so a
+      # config edit that produces a stale doc — or an envelope refactor that breaks
+      # conformance — fails RED here before merging.  research/neuralweb/** is included
+      # because the census_w0.json evidence file lives there and documents the program.
+      - "scripts/gen_signal_bus_doc.py"
+      - "docs/SIGNAL_BUS.md"
+      - "engine/neuralweb/**"
+      - "research/neuralweb/**"
+      - "tests/test_signal_bus_doc.py"
+      - "tests/test_synapse_registry.py"
+      - "tests/test_neuralweb_envelope.py"
   workflow_dispatch:
 
 permissions:
@@ -142,14 +174,40 @@ jobs:
       # PR (like the one introducing this guard) must not be judged against an artifact
       # built by OLDER code. The always-on tripwire for freshly rendered artifacts
       # lives in pages.yml (deploy gate) — see the twin step there.
+      # 2026-07-04 incident (#1195 run): a PR squash-merged before this job started, so by
+      # run time origin/main's tip WAS the squash commit — and the old `--depth=1` fetch
+      # shallow-cut it, so `origin/main...HEAD` had NO merge base. `git diff --quiet` then
+      # exited fatal (non-zero), the skip branch was not taken, and the checker FAILED OPEN
+      # against a stale artifact the PR never touched. Fix: fetch without --depth (checkout
+      # is already fetch-depth 0), and treat a missing merge base as SKIP — fail closed to
+      # the always-on deploy-gate twin in pages.yml, which grades every fresh render.
       - name: board invariants must hold when this PR ships the standouts artifact
         run: |
-          git fetch origin ${{ github.base_ref }} --depth=1
-          if git diff --quiet origin/${{ github.base_ref }}...HEAD -- site/factordata/us_standouts.json; then
+          git fetch origin ${{ github.base_ref }}
+          if ! mb=$(git merge-base "origin/${{ github.base_ref }}" HEAD); then
+            echo "no merge base with ${{ github.base_ref }} (base moved under a fast merge) — deploy-gate twin covers fresh renders; skipping"
+            exit 0
+          fi
+          if git diff --quiet "$mb" HEAD -- site/factordata/us_standouts.json; then
             echo "us_standouts.json untouched by this PR — deploy-gate twin covers fresh renders; skipping"
             exit 0
           fi
           python3 scripts/check_board_contradictions.py site/factordata/us_standouts.json
+
+  conflict-markers:
+    # 2026-07-03 incident: a merge commit shipped literal git conflict markers
+    # ('<<<<<<< ours' / '=======' / '>>>>>>> theirs') inside templates/dashboard.html.j2
+    # and merged GREEN — Jinja parses marker lines as plain text, pytest never rendered
+    # that block, and no other guard greps for them. This fails RED on any conflict-marker
+    # line in templates/**, engine/**, scripts/**, or shipped site/** files. The self-test
+    # proves the guard itself still catches known-bad fixtures before trusting its OK.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard self-test (known-bad flagged, known-good clean)
+        run: python3 scripts/check_conflict_markers.py --self-test
+      - name: no git conflict markers in committed content
+        run: python3 scripts/check_conflict_markers.py
 
   title-i18n:
     # The i18n rule: translated text NEVER goes in HTML attributes — the dual-span
@@ -298,7 +356,7 @@ jobs:
           tests/test_risk_lead_lag.py tests/test_anticipation.py
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
-          tests/test_options_stamp.py -q
+          tests/test_options_stamp.py tests/test_sector_pulse_wiring.py -q
 
   collector-registry:
     # 2026-07-03 (#1052 post-mortem): PR #1052's squash-merge shipped scripts/collect.py as
@@ -344,3 +402,80 @@ jobs:
         run: python3 scripts/check_cycle_consistency.py site
       - name: consistency + phase-coherence regression tests
         run: python -m pytest tests/test_cycle_consistency.py tests/test_cycle_ontology.py -q
+
+  synapse-read-gate:
+    # W0 PR3: literal-path scan over engine/*.py, scripts/*.py, collectors/*.py.
+    # WARN tier (exit 0): any undeclared reader of a registered artifact.
+    # HARD FAIL (exit 1): an undeclared reader that is an Article-2 money-path
+    # surface (alert_triage / board_ordering / top_setups).
+    # Baseline: data/neuralweb/read_gate_baseline.json (only-shrinks ratchet).
+    # Runs check_synapse_registry.py (integrity, hard) first, then
+    # check_synapse_reads.py (warn + Article-2 hard) + the unit test suite.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: synapse registry integrity (hard gate)
+        run: python3 scripts/check_synapse_registry.py
+      - name: synapse read-gate — warn tier + Article-2 hard fail
+        run: python3 scripts/check_synapse_reads.py
+      - name: synapse read-gate unit tests
+        run: python -m pytest tests/test_synapse_read_gate.py -q
+
+  neural-web:
+    # neural-web program (W0, #1253 post-mortem): three test files were run by ZERO
+    # GitHub workflows before this job was added.  Without CI wiring, an edit to
+    # config/synapse.yml (not under any prior ci.yml path glob) could merge GREEN with a
+    # stale committed SIGNAL_BUS.md — precisely the 'merged green because no CI job
+    # covered X' failure class documented in #1052 / #1193 / #1195.
+    #
+    # Three suites, one job:
+    #   test_synapse_registry.py   — synapse.yml integrity (YAML parses, paths exist,
+    #                                enums valid, duplicate-path check, validator unit tests)
+    #   test_neuralweb_envelope.py — envelope helper (sibling-not-wrapper, hash stability,
+    #                                stamp_if_changed byte-identity, sidecar round-trip)
+    #   test_signal_bus_doc.py     — SIGNAL_BUS.md freshness gate (regenerated bytes must
+    #                                match committed doc byte-for-byte; determinism; all 64
+    #                                artifact ids present; Mermaid block plausible)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: neural-web registry + envelope + bus-doc freshness tests
+        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py -q
+
+  dag-conformance:
+    # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;
+    # scripts/check_dag_conformance.py diffs the declared sequences against the LIVE
+    # .github/workflows/ files and exits 1 on any mismatch not covered by a divergences
+    # entry.  ANY undeclared drift between dag.yml and the real workflow now reds CI here
+    # before merging — ending the hand-sync problem.
+    #
+    # Three checks in sequence:
+    #   1. Hard: check_dag_conformance.py against the repo (exits 1 on undeclared drift)
+    #   2. Hard: pytest tests/test_dag_conformance.py (selftest + live conformance assertion)
+    #
+    # Suspect divergences count as covered (declared), but are PRINTED in every run
+    # so they stay visible.  The suspect list may only SHRINK (only-shrinks ratchet).
+    #
+    # Triggers on: .github/workflows/**, config/dag.yml, the checker, and the test file.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: DAG conformance check (hard — exits 1 on undeclared lane drift)
+        run: python scripts/check_dag_conformance.py --verbose
+      - name: DAG conformance selftest + live conformance tests
+        run: python -m pytest tests/test_dag_conformance.py -q

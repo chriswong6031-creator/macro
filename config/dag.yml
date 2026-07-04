@@ -1,0 +1,1113 @@
+meta:
+  schema_version: 1
+  description: >
+    Neural Web W5a — per-workflow-step lane inventory with cluster units as first-class
+    entries. Each lane maps one (workflow, job) pair to its ordered build-module steps.
+    A step is either {id, module} (serial) or {id, cluster: {cl_name: [module, ...]}}
+    (parallel band). The conformance checker (scripts/check_dag_conformance.py) diffs
+    these declared sequences against the live YAML workflows and exits 1 on any mismatch
+    not covered by a divergences entry.
+  granularity: workflow-step
+
+# ---------------------------------------------------------------------------
+# LANES — one entry per (workflow, job) that invokes build modules
+# ---------------------------------------------------------------------------
+lanes:
+
+  # ── daily.yml / collect ──────────────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: collect
+    steps:
+      - id: collect_us
+        module: scripts.collect
+        args: [--exclude-group, asia]
+        note: >
+          fetch_finviz_themes also runs in this step but is called as
+          'python scripts/fetch_finviz_themes.py' (not python -m), so the
+          conformance parser cannot extract it via _PYTHON_M_RE. It is intentionally
+          omitted from the declared module list to keep parser output consistent.
+
+  # ── daily.yml / engine ──────────────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: engine
+    steps:
+      # serial spine (pre-band)
+      - id: build_signal_quality
+        module: scripts.build_signal_quality
+      - id: validate_signals
+        module: scripts.validate_signals
+      - id: build_track_record
+        module: scripts.build_track_record
+      - id: audit_sizes
+        module: scripts.audit_sizes
+        note: non-fatal size tripwire
+      - id: export_signal_contracts
+        module: scripts.export_signal_contracts
+        note: non-fatal
+      - id: engine_run
+        module: engine.run
+      - id: build_spvector
+        module: scripts.build_spvector
+      - id: factor_ic_scorecard
+        module: scripts.factor_ic_scorecard
+        args: [--deep]
+      - id: build_alt_data_pre
+        module: scripts.build_alt_data
+        note: first pass (before altdata_brain)
+      - id: build_smart_money
+        module: scripts.build_smart_money
+      - id: build_site
+        module: scripts.build_site
+      - id: build_stock_board_v2
+        module: scripts.build_stock_board_v2
+      - id: build_impulse
+        module: scripts.build_impulse
+      - id: build_congress
+        module: scripts.build_congress
+      - id: build_foresight
+        module: scripts.build_foresight
+      # parallel band
+      - id: band
+        cluster:
+          cl_markets:
+            - scripts.build_commodities
+            - scripts.build_spr
+            - scripts.build_forex
+            - scripts.build_bonds
+            - scripts.build_crossasset
+            - scripts.build_transmission
+            - scripts.build_discovery
+          cl_gex:
+            - scripts.build_gex_board
+            - scripts.build_vol_regime
+            - scripts.build_options_flow
+            - scripts.build_options_skew
+            - scripts.build_options_ivspread
+          cl_baskets:
+            - scripts.build_baskets
+            - scripts.build_subsector_confluence
+            - scripts.build_subsector_confluence --nasdaq
+            - scripts.build_subsector_confluence --russell
+            - scripts.build_cohort_metrics
+            - scripts.build_news
+            - scripts.build_methodology
+          cl_special:
+            - scripts.build_special_situations
+          cl_misc:
+            - scripts.build_seasonality
+            - scripts.build_reports
+            - scripts.build_cycle
+            - scripts.build_sector_cycles
+            - scripts.build_country_cycles
+            - engine.policy_intent_desk
+            - scripts.build_policy_watch
+            - scripts.build_index_changes
+      # serial post-band
+      - id: build_sector_central
+        module: scripts.build_sector_central
+      - id: build_vector
+        module: scripts.build_vector
+      - id: master_brain_scorer
+        module: engine.master_brain_scorer
+      - id: master_brain
+        module: engine.master_brain
+      - id: ai_desk_scorer
+        module: engine.ai_desk_scorer
+      - id: demand_ledger
+        module: engine.demand_ledger
+      - id: demand_chain_phase0
+        module: scripts.demand_chain_phase0
+      - id: build_demand
+        module: scripts.build_demand
+      - id: ai_desk
+        module: engine.ai_desk
+      - id: narrative_brain
+        module: engine.narrative_brain
+      - id: risk_brain
+        module: engine.risk_brain
+      - id: risk_radar_review
+        module: engine.risk_radar_review
+      - id: radar_scorer
+        module: engine.radar_scorer
+      - id: grade_us_board
+        module: scripts.grade_us_board
+        args: [--nightly]
+      - id: build_calibration
+        module: scripts.build_calibration
+      - id: build_spine_index
+        module: scripts.build_spine_index
+        note: "neural-web W2 — spine query index (read-side union over all graded ledgers)"
+      - id: build_kernel_estimates
+        module: scripts.build_kernel_estimates
+        note: "neural-web W3 — reliability kernel estimates (engine × regime × horizon cells; display-first)"
+      - id: build_kernel_diagnostics
+        module: scripts.build_kernel_diagnostics
+        note: "neural-web W3 PR3 — decay curves (kernel_families.json) + lagging-signal detector (lagging_signals.json); display-first, resilient"
+      - id: build_confluence_graph
+        module: scripts.build_confluence_graph
+        note: "neural-web W4 — confluence graph v1 (typed nodes: engine/sector/regime/thesis/episode; feeds/stable/leads/contradicts/confirms edges; contradiction detector 6 pairs; display-only under hard law)"
+      - id: altdata_brain
+        module: engine.altdata_brain
+      - id: build_alt_data_post
+        module: scripts.build_alt_data
+        note: second pass (re-emit after altdata_brain)
+      - id: build_radar_plus
+        module: scripts.build_radar_plus
+      - id: build_radar_ic
+        module: scripts.build_radar_ic
+      - id: build_radar_page
+        module: scripts.build_radar_page
+      - id: build_intelligence
+        module: scripts.build_intelligence
+      - id: build_briefing
+        module: scripts.build_briefing
+      - id: build_intel_hub
+        module: scripts.build_intel_hub
+      - id: build_aibrief
+        module: scripts.build_aibrief
+      - id: build_mastermind
+        module: scripts.build_mastermind
+      - id: build_ai_desk_page
+        module: scripts.build_ai_desk_page
+      - id: notify
+        module: scripts.notify
+      - id: push_alerts
+        module: scripts.push_alerts
+        # W6a: config-gated OFF (alert_push.enabled=false); pure no-op until operator enables
+      - id: archive_signals
+        module: scripts.archive_signals
+      - id: signal_sanity
+        module: scripts.signal_sanity
+      - id: build_whitehouse_page_only
+        module: scripts.build_whitehouse
+        args: [--page-only]
+      - id: inject_wh_banner
+        module: scripts.inject_wh_banner
+      - id: inject_data_base
+        module: scripts.inject_data_base
+      - id: oracle_nightly
+        module: scripts.oracle_nightly
+      - id: build_world_state
+        module: scripts.build_world_state
+      - id: build_feeds
+        module: scripts.build_feeds
+        note: non-fatal; per-ticker JSON feeds
+      - id: publish_r2
+        module: scripts.publish_r2
+        note: non-fatal; uploads OHLC + stockdata stores to Cloudflare R2
+      - id: audit_r2
+        module: scripts.audit_r2
+        note: non-fatal; data-plane freshness check
+        note2: >
+          build_canada_library and build_intl_library also run in the "library rebuild"
+          step via a shell loop ('for mod in scripts.build_canada_library ...; do python -m
+          $mod; done') which the conformance parser cannot extract (variable expansion).
+          They are intentionally omitted from declared steps.
+
+  # ── daily.yml / factor_series ───────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: factor_series
+    steps:
+      - id: build_factor_series
+        module: scripts.build_factor_series
+
+  # ── daily.yml / stock_briefs ────────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: stock_briefs
+    steps:
+      - id: build_stock_briefs
+        module: scripts.build_stock_briefs
+      - id: publish_r2_stockdata
+        module: scripts.publish_r2
+        note: non-fatal; syncs stockdata store to R2
+
+  # ── asia-close.yml / asia ───────────────────────────────────────────────
+  - workflow: .github/workflows/asia-close.yml
+    job: asia
+    steps:
+      - id: collect_asia
+        module: scripts.collect
+        args: [--group, asia]
+      - id: build_china
+        module: scripts.build_china
+      - id: build_china_sector_desk
+        module: scripts.build_china_sector_desk
+      - id: build_china_sector_cycles
+        module: scripts.build_china_sector_cycles
+      - id: build_china_cycles_scorecard
+        module: scripts.build_china_cycles_scorecard
+      - id: build_china_sector_central
+        module: scripts.build_china_sector_central
+      - id: build_flow_velocity
+        module: scripts.build_flow_velocity
+      - id: build_subsector_confluence_china
+        module: scripts.build_subsector_confluence
+        args: [--china]
+      - id: build_hk
+        module: scripts.build_hk
+      - id: build_baskets_china
+        module: scripts.build_baskets_china
+      - id: build_baskets_china_ths
+        module: scripts.build_baskets_china_ths
+      - id: build_baskets_hk
+        module: scripts.build_baskets_hk
+      - id: build_cn_reversal_sleeve
+        module: scripts.build_cn_reversal_sleeve
+      - id: inject_data_base
+        module: scripts.inject_data_base
+      - id: publish_r2_asia
+        module: scripts.publish_r2
+        note: non-fatal; uploads CN/HK OHLC + stockdata to R2
+      - id: audit_r2_asia
+        module: scripts.audit_r2
+        note: >
+          non-fatal; data-plane freshness anchor check. build_china_library and
+          build_hk_library also run in the library-restore step via a shell loop
+          ('for mod in scripts.build_china_library ...; do python -m $mod; done')
+          which the conformance parser cannot extract. Intentionally omitted.
+
+  # ── engine-render.yml / engine-render ───────────────────────────────────
+  # NOTE: scope=all path. Other scopes (macro/china/hk/markets/gex/baskets) are
+  # subsets not declared separately; the checker validates only scope=all.
+  - workflow: .github/workflows/engine-render.yml
+    job: engine-render
+    steps:
+      # regime recompute (serial, pre-render)
+      - id: build_signal_quality
+        module: scripts.build_signal_quality
+      - id: validate_signals
+        module: scripts.validate_signals
+      - id: engine_run
+        module: engine.run
+      - id: build_world_state
+        module: scripts.build_world_state
+      # spine (serial)
+      - id: build_spvector
+        module: scripts.build_spvector
+      - id: build_alt_data
+        module: scripts.build_alt_data
+      - id: build_smart_money
+        module: scripts.build_smart_money
+      - id: build_site
+        module: scripts.build_site
+      - id: build_stock_board_v2
+        module: scripts.build_stock_board_v2
+      - id: build_congress
+        module: scripts.build_congress
+      # parallel band (scope=all)
+      - id: band
+        cluster:
+          cl_markets:
+            - scripts.build_commodities
+            - scripts.build_spr
+            - scripts.build_forex
+            - scripts.build_bonds
+            - scripts.build_crossasset
+            - scripts.build_transmission
+            - scripts.build_discovery
+          cl_china:
+            - scripts.build_china
+          cl_hk:
+            - scripts.build_hk
+          cl_gex:
+            - scripts.build_vol_regime
+            - scripts.build_options_flow
+            - scripts.build_options_skew
+            - scripts.build_options_ivspread
+          cl_baskets:
+            - scripts.build_baskets
+            - scripts.build_news
+            - scripts.build_methodology
+          cl_misc:
+            - scripts.build_seasonality
+            - scripts.build_reports
+            - scripts.build_policy_watch
+            - scripts.build_index_changes
+      # serial post-band (composition order: spine; band; central; hub; us_pages; libs)
+      # NOTE: build_sector_central runs via central() and build_vector via hub().
+      # After the W5a parser fix (_collect() no longer treats single-line function
+      # definition lines like `central() { run_py ... }` as composition calls), both
+      # modules are visible to the parser and are declared here.
+      # PARSER ORDER NOTE: the file defines us_pages() before hub() and central(), so
+      # the parser extracts us_pages() contents (build_radar_plus...build_ai_desk_page)
+      # BEFORE hub() (build_vector) and central() (build_sector_central). The declaration
+      # order below mirrors the parser's file-scan order, NOT the runtime composition order.
+      - id: build_radar_plus
+        module: scripts.build_radar_plus
+      - id: build_radar_ic
+        module: scripts.build_radar_ic
+      - id: build_radar_page
+        module: scripts.build_radar_page
+      - id: build_intelligence
+        module: scripts.build_intelligence
+      - id: build_briefing
+        module: scripts.build_briefing
+      - id: build_intel_hub
+        module: scripts.build_intel_hub
+      - id: build_demand
+        module: scripts.build_demand
+      - id: build_calibration
+        module: scripts.build_calibration
+      - id: build_aibrief
+        module: scripts.build_aibrief
+      - id: build_mastermind
+        module: scripts.build_mastermind
+      - id: build_ai_desk_page
+        module: scripts.build_ai_desk_page
+      - id: build_vector
+        module: scripts.build_vector
+      - id: build_sector_central
+        module: scripts.build_sector_central
+      - id: inject_data_base
+        module: scripts.inject_data_base
+        note: >
+          non-fatal data-base shim. Library builds (build_china_library, build_hk_library,
+          build_canada_library, build_intl_library) run in a background loop via shell
+          variable expansion; parser cannot extract them. Intentionally omitted.
+
+  # ── render.yml / render ─────────────────────────────────────────────────
+  # NOTE: scope=all path.
+  - workflow: .github/workflows/render.yml
+    job: render
+    steps:
+      # spine (serial)
+      - id: build_spvector
+        module: scripts.build_spvector
+      - id: build_alt_data
+        module: scripts.build_alt_data
+      - id: build_smart_money
+        module: scripts.build_smart_money
+      - id: build_site
+        module: scripts.build_site
+      - id: build_congress
+        module: scripts.build_congress
+      # parallel band (scope=all)
+      - id: band
+        cluster:
+          cl_markets:
+            - scripts.build_commodities
+            - scripts.build_spr
+            - scripts.build_forex
+            - scripts.build_bonds
+            - scripts.build_crossasset
+            - scripts.build_transmission
+            - scripts.build_discovery
+          cl_china:
+            - scripts.build_china
+          cl_hk:
+            - scripts.build_hk
+          cl_gex:
+            - scripts.build_gex_board
+            - scripts.build_vol_regime
+            - scripts.build_options_flow
+            - scripts.build_options_skew
+            - scripts.build_options_ivspread
+          cl_baskets:
+            - scripts.build_baskets
+            - scripts.build_news
+            - scripts.build_methodology
+          cl_misc:
+            - scripts.build_seasonality
+            - scripts.build_reports
+            - scripts.build_sector_cycles
+            - scripts.build_country_cycles
+            - scripts.build_cycle
+            - scripts.build_markets
+            - engine.policy_intent_desk
+            - scripts.build_policy_watch
+            - scripts.build_index_changes
+      # serial post-band (composition order: spine; band; central; hub; us_pages; libs)
+      # NOTE: build_sector_central runs via central() and build_vector via hub().
+      # After the W5a parser fix, both are visible and declared here.
+      # PARSER ORDER NOTE: file defines us_pages() before hub() and central(); the
+      # parser extracts us_pages() contents before hub()/central() contents.
+      - id: build_radar_plus
+        module: scripts.build_radar_plus
+      - id: build_radar_ic
+        module: scripts.build_radar_ic
+      - id: build_radar_page
+        module: scripts.build_radar_page
+      - id: build_intelligence
+        module: scripts.build_intelligence
+      - id: build_briefing
+        module: scripts.build_briefing
+      - id: build_intel_hub
+        module: scripts.build_intel_hub
+      - id: build_demand
+        module: scripts.build_demand
+      - id: build_calibration
+        module: scripts.build_calibration
+      - id: build_aibrief
+        module: scripts.build_aibrief
+      - id: build_mastermind
+        module: scripts.build_mastermind
+      - id: build_ai_desk_page
+        module: scripts.build_ai_desk_page
+      - id: build_vector
+        module: scripts.build_vector
+      - id: build_sector_central
+        module: scripts.build_sector_central
+      - id: inject_data_base
+        module: scripts.inject_data_base
+        note: >
+          non-fatal data-base shim. Library builds run in background loops via shell
+          variable expansion; parser cannot extract them. Intentionally omitted.
+
+  # ── intraday.yml / bars ─────────────────────────────────────────────────
+  - workflow: .github/workflows/intraday.yml
+    job: bars
+    steps:
+      - id: build_polygon_intraday
+        module: scripts.build_polygon_intraday
+        note: no downstream build modules; intraday cache only
+
+  # ── intraday-fastpath.yml / fastpath ─────────────────────────────────────
+  - workflow: .github/workflows/intraday-fastpath.yml
+    job: fastpath
+    steps:
+      - id: refresh_regime_if_stale
+        module: scripts.refresh_regime_if_stale
+      - id: build_live_overlay
+        module: scripts.build_live_overlay
+      - id: build_risk_state
+        module: scripts.build_risk_state
+
+  # ── weekly.yml / weekly-report ──────────────────────────────────────────
+  - workflow: .github/workflows/weekly.yml
+    job: weekly-report
+    steps:
+      - id: collect_weekly
+        module: scripts.collect
+        args: [--only, cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals]
+      - id: build_dead_name_fundamentals_resolve
+        module: scripts.build_dead_name_fundamentals
+        args: [--resolve-only, --fts-max, "200"]
+      - id: build_dead_name_fundamentals
+        module: scripts.build_dead_name_fundamentals
+        args: [--max-new, "200"]
+      - id: build_dead_name_prices
+        module: scripts.build_dead_name_prices
+        args: [--max-new, "150"]
+      - id: build_dead_name_delisting
+        module: scripts.build_dead_name_delisting
+        args: [--max-new, "200"]
+      - id: factor_ic_scorecard_debiased
+        module: scripts.factor_ic_scorecard
+        args: [--debiased, --horizon, "63"]
+      - id: signal_factory
+        module: scripts.signal_factory
+      - id: recalibrate
+        module: scripts.recalibrate
+      - id: engine_run
+        module: engine.run
+      - id: build_spvector
+        module: scripts.build_spvector
+      - id: build_site
+        module: scripts.build_site
+      - id: china_fundamentals
+        module: collectors.china_fundamentals
+      - id: china_fundamentals_all
+        module: collectors.china_fundamentals
+        args: [--all, --limit, "150"]
+      - id: calibrate_china
+        module: scripts.calibrate_china
+      - id: build_china
+        module: scripts.build_china
+      - id: hk_fundamentals
+        module: collectors.hk_fundamentals
+      - id: calibrate_hk
+        module: scripts.calibrate_hk
+      - id: build_hk
+        module: scripts.build_hk
+      - id: calibrate_commodities
+        module: scripts.calibrate_commodities
+      - id: research_commodity_conviction
+        module: scripts.research_commodity_conviction
+      - id: build_commodities
+        module: scripts.build_commodities
+      - id: calibrate_bonds
+        module: scripts.calibrate_bonds
+      - id: build_bonds
+        module: scripts.build_bonds
+      - id: calibrate_rate_inflation
+        module: scripts.calibrate_rate_inflation
+      - id: build_transmission
+        module: scripts.build_transmission
+      - id: calibrate_vector
+        module: scripts.calibrate_vector
+      - id: validate_gex
+        module: scripts.validate_gex
+      - id: build_vector
+        module: scripts.build_vector
+      - id: build_aibrief
+        module: scripts.build_aibrief
+      - id: inject_data_base
+        module: scripts.inject_data_base
+        note: >
+          Library builds (build_china_library, build_hk_library, build_canada_library,
+          build_intl_library) run in a shell loop via variable expansion after inject_data_base;
+          parser cannot extract them. Intentionally omitted.
+
+  # ── sentinel.yml / flash-crash ──────────────────────────────────────────
+  - workflow: .github/workflows/sentinel.yml
+    job: flash-crash
+    steps:
+      - id: vector_sentinel
+        module: scripts.vector_sentinel
+      - id: build_vector_on_change
+        module: scripts.build_vector
+        note: conditional on rc=10 only; event-driven sentinel
+
+  # ── commodity-sentinel.yml / shock ──────────────────────────────────────
+  - workflow: .github/workflows/commodity-sentinel.yml
+    job: shock
+    steps:
+      - id: commodity_sentinel
+        module: scripts.commodity_sentinel
+      - id: build_commodities_on_change
+        module: scripts.build_commodities
+        note: conditional on rc=10 only; event-driven sentinel
+
+  # ── whitehouse-sentinel.yml / monitor ───────────────────────────────────
+  - workflow: .github/workflows/whitehouse-sentinel.yml
+    job: monitor
+    steps:
+      - id: build_whitehouse
+        module: scripts.build_whitehouse
+        note: event-driven; commit only on change (rc=10)
+
+# ---------------------------------------------------------------------------
+# DIVERGENCES — declared lane-difference ledger
+# Two kinds:
+#   documented: {lanes, differs, reason, evidence}  — intentional, no CI red
+#   suspect:    {lanes, differs, status: suspect, note}  — undocumented drift,
+#               stays visible in every checker run; only SHRINKS (each entry
+#               either gets a documented reason or the lanes get fixed)
+# ---------------------------------------------------------------------------
+divergences:
+
+  # ── DOCUMENTED ──────────────────────────────────────────────────────────
+
+  - lanes: [engine-render]
+    differs: >
+      cl_gex omits scripts.build_gex_board (daily/render include it)
+    reason: >
+      build_gex_board is NOT a pure function of committed data — it fetches ~700 live
+      CBOE option chains (~22 min, cdn.cboe.com, rate-limited). Including it would break
+      the engine-render lane's "no network" invariant. GEX consumers read the committed
+      data/gex/latest.json; the page keeps the last nightly's values until the nightly
+      `daily` (or manual scope=gex dispatch) refreshes them.
+    evidence: engine-render.yml:214-226
+
+  - lanes: [engine-render]
+    differs: >
+      cl_misc omits engine.policy_intent_desk (daily/render include it)
+    reason: >
+      policy_intent_desk is an LLM builder requiring DEEPSEEK_API_KEY. The engine-render
+      lane carries no secrets ("NO secrets → no network" invariant in the lane header).
+      Without the key the module exits rc=134 (SIGABRT). The committed
+      site/policy_intent.json is kept from the last nightly until the nightly refreshes it.
+    evidence: engine-render.yml:264-270
+
+  - lanes: [engine-render]
+    differs: >
+      All LLM brains absent: engine.master_brain, engine.ai_desk, engine.narrative_brain,
+      engine.risk_brain, engine.altdata_brain, engine.master_brain_scorer,
+      engine.ai_desk_scorer, engine.demand_ledger, engine.demand_chain_phase0,
+      engine.risk_radar_review, engine.radar_scorer, scripts.grade_us_board,
+      scripts.archive_signals, scripts.notify — all present in daily.yml engine job.
+    reason: >
+      Documented in engine-render.yml header (lines 17-20): "DELIBERATELY skipped (belong
+      to the nightly): collectors, the master/ai_desk/narrative/altdata LLM brains + their
+      scorers, build_special_situations (EDGAR), factor_series/stock_briefs,
+      notify/archive_signals." The express lane carries no secrets; the nightly is the sole
+      advancer of forward-accountability ledgers.
+    evidence: engine-render.yml:17-20
+
+  - lanes: [engine-render]
+    differs: >
+      build_world_state runs BEFORE the render band in engine-render (as the W1 express-lane
+      step, lines 146/148), whereas in daily.yml it is the LAST serial step after the band.
+    reason: >
+      The express lane places world_state immediately after engine.run to give the render
+      band an up-to-date world state. The nightly places it last because many band outputs
+      (oracle_state, alerts_triage) contribute to it. Both placements are deliberate and
+      serve different freshness objectives.
+    evidence: engine-render.yml:109-131 (recompute step includes build_world_state at line 146)
+
+  - lanes: [engine-render, render]
+    differs: >
+      cl_china (build_china) and cl_hk (build_hk) are band clusters in engine-render and
+      render, but NOT in daily.yml (daily omits them from its nightly band entirely).
+    reason: >
+      cl_china and cl_hk were MOVED from daily.yml to asia-close.yml (runs 08:30 UTC after
+      the HK cash close) so CN/HK pages render SETTLED closes instead of stale marks.
+      render.yml and engine-render.yml include cl_china/cl_hk in their band because those
+      lanes use COMMITTED data (no timing dependency).
+    evidence: "daily.yml:413 (comment: cl_china / cl_hk MOVED to .github/workflows/asia-close.yml)"
+
+  - lanes: [render, engine-render]
+    differs: >
+      cl_baskets omits scripts.build_subsector_confluence (×3 variants) and
+      scripts.build_cohort_metrics vs daily.yml cl_baskets which includes them.
+    reason: >
+      subsector_confluence (--default/--nasdaq/--russell) and cohort_metrics are omitted
+      from the render/engine-render express lanes because they perform expensive computation
+      (universe-wide confluence scoring, cohort peer washout metrics) that is only justified
+      in the nightly full rebuild. The committed subsector_confluence.json artifacts from the
+      last nightly are served unchanged until the next nightly run. This is consistent with
+      the render lane's stated purpose: re-render pages from COMMITTED data.
+    evidence: render.yml header (lines 1-30), render.yml:261-265 (cl_baskets definition)
+
+  - lanes: [intraday-fastpath]
+    differs: >
+      Only 3 steps (refresh_regime_if_stale, build_live_overlay, build_risk_state); all
+      nightly band modules absent.
+    reason: >
+      Documented in intraday-fastpath.yml header: the fast/slow split — only price-driven
+      leaves run every 30 min during RTH; the slow regime/conviction/brain layer stays in
+      the nightly. The three steps are the complete fast path by design.
+    evidence: intraday-fastpath.yml:1-17
+
+  - lanes: [sentinel, commodity-sentinel, whitehouse-sentinel]
+    differs: >
+      Minimal module sets (1-2 modules each); all nightly band modules absent.
+    reason: >
+      Event-driven sentinels: commit ONLY on state transition (rc=10). These are by design
+      minimal; the secondary build step (build_vector / build_commodities / build_whitehouse)
+      is conditional on a state change and not a general page rebuild. No drift to correct.
+    evidence: sentinel.yml:39-47; commodity-sentinel.yml:42-55; whitehouse-sentinel.yml:54-74
+
+  - lanes: [weekly]
+    differs: >
+      Serial-only (no parallel band); omits most US-only builders (build_baskets,
+      build_subsector_confluence, build_sector_central, build_news, build_seasonality, etc.)
+      and includes calibration steps absent from daily (calibrate_china, calibrate_hk,
+      calibrate_commodities, calibrate_bonds, calibrate_rate_inflation, calibrate_vector,
+      validate_gex, recalibrate, signal_factory, dead-name drips).
+    reason: >
+      Weekly runs deep-recalibration (model refit, dead-name de-bias, factor series) on
+      Saturday when CI capacity is available. Band parallelism is not needed (only one
+      runner, Saturday quiet hours). US-only page builders run every nightly; the weekly's
+      purpose is calibration + international builds, not full US page rebuild.
+    evidence: "weekly.yml:18-21 (comment: weekly does collectors + all calibrations + every dashboard build)"
+
+  # ── SUSPECT — undocumented drift inherited at W5a adoption ─────────────
+  # Each entry either gets a documented reason or the lanes get fixed in a future PR.
+  # This list ONLY SHRINKS.
+
+  - lanes: [render, engine-render]
+    differs: >
+      cl_misc order differs from daily cl_misc: render has sectorcyc→countrycyc→cycle→markets
+      vs daily cycle→sectorcyc→countrycyc (no markets). render adds build_markets; daily does
+      not. No documented justification for the order difference or the build_markets addition.
+    status: suspect
+    note: >
+      UNDOCUMENTED drift inherited at W5a adoption — needs owner review.
+      render.yml cl_misc line 266-276 (render adds build_markets, order differs from daily.yml
+      lines 420-429). Either document why render needs build_markets + the different order, or
+      align the order and remove build_markets from the render lane.
+
+  - lanes: [engine-render]
+    differs: >
+      cl_misc omits build_sector_cycles, build_country_cycles, build_cycle, and build_markets
+      vs both daily.yml and render.yml cl_misc. Only policy_intent_desk omission is documented.
+    status: suspect
+    note: >
+      UNDOCUMENTED drift inherited at W5a adoption — needs owner review.
+      engine-render.yml cl_misc (lines 241-244) contains only: build_seasonality,
+      build_reports, build_policy_watch, build_index_changes. The omission of
+      build_sector_cycles, build_country_cycles, build_cycle, and build_markets lacks a
+      documented justification (policy_intent_desk omission IS documented at lines 234-244).
+      If these are intentionally omitted for the same reason as policy_intent_desk (LLM/secret
+      dependency or long-running), add a comment and a documented divergence entry here.
+
+# ---------------------------------------------------------------------------
+# MODULES — 25-module IO table from the W5a scout
+# (reads, writes, impure, needs_secrets, event_driven flags)
+# ---------------------------------------------------------------------------
+modules:
+
+  - module: engine.run
+    reads:
+      - data/macro/*.parquet
+      - data/fred/*.parquet
+      - data/stocks/*.parquet
+      - data/breadth/breadth.parquet
+      - data/bonds/bond_health.json
+      - data/forex/latest.json
+      - data/risk_radar/forward_log.parquet
+      - data/signal_archive/mtf_signals_latest.json
+      - data/regime/regime_one.json
+      - site/vol/regime.json
+    writes:
+      - data/regime/latest.json
+      - data/regime/regime_history.parquet
+      - data/regime/base_effect_fwd.jsonl
+      - data/regime/regime_one.json
+      - data/regime/regime_vector.parquet
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_signal_quality
+    reads:
+      - data/stocks/*.parquet
+      - data/intraday/<T>.parquet
+    writes:
+      - site/signals/<SYM>.json
+      - data/signal_archive/mtf_signals_latest.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_site
+    reads:
+      - data/regime/latest.json
+      - data/regime/regime_history.parquet
+      - data/breadth/breadth.parquet
+      - site/basketdata/baskets.json
+      - site/factordata/sector_pulse.json
+      - site/allocationdata/allocation.json
+      - data/regime/spvector_latest.json
+      - data/market_state/forward_log.jsonl
+      - data/experiments/registry_seed.json
+      - data/edgar/ic_scorecard.json
+    writes:
+      - site/macro.html
+      - site/us_stocks.html
+      - site/regime_timeline.json
+      - site/macrodata/macro_signals.json
+      - site/factordata/factors.json
+      - site/factordata/alerts_triage.json
+      - data/market_state/latest.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      Also calls build_subsector_rotation (line 3209), build_stock_library,
+      market_state.persist() at runtime — full write surface is a superset of
+      declared outputs (lower bound).
+
+  - module: scripts.build_stock_library
+    reads:
+      - data/regime/latest.json
+      - data/breadth/breadth.parquet
+      - data/breadth/_closes_cache.parquet
+      - site/altdata/by_ticker.json
+      - data/baskets/membership.json
+    writes:
+      - site/factordata/us_standouts.json
+      - site/factordata/signal_gate.json
+    impure: true
+    needs_secrets: false
+    event_driven: false
+    note: >
+      Mixed: pure computation PLUS optional per-build drip fetches (SEC/Wikipedia
+      equity_profile, edgar_rpo, edgar_headcount). Drip fetches are network calls and
+      are suppressed in engine-render/render lanes via RENDER_NO_DRIP=1.
+
+  - module: scripts.build_baskets
+    reads:
+      - data/baskets/membership.json
+      - data/breadth/_closes_cache.parquet
+      - data/stocks/*.parquet
+      - data/radar/theses.jsonl
+    writes:
+      - site/basketdata/baskets.json
+      - site/basketdata/radar.json
+      - site/basketdata/flow.json
+      - site/basketdata/sector_pulse.json
+      - data/baskets/latest.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_baskets_canada
+    reads:
+      - data/baskets_canada/membership.json
+      - data/canada_search/*.parquet
+    writes:
+      - site/canadabasketdata/baskets.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_baskets_china
+    reads:
+      - data/baskets_china/membership.json
+      - data/china_search/*.parquet
+    writes:
+      - site/chinabasketdata/baskets.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_baskets_hk
+    reads:
+      - data/baskets_hk/membership.json
+      - data/hk_search/*.parquet
+    writes:
+      - site/hkbasketdata/baskets.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_baskets_intl
+    reads:
+      - data/baskets_intl/membership.json
+      - data/intl_search/*.parquet
+      - data/breadth/breadth.parquet
+    writes:
+      - site/intlbasketdata/baskets.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_foresight
+    reads:
+      - data/foresight/log.jsonl
+      - data/bottleneck/log.jsonl
+      - data/glut_watch/log.jsonl
+      - data/themes/revisions_log.jsonl
+      - data/guidance_gap/log.jsonl
+      - data/theme_emergence/log.jsonl
+      - data/subsector_scan/log.jsonl
+      - data/regime/latest.json
+    writes:
+      - site/basketdata/foresight_cascade.json
+      - site/foresight.html
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_alt_data
+    reads:
+      - data/altdata/theses.jsonl
+      - data/qledger/claims.jsonl
+      - site/qledger/track_record.json
+      - data/spine/predictions.parquet
+      - data/quiver/*
+    writes:
+      - data/altdata/by_ticker.json
+      - site/altdata/by_ticker.json
+      - site/altdata/mastermind.json
+      - site/alt_data.html
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.oracle_nightly
+    reads:
+      - data/oracle/panel*.parquet
+      - data/oracle/graph_s.json
+      - data/oracle/episodes.json
+      - site/basketdata/oracle_state.json
+      - data/breadth/breadth.parquet
+    writes:
+      - site/basketdata/oracle_state.json
+      - data/oracle/oracle_alerts.jsonl
+      - data/oracle/alerts_state.json
+      - data/oracle/rotation_directive.json
+      - data/oracle/memory_base_rates.json
+      - data/oracle/forward_ledger.jsonl
+      - site/wh_banner.json
+    impure: false
+    needs_secrets: false
+    event_driven: true
+    note: Event-driven — detects new rotation complexes vs prior state by diffing oracle_state
+
+  - module: scripts.build_world_state
+    reads:
+      - data/market_state/latest.json
+      - data/regime/latest.json
+      - data/breadth/breadth.parquet
+      - site/basketdata/oracle_state.json
+      - data/run_status.json
+      - site/factordata/alerts_triage.json
+    writes:
+      - data/neuralweb/world_state.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_feeds
+    reads:
+      - data/regime/latest.json
+      - data/breadth/breadth.parquet
+      - site/marketdata/subsector_rotation.json
+      - data/neuralweb/world_state.json
+    writes:
+      - site/feeds/
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.publish_r2
+    reads:
+      - site/ohlc/
+      - site/stockdata/
+      - site/intlstockdata/
+      - site/canadastockdata/
+      - site/intraday/
+      - site/feeds/
+    writes:
+      - Cloudflare R2 bucket (S3-compatible; no git writes)
+    impure: true
+    needs_secrets: true
+    event_driven: false
+
+  - module: scripts.build_sector_central
+    reads:
+      - site/basketdata/baskets.json
+      - data/sector_cycles_data.js
+      - data/regime/latest.json
+    writes:
+      - site/sector_central.html
+      - site/sector_central_data.js
+      - site/factordata/sector_central.json
+      - data/sector_central/calls.parquet
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_radar_plus
+    reads:
+      - site/basketdata/radar.json
+      - site/altdata/mastermind.json
+      - data/regime/latest.json
+    writes:
+      - site/basketdata/radar_enriched.json
+      - site/basketdata/radar_ticker.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_intelligence
+    reads:
+      - site/news/by_ticker.json
+      - site/altdata/mastermind.json
+      - site/altdata/by_ticker.json
+      - site/news/financial.json
+    writes:
+      - site/intelligence/by_ticker.json
+      - site/basketdata/radar_news.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_impulse
+    reads:
+      - data/breadth/_closes_cache.parquet
+      - data/midcap_breadth/_closes_cache.parquet
+      - data/smallcap_breadth/_closes_cache.parquet
+      - data/regime/latest.json
+      - data/neuralweb/world_state.json
+    writes:
+      - site/impulse.html
+      - site/factordata/impulse.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_subsector_rotation
+    reads:
+      - data/themes_heatmap/themes_tree.json
+      - data/themes_heatmap/perf_snapshot.json
+      - data/subsector_rotation/track_record.json
+    writes:
+      - site/marketdata/subsector_rotation.json
+      - data/subsector_rotation/track_record.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: Called from build_site at line 3209; not a direct workflow step
+
+  - module: scripts.build_vol_regime
+    reads:
+      - data/vix/*.parquet
+      - data/move/*.parquet
+      - data/cboe/skew.parquet
+      - data/stocks/SPY.parquet
+      - data/vol_regime/gate.json
+      - data/vol_regime/basket_overlay_gate.json
+    writes:
+      - site/vol/regime.json
+      - site/vol/mastermind.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_gex_board
+    reads:
+      - data/cboe/*.parquet
+    writes:
+      - site/gex/*.json
+      - site/gex_board.html
+    impure: true
+    needs_secrets: false
+    event_driven: true
+    note: >
+      Fetches ~700 live CBOE option chains at build time (cdn.cboe.com, ~22 min).
+      DELIBERATELY omitted from engine-render auto (push-triggered) path;
+      runs only in daily.yml cl_gex cluster and manual scope=gex dispatch.
+
+  - module: scripts.build_vector
+    reads:
+      - data/regime/latest.json
+      - site/basketdata/baskets.json
+      - data/regime/spvector_latest.json
+      - data/cycle_ontology/falsifiers.json
+      - data/canada_regime/latest.json
+      - data/intl/hub.json
+    writes:
+      - site/index.html
+      - site/vector.html
+      - site/btc_vector.js
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_china
+    reads:
+      - data/china_stocks/*.parquet
+      - data/china_breadth/_closes_cache.parquet
+      - data/china_regime/*.parquet
+      - data/baskets_china/membership.json
+      - data/regime/latest.json
+    writes:
+      - site/china.html
+      - site/chinastockdata/
+      - data/china_regime/latest.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_hk
+    reads:
+      - data/hk_stocks/*.parquet
+      - data/hk_breadth/_closes_cache.parquet
+      - data/baskets_hk/membership.json
+      - data/regime/latest.json
+    writes:
+      - site/hk.html
+      - site/hkstockdata/
+      - data/hk_regime/latest.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+
+  - module: scripts.build_world_state
+    reads:
+      - data/market_state/latest.json
+      - data/regime/latest.json
+      - data/breadth/breadth.parquet
+      - site/basketdata/oracle_state.json
+      - data/run_status.json
+      - site/factordata/alerts_triage.json
+    writes:
+      - data/neuralweb/world_state.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: Already listed above; repeated for completeness in the IO table

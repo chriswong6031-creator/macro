@@ -4,7 +4,20 @@
       "displayed": "cn_robotics",
       "pending": null
     },
-    "reco": {}
+    "reco": {
+      "cn_defense": {
+        "bucket": "2026-07-03",
+        "count": 1,
+        "from": "hold",
+        "to": "enter"
+      },
+      "cn_semis": {
+        "bucket": "2026-07-03",
+        "count": 1,
+        "from": "hold",
+        "to": "accumulate"
+      }
+    }
   },
   "cn_ai_compute": {
     "label": "deteriorating",
@@ -83,8 +96,8 @@
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
     "rank": 8,
-    "reco": "hold",
-    "score": 56
+    "reco": "enter",
+    "score": 59
   },
   "cn_food_bev": {
     "label": "deteriorating",
@@ -127,7 +140,7 @@
     "score": 41
   },
   "cn_pharma_cxo": {
-    "label": "neutral",
+    "label": "dominant",
     "name": "Innovative Pharma & CXO",
     "name_zh": "\u521b\u65b0\u836f\u4e0eCXO",
     "rank": 2,

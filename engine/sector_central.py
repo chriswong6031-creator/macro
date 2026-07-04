@@ -239,6 +239,21 @@ def market_context() -> dict:
 # =========================================================================== #
 # per-sector / per-basket confluence
 # =========================================================================== #
+def _rolling_over(now: dict) -> bool:
+    """Fast-rollover detector. The slow 5-phase label (`phase`) is weekly-MACD-led, so a name
+    that has dropped hard off a recent high can still read 'Trending/Expansion' for weeks after
+    it rolled — the label LAGS the move. When the oscillator slope is clearly DOWN, the daily
+    timing ladder is in decline, AND the canonical (detrended) position is stretched, the name is
+    topping/rolling regardless of a still-positive weekly MACD. Keys only off signals the cycle
+    record already carries (osc_slope / pos_v2 / timing_state) — no new data, no whipsaw on wiggles
+    (needs all three: falling + stretched + daily-decline)."""
+    slope = now.get("osc_slope") or 0.0
+    pv2 = now.get("pos_v2")
+    hi = (pv2 if pv2 is not None else (now.get("pos") or 0)) >= 68.0
+    timing = (now.get("timing_state") or "").upper()
+    return bool(slope < -3.0 and hi and timing in ("DECLINE", "ROLLING OVER"))
+
+
 def _state_score(now: dict) -> tuple[float, dict]:
     """Where-are-we, from the cycle-position oscillator + phase direction. The US cycle record
     has NO `signature` field (unlike China) — key off `pos` (0–100 oscillator: low = washed-out =
@@ -256,8 +271,14 @@ def _state_score(now: dict) -> tuple[float, dict]:
         score = float(np.clip(score + 0.12, -1, 1))
     elif sig == "SELL":
         score = float(np.clip(score - 0.12, -1, 1))
+    # fast-rollover override: the slow phase label lags a sharp multi-week rollover, so don't let a
+    # stale 'Trending' read a rolling-over name UP. De-rate to cautious (never a lift). See
+    # _rolling_over: needs oscillator falling + stretched (detrended) + daily ladder in decline.
+    rolling = _rolling_over(now)
+    if rolling:
+        score = float(np.clip(min(score, -0.25), -1, 1))
     return score, {"pos": pos, "phase": phase, "phaseLabel": now.get("phaseLabel"),
-                   "signal": sig, "osc_slope": now.get("osc_slope")}
+                   "signal": sig, "osc_slope": now.get("osc_slope"), "rolling": rolling}
 
 
 def _momentum_confirm(now: dict, n_peers: int) -> tuple[float, dict]:
@@ -412,16 +433,24 @@ def _trace(state_d, fwd, mkt, mom_d, crowd, early, stretched, beta, heat) -> lis
     t = []
     pos = state_d.get("pos")
     if pos is not None:
-        stance = "bullish" if pos <= 40 else "bearish" if pos >= 65 else "neutral"
-        sig = state_d.get("signal")
-        sigtxt = f" · turn signal {sig}" if sig else ""
-        sigtxt_zh = f" · 转向信号 {_SIGNAL_ZH.get(sig, sig)}" if sig else ""
-        plab = state_d.get("phaseLabel")
-        ph = state_d.get("phase")
-        plab_zh = (_PHASELABEL_ZH.get(plab) if plab else None) or _PHASE_ZH.get(ph, plab or ph or "—")
-        t.append({"layer": "Cycle state", "tier": "validated", "stance": stance,
-                  "en": f"{plab or ph or '—'} — position {pos:.0f}/100{sigtxt}",
-                  "zh": f"{plab_zh} — 位置 {pos:.0f}/100{sigtxt_zh}"})
+        if state_d.get("rolling"):
+            # the slow phase label lags; the fast signals say it has rolled over → surface that
+            # instead of the stale 'Trending' read (keeps the board honest vs. a −20% pullback).
+            t.append({"layer": "Cycle state", "tier": "validated", "stance": "bearish",
+                      "en": f"Rolling over — position {pos:.0f}/100 · oscillator falling, "
+                            "daily ladder in decline (slow phase label lags)",
+                      "zh": f"回落中 — 位置 {pos:.0f}/100 · 振荡指标下行、日线阶梯走弱（慢速阶段标签滞后）"})
+        else:
+            stance = "bullish" if pos <= 40 else "bearish" if pos >= 65 else "neutral"
+            sig = state_d.get("signal")
+            sigtxt = f" · turn signal {sig}" if sig else ""
+            sigtxt_zh = f" · 转向信号 {_SIGNAL_ZH.get(sig, sig)}" if sig else ""
+            plab = state_d.get("phaseLabel")
+            ph = state_d.get("phase")
+            plab_zh = (_PHASELABEL_ZH.get(plab) if plab else None) or _PHASE_ZH.get(ph, plab or ph or "—")
+            t.append({"layer": "Cycle state", "tier": "validated", "stance": stance,
+                      "en": f"{plab or ph or '—'} — position {pos:.0f}/100{sigtxt}",
+                      "zh": f"{plab_zh} — 位置 {pos:.0f}/100{sigtxt_zh}"})
     # the validated trend gate (forward axis)
     tp = (fwd or {}).get("trend_pass")
     if tp is not None:
@@ -584,12 +613,15 @@ def _as_str(v) -> str | None:
 def _carry(rec: dict) -> dict:
     """Carry the identity + a compact cycle snapshot from the cycle record onto the central row."""
     now = rec.get("now") or {}
+    # the displayed phase-label chip: override the (lagging) slow label when the fast signals show
+    # a rollover, so the card chip matches the de-rated conviction instead of reading 'Trending'.
+    phase_label = "Rolling over" if _rolling_over(now) else now.get("phaseLabel")
     return {
         "id": rec.get("id"), "ticker": _as_str(rec.get("ticker")), "kind": rec.get("kind"),
         "etf_proxy": _as_str(rec.get("etf_proxy")),
         "name": rec.get("name"), "name_zh": rec.get("name_zh"),
         "group": rec.get("group"), "group_zh": rec.get("group_zh"), "accent": rec.get("accent"),
-        "cycle": {"phase": now.get("phase"), "phaseLabel": now.get("phaseLabel"),
+        "cycle": {"phase": now.get("phase"), "phaseLabel": phase_label,
                   "pos": now.get("pos"), "proj": rec.get("proj"),
                   "rs_rank": now.get("rs_rank"), "above200d": now.get("above200d")},
     }

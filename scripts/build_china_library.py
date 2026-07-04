@@ -433,7 +433,36 @@ def compute_china_scoreboard() -> dict | None:
     def enrich(rows):
         return [{**rec, **look.get(rec["ticker"], {})} for rec in rows]
     modes = {k: enrich(v) for k, v in raw.items()}
-    return {"as_of": rev.get("as_of") or lv.get("as_of") or al.get("as_of"), "modes": modes}
+
+    # Sector washout→turn context (owner request): a per-SECTOR map the board JS uses to
+    # highlight + push up names whose sector washed out along with them and is now turning
+    # (leg A: the sector composite's fresh 2D-MACD x 3D-StochRSI cross; leg B: washed peers
+    # basing/perking — decline velocity collapsed, slight uptick). Re-orders the DEFAULT
+    # view only: reports/china-reversal-gated.md falsified sector-state as a FILTER (its
+    # info is a small per-name tilt), so this never adds/removes rows and feeds nothing
+    # downstream. Best-effort — absent on any failure, never read as neutral.
+    sector_turn = None
+    try:
+        from engine.china_sector_turn import sector_turn_map
+        dd = config.data_dir()
+        cp = dd / "china_search" / "closes.parquet"
+        mp = dd / "china_search" / "members.parquet"
+        if cp.exists() and mp.exists():
+            closes = pd.read_parquet(cp)
+            members = pd.read_parquet(mp)
+            tkr_sector = {t: (s if s != JUNK_SECTOR else "—")
+                          for t, s in members["sector"].items()}
+            st = sector_turn_map(closes, tkr_sector)
+            sector_turn = st.get("sectors") or None
+            if sector_turn:
+                n_boost = sum(1 for r in sector_turn.values() if r.get("boost"))
+                log.info("china sector turn: %d sectors mapped, %d boosted",
+                         len(sector_turn), n_boost)
+    except Exception as e:  # noqa: BLE001 — additive display context, never fatal
+        log.warning("china sector turn unavailable (%s)", e)
+
+    return {"as_of": rev.get("as_of") or lv.get("as_of") or al.get("as_of"), "modes": modes,
+            "sector_turn": sector_turn}
 
 
 def _spark_svg(vals: list[float], color: str = "var(--link)",
@@ -1416,9 +1445,10 @@ def main(alpha: dict | None = None) -> dict | None:
     _close_map: dict[str, pd.Series] = {t: c for (t, c, *_) in uni if c is not None}
     _eligible_set = {r.get("ticker") for r in eligible_rows}
 
-    def _last_cross_info(ticker: str) -> dict | None:
-        """Extract last-cross info for rule-3: (cross_date, sessions_since, pct_since).
-        Only for ineligible names whose last signal_gate marker is a buy-type."""
+    def _last_cross_info(ticker: str, max_sessions: int | None = 15) -> dict | None:
+        """Extract last-cross info: (cross_date, sessions_since, pct_since).
+        Rule-3 callers keep the default 15-session window; buy rows pass
+        max_sessions=None (rules 1a/2c need cross AGE with no cutoff)."""
         sv = sig_verdict.get(ticker)
         if not sv:
             return None
@@ -1430,14 +1460,21 @@ def main(alpha: dict | None = None) -> dict | None:
             return None
         try:
             cross_dt = pd.Timestamp(cross_date_str)
-            c = (_close_map.get(ticker) or pd.Series(dtype=float)).dropna()
+            # NOT `_close_map.get(t) or Series()` — bool(Series) raises ValueError,
+            # which the except below swallowed, silently disabling this function for
+            # EVERY name (the rule-3 RAN shelf logged 0 rows every build).
+            c = _close_map.get(ticker)
+            c = pd.Series(dtype=float) if c is None else c.dropna()
             after = c[c.index > cross_dt]
             sessions_since = int(len(after))
-            if sessions_since > 15:
-                return None       # outside rule-3 window — no point computing pct
+            if max_sessions is not None and sessions_since > max_sessions:
+                return None       # outside the caller's window — no point computing pct
             at_or_before = c[c.index <= cross_dt]
-            if len(at_or_before) == 0 or len(after) == 0:
+            if len(at_or_before) == 0:
                 return None
+            # sessions_since == 0 (cross fired on the latest bar) is a legitimate
+            # fresh cross for buy rows; rule-3 callers never see it (they require
+            # the gate to have LAPSED, which takes at least one session).
             price_at_cross = float(at_or_before.iloc[-1])
             spot = float(c.iloc[-1])
             pct_since = round((spot / price_at_cross - 1) * 100, 1) if price_at_cross > 0 else None
@@ -1474,18 +1511,24 @@ def main(alpha: dict | None = None) -> dict | None:
         _sv = sig_verdict.get(_t) or {}
         _es = entry_sig.get(_t) or {}
         _es_status = _es.get("status")
-        _ext_flag = bool((r.get("extension") or {}).get("extended"))
-        _overext = _ext_flag or _es_status in ("extended", "topping")
+        # overextended = the A-share PRICE-extension read only (extension_read: has it
+        # already run?). The old `or _es_status in ("extended","topping")` term imported
+        # the daily-cycle RSI>70 gate, which fires on the FIRST breakout thrust off a
+        # base (limit-up mechanics) — it demoted exactly the freshest T1/T2 crosses to
+        # RAN_LATE while names that crossed weeks ago sat on ENTRY. The daily gauge is
+        # display context on the card; the stage may not be driven by it.
+        _overext = bool((r.get("extension") or {}).get("extended"))
         _stage_res = _assign_stage_fn(
             gate_eligible=bool(_sv.get("eligible")),
             entry_status=_es_status,
             overextended=_overext,
-            last_cross_info=None,         # rules 1-2 only; buy rows are gate-eligible
+            last_cross_info=_last_cross_info(_t, max_sessions=None),  # rule 1a: cross age
             hold_state=_hold_state_cn.get(_t),
             wsetup=_wsetup_by.get(_t),
         )
         r["stage"] = _stage_res["stage"]
         r["stage_sublabel"] = _stage_res.get("sublabel")
+        r["stage_sublabel_zh"] = _stage_res.get("sublabel_zh")
         r["stage_detail"] = _stage_res.get("detail") or {}
         r["why_ranked"] = _why_ranked(r)
 

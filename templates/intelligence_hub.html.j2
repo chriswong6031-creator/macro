@@ -1,3 +1,4 @@
+{% import "_desk_grader_panel.html.j2" as dg %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
@@ -38,6 +39,19 @@
 <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:{{ ((e or 0)*100)|round|int }}%"></i></span>
 <span class="ev">{{ ((e or 0)*100)|round|int }}%</span></div>
+{%- endmacro %}
+{#- ⚡ prime-entry badge — the owner's validated T1-T4 confluence verdict. i18n via the
+    data-tip-en/zh popover pattern (NEVER translated text in a title= attribute). -#}
+{% macro entrybadge(eg) -%}
+{% if eg %}{% if eg.get('buyable') %}<span class="egate buy" data-tip-en="Validated confluence buy · tier {{ eg.get('tier') or '—' }}" data-tip-zh="已验证共振买入 · 层级 {{ eg.get('tier') or '—' }}">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span>{% if eg.get('tier') %} {{ eg.tier }}{% endif %}</span>{% elif eg.get('flat_sell') %}<span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>{% endif %}{% endif %}
+{%- endmacro %}
+{#- honest price-trajectory chips: off-high %, RS pp, rolling-over/basing state -#}
+{% macro tchips(tr) -%}
+{% if tr %}<div class="tchips">
+{%- if tr.get('off_high_252') is not none %}<span class="tchip {{ 'bad' if tr.off_high_252 <= -0.15 else '' }}">{{ (tr.off_high_252*100)|round|int }}% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>{% endif %}
+{%- if tr.get('rs_vs_spy_60d') is not none %}<span class="tchip {{ 'good' if tr.rs_vs_spy_60d > 0 else 'bad' }}">{{ '%+d'|format(tr.rs_vs_spy_60d|round|int) }}pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>{% endif %}
+{%- if tr.get('rolling_over') %}<span class="tchip bad"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span>{% elif tr.get('basing') %}<span class="tchip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>{% endif %}
+</div>{% endif %}
 {%- endmacro %}
 {#- qledger honesty chip macro (D10) -#}
 {% macro ql_chip(chip) -%}
@@ -178,8 +192,19 @@
   .stage.consensus{ background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted); }
   .stage.exhausted{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
   .stage.distribution{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
+  .stage.faltering{ background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn);box-shadow:0 0 0 1px color-mix(in srgb,var(--warn) 30%,transparent) inset; }
   .stage.discovery{ background:color-mix(in srgb,var(--info) 24%,transparent);color:var(--info);box-shadow:0 0 0 1px color-mix(in srgb,var(--info) 35%,transparent) inset; }
   .stage.building{ background:color-mix(in srgb,var(--text) 10%,transparent);color:var(--muted); }
+  /* ⚡ prime-entry badge (validated T1-T4 confluence) + honest price chips */
+  .egate{ display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:800;letter-spacing:.03em;
+    padding:2px 6px;border-radius:6px;white-space:nowrap;cursor:default; }
+  .egate.buy{ background:color-mix(in srgb,var(--up) 24%,transparent);color:var(--up);box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 40%,transparent) inset; }
+  .egate.no{ background:color-mix(in srgb,var(--muted) 16%,transparent);color:var(--muted); }
+  .tchips{ display:flex;flex-wrap:wrap;gap:5px;margin-top:5px; }
+  .tchip{ font-size:9px;font-weight:700;padding:1.5px 6px;border-radius:5px;white-space:nowrap;
+    background:color-mix(in srgb,var(--line) 55%,transparent);color:color-mix(in srgb,var(--text) 70%,transparent); }
+  .tchip.bad{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
+  .tchip.good{ background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up); }
   /* discovery cards */
   .dcard .et .src{ font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
     background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info); }
@@ -300,11 +325,12 @@
   <div class="ecards">
     {% for d in EM %}
     <div class="glass acc ecard" style="--accent:{{ 'var(--info)' if d.stage=='emerging' else 'var(--up)' }}">
-      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}{{ stage(d.stage) }}
+      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}{{ stage(d.stage) }}{{ entrybadge(d.entry_gate) }}
         <span class="oppn">{{ d.opportunity_score|round|int }}</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">{{ d.name }}</div>
       <div class="erd">{{ d.read }}</div>
       {{ edgebar(d.edge_remaining) }}
+      {{ tchips(d.trajectory) }}
       {% if d.edge_drivers %}<div class="drv">{% for dr in d.edge_drivers %}{% if dr.startswith('⚠') %}<span style="color:var(--warn)">{{ dr }}</span>{% else %}<b>{{ dr }}</b>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
       {% if d.catalyst and d.catalyst.live %}<div class="drv">{{ ic('cal') }} {{ d.catalyst.category }}{% if d.catalyst.days_since is not none %} · {{ d.catalyst.days_since }}{{ t('d ago','天前') }}{% endif %}</div>{% endif %}
     </div>{% endfor %}
@@ -363,10 +389,11 @@
         <div class="convn">{{ t('conv','信念') }} {{ d.composite_conviction|round|int }} · {{ d.n_confirm }}{{ t('d','台') }}</div>
       </div>
       <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">{{ stage(d.stage) }}
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">{{ stage(d.stage) }}{{ entrybadge(d.entry_gate) }}
           {% if d.leading_gap and d.leading_gap>0 %}<span style="font-size:9.5px;color:var(--info);font-weight:700">{{ t('leads crowd by','领先') }} +{{ d.leading_gap }}</span>{% endif %}</div>
         <div class="rd2">{{ d.read }}</div>
         {{ edgebar(d.edge_remaining) }}
+        {{ tchips(d.trajectory) }}
         <div class="flags">{% for f in d.flags %}{% if f not in ['emerging'] %}<span class="fl {{ 'edge' if f in ['early_edge','discovery'] else 'stealth' if f=='stealth_accumulation' else 'crowd' if f=='crowded_top' else 'conf' if f in ['confirmed_trend','theme_wide'] else 'fade' if f=='fading' else 'conflict' if f=='policy_conflict' else 'pol' if f in ['policy_aligned','catalyst'] else 'iso' if f=='isolated' else '' }}">{{ f.replace('_',' ') }}</span>{% endif %}{% endfor %}
           {%- if d.peers %}<span class="peers" title="basket peers also confirming">+{{ d.peer_confirm }} {{ t('peers', '同伴') }}: {{ d.peers|join(' ') }}</span>{% endif %}</div>
         {% if d.falsifier %}<div class="fal">{{ t('Falsifier', '证伪点') }}: <b>{{ d.falsifier }}</b></div>{% endif %}
@@ -419,6 +446,10 @@
     </div>{% endfor %}
   </div>
   {% endif %}
+
+  {# ── UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d, level+velocity, leave-tracking) ── #}
+  {{ dg.styles() }}
+  {{ dg.panel(hub.desk_grader) }}
 
   <footer class="hf">
     {{ t('Built', '生成于') }} <time datetime="{{ built }}">{{ built[:16].replace('T',' ') }}</time> UTC ·

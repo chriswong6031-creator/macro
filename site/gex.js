@@ -410,8 +410,15 @@
     var regTxt = s.regime === "long" ? lz("🛡️ Calm regime — dealers fade moves; price tends to pin", "🛡️ 平静体制 — 做市商抑制走势；价格倾向被磁吸")
       : s.regime === "short" ? lz("⚡ Jumpy regime — dealers chase moves; price tends to trend", "⚡ 跳动体制 — 做市商追逐走势；价格倾向趋势化")
       : lz("⚖️ Mixed regime — no clear dealer lean", "⚖️ 中性体制 — 做市商无明显倾向");
-    var ivrTxt = ivr ? (" <small>· " + esc(lz((IVRANK[ivr.band] || {}).en, (IVRANK[ivr.band] || {}).zh))
-      + (ivr.low_confidence ? lz(" (short window)", "（短窗）") : "") + "</small>") : "";
+    // W0.7: when low_confidence, replace the rich/cheap label with an explicit caveat chip
+    // so we never present settled rich/cheap bands on a sub-floor history window.
+    // i18n: EN+ZH; no translated text in title= attrs (data-tip-* popover mechanism used below).
+    var ivrTxt = ivr ? (ivr.low_confidence
+      ? (' <span class="ivr-building" data-tip-en="IVR n=' + (ivr.n_days || "?") + 'd — building history (need ≥20d for reliable rank)" data-tip-zh="IVR n=' + (ivr.n_days || "?") + '天 — 历史积累中（需≥20天）">'
+          + esc(lz("IVR n=" + (ivr.n_days || "?") + "d — building history", "IVR n=" + (ivr.n_days || "?") + "天 — 积累中"))
+          + "</span>")
+      : (" <small>· " + esc(lz((IVRANK[ivr.band] || {}).en, (IVRANK[ivr.band] || {}).zh)) + "</small>")
+    ) : "";
     var flipTxt = s.gamma_flip == null ? "—" : price(s.gamma_flip) + " <small>(" + pct(s.dist_to_flip_pct, 1) + ")</small>";
 
     var zoneA =
@@ -737,9 +744,16 @@
     }
     var ivr = s && s.iv_rank;
     if (ivr) {
-      var d = IVRANK[ivr.band] || {};
-      out.push(lz("IV rank: ", "IV分位：") + "<b>" + esc(lz(d.en, d.zh)) + "</b> <span class='xs'>(" + ivr.rank_pct + "%"
-        + (ivr.low_confidence ? lz(", short window", "，短窗") : "") + ")</span>");
+      // W0.7: low_confidence → explicit caveat; do not present rich/cheap band as settled
+      if (ivr.low_confidence) {
+        out.push('<span class="ivr-building">'
+          + esc(lz("IV rank: n=" + (ivr.n_days || "?") + "d — building history",
+                   "IV分位：n=" + (ivr.n_days || "?") + "天 — 积累中"))
+          + "</span>");
+      } else {
+        var d = IVRANK[ivr.band] || {};
+        out.push(lz("IV rank: ", "IV分位：") + "<b>" + esc(lz(d.en, d.zh)) + "</b> <span class='xs'>(" + ivr.rank_pct + "%)</span>");
+      }
     }
     return out.length ? '<div class="vh-stats">' + out.join("") + "</div>" : "";
   }
@@ -1172,10 +1186,30 @@
       .then(function (j) { flowCache[key] = j; if (curKey === key) renderFlow(); })
       .catch(function () { flowCache[key] = null; });
   }
+  // W0.7: FLOW_ACCRUAL_SINCE is the program start date (W0.1 secrets fix); used in the
+  // "accruing" state card when flow data is not yet available for a name.
+  var FLOW_ACCRUAL_SINCE = "2026-07-03";
   function renderFlow() {
     var host = document.getElementById("gx-flow"); if (!host) return;
     var f = flowCache[curKey];
-    if (!f || !f.available) { host.innerHTML = ""; return; }
+    if (!f || !f.available) {
+      // Show an honest "accruing" state rather than a blank panel — F12 UI honesty fix.
+      host.innerHTML =
+        '<div class="panel"><div class="fl fl-accruing">' +
+          '<div class="fl-head"><span class="fl-tag">📊 ' +
+            esc(lz("Options flow desk", "期权流动台")) +
+          "</span></div>" +
+          '<div class="fl-accruing-msg">' +
+            esc(lz(
+              "Flow accruing since " + FLOW_ACCRUAL_SINCE + " — no data yet for this name. "
+                + "Magnitude signals (premium, 0DTE, ΔOI) populate once the S3 pull runs.",
+              "流动数据自 " + FLOW_ACCRUAL_SINCE + " 起积累中 — 该标的暂无数据。"
+                + "S3拉取运行后，量级信号（权利金、0DTE、ΔOI）将自动填充。"
+            )) +
+          "</div>" +
+        "</div></div>";
+      return;
+    }
     var d = f.dealer || {}, np = f.net_premium_mn, v = f.verdict || {}, sg = f.signing || {};
     var p = (f.positioning && f.positioning.available) ? f.positioning : null;
     var dirOK = !!sg.direction_reliable;

@@ -1,0 +1,194 @@
+{
+ "formation_21": {
+  "formation_days": 21,
+  "n_rebalances": 358,
+  "avg_names_per_month": 65.2,
+  "avg_member_price_coverage": 0.6938,
+  "eras": {
+   "pit_full_1996_2026": {
+    "n_months": 358,
+    "mean_monthly_excess": 0.00282,
+    "ann_excess": 0.0338,
+    "hac_t": 1.797,
+    "sharpe_monthly": 0.096,
+    "dsr": 0.9102,
+    "dsr_n_trials": 2,
+    "dsr_verdict": "MARGINAL (0.90\u2264DSR<0.95)",
+    "boot_sharpe_ci": [
+     -0.01,
+     0.33,
+     0.66
+    ],
+    "boot_sharpe_gt0_prob": 0.973
+   },
+   "modern_2002_2026_K1": {
+    "n_months": 292,
+    "mean_monthly_excess": 0.00195,
+    "ann_excess": 0.0233,
+    "hac_t": 1.278,
+    "sharpe_monthly": 0.07,
+    "dsr": 0.7597,
+    "dsr_n_trials": 2,
+    "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+    "boot_sharpe_ci": [
+     -0.13,
+     0.24,
+     0.58
+    ],
+    "boot_sharpe_gt0_prob": 0.906
+   },
+   "pre_flip_2002_2023": {
+    "n_months": 264,
+    "mean_monthly_excess": 0.0034,
+    "ann_excess": 0.0408,
+    "hac_t": 2.267,
+    "sharpe_monthly": 0.122,
+    "dsr": 0.9413,
+    "dsr_n_trials": 2,
+    "dsr_verdict": "MARGINAL (0.90\u2264DSR<0.95)",
+    "boot_sharpe_ci": [
+     0.06,
+     0.43,
+     0.77
+    ],
+    "boot_sharpe_gt0_prob": 0.988
+   },
+   "flip_2024_2026_K2": {
+    "n_months": 28,
+    "mean_monthly_excess": -0.01175,
+    "ann_excess": -0.1411,
+    "hac_t": -4.459,
+    "sharpe_monthly": -0.466,
+    "dsr": 0.0017,
+    "dsr_n_trials": 2,
+    "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+    "boot_sharpe_ci": null,
+    "boot_sharpe_gt0_prob": null
+   }
+  },
+  "K3_concentration": {
+   "top_name": "ADSK",
+   "top_share_of_cum_excess": 0.0515
+  },
+  "K4_within_sector_ic": {
+   "mean_ic": -0.0101,
+   "ic_vol": 0.135,
+   "ic_ir": -0.075,
+   "ic_ir_ann": -0.259,
+   "t_hac": -1.9,
+   "p_hac": 0.0574,
+   "hit": 0.472,
+   "n": 358
+  },
+  "terminal_states_clean8_21_pct": {
+   "CLEAN_LIFTOFF": 27.11,
+   "CUSHIONED": 13.17,
+   "DEAD_MONEY": 21.12,
+   "STOPPED": 38.6,
+   "n_fires": 23342
+  },
+  "terminal_states_clean15_126_pct": {
+   "CLEAN_LIFTOFF": 32.84,
+   "CUSHIONED": 5.66,
+   "DEAD_MONEY": 0.15,
+   "STOPPED": 61.36,
+   "n_fires": 22853
+  }
+ },
+ "formation_63": {
+  "formation_days": 63,
+  "n_rebalances": 358,
+  "avg_names_per_month": 65.2,
+  "avg_member_price_coverage": 0.6929,
+  "eras": {
+   "pit_full_1996_2026": {
+    "n_months": 358,
+    "mean_monthly_excess": 0.00493,
+    "ann_excess": 0.0591,
+    "hac_t": 2.487,
+    "sharpe_monthly": 0.138,
+    "dsr": 0.9911,
+    "dsr_n_trials": 2,
+    "dsr_verdict": "SURVIVES multiple-testing (DSR\u22650.95)",
+    "boot_sharpe_ci": [
+     0.13,
+     0.48,
+     0.81
+    ],
+    "boot_sharpe_gt0_prob": 0.996
+   },
+   "modern_2002_2026_K1": {
+    "n_months": 292,
+    "mean_monthly_excess": 0.00337,
+    "ann_excess": 0.0404,
+    "hac_t": 1.72,
+    "sharpe_monthly": 0.099,
+    "dsr": 0.9082,
+    "dsr_n_trials": 2,
+    "dsr_verdict": "MARGINAL (0.90\u2264DSR<0.95)",
+    "boot_sharpe_ci": [
+     -0.02,
+     0.34,
+     0.67
+    ],
+    "boot_sharpe_gt0_prob": 0.968
+   },
+   "pre_flip_2002_2023": {
+    "n_months": 264,
+    "mean_monthly_excess": 0.00476,
+    "ann_excess": 0.0571,
+    "hac_t": 2.36,
+    "sharpe_monthly": 0.14,
+    "dsr": 0.9808,
+    "dsr_n_trials": 2,
+    "dsr_verdict": "SURVIVES multiple-testing (DSR\u22650.95)",
+    "boot_sharpe_ci": [
+     0.14,
+     0.5,
+     0.8
+    ],
+    "boot_sharpe_gt0_prob": 0.997
+   },
+   "flip_2024_2026_K2": {
+    "n_months": 28,
+    "mean_monthly_excess": -0.0098,
+    "ann_excess": -0.1175,
+    "hac_t": -2.424,
+    "sharpe_monthly": -0.318,
+    "dsr": 0.016,
+    "dsr_n_trials": 2,
+    "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+    "boot_sharpe_ci": null,
+    "boot_sharpe_gt0_prob": null
+   }
+  },
+  "K3_concentration": {
+   "top_name": "ADBE",
+   "top_share_of_cum_excess": 0.0307
+  },
+  "K4_within_sector_ic": {
+   "mean_ic": -0.0111,
+   "ic_vol": 0.1605,
+   "ic_ir": -0.069,
+   "ic_ir_ann": -0.239,
+   "t_hac": -1.491,
+   "p_hac": 0.136,
+   "hit": 0.492,
+   "n": 358
+  },
+  "terminal_states_clean8_21_pct": {
+   "CLEAN_LIFTOFF": 28.32,
+   "CUSHIONED": 13.01,
+   "DEAD_MONEY": 20.13,
+   "STOPPED": 38.54,
+   "n_fires": 23336
+  },
+  "terminal_states_clean15_126_pct": {
+   "CLEAN_LIFTOFF": 33.92,
+   "CUSHIONED": 5.4,
+   "DEAD_MONEY": 0.12,
+   "STOPPED": 60.56,
+   "n_fires": 22847
+  }
+ }
+}

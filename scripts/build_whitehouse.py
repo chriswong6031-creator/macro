@@ -427,8 +427,13 @@ def _register_wh_claim(rec: dict, root: Path) -> None:
             stored = ql.register(claim, root)
             if stored.get("status") != "rejected":
                 n_ok += 1
-        except Exception as e:  # noqa: BLE001
-            log.warning("qledger register failed for %s (%s)", claim.get("scope", {}).get("key"), e)
+        except Exception as e:  # noqa: BLE001 — isolate one bad claim, never crash the render
+            # LOUD by design (W5 doctrine, same as the import guard above): a
+            # register failure silently zeroing the ledger is a production bug,
+            # not a benign skip. ERROR + exc_info so CI/prod log scans catch it
+            # instead of it hiding at WARNING behind a healthy-looking render.
+            log.error("qledger register FAILED for %s — claim dropped from the ledger (%s)",
+                      claim.get("scope", {}).get("key"), e, exc_info=True)
     log.info("wh qledger: registered %d/%d claims for %s", n_ok, len(claims_to_register), rec.get("id"))
 
 

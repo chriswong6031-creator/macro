@@ -251,19 +251,23 @@ def compute(today: date | str | None = None, root: Path | None = None,
             verdict, note = "accruing", (
                 "Measuring — logging daily calls; no horizon has matured yet. The forward "
                 "edge is unmeasured. Context-only.")
+            note_zh = ("测量中——每日记录研判，尚无周期到期，前瞻性优势暂未测得。仅供参考。")
         elif any(proven.values()):
             verdict, note = "validated", (
                 f"Emerging-score IC is significant at the {lead_time}d horizon (measured). "
                 "Context-only — informs the read, never sizes.")
+            note_zh = (f"升温评分的信息系数在 {lead_time} 天周期上显著（已测得）。仅供参考——辅助研判，从不用于仓位。")
         else:
             verdict, note = "measuring", (
                 "Accruing forward observations; no horizon clears the Newey-West significance "
                 "bar yet. Early numbers are provisional, context-only.")
+            note_zh = ("正在累积前瞻观测；尚无周期通过 Newey-West 显著性检验。早期数据为暂定，仅供参考。")
         return {
             "schema": SCHEMA, "as_of": today_dt.isoformat(), "generated_at": _now_iso(),
             "is_context_only": True, "n_snapshots": len(rows), "n_days": n_days,
             "horizons": out_h, "lead_time_d": lead_time, "peak_score_ic": peak_ic,
-            "proven": proven, "any_matured": any_matured, "verdict": verdict, "note": note,
+            "proven": proven, "any_matured": any_matured, "verdict": verdict,
+            "note": note, "note_zh": note_zh,
             "recent_misses": misses,
             "disclaimer": ("A falsifiable scorecard of the rotation read's own calls — "
                            "emerging_score rank and emerging/fading labels graded against "
@@ -271,6 +275,10 @@ def compute(today: date | str | None = None, root: Path | None = None,
                            "horizon matures and clears a Newey-West significance bar it is "
                            "'measuring', never trusted. Members are frozen point-in-time; only "
                            "priceable members are used. Nothing here sizes a position."),
+            "disclaimer_zh": ("对轮动研判自身研判的可证伪记分卡——升温评分排名与升温/退潮标签，"
+                              "以成分股等权、相对 SPY 的实际前瞻收益进行评分。在某周期到期并通过 "
+                              "Newey-West 显著性检验之前，始终为「测量中」，不予采信。成分股按时间点冻结，"
+                              "仅使用可定价成分股。此处任何内容都不用于确定仓位。"),
         }
     except Exception as e:  # noqa: BLE001
         log.warning("subsector track compute failed: %s", e)
@@ -278,4 +286,5 @@ def compute(today: date | str | None = None, root: Path | None = None,
                 "is_context_only": True, "n_snapshots": 0, "n_days": 0, "horizons": {},
                 "lead_time_d": None, "peak_score_ic": None, "proven": {}, "any_matured": False,
                 "verdict": "accruing", "note": f"compute error ({e}) — accruing, degrade-safe.",
+                "note_zh": f"计算出错（{e}）——累积中，降级安全。",
                 "recent_misses": []}

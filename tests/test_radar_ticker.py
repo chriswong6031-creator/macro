@@ -359,3 +359,53 @@ def test_basket_attribution_skips_existing(monkeypatch):
     monkeypatch.setattr(rp, "_load", lambda rel: radar if "radar.json" in rel else baskets)
     out = rt._basket_attributed({"T0"}, date(2026, 6, 20))    # T0 already scored
     assert "T0" not in {r["ticker"] for r in out}             # scored names are not overridden
+
+
+# --------------------------------------------------------------------------- #
+# CONDITIONAL attribution — the inversion fix. A basket laggard is a bullish
+# POSITIVE_DIVERGENCE only when its OWN price is not rolling over; a broken (rolling-
+# over) laggard is downgraded to BROKEN_LAGGARD/fading with rs populated from the spine.
+# --------------------------------------------------------------------------- #
+def _hot_basket(monkeypatch):
+    from engine import radar_ticker as rt   # noqa: F401
+    from engine import radar_plus as rp
+    radar = {"flags": [{"basket": "semis", "name": "Semis",
+                        "state": "POSITIVE_DIVERGENCE", "edge_score": 80}]}
+    baskets = {"baskets": [{"id": "semis", "members": [
+        {"symbol": "BROKE", "ret_20d": -0.45},   # worst → laggard
+        {"symbol": "M1", "ret_20d": 0.01}, {"symbol": "M2", "ret_20d": 0.02},
+        {"symbol": "M3", "ret_20d": 0.03},
+        {"symbol": "WINNER", "ret_20d": 0.20},
+    ]}]}
+    monkeypatch.setattr(rp, "_load",
+                        lambda rel: radar if "radar.json" in rel else baskets if "baskets.json" in rel else {})
+
+
+def test_rolling_over_laggard_downgraded(monkeypatch):
+    from engine import radar_ticker as rt
+    from engine import trajectory
+    _hot_basket(monkeypatch)
+    # the worst-performing laggard's OWN price is rolling over (crashed, falling, below 50d)
+    monkeypatch.setattr(trajectory, "snapshot",
+                        lambda t, *a, **k: {"rolling_over": True, "rs_vs_spy_60d": -12.5} if t == "BROKE" else None)
+    out = rt._basket_attributed(set(), date(2026, 6, 20))
+    by = {r["ticker"]: r for r in out}
+    assert by["BROKE"]["state"] == "BROKEN_LAGGARD"        # NOT a bullish divergence
+    assert by["BROKE"]["lifecycle"] == "fading"
+    assert "DIVERGENCE" not in by["BROKE"]["state"]        # divergence surfaces must skip it
+    assert by["BROKE"]["rs_vs_spy_60d"] == -12.5           # rs populated from the spine, not None
+    assert by["WINNER"]["state"] == "CONFIRMED_UP"         # leader unchanged
+
+
+def test_healthy_laggard_stays_positive(monkeypatch):
+    from engine import radar_ticker as rt
+    from engine import trajectory
+    _hot_basket(monkeypatch)
+    # same laggard, but its price is NOT rolling over → stays the bullish unpriced laggard
+    monkeypatch.setattr(trajectory, "snapshot",
+                        lambda t, *a, **k: {"rolling_over": False, "rs_vs_spy_60d": 3.0} if t == "BROKE" else None)
+    out = rt._basket_attributed(set(), date(2026, 6, 20))
+    by = {r["ticker"]: r for r in out}
+    assert by["BROKE"]["state"] == "POSITIVE_DIVERGENCE"
+    assert by["BROKE"]["lifecycle"] == "forming"
+    assert by["BROKE"]["rs_vs_spy_60d"] == 3.0            # rs still populated from the spine

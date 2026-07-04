@@ -80,13 +80,26 @@ def main() -> int:
         fetch_shortages()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("fda_shortages drip failed (non-fatal): %s", e)
+    # W1b: policy catalyst calendar — pre-compute before the cascade so policy_reg can be
+    # passed in directly (avoids double-loading the parquet inside the cascade lazy-load).
+    # Non-fatal: cascade degrades gracefully if policy_calendar fails.
+    try:
+        from engine.policy_calendar import compute_policy_calendar
+        policy_calendar = compute_policy_calendar()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("policy_calendar failed (non-fatal): %s", e)
+        policy_calendar = None
     try:
         from engine.foresight_cascade import compute_foresight_cascade
         # write_ledger=True so the daily build accrues the forward-grading record (deduped by
         # theme+asof, so calling alongside engine/run.py's leaf is idempotent). inputs_out
         # captures the resolved sub-objects for reuse by the shadow pass below.
         cascade_inputs: dict = {}
-        cascade = compute_foresight_cascade(write_ledger=True, inputs_out=cascade_inputs)
+        cascade = compute_foresight_cascade(
+            write_ledger=True,
+            inputs_out=cascade_inputs,
+            policy_reg=policy_calendar,
+        )
     except Exception as e:  # noqa: BLE001
         log.warning("foresight cascade unavailable — skipping page: %s", e)
         return 0
@@ -197,6 +210,38 @@ def main() -> int:
         log.warning("thesis_monitor failed (non-fatal): %s", e)
         monitor = None
 
+    # W1a — Narrative-to-Money Divergence board (display-only; forward-graded ledger)
+    # Calls theme_activity fresh (cascade_inputs does not carry the activity payload).
+    # Builds baskets_payload from the engine.baskets compute — this is the same payload
+    # compute_radar uses in build_baskets.py, ensuring member coverage is consistent.
+    divergence_board = None
+    try:
+        from engine.theme_activity import compute_real_activity
+        from engine.foresight_divergence import compute_divergence_board, grade_divergence_ledger
+        from engine.baskets import compute_baskets as _compute_baskets
+        baskets_payload = _compute_baskets() or {}
+        activity = compute_real_activity(baskets_payload, news=True)
+        divergence_board = compute_divergence_board(cascade, activity, write_ledger=True)
+        if divergence_board:
+            log.info(
+                "divergence board: %d themes in cross-section, quadrants=%s",
+                divergence_board.get("n_cross_section", 0),
+                divergence_board.get("quadrant_counts", {}),
+            )
+        # Grade matured flags (silently non-fatal when ledger is too fresh)
+        try:
+            div_grade = grade_divergence_ledger()
+            if div_grade.get("n_graded_catchup", 0) or div_grade.get("n_graded_return", 0):
+                log.info(
+                    "divergence ledger grade: catchup=%s n=%d, return=%s n=%d",
+                    div_grade.get("catchup_hit_rate"), div_grade.get("n_graded_catchup", 0),
+                    div_grade.get("return_hit_rate"), div_grade.get("n_graded_return", 0),
+                )
+        except Exception as _ge:  # noqa: BLE001
+            log.debug("grade_divergence_ledger non-fatal: %s", _ge)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("divergence_board failed (non-fatal): %s", e)
+
     themes = cascade.get("themes", [])
     stage_counts = {s: 0 for s in STAGE_ORDER}
     for r in themes:
@@ -247,10 +292,12 @@ def main() -> int:
             emergence=emergence,
             subsectors=subsectors,
             convergence=convergence,
+            divergence_board=divergence_board,
             power=power,
             analyst=analyst,
             monitor=monitor,
             health=health,
+            policy_calendar=policy_calendar,
             asof=cascade.get("asof"),
             generated_utc=built,
             nav_prefix="",

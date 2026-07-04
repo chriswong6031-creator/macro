@@ -425,3 +425,90 @@ class TestNeverRaises:
              patch.object(cm, "load_tier_map", return_value={}):
             result = cm.compute()
         assert result.get("ok") is False   # empty sector_map → ok=False
+
+
+# ---------------------------------------------------------------------------
+# W1 S1 interim widening (§7) — already-priced unmapped names only
+# ---------------------------------------------------------------------------
+class TestS1InterimWidening:
+
+    def _base_map(self, monkeypatch, tmp_path):
+        import json
+        import engine.cohort_metrics as cm
+        sub = {"subsectors": [{"sector": "Technology",
+                               "members": [{"ticker": "AAPL"}, {"ticker": "MSFT"}]}]}
+        site = tmp_path / "site" / "marketdata"
+        site.mkdir(parents=True)
+        (site / "subsector_confluence.json").write_text(json.dumps(sub))
+        monkeypatch.setattr(cm, "_site_dir", lambda: tmp_path / "site")
+        return cm
+
+    def test_widening_adds_only_priced_names_with_vocab_translation(
+            self, monkeypatch, tmp_path):
+        cm = self._base_map(monkeypatch, tmp_path)
+        import engine.equity_factors as ef
+        closes = pd.DataFrame({"AAPL": [1.0], "MSFT": [1.0], "NEWP": [1.0]})
+        monkeypatch.setattr(ef, "_closes", lambda u="broad": closes)
+        monkeypatch.setattr(ef, "_names_sectors", lambda u="broad": {
+            "NEWP": ("New Priced Co", "Information Technology"),   # priced → added
+            "NOPX": ("No Price Co", "Materials"),                  # unpriced → skipped
+            "AAPL": ("Apple", "Information Technology"),           # mapped → keep-FIRST
+        })
+        m = cm.load_sector_map(widen=True)
+        assert m["NEWP"] == "Technology"        # GICS → cohort vocabulary
+        assert "NOPX" not in m                  # already-priced only
+        assert m["AAPL"] == "Technology"        # subsector mapping wins
+
+    def test_widen_false_is_baseline(self, monkeypatch, tmp_path):
+        cm = self._base_map(monkeypatch, tmp_path)
+        m = cm.load_sector_map(widen=False)
+        assert set(m) == {"AAPL", "MSFT"}
+
+    def test_unknown_tier_macd_turn_is_none_not_false(self, monkeypatch):
+        """Widened names have no subsector tier: the flag must stay None so the
+        per-metric coverage gate excludes them (False would depress
+        peer_macd_turn_pct across every widened cohort)."""
+        import engine.cohort_metrics as cm
+        idx = pd.bdate_range("2024-01-01", periods=300)
+        close = pd.Series(np.linspace(100, 120, 300), index=idx)
+        monkeypatch.setattr(cm, "_close", lambda t: close)
+        st = cm._member_state("WIDE", None)
+        assert st is not None
+        assert st["macd_turn"] is None
+        st2 = cm._member_state("KNOWN", "T4")   # known but not fresh → False
+        assert st2["macd_turn"] is False
+
+
+# ---------------------------------------------------------------------------
+# W1.5 (§7) — massive-store fallback with split guard
+# ---------------------------------------------------------------------------
+class TestW15MassiveFallback:
+
+    def _massive(self, tmp_path, monkeypatch, ticker, closes):
+        import engine.cohort_metrics as cm
+        from lib import config as _config
+        msd = tmp_path / "massive_stock_day"
+        msd.mkdir(parents=True, exist_ok=True)
+        idx = pd.bdate_range("2024-01-01", periods=len(closes))
+        pd.DataFrame({"close": closes}, index=idx).to_parquet(msd / f"{ticker}.parquet")
+        monkeypatch.setattr(_config, "data_dir", lambda: tmp_path)
+        # adjusted stores miss the name → fallback path exercises
+        monkeypatch.setattr(cm.basket_index, "_load_member_ohlcv", lambda t: None)
+        return cm
+
+    def test_fallback_serves_clean_series(self, tmp_path, monkeypatch):
+        cm = self._massive(tmp_path, monkeypatch, "NEWCO",
+                           list(np.linspace(100, 120, 320)))
+        c = cm._close("NEWCO")
+        assert c is not None and len(c) == 320
+
+    def test_split_guard_marks_uncovered(self, tmp_path, monkeypatch):
+        """A raw 4:1 split (unadjusted store) must yield None — honestly
+        uncovered, never a fabricated capitulation."""
+        closes = list(np.linspace(100, 110, 160)) + list(np.linspace(27.5, 30, 160))
+        cm = self._massive(tmp_path, monkeypatch, "SPLITCO", closes)
+        assert cm._close("SPLITCO") is None
+
+    def test_absent_everywhere_is_none(self, tmp_path, monkeypatch):
+        cm = self._massive(tmp_path, monkeypatch, "OTHER", [100.0] * 10)
+        assert cm._close("GHOST") is None

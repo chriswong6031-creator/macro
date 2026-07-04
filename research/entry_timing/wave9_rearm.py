@@ -78,8 +78,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-warnings.filterwarnings("ignore")
-logging.disable(logging.CRITICAL)
+if __name__ == "__main__":
+    # CLI-only silencers.  logging.disable() is PROCESS-GLOBAL state (and the warnings
+    # filter list is too): at module level they leak out of a bare import and mute every
+    # logger/warning for the rest of the pytest run — breaking any later test that
+    # asserts on emitted log records (walk_forward.py idiom).
+    warnings.filterwarnings("ignore")
+    logging.disable(logging.CRITICAL)
 
 # ── path bootstrap ─────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[2]

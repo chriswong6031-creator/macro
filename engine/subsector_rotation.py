@@ -23,9 +23,25 @@ Design
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Mapping, Sequence
 
 import numpy as np
+
+
+def _load_names_zh() -> dict:
+    """Chinese translations for theme / subsector display names (i18n). Optional —
+    a missing file just leaves names in English (degrade-never-raise)."""
+    try:
+        p = Path(__file__).resolve().parent.parent / "data" / "themes_heatmap" / "names_zh.json"
+        d = json.loads(p.read_text(encoding="utf-8"))
+        return {"themes": d.get("themes") or {}, "subsectors": d.get("subsectors") or {}}
+    except Exception:  # noqa: BLE001
+        return {"themes": {}, "subsectors": {}}
+
+
+_NAMES_ZH = _load_names_zh()
 
 # Finviz snapshot horizons (calendar MTD/YTD kept for display; the rolling ones
 # drive momentum). Approx weeks per window normalise returns to a weekly pace.
@@ -151,6 +167,8 @@ def compute_rotation(
         mem_rows.sort(key=lambda r: (r["1M"] if r["1M"] is not None else -1e9), reverse=True)
         subsectors.append({
             "key": key, "name": m["name"], "theme": m["theme"],
+            "name_zh": _NAMES_ZH["subsectors"].get(m["name"], m["name"]),
+            "theme_zh": _NAMES_ZH["themes"].get(m["theme"], m["theme"]),
             "n_members": len(m["members"]),
             "members": mem_rows[:top_members],
             **met,
@@ -181,8 +199,10 @@ def compute_rotation(
         met = theme_metrics[theme]
         ranked = sorted(sub_by_theme[theme], key=lambda s: s["emerging_score"], reverse=True)
         themes.append({
-            "theme": theme, "n_subs": len(subs),
+            "theme": theme, "theme_zh": _NAMES_ZH["themes"].get(theme, theme),
+            "n_subs": len(subs),
             "top_sub": ranked[0]["name"] if ranked else None,
+            "top_sub_zh": _NAMES_ZH["subsectors"].get(ranked[0]["name"], ranked[0]["name"]) if ranked else None,
             **met,
         })
     themes.sort(key=lambda t: t["emerging_score"], reverse=True)

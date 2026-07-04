@@ -401,20 +401,25 @@ def _mtf_reasons(mtf: dict | None, tape: dict | None) -> list[str]:
 
 
 def _long_sign(mtf: dict | None, fp: dict | None = None) -> int | None:
-    """Sign of the basket's long-term trend: the mtf consolidated-candle reading when present
-    (US), else the region-available 200d-trend proxy `fp['long_sign']` (CN/HK/CA, where the
-    candle store is US-only and mtf is empty). None when neither resolves."""
-    ls = ((mtf or {}).get("confluence") or {}).get("long_sign")
-    if ls is None and fp is not None:
-        ls = fp.get("long_sign")
+    """Sign of the basket's long-term trend. The price-vs-200d proxy `fp['long_sign']` is
+    PRIMARY — it is the definition the phase-0 drawdown gate was actually validated on
+    (calibrate_baskets: 'trend gate stays the price 200d gate'). The mtf confluence
+    long_sign is the fallback only: it blends the cycle-shape governor (regime /
+    translation / failed-cycle), which can read -1 on a basket trading ABOVE a rising
+    200d with a fresh monthly cross-up (the us_sector_health mislabel). None when
+    neither resolves."""
+    ls = (fp or {}).get("long_sign")
+    if ls is None:
+        ls = ((mtf or {}).get("confluence") or {}).get("long_sign")
     return ls
 
 
 def _long_below_trend(mtf: dict | None, fp: dict | None = None) -> bool:
-    """The validated drawdown-control gate: is the basket BELOW its long-term trend (monthly +
-    cycle governor pointing down)?  Phase-0: below-trend baskets drew ~1.5-2pp deeper forward
-    drawdowns at equal forward return — so we never recommend ENTER/ACCUMULATE against it.
-    Uses the 200d-trend proxy abroad so the brake is no longer BLIND for non-US regions."""
+    """The validated drawdown-control gate: is the basket BELOW its long-term trend?
+    Phase-0: below-trend baskets drew ~1.5-2pp deeper forward drawdowns at equal forward
+    return — so we never recommend ENTER/ACCUMULATE against it. The gate now reads the
+    price-vs-200d proxy first in EVERY region (the validated definition), falling back to
+    the mtf confluence governor only when the proxy is unavailable."""
     ls = _long_sign(mtf, fp)
     return ls is not None and ls < 0
 
@@ -712,21 +717,24 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         fp5 = group_flow.fingerprint_at(prep, i5, cfg) if prep else None
         if fp is None:
             continue
-        # PRICE-ONLY region proxies for the mtf-less / macro-less non-US regions (see EXT_HI doc):
-        # an ABSOLUTE stretch (vs the basket's own history) for the extension gate, and a 200d
-        # trend sign for the drawdown gate. US keeps its real mtf candle + rs_pctile behaviour.
+        # PRICE-ONLY proxies (see EXT_HI doc): an ABSOLUTE stretch (vs the basket's own
+        # history) for the non-US extension gate (US keeps its validated rs_pctile), and a
+        # 200d trend sign for the drawdown gate — ALL regions, because the 200d price gate
+        # is the definition the phase-0 drawdown channel was validated on; US previously
+        # leaned on the mtf confluence long_sign, whose cycle-shape governor mislabels a
+        # basket above a rising 200d with a fresh monthly cross-up (us_sector_health).
+        ld = lvl.dropna()
         if region != "us":
-            ld = lvl.dropna()
             ma50 = ld.rolling(50, min_periods=25).mean()
             stretch = ld / ma50 - 1.0
             sh = stretch.iloc[-252:].dropna() if stretch.notna().sum() > 60 else stretch.dropna()
             if len(sh) >= 30 and sh.std() and pd.notna(stretch.iloc[-1]):
                 fp["ext_abs"] = float((stretch.iloc[-1] - sh.mean()) / sh.std())
-            m2 = ld.rolling(200, min_periods=100).mean().dropna()
-            if len(m2) > 22 and pd.notna(ld.iloc[-1]):
-                above = bool(ld.iloc[-1] > m2.iloc[-1])
-                slope = float(m2.iloc[-1] - m2.iloc[-22])
-                fp["long_sign"] = 1 if (above and slope > 0) else (-1 if ((not above) and slope <= 0) else 0)
+        m2 = ld.rolling(200, min_periods=100).mean().dropna()
+        if len(m2) > 22 and pd.notna(ld.iloc[-1]):
+            above = bool(ld.iloc[-1] > m2.iloc[-1])
+            slope = float(m2.iloc[-1] - m2.iloc[-22])
+            fp["long_sign"] = 1 if (above and slope > 0) else (-1 if ((not above) and slope <= 0) else 0)
         lead = group_flow._leadership(mc_closes, {}, nm)
         perf = _perf(lvl, bench, idx, ytd_anchor, mtd_anchor)
 
@@ -791,6 +799,23 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         # intra-basket breadth divergence — mc_closes is additive; None-safe in theme_textures)
         textures = basket_score.theme_textures(lvl, fp, fp5, crowd, breadth_d, perf,
                                                mc_closes=mc_closes)
+        # DON'T-CHASE demotion (continuation VERB only, non-US) — twin of the regime_demoted
+        # stand-down above. A DOMINANT leader that is simultaneously (a) OVERBOUGHT, (b)
+        # DECELERATING (its 3-day member impulse leg has turned negative — more names rolling
+        # over than advancing), AND (c) already within a session of the validated rollover guard
+        # (flip_distance route_a armed) is leadership being DISTRIBUTED at the top, not a trend to
+        # add to. Soften ACCUMULATE -> HOLD ("keep, don't chase") WITHOUT fading the DOMINANT
+        # label or crossing to the reduce/avoid side. The continuation verbs carry NO measured
+        # forward edge (rank-IC~0, see _signal_strength), so this only makes the verb honest — it
+        # never touches the validated fading/deteriorating risk thresholds, and the US rs_pctile
+        # path (ext_abs is None) is left byte-identical. Fix: A-share 'cn_semis' read
+        # DOMINANT/ACCUMULATE ("room to add") while overbought, impulse net -6, ~1 session from FADING.
+        chase_demoted = False
+        if (reco == "accumulate" and label == "dominant" and fp.get("ext_abs") is not None
+                and impulse is not None and impulse < 0
+                and (textures.get("overbought") or {}).get("band") in ("overbought", "extreme")
+                and flip_dist.get("route_a_bps") is not None):
+            reco, chase_demoted = "hold", True
         # achieved-lead-time forward log for the divergence texture: stamp elevated/high
         # reads keyed (date, basket, region) — keep-first, so intraday rebuilds can't drift
         # the stamp — so a later grader can measure the lead vs the fading/deteriorating
@@ -829,6 +854,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "reco": reco, "reco_en": RECOS[reco][0], "reco_zh": RECOS[reco][1],
             "reco_why_en": _RECO_WHY[reco][0], "reco_why_zh": _RECO_WHY[reco][1],
             "regime_demoted": regime_demoted,
+            "chase_demoted": chase_demoted,
             "reasons": reasons,
             "signal_strength": _signal_strength(label, cal),
             "flip_distance": flip_dist,

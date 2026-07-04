@@ -137,6 +137,37 @@ def _log_review(root, record: dict) -> None:
         pass
 
 
+def _append_governance_a6(root, decision: str, n_graded: int, base_rate: float,
+                           bt_cur: dict, bt_cand: dict) -> None:
+    """Append a6_auto_apply governance event. Fail-open — never raises into the build."""
+    try:
+        from engine.neuralweb.governance import append_event  # type: ignore[import]
+        append_event(
+            "a6_auto_apply",
+            "data/market_state/calibration.json",
+            article=6,
+            authored_by="market_state_tune",
+            evidence={
+                "n_graded": n_graded,
+                "base_rate_dd5": base_rate,
+                "do_no_harm_evidence": {
+                    "base_f1": bt_cur.get("f1"),
+                    "proposed_f1": bt_cand.get("f1"),
+                    "base_fp": bt_cur.get("fp"),
+                    "proposed_fp": bt_cand.get("fp"),
+                    "improves": (bt_cand.get("f1", 0) >= bt_cur.get("f1", 0)
+                                 and bt_cand.get("fp", 0) <= bt_cur.get("fp", 0)),
+                },
+            },
+            after={"action": decision, "lane": "i", "engine": "market_state_tune",
+                   "calibration_ref": "data/market_state/calibration.json"},
+            note="ratified standing A6 lane-i; quarterly re-audit required",
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("market_state_tune: governance append failed: %s", exc)
+
+
 def tune(root=None) -> dict:
     """Run one bounded calibration step. Returns a status dict; never raises into the build."""
     try:
@@ -161,6 +192,8 @@ def tune(root=None) -> dict:
                "corr_lift": corr_lift, "from": current["weights"], "to": cand_w,
                "backtest": {"current": bt_cur, "candidate": bt_cand}}
         _log_review(root, rec)
+        # A6 lane-(i) governance event — ratified standing approval; fail-open
+        _append_governance_a6(root, decision, len(rows), base_rate, bt_cur, bt_cand)
         return {"status": decision, "n_graded": len(rows), "weights": cand_w,
                 "backtest": rec["backtest"], "corr_lift": corr_lift}
     except Exception as e:  # noqa: BLE001 — never fatal

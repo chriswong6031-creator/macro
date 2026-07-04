@@ -531,6 +531,10 @@
       "en": "Cycle read is Topping; the daily timing ladder is hunting a short-term low. Any buy here is countertrend only.",
       "zh": "周期读数为做顶中；日线时点阶梯正在寻找短线低点。此处任何买入仅属逆势短线。"
     },
+    "extended_uptrend": {
+      "en": "Position is stretched above trend, but the 200-day trend and momentum are still up — a late-stage continuation, not a fresh entry. Don't chase; this is NOT a topping or countertrend signal.",
+      "zh": "位置已高于趋势并偏拉伸，但200日趋势与动量仍向上——属晚段延续，而非新入场点。不宜追高；这并非见顶或逆势信号。"
+    },
     "decline_recovery": {
       "en": "The broader phase suggests recovery, but the daily cycle has failed. Phase confidence is low; treat as bottoming rather than confirmed entry.",
       "zh": "更大级别阶段显示复苏，但日线周期已失败。阶段置信度低；视为筑底而非确认入场。"

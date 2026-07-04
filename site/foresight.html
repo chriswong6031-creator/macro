@@ -273,6 +273,30 @@
                background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--panel)); }
   .fx-rsub { font-weight:700; } .fx-rsec { font-size:10px; color:var(--muted); }
   .fx-rscar { font-weight:800; color:var(--g-hot); cursor:help; }
+  /* W1a — Narrative-to-Money Divergence board */
+  .fx-div-board { border:1px solid var(--line); border-left:5px solid var(--info); border-radius:14px; padding:16px 18px 12px; margin:18px 0; background:var(--panel); }
+  .fx-div-h { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .fx-div-t { font-size:14.5px; font-weight:800; color:var(--text); cursor:help; }
+  .fx-div-sub { font-size:11.5px; color:var(--muted); }
+  .fx-div-thin { color:var(--warn); font-size:12.5px; font-weight:700; padding:8px 0; }
+  .fx-div-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(175px,1fr)); gap:10px; margin:8px 0 12px; }
+  .fx-div-card { border:1px solid var(--line); border-left:4px solid var(--c,var(--line)); border-radius:10px; padding:10px 11px 8px; background:color-mix(in srgb,var(--c,var(--panel)) 7%,var(--panel)); }
+  .q-hidden_opportunity { --c:var(--up); }
+  .q-confirmed          { --c:var(--info); }
+  .q-hype_risk          { --c:var(--down); }
+  .q-ignore             { opacity:0.55; }
+  .fx-div-name { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px; }
+  .fx-div-quad { font-size:12px; font-weight:800; color:var(--c,var(--text)); margin-bottom:6px; }
+  .fx-div-expired { font-size:10px; font-weight:800; color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,transparent); border-radius:4px; padding:2px 5px; margin-bottom:5px; display:inline-block; }
+  .fx-div-bars { display:flex; flex-direction:column; gap:3px; margin:4px 0; }
+  .fx-div-bar-row { display:flex; align-items:center; gap:5px; font-size:9.5px; }
+  .fx-div-bar-lbl { width:26px; color:var(--muted); font-weight:700; flex-shrink:0; }
+  .fx-div-bar-wrap { flex:1; height:5px; background:color-mix(in srgb,var(--line) 60%,transparent); border-radius:3px; overflow:hidden; }
+  .fx-div-bar-n { display:block; height:100%; background:var(--warn); border-radius:3px; }
+  .fx-div-bar-m { display:block; height:100%; background:var(--up); border-radius:3px; }
+  .fx-div-bar-val { width:26px; color:var(--muted); font-size:9.5px; text-align:right; flex-shrink:0; }
+  .fx-div-legs { font-size:9.5px; color:var(--muted); margin-top:5px; }
+  .fx-div-foot { font-size:10.5px; color:var(--muted); line-height:1.55; margin-top:8px; border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); padding-top:7px; }
 
 </style>
 
@@ -321,7 +345,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
-            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
             <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
           </div>
         </div>
@@ -336,13 +360,14 @@
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
-        <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
             <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
           </div>
         </div>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -356,6 +381,7 @@
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
       </div>
@@ -561,7 +587,7 @@
     <div class="fx-eyebrow">🔮 <span class="l-en">Thematic Foresight Desk</span><span class="l-zh">主题前瞻台</span></div>
     <h1><span class="l-en">Catch the theme before the revisions explode</span><span class="l-zh">在盈利预期爆发前抓住主题</span></h1>
     <p class="fx-sub"><span class="l-en">Anticipate themes at the <b>precipice of induction</b> and convert them to calls <b>before</b> estimate revisions broaden. Physical-supply tightness (T1) <b>leads</b> the revision; customer capex (T2) and revision-breadth (T4) <b>confirm</b>; the buy is deferred to a dislocation. Worked case: the June-2024 13D HBM/DRAM call — <i>sold out, concentrated, underpriced</i>, right and ~9 months early.</span><span class="l-zh">在主题处于<b>诱发临界点</b>时提前布局，在盈利预期普遍上修<b>之前</b>转化为决策。物理供给紧张（T1）<b>领先</b>预期修正；客户资本开支（T2）与预期上修广度（T4）<b>确认</b>；买点交由错位回调触发。范例：2024年6月 13D 的 HBM/DRAM 判断——售罄、集中、被低估，正确且早约9个月。</span></p>
-    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-07-01 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-07-03 06:58 UTC</div>
+    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-07-04 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-07-04 07:00 UTC</div>
   </header>
 
   
@@ -588,8 +614,8 @@
       <span class="fx-hchip hl-PARTIAL" title="7/18 themes have a glut read">
         <span class="hdot"></span>glut <span style="opacity:.7">7/18</span>
       </span>
-      <span class="fx-hchip hl-LIVE" title="power scarcity live: band=LOOSE">
-        <span class="hdot"></span>power <span style="opacity:.7">LOOSE</span>
+      <span class="fx-hchip hl-LIVE" title="power scarcity live: band=NEUTRAL">
+        <span class="hdot"></span>power <span style="opacity:.7">NEUTRAL</span>
       </span>
       <span class="fx-hchip hl-PARTIAL" title="8/18 themes have an alt-data confirmer read">
         <span class="hdot"></span>confirmers <span style="opacity:.7">8/18</span>
@@ -597,11 +623,11 @@
       <span class="fx-hchip hl-LIVE" title="LLM analyst read present">
         <span class="hdot"></span>analyst
       </span>
-      <span class="fx-hchip hl-LIVE" title="monitor watching 1 active thesis/theses">
-        <span class="hdot"></span>monitor <span style="opacity:.7">1 theses</span>
+      <span class="fx-hchip hl-LIVE" title="monitor watching 8 active thesis/theses">
+        <span class="hdot"></span>monitor <span style="opacity:.7">8 theses</span>
       </span>
-      <span class="fx-hchip hl-LIVE" title="18 cascade flag rows logged (forward-grading accruing)">
-        <span class="hdot"></span>grading <span style="opacity:.7">18 rows</span>
+      <span class="fx-hchip hl-LIVE" title="34 cascade flag rows logged (forward-grading accruing)">
+        <span class="hdot"></span>grading <span style="opacity:.7">34 rows</span>
       </span>
       
     </div>
@@ -625,10 +651,10 @@
     <div class="fx-web-grid">
       
       <div class="fx-hot stg-BROADENING (text)">
-        <div class="fx-hot-top"><span class="fx-hot-nm">Defense &amp; Aerospace</span><span class="fx-hot-heat">55</span></div>
+        <div class="fx-hot-top"><span class="fx-hot-nm">Defense &amp; Aerospace</span><span class="fx-hot-heat">47</span></div>
         <div class="fx-hot-sig"><span class="fx-sig">altdata</span><span class="fx-sig">edgar scarcity</span></div>
         <div class="fx-hot-meta">
-          2/3 <span class="l-en">sources lit</span><span class="l-zh">数据源点亮</span> · <span class="l-en">earliness</span><span class="l-zh">早期度</span> 82%
+          2/3 <span class="l-en">sources lit</span><span class="l-zh">数据源点亮</span> · <span class="l-en">earliness</span><span class="l-zh">早期度</span> 71%
         </div>
       </div>
       
@@ -644,8 +670,8 @@
       <span class="fx-mon-counts">
         
         
-        <span class="fx-mon-ok">1 <span class="l-en">intact</span><span class="l-zh">稳定</span></span>
-      </span><span class="fx-mon-src">0 <span class="l-en">det</span><span class="l-zh">确定性</span> · 1 <span class="l-en">LLM</span><span class="l-zh">LLM</span></span>
+        <span class="fx-mon-ok">8 <span class="l-en">intact</span><span class="l-zh">稳定</span></span>
+      </span><span class="fx-mon-src">8 <span class="l-en">det</span><span class="l-zh">确定性</span> · 2 <span class="l-en">LLM</span><span class="l-zh">LLM</span></span>
     </div>
     
 
@@ -654,17 +680,273 @@
     
     <div class="fx-ai">
       <div class="fx-ai-h">🧠 <span class="l-en">AI analyst read</span><span class="l-zh">AI 分析师解读</span></div>
-      <div class="fx-ai-regime">Only one theme, defense/aerospace, shows an early alignment of independent surfaces: altdata government award acceleration and EDGAR subsector scarcity, while revisions remain highly un-priced. All other themes either lack converging surfaces or are too late in the revision cycle.</div>
+      <div class="fx-ai-regime">The board shows two early-stage convergences: supply-tight language in filings aligns with independent government-award acceleration (defense) and accelerating customer capex (data center power), while analyst revisions have not fully priced the bottleneck — a window into pre-revision supply constraints.</div>
       
       <div class="fx-ai-th">
-        <div class="fx-ai-mech"><b>Defense Aerospace</b> <span class="fx-ai-conf c-low">low</span> — Government award acceleration and patent clusters (altdata) signal rising contract momentum and innovation, while EDGAR scarcity indicates a limited pool of listed companies in this niche. As contracts ramp, the spoils concentrate among fewer publicly traded names, and the street has not yet begun to revise estimates upward—creating an early-stage supply/demand imbalance for exposure before earnings materialize.</div>
-        <div class="fx-ai-no"><span class="l-en">non-obvious</span><span class="l-zh">非显性</span>: The award acceleration (often lumpy and easy to dismiss) combined with subsector scarcity reveals a pre-revision scarcity premium: the investable universe is shrinking relative to growing contract flow, compressing future [forecast removed] into a tight set of tickers before analysts can adjust their models.</div>
-        <div class="fx-ai-kill"><span class="l-en">kills if</span><span class="l-zh">失效条件</span>: <span class="fx-kc">altdata gov-award acceleration decelerates or turns neutral</span><span class="fx-kc">EDGAR scarcity signal moves to NEUTRAL (filings indicate new public entrants or major secondary offerings)</span><span class="fx-kc">revision breadth for defense/aerospace fails to broaden further and begins to roll over</span><span class="fx-kc">physical bottleneck fails to confirm from TIGHT (text) to numeric tightness within two quarters</span></div><div class="fx-ai-cit"><span class="l-en">Citation grounding</span><span class="l-zh">引用核实</span>: 0/2</div>
+        <div class="fx-ai-mech"><b>Defense Aerospace</b> <span class="fx-ai-conf c-low">low</span> — Language-based supply tightness (edgar_scarcity) aligns with alternative data showing government award acceleration and patent clustering, suggesting the defense sector is entering a contracting cycle where awards are ramping and supply chains are tightening before street revisions fully reflect the revenue impact.</div>
+        <div class="fx-ai-no"><span class="l-en">non-obvious</span><span class="l-zh">非显性</span>: The cross-surface pattern is not just contract wins but a simultaneous patent cluster (AXON) while filings signal supply tightness — R&amp;D activity is spiking just as awards accelerate, implying product cycles are shifting in response to government demand, a signal easily lost in the noise of isolated contract announcements.</div>
+        <div class="fx-ai-kill"><span class="l-en">kills if</span><span class="l-zh">失效条件</span>: <span class="fx-kc">Gov-award acceleration disappears (altdata goes cold)</span><span class="fx-kc">Bottleneck language loosens to NEUTRAL</span><span class="fx-kc">Revisions fail to broaden beyond current breadth (0.374)</span><span class="fx-kc">No numeric physical confirmation (e.g., lead times, backlog) emerges</span></div><div class="fx-ai-cit"><span class="l-en">Citation grounding</span><span class="l-zh">引用核实</span>: 0/2</div>
+      </div>
+      
+      <div class="fx-ai-th">
+        <div class="fx-ai-mech"><b>Data Center Power</b> <span class="fx-ai-conf c-low">low</span> — Accelerating customer capex (independent demand surface) coincides with corporate filings that signal supply tightness, while management guidance remains neutral. This suggests that the demand pipeline is pulling supply tight, but conservative guidance has not yet priced the resulting pricing power or volume, leaving street revisions still early.</div>
+        <div class="fx-ai-no"><span class="l-en">non-obvious</span><span class="l-zh">非显性</span>: Demand acceleration (+[forecast removed] YoY capex) is a hard number, yet the supply-tight language has not triggered a guidance raise — a classic lag pattern where companies under-react to a demand inflection. Most observers see the capex growth, but the simultaneous supply-language tightening reveals a capacity bottleneck that is not yet reflected in forward estimates, making the revision spread a stealthy signal.</div>
+        <div class="fx-ai-kill"><span class="l-en">kills if</span><span class="l-zh">失效条件</span>: <span class="fx-kc">Customer capex decelerates</span><span class="fx-kc">Bottleneck language loosens to NEUTRAL</span><span class="fx-kc">Guidance remains NEUTRAL or turns to cuts</span><span class="fx-kc">Revisions stall or roll over</span></div><div class="fx-ai-cit"><span class="l-en">Citation grounding</span><span class="l-zh">引用核实</span>: 0/2</div>
       </div>
       
       <div class="fx-ai-foot">An AI reading of the desk&#39;s OWN deterministic convergence — falsifiable and forward-graded, never a price forecast. <span class="l-en">The deterministic monitor re-checks each thesis against its convergence every build and flags BROKEN before the tape confirms. The model is FORBIDDEN to forecast a price.</span><span class="l-zh">确定性监视器每次构建都依据其共振重新核验每个论点，并在行情确认前标记失效。模型被禁止预测价格。</span></div>
     </div>
     
+  </div>
+  
+
+  
+  
+  <div class="fx-div-board">
+    <div class="fx-div-h">
+      <span class="fx-div-t" data-tip-en="Per-theme rank-percentile of narrative legs (news velocity + EDGAR language) vs money legs (federal spend + revision breadth). HIDDEN-OPPORTUNITY = money rising, narrative quiet — the logged front-run claim." data-tip-zh="每主题叙事腿（新闻速度+EDGAR语言）与资金腿（联邦支出+修正广度）的百分位排名。隐藏机会=资金上升、叙事平静——已记录的前沿主张。"><span class="l-en">Narrative ↔ Money Divergence</span><span class="l-zh">叙事 ↔ 资金背离</span></span>
+      <span class="fx-div-sub"><span class="l-en">percentile-rank each side cross-sectionally</span><span class="l-zh">各维度跨主题百分位排名</span> · 18 <span class="l-en">themes in cross-section</span><span class="l-zh">主题入截面</span></span>
+    </div>
+    
+    <div class="fx-div-grid">
+      
+      <div class="fx-div-card q-hidden_opportunity">
+        <div class="fx-div-name">Robotics &amp; Automation</div>
+        <div class="fx-div-quad">HIDDEN OPPORTUNITY</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:18%"></span></span><span class="fx-div-bar-val">18%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:100%"></span></span><span class="fx-div-bar-val">100%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 3 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-hidden_opportunity">
+        <div class="fx-div-name">Cybersecurity</div>
+        <div class="fx-div-quad">HIDDEN OPPORTUNITY</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:18%"></span></span><span class="fx-div-bar-val">18%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:82%"></span></span><span class="fx-div-bar-val">82%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 3 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-confirmed">
+        <div class="fx-div-name">Space &amp; Satellites</div>
+        <div class="fx-div-quad">CONFIRMED</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:62%"></span></span><span class="fx-div-bar-val">62%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:94%"></span></span><span class="fx-div-bar-val">94%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-confirmed">
+        <div class="fx-div-name">Rare Earth &amp; Critical Minerals</div>
+        <div class="fx-div-quad">CONFIRMED</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:62%"></span></span><span class="fx-div-bar-val">62%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:88%"></span></span><span class="fx-div-bar-val">88%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-confirmed">
+        <div class="fx-div-name">Grid &amp; Electrification</div>
+        <div class="fx-div-quad">CONFIRMED</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:79%"></span></span><span class="fx-div-bar-val">79%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:74%"></span></span><span class="fx-div-bar-val">74%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-confirmed">
+        <div class="fx-div-name">Defense &amp; Aerospace</div>
+        <div class="fx-div-quad">CONFIRMED</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:94%"></span></span><span class="fx-div-bar-val">94%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:74%"></span></span><span class="fx-div-bar-val">74%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-confirmed">
+        <div class="fx-div-name">Data Center Power &amp; Cooling</div>
+        <div class="fx-div-quad">CONFIRMED</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:79%"></span></span><span class="fx-div-bar-val">79%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:65%"></span></span><span class="fx-div-bar-val">65%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 3 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-hype_risk">
+        <div class="fx-div-name">Agriculture &amp; Fertilizer</div>
+        <div class="fx-div-quad">HYPE RISK</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:94%"></span></span><span class="fx-div-bar-val">94%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:47%"></span></span><span class="fx-div-bar-val">47%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-hype_risk">
+        <div class="fx-div-name">Nuclear &amp; SMR Power</div>
+        <div class="fx-div-quad">HYPE RISK</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:71%"></span></span><span class="fx-div-bar-val">71%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:35%"></span></span><span class="fx-div-bar-val">35%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">3 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 3 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-hype_risk">
+        <div class="fx-div-name">Copper, Steel &amp; Electrification</div>
+        <div class="fx-div-quad">HYPE RISK</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:94%"></span></span><span class="fx-div-bar-val">94%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:24%"></span></span><span class="fx-div-bar-val">24%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-ignore">
+        <div class="fx-div-name">AI Semiconductors</div>
+        <div class="fx-div-quad">IGNORE</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:53%"></span></span><span class="fx-div-bar-val">53%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:59%"></span></span><span class="fx-div-bar-val">59%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">3 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 3 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-ignore">
+        <div class="fx-div-name">Memory, HBM &amp; Storage</div>
+        <div class="fx-div-quad">IGNORE</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:18%"></span></span><span class="fx-div-bar-val">18%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:53%"></span></span><span class="fx-div-bar-val">53%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 3 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-ignore">
+        <div class="fx-div-name">Semiconductor Equipment (WFE)</div>
+        <div class="fx-div-quad">IGNORE</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:41%"></span></span><span class="fx-div-bar-val">41%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:41%"></span></span><span class="fx-div-bar-val">41%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">3 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 3 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-ignore">
+        <div class="fx-div-name">Diagnostics &amp; Life-Science Tools</div>
+        <div class="fx-div-quad">IGNORE</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:18%"></span></span><span class="fx-div-bar-val">18%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:29%"></span></span><span class="fx-div-bar-val">29%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-ignore">
+        <div class="fx-div-name">Medical Devices</div>
+        <div class="fx-div-quad">IGNORE</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:47%"></span></span><span class="fx-div-bar-val">47%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:18%"></span></span><span class="fx-div-bar-val">18%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-ignore">
+        <div class="fx-div-name">GLP-1 / Obesity</div>
+        <div class="fx-div-quad">IGNORE</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:18%"></span></span><span class="fx-div-bar-val">18%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:12%"></span></span><span class="fx-div-bar-val">12%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-ignore">
+        <div class="fx-div-name">Fintech &amp; Payments</div>
+        <div class="fx-div-quad">IGNORE</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:18%"></span></span><span class="fx-div-bar-val">18%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:6%"></span></span><span class="fx-div-bar-val">6%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+      <div class="fx-div-card q-ignore">
+        <div class="fx-div-name">Solar</div>
+        <div class="fx-div-quad">IGNORE</div>
+        
+        
+        <div class="fx-div-bars">
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">narr</span><span class="l-zh">叙事</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:18%"></span></span><span class="fx-div-bar-val">18%</span></div>
+          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl"><span class="l-en">$</span><span class="l-zh">资金</span></span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:0%"></span></span><span class="fx-div-bar-val">0%</span></div>
+        </div>
+        
+        <div class="fx-div-legs">2 <span class="l-en">narr leg(s)</span><span class="l-zh">叙事腿</span> · 2 <span class="l-en">$ leg(s)</span><span class="l-zh">资金腿</span></div>
+      </div>
+      
+    </div>
+    
+    <div class="fx-div-foot"><span class="l-en">Display-only. Quadrant thresholds (0.60/0.60) PROVISIONAL — pending forward-graded ledger significance. HIDDEN-OPPORTUNITY = money rising, narrative quiet — the logged claim accrues to data/foresight/divergence_log.jsonl and grades at 60d (catch-up) + 90d (SPY-excess). CONFIRMED transition = narrative catches up = exit-of-earliness event.</span><span class="l-zh">仅供展示。象限阈值（0.60/0.60）暂定——待前向评分账本显著性确认。隐藏机会=资金上升、叙事平静——记录的主张累积至divergence_log.jsonl并在60天（追赶）+90天（超额收益）评分。确认转换=叙事跟上=早期优势结束事件。</span></div>
   </div>
   
 
@@ -680,7 +962,7 @@
     
     <div class="fx-bn" style="--c:var(--muted)">
       <div class="k"><span class="l-en">Power-cluster physical (electricity scarcity)</span><span class="l-zh">电力集群物理（电力短缺）</span></div>
-      <div class="v">LOOSE · -0.69</div>
+      <div class="v">NEUTRAL · -0.19</div>
       <div class="d"><span class="l-en">Data-center / grid / nuclear / solar — demand growth + utility capacity-utilization + electricity price</span><span class="l-zh">数据中心/电网/核电/光伏——需求增长＋公用事业产能利用率＋电价</span></div>
     </div>
     
@@ -774,7 +1056,7 @@
       </div>
     </div>
 
-    <p class="why">fingerprint-only (annual member filings) TIGHT while revisions not yet firing — awaiting real-time physical confirmation</p>
+    <p class="why">fingerprint-only (annual member filings) TIGHT while revisions not yet firing — awaiting real-time physical confirmation · policy pipeline: comment close in 2d (2026-07-06); 2 proposed rule(s) last 60d; 35 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     <span class="fx-conf" title="">🛰 1 activist 13d</span>
     
@@ -848,7 +1130,7 @@
     <div class="fx-strip">
       <div class="fx-leg warn">
         <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-        <div class="lv">TIGHT (text) <span class="fx-text-only" title="<span class="l-en">text-only — awaiting numeric physical confirmation</span><span class="l-zh">纯文本信号 — 待实物数据确认</span>"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
+        <div class="lv">TIGHT (text) <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
         <div class="ld"><span class="l-en">provisional — shadow-calibration pending</span><span class="l-zh">暂定 — 影子校准待完成</span></div>
       </div>
       <div class="fx-leg mute">
@@ -868,7 +1150,7 @@
       </div>
     </div>
 
-    <p class="why">language signal TIGHT while revisions not yet firing — text-only; awaiting numeric physical confirmation</p>
+    <p class="why">language signal TIGHT while revisions not yet firing — text-only; awaiting numeric physical confirmation · policy pipeline: comment close in 2d (2026-07-06); 11 proposed rule(s) last 60d; 22 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     
     
@@ -884,7 +1166,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude 0.5 · acceleration 0.95 · bottleneck None · pricing_power 0.97 · underpricing 0.29 · purity 0.45 · timing 0.4">
+            title="magnitude 0.5 · acceleration 0.68 · bottleneck None · pricing_power 0.97 · underpricing 0.59 · purity 0.45 · timing 0.4">
         <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Data Center Power &amp; Cooling</span>
@@ -895,7 +1177,7 @@
     <div class="fx-strip">
       <div class="fx-leg warn">
         <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-        <div class="lv">TIGHT (text) <span class="fx-text-only" title="<span class="l-en">text-only — awaiting numeric physical confirmation</span><span class="l-zh">纯文本信号 — 待实物数据确认</span>"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
+        <div class="lv">TIGHT (text) <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
         <div class="ld"><span class="l-en">tightness</span><span class="l-zh">紧张度</span> +0.95</div>
       </div>
       <div class="fx-leg hot">
@@ -915,7 +1197,7 @@
       </div>
     </div>
 
-    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · customer capex accelerating (+69% YoY) confirms demand</p>
+    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · customer capex accelerating (+69% YoY) confirms demand · policy pipeline: comment close in 9d (2026-07-13); 9 proposed rule(s) last 60d; 6 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     
     
@@ -931,7 +1213,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude 1.0 · acceleration 0.95 · bottleneck None · pricing_power 0.94 · underpricing 0.41 · purity 0.45 · timing 0.4">
+            title="magnitude 1.0 · acceleration 0.95 · bottleneck None · pricing_power 0.94 · underpricing 0.35 · purity 0.45 · timing 0.4">
         <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Grid &amp; Electrification</span>
@@ -942,7 +1224,7 @@
     <div class="fx-strip">
       <div class="fx-leg warn">
         <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-        <div class="lv">TIGHT (text) <span class="fx-text-only" title="<span class="l-en">text-only — awaiting numeric physical confirmation</span><span class="l-zh">纯文本信号 — 待实物数据确认</span>"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
+        <div class="lv">TIGHT (text) <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
         <div class="ld"><span class="l-en">tightness</span><span class="l-zh">紧张度</span> +0.87</div>
       </div>
       <div class="fx-leg hot">
@@ -957,12 +1239,12 @@
       </div>
       <div class="fx-leg hot">
         <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-        <div class="lv">+0.38</div>
+        <div class="lv">+0.37</div>
         <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +0%</div>
       </div>
     </div>
 
-    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · customer capex accelerating (+69% YoY) confirms demand</p>
+    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · customer capex accelerating (+69% YoY) confirms demand · policy pipeline: comment close in 2d (2026-07-06); 5 proposed rule(s) last 60d; 3 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     
     
@@ -978,7 +1260,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude 0.75 · acceleration 0.95 · bottleneck None · pricing_power 0.49 · underpricing 0.71 · purity 0.45 · timing 0.4">
+            title="magnitude 0.75 · acceleration 0.95 · bottleneck None · pricing_power 0.49 · underpricing 0.65 · purity 0.45 · timing 0.4">
         <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Nuclear &amp; SMR Power</span>
@@ -989,7 +1271,7 @@
     <div class="fx-strip">
       <div class="fx-leg warn">
         <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-        <div class="lv">TIGHT (text) <span class="fx-text-only" title="<span class="l-en">text-only — awaiting numeric physical confirmation</span><span class="l-zh">纯文本信号 — 待实物数据确认</span>"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
+        <div class="lv">TIGHT (text) <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
         <div class="ld"><span class="l-en">provisional — shadow-calibration pending</span><span class="l-zh">暂定 — 影子校准待完成</span></div>
       </div>
       <div class="fx-leg hot">
@@ -1009,7 +1291,7 @@
       </div>
     </div>
 
-    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · customer capex accelerating (+69% YoY) confirms demand</p>
+    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · customer capex accelerating (+69% YoY) confirms demand · policy pipeline: comment close in 2d (2026-07-06); rule effective in 27d; 7 proposed rule(s) last 60d; 4 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     <span class="fx-conf" title="">🛰 1 activist 13d</span>
     
@@ -1036,7 +1318,7 @@
     <div class="fx-strip">
       <div class="fx-leg warn">
         <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-        <div class="lv">TIGHT (text) <span class="fx-text-only" title="<span class="l-en">text-only — awaiting numeric physical confirmation</span><span class="l-zh">纯文本信号 — 待实物数据确认</span>"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
+        <div class="lv">TIGHT (text) <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
         <div class="ld"><span class="l-en">provisional — shadow-calibration pending</span><span class="l-zh">暂定 — 影子校准待完成</span></div>
       </div>
       <div class="fx-leg mute">
@@ -1056,7 +1338,7 @@
       </div>
     </div>
 
-    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation</p>
+    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · policy pipeline: comment close in 2d (2026-07-06); rule effective in 12d; 14 proposed rule(s) last 60d; 8 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     <span class="fx-conf" title="">🛰 1 activist 13d</span>
     
@@ -1072,7 +1354,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude None · acceleration 0.9 · bottleneck None · pricing_power 0.79 · underpricing 0.65 · purity None · timing 0.4">
+            title="magnitude None · acceleration 0.9 · bottleneck None · pricing_power 0.79 · underpricing 0.85 · purity None · timing 0.4">
         <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Rare Earth &amp; Critical Minerals</span>
@@ -1083,7 +1365,7 @@
     <div class="fx-strip">
       <div class="fx-leg warn">
         <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-        <div class="lv">TIGHT (text) <span class="fx-text-only" title="<span class="l-en">text-only — awaiting numeric physical confirmation</span><span class="l-zh">纯文本信号 — 待实物数据确认</span>"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
+        <div class="lv">TIGHT (text) <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
         <div class="ld"><span class="l-en">tightness</span><span class="l-zh">紧张度</span> +0.46</div>
       </div>
       <div class="fx-leg mute">
@@ -1098,12 +1380,12 @@
       </div>
       <div class="fx-leg hot">
         <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-        <div class="lv">+0.58</div>
+        <div class="lv">+0.45</div>
         <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +5%</div>
       </div>
     </div>
 
-    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation</p>
+    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · policy pipeline: comment close in 2d (2026-07-06); 5 proposed rule(s) last 60d; 7 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     
     
@@ -1130,7 +1412,7 @@
     <div class="fx-strip">
       <div class="fx-leg warn">
         <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-        <div class="lv">TIGHT (text) <span class="fx-text-only" title="<span class="l-en">text-only — awaiting numeric physical confirmation</span><span class="l-zh">纯文本信号 — 待实物数据确认</span>"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
+        <div class="lv">TIGHT (text) <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
         <div class="ld"><span class="l-en">tightness</span><span class="l-zh">紧张度</span> +0.46</div>
       </div>
       <div class="fx-leg mute">
@@ -1150,7 +1432,7 @@
       </div>
     </div>
 
-    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation</p>
+    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · policy pipeline: comment close in 9d (2026-07-13); 1 proposed rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     
     
@@ -1166,7 +1448,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude None · acceleration 0.93 · bottleneck None · pricing_power 0.52 · underpricing 0.82 · purity None · timing 0.4">
+            title="magnitude None · acceleration 0.93 · bottleneck None · pricing_power 0.52 · underpricing 0.71 · purity None · timing 0.4">
         <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Defense &amp; Aerospace</span>
@@ -1177,7 +1459,7 @@
     <div class="fx-strip">
       <div class="fx-leg warn">
         <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-        <div class="lv">TIGHT (text) <span class="fx-text-only" title="<span class="l-en">text-only — awaiting numeric physical confirmation</span><span class="l-zh">纯文本信号 — 待实物数据确认</span>"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
+        <div class="lv">TIGHT (text) <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
         <div class="ld"><span class="l-en">provisional — shadow-calibration pending</span><span class="l-zh">暂定 — 影子校准待完成</span></div>
       </div>
       <div class="fx-leg mute">
@@ -1197,7 +1479,7 @@
       </div>
     </div>
 
-    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · alt-data confirms (pre-revision): 1 gov-award accel · 1 patent cluster</p>
+    <p class="why">language signal TIGHT and revisions rising — text-only; awaiting numeric physical confirmation · alt-data confirms (pre-revision): 1 gov-award accel · 1 patent cluster · policy pipeline: comment close in 2d (2026-07-06); 10 proposed rule(s) last 60d; 2 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     <span class="fx-conf lit" title="AXON">🛰 1 gov-award accel · 1 patent cluster</span>
     
@@ -1213,7 +1495,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude 0.56 · acceleration 0.95 · bottleneck None · pricing_power 0.52 · underpricing 0.18 · purity 0.9 · timing 0.35">
+            title="magnitude 0.56 · acceleration 0.95 · bottleneck None · pricing_power 0.52 · underpricing 0.0 · purity 0.9 · timing 0.35">
         <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">AI Semiconductors</span>
@@ -1224,7 +1506,7 @@
     <div class="fx-strip">
       <div class="fx-leg warn">
         <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-        <div class="lv">TIGHT (text) <span class="fx-text-only" title="<span class="l-en">text-only — awaiting numeric physical confirmation</span><span class="l-zh">纯文本信号 — 待实物数据确认</span>"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
+        <div class="lv">TIGHT (text) <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation"><span class="l-en">text-only</span><span class="l-zh">纯文本</span></span></div>
         <div class="ld"><span class="l-en">tightness</span><span class="l-zh">紧张度</span> +0.38</div>
       </div>
       <div class="fx-leg hot">
@@ -1239,14 +1521,14 @@
       </div>
       <div class="fx-leg hot">
         <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-        <div class="lv">+0.83</div>
-        <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +9%</div>
+        <div class="lv">+0.85</div>
+        <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +12%</div>
       </div>
     </div>
 
     <p class="why">language signal present but revisions already broad — runway maturing, do not chase (text-only)</p>
     <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
-    <span class="fx-conf" title="">🛰 2 patent cluster · 2 13f add</span>
+    <span class="fx-conf" title="">🛰 2 13f add · 2 patent cluster</span>
     
     
     <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
@@ -1260,8 +1542,8 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude None · acceleration 0.35 · bottleneck 0.4 · pricing_power 0.83 · underpricing 0.53 · purity None · timing 0.4">
-        <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+            title="magnitude None · acceleration 0.35 · bottleneck 0.4 · pricing_power 0.83 · underpricing 0.29 · purity None · timing 0.4">
+        <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">GLP-1 / Obesity</span>
       <span class="badge">BROADENING (fingerprint)</span>
@@ -1291,7 +1573,7 @@
       </div>
     </div>
 
-    <p class="why">fingerprint-only (annual member filings) TIGHT and revisions rising — awaiting real-time physical confirmation</p>
+    <p class="why">fingerprint-only (annual member filings) TIGHT and revisions rising — awaiting real-time physical confirmation · policy pipeline: comment close in 72d (2026-09-14); 1 proposed rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="thesis on unconfirmed evidence (text/fingerprint) — watch, no size until real-time physical confirms">⚖ WATCH</span>
     
     
@@ -1309,7 +1591,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude 0.54 · acceleration 0.73 · bottleneck 0.35 · pricing_power 0.52 · underpricing 0.06 · purity 0.6 · timing 0.4">
+            title="magnitude 0.54 · acceleration 0.73 · bottleneck 0.35 · pricing_power 0.52 · underpricing 0.23 · purity 0.6 · timing 0.4">
         <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Semiconductor Equipment (WFE)</span>
@@ -1336,7 +1618,7 @@
       <div class="fx-leg hot">
         <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
         <div class="lv">+0.93</div>
-        <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +18%</div>
+        <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +19%</div>
       </div>
     </div>
 
@@ -1356,7 +1638,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude 0.5 · acceleration 0.72 · bottleneck 0.35 · pricing_power 0.52 · underpricing 0.35 · purity 0.9 · timing 0.4">
+            title="magnitude 0.5 · acceleration 0.72 · bottleneck 0.35 · pricing_power 0.52 · underpricing 0.41 · purity 0.9 · timing 0.4">
         <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Memory, HBM &amp; Storage</span>
@@ -1387,7 +1669,7 @@
       </div>
     </div>
 
-    <p class="why">supply not tight; nothing actionable yet</p>
+    <p class="why">supply not tight; nothing actionable yet · policy pipeline: comment close in 9d (2026-07-13); 1 proposed rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
     <span class="fx-conf" title="">🛰 1 patent cluster</span>
     
@@ -1403,7 +1685,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude None · acceleration 0.9 · bottleneck 0.35 · pricing_power 0.58 · underpricing 0.0 · purity None · timing 0.4">
+            title="magnitude None · acceleration 0.9 · bottleneck 0.35 · pricing_power 0.58 · underpricing 0.06 · purity None · timing 0.4">
         <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Cybersecurity</span>
@@ -1434,7 +1716,7 @@
       </div>
     </div>
 
-    <p class="why">supply not tight; nothing actionable yet</p>
+    <p class="why">supply not tight; nothing actionable yet · policy pipeline: comment close in 2d (2026-07-06); rule effective in 55d; 5 proposed rule(s) last 60d; 4 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
     <span class="fx-conf" title="">🛰 1 activist 13d</span>
     
@@ -1450,7 +1732,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude None · acceleration 0.39 · bottleneck 0.35 · pricing_power 0.5 · underpricing 0.88 · purity None · timing 0.4">
+            title="magnitude None · acceleration 0.39 · bottleneck 0.35 · pricing_power 0.5 · underpricing 0.85 · purity None · timing 0.4">
         <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Fintech &amp; Payments</span>
@@ -1481,7 +1763,7 @@
       </div>
     </div>
 
-    <p class="why">supply not tight; nothing actionable yet</p>
+    <p class="why">supply not tight; nothing actionable yet · policy pipeline: comment close in 9d (2026-07-13); 4 proposed rule(s) last 60d; 5 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
     <span class="fx-conf lit" title="HOOD">🛰 1 insider cluster</span>
     
@@ -1497,7 +1779,7 @@
     <div class="row1">
       
       <span class="fx-score sc-watch"
-            title="magnitude None · acceleration 0.9 · bottleneck 0.35 · pricing_power 0.49 · underpricing 0.59 · purity None · timing 0.4">
+            title="magnitude None · acceleration 0.9 · bottleneck 0.35 · pricing_power 0.49 · underpricing 0.53 · purity None · timing 0.4">
         <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Robotics &amp; Automation</span>
@@ -1544,8 +1826,8 @@
     <div class="row1">
       
       <span class="fx-score sc-low"
-            title="magnitude None · acceleration 0.35 · bottleneck 0.35 · pricing_power 0.52 · underpricing 0.23 · purity None · timing 0.4">
-        <span class="s">36</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+            title="magnitude None · acceleration 0.35 · bottleneck 0.35 · pricing_power 0.52 · underpricing 0.18 · purity None · timing 0.4">
+        <span class="s">35</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
       </span>
       <span class="nm">Diagnostics &amp; Life-Science Tools</span>
       <span class="badge">WATCH</span>
@@ -1575,7 +1857,7 @@
       </div>
     </div>
 
-    <p class="why">supply not tight; nothing actionable yet</p>
+    <p class="why">supply not tight; nothing actionable yet · policy pipeline: comment close in 2d (2026-07-06); 3 proposed rule(s) last 60d; 11 final rule(s) last 60d</p>
     <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
     
     
@@ -1661,7 +1943,7 @@
   
   <div class="fx-panel fx-radar">
     <h2>📡 <span class="l-en">Subsector radar — the whole S&P 500 at sub-industry granularity</span><span class="l-zh">子行业雷达——以子行业粒度覆盖整个标普500</span></h2>
-    <div class="sub"><span class="l-en">The cascade runs the same <b>bottleneck × revision</b> signature over all <b>113 Finviz sub-industries</b> (503 names), not just the 18 curated themes — so you can see, market-wide, <b>where supply scarcity and estimate revisions are aligning</b>. The bottleneck here is a <b>text-only proxy</b> (EDGAR scarcity language), not FRED-confirmed — a screen to investigate, not a confirmed thesis.</span><span class="l-zh">级联将同一<b>瓶颈 × 预期修正</b>信号运行于全部<b>113个 Finviz 子行业</b>（503只成分股），而不仅是18个精选主题——从而在全市场范围看到<b>供给短缺与盈利预期在何处共振</b>。此处瓶颈为<b>纯文本代理</b>（EDGAR 短缺用语），非 FRED 确认——是待查筛选，而非确认论点。</span>
+    <div class="sub"><span class="l-en">The cascade runs the same <b>bottleneck × revision</b> signature over all <b>113 sub-industries</b> (503 names), not just the 18 curated themes — so you can see, market-wide, <b>where supply scarcity and estimate revisions are aligning</b>. The bottleneck here is a <b>text-only proxy</b> (EDGAR scarcity language), not FRED-confirmed — a screen to investigate, not a confirmed thesis.</span><span class="l-zh">级联将同一<b>瓶颈 × 预期修正</b>信号运行于全部<b>113个子行业</b>（503只成分股），而不仅是18个精选主题——从而在全市场范围看到<b>供给短缺与盈利预期在何处共振</b>。此处瓶颈为<b>纯文本代理</b>（EDGAR 短缺用语），非 FRED 确认——是待查筛选，而非确认论点。</span>
       <b>6</b> / 57 <span class="l-en">scanned sub-industries currently pair scarcity language with their revision read.</span><span class="l-zh">个已扫描子行业当前将短缺用语与其预期读数配对。</span></div>
     <table class="fx-radar-tbl">
       <thead><tr>
@@ -1682,7 +1964,7 @@
       <tr>
         <td><span class="fx-rstage stg-BROADENING">BROADENING</span></td>
         <td><span class="fx-rsub">Specialty Industrial Machinery</span> <span class="fx-rsec">Industrials</span></td>
-        <td class="num">+0.41</td>
+        <td class="num">+0.38</td>
         <td class="num">+1%</td>
         <td class="num"><span class="fx-rscar" title="AME, FTV, PH, TT">4🔥</span></td>
       </tr>
@@ -1698,8 +1980,8 @@
       <tr>
         <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
         <td><span class="fx-rsub">Communication Equipment</span> <span class="fx-rsec">Technology</span></td>
-        <td class="num">+0.90</td>
-        <td class="num">+6%</td>
+        <td class="num">+0.92</td>
+        <td class="num">+11%</td>
         <td class="num"><span class="fx-rscar" title="ANET, CIEN, MSI">3🔥</span></td>
       </tr>
       
@@ -1745,6 +2027,14 @@
       
       <tr>
         <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Electronic Components</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.88</td>
+        <td class="num">+10%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
         <td><span class="fx-rsub">Integrated Freight &amp; Logistics</span> <span class="fx-rsec">Industrials</span></td>
         <td class="num">+0.82</td>
         <td class="num">+4%</td>
@@ -1785,17 +2075,17 @@
       
       <tr>
         <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
-        <td><span class="fx-rsub">Electronic Components</span> <span class="fx-rsec">Technology</span></td>
-        <td class="num">+0.74</td>
-        <td class="num">+10%</td>
+        <td><span class="fx-rsub">Scientific &amp; Technical Instruments</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.66</td>
+        <td class="num">+2%</td>
         <td class="num">—</td>
       </tr>
       
       <tr>
         <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
-        <td><span class="fx-rsub">Scientific &amp; Technical Instruments</span> <span class="fx-rsec">Technology</span></td>
-        <td class="num">+0.66</td>
-        <td class="num">+2%</td>
+        <td><span class="fx-rsub">REIT - Specialty</span> <span class="fx-rsec">Real Estate</span></td>
+        <td class="num">+0.62</td>
+        <td class="num">+4%</td>
         <td class="num">—</td>
       </tr>
       
@@ -1833,25 +2123,9 @@
       
       <tr>
         <td><span class="fx-rstage stg-WATCH">WATCH</span></td>
-        <td><span class="fx-rsub">REIT - Specialty</span> <span class="fx-rsec">Real Estate</span></td>
-        <td class="num">+0.48</td>
-        <td class="num">+3%</td>
-        <td class="num">—</td>
-      </tr>
-      
-      <tr>
-        <td><span class="fx-rstage stg-WATCH">WATCH</span></td>
         <td><span class="fx-rsub">Specialty Chemicals</span> <span class="fx-rsec">Basic Materials</span></td>
-        <td class="num">+0.46</td>
+        <td class="num">+0.48</td>
         <td class="num">+1%</td>
-        <td class="num">—</td>
-      </tr>
-      
-      <tr>
-        <td><span class="fx-rstage stg-WATCH">WATCH</span></td>
-        <td><span class="fx-rsub">Asset Management</span> <span class="fx-rsec">Financial</span></td>
-        <td class="num">+0.43</td>
-        <td class="num">-1%</td>
         <td class="num">—</td>
       </tr>
       
@@ -1863,8 +2137,550 @@
         <td class="num">—</td>
       </tr>
       
+      <tr>
+        <td><span class="fx-rstage stg-WATCH">WATCH</span></td>
+        <td><span class="fx-rsub">Software - Infrastructure</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.40</td>
+        <td class="num">+2%</td>
+        <td class="num"><span class="fx-rscar" title="CDNS">1🔥</span></td>
+      </tr>
+      
       </tbody>
     </table>
+  </div>
+  
+
+  
+  
+  <div class="fx-panel fx-policy-cal">
+    <h2><span class="l-en">Policy catalyst calendar — regulatory-action convergence</span><span class="l-zh">政策催化日历——监管行动收敛</span></h2>
+    <div class="sub"><span class="l-en"><b>Display-only · Dated-structured evidence class.</b> Federal Register PRORULE/RULE events are hard, dated, known-in-advance — publication-date-stamped the day they appear, weeks-to-months before money lands and before financial media narrates. <b>Entity-list additions</b> (BIS / Industry &amp; Security Bureau) are supply-chain-rewiring events directly relevant to semis/minerals themes. <b>Empirical PRORULE→RULE latency</b> is measured via Regulation Identifier Number (RIN) join across the 2015-to-date backfill — never modeled. Forward-graded: every upcoming-event flag seeds a ledger row today.</span><span class="l-zh"><b>仅供展示·有日期结构化证据类。</b>联邦公报 PRORULE/RULE 事件具有硬性日期且提前可知——在资金落地及金融媒体报道之前数周至数月，以发布日期为时点戳记。<b>实体清单新增</b>（BIS/工业与安全局）是直接影响半导体/矿产主题的供应链重组事件。<b>实证 PRORULE→RULE 时滞</b>通过对2015年至今回填数据的监管标识符（RIN）关联测量——从不建模。前瞻评分：每个即将发生的事件标记当日植入账本。</span>
+    </div>
+
+    
+    
+    
+    <h3 class="fx-sub-h"><span class="l-en">Upcoming comment-close / rule-effective events</span><span class="l-zh">即将到期的意见征集截止/规则生效事项</span></h3>
+    <table class="fx-pol-tbl">
+      <thead><tr>
+        <th><span class="l-en">Days</span><span class="l-zh">天</span></th>
+        <th><span class="l-en">Date</span><span class="l-zh">日期</span></th>
+        <th><span class="l-en">Theme</span><span class="l-zh">主题</span></th>
+        <th><span class="l-en">Type</span><span class="l-zh">类型</span></th>
+        <th><span class="l-en">Title</span><span class="l-zh">标题</span></th>
+      </tr></thead>
+      <tbody>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">medical_devices</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Agency Information Collection Activities; Proposed Collection; Comment Request; National Youth Tobacco Survey</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">grid_electrification</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Commission Information Collection Activities (Ferc-725e) Comment Request; Extension</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">medical_devices</span></td>
+        <td><span class="fx-rstage stg-proposed_rule">proposed_rule</span></td>
+        <td class="pol-title">Modification of Certain Terminology in Title 21</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">diagnostics_lifesci</span></td>
+        <td><span class="fx-rstage stg-proposed_rule">proposed_rule</span></td>
+        <td class="pol-title">Modification of Certain Terminology in Title 21</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">space_satellite</span></td>
+        <td><span class="fx-rstage stg-proposed_rule">proposed_rule</span></td>
+        <td class="pol-title">Designation-Restrict the Operation of Unmanned Aircraft in Close Proximity to a Fixed Site Facility</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">defense_aerospace</span></td>
+        <td><span class="fx-rstage stg-proposed_rule">proposed_rule</span></td>
+        <td class="pol-title">Defense Federal Acquisition Regulation Supplement: Mitigating Risks Related to Foreign Ownership, Control, or Influence </td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">space_satellite</span></td>
+        <td><span class="fx-rstage stg-proposed_rule">proposed_rule</span></td>
+        <td class="pol-title">Amendment of United States Area Navigation Route T-306 and Establishment of United States Area Navigation Route T-647</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">cybersecurity</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Agency Information Collection Activities; Submission to the Office of Management and Budget for Review and Approval; Com</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">nuclear_power</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Arizona Public Service Company; Palo Verde Nuclear Generating Station, Units 1, 2, and 3; Consideration of Approval of T</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">nuclear_power</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Regulatory Guide: Acceptability of ASME OM-2 Code, Component Testing Requirements at Nuclear Facilities</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">rare_earth_critical_min</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Agency Information Collection Activities; Submission to the Office of Management and Budget for Review and Approval; Ope</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>2</b></td>
+        <td>2026-07-06</td>
+        <td><span class="chip2 chip-sm">ag_fertilizer</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Certain New Chemicals; Receipt and Status Information for November 2025, December 2025, and January 2026</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>3</b></td>
+        <td>2026-07-07</td>
+        <td><span class="chip2 chip-sm">space_satellite</span></td>
+        <td><span class="fx-rstage stg-proposed_rule">proposed_rule</span></td>
+        <td class="pol-title">Combatting Illegal Robocalls Through FCC Numbering Policies; Implementation of TRACED Act-Knowledge of Customers by Enti</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>3</b></td>
+        <td>2026-07-07</td>
+        <td><span class="chip2 chip-sm">space_satellite</span></td>
+        <td><span class="fx-rstage stg-proposed_rule">proposed_rule</span></td>
+        <td class="pol-title">Protecting Against National Security Threats in Domestic Telecommunications Service</td>
+      </tr>
+      
+      <tr class="pol-urgent">
+        <td class="num"><b>5</b></td>
+        <td>2026-07-09</td>
+        <td><span class="chip2 chip-sm">nuclear_power</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Biweekly Notice; Applications and Amendments to Facility Operating Licenses and Combined Licenses Involving No Significa</td>
+      </tr>
+      
+      <tr class="pol-soon">
+        <td class="num"><b>9</b></td>
+        <td>2026-07-13</td>
+        <td><span class="chip2 chip-sm">rare_earth_critical_min</span></td>
+        <td><span class="fx-rstage stg-proposed_rule">proposed_rule</span></td>
+        <td class="pol-title">Revision of Regulations for Grazing Administration, Exclusive of Alaska</td>
+      </tr>
+      
+      <tr class="pol-soon">
+        <td class="num"><b>9</b></td>
+        <td>2026-07-13</td>
+        <td><span class="chip2 chip-sm">grid_electrification</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Commission Information Collection Activities (FERC-923); Comment Request; Extension</td>
+      </tr>
+      
+      <tr class="pol-soon">
+        <td class="num"><b>9</b></td>
+        <td>2026-07-13</td>
+        <td><span class="chip2 chip-sm">medical_devices</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Agency Information Collection Activities; Proposed Collection; Comment Request; Postmarketing Adverse Experience Reporti</td>
+      </tr>
+      
+      <tr class="pol-soon">
+        <td class="num"><b>9</b></td>
+        <td>2026-07-13</td>
+        <td><span class="chip2 chip-sm">diagnostics_lifesci</span></td>
+        <td><span class="fx-rstage stg-rfi">rfi</span></td>
+        <td class="pol-title">Biomarker Incubator: Urinary Kidney Safety Biomarkers; Request for Information</td>
+      </tr>
+      
+      <tr class="pol-soon">
+        <td class="num"><b>9</b></td>
+        <td>2026-07-13</td>
+        <td><span class="chip2 chip-sm">nuclear_power</span></td>
+        <td><span class="fx-rstage stg-notice">notice</span></td>
+        <td class="pol-title">Information Collection: Notice of Enforcement Discretion (NOED) for Operating Power Reactors and Gaseous Diffusion Plant</td>
+      </tr>
+      
+      
+      <tr><td colspan="5" class="pol-more"><span class="l-en">… and</span><span class="l-zh">…还有</span> 112 <span class="l-en">more</span><span class="l-zh">条</span></td></tr>
+      
+      </tbody>
+    </table>
+    
+
+    
+    
+    
+
+    
+    <h3 class="fx-sub-h"><span class="l-en">Per-theme pipeline status</span><span class="l-zh">各主题管线状态</span></h3>
+    <div class="fx-pol-chips">
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">ag_fertilizer</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 2<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">11 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">22 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">copper_steel_electrify</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 9<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">1 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">cybersecurity</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 2<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">5 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">4 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">data_center_power</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 9<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">9 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">6 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">defense_aerospace</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 2<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">10 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">2 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">diagnostics_lifesci</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 2<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">3 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">11 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">fintech_payments</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 9<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">4 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">5 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">glp1_obesity</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 72<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">1 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">grid_electrification</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 2<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">5 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">3 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">medical_devices</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 2<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">2 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">35 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">memory_storage</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 9<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">1 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">nuclear_power</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 2<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">7 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">4 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">rare_earth_critical_min</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 2<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">5 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">7 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    <div class="pol-chip">
+      <span class="pol-basket">space_satellite</span>
+      
+      <span class="chip2 chip-sm"><span class="l-en">comment close</span><span class="l-zh">意见截止</span> 2<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span class="chip2 chip-sm">14 <span class="l-en">PRORULE 60d</span><span class="l-zh">拟议规则60天</span></span>
+      <span class="chip2 chip-sm">8 <span class="l-en">RULE 60d</span><span class="l-zh">最终规则60天</span></span>
+    </div>
+    
+    
+    </div>
+
+    
+    
+    
+    <h3 class="fx-sub-h"><span class="l-en">Empirical PRORULE→RULE latency (R1 — measured, not modeled)</span><span class="l-zh">实证 PRORULE→RULE 时滞（R1——实测，非建模）</span></h3>
+    <div class="sub"><span class="l-en">Latency measured via Regulation Identifier Number (RIN) join across the 2015→2026 Federal Register backfill. Open PRORULE rows (no matching RULE yet) are excluded from the median — counted separately as still-pending. This is a distribution measurement, never a latency score.</span><span class="l-zh">时滞通过2015→2026联邦公报回填数据的监管标识符（RIN）关联实测。尚无匹配最终规则的开放PRORULE行从中位数中排除——单独计为仍待决。这是分布测量，绝非时滞评分。</span></div>
+    <table class="fx-pol-tbl">
+      <thead><tr>
+        <th><span class="l-en">Theme</span><span class="l-zh">主题</span></th>
+        <th class="num"><span class="l-en">Median days</span><span class="l-zh">中位天数</span></th>
+        <th class="num"><span class="l-en">P25</span><span class="l-zh">P25</span></th>
+        <th class="num"><span class="l-en">P75</span><span class="l-zh">P75</span></th>
+        <th class="num"><span class="l-en">n (matched)</span><span class="l-zh">n（匹配）</span></th>
+        <th class="num"><span class="l-en">n open</span><span class="l-zh">n待决</span></th>
+      </tr></thead>
+      <tbody>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">ag_fertilizer</span></td>
+        <td class="num"><b>383</b></td>
+        <td class="num">276</td>
+        <td class="num">508</td>
+        <td class="num">218</td>
+        <td class="num">127</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">ai_semiconductors</span></td>
+        <td class="num"><b>246</b></td>
+        <td class="num">164</td>
+        <td class="num">362</td>
+        <td class="num">27</td>
+        <td class="num">12</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">copper_steel_electrify</span></td>
+        <td class="num"><b>169</b></td>
+        <td class="num">86</td>
+        <td class="num">293</td>
+        <td class="num">97</td>
+        <td class="num">43</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">cybersecurity</span></td>
+        <td class="num"><b>309</b></td>
+        <td class="num">168</td>
+        <td class="num">418</td>
+        <td class="num">18</td>
+        <td class="num">41</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">data_center_power</span></td>
+        <td class="num"><b>337</b></td>
+        <td class="num">259</td>
+        <td class="num">446</td>
+        <td class="num">292</td>
+        <td class="num">144</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">defense_aerospace</span></td>
+        <td class="num"><b>262</b></td>
+        <td class="num">175</td>
+        <td class="num">470</td>
+        <td class="num">208</td>
+        <td class="num">87</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">diagnostics_lifesci</span></td>
+        <td class="num"><b>130</b></td>
+        <td class="num">114</td>
+        <td class="num">363</td>
+        <td class="num">107</td>
+        <td class="num">56</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">fintech_payments</span></td>
+        <td class="num"><b>361</b></td>
+        <td class="num">172</td>
+        <td class="num">477</td>
+        <td class="num">42</td>
+        <td class="num">47</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">glp1_obesity</span></td>
+        <td class="num"><b>355</b></td>
+        <td class="num">215</td>
+        <td class="num">575</td>
+        <td class="num">4</td>
+        <td class="num">7</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">grid_electrification</span></td>
+        <td class="num"><b>322</b></td>
+        <td class="num">218</td>
+        <td class="num">478</td>
+        <td class="num">116</td>
+        <td class="num">75</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">medical_devices</span></td>
+        <td class="num"><b>517</b></td>
+        <td class="num">301</td>
+        <td class="num">806</td>
+        <td class="num">33</td>
+        <td class="num">36</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">memory_storage</span></td>
+        <td class="num"><b>195</b></td>
+        <td class="num">102</td>
+        <td class="num">372</td>
+        <td class="num">68</td>
+        <td class="num">27</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">nuclear_power</span></td>
+        <td class="num"><b>76</b></td>
+        <td class="num">54</td>
+        <td class="num">254</td>
+        <td class="num">123</td>
+        <td class="num">64</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">rare_earth_critical_min</span></td>
+        <td class="num"><b>401</b></td>
+        <td class="num">288</td>
+        <td class="num">599</td>
+        <td class="num">169</td>
+        <td class="num">130</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">semicap_equipment</span></td>
+        <td class="num"><b>253</b></td>
+        <td class="num">181</td>
+        <td class="num">387</td>
+        <td class="num">4</td>
+        <td class="num">4</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">solar</span></td>
+        <td class="num"><b>314</b></td>
+        <td class="num">216</td>
+        <td class="num">397</td>
+        <td class="num">14</td>
+        <td class="num">6</td>
+      </tr>
+      
+      <tr>
+        <td><span class="chip2 chip-sm">space_satellite</span></td>
+        <td class="num"><b>398</b></td>
+        <td class="num">249</td>
+        <td class="num">566</td>
+        <td class="num">33</td>
+        <td class="num">40</td>
+      </tr>
+      
+      </tbody>
+    </table>
+    <div class="sub"><span class="l-en">Latency = publication_date(RULE) − publication_date(PRORULE) for the same RIN. One PRORULE may produce multiple RULE amendments; earliest RULE taken per RIN/basket pair. Source: Federal Register API, 2015–present.</span><span class="l-zh">时滞 = 同一RIN的规则发布日期 − 拟议规则发布日期。一条PRORULE可能产生多条规则修订；每个RIN/主题对取最早规则。来源：联邦公报API，2015年至今。</span></div>
+    
   </div>
   
 
@@ -1873,20 +2689,20 @@
     <h2><span class="l-en">Forward-graded track record</span><span class="l-zh">前瞻评分记录</span></h2>
     <div class="sub"><span class="l-en">Every stage flag (PRECIPICE / BROADENING / RE-RATING / WATCH) is logged at fire time and graded forward vs SPY at 30, 60, and 90-day horizons independently — <b>survivorship-free</b> (delisted members counted at their loss), on <b>point-in-time</b> basket membership, with a <b>Wilson 95% CI</b> and a <b>Benjamini-Yekutieli FDR</b> gate (dependence-robust — more conservative than BH, valid under overlapping horizons and a shared benchmark) on the canonical 90d horizon so a small lucky sample can't read as edge. <b>Hit-rates are skill claims and exist only for the directional stages</b> (thesis: PRECIPICE/BROADENING = outperform; exit: GLUT = underperform); RE-RATING / WATCH are <b>control arms</b> — their forward excess validates the "do not chase" rule but is never scored as a hit-rate, because a crowded theme continuing to run is beta, not skill.</span><span class="l-zh">每个阶段标记（PRECIPICE / BROADENING / RE-RATING / WATCH）在触发时记录并对标普在30、60、90天视野独立前瞻评分——<b>免幸存者偏差</b>（退市成分按其亏损计入）、采用<b>时点</b>篮子成分，并附<b>Wilson 95%置信区间</b>与<b>Benjamini-Yekutieli FDR</b>门槛（依赖稳健——比BH更保守，在视野重叠及共用基准下仍有效），在标准90天视野上确保小样本侥幸不被读作优势。<b>命中率是技能主张，仅适用于方向性阶段</b>（论点：PRECIPICE/BROADENING＝跑赢；退出：GLUT＝跑输）；RE-RATING / WATCH 为<b>对照组</b>——其前瞻超额用于检验“勿追高”规则，绝不计为命中率，因为已拥挤主题继续上涨是贝塔，不是技能。</span></div>
     <div class="fx-rec">
-      <span class="chip2"><b>18</b> <span class="l-en">cascade flags</span><span class="l-zh">级联标记</span></span>
+      <span class="chip2"><b>34</b> <span class="l-en">cascade flags</span><span class="l-zh">级联标记</span></span>
       <span class="chip2"><b>12</b> <span class="l-en">bottleneck regimes</span><span class="l-zh">瓶颈机制</span></span>
       <span class="chip2"><b>0</b> <span class="l-en">glut flags</span><span class="l-zh">过剩标记</span></span>
       <span class="chip2"><b>90</b> <span class="l-en">revision reads</span><span class="l-zh">预期读数</span></span>
       <span class="chip2"><b>1</b> <span class="l-en">guidance tilts</span><span class="l-zh">指引倾向</span></span>
       <span class="chip2"><b>5</b> <span class="l-en">discovery candidates</span><span class="l-zh">发现候选</span></span>
-      <span class="chip2"><b>12</b> <span class="l-en">subsector flags</span><span class="l-zh">子行业标记</span></span>
-      <span class="chip2">robotics_automation · <b>RE-RATING</b> · 2026-07-01</span><span class="chip2">diagnostics_lifesci · <b>RE-RATING</b> · 2026-07-01</span><span class="chip2">rare_earth_critical_min · <b>RE-RATING</b> · 2026-07-01</span><span class="chip2">space_satellite · <b>RE-RATING</b> · 2026-07-01</span><span class="chip2">cybersecurity · <b>RE-RATING</b> · 2026-07-01</span><span class="chip2">defense_aerospace · <b>WATCH</b> · 2026-07-01</span><span class="chip2">solar · <b>WATCH</b> · 2026-07-01</span><span class="chip2">medical_devices · <b>WATCH</b> · 2026-07-01</span>
+      <span class="chip2"><b>15</b> <span class="l-en">subsector flags</span><span class="l-zh">子行业标记</span></span>
+      <span class="chip2">diagnostics_lifesci · <b>WATCH</b> · 2026-07-04</span><span class="chip2">robotics_automation · <b>WATCH</b> · 2026-07-04</span><span class="chip2">cybersecurity · <b>WATCH</b> · 2026-07-04</span><span class="chip2">memory_storage · <b>WATCH</b> · 2026-07-04</span><span class="chip2">semicap_equipment · <b>WATCH</b> · 2026-07-04</span><span class="chip2">glp1_obesity · <b>BROADENING (fingerprint)</b> · 2026-07-04</span><span class="chip2">defense_aerospace · <b>BROADENING (text)</b> · 2026-07-04</span><span class="chip2">copper_steel_electrify · <b>BROADENING (text)</b> · 2026-07-04</span>
     </div>
     
     <div class="fx-rec" style="margin-top:9px">
       
         
-        <span class="chip2">⏳ <span class="l-en">accruing</span><span class="l-zh">累计中</span> — <b>18</b> <span class="l-en">flags logged</span><span class="l-zh">个标记已记录</span> · <b>18</b> <span class="l-en">pending 90d maturity</span><span class="l-zh">个待90天成熟</span></span>
+        <span class="chip2">⏳ <span class="l-en">accruing</span><span class="l-zh">累计中</span> — <b>34</b> <span class="l-en">flags logged</span><span class="l-zh">个标记已记录</span> · <b>34</b> <span class="l-en">pending 90d maturity</span><span class="l-zh">个待90天成熟</span></span>
       
     </div>
     

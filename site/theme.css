@@ -385,7 +385,12 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 .nav-dd-menu .nav-sub > a.nav-sub-trig .caret-r { margin-left: auto; padding-left: 12px; font-size: 10px;
   opacity: .55; flex: none; transition: transform .2s; }
 .nav-dd-menu .nav-sub:hover > a.nav-sub-trig .caret-r { opacity: .9; transform: translateX(2px); }
-.nav-dd-menu .nav-sub > .nav-dd-menu { top: -7px; left: 100%; z-index: 95; }
+.nav-dd-menu .nav-sub > .nav-dd-menu { top: -7px; left: 100%; z-index: 95;
+  /* The 2nd-tier .nav-dd-menu already has backdrop-filter, making it a backdrop
+     root — so this nested fly-out's own backdrop-filter can't reach & blur the
+     page behind it, and the translucent --glass-bg alone reads as see-through.
+     Give it a denser near-opaque fill so it matches the 2nd tier's frosted density. */
+  background: color-mix(in srgb, var(--panel) 96%, transparent); }
 .nav-dd-menu .nav-sub::after { content: ""; position: absolute; top: 0; left: 100%; width: 12px; height: 100%; }
 @media (max-width: 560px) {   /* no hover on touch — render the submenu inline-expanded */
   .nav-dd { display: block; }

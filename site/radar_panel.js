@@ -76,10 +76,11 @@
       "</span>";
   }
 
-  // additive: recent financial-news headlines for the flag's theme (cross-surfaced from
-  // engine.financial_news; display-only context, NEVER part of the divergence z-score).
+  // additive: recent financial-news headlines for the flag's theme (sourced from
+  // radar_news.json; display-only context, NEVER part of the divergence z-score).
+  // headlines are injected into f by the caller after merging radar_news.json.
   function headlinesBlock(f) {
-    var hs = f.headlines || [];
+    var hs = f._headlines || [];
     if (!hs.length) return "";
     var items = hs.map(function (h) {
       var sent = h.sentiment === "pos" ? " ▲" : h.sentiment === "neg" ? " ▼" : "";
@@ -93,7 +94,9 @@
       bi("📰 Recent news", "📰 近期新闻") + "</div>" + items + "</div>";
   }
 
-  // additive (Phase 2): the new scored edge axis + the cross-source confirmation legs
+  // additive (Phase 2): the new scored edge axis + the cross-source confirmation legs.
+  // edge_score, confirm, regime, decay, drivers come from radar_enriched.json and are
+  // merged into the flag objects by the caller before spotlightCard() is invoked.
   function edgeColor(e) { return e >= 70 ? "#16a34a" : e >= 45 ? "#e0a030" : "#8b93a1"; }
   function edgeBadge(f) {
     if (f.edge_score == null) return "";
@@ -219,13 +222,44 @@
       '<p class="dr-cav">' + bi(b.disclaimer || "", b.disclaimer || "") + "</p></div>";
   }
 
+  // Merge enrichment fields from radar_enriched.json into the base flag objects.
+  // radar_enriched.json carries edge_score, confirm, regime, decay, drivers, edge_ranked.
+  // radar_news.json carries per-basket headlines.
+  // Both are optional: missing files degrade gracefully (no edge/news shown).
+  function _mergeEnrichment(flags, enriched, newsMap) {
+    // Build basket→enriched-flag index (enriched.flags has same basket keys)
+    var eidx = {};
+    ((enriched || {}).flags || []).forEach(function (ef) {
+      if (ef.basket) eidx[ef.basket] = ef;
+    });
+    var baskets = (newsMap || {}).baskets || {};
+    flags.forEach(function (f) {
+      var ef = eidx[f.basket] || {};
+      // Copy enrichment fields; never overwrite the base flag's own structural fields.
+      ["edge_score", "confirm", "regime", "decay", "drivers"].forEach(function (k) {
+        if (ef[k] != null) f[k] = ef[k];
+      });
+      // Headlines sourced from radar_news.json (display-only context).
+      var nb = baskets[f.basket] || {};
+      f._headlines = nb.headlines || [];
+    });
+    return enriched;  // return for top-level fields (edge_ranked, regime)
+  }
+
   window.renderDivergenceRadar = function (opts) {
     opts = opts || {};
     var base = opts.base || "basketdata/";
     var mount = document.querySelector(opts.mount || "#divergence-radar");
     if (!mount) return;
-    fetchJSON(base + "radar.json").then(function (d) {
+    // Fetch all three artifacts in parallel; degraded if enriched/news absent.
+    Promise.all([
+      fetchJSON(base + "radar.json"),
+      fetchJSON(base + "radar_enriched.json"),
+      fetchJSON(base + "radar_news.json")
+    ]).then(function (results) {
+      var d = results[0], enriched = results[1], newsMap = results[2];
       if (!d || !d.flags || !d.flags.length) { mount.style.display = "none"; return; }
+      _mergeEnrichment(d.flags, enriched, newsMap);
       var cov = d.coverage || {};
       var divs = d.flags.filter(function (f) { return f.state.indexOf("DIVERGENCE") >= 0; });
 

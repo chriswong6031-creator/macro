@@ -1,0 +1,438 @@
+# config/reflexes.yml — Reflex Registry v1 (Neural Web W6a)
+#
+# WHAT IS A REFLEX?
+# A reflex is a deterministic trigger → scoped chain → bounded action pattern
+# already present in the production engine. This registry NAMES what exists;
+# it does not change any existing behavior unless the entry is marked
+# migration_status: mirroring (meaning a firings.jsonl append has been added —
+# additive only, no existing logic touched).
+#
+# LAW (LEDGER):
+# Each reflex owns one single-writer JSONL: data/reflexes/<name>/firings.jsonl.
+# ONLY the reflex's own lane calls record_firing(); no other writer may append.
+# The nightly grader (scripts/grade_qledger.py) folds firings into the spine by
+# treating each firing as a qledger claim (claim_family = reflex.<name>).
+# No intraday writer ever touches the spine parquet.
+#
+# LAW (PUSH TIER):
+# Default tier is sub-hour on existing lanes (30-min sentinels or fastpath).
+# W6b push tier (VPS FastAPI webhook / systemd timer) is reserved for reflexes
+# where end-to-end latency <= 5 min is the acceptance criterion, measured in
+# production. Push_tier: true here = W6b CANDIDATE; it is not yet active.
+
+meta:
+  schema_version: 1
+  ledger_law: >
+    Every reflex owns one single-writer JSONL: data/reflexes/<name>/firings.jsonl.
+    The nightly grader grades firings exactly like qledger claims (claim_family=
+    reflex.<name>). No reflex may write to claims.jsonl directly — it appends to
+    firings.jsonl; the grader folds it in during the collect step
+    (scripts/collect.py end-of-collect hook). Single-writer law: ONLY the
+    reflex's own workflow lane calls record_firing(). No global enforcement;
+    documented here as the binding contract.
+  push_tier_law: >
+    Default tier is sub-hour on existing GitHub Actions lanes (30-min sentinels
+    or fastpath, effective 30-75 min end-to-end with runner queue). W6b push tier
+    (VPS FastAPI webhook / systemd timer) is reserved for reflexes where
+    end-to-end latency <= 5 min is the acceptance criterion, measured in
+    production with real events. Enabling W6b for a reflex is an operator +
+    Article-2 event: it must have a gauntlet design + measured latency baseline
+    before the push path is live.
+
+reflexes:
+
+  # ─── CURRENTLY MIRRORING (firings.jsonl append added in W6a) ─────────────
+
+  regime_stale_selfheal:
+    description: >
+      Regime self-heal fires when data/regime/latest.json is behind the price
+      store's last close (or when the store itself is behind the market reference).
+      The reflex re-runs the regime engine and re-stamps latest.json + latest
+      market_state snapshot.
+    trigger:
+      type: staleness_check
+      source: data/regime/latest.json + data/massive_stock_day/_manifest.json
+      condition: >
+        regime_asof < store_close_date  OR
+        (store_close_date < market_reference_date AND regime < market_reference_date)
+      cadence_cron: "*/30 13-20 * * 1-5"
+      lane: intraday-fastpath
+    action:
+      type: [rerun_engine, persist_market_state, commit_artifacts]
+      artifacts:
+        - data/regime/latest.json
+        - data/market_state/latest.json
+      excludes:
+        - data/regime/regime_history.parquet
+        - data/regime/regime_one.json
+        - data/regime/base_effect_fwd.jsonl
+        - data/regime/regime_vector.parquet
+      note: >
+        The nightly daily.yml is the sole canonical writer of the excluded
+        artifacts. The fast-path commits ONLY the two small stamped JSONs to
+        avoid polluting the forward-grading history with intraday re-runs.
+    firings_jsonl: data/reflexes/regime_stale_selfheal/firings.jsonl
+    claim_family: reflex.regime_stale_selfheal
+    tier: infrastructure
+    push_tier: false
+    graded: false
+    graded_note: >
+      Infrastructure tier — no directional forward bet; direction=0. The nightly
+      grader folds firings into the spine index as ungraded-honest rows
+      (outcome_graded=False). Grading design: future work if operational-metadata
+      correlation study is desired (not a signal, never scored).
+    migration_status: mirroring
+    producer: scripts/refresh_regime_if_stale.py
+
+  commodity_shock:
+    description: >
+      Commodity shock sentinel fires when any watched commodity (gold/silver/
+      copper/crude oil) crosses an intraday shock threshold, triggering a
+      state-machine transition in data/commodity/shock_state.json.
+    trigger:
+      type: price_state_machine
+      source: yfinance hourly bars (GC=F, SI=F, HG=F, CL=F)
+      condition: "any new shock_events past last_emitted_ts watermark"
+      cadence_cron: "*/30 * * * *"
+      lane: commodity-sentinel
+    action:
+      type: [append_events, rebuild_page, commit_artifacts, notify_telegram]
+      ledger: data/commodity/alerts.jsonl
+      state: data/commodity/shock_state.json
+    firings_jsonl: data/reflexes/commodity_shock/firings.jsonl
+    claim_family: reflex.commodity_shock
+    tier: shadow
+    push_tier: false
+    graded: true
+    graded_note: >
+      Shadow tier — each shock event carries a directional lean (shock=bearish
+      risk-appetite context for the commodity, direction=-1 by convention) and
+      a scope_type=macro. Graded at 1d/5d horizon vs commodity ETF bench.
+      SHADOW: n_dates>=25 + wilson_ci_low>0 vs matched control required before
+      any surface renders this as conviction.
+    migration_status: mirroring
+    producer: scripts/commodity_sentinel.py
+
+  # ─── REGISTERED ONLY (existing behavior named; no firings.jsonl yet) ──────
+  # W6b / follow-up migrations listed in order of priority per scout evidence.
+
+  whitehouse_alert:
+    description: >
+      New White House announcement judged market-significant by the Opus brain.
+      SACRED pattern — single-writer contract must never be violated. The daily
+      build calls build_whitehouse --page-only which skips all ledger/state
+      writes. The sentinel is the SOLE writer of data/whitehouse/alerts.jsonl.
+    trigger:
+      type: feed_poll
+      source: "whitehouse_rss (3 feeds: whitehouse.gov/news + two social mirrors)"
+      condition: >
+        new_items(collect(), load_processed()) is non-empty AND
+        brain.evaluate().activated = True
+      cadence_cron: "12 * * * *"
+      lane: whitehouse-sentinel
+    action:
+      type: [lm_eval, append_ledger, rebuild_page, commit_artifacts]
+      ledger: data/whitehouse/alerts.jsonl
+      state: data/whitehouse/processed.json
+      also_registers_qledger: true
+      sacred: >
+        data/whitehouse/alerts.jsonl is the existing ledger (already append-only,
+        single-writer). The firings.jsonl for this reflex mirrors it — a SEPARATE
+        file. Whitehouse MUST remain untouched until W6b scopes the migration
+        explicitly. No write inside build_whitehouse.py may be added here.
+    firings_jsonl: data/reflexes/whitehouse_alert/firings.jsonl
+    claim_family: reflex.whitehouse_alert
+    tier: shadow
+    push_tier: false
+    graded: true
+    graded_note: >
+      Shadow tier (existing whitehouse claim family in qual_ladder.yml).
+      Each activated alert registers a qledger claim with direction from tone
+      and horizon = banner_days. Grading is already wired via grade_qledger.
+      The firings.jsonl mirror is a W6b migration — not done in W6a to avoid
+      the whitehouse single-writer contract. WHITEHOUSE UNTOUCHED in W6a.
+    migration_status: registered
+    producer: scripts/build_whitehouse.py
+    w6b_note: >
+      W6b: add firings.jsonl append (read-only from data/whitehouse/alerts.jsonl
+      inside a separate reader, never adding a write inside build_whitehouse.py).
+
+  btc_flash_crash:
+    description: >
+      BTC flash-crash state machine detects a transition in the hourly state
+      series. Exits 10 on change, triggering a commit + page rebuild.
+    trigger:
+      type: price_state_machine
+      source: Coinbase hourly candles (REST)
+      condition: "flash_crash_states(hourly_window).iloc[-1] != prev_state"
+      cadence_cron: "*/30 * * * *"
+      lane: sentinel (vector-sentinel)
+    action:
+      type: [append_events, rebuild_page, commit_artifacts, notify_telegram]
+      ledger: data/vector/alerts.jsonl
+      state: data/vector/flash_state.json
+      note: >
+        btc_alerts.write_events() uses open("w") (full sorted rewrite) not
+        open("a") — this is intentional for the page builder which needs the
+        full sorted list. The firings.jsonl append (W6b) is a SEPARATE file.
+    firings_jsonl: data/reflexes/btc_flash_crash/firings.jsonl
+    claim_family: reflex.btc_flash_crash
+    tier: shadow
+    push_tier: false
+    graded: true
+    graded_note: >
+      Shadow tier — flash_crash fires are directional (state change to crash =
+      direction=-1; recovery = direction=+1). Graded vs BTC at 1d/5d horizon.
+    migration_status: registered
+    producer: scripts/vector_sentinel.py
+    w6b_note: >
+      W6b: add firings.jsonl append inside vector_sentinel.py on state change.
+
+  circuit_breaker_trip:
+    description: >
+      A data source accumulates >= 3 consecutive failures (CIRCUIT_BREAKER_FAILS
+      = 3 in collectors/base.py) and transitions to dead state. Half-open after
+      CIRCUIT_HALF_OPEN_AFTER_H = 20h.
+    trigger:
+      type: counter_threshold
+      source: collectors/base.py:update_breaker()
+      condition: "circuit_breaker[source] >= CIRCUIT_BREAKER_FAILS (3)"
+      cadence: "embedded in nightly collect run (daily.yml:02:00 UTC)"
+      lane: nightly-collect
+    action:
+      type: [write_run_status, heartbeat_alert]
+      state: data/run_status.json
+      note: >
+        State is written to run_status.json (overwrite, not append). No JSONL
+        stream yet. The heartbeat.yml workflow reads run_status.json and fails
+        on broadly broken. Circuit trips during RTH are W6b candidates for
+        push-tier (minutes-class latency needed since trips happen intraday).
+    firings_jsonl: data/reflexes/circuit_breaker_trip/firings.jsonl
+    claim_family: reflex.circuit_breaker_trip
+    tier: infrastructure
+    push_tier: true
+    graded: false
+    graded_note: >
+      Infrastructure tier — no forward signal; direction=0. Operational
+      monitoring only. push_tier=true = W6b candidate (circuit trips during
+      RTH need minutes-class notification).
+    migration_status: registered
+    producer: collectors/base.py:update_breaker
+    w6b_note: >
+      W6b: add firings.jsonl append inside update_breaker() when state
+      transitions to dead. Route notify through push_priority_alerts().
+
+  intraday_fastpath:
+    description: >
+      Intraday fastpath runs every 30 min during RTH (+ pre-open / post-close
+      settle). Covers regime self-heal (see regime_stale_selfheal reflex),
+      live overlay build, and risk-state rebuild. Commits on every run.
+    trigger:
+      type: scheduled_lane
+      source: intraday-fastpath.yml
+      condition: "RTH tick; every 30 min 13:00-20:30 UTC Mon-Fri"
+      cadence_cron: "*/30 13-20 * * 1-5"
+      lane: intraday-fastpath
+    action:
+      type: [refresh_regime_if_stale, build_live_overlay, build_risk_state,
+             commit_artifacts]
+      artifacts:
+        - site/live/overlay.json
+        - site/live/risk_state.json
+        - site/live_config.js
+        - data/regime/latest.json
+        - data/market_state/latest.json
+    firings_jsonl: null
+    claim_family: null
+    tier: infrastructure
+    push_tier: false
+    graded: false
+    migration_status: registered
+    producer: .github/workflows/intraday-fastpath.yml
+    note: >
+      The regime self-heal sub-step is registered separately as
+      regime_stale_selfheal. The broader lane is registered here for
+      completeness — no firings.jsonl needed (lane-level infrastructure,
+      not an event reflex).
+
+  vector_sentinel_lane:
+    description: >
+      Vector sentinel (flash-crash) lane — the 30-min cron that drives the
+      btc_flash_crash reflex. Registered as a lane-level entry distinct from
+      the btc_flash_crash event-reflex above.
+    trigger:
+      type: scheduled_lane
+      source: sentinel.yml (vector-sentinel job)
+      condition: "30-min cron 24/7 all hours/days"
+      cadence_cron: "*/30 * * * *"
+      lane: sentinel
+    action:
+      type: [run_vector_sentinel, rebuild_site_on_change]
+    firings_jsonl: null
+    claim_family: null
+    tier: infrastructure
+    push_tier: false
+    graded: false
+    migration_status: registered
+    producer: scripts/vector_sentinel.py
+
+  falsifier_tripwires:
+    description: >
+      Cycle falsifier tripwires — dispatch_alerts() fires when the cycle ontology
+      detects a newly-fired tripwire rule (e.g. "Cycle falsifier FIRED — {cycle}:
+      '{claim}'"). Uses inline raw requests.post (does not import scripts.notify).
+      Dedup via engine.alerts.log_and_dedup() + alerts_log.parquet window.
+    trigger:
+      type: event_callback
+      source: engine/falsifier_tripwires.py:dispatch_alerts
+      condition: "newly_fired list is non-empty after log_and_dedup()"
+      cadence: "called from build_cycle._emit_tripwire_alerts() in nightly band"
+      lane: nightly-engine
+    action:
+      type: [append_alerts_log, notify_telegram_raw]
+      dedup: engine.alerts.log_and_dedup() + alerts_log.parquet window
+    firings_jsonl: data/reflexes/falsifier_tripwires/firings.jsonl
+    claim_family: reflex.falsifier_tripwires
+    tier: shadow
+    push_tier: false
+    graded: false
+    migration_status: registered
+    producer: engine/falsifier_tripwires.py
+    w6b_note: >
+      W6b: replace inline raw requests.post with scripts.notify import;
+      add firings.jsonl append.
+
+  cctv_finalize_watcher:
+    description: >
+      CCTV China news backfill finalization watcher — fires on FINALIZED
+      transition or STALL alert when finalization stalls past deadline.
+      Uses inline raw requests.post. Dedup via _already_fired() persistent
+      JSON keyed on _ALERT_FINALIZED / _ALERT_STALL (fires each at most once).
+    trigger:
+      type: state_machine
+      source: scripts/cctv_finalize_watcher.py:_do_finalize_transition
+      condition: "state enters FINALIZED OR stall condition detected"
+      cadence: "embedded in nightly collect or daily trigger"
+      lane: nightly-collect
+    action:
+      type: [notify_telegram_raw]
+      dedup: data/china_news/cctv_finalize_alerts_fired.json
+    firings_jsonl: data/reflexes/cctv_finalize_watcher/firings.jsonl
+    claim_family: reflex.cctv_finalize_watcher
+    tier: infrastructure
+    push_tier: false
+    graded: false
+    migration_status: registered
+    producer: scripts/cctv_finalize_watcher.py
+    w6b_note: >
+      W6b: replace inline raw requests.post with scripts.notify import.
+
+  qledger_promotion_readiness:
+    description: >
+      qledger promotion-readiness alert fires the FIRST time a claim family
+      crosses n_dates>=25 + wilson_ci_low>0 vs matched control. Dedup via
+      persistent data/qledger/readiness_alerts_fired.json.
+    trigger:
+      type: threshold_crossing
+      source: scripts/grade_qledger.py:run_readiness_post_step
+      condition: "claim_family x horizon: n_dates>=25 AND wilson_ci_low > 0"
+      cadence: "end-of-collect hook in nightly daily.yml collect job"
+      lane: nightly-collect
+    action:
+      type: [notify_telegram]
+      dedup: data/qledger/readiness_alerts_fired.json
+    firings_jsonl: data/reflexes/qledger_promotion_readiness/firings.jsonl
+    claim_family: reflex.qledger_promotion_readiness
+    tier: infrastructure
+    push_tier: false
+    graded: false
+    migration_status: registered
+    producer: scripts/grade_qledger.py
+
+  basket_freeze_notify:
+    description: >
+      Basket freeze notification fires when a basket membership change crosses
+      the freeze threshold (churn_violations list non-empty). NO dedup —
+      fires every build that trips the churn guard.
+    trigger:
+      type: guard_violation
+      source: engine/basket_freeze.py:_freeze_domain_inner
+      condition: "churn_violations list non-empty"
+      cadence: "embedded in nightly engine run"
+      lane: nightly-engine
+    action:
+      type: [notify_telegram, notify_discord]
+      dedup: none
+    firings_jsonl: data/reflexes/basket_freeze_notify/firings.jsonl
+    claim_family: reflex.basket_freeze_notify
+    tier: infrastructure
+    push_tier: false
+    graded: false
+    migration_status: registered
+    producer: engine/basket_freeze.py
+    w6b_note: >
+      W6b: add 6-hour dedup window via push_priority_alerts() to stop the
+      "fires every trip" spam pattern.
+
+  btc_live:
+    description: >
+      BTC live price lane — hourly 24/7 cron that fetches BTC-USD last price
+      and commits site/live/quotes.json to main. Lane-level registration.
+    trigger:
+      type: scheduled_lane
+      source: .github/workflows/btc-live.yml
+      condition: "top of every hour, 24/7"
+      cadence_cron: "0 * * * *"
+      lane: btc-live
+    action:
+      type: [fetch_price, commit_quotes_json]
+      artifacts: [site/live/quotes.json]
+    firings_jsonl: null
+    claim_family: null
+    tier: infrastructure
+    push_tier: false
+    graded: false
+    migration_status: registered
+    producer: scripts/build_live_quotes.py
+
+  live_quotes:
+    description: >
+      Equity live quotes lane — every 10 min weekdays. Pushes quotes.json to
+      the live-data branch (not main), browser fetches from raw.githubusercontent.
+    trigger:
+      type: scheduled_lane
+      source: .github/workflows/live-quotes.yml
+      condition: "every 10 min Mon-Fri all hours"
+      cadence_cron: "*/10 * * * 1-5"
+      lane: live-quotes
+    action:
+      type: [fetch_prices, push_to_live_data_branch]
+    firings_jsonl: null
+    claim_family: null
+    tier: infrastructure
+    push_tier: false
+    graded: false
+    migration_status: registered
+    producer: scripts/build_live_quotes.py
+
+  heartbeat_deadman:
+    description: >
+      Heartbeat dead-man's switch — once daily at 14:30 UTC weekdays. Reads
+      run_status.json + circuit_breaker counts. Fails the workflow on staleness
+      or dead adapters. Non-persistent dedup: non-zero exit guard only.
+    trigger:
+      type: scheduled_check
+      source: .github/workflows/heartbeat.yml
+      condition: "run_status.json stale OR circuit_breaker broadly broken"
+      cadence_cron: "30 14 * * 1-5"
+      lane: heartbeat
+    action:
+      type: [fail_workflow, notify_telegram]
+      dedup: "non-zero exit guard (fires every failed check)"
+    firings_jsonl: null
+    claim_family: null
+    tier: infrastructure
+    push_tier: false
+    graded: false
+    migration_status: registered
+    producer: scripts/healthcheck.py

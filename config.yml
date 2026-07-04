@@ -1438,6 +1438,308 @@ stock_search:
     - OSCR   # Oscar Health
     # Crypto ETF basket member (fund, not a company — bare "ETF / macro" label)
     - ETHA   # iShares Ethereum Trust ETF
+    # ---- Desk-coverage extension (W1.5): intel-hub + alt-data + congress-traded ------
+    # Every name the intel-hub command/emerging/exhausted/discovery lists, the alt-data
+    # mastermind signals/broken_signals, and recent congress-trades disclosures. Without
+    # a data/yahoo/<T>.parquet the trajectory veto (engine/trajectory.py) silently passes
+    # names through regardless of drawdown. This list is additive — existing tickers above
+    # are untouched. Grouped roughly by source for auditability.
+    # Intel-hub specific names not in S&P 1500
+    - ALHC   # Alignment Healthcare
+    - BLCO   # Bausch + Lomb
+    - BRUN   # Brunswick (mis-indexed by pipeline)
+    - BZFD   # BuzzFeed
+    - CABA   # Cabaletta Bio
+    - CAMT   # Camtek
+    - CI     # Cigna Group
+    - CIEN   # Ciena
+    - CNTM   # ConnectM Technology
+    - CSHR   # Casper Sleep (or similar)
+    - ELV    # Elevance Health
+    - FFIN   # First Financial Bankshares
+    - FIVE   # Five Below
+    - GLW    # Corning
+    - HTGC   # Hercules Capital
+    - KLIC   # Kulicke & Soffa
+    - KRRO   # Korro Bio
+    - LILA   # Liberty Latin America
+    - LUMN   # Lumen Technologies
+    - NAVN   # Navitas Semiconductor (or similar)
+    - NCDL   # Nuveen Churchill Direct Lending
+    - "ON"   # ON Semiconductor
+    - ONCY   # Onconova Therapeutics
+    - SGP    # Schering-Plough / SGP index
+    - SSP    # E.W. Scripps
+    - UCTT   # Ultra Clean Holdings
+    - VECO   # Veeco Instruments
+    # Alt-data mastermind signals
+    - BIIB   # Biogen
+    - DELL   # Dell Technologies
+    - F      # Ford Motor
+    - GOOG   # Alphabet (GOOG)
+    - GOOGL  # Alphabet (GOOGL)
+    - HON    # Honeywell
+    - INTC   # Intel
+    - META   # Meta Platforms
+    - MSFT   # Microsoft
+    - APH    # Amphenol
+    - LUV    # Southwest Airlines
+    - PLTR   # Palantir Technologies
+    - TSLA   # Tesla
+    - UBER   # Uber Technologies
+    - UNH    # UnitedHealth Group
+    # Owner-named entry candidates
+    - MRK    # Merck & Co
+    # Congress-traded US equities missing from main pipeline
+    - AAPL   # Apple
+    - ABBV   # AbbVie
+    - ABT    # Abbott Laboratories
+    - ACN    # Accenture
+    - ADBE   # Adobe
+    - ADI    # Analog Devices
+    - ADP    # Automatic Data Processing
+    - ADSK   # Autodesk
+    - AESI   # Atlas Energy Solutions
+    - AFL    # Aflac
+    - AIT    # Applied Industrial Technologies
+    - ALLY   # Ally Financial
+    - AMCR   # Amcor
+    - AMKR   # Amkor Technology
+    - AMP    # Ameriprise Financial
+    - AMT    # American Tower
+    - AMZN   # Amazon
+    - APG    # APi Group
+    - APO    # Apollo Global Management
+    - APP    # Applovin
+    - ARE    # Alexandria Real Estate
+    - ARES   # Ares Management
+    - ARLP   # Alliance Resource Partners
+    - ARQT   # Arcutis Biotherapeutics
+    - AWK    # American Water Works
+    - AXP    # American Express
+    - AZO    # AutoZone
+    - BAC    # Bank of America
+    - BBIO   # BridgeBio Pharma
+    - BDX    # Becton Dickinson
+    - BEP    # Brookfield Renewable Partners
+    - BITB   # Bitwise Bitcoin ETF
+    - BKNG   # Booking Holdings
+    - BLK    # BlackRock
+    - BMY    # Bristol-Myers Squibb
+    - BR     # Broadridge Financial Solutions
+    - BRO    # Brown & Brown
+    - BX     # Blackstone
+    - C      # Citigroup
+    - CAG    # Conagra Brands
+    - CARR   # Carrier Global
+    - CASY   # Casey's General Stores
+    - CAT    # Caterpillar
+    - CB     # Chubb
+    - CBZ    # CBIZ
+    - CDW    # CDW Corp
+    - CHKP   # Check Point Software
+    - CHRW   # C.H. Robinson
+    - CHTR   # Charter Communications
+    - CL     # Colgate-Palmolive
+    - CLH    # Clean Harbors
+    - CLX    # Clorox
+    - CMCSA  # Comcast
+    - CMG    # Chipotle Mexican Grill
+    - CODI   # Compass Diversified
+    - COF    # Capital One Financial
+    - COHR   # Coherent Corp
+    - COO    # Cooper Companies
+    - COP    # ConocoPhillips
+    - COR    # Cencora
+    - COST   # Costco
+    - CPB    # Campbell Soup
+    - CRM    # Salesforce
+    - CSGP   # CoStar Group
+    - CSW    # CSW Industrials
+    - CSX    # CSX Corp
+    - CTRA   # Coterra Energy
+    - CTSH   # Cognizant
+    - CVNA   # Carvana
+    - CVR    # CVR Energy
+    - CVS    # CVS Health
+    - CVX    # Chevron
+    - DASH   # DoorDash
+    - DCO    # Ducommun
+    - DDOG   # Datadog
+    - DIS    # Walt Disney
+    - DLTR   # Dollar Tree
+    - DPZ    # Domino's Pizza
+    - DRI    # Darden Restaurants
+    - DVN    # Devon Energy
+    - EA     # Electronic Arts
+    - EFX    # Equifax
+    - EME    # EMCOR Group
+    - ENB    # Enbridge
+    - EPAM   # EPAM Systems
+    - EQT    # EQT Corp
+    - ERIE   # Erie Indemnity
+    - ET     # Energy Transfer
+    - FBIN   # Fortune Brands Innovations
+    - FCFS   # FirstCash Holdings
+    - FCNCA  # First Citizens BancShares
+    - FDS    # FactSet Research
+    - FICO   # Fair Isaac (FICO)
+    - FIP    # FTAI Infrastructure
+    - FIS    # Fidelity National Information Services
+    - FLEX   # Flex Ltd
+    - FLL    # Full House Resorts
+    - FN     # Fabrinet
+    - FSV    # FirstService Corp
+    - FTAI   # FTAI Aviation
+    - FULT   # Fulton Financial
+    - FWONK  # Formula One Group
+    - GDDY   # GoDaddy
+    - GE     # GE Aerospace
+    - GEN    # Gen Digital
+    - GH     # Guardant Health
+    - GIL    # Gildan Activewear
+    - GILD   # Gilead Sciences
+    - GS     # Goldman Sachs
+    - GSK    # GSK (ADR)
+    - HBAN   # Huntington Bancshares
+    - HD     # Home Depot
+    - HLT    # Hilton Worldwide
+    - HOG    # Harley-Davidson
+    - HQY    # HealthEquity
+    - HSY    # Hershey
+    - IAG    # iA Financial Group
+    - IBM    # IBM
+    - ICE    # Intercontinental Exchange
+    - IHG    # InterContinental Hotels (ADR)
+    - INDB   # Independent Bank Group
+    - INTA   # Intapp
+    - INTU   # Intuit
+    - IP     # International Paper
+    - IRM    # Iron Mountain
+    - IT     # Gartner
+    - ITW    # Illinois Tool Works
+    - JKHY   # Jack Henry & Associates
+    - JNJ    # Johnson & Johnson
+    - JPM    # JPMorgan Chase
+    - K      # Kellanova
+    - KEX    # Kirby Corp
+    - KHC    # Kraft Heinz
+    - KO     # Coca-Cola
+    - KR     # Kroger
+    - KVUE   # Kenvue
+    - LAZR   # Luminar Technologies
+    - LGND   # Ligand Pharmaceuticals
+    - LITE   # Lumentum Holdings
+    - LOW    # Lowe's Companies
+    - LPLA   # LPL Financial
+    - LRN    # Stride
+    - MCD    # McDonald's
+    - MCK    # McKesson
+    - MDLZ   # Mondelez International
+    - MEDP   # Medpace Holdings
+    - MELI   # MercadoLibre
+    - MIDD   # Middleby Corp
+    - MKL    # Markel Group
+    - MKTX   # MarketAxess
+    - MLM    # Martin Marietta Materials
+    - MMM    # 3M
+    - MORN   # Morningstar
+    - MRVL   # Marvell Technology
+    - MSI    # Motorola Solutions
+    - MTSI   # MACOM Technology
+    - MTZ    # MasTec
+    - NDAQ   # Nasdaq (exchange)
+    - NFLX   # Netflix
+    - NKE    # Nike
+    - NOW    # ServiceNow
+    - NWS    # News Corp
+    - OC     # Owens Corning
+    - OGN    # Organon & Co
+    - OMC    # Omnicom Group
+    - ORCL   # Oracle
+    - ORLY   # O'Reilly Automotive
+    - PAYC   # Paycom Software
+    - PAYX   # Paychex
+    - PCVX   # Vaxcyte
+    - PEP    # PepsiCo
+    - PFGC   # Performance Food Group
+    - PG     # Procter & Gamble
+    - PGR    # Progressive Corp
+    - PH     # Parker Hannifin
+    - PINS   # Pinterest
+    - PKG    # Packaging Corp of America
+    - PLD    # Prologis
+    - PNC    # PNC Financial
+    - PPG    # PPG Industries
+    - PRIM   # Primoris Services
+    - PRU    # Prudential Financial
+    - PTA    # Cohen & Steers Tax-Advantaged Pref
+    - PTON   # Peloton Interactive
+    - PWP    # Perella Weinberg Partners
+    - REGN   # Regeneron Pharmaceuticals
+    - ROP    # Roper Technologies
+    - RRC    # Range Resources
+    - RVTY   # Revvity
+    - SARO   # StandardAero
+    - SBUX   # Starbucks
+    - SCI    # Service Corp International
+    - SHW    # Sherwin-Williams
+    - SIRI   # Sirius XM
+    - SPG    # Simon Property Group
+    - SPGI   # S&P Global
+    - SSNC   # SS&C Technologies
+    - ST     # Sensata Technologies
+    - STE    # Steris
+    - STRL   # Sterling Infrastructure
+    - STT    # State Street
+    - STZ    # Constellation Brands
+    - SWK    # Stanley Black & Decker
+    - SYF    # Synchrony Financial
+    - T      # AT&T
+    - TCBI   # Texas Capital Bancshares
+    - TCNNF  # Trulieve Cannabis
+    - TECH   # Bio-Techne
+    - TEL    # TE Connectivity
+    - TFC    # Truist Financial
+    - THC    # Tenet Healthcare
+    - TJX    # TJX Companies
+    - TMUS   # T-Mobile US
+    - TPH    # Tri Pointe Homes
+    - TPR    # Tapestry
+    - TSCO   # Tractor Supply
+    - TTD    # The Trade Desk
+    - TTWO   # Take-Two Interactive
+    - TWLO   # Twilio
+    - TXN    # Texas Instruments
+    - TYL    # Tyler Technologies
+    - UNP    # Union Pacific
+    - UPS    # United Parcel Service
+    - URI    # United Rentals
+    - VIAV   # Viavi Solutions
+    - VIK    # Viking Holdings
+    - VLTO   # Veralto
+    - VLY    # Valley National Bancorp
+    - VOYG   # Voyager Digital
+    - VRSK   # Verisk Analytics
+    - VSEC   # VSE Corp
+    - VZ     # Verizon Communications
+    - W      # Wayfair
+    - WAB    # Westinghouse Air Brake
+    - WDAY   # Workday
+    - WDS    # Woodside Energy (ADR)
+    - WFC    # Wells Fargo
+    - WHR    # Whirlpool
+    - WMT    # Walmart
+    - WPC    # W. P. Carey
+    - WPM    # Wheaton Precious Metals
+    - WRB    # W.R. Berkley
+    - XOM    # Exxon Mobil
+    - ZTS    # Zoetis
+    # Additional intel-hub off-desk discovery names found post-build
+    - HPE    # Hewlett Packard Enterprise
+    - ROST   # Ross Stores
+    - FMBM   # F&M Bank Corp
+    - PMPEX  # Pumping Solutions (or similar)
   # ticker -> {name, sector} for the single-stock extras above. build_stock_library
   # reads this so the search index shows the company + its GICS sector instead of
   # "<ticker> / ETF / macro". A ticker present in extra_tickers but missing here
@@ -2110,6 +2412,19 @@ notify:
   # have to watch the admin Experiments tab. Fires once per experiment, on transition only.
   experiments_alerts: true
 
+# Neural Web W6a — Push spine (engine/alert_triage.py:push_priority_alerts).
+# CONFIG-GATED OFF by default.  Enabling this is an operator + Article-2 event:
+# it converts the display-only triage priority score into automated outbound
+# dispatch.  Priority inputs are unvalidated hand-weights (W_TIER/W_SEVERITY)
+# and the cross-asset verdict — these are Article-2 surfaces.  No score is
+# RAISED by push_priority_alerts; it only dispatches alerts that already cleared
+# the threshold.  W6b: sender migration (routing existing 11 senders through this
+# spine) follows when this gate is opened and the dedup window is measured.
+alert_push:
+  enabled: false            # OPERATOR GATE: set true only after W6b gauntlet design
+  threshold: 60             # priority floor (0-100); 60 = act/critical or act/major-fresh
+  window_hours: 6           # dedup: same (source,type,asset) silenced for N hours after send
+
 # Public R2 data-plane freshness tripwire (scripts/audit_r2.py). The heavy per-ticker
 # stores are served to the live site from Cloudflare R2 (templates/data_base.js); every
 # CI publish is non-fatal and no-ops without creds, so ONLY this probe notices a dead
@@ -2151,6 +2466,14 @@ quality:
   macro_outlier_z: 5             # |z| of the latest change beyond this = FLAG only (log, never fail)
   # --- configured universe (audit_universe: config.yml sector/basket/intl lists) ---
   universe_min_bars: 250         # a configured ticker with fewer rows is flagged "short"
+  # --- massive_stock_day whole-market store (audit_massive_store) ---
+  # 2026-07-03 incident tripwire: the store's manifest claimed latest=2026-06-30 over a
+  # 110-day content hole (2026-03-13→2026-06-30). Ground truth = anchor parquets
+  # (SPY/QQQ/AAPL/MSFT/IWM), never the manifest.
+  massive_max_gap_bdays: 5       # > this many consecutive missing BUSINESS days in an anchor = coverage hole (fail)
+  massive_stale_bdays: 5         # newest anchor bar older than this many business days = stale FLAG only
+  massive_manifest_ahead_bdays: 2  # manifest latest_date > this many business days ahead of anchor content = lie (fail)
+  massive_min_files: 100         # fewer parquets than this = store absent (CI runner checkout) -> skipped, never a fail
   # --- governance gate (collect.py) ---
   abort_fail_pct: 5              # > this % of a universe failing aborts the collect run
   warn_fail_pct: 1               # 1-5% only warns + logs
@@ -5094,3 +5417,15 @@ pit:
   #   release_lags:
   #     core_pce: {lag_bd: 20, cadence: M, note: "..."}
   release_lags: {}
+
+
+# --------------------------------------------------------------------------- #
+# Oracle — Rotation Intelligence Web (engine/oracle/, P5).
+# ADD NEW KEYS AT THE END OF THIS BLOCK ONLY — never reorder.
+# --------------------------------------------------------------------------- #
+oracle:
+  # tilt_enabled: gates engine.oracle.tilt → stock_score._axis_tailwind.
+  # R4 binding (ORACLE_GAUNTLET_P3_ADJUDICATION.md): stays false until a Phase-0
+  # survival is registered in the forward ledger.  Two-sided regression test in
+  # tests/test_oracle_tilt.py verifies the gate is effective (not dead code).
+  tilt_enabled: false

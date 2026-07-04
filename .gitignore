@@ -131,7 +131,9 @@ research/_recon_raw/
 site/live/
 
 # options-flow transient caches (re-downloadable; keep out of git)
+# Options Alpha §A8: data/massive_flat/ and data/massive_flatfiles/ are dead stray dirs; do not write to them.
 data/massive_flat/
+data/massive_flatfiles/
 data/options_flow/_*.parquet
 # heavy per-ticker stores — served from Cloudflare R2 (scripts/publish_r2.py), not committed/deployed
 site/subsectorohlc/
@@ -154,6 +156,21 @@ data/hk_stocks_ext/*.parquet
 #            data/massive_stock_day/_backfill_state.json (resume state)
 # ~12,400 tickers × ~350 rows = ~240 MB total — must NOT be committed to git.
 data/massive_stock_day/*.parquet
+# Options Alpha §A4/A8: raw Massive.com options day-agg cache.
+# Local cache + R2-published via publish_r2 --dirs massive_options_day.
+# NEVER committed to git; content is re-downloadable from massive.com entitlement.
+# See research/OPTIONS_ALPHA_MASTERPLAN.md §3 rulings A4 and A8.
+data/massive_options_day/
+# ThetaData Phase-A T1 backfill store (rulings A4/A8 + §7.2 of LIVE_ORDER_FLOW_BRAINSTORM).
+# ~30–80 GB raw EOD chains + OI + Greeks; published to R2 via publish_r2 --dirs thetadata_eod.
+# NEVER committed to git; re-downloadable from ThetaData entitlement.
+# Committed (git-tracked): _backfill_state.json (resume state) + _manifest.json (R2 anchor).
+data/thetadata_eod/eod/
+data/thetadata_eod/oi/
+data/thetadata_eod/greeks/
+# Negation: keep the committed state + manifest files tracked even though the data subdirs above are excluded
+!data/thetadata_eod/_backfill_state.json
+!data/thetadata_eod/_manifest.json
 # (NOT R2) — not regenerable without re-scraping; critical H2a phase-0 evidence.
 # data/hk_shorts/ is intentionally NOT listed here; all files are committed.
 # ---- Slice G store decisions (2026-07-03) ------------------------------------
@@ -167,3 +184,37 @@ data/massive_stock_day/*.parquet
 #   data/canada_insider/insider.parquet      -- GIT-tracked (legacy; kept 1 month for
 #                                              migration safety, phase out 2026-08-03)
 # Both are small (<5MB), non-regenerable, git-tracked. Not gitignored.
+
+# ObsidianBrain vault (own git repo; view over memory/ + research/, lives inside this folder)
+ObsidianBrain/
+
+# Oracle rotation panel parquets (O0 — built off-render on Mac, published to R2).
+# manifest.json MAY be committed in a later PR once it stabilises; for now it is
+# also excluded to avoid stale snapshots in git.
+# Mirror pattern: data/massive_stock_day/*.parquet above.
+data/oracle/*.parquet
+data/oracle/manifest.json
+# Oracle graph outputs (O1) — heavy JSON artifacts; published to R2 per D5
+data/oracle/graph_s.json
+data/oracle/graph_m.json
+# Oracle P3 gauntlet outputs — heavy JSON artifacts; results MD is committed, JSON is not
+# p3_results.json is NOT committed (regenerate via: python scripts/oracle_gauntlet_p3.py --data-dir <DATA_DIR>)
+data/oracle/gauntlet/p3_results.json
+# p3_trial_ledger.json IS committed: it is the registration record and must be in git.
+# The negation below overrides the gitignore for that specific file only.
+data/oracle/gauntlet/p3_trial_ledger.json
+!data/oracle/gauntlet/p3_trial_ledger.json
+# Oracle P8 gauntlet outputs — JSON artifacts gitignored; results MD is committed
+data/oracle/gauntlet/p8_results.json
+data/oracle/gauntlet/p8_trial_ledger.json
+# Oracle B1 personality output — heavy local artifact, mirrors panel_*.parquet pattern
+data/oracle/personality.json
+# Oracle Research Factory (W-B1/B3) — governance + ledger files ARE committed.
+# registry.jsonl is the compound spec registry (small governance data).
+# trial_ledger.jsonl and live_ledger.jsonl are append-only result ledgers.
+# promotion_queue.json is the Fable-adjudicated promotion candidate list.
+!data/oracle/compounds/registry.jsonl
+!data/oracle/compounds/trial_ledger.jsonl
+!data/oracle/compounds/live_ledger.jsonl
+!data/oracle/promotion_queue.json
+data/oracle/memory_active_analogues.json

@@ -210,6 +210,13 @@ DIVERGENCE_NOTES: dict[str, dict[str, str]] = {
                "Any buy here is countertrend only."),
         "zh": ("周期读数为做顶中；日线时点阶梯正在寻找短线低点。此处任何买入仅属逆势短线。"),
     },
+    "extended_uptrend": {
+        "en": ("Position is stretched above trend, but the 200-day trend and momentum are still "
+               "up — a late-stage continuation, not a fresh entry. Don't chase; this is NOT a "
+               "topping or countertrend signal."),
+        "zh": ("位置已高于趋势并偏拉伸，但200日趋势与动量仍向上——属晚段延续，而非新入场点。"
+               "不宜追高；这并非见顶或逆势信号。"),
+    },
     "decline_recovery": {
         "en": ("The broader phase suggests recovery, but the daily cycle has failed. "
                "Phase confidence is low; treat as bottoming rather than confirmed entry."),
@@ -843,6 +850,7 @@ def resolve_state(
     dc_phase: str | None = None,
     ic_phase: str | None = None,
     failed_cycle: bool = False,
+    trend_up: bool = False,
 ) -> dict:
     """Resolve the full state for a single instrument bar.
 
@@ -851,7 +859,18 @@ def resolve_state(
        phase_conf=low; stance never softer than AVOID in those phases.
     2. Position-gated cells (Downturn × TURN SIGNALED/FRESH BUY).
     3. Matrix lookup from _SIMPLE_CROSSWALK.
+    3b. trend_up softening of the Peak buy-signal cells (see below).
     4. Raises ValueError on unknown phase/ladder_state.
+
+    trend_up: the name is in a CONFIRMED uptrend (above its long-term trend AND
+    momentum still rising). A "Peak" phase is high-position AND rising by
+    construction (classify_phase routes high+falling to Downturn), so the
+    ("Peak", buy-ladder) cells otherwise fire "Countertrend Only / Topping" on
+    every stretched-but-still-rising name — a read that contradicts the trend it
+    is riding. When trend_up, those cells soften to a "don't-chase / extended"
+    HOLD instead. A stretched bounce in a DOWNtrend (trend_up False) keeps the
+    countertrend read; a genuinely rolling-over name classifies as Downturn and
+    is unaffected.
 
     Returns
     -------
@@ -902,6 +921,19 @@ def resolve_state(
         stance = cell["stance"]
         divergence = cell.get("divergence", False)
         note_key = cell.get("note_key", "none")
+
+    # ── 3b. trend_up softening of the Peak buy-signal cells ────────────────
+    # ("Peak", BOTTOM WATCH / TURN SIGNALED / FRESH BUY) => COUNTERTREND ONLY + "topping" note.
+    # But a "Peak" is high-position AND still rising (high+falling => Downturn), so a fresh daily
+    # buy signal on a name that is ALSO above its long-term trend is trend-CONTINUATION, not
+    # countertrend — the hard "topping / countertrend only" read overclaims a reversal. Soften to
+    # a "don't-chase / extended" HOLD (no divergence, no topping note). Downtrend bounces
+    # (trend_up False) and rolling-over names (phase == Downturn) are untouched.
+    if (trend_up and phase == "Peak"
+            and ladder_state in ("BOTTOM WATCH", "TURN SIGNALED", "FRESH BUY")):
+        stance = "HOLD"
+        divergence = False
+        note_key = "extended_uptrend"
 
     stance_meta = STANCES[stance]
     note = DIVERGENCE_NOTES.get(note_key, DIVERGENCE_NOTES["none"])

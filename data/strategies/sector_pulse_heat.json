@@ -1,0 +1,694 @@
+{
+  "schema": "sector_pulse_heat.v1",
+  "region": "us",
+  "generated_at": "2026-07-04T00:51:13.103044+00:00",
+  "fwd_horizons_d": [
+    21,
+    63
+  ],
+  "step_d": 5,
+  "dd_risk": -0.08,
+  "hac_floor_t": 2.0,
+  "bh_q": 0.1,
+  "classifier": {
+    "source": "engine.sector_pulse._heat_tier (imported, shipped)",
+    "rank_delta_5d_thresh": 3,
+    "cool_rank_delta_5d_thresh": -3,
+    "score_delta_5d_thresh": 6
+  },
+  "n_trials": 16,
+  "proxy": {
+    "universe": "proxy_spdr_sectors",
+    "n_assets": 11,
+    "span": [
+      "1998-12-22",
+      "2026-07-01"
+    ],
+    "n_rows": 12755,
+    "tier_days": {
+      "heating": 424,
+      "hot": 527,
+      "cooling": 867,
+      "broken": 1271,
+      "idle": 1316
+    },
+    "tier_n": {
+      "heating": 539,
+      "hot": 624,
+      "cooling": 1311,
+      "broken": 3969,
+      "idle": 6312
+    },
+    "board_width_note": "\u00b13 rank positions \u224827% of the 11-wide proxy board vs \u22486.5% of the 46-wide live board \u2014 the proxy UNDER-fires the rank-delta legs; score-delta/label legs are width-free. sensitivity_rank1 re-runs at \u00b11 (live board share).",
+    "tiers": {
+      "heating": {
+        "n": 539,
+        "n_days": 424,
+        "rel21_med_pct": -0.01,
+        "rel63_med_pct": -0.28,
+        "dd21_med_pct": -2.0,
+        "dd63_med_pct": -3.33,
+        "p_dd21_lt_risk": 0.121,
+        "kind": "continuation",
+        "car_metric": "fwd_rel_21d",
+        "mean_pct": -0.07,
+        "t_hac": -0.329,
+        "p_hac": 0.7423,
+        "hit": 0.497,
+        "t_n": 424,
+        "measurable": false,
+        "verdict": "not_measurable",
+        "bh_q": 0.9279,
+        "bh_reject": false
+      },
+      "hot": {
+        "n": 624,
+        "n_days": 527,
+        "rel21_med_pct": -0.16,
+        "rel63_med_pct": 0.03,
+        "dd21_med_pct": -1.93,
+        "dd63_med_pct": -3.5,
+        "p_dd21_lt_risk": 0.103,
+        "kind": "continuation",
+        "car_metric": "fwd_rel_21d",
+        "mean_pct": -0.15,
+        "t_hac": -0.843,
+        "p_hac": 0.3993,
+        "hit": 0.473,
+        "t_n": 527,
+        "measurable": false,
+        "verdict": "not_measurable",
+        "bh_q": 0.6655,
+        "bh_reject": false
+      },
+      "cooling": {
+        "n": 1311,
+        "n_days": 867,
+        "rel21_med_pct": -0.05,
+        "rel63_med_pct": -0.0,
+        "dd21_med_pct": -2.29,
+        "dd63_med_pct": -4.27,
+        "p_dd21_lt_risk": 0.114,
+        "kind": "risk",
+        "car_metric": "fwd_dd_21d",
+        "mean_pct": -3.32,
+        "t_hac": -15.421,
+        "p_hac": 0.0,
+        "hit": 0.114,
+        "t_n": 867,
+        "measurable": true,
+        "verdict": "measurable_edge",
+        "bh_q": 0.0,
+        "bh_reject": true
+      },
+      "broken": {
+        "n": 3969,
+        "n_days": 1271,
+        "rel21_med_pct": -0.08,
+        "rel63_med_pct": 0.11,
+        "dd21_med_pct": -2.27,
+        "dd63_med_pct": -3.8,
+        "p_dd21_lt_risk": 0.126,
+        "kind": "risk",
+        "car_metric": "fwd_dd_21d",
+        "mean_pct": -3.61,
+        "t_hac": -15.455,
+        "p_hac": 0.0,
+        "hit": 0.126,
+        "t_n": 1271,
+        "measurable": true,
+        "verdict": "measurable_edge",
+        "bh_q": 0.0,
+        "bh_reject": true
+      },
+      "idle": {
+        "n": 6312,
+        "n_days": 1316,
+        "rel21_med_pct": -0.03,
+        "rel63_med_pct": -0.12,
+        "dd21_med_pct": -1.99,
+        "dd63_med_pct": -3.71,
+        "p_dd21_lt_risk": 0.099,
+        "kind": "continuation",
+        "car_metric": "fwd_rel_21d",
+        "mean_pct": 0,
+        "t_hac": -0.006,
+        "p_hac": 0.9953,
+        "hit": 0.495,
+        "t_n": 1316,
+        "measurable": false,
+        "verdict": "not_measurable",
+        "bh_q": 0.9953,
+        "bh_reject": false
+      }
+    },
+    "paired_vs_idle": {
+      "heating_rel21": {
+        "t_hac": 0.067,
+        "p_hac": 0.9469,
+        "mean_pct": 0.01,
+        "n_days": 420,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": -0.13,
+            "n_days": 184
+          },
+          "post2013": {
+            "mean_pct": 0.13,
+            "n_days": 236
+          }
+        },
+        "claim_sign": 1,
+        "bh_q": 0.9469,
+        "bh_reject": false
+      },
+      "heating_dd21": {
+        "t_hac": -2.381,
+        "p_hac": 0.0172,
+        "mean_pct": -0.35,
+        "n_days": 420,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": -0.65,
+            "n_days": 184
+          },
+          "post2013": {
+            "mean_pct": -0.11,
+            "n_days": 236
+          }
+        },
+        "claim_sign": 1,
+        "bh_q": 0.0516,
+        "bh_reject": true
+      },
+      "hot_rel21": {
+        "t_hac": -0.879,
+        "p_hac": 0.3792,
+        "mean_pct": -0.18,
+        "n_days": 524,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": 0.01,
+            "n_days": 249
+          },
+          "post2013": {
+            "mean_pct": -0.34,
+            "n_days": 275
+          }
+        },
+        "claim_sign": 1,
+        "bh_q": 0.5458,
+        "bh_reject": false
+      },
+      "hot_dd21": {
+        "t_hac": -2.148,
+        "p_hac": 0.0317,
+        "mean_pct": -0.32,
+        "n_days": 524,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": -0.34,
+            "n_days": 249
+          },
+          "post2013": {
+            "mean_pct": -0.3,
+            "n_days": 275
+          }
+        },
+        "claim_sign": 1,
+        "bh_q": 0.0634,
+        "bh_reject": true
+      },
+      "cooling_dd21": {
+        "t_hac": -0.747,
+        "p_hac": 0.4548,
+        "mean_pct": -0.06,
+        "n_days": 862,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": -0.12,
+            "n_days": 412
+          },
+          "post2013": {
+            "mean_pct": -0.0,
+            "n_days": 450
+          }
+        },
+        "claim_sign": -1,
+        "bh_q": 0.5458,
+        "bh_reject": false
+      },
+      "broken_dd21": {
+        "t_hac": -4.339,
+        "p_hac": 0.0,
+        "mean_pct": -0.41,
+        "n_days": 1266,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": -0.63,
+            "n_days": 616
+          },
+          "post2013": {
+            "mean_pct": -0.2,
+            "n_days": 650
+          }
+        },
+        "claim_sign": -1,
+        "bh_q": 0.0,
+        "bh_reject": true
+      }
+    },
+    "sensitivity_rank1": {
+      "tier_n": {
+        "heating": 965,
+        "hot": 271,
+        "cooling": 3187,
+        "broken": 3969,
+        "idle": 4363
+      },
+      "paired_vs_idle": {
+        "heating_rel21": {
+          "t_hac": 0.429,
+          "p_hac": 0.6676,
+          "mean_pct": 0.08,
+          "n_days": 663,
+          "split_half": {
+            "pre2013": {
+              "mean_pct": -0.0,
+              "n_days": 301
+            },
+            "post2013": {
+              "mean_pct": 0.15,
+              "n_days": 362
+            }
+          },
+          "claim_sign": 1,
+          "bh_q": 0.7755,
+          "bh_reject": false
+        },
+        "heating_dd21": {
+          "t_hac": -0.53,
+          "p_hac": 0.5961,
+          "mean_pct": -0.07,
+          "n_days": 663,
+          "split_half": {
+            "pre2013": {
+              "mean_pct": -0.13,
+              "n_days": 301
+            },
+            "post2013": {
+              "mean_pct": -0.02,
+              "n_days": 362
+            }
+          },
+          "claim_sign": 1,
+          "bh_q": 0.7755,
+          "bh_reject": false
+        },
+        "hot_rel21": {
+          "t_hac": -1.027,
+          "p_hac": 0.3043,
+          "mean_pct": -0.34,
+          "n_days": 235,
+          "split_half": {
+            "pre2013": {
+              "mean_pct": 0.13,
+              "n_days": 108
+            },
+            "post2013": {
+              "mean_pct": -0.73,
+              "n_days": 127
+            }
+          },
+          "claim_sign": 1,
+          "bh_q": 0.6086,
+          "bh_reject": false
+        },
+        "hot_dd21": {
+          "t_hac": -1.924,
+          "p_hac": 0.0543,
+          "mean_pct": -0.44,
+          "n_days": 235,
+          "split_half": {
+            "pre2013": {
+              "mean_pct": -0.52,
+              "n_days": 108
+            },
+            "post2013": {
+              "mean_pct": -0.37,
+              "n_days": 127
+            }
+          },
+          "claim_sign": 1,
+          "bh_q": 0.1629,
+          "bh_reject": false
+        },
+        "cooling_dd21": {
+          "t_hac": -0.285,
+          "p_hac": 0.7755,
+          "mean_pct": -0.02,
+          "n_days": 1218,
+          "split_half": {
+            "pre2013": {
+              "mean_pct": -0.05,
+              "n_days": 595
+            },
+            "post2013": {
+              "mean_pct": 0.01,
+              "n_days": 623
+            }
+          },
+          "claim_sign": -1,
+          "bh_q": 0.7755,
+          "bh_reject": false
+        },
+        "broken_dd21": {
+          "t_hac": -3.906,
+          "p_hac": 0.0001,
+          "mean_pct": -0.36,
+          "n_days": 1243,
+          "split_half": {
+            "pre2013": {
+              "mean_pct": -0.6,
+              "n_days": 601
+            },
+            "post2013": {
+              "mean_pct": -0.14,
+              "n_days": 642
+            }
+          },
+          "claim_sign": -1,
+          "bh_q": 0.0006,
+          "bh_reject": true
+        }
+      }
+    }
+  },
+  "live": {
+    "universe": "live_baskets",
+    "n_baskets": 46,
+    "span": [
+      "2023-05-30",
+      "2026-07-02"
+    ],
+    "n_rows": 3892,
+    "tier_n": {
+      "heating": 417,
+      "hot": 126,
+      "cooling": 829,
+      "broken": 1466,
+      "idle": 1054
+    },
+    "tiers": {
+      "heating": {
+        "n": 417,
+        "n_days": 93,
+        "rel21_med_pct": 1.06,
+        "rel63_med_pct": 2.23,
+        "dd21_med_pct": -3.94,
+        "dd63_med_pct": -7.09,
+        "p_dd21_lt_risk": 0.305,
+        "kind": "continuation",
+        "car_metric": "fwd_rel_21d",
+        "mean_pct": 3.16,
+        "t_hac": 2.161,
+        "p_hac": 0.0307,
+        "hit": 0.542,
+        "t_n": 93,
+        "measurable": true,
+        "verdict": "measurable_edge",
+        "bh_q": 0.0406,
+        "bh_reject": true
+      },
+      "hot": {
+        "n": 126,
+        "n_days": 62,
+        "rel21_med_pct": 1.63,
+        "rel63_med_pct": 0.74,
+        "dd21_med_pct": -4.49,
+        "dd63_med_pct": -8.39,
+        "p_dd21_lt_risk": 0.294,
+        "kind": "continuation",
+        "car_metric": "fwd_rel_21d",
+        "mean_pct": 10.21,
+        "t_hac": 2.11,
+        "p_hac": 0.0348,
+        "hit": 0.587,
+        "t_n": 62,
+        "measurable": true,
+        "verdict": "measurable_edge",
+        "bh_q": 0.0406,
+        "bh_reject": true
+      },
+      "cooling": {
+        "n": 829,
+        "n_days": 100,
+        "rel21_med_pct": 0.49,
+        "rel63_med_pct": 1.54,
+        "dd21_med_pct": -3.68,
+        "dd63_med_pct": -5.8,
+        "p_dd21_lt_risk": 0.267,
+        "kind": "risk",
+        "car_metric": "fwd_dd_21d",
+        "mean_pct": -6.33,
+        "t_hac": -6.603,
+        "p_hac": 0.0,
+        "hit": 0.267,
+        "t_n": 100,
+        "measurable": true,
+        "verdict": "measurable_edge",
+        "bh_q": 0.0,
+        "bh_reject": true
+      },
+      "broken": {
+        "n": 1466,
+        "n_days": 102,
+        "rel21_med_pct": 0.28,
+        "rel63_med_pct": 1.33,
+        "dd21_med_pct": -3.87,
+        "dd63_med_pct": -7.16,
+        "p_dd21_lt_risk": 0.283,
+        "kind": "risk",
+        "car_metric": "fwd_dd_21d",
+        "mean_pct": -6.0,
+        "t_hac": -7.14,
+        "p_hac": 0.0,
+        "hit": 0.283,
+        "t_n": 102,
+        "measurable": true,
+        "verdict": "measurable_edge",
+        "bh_q": 0.0,
+        "bh_reject": true
+      },
+      "idle": {
+        "n": 1054,
+        "n_days": 102,
+        "rel21_med_pct": 0.22,
+        "rel63_med_pct": 0.35,
+        "dd21_med_pct": -2.91,
+        "dd63_med_pct": -5.23,
+        "p_dd21_lt_risk": 0.232,
+        "kind": "continuation",
+        "car_metric": "fwd_rel_21d",
+        "mean_pct": 1.88,
+        "t_hac": 2.047,
+        "p_hac": 0.0406,
+        "hit": 0.513,
+        "t_n": 102,
+        "measurable": true,
+        "verdict": "measurable_edge",
+        "bh_q": 0.0406,
+        "bh_reject": true
+      }
+    },
+    "paired_vs_idle": {
+      "heating_rel21": {
+        "t_hac": 1.466,
+        "p_hac": 0.1427,
+        "mean_pct": 1.31,
+        "n_days": 93,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": null,
+            "n_days": 0
+          },
+          "post2013": {
+            "mean_pct": 1.31,
+            "n_days": 93
+          }
+        },
+        "claim_sign": 1,
+        "bh_q": 0.4281,
+        "bh_reject": false
+      },
+      "heating_dd21": {
+        "t_hac": 0.04,
+        "p_hac": 0.9684,
+        "mean_pct": 0.02,
+        "n_days": 93,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": null,
+            "n_days": 0
+          },
+          "post2013": {
+            "mean_pct": 0.02,
+            "n_days": 93
+          }
+        },
+        "claim_sign": 1,
+        "bh_q": 0.9684,
+        "bh_reject": false
+      },
+      "hot_rel21": {
+        "t_hac": 1.923,
+        "p_hac": 0.0545,
+        "mean_pct": 8.09,
+        "n_days": 62,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": null,
+            "n_days": 0
+          },
+          "post2013": {
+            "mean_pct": 8.09,
+            "n_days": 62
+          }
+        },
+        "claim_sign": 1,
+        "bh_q": 0.327,
+        "bh_reject": false
+      },
+      "hot_dd21": {
+        "t_hac": -1.196,
+        "p_hac": 0.2316,
+        "mean_pct": -1.14,
+        "n_days": 62,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": null,
+            "n_days": 0
+          },
+          "post2013": {
+            "mean_pct": -1.14,
+            "n_days": 62
+          }
+        },
+        "claim_sign": 1,
+        "bh_q": 0.4632,
+        "bh_reject": false
+      },
+      "cooling_dd21": {
+        "t_hac": -0.645,
+        "p_hac": 0.5191,
+        "mean_pct": -0.2,
+        "n_days": 100,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": null,
+            "n_days": 0
+          },
+          "post2013": {
+            "mean_pct": -0.2,
+            "n_days": 100
+          }
+        },
+        "claim_sign": -1,
+        "bh_q": 0.7787,
+        "bh_reject": false
+      },
+      "broken_dd21": {
+        "t_hac": 0.391,
+        "p_hac": 0.6959,
+        "mean_pct": 0.18,
+        "n_days": 102,
+        "split_half": {
+          "pre2013": {
+            "mean_pct": null,
+            "n_days": 0
+          },
+          "post2013": {
+            "mean_pct": 0.18,
+            "n_days": 102
+          }
+        },
+        "claim_sign": -1,
+        "bh_q": 0.8351,
+        "bh_reject": false
+      }
+    },
+    "warning": "HINDSIGHT-curated membership, ~3y, survivorship-biased \u2014 descriptive context only, NEVER a gate."
+  },
+  "archive": {
+    "stream": "baskets",
+    "n_snapshots": 10,
+    "span": [
+      "2026-06-18",
+      "2026-07-02"
+    ],
+    "n_heat_rows": 161,
+    "tier_counts": {
+      "heating": 29,
+      "hot": 9,
+      "cooling": 40,
+      "broken": 67,
+      "idle": 16
+    },
+    "n_gradeable_21d": 0,
+    "rerun_bar": ">=90 archived sessions (~4.5 months) before the archive lane can confirm/deny the proxy verdict; re-run this script then (grades accrue automatically).",
+    "note": "Heat reconstructed from the REAL shipped snapshots \u2014 validates the reconstruction machinery on live data even before forward windows mature."
+  },
+  "verdict": {
+    "heating": {
+      "claim": "fwd 21d rel-return / drawdown vs same-day idle",
+      "verdict": "not_measurable",
+      "via": null,
+      "inverted": [
+        "heating_dd21"
+      ],
+      "t_hac": 0.067,
+      "mean_pct": 0.01,
+      "n_days": 420,
+      "bh_q": 0.9469
+    },
+    "hot": {
+      "claim": "fwd 21d rel-return / drawdown vs same-day idle",
+      "verdict": "not_measurable",
+      "via": null,
+      "inverted": [
+        "hot_dd21"
+      ],
+      "t_hac": -0.879,
+      "mean_pct": -0.18,
+      "n_days": 524,
+      "bh_q": 0.5458
+    },
+    "cooling": {
+      "claim": "fwd 21d drawdown deeper than same-day idle",
+      "verdict": "not_measurable",
+      "via": null,
+      "inverted": null,
+      "t_hac": -0.747,
+      "mean_pct": -0.06,
+      "n_days": 862,
+      "bh_q": 0.5458
+    },
+    "broken": {
+      "claim": "fwd 21d drawdown deeper than same-day idle",
+      "verdict": "measurable_edge",
+      "via": "broken_dd21",
+      "inverted": null,
+      "t_hac": -4.339,
+      "mean_pct": -0.41,
+      "n_days": 1266,
+      "bh_q": 0.0
+    },
+    "idle": {
+      "verdict": "baseline",
+      "claim": null
+    },
+    "GO": true,
+    "decision": "grades_upgraded",
+    "note": "Verdict controls ONLY the displayed grade (backtested vs descriptive/unconfirmed) via sector_pulse._heat_strength \u2014 heat tiers never bind a score, a reco or a weight regardless of outcome (validate-before-weight). Measured on the 27y US proxy; cited cross-market the way baskets_calibration is."
+  }
+}

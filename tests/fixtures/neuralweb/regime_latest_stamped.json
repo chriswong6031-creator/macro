@@ -1,0 +1,13 @@
+{
+  "date": "2026-07-04",
+  "regime": "neutral",
+  "risk_radar": {
+    "state": "caution",
+    "asof": "2026-07-04"
+  },
+  "schema_version": 1,
+  "produced_by": "engine/run.py",
+  "produced_at": "2026-07-04T12:00:00Z",
+  "inputs_hash": "sha256:a792d3665b6ae7306c8339d3aae4a1be55d76f8afad9e41171a9fc06c6b64149",
+  "tier": "infrastructure"
+}

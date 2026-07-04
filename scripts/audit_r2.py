@@ -61,6 +61,11 @@ DEFAULT_ANCHORS = [
     # once the first full backfill publish completes).  Not in DEFAULT yet: the initial
     # backfill may take several nightly runs; only stable after the _manifest.json is
     # first written by a successful --dirs hk_stocks_ext run.
+    # massive_stock_day: whole-market daily OHLCV parquets (Setup-Species W0.6a).
+    # Same deal — NOT in DEFAULT until the first publish from the store host lands
+    # (as of 2026-07-03 the store has never been published; anchoring it now would
+    # red-flag every heartbeat with DARK). Add via config r2_data_plane.anchors once
+    # live; the coverage probe below then also checks its CONTENT continuity.
 ]
 # Both lanes republish daily (daily.yml 02:00 UTC + cron lag lands ~05-10 UTC;
 # asia-close 08:30 UTC), so the manifest's expected age at the 14:30 UTC heartbeat is
@@ -69,6 +74,15 @@ DEFAULT_ANCHORS = [
 DEFAULT_MAX_AGE_H = 26.0
 ASOF_KEY = "stockdata/SPY.json"
 DEFAULT_ASOF_MAX_DAYS = 6  # `asof` = last bar date: 3-day weekend + a market holiday tolerated
+
+# Data-dir stores whose publish-side manifest embeds the collector's own manifest under
+# "store" (see publish_r2) — carrying coverage/anchor blocks this audit can content-check.
+# Probed only when the dir is ALSO in the active anchors list. 2026-07-03 lesson
+# (massive_stock_day): a manifest can be FRESH while the store misses 110 days of
+# content — Last-Modified freshness alone cannot see that.
+COVERAGE_ANCHORS = ["massive_stock_day", "hk_stocks_ext"]
+DEFAULT_COVERAGE_MAX_RUN_BDAYS = 5   # store-reported longest missing-weekday run tolerated
+DEFAULT_COVERAGE_MAX_AGE_DAYS = 6    # newest store content older than this = content-stale
 
 
 def _fetch(url: str, method: str = "HEAD", timeout: float = 20.0):
@@ -105,7 +119,10 @@ def _candidates(d: str) -> list[str]:
 
 def probe(now: datetime, base: str = DEFAULT_BASE, anchors: list[str] | None = None,
           max_age_hours: float = DEFAULT_MAX_AGE_H, asof_key: str | None = ASOF_KEY,
-          asof_max_days: int = DEFAULT_ASOF_MAX_DAYS, fetch=_fetch, retries: int = 2) -> dict:
+          asof_max_days: int = DEFAULT_ASOF_MAX_DAYS, fetch=_fetch, retries: int = 2,
+          coverage_anchors: list[str] | None = None,
+          coverage_max_run_bdays: int = DEFAULT_COVERAGE_MAX_RUN_BDAYS,
+          coverage_max_age_days: int = DEFAULT_COVERAGE_MAX_AGE_DAYS) -> dict:
     """Pure evaluation -> {ok, fail_reasons, warnings, anchors}. `fetch` injectable for tests."""
     base = base.rstrip("/")
     anchors = list(anchors or DEFAULT_ANCHORS)
@@ -179,6 +196,56 @@ def probe(now: datetime, base: str = DEFAULT_BASE, anchors: list[str] | None = N
         except (ValueError, KeyError, TypeError) as e:
             warn.append(f"asof probe {asof_key}: unparseable ({e!r})")
 
+    # Content-level COVERAGE probe for data-dir stores: freshness (above) proves a
+    # publish ran; the embedded store manifest proves the content is CONTINUOUS. A
+    # store can be freshly published yet miss months of interior days — the
+    # 2026-07-03 massive_stock_day incident — and only this check can see it.
+    for d in (coverage_anchors if coverage_anchors is not None else COVERAGE_ANCHORS):
+        if d not in anchors:
+            continue
+        try:
+            st, _, body = _try(fetch, f"{base}/{d}/_manifest.json", retries, method="GET")
+        except OSError as e:
+            warn.append(f"coverage probe {d}: unreachable ({e})")
+            continue
+        if st != 200 or not body:
+            # anchor-existence failures are already handled by the freshness loop
+            warn.append(f"coverage probe {d}: HTTP {st}")
+            continue
+        try:
+            store = json.loads(body).get("store") or {}
+        except ValueError as e:
+            warn.append(f"coverage probe {d}: unparseable ({e!r})")
+            continue
+        cov = store.get("coverage") or {}
+        anchor_blk = store.get("anchor") or {}
+        if not cov and not anchor_blk:
+            warn.append(f"coverage probe {d}: manifest carries no store coverage yet "
+                        "(pre-coverage publish?) — content continuity unverifiable")
+            continue
+        run_bd = cov.get("max_missing_run_weekdays")
+        latest = anchor_blk.get("last") or store.get("latest_date") or cov.get("last_day")
+        rec: dict = {}
+        if run_bd is not None:
+            rec["max_missing_run_weekdays"] = int(run_bd)
+            if int(run_bd) > coverage_max_run_bdays:
+                fail.append(f"R2 COVERAGE HOLE: {d} reports a {run_bd}-business-day "
+                            f"missing run (limit {coverage_max_run_bdays}) — the "
+                            "published store has an interior content gap")
+        if latest:
+            try:
+                age_d = (now.date() - date.fromisoformat(str(latest))).days
+            except ValueError:
+                warn.append(f"coverage probe {d}: bad latest date {latest!r}")
+            else:
+                rec.update({"latest": str(latest), "age_days": age_d})
+                if age_d > coverage_max_age_days:
+                    fail.append(f"R2 CONTENT STALE: {d} newest content {latest} is "
+                                f"{age_d}d old (limit {coverage_max_age_days}d) — "
+                                "publishes may be running but shipping old data")
+        if rec:
+            detail[f"{d}/coverage"] = rec
+
     return {"ok": not fail, "fail_reasons": fail, "warnings": warn, "anchors": detail}
 
 
@@ -194,6 +261,11 @@ def run(now: datetime | None = None, anchors: list[str] | None = None,
         max_age_hours=max_age_hours if max_age_hours is not None
         else float(cfg.get("max_age_hours", DEFAULT_MAX_AGE_H)),
         asof_max_days=int(cfg.get("asof_max_days", DEFAULT_ASOF_MAX_DAYS)),
+        coverage_anchors=cfg.get("coverage_anchors"),
+        coverage_max_run_bdays=int(cfg.get("coverage_max_run_bdays",
+                                           DEFAULT_COVERAGE_MAX_RUN_BDAYS)),
+        coverage_max_age_days=int(cfg.get("coverage_max_age_days",
+                                          DEFAULT_COVERAGE_MAX_AGE_DAYS)),
     )
     out_dir = config.data_dir() / "quality"
     out_dir.mkdir(parents=True, exist_ok=True)

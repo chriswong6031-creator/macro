@@ -261,6 +261,53 @@ def test_qledger_adapter_idempotent(tmp_path: Path = None) -> None:
     assert len(claims) == 3
 
 
+def test_qledger_numpy_stamp_does_not_zero_ledger(tmp_path: Path = None) -> None:
+    """Regression (CI red 2026-07-04): the US regime_vector stamp is read from a
+    parquet, so its values arrive as numpy scalars (np.int64/float64). A leaked
+    np.int64 made json.dumps raise 'Object of type int64 is not JSON
+    serializable' — which, swallowed by a broad except, silently zeroed every
+    claim (0 written instead of 3). qledger's write boundary must coerce numpy
+    scalars to native python so this can never zero the ledger again."""
+    import numpy as np
+    from engine import qledger as ql
+    d = Path(tempfile.mkdtemp())
+
+    orig = wb._call_model
+    wb._call_model = _patch(_FIXTURE_REPLY)
+    try:
+        rec = wb.evaluate(_TARIFF_ITEM, _CFG, root=Path("/nonexistent"))
+    finally:
+        wb._call_model = orig
+    rec["generated_at"] = datetime.now(timezone.utc).isoformat()
+
+    # A stamp exactly as a raw parquet row yields it — numpy scalars throughout,
+    # regime_vector_degraded being the int64 that broke CI. Patch the stamp
+    # source directly so the test is independent of any on-disk parquet.
+    numpy_stamp = {
+        "rate_pressure": np.float64(0.15),
+        "quad_hard_label": "Quad3",
+        "fused_risk_label": "risk_on",
+        "vol_regime": "calm",
+        "risk_radar_state": "neutral",
+        "regime_vector_degraded": np.int64(1),
+        "vector_asof": "2026-07-01",
+        "staleness_hours": np.float64(0.0),
+    }
+    with patch.object(ql, "_regime_stamp_for_asof", return_value=numpy_stamp):
+        bw._register_wh_claim(rec, d)
+
+    claims_path = d / "data" / "qledger" / "claims.jsonl"
+    assert claims_path.exists(), "numpy in the stamp must not prevent the write"
+    claims = [json.loads(l) for l in claims_path.read_text().splitlines() if l.strip()]
+    assert len(claims) == 3, "numpy scalar in the stamp must NOT zero the ledger"
+    c = claims[0]
+    # round-tripped through json → native JSON scalars, not numpy repr strings
+    assert c["regime_vector_degraded"] == 1
+    assert isinstance(c["regime_vector_degraded"], int)
+    assert isinstance(c["rate_pressure"], float)
+    assert c["vector_asof"] == "2026-07-01"
+
+
 # ---------------------------------------------------------------------------
 # 4b. qledger import guard — real dependency failures must be LOUD
 # ---------------------------------------------------------------------------

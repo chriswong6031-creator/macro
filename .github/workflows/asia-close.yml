@@ -70,7 +70,10 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/
+          # site/qledger: scripts.collect runs the qledger grader in every lane;
+          # its tracked site/qledger/track_record.json must be staged or the
+          # rebase+push dies on "unstaged changes" (same gap as daily.yml).
+          git add data/ site/qledger/
           if git diff --cached --quiet; then echo "no asia data changes"; else
             git commit -m "data: asia collection $(date -u +%F)"
             for i in 1 2 3 4 5; do

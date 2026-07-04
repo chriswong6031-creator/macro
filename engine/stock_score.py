@@ -198,8 +198,13 @@ def trust_tier(market: str, gate_go: bool = False) -> dict:
 # equal-weight over the axes that are actually present (research §4).
 # v2: EDGE-dominant — the validated event core (selection) carries the most weight; entry
 # is timing context; quality is durability; tailwind is a small sector tilt.
+#
+# W9-B DEMOTE (2026-07-03, #1143): US thematic-basket tailwind axis carries no forward
+# clean15 information (negative tercile spreads, both deep-panel and OOS, sign-unstable).
+# Weight set to 0.0 for US only — axis fields remain in the profile for display context;
+# no rank/ordering contribution. Non-US markets unaffected (untested on those panels).
 _WEIGHT_PRIOR = {
-    "US": {"selection": 0.45, "entry": 0.15, "tailwind": 0.10, "quality": 0.30},
+    "US": {"selection": 0.45, "entry": 0.15, "tailwind": 0.0, "quality": 0.30},
     "CA": {"selection": 0.45, "entry": 0.18, "tailwind": 0.12, "quality": 0.25},
     "CN": {"selection": 0.42, "entry": 0.25, "tailwind": 0.13, "quality": 0.20},
     "HK": {"selection": 0.35, "entry": 0.25, "tailwind": 0.20, "quality": 0.20},

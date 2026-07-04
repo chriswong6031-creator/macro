@@ -22,7 +22,7 @@ from datetime import date  # noqa: E402
 
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
-from engine import intel_hub, hub_track_record  # noqa: E402
+from engine import intel_hub, hub_track_record, desk_grader  # noqa: E402
 from engine.qledger_ui import chips_for_desks, load_track_record  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -71,6 +71,14 @@ def build(write: bool = True) -> dict:
         log.warning("hub track-record step failed: %s", e)
     hub.pop("track_rows", None)                    # heavy; not part of the published command view
     hub["track_record"] = track
+    # UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d). intel_hub uses the ADAPTER over the
+    # existing hub ledger (no double-snapshot) — real matured numbers immediately. Degrade-safe.
+    try:
+        desk_grader.seed_notes()
+        hub["desk_grader"] = desk_grader.compute("intel_hub", date.today())
+    except Exception as e:  # noqa: BLE001
+        log.warning("desk_grader (intel_hub) step failed: %s", e)
+        hub["desk_grader"] = {}
     if not write:
         return hub
     root = config.ROOT

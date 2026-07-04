@@ -1,9 +1,9 @@
 {
- "generated": "2026-07-03T18:00:37.704449+00:00",
+ "generated": "2026-07-04T07:41:41.182489+00:00",
  "source": "git-archaeology + forward snapshots (unioned, de-duped on as_of)",
- "board_dates_total": 13,
+ "board_dates_total": 3,
  "board_dates_range": [
-  "2026-06-15",
+  "2026-06-30",
   "2026-07-02"
  ],
  "graded_dates": [
@@ -16,19 +16,32 @@
   "2026-06-24"
  ],
  "graded_rows_total": 950,
- "price_source": "engine.equity_factors._closes('broad') (S&P-1500 breadth caches) + data/yahoo/{SPY,XL*}",
- "price_coverage_note": "359 distinct tickers graded; rows with no price in the broad cache are dropped (survivor-biased current-membership universe).",
+ "price_source": "engine.equity_factors._closes('broad') + engine.grading.resolve_series (extends with edgar dead-name terminals) + data/yahoo/{SPY,XL*}",
+ "price_coverage_note": "359 distinct tickers graded; rows unresolvable by both live cache and dead-name store are skipped \u2014 see the `survivorship` block for the quantified exclusion count.",
+ "survivorship": {
+  "n_skipped_no_price": 0,
+  "n_rows_skipped_no_price": 0,
+  "n_board_rows_total": 205,
+  "tickers_skipped": [],
+  "n_recovered_by_dead_store": 0,
+  "dead_store_active": false,
+  "dead_store_tickers": 0,
+  "note": "broad cache is current-membership only; edgar dead-name store absent (data/edgar/dead_name_prices.parquet not found \u2014 populate via collectors/edgar_deadname_prices to recover delisted names); n_skipped_no_price may include delisted names whose terminal values would have been graded if the store were present \u2014 residual survivor bias"
+ },
  "conventions": {
-  "entry": "next session's close after as_of (next-bar realism)",
+  "entry": "next session's close after as_of (next-bar realism, via engine.grading.fill_index)",
   "returns": "total-return (dividend-adjusted) closes; excess = name_ret - benchmark_ret",
   "mae": "CLOSE-PATH MAE (min excess cum-return over window); UNDER-states intraday DD",
-  "benchmarks": "SPY and per-name GICS sector SPDR ETF"
+  "benchmarks": "SPY and per-name GICS sector SPDR ETF",
+  "grader": "engine.grading.forward_metrics (one-grader law \u00a71.2, W0.1 B-b)",
+  "horizons": "[5, 10, 21, 63]"
  },
  "caveats": [
   "TINY n: multi-day horizons only recently matured; first runs have ~11 trading days of 5d data. Read n on every cell; no strong claims.",
   "OVERLAPPING WINDOWS: daily boards x multi-day horizons -> heavy serial correlation. Effective independent-sample count << n. Wilson CIs on raw n are OPTIMISTICALLY NARROW (lower bound on true uncertainty).",
-  "SURVIVORSHIP: broad cache is current membership; delisted names invisible -> inflates hit-rates, especially for reversal/laggard lanes.",
-  "SCHEMA DRIFT: earliest boards (2026-06-16..) had 120-row buy lanes, no watch lane, no entry_signal/signal fields; those slices show 'None'. align_tier and signal.last.quality only populate on later revisions."
+  "SURVIVORSHIP: dead-name store (data/edgar/dead_name_prices.parquet) extends coverage; if absent, delisted names are invisible \u2014 see survivorship.dead_store_active. Residual survivor bias remains for names absent from both sources.",
+  "SCHEMA DRIFT: earliest boards (2026-06-16..) had 120-row buy lanes, no watch lane, no entry_signal/signal fields; those slices show 'None'. align_tier and signal.last.quality only populate on later revisions.",
+  "W3 EVIDENCE STRATA: by_news_burst has tiny sample (<= 17 tickers / board); by_smartmoney uses Q1-2026 13F (~45-day lag); by_insider_cluster uses 6-month rolling Form-4 window. All W3 strata are DISPLAY-ONLY context; no return claims until wave-8 forward-ledger accrual matures."
  ],
  "per_horizon": {
   "h5": {
@@ -703,6 +716,14 @@
       "mean_excess": 0.0161
      }
     },
+    "by_insider_cluster": {},
+    "by_gex_confirm": {},
+    "by_altdata_conv": {},
+    "by_sue_fresh": {},
+    "by_news_burst": {},
+    "by_smartmoney": {},
+    "by_stop_guidance": {},
+    "by_confluence_k": {},
     "mae_close_excess_spy": {
      "median": -0.00782,
      "n": 611
@@ -1235,6 +1256,14 @@
       "mean_excess": 0.00746
      }
     },
+    "by_insider_cluster": {},
+    "by_gex_confirm": {},
+    "by_altdata_conv": {},
+    "by_sue_fresh": {},
+    "by_news_burst": {},
+    "by_smartmoney": {},
+    "by_stop_guidance": {},
+    "by_confluence_k": {},
     "mae_close_excess_spy": {
      "median": -0.02247,
      "n": 177
@@ -1249,6 +1278,9 @@
    }
   },
   "h21": {
+   "n": 0
+  },
+  "h63": {
    "n": 0
   }
  }

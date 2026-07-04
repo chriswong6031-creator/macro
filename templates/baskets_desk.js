@@ -2,6 +2,56 @@
 // Relies on per-page globals: BASKETS, CHART, THEME, THEME_ALERTS + helpers esc/cssv/
 // fmtPct/cls/sparkSvg/ratio/sparkTail. Call deskBoot() after those are defined.
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+// ---- Velocity / Heat helpers (W4 rotation-scorecard upgrade) ------------------
+// All labels are DESCRIPTIVE — they characterise current rank/score trajectory; no
+// forward-return forecast is implied (house rule: honest framing).
+const HEAT_PILL = {
+  heating: ['heat-pill heating', '▲', 'heating', '加热'],
+  hot:     ['heat-pill hot',     '★', 'hot',     '强势'],
+  cooling: ['heat-pill cooling', '▽', 'cooling', '降温'],
+  broken:  ['heat-pill broken',  '✕', 'broken',  '破位'],
+};
+// heatPill(t) — small heat pill rendered next to the label chip when heat is non-idle.
+// Returns '' for idle or when pulse data is absent (pre-W4 payloads).
+function heatPill(t){
+  const h = t && t.pulse_heat;
+  if(!h || h==='idle') return '';
+  const p = HEAT_PILL[h];
+  if(!p) return '';
+  return `<span class="${p[0]}" data-tip-en="${esc(p[2])} — descriptive, not a forecast" data-tip-zh="${esc(p[3])} — 描述性，非预测">${p[1]} ${L(p[2],p[3])}</span>`;
+}
+// heatDot(t) — minimal inline dot (no text) for use in compact rotrow/leadrow contexts.
+function heatDot(t){
+  const h = t && t.pulse_heat;
+  if(!h || h==='idle') return '';
+  const p = HEAT_PILL[h];
+  if(!p) return '';
+  return `<span class="${p[0]} heat-dot" data-tip-en="${esc(p[2])} — descriptive" data-tip-zh="${esc(p[3])} — 描述性"></span>`;
+}
+// rankTrajectory(t) — "▲4 · 20d ▲7" context string for rotation rows; returns '' when
+// rank delta data is absent (history accruing).
+function rankTrajectory(t){
+  const r5 = t && t.pulse_rank_delta_5d;
+  const r20 = t && t.pulse_rank_delta_20d;
+  if(r5 == null) return '';
+  const fmt5 = (r5>0?'▲':'▼')+Math.abs(r5);
+  const fmt20 = r20!=null ? ' · 20d '+(r20>0?'▲':'▼')+Math.abs(r20) : '';
+  return fmt5 + fmt20;
+}
+// actNowPulseBar(themes) — compact "Heating / Cooling" summary for the act-now header.
+// Top 3 of each tier by current rank (best rank = lowest number first).
+function actNowPulseBar(themes){
+  if(!themes||!themes.length) return '';
+  const byHeat = h => themes.filter(t=>t.pulse_heat===h).sort((a,b)=>(a.rank||999)-(b.rank||999)).slice(0,3);
+  const heating = byHeat('heating'), cooling = byHeat('cooling');
+  if(!heating.length && !cooling.length) return '';
+  const BASE = window.BASKET_BASE||'basket/';
+  const links = arr => arr.map(t=>`<a href="${BASE}${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a>`).join(', ');
+  const parts = [];
+  if(heating.length) parts.push(`🔥 ${L('Heating','加热')}: ${links(heating)}`);
+  if(cooling.length) parts.push(`❄ ${L('Cooling','降温')}: ${links(cooling)}`);
+  return `<div class="pulse-bar">${parts.join(' · ')}<span class="pulse-tag">${L('descriptive — not a forecast','描述性 — 非预测')}</span></div>`;
+}
 // ---- Theme Rotation Desk --------------------------------------------------
 const LABEL_COLOR = {
   dominant:      ['rgba(250,204,21,.16)','rgba(250,204,21,.55)','#eab308'],
@@ -139,7 +189,7 @@ function themeCard(t){
     : badge('tlabel',lc,t.label_en,t.label_zh);
   return `<div class="tcard" id="theme-${t.id}" style="--tc:${lc[2]}">
     <div class="top">
-      ${labelChip}
+      ${labelChip}${heatPill(t)}
       <a class="nm" href="${(window.BASKET_BASE||'basket/')}${t.id}.html" title="open full theme detail">${L(esc(t.name),esc(t.name_zh))}</a>
       <span class="sc">${t.score}<small>/100</small></span>
     </div>
@@ -201,12 +251,22 @@ function renderRotation(){
   const sec=document.getElementById('rotation-section');
   if(!THEME||!THEME.rotation_5d){ if(sec) sec.style.display='none'; return; }
   const rot=THEME.rotation_5d;
-  const row=t=>{const ar=t.rank_5d>0?'▲':t.rank_5d<0?'▼':'·'; const ac=t.rank_5d>0?'pos':t.rank_5d<0?'neg':'muted';
-    return `<div class="rotrow"><span class="rn"><a href="${(window.BASKET_BASE||'basket/')}${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a></span>
+  // Build a pulse lookup keyed by theme id so we can decorate climber/faller rows with
+  // velocity context (heat dot, 20d rank trajectory) — undefined-safe for pre-W4 payloads.
+  const pulseById = {};
+  (THEME.themes||[]).forEach(t=>{ if(t&&t.id) pulseById[t.id]=t; });
+  const row=t=>{
+    const ar=t.rank_5d>0?'▲':t.rank_5d<0?'▼':'·'; const ac=t.rank_5d>0?'pos':t.rank_5d<0?'neg':'muted';
+    const pt = pulseById[t.id] || t;                          // pulse fields merged into themes
+    const traj = rankTrajectory(pt);
+    const dot = heatDot(pt);
+    return `<div class="rotrow">${dot}<span class="rn"><a href="${(window.BASKET_BASE||'basket/')}${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a></span>
       <span class="rv ${cls(t.delta_5d)}">${fmtPct(t.delta_5d)}</span>
-      <span class="rk ${ac}" title="20d RS rank change">${ar}${t.rank_5d?Math.abs(t.rank_5d):''}</span></div>`;};
+      <span class="rk ${ac}" title="5d rank change${traj?' · '+traj:''}">${ar}${t.rank_5d?Math.abs(t.rank_5d):''}${traj?`<span class="rk20"> · ${traj}</span>`:''}</span></div>`;};
+  const subtitle=`<p class="rot-sub">${L('Rank velocity across the theme board — descriptive, not a forecast','主题榜排名速度——描述性，非预测')}</p>`;
   const col=(en,zh,emo,arr)=>`<div class="rotcol"><h4>${emo} ${L(en,zh)}</h4>${arr.length?arr.map(row).join(''):`<div class="muted sm" style="padding:6px 0">${L('none','无')}</div>`}</div>`;
-  document.getElementById('rotation').innerHTML=col('Weekly climbers','本周上升','▲',rot.climbers||[])+col('Weekly fallers','本周下降','▽',rot.fallers||[]);
+  const rotEl=document.getElementById('rotation');
+  rotEl.innerHTML=subtitle+`<div class="rotwrap" style="margin-top:6px">${col('Weekly climbers','本周上升','▲',rot.climbers||[])}${col('Weekly fallers','本周下降','▽',rot.fallers||[])}</div>`;
 }
 function renderActNow(){
   const sec=document.getElementById('actnow-section'); if(!THEME||!THEME.act_now){ if(sec) sec.style.display='none'; return; }
@@ -228,7 +288,8 @@ function renderActNow(){
   const buys=a.buy||[], wait=a.add_on_pullback||[], red=a.reduce||[];
   const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
   const anCol=(cls,head,arr,empty,rowFn)=>`<div class="ancol lst-wrap"><h4 class="anh ${cls}">${head} <span class="muted sm">(${arr.length})</span></h4>${arr.length?`<div class="anlist lst-collapse is-collapsed">${arr.map(rowFn||row).join('')}</div>${moreBtn(arr.length)}`:`<div class="muted sm" style="padding:10px 2px">${empty}</div>`}</div>`;
-  document.getElementById('actnow').innerHTML=`<div class="anwrap three">
+  const pulseBar = actNowPulseBar(THEME.themes||[]);
+  document.getElementById('actnow').innerHTML=pulseBar+`<div class="anwrap three">
     ${anCol('buy',`✅ ${L('Buy now (clean entry)','立即买入（干净入场）')}`,buys,L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。'))}
     ${anCol('wait',`⏳ ${L('In favour — no clean entry, wait for a pullback','看好 — 无干净入场点，等待回调')}`,wait,L('none','无'),rowWait)}
     ${anCol('red',`🔻 ${L('Reduce / avoid','减仓 / 回避')}`,red,L('none','无'))}
@@ -287,7 +348,10 @@ function renderConcentration(){
       <div class="adgrid">${adc('A/D today','今日',mc.ad_ratio)}${adc('3-day','3日',mc.ad_3d)}${adc('weekly','周',mc.ad_w)}${adc('monthly','月',mc.ad_m)}</div>
       <div class="muted sm">${L('above 50d','站上50日')} <b>${mc.pct_above_50!=null?mc.pct_above_50+'%':'—'}</b> · ${L('above 200d','站上200日')} <b>${mc.pct_above_200!=null?mc.pct_above_200+'%':'—'}</b> · ${L('new hi/lo','新高/低')} <b class="pos">${mc.nh}</b>/<b class="neg">${mc.nl}</b></div>
     </div></div>`;
-  const lead=(arr,en,zh,sign)=>`<div class="rotcol"><h4>${sign} ${L(en,zh)}</h4>${(arr||[]).map(x=>`<div class="rotrow"><span class="rn"><a href="${(window.BASKET_BASE||'basket/')}${x.id}.html">${L(esc(x.name),esc(x.name_zh))}</a></span><span class="rv ${x.net_ad>=0?'pos':'neg'}">${x.net_ad>=0?'+':''}${x.net_ad}</span><span class="rk muted">${x.adv}/${x.dec}</span></div>`).join('')}</div>`;
+  // pulse lookup for heat dots on breadth leaders/laggards
+  const cPulseById = {};
+  (THEME.themes||[]).forEach(t=>{ if(t&&t.id) cPulseById[t.id]=t; });
+  const lead=(arr,en,zh,sign)=>`<div class="rotcol"><h4>${sign} ${L(en,zh)}</h4>${(arr||[]).map(x=>{const pt=cPulseById[x.id]||x;return `<div class="rotrow">${heatDot(pt)}<span class="rn"><a href="${(window.BASKET_BASE||'basket/')}${x.id}.html">${L(esc(x.name),esc(x.name_zh))}</a></span><span class="rv ${x.net_ad>=0?'pos':'neg'}">${x.net_ad>=0?'+':''}${x.net_ad}</span><span class="rk muted">${x.adv}/${x.dec}</span></div>`}).join('')}</div>`;
   const tlist=(arr,en,zh,kind)=>`<div class="rotcol"><h4>${kind==='entry'?'✦':'⚠'} ${L(en,zh)}</h4>${(arr||[]).length?arr.map(x=>`<div class="rotrow"><span class="rn"><a href="${(window.BASKET_BASE||'basket/')}${x.id}.html">${L(esc(x.name),esc(x.name_zh))}</a></span><span class="rv">${kind==='entry'?Math.round(x.quality*100)+'%':esc(x.band)}</span></div>`).join(''):`<div class="muted sm" style="padding:6px 0">${L('none right now','暂无')}</div>`}</div>`;
   document.getElementById('concentration').innerHTML = narrow
     + `<div class="rotwrap" style="margin-top:12px">${lead(THEME.breadth_leaders,'Owns the advance','主导上涨','▲')}${lead(THEME.breadth_laggards,'In the decline','处于下跌','▽')}</div>`

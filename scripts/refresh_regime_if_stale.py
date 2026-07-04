@@ -2,20 +2,28 @@
 has advanced past the regime's as-of.
 
 WHY (the observed bug): the nightly regime engine (engine.run) can run BEFORE the latest
-daily close lands in the store. Two real failure modes seen in the git history:
+daily close lands in the store. Three real failure modes seen in the git history:
   1. A separate/late "daily collection" commit adds today's SPY bar MINUTES after the last
      regime recompute (e.g. 2026-07-01: engine-render at 23:29 UTC saw only the 06-30 bar;
      the 07-01 bar landed at 23:34 UTC in a later collection commit — the regime never saw it).
   2. The heavy nightly build hits its timeout and is CANCELLED before the engine-outputs
      commit (see daily.yml:153), so the price data lands but the regime never re-stamps.
+  3. STORE-BEHIND-MARKET: the nightly US collect commit itself races or fails (daily.yml's
+     data push is non-fatal after 5 rebase attempts), so the yahoo/SPY store FREEZES a session
+     behind the market — while a different store (massive) already holds the close. Modes 1-2 are
+     "engine behind store"; this one is "store behind market", which the store-vs-engine check
+     alone can NEVER see (both agree on the stale date). Fix: when the massive reference has
+     advanced past yahoo/SPY, re-pull yahoo (keyless) before re-running the engine. (The 2026-07-03
+     July-4-holiday incident: US yahoo froze at 07-01, regime stuck at 07-01, massive already 07-02.)
 
-Either way data/regime/latest.json — which BOTH the macro.html "Current Macro Regime" badge
-AND the Market State board read their as-of date from — is left one session behind the store,
+In all three cases data/regime/latest.json — which BOTH the macro.html "Current Macro Regime"
+badge AND the Market State board read their as-of date from — is left behind the latest session,
 so the dashboard shows a stale date (the "still showing 2026-06-30" report).
 
 This is the FAST, cancellation-proof catch-up. It runs in the intraday fast-path (every
 ~30 min during RTH, plus a pre-open tick). When the store's last SPY close is newer than
-latest.json's date it re-runs the regime engine (~25s, offline-safe — every leaf is
+latest.json's date — OR the store itself is behind the massive market reference (mode 3, healed
+by a keyless yahoo re-pull) — it re-runs the regime engine (~25s, offline-safe — every leaf is
 try/except wrapped) and re-persists the Market State snapshot. The fast-path then commits
 ONLY those two small artifacts (data/regime/latest.json + data/market_state/latest.json);
 the forward-grading logs engine.run also touches (regime_history.parquet, *_log.jsonl,
@@ -58,16 +66,71 @@ def _regime_asof() -> str | None:
         return None
 
 
+def _market_reference_date() -> str | None:
+    """The last session the price store SHOULD reflect — read from the massive US whole-market
+    store's manifest (keyless, already on disk, advanced by its own collector). When yahoo/SPY is
+    behind THIS, the STORE is behind the MARKET, not just the engine behind the store — the failure
+    the regime-vs-store check below cannot see on its own. Best-effort: absent/unreadable -> None
+    (the store re-pull is simply skipped and behaviour is exactly as before)."""
+    try:
+        m = json.loads((config.data_dir() / "massive_stock_day" / "_manifest.json").read_text())
+        d = m.get("latest_date")
+        return str(d) if d else None
+    except Exception:  # noqa: BLE001 — reference is advisory; never let it break the self-heal
+        return None
+
+
+def _repull_yahoo() -> str | None:
+    """Re-collect the yahoo price group so the store catches the latest close before the regime
+    re-runs. KEYLESS (period=1mo, ~16s) so the fast-path stays secret-free; run_adapter upserts
+    every fetched series back into the store. Returns the refreshed SPY store date. The caller
+    wraps this so a network hiccup can never fail the fast-path."""
+    from collectors.base import run_adapter
+    from collectors.yahoo import YahooAdapter
+    res = run_adapter(YahooAdapter())
+    log.info("yahoo re-pull -> %s (%s rows, last %s)", res.status, res.rows, res.last_date)
+    return _store_close_date()
+
+
 def refresh(force: bool = False) -> dict:
     store_date = _store_close_date()
     regime_date = _regime_asof()
+    # STORE-BEHIND-MARKET self-heal (the 2026-07-03 holiday incident): the regime-vs-store check
+    # below only catches the ENGINE lagging the STORE. But when a nightly US collect commit races
+    # or fails (daily.yml documents both modes — the non-fatal 5x push-retry AND the timeout cancel
+    # before the data commit), the yahoo/SPY store itself freezes a session behind the market while
+    # a DIFFERENT store (massive) already holds the close, and every regime recompute faithfully
+    # re-stamps the stale date with nothing to catch it. When the massive reference has advanced
+    # past yahoo/SPY, re-pull yahoo (keyless, non-fatal) so the regime re-run below sees the latest
+    # close. Guarded on regime<market too: a PRIOR fast-path run may have already advanced the
+    # regime past a still-frozen COMMITTED store (its re-pull is ephemeral — the fast-path commits
+    # regime, not the yahoo store), so skip the re-fetch when there is nothing left to heal.
+    # Threaded into the return so the fast-path log surfaces heal / could-not-heal.
+    repull = None
+    market_date = _market_reference_date()
+    if (store_date is not None and market_date is not None and store_date < market_date
+            and (force or regime_date is None or regime_date < market_date)):
+        log.info("yahoo/SPY store (%s) BEHIND market (%s) — re-pulling yahoo", store_date, market_date)
+        try:
+            new_date = _repull_yahoo()
+            healed = bool(new_date and new_date > store_date)
+            repull = {"prev": store_date, "new": new_date, "market": market_date, "healed": healed}
+            if healed:
+                store_date = new_date
+            else:
+                log.warning("STORE STILL BEHIND MARKET after yahoo re-pull (store=%s market=%s) — "
+                            "upstream feed has not published the close yet", new_date, market_date)
+        except Exception as e:  # noqa: BLE001 — the fast-path must never fail on the self-heal
+            log.error("yahoo re-pull failed (non-fatal): %s", e)
+            repull = {"prev": store_date, "market": market_date, "error": str(e)}
+
     if store_date is None:
         log.warning("no SPY close in store — nothing to do")
-        return {"status": "no_store", "asof": regime_date}
+        return {"status": "no_store", "asof": regime_date, "repull": repull}
     # ISO date strings compare lexicographically -> "2026-07-01" > "2026-06-30".
     if not force and regime_date is not None and regime_date >= store_date:
         log.info("regime fresh (asof=%s, store=%s) — no refresh", regime_date, store_date)
-        return {"status": "fresh", "asof": regime_date, "store": store_date}
+        return {"status": "fresh", "asof": regime_date, "store": store_date, "repull": repull}
 
     log.info("regime stale (asof=%s < store=%s) — re-running the regime engine",
              regime_date, store_date)
@@ -86,8 +149,37 @@ def refresh(force: bool = False) -> dict:
         log.error("market_state persist after refresh failed (non-fatal): %s", e)
     new = _regime_asof()
     log.info("regime refreshed -> asof=%s quad=%s", new, latest.get("quad_name"))
-    return {"status": "refreshed", "asof": new, "prev": regime_date,
-            "store": store_date, "quad": latest.get("quad_name")}
+    result = {"status": "refreshed", "asof": new, "prev": regime_date,
+              "store": store_date, "quad": latest.get("quad_name"), "repull": repull}
+
+    # W6a MIRROR: record this self-heal firing to the reflex firings ledger.
+    # Single-writer law: ONLY the intraday-fastpath lane calls this.
+    # The append is additive — existing behavior is unchanged.
+    try:
+        from datetime import datetime, timezone  # noqa: PLC0415
+        from engine.neuralweb.reflexes import record_firing  # noqa: PLC0415
+        record_firing("regime_stale_selfheal", {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "trigger_type": "staleness_check",
+            "trigger_key": f"regime:{regime_date}:store:{store_date}",
+            "action_taken": "rerun_engine",
+            "scope_type": "macro",
+            "scope_key": "regime",
+            "direction": 0,      # infrastructure; no directional bet
+            "horizon_d": None,   # not gradeable
+            "asof": new or store_date,
+            "extra": {
+                "prev_asof": regime_date,
+                "new_asof": new,
+                "store_date": store_date,
+                "repull_healed": bool(repull and repull.get("healed")),
+                "quad": latest.get("quad_name"),
+            },
+        })
+    except Exception as e:  # noqa: BLE001 — firings append must never fail the fast-path
+        log.warning("W6a record_firing skipped (non-fatal): %s", e)
+
+    return result
 
 
 def main() -> int:

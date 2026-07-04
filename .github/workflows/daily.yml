@@ -131,7 +131,12 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/
+          # site/qledger: the qledger grader (scripts/collect.py -> grade_qledger)
+          # writes the TRACKED site/qledger/track_record.json (un-ignored by #1139).
+          # Left unstaged it blocks `git pull --rebase` ("unstaged changes") and the
+          # whole data push silently dies after 5 attempts — 07-03/07-04 collections
+          # were lost exactly this way (the sentinel staging-gap pattern).
+          git add data/ site/qledger/
           if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
           # best-effort push: losing a race with a concurrent push must NOT fail the
@@ -258,6 +263,15 @@ jobs:
           echo "::endgroup::"
           python -m scripts.audit_sizes || echo "::warning::track_record size tripwire fired �� check data/quality/sizes_audit.json"
           exit 0
+      - name: export cross-repo signal contracts (golden_signals + artifact_manifest)
+        # Writes site/factordata/contracts/golden_signals.json + artifact_manifest.json --
+        # the oracle the Terminal's golden_gate.py + artifact_conformance.py consume as a
+        # conformance check (audit #7 #9). Runs after build_signal_quality (engine.canon is
+        # confirmed working) + after the china/hk OHLC cache restores. Window is FIXED
+        # (2015-2024) so output is deterministic and the step is cheap (~5s). Resilient.
+        run: |
+          python -m scripts.export_signal_contracts \
+            || echo "::warning::export_signal_contracts failed (non-fatal) -- keeping last committed contract"
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the
@@ -631,6 +645,53 @@ jobs:
         # surface (data/calibration/summary.json + site/calibration.html). Runs after the
         # deterministic scorers so it reads fresh track records; never feeds a score.
         run: python -m scripts.build_calibration || true
+      - name: build spine index (neural-web W2)
+        # Read-side union index over all graded ledgers: spine + track_record + HK/CA/CN
+        # boards + qledger claims⋈grades (read-only) + graded cycle rows. Writes
+        # data/neuralweb/spine_index.parquet + envelope sidecar. AFTER grade_us_board
+        # (all graders incl. qledger grading in collect have run); BEFORE radar_plus block.
+        # Exit 0 on partial gaps; 1 only on write failure. Resilient wrapper.
+        run: |
+          set +e
+          python -m scripts.build_spine_index > /tmp/spine_index.log 2>&1; rc=$?
+          cat /tmp/spine_index.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_spine_index::rc=$rc (non-fatal)"
+          exit 0
+      - name: build reliability kernel estimates (neural-web W3)
+        # Reliability kernel estimates: (engine × regime × horizon) cells over the spine
+        # index. Writes data/neuralweb/kernel_estimates.parquet + envelope sidecar.
+        # Display-first: zero behavior-changing consumers; the quarterly FDR batch (PR2)
+        # is the only path to behavior. Input: spine_index.parquet (only dependency).
+        # Resilient wrapper: exits 0 on empty/thin data; 1 only on write failure.
+        run: |
+          set +e
+          python -m scripts.build_kernel_estimates > /tmp/kernel_estimates.log 2>&1; rc=$?
+          cat /tmp/kernel_estimates.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_kernel_estimates::rc=$rc (non-fatal)"
+          exit 0
+      - name: build kernel diagnostics (neural-web W3)
+        # W3 PR3: decay curves (kernel_families.json) + lagging-signal detector
+        # (lagging_signals.json). Both are display-only diagnostics; zero behavior-changing
+        # consumers. Runs AFTER build_kernel_estimates (kernel_families reads its parquet).
+        # Resilient wrapper: each sub-step fail-open; exits 0 unless both steps fail.
+        run: |
+          set +e
+          python -m scripts.build_kernel_diagnostics > /tmp/kernel_diagnostics.log 2>&1; rc=$?
+          cat /tmp/kernel_diagnostics.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_kernel_diagnostics::rc=$rc (non-fatal)"
+          exit 0
+      - name: Confluence Graph (Neural Web W4 — display-only typed graph)
+        # Builds data/neuralweb/confluence_graph.json — typed nodes (engine/sector/regime/
+        # thesis/episode) and five edge families (feeds/stable/leads/contradicts/confirms).
+        # Contradiction detector covers 6 typed pairs; all edges display_only=True.
+        # HARD LAW: confluence never gates, never ranks, never raises a priority.
+        # Gaps (missing oracle files — gitignored) logged as warnings, never failures.
+        run: |
+          set +e
+          python -m scripts.build_confluence_graph > /tmp/confluence_graph.log 2>&1; rc=$?
+          cat /tmp/confluence_graph.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_confluence_graph::rc=$rc (non-fatal)"
+          exit 0
       - name: Alt-Data Brain (Claude-Opus convergence analyst; actionable + falsifiable)
         # Reads the deterministic weighted-convergence substrate + influence graph (written by
         # build_alt_data above) as an evidence pack and writes an ACTIONABLE scored read
@@ -748,6 +809,18 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.notify
+      - name: push priority alerts (W6a — config-gated OFF; no-op until operator enables)
+        # Neural Web W6a: push high-priority alerts above `alert_push.threshold` (default 60)
+        # through Telegram/Discord with a dedup window (`alert_push.window_hours`).
+        # Gate: `alert_push.enabled: false` in config.yml — a pure no-op until an operator
+        # explicitly flips it (Article-2 event: priority inputs may never be raised by a model).
+        # Dedup store: data/alert_triage/push_sent.jsonl (single-writer, append-only).
+        # Resilient: always exits 0 — a dispatch error never blocks the daily build.
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m scripts.push_alerts || echo "::warning::push_alerts failed (non-fatal — push spine is gated off by default)"
       - name: archive signal layer (append-only point-in-time model outputs; resilient)
         # LAST data-producing step: append today's latest.json / bond_health.json /
         # regime_snap.json / forex + commodity reads to data/signal_archive/<label>.parquet
@@ -783,6 +856,33 @@ jobs:
           # when window.DATA_BASE is set; no-op while empty. Last page-mutating pass so no
           # later builder strips the tag. See scripts/inject_data_base.py.
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+      - name: oracle nightly (state + alerts + directive + ledger + banner)
+        if: always()
+        # Oracle O4 live-wiring: reads committed panel/episode/graph artifacts (heavy
+        # re-builds run off-render via scripts/build_oracle_panel.py etc.), emits:
+        #   data/oracle/oracle_alerts.jsonl      alert event log (git add data/ covers)
+        #   data/oracle/alerts_state.json        diff-state for next run
+        #   data/oracle/rotation_directive.json  Mastermind context
+        #   data/oracle/memory_base_rates.json   base rates from gauntlet results
+        #   data/oracle/forward_ledger.jsonl     PIT keep-FIRST episode ledger
+        #   site/basketdata/oracle_state.json    the bus payload (git add site/ covers)
+        # Sentinel-gap check: all outputs land under data/ or site/ which are in the
+        # "git add data/ site/ reports/" below — NO new explicit git add needed.
+        # --skip-panel --skip-graph --skip-episodes: heavy rebuilds run separately off-render.
+        # Non-fatal: missing panel degrades gracefully; later builds use cached state.
+        run: python -m scripts.oracle_nightly --skip-panel --skip-graph --skip-episodes || echo "::warning::oracle_nightly failed (non-fatal — state and alerts degrade gracefully)"
+      - name: build world state (neural-web W1)
+        if: always()
+        # Neural Web N1: compose data/neuralweb/world_state.json from all fresh
+        # stores (market_state/latest.json, regime/latest.json, breadth.parquet,
+        # oracle_state.json, run_status.json, alerts_triage.json).  All inputs
+        # are ready at this point (engine step + oracle_nightly have both run).
+        # Resilient: fail-open with printed gaps; a failed write keeps the last
+        # committed world_state and never blocks the commit step.
+        # git add data/ site/ in commit engine outputs covers data/neuralweb/ automatically.
+        # engine-render.yml (express lane) also runs this step — its regime/market_state
+        # recompute would otherwise drift ahead of the committed world_state copies.
+        run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |
@@ -843,7 +943,7 @@ jobs:
         # US-evening shard owns the US/intl/canada/subsector stores; CN/HK go via asia-close.yml.
         # Content-hash skip -> only deltas upload. Still committed to git for now (Pages fallback);
         # the git de-bloat + Pages slim-down is the follow-up increment once the client reads R2.
-        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday,feeds || echo "::warning::R2 publish failed (non-fatal)"
+        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday,feeds,massive_stock_day || echo "::warning::R2 publish failed (non-fatal)"
       - name: verify R2 data plane freshness (loud tripwire — the publish above is non-fatal)
         # The publish step swallows every failure (incl. the exit-0 no-op when the R2_*
         # secrets are absent/expired), so the live site would serve stale per-ticker data

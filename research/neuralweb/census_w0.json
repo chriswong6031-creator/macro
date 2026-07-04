@@ -1,0 +1,1543 @@
+{
+ "dataLane": {
+  "artifacts": [
+   {
+    "path": "data/regime/latest.json",
+    "format": "json",
+    "producer": "engine/run.py:705 (json.dump at p/'latest.json', p=config.data_dir()/'regime')",
+    "consumers": [
+     "engine/alert_triage.py",
+     "engine/briefing.py",
+     "engine/china_intel_analysis.py",
+     "engine/china_intel_bus.py",
+     "engine/china_sector_central.py",
+     "engine/etf_pulse.py",
+     "engine/holdings_signals.py",
+     "engine/market_gamma.py",
+     "engine/master_brain.py",
+     "engine/radar_plus.py",
+     "engine/regime_label.py",
+     "engine/regime_prior.py",
+     "engine/risk_brain.py",
+     "engine/sector_central.py",
+     "engine/vol_regime.py",
+     "engine/vol_sentiment.py",
+     "scripts/archive_signals.py",
+     "scripts/build_canada_library.py",
+     "scripts/build_china_library.py",
+     "scripts/build_feeds.py",
+     "scripts/build_hk_library.py",
+     "scripts/build_impulse.py",
+     "scripts/build_regime_prior.py",
+     "scripts/build_site.py",
+     "scripts/build_stock_library.py",
+     "scripts/notify.py",
+     "scripts/refresh_regime_if_stale.py"
+    ],
+    "consumer_count": 27,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "schema_version",
+     "asof",
+     "date",
+     "quad",
+     "quad_name",
+     "confidence",
+     "liquidity_overlay",
+     "cycle_tag",
+     "transition_state"
+    ],
+    "owner_program": "engine-fix/sector-pulse",
+    "cadence": "daily (engine.run in daily.yml at 02:00 UTC post-US-close)"
+   },
+   {
+    "path": "data/baskets/membership.json",
+    "format": "json",
+    "producer": "scripts/seed_us_sector_baskets.py (write_text); hand-curated (promote_candidate.py for edits)",
+    "consumers": [
+     "engine/demand_ledger.py",
+     "engine/financial_news.py",
+     "engine/froth_fragility.py",
+     "engine/news_common.py",
+     "engine/options_universe.py",
+     "engine/sector_central.py",
+     "engine/sector_cycles.py",
+     "engine/sector_pulse.py",
+     "engine/spotlight.py",
+     "engine/theme_catalyst_binder.py",
+     "scripts/basket_coherence_audit.py",
+     "scripts/build_baskets.py",
+     "scripts/build_demand.py",
+     "scripts/build_gex_board.py",
+     "scripts/build_stock_library.py",
+     "scripts/fetch_basket_ohlcv.py"
+    ],
+    "consumer_count": 16,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "version",
+     "note",
+     "seed_date",
+     "curated",
+     "baskets",
+     "construction"
+    ],
+    "owner_program": "sector-pulse",
+    "cadence": "weekly or on-demand (seed scripts / human edits)"
+   },
+   {
+    "path": "data/breadth/breadth.parquet",
+    "format": "parquet",
+    "producer": "scripts/build_breadth.py (to_parquet); also collectors/breadth_collector.py",
+    "consumers": [
+     "engine/anticipation.py",
+     "engine/basket_score.py",
+     "engine/baskets_intl.py",
+     "engine/froth_fragility.py",
+     "engine/regime_vector.py",
+     "scripts/anticipation_phase0.py",
+     "scripts/build_anticipation.py",
+     "scripts/build_baskets_intl.py",
+     "scripts/build_canada.py",
+     "scripts/build_china.py",
+     "scripts/build_feeds.py",
+     "scripts/build_hk.py",
+     "scripts/build_site.py",
+     "scripts/build_stock_library.py",
+     "scripts/validate_timing_overlay.py"
+    ],
+    "consumer_count": 15,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [],
+    "owner_program": "engine-fix",
+    "cadence": "daily (collect lane, pre-close)"
+   },
+   {
+    "path": "data/breadth/sp1500_pit_membership.parquet",
+    "format": "parquet",
+    "producer": "scripts/build_sp1500_pit.py or collectors/sp1500_pit_collector.py",
+    "consumers": [
+     "engine/grading.py",
+     "engine/group_flow.py",
+     "engine/index_changes.py",
+     "engine/intel_discovery.py",
+     "scripts/backtest_strategies.py",
+     "scripts/insider_phase0.py",
+     "scripts/midsmall_pit.py",
+     "scripts/name_direction_phase0.py",
+     "scripts/research/gate0_survivorship.py",
+     "scripts/validate_index_reconstitution.py",
+     "scripts/validate_reversal_nonsurvivor.py"
+    ],
+    "consumer_count": 11,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [],
+    "owner_program": "engine-fix",
+    "cadence": "weekly (index reconstitution driven)"
+   },
+   {
+    "path": "data/altdata/by_ticker.json",
+    "format": "json",
+    "producer": "engine/altdata_signals.py (via scripts/build_alt_data.py write path)",
+    "consumers": [
+     "engine/altdata_brain.py",
+     "engine/altdata_confirmers.py",
+     "engine/altdata_signals.py",
+     "engine/briefing.py",
+     "engine/foresight_earliness.py",
+     "engine/intelligence.py",
+     "engine/radar_plus.py",
+     "engine/radar_ticker.py",
+     "engine/signal_sanity.py",
+     "scripts/build_briefing.py",
+     "scripts/build_china_altdata.py",
+     "scripts/build_china_news.py",
+     "scripts/build_intelligence.py",
+     "scripts/build_news.py",
+     "scripts/build_stock_library.py"
+    ],
+    "consumer_count": 15,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "schema",
+     "as_of",
+     "generated_utc",
+     "n_tickers"
+    ],
+    "owner_program": "QI/altdata",
+    "cadence": "daily (build_alt_data in daily.yml)"
+   },
+   {
+    "path": "data/qledger/claims.jsonl",
+    "format": "jsonl",
+    "producer": "engine/qledger.py:326 (append-only per-claim row); also backfill scripts (backfill_qledger_us.py, backfill_qledger_cn.py)",
+    "consumers": [
+     "engine/communique_diff.py",
+     "engine/missing_tape.py",
+     "engine/qledger_ui.py",
+     "scripts/backfill_qledger_intel_hub.py",
+     "scripts/build_alt_data.py",
+     "scripts/build_intel_hub.py",
+     "scripts/build_whitehouse.py",
+     "scripts/grade_qledger.py",
+     "scripts/report_importance_duel.py",
+     "scripts/sample_qledger_placebo.py",
+     "scripts/shadow_importance_v0.py",
+     "scripts/shadow_importance_v0_pit.py"
+    ],
+    "consumer_count": 12,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "desk",
+     "asof",
+     "scope",
+     "direction",
+     "horizon_d",
+     "entry_levels",
+     "bench",
+     "control",
+     "falsifier",
+     "check_by"
+    ],
+    "owner_program": "QI (qledger)",
+    "cadence": "daily (appended per build by whitehouse-sentinel + daily.yml); also on-demand from collectors"
+   },
+   {
+    "path": "data/qbus/items.parquet",
+    "format": "parquet",
+    "producer": "engine/qbus.py:83 (append to data/qbus/items.parquet, keep-FIRST on item_id)",
+    "consumers": [
+     "engine/china_news_intel.py",
+     "engine/communique_diff.py",
+     "engine/financial_news.py",
+     "engine/importance_v0.py",
+     "engine/missing_tape_attention.py",
+     "engine/news_vector.py",
+     "scripts/audit_qbus.py",
+     "scripts/recrawl_official_tape.py",
+     "scripts/shadow_importance_v0.py",
+     "scripts/shadow_importance_v0_pit.py"
+    ],
+    "consumer_count": 10,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "item_id",
+     "_crawled_at",
+     "timestamp_quality",
+     "event_key",
+     "entities",
+     "themes",
+     "seendate",
+     "source_tier"
+    ],
+    "owner_program": "QI (qbus/qkernel)",
+    "cadence": "daily (collect lane + news ingest)"
+   },
+   {
+    "path": "data/signal_archive/mtf_signals_latest.json",
+    "format": "json",
+    "producer": "scripts/build_signal_quality.py:97 (write_text to arch/'mtf_signals_latest.json')",
+    "consumers": [
+     "engine/master_brain.py",
+     "engine/run.py",
+     "engine/sector_pulse.py",
+     "engine/track_record.py",
+     "scripts/build_track_record.py",
+     "scripts/validate_signals.py"
+    ],
+    "consumer_count": 6,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "asof",
+     "tf",
+     "universe",
+     "source",
+     "note",
+     "signals"
+    ],
+    "owner_program": "engine-fix",
+    "cadence": "daily (build_signal_quality runs before engine.run in daily.yml)"
+   },
+   {
+    "path": "data/regime/regime_history.parquet",
+    "format": "parquet",
+    "producer": "engine/run.py:83 (store_df.to_parquet); also engine/canada_run.py:44, engine/china_run.py:42, engine/hk_run.py:44 (separate region paths)",
+    "consumers": [
+     "engine/alerts.py",
+     "engine/board_ledger.py",
+     "engine/regime_hmm.py",
+     "engine/regime_one.py",
+     "engine/regime_vector.py",
+     "engine/signal_archive.py",
+     "scripts/build_conditional_cells.py",
+     "scripts/build_hazard_panel.py",
+     "scripts/build_site.py",
+     "scripts/calibrate_regime_hmm.py",
+     "scripts/collinearity_phase0.py",
+     "scripts/cross_asset_confirm_phase0.py",
+     "scripts/quad_nfci_phase0.py",
+     "scripts/refresh_regime_if_stale.py",
+     "scripts/research_playbook.py",
+     "scripts/validate_regime_fwd.py"
+    ],
+    "consumer_count": 16,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [],
+    "owner_program": "engine-fix",
+    "cadence": "daily (engine.run, asia-close for CN/HK/CA regions)"
+   },
+   {
+    "path": "data/market_state/latest.json",
+    "format": "json",
+    "producer": "engine/market_state.py:795 persist() \u2014 called from scripts/build_site.py:1700",
+    "consumers": [
+     "engine/regime_prior.py",
+     "engine/market_state_audit.py",
+     "engine/market_state_tune.py",
+     "scripts/build_index_leadership.py",
+     "scripts/build_regime_prior.py",
+     "scripts/refresh_regime_if_stale.py"
+    ],
+    "consumer_count": 6,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "schema",
+     "asof",
+     "score",
+     "verdict",
+     "label_en",
+     "radar",
+     "components",
+     "market"
+    ],
+    "owner_program": "engine-fix",
+    "cadence": "daily (build_site in daily.yml)"
+   },
+   {
+    "path": "data/species/registry.json",
+    "format": "json",
+    "producer": "engine/species_registry.py:365 (sync/write); also scripts/backfill_forward_logs.py:944 (additive merge)",
+    "consumers": [
+     "engine/board_ledger.py",
+     "engine/qledger.py",
+     "engine/track_record.py",
+     "scripts/china_max_phase0.py"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "species_registry.v1",
+    "envelope_fields": [
+     "schema",
+     "authored",
+     "note",
+     "species"
+    ],
+    "owner_program": "setup-species",
+    "cadence": "on-demand (species promotions; daily mirror from species_registry.sync() in daily.yml)"
+   },
+   {
+    "path": "data/experiments/registry_seed.json",
+    "format": "json",
+    "producer": "engine/species_registry.py:321 (additive merge); scripts/backfill_forward_logs.py:937 (additive merge); scripts/build_measurement.py",
+    "consumers": [
+     "engine/experiments_registry.py",
+     "engine/falsifier_tripwires.py",
+     "scripts/build_site.py"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "experiments_registry.v1",
+    "envelope_fields": [
+     "schema",
+     "experiments"
+    ],
+    "owner_program": "setup-species/cycle-intelligence",
+    "cadence": "daily (species_registry.mirror_to_experiments) + on-demand (backfill, build_measurement)"
+   },
+   {
+    "path": "data/sector_cycles/forward_log.parquet",
+    "format": "parquet",
+    "producer": "scripts/build_sector_cycles.py:88 via engine/cycle_forward_log.py:append_forward_log('sector_cycles')",
+    "consumers": [
+     "engine/grading_stats.py (via load_graded_log)",
+     "scripts/grade_promises.py",
+     "scripts/backfill_forward_logs.py",
+     "scripts/build_measurement.py"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "date",
+     "id",
+     "kind",
+     "phase",
+     "pos",
+     "signal",
+     "timing_state",
+     "stance",
+     "hazard_1m_p",
+     "hazard_3m_p",
+     "hazard_6m_p"
+    ],
+    "owner_program": "cycle-intelligence",
+    "cadence": "daily (build_sector_cycles in daily.yml)"
+   },
+   {
+    "path": "data/china_sector_cycles/forward_log.parquet",
+    "format": "parquet",
+    "producer": "engine/china_sector_cycles.py:358 (to_parquet append, keep-FIRST)",
+    "consumers": [
+     "engine/china_sector_cycles_grader.py",
+     "scripts/backfill_forward_logs.py",
+     "scripts/build_china_cycles_scorecard.py",
+     "scripts/build_china_library.py",
+     "scripts/keystone_position_gate_phase0.py"
+    ],
+    "consumer_count": 5,
+    "storage": "git",
+    "schema": "china_sector_cycles.grader.v1",
+    "envelope_fields": [
+     "date",
+     "id",
+     "phase",
+     "pos",
+     "signal",
+     "timing_state"
+    ],
+    "owner_program": "china-alpha/cycle-intelligence",
+    "cadence": "daily (build_china_sector_cycles in daily.yml asia-close)"
+   },
+   {
+    "path": "data/country_cycles/forward_log.parquet",
+    "format": "parquet",
+    "producer": "scripts/build_country_cycles.py:88 via engine/cycle_forward_log.py:append_forward_log('country_cycles')",
+    "consumers": [
+     "engine/grading_stats.py (via load_graded_log)",
+     "scripts/grade_promises.py",
+     "scripts/backfill_forward_logs.py",
+     "scripts/build_measurement.py"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "date",
+     "id",
+     "kind",
+     "phase",
+     "pos",
+     "signal",
+     "timing_state",
+     "stance",
+     "hazard_1m_p",
+     "hazard_3m_p",
+     "hazard_6m_p"
+    ],
+    "owner_program": "cycle-intelligence",
+    "cadence": "daily (build_country_cycles in daily.yml)"
+   },
+   {
+    "path": "data/altdata/theses.jsonl",
+    "format": "jsonl",
+    "producer": "engine/altdata_ledger.py (append per-thesis row)",
+    "consumers": [
+     "engine/qledger.py",
+     "engine/spine.py",
+     "scripts/backfill_qledger_us.py",
+     "scripts/build_alt_data.py"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "id",
+     "ticker",
+     "logged_at",
+     "state_asof",
+     "subject",
+     "lean",
+     "conviction",
+     "horizon_d"
+    ],
+    "owner_program": "QI/altdata",
+    "cadence": "daily (build_alt_data in daily.yml)"
+   },
+   {
+    "path": "data/radar/theses.jsonl",
+    "format": "jsonl",
+    "producer": "engine/radar.py:284 (append, idempotent by id)",
+    "consumers": [
+     "engine/ai_desk_scorer.py",
+     "engine/hub_track_record.py",
+     "engine/master_brain.py",
+     "engine/qledger.py",
+     "engine/radar_scorer.py",
+     "scripts/backfill_qledger_us.py",
+     "scripts/build_baskets.py",
+     "scripts/build_radar_ic.py"
+    ],
+    "consumer_count": 8,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "id",
+     "subject",
+     "subject_ticker",
+     "lean",
+     "horizon_d",
+     "thesis",
+     "falsifier",
+     "check_by"
+    ],
+    "owner_program": "oracle/sector-pulse",
+    "cadence": "daily (build_baskets in daily.yml)"
+   },
+   {
+    "path": "data/radar/track_record.json",
+    "format": "json",
+    "producer": "engine/radar_scorer.py (build on each grade run)",
+    "consumers": [
+     "engine/master_brain.py",
+     "engine/radar_ic.py"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [],
+    "owner_program": "oracle/sector-pulse",
+    "cadence": "daily (build_radar_ic in daily.yml)"
+   },
+   {
+    "path": "data/altdata/track_record.json",
+    "format": "json",
+    "producer": "engine/altdata_ledger.py:rebuild() (full rewrite on each grade run)",
+    "consumers": [
+     "engine/master_brain.py",
+     "scripts/build_alt_data.py"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [],
+    "owner_program": "QI/altdata",
+    "cadence": "daily (build_alt_data in daily.yml)"
+   },
+   {
+    "path": "data/vol_regime/gate.json",
+    "format": "json",
+    "producer": "scripts/validate_vol_regime.py (writes on --persist; manual or CI-cycle gate)",
+    "consumers": [
+     "engine/vol_regime.py",
+     "scripts/build_vol_regime.py",
+     "scripts/validate_gex.py"
+    ],
+    "consumer_count": 3,
+    "storage": "gitignored-local",
+    "schema": "implicit",
+    "envelope_fields": [],
+    "owner_program": "options-alpha",
+    "cadence": "on-demand (cycle-calibration workflow)"
+   },
+   {
+    "path": "data/vol_regime/basket_overlay_gate.json",
+    "format": "json",
+    "producer": "scripts/backtest_vol_overlay.py (writes verdict gate)",
+    "consumers": [
+     "engine/vol_regime.py",
+     "scripts/build_vol_regime.py"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "validation"
+    ],
+    "owner_program": "options-alpha",
+    "cadence": "on-demand (cycle-calibration workflow)"
+   },
+   {
+    "path": "data/regime/regime_vector.parquet",
+    "format": "parquet",
+    "producer": "engine/regime_vector.py:487 via engine/run.py:681 (append-only, keep-FIRST per date)",
+    "consumers": [
+     "engine/board_ledger.py",
+     "engine/china_standout_track.py",
+     "engine/qledger.py",
+     "scripts/grade_us_board.py"
+    ],
+    "consumer_count": 4,
+    "storage": "gitignored-local",
+    "schema": "implicit",
+    "envelope_fields": [
+     "date"
+    ],
+    "owner_program": "engine-fix/btc-vector",
+    "cadence": "daily (engine.run in daily.yml)"
+   },
+   {
+    "path": "data/regime/base_effect_fwd.jsonl",
+    "format": "jsonl",
+    "producer": "engine/run.py:187 (append per daily build)",
+    "consumers": [
+     "engine/regime_one.py",
+     "scripts/refresh_regime_if_stale.py",
+     "scripts/validate_regime_fwd.py"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "as_of",
+     "realized_q1",
+     "predicted_sign"
+    ],
+    "owner_program": "engine-fix",
+    "cadence": "daily (engine.run in daily.yml)"
+   },
+   {
+    "path": "data/risk_radar/forward_log.jsonl",
+    "format": "jsonl",
+    "producer": "engine/risk_radar_audit.py:35 (append, idempotent by as-of)",
+    "consumers": [
+     "engine/risk_radar_audit.py",
+     "engine/risk_radar_intl_audit.py",
+     "engine/risk_radar_recovery.py",
+     "engine/risk_radar_review.py",
+     "engine/run.py"
+    ],
+    "consumer_count": 5,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "engine-fix/oracle",
+    "cadence": "daily (engine.run stamps forward log)"
+   },
+   {
+    "path": "data/market_state/forward_log.jsonl",
+    "format": "jsonl",
+    "producer": "engine/market_state_audit.py (append, idempotent by as-of)",
+    "consumers": [
+     "engine/market_state_audit.py",
+     "engine/market_state_tune.py",
+     "scripts/build_site.py"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "as_of",
+     "verdict",
+     "score"
+    ],
+    "owner_program": "engine-fix",
+    "cadence": "daily (build_site stamps log)"
+   },
+   {
+    "path": "data/us_board_ledger/retro_grades.parquet",
+    "format": "parquet",
+    "producer": "scripts/grade_us_board.py:11 (append-only per as_of, lane, ticker, horizon)",
+    "consumers": [
+     "engine/board_ledger.py",
+     "engine/china_standout_track.py",
+     "engine/spine.py",
+     "engine/track_record.py",
+     "scripts/build_canada.py",
+     "scripts/build_hk.py",
+     "scripts/build_hk_library.py",
+     "scripts/us_board_studies.py"
+    ],
+    "consumer_count": 8,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "as_of",
+     "lane",
+     "ticker",
+     "horizon"
+    ],
+    "owner_program": "durable-bottom/setup-species",
+    "cadence": "daily (grade_us_board --nightly in daily.yml line 614)"
+   },
+   {
+    "path": "data/sector_central/calls.parquet",
+    "format": "parquet",
+    "producer": "engine/sector_central.py + scripts/build_sector_central.py (append calls per build)",
+    "consumers": [
+     "engine/sector_central_grader.py",
+     "scripts/build_sector_central.py"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "date",
+     "id"
+    ],
+    "owner_program": "institutional-sector-intelligence",
+    "cadence": "daily (build_sector_central in daily.yml)"
+   },
+   {
+    "path": "data/china_sector_central/calls.parquet",
+    "format": "parquet",
+    "producer": "engine/china_sector_central.py + scripts/build_china_sector_central.py (append calls per build)",
+    "consumers": [
+     "engine/china_sector_central_grader.py",
+     "scripts/build_china_sector_central.py"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "date",
+     "id"
+    ],
+    "owner_program": "institutional-sector-intelligence/china-alpha",
+    "cadence": "daily (build_china_sector_central in daily.yml asia-close)"
+   },
+   {
+    "path": "data/cycle_ontology/falsifiers.json",
+    "format": "json",
+    "producer": "engine/cycle_ontology.py (written via DSL compile step)",
+    "consumers": [
+     "engine/btc_regime_ledger.py",
+     "engine/falsifier_tripwires.py",
+     "scripts/_narrative_ttl.py",
+     "scripts/build_cycle.py",
+     "scripts/build_vector.py",
+     "scripts/migrate_narrative_ttl.py"
+    ],
+    "consumer_count": 6,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [],
+    "owner_program": "cycle-intelligence",
+    "cadence": "on-demand (cycle DSL recompile)"
+   },
+   {
+    "path": "data/hazard/model_price_c4414dcb.json",
+    "format": "json",
+    "producer": "scripts/fit_cycle_hazard.py:34 (writes coefficients + calibration maps)",
+    "consumers": [
+     "engine/hazard_score.py",
+     "scripts/build_conditional_cells.py",
+     "engine/sector_cycles.py",
+     "scripts/build_cycle.py"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "meta",
+     "signals",
+     "trial_log",
+     "collinearity",
+     "allocation_bootstrap"
+    ],
+    "owner_program": "cycle-intelligence",
+    "cadence": "on-demand (cycle-calibration workflow; model refit)"
+   },
+   {
+    "path": "data/vector/calibration.json",
+    "format": "json",
+    "producer": "scripts/calibrate_vector.py:1201 (writes after OOS validation pass)",
+    "consumers": [
+     "engine/alert_triage.py",
+     "engine/alerts.py",
+     "engine/btc_alerts.py",
+     "engine/btc_master.py",
+     "scripts/build_vector.py",
+     "scripts/calibrate_regime.py"
+    ],
+    "consumer_count": 6,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "meta",
+     "signals",
+     "risk_drawdown",
+     "allocation",
+     "multiple_testing"
+    ],
+    "owner_program": "btc-vector",
+    "cadence": "on-demand (calibrate_vector.py; after validated backtest pass)"
+   },
+   {
+    "path": "data/spine/predictions.parquet",
+    "format": "parquet",
+    "producer": "engine/spine.py:132 (append per build; SCHEMA=spine.predictions.v1)",
+    "consumers": [
+     "engine/alert_triage.py",
+     "engine/altdata_signals.py",
+     "engine/desk_scorer.py",
+     "engine/passport.py",
+     "scripts/build_alt_data.py"
+    ],
+    "consumer_count": 5,
+    "storage": "git",
+    "schema": "spine.predictions.v1",
+    "envelope_fields": [
+     "schema",
+     "as_of",
+     "engine",
+     "family",
+     "ticker",
+     "horizon"
+    ],
+    "owner_program": "QI/durable-bottom",
+    "cadence": "daily (build_alt_data / build_site in daily.yml)"
+   },
+   {
+    "path": "data/regime/spvector_latest.json",
+    "format": "json",
+    "producer": "scripts/build_spvector.py:319 (snap_dir/'spvector_latest.json'.write_text)",
+    "consumers": [
+     "scripts/build_china_allocation.py",
+     "scripts/build_ipo.py",
+     "scripts/build_site.py",
+     "scripts/build_vector.py"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [],
+    "owner_program": "btc-vector",
+    "cadence": "daily (build_spvector in daily.yml)"
+   },
+   {
+    "path": "data/altdata/feed.json",
+    "format": "json",
+    "producer": "engine/altdata.py (build_alt_data write path)",
+    "consumers": [
+     "engine/theme_activity.py",
+     "scripts/build_alt_data.py"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "generated_utc",
+     "as_of",
+     "schema",
+     "source",
+     "datasets",
+     "signals"
+    ],
+    "owner_program": "QI/altdata",
+    "cadence": "daily (build_alt_data in daily.yml)"
+   },
+   {
+    "path": "data/archetypes/history.parquet",
+    "format": "parquet",
+    "producer": "engine/stock_fundamentals.py:1480 (to_parquet write); scripts/build_archetype_history.py",
+    "consumers": [
+     "engine/stock_fundamentals.py",
+     "scripts/build_archetype_history.py"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [],
+    "owner_program": "engine-fix/fundamentals",
+    "cadence": "on-demand (build_archetype_history.py)"
+   }
+  ],
+  "notes": "1. MULTIPLE WRITERS: data/experiments/registry_seed.json has three writers \u2014 engine/species_registry.py (daily mirror of species into the seed), scripts/backfill_forward_logs.py (additive experiment entries), and scripts/build_measurement.py (measurement entries). All are additive/idempotent but there is no single-writer enforcement, which is exactly the class of rot the masterplan identifies. 2. data/regime/regime_vector.parquet is NOT git-tracked (absent from git ls-files output despite 12 consumer references); it is written locally by engine/run.py but not committed \u2014 this is a gap since board_ledger.py, qledger.py, and grade_us_board.py all require it. 3. data/vol_regime/gate.json is also NOT git-tracked (only basket_overlay_gate.json is tracked); this means the vol-regime scored weight is ungated on CI clones. 4. The oracle/ directory (data/oracle/) exists with rotation_directive.json, episodes_m/s.parquet, graph_m/s.json, memory_active_analogues.json, memory_base_rates.json \u2014 but NO engine or scripts code in origin/main yet reads these artifacts; oracle is a parallel worktree program that has not yet shipped cross-engine consumers. These artifacts are excluded from the bus-citizen list as the consumer count is 0 in the main codebase. 5. data/qledger/grades.jsonl (written by scripts/grade_qledger.py) is git-tracked but grade_qledger.py itself does not appear in daily.yml; it runs from the whitehouse-sentinel workflow when a whitehouse alert fires. The grader also reads from backfill scripts on-demand. 6. The masterplan's claim of 12+ consumers for data/regime/latest.json is confirmed and exceeded (27 unique module files). 7. Coverage caveat: this survey covers engine/*.py and scripts/*.py only; Mastermind vendored readers (separate repo) and Terminal ingest are separate consumers not counted here \u2014 they read site/ mirrors, not data/ directly, except for the documented Terminal intel/v1 freeze since R2 migration."
+ },
+ "siteLane": {
+  "artifacts": [
+   {
+    "path": "site/basketdata/baskets.json",
+    "format": "json",
+    "producer": "scripts/build_baskets.py:99 (US); build_baskets_canada.py:173, build_baskets_china.py:96, build_baskets_hk.py:162, build_baskets_intl.py:77 for regional variants",
+    "consumers": [
+     "engine/conviction_accrual.py:44 (all 5 region variants)",
+     "engine/group_context.py:85",
+     "engine/oracle/panel.py:796",
+     "engine/oracle/timemachine.py:98",
+     "engine/radar_ticker.py:72",
+     "engine/sector_pulse.py:109 (reads US variant)",
+     "scripts/build_allocation.py:79 + :106",
+     "scripts/build_site.py:1102 (basket_action block)",
+     "scripts/build_vector.py:3125 (guard reads china/hk variants)",
+     "site/baskets.html (JS fetch \u2014 display)",
+     "Mastermind bot snapshot 2x/day (vendored copy via conviction_accrual paths)"
+    ],
+    "consumer_count": 11,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of (key inside payload; no schema_version)"
+    ],
+    "owner_program": "sector-pulse / oracle",
+    "cadence": "daily engine (nightly build_baskets)"
+   },
+   {
+    "path": "data/regime/latest.json",
+    "format": "json",
+    "producer": "engine/run.py:705 (open(p / 'latest.json', 'w'); json.dump)",
+    "consumers": [
+     "engine/briefing.py:159",
+     "engine/etf_pulse.py:18",
+     "engine/market_gamma.py:3",
+     "engine/master_brain.py:846 + :1056 + :1103",
+     "engine/radar_plus.py:155",
+     "engine/regime_label.py:17",
+     "engine/regime_prior.py:118",
+     "engine/risk_brain.py:24",
+     "engine/sector_central.py:79",
+     "engine/vol_regime.py:367",
+     "scripts/build_feeds.py:97 (feeds risk_radar snapshot from this)",
+     "scripts/build_site.py (multiple consumption points for regime quadrant)",
+     "admin/health.py (reads data/run_status.json which mirrors regime fields)",
+     "Mastermind bot: master_brain + risk_brain consume this nightly",
+     "Terminal: ingest/pull_macro_intel reads regime fields from vendored copy"
+    ],
+    "consumer_count": 15,
+    "storage": "git",
+    "schema": "implicit",
+    "envelope_fields": [
+     "quad_name",
+     "confidence",
+     "liquidity_overlay",
+     "cycle_tag",
+     "transition_state",
+     "risk_radar sub-object"
+    ],
+    "owner_program": "engine-fix / oracle",
+    "cadence": "daily engine (nightly engine/run.py)"
+   },
+   {
+    "path": "site/altdata/mastermind.json",
+    "format": "json",
+    "producer": "engine/altdata_emit.py:259 (write_text; called from scripts/build_alt_data.py)",
+    "consumers": [
+     "engine/intelligence.py:286",
+     "engine/radar_plus.py:215",
+     "engine/radar_ticker.py:136",
+     "engine/china_intel_analysis.py:545 (reads chinaaltdata/mastermind.json variant)",
+     "engine/china_intel_bus.py:130",
+     "engine/signal_sanity.py:157 (freshness monitor)",
+     "scripts/build_intelligence.py:5",
+     "site/alt_data.html (JS fetch)",
+     "Mastermind bot: master_brain reads as context block"
+    ],
+    "consumer_count": 9,
+    "storage": "git",
+    "schema": "altdata.mastermind.v1 (inline SCHEMA constant in altdata_emit.py:65)",
+    "envelope_fields": [
+     "schema",
+     "as_of",
+     "generated_utc"
+    ],
+    "owner_program": "qualitative-intelligence",
+    "cadence": "daily engine (nightly build_alt_data)"
+   },
+   {
+    "path": "site/altdata/by_ticker.json",
+    "format": "json",
+    "producer": "engine/altdata_signals.py:72 (write_text; mirrors to both data/ and site/)",
+    "consumers": [
+     "engine/intelligence.py:287",
+     "engine/radar_plus.py:214",
+     "engine/radar_ticker.py:137",
+     "engine/foresight_earliness.py:148",
+     "engine/altdata_confirmers.py:94",
+     "collectors/quiver_watchlist.py:6",
+     "scripts/build_stock_library.py:1639",
+     "scripts/build_intelligence.py:6 (re-publishes merged form)"
+    ],
+    "consumer_count": 8,
+    "storage": "git",
+    "schema": "altdata.by_ticker.v2 (schema field in payload)",
+    "envelope_fields": [
+     "schema",
+     "as_of",
+     "generated_utc",
+     "n_tickers"
+    ],
+    "owner_program": "qualitative-intelligence",
+    "cadence": "daily engine (nightly build_alt_data)"
+   },
+   {
+    "path": "site/factordata/us_standouts.json",
+    "format": "json",
+    "producer": "scripts/build_stock_library.py:2412 (write_text)",
+    "consumers": [
+     "engine/intelligence.py:289",
+     "engine/risk_brain.py:178",
+     "engine/signal_sanity.py:115",
+     "engine/stock_desk.py:166",
+     "engine/subsector_confluence.py:9",
+     "scripts/build_allocation.py:84",
+     "scripts/build_site.py:2860",
+     "scripts/build_stock_board_v2.py:101",
+     "scripts/build_theme_detail.py:83",
+     "scripts/grade_us_board.py:95 (grader)",
+     "scripts/snapshot_shadow_book.py:20",
+     "Mastermind bot:lenses + bot:strategist (export_signal_contracts.py:171 confirms)",
+     "Terminal:screener (export_signal_contracts.py:171 confirms)"
+    ],
+    "consumer_count": 13,
+    "storage": "git",
+    "schema": "implicit (as_of field; check_board_contradictions.py validates structure)",
+    "envelope_fields": [
+     "as_of",
+     "rank_by",
+     "n_buy",
+     "n_eligible"
+    ],
+    "owner_program": "us-stocks-prebreakout",
+    "cadence": "daily engine (nightly build_stock_library)"
+   },
+   {
+    "path": "site/basketdata/radar.json",
+    "format": "json",
+    "producer": "scripts/build_baskets.py:149 (write_text inside build_baskets)",
+    "consumers": [
+     "engine/narrative_brain.py:4 (reads radar for narrative synthesis)",
+     "engine/radar_plus.py:4 (enriches radar in place post-emit \u2014 known rot)",
+     "engine/radar_ticker.py:71",
+     "engine/theme_validation.py:3",
+     "scripts/build_radar_page.py:4",
+     "scripts/build_radar_plus.py:2",
+     "scripts/build_intelligence.py (_crosssurface_radar mutates the file)",
+     "site/baskets.html:1275 (JS fetch)",
+     "site/radar_panel.js:3 (frontend render)"
+    ],
+    "consumer_count": 9,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of (inside payload)"
+    ],
+    "owner_program": "oracle",
+    "cadence": "daily engine (nightly build_baskets)"
+   },
+   {
+    "path": "site/signals/<SYM>.json",
+    "format": "json",
+    "producer": "engine/signal_gate.py:305 / scripts/build_signal_quality.py:103 (writes per-ticker files)",
+    "consumers": [
+     "scripts/validate_signals.py (jsonschema CI gate against research/signal_engine/SCHEMA.json)",
+     "scripts/build_track_record.py:7",
+     "engine/track_record.py:784",
+     "Terminal:chart_markers (export_signal_contracts.py:165 confirms)",
+     "site/stock.html (JS fetch per ticker)",
+     "Mastermind bot:conviction (export_signal_contracts.py:165 confirms)"
+    ],
+    "consumer_count": 6,
+    "storage": "git",
+    "schema": "research/signal_engine/SCHEMA.json (jsonschema Draft202012 \u2014 the ONLY jsonschema-enforced family)",
+    "envelope_fields": [
+     "asof",
+     "schema",
+     "ticker"
+    ],
+    "owner_program": "us-stocks-prebreakout / setup-species",
+    "cadence": "daily engine (nightly build_signal_quality)"
+   },
+   {
+    "path": "site/factordata/signal_gate.json",
+    "format": "json",
+    "producer": "scripts/build_stock_library.py:1833 (write_text)",
+    "consumers": [
+     "engine/altdata_emit.py:34 (loads to gate ticker universe)",
+     "engine/intel_hub.py:665",
+     "engine/whitehouse_brain.py:383 (hallucination filter)",
+     "scripts/build_congress.py:38",
+     "scripts/build_discovery.py:64"
+    ],
+    "consumer_count": 5,
+    "storage": "git",
+    "schema": "implicit ({as_of, verdicts: {ticker: verdict}})",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "us-stocks-prebreakout",
+    "cadence": "daily engine (nightly build_stock_library)"
+   },
+   {
+    "path": "site/qledger/track_record.json",
+    "format": "json",
+    "producer": "engine/qledger.py:979 (emit_track_record; also scripts/grade_qledger.py:576)",
+    "consumers": [
+     "engine/experiments_registry.py:115 (reads promotion_readiness)",
+     "engine/qledger_ui.py:56 (chip rendering for desk pages)",
+     "scripts/grade_qledger.py:17 (reads + merges ladder_states)",
+     "scripts/build_allocation.py (qledger chips for desk pages)",
+     "scripts/build_alt_data.py (qledger_chips consumption)",
+     "admin/experiments.py (reads experiments.json which references qledger state)"
+    ],
+    "consumer_count": 6,
+    "storage": "git",
+    "schema": "implicit (promotion_readiness + per-family hit-rates)",
+    "envelope_fields": [
+     "as_of",
+     "schema_version (in grade_qledger merge output)"
+    ],
+    "owner_program": "qualitative-intelligence",
+    "cadence": "daily engine (nightly grade_qledger)"
+   },
+   {
+    "path": "site/basketdata/oracle_state.json",
+    "format": "json",
+    "producer": "engine/oracle/live.py:395 (write_text; called from scripts/oracle_nightly.py)",
+    "consumers": [
+     "engine/oracle/alerts.py:106 (diffs new vs prior)",
+     "engine/oracle/tilt.py:117 (reads for allocation tilt)",
+     "scripts/oracle_nightly.py:194"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "oracle_state.v1 (inline schema constant engine/oracle/live.py:78 + documented OUTPUT SCHEMA block)",
+    "envelope_fields": [
+     "schema",
+     "asof",
+     "regime",
+     "active_episodes",
+     "complexes"
+    ],
+    "owner_program": "oracle",
+    "cadence": "daily engine (nightly oracle_nightly)"
+   },
+   {
+    "path": "site/basketdata/flow.json",
+    "format": "json",
+    "producer": "scripts/build_baskets.py:113 (write_text via compute_group_flows from engine/group_flow.py)",
+    "consumers": [
+     "engine/ai_desk.py:7 (reads as Engine-1 thematic/sector flow context)",
+     "engine/expansion_gate.py:13 (reads stage/accel from flow.json)",
+     "Mastermind bot (referenced as AI-handoff payload in build_baskets.py docstring)"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of (inside group_flow payload)"
+    ],
+    "owner_program": "oracle",
+    "cadence": "daily engine (nightly build_baskets)"
+   },
+   {
+    "path": "site/basketdata/sector_pulse.json",
+    "format": "json",
+    "producer": "engine/sector_pulse.py:629 (write_pulse; called from scripts/build_baskets.py:118)",
+    "consumers": [
+     "scripts/build_site.py:1398 (macro.html sector-heat strip via build_pulse API)",
+     "scripts/build_stock_library.py:969 (per-ticker sector_pulse chip)",
+     "engine/oracle/live.py:4 (referenced as bus pattern)",
+     "Mastermind bot: W2d consumer per SECTOR_PULSE_PROGRAM.md",
+     "Terminal: W2c consumer per SECTOR_PULSE_PROGRAM.md (pull_macro_intel path)"
+    ],
+    "consumer_count": 5,
+    "storage": "git",
+    "schema": "schema=1 (integer version in payload; engine/sector_pulse.py:86)",
+    "envelope_fields": [
+     "schema",
+     "as_of",
+     "region"
+    ],
+    "owner_program": "sector-pulse",
+    "cadence": "daily engine (nightly build_baskets)"
+   },
+   {
+    "path": "site/regime_timeline.json",
+    "format": "json",
+    "producer": "scripts/build_site.py:2701 (write_text)",
+    "consumers": [
+     "scripts/build_index_leadership.py:144",
+     "scripts/export_signal_contracts.py:182",
+     "site/timemachine.js:109 (JS fetch for Time Machine)",
+     "Mastermind bot:macro_risk (export_signal_contracts.py confirms)",
+     "Terminal:regime_banner (export_signal_contracts.py confirms)"
+    ],
+    "consumer_count": 5,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "dates array (as_of is last entry)"
+    ],
+    "owner_program": "engine-fix",
+    "cadence": "daily engine (nightly build_site)"
+   },
+   {
+    "path": "site/allocationdata/allocation.json",
+    "format": "json",
+    "producer": "scripts/build_allocation.py:134 (write_text; jname='allocation.json' for US)",
+    "consumers": [
+     "scripts/build_site.py:1122 (basket_action enrichment block)",
+     "site/allocation.html (direct JS load)",
+     "Mastermind bot snapshot (vendored 2x/day allocation snapshot)"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "engine-fix",
+    "cadence": "daily engine (nightly build_allocation)"
+   },
+   {
+    "path": "site/allocationdata/ai_desk_us.json",
+    "format": "json",
+    "producer": "scripts/build_allocation.py:240 (via ai_desk.ThematicDeskWriter; score_ledger writes ai_desk_track.json; ai_desk*.json written at line ~240)",
+    "consumers": [
+     "engine/narrative_emergence.py:8 (reads ai_desk_<region>.json for emerging_watch)",
+     "site/ai_desk.html (JS fetch)",
+     "Mastermind bot (ai_desk track record consumed by master_brain.py:658)"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "qualitative-intelligence",
+    "cadence": "daily engine (nightly build_allocation)"
+   },
+   {
+    "path": "site/basketdata/radar_ticker.json",
+    "format": "json",
+    "producer": "scripts/build_radar_plus.py:3 (engine/radar_ticker.py:14 documents the emit)",
+    "consumers": [
+     "engine/intelligence.py:288",
+     "engine/intel_discovery.py:535",
+     "engine/radar_ic.py:221",
+     "engine/signal_sanity.py:143"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "oracle",
+    "cadence": "daily engine (nightly build_radar_plus)"
+   },
+   {
+    "path": "site/intelligence/by_ticker.json",
+    "format": "json",
+    "producer": "scripts/build_intelligence.py:60 (write_text; merges news + altdata)",
+    "consumers": [
+     "engine/briefing.py:3 (reads to build site/intelligence/briefing.json)",
+     "scripts/build_briefing.py:3",
+     "scripts/build_intel_hub.py:5",
+     "Terminal: pull_macro_intel.py reads per-ticker intel (confirmed in ENGINE_PROBLEM_AUDIT.md:328)"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "asof",
+     "n_tickers"
+    ],
+    "owner_program": "qualitative-intelligence",
+    "cadence": "daily engine (nightly build_intelligence, runs after build_news + build_alt_data)"
+   },
+   {
+    "path": "site/factordata/contracts/artifact_manifest.json",
+    "format": "json",
+    "producer": "scripts/export_signal_contracts.py:216 (write_text)",
+    "consumers": [
+     "Terminal:artifact_conformance (export_signal_contracts.py:165 annotates this as a Terminal/bot conformance check)",
+     "tests/test_signal_contracts_wiring.py:159 (CI guard)",
+     "Mastermind bot freshness verification"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "artifact_manifest/v1 (schema field in payload, export_signal_contracts.py:197)",
+    "envelope_fields": [
+     "schema",
+     "generated_utc",
+     "artifacts array with expected_max_age_td + as_of_field + consumers"
+    ],
+    "owner_program": "neural-web",
+    "cadence": "daily engine (nightly; wired in daily.yml after build_signal_quality)"
+   },
+   {
+    "path": "site/factordata/contracts/golden_signals.json",
+    "format": "json",
+    "producer": "scripts/export_signal_contracts.py:214 (write_text)",
+    "consumers": [
+     "Terminal:golden_gate conformance (named explicitly in export_signal_contracts.py:5)",
+     "tests/test_signal_contracts_wiring.py",
+     "Mastermind bot signal conformance"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "none (inputs_hash + signal snapshots for known symbols)",
+    "envelope_fields": [
+     "generated_utc",
+     "symbols",
+     "inputs_hash per symbol"
+    ],
+    "owner_program": "neural-web",
+    "cadence": "daily engine (nightly; wired after build_signal_quality)"
+   },
+   {
+    "path": "site/china_intel/briefing.json",
+    "format": "json",
+    "producer": "engine/china_intel_bus.py:335 (write_text; called from scripts/build_china_intel.py:32)",
+    "consumers": [
+     "engine/master_brain.py:1075 (china_intel_bus.briefing() loads from this)",
+     "Mastermind bot: China Mastermind context (china_intel_bus.py:6 docstring)",
+     "site/china_intel.html (links to briefing.json as machine-readable)"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "china_intel.briefing.v3 (SCHEMA constant in china_intel_bus.py:25)",
+    "envelope_fields": [
+     "schema",
+     "asof",
+     "max_staleness_days",
+     "digest"
+    ],
+    "owner_program": "china-alpha",
+    "cadence": "asia-close lane (nightly build_china_intel)"
+   },
+   {
+    "path": "site/factordata/china_standouts.json",
+    "format": "json",
+    "producer": "scripts/build_china_library.py:1865 (write_text)",
+    "consumers": [
+     "scripts/build_china.py:823 (fallback read)",
+     "scripts/export_signal_contracts.py:175 (bot:china_book consumer annotated)",
+     "Mastermind bot:china_book (autonomous book nightly \u2014 CHINA_ENGINE_REASSESSMENT.md confirms)",
+     "scripts/backfill_stock_open.py:42"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "implicit (as_of + buy/ripening/ran arrays)",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "china-alpha",
+    "cadence": "asia-close lane (nightly build_china_library)"
+   },
+   {
+    "path": "site/basketdata/foresight_cascade.json",
+    "format": "json",
+    "producer": "scripts/build_foresight.py:275 (write_text \u2014 SINGLE authoritative writer; test_build_theme_addons_no_foresight_write.py enforces no second writer)",
+    "consumers": [
+     "site/foresight.html (JS load via basketdata/foresight_cascade.json)",
+     "Mastermind bot (foresight cascade listed as context block in master_brain)"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "qualitative-intelligence",
+    "cadence": "daily engine (nightly build_foresight)"
+   },
+   {
+    "path": "site/basketdata/narrative_brain.json",
+    "format": "json",
+    "producer": "engine/narrative_brain.py:363 (write_text)",
+    "consumers": [
+     "scripts/build_radar_page.py:5 (serves via radar_panel.js)",
+     "site/radar_panel.js:262 (JS fetch)"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "oracle",
+    "cadence": "daily engine (nightly build_radar_page)"
+   },
+   {
+    "path": "site/basketdata/member_context.json",
+    "format": "json",
+    "producer": "scripts/build_theme_addons.py:76 (write_text; compute_member_context from engine/basket_member_context.py:231)",
+    "consumers": [
+     "scripts/build_cn_reversal_sleeve.py:128 (_member_context reads this)",
+     "site/theme_addons.js:246 (JS fetchJSON for member_context + suffix)"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "oracle",
+    "cadence": "daily engine (nightly build_theme_addons)"
+   },
+   {
+    "path": "site/marketdata/subsector_rotation.json",
+    "format": "json",
+    "producer": "scripts/build_subsector_rotation.py:63 (write_text)",
+    "consumers": [
+     "engine/group_context.py:78 (reads as rotation rotation source)",
+     "scripts/build_feeds.py:131 (mirrors to feeds plane on R2)",
+     "site/subsector_rotation.js:19 (JS fetch for RRG display)"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "asof"
+    ],
+    "owner_program": "oracle",
+    "cadence": "daily engine (nightly build_subsector_rotation)"
+   },
+   {
+    "path": "site/marketdata/experiments.json",
+    "format": "json",
+    "producer": "engine/experiments_registry.py:310 (write_text)",
+    "consumers": [
+     "admin/experiments.py:19 (admin console Experiments tab \u2014 reads registry)",
+     "engine/qledger.py (promotion_readiness feeds this)"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "qualitative-intelligence",
+    "cadence": "daily engine (nightly; called during build)"
+   },
+   {
+    "path": "site/regimedata/regime_prior.js",
+    "format": "other",
+    "producer": "scripts/build_regime_prior.py:77 (write_text \u2014 window.REGIME_PRIOR JS data file)",
+    "consumers": [
+     "site/cycle.html:359 (script tag)",
+     "site/markets.html:367 (script tag)"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "quad",
+     "liquidity",
+     "market_state",
+     "vol",
+     "bc_phase"
+    ],
+    "owner_program": "engine-fix",
+    "cadence": "daily engine (nightly build_regime_prior)"
+   },
+   {
+    "path": "data/sector_cycles/forward_log.parquet",
+    "format": "parquet",
+    "producer": "engine/cycle_forward_log.py:160 (to_parquet; keep-FIRST per date+id)",
+    "consumers": [
+     "engine/grading_stats.py:788",
+     "scripts/audit_price_basis.py:280",
+     "scripts/backfill_forward_logs.py:172 (reads schema to validate backfill)",
+     "scripts/build_scorecard.py (reads for grading IC)"
+    ],
+    "consumer_count": 4,
+    "storage": "git",
+    "schema": "implicit (date, id, phase, label, entry_price columns; keep-FIRST PIT contract)",
+    "envelope_fields": [
+     "date",
+     "id (sidecar convention)"
+    ],
+    "owner_program": "cycle-intelligence",
+    "cadence": "daily engine (nightly cycle append)"
+   },
+   {
+    "path": "data/china_sector_cycles/forward_log.parquet",
+    "format": "parquet",
+    "producer": "engine/china_sector_cycles.py:358 (to_parquet) + engine/china_sector_cycles_grader.py:434",
+    "consumers": [
+     "engine/grading_stats.py (shared library reads)",
+     "scripts/build_china_cycles_scorecard.py:4",
+     "scripts/build_china_library.py:865"
+    ],
+    "consumer_count": 3,
+    "storage": "git",
+    "schema": "implicit (same schema as sector_cycles/forward_log.parquet)",
+    "envelope_fields": [
+     "date",
+     "id (sidecar convention)"
+    ],
+    "owner_program": "cycle-intelligence / china-alpha",
+    "cadence": "asia-close lane (nightly china cycle append)"
+   },
+   {
+    "path": "site/feeds/ (R2 contract plane: risk_radar.json, sector_breadth.json, event_calendar.json, intl_spillover.json, froth_fragility_log.jsonl, dislocation_state_log.parquet, group_flow_validation_meta.json, subsector_rotation.json, feeds_meta.json)",
+    "format": "json",
+    "producer": "scripts/build_feeds.py (multiple _write_json + copy calls; runs after engine+site builders)",
+    "consumers": [
+     "Mastermind bot (PERCEPTION_CONTRACTS.md: bot reads R2 feeds plane nightly)",
+     "Terminal:pull_macro_intel (sector_breadth, risk_radar listed as handoff artifacts)",
+     "scripts/publish_r2.py:48 (pushes feeds dir to R2)"
+    ],
+    "consumer_count": 3,
+    "storage": "r2",
+    "schema": "schema_version=1 in feeds_meta.json; risk_radar sub-object carries risk_radar.v2 schema",
+    "envelope_fields": [
+     "asof (per artifact)",
+     "generated_utc (feeds_meta.json)",
+     "schema_version"
+    ],
+    "owner_program": "neural-web / engine-fix",
+    "cadence": "daily engine (runs after build_site + engine, before publish_r2)"
+   },
+   {
+    "path": "site/macrodata/macro_signals.json",
+    "format": "json",
+    "producer": "scripts/build_site.py:3151 (write_text inside build_site nightly block)",
+    "consumers": [
+     "site/macro_signals.html (links to this as machine-readable copy)",
+     "Terminal:pull_macro_intel (ENGINE_PROBLEM_AUDIT.md:328 confirms ingest reads macro_signals family)"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of (from view-model)"
+    ],
+    "owner_program": "engine-fix",
+    "cadence": "daily engine (nightly build_site)"
+   },
+   {
+    "path": "site/factordata/factors.json",
+    "format": "json",
+    "producer": "scripts/build_site.py:1961 (write_text)",
+    "consumers": [
+     "engine/stock_fundamentals.py:1355 (sector + factor z-scores for per-stock panel)",
+     "scripts/build_site.py:2057 (cross-sectional snapshot read-back)"
+    ],
+    "consumer_count": 2,
+    "storage": "git",
+    "schema": "none",
+    "envelope_fields": [
+     "as_of"
+    ],
+    "owner_program": "engine-fix",
+    "cadence": "daily engine (nightly build_site)"
+   }
+  ],
+  "notes": "MULTIPLE WRITERS (resolved): foresight_cascade.json \u2014 build_theme_addons.py previously wrote this file, clobbering build_foresight.py output. A regression test (test_build_theme_addons_no_foresight_write.py) now enforces single-writer (build_foresight.py only). radar.json \u2014 scripts/build_intelligence.py (_crosssurface_radar) mutates the already-committed basketdata/radar.json in place after build_baskets emits it; this is a second writer operating as a post-emit enricher; the neural-web masterplan flags this as rot to fix in N0 (radar_plus folded into its producer).\n\nCOVERAGE CAVEATS: (1) The regional baskets variants (chinabasketdata/, hkbasketdata/, canadabasketdata/, intlbasketdata/baskets.json) share the same producer pattern (build_baskets_*.py:N) and consumer pattern as site/basketdata/baskets.json but are separate files tracked in git; they are collapsed into the baskets.json entry above for brevity. (2) site/basketdata/sector_pulse_cn.json / sector_pulse_hk.json / sector_pulse_ca.json follow the same write/read pattern as sector_pulse.json (US) \u2014 all written by engine/sector_pulse.py:629 via write_pulse(). (3) The feeds plane artifacts are gitignored locally and published to R2 via scripts/publish_r2.py \u2014 they are NOT present in the git tree at origin/main; only feeds_meta.json naming them is canonical. (4) External consumer counts for Mastermind bot and Terminal are sourced from: export_signal_contracts.py consumer annotations, SECTOR_PULSE_PROGRAM.md W2, ENGINE_PROBLEM_AUDIT.md, CHINA_ENGINE_REASSESSMENT.md, and the perception contracts doc; no vendored-reader code was directly verified. (5) data/regime/latest.json has the highest raw Python consumer count (~28 grep hits confirmed) but several are engine-internal calls within run.py itself; the count of 15 reflects distinct consuming modules. (6) site/basketdata/narrative_emergence.json is written by all five build_baskets_*.py scripts but has no verified inter-engine reader beyond the scripts/promote_candidate.py use \u2014 excluded from top-30 on low cross-engine consumer count. (7) The qbus/qkernel qualitative event bus (1,261 event keys, live in-process) is not a file artifact and is not included in this inventory."
+ },
+ "precedent": {
+  "qual_ladder_structure": "config/qual_ladder.yml is a flat YAML mapping. Each top-level key is `<namespace>.<field_name>` (e.g. `altdata.signal_score`). Required fields per entry (enforced by tests/test_claim_passport.py::TestLadderYaml): `field` (the Python dict key the engine reads), `producer` (engine module path), `claim_family` (qledger family tag used in claims.jsonl and grade_qledger.py grouping), `ladder_state` (one of DISPLAY|SHADOW|CONFIRMER|SCORED). Optional: `artifact_glob`, `max_weight`, `grandfathered` (bool), `gated_by` (required when grandfathered=true), `scored_consumers` (list of engine/scripts/* paths that read this field in a scoring context), `notes`.\n\nLoader mechanics: scripts/check_claim_passport.py::load_ladder() (line 88) calls yaml.safe_load() on the file and returns the raw dict. scripts/grade_qledger.py::_load_qual_ladder_families() (lines 75-93) does a line-by-line text scan for `claim_family:` values, returning a sorted deduplicated list \u2014 deliberately a text scan, not yaml.safe_load, so it is robust to parse failures. tests/test_claim_passport.py asserts (a) every entry has {field, producer, claim_family, ladder_state}, (b) ladder_state in {DISPLAY, SHADOW, CONFIRMER, SCORED}, (c) grandfathered=true entries have a gated_by note.\n\nCurrent registered entries (from config/qual_ladder.yml on origin/main, 553 lines, all at DISPLAY or SHADOW \u2014 none yet at CONFIRMER or SCORED per the 2026-07-02 honest seeding): altdata.signal_score (DISPLAY, grandfathered), altdata.conviction (DISPLAY), altdata.action (DISPLAY), altdata.direction (DISPLAY), policy.dir (DISPLAY, grandfathered), policy.conviction (DISPLAY), china_intel.news_dir (DISPLAY), china_intel.policy_dir (DISPLAY), china_intel.lean (DISPLAY), china_intel.importance_score (SHADOW), china_validation.news_sentiment (SHADOW), communique_diff.event_kind (SHADOW), missing_tape.risk_level (SHADOW), missing_tape.divergence_z (SHADOW), extraction_8k.direction (SHADOW), extraction_8k.importance_raw (SHADOW), extraction_8k.magnitude (SHADOW), news_llm.llm_importance (DISPLAY/off), whitehouse.alert (SHADOW), lexical.epu_z (SHADOW/pinned_off), lexical.gpr_z (SHADOW/pinned_off), lexical.sfed_sentiment_z (SHADOW).\n\nLadder states semantics: DISPLAY = rendered, salience-eligible, NO arithmetic on traded pages. SHADOW = computed + claim-registered + graded nightly, never rendered as conviction. CONFIRMER = passed \u00a73 gate: n_dates>=25, wilson_ci_low>0 vs matched control, incremental info over price+VIX, block-bootstrap stable. SCORED = composite-level re-validation + 63d OOS accrual. Auto-demotion: rolling-window CI falls below zero \u2192 back one rung, pinned with reason/date.",
+  "signals_schema_enforcement": "Enforcement is a two-layer architecture:\n\nLayer 1 \u2014 JSON Schema (research/signal_engine/SCHEMA.json): The schema defines two `$defs` \u2014 `perTicker` (for site/signals/<TICKER>.json files) and `brainLeaf` (for data/signal_archive/mtf_signals_latest.json). The `perTicker` shape has `additionalProperties: false` and required fields: ticker, asof (YYYY-MM-DD), tf, state (enum: long-bias|short-bias|mixed), above200 (bool), weekly_bull (bool), markers (array). Optional fields: trail_stop, trail_breach, risk_flags (ascending date list), early_markers (ascending date list), early_now. The `marker` object has `additionalProperties: false` with required [date, type]; `quality` (enum: take|block|pending) is required on buy/rebuy markers and FORBIDDEN on sell/cut markers \u2014 enforced by both JSON Schema allOf rules AND the validator's cross-field checks.\n\nLayer 2 \u2014 scripts/validate_signals.py cross-field rules (beyond what JSON Schema can express): (1) markers within a file must be strictly date-sorted ascending; (2) `quality` field present ONLY on buy/rebuy types (never sell/cut); (3) brain leaf consistency: every ticker in the leaf's `signals` array must have a corresponding per-ticker file (leaf \u2286 files check). The validator uses Draft202012Validator with format_checker=FORMAT_CHECKER for real date validation, wrapping each $def with an allOf root wrapper so $refs resolve. Writes data/quality/signals_audit.json {asof, files_checked, n_markers, errors:[...]} and exits non-zero on ANY violation.\n\nCI wiring: The `signal-contract` job in .github/workflows/ci.yml triggers on PRs touching: research/signal_engine/SCHEMA.json, scripts/validate_signals.py, scripts/build_signal_quality.py, engine/signal_quality.py, tests/test_validate_signals.py. It runs `python -m pytest tests/test_validate_signals.py -q`. The schema is described as the SINGLE SOURCE OF TRUTH shared with the charting app (charting-app/signal_layer/golden_gate.py reads site/factordata/contracts/golden_signals.json, not the schema directly, but that contract is produced by the same engine). In the daily lane (daily.yml), validate_signals runs post build_signal_quality with `if: always()` \u2014 deliberate resilience (quarantine-continue, never 404), blocking is done at CI-merge time only. The signal-contract CI job is HARD-fail: exit 1 blocks the PR merge.",
+  "feeds_contract": "scripts/build_feeds.py assembles site/feeds/ from multiple sources. The 2026-07-02 semis incident constraint is documented in the module docstring (lines 1-20): the Mastermind bot was acting on only the top-level fields of data/regime/latest.json (which the bot's vendored sparse set had) while the risk_radar sub-object was missing \u2014 the sub-object carried the caution/growth-scare state the bot needed.\n\nExact sub-object extraction code (build_feeds.py lines 91-100):\n```python\nlatest = _read_json(data / \"regime\" / \"latest.json\") or {}\nrr = latest.get(\"risk_radar\")\nif isinstance(rr, dict) and rr.get(\"state\") is not None:\n    _write_json(out, \"risk_radar.json\", rr)\n```\nThis writes the `rr` sub-object \u2014 already a dict \u2014 as the entire content of `risk_radar.json`. The `_write_json` function (line 55-59) is a plain `json.dump(obj, ...)` of whatever object is passed.\n\nFor other artifacts, the `copy` function (lines 84-89) uses `shutil.copyfile(src, out / name)` \u2014 byte-verbatim copy, no reshaping.\n\nWhy in-place sibling keys are safe and a wrapper is NOT: The feeds plane publishes the `risk_radar` sub-object directly as `site/feeds/risk_radar.json`. If instead of sibling envelope keys the producer wrapped it \u2014 e.g. `{\"envelope\": {...}, \"data\": rr}` \u2014 then the `_write_json(out, \"risk_radar.json\", rr)` call above would write the whole wrapper to the file. The Mastermind bot and any consumer reading `rr.get(\"state\")` at the top level of `risk_radar.json` would get `None` (the key is now nested under `\"data\"`), effectively re-darkening the feed \u2014 exactly what the 2026-07-02 incident caused. Sibling keys appended to `rr` before `_write_json` are preserved verbatim in the output file and are top-level in the feed; consumers reading `rr.get(\"state\")` still get the value; new consumers reading `rr.get(\"schema_version\")` or `rr.get(\"produced_by\")` also find it at the top level. The byte-verbatim `shutil.copyfile` paths are safe for any sibling-key envelope because they copy the full source file content regardless.\n\nThe module docstring states the contract explicitly: \"Copies are byte-verbatim \u2014 the source engine owns the schema; this script never reshapes what it copies.\" Artifact list produced: risk_radar.json (sub-object from latest.json), froth_fragility_log.jsonl (verbatim copy), dislocation_state_log.parquet (verbatim copy), group_flow_validation_meta.json (verbatim copy), subsector_rotation.json (verbatim copy from site/marketdata/), event_calendar.json (freshly constructed), intl_spillover.json (freshly constructed), sector_breadth.json (freshly constructed from parquet), feeds_meta.json (manifest). All land in site/feeds/.",
+  "external_consumers": "1. MASTERMIND VENDORED READERS (vendor/macro_src in /Users/chriswong/Documents/Cluade/Mastermind):\n\ndata_layer/macro_refresh.py maintains a sparse checkout of the macro repo at vendor/macro_src. Sparse paths: site/, data/regime/, engine/, lib/, data/yahoo/, data/risk_radar/, data/china_regime/. Four \"anchor contracts\" are checked for freshness at every build:\n  - site/factordata/us_standouts.json \u2014 date field: \"as_of\" (or \"asof\" or \"generated_at\")\n  - data/regime/latest.json \u2014 date field: \"date\" (then \"as_of\", \"asof\", \"generated_at\")\n  - site/sectordata/sector_cycles.json \u2014 date field: meta[\"asOf\"] (camelCase, then as_of/date/generated_at)\n  - site/stockdata/SPY.json \u2014 date field: \"asof\" (no underscore; R2 leg)\n\nFreshness check: `asof()` returns the minimum (oldest) date across all four anchors. Staleness threshold: `_MAX_AGE_DAYS = 2`. The R2 leg (`_sync_r2`) syncs `stockdata/` directory using `{dir}/_manifest.json` as the authoritative file list, with ETag fast-path. The Mastermind bot IMPORTS engine/ and lib/ as a Python library (function signatures are cross-repo API per loop/harness.py doing `from engine import active_alloc, validation`).\n\nWhat added sibling keys do to Mastermind reads: The anchor readers (`_read_standouts_date`, `_read_regime_date`, etc.) all use dict.get() on specific keys \u2014 they are insensitive to additional sibling keys at the top level. Example: `_read_regime_date(d)` returns `d.get(\"date\") or d.get(\"as_of\") or d.get(\"asof\") or d.get(\"generated_at\")`. An added `schema_version` or `produced_by` sibling key is silently ignored. The Mastermind engine code (`active_alloc`, `validation`, etc.) reads specific known fields from these files \u2014 as long as existing field names and types are unchanged, sibling keys at the same level do NOT break anything.\n\n2. TERMINAL (charting-app) EXTERNAL CONSUMERS:\n\ncharting-app/ingest/artifact_conformance.py reads site/factordata/contracts/artifact_manifest.json. The manifest (site/factordata/contracts/artifact_manifest.json) declares 8 artifacts with their `as_of_field` and `expected_max_age_td`. The conformance checker reads each artifact's as_of field via `_artifact_asof(path, spec)` which calls `d.get(field)` where field comes from the manifest spec. For regime timelines (as_of_field: null), it reads the last entry of the `dates` array. An added sibling envelope key would NOT break conformance \u2014 the checker reads only the declared `as_of_field`, not the entire object.\n\ncharting-app/signal_layer/golden_gate.py reads site/factordata/contracts/golden_signals.json. The contract shape is {schema, as_of, oracle, math, note, symbols:[{symbol, region, label, window:{start,end,n_daily_bars,first_bar,last_bar}, inputs_hash, n_signals, expected_sequence:[{ts, type}]}]}. The gate reads `contract.get(\"symbols\")` and per-symbol `s[\"symbol\"]`, `s[\"window\"]`, `s[\"inputs_hash\"]`, `s[\"expected_sequence\"]`. An envelope sibling key at the top level (e.g. `produced_by`) is ignored. Added sibling keys inside a `symbols[n]` entry would also be ignored since the code reads specific named keys.\n\nTerminal artifact manifest (site/factordata/contracts/artifact_manifest.json) currently lists: site/stockdata/<SYM>.json (as_of_field: \"asof\"), site/signals/<SYM>.json (as_of_field: \"asof\"), site/factordata/us_standouts.json (as_of_field: \"as_of\"), site/factordata/china_standouts.json (as_of_field: \"as_of\"), site/factordata/canada_standouts.json (as_of_field: \"as_of\"), site/regime_timeline.json (as_of_field: null, uses dates array), site/china_regime_timeline.json (as_of_field: null), site/hk_regime_timeline.json (as_of_field: null). Consumers listed: terminal:pull_macro_intel, terminal:chart_markers, terminal:screener, terminal:regime_banner; bot:conviction, bot:lenses, bot:strategist, bot:china_book, bot:canada_book, bot:hk_book, bot:macro_risk.",
+  "envelope_constraints": "Mandatory: in-place sibling keys on the existing top-level object. Never a wrapper object.\n\nThe five envelope fields per the masterplan (N0): `schema_version`, `produced_by`, `produced_at`, `inputs_hash`, `tier`. These must be added as sibling keys alongside the artifact's existing payload \u2014 e.g., the risk_radar object already contains `state`, `asof`, `_trajectory`, etc.; the envelope adds `schema_version`, `produced_by`, `produced_at`, `inputs_hash`, `tier` at the same dict level.\n\ninputs_hash computation: Must be computed over the payload-ex-envelope (i.e., the artifact content minus the five envelope keys themselves) so that unchanged data stays byte-identical across builds. This is the same pattern as charting-app/signal_layer/golden_gate.py::_inputs_hash() (line 62-68), which serializes the payload as json.dumps with sort_keys=True and hashes with sha256, returning \"sha256:\" + hexdigest. The envelope fields must be excluded before hashing so re-stamping an unchanged artifact produces the same hash.\n\nFor parquet and JSONL artifacts (qbus items.parquet, froth_fragility_log.jsonl, etc.): use a sidecar `.envelope.json` file (e.g., `data/qbus/items.parquet.envelope.json`) since these formats cannot carry inline metadata without schema changes. The sidecar contains the same five envelope fields plus a reference to the artifact path.\n\nThe wrapper prohibition is load-bearing for build_feeds.py: `_write_json(out, \"risk_radar.json\", rr)` writes `rr` (the sub-object) directly. If `rr` is a dict with sibling envelope keys (`schema_version`, `produced_by` etc.), they appear at the top level of `site/feeds/risk_radar.json`. If instead a wrapper was used (`{\"envelope\": {...}, \"data\": rr}`), the bot's `rr.get(\"state\")` would return None \u2014 re-creating the exact 2026-07-02 incident. The byte-verbatim `shutil.copyfile` paths (froth_fragility_log.jsonl, dislocation_state_log.parquet, group_flow_validation_meta.json, subsector_rotation.json) copy whatever the source file contains, so sibling envelope keys added by the producer ARE preserved in the feed copy verbatim.\n\nField name collision risk: The existing artifact must not already use any of the five envelope field names for a different purpose. Confirmed safe for key fields: `data/regime/latest.json` uses `schema_version` as a top-level field (it is present and equals an integer per the feeds code `SCHEMA_VERSION = 1`) \u2014 synapse.yml's envelope field is the same concept, so this is compatible rather than a collision. `produced_by` and `produced_at` are not present in latest.json or the signals files. `inputs_hash` is only present in the golden_signals.json contract, not in the live artifacts.",
+  "ci_gate_precedents": "Three existing CI gates model the W0 read-gate:\n\n1. check_validated_claims (BC-2 / W4.6):\n   - File: scripts/check_validated_claims.py\n   - Discovery: scans templates/*.j2, templates/*.js, site/*.js, site/*.html via rglob for the token `validated|\u5df2\u9a8c\u8bc1`. Phrase-scoped not file:line-scoped (one allowlist entry covers all per-basket pages that repeat one template phrase).\n   - Allowlist: data/regime/validated_claims_allowlist.json \u2014 each entry has `match` (case-insensitive substring), `backing` (evidence artifact), `surfaces`.\n   - Warn vs fail: HARD FAIL (exit 1) on any affirmative unearned claim. Negated/hedged uses (\"no validated edge\", \"unvalidated\", \"\u672a\u9a8c\u8bc1\") are auto-skipped by `_is_negated()`. Structural non-claims (CSS class names, i18n label pairs, engine-stamped data-field values) are skipped by `_STRUCTURAL` regex list.\n   - CI wiring: NOT in ci.yml (PR gate). Lives in `.github/workflows/cycle-calibration.yml` (monthly lane, HARD semantics = ABORT-LANE for that workflow) and also runs in daily.yml. Self-test flag (`--selftest`) proves the gate fires on synthetic EN+zh claims. Only-shrinks ratchet: the allowlist can only GROW with new earned evidence, never shrink a justified entry.\n\n2. check_trial_registration (W1d / audit #21):\n   - File: scripts/check_trial_registration.py\n   - Discovery: AST-parses every `validate_*.py`, `*_phase0.py`, `*_phase1.py` in scripts/. Checks for `deflated_sharpe` calls (budget spend) vs registration calls (`register_trials`, `log_declared_budget`, `log_grid`, `with_declared_budget`, `TrialLedger`, `ledger=` kwarg).\n   - Allowlist: `LEGACY_UNREGISTERED` frozen set of 44 pre-existing offenders (grandfathered). Only-shrinks: migrating a harness means adding `register_trials()` AND deleting from LEGACY_UNREGISTERED.\n   - Warn vs fail: HARD FAIL (exit 1) on any NEW harness (not in LEGACY_UNREGISTERED) that spends a budget without registering. Prints NOTE for stale entries (grandfathered harness now registered = prune the allowlist).\n   - CI wiring: `trial-budgets` job in ci.yml, triggered on PRs touching scripts/*_phase0.py, scripts/*_phase1.py, scripts/validate_*.py, scripts/check_trial_registration.py, engine/trial_ledger.py, engine/grading.py, etc.\n\n3. signal-contract (\u00a77 gate):\n   - File: scripts/validate_signals.py + tests/test_validate_signals.py\n   - Discovery: globs site/signals/*.json + data/signal_archive/mtf_signals_latest.json.\n   - Warn vs fail: HARD FAIL (exit 1) on ANY violation (schema error, ordering violation, quality-placement error, leaf-ticker without per-ticker file).\n   - CI wiring: `signal-contract` job in ci.yml, triggered on PRs touching the schema/validator/engine/tests. Runs `python -m pytest tests/test_validate_signals.py -q`.\n   - The daily lane runs validate_signals with `if: always()` (deliberate resilience \u2014 quarantine-continue, never 404). Blocking is ci.yml only.\n\nModel for W0 read-gate: The `check_trial_registration` pattern is the closest precedent \u2014 AST scan of a defined file set, allowlist of pre-existing offenders (only-shrinks), HARD FAIL on new offenders, NOTE on stale entries. The `check_validated_claims` pattern adds the phrase-scoped discovery (not file:line) and the allowlist-as-evidence-trail model. The W0 read-gate should: (a) discover cross-engine reads by scanning the engine/scripts/* files that are NOT the registered producer; (b) check each read's artifact against synapse.yml to see if the reader is a declared consumer; (c) warn (not yet fail) on the initial rollout (only-shrinks ratchet starts at all-warn, ratchets toward fail as enrollment grows); (d) HARD FAIL for Article-2 surface violations (unregistered field read in alert_triage/board ordering/top-setups \u2014 the money-path surfaces).",
+  "recommendations": "1. ENVELOPE SHAPE \u2014 add exactly these 5 sibling keys to each registered JSON artifact's top-level dict: `schema_version` (int, bumped on breaking field changes), `produced_by` (module path string, e.g. \"engine/sector_central.py\"), `produced_at` (ISO-8601 UTC build timestamp \u2014 distinct from `asof` which is the true data date), `inputs_hash` (\"sha256:\" + hex of json.dumps(payload_minus_envelope, sort_keys=True)), `tier` (string: one of DISPLAY|SHADOW|CONFIRMER|SCORED from qual_ladder, or \"unregistered\"). Never use a wrapper object. For parquet/JSONL, use a sidecar `<artifact>.envelope.json` with the same 5 fields plus `artifact_path`.\n\n2. FRESHNESS FIELD NAMING \u2014 the existing codebase has two spellings: `as_of` (us_standouts.json, sector_cycles.json meta) and `asof` (no underscore: signals/*.json, stockdata/*.json, latest.json). Mastermind's macro_refresh.py anchor readers handle both (`d.get(\"as_of\") or d.get(\"asof\")`). Synapse.yml must declare the actual field name per artifact (matching the artifact_manifest.json `as_of_field` convention) to avoid the Mastermind reader needing to try both.\n\n3. QBUS/QKERNEL REGISTRATION \u2014 register as QI-owned rails with `owner_program: QI`, `scored_consumers: []`, `tier: infrastructure`. Do NOT add scored_consumers or a ladder_state that implies they are scoring signals. The schema for their bus store is `data/qbus/items.parquet` with the 15-column COLUMNS tuple defined in qbus.py. The envelope for this parquet is a sidecar `data/qbus/items.parquet.envelope.json`.\n\n4. SYNAPSE.YML FIELDS \u2014 extend qual_ladder.yml's field vocabulary with: `artifact_path` (actual file path, not just glob), `format` (json|parquet|jsonl), `freshness_sla_hours` (integer), `r2_vs_git` (r2|git|both|gitignored), `scored_path_surfaces` (list from {alert_triage, board_ordering, top_setups, attention_queue, push_floor} \u2014 Article-2 perimeter), `weights` (measured|hand|none \u2014 composite weight debt ratchet), `consumer_modules` (list of file:approx_line references for read evidence), `owner_program` (oracle|QI|species|sector-pulse|etc.), `cadence` (daily-engine|collect|asia-close|intraday|weekly|monthly). Inherit existing qual_ladder fields: field, producer, claim_family, ladder_state, max_weight, grandfathered, gated_by, scored_consumers, notes.\n\n5. CI GATE MECHANICS FOR W0 READ-GATE \u2014 model on check_trial_registration: (a) use AST scan (ast.parse) to find reads of registered artifact field names (dict.get calls, subscript reads) in engine/scripts/* modules; (b) initial deployment: warn-only for all unregistered reads, populate an allowlist from the current state; (c) LEGACY_UNREGISTERED analog that ONLY SHRINKS as enrollment happens; (d) HARD FAIL immediately for Article-2 surface reads (alert_triage.py, board ordering, top_setups paths) of any artifact whose synapse.yml tier is DISPLAY or unregistered; (e) wire into ci.yml's paths filter for engine/**, config/synapse.yml, and the gate script itself.\n\n6. MASTERMIND + TERMINAL CONFORMANCE FIXTURES \u2014 per the masterplan, W0 ships fixtures proving the vendored readers and Terminal manifest check pass against stamped artifacts. For Mastermind: a test that calls `_read_standouts_date(stamped_fixture)` still returns a valid date when envelope keys are present. For Terminal: a test that calls `artifact_conformance.check_artifact(macro_root, spec)` against a stamped fixture returns `stale=False` when `as_of` is fresh. These tests live in the Dashboard repo's tests/ directory, not the charting-app \u2014 they test the Dashboard's own output format.\n\n7. DATA/REGIME/LATEST.JSON SPECIAL CASE \u2014 this file has 60+ top-level keys (confirmed from origin/main); it is the de-facto hub with 12+ consumers including Mastermind's anchor_2 reader (reads \"date\" key). Adding 5 envelope sibling keys is safe (date, asof, schema_version already present; produced_by and produced_at are new; inputs_hash is new). However, inputs_hash over the full 60-key payload will change every build even when only one sub-object changes \u2014 consider computing inputs_hash per sub-object for finer-grained cache invalidation (matching the build_feeds sub-object extraction model).\n\n8. QUAL_LADDER \u2192 SYNAPSE MIGRATION \u2014 do not delete qual_ladder.yml; synapse.yml should import or inline the qual_ladder entries with a `qual_ladder_entry: true` flag. The check_claim_passport.py linter must continue reading qual_ladder.yml (its `_LADDER_PATH` is hardcoded); either update the path or make synapse.yml the new canonical file and redirect check_claim_passport.py. grade_qledger.py's `_load_qual_ladder_families()` reads the file via a text scan \u2014 update the path reference when migrating."
+ }
+}

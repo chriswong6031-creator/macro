@@ -81,8 +81,12 @@ def main() -> int:
         log.error("member_context import failed: %s", e)
 
     # Thematic Foresight Desk (research/THEMATIC_FORESIGHT_DESK.md): drip the keyless EDGAR
-    # bottleneck-language sweep (cached / stale-guarded), then emit the per-theme cascade +
-    # its two legs for the panel. write_ledger=False — engine/run.py owns the forward ledgers.
+    # bottleneck-language sweep (cached / stale-guarded), then emit the two input legs for
+    # the panel. write_ledger=False — engine/run.py owns the forward ledgers.
+    # NOTE: foresight_cascade.json is NOT written here. scripts.build_foresight is the
+    # sole owner of that artifact (it adds the `health` key and policy-calendar enrichment).
+    # In daily.yml, build_foresight runs serially BEFORE this script's parallel band —
+    # if that ordering ever changes, re-evaluate ownership here.
     try:
         from collectors.edgar_fts import fetch_bottleneck_hits
         fetch_bottleneck_hits()                 # drip + cached; network failure is non-fatal
@@ -91,18 +95,41 @@ def main() -> int:
     try:
         from engine.theme_revisions import compute_theme_revisions
         from engine.bottleneck import compute_bottleneck
-        from engine.foresight_cascade import compute_foresight_cascade
         rv = compute_theme_revisions(write_ledger=False)
         bn = compute_bottleneck(write_ledger=False)
         if _dump(fdir, "theme_revisions.json", rv):
             wrote.append("theme_revisions")
         if _dump(fdir, "bottleneck.json", bn):
             wrote.append("bottleneck")
-        if _dump(fdir, "foresight_cascade.json",
-                 compute_foresight_cascade(bn, rv, write_ledger=False)):
-            wrote.append("foresight_cascade")
     except Exception as e:  # noqa: BLE001
-        log.error("foresight_cascade failed: %s", e)
+        log.error("theme_revisions/bottleneck failed: %s", e)
+
+    # W1c — 8-K Item 1.01/2.03 contract-dollar magnitude + pre-drift panel.
+    # Runs incremental enrichment (filings <= 45d old, unprocessed rows only) first,
+    # then emits eightk_magnitude.json for the themed panel.
+    try:
+        import pandas as pd
+        from collectors.edgar_8k import enrich_contract_amounts
+        from lib import config as _cfg
+
+        events_path = _cfg.data_dir() / "edgar" / "material_8k_events.parquet"
+        if events_path.exists():
+            _ev = pd.read_parquet(events_path)
+            _ev_enriched = enrich_contract_amounts(_ev, incremental=True)
+            _ev_enriched.to_parquet(events_path)
+            log.info("eightk_magnitude: enriched events written back (%d rows)", len(_ev_enriched))
+        else:
+            log.info("eightk_magnitude: no material_8k_events.parquet — skipping enrichment")
+    except Exception as e:  # noqa: BLE001 — enrichment failure never blocks page
+        log.error("eightk_magnitude enrichment failed: %s", e)
+
+    try:
+        from engine.eightk_magnitude import compute_eightk_magnitude
+        mag = compute_eightk_magnitude(write_ledger=True)
+        if _dump(fdir, "eightk_magnitude.json", mag):
+            wrote.append("eightk_magnitude")
+    except Exception as e:  # noqa: BLE001
+        log.error("eightk_magnitude engine failed: %s", e)
 
     log.info("theme add-ons built -> %s (%s)", fdir, ", ".join(wrote) or "nothing")
     return 0

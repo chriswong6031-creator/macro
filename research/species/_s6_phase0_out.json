@@ -1,0 +1,130 @@
+{
+ "base3d": {
+  "variant": "base3d",
+  "n_fires_total": 64391,
+  "n_fires_graded": 64391,
+  "primary_within_COILED": {
+   "failed2_T": {
+    "n": 1224,
+    "clean8_21": 36.52,
+    "stopped21": 37.09,
+    "dead21": 12.91,
+    "clean15_126_ctx": 39.13
+   },
+   "failed2_F": {
+    "n": 3804,
+    "clean8_21": 32.73,
+    "stopped21": 38.7,
+    "dead21": 15.43,
+    "clean15_126_ctx": 36.25
+   },
+   "clean8_21_spread_pp": 3.79,
+   "n_floor_300_met": true,
+   "p_one_sided_episode_boot": 0.04,
+   "spread_ci95_pp": [
+    -0.47,
+    7.68
+   ],
+   "halves_spread_pp": {
+    "H1": 5.58,
+    "H2": 1.54
+   },
+   "per_name_majority": {
+    "n_names": 319,
+    "agree_pct": 52.0
+   }
+  },
+  "secondary_standalone_ALL": {
+   "failed2_T": {
+    "n": 16428,
+    "clean8_21": 33.6,
+    "stopped21": 45.76,
+    "dead21": 11.71,
+    "clean15_126_ctx": 31.83
+   },
+   "failed2_F": {
+    "n": 47963,
+    "clean8_21": 29.89,
+    "stopped21": 44.15,
+    "dead21": 15.55,
+    "clean15_126_ctx": 31.16
+   },
+   "clean8_21_spread_pp": 3.71
+  }
+ },
+ "m2d_s3d": {
+  "variant": "m2d_s3d",
+  "n_fires_total": 102433,
+  "n_fires_graded": 102433,
+  "primary_within_COILED": {
+   "failed2_T": {
+    "n": 3160,
+    "clean8_21": 37.15,
+    "stopped21": 35.66,
+    "dead21": 14.37,
+    "clean15_126_ctx": 41.01
+   },
+   "failed2_F": {
+    "n": 3682,
+    "clean8_21": 32.86,
+    "stopped21": 40.58,
+    "dead21": 13.53,
+    "clean15_126_ctx": 36.72
+   },
+   "clean8_21_spread_pp": 4.29,
+   "n_floor_300_met": true,
+   "p_one_sided_episode_boot": 0.008,
+   "spread_ci95_pp": [
+    0.87,
+    7.41
+   ],
+   "halves_spread_pp": {
+    "H1": 3.93,
+    "H2": 4.45
+   },
+   "per_name_majority": {
+    "n_names": 459,
+    "agree_pct": 52.7
+   }
+  },
+  "secondary_standalone_ALL": {
+   "failed2_T": {
+    "n": 45851,
+    "clean8_21": 32.96,
+    "stopped21": 45.97,
+    "dead21": 12.14,
+    "clean15_126_ctx": 31.76
+   },
+   "failed2_F": {
+    "n": 56582,
+    "clean8_21": 28.82,
+    "stopped21": 43.52,
+    "dead21": 17.02,
+    "clean15_126_ctx": 30.64
+   },
+   "clean8_21_spread_pp": 4.14
+  }
+ },
+ "_bh_family_W1": {
+  "s13_t2": {
+   "p": 1.0,
+   "q": 1.0,
+   "reject": false
+  },
+  "s13_t1": {
+   "p": 1.0,
+   "q": 1.0,
+   "reject": false
+  },
+  "s6_base3d": {
+   "p": 0.04,
+   "q": 0.08,
+   "reject": true
+  },
+  "s6_m2d_s3d": {
+   "p": 0.008,
+   "q": 0.032,
+   "reject": true
+  }
+ }
+}

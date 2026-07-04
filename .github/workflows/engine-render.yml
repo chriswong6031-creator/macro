@@ -129,6 +129,21 @@ jobs:
           run_py "§7 signal contract gate (validate_signals)"     scripts.validate_signals
           run_py "regime engine (engine.run)"                     engine.run
           exit 0
+      - name: build world state (neural-web W1 — express lane)
+        # Neural Web N1: recompose data/neuralweb/world_state.json from the
+        # freshly recomputed engine outputs (regime/latest.json was just
+        # updated by engine.run above).  O(50ms) — negligible on the render
+        # budget.  Resilient: a failure keeps the last committed world_state
+        # and never blocks the render.
+        # git add site/ in the commit step below does NOT cover data/neuralweb/;
+        # the express lane commits site/ only, so world_state.json is NOT
+        # committed here — it is a working-tree side-effect that gets discarded
+        # exactly like the other data/ writes (regime_history, ledger appends).
+        # The nightly daily.yml run recomputes and commits it under data/.
+        # This step exists so world_state is FRESH in memory for any builder
+        # that reads it during the render (the builders run after this step and
+        # read data/neuralweb/world_state.json from the working tree).
+        run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
       - name: re-render pages from the freshly recomputed engine output (resilient)
         # IDENTICAL to render.yml's render step — reads the engine output just recomputed above
         # (regime/latest.json + the MTF leaf, now in the working tree) and re-renders every page.
@@ -187,6 +202,22 @@ jobs:
           }
 
           hub() { run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
+
+          # US Sector Central hub — reads baskets.json (cl_baskets) + sector_cycles_data.js
+          # (sector_cycles/country_cycles, both present in render/daily cl_misc but intentionally
+          # omitted from engine-render cl_misc per the suspect divergence) + the committed heatmap.
+          # W5a fix: sector_central was absent from engine-render (runtime ~34s per 2026-07-03
+          # daily run log — well under the 3-minute threshold). Its two direct deps
+          # (baskets.json from cl_baskets, regime/latest.json from engine.run) ARE satisfied
+          # by the time the band barrier fires. sector_cycles_data.js is consumed from the
+          # COMMITTED artifact on disk (the last daily's write); the page renders the last
+          # nightly's cycle data rather than a fresh recompute — matching the express lane's
+          # stated contract ("re-render from committed data"). Call AFTER band so cl_baskets
+          # has completed. Additive (returns 0 on any failure), so it can never break the deploy.
+          # Ledger-safe: this lane's commit step is `git add site/` ONLY (engine-render.yml:340),
+          # so data/sector_central/calls.parquet is discarded; the nightly daily.yml run is the
+          # sole advancer of that forward ledger.
+          central() { run_py "US sector central intelligence (build_sector_central)" scripts.build_sector_central; }
 
           band() {
             local ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
@@ -289,7 +320,7 @@ jobs:
 
           case "$SCOPE" in
             all)
-              spine; band; hub; us_pages; libs ;;
+              spine; band; central; hub; us_pages; libs ;;
             macro)
               spine; hub; us_pages ;;
             china)

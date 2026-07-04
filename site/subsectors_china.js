@@ -107,10 +107,10 @@
           '个股级联触发，但其唯一顺风概念有价成分少于6只——概念背景不可靠。请仅凭个股判断。') + '</div>'
         + dbTable(dbThin.slice(0, DB_CAP), maxs) + '</details>';
     }
-    if (warn) h += '<h2 style="margin-top:20px">⚠️ ' + L('Headwind warnings', '逆风警示') + ' <span style="color:var(--muted);font-weight:500">' + hw.length + '</span></h2>'
+    if (warn) h += '<details class="thin" style="margin-top:20px"><summary>⚠️ ' + L('Headwind warnings', '逆风警示') + ' <span style="color:var(--muted);font-weight:500">' + hw.length + '</span></summary>'
       + '<div class="desc">' + L('A strong-looking A-share (its own cascade fires) but its concept is TOPPING / SELLING — the "don\'t chase the leadership being distributed" flag. Not a buy.',
         '个股看似强势（自身级联触发），但所在概念正见顶/派发——“别去追正在派发的领涨股”信号。非买入。') + '</div>'
-      + '<table class="tbl"><thead><tr><th>' + L('Stock', '个股') + '</th><th>' + L('Stock tier', '个股层级') + '</th><th>' + L('Concept', '概念') + '</th><th>' + L('Concept regime', '概念状态') + '</th></tr></thead><tbody>' + warn + '</tbody></table>';
+      + '<table class="tbl"><thead><tr><th>' + L('Stock', '个股') + '</th><th>' + L('Stock tier', '个股层级') + '</th><th>' + L('Concept', '概念') + '</th><th>' + L('Concept regime', '概念状态') + '</th></tr></thead><tbody>' + warn + '</tbody></table></details>';
     return h + '</div>';
   }
 
@@ -147,7 +147,7 @@
         + ' <span style="color:var(--muted);font-weight:400;font-size:11px">· ' + gs.length + (en ? ' · ' + en + ' ' + L('entry-now', '现可入场') : '') + '</span></td></tr>';
       body += gs.map(conceptRow).join('');
     });
-    return '<div class="sec"><h2>📋 ' + L('All gateable concepts · by category', '全部可评概念 · 按类别') + ' <span style="color:var(--muted);font-weight:500">' + bs.length + '</span></h2>'
+    return '<div class="sec"><h2>📋 ' + L('All concepts · by category', '全部概念 · 按类别') + ' <span style="color:var(--muted);font-weight:500">' + bs.length + '</span></h2>'
       + '<table class="tbl"><thead><tr><th>' + L('Concept', '概念') + '</th><th>' + L('Entry', '入场') + '</th><th>' + L('Regime', '状态') + '</th><th>' + L('Freshness', '新鲜度') + '</th><th>RS60</th><th>' + L('N', '数') + '</th></tr></thead><tbody>' + body + '</tbody></table></div>';
   }
 

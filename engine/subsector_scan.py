@@ -161,7 +161,7 @@ def compute_subsector_scan(write_ledger: bool = True) -> dict | None:
         "subsectors": rows[:TOP_N],
         "all_count": len(rows),
         "note": ("display-only; the cascade signature (text scarcity x revision breadth) over all "
-                 "113 Finviz sub-industries. The bottleneck is a TEXT-ONLY proxy (EDGAR scarcity "
+                 "113 sub-industries. The bottleneck is a TEXT-ONLY proxy (EDGAR scarcity "
                  "language), not FRED-confirmed — a screen to investigate, not a confirmed thesis. "
                  "Complements the curated 18-theme cascade and the small-cap discovery layer."),
     }

@@ -52,3 +52,66 @@ def test_buy_signal_is_slim_and_json_safe():
     assert is_buyable(slim) is True                              # slim still gates correctly
     assert buy_signal(None) == {"eligible": False, "tier_cascade": None}
     assert is_buyable(buy_signal(None)) is False
+
+
+# ---------------------------------------------------------------------------
+# W0.2 Stage C — near-miss annotation (Appendix A: EXACTLY-ONE-condition rule)
+# ---------------------------------------------------------------------------
+class TestNearMissAnnotation:
+    """gate() must stamp near_miss_reason ONLY when a live take/pending lost the
+    board for exactly one condition — topped AND stale together is two failures
+    (a plain rejection), and eligible names carry no annotation."""
+
+    def _series(self):
+        import pandas as pd
+        idx = pd.bdate_range("2024-01-01", periods=300)
+        return pd.Series(range(100, 400), index=idx, dtype=float)
+
+    def _gate(self, monkeypatch, *, topped: bool, ticks: int):
+        from engine import signal_gate as sg
+        from engine import confluence_tiers as ct
+        res = {"markers": [{"date": "2025-01-06", "type": "buy",
+                            "quality": "take"}],
+               "state": "long-bias", "above200": True, "weekly_bull": True,
+               "early_now": False, "asof": "2025-02-01"}
+        monkeypatch.setattr(sg, "analyze", lambda t, c: res)
+        monkeypatch.setattr(ct, "cascade",
+                            lambda close, take_active=False, take_date=None: {
+                                "not_topped": not topped, "tier": None,
+                                "ticks": ticks, "sub": None,
+                                "bars_to_cross": None, "provisional": False})
+        return sg.gate("TEST", self._series())
+
+    def test_topped_only_is_not_topped_veto(self, monkeypatch):
+        v = self._gate(monkeypatch, topped=True, ticks=1)   # fresh but topped
+        assert v["eligible"] is False
+        assert v.get("near_miss_reason") == "not_topped_veto"
+
+    def test_stale_only_is_freshness_expired(self, monkeypatch):
+        from engine import confluence_tiers as ct
+        v = self._gate(monkeypatch, topped=False, ticks=ct.FRESH_TICKS + 3)
+        assert v["eligible"] is False
+        assert v.get("near_miss_reason") == "freshness_expired"
+
+    def test_two_failures_is_not_a_near_miss(self, monkeypatch):
+        from engine import confluence_tiers as ct
+        v = self._gate(monkeypatch, topped=True, ticks=ct.FRESH_TICKS + 3)
+        assert v["eligible"] is False
+        assert v.get("near_miss_reason") is None
+
+    def test_eligible_take_carries_no_annotation(self, monkeypatch):
+        from engine import signal_gate as sg
+        from engine import confluence_tiers as ct
+        res = {"markers": [{"date": "2025-01-06", "type": "buy",
+                            "quality": "take"}],
+               "state": "long-bias", "above200": True, "weekly_bull": True,
+               "early_now": False, "asof": "2025-02-01"}
+        monkeypatch.setattr(sg, "analyze", lambda t, c: res)
+        monkeypatch.setattr(ct, "cascade",
+                            lambda close, take_active=False, take_date=None: {
+                                "not_topped": True, "tier": "T1", "ticks": 1,
+                                "sub": None, "bars_to_cross": None,
+                                "provisional": False})
+        v = sg.gate("TEST", self._series())
+        assert v["eligible"] is True
+        assert v.get("near_miss_reason") is None

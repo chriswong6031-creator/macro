@@ -75,6 +75,16 @@ def main() -> int:
     fdir = site / "intlbasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    # SECTOR PULSE — compact per-theme rotation data product. Also merges velocity/heat keys
+    # into theme_intel for the rotation-scorecard page enhancements. Additive — never breaks build.
+    try:
+        if data.get("theme_intel"):
+            from engine import sector_pulse as _sp
+            _sp.write_pulse(data["theme_intel"], "intl", fdir)
+            _sp.merge_pulse_into_theme_intel(data["theme_intel"], "intl")
+            _sp.write_score_snapshot(data["theme_intel"], "intl")   # accrues the baskets_intl velocity stream
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector_pulse intl hook failed: %s", e)
     if emergence:
         (fdir / "narrative_emergence.json").write_text(
             json.dumps(emergence, separators=(",", ":"), ensure_ascii=False, default=str))

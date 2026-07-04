@@ -44,13 +44,40 @@ def is_passive(company: str | None, ticker: str | None) -> bool:
     return any(k in c for k in _PASSIVE_KW)
 
 
-def _rs_vs_spy(ticker: str, root, win: int = 60) -> float | None:
-    """Relative strength: name return minus SPY return over `win` trading days, in pp."""
+def _yahoo_series(ticker: str, root) -> "pd.Series | None":
+    """Load the split/dividend-adjusted close series from data/yahoo/<T>.parquet ONLY.
+    Returns None when the yahoo parquet is absent — never falls back to the breadth
+    cache (_closes_cache.parquet), which carries split-unadjusted prices for some names
+    (INTC, DELL etc.) and produces wildly wrong RS values."""
     try:
-        from engine import ai_desk as _desk
+        import pandas as pd
+        from pathlib import Path
         root = root or config.ROOT
-        s = _desk._close_series(ticker, root)
-        spy = _desk._close_series("SPY", root)
+        p = Path(root) / "data" / "yahoo" / f"{ticker}.parquet"
+        if not p.exists():
+            return None
+        df = pd.read_parquet(p)
+        s = df["close"].dropna()
+        s.index = pd.to_datetime(s.index)
+        return s.sort_index()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _rs_vs_spy(ticker: str, root, win: int = 60) -> float | None:
+    """Relative strength: name return minus SPY return over `win` trading days, in pp.
+
+    Uses yahoo adjusted-close parquets ONLY.  Returns None (no_price_data) when the
+    ticker's parquet is absent — the breadth cache (_closes_cache.parquet) carries
+    split-unadjusted prices for some tickers (e.g. INTC, DELL after splits) and must
+    NEVER be used here; corrupted RS values (+100pp) caused those names to dominate
+    the conviction board while actually crashing.
+    """
+    try:
+        import pandas as pd
+        root = root or config.ROOT
+        s = _yahoo_series(ticker, root)
+        spy = _yahoo_series("SPY", root)
         if s is None or spy is None or len(s) < 6 or len(spy) < 6:
             return None
 
@@ -60,6 +87,47 @@ def _rs_vs_spy(ticker: str, root, win: int = 60) -> float | None:
         return round((_ret(s) - _ret(spy)) * 100, 1)
     except Exception:  # noqa: BLE001
         return None
+
+
+def _trajectory(ticker: str, root) -> dict:
+    """Price trajectory flags for a ticker from yahoo adjusted-close parquets.
+
+    Returns a dict with:
+      off_high_252: float pct below 252d high (negative = below high; 0 = at high)
+      ret_20d:      float 20d return in pct
+      above_50dma:  bool | None
+      rolling_over: bool — True when off_high ≤ −15% AND 20d return < 0 AND below 50dma
+      no_price_data: bool — True when the yahoo parquet is absent (never use breadth cache)
+    """
+    out: dict = {"off_high_252": None, "ret_20d": None, "above_50dma": None,
+                 "rolling_over": False, "no_price_data": False}
+    try:
+        import pandas as pd
+        s = _yahoo_series(ticker, root)
+        if s is None or len(s) < 20:
+            out["no_price_data"] = True
+            return out
+        last = float(s.iloc[-1])
+        # 252d high (or full history if shorter)
+        win252 = min(252, len(s))
+        high252 = float(s.iloc[-win252:].max())
+        out["off_high_252"] = round((last / high252 - 1) * 100, 1) if high252 > 0 else None
+        # 20d return
+        n20 = min(20, len(s) - 1)
+        out["ret_20d"] = round((last / float(s.iloc[-1 - n20]) - 1) * 100, 1) if n20 > 0 else None
+        # 50dma
+        win50 = min(50, len(s))
+        dma50 = float(s.iloc[-win50:].mean())
+        out["above_50dma"] = last > dma50
+        # rolling_over: all three conditions must hold
+        out["rolling_over"] = bool(
+            out["off_high_252"] is not None and out["off_high_252"] <= -15.0
+            and out["ret_20d"] is not None and out["ret_20d"] < 0
+            and out["above_50dma"] is False
+        )
+    except Exception:  # noqa: BLE001
+        out["no_price_data"] = True
+    return out
 
 
 def _verdict(score: int, rs: float | None, trump_linked: bool) -> dict:

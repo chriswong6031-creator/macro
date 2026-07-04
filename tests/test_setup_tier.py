@@ -363,6 +363,110 @@ class TestAssignStageRules:
         # entry_status="extended" -> neither buy_now nor partial -> Rule 2 fires
         assert result["stage"] == STAGE_RAN_LATE
 
+    # ── Rule 1a: fresh gate cross = ENTRY (the daily gauge may not overrule it)
+
+    def test_rule1a_fresh_cross_beats_extended_status(self):
+        """A T1/T2 cross that fired <=FRESH_CROSS_SESSIONS ago, NOT price-extended,
+        is ENTRY even when the daily-cycle gauge reads 'extended' (its RSI>70 gate
+        fires on the first base-breakout thrust — the 000661/002170 misfire)."""
+        from engine.setup_tier import assign_stage, STAGE_ENTRY
+        ci = {"cross_date": "2026-07-03", "sessions_since": 0, "pct_since": 0.0}
+        result = assign_stage(
+            gate_eligible=True, entry_status="extended",
+            overextended=False, last_cross_info=ci,
+            hold_state=None, wsetup=self._wsetup_live(),
+        )
+        assert result["stage"] == STAGE_ENTRY
+        assert result["detail"].get("fresh_cross") is True
+        assert result["detail"].get("cross_sessions_since") == 0
+
+    def test_rule1a_fresh_cross_boundary_5_sessions(self):
+        from engine.setup_tier import assign_stage, STAGE_ENTRY
+        ci = {"cross_date": "2026-06-26", "sessions_since": 5, "pct_since": 3.0}
+        result = assign_stage(
+            gate_eligible=True, entry_status="hold",
+            overextended=False, last_cross_info=ci,
+            hold_state=None, wsetup=None,
+        )
+        assert result["stage"] == STAGE_ENTRY, "sessions_since=5 is inclusive-fresh"
+
+    def test_rule2c_stale_cross_6_sessions_ran_late(self):
+        from engine.setup_tier import assign_stage, STAGE_RAN_LATE
+        ci = {"cross_date": "2026-06-25", "sessions_since": 6, "pct_since": 9.0}
+        result = assign_stage(
+            gate_eligible=True, entry_status="extended",
+            overextended=False, last_cross_info=ci,
+            hold_state=None, wsetup=None,
+        )
+        assert result["stage"] == STAGE_RAN_LATE
+        assert "6 sessions ago" in (result["sublabel"] or "")
+        assert "wait for pullback" in (result["sublabel"] or "")
+
+    def test_rule2a_overextended_beats_fresh_cross(self):
+        """F6 preserved: TRUE price extension beats even a fresh cross."""
+        from engine.setup_tier import assign_stage, STAGE_RAN_LATE
+        ci = {"cross_date": "2026-07-03", "sessions_since": 1, "pct_since": 12.0}
+        result = assign_stage(
+            gate_eligible=True, entry_status="buy_now",
+            overextended=True, last_cross_info=ci,
+            hold_state=None, wsetup=None,
+        )
+        assert result["stage"] == STAGE_RAN_LATE
+        assert result["detail"].get("muted_entry") is True
+
+    def test_rule2b_blocked_stand_aside_not_entry_passed(self):
+        """Failed-cycle statuses get a stand-aside sublabel, never 'entry passed'."""
+        from engine.setup_tier import assign_stage, STAGE_RAN_LATE
+        result = assign_stage(
+            gate_eligible=True, entry_status="blocked",
+            overextended=False, last_cross_info=None,
+            hold_state=None, wsetup=None,
+        )
+        assert result["stage"] == STAGE_RAN_LATE
+        assert "stand aside" in (result["sublabel"] or "")
+        assert "entry passed" not in (result["sublabel"] or "")
+
+    def test_rule2b_blocked_beats_fresh_cross(self):
+        from engine.setup_tier import assign_stage, STAGE_RAN_LATE
+        ci = {"cross_date": "2026-07-03", "sessions_since": 1, "pct_since": 2.0}
+        result = assign_stage(
+            gate_eligible=True, entry_status="exit",
+            overextended=False, last_cross_info=ci,
+            hold_state=None, wsetup=None,
+        )
+        assert result["stage"] == STAGE_RAN_LATE, (
+            "a rolling-over/failed cycle must not land on ENTRY even with a fresh cross")
+
+    def test_rule1a_none_status_fresh_cross_is_entry(self):
+        """entry gauge unavailable (None) + fresh cross -> ENTRY (the cross IS the signal)."""
+        from engine.setup_tier import assign_stage, STAGE_ENTRY
+        ci = {"cross_date": "2026-07-02", "sessions_since": 1, "pct_since": 1.5}
+        result = assign_stage(
+            gate_eligible=True, entry_status=None,
+            overextended=False, last_cross_info=ci,
+            hold_state=None, wsetup=None,
+        )
+        assert result["stage"] == STAGE_ENTRY
+
+    def test_none_status_no_cross_stays_shelfless(self):
+        from engine.setup_tier import assign_stage
+        result = assign_stage(
+            gate_eligible=True, entry_status=None,
+            overextended=False, last_cross_info=None,
+            hold_state=None, wsetup=None,
+        )
+        assert result["stage"] is None
+
+    def test_rule2c_buy_soon_stale_cross_ran_late(self):
+        from engine.setup_tier import assign_stage, STAGE_RAN_LATE
+        ci = {"cross_date": "2026-06-01", "sessions_since": 22, "pct_since": 18.0}
+        result = assign_stage(
+            gate_eligible=True, entry_status="buy_soon",
+            overextended=False, last_cross_info=ci,
+            hold_state=None, wsetup=None,
+        )
+        assert result["stage"] == STAGE_RAN_LATE
+
     # ── Rule 3: RAN_LATE (cross aged out, <=15 ticks) ────────────────────────
 
     def test_rule3_ran_late_recent_cross(self):

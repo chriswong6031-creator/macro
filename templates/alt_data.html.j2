@@ -1,4 +1,5 @@
 {% extends "report_base.html.j2" %}
+{% import "_desk_grader_panel.html.j2" as dg %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
@@ -179,9 +180,13 @@
             <span class="pill cv-{{ sg.conviction }}">{{ sg.conviction }}</span>
             {% if sg.direction and sg.direction != 'neutral' %}<span class="pill">{{ sg.direction }}</span>{% endif %}
             {% if sg.source == 'brain' %}<span class="pill src-brain">AI</span>{% endif %}
-            {% if sg.extended %}<span class="pill ext">{{ t('extended', '已拉伸') }}</span>{% endif %}
+            {# T3 entry badge: T1/T2/T3 confluence buy gate verdict #}
+            {% if sg.get('entry_tier') %}<span class="pill entry-badge" data-tip-en="⚡ Prime entry — validated confluence buy gate" data-tip-zh="⚡ 优质入场 — 已验证汇流买入信号">⚡ {{ sg.entry_tier }}</span>{% endif %}
+            {% if sg.get('extended') %}<span class="pill ext">{{ t('extended', '已拉伸') }}</span>{% endif %}
             {% if sg.trump_linked %}<span class="pill trump">{{ t('Trump-linked', '特朗普关联') }}</span>{% endif %}
-            {% if sg.rs_vs_spy_60d is not none %}<span class="pill {{ 'r-pos' if sg.rs_vs_spy_60d>0 else 'r-neg' }}">{{ '%+.0f'|format(sg.rs_vs_spy_60d) }}pp 60d</span>{% endif %}
+            {# RS truth chip: real yahoo-adjusted RS; honest no-price-data flag #}
+            {% if sg.get('no_price_data') %}<span class="pill r-nd" data-tip-en="No yahoo price data — RS unavailable" data-tip-zh="无雅虎价格数据——RS不可用">{{ t('price n/a', '无价格') }}</span>
+            {% elif sg.rs_vs_spy_60d is not none %}<span class="pill {{ 'r-pos' if sg.rs_vs_spy_60d > 0 else 'r-neg' }}">{{ '%+.0f'|format(sg.rs_vs_spy_60d) }}pp 60d</span>{% endif %}
           </div>
           <div class="conv-chips">
             {% for c in sg.channels %}<span class="pill ch">{{ ch(c) }}</span>{% endfor %}
@@ -204,6 +209,37 @@
     <div class="sid-card"><span class="mut">{{ t('No multi-channel convergence today.', '今日无多通道汇聚。') }}</span></div>
     {% endif %}
   </section>
+
+  {# ---------- BROKEN NAMES STRIP (attention on crashing names — NOT entries) ---------- #}
+  {% if mastermind and mastermind.get('broken_signals') %}
+  <section class="sid-sec broken-strip">
+    <h2>⚠ <span class="l-en">Attention on broken names — crowd activity, NOT entries</span><span class="l-zh">问题标的受关注——仅为人气聚焦，非入场信号</span>
+      <span class="h-note mut">{{ t('rolling-over: off 252d high ≤ −15% AND 20d return < 0 AND below 50dma — conviction-ranked but excluded from the main board', '下行趋势：较252日高点 ≤ −15% 且20日收益<0 且低于50日均线——已按置信度排序但排除在主榜之外') }}</span></h2>
+    <div class="conv-list broken-list">
+      {% for sg in mastermind.broken_signals[:8] %}
+      <div class="conv-row act-{{ sg.action }} broken-row">
+        <div class="conv-score">
+          <div class="sc mut">{{ sg.signal_score }}</div>
+          <div class="scl">{{ t('score', '评分') }}</div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">{{ sg.ticker }}</span>
+            <span class="pill rolling-over" data-tip-en="Rolling over: off-high={{ sg.off_high_252 }}% 20d={{ sg.ret_20d }}% below50dma" data-tip-zh="下行趋势: 较高点={{ sg.off_high_252 }}% 20日={{ sg.ret_20d }}%"><span class="l-en">rolling over</span><span class="l-zh">下行</span></span>
+            {% if sg.get('no_price_data') %}<span class="pill r-nd">{{ t('price n/a', '无价格') }}</span>
+            {% elif sg.rs_vs_spy_60d is not none %}<span class="pill {{ 'r-pos' if sg.rs_vs_spy_60d > 0 else 'r-neg' }}">{{ '%+.0f'|format(sg.rs_vs_spy_60d) }}pp 60d</span>{% endif %}
+            {% if sg.get('extended') %}<span class="pill ext">{{ t('extended', '已拉伸') }}</span>{% endif %}
+            {% if sg.trump_linked %}<span class="pill trump">{{ t('Trump-linked', '特朗普关联') }}</span>{% endif %}
+          </div>
+          <div class="conv-chips">
+            {% for c in sg.channels %}<span class="pill ch">{{ ch(c) }}</span>{% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
   {# ---------- INFLUENCE GRAPH ---------- #}
   {% if influence and influence.watch %}
@@ -356,7 +392,7 @@
       {% if s.material_8k %}
       <div class="sid-card"><h3>📄 {{ t('Material 8-K clusters','重大8-K集群') }} <span class="mut" style="font-size:11px;">30d</span></h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Count','数量') }}</th><th>{{ t('Items','条目') }}</th></tr></thead>
-        <tbody>{% for r in s.material_8k[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.count }}</td><td class="mut">{{ r.items }}</td></tr>{% endfor %}</tbody></table></div>
+        <tbody>{% for r in s.material_8k[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.count }}</td><td class="mut">{{ r['items'] }}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.unusual_options %}
@@ -424,6 +460,10 @@
         '数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · Finnhub · Hugging Face · GitHub + 精选影响力图谱。公开记录替代数据；可操作轴由可证伪战绩校准，而非假定正确。') }}</p>
     </div>
   </section>
+
+  {# ── UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d, level+velocity, leave-tracking) ── #}
+  {{ dg.styles() }}
+  {{ dg.panel(desk_grader) }}
 
   {# ---------- NEWS CROSS-SURFACE (additive; client-fetched — no server coupling) ---------- #}
   <section class="sid-sec">

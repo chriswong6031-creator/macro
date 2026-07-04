@@ -292,6 +292,7 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
                               guidance: dict | None = None,
                               confirmers: dict | None = None,
                               fda_scarcity: dict | None = None,
+                              policy_reg: dict | None = None,
                               write_ledger: bool = True,
                               inputs_out: dict | None = None) -> dict | None:
     """Combine T1 (bottleneck) x T2 (demand) x T3 (guidance) x T4 (revisions) x exit-risk
@@ -359,6 +360,16 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         except Exception as e:  # noqa: BLE001
             log.warning("cascade: fda_scarcity failed (non-fatal): %s", e)
             fda_scarcity = None
+    # W1b: Federal Register policy catalyst calendar — per-theme pipeline metrics
+    # (days-to-comment-close, prorule inflow, finalization rate). Non-fatal; degrades to
+    # None per theme. Folds into rationale string only — never changes T1×T4×exit stages.
+    if policy_reg is None:
+        try:
+            from engine.policy_calendar import compute_policy_calendar
+            policy_reg = compute_policy_calendar()
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: policy_calendar failed (non-fatal): %s", e)
+            policy_reg = None
 
     if inputs_out is not None:
         inputs_out.update({"bottleneck": bottleneck, "revisions": revisions, "demand": demand,
@@ -424,6 +435,21 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
                 except Exception as _e:  # noqa: BLE001
                     log.debug("fda_scarcity chip format failed for %s: %s", k, _e)
 
+        # W1b: Federal Register policy catalyst chip — fold into rationale only.
+        # NEVER changes stage. policy_reg_chip is a display dict; summary folds into rationale.
+        policy_reg_chip: dict | None = None
+        if policy_reg is not None:
+            pr_themes = (policy_reg or {}).get("themes") or {}
+            policy_row = pr_themes.get(k)
+            if policy_row is not None:
+                try:
+                    from engine.policy_calendar import format_policy_reg_chip
+                    policy_reg_chip = format_policy_reg_chip(policy_row, k)
+                    if policy_reg_chip and policy_reg_chip.get("summary"):
+                        rationale += f" · policy pipeline: {policy_reg_chip['summary']}"
+                except Exception as _e:  # noqa: BLE001
+                    log.debug("policy_reg chip format failed for %s: %s", k, _e)
+
         # W5b: tier tag — P (physical desk) or W (watch shelf).
         # Use numeric_band (the raw FRED measurement), NOT the top-level band
         # (which the anti-laundering guard rewrites to "TIGHT (text)" for FRED-mapped
@@ -472,6 +498,10 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             # kill-criterion in thesis_monitor reads this field from the log row.
             # Absent when there is no EDGAR language leg for the theme (None → UNVERIFIABLE).
             "language_accel": (bn or {}).get("language_accel"),
+            # W1b: Federal Register policy pipeline chip (display-only; dated-structured class).
+            # Folds into rationale above; also surfaced as a structured dict for the template.
+            # NEVER a stage input, NEVER in confirmers dict.
+            "policy_reg_chip": policy_reg_chip,
         })
     # rank by edge remaining (stage), then surface AI-capex beneficiaries, then by the
     # sharpest physical/estimate read available (tightness if known, else revision breadth)

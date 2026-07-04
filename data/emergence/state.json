@@ -1,22 +1,32 @@
 {
-  "121b3b429610": {
-    "name_en": "Emerging Utilities cluster",
-    "name_zh": "\u65b0\u5174 Utilities \u96c6\u7fa4",
-    "score": 47.8
+  "36af1668c88a": {
+    "name_en": "Emerging Industrials cluster",
+    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
+    "score": 48.2
   },
-  "121f00a13caf": {
+  "6f1dca330cfc": {
     "name_en": "Cross-sector cluster \u00b7 Industrials + Information Technology",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Information Technology",
-    "score": 43.5
+    "score": 56.0
   },
-  "5467f3b8254a": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Discretionary",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Discretionary",
-    "score": 47.2
-  },
-  "d040b07607b6": {
+  "82fa80f4d954": {
     "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Health Care",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Health Care",
-    "score": 64.5
+    "score": 64.0
+  },
+  "9c9eb9dc358b": {
+    "name_en": "Emerging Real Estate cluster",
+    "name_zh": "\u65b0\u5174 Real Estate \u96c6\u7fa4",
+    "score": 55.3
+  },
+  "ede1da478398": {
+    "name_en": "Cross-sector cluster \u00b7 Information Technology + Communication Services",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Communication Services",
+    "score": 66.8
+  },
+  "f449e2014f48": {
+    "name_en": "Cross-sector cluster \u00b7 Information Technology + Consumer Discretionary",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Consumer Discretionary",
+    "score": 74.3
   }
 }
