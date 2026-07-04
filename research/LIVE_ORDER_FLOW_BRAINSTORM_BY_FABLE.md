@@ -235,8 +235,15 @@ path (validate-before-score) — and the fastest honest version of it:
 
 ### 5.3 Neural Web — the options nerves
 
-Neural Web is at operator STOP; when W0 (synapse) lands, options artifacts register like
-every other bus citizen. What this program should hand it:
+[STATUS UPDATE 2026-07-04: Neural Web is no longer at operator STOP for the nerve-
+registration phase. W0 (synapse registry, synapse.yml), W1 (world_state), and W2 (spine
+index, 287K rows) all SHIPPED 2026-07-04. §10 Phase G (options nerve registration) is
+therefore UNBLOCKED once flow artifacts exist from Phase D. The "operator STOP" note
+below is superseded; Phase G can proceed as soon as D lands and the probe confirms
+entitlement. The build sequencing (D → G) is unchanged.]
+
+Neural Web's W0 (synapse) is live; when Phase D flow artifacts are ready, options
+artifacts register like every other bus citizen. What this program should hand it:
 
 - **Nerve registrations (`synapse.yml`):** `options_flow` (per-name + group daily features),
   `gex_state` (per-name + index regime), `iv_surface` (rank/term/skew), `options_events`
@@ -511,3 +518,4 @@ routing: Sonnet builds, Opus reviews stats-heavy designs, Fable adjudicates._
 | Date | Event |
 |---|---|
 | 2026-07-04 | Brainstorm/assessment authored (Fable): codebase-grounded read of both external docs; constraint-reversal analysis vs OPTIONS_ALPHA F5–F7; unlock table; per-engine designs; licensing research (Pro $160/mo confirmed; redistribution prohibited w/o commercial agreement; derived-display = gray zone); phased roadmap as amendments to options-alpha / Oracle P7 / Neural Web. Fire-ledger depth verified (2026-06-15→, 950 rows): fire-conditioned claims stay accrual-bound; episode/cross-sectional claims unlock immediately. At operator STOP. |
+| 2026-07-04 | Phase-A PR opened (`feat/thetadata-plumbing`): `collectors/thetadata.py` (terminal client, INERT until subscription active), `scripts/backfill_thetadata_eod.py` (resumable T1 driver, --probe/--dry-run), `scripts/run_theta_terminal.sh` (launcher), `research/THETADATA_PROBE.md` (skeleton + API ambiguities A1–A8), `scripts/calibrate_flow_signing.py --source thetadata` (additive; existing keys untouched). §5.3 updated: Neural Web W0+W1+W2 SHIPPED; Phase G unblocked once Phase D lands. Tests: hermetic, all pass. Subscription not yet active; probe pending. |
