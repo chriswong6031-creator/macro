@@ -206,7 +206,7 @@ def resample_weekly_leakfree(daily_close: pd.Series) -> pd.Series:
     and aggregates closes from Mon-Fri of that week — satisfying the invariant
     that bar at label-date i contains no close dated > i.
 
-    Left-labeled per spec: each bar's label IS the last trading day of the week,
+    Right-edge-labeled (pandas W-FRI default), leak-free: the label is the last date IN the bar; truncation-invariance is the enforced property, verified by test: each bar's label IS the last trading day of the week,
     so by construction all data in the bar predates or equals the label.
     """
     return daily_close.resample("W-FRI").last().dropna()
@@ -791,61 +791,39 @@ def sample_washout_placebo(
     return placebo_by_h
 
 
-def sample_context_coin_flip_placebo(
+def sample_context_size_matched_placebo(
     entries: pd.DataFrame,
-    horizons: list[int],
+    horizon: int,
+    n_subset: int,
     n_draws: int = 200,
     rng: np.random.Generator | None = None,
-) -> dict[str, dict[int, np.ndarray]]:
-    """G6 coin-flip context placebo: randomly split entries 50/50 and compute increment.
+) -> np.ndarray:
+    """G6 SIZE-MATCHED context placebo (audit major fix on #1272).
 
-    This tests whether conditioning on a coin flip produces the same increment
-    as conditioning on the real P-W2 context. If the real context increment
-    exceeds the 95th percentile of coin-flip increments, the context is informative.
-
-    Returns
-    -------
-    dict: context_name -> {horizon -> np.ndarray(n_draws) of increment means}
-    """
+    For the given horizon, draw random subsets of the SAME size as the real
+    conditioned subgroup and record |mean(subset) − mean(all)| per draw.
+    The original 50/50 coin flip understated null variability for the actual
+    25-31%-sized subgroups (a correctly-sized null band is ~48-73% wider per
+    the audit's quantification), biasing 'exceeds coin-flip' toward PASS on
+    exactly the headline P-W2 rows. Registration §2 G6 requires that
+    conditioning on chance 'must not produce the increment' — a fair test
+    matches the real subgroup size."""
     if rng is None:
         rng = np.random.default_rng(SEED)
+    out = np.full(n_draws, np.nan)
+    col = f"excess_{horizon}d"
+    if col not in entries.columns or n_subset <= 0:
+        return out
+    vals = entries[col].to_numpy(dtype=float)
+    valid_idx = np.where(~np.isnan(vals))[0]
+    if len(valid_idx) == 0 or n_subset > len(valid_idx):
+        return out
+    mean_all = float(np.mean(vals[valid_idx]))
+    for d in range(n_draws):
+        pick = rng.choice(valid_idx, size=n_subset, replace=False)
+        out[d] = abs(float(np.mean(vals[pick])) - mean_all)
+    return out
 
-    n = len(entries)
-    if n == 0:
-        return {}
-
-    placebo_dist: dict[str, dict[int, np.ndarray]] = {
-        "coin_flip_a": {h: np.full(n_draws, np.nan) for h in horizons},
-        "coin_flip_b": {h: np.full(n_draws, np.nan) for h in horizons},
-    }
-
-    for draw_i in range(n_draws):
-        # Random 50/50 split
-        coin = rng.integers(0, 2, size=n).astype(bool)
-        for h in horizons:
-            col = f"excess_{h}d"
-            if col not in entries.columns:
-                continue
-            vals = entries[col].to_numpy(dtype=float)
-            valid = ~np.isnan(vals)
-            if valid.sum() == 0:
-                continue
-            subset_a = vals[coin & valid]
-            subset_all = vals[valid]
-            mean_all = float(np.mean(subset_all))
-            if len(subset_a) > 0:
-                mean_a = float(np.mean(subset_a))
-                placebo_dist["coin_flip_a"][h][draw_i] = mean_a - mean_all
-            if np.sum(~coin & valid) > 0:
-                mean_b = float(np.mean(vals[~coin & valid]))
-                placebo_dist["coin_flip_b"][h][draw_i] = mean_b - mean_all
-
-    return placebo_dist
-
-
-# ---------------------------------------------------------------------------
-# Cell statistics computation
-# ---------------------------------------------------------------------------
 
 def compute_cell_stats(
     values: np.ndarray,
@@ -989,7 +967,7 @@ def evaluate_pw2(
     -------
     dict with keys: 'unconditioned', 'cond_a', 'cond_b', 'cond_both',
                     'increment_a', 'increment_b', 'increment_both',
-                    'coin_flip_p95' per horizon
+                    'size_matched_p95' per condition per horizon
     """
     results: dict[str, Any] = {}
     for h in horizons:
@@ -1027,27 +1005,21 @@ def evaluate_pw2(
         h_results["cond_b"] = _subset_stats("pw2_opp_out_active")
         h_results["cond_both"] = _subset_stats("pw2_both")
 
-        # Coin-flip context placebo for G6
-        coin_placebo = sample_context_coin_flip_placebo(
-            entries, [h], n_draws=200,
-            rng=np.random.default_rng(rng.integers(0, 2**32)),
-        )
-        # Report p95 of the |increment| across coin-flip draws
-        for coin_name, coin_dist in coin_placebo.items():
-            dists = coin_dist.get(h, np.array([]))
-            valid_d = dists[~np.isnan(dists)]
-            if len(valid_d) > 0:
-                h_results[f"coin_flip_{coin_name}_p95"] = float(np.percentile(np.abs(valid_d), 95))
-            else:
-                h_results[f"coin_flip_{coin_name}_p95"] = np.nan
-
-        # G6: real increment > coin-flip p95 (conditioning adds info beyond coin flip)
+        # G6: per-condition SIZE-MATCHED chance placebo (audit fix): the null
+        # subset is drawn at the SAME n as the real conditioned subgroup.
         for cond_key in ["cond_a", "cond_b", "cond_both"]:
             real_inc = h_results[cond_key].get("increment", np.nan)
-            coin_p95 = h_results.get("coin_flip_coin_flip_a_p95", np.nan)
-            h_results[cond_key]["g6_exceeds_coin_flip"] = (
-                bool(abs(real_inc) > coin_p95)
-                if not (np.isnan(real_inc) or np.isnan(coin_p95))
+            n_cond = int(h_results[cond_key].get("n") or 0)
+            dist = sample_context_size_matched_placebo(
+                entries, h, n_cond, n_draws=200,
+                rng=np.random.default_rng(rng.integers(0, 2**32)),
+            )
+            valid_d = dist[~np.isnan(dist)]
+            p95 = float(np.percentile(valid_d, 95)) if len(valid_d) > 0 else np.nan
+            h_results[cond_key]["size_matched_p95"] = p95
+            h_results[cond_key]["g6_exceeds_chance"] = (
+                bool(abs(real_inc) > p95)
+                if not (np.isnan(real_inc) or np.isnan(p95))
                 else None
             )
 
@@ -1322,21 +1294,9 @@ def run_p8_gauntlet(data_dir: Path) -> dict:
             valid = ~np.isnan(all_vals)
             uncond_mean = float(np.mean(all_vals[valid])) if valid.sum() > 0 else np.nan
 
-            # Coin-flip placebo for G6
-            coin_placebo = sample_context_coin_flip_placebo(
-                entries_pw1, [h], n_draws=200,
-                rng=np.random.default_rng(rng.integers(0, 2**32)),
-            )
-            coin_p95 = {}
-            for cname, cdist in coin_placebo.items():
-                d = cdist.get(h, np.array([]))
-                valid_d = d[~np.isnan(d)]
-                coin_p95[cname] = float(np.percentile(np.abs(valid_d), 95)) if len(valid_d) > 0 else np.nan
-
             h_result: dict[str, Any] = {
                 "unconditioned_mean": uncond_mean,
                 "unconditioned_n": int(valid.sum()),
-                "coin_flip_p95": coin_p95,
             }
 
             for cond_label, mask_col in [
@@ -1364,11 +1324,16 @@ def run_p8_gauntlet(data_dir: Path) -> dict:
                     )
                     boot_p = bootstrap_p_value(mean_sub, boot_dist)
 
-                    # G6: increment > coin-flip p95
-                    cf_p95 = list(coin_p95.values())[0] if coin_p95 else np.nan
-                    g6_coin = (
-                        bool(abs(increment) > cf_p95)
-                        if not (np.isnan(increment) or np.isnan(cf_p95))
+                    # G6: increment vs a SIZE-MATCHED chance placebo (audit fix)
+                    sm_dist = sample_context_size_matched_placebo(
+                        entries_pw1, h, n_sub, n_draws=200,
+                        rng=np.random.default_rng(rng.integers(0, 2**32)),
+                    )
+                    sm_valid = sm_dist[~np.isnan(sm_dist)]
+                    sm_p95 = float(np.percentile(sm_valid, 95)) if len(sm_valid) > 0 else np.nan
+                    g6_chance = (
+                        bool(abs(increment) > sm_p95)
+                        if not (np.isnan(increment) or np.isnan(sm_p95))
                         else None
                     )
                     h_result[cond_label] = {
@@ -1379,7 +1344,8 @@ def run_p8_gauntlet(data_dir: Path) -> dict:
                         "boot_ci_lo": float(np.nanpercentile(boot_dist, 2.5)),
                         "boot_ci_hi": float(np.nanpercentile(boot_dist, 97.5)),
                         "boot_p_value": boot_p,
-                        "g6_exceeds_coin_flip": g6_coin,
+                        "size_matched_p95": sm_p95,
+                        "g6_exceeds_chance": g6_chance,
                     }
 
                 tid = f"pw2_{cond_label}_{h}d"
@@ -1681,7 +1647,7 @@ def write_p8_markdown(results: dict, output_path: Path, ledger_path: Path) -> No
                 f"| {_fmt(cd.get('increment'), pct=True)} "
                 f"| {_fmt(cd.get('boot_ci_lo'), pct=True)} "
                 f"| {_fmt(cd.get('boot_ci_hi'), pct=True)} "
-                f"| {'✓' if cd.get('g6_exceeds_coin_flip') else '✗' if cd.get('g6_exceeds_coin_flip') is False else '—'} "
+                f"| {'✓' if cd.get('g6_exceeds_chance') else '✗' if cd.get('g6_exceeds_chance') is False else '—'} "
                 f"| PENDING ADJUDICATION |"
             )
 

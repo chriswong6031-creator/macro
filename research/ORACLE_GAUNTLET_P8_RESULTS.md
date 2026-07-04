@@ -2,7 +2,7 @@
 
 **Registration:** [ORACLE_GAUNTLET_P8_WASHOUT_PREREG.md](ORACLE_GAUNTLET_P8_WASHOUT_PREREG.md)
 **Inherits:** [ORACLE_GAUNTLET_P3_PREREG.md](ORACLE_GAUNTLET_P3_PREREG.md)
-**Seed:** 20260704  **Trials:** 14  **Runtime:** 104.55s
+**Seed:** 20260704  **Trials:** 14  **Runtime:** 101.02s
 **BH-FDR:** q=0.10, 1/14 trials rejected
 
 > All verdict cells marked **PENDING ADJUDICATION** — adjudicator applies pre-bound vocabulary from §3 of the registration.
@@ -31,12 +31,12 @@
 
 | Horizon | Condition | n_cond | n_uncond | Uncond mean | Cond mean | Increment | Boot CI lo | Boot CI hi | G6 > coin-flip | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|
-| +21d | accel_z_5d>0 | 541 | 639 | 0.05% | -0.03% | -0.08% | -1.42% | 1.40% | ✗ | PENDING ADJUDICATION |
+| +21d | accel_z_5d>0 | 541 | 639 | 0.05% | -0.03% | -0.08% | -1.47% | 1.50% | ✗ | PENDING ADJUDICATION |
 | +21d | opp_out_active | 201 | 639 | 0.05% | 0.16% | 0.11% | -2.10% | 2.63% | ✗ | PENDING ADJUDICATION |
-| +21d | both | 160 | 639 | 0.05% | 0.23% | 0.19% | -2.18% | 3.04% | ✗ | PENDING ADJUDICATION |
-| +63d | accel_z_5d>0 | 534 | 629 | 0.45% | 0.14% | -0.31% | -2.22% | 2.49% | ✗ | PENDING ADJUDICATION |
-| +63d | opp_out_active | 194 | 629 | 0.45% | 1.59% | 1.14% | -2.67% | 6.30% | ✓ | PENDING ADJUDICATION |
-| +63d | both | 155 | 629 | 0.45% | 1.39% | 0.94% | -3.17% | 6.40% | ✓ | PENDING ADJUDICATION |
+| +21d | both | 160 | 639 | 0.05% | 0.23% | 0.19% | -2.13% | 3.21% | ✗ | PENDING ADJUDICATION |
+| +63d | accel_z_5d>0 | 534 | 629 | 0.45% | 0.14% | -0.31% | -2.28% | 2.58% | ✓ | PENDING ADJUDICATION |
+| +63d | opp_out_active | 194 | 629 | 0.45% | 1.59% | 1.14% | -2.52% | 6.14% | ✓ | PENDING ADJUDICATION |
+| +63d | both | 155 | 629 | 0.45% | 1.39% | 0.94% | -3.00% | 6.38% | ✗ | PENDING ADJUDICATION |
 
 ---
 
@@ -75,27 +75,27 @@
 
 | Horizon | n | Mean | Hit rate | Boot p | Underpowered note | Verdict |
 |---|---|---|---|---|---|---|
-| +21d | 152 | 0.09% | 52.63% | 0.4105 | — | PENDING ADJUDICATION |
-| +63d | 151 | -0.86% | 43.71% | 0.9095 | — | PENDING ADJUDICATION |
+| +21d | 152 | 0.09% | 52.63% | 0.4275 | — | PENDING ADJUDICATION |
+| +63d | 151 | -0.86% | 43.71% | 0.9105 | — | PENDING ADJUDICATION |
 
 ## S-W4 — Topping exit mirror (secondary)
 
 | Horizon | n | Actual excess (should be neg) | Boot p | G1 | G2 | Verdict |
 |---|---|---|---|---|---|---|
-| +21d | 814 | -0.12% | 0.1955 | ✗ | ✗ | PENDING ADJUDICATION |
-| +63d | 811 | -0.24% | 0.2555 | ✓ | ✗ | PENDING ADJUDICATION |
+| +21d | 814 | -0.12% | 0.1900 | ✗ | ✗ | PENDING ADJUDICATION |
+| +63d | 811 | -0.24% | 0.2405 | ✓ | ✗ | PENDING ADJUDICATION |
 
 ## S-W5 — Theme echo (Tier-M, 2021+, confirmatory only)
 
 | Horizon | n | Mean | Hit rate | Boot p | Verdict |
 |---|---|---|---|---|---|
-| +21d | 4326 | 1.43% | 51.34% | 0.0790 | PENDING ADJUDICATION |
-| +63d | 4144 | 6.01% | 54.20% | 0.0005 | PENDING ADJUDICATION |
+| +21d | 4326 | 1.43% | 51.34% | 0.0505 | PENDING ADJUDICATION |
+| +63d | 4144 | 6.01% | 54.20% | 0.0000 | PENDING ADJUDICATION |
 
 ---
 
 *Trial ledger: p8_trial_ledger.json (gitignored) — 14 trials before p-computation.*
-*Runtime: 104.55s*
+*Runtime: 101.02s*
 
 ## BH-FDR summary
 
@@ -105,9 +105,23 @@ q=0.10, 1/14 rejected
 |---|---|---|
 | pw1_21d | 0.3920 | N |
 | pw1_63d | 0.0880 | N |
-| pw2_cond_a_21d | 0.5150 | N |
-| pw2_cond_a_63d | 0.4530 | N |
+| pw2_cond_a_21d | 0.5085 | N |
+| pw2_cond_a_63d | 0.4495 | N |
 | pw2_cond_b_21d | 0.4565 | N |
-| pw2_cond_b_63d | 0.2365 | N |
-| pw2_cond_both_21d | 0.4205 | N |
-| pw2_cond_both_63d | 0.2725 | N |
+| pw2_cond_b_63d | 0.2400 | N |
+| pw2_cond_both_21d | 0.4660 | N |
+| pw2_cond_both_63d | 0.2795 | N |
+
+---
+
+## ADJUDICATION (Fable, 2026-07-04 — applied against the locked vocabulary of the P8/P3 registrations)
+
+| Endpoint | Result | Verdict |
+|---|---|---|
+| **P-W1** (2W washout-turn, 11 ETFs, pooled) | 21d: +0.05%/50.1% · 63d: +0.45%/50.7%; G2 fails both; loses to the validated BUY state (+1.10%/56%) on both mean and hit | **NULL** — the boring baseline wins |
+| **P-W2 cond_b** (washout × opposite complex rolling over) | @63d: n=194, mean **+1.59%**, hit 55.2%, increment **+1.14%** — **beats the size-matched chance placebo (p95 0.78%)** after the audit fix widened the null ~50-70%; but boot CI straddles zero (p 0.24), no FDR survival | **NULL as registered** (secondary; G2 fail) — **flagged as the standout accruing hypothesis**: largest honest increment in the program, in exactly the direction the operator predicted (money must have somewhere to come FROM), pre-bound for re-registration as Tier-L n accrues |
+| P-W2 cond_a (washout × RS already accelerating) | increment **−0.31%**, exceeds chance in the NEGATIVE direction | informative negative: a washout entry after acceleration has begun is LATE — supports the front-run-not-confirm thesis from the loss side |
+| P-W2 cond_both | +0.94% vs p95 0.98% — just misses | accrues with cond_b |
+| S-W3/S-W4/S-W5 | S-W5 63d = sole FDR rejection; confirmatory-only by registration | no headline permitted |
+
+**Pre-bound consequences applied:** P-W1 null ⇒ oscillator columns are NOT promoted into the panel on validation grounds (a descriptive washout marker for the Time Machine may still ship as display). P-W2 increment not validated ⇒ **Oracle remains initiator-class for Red Queen**, with `cond_b` (washout entries during an opposite-complex rollover) as the named channel to re-test at higher n. Per-ETF heterogeneity is large (XLE mean fwd-63d excess +1.79%, twice-independently verified) — pooled nulls do not preclude per-sector structure, but naming WHICH sectors post-hoc would be trial-mining; any per-sector claim requires its own registration.
