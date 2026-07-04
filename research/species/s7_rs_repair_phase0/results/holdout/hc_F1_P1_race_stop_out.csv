@@ -1,0 +1,4 @@
+stratum,n_fires,n_valid,n_episodes,point,ci_lo,ci_hi,verdict
+cohort>=50 all regimes,1047,1047,17,0.3839541547277937,0.2993201435264721,0.4673798100409846,OK (month-block D1)
+cohort>=50 + bear (SPY<200d falling),215,215,1,0.18604651162790697,,,NO_VERDICT (episodes=1 < 8; months=2 < 8)
+cohort>=50 + bull (SPY above/rising 200d),832,832,16,0.43509615384615385,0.37348024576940236,0.4917464962341797,OK (month-block D1)

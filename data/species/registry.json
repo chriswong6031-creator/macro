@@ -569,7 +569,9 @@
       "market_scope": ["US"],
       "adjacent_falsified": [
         {"idea": "rs_low: RS-vs-SPY at 126d low — H6∧rs_low was dilutive (36.8 vs 39.3 H6-only)", "source": "§4 S7 adjacent evidence (a)", "mechanical_difference": "S7 is RS SLOPE vs cohort, not RS LEVEL vs market; different sign direction from the graveyard entry"},
-        {"idea": "US residual momentum as modern-era alpha (DSR≈0.001, Sharpe −0.29 modern era)", "source": "§1.6 reports/residual-alpha-phase0", "mechanical_difference": "S7 is a washout-fire stratifier, not a cross-sectional ranking signal"}
+        {"idea": "US residual momentum as modern-era alpha (DSR≈0.001, Sharpe −0.29 modern era)", "source": "§1.6 reports/residual-alpha-phase0", "mechanical_difference": "S7 is a washout-fire stratifier, not a cross-sectional ranking signal"},
+        {"idea": "RS-vs-SPY 20d slope repair on bottom fires (external Codex backtest's headline RS leg)", "source": "research/species/s7_rs_repair_phase0/REPORT.md §7 P-B", "mechanical_difference": "market-relative slope, not within-cohort rank slope. Phase-0: dev null/pointwise-worse; 2025-26 holdout SIGNIFICANTLY worse (stop-out Δ +7.4pp, 90% CI [+2.0,+13.2] excludes 0). The cohort-rank form kept the repair sign; the market-relative form is anti-signal."},
+        {"idea": "Triple-lock conjunction tier (cohort_frac>=40 AND rs_spy-repair AND within-15%-of-60d-low) as a required entry gate", "source": "research/species/s7_rs_repair_phase0/REPORT.md §4 H-B / §7 P-C", "mechanical_difference": "S7 is a stratifier on COILED arming, not a conjunction gate. Failed pre-registered dev bars (5.1pp < 8pp vs subset baseline; 0.7pp < 3pp vs best pair); holdout significantly WORSE than cohort-alone (+11.7pp, CI excludes 0) — the anti-signal rs_spy leg poisons the conjunction."}
       ],
       "fixtures": [],
       "ledger_binding": {
@@ -580,9 +582,9 @@
       "gating": {
         "come_back_on": "2026-10-01",
         "cadence": "quarterly",
-        "maturation": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible."
+        "maturation": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible. || 2026-07-04 phase-0 EXECUTED (research/species/s7_rs_repair_phase0, brought forward from W3 on external-evidence grounds): REPAIR sign supported on dev 2022-24 F1/P1 (stop-out Δ −5.7pp, 90% CI [−8.7,−1.9]; clean8_21 Δ +8.8pp CI [+4.6,+11.8]; rs_low promotion bar MET; within-month permutation placebo p≈0.000) but MIXED on 2025-26 holdout (Δ −2.7pp spans 0 at n=725; signs held on both primaries; rs_low bar flipped) → stays phase0 per frozen rule. Re-read on W0.4 series + come_back_on; in-harness rank approximation used, production series may differ."
       },
-      "trial_count": 2
+      "trial_count": 3
     },
     {
       "species_id": "S8",
