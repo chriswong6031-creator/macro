@@ -1,5 +1,7 @@
 # CORTEX — The Central Brain & Nervous System — Brainstorm by Fable
 
+> **SUPERSEDED (2026-07-04)** by [NEURAL_WEB_MASTERPLAN_BY_FABLE.md](NEURAL_WEB_MASTERPLAN_BY_FABLE.md) — same program, renamed **Neural Web** by the operator (Oracle keeps the rotation lobe), re-founded on an 8-agent census + 5-lens red-team. This doc's census and rejections carry forward; its architecture (C0-C5) and one-brain lean are revised there (D3: two organisms, two brains).
+
 **Question posed (operator, 2026-07-04).** Should we build a central brain for the dashboard — reactive, live, able to learn — that also serves as the communication hub letting engines talk to each other? Two sub-questions: (1) will our engines ever truly cross-communicate (today it's "messy and undocumented"); (2) can engines stop being batch gears and become "breathing" pieces?
 
 **Status: BRAINSTORM at operator STOP. Nothing dispatched.**
