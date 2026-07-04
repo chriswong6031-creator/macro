@@ -18,7 +18,8 @@ ARTICLE 2 — SCORED-PATH PERIMETER
 ARTICLE 3 — EVIDENCE-FLOOR FOR AUTHORITY GRANTS
   Every authority grant (can_force-style) must pass:
     (a) sample-size floors  (n >= min_n AND n_events >= min_events)
-    (b) Wilson CI lower-bound lift > 1.0  (not a point estimate)
+    (b) Wilson CI lower-bound lift > 1.25  (matches the retired point-estimate
+        threshold of 1.25 — strictly tighter everywhere, zero grant-more cases)
     (c) evidence freshness  (evidence_asof within max_staleness_days)
   Grants that do not pass are refused; grants that previously passed but whose
   evidence has gone stale are lapsed (returned with granted=False, reason='stale').
@@ -113,7 +114,8 @@ ARTICLES: dict[int, str] = {
     ),
     3: (
         "Article 3 — Evidence Floor: Every authority grant must clear sample-size floors, "
-        "a Wilson CI lower-bound lift > 1.0 (not a point estimate), and freshness. "
+        "a Wilson CI lower-bound lift > 1.25 (matches the retired point-estimate threshold — "
+        "strictly tighter everywhere, zero grant-more cases), and freshness. "
         "Grants whose evidence has gone stale lapse — authority never persists on silence."
     ),
 }
@@ -240,7 +242,10 @@ def grant_authority(
     GrantResult
         granted=True only when ALL three Article-3 gates clear:
           1. n >= floors['min_n'] AND hits >= floors['min_events']
-          2. wilson_lower(hits, n, z=1.645) / base_rate > 1.0
+          2. wilson_lower(hits, n, z=1.645) / base_rate > 1.25
+             (matches the retired point-estimate threshold of 1.25 — strictly tighter
+             everywhere because wilson_lb <= point_estimate always; zero grant-more
+             cases across all k/n/base sweep, verified by tests)
           3. evidence_asof within max_staleness_days
     """
     if now is None:
@@ -272,7 +277,12 @@ def grant_authority(
             lapses_at=None,
         )
 
-    # Gate 2 — Wilson CI lower-bound lift > 1.0
+    # Gate 2 — Wilson CI lower-bound lift > 1.25
+    # Threshold 1.25 matches the retired point-estimate floor (MIN_FORCE_LIFT=1.25).
+    # Because wilson_lb <= point_estimate always, the CI gate is strictly tighter
+    # everywhere — zero grant-more cases across a full k/n/base sweep (verified in
+    # tests/test_constitution.py::test_wilson_gate_no_grant_more_cases_full_sweep).
+    _LIFT_THRESHOLD = 1.25
     wb = wilson_lower(hits, n, z=1.645)
     if base_rate <= 0.0:
         return GrantResult(
@@ -284,12 +294,12 @@ def grant_authority(
         )
     lift_lb = wb / base_rate
 
-    if lift_lb <= 1.0:
+    if lift_lb <= _LIFT_THRESHOLD:
         return GrantResult(
             granted=False,
             lift_lb=round(lift_lb, 4),
             wilson_lb=round(wb, 6),
-            reason=f"lift-lb-insufficient: wilson_lb/base={lift_lb:.4f} <= 1.0",
+            reason=f"lift-lb-insufficient: wilson_lb/base={lift_lb:.4f} <= {_LIFT_THRESHOLD}",
             lapses_at=None,
         )
 
@@ -319,6 +329,6 @@ def grant_authority(
         granted=True,
         lift_lb=round(lift_lb, 4),
         wilson_lb=round(wb, 6),
-        reason="granted: n-floors cleared, wilson-lift > 1.0, evidence fresh",
+        reason="granted: n-floors cleared, wilson-lift > 1.25, evidence fresh",
         lapses_at=lapses_at,
     )

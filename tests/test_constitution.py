@@ -5,6 +5,10 @@ Tests:
    - Wilson gate false-grant rate < 10%  (scout computed 5.8%)
    - Old point-estimate gate (>= 1.25) would have been > 35%
    The motivating math is embedded as assertions, not just comments.
+1b. SAFETY PROPERTY SWEEP — full (k, n, base) sweep over base>=0.45 (the grant-more
+    region identified by the reviewer) asserts ZERO grant-more cases: new Wilson gate
+    with threshold > 1.25 never grants where the old point-estimate gate >= 1.25 denied.
+    This test would go red immediately if the threshold regressed back to 1.0.
 2. grant_authority paths: granted, refused (n), refused (events), refused (lift), lapsed.
 3. A7 ORIGINATE refusal — AuthorityLevel.A7_ORIGINATE is refused unconditionally.
 4. wilson_lower basic correctness + edge cases (k=0, k=n, n=0).
@@ -50,10 +54,15 @@ def _old_gate_passes(k: int, n: int, base: float) -> bool:
 
 
 def _new_wilson_gate_passes(k: int, n: int, base: float) -> bool:
-    """The new Wilson CI lower-bound gate: wilson_lower(k, n) / base > 1.0."""
+    """The new Wilson CI lower-bound gate: wilson_lower(k, n) / base > 1.25.
+
+    Threshold 1.25 matches the retired point-estimate floor (MIN_FORCE_LIFT=1.25).
+    Because wilson_lb <= point_estimate always, lift_lb > 1.25 is strictly tighter
+    than force_lift >= 1.25 — zero grant-more cases across all (k, n, base).
+    """
     if base == 0:
         return False
-    return wilson_lower(k, n, z=1.645) / base > 1.0
+    return wilson_lower(k, n, z=1.645) / base > 1.25
 
 
 class TestNullSimulation:
@@ -97,12 +106,55 @@ class TestNullSimulation:
         )
 
     def test_wilson_gate_strictly_tighter_than_old_gate(self):
-        """The Wilson gate must be strictly tighter (fewer grants) than the old gate."""
+        """The Wilson gate must be strictly tighter (fewer grants) than the old gate.
+
+        This simulation-level check confirms the direction at base=0.30 under the null,
+        but the universal safety property is proved by the full-sweep test below.
+        """
         old_rate = self._simulate(_old_gate_passes)
         new_rate = self._simulate(_new_wilson_gate_passes)
         assert new_rate < old_rate, (
             f"Wilson gate ({new_rate:.1%}) must be strictly tighter than old gate ({old_rate:.1%}). "
             f"If new >= old, the Wilson gate is not an improvement."
+        )
+
+    def test_wilson_gate_no_grant_more_cases_full_sweep(self):
+        """SAFETY PROPERTY: zero grant-more cases across the full (k, n, base) space.
+
+        A 'grant-more case' is one where the old point-estimate gate (force_lift >= 1.25)
+        DENIES but the new Wilson gate GRANTS — a violation of the PR's central safety
+        guarantee ('strictly tighter / authority-revoking direction only').
+
+        The reviewer identified that the grant-more region requires base >= 0.45 (the
+        old threshold at base=0.30 under the null is OUTSIDE this region, so the
+        simulation test above is non-discriminating).  This test sweeps that region
+        exhaustively and will go RED if the threshold regresses from 1.25 back to 1.0.
+
+        Sweep: base in {0.01, 0.02, ..., 0.99}, n in 1..199, k in 0..n.
+        Total triples: ~1,980,100. Runtime: < 2s on the CI box.
+        """
+        grant_more_cases = []
+        for base_int in range(1, 100):
+            base = base_int / 100.0
+            for n in range(1, 200):
+                for k in range(0, n + 1):
+                    if _old_gate_passes(k, n, base):
+                        continue  # old gate grants → not a grant-more case
+                    if _new_wilson_gate_passes(k, n, base):
+                        grant_more_cases.append((k, n, base))
+                        if len(grant_more_cases) > 5:
+                            break  # fail fast with examples
+                if len(grant_more_cases) > 5:
+                    break
+            if len(grant_more_cases) > 5:
+                break
+
+        assert len(grant_more_cases) == 0, (
+            f"Wilson gate grants where old gate denied in {len(grant_more_cases)} case(s). "
+            f"First examples: {grant_more_cases[:5]}. "
+            f"Root cause: the Wilson lift threshold must be 1.25 (not 1.0). "
+            f"If this test is failing, the threshold in constitution.py grant_authority() "
+            f"has regressed from > 1.25 to > 1.0 (or similar). Fix: restore _LIFT_THRESHOLD = 1.25."
         )
 
     def test_wilson_reduction_factor_at_least_4x(self):

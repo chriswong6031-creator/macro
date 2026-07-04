@@ -16,13 +16,15 @@ clears the bar — accountable by construction, never trusted on faith. Never ra
 CAN_FORCE — ARTICLE-3 GATE (W7a)
 ---------------------------------
 `can_force` is now gated by a Wilson-CI lower-bound lift (Article 3) rather than a
-point-estimate threshold.  The Wilson lower bound at the 90%-confidence level
-(z=1.645) must exceed the base drawdown rate — i.e. the CI lower bound on alert
-precision must beat the unconditional base rate.  At minimum sample sizes (n_alerts=8)
+point-estimate threshold.  The Wilson lower bound at the 90%-confidence level (z=1.645)
+must exceed 1.25× the base drawdown rate — matching the retired point-estimate floor of
+1.25 but measured on the CI lower bound instead of the point estimate.  Because
+wilson_lb <= point_estimate always, the CI gate is strictly tighter everywhere: zero
+grant-more cases across the full (k, n, base) space.  At minimum sample sizes (n_alerts=8)
 the old point-estimate gate false-granted ~44% of the time under the null; the Wilson
 gate reduces this to ~5.8%.  This is the conservative / authority-revoking direction:
 markets that previously cleared the point-estimate gate may lose can_force; no market
-can gain it without sufficient graded evidence.
+can gain force authority it did not have under the old gate.
 
 When the grant state changes vs the previous scorecard call, authority_grant or
 authority_lapse events are appended to data/neuralweb/governance.jsonl via
@@ -49,8 +51,10 @@ ALERT_STATES = ("elevated", "risk-off")            # the loud tiers, for precisi
 # --- gate for earning the right to hard-force the verdict (Article 3) ---
 MIN_GRADED_FORCE = 30      # need this many matured calls before forcing is even considered
 MIN_ALERTS_FORCE = 8       # and this many loud calls among them
-# NOTE: MIN_FORCE_LIFT (point-estimate 1.25) REMOVED — replaced by Wilson CI lift > 1.0
+# NOTE: MIN_FORCE_LIFT (point-estimate 1.25) REMOVED — replaced by Wilson CI lift > 1.25
 # The Wilson lower-bound gate (z=1.645, 90% one-sided) is evaluated inside scorecard().
+# Threshold 1.25 matches the retired point-estimate floor; because wilson_lb <= point_estimate
+# always, the CI gate is strictly tighter everywhere (zero grant-more cases, verified in tests).
 # At n_alerts=8 the old gate false-granted ~44% under the null; Wilson reduces this to ~5.8%.
 
 
@@ -281,8 +285,10 @@ def scorecard(market: str, root=None) -> dict:
     """Rolling realized-accuracy scorecard from the graded log. Carries `can_force`: whether this
     market's radar has earned the right to hard-force the Market-State verdict. Never raises.
 
-    ARTICLE-3 GATE (W7a): can_force is now granted via Wilson CI lower-bound lift > 1.0
-    at z=1.645 (90% one-sided), not the old point-estimate >= 1.25.  Additive scorecard
+    ARTICLE-3 GATE (W7a): can_force is now granted via Wilson CI lower-bound lift > 1.25
+    at z=1.645 (90% one-sided).  Threshold 1.25 matches the retired point-estimate floor;
+    because wilson_lb <= point_estimate always, the CI gate is strictly tighter everywhere
+    (zero grant-more cases across all k/n/base — verified in tests).  Additive scorecard
     fields: wilson_lift_lb, grant_reason, evidence_asof.  Existing consumers read only
     the can_force bool — these additions are backward-compatible.
     """
