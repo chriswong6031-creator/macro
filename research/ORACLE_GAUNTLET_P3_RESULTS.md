@@ -210,3 +210,72 @@ BH-FDR rejected: per trial ledger
 
 *Trial ledger: p3_trial_ledger.json (gitignored) — 109 trials enumerated before p-computation.*
 *Runtime: 114.71s*
+
+---
+
+## P3b — Routing placebo
+
+**Seed:** 20260704  **Draws:** 200  **Exclusion zone:** ±10 sessions  **Runtime:** 0.94s
+
+> Verdicts in this section are left as **PENDING ADJUDICATION**.
+> PASS rule (G1-routing): real cell mean > 95th percentile of 200 placebo means
+> (one-sided; sign = sign of real mean as stored in graph_m.json — see code comment).
+> FIX 2: pseudo-onsets sampled from regime-matching dates, count-matched to cell's
+> regime-filtered real event count (cell_n from graph_m), not total source onset count.
+> FIX 5: cells with fewer than 200 valid draws are marked insufficient_placebo and
+> automatically fail G1-routing regardless of their placebo p95.
+
+### 34 previously BH-rejected cells — placebo verdicts
+
+| trial_id | n_real | eff_draws | real_mean | placebo_mean | placebo_p95 | insuff | G1-routing pass |
+|---|---|---|---|---|---|---|---|
+| routing_ai_compute/energy_commodities/high_vix_10d | 12 | 200 | 0.999% | 0.009% | 0.930% | N | ✓ |
+| routing_ai_compute/energy_commodities/high_vix_15d | 12 | 200 | 0.932% | -0.004% | 0.990% | N | ✗ |
+| routing_ai_compute/energy_commodities/high_vix_5d | 12 | 200 | 0.529% | -0.024% | 0.999% | N | ✗ |
+| routing_ai_compute/healthcare_defensive/high_vix_5d | 12 | 200 | 0.017% | -0.045% | 0.495% | N | ✗ |
+| routing_consumer_staples_defensive/ai_compute/high_vix_10d | 10 | 200 | 0.074% | 0.019% | 0.944% | N | ✗ |
+| routing_consumer_staples_defensive/financials_rates/high_vix_10d | 10 | 200 | 0.668% | 0.003% | 0.955% | N | ✗ |
+| routing_consumer_staples_defensive/financials_rates/high_vix_15d | 10 | 200 | 0.552% | 0.110% | 0.894% | N | ✗ |
+| routing_consumer_staples_defensive/financials_rates/high_vix_5d | 10 | 200 | 0.943% | 0.051% | 0.904% | N | ✓ |
+| routing_consumer_staples_defensive/healthcare_defensive/high_vix_15d | 10 | 200 | 0.319% | -0.090% | 0.615% | N | ✗ |
+| routing_consumer_staples_defensive/healthcare_defensive/high_vix_5d | 10 | 200 | 0.610% | -0.099% | 0.661% | N | ✗ |
+| routing_consumer_staples_defensive/long_duration_growth/high_vix_5d | 10 | 200 | 0.066% | -0.158% | 0.610% | N | ✗ |
+| routing_consumer_staples_defensive/software/high_vix_10d | 10 | 200 | 0.158% | 0.089% | 0.771% | N | ✗ |
+| routing_energy_commodities/ai_compute/high_vix_10d | 10 | 200 | 1.061% | 0.013% | 0.891% | N | ✓ |
+| routing_energy_commodities/ai_compute/high_vix_15d | 10 | 200 | 0.121% | -0.001% | 0.977% | N | ✗ |
+| routing_energy_commodities/ai_compute/high_vix_5d | 10 | 200 | 0.232% | 0.072% | 0.870% | N | ✗ |
+| routing_energy_commodities/healthcare_defensive/high_vix_5d | 10 | 200 | 0.116% | -0.073% | 0.605% | N | ✗ |
+| routing_energy_commodities/long_duration_growth/high_vix_10d | 10 | 200 | 0.671% | 0.045% | 0.756% | N | ✗ |
+| routing_energy_commodities/long_duration_growth/high_vix_15d | 10 | 200 | 0.459% | -0.022% | 0.728% | N | ✗ |
+| routing_energy_commodities/long_duration_growth/high_vix_5d | 10 | 200 | 0.112% | -0.102% | 0.760% | N | ✗ |
+| routing_long_duration_growth/ai_compute/high_vix_5d | 10 | 200 | 0.616% | 0.135% | 0.875% | N | ✗ |
+| routing_long_duration_growth/consumer_staples_defensive/high_vix_15d | 10 | 200 | 0.026% | -0.056% | 0.615% | N | ✗ |
+| routing_long_duration_growth/energy_commodities/high_vix_5d | 10 | 200 | 0.168% | 0.014% | 1.158% | N | ✗ |
+| routing_long_duration_growth/financials_rates/high_vix_10d | 10 | 200 | 0.432% | -0.022% | 0.704% | N | ✗ |
+| routing_long_duration_growth/financials_rates/high_vix_15d | 10 | 200 | 0.271% | 0.053% | 0.997% | N | ✗ |
+| routing_long_duration_growth/healthcare_defensive/high_vix_10d | 10 | 200 | 0.377% | -0.087% | 0.576% | N | ✗ |
+| routing_long_duration_growth/healthcare_defensive/high_vix_15d | 10 | 200 | 0.480% | -0.107% | 0.521% | N | ✗ |
+| routing_long_duration_growth/healthcare_defensive/high_vix_5d | 10 | 200 | 0.454% | -0.058% | 0.689% | N | ✗ |
+| routing_long_duration_growth/software/high_vix_10d | 10 | 200 | 0.029% | 0.059% | 0.729% | N | ✗ |
+| routing_long_duration_growth/software/high_vix_15d | 10 | 200 | 0.190% | 0.026% | 0.738% | N | ✗ |
+| routing_long_duration_growth/software/high_vix_5d | 10 | 200 | 0.085% | 0.052% | 0.736% | N | ✗ |
+| routing_software/ai_compute/high_vix_10d | 12 | 200 | 1.791% | 0.099% | 0.825% | N | ✓ |
+| routing_software/ai_compute/high_vix_5d | 12 | 200 | 1.771% | 0.031% | 0.762% | N | ✓ |
+| routing_software/energy_commodities/high_vix_5d | 12 | 200 | 0.037% | -0.038% | 0.913% | N | ✗ |
+| routing_software/financials_rates/high_vix_15d | 12 | 200 | 0.952% | -0.068% | 0.949% | N | ✓ |
+
+**Of the 34 BH-rejected cells: 6 pass placebo.**
+
+### All sufficient cells — placebo summary
+
+| Metric | Value |
+|---|---|
+| Sufficient cells tested | 90 |
+| Pass G1-routing | 6 |
+| Fail G1-routing | 84 |
+| Insufficient placebo (< 200 valid draws) | 0 |
+| Effective draw count min | 200 |
+| Effective draw count max | 200 |
+| Effective draw count mean | 200.0 |
+
+> PENDING ADJUDICATION

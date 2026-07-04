@@ -789,7 +789,8 @@ def _reconstruct_routing_onset_outcomes(
     panel_m: pd.DataFrame,
     rotation_groups_path: Path,
     graph_m_routing_config: dict,
-) -> dict[str, dict[str, dict[str, list[float]]]]:
+    return_onset_indices: bool = False,
+) -> "dict | tuple[dict, dict[str, list[int]]]":
     """Reconstruct per-onset routing outcomes from panel_m.
 
     Mirrors engine/oracle/graph.py compute_routing's onset detection EXACTLY:
@@ -798,10 +799,21 @@ def _reconstruct_routing_onset_outcomes(
       - regime split by vix_pctile >= high_vix_thresh → 'high_vix' / 'low_vix'
       - forward RS-change at fwd_windows horizons per destination complex
 
+    Parameters
+    ----------
+    return_onset_indices : bool, optional (default False)
+        When True, also return a dict mapping src_id → list[int] of raw onset
+        integer positions (into the panel_m date axis), BEFORE regime filtering.
+        This avoids duplicating onset detection in the P3b placebo path (FIX 4).
+
     Returns
     -------
-    dict: src_id → dest_id → regime_label → {h: [per-onset outcomes]}
-        Only sufficient cells (n >= min_n) are included.
+    When return_onset_indices=False (default):
+        dict: src_id → dest_id → regime_label → {h: [per-onset outcomes]}
+            Only sufficient cells (n >= min_n) are included.
+    When return_onset_indices=True:
+        tuple(outcomes_dict, onset_indices_per_src)
+        where onset_indices_per_src: src_id → list[int] raw onset positions.
 
     The returned per-onset outcome lists are used to form block-bootstrap p-values
     per the registered G5 method (same 2,000-iter/21d-block machinery as G2).
@@ -846,6 +858,8 @@ def _reconstruct_routing_onset_outcomes(
 
     # src → dest → regime → {h: [outcomes]}
     results: dict[str, dict[str, dict[str, dict[int, list[float]]]]] = {}
+    # FIX 4: track raw (pre-regime) onset indices per source for P3b reuse
+    onset_indices_per_src_raw: dict[str, list[int]] = {}
 
     for src_id, src_accel in complex_accel.items():
         accel_arr = src_accel.values
@@ -881,6 +895,9 @@ def _reconstruct_routing_onset_outcomes(
 
         if not onset_indices:
             continue
+
+        # FIX 4: store raw onset indices for reuse in P3b path
+        onset_indices_per_src_raw[src_id] = onset_indices
 
         src_results: dict[str, dict[str, dict[int, list[float]]]] = {}
 
@@ -925,6 +942,9 @@ def _reconstruct_routing_onset_outcomes(
         if src_results:
             results[src_id] = src_results
 
+    # FIX 4: optionally return onset indices alongside outcomes
+    if return_onset_indices:
+        return results, onset_indices_per_src_raw
     return results
 
 
@@ -1019,6 +1039,7 @@ def run_gauntlet(data_dir: Path) -> dict:
         tol=1e-9,
     )
     log.info("  Reconstruction cross-check PASSED (all means match stored to 1e-9)")
+    # Note: run_gauntlet does not need onset_indices_per_src — only P3b uses them.
 
     # ---- Two-sided premium n ----
     two_sided_n = int(episodes_m["two_sided"].sum()) if "two_sided" in episodes_m.columns else 0
@@ -1672,6 +1693,695 @@ def write_markdown(results: dict, output_path: Path, ledger_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# P3b — Routing placebo leg
+# ---------------------------------------------------------------------------
+
+# SEED for all P3b randomness — matches top-level SEED per registration.
+P3B_SEED = SEED  # 20260704, 200 draws per §2 S4 / adjudication R2
+
+
+def _reconstruct_routing_real_onset_indices(
+    panel_m: pd.DataFrame,
+    rotation_groups_path: Path,
+    graph_m_routing_config: dict,
+) -> dict[str, list[int]]:
+    """Return per-source real onset indices (integer positions into panel_m's date axis).
+
+    Mirrors _reconstruct_routing_onset_outcomes's onset detection exactly, but
+    returns only the onset indices (not outcomes) — used by the placebo sampler
+    to build the exclusion mask.
+
+    Returns
+    -------
+    dict: src_id → list of integer onset indices into the panel_m date axis
+    """
+    with open(rotation_groups_path) as f:
+        rg = json.load(f)
+    complexes = {c["id"]: c["members"] for c in rg["complexes"]}
+
+    cfg = graph_m_routing_config
+    accel_thresh = cfg["accel_z_thresh"]
+    confirm_k = cfg["confirm_k"]
+    confirm_m = cfg["confirm_m"]
+
+    accel_z_wide = panel_m["accel_z"].unstack(level="node") if "accel_z" in panel_m.columns else pd.DataFrame()
+    if accel_z_wide.empty:
+        return {}
+
+    complex_accel: dict[str, pd.Series] = {}
+    for cid, members in complexes.items():
+        avail = [m for m in members if m in accel_z_wide.columns]
+        if avail:
+            complex_accel[cid] = accel_z_wide[avail].mean(axis=1, skipna=True)
+
+    onset_indices_per_src: dict[str, list[int]] = {}
+
+    for src_id, src_accel in complex_accel.items():
+        accel_arr = src_accel.values
+        n = len(accel_arr)
+
+        roll5 = np.full(n, np.nan)
+        for i in range(4, n):
+            window = accel_arr[i - 4: i + 1]
+            valid = window[~np.isnan(window)]
+            if len(valid) >= 3:
+                roll5[i] = float(valid.mean())
+
+        confirm_flags = np.zeros(n, dtype=bool)
+        for i in range(confirm_m - 1, n):
+            window = accel_arr[i - confirm_m + 1: i + 1]
+            below = int(np.sum(window < accel_thresh))
+            if below >= confirm_k:
+                confirm_flags[i] = True
+
+        onset_indices: list[int] = []
+        in_outflow = False
+        for i in range(1, n):
+            if confirm_flags[i] and not np.isnan(roll5[i]) and roll5[i] < accel_thresh:
+                if not in_outflow:
+                    onset_indices.append(i)
+                    in_outflow = True
+            else:
+                if not np.isnan(roll5[i]) and roll5[i] >= -0.5:
+                    in_outflow = False
+
+        if onset_indices:
+            onset_indices_per_src[src_id] = onset_indices
+
+    return onset_indices_per_src
+
+
+def _sample_routing_placebo_cell(
+    src_id: str,
+    dest_id: str,
+    regime_label: str,
+    fwd_windows: list[int],
+    real_onset_indices: list[int],
+    n_panel: int,
+    vix_arr: np.ndarray,
+    dest_rs_arr: np.ndarray,
+    high_vix_thresh: float,
+    n_draws: int,
+    exclusion_zone: int,
+    rng: np.random.Generator,
+    cell_n: int | None = None,
+    return_per_draw_counts: bool = False,
+    resample_retry_cap: int = 20,
+) -> "dict[int, np.ndarray] | tuple[dict[int, np.ndarray], dict[int, np.ndarray], int]":
+    """Draw placebo means for one (src, dest, regime) cell.
+
+    Convention: the hypothesized direction for each routing cell is the sign of
+    the real cell mean as stored in graph_m.json (positive = destination RS
+    rises after source onset; negative = destination RS falls).  PASS rule G1-routing:
+    real cell mean > 95th percentile of its 200 placebo means regardless of sign
+    (i.e. if the real mean is negative, the placebo distribution's 95th pctile must
+    be BELOW the real mean, meaning even the high end of the null exceeds the real
+    — which would fail).  Concretely: pass = real_mean > placebo_p95 where the
+    p95 is the 95th percentile of 200 unsigned draw means.  Sign convention
+    is stated here for auditors: no direction adjustment is applied to routing RS
+    changes (unlike episode DA means); the raw RS change sign is used, and the
+    PASS rule is always real > placebo_p95.
+
+    FIX 2 (count matching per registration G1): pseudo-onsets are sampled ONLY from
+    dates that satisfy the cell's regime condition (vix_pctile >= high_vix_thresh for
+    high_vix cells; < threshold for low_vix cells), and the sample size per draw
+    is ``cell_n`` — the cell's regime-filtered REAL event count from graph_m.json,
+    NOT the source's total onset count.  This mirrors what G1 says: "same number of
+    pseudo-onset dates as real episodes" where "real episodes" means the episodes
+    that actually contributed to THIS cell.
+
+    FIX 3 (hollow-test instrumentation): when ``return_per_draw_counts=True`` the
+    function also returns per-draw sampled counts (before NaN/forward-lookup filtering)
+    so that tests can assert each draw's count equals ``cell_n``.  The mutation that
+    this kills: if cell_n were replaced by len(real_onset_indices) (total source
+    onsets, ignoring regime), the per-draw count would equal the larger total count
+    rather than cell_n, causing the assertion to fail for any cell where the regime
+    filters out some onsets.
+
+    FIX 5 (guarantee 200 valid draws): for each draw, if the regime-filtered valid
+    pool is non-empty but produces a NaN result (e.g. all forward-lookups go past the
+    end of the panel), the sampler resamples up to ``resample_retry_cap`` times.
+    The returned arrays have length n_draws.  Draws that remain NaN after all retries
+    count towards the effective_draw_count only if they produced a non-NaN value;
+    the caller uses effective_draw_count to flag ``insufficient_placebo`` cells.
+
+    Parameters
+    ----------
+    real_onset_indices : list[int]
+        Integer positions (into the panel_m date axis) of REAL source onsets
+        (BEFORE regime filtering).  Used to build the ±exclusion_zone exclusion
+        mask for pseudo-onset sampling.
+    cell_n : int | None
+        Regime-filtered real event count for this specific (src, dest, regime)
+        cell from graph_m.json.  When provided, each draw samples exactly
+        ``cell_n`` pseudo-onsets from regime-matching valid positions.
+        When None, falls back to len(real_onset_indices) (old behaviour — not
+        used in production, but retained for backward-compatible callers in tests).
+    n_panel : int
+        Length of the panel_m date axis.
+    vix_arr : np.ndarray
+        1-D array of vix_pctile values aligned to panel_m dates (length n_panel).
+    dest_rs_arr : np.ndarray
+        1-D array of destination complex RS aligned to panel_m dates.
+    n_draws : int
+        Number of placebo draws (200 per spec).
+    exclusion_zone : int
+        Sessions to exclude on each side of each real onset (10 per spec).
+    rng : np.random.Generator
+        Seeded generator (caller manages seed).
+    return_per_draw_counts : bool
+        When True, also return per-draw sampled counts (FIX 3).
+    resample_retry_cap : int
+        Max extra resampling attempts per draw when a draw produces NaN (FIX 5).
+
+    Returns
+    -------
+    When return_per_draw_counts=False (default):
+        dict: {h: np.ndarray of length n_draws}
+    When return_per_draw_counts=True:
+        tuple(draw_means, per_draw_counts, effective_draw_count)
+        where per_draw_counts: {h: np.ndarray[int]} of per-draw sampled counts
+        and effective_draw_count: int = number of non-NaN draws for first h.
+    """
+    vix_cond = (regime_label == "high_vix")
+
+    if len(real_onset_indices) == 0:
+        empty = {w: np.full(n_draws, np.nan) for w in fwd_windows}
+        if return_per_draw_counts:
+            return empty, {w: np.zeros(n_draws, dtype=int) for w in fwd_windows}, 0
+        return empty
+
+    # Build exclusion mask: ±exclusion_zone around each real onset (all onsets, pre-regime)
+    excl = np.zeros(n_panel, dtype=bool)
+    for oi in real_onset_indices:
+        lo = max(0, oi - exclusion_zone)
+        hi = min(n_panel - 1, oi + exclusion_zone)
+        excl[lo: hi + 1] = True
+
+    # FIX 2: valid pool is restricted to regime-matching, non-excluded positions
+    regime_mask = np.zeros(n_panel, dtype=bool)
+    for idx in range(n_panel):
+        vix_val = float(vix_arr[idx]) if idx < len(vix_arr) else np.nan
+        if not np.isnan(vix_val):
+            is_high = vix_val >= high_vix_thresh
+            if is_high == vix_cond:
+                regime_mask[idx] = True
+        # If VIX is NaN, include the position (VIX unknown → cannot exclude on regime alone)
+        # This mirrors the real-onset handling in _reconstruct_routing_onset_outcomes
+        elif np.isnan(vix_val):
+            regime_mask[idx] = True
+
+    valid_indices = np.where(~excl & regime_mask)[0]
+
+    if len(valid_indices) == 0:
+        empty = {w: np.full(n_draws, np.nan) for w in fwd_windows}
+        if return_per_draw_counts:
+            return empty, {w: np.zeros(n_draws, dtype=int) for w in fwd_windows}, 0
+        return empty
+
+    # FIX 2: use cell_n (regime-filtered real count) as draw sample size
+    # If cell_n not provided, fall back to total source onsets (backward-compat only)
+    draw_n = cell_n if cell_n is not None and cell_n > 0 else len(real_onset_indices)
+
+    draw_means: dict[int, list[float]] = {w: [] for w in fwd_windows}
+    per_draw_cnt: dict[int, list[int]] = {w: [] for w in fwd_windows}
+
+    for draw_i in range(n_draws):
+        # Sample draw_n pseudo-onset indices from regime-valid, non-excluded positions
+        n_valid = len(valid_indices)
+        if n_valid >= draw_n:
+            pseudo_indices = rng.choice(valid_indices, size=draw_n, replace=False)
+        else:
+            pseudo_indices = rng.choice(valid_indices, size=draw_n, replace=True)
+
+        for hw in fwd_windows:
+            cell_vals: list[float] = []
+            for pseudo_i in pseudo_indices:
+                rs_at = dest_rs_arr[pseudo_i] if pseudo_i < len(dest_rs_arr) else np.nan
+                if np.isnan(rs_at):
+                    continue
+                fwd_i = pseudo_i + hw
+                if fwd_i >= len(dest_rs_arr) or np.isnan(dest_rs_arr[fwd_i]):
+                    continue
+                cell_vals.append(dest_rs_arr[fwd_i] - rs_at)
+
+            # FIX 3: record count of successful pseudo-onsets in this draw
+            per_draw_cnt[hw].append(len(cell_vals))
+
+            if cell_vals:
+                draw_means[hw].append(float(np.mean(cell_vals)))
+            else:
+                # FIX 5: resample on empty draw — retry up to resample_retry_cap times
+                retried = False
+                for _retry in range(resample_retry_cap):
+                    n_retry = n_valid if n_valid <= draw_n else draw_n
+                    retry_indices = rng.choice(valid_indices, size=n_retry, replace=(n_valid < draw_n))
+                    retry_vals: list[float] = []
+                    for pi in retry_indices:
+                        rs_at2 = dest_rs_arr[pi] if pi < len(dest_rs_arr) else np.nan
+                        if np.isnan(rs_at2):
+                            continue
+                        fwd_i2 = pi + hw
+                        if fwd_i2 >= len(dest_rs_arr) or np.isnan(dest_rs_arr[fwd_i2]):
+                            continue
+                        retry_vals.append(dest_rs_arr[fwd_i2] - rs_at2)
+                    if retry_vals:
+                        # Replace the last entry in per_draw_cnt with the retry count
+                        per_draw_cnt[hw][-1] = len(retry_vals)
+                        draw_means[hw].append(float(np.mean(retry_vals)))
+                        retried = True
+                        break
+                if not retried:
+                    draw_means[hw].append(np.nan)
+
+    result_arrays = {w: np.array(draw_means[w], dtype=float) for w in fwd_windows}
+    count_arrays = {w: np.array(per_draw_cnt[w], dtype=int) for w in fwd_windows}
+
+    if return_per_draw_counts:
+        first_h = fwd_windows[0]
+        effective = int(np.sum(~np.isnan(result_arrays[first_h])))
+        return result_arrays, count_arrays, effective
+
+    return result_arrays
+
+
+def run_routing_placebo(data_dir: Path) -> dict:
+    """Run the P3b routing placebo leg per adjudication R2 / prereg §2 S4.
+
+    Returns a dict written to data/oracle/gauntlet/p3b_routing_placebo.json:
+      {
+        "seed": 20260704,
+        "n_draws": 200,
+        "exclusion_zone": 10,
+        "cells": {
+          "<trial_id>": {
+            "src": ..., "dest": ..., "regime": ..., "horizon_d": ...,
+            "n_real": ...,
+            "real_mean": ...,
+            "placebo_mean": ...,    # mean of placebo draw means
+            "placebo_p95": ...,     # 95th pctile of 200 placebo means
+            "effective_draw_count": ..., # non-NaN draws (FIX 5)
+            "insufficient_placebo": ..., # bool: True if effective < n_draws (FIX 5)
+            "g1_routing_pass": ..., # bool: real_mean > placebo_p95
+          }
+        },
+        "summary": {
+          "n_sufficient_cells": 90,
+          "n_34_bh_rejected_cells": 34,
+          "n_34_pass_placebo": ...,
+          "n_90_pass_placebo": ...,
+        }
+      }
+
+    FIX 1 (reproducibility): hard-fails with explicit FileNotFoundError when
+    either input file (p3_trial_ledger.json or p3_results.json) is missing.
+    Neither file is silently degraded — the run must be aborted and the caller
+    must regenerate the missing file first.  Regeneration commands:
+      python scripts/oracle_gauntlet_p3.py --data-dir <DATA_DIR>
+    (that produces both p3_trial_ledger.json and p3_results.json).
+
+    FIX 4 (deduplication): onset detection is performed by
+    _reconstruct_routing_onset_outcomes with return_onset_indices=True; the
+    separate _reconstruct_routing_real_onset_indices function is no longer
+    called from this path.  Per-cell real means from the reconstructed outcomes
+    are asserted to match graph_m.json to 1e-9 via _verify_routing_reconstruction.
+    """
+    t0 = time.time()
+    rng = np.random.default_rng(P3B_SEED)
+
+    oracle_dir = data_dir / "oracle"
+    gauntlet_dir = oracle_dir / "gauntlet"
+    gauntlet_dir.mkdir(parents=True, exist_ok=True)
+
+    # FIX 1(a): hard-fail when required input files are missing
+    ledger_path = gauntlet_dir / "p3_trial_ledger.json"
+    results_path = gauntlet_dir / "p3_results.json"
+    if not ledger_path.exists():
+        raise FileNotFoundError(
+            f"P3b HARD-FAIL: required input p3_trial_ledger.json not found at "
+            f"{ledger_path}. "
+            "This file must be committed to git or regenerated before running the "
+            "placebo leg. Regeneration command:\n"
+            f"  python scripts/oracle_gauntlet_p3.py --data-dir {data_dir}\n"
+            "See research/ORACLE_GAUNTLET_P3_RESULTS.md §P3b for details."
+        )
+    if not results_path.exists():
+        raise FileNotFoundError(
+            f"P3b HARD-FAIL: required input p3_results.json not found at "
+            f"{results_path}. "
+            "This file must be regenerated before running the placebo leg. "
+            "Regeneration command:\n"
+            f"  python scripts/oracle_gauntlet_p3.py --data-dir {data_dir}\n"
+            "See research/ORACLE_GAUNTLET_P3_RESULTS.md §P3b for details."
+        )
+
+    log.info("P3b: Loading panel_m and graph_m for routing placebo…")
+    panel_m = pd.read_parquet(oracle_dir / "panel_m.parquet")
+    with open(oracle_dir / "graph_m.json") as f:
+        graph_m = json.load(f)
+
+    rotation_groups_path = oracle_dir / "rotation_groups.json"
+    routing_m = graph_m.get("routing", {})
+    routing_m_cfg = routing_m.get("_config", {})
+
+    fwd_windows: list[int] = routing_m_cfg.get("fwd_windows", [5, 10, 15])
+    high_vix_thresh: float = routing_m_cfg.get("high_vix_thresh", 0.6)
+    exclusion_zone: int = 10  # ±10 sessions per registration
+    n_draws: int = 200        # 200 draws per registration
+
+    # ---- Build panel_m wide arrays ----
+    with open(rotation_groups_path) as f:
+        rg_json = json.load(f)
+    complexes = {c["id"]: c["members"] for c in rg_json["complexes"]}
+
+    rs_wide = panel_m["rs"].unstack(level="node") if "rs" in panel_m.columns else pd.DataFrame()
+    vix_wide = panel_m["vix_pctile"].unstack(level="node") if "vix_pctile" in panel_m.columns else pd.DataFrame()
+
+    if rs_wide.empty:
+        raise ValueError("panel_m missing 'rs' column")
+
+    n_panel = len(rs_wide)
+
+    # VIX series: use the first column (same convention as _reconstruct_routing_onset_outcomes)
+    vix_arr: np.ndarray = vix_wide.iloc[:, 0].to_numpy(dtype=float) if not vix_wide.empty else np.full(n_panel, np.nan)
+
+    # Per-complex RS arrays
+    complex_rs_arr: dict[str, np.ndarray] = {}
+    for cid, members in complexes.items():
+        avail = [m for m in members if m in rs_wide.columns]
+        if avail:
+            complex_rs_arr[cid] = rs_wide[avail].mean(axis=1, skipna=True).to_numpy(dtype=float)
+
+    # ---- FIX 4: Reconstruct onset outcomes AND indices in one pass (no duplicate detection) ----
+    log.info("P3b: Reconstructing onset outcomes + onset indices from panel_m (FIX 4)…")
+    onset_outcomes_m, onset_indices_per_src = _reconstruct_routing_onset_outcomes(
+        panel_m, rotation_groups_path, routing_m_cfg, return_onset_indices=True
+    )
+    log.info("P3b: Verifying reconstruction means against stored graph_m.json means…")
+    _verify_routing_reconstruction(
+        onset_outcomes_m,
+        routing_m,
+        fwd_windows=fwd_windows,
+        tol=1e-9,
+    )
+    log.info("  P3b reconstruction cross-check PASSED (all means match stored to 1e-9)")
+
+    # ---- Enumerate sufficient cells from graph_m ----
+    routing_cells_m = _enumerate_routing_cells(routing_m)
+    log.info(f"P3b: {len(routing_cells_m)} sufficient cell×horizon trials to placebo-test…")
+
+    # ---- Load trial ledger to identify 34 BH-rejected cells ----
+    with open(ledger_path) as f:
+        ledger = json.load(f)
+    bh_rejected_ids: set[str] = {
+        t["trial_id"]
+        for t in ledger.get("trials", [])
+        if t.get("bh_rejected") and t.get("type") == "routing"
+    }
+    log.info(f"P3b: {len(bh_rejected_ids)} BH-rejected routing trials from ledger")
+
+    # ---- Load stored results to get per-trial real means ----
+    with open(results_path) as f:
+        p3_res = json.load(f)
+    stored_routing: dict[str, dict] = p3_res.get("routing", {})
+
+    # ---- Run placebo for each sufficient cell ----
+    cells_out: dict[str, dict] = {}
+
+    for rc in routing_cells_m:
+        path = rc["path"]
+        hw = rc["horizon_d"]
+        trial_id = f"routing_{path}_{hw}d"
+
+        # Parse src/dest/regime from path (format: "src_id/dest_id/regime_label")
+        parts = path.split("/")
+        if len(parts) != 3:
+            log.warning(f"P3b: unexpected path format {path!r}, skipping")
+            continue
+        src_id, dest_id, regime_label = parts
+
+        # FIX 4: use raw onset indices from the shared detection pass (not a separate call)
+        real_onsets = onset_indices_per_src.get(src_id, [])
+        n_src_onsets = len(real_onsets)  # total source onsets (all regimes)
+
+        # FIX 2: get cell_n — the regime-filtered real event count from graph_m
+        graph_cell = (
+            routing_m.get(src_id, {})
+            .get(dest_id, {})
+            .get(regime_label, {})
+        )
+        cell_n_graph: int | None = graph_cell.get("n")
+
+        # Destination RS array
+        dest_rs = complex_rs_arr.get(dest_id)
+        if dest_rs is None:
+            log.warning(f"P3b: no RS data for dest {dest_id!r}, skipping")
+            continue
+
+        # Real cell mean from stored results (preferred) or graph_m
+        stored_cell = stored_routing.get(trial_id, {})
+        real_mean = stored_cell.get("mean_fwd_rs")
+        if real_mean is None:
+            real_mean = graph_cell.get(f"mean_fwd_rs_{hw}d")
+
+        if real_mean is None:
+            log.warning(f"P3b: no real mean for {trial_id}, skipping")
+            continue
+
+        log.info(
+            f"P3b: {trial_id} "
+            f"(n_src_onsets={n_src_onsets}, cell_n={cell_n_graph}, real_mean={real_mean:.6f})…"
+        )
+
+        # FIX 4 assertion: per-cell reconstructed mean must match graph_m to 1e-9
+        # (mirrors _verify_routing_reconstruction; belt-and-suspenders check for P3b path)
+        recon_per_h = (
+            onset_outcomes_m.get(src_id, {})
+            .get(dest_id, {})
+            .get(regime_label, {})
+            .get(hw, [])
+        )
+        if len(recon_per_h) > 0:
+            recon_mean = float(np.mean(recon_per_h))
+            stored_mean_hw = graph_cell.get(f"mean_fwd_rs_{hw}d")
+            if stored_mean_hw is not None and abs(recon_mean - stored_mean_hw) > 1e-9:
+                raise ValueError(
+                    f"P3b reconstruction mismatch for {trial_id}: "
+                    f"reconstructed={recon_mean:.15f} stored={stored_mean_hw:.15f} "
+                    f"diff={abs(recon_mean - stored_mean_hw):.3e}. "
+                    "STOP: cell means must match graph_m to 1e-9."
+                )
+
+        # FIX 2+5: draw placebo with cell_n (regime-filtered count), resample retries
+        draw_means_by_hw, _, effective_draws = _sample_routing_placebo_cell(
+            src_id=src_id,
+            dest_id=dest_id,
+            regime_label=regime_label,
+            fwd_windows=[hw],
+            real_onset_indices=real_onsets,
+            n_panel=n_panel,
+            vix_arr=vix_arr,
+            dest_rs_arr=dest_rs,
+            high_vix_thresh=high_vix_thresh,
+            n_draws=n_draws,
+            exclusion_zone=exclusion_zone,
+            rng=rng,
+            cell_n=cell_n_graph,
+            return_per_draw_counts=True,
+            resample_retry_cap=20,
+        )
+
+        draw_arr = draw_means_by_hw[hw]
+        valid_draws = draw_arr[~np.isnan(draw_arr)]
+        placebo_p95 = float(np.percentile(valid_draws, 95)) if len(valid_draws) > 0 else np.nan
+        placebo_mean = float(np.mean(valid_draws)) if len(valid_draws) > 0 else np.nan
+
+        # FIX 5: mark cells that cannot reach 200 valid draws
+        insufficient_placebo = bool(effective_draws < n_draws)
+        if insufficient_placebo:
+            log.warning(
+                f"P3b: {trial_id} has only {effective_draws}/{n_draws} valid draws — "
+                "marking as insufficient_placebo."
+            )
+
+        # G1-routing PASS rule: real_mean > placebo_p95 (one-sided, 95th pctile of null).
+        # Sign convention: we compare the raw real_mean directly to the placebo 95th pctile.
+        # For a cell where the hypothesized direction is positive (real_mean > 0), PASS means
+        # the real positive effect exceeds the top of the null distribution.  For a cell where
+        # real_mean < 0, PASS would require the null's 95th pctile to also be below real_mean,
+        # which is extremely unlikely — such cells will almost always FAIL, correctly flagging
+        # that even high-VIX the effect direction is not "positive routing" but negative RS-change.
+        # FIX 5: cells with insufficient_placebo always FAIL (p95 based on thin draws is unreliable).
+        if insufficient_placebo:
+            g1_pass = False
+        else:
+            g1_pass = bool(float(real_mean) > placebo_p95) if not np.isnan(placebo_p95) else False
+
+        cells_out[trial_id] = {
+            "src": src_id,
+            "dest": dest_id,
+            "regime": regime_label,
+            "horizon_d": hw,
+            "n_real": cell_n_graph if cell_n_graph is not None else n_src_onsets,
+            "real_mean": float(real_mean),
+            "effective_draw_count": effective_draws,
+            "insufficient_placebo": insufficient_placebo,
+            "placebo_mean": float(placebo_mean) if not np.isnan(placebo_mean) else None,
+            "placebo_p95": float(placebo_p95) if not np.isnan(placebo_p95) else None,
+            "g1_routing_pass": g1_pass,
+            "was_bh_rejected": trial_id in bh_rejected_ids,
+        }
+
+    # ---- Summary ----
+    n_sufficient = len(cells_out)
+    n_pass_total = sum(1 for c in cells_out.values() if c["g1_routing_pass"])
+    n_insufficient = sum(1 for c in cells_out.values() if c.get("insufficient_placebo"))
+
+    bh_cells = {k: v for k, v in cells_out.items() if v.get("was_bh_rejected")}
+    n_bh = len(bh_cells)
+    n_bh_pass = sum(1 for c in bh_cells.values() if c["g1_routing_pass"])
+
+    # FIX 5: report effective draw statistics across all cells
+    effective_counts = [c.get("effective_draw_count", 0) for c in cells_out.values()]
+    min_effective = int(min(effective_counts)) if effective_counts else 0
+    max_effective = int(max(effective_counts)) if effective_counts else 0
+    mean_effective = float(np.mean(effective_counts)) if effective_counts else 0.0
+
+    summary = {
+        "n_sufficient_cells": n_sufficient,
+        "n_34_bh_rejected_cells": n_bh,
+        "n_34_pass_placebo": n_bh_pass,
+        "n_90_pass_placebo": n_pass_total,
+        "n_insufficient_placebo": n_insufficient,
+        "effective_draw_count_min": min_effective,
+        "effective_draw_count_max": max_effective,
+        "effective_draw_count_mean": round(mean_effective, 2),
+    }
+
+    output = {
+        "spec_version": "ORACLE_GAUNTLET_P3_PREREG.md §2 S4 / adjudication R2",
+        "seed": P3B_SEED,
+        "n_draws": n_draws,
+        "exclusion_zone": exclusion_zone,
+        "timing_s": round(time.time() - t0, 2),
+        "cells": cells_out,
+        "summary": summary,
+    }
+
+    out_path = gauntlet_dir / "p3b_routing_placebo.json"
+    with open(out_path, "w") as f:
+        json.dump(output, f, indent=2, default=str)
+    log.info(f"P3b: Written → {out_path}")
+    log.info(
+        f"P3b summary: {n_bh_pass}/{n_bh} of BH-rejected cells pass placebo; "
+        f"{n_pass_total}/{n_sufficient} of all sufficient cells pass placebo"
+    )
+
+    return output
+
+
+def append_p3b_to_results_md(
+    p3b_output: dict,
+    md_path: Path,
+) -> None:
+    """Append the 'P3b — Routing placebo' section to ORACLE_GAUNTLET_P3_RESULTS.md.
+
+    Adds:
+    1. A table of the 34 previously-BH-rejected cells with placebo verdicts.
+    2. Totals (how many of 90 sufficient cells pass placebo).
+    3. 'PENDING ADJUDICATION' only — no verdict language per spec.
+    """
+    cells = p3b_output.get("cells", {})
+    summary = p3b_output.get("summary", {})
+    n_draws = p3b_output.get("n_draws", 200)
+    seed = p3b_output.get("seed", P3B_SEED)
+    timing = p3b_output.get("timing_s", "?")
+
+    def _fmtv(v, pct: bool = False) -> str:
+        if v is None or (isinstance(v, float) and np.isnan(v)):
+            return "—"
+        if pct:
+            return f"{v * 100:.3f}%"
+        return f"{v:.6f}"
+
+    lines = [
+        "",
+        "---",
+        "",
+        "## P3b — Routing placebo",
+        "",
+        f"**Seed:** {seed}  **Draws:** {n_draws}  "
+        f"**Exclusion zone:** ±10 sessions  "
+        f"**Runtime:** {timing}s",
+        "",
+        "> Verdicts in this section are left as **PENDING ADJUDICATION**.",
+        "> PASS rule (G1-routing): real cell mean > 95th percentile of 200 placebo means",
+        "> (one-sided; sign = sign of real mean as stored in graph_m.json — see code comment).",
+        "> FIX 2: pseudo-onsets sampled from regime-matching dates, count-matched to cell's",
+        "> regime-filtered real event count (cell_n from graph_m), not total source onset count.",
+        "> FIX 5: cells with fewer than 200 valid draws are marked insufficient_placebo and",
+        "> automatically fail G1-routing regardless of their placebo p95.",
+        "",
+        "### 34 previously BH-rejected cells — placebo verdicts",
+        "",
+        "| trial_id | n_real | eff_draws | real_mean | placebo_mean | placebo_p95 | insuff | G1-routing pass |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+
+    # BH-rejected cells, sorted by trial_id
+    bh_cells = {k: v for k, v in cells.items() if v.get("was_bh_rejected")}
+    for tid in sorted(bh_cells.keys()):
+        c = bh_cells[tid]
+        insuff = "Y" if c.get("insufficient_placebo") else "N"
+        lines.append(
+            f"| {tid} "
+            f"| {c.get('n_real', 0)} "
+            f"| {c.get('effective_draw_count', n_draws)} "
+            f"| {_fmtv(c.get('real_mean'), pct=True)} "
+            f"| {_fmtv(c.get('placebo_mean'), pct=True)} "
+            f"| {_fmtv(c.get('placebo_p95'), pct=True)} "
+            f"| {insuff} "
+            f"| {'✓' if c.get('g1_routing_pass') else '✗'} |"
+        )
+
+    n_bh = summary.get("n_34_bh_rejected_cells", len(bh_cells))
+    n_bh_pass = summary.get("n_34_pass_placebo", 0)
+    n_total = summary.get("n_sufficient_cells", len(cells))
+    n_total_pass = summary.get("n_90_pass_placebo", 0)
+    n_insuff = summary.get("n_insufficient_placebo", 0)
+
+    lines += [
+        "",
+        f"**Of the {n_bh} BH-rejected cells: {n_bh_pass} pass placebo.**",
+        "",
+        "### All sufficient cells — placebo summary",
+        "",
+        "| Metric | Value |",
+        "|---|---|",
+        f"| Sufficient cells tested | {n_total} |",
+        f"| Pass G1-routing | {n_total_pass} |",
+        f"| Fail G1-routing | {n_total - n_total_pass} |",
+        f"| Insufficient placebo (< {n_draws} valid draws) | {n_insuff} |",
+        f"| Effective draw count min | {summary.get('effective_draw_count_min', n_draws)} |",
+        f"| Effective draw count max | {summary.get('effective_draw_count_max', n_draws)} |",
+        f"| Effective draw count mean | {summary.get('effective_draw_count_mean', n_draws)} |",
+        "",
+        "> PENDING ADJUDICATION",
+        "",
+    ]
+
+    # Append to existing MD
+    existing = md_path.read_text() if md_path.exists() else ""
+    # Remove any previously appended P3b section
+    marker = "\n---\n\n## P3b — Routing placebo"
+    if marker in existing:
+        existing = existing[:existing.index(marker)]
+
+    md_path.write_text(existing.rstrip() + "\n" + "\n".join(lines))
+    log.info(f"P3b: Appended results section → {md_path}")
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -1688,11 +2398,43 @@ def main() -> None:
         default="data",
         help="Path to data/ directory (default: data/)",
     )
+    parser.add_argument(
+        "--routing-placebo",
+        action="store_true",
+        default=False,
+        help=(
+            "Run the P3b routing placebo leg (§2 S4 / adjudication R2). "
+            "200 draws, seed 20260704, ±10-session exclusion zone. "
+            "Writes data/oracle/gauntlet/p3b_routing_placebo.json and appends "
+            "a 'P3b — Routing placebo' section to ORACLE_GAUNTLET_P3_RESULTS.md. "
+            "DEFAULT OFF — existing run modes are unchanged when this flag is absent."
+        ),
+    )
     args = parser.parse_args()
 
     data_dir = Path(args.data_dir)
     if not data_dir.exists():
         sys.exit(f"data-dir not found: {data_dir}")
+
+    if args.routing_placebo:
+        # P3b mode — routing placebo only; does NOT re-run the full gauntlet.
+        p3b_output = run_routing_placebo(data_dir)
+
+        gauntlet_dir = data_dir / "oracle" / "gauntlet"
+        md_path = Path("research") / "ORACLE_GAUNTLET_P3_RESULTS.md"
+        append_p3b_to_results_md(p3b_output, md_path)
+
+        summary = p3b_output.get("summary", {})
+        print(
+            f"\nP3b done.  "
+            f"{summary.get('n_34_pass_placebo', 0)}/{summary.get('n_34_bh_rejected_cells', 0)} "
+            f"of BH-rejected cells pass placebo;  "
+            f"{summary.get('n_90_pass_placebo', 0)}/{summary.get('n_sufficient_cells', 0)} "
+            f"of all sufficient cells pass placebo."
+        )
+        print(f"Output:  {gauntlet_dir / 'p3b_routing_placebo.json'}")
+        print(f"Report:  {md_path}")
+        return
 
     results = run_gauntlet(data_dir)
 
