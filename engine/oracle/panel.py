@@ -30,12 +30,17 @@ HONESTY FRAMING
   UI surface that shows Tier-M numbers.  The baskets carry PIT membership
   (added dates per member) which is honored — but basket-level prices begin
   2023-05-09 (declared hindsight per the masterplan census).
-* GICS sector labels applied backward via data/breadth/constituents.parquet
-  (the "broad" universe) introduce mild look-ahead bias for the per-member
-  breadth/cohesion legs: a company reclassified after the fact carries its
-  *current* sector label back in time.  This is noted in the manifest under
-  ``sector_label_caveat``.  For Tier-S ETF-level legs it is irrelevant;
-  only the within-sector member legs are affected.
+* GICS sector labels come from the UNION of the current sp500/sp400/sp600
+  constituent files (data/{breadth,midcap_breadth,smallcap_breadth}/
+  constituents.parquet — 1,503 labeled names, 99.1% of ACTIVE PIT-spine
+  tickers).  Two declared biases for the per-member breadth/cohesion legs:
+  (a) labels-applied-backward — a reclassified company carries its *current*
+  sector back in time; (b) label survivorship — names that left the index
+  universe before the label snapshot have no label and are EXCLUDED from
+  member legs (concentrated in the earliest panel years; a PIT sector-label
+  map, e.g. from Polygon reference data, is the follow-up that closes this).
+  Noted in the manifest under ``sector_label_caveat``.  Tier-S ETF-level
+  legs are unaffected either way.
 * All per-node-day columns are CAUSAL: rolling windows use only data ≤ t.
   The no-lookahead invariant is enforced by the test suite
   (tests/test_oracle_panel.py::test_no_lookahead).
@@ -346,11 +351,6 @@ def _build_regime(
     })
 
 
-def _attach_regime(panel: pd.DataFrame, regime: pd.DataFrame) -> pd.DataFrame:
-    """Join regime columns onto a MultiIndex (node, date) panel by date."""
-    return panel.join(regime, on="date", how="left")
-
-
 # ---------------------------------------------------------------------------
 # Tier S — Survivorship-clean spine
 # ---------------------------------------------------------------------------
@@ -385,6 +385,27 @@ ETF_TO_SECTOR: dict[str, str] = {
     "XLRE": "Real Estate",
     "XLB": "Materials",
 }
+
+
+def pit_union_mask(
+    intervals: list[tuple[pd.Timestamp, pd.Timestamp]],
+    index: pd.DatetimeIndex,
+) -> pd.Series:
+    """True on days inside ANY of a ticker's membership intervals.
+
+    NaT end_date = still active.  A ticker that was added, dropped, and
+    re-added must be live in BOTH active windows and masked in the gap —
+    honoring only the first stored interval mismasks 559 of the 2,589
+    PIT-spine tickers (the review-flagged iloc[0] bug)."""
+    mask = pd.Series(False, index=index)
+    for start_d, end_d in intervals:
+        m = pd.Series(True, index=index)
+        if pd.notna(start_d):
+            m &= index >= start_d
+        if pd.notna(end_d):
+            m &= index <= end_d
+        mask |= m
+    return mask
 
 
 def build_panel_s(
@@ -462,32 +483,30 @@ def build_panel_s(
     bench_ret = etf_rets.median(axis=1)
 
     # ---- Build ticker→sector map from constituents ----
-    # constituents.index = symbol, columns include 'sector'
+    # constituents = the UNION of the current sp500/sp400/sp600 constituent
+    # files (index=symbol, column 'sector'). Coverage measured 2026-07-04:
+    # 99.1% of ACTIVE PIT-spine tickers labeled (1,493/1,506). Names that left
+    # the index universe before the label snapshot carry no label and are
+    # therefore EXCLUDED from member legs — a label-survivorship bias
+    # concentrated in the earliest panel years, declared in the manifest.
+    # ETF-level columns (ret/rs/vel/accel) are unaffected and fully clean.
     ticker_sector: dict[str, str] = {}
     if "sector" in constituents.columns:
         ticker_sector = constituents["sector"].to_dict()
 
-    # ---- Build PIT membership per sector ----
-    # pit_membership: ticker, start_date, end_date, src
-    # end_date NaT = still active
-    def _members_active_on(sector: str, date: pd.Timestamp) -> list[str]:
-        """Return list of tickers active in ``sector`` on ``date`` per PIT data."""
-        members = []
-        for _, row in pit_membership.iterrows():
-            t = row["ticker"]
-            if ticker_sector.get(t) != sector:
-                continue
-            if pd.isna(row["start_date"]) or row["start_date"] > date:
-                continue
-            if pd.notna(row["end_date"]) and row["end_date"] < date:
-                continue
-            members.append(t)
-        return members
+    # ---- PIT membership intervals per ticker ----
+    # A ticker can enter/leave the index universe multiple times (add, drop,
+    # re-add), so masking must take the UNION of ALL its intervals — using only
+    # the first stored row mismasks every multi-interval name (559 of 2,589
+    # spine tickers have >1 interval).  end_date NaT = still active.
+    pit_intervals: dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]] = {}
+    for _, row in pit_membership.iterrows():
+        pit_intervals.setdefault(row["ticker"], []).append(
+            (row["start_date"], row["end_date"]))
 
     # Pre-compute the full set of tickers ever in each sector (for price loading)
     sector_all_tickers: dict[str, set[str]] = {s: set() for s in ETF_TO_SECTOR.values()}
-    for _, row in pit_membership.iterrows():
-        t = row["ticker"]
+    for t in pit_intervals:
         sec = ticker_sector.get(t)
         if sec and sec in sector_all_tickers:
             sector_all_tickers[sec].add(t)
@@ -550,19 +569,14 @@ def build_panel_s(
             if t in member_volume_store:
                 mv_dict[t] = member_volume_store[t].reindex(node_idx)
 
-        # Apply PIT filter: mask prices for days outside the member's active window
+        # Apply PIT filter: a member's prices count only on days inside the
+        # UNION of its membership intervals (multi-interval names: add → drop
+        # → re-add must be masked in the gap and live in BOTH active windows).
         for t in list(mc_dict.keys()):
-            rows = pit_membership[pit_membership["ticker"] == t]
-            if rows.empty:
+            intervals = pit_intervals.get(t)
+            if not intervals:
                 continue
-            row = rows.iloc[0]
-            start_d = row["start_date"]
-            end_d = row["end_date"]
-            mask = pd.Series(True, index=node_idx)
-            if pd.notna(start_d):
-                mask &= node_idx >= start_d
-            if pd.notna(end_d):
-                mask &= node_idx <= end_d
+            mask = pit_union_mask(intervals, node_idx)
             mc_dict[t] = mc_dict[t].where(mask)
             if t in mv_dict:
                 mv_dict[t] = mv_dict[t].where(mask)

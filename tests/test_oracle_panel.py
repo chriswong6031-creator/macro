@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from engine.oracle.panel import (
+    pit_union_mask,
     COLUMN_SCHEMA,
     _build_node_features,
     _build_ew_index,
@@ -144,8 +145,11 @@ class TestNoLookahead:
                                       member_closes=mc.iloc[:t],
                                       member_volume=None, node_volume=None)
 
-        # Rows ≤ t-1 must be identical in the two builds
-        shared_idx = full_t.index.intersection(full.index[: t - 5])
+        # Rows < t must be identical in the two builds — ZERO guard band:
+        # every column is trailing-causal, so truncation at t may not change
+        # ANY earlier row. A guard band would let an N-day forward peek hide
+        # inside the discarded boundary (review finding).
+        shared_idx = full_t.index.intersection(full.index[:t])
         for col in full.columns:
             if col not in full_t.columns:
                 continue
@@ -191,15 +195,19 @@ class TestNoLookahead:
             full_node = panel_full.xs(node, level="node")
             trunc_node = panel_trunc.xs(node, level="node")
             shared = full_node.index.intersection(trunc_node.index)
-            # Use only dates well before cutoff (allow rolling window warmup)
-            shared = shared[shared < cutoff - pd.Timedelta(days=5)]
+            # ZERO guard band: trailing-causal columns must match on EVERY
+            # shared row up to and including the cutoff (review finding: a
+            # discard band hides forward peeks shorter than the band).
             if shared.empty:
                 continue
-            for col in ["vel_3m", "accel_z", "persistence"]:
+            # Member-derived legs included — they run through the PIT-masking
+            # code path where the interval bug lived.
+            for col in ["vel_3m", "accel_z", "persistence",
+                        "cohesion", "cohesion_chg", "breadth_50", "turnover_z"]:
                 if col not in full_node.columns or col not in trunc_node.columns:
                     continue
-                a = full_node.loc[shared, col].values
-                b = trunc_node.loc[shared, col].values
+                a = full_node.loc[shared, col].astype(float).values
+                b = trunc_node.loc[shared, col].astype(float).values
                 mask = ~np.isnan(a) & ~np.isnan(b)
                 if mask.any():
                     np.testing.assert_allclose(
@@ -214,53 +222,56 @@ class TestNoLookahead:
 
 class TestPITMembership:
     def test_member_contributes_only_after_start_date(self, tmp_path):
-        """A member with start_date day-100 must not affect cohesion before day 100."""
+        """A member with start_date day-100 must not affect cohesion before day 100.
+
+        Uses the SAME pit_union_mask the panel build calls — no inline
+        re-implementation that could drift from the production path."""
         n = 250
         idx = pd.bdate_range("2021-01-04", periods=n, name="date")
 
-        # 3 early members (from day 0)
-        mc_dict = {f"T{i}": _make_price_series(n, seed=i) for i in range(3)}
-        # 1 late member (start_date = day 100)
-        late_member = "LATE"
-        mc_dict[late_member] = _make_price_series(n, seed=99, drift=0.01)
+        late = _make_price_series(n, seed=99, drift=0.01)
+        mask = pit_union_mask([(idx[100], pd.NaT)], idx)
+        late_masked = late.where(mask)
 
-        # Build PIT membership table
-        pit = pd.DataFrame([
-            {"ticker": f"T{i}", "start_date": pd.Timestamp("2021-01-04"),
-             "end_date": pd.NaT, "src": "sp500"}
-            for i in range(3)
-        ] + [
-            {"ticker": late_member, "start_date": idx[100],
-             "end_date": pd.NaT, "src": "sp500"}
-        ])
-
-        # Apply PIT masking as build_panel_s does it
-        for t_name in list(mc_dict.keys()):
-            rows = pit[pit["ticker"] == t_name]
-            if rows.empty:
-                continue
-            row = rows.iloc[0]
-            start_d = row["start_date"]
-            end_d = row["end_date"]
-            mask = pd.Series(True, index=idx)
-            if pd.notna(start_d):
-                mask &= idx >= start_d
-            if pd.notna(end_d):
-                mask &= idx <= end_d
-            mc_dict[t_name] = mc_dict[t_name].where(mask)
-
-        mc = pd.DataFrame(mc_dict, index=idx)
-
-        # Before day 100, LATE member must be NaN
-        late_before = mc[late_member].iloc[:100]
-        assert late_before.isna().all(), (
+        assert late_masked.iloc[:100].isna().all(), (
             "PIT violation: late member has prices before start_date"
         )
-
-        # After day 100, LATE member must have prices
-        late_after = mc[late_member].iloc[100:]
-        assert late_after.notna().any(), (
+        assert late_masked.iloc[100:].notna().any(), (
             "Late member has no prices after start_date"
+        )
+
+    def test_multi_interval_member_add_drop_readd(self, tmp_path):
+        """The review-flagged iloc[0] bug: a ticker with add → drop → re-add
+        must be live in BOTH active windows and masked in the gap.
+
+        Under the old first-interval-only masking this test FAILS: the
+        re-added window (interval 2) would be masked off entirely."""
+        n = 250
+        idx = pd.bdate_range("2021-01-04", periods=n, name="date")
+        px = _make_price_series(n, seed=7)
+
+        intervals = [
+            (idx[0], idx[80]),      # active days 0..80
+            (idx[150], pd.NaT),     # dropped 81..149, re-added from 150
+        ]
+        masked = px.where(pit_union_mask(intervals, idx))
+
+        assert masked.iloc[:81].notna().all(), "first active window lost"
+        assert masked.iloc[81:150].isna().all(), (
+            "PIT violation: member has prices in the dropped gap"
+        )
+        assert masked.iloc[150:].notna().all(), (
+            "re-added window lost — the iloc[0] bug"
+        )
+
+    def test_interval_order_does_not_matter(self, tmp_path):
+        """Stored row order must not change the mask (the old code silently
+        depended on which interval happened to be stored first)."""
+        idx = pd.bdate_range("2021-01-04", periods=100, name="date")
+        a = [(idx[0], idx[30]), (idx[60], pd.NaT)]
+        b = list(reversed(a))
+        pd.testing.assert_series_equal(
+            pit_union_mask(a, idx), pit_union_mask(b, idx)
         )
 
 

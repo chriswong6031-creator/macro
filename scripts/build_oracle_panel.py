@@ -115,7 +115,6 @@ def build_s(args: argparse.Namespace) -> pd.DataFrame:
     yahoo_dir = data_dir / "yahoo"
     massive_dir = data_dir / "massive_stock_day"
     pit_path = data_dir / "breadth" / "sp1500_pit_membership.parquet"
-    const_path = data_dir / "breadth" / "constituents.parquet"
 
     if not pit_path.exists():
         log.error("PIT membership not found: %s", pit_path)
@@ -124,11 +123,23 @@ def build_s(args: argparse.Namespace) -> pd.DataFrame:
     log.info("Loading PIT membership (%s)...", pit_path)
     pit_membership = pd.read_parquet(pit_path)
 
-    log.info("Loading constituents (%s)...", const_path)
-    constituents = (
-        pd.read_parquet(const_path) if const_path.exists()
-        else pd.DataFrame(columns=["name", "sector"])
-    )
+    # Sector labels = UNION of the three current constituent files (sp500 +
+    # sp400 + sp600) so the member legs cover the full current SP1500, not just
+    # the S&P 500 (which silently dropped 80.6% of the PIT spine — review fix).
+    # First-seen wins on the rare cross-file duplicate symbol.
+    frames = []
+    for sub in ("breadth", "midcap_breadth", "smallcap_breadth"):
+        cp = data_dir / sub / "constituents.parquet"
+        if cp.exists():
+            log.info("Loading constituents (%s)...", cp)
+            frames.append(pd.read_parquet(cp))
+        else:
+            log.warning("constituents missing: %s (label coverage shrinks)", cp)
+    if frames:
+        constituents = pd.concat(frames)
+        constituents = constituents[~constituents.index.duplicated(keep="first")]
+    else:
+        constituents = pd.DataFrame(columns=["name", "sector"])
 
     log.info("Building Tier S panel (start=%s end=%s limit=%s)...",
              args.start or "earliest", args.end or "latest", args.limit)
@@ -223,13 +234,23 @@ def write_manifest(
         },
         "column_schema": COLUMN_SCHEMA,
         "sector_label_caveat": (
-            "GICS sector labels applied from data/breadth/constituents.parquet "
-            "(current composition).  Labels-applied-backward introduce mild bias "
-            "for the per-member cohesion/breadth/turnover legs (Tier S).  "
-            "ETF-level legs are unaffected."
+            "GICS sector labels = UNION of current sp500/sp400/sp600 constituent "
+            "files (99.1% of ACTIVE PIT-spine tickers labeled at build time). "
+            "Two biases on the per-member cohesion/breadth/turnover legs: "
+            "(a) labels-applied-backward (current sector carried back in time); "
+            "(b) LABEL SURVIVORSHIP — names that left the index universe before "
+            "the label snapshot are unlabeled and excluded, concentrated in the "
+            "earliest panel years.  ETF-level legs are unaffected."
         ),
         "survivorship_note": {
-            "tier_s": "Survivorship-CLEAN: 11 real sector ETFs; PIT-SP1500 member legs.",
+            "tier_s": (
+                "ETF-level columns: survivorship-CLEAN (11 real sector ETFs, "
+                "1998→).  Member-derived legs (cohesion/breadth_50/turnover_z): "
+                "PIT membership intervals honored (union of ALL intervals per "
+                "ticker), but restricted to names labelable today (current "
+                "SP1500 union) — NOT fully survivorship-clean; see "
+                "sector_label_caveat."
+            ),
             "tier_m": (
                 "Survivorship-FLAGGED: themes_tree.json is current-only (single commit "
                 "2026-06).  Subsector and theme EW indices are reconstructed from "
