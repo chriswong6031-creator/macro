@@ -376,7 +376,7 @@
       "gating": {
         "come_back_on": "2026-10-01",
         "cadence": "quarterly",
-        "maturation": "W1 retro-derivation: (i) rebuild historical de-escalation/dislocation state series via risk_radar's full-history subscore path; (ii) recompute historical C2 fires from prices; (iii) stamp derivation='retro-recomputed'; (iv) Opus reconstruction check passes on overlap window. If reconstruction check fails, S3 moves to W3+. Come-back: 2026-10-01."
+        "maturation": "W1 RULING 2026-07-04: moved to W3+ per the pre-registered fallback — the reconstruction check's overlap window DOES NOT EXIST (forward_log: 7 days of states, ZERO logged de-escalation verdicts). Retro-deriving without a verification window is the exact un-checked reconstruction the gate prohibits. ENABLING FIX SHIPPED: deescalation_eligible/reason + dislocation_active now logged in every forward_log row, so the overlap window accrues from 2026-07-04; the W3 retro-derivation runs when ~60+ overlap days exist (≈2026-10-01, unchanged come-back) and the Opus reconstruction check becomes decidable."
       },
       "trial_count": 3
     },
