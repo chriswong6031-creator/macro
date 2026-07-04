@@ -3,7 +3,9 @@
 Reads data/federal_register/documents.parquet (W0b store) and produces:
 
 1. Per-theme pipeline metrics:
-   - days_to_next_comment_close  (forward-dated PRORULE/NOTICE rows only)
+   - days_to_next_comment_close  (forward-dated comment-close across ALL reg_stages —
+     a comment-close date is a real dated event whether the doc is a notice, RFI,
+     proposed rule or final rule; the surfaced event carries its true reg_stage)
    - days_to_next_rule_effective (final_rule rows with future comments_close_on — proxy;
      see note below on effective-date absence in W0b schema)
    - prorule_inflow_60d          (proposed_rule rows published in last 60 days)
