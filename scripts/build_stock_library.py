@@ -2173,6 +2173,22 @@ def main() -> int:
                         r["postcross"] = _pc_state
             except Exception as _pce:  # noqa: BLE001 — display-only; never fatal
                 pass
+            # W9-A SAFETY_ONLY annotation (2026-07-03, #1143): when a BASED or Lane-R row
+            # sits inside a sector-wide capitulation (cohort washout fraction >= 0.40 at
+            # build time), attach a "sector_capitulating" marker for the safety chip.
+            # NO rank/admission effect — display-only context, sign-stable stop-reduction
+            # signal (−2.7pp stocks / −3.5pp baskets) but clean15 sub-threshold (+0.54pp).
+            # Cohort fraction = fraction of GICS-sector peers with weekly StochRSI D < 30;
+            # uses the same _coil_frac computed above (H6 cohort washout, leak-free).
+            try:
+                _is_based_row = bool(r.get("postcross", {}).get("based"))
+                _is_recovery_row = r.get("lane") == "recovery"
+                if _is_based_row or _is_recovery_row:
+                    _w9a_frac = _coil_frac.get(t)
+                    if _w9a_frac is not None and _w9a_frac >= 0.40:
+                        r["sector_capitulating"] = {"cohort_frac": round(float(_w9a_frac), 3)}
+            except Exception as _w9ae:  # noqa: BLE001 — display-only; never fatal
+                pass
             # W3 evidence-stack: propagate evidence fields to ALL board rows (buy + watch).
             # ZERO ordering/admission impact — display chips + grader strata only.
             # Missing artifact => field absent, chip absent; never a neutral default.

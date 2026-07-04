@@ -796,6 +796,8 @@
   /* W8-B postcross lifecycle chip (SHAKEN; ARMED display removed per W8-A-OOS FAIL) */
   .nb-postcross{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
   .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  /* W9-A sector-capitulating safety chip (display-only; no rank power) */
+  .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
   /* W2 merge note: chip explanatory copy uses the repo-standard data-tip-en/data-tip-zh
      + theme.js popover (check_title_i18n.py-guarded); the bespoke .nb-chip-pop is retired. */
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
@@ -2717,6 +2719,10 @@
             {% if n.get('alpha_entry') == 'laggard' %}<span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>{% endif %}
             {% set _pc = n.get('postcross') %}
             {% if _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}
+            {# W9-A sector-capitulating safety chip: fires on BASED or Lane-R rows when ≥40% of GICS
+               sector peers are in weekly washout (StochRSI D<30). Safety context only — no rank power.
+               Stop-out −2.7pp (deep panel) / −3.5pp (OOS), sign-stable all splits. #}
+            {% if n.get('sector_capitulating') %}<span class="nb-sector-cap" data-tip-en="Sector capitulating — {{ '%.0f'|format((n.sector_capitulating.cohort_frac or 0)*100) }}% of {{ n.sector or 'sector' }} peers in weekly washout at build time. Safety context: stop-out −2.7pp (deep panel) / −3.5pp (OOS), sign-stable all splits — safety context, not a ranking signal." data-tip-zh="板块集体回调——{{ '%.0f'|format((n.sector_capitulating.cohort_frac or 0)*100) }}%的{{ n.sector or '板块' }}同类股处于周线深度超卖。安全背景：止损率−2.7pp（深度面板）/−3.5pp（样本外），各拆分均稳定——仅为安全背景参考，不影响排名。"><span class="l-en">Sector capitulating</span><span class="l-zh">板块集体回调</span></span>{% endif %}
             {# Sector-pulse heat chip — DISPLAY-ONLY, never in score/rank.
                Shows only when the name belongs to a live theme with a non-idle heat tier.
                Bilingual via l-en/l-zh; no translated text in attributes (check_title_i18n). #}
@@ -2757,7 +2763,7 @@
             {# SECONDARY: score_edge (within-market edge percentile, honest cross-sectional rank).
                Shown as a small muted "edge" label so a leader like WAB (edge pct 98) is visible
                alongside a laggard like LKQ (edge pct 46) without confusion. #}
-            {% if c.score_edge is defined and c.score_edge is not none %}<span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。">{{ t('edge', '优势') }} {{ c.score_edge }}%ile</span>{% endif %}
+            {% if c.score_edge is defined and c.score_edge is not none %}<span class="nb-edge-pct muted" data-tip-en="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above." data-tip-zh="优势百分位——按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。">{{ t('edge', '优势') }} {{ c.score_edge }}%ile</span>{% endif %}
             <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
             {% if c.valuation_band %}<span class="nb-val val-{{ c.valuation_band }}" data-tip-en="{{ c.valuation_note }}" data-tip-zh="{{ c.valuation_note_zh }}">{{ t(c.valuation_band, {'cheap':'便宜','fair':'合理','stretched':'偏贵','extreme':'昂贵'}[c.valuation_band] if c.valuation_band in ['cheap','fair','stretched','extreme'] else c.valuation_band) }}</span>{% endif %}
           </div>
