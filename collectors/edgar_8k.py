@@ -226,6 +226,183 @@ class Edgar8KAdapter(Adapter):
         return {"edgar_8k__ingest": ingest}
 
 
+# ---------------------------------------------------------------------------
+# W1c — contract-dollar magnitude extraction for Item 1.01 / 2.03 filings
+# ---------------------------------------------------------------------------
+# EDGAR Archives primary-doc URL: https://www.sec.gov/Archives/edgar/data/{cik}/{acc_nodash}/{doc}
+# Fetching is bounded to filings <= 45 days old on the incremental path (see enrich_contract_amounts).
+
+_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
+_ENRICH_WINDOW_DAYS = 45   # only fetch primary doc for recent filings on incremental runs
+
+# Dollar-amount regex: captures 'approximately $1.2 billion', '$450 million', '$3,200,000',
+# '$12.5M', numbers with decimal/comma thousands separators.
+# Order: billion-explicit first so 'billion' multiplier is captured correctly.
+_DOLLAR_RE = re.compile(
+    r"\$\s*([\d,]+(?:\.\d+)?)\s*(billion|million|bn|mm|m\b)?",
+    re.IGNORECASE,
+)
+# Counterparty: 'with <Company Name>, Inc.' / 'between ... and <Company Name>'
+_COUNTERPARTY_RE = re.compile(
+    r"(?:with|by|from|to|between\s+\S+\s+and)\s+([A-Z][A-Za-z0-9 ,\.&']{3,60}?)(?:\s*[,\.;]|LLC|Inc|Corp|Ltd|LP|plc|AG|SA\b)",
+    re.IGNORECASE,
+)
+
+
+def _parse_dollar_amounts(text: str) -> tuple[float | None, bool]:
+    """Extract the largest contract USD amount from filing text.
+
+    Returns (amount_usd, extraction_ok).  extraction_ok=True iff at least one
+    parseable $ figure was found; amount_usd is the largest such figure in USD.
+    Many 8-K/Item-1.01 filings bury the $ in exhibits or omit it entirely — those
+    return (None, False) and degrade to count-only.
+    """
+    best: float | None = None
+    for m in _DOLLAR_RE.finditer(text):
+        raw = m.group(1).replace(",", "")
+        try:
+            val = float(raw)
+        except ValueError:
+            continue
+        suffix = (m.group(2) or "").lower()
+        if suffix in ("billion", "bn"):
+            val *= 1_000_000_000
+        elif suffix in ("million", "mm", "m"):
+            val *= 1_000_000
+        # skip noise values under $10k (page numbers, percentages formatted as $0.XX)
+        if val < 10_000:
+            continue
+        if best is None or val > best:
+            best = val
+    return best, best is not None
+
+
+def _parse_counterparty(text: str) -> str | None:
+    """Best-effort counterparty from filing text. None when unextractable."""
+    m = _COUNTERPARTY_RE.search(text)
+    if not m:
+        return None
+    cp = m.group(1).strip().rstrip(",. ")
+    # ignore very long / very short matches (noise)
+    if len(cp) < 3 or len(cp) > 80:
+        return None
+    return cp
+
+
+def _fetch_primary_doc_text(cik: int, accession: str) -> str | None:
+    """Fetch the primary HTML/htm document from EDGAR Archives for a filing.
+
+    Strategy: fetch the filing index.json to find the primary document name,
+    then fetch that document.  Paced to <=8 req/s (PACE_S already applied externally).
+    Returns raw text (HTML/plain) or None on any failure.
+    """
+    acc_nodash = accession.replace("-", "")
+    idx_url = f"{_ARCHIVES}/{int(cik)}/{acc_nodash}/index.json"
+    try:
+        r = requests.get(idx_url, headers={"User-Agent": _SEC_UA}, timeout=20)
+        if r.status_code != 200:
+            return None
+        idx = r.json()
+    except Exception:  # noqa: BLE001
+        return None
+
+    items = ((idx.get("directory") or {}).get("item") or [])
+    # Prefer the primary document (type field), then any htm/html file
+    primary = None
+    for it in items:
+        if str(it.get("type", "")).strip().upper() in ("8-K", "8-K/A"):
+            primary = it.get("name")
+            break
+    if not primary:
+        for it in items:
+            nm = str(it.get("name", "")).lower()
+            if nm.endswith(".htm") or nm.endswith(".html"):
+                primary = it["name"]
+                break
+    if not primary:
+        return None
+
+    doc_url = f"{_ARCHIVES}/{int(cik)}/{acc_nodash}/{primary}"
+    try:
+        r2 = requests.get(doc_url, headers={"User-Agent": _SEC_UA}, timeout=30)
+        if r2.status_code != 200:
+            return None
+        return r2.text
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def enrich_contract_amounts(
+    events: pd.DataFrame,
+    incremental: bool = True,
+    pace_s: float = PACE_S,
+) -> pd.DataFrame:
+    """Add amount_usd, counterparty, extraction_ok columns to material_8k_events.
+
+    For rows with items containing '1.01' or '2.03', fetch the primary filing doc
+    and regex-extract the contract dollar amount + counterparty.
+
+    Args:
+        events:      The full material_8k_events DataFrame (must have cik/accession/
+                     filing_date/items columns).
+        incremental: When True, only process filings <= _ENRICH_WINDOW_DAYS old AND
+                     not yet enriched (extraction_ok column absent or NaN).
+                     When False (backfill), process all 1.01/2.03 rows missing enrichment.
+        pace_s:      Seconds to sleep between EDGAR Archives requests.
+
+    Returns:
+        Updated DataFrame with amount_usd (float|None), counterparty (str|None),
+        extraction_ok (bool) columns.  Rows not in scope are returned unchanged.
+    """
+    df = events.copy()
+    # Ensure enrichment columns exist
+    for col, default in [("amount_usd", None), ("counterparty", None), ("extraction_ok", None)]:
+        if col not in df.columns:
+            df[col] = default
+
+    # Target: only 1.01 / 2.03 rows
+    mask_items = df["items"].str.contains(r"1\.01|2\.03", na=False)
+
+    if incremental:
+        cutoff = pd.Timestamp.now(tz="UTC").normalize() - pd.Timedelta(days=_ENRICH_WINDOW_DAYS)
+        dates = pd.to_datetime(df["filing_date"], errors="coerce", utc=True)
+        mask_recent = dates >= cutoff
+        mask_unenriched = df["extraction_ok"].isna()
+        target_mask = mask_items & mask_recent & mask_unenriched
+    else:
+        mask_unenriched = df["extraction_ok"].isna()
+        target_mask = mask_items & mask_unenriched
+
+    targets = df[target_mask]
+    log.info("edgar_8k enrich: %d rows to process (incremental=%s)", len(targets), incremental)
+
+    for idx_pos, row in targets.iterrows():
+        cik = row.get("cik")
+        acc = row.get("accession")
+        if not cik or not acc:
+            df.at[idx_pos, "extraction_ok"] = False
+            continue
+        try:
+            text = _fetch_primary_doc_text(int(cik), str(acc))
+            time.sleep(pace_s)
+        except Exception as e:  # noqa: BLE001
+            log.debug("edgar_8k enrich fetch failed %s %s: %s", row.get("ticker"), acc, e)
+            df.at[idx_pos, "extraction_ok"] = False
+            continue
+
+        if not text:
+            df.at[idx_pos, "extraction_ok"] = False
+            continue
+
+        amount, ok = _parse_dollar_amounts(text)
+        counterparty = _parse_counterparty(text) if ok else None
+        df.at[idx_pos, "amount_usd"] = amount
+        df.at[idx_pos, "counterparty"] = counterparty
+        df.at[idx_pos, "extraction_ok"] = ok
+
+    return df
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     Edgar8KAdapter().fetch()
