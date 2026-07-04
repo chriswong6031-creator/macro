@@ -1,0 +1,105 @@
+{
+ "schema": "options_entry.gate.v1",
+ "generated_at": "2026-07-03 22:40 UTC",
+ "scored": false,
+ "status": "building_history",
+ "weight": 0.0,
+ "horizons": [
+  5,
+  10,
+  21
+ ],
+ "min_per_bucket": 30,
+ "n_ledger_rows": 950,
+ "n_stamped_rows": 47,
+ "tests": {
+  "S-DOI": {
+   "bucket": "S-DOI",
+   "n_cond": 0,
+   "n_base": 0,
+   "ready": false,
+   "note": "no stamped opt_doi_slope_5d yet (needs \u22655 prior chain days per name)"
+  },
+  "S-IVR": {
+   "bucket": "S-IVR",
+   "n_cond": 0,
+   "n_base": 0,
+   "ready": false,
+   "note": "opt_iv_rank_252 is null until the post-W1.1 IV-backfill PR (ruling A9)"
+  },
+  "S-VOI": {
+   "bucket": "S-VOI: voi_flag True (vol>prior-OI fresh positioning)",
+   "n_cond": 42,
+   "n_base": 4,
+   "ready": false,
+   "breach": {
+    "n_cond": 0,
+    "n_base": 0,
+    "delta": null,
+    "ci_lo": null,
+    "ci_hi": null,
+    "excludes_zero": false
+   },
+   "clean": {
+    "n_cond": 0,
+    "n_base": 0,
+    "delta": null,
+    "ci_lo": null,
+    "ci_hi": null,
+    "excludes_zero": false
+   },
+   "mfe21": {
+    "n_cond": 0,
+    "n_base": 0,
+    "delta": null,
+    "ci_lo": null,
+    "ci_hi": null,
+    "excludes_zero": false
+   }
+  },
+  "S-VOI-fast": {
+   "bucket": "S-VOI-fast",
+   "n_cond": 42,
+   "n_base": 4,
+   "ready": false,
+   "fwd_ret_5": {
+    "n_cond": 0,
+    "n_base": 0,
+    "delta": null,
+    "ci_lo": null,
+    "ci_hi": null,
+    "excludes_zero": false
+   },
+   "fwd_mfe_5": {
+    "n_cond": 0,
+    "n_base": 0,
+    "delta": null,
+    "ci_lo": null,
+    "ci_hi": null,
+    "excludes_zero": false
+   }
+  },
+  "S-WALL": {
+   "n_eligible": 45,
+   "n_priced": 0,
+   "wall_touches": 0,
+   "fixed_stop_touches": 0,
+   "wall_before_fixed": 0,
+   "price_store_available": false,
+   "limitation": "close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3."
+  }
+ },
+ "verdicts": {
+  "S-DOI": "building_history",
+  "S-IVR": "building_history",
+  "S-VOI": "building_history"
+ },
+ "evidence": [
+  "S-IVR: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_iv_rank_252 is null until the post-W1.1 IV-backfill PR (ruling A9)",
+  "S-DOI: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 no stamped opt_doi_slope_5d yet (needs \u22655 prior chain days per name)",
+  "S-VOI: building history (n_cond=42, n_base=4; need 30/bucket)",
+  "S-VOI-fast (5d): building history (n_cond=42, n_base=4; need 30/bucket)",
+  "S-WALL: 0/45 eligible fires priced (price_store_available=False); wall_touches=0, fixed\u22125%_touches=0, wall_before_fixed=0. LIMITATION: close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3."
+ ],
+ "note": "Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI). Display/ledger-seed only until a bucket clears n\u226530 AND a primitive delta's bootstrap CI excludes 0 (doctrine \u00a72.3). Ledger primitives only (ruling A10). Never scored in W1.3."
+}
