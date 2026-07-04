@@ -172,6 +172,31 @@ def weekly_stochrsi_kd(
 # ---------------------------------------------------------------------------
 
 
+def weekly_turn_series(daily_close: pd.Series) -> pd.Series:
+    """1.0 on daily rows whose MOST RECENT COMPLETED weekly bar printed a
+    K-over-D upcross (K > D and prior completed bar K <= D) — the C4 "turn
+    bar" per ORACLE_COMPOUND_LIBRARY.md §Family C.  Same leak-free ffill
+    convention as weekly_stochrsi_kd: the flag holds for the daily sessions
+    until the NEXT weekly bar completes (which is exactly "the turn bar is
+    the most recent completed bar").  Nullable: NaN before warm-up.
+    """
+    null = pd.Series(np.nan, index=daily_close.index, dtype=float, name="turn_w")
+    if daily_close.empty:
+        return null
+    wk = resample_weekly_leakfree(daily_close)
+    if len(wk) < _MIN_WEEKLY_BARS:
+        return null
+    try:
+        k_wk, d_wk = _stoch_rsi_kd(wk)
+    except Exception:  # noqa: BLE001
+        log.warning("stoch_rsi_kd failed on node — turn_w set to NaN")
+        return null
+    cross = ((k_wk > d_wk) & (k_wk.shift(1) <= d_wk.shift(1))).astype(float)
+    warm = k_wk.isna() | d_wk.isna() | k_wk.shift(1).isna() | d_wk.shift(1).isna()
+    cross[warm] = np.nan
+    return cross.reindex(daily_close.index, method="ffill")
+
+
 def washout_active_series(
     daily_close: pd.Series,
 ) -> pd.Series:

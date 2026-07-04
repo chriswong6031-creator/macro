@@ -76,7 +76,7 @@ stochrsi_w_k — weekly StochRSI %K (faithful confluence.py port), ffilled daily
 stochrsi_w_d — weekly StochRSI %D, same convention
 washout_w    — 0/1/NaN: K<20 on ≥2 consecutive completed weekly bars within prior 3
                (P8 registered definition, frozen); forward-filled to daily
-cohesion_rebuild — 0/1/NaN: C4 compound (washout_w active-or-within-5-sessions AND
+cohesion_rebuild — 0/1/NaN: FAITHFUL C4 (washout recent AND the most recent completed\n#                weekly bar printed a K-over-D upcross — the TURN BAR — AND
                cohesion_chg > 0.056, the panel_m q75); DISPLAY-ONLY per R4
 
 MIRRORS / BORROWS
@@ -102,7 +102,7 @@ import pandas as pd
 # two surfaces stay in sync if WEEKS is ever updated.
 from engine.subsector_rotation import WEEKS  # noqa: F401 — re-exported for callers
 from engine.group_flow import _causal_z, _mean_pairwise_corr
-from engine.oracle.oscillators import weekly_stochrsi_kd, washout_active_series
+from engine.oracle.oscillators import weekly_stochrsi_kd, washout_active_series, weekly_turn_series
 
 log = logging.getLogger(__name__)
 
@@ -118,7 +118,7 @@ _Z_LOOKBACK_D = 252
 _VIX_PCTILE_LOOKBACK_D = 504  # ~2y, mirror group_flow default
 _TURNOVER_Z_LOOKBACK_D = 252
 
-# C1/C4 compound columns
+# C1 (WEEKLY LEGS ONLY — the daily-timeframe trigger leg is future work per the\n# library) / C4 compound columns
 # washout_w lookback: number of DAILY sessions after a washout_w=1 bar during
 # which cohesion_rebuild can still fire ("active-or-within-5-sessions").
 # Source: C4 spec in research/ORACLE_COMPOUND_LIBRARY.md §Family C.
@@ -186,6 +186,7 @@ def _vel(lvl: pd.Series, days: int, divisor: float) -> pd.Series:
 
 def _build_cohesion_rebuild(
     washout_w: pd.Series,
+    turn_w: pd.Series,
     cohesion_chg: pd.Series,
     linger_days: int,
     threshold: float,
@@ -193,11 +194,14 @@ def _build_cohesion_rebuild(
 ) -> pd.Series:
     """Compute C4 cohesion_rebuild boolean (stored as float 0/1/NaN).
 
-    Definition (C4, ORACLE_COMPOUND_LIBRARY.md §Family C):
+    Definition (FAITHFUL C4, ORACLE_COMPOUND_LIBRARY.md §Family C — "washout
+    + cohesion_chg > q75 ON THE TURN BAR"; review fix on #1280 which had
+    shipped the looser washout-adjacent version without the turn):
         cohesion_rebuild = 1 if:
-            (a) washout_w == 1 on this bar OR washout_w was 1 within the prior
-                ``linger_days`` daily sessions (i.e. washout is active or
-                recently expired), AND
+            (a) washout_w == 1 on this bar OR within the prior ``linger_days``
+                daily sessions (washout active or recently expired), AND
+            (t) turn_w == 1 — the most recent COMPLETED weekly bar printed a
+                K-over-D upcross (the turn bar), AND
             (b) cohesion_chg > ``threshold`` (0.056 = panel_m q75).
 
     The "active-or-within-5-sessions" window is computed on the DAILY index so
@@ -209,6 +213,7 @@ def _build_cohesion_rebuild(
     the result is 0 (not NaN) because the AND-condition is definitively False.
     """
     wo_arr = washout_w.reindex(idx).to_numpy(dtype=float)
+    tn_arr = turn_w.reindex(idx).to_numpy(dtype=float)
     cc_arr = cohesion_chg.reindex(idx).to_numpy(dtype=float)
 
     n = len(idx)
@@ -236,8 +241,11 @@ def _build_cohesion_rebuild(
 
         washout_condition = bool(np.any(non_nan_in_window == 1.0))
         cohesion_condition = bool(cc_i > threshold)
+        # (t) the turn bar: NaN turn (warm-up) → condition undetermined; only a
+        # definitive 1.0 satisfies it (a leaky default-true would fabricate C4s)
+        turn_condition = bool(not np.isnan(tn_arr[i]) and tn_arr[i] == 1.0)
 
-        result[i] = 1.0 if (washout_condition and cohesion_condition) else 0.0
+        result[i] = 1.0 if (washout_condition and turn_condition and cohesion_condition) else 0.0
 
     return pd.Series(result, index=idx, dtype=float, name="cohesion_rebuild")
 
@@ -366,6 +374,7 @@ def _build_node_features(
     # Nullable: all-NaN when fewer than _MIN_WEEKLY_BARS (40) weekly bars available.
     stochrsi_w_k, stochrsi_w_d = weekly_stochrsi_kd(lvl)
     washout_w = washout_active_series(lvl)
+    turn_w = weekly_turn_series(lvl)
 
     # ---- C4 cohesion_rebuild ----
     # Boolean (stored as float 0/1/NaN): washout_w active-or-within-5 daily sessions
@@ -374,6 +383,7 @@ def _build_node_features(
     # Nullable: NaN where either washout_w or cohesion_chg is NaN.
     cohesion_rebuild = _build_cohesion_rebuild(
         washout_w=washout_w,
+        turn_w=turn_w,
         cohesion_chg=cohesion_chg,
         linger_days=_WASHOUT_LINGER_D,
         threshold=_COHESION_REBUILD_THRESHOLD,

@@ -768,6 +768,22 @@ class TestWashoutW:
 
 
 class TestCohesionRebuild:
+    def test_no_turn_no_fire(self):
+        """FAITHFUL C4 (review major on #1280): washout recent AND cohesion_chg
+        above threshold but NO K-over-D turn on the last completed weekly bar →
+        cohesion_rebuild must be 0. FAILS on the shipped washout-adjacent
+        version that omitted the turn condition."""
+        idx = pd.bdate_range("2021-01-04", periods=60, name="date")
+        washout = pd.Series(1.0, index=idx)
+        cohesion_chg = pd.Series(0.10, index=idx)      # > 0.056 threshold
+        no_turn = pd.Series(0.0, index=idx)
+        cr = _build_cohesion_rebuild(
+            washout_w=washout, turn_w=no_turn, cohesion_chg=cohesion_chg,
+            linger_days=5, threshold=0.056, idx=idx,
+        )
+        assert (cr.dropna() == 0.0).all(), "fired without a turn bar — not faithful C4"
+
+
     """Tests for C4 cohesion_rebuild compound column."""
 
     def test_cohesion_rebuild_is_0_1_or_nan(self):
@@ -798,6 +814,7 @@ class TestCohesionRebuild:
         cohesion_chg = pd.Series(0.10, index=idx, name="cohesion_chg")
 
         cr = _build_cohesion_rebuild(
+            turn_w=pd.Series(1.0, index=idx),  # turn satisfied — isolates the other legs
             washout_w=washout_w,
             cohesion_chg=cohesion_chg,
             linger_days=5,
@@ -818,6 +835,7 @@ class TestCohesionRebuild:
         cohesion_chg = pd.Series(0.01, index=idx, name="cohesion_chg")
 
         cr = _build_cohesion_rebuild(
+            turn_w=pd.Series(1.0, index=idx),  # turn satisfied — isolates the other legs
             washout_w=washout_w,
             cohesion_chg=cohesion_chg,
             linger_days=5,
@@ -836,6 +854,7 @@ class TestCohesionRebuild:
         cohesion_chg = pd.Series(0.10, index=idx, name="cohesion_chg")  # > 0.056
 
         cr = _build_cohesion_rebuild(
+            turn_w=pd.Series(1.0, index=idx),  # turn satisfied — isolates the other legs
             washout_w=washout_w,
             cohesion_chg=cohesion_chg,
             linger_days=5,
@@ -864,6 +883,7 @@ class TestCohesionRebuild:
         cohesion_chg = pd.Series(cohesion_vals, index=idx, name="cohesion_chg")
 
         cr = _build_cohesion_rebuild(
+            turn_w=pd.Series(1.0, index=idx),  # turn satisfied — isolates the other legs
             washout_w=washout_w,
             cohesion_chg=cohesion_chg,
             linger_days=5,
@@ -933,52 +953,58 @@ class TestCohesionRebuild:
             )
 
     def test_planted_right_edge_leak_is_detectable(self):
-        """Demonstrate that the no-lookahead test WOULD catch a right-edge leak.
+        """DISCRIMINATING guardian (review major on #1280 — the prior version
+        only checked bar LABEL dates and never ran a leaky implementation
+        through the comparator, so a partial-bar leak with an in-range label
+        passed it).
 
-        If weekly_stochrsi_kd were to include the CURRENT (in-progress) weekly
-        bar's K/D value on row t (i.e. using a LEFT-edge label convention
-        instead of right-edge), then truncating the daily series mid-week would
-        change the last few daily rows because the partial bar would have a
-        different K/D.
-
-        This test plants that failure by constructing a 'leaking' variant of
-        weekly_stochrsi_kd that uses resample("W-FRI").last() WITHOUT dropna()
-        on the weekly series (allowing the in-progress bar to exist as a NaN
-        bar that then gets forward-filled from the *future* close), and verifies
-        that our zero-guard-band check WOULD detect it.
-
-        Implementation note: we cannot make the in-progress bar a real leaking
-        bar in a pure unit test without real calendar data.  Instead we test
-        the conceptual mechanism: the resample must NOT include partial bars
-        (i.e. bars with NaN close caused by truncation within the week).
-        We verify this by checking that after truncation, no weekly bar label
-        date exceeds the truncation point.
-        """
-        n = 500
-        lvl = _make_price_series(n, seed=42)
-
-        # Truncate at a non-Friday (mid-week)
-        t = 250
-        while lvl.index[t].dayofweek == 4:
-            t -= 1
-
-        lvl_trunc = lvl.iloc[:t]
-
-        # Weekly bar label dates must all be <= lvl_trunc.index[-1]
-        wk = resample_weekly_leakfree(lvl_trunc)
-        last_daily_date = lvl_trunc.index[-1]
-
-        future_bar_dates = wk.index[wk.index > last_daily_date]
-        assert len(future_bar_dates) == 0, (
-            f"resample_weekly_leakfree produced bar labels AFTER truncation point: "
-            f"{future_bar_dates.tolist()[:3]}. "
-            "This indicates an in-progress bar is leaking future information."
+        Here we construct a genuinely LEAKY variant — it keeps the in-progress
+        partial weekly bar and relabels its future-Friday label to the series'
+        last date, so the partial bar's K ffills onto the final daily rows —
+        and push BOTH implementations through the same zero-guard truncation
+        comparison. The real implementation must be truncation-invariant; the
+        leaky one must produce mismatches. If the leaky variant ever PASSES
+        the comparator, this guardian has lost its teeth."""
+        from engine.oracle.oscillators import (
+            weekly_stochrsi_kd, resample_weekly_leakfree, _stoch_rsi_kd,
         )
 
+        def _leaky_weekly_k(daily_close: pd.Series) -> pd.Series:
+            wk = daily_close.resample("W-FRI").last().dropna()
+            if len(wk) and wk.index[-1] > daily_close.index[-1]:
+                # THE LEAK: clamp the partial bar's future label to 'today'
+                new_idx = wk.index[:-1].append(
+                    pd.DatetimeIndex([daily_close.index[-1]]))
+                wk = pd.Series(wk.to_numpy(), index=new_idx)
+            k, _d = _stoch_rsi_kd(wk)
+            return k.reindex(daily_close.index, method="ffill")
 
-# ---------------------------------------------------------------------------
-# Fixture builders (shared)
-# ---------------------------------------------------------------------------
+        def _mismatches(fn, lvl, t):
+            full = fn(lvl)
+            trunc = fn(lvl.iloc[:t])
+            shared = trunc.index
+            f, tr = full.reindex(shared), trunc.reindex(shared)
+            both_nan = f.isna() & tr.isna()
+            equal = (f == tr) | both_nan
+            return int((~equal).sum())
+
+        n = 700
+        lvl = _make_price_series(n, seed=55, drift=-0.0003)
+        # ensure the truncated series ENDS mid-week (a partial bar must exist:
+        # if index[t_cut-1] were a Friday the leaky variant has nothing to leak)
+        t_cut = n // 2
+        while lvl.index[t_cut - 1].dayofweek != 2:   # end on a Wednesday
+            t_cut -= 1
+
+        real_mm = _mismatches(lambda s: weekly_stochrsi_kd(s)[0], lvl, t_cut)
+        leaky_mm = _mismatches(_leaky_weekly_k, lvl, t_cut)
+
+        assert real_mm == 0, (
+            f"real implementation not truncation-invariant: {real_mm} mismatches")
+        assert leaky_mm > 0, (
+            "leaky variant passed the comparator — the guardian does not "
+            "discriminate; check the truncation point / comparator boundary")
+
 
 def _make_minimal_yahoo(yahoo_dir: Path, n: int = 300, start: str = "2021-01-04") -> None:
     """Write minimal ETF parquets for XLK and XLV to yahoo_dir."""
