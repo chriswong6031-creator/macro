@@ -784,3 +784,34 @@ def test_no_module_level_logging_disable():
                     and call.func.value.id == "logging"):
                 pytest.fail(
                     f"logging.disable() found at module level (line {node.lineno})")
+
+
+# ── write_score_snapshot: the regional velocity-accrual writer (audit follow-up) ──
+class TestWriteScoreSnapshot:
+    def _ti(self):
+        return {"as_of": "2026-07-03", "themes": [
+            {"id": "hk_prop", "name": "HK Property", "score": 61, "label": "emerging",
+             "reco": "hold", "rank": 2, "net_ad": 3,
+             "components": {"trend": 0.4},
+             "textures": {"bull_age": {"days": 12}, "overbought": {"value": 0.2},
+                          "clean_entry": {"flag": True}, "rollover_risk": {"risk": 0.1}}}]}
+
+    def test_writes_regional_latest(self, tmp_path, monkeypatch):
+        from lib import config as cfg
+        monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+        sp.write_score_snapshot(self._ti(), "hk")
+        p = tmp_path / "baskets_hk" / "latest.json"
+        assert p.exists()
+        snap = json.loads(p.read_text())
+        assert snap["as_of"] == "2026-07-03"
+        row = snap["themes"][0]
+        assert row["id"] == "hk_prop" and row["rank"] == 2 and row["clean_entry"] is True
+
+    def test_us_region_uses_baskets_dir(self, tmp_path, monkeypatch):
+        from lib import config as cfg
+        monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+        sp.write_score_snapshot(self._ti(), "us")
+        assert (tmp_path / "baskets" / "latest.json").exists()
+
+    def test_never_fatal_on_garbage(self):
+        sp.write_score_snapshot({"themes": [None]}, "hk")  # must not raise

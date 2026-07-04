@@ -82,6 +82,7 @@ def main() -> int:
             from engine import sector_pulse as _sp
             _sp.write_pulse(data["theme_intel"], "intl", fdir)
             _sp.merge_pulse_into_theme_intel(data["theme_intel"], "intl")
+            _sp.write_score_snapshot(data["theme_intel"], "intl")   # accrues the baskets_intl velocity stream
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector_pulse intl hook failed: %s", e)
     if emergence:
