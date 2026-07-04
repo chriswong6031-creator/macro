@@ -1055,13 +1055,12 @@ artifacts:
     qual_ladder_ref: altdata.signal_score
     notes: "Producer: engine/altdata_emit.py:259 write_text. schema=altdata.mastermind.v1 inline constant at altdata_emit.py:65."
 
-  # --- 9 consumers ---
+  # --- 7 consumers --- (single-writer restored by neural-web W0 PR5)
   site-radar-json:
     path: site/basketdata/radar.json
     format: json
     producer: scripts/build_baskets.py
-    known_extra_writers:
-      - "scripts/build_intelligence.py — _crosssurface_radar mutates the file in-place post-emit (census-flagged rot; neural-web masterplan targets this in N0)"
+    known_extra_writers: []
     owner_program: oracle
     cadence: daily-engine
     storage: git
@@ -1078,9 +1077,54 @@ artifacts:
       - engine/theme_validation.py
       - scripts/build_radar_page.py
       - scripts/build_radar_plus.py
-      - scripts/build_intelligence.py
+      - engine/radar_ic.py
     external_consumers: []
-    notes: "known_extra_writers: scripts/build_intelligence.py (_crosssurface_radar) mutates the already-committed file in place — second-writer rot flagged by census. N0 plan: fold radar_plus into its producer."
+    notes: "Single-writer restored (W0 PR5). build_radar_plus now reads this file and writes site/basketdata/radar_enriched.json as its own artifact; build_intelligence reads financial.json and writes site/basketdata/radar_news.json. Neither mutates radar.json."
+
+  # --- 9 consumers ---
+  site-basketdata-radar-enriched:
+    path: site/basketdata/radar_enriched.json
+    format: json
+    producer: scripts/build_radar_plus.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: enriched_utc
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/radar_panel.js
+      - engine/radar_ic.py
+      - engine/radar_ticker.py
+      - engine/briefing.py
+      - engine/intelligence.py
+      - engine/signal_sanity.py
+    external_consumers: []
+    notes: "OWN artifact of build_radar_plus (W0 PR5). Contains per-flag edge_score, confirm legs, regime, decay, drivers, edge_ranked, enriched_utc. Consumers read edge_score from here; radar.json no longer carries enrichment fields. radar_ic.py has a one-cycle fallback to radar.json for legacy snapshots."
+
+  # --- 1 consumer ---
+  site-basketdata-radar-news:
+    path: site/basketdata/radar_news.json
+    format: json
+    producer: scripts/build_intelligence.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: none
+    freshness_sla_hours: 30
+    schema: none
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/radar_panel.js
+    external_consumers: []
+    notes: "OWN artifact of build_intelligence (W0 PR5). Shape: {baskets: {basket_id: {headlines: [...]}}}. Per-flag news headlines sourced from site/news/financial.json; previously these were cross-surfaced onto radar.json by _crosssurface_radar (second-writer rot). Client-side merge in radar_panel.js::_mergeEnrichment()."
 
   # --- 8 consumers ---
   site-altdata-by-ticker:

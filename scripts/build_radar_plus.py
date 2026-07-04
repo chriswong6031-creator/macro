@@ -1,6 +1,11 @@
-"""Build the additive radar upgrade (Phase 2):
-  • enrich site/basketdata/radar.json with edge_score + confirm legs + regime + decay
-  • emit site/basketdata/radar_ticker.json (per-ticker divergence)
+"""Build the additive radar enrichment (Phase 2) — single-writer edition.
+
+Single-writer fix (neural-web W0 PR5):
+  • Reads site/basketdata/radar.json (written by build_baskets — the sole writer).
+  • Writes site/basketdata/radar_enriched.json with edge_score + confirm legs +
+    regime + decay + drivers + edge_ranked + enriched_utc.  radar.json is NEVER
+    mutated by this script.
+  • Writes site/basketdata/radar_ticker.json (per-ticker divergence).
 
 Runs AFTER build_baskets (which emits radar.json) + build_alt_data (mastermind.json) +
 build_news/build_intelligence. Additive + degrade-safe; never aborts the build.
@@ -27,17 +32,21 @@ def build(write: bool = True) -> dict:
     out = {"radar_enriched": False, "radar_ticker": 0}
 
     radar_p = site / "basketdata" / "radar.json"
+    enriched_p = site / "basketdata" / "radar_enriched.json"
     if radar_p.exists():
         try:
-            radar = json.loads(radar_p.read_text())
-            radar_plus.enrich(radar)
+            # Deep-copy via JSON round-trip so the original radar dict is never mutated;
+            # radar.json stays frozen — radar_enriched.json is the enrichment's OWN artifact.
+            radar_copy = json.loads(radar_p.read_text())
+            radar_plus.enrich(radar_copy)
             if write:
-                radar_p.write_text(json.dumps(radar, default=str))
-            top = (radar.get("edge_ranked") or [{}])[0]
+                (site / "basketdata").mkdir(parents=True, exist_ok=True)
+                enriched_p.write_text(json.dumps(radar_copy, default=str))
+            top = (radar_copy.get("edge_ranked") or [{}])[0]
             out["radar_enriched"] = True
-            log.info("radar enriched: %d flags, top edge %s (%s), regime mult %s",
-                     len(radar.get("flags", [])), top.get("edge_score"), top.get("basket"),
-                     (radar.get("regime") or {}).get("mult"))
+            log.info("radar_enriched.json written: %d flags, top edge %s (%s), regime mult %s",
+                     len(radar_copy.get("flags", [])), top.get("edge_score"), top.get("basket"),
+                     (radar_copy.get("regime") or {}).get("mult"))
         except Exception as e:  # noqa: BLE001
             log.error("radar enrich failed: %s", e)
     else:
