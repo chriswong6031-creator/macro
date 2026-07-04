@@ -807,6 +807,10 @@ jobs:
         # Resilient: fail-open with printed gaps; a failed write keeps the last
         # committed world_state and never blocks the commit step.
         # git add data/ site/ in commit engine outputs covers data/neuralweb/ automatically.
+        # engine-render.yml (express lane) intentionally has NO world_state step — its
+        # inputs (oracle_state, the resolved market_state verdict) advance nightly only,
+        # so an express recompute would re-stamp identical data; the lane serves the
+        # last-nightly world_state, same as every other nightly-only artifact.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
