@@ -23,7 +23,9 @@ from scripts.check_dag_conformance import (
     Step,
     _diff_lane,
     _extract_modules_from_run,
+    _extract_steps_from_run,
     _parse_dag_yml,
+    _parse_workflow,
     _run_selftest,
     run_conformance,
 )
@@ -179,27 +181,28 @@ class TestParserRealExcerpts:
         assert "scripts.build_risk_state" in modules
 
     def test_composition_detects_central(self):
-        """Composition line 'spine; band; central; hub; ...' is captured as __segment__central.
+        """Parser fix: single-line function definition `central() { run_py ... }` must NOT
+        be consumed by the composition branch.  The inner run_py module is extracted directly.
 
-        The parser emits __segment__central (not the individual module) because
-        central() is a named function (non-cl_*) whose definition line starts with
-        'central' and triggers the composition regex. The segment token confirms
-        the central() call IS present without enumerating its internals.
+        The composition branch now checks that the keyword is NOT immediately followed by '('
+        before treating the line as a composition call.  This makes build_sector_central
+        and build_vector visible to the conformance checker in render + engine-render lanes.
         """
         modules = _extract_modules_from_run(RENDER_CENTRAL_EXCERPT)
+        # After the parser fix, the inner module IS extracted from the function body
+        assert "scripts.build_sector_central" in modules
+        # The composition CALL line still emits __segment__ tokens
         assert "__segment__central" in modules
-        # The individual module is NOT extracted directly (it's inside the function
-        # definition which starts with 'central' and is consumed by the composition
-        # regex before the run_py scanner runs).
-        # This is expected behavior — the conformance check treats __segment__central
-        # as proof that central() is called, which is sufficient for W5a.
 
     def test_composition_detects_central_in_engine_render(self):
-        """W5a fix: engine-render scope=all now calls central() after band."""
+        """Parser fix: hub() and central() single-line definitions in engine-render yield
+        their inner modules, not just segment tokens."""
         modules = _extract_modules_from_run(ENGINE_RENDER_COMPOSITION_EXCERPT)
-        # After W5a fix, central IS in the composition call
+        # Inner modules are extracted from the function definitions
+        assert "scripts.build_sector_central" in modules
+        assert "scripts.build_vector" in modules
+        # Composition CALL line still emits segment tokens
         assert "__segment__central" in modules
-        # hub is also present
         assert "__segment__hub" in modules
 
 
@@ -317,6 +320,105 @@ class TestDiffer:
         ]
         errors = _diff_lane(declared, actual, "fake / lane", divergences)
         assert errors == [], f"Covered reorder should be GREEN but got: {errors}"
+
+
+# ---------------------------------------------------------------------------
+# 2b. Parser-driven positive-control test (regression guard for the parser fix)
+# ---------------------------------------------------------------------------
+
+class TestParserDrivenPositiveControl:
+    """Positive-control tests that exercise the FULL parse→diff pipeline against
+    a real (or near-real) workflow file.
+
+    This class of test would have caught the original blocker: hub() and central()
+    function definitions consumed as __segment__ tokens, making build_sector_central
+    and build_vector invisible to the conformance checker.  The existing RED-b/RED-c
+    tests feed hand-built Step lists into the differ and bypass the parser entirely.
+    """
+
+    def test_remove_central_from_engine_render_causes_red(self, tmp_path):
+        """Parser-driven positive control: remove central() definition from a copy of
+        engine-render.yml and assert the conformance check exits RED naming build_sector_central.
+
+        This test would have caught the original blocker: without the parser fix, the
+        central() definition line was consumed as __segment__central and build_sector_central
+        was never extracted, so its absence was invisible to the checker.
+        """
+        import shutil
+        import yaml
+
+        # --- set up a minimal dag that declares build_sector_central as a serial step ---
+        dag_fixture = {
+            "meta": {"schema_version": 1, "granularity": "workflow-step"},
+            "lanes": [
+                {
+                    "workflow": str(tmp_path / "engine-render.yml"),
+                    "job": "engine-render",
+                    "steps": [
+                        {"id": "build_sector_central", "module": "scripts.build_sector_central"},
+                    ],
+                }
+            ],
+            "divergences": [],
+            "modules": [],
+        }
+        dag_path = tmp_path / "dag.yml"
+        dag_path.write_text(yaml.dump(dag_fixture))
+
+        # --- copy real engine-render.yml into tmp_path ---
+        real_wf = REPO_ROOT / ".github" / "workflows" / "engine-render.yml"
+        wf_dir = tmp_path / ".github" / "workflows"
+        wf_dir.mkdir(parents=True)
+        shutil.copy(real_wf, wf_dir / "engine-render.yml")
+
+        # --- parse the UNMODIFIED workflow: build_sector_central MUST be found ---
+        job_steps = _parse_workflow(wf_dir / "engine-render.yml")
+        assert "engine-render" in job_steps, "engine-render job not found in parsed workflow"
+        actual_modules = [s.module for s in job_steps["engine-render"]]
+        assert "scripts.build_sector_central" in actual_modules, (
+            "build_sector_central NOT found in unmodified engine-render.yml parse — "
+            "the parser fix is not working correctly"
+        )
+
+        # --- now remove central() definition AND its call from the composition line ---
+        wf_text = (wf_dir / "engine-render.yml").read_text()
+        # Remove the single-line central() function definition
+        wf_text_no_central = "\n".join(
+            line for line in wf_text.splitlines()
+            if not line.strip().startswith("central()")
+        )
+        # Also remove 'central' from the composition call line so it's a real absence
+        wf_text_no_central = wf_text_no_central.replace(
+            "spine; band; central; hub; us_pages; libs",
+            "spine; band; hub; us_pages; libs",
+        )
+        (wf_dir / "engine-render.yml").write_text(wf_text_no_central)
+
+        # --- parse modified workflow: build_sector_central must be ABSENT ---
+        job_steps_mod = _parse_workflow(wf_dir / "engine-render.yml")
+        actual_modules_mod = [s.module for s in job_steps_mod["engine-render"]]
+        assert "scripts.build_sector_central" not in actual_modules_mod, (
+            "build_sector_central still found after removing central() — "
+            "the test fixture modification did not work"
+        )
+
+        # --- diff: declared has build_sector_central; actual does not -> RED ---
+        from scripts.check_dag_conformance import _parse_dag_yml
+        declared_lanes, divergences = _parse_dag_yml(dag_path)
+        assert len(declared_lanes) == 1
+
+        declared_steps = declared_lanes[0].steps
+        actual_steps = job_steps_mod["engine-render"]
+        lane_key = f"{declared_lanes[0].workflow} / {declared_lanes[0].job}"
+        errors = _diff_lane(declared_steps, actual_steps, lane_key, divergences)
+
+        assert errors, (
+            "Expected RED (build_sector_central absent) but got GREEN. "
+            "This means the conformance checker would silently miss a missing sector_central."
+        )
+        assert any("build_sector_central" in e for e in errors), (
+            f"RED error found but does not name build_sector_central: {errors}"
+        )
 
 
 # ---------------------------------------------------------------------------

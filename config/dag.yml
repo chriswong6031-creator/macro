@@ -308,12 +308,15 @@ lanes:
             - scripts.build_reports
             - scripts.build_policy_watch
             - scripts.build_index_changes
-      # serial post-band
-      # NOTE: build_sector_central is called via central() and build_vector via hub().
-      # Both are named (non-cl_*) shell functions; the parser's composition detection
-      # captures them as __segment__central / __segment__hub tokens (filtered from
-      # diff errors). They are intentionally not declared as separate module entries
-      # here because the parser cannot enumerate their contents via _CLUSTER_FUNC_RE.
+      # serial post-band (composition order: spine; band; central; hub; us_pages; libs)
+      # NOTE: build_sector_central runs via central() and build_vector via hub().
+      # After the W5a parser fix (_collect() no longer treats single-line function
+      # definition lines like `central() { run_py ... }` as composition calls), both
+      # modules are visible to the parser and are declared here.
+      # PARSER ORDER NOTE: the file defines us_pages() before hub() and central(), so
+      # the parser extracts us_pages() contents (build_radar_plus...build_ai_desk_page)
+      # BEFORE hub() (build_vector) and central() (build_sector_central). The declaration
+      # order below mirrors the parser's file-scan order, NOT the runtime composition order.
       - id: build_radar_plus
         module: scripts.build_radar_plus
       - id: build_radar_ic
@@ -336,6 +339,10 @@ lanes:
         module: scripts.build_mastermind
       - id: build_ai_desk_page
         module: scripts.build_ai_desk_page
+      - id: build_vector
+        module: scripts.build_vector
+      - id: build_sector_central
+        module: scripts.build_sector_central
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
@@ -394,11 +401,11 @@ lanes:
             - engine.policy_intent_desk
             - scripts.build_policy_watch
             - scripts.build_index_changes
-      # serial post-band
-      # NOTE: build_sector_central is called via central() and build_vector via hub().
-      # Both are named (non-cl_*) shell functions captured as __segment__central /
-      # __segment__hub tokens by the parser and filtered from diff. Intentionally
-      # not declared as separate module entries.
+      # serial post-band (composition order: spine; band; central; hub; us_pages; libs)
+      # NOTE: build_sector_central runs via central() and build_vector via hub().
+      # After the W5a parser fix, both are visible and declared here.
+      # PARSER ORDER NOTE: file defines us_pages() before hub() and central(); the
+      # parser extracts us_pages() contents before hub()/central() contents.
       - id: build_radar_plus
         module: scripts.build_radar_plus
       - id: build_radar_ic
@@ -421,6 +428,10 @@ lanes:
         module: scripts.build_mastermind
       - id: build_ai_desk_page
         module: scripts.build_ai_desk_page
+      - id: build_vector
+        module: scripts.build_vector
+      - id: build_sector_central
+        module: scripts.build_sector_central
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
@@ -581,7 +592,7 @@ divergences:
       lane carries no secrets ("NO secrets → no network" invariant in the lane header).
       Without the key the module exits rc=134 (SIGABRT). The committed
       site/policy_intent.json is kept from the last nightly until the nightly refreshes it.
-    evidence: engine-render.yml:234-244
+    evidence: engine-render.yml:264-270
 
   - lanes: [engine-render]
     differs: >
@@ -618,7 +629,7 @@ divergences:
       the HK cash close) so CN/HK pages render SETTLED closes instead of stale marks.
       render.yml and engine-render.yml include cl_china/cl_hk in their band because those
       lanes use COMMITTED data (no timing dependency).
-    evidence: "daily.yml:399-401 (comment: cl_china / cl_hk MOVED to .github/workflows/asia-close.yml)"
+    evidence: "daily.yml:413 (comment: cl_china / cl_hk MOVED to .github/workflows/asia-close.yml)"
 
   - lanes: [render, engine-render]
     differs: >

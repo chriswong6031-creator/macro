@@ -186,11 +186,16 @@ def _extract_steps_from_run(run_body: str) -> list[Step]:
                 if expanded_any:
                     continue
             # Named function composition: spine; band; central; hub; us_pages; libs
+            # Exclude function-DEFINITION lines (e.g. `hub() { run_py ... }`) — those start
+            # with the keyword immediately followed by '(' and must NOT be treated as a
+            # composition call.  Without this guard the single-line definition bodies
+            # (hub/central in render.yml + engine-render.yml) are consumed as __segment__
+            # tokens and the inner run_py is never extracted.
             comp = re.match(
                 r'(spine|band|central|hub|us_pages|libs)(?:\s*;\s*(spine|band|central|hub|us_pages|libs))*',
                 stripped,
             )
-            if comp:
+            if comp and not re.match(r'(spine|band|central|hub|us_pages|libs)\s*\(', stripped):
                 # Expand each named segment in order
                 for seg in re.findall(
                     r'\b(spine|band|central|hub|us_pages|libs)\b', stripped
