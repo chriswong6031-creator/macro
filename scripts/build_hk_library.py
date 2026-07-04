@@ -1322,6 +1322,12 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                 #   sfc_short_pctile: SFC days-to-cover own-history pctile (H2a ACCRUE context)
                 #   liq_regime: HK peg-liquidity regime at render (H5 ACCRUE conditioner)
                 "knife_demoted": bool(e.get("knife_demoted")),
+                # W0.2 Stage C: the knife magnitude + the CLOSED-taxonomy near-miss
+                # reason. Before Stage C these were passed but silently DROPPED by
+                # the ledger's _SCHEMA reindex; the schema now persists them.
+                "knife_z": e.get("knife_z"),
+                "primary_rejection_reason": ("knife_demote"
+                                             if e.get("knife_demoted") else None),
                 "sfc_short_pctile": (e.get("sfc_short") or {}).get("pctile"),
                 "liq_regime": (liquidity_regime or {}).get("regime"),
                 # W1c H-PLC risk-gate stamp (persisted — board_ledger schema column).

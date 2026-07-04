@@ -178,6 +178,15 @@ _SCHEMA = [
     "edge_z", "gate_tier", "align_tier", "entry_state", "close_asof",
     "washout_2w", "extended", "placement_flag",
     "hold_basing", "dt_compress",
+    # W0.2 Stage C — near-miss capture (masterplan §5.2 move 2, Appendix A):
+    #   primary_rejection_reason: the CLOSED-taxonomy reason a watch-strip row was
+    #     held off the entry groups (null on entry rows and non-near-miss watch rows;
+    #     validated against grading.REJECTION_TAXONOMY at append time).
+    #   block_reason: the builder's free-text why (CA watch strip); display context.
+    #   knife_demoted/knife_z: the HK falling-knife demote flag + its 3M-return z
+    #     magnitude (HK passed these before Stage C but the _SCHEMA reindex DROPPED
+    #     them silently — adding the columns is what makes them persist).
+    "primary_rejection_reason", "block_reason", "knife_demoted", "knife_z",
     # W0 Stage B-c additions
     "species_id", "archetype",
     "own_market_regime", "own_market_regime_note",
@@ -200,6 +209,7 @@ _GATE_STAMPS = ("placement_flag",)
 # wherever a frame is assembled so cell writes are dtype-safe regardless of how a
 # legacy parquet happened to be typed.
 _OBJECT_COLS = (
+    "primary_rejection_reason", "block_reason", "knife_demoted",
     "species_id", "archetype", "own_market_regime", "own_market_regime_note",
     "us_rate_pressure", "us_quad_hard_label", "us_fused_risk_label",
     "us_vol_regime", "us_risk_radar_state", "us_regime_vector_degraded",
@@ -344,6 +354,15 @@ def append_board(
             "placement_flag": _bool_or_none(c.get("placement_flag")),
             "hold_basing": _bool_or_none(c.get("hold_basing")),
             "dt_compress": _bool_or_none(c.get("dt_compress")),
+            # W0.2 Stage C: near-miss capture fields (Appendix A). A reason outside
+            # the CLOSED taxonomy is dropped to null + logged loudly — a runner must
+            # never silently extend the enum (extension requires a §8 row).
+            "primary_rejection_reason": _taxonomy_or_none(
+                c.get("primary_rejection_reason"), tk),
+            "block_reason": (str(c.get("block_reason"))
+                             if c.get("block_reason") else None),
+            "knife_demoted": _bool_or_none(c.get("knife_demoted")),
+            "knife_z": _float_or_none(c.get("knife_z")),
             # W0 Stage B-c: species/archetype — always null (documented; no registry binding)
             "species_id": None,
             "archetype": None,
@@ -827,6 +846,22 @@ def _float_or_none(v) -> float | None:
         return f if np.isfinite(f) else None
     except (TypeError, ValueError):
         return None
+
+
+def _taxonomy_or_none(reason, ticker: str):
+    """Validate a near-miss reason against the CLOSED Appendix-A taxonomy
+    (grading.REJECTION_TAXONOMY). Unknown reasons null out LOUDLY — extending
+    the enum requires a §8 status row, never a silent runner append."""
+    if reason is None:
+        return None
+    r = str(reason)
+    from engine import grading as _grading  # local: avoid import-order surprises
+    if r in _grading.REJECTION_TAXONOMY:
+        return r
+    log.warning("append_board: %s carries non-taxonomy rejection reason %r — "
+                "dropped to null (Appendix A is a CLOSED set; §8 row required "
+                "to extend)", ticker, r)
+    return None
 
 
 def _bool_or_none(v) -> bool | None:
