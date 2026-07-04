@@ -140,6 +140,9 @@ lanes:
       - id: build_kernel_estimates
         module: scripts.build_kernel_estimates
         note: "neural-web W3 — reliability kernel estimates (engine × regime × horizon cells; display-first)"
+      - id: build_kernel_diagnostics
+        module: scripts.build_kernel_diagnostics
+        note: "neural-web W3 PR3 — decay curves (kernel_families.json) + lagging-signal detector (lagging_signals.json); display-first, resilient"
       - id: altdata_brain
         module: engine.altdata_brain
       - id: build_alt_data_post
