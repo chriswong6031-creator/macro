@@ -16,16 +16,23 @@ joint QI co-sign.  Both sequencing escape hatches verified by scout
 
 DOUBLE-COUNT PREVENTION
 -----------------------
-``adapt_spine()`` explicitly EXCLUDES engines that are also natively
-adapted via another adapter (see ``_SPINE_EXCLUDED_ENGINES``).  The
-altdata_conv engine is the canonical example: its signals live in BOTH
-``data/spine/predictions.parquet`` (engine='altdata_conv', horizon=63,
-outcome_graded=False, graded_at=null) AND ``data/qledger/claims.jsonl``
-(desk='altdata', horizon=5, with actual grades where available).
-``adapt_qledger()`` is the authoritative path for altdata — it carries the
-real grade data.  Including altdata_conv from the spine would produce
-133 duplicate economic events under two ledger namespaces with conflicting
-horizons and graded status.
+``adapt_spine()`` skips altdata_conv rows ONLY when a qledger twin exists
+for the same (symbol, as_of) — i.e. event-matched exclusion, not blanket
+engine exclusion.  ``build_index`` computes the qledger frame first, derives
+the altdata twin key set (frozenset of (symbol, as_of) for desk='altdata'
+claims), then passes it to ``adapt_spine(twin_keys=...)``.
+
+Called standalone (``adapt_spine()`` without twin_keys), no altdata_conv
+rows are excluded — the caller has no qledger context.
+
+The real-world correspondence: spine has 134 altdata_conv rows; qledger has
+133 desk='altdata' claims (one-to-one match for 133 events).  The 1 orphan
+(BWXT@2026-07-02) has NO qledger twin and is retained with ledger='spine'.
+Today it is ungraded so calibration-inert, but a future graded orphan would
+otherwise silently vanish from the W3 calibration index.
+
+engine='desk:ai_desk' rows are intentionally NOT excluded — they have no
+qledger twin family and no dedicated adapter.
 
 PIT CORRECTNESS FOR GRADED_AT
 ------------------------------
@@ -63,6 +70,9 @@ US/HK/CA post Stage B-e, "asof_legacy" for older qledger rows).
 ``ledger`` is a source enum:
   spine, track_record, board_hk, board_ca, board_cn, qledger,
   cycles_us, cycles_china, cycles_country
+``scope_type`` domain: 'entity' | 'basket' are produced by current data;
+  'sector' | 'macro' are reserved for future adapters — no current qledger
+  rows produce them.
 
 ADAPTERS (one per source — all fail-open)
 -----------------------------------------
@@ -169,26 +179,14 @@ LEDGER_ENUM: tuple[str, ...] = (
 )
 
 # ---------------------------------------------------------------------------
-# Double-count prevention: engines excluded from adapt_spine()
+# Double-count prevention: event-matched altdata_conv exclusion
 # ---------------------------------------------------------------------------
-# These engines have rows in data/spine/predictions.parquet AND are also
-# adapted by a dedicated adapter (adapt_qledger for altdata_conv).  The
-# dedicated adapter is authoritative — it carries actual grade data.
-# Excluding them here prevents 133 events from appearing under two ledger
-# namespaces with conflicting horizons and graded status.
-_SPINE_EXCLUDED_ENGINES: frozenset[str] = frozenset({"altdata_conv"})
-
-# Regime stamp keys on qledger claims (from engine/qledger.py:_REGIME_STAMP_KEYS)
-_QLEDGER_REGIME_KEYS: tuple[str, ...] = (
-    "rate_pressure",
-    "quad_hard_label",
-    "fused_risk_label",
-    "vol_regime",
-    "risk_radar_state",
-    "regime_vector_degraded",
-    "vector_asof",
-    "staleness_hours",
-)
+# altdata_conv rows in data/spine/predictions.parquet are excluded from
+# adapt_spine() ONLY when a qledger twin exists for the same (symbol, as_of).
+# build_index passes the twin key set; standalone adapt_spine() calls (no
+# twin_keys) skip no rows.  engine='desk:ai_desk' rows are intentionally not
+# excluded — they have no qledger twin family.
+_ALTDATA_CONV_ENGINE: str = "altdata_conv"
 
 # Regime key mapping from board_ledger / china_standout_track (us_ prefixed) to canonical
 _US_PREFIX_MAP: dict[str, str] = {
@@ -202,8 +200,6 @@ _US_PREFIX_MAP: dict[str, str] = {
     "staleness_hours":     "staleness_hours",
 }
 
-# qledger grade horizon mapping onto SPINE_HORIZONS
-_QLEDGER_GRADE_HORIZONS: tuple[int, ...] = (5, 21, 63)
 _MFE_COL_FOR_H: dict[int, str] = {
     5:   "fwd_mfe_5",
     10:  "fwd_mfe_10",
@@ -279,18 +275,29 @@ def _str_date(val: Any) -> str | None:
 # ADAPTER a) spine
 # ---------------------------------------------------------------------------
 
-def adapt_spine(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]]:
+def adapt_spine(
+    root: Path | str | None = None,
+    *,
+    twin_keys: frozenset[tuple[str, str]] | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
     """Adapt data/spine/predictions.parquet → ledger='spine'.
 
     The spine parquet is the canonical carrier for the us_board + 7 desk
     adapters.  Do NOT re-adapt those sources directly — that would double-count
     rows already in the spine.
 
-    DOUBLE-COUNT GUARD: rows whose engine is in ``_SPINE_EXCLUDED_ENGINES``
-    are skipped.  Specifically, engine='altdata_conv' rows are excluded because
-    the same economic events are adapted from data/qledger/claims.jsonl via
-    ``adapt_qledger()`` (which carries the actual grade data and correct
-    horizon=5 vs the spine's stale horizon=63/ungraded copy).
+    DOUBLE-COUNT GUARD (event-matched): engine='altdata_conv' rows are skipped
+    ONLY when ``twin_keys`` contains (symbol, as_of) — meaning a qledger twin
+    exists for that event.  Orphan altdata_conv rows (no qledger twin) are
+    retained with ledger='spine' so they are not silently dropped from the
+    calibration index.
+
+    ``twin_keys`` is a frozenset of (symbol, as_of) tuples built from
+    qledger desk='altdata' claims by ``build_index``.  When ``twin_keys`` is
+    None (standalone call), no altdata_conv rows are excluded.
+
+    engine='desk:ai_desk' rows are intentionally NOT excluded — they have no
+    qledger twin family and no dedicated adapter.
 
     GRADED_AT BACKFILL: data/spine/predictions.parquet carries graded_at=null
     for every row (0 of 1086 populated in the current build).  For rows with
@@ -316,17 +323,27 @@ def adapt_spine(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]
     if raw.empty:
         return _empty_df(), gaps
 
-    excluded = 0
+    excluded_twin = 0   # altdata_conv rows skipped because qledger twin found
+    orphan_kept   = 0   # altdata_conv rows retained because no qledger twin
     rows: list[dict] = []
     for _, r in raw.iterrows():
         sig = _safe_str(r.get("signal_id"))
         if not sig:
             continue
         engine_val = _safe_str(r.get("engine")) or ""
-        # DOUBLE-COUNT GUARD: skip engines adapted by a dedicated adapter
-        if engine_val in _SPINE_EXCLUDED_ENGINES:
-            excluded += 1
-            continue
+        # EVENT-MATCHED DOUBLE-COUNT GUARD (altdata_conv only):
+        # Skip this altdata_conv row only when twin_keys was supplied AND
+        # (symbol, as_of) is in the qledger altdata twin key set.  Orphans
+        # (no qledger twin) are retained.  Standalone calls (twin_keys=None)
+        # skip no rows.  engine='desk:ai_desk' is intentionally not touched here.
+        if engine_val == _ALTDATA_CONV_ENGINE and twin_keys is not None:
+            sym  = _safe_str(r.get("symbol")) or ""
+            asof = _str_date(r.get("as_of")) or ""
+            if (sym, asof) in twin_keys:
+                excluded_twin += 1
+                continue
+            else:
+                orphan_kept += 1
         row: dict[str, Any] = {c: None for c in COLUMNS}
         row["signal_id"]      = sig
         row["engine"]         = engine_val
@@ -361,11 +378,10 @@ def adapt_spine(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]
         row["graded_at"] = raw_graded_at
         rows.append(row)
 
-    if excluded:
+    if twin_keys is not None and (excluded_twin or orphan_kept):
         gaps.append(
-            f"spine: excluded {excluded} rows with engine in "
-            f"{sorted(_SPINE_EXCLUDED_ENGINES)} — adapted by dedicated adapters "
-            f"(adapt_qledger); see _SPINE_EXCLUDED_ENGINES"
+            f"spine: altdata_conv: {excluded_twin} excluded (qledger twin), "
+            f"{orphan_kept} retained (no twin)"
         )
 
     if not rows:
@@ -631,8 +647,10 @@ def adapt_qledger(root: Path | str | None = None) -> tuple[pd.DataFrame, list[st
     """Adapt data/qledger/claims.jsonl ⋈ data/qledger/grades.jsonl → ledger='qledger'.
 
     JOIN KEY: claim_id.
-    GRADE HORIZONS: (5, 21, 63) — no 10d or 126d rows exist in qledger.
-    Those fwd_mfe cells stay NaN in the index.
+    GRADE HORIZONS: contract is (5, 21, 63) — no 10d or 126d rows exist in
+    qledger; those fwd_mfe cells stay NaN in the index.  Current graded data
+    is horizon=5 only (1088/1088 graded rows are h=5); h=21 and h=63 are
+    contract-reserved but not yet populated.
 
     FILL CONVENTION: pre-Stage B-e rows carry fill_convention absent or
     "asof_legacy"; post-Stage B-e rows carry "next_bar".  The fill_basis
@@ -890,13 +908,35 @@ def build_index(
     gaps: dict[str, list[str]] = {}
     frames: list[pd.DataFrame] = []
 
+    # Run qledger first so we can derive the altdata twin key set for adapt_spine.
+    # Twin keys = (symbol, as_of) for every desk='altdata' qledger claim.
+    # adapt_spine uses this set to skip altdata_conv rows that have a qledger twin
+    # (event-matched exclusion) while retaining orphans with no twin.
+    try:
+        qledger_df, qledger_gaps = adapt_qledger(root)
+        gaps["qledger"] = qledger_gaps
+        if not qledger_df.empty:
+            frames.append(qledger_df)
+        # Build twin key set: rows adapted from desk='altdata' (engine='altdata' in qledger)
+        altdata_mask = qledger_df["engine"].astype(str) == "altdata"
+        altdata_twin_keys: frozenset[tuple[str, str]] = frozenset(
+            zip(
+                qledger_df.loc[altdata_mask, "symbol"].astype(str),
+                qledger_df.loc[altdata_mask, "as_of"].astype(str),
+            )
+        )
+    except Exception as e:  # noqa: BLE001
+        msg = f"qledger: adapter raised unexpectedly ({e}) — zero rows"
+        log.warning(msg)
+        gaps["qledger"] = [msg]
+        altdata_twin_keys = frozenset()
+
     adapters = [
-        ("spine",          lambda: adapt_spine(root)),
+        ("spine",          lambda: adapt_spine(root, twin_keys=altdata_twin_keys)),
         ("track_record",   lambda: adapt_track_record(root)),
         ("board_hk",       lambda: adapt_board("hk", root)),
         ("board_ca",       lambda: adapt_board("ca", root)),
         ("board_cn",       lambda: adapt_china_board(root)),
-        ("qledger",        lambda: adapt_qledger(root)),
         ("forward_logs",   lambda: adapt_forward_logs(root)),
     ]
 

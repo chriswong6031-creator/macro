@@ -553,11 +553,15 @@ def test_query_regime_matches_any_column(tmp_path):
 # ---------------------------------------------------------------------------
 
 def _make_spine_with_altdata_conv(tmp_path: Path) -> Path:
-    """Write spine predictions.parquet that includes altdata_conv rows for NVDA and META
-    at the same as_of/symbol as the qledger altdata claims fixture.
+    """Write spine predictions.parquet that includes altdata_conv rows for NVDA and BWXT.
 
-    This reproduces the real-world double-count: spine has altdata_conv rows and qledger
-    has desk='altdata' claims for the same economic events.
+    NVDA@2026-01-05: same (symbol, as_of) as the qledger altdata claim fixture →
+    should be EXCLUDED when twin_keys is supplied (qledger is authoritative).
+
+    BWXT@2026-07-02: no matching qledger claim (orphan) → must be RETAINED
+    with ledger='spine' regardless of twin_keys.
+
+    This reproduces the real-world 134:133 spine:qledger correspondence.
     """
     rows = [
         # Normal us_board row (not excluded)
@@ -579,14 +583,14 @@ def _make_spine_with_altdata_conv(tmp_path: Path) -> Path:
             "graded_at": None,
             "meta": "{}",
         },
-        # altdata_conv row — same symbol+as_of as qledger altdata claim below
+        # altdata_conv row WITH qledger twin → excluded when twin_keys supplied
         {
             "signal_id": "altdata_conv:2026-01-05-NVDA-altconv",
             "engine": "altdata_conv",
             "version": "v1",
             "family": "altdata_conv",
-            "as_of": "2026-01-05",  # same as_of as qledger claim
-            "symbol": "NVDA",       # same symbol as qledger claim
+            "as_of": "2026-01-05",  # same as_of as qledger altdata claim
+            "symbol": "NVDA",       # same symbol as qledger altdata claim
             "universe": "us_altdata",
             "horizon": 63,          # different horizon than qledger (5)
             "score": 0.9,
@@ -595,6 +599,25 @@ def _make_spine_with_altdata_conv(tmp_path: Path) -> Path:
             "event_key": "NVDA:2026-01-05",
             "outcome_excess": None,
             "outcome_graded": False,  # ungraded in spine
+            "graded_at": None,
+            "meta": "{}",
+        },
+        # altdata_conv ORPHAN (no qledger twin) → RETAINED with ledger='spine'
+        {
+            "signal_id": "altdata_conv:2026-07-02-BWXT-altconv",
+            "engine": "altdata_conv",
+            "version": "v1",
+            "family": "altdata_conv",
+            "as_of": "2026-07-02",
+            "symbol": "BWXT",
+            "universe": "us_altdata",
+            "horizon": 63,
+            "score": 0.7,
+            "size_binding": False,
+            "direction": 1,
+            "event_key": "BWXT:2026-07-02",
+            "outcome_excess": None,
+            "outcome_graded": False,
             "graded_at": None,
             "meta": "{}",
         },
@@ -652,31 +675,31 @@ def _make_qledger_altdata(tmp_path: Path) -> tuple[Path, Path]:
 # ---------------------------------------------------------------------------
 
 def test_no_double_count_altdata_conv(tmp_path):
-    """BLOCKER-1: altdata_conv rows from spine must NOT appear in the index
-    when qledger carries the same economic event.
+    """BLOCKER-1 (event-matched): altdata_conv spine rows are excluded ONLY when a
+    qledger twin exists for (symbol, as_of); orphans (no twin) are retained.
 
-    The real-world double-count: spine has altdata_conv row for NVDA@2026-01-05
-    with horizon=63/ungraded; qledger has desk='altdata' claim for the same
-    event with horizon=5/graded.  The combined index must contain ONE row for
-    this economic event, not two.
+    Fixture:
+      - Spine: AAPL@2026-01-01 (us_board), NVDA@2026-01-05 (altdata_conv, HAS twin),
+               BWXT@2026-07-02 (altdata_conv, NO twin — orphan)
+      - qledger: desk='altdata' claim for NVDA@2026-01-05 (h=5, graded)
 
-    This test is the discrimination check that test_build_index_union_no_collision
-    fails to provide: signal_id uniqueness is trivially true by namespacing; the
-    real risk is duplicate *economic events* (same symbol+as_of) across ledgers.
+    Expected build_index result:
+      - NVDA@2026-01-05: exactly 1 row from qledger (altdata_conv spine row excluded)
+      - BWXT@2026-07-02: exactly 1 row from spine (orphan retained — no qledger twin)
+      - No altdata_conv spine row for NVDA in the index
+
+    The BWXT retention prevents silent data loss: today it is ungraded
+    (calibration-inert), but a future graded orphan would otherwise vanish from
+    the W3 calibration index without error.
     """
     _make_spine_with_altdata_conv(tmp_path)
     _make_qledger_altdata(tmp_path)
 
-    # Step 1: adapt_spine must exclude altdata_conv rows
-    spine_df, spine_gaps = Q.adapt_spine(root=tmp_path)
-    altdata_in_spine = spine_df[spine_df["engine"] == "altdata_conv"]
-    assert len(altdata_in_spine) == 0, (
-        f"adapt_spine must exclude altdata_conv rows; found {len(altdata_in_spine)}: "
-        f"{altdata_in_spine[['signal_id','engine']].to_dict('records')}"
-    )
-    # At least one gap note about the exclusion
-    assert any("altdata_conv" in n or "excluded" in n for n in spine_gaps), (
-        f"adapt_spine must log a gap note for excluded engines; gaps: {spine_gaps}"
+    # Step 1: adapt_spine standalone (no twin_keys) — must NOT exclude any rows
+    # (twin_keys=None means "no qledger context, skip nothing")
+    spine_df_standalone, _ = Q.adapt_spine(root=tmp_path)
+    assert len(spine_df_standalone[spine_df_standalone["engine"] == "altdata_conv"]) == 2, (
+        "adapt_spine with no twin_keys must retain ALL altdata_conv rows (no exclusion)"
     )
 
     # Step 2: qledger must carry the NVDA@2026-01-05 event
@@ -686,22 +709,47 @@ def test_no_double_count_altdata_conv(tmp_path):
     ]
     assert len(nvda_qledger) >= 1, "qledger must carry NVDA@2026-01-05 altdata claim"
 
-    # Step 3: build_index must carry NVDA@2026-01-05 exactly ONCE (from qledger)
-    combined, _ = Q.build_index(root=tmp_path)
+    # Step 3: build_index (supplies twin_keys to adapt_spine) — the full integration check
+    combined, gaps = Q.build_index(root=tmp_path)
+
+    # 3a: NVDA@2026-01-05 must appear exactly ONCE (from qledger — spine copy excluded)
     nvda_rows = combined[
         (combined["symbol"] == "NVDA") & (combined["as_of"] == "2026-01-05")
     ]
     assert len(nvda_rows) == 1, (
-        f"NVDA@2026-01-05 must appear exactly once in the index (not double-counted); "
+        f"NVDA@2026-01-05 must appear exactly once (qledger authoritative, spine excluded); "
         f"found {len(nvda_rows)} rows:\n{nvda_rows[['signal_id','ledger','horizon','outcome_graded']]}"
     )
-    # The surviving row must be the qledger copy (graded, horizon=5)
-    row = nvda_rows.iloc[0]
-    assert row["ledger"] == "qledger", (
-        f"surviving NVDA@2026-01-05 row must be from qledger (authoritative); got ledger={row['ledger']!r}"
+    nvda_row = nvda_rows.iloc[0]
+    assert nvda_row["ledger"] == "qledger", (
+        f"surviving NVDA@2026-01-05 must be from qledger; got ledger={nvda_row['ledger']!r}"
     )
-    assert row["outcome_graded"] == True, (  # noqa: E712
+    assert nvda_row["outcome_graded"] == True, (  # noqa: E712
         "qledger NVDA row must be graded (horizon=5 grade exists)"
+    )
+
+    # 3b: BWXT@2026-07-02 must appear exactly ONCE from spine (orphan retained)
+    bwxt_rows = combined[
+        (combined["symbol"] == "BWXT") & (combined["as_of"] == "2026-07-02")
+    ]
+    assert len(bwxt_rows) == 1, (
+        f"BWXT@2026-07-02 orphan must be retained in the index with ledger='spine'; "
+        f"found {len(bwxt_rows)} rows: {bwxt_rows[['signal_id','ledger']].to_dict('records')}"
+    )
+    bwxt_row = bwxt_rows.iloc[0]
+    assert bwxt_row["ledger"] == "spine", (
+        f"BWXT@2026-07-02 must come from ledger='spine'; got {bwxt_row['ledger']!r}"
+    )
+    assert bwxt_row["engine"] == "altdata_conv", (
+        f"BWXT row must have engine='altdata_conv'; got {bwxt_row['engine']!r}"
+    )
+
+    # 3c: Gap note must report matched-and-excluded vs orphan-retained counts
+    spine_gaps = gaps.get("spine", [])
+    assert any("altdata_conv" in n and "excluded" in n and "retained" in n
+               for n in spine_gaps), (
+        f"spine gap note must report excluded (qledger twin) and retained (no twin) counts; "
+        f"got: {spine_gaps}"
     )
 
 

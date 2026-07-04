@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "produced_by": "engine/neuralweb/query.py",
-  "produced_at": "2026-07-04T18:10:36Z",
-  "inputs_hash": "sha256:ec1f982f9d2187efe495872f00e03179b019e0e904c471651c136e511422f68e",
+  "produced_at": "2026-07-04T18:47:49Z",
+  "inputs_hash": "sha256:790c074ae6cc71d88e75434b5b8acfac5d292fa4501a790558ac91fcd80f1922",
   "tier": "infrastructure",
-  "artifact_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/neuralweb/spine_index.parquet",
-  "byte_sha256": "sha256:ec1f982f9d2187efe495872f00e03179b019e0e904c471651c136e511422f68e"
+  "artifact_path": "data/neuralweb/spine_index.parquet",
+  "byte_sha256": "sha256:790c074ae6cc71d88e75434b5b8acfac5d292fa4501a790558ac91fcd80f1922"
 }
