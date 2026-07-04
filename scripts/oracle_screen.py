@@ -242,7 +242,15 @@ def _era_consistent_count(era_directions: dict[str, str], target_dir: str) -> in
 # ---------------------------------------------------------------------------
 
 def _params_hash(compound_id: str, screener: str, panel_tier: str, horizons: list[int]) -> str:
-    payload = f"{compound_id}|{screener}|{panel_tier}|{sorted(horizons)}"
+    """Produce a 12-char hex hash covering the trial identity.
+
+    GRAMMAR_VERSION is included so that an evaluator semantics change
+    (e.g. the 1.0.0→1.1.0 nunique breadth fix) forces a NEW ledger row
+    instead of being silently suppressed by keep-first deduplication.
+    The old row under the prior version stands as a counted historical trial.
+    """
+    from engine.oracle.compounds import GRAMMAR_VERSION
+    payload = f"{compound_id}|{screener}|{panel_tier}|{sorted(horizons)}|grammar={GRAMMAR_VERSION}"
     return hashlib.sha256(payload.encode()).hexdigest()[:12]
 
 

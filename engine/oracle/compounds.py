@@ -41,6 +41,20 @@ never raises — always returns an empty Series.
 Unknown operator → ValueError raised loudly at rule parse time, not silently
 swallowed.  The grammar is the contract; extending it requires editing this
 file explicitly.
+
+GRAMMAR VERSION
+---------------
+GRAMMAR_VERSION must be bumped on ANY change to evaluator semantics.
+The version is included in the params-hash used for trial_ledger AND
+live_ledger keep-first keys so that a semantics change forces a new row
+instead of silently inheriting results from the old semantics.
+
+Version history:
+  1.0.0  — initial grammar (6 comparators + episode_event; breadth counted by
+            row-count, not distinct nodes)
+  1.1.0  — W-B4 fix: breadth semantics corrected to nunique (distinct nodes)
+            in _eval_episode_event; old keep-first rows under 1.0.0 stand as
+            counted historical trials — append, never rewrite.
 """
 from __future__ import annotations
 
@@ -57,6 +71,17 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
+
+#: Grammar version — bump on ANY change to evaluator semantics.
+#: Included in the params-hash for trial_ledger AND live_ledger keep-first
+#: keys so that a semantics change forces a new row rather than silently
+#: inheriting results from the prior evaluator.
+#:
+#: Version history:
+#:   1.0.0 — initial release (breadth counted by row-count, not distinct nodes)
+#:   1.1.0 — breadth semantics corrected to nunique (distinct nodes) in
+#:            _eval_episode_event; this was the A2 distinct-node semantics fix.
+GRAMMAR_VERSION: str = "1.1.0"
 
 #: Valid operators.  Additions require an explicit code change (the firewall).
 VALID_OPS: frozenset[str] = frozenset(
