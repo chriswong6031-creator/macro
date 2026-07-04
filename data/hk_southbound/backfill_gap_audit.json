@@ -1,60 +1,50 @@
 {
-  "as_of": "2026-07-03",
-  "n_dates": 464,
+  "updated": "2026-07-04",
+  "n_dates": 465,
   "earliest": "2024-07-10",
-  "latest": "2026-07-02",
+  "latest": "2026-07-03",
   "n_gaps": 8,
-  "gap_threshold_bdays": 3,
   "gaps": [
     {
       "from": "2024-09-13",
       "to": "2024-09-19",
-      "bdays": 4,
-      "note": "3 missing HK trading day(s) in the captured range"
+      "bdays": 4
     },
     {
       "from": "2024-09-30",
       "to": "2024-10-08",
-      "bdays": 6,
-      "note": "5 missing HK trading day(s) in the captured range"
+      "bdays": 6
     },
     {
       "from": "2025-01-27",
       "to": "2025-02-05",
-      "bdays": 7,
-      "note": "6 missing HK trading day(s) in the captured range"
+      "bdays": 7
     },
     {
       "from": "2025-04-30",
       "to": "2025-05-06",
-      "bdays": 4,
-      "note": "3 missing HK trading day(s) in the captured range"
+      "bdays": 4
     },
     {
       "from": "2025-09-30",
       "to": "2025-10-09",
-      "bdays": 7,
-      "note": "6 missing HK trading day(s) in the captured range"
+      "bdays": 7
     },
     {
       "from": "2026-02-13",
       "to": "2026-02-24",
-      "bdays": 7,
-      "note": "6 missing HK trading day(s) in the captured range"
+      "bdays": 7
     },
     {
       "from": "2026-04-02",
       "to": "2026-04-08",
-      "bdays": 4,
-      "note": "3 missing HK trading day(s) in the captured range"
+      "bdays": 4
     },
     {
       "from": "2026-04-30",
       "to": "2026-05-06",
-      "bdays": 4,
-      "note": "3 missing HK trading day(s) in the captured range"
+      "bdays": 4
     }
   ],
-  "verdict": "GAPS_DETECTED",
-  "note": "Gaps > 3 business days between consecutive captured dates. HK/mainland joint holidays are expected and < 5 bdays; gaps of 5+ bdays indicate a missed fetch in the nightly collector."
+  "verdict": "GAPS_DETECTED"
 }
