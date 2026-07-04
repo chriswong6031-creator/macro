@@ -13,8 +13,8 @@
   body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,
          "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:24px 0 28px; }
   a { text-decoration:none; }
-  .wrap { padding:16px; }
-  @media (min-width:1100px){ .wrap{ padding:18px max(28px,calc((100vw - 1680px)/2)); } }
+  .wrap { padding:16px 20px; }
+  @media (min-width:1100px){ .wrap{ padding:18px max(48px,calc((100vw - 1360px)/2)); } }
   .sr-head { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 22px; margin:10px 2px 16px; }
   .sr-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
   .sr-head .sub { color:var(--muted); font-size:12.5px; margin-top:5px; max-width:80ch; line-height:1.5; }
@@ -63,7 +63,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
-            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
             <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
           </div>
         </div>
@@ -301,14 +301,14 @@
   <div class="sr-head">
     <div>
       <h1>🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span></h1>
-      <div class="sub"><span class="l-en">Finviz's broad-universe theme → subsector map (268 subsectors across 40 themes), read for rotation: a relative-rotation map of leadership vs momentum, a velocity/acceleration screen for themes heating up early, and the subsectors leaders are rotating into and out of. A breadth/rotation lens, not a buy list — and separate from our own equal-weight thematic baskets.</span><span class="l-zh">Finviz 全市场「主题 → 子行业」图谱（40 个主题、268 个子行业）的轮动解读：相对轮动图（领先度 vs 动量）、捕捉早期升温主题的速度/加速度筛选，以及资金正在轮入/轮出的子行业。这是广度/轮动视角，并非买入清单，且独立于我们自有的等权主题篮子。</span></div>
+      <div class="sub"><span class="l-en">A broad-universe theme → subsector map (268 subsectors across 40 themes), read for rotation: a relative-rotation map of strength vs. trend, a velocity/acceleration screen for themes heating up early, and the subsectors leaders are rotating into and out of. It measures the velocity of relative strength — not nominal return. A breadth/rotation lens, not a buy list, and separate from our own equal-weight thematic baskets.</span><span class="l-zh">全市场「主题 → 子行业」图谱（40 个主题、268 个子行业）的轮动解读：相对轮动图（强度 vs 趋势）、捕捉早期升温主题的速度/加速度筛选，以及资金正在轮入/轮出的子行业。它衡量的是相对强度的变化速度，而非名义涨跌幅。这是广度/轮动视角，并非买入清单，且独立于我们自有的等权主题篮子。</span></div>
     </div>
   </div>
 
   <div id="rotation-app"></div>
 
   <div class="sr-foot">
-    <span class="l-en">Performance is Finviz's own multi-horizon snapshot (1D–1Y), refreshed nightly. Relative strength is measured cross-sectionally vs the median subsector. On the rotation map the horizontal axis is strength vs. the market (right = stronger) and the vertical axis is whether that strength is heating up or cooling (up = heating); each trail traces where a subsector has been and the arrow points where it is heading, so a longer trail is a faster mover. Click a quadrant to zoom in. Under the hood these are RS-Ratio (medium-term leadership) and RS-Momentum (is that leadership improving); acceleration compares the latest weekly pace to the 3-month pace. Research context only — not investment advice.</span><span class="l-zh">业绩为 Finviz 自有的多周期快照（1天–1年），每晚刷新。相对强度以横截面方式相对中位数子行业衡量。轮动图中，横轴为相对大盘的强弱（越靠右越强），纵轴为该强度在升温还是降温（越靠上越热）；每条轨迹描绘子行业的来路，箭头指向去向，轨迹越长移动越快。点击象限可放大。底层对应 RS-Ratio（中期领先度）与 RS-Momentum（领先度是否改善）；加速度比较最近一周与三个月的节奏。仅供研究参考，非投资建议。</span>
+    <span class="l-en">Performance is a broad-universe multi-horizon snapshot (1D–1Y), refreshed nightly. Relative strength is measured cross-sectionally vs the median subsector. On the rotation map the horizontal axis is strength vs. the market (right = stronger) and the vertical axis is whether that strength is heating up or cooling (up = heating); each trail traces where a subsector has been and the arrow points where it is heading, so a longer trail is a faster mover. Click a quadrant to zoom in. Under the hood these are RS-Ratio (medium-term leadership) and RS-Momentum (is that leadership improving); acceleration compares the latest weekly pace to the 3-month pace. Research context only — not investment advice.</span><span class="l-zh">业绩为全市场多周期快照（1天–1年），每晚刷新。相对强度以横截面方式相对中位数子行业衡量。轮动图中，横轴为相对大盘的强弱（越靠右越强），纵轴为该强度在升温还是降温（越靠上越热）；每条轨迹描绘子行业的来路，箭头指向去向，轨迹越长移动越快。点击象限可放大。底层对应 RS-Ratio（中期领先度）与 RS-Momentum（领先度是否改善）；加速度比较最近一周与三个月的节奏。仅供研究参考，非投资建议。</span>
   </div>
 </div>
 
