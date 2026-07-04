@@ -1,0 +1,133 @@
+{
+  "generated_at": "2026-07-04T20:12:23.502989+00:00",
+  "version": "v0",
+  "status": "accruing \u2014 activates as theses mature (check_by ~2026-10)",
+  "total_theses": 837,
+  "total_matured": 0,
+  "overall_verdicts": {
+    "right-for-right-reason": 0,
+    "right-wrong-reason": 0,
+    "wrong-regime-changed": 0,
+    "wrong-missing-data": 0,
+    "wrong-overfit": 0,
+    "wrong-undetermined": 0
+  },
+  "brier": {
+    "brier": null,
+    "note": "insufficient matured pairs (<10); currently 0"
+  },
+  "desks": [
+    {
+      "desk": "ai_desk",
+      "n_theses": 92,
+      "n_matured": 0,
+      "n_graded": 0,
+      "verdicts": {
+        "right-for-right-reason": 0,
+        "right-wrong-reason": 0,
+        "wrong-regime-changed": 0,
+        "wrong-missing-data": 0,
+        "wrong-overfit": 0,
+        "wrong-undetermined": 0
+      }
+    },
+    {
+      "desk": "altdata",
+      "n_theses": 134,
+      "n_matured": 0,
+      "n_graded": 0,
+      "verdicts": {
+        "right-for-right-reason": 0,
+        "right-wrong-reason": 0,
+        "wrong-regime-changed": 0,
+        "wrong-missing-data": 0,
+        "wrong-overfit": 0,
+        "wrong-undetermined": 0
+      }
+    },
+    {
+      "desk": "demand_chain",
+      "n_theses": 33,
+      "n_matured": 0,
+      "n_graded": 0,
+      "verdicts": {
+        "right-for-right-reason": 0,
+        "right-wrong-reason": 0,
+        "wrong-regime-changed": 0,
+        "wrong-missing-data": 0,
+        "wrong-overfit": 0,
+        "wrong-undetermined": 0
+      }
+    },
+    {
+      "desk": "master_brain",
+      "n_theses": 8,
+      "n_matured": 0,
+      "n_graded": 0,
+      "verdicts": {
+        "right-for-right-reason": 0,
+        "right-wrong-reason": 0,
+        "wrong-regime-changed": 0,
+        "wrong-missing-data": 0,
+        "wrong-overfit": 0,
+        "wrong-undetermined": 0
+      }
+    },
+    {
+      "desk": "policy_intent",
+      "n_theses": 13,
+      "n_matured": 0,
+      "n_graded": 0,
+      "verdicts": {
+        "right-for-right-reason": 0,
+        "right-wrong-reason": 0,
+        "wrong-regime-changed": 0,
+        "wrong-missing-data": 0,
+        "wrong-overfit": 0,
+        "wrong-undetermined": 0
+      }
+    },
+    {
+      "desk": "radar",
+      "n_theses": 105,
+      "n_matured": 0,
+      "n_graded": 0,
+      "verdicts": {
+        "right-for-right-reason": 0,
+        "right-wrong-reason": 0,
+        "wrong-regime-changed": 0,
+        "wrong-missing-data": 0,
+        "wrong-overfit": 0,
+        "wrong-undetermined": 0
+      }
+    },
+    {
+      "desk": "stock_desk",
+      "n_theses": 390,
+      "n_matured": 0,
+      "n_graded": 0,
+      "verdicts": {
+        "right-for-right-reason": 0,
+        "right-wrong-reason": 0,
+        "wrong-regime-changed": 0,
+        "wrong-missing-data": 0,
+        "wrong-overfit": 0,
+        "wrong-undetermined": 0
+      }
+    },
+    {
+      "desk": "thematic_desk",
+      "n_theses": 62,
+      "n_matured": 0,
+      "n_graded": 0,
+      "verdicts": {
+        "right-for-right-reason": 0,
+        "right-wrong-reason": 0,
+        "wrong-regime-changed": 0,
+        "wrong-missing-data": 0,
+        "wrong-overfit": 0,
+        "wrong-undetermined": 0
+      }
+    }
+  ]
+}
