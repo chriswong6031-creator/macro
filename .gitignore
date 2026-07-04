@@ -187,3 +187,6 @@ data/oracle/manifest.json
 # Oracle graph outputs (O1) — heavy JSON artifacts; published to R2 per D5
 data/oracle/graph_s.json
 data/oracle/graph_m.json
+# Oracle P3 gauntlet outputs — heavy JSON artifacts; results MD is committed, JSON is not
+data/oracle/gauntlet/p3_results.json
+data/oracle/gauntlet/p3_trial_ledger.json
