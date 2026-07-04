@@ -44,13 +44,13 @@ lanes:
       - id: export_signal_contracts
         module: scripts.export_signal_contracts
         note: non-fatal
-      - id: factor_ic_scorecard
-        module: scripts.factor_ic_scorecard
-        args: [--deep]
       - id: engine_run
         module: engine.run
       - id: build_spvector
         module: scripts.build_spvector
+      - id: factor_ic_scorecard
+        module: scripts.factor_ic_scorecard
+        args: [--deep]
       - id: build_alt_data_pre
         module: scripts.build_alt_data
         note: first pass (before altdata_brain)

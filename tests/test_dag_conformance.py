@@ -20,6 +20,7 @@ REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.check_dag_conformance import (
+    Step,
     _diff_lane,
     _extract_modules_from_run,
     _parse_dag_yml,
@@ -260,6 +261,62 @@ class TestDiffer:
         actual = ["scripts.a", "scripts.b", "__segment__spine", "__segment__band"]
         errors = _diff_lane(declared, actual, "fake/lane", [])
         assert errors == []
+
+    def test_red_serial_reorder(self):
+        """Reordering two serial steps (both present but wrong order) must RED."""
+        declared = [
+            Step(id="a", module="scripts.a", cluster=None),
+            Step(id="b", module="scripts.b", cluster=None),
+            Step(id="c", module="scripts.c", cluster=None),
+        ]
+        actual = [
+            Step(id="", module="scripts.b", cluster=None),  # swapped
+            Step(id="", module="scripts.a", cluster=None),  # swapped
+            Step(id="", module="scripts.c", cluster=None),
+        ]
+        errors = _diff_lane(declared, actual, "fake/lane", [])
+        assert errors, "Expected RED on reorder but got GREEN"
+        assert any("ORDER" in e or "order" in e.lower() for e in errors), (
+            f"Expected order-mismatch error but got: {errors}"
+        )
+
+    def test_red_cluster_member_migrated(self):
+        """Moving a module from one cluster to another must RED."""
+        declared = [
+            Step(id="band", module="scripts.mod_x1", cluster="cl_x"),
+            Step(id="band", module="scripts.mod_x2", cluster="cl_x"),
+            Step(id="band", module="scripts.mod_y1", cluster="cl_y"),
+        ]
+        actual = [
+            Step(id="", module="scripts.mod_x1", cluster="cl_x"),
+            Step(id="", module="scripts.mod_x2", cluster="cl_y"),  # migrated to cl_y
+            Step(id="", module="scripts.mod_y1", cluster="cl_y"),
+        ]
+        errors = _diff_lane(declared, actual, "fake/lane", [])
+        assert errors, "Expected RED on cluster member migration but got GREEN"
+        assert any("MIGRATED" in e or "migrated" in e.lower() for e in errors), (
+            f"Expected cluster-migration error but got: {errors}"
+        )
+
+    def test_green_serial_reorder_covered_by_divergence(self):
+        """A reorder covered by a divergence entry must remain GREEN."""
+        declared = [
+            Step(id="a", module="scripts.a", cluster=None),
+            Step(id="b", module="scripts.b", cluster=None),
+        ]
+        actual = [
+            Step(id="", module="scripts.b", cluster=None),
+            Step(id="", module="scripts.a", cluster=None),
+        ]
+        divergences = [
+            {
+                "lanes": ["fake"],
+                "differs": "scripts.a and scripts.b reordered",
+                "reason": "test",
+            }
+        ]
+        errors = _diff_lane(declared, actual, "fake / lane", divergences)
+        assert errors == [], f"Covered reorder should be GREEN but got: {errors}"
 
 
 # ---------------------------------------------------------------------------

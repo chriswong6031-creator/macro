@@ -106,10 +106,26 @@ _COMPOSITION_RE = re.compile(
 
 
 def _extract_modules_from_run(run_body: str) -> list[str]:
-    """Return ordered list of module strings from a run: block."""
-    modules: list[str] = []
-    # Extract cluster function definitions and map name -> [modules]
+    """Return ordered list of module strings from a run: block.
+
+    Preserved for backward compatibility with tests that call this function directly.
+    For cluster-aware extraction use _extract_steps_from_run().
+    """
+    return [s.module for s in _extract_steps_from_run(run_body)]
+
+
+def _extract_steps_from_run(run_body: str) -> list[Step]:
+    """Return ordered list of Steps (with cluster membership) from a run: block.
+
+    Cluster functions (cl_x() { ... }) are expanded with cluster=<cl_name>.
+    Serial invocations (run_py / python -m / brun outside a cluster func) have cluster=None.
+    Virtual __segment__xxx tokens from composition lines are emitted with cluster=None.
+    """
+    # Extract cluster function definitions and map name -> [modules].
+    # Also record the character spans of each function body so the line-level scanner
+    # can skip those regions (avoiding double-counting).
     cluster_funcs: dict[str, list[str]] = {}
+    cluster_func_spans: list[tuple[int, int]] = []  # (start, end) byte offsets to skip
     for match in _CLUSTER_FUNC_RE.finditer(run_body):
         fname = match.group(1)
         body = match.group(2)
@@ -121,27 +137,54 @@ def _extract_modules_from_run(run_body: str) -> list[str]:
         for m in _PYTHON_M_RE.finditer(body):
             cluster_mods.append(m.group(1))
         cluster_funcs[fname] = cluster_mods
+        cluster_func_spans.append((match.start(), match.end()))
 
-    # Helper to collect modules in source order from a text block,
+    def _in_cluster_func_body(char_offset: int) -> bool:
+        """True if char_offset falls inside a cl_*() { ... } definition."""
+        return any(start <= char_offset < end for start, end in cluster_func_spans)
+
+    # Helper to collect Steps in source order from a text block,
     # expanding cluster calls and composition calls.
-    def _collect(text: str, visited: set[str]) -> list[str]:
-        result: list[str] = []
-        for line in text.splitlines():
+    # Lines inside cluster function bodies are skipped — they are expanded via
+    # cluster_funcs when the cluster call line (cl_x &) is encountered.
+    def _collect(text: str, visited: set[str]) -> list[Step]:
+        result: list[Step] = []
+        char_offset = 0
+        for line in text.splitlines(keepends=True):
+            line_start = char_offset
+            char_offset += len(line)
             stripped = line.strip()
-            # Skip lines inside cluster function definitions (handled above)
-            # dag annotation escape
+            # Skip blank lines and comment-only lines quickly
+            if not stripped or stripped.startswith('#') and not re.match(r'#\s*dag:', stripped):
+                # Still need to check dag annotations even in comment lines
+                dag_ann = re.match(r'#\s*dag:\s*(\S+)', stripped)
+                if dag_ann:
+                    result.append(Step(id="", module=dag_ann.group(1), cluster=None))
+                continue
+            # Skip lines that are INSIDE a cluster function body definition —
+            # those modules are captured via cluster_funcs expansion below.
+            if _in_cluster_func_body(line_start):
+                continue
+            # dag annotation escape (non-comment context)
             dag_ann = re.match(r'#\s*dag:\s*(\S+)', stripped)
             if dag_ann:
-                result.append(dag_ann.group(1))
+                result.append(Step(id="", module=dag_ann.group(1), cluster=None))
                 continue
-            # Check for cluster call (cl_x &, cl_x;, or cl_x())
-            cl_call = re.match(r'(cl_\w+)\s*(?:[&;]|$)', stripped)
-            if cl_call:
-                fname = cl_call.group(1)
-                if fname in cluster_funcs and fname not in visited:
-                    visited = visited | {fname}
-                    result.extend(cluster_funcs[fname])
-                continue
+            # Check for cluster call(s) on this line.
+            # A line may call multiple clusters: "cl_x & cl_y & wait"
+            # Use findall so all cluster names on the line are expanded in order.
+            cl_calls = re.findall(r'\b(cl_\w+)\b', stripped)
+            if cl_calls:
+                expanded_any = False
+                for fname in cl_calls:
+                    if fname in cluster_funcs:
+                        expanded_any = True
+                        if fname not in visited:
+                            visited = visited | {fname}
+                            for mod in cluster_funcs[fname]:
+                                result.append(Step(id="", module=mod, cluster=fname))
+                if expanded_any:
+                    continue
             # Named function composition: spine; band; central; hub; us_pages; libs
             comp = re.match(
                 r'(spine|band|central|hub|us_pages|libs)(?:\s*;\s*(spine|band|central|hub|us_pages|libs))*',
@@ -158,43 +201,41 @@ def _extract_modules_from_run(run_body: str) -> list[str]:
                     # because the declared lane already captures all their modules
                     # from the full run block scan.  The composition detection is
                     # only used to confirm that "central" IS called (sector_central fix).
-                    result.append(f"__segment__{seg}")
+                    result.append(Step(id="", module=f"__segment__{seg}", cluster=None))
                 continue
             # run_py
             m = _RUN_PY_RE.search(stripped)
-            if m and not stripped.startswith('#'):
-                result.append(m.group(1))
+            if m:
+                result.append(Step(id="", module=m.group(1), cluster=None))
                 continue
             # brun outside cluster function
             m = _BRUN_RE.search(stripped)
-            if m and not stripped.startswith('#'):
-                result.append(m.group(1))
+            if m:
+                result.append(Step(id="", module=m.group(1), cluster=None))
                 continue
             # python -m
             m = _PYTHON_M_RE.search(stripped)
-            if m and not stripped.startswith('#'):
-                result.append(m.group(1))
+            if m:
+                result.append(Step(id="", module=m.group(1), cluster=None))
                 continue
         return result
 
     return _collect(run_body, set())
 
 
-def _parse_workflow(wf_path: Path) -> dict[str, list[str]]:
-    """Parse one workflow file; return {job_name: [module, ...]}."""
+def _parse_workflow(wf_path: Path) -> dict[str, list[Step]]:
+    """Parse one workflow file; return {job_name: [Step, ...]} with cluster membership."""
     raw = yaml.safe_load(wf_path.read_text())
-    result: dict[str, list[str]] = {}
+    result: dict[str, list[Step]] = {}
     jobs = raw.get("jobs", {})
     for job_name, job_body in jobs.items():
         steps = job_body.get("steps", [])
-        modules: list[str] = []
+        all_steps: list[Step] = []
         for step in steps:
             run_body = step.get("run", "")
             if run_body:
-                modules.extend(_extract_modules_from_run(run_body))
-        # Deduplicate consecutive duplicates that arise from cluster expansion,
-        # but KEEP intentional re-invocations (build_alt_data runs twice in daily).
-        result[job_name] = modules
+                all_steps.extend(_extract_steps_from_run(run_body))
+        result[job_name] = all_steps
     return result
 
 
@@ -212,22 +253,40 @@ def _declared_modules_for_lane(lane: Lane) -> list[str]:
 
 
 def _diff_lane(
-    declared_modules: list[str],
-    actual_modules: list[str],
+    declared: list[Step] | list[str],
+    actual: list[Step] | list[str],
     lane_key: str,
     divergences: list[dict],
 ) -> list[str]:
     """Return list of error strings for undeclared mismatches.
 
-    The diff is order-aware for serial steps but cluster-tolerant:
-    clusters (parallel bands) are identified by cluster membership rather than
-    exact position because their internal ordering within the band is preserved
-    by the declaration, but the checker allows the band clusters to appear in
-    any interleaving relative to each other (they run as background subshells).
+    Accepts either list[Step] (preferred, cluster-aware) or list[str] (legacy,
+    treated as serial steps with cluster=None for backward compatibility).
+
+    The diff is order-aware for serial steps (cluster=None): the relative order
+    of serial modules in the declared sequence must be preserved in actual.
+    Cluster steps are checked both for presence AND cluster membership: a module
+    declared in cl_x must be found in cl_x in the actual workflow, not just
+    anywhere in the workflow.
+
+    Cluster interleaving (the order in which parallel clusters execute relative
+    to each other) is not checked — clusters run as background subshells and
+    their wall-clock interleaving is non-deterministic.
     """
+    # Normalise inputs: accept both list[str] and list[Step]
+    def _to_steps(seq: list[Step] | list[str]) -> list[Step]:
+        if not seq:
+            return []
+        if isinstance(seq[0], str):
+            return [Step(id="", module=m, cluster=None) for m in seq]
+        return list(seq)
+
+    declared_steps = _to_steps(declared)
+    actual_steps = _to_steps(actual)
+
     errors: list[str] = []
 
-    # Build a set of (workflow_short_name, cluster_or_serial) for divergence lookup
+    # Build a set of (workflow_short_name) for divergence lookup
     wf_short = lane_key.split("/")[0].strip().split("/")[-1].replace(".yml", "")
 
     def _covered_by_divergence(module: str) -> tuple[bool, bool]:
@@ -243,31 +302,171 @@ def _diff_lane(
                 return True, is_suspect
         return False, False
 
-    # Simple set-based check: for each declared module, verify it appears in actual
-    actual_set = set(actual_modules)
-    declared_set = set(declared_modules)
+    # ---- 1. Cluster-membership check ----------------------------------------
+    # For every declared cluster step, verify the module appears in the SAME cluster
+    # in actual (not just anywhere).  A module migrated to a different cluster is
+    # an undeclared structural change.
+    #
+    # Build: declared cluster → set[module]; actual cluster → set[module]
+    declared_by_cluster: dict[str, set[str]] = {}
+    for s in declared_steps:
+        if s.cluster is not None and not s.module.startswith("__segment__"):
+            declared_by_cluster.setdefault(s.cluster, set()).add(s.module)
 
-    # Modules in declared but missing from actual (except __segment__ virtual entries)
-    for mod in declared_set - actual_set:
-        if mod.startswith("__segment__"):
+    actual_by_cluster: dict[str, set[str]] = {}
+    for s in actual_steps:
+        if s.cluster is not None and not s.module.startswith("__segment__"):
+            actual_by_cluster.setdefault(s.cluster, set()).add(s.module)
+
+    # Modules declared in cluster X but absent from cluster X in actual
+    for cl_name, decl_mods in declared_by_cluster.items():
+        act_mods = actual_by_cluster.get(cl_name, set())
+        for mod in decl_mods - act_mods:
+            covered, _ = _covered_by_divergence(mod)
+            if not covered:
+                # Distinguish: missing entirely vs present in wrong cluster
+                actual_all = {s.module for s in actual_steps if not s.module.startswith("__segment__")}
+                if mod in actual_all:
+                    # Find which cluster it ended up in
+                    wrong_clusters = [
+                        s.cluster for s in actual_steps
+                        if s.module == mod and s.cluster != cl_name
+                    ]
+                    wrong_str = ", ".join(str(c) for c in wrong_clusters) if wrong_clusters else "unknown"
+                    errors.append(
+                        f"  CLUSTER MEMBER MIGRATED in {lane_key}: module '{mod}' declared "
+                        f"in cluster '{cl_name}' but found in cluster '{wrong_str}' in the "
+                        f"live workflow.  Update dag.yml or add a divergences entry."
+                    )
+                else:
+                    errors.append(
+                        f"  UNDECLARED ABSENCE in {lane_key}: module '{mod}' declared in "
+                        f"dag.yml (cluster '{cl_name}') but NOT found in the live workflow."
+                    )
+
+    # Modules present in cluster X in actual but NOT declared in cluster X
+    for cl_name, act_mods in actual_by_cluster.items():
+        decl_mods = declared_by_cluster.get(cl_name, set())
+        for mod in act_mods - decl_mods:
+            covered, _ = _covered_by_divergence(mod)
+            if not covered:
+                # Is it declared in a different cluster (migration detected from the other side)?
+                declared_all_clusters = {
+                    s.cluster for s in declared_steps
+                    if s.module == mod and s.cluster is not None
+                }
+                if declared_all_clusters:
+                    # Already reported from the declared side; skip double-reporting
+                    continue
+                errors.append(
+                    f"  UNDECLARED ADDITION in {lane_key}: module '{mod}' found in cluster "
+                    f"'{cl_name}' in live workflow but NOT declared in dag.yml."
+                )
+
+    # ---- 2. Serial-step presence + order check --------------------------------
+    # Collect serial (non-cluster) steps from declared and actual.
+    # NOTE: workflow parsers see ALL case-arm branches (e.g. scope=all, scope=china,
+    # scope=gex) as a flat list.  Cluster modules sometimes appear AGAIN as cluster=None
+    # in scope-specific arms (e.g. "gex)" arm uses run_py directly for the same modules
+    # that the "all)" arm puts in cl_gex).  These scope-arm duplicates are intentional
+    # and must NOT be flagged as undeclared serial additions.  We therefore exclude from
+    # the serial sets any module that is declared (or found) as a cluster member.
+    declared_all_modules = {s.module for s in declared_steps if not s.module.startswith("__segment__")}
+    declared_cluster_modules = {
+        s.module for s in declared_steps
+        if s.cluster is not None and not s.module.startswith("__segment__")
+    }
+    actual_cluster_modules = {
+        s.module for s in actual_steps
+        if s.cluster is not None and not s.module.startswith("__segment__")
+    }
+
+    serial_declared = [
+        s.module for s in declared_steps
+        if s.cluster is None and not s.module.startswith("__segment__")
+    ]
+    # Exclude from actual-serial any module that is known to belong to a cluster
+    # (either declared-cluster or actual-cluster) — those are scope-arm duplicates.
+    serial_actual = [
+        s.module for s in actual_steps
+        if s.cluster is None
+        and not s.module.startswith("__segment__")
+        and s.module not in declared_cluster_modules
+        and s.module not in actual_cluster_modules
+    ]
+
+    declared_serial_set = set(serial_declared)
+    actual_serial_set = set(serial_actual)
+
+    # Presence: declared serial module missing from actual (also not in any cluster)
+    for mod in declared_serial_set - actual_serial_set:
+        # A declared serial module that appeared as a cluster module in actual is OK;
+        # it means the workflow restructured it into a cluster (caught by cluster check).
+        if mod in actual_cluster_modules:
             continue
-        covered, suspect = _covered_by_divergence(mod)
+        covered, _ = _covered_by_divergence(mod)
         if not covered:
             errors.append(
                 f"  UNDECLARED ABSENCE in {lane_key}: module '{mod}' declared in "
                 f"dag.yml but NOT found in the live workflow."
             )
 
-    # Modules in actual but not in declared (filter out internal segment markers)
-    for mod in actual_set - declared_set:
-        if mod.startswith("__segment__"):
+    # Presence: actual serial module not declared anywhere (serial or cluster)
+    for mod in actual_serial_set - declared_serial_set:
+        if mod in declared_all_modules:
+            # Declared as cluster but found serial — that's a structural change caught
+            # by the cluster-membership check, not a new module.
             continue
-        covered, suspect = _covered_by_divergence(mod)
+        covered, _ = _covered_by_divergence(mod)
         if not covered:
             errors.append(
                 f"  UNDECLARED ADDITION in {lane_key}: module '{mod}' found in live "
                 f"workflow but NOT declared in dag.yml."
             )
+
+    # Order: the relative order of serial declared modules must be preserved in actual.
+    # Build the subsequence of serial_actual that contains the declared modules (in
+    # actual order), then compare it to serial_declared.  A reorder is detected when
+    # this subsequence differs from serial_declared.
+    # Only compare modules present in BOTH (already reported absent/extra above).
+    #
+    # Re-invocation handling: some modules are legitimately called multiple times in the
+    # same job (e.g. build_alt_data in daily, build_dead_name_fundamentals in weekly).
+    # dag.yml declares each re-invocation as a separate step, so serial_declared may
+    # contain the module name multiple times.  We must preserve the multiplicity when
+    # building the actual sequence for comparison.
+    #
+    # Scope-arm deduplication: workflows with scope-based dispatch (case "$SCOPE" in)
+    # may re-invoke the same modules in scope-specific arms (e.g. the "baskets)" arm
+    # re-runs build_radar_plus).  These scope-arm duplicates appear at the END of the
+    # parsed step list (after all the all-scope steps).  To avoid false-positive order
+    # errors, we cap the actual subsequence length to the declared count for modules that
+    # appear fewer times in declared than in actual.
+    common_serial = [m for m in serial_declared if m in actual_serial_set]
+    actual_common_order_raw = [m for m in serial_actual if m in declared_serial_set]
+    # Count declared occurrences per module so we know the allowed multiplicity
+    from collections import Counter
+    declared_counts = Counter(serial_declared)
+    _occurrence: Counter = Counter()
+    actual_common_order: list[str] = []
+    for m in actual_common_order_raw:
+        if _occurrence[m] < declared_counts[m]:
+            actual_common_order.append(m)
+            _occurrence[m] += 1
+    if common_serial != actual_common_order:
+        # Find the first position where they diverge to give a precise message
+        for i, (dec, act) in enumerate(zip(common_serial, actual_common_order)):
+            if dec != act:
+                covered_dec, _ = _covered_by_divergence(dec)
+                covered_act, _ = _covered_by_divergence(act)
+                if not covered_dec and not covered_act:
+                    errors.append(
+                        f"  SERIAL ORDER MISMATCH in {lane_key}: at position {i}, "
+                        f"declared order has '{dec}' but live workflow has '{act}'. "
+                        f"Declared sequence: {common_serial}. "
+                        f"Actual sequence: {actual_common_order}."
+                    )
+                    break  # one error per lane is enough to diagnose a reorder
 
     return errors
 
@@ -295,25 +494,24 @@ def run_conformance(repo_root: Path, verbose: bool = False) -> int:
             )
             continue
         try:
-            job_modules = _parse_workflow(wf_path)
+            job_steps = _parse_workflow(wf_path)
         except Exception as exc:  # noqa: BLE001
             all_errors.append(f"  PARSE ERROR {lane.workflow}: {exc}")
             continue
-        if lane.job not in job_modules:
+        if lane.job not in job_steps:
             all_errors.append(
                 f"  MISSING JOB: job '{lane.job}' declared in dag.yml "
                 f"but not found in {lane.workflow}."
             )
             continue
 
-        actual_modules = job_modules[lane.job]
-        declared_modules = _declared_modules_for_lane(lane)
+        actual_steps = job_steps[lane.job]
         lk = f"{lane.workflow} / {lane.job}"
-        errors = _diff_lane(declared_modules, actual_modules, lk, divergences)
+        errors = _diff_lane(lane.steps, actual_steps, lk, divergences)
         all_errors.extend(errors)
         checked += 1
         if verbose:
-            print(f"  [OK] {lk} ({len(declared_modules)} declared steps)")
+            print(f"  [OK] {lk} ({len(lane.steps)} declared steps)")
 
     # Print suspect divergences every run (visibility requirement)
     if suspect_divs:
@@ -391,72 +589,109 @@ _DAG_FIXTURE_GREEN = {
 }
 
 
+def _build_declared_steps(dag_fixture: dict) -> list[Step]:
+    """Build a flat list[Step] from a dag fixture dict (same logic as _parse_dag_yml)."""
+    steps: list[Step] = []
+    for entry in dag_fixture.get("lanes", [{}]):
+        for step in entry.get("steps", []):
+            sid = step.get("id", "")
+            if "cluster" in step:
+                for cl_name, modules in step["cluster"].items():
+                    for mod in modules:
+                        mod_clean = mod.split()[0]
+                        steps.append(Step(id=sid, module=mod_clean, cluster=cl_name))
+            else:
+                mod = step.get("module", "")
+                steps.append(Step(id=sid, module=mod, cluster=None))
+    return steps
+
+
 def _run_selftest() -> int:
     """Run synthetic scenarios; return 0 if all pass, 1 if any fail."""
     import copy
-    import tempfile
 
     failures: list[str] = []
 
-    actual_modules_green = _extract_modules_from_run(
+    # Parse the synthetic workflow to get actual Steps (with cluster info)
+    actual_steps_all = _extract_steps_from_run(
         "\n".join(
             s.get("run", "")
             for s in yaml.safe_load(_SYNTHETIC_WORKFLOW)["jobs"]["build"]["steps"]
         )
     )
-    # Filter to just real modules
-    actual_set = {m for m in actual_modules_green if not m.startswith("__")}
+    # Filter virtual segment tokens
+    actual_steps_real = [s for s in actual_steps_all if not s.module.startswith("__")]
 
     # ---- GREEN: declared matches actual ----
     dag_green = copy.deepcopy(_DAG_FIXTURE_GREEN)
-    declared_green = [
-        s["module"]
-        for s in dag_green["lanes"][0]["steps"]
-        if "module" in s
-    ] + [
-        mod
-        for s in dag_green["lanes"][0]["steps"]
-        if "cluster" in s
-        for mods in s["cluster"].values()
-        for mod in mods
-    ]
-    errs = _diff_lane(declared_green, list(actual_set), "__synthetic__/build", [])
+    declared_steps_green = _build_declared_steps(dag_green)
+    errs = _diff_lane(declared_steps_green, actual_steps_real, "__synthetic__/build", [])
     if errs:
         failures.append(f"SELFTEST GREEN failed (should have no errors): {errs}")
 
-    # ---- RED-a: remove a step from declared ----
-    dag_missing = copy.deepcopy(_DAG_FIXTURE_GREEN)
-    # Remove mod_c from declared
-    dag_missing["lanes"][0]["steps"] = [
-        s for s in dag_missing["lanes"][0]["steps"]
+    # ---- RED-a: remove a declared step that IS present in actual ----
+    # Declare only mod_a, mod_b, cluster, but NOT mod_c.
+    # actual still has mod_c -> UNDECLARED ADDITION detected.
+    dag_missing_decl = copy.deepcopy(_DAG_FIXTURE_GREEN)
+    dag_missing_decl["lanes"][0]["steps"] = [
+        s for s in dag_missing_decl["lanes"][0]["steps"]
         if s.get("module") != "scripts.mod_c"
     ]
-    declared_missing = ["scripts.mod_a", "scripts.mod_b", "scripts.mod_x1", "scripts.mod_x2", "scripts.mod_y1"]
-    errs = _diff_lane(declared_missing, list(actual_set), "__synthetic__/build", [])
+    declared_steps_missing = _build_declared_steps(dag_missing_decl)
+    errs = _diff_lane(declared_steps_missing, actual_steps_real, "__synthetic__/build", [])
     if not errs:
-        failures.append("SELFTEST RED-a failed: should have detected missing 'scripts.mod_c' from declared")
+        failures.append(
+            "SELFTEST RED-a failed: should have detected 'scripts.mod_c' present in "
+            "actual but absent from declared"
+        )
 
-    # ---- RED-b: reorder step (module absent in declared but present in actual) ----
-    dag_reorder = copy.deepcopy(_DAG_FIXTURE_GREEN)
-    # Simulate actual having an extra module the declared doesn't know about
-    actual_with_extra = list(actual_set) + ["scripts.mod_extra"]
-    errs = _diff_lane(declared_green, actual_with_extra, "__synthetic__/build", [])
+    # ---- RED-b: reorder two serial steps ----
+    # Declared: mod_a THEN mod_b.  Actual: mod_b THEN mod_a (swapped).
+    # The checker must detect the order violation and exit RED.
+    declared_steps_ordered = [
+        Step(id="a", module="scripts.mod_a", cluster=None),
+        Step(id="b", module="scripts.mod_b", cluster=None),
+        Step(id="c", module="scripts.mod_c", cluster=None),
+    ]
+    actual_steps_reordered = [
+        Step(id="", module="scripts.mod_b", cluster=None),  # swapped
+        Step(id="", module="scripts.mod_a", cluster=None),  # swapped
+        Step(id="", module="scripts.mod_c", cluster=None),
+    ]
+    errs = _diff_lane(declared_steps_ordered, actual_steps_reordered, "__synthetic__/build", [])
     if not errs:
-        failures.append("SELFTEST RED-b failed: should have detected undeclared 'scripts.mod_extra' in actual")
+        failures.append(
+            "SELFTEST RED-b failed: should have detected reorder of "
+            "scripts.mod_a / scripts.mod_b (declared order not preserved)"
+        )
 
     # ---- RED-c: cluster member moved between clusters ----
-    # Simulate: declared says mod_x2 is in cl_x, but actual moved it to cl_y
-    # In set-based check this would show as no error since the module still exists.
-    # The set-diff is cluster-tolerant by design; this tests that we don't false-red.
-    # (Cluster-level ordering is documented as suspect in the divergences.)
-    pass  # Cluster reordering is a suspect divergence, not a hard error
+    # Declared: mod_x2 in cl_x, mod_y1 in cl_y.
+    # Actual: mod_x2 moved to cl_y (still present, just in wrong cluster).
+    # The checker must detect the cluster-membership violation.
+    declared_steps_clustered = [
+        Step(id="band", module="scripts.mod_x1", cluster="cl_x"),
+        Step(id="band", module="scripts.mod_x2", cluster="cl_x"),   # declared in cl_x
+        Step(id="band", module="scripts.mod_y1", cluster="cl_y"),
+    ]
+    actual_steps_migrated = [
+        Step(id="", module="scripts.mod_x1", cluster="cl_x"),
+        Step(id="", module="scripts.mod_x2", cluster="cl_y"),   # migrated to cl_y
+        Step(id="", module="scripts.mod_y1", cluster="cl_y"),
+    ]
+    errs = _diff_lane(declared_steps_clustered, actual_steps_migrated, "__synthetic__/build", [])
+    if not errs:
+        failures.append(
+            "SELFTEST RED-c failed: should have detected scripts.mod_x2 migrated "
+            "from cluster 'cl_x' (declared) to cluster 'cl_y' (actual)"
+        )
 
     # ---- GREEN on declared divergences ----
     dag_div = copy.deepcopy(_DAG_FIXTURE_GREEN)
-    # declared includes scripts.mod_x2, actual does NOT (it moved to cl_y in the workflow)
-    actual_without_x2 = {m for m in actual_set if m != "scripts.mod_x2"}
+    # declared includes scripts.mod_x2 in cl_x, actual does NOT have it at all
+    actual_without_x2 = [s for s in actual_steps_real if s.module != "scripts.mod_x2"]
     divs_covering = [{"lanes": ["build"], "differs": "scripts.mod_x2 omitted", "reason": "test"}]
-    errs = _diff_lane(declared_green, list(actual_without_x2), "__synthetic__/build", divs_covering)
+    errs = _diff_lane(declared_steps_green, actual_without_x2, "__synthetic__/build", divs_covering)
     if errs:
         failures.append(f"SELFTEST GREEN-with-divergence failed: {errs}")
 
@@ -466,7 +701,7 @@ def _run_selftest() -> int:
             print(f"  {f}")
         return 1
 
-    print("SELFTEST PASSED: GREEN/RED-a/RED-b/GREEN-with-divergence all correct.")
+    print("SELFTEST PASSED: GREEN/RED-a/RED-b/RED-c/GREEN-with-divergence all correct.")
     return 0
 
 
