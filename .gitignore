@@ -194,3 +194,6 @@ data/oracle/gauntlet/p3_results.json
 # The negation below overrides the gitignore for that specific file only.
 data/oracle/gauntlet/p3_trial_ledger.json
 !data/oracle/gauntlet/p3_trial_ledger.json
+# Oracle P8 gauntlet outputs — JSON artifacts gitignored; results MD is committed
+data/oracle/gauntlet/p8_results.json
+data/oracle/gauntlet/p8_trial_ledger.json
