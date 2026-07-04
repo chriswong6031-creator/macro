@@ -181,6 +181,30 @@ _HOOKS = {"track_record": _refresh_track_record,
           "qledger_promotion": _refresh_qledger_promotion}
 
 
+# Newer seed entries (hazard-live-reliability-*, w5a-reversal-rederive, hkca-*, w3*-…)
+# were authored with an alternate keyset: title/hypothesis/registered_on/pr plus
+# program/wave/channel/phase and verdict/result. compute() normalizes both keysets so
+# the manifest never emits name/what=null — the admin Experiments tab renders those
+# fields directly and shows blank cards otherwise.
+
+def _alt_phase_hint(e: dict) -> str | None:
+    """phase_hint fallback: 'program · wave · channel · phase' (blanks and N/A skipped)."""
+    parts = [str(v) for v in (e.get("program"), e.get("wave"), e.get("channel"), e.get("phase"))
+             if v and str(v).strip().lower() not in ("", "n/a")]
+    return " · ".join(parts) or None
+
+
+def _alt_state(e: dict) -> str | None:
+    """state fallback: verdict + result, capped — some seed verdicts run to a paragraph."""
+    bits = []
+    if e.get("verdict"):
+        bits.append(f"verdict={e['verdict']}")
+    if e.get("result"):
+        bits.append(str(e["result"]))
+    s = " · ".join(bits)
+    return (s[:397] + "…") if len(s) > 400 else (s or None)
+
+
 def compute() -> dict:
     today = datetime.now(timezone.utc).date()
     seed = _read_json(SEED) or {}
@@ -188,14 +212,15 @@ def compute() -> dict:
     out = []
     for e in rows_in:
         rec = {
-            "id": e.get("id"), "name": e.get("name"), "kind": e.get("kind"),
+            "id": e.get("id"), "name": e.get("name") or e.get("title"), "kind": e.get("kind"),
             "status": e.get("status") or "accruing", "priority": e.get("priority", "medium"),
-            "what": e.get("what"), "source": e.get("source"), "storage": e.get("storage", ""),
+            "what": e.get("what") or e.get("hypothesis"),
+            "source": e.get("source") or e.get("pr"), "storage": e.get("storage", ""),
             "surfaced": e.get("surfaced"), "cadence": e.get("cadence"),
-            "started": e.get("started"), "maturation": e.get("maturation"),
+            "started": e.get("started") or e.get("registered_on"), "maturation": e.get("maturation"),
             "come_back_on": e.get("come_back_on"), "come_back_note": e.get("come_back_note"),
-            "next_step": e.get("next_step"), "phase_hint": e.get("phase_hint"),
-            "state": e.get("state"), "ready": False,
+            "next_step": e.get("next_step"), "phase_hint": e.get("phase_hint") or _alt_phase_hint(e),
+            "state": e.get("state") or _alt_state(e), "ready": False,
         }
         hook = _HOOKS.get(e.get("hook") or "")
         if hook:
