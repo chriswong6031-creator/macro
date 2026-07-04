@@ -1,0 +1,15 @@
+{
+  "as_of": "2026-07-04",
+  "board": [
+    {
+      "ticker": "NVDA",
+      "rank": 1,
+      "score": 0.8
+    }
+  ],
+  "schema_version": 1,
+  "produced_by": "engine/master_brain.py",
+  "produced_at": "2026-07-04T12:00:00Z",
+  "inputs_hash": "sha256:cffe30642c862c979449c3a8157eb27ba0daf66a832110570aeb52c1d881e7d4",
+  "tier": "shadow"
+}
