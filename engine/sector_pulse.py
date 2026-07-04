@@ -51,6 +51,14 @@ log = logging.getLogger(__name__)
 # Heat-tier thresholds (simple, documented, deterministic).
 # ALL labels are DESCRIPTIVE — they characterise the current rank/score
 # trajectory, never imply a forward-return forecast.
+#
+# Phase-0 kill-test (scripts.calibrate_sector_pulse_heat, 27y SPDR proxy,
+# 2026-07-03): heating/hot showed NO forward-return edge vs same-day idle and,
+# if anything, slightly DEEPER 21d drawdowns; cooling was not separately
+# confirmed (the rank-drop leg dilutes the validated fading label); broken
+# precedes measurably deeper drawdowns (consistent with the deteriorating
+# label's baskets_calibration verdict). Tiers therefore stay display-only;
+# _heat_strength() grades each tier from data/strategies/sector_pulse_heat.json.
 # ---------------------------------------------------------------------------
 # "heating": rank is improving fast (moved up ≥3 rank positions in 5 sessions
 #            OR score rose ≥6 points in 5 sessions) AND the lifecycle label is
@@ -220,9 +228,76 @@ def _heat_tier(rank: int, n_themes: int, label: str,
     return "idle"
 
 
+# ----------------------------------------------- backtested heat-tier grading
+def _heat_calibration() -> dict:
+    """The phase-0 heat-tier kill-test verdict from scripts.calibrate_sector_pulse_heat
+    (data/strategies/sector_pulse_heat.json — 27y SPDR-proxy, paired-vs-idle HAC t + BH).
+    Display/grade only, additive — returns {} if absent so every tier keeps the honest
+    'descriptive' framing. The tier logic (_heat_tier) is shared across regions, so the
+    US-proxy verdict is cited cross-market, exactly as theme_scoring._signal_calibration
+    cites baskets_calibration.json."""
+    try:
+        from lib import config
+        p = config.data_dir() / "strategies" / "sector_pulse_heat.json"
+        d = json.loads(p.read_text()) if p.exists() else {}
+        return d.get("verdict", {}) if isinstance(d, dict) else {}
+    except Exception:  # noqa: BLE001 — grading is enrichment, never fatal
+        return {}
+
+
+def _heat_strength(heat: str | None, cal: dict) -> dict | None:
+    """Grade a theme's CURRENT heat tier by what the kill-test measured about it —
+    mirrors theme_scoring._signal_strength. Phase-0 verdict (2026-07-03, 27y proxy):
+    heating/hot showed NO forward-return edge vs same-day idle, and if anything slightly
+    DEEPER forward drawdowns (the inverted tripwire) → 'descriptive'; cooling was NOT
+    separately confirmed (the rank-drop leg dilutes the validated fading label) →
+    'unconfirmed'; broken precedes measurably deeper drawdowns → 'backtested' risk.
+    cal {} → None (payload keeps its existing honest framing); idle carries no claim."""
+    if not cal or heat in (None, "idle"):
+        return None
+    v = cal.get(heat) or {}
+    if not v or v.get("verdict") in (None, "baseline"):
+        return None
+    measured = v.get("verdict") == "measurable_edge"
+    inverted = bool(v.get("inverted"))
+    common = {"measured": bool(measured), "metric": v.get("claim"),
+              "mean_pct": v.get("mean_pct"), "t_hac": v.get("t_hac"),
+              "n_days": v.get("n_days")}
+    if heat in ("cooling", "broken"):
+        return {"grade": "backtested" if measured else "unconfirmed", "kind": "risk",
+                **common,
+                "en": ("Backtested risk read — on 27y of proxy history this tier precedes "
+                       "measurably deeper 21-day drawdowns than same-day idle themes "
+                       "(a risk timer, not a return forecast)." if measured else
+                       "Risk read — not separately confirmed vs idle on the proxy; the "
+                       "fading/deteriorating LABEL grades remain the backtested risk reads."),
+                "zh": ("已回测的风险信号 — 在27年代理历史上，该档位领先于比同日闲置主题"
+                       "更深的21日回撤（风险计时器，非收益预测）。" if measured else
+                       "风险信号 — 代理上未相对闲置档单独验证；已回测的风险读数仍是"
+                       "退潮/走弱标签本身。")}
+    if heat in ("heating", "hot"):
+        if measured:
+            return {"grade": "backtested", "kind": "continuation", **common,
+                    "en": ("Backtested — this tier preceded measurable forward strength "
+                           "vs same-day idle themes on the 27y proxy."),
+                    "zh": "已回测 — 在27年代理上该档位领先于相对闲置档的可测前向优势。"}
+        caution_en = (" If anything, it drew slightly DEEPER 21-day drawdowns than idle "
+                      "— a chase caution, never an entry signal.") if inverted else ""
+        caution_zh = ("（若有差异，其21日回撤反而略深于闲置档 — 追高警示，绝非入场信号。）"
+                      if inverted else "")
+        return {"grade": "descriptive", "kind": "continuation", **common,
+                "en": ("Descriptive — the phase-0 kill-test found no forward-return or "
+                       "drawdown edge vs same-day idle themes on the 27y proxy."
+                       + caution_en),
+                "zh": ("描述性 — 阶段0检验在27年代理上未发现相对同日闲置主题的前向收益"
+                       "或回撤优势。" + caution_zh)}
+    return None
+
+
 def _build_theme_row(th: dict, n_themes: int,
                      rank_1d: dict[str, int], rank_5d: dict[str, int], rank_20d: dict[str, int],
-                     score_5d: dict[str, float], score_20d: dict[str, float]) -> dict:
+                     score_5d: dict[str, float], score_20d: dict[str, float],
+                     heat_cal: dict | None = None) -> dict:
     """Assemble one pulse row from a full theme_intel theme entry + archive look-ups."""
     tid = th["id"]
     cur_rank = th.get("rank")
@@ -284,8 +359,9 @@ def _build_theme_row(th: dict, n_themes: int,
         # Multi-timeframe momentum
         "momentum_score": mtf.get("momentum_score"),
         "long_sign": confluence.get("long_sign"),
-        # Descriptive heat tier
+        # Descriptive heat tier + its kill-test grade (None = no calibration / no claim)
         "heat": heat,
+        "heat_strength": _heat_strength(heat, heat_cal or {}),
     }
 
 
@@ -324,11 +400,13 @@ def build_pulse(region: str = "us") -> dict | None:
         rank_20d = _rank_map_at(snapshots, 20)
         score_5d = _score_map_at(snapshots, 5)
         score_20d = _score_map_at(snapshots, 20)
+        heat_cal = _heat_calibration()
 
         rows: list[dict] = []
         for th in themes_raw:
             try:
-                row = _build_theme_row(th, n, rank_1d, rank_5d, rank_20d, score_5d, score_20d)
+                row = _build_theme_row(th, n, rank_1d, rank_5d, rank_20d, score_5d, score_20d,
+                                       heat_cal)
                 rows.append(row)
             except Exception:  # noqa: BLE001
                 log.debug("sector_pulse: skipping theme %s due to error", th.get("id"), exc_info=True)
@@ -350,6 +428,10 @@ def build_pulse(region: str = "us") -> dict | None:
             "themes": rows,
             "heating": heating,
             "cooling": cooling,
+            # Per-tier kill-test grades (backtested vs descriptive/unconfirmed); {} when
+            # the calibration artifact is absent — consumers fall back to descriptive.
+            "heat_grades": {t: (_heat_strength(t, heat_cal) or {}).get("grade")
+                            for t in ("heating", "hot", "cooling", "broken")} if heat_cal else {},
         }
     except Exception:  # noqa: BLE001
         log.warning("sector_pulse.build_pulse failed for region=%s", region, exc_info=True)
@@ -468,6 +550,9 @@ def merge_pulse_into_theme_intel(ti: dict, region: str) -> None:
     modified, missing keys default to None so JS can degrade safely on pre-W4 payloads):
 
         pulse_heat          — str: "heating" | "hot" | "cooling" | "broken" | "idle" | None
+        pulse_heat_grade    — str | None: "backtested" | "descriptive" | "unconfirmed"
+                              (the kill-test grade for the tier; None = no calibration
+                              artifact or the tier carries no claim, e.g. idle)
         pulse_rank_delta_1d — int | None   (positive = rank improved, i.e. number went down)
         pulse_rank_delta_5d — int | None
         pulse_rank_delta_20d — int | None
@@ -490,6 +575,7 @@ def merge_pulse_into_theme_intel(ti: dict, region: str) -> None:
         rank_20d = _rank_map_at(snapshots, 20)
         score_5d = _score_map_at(snapshots, 5)
         score_20d = _score_map_at(snapshots, 20)
+        heat_cal = _heat_calibration()
 
         for th in themes_raw:
             try:
@@ -510,8 +596,11 @@ def merge_pulse_into_theme_intel(ti: dict, region: str) -> None:
                 sd5 = _sd(cur_score, score_5d)
                 heat = _heat_tier(cur_rank or 9999, n, label, rd5, sd5)
 
+                hs = _heat_strength(heat, heat_cal)
+
                 # Additive: set only if not already present (never overwrite existing data)
                 th.setdefault("pulse_heat", heat)
+                th.setdefault("pulse_heat_grade", (hs or {}).get("grade"))
                 th.setdefault("pulse_rank_delta_1d", rd1)
                 th.setdefault("pulse_rank_delta_5d", rd5)
                 th.setdefault("pulse_rank_delta_20d", rd20)
@@ -552,12 +641,13 @@ def write_pulse(ti: dict, region: str, out_dir: Any) -> None:
         rank_20d = _rank_map_at(snapshots, 20)
         score_5d = _score_map_at(snapshots, 5)
         score_20d = _score_map_at(snapshots, 20)
+        heat_cal = _heat_calibration()
 
         rows: list[dict] = []
         for th in themes_raw:
             try:
                 rows.append(_build_theme_row(th, n, rank_1d, rank_5d, rank_20d,
-                                             score_5d, score_20d))
+                                             score_5d, score_20d, heat_cal))
             except Exception:  # noqa: BLE001
                 log.debug("write_pulse: skipping theme %s", th.get("id"), exc_info=True)
 
@@ -577,6 +667,8 @@ def write_pulse(ti: dict, region: str, out_dir: Any) -> None:
             "themes": rows,
             "heating": heating,
             "cooling": cooling,
+            "heat_grades": {t: (_heat_strength(t, heat_cal) or {}).get("grade")
+                            for t in ("heating", "hot", "cooling", "broken")} if heat_cal else {},
         }
         (p / fname).write_text(json.dumps(payload, separators=(",", ":"), default=str))
         log.info("sector_pulse: wrote %s (%d themes)", fname, len(rows))

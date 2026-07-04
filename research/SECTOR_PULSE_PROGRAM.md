@@ -80,8 +80,10 @@ tests + audits green, PRs squash-merged same-day.
   recomputed hindsight.
 
 ## Open follow-ups (candidates for future waves)
-- Backfill heat-tier history from basket OHLCV RS series and kill-test heat as an
-  entry-timing overlay (does "heating" lead 21d relative return / shallower drawdown?).
+- ~~Backfill heat-tier history from basket OHLCV RS series and kill-test heat as an
+  entry-timing overlay (does "heating" lead 21d relative return / shallower drawdown?)~~
+  **DONE — W6 below. Verdict: heating/hot/cooling REFUTED as entry timing; broken
+  confirmed as a risk timer. Tiers stay display-only; grades now shipped in the payload.**
 - Region variants (cn/hk/ca) of sector_pulse once the US shape settles.
 - Subsector confluence + subsector rotation (RRG velocity) folded into the same pulse
   schema so Mastermind reads ONE artifact for "what's rising, how fast".
@@ -107,3 +109,40 @@ tests + audits green, PRs squash-merged same-day.
 Shipped: #1166 (W0 fix), #1168 (W1 pulse), #1170 (W2 consumers), #1172 (W4 scorecards),
 plus this audit-fix PR. Sibling repos: charting-app `feat/sector-pulse-intel`,
 Mastermind `fable/entry-discipline` (both local-only branches — no remotes).
+
+## W6 — heat-tier phase-0 kill-test (2026-07-04)
+
+**Question**: do the heat tiers carry a measurable forward edge, or are they texture?
+Pre-registered claims, all vs the same-day **idle** baseline at 21d: heating/hot →
+higher relative return OR shallower drawdown; cooling/broken → deeper drawdown.
+
+**Method** (`scripts/calibrate_sector_pulse_heat.py`): rank series reconstructed
+point-in-time from RS-derived proxy scores on the 27y SPDR sector panel (the
+calibrate_baskets GO/NO-GO substrate); heat classified by the SHIPPED
+`sector_pulse._heat_tier` (imported, never re-implemented) at exact 5-session deltas.
+Paired same-day tier-vs-idle differences, HAC t (floor 2.0) + BH-FDR q≤0.10 across the
+6-cell panel, split-half 2013, ±1-rank board-width sensitivity (±3 of 11 ≈ 27% of the
+proxy board vs 6.5% live — the literal thresholds under-fire on the proxy). Live ~3y
+basket lane (descriptive) + accruing signal-archive lane (rerun bar ≥90 sessions)
+as confirmation channels. Trial ledger family `sector_pulse_heat` (budget 16).
+
+**Verdict** (`data/strategies/sector_pulse_heat.json`):
+- **heating — REFUTED**: rel21 vs idle +0.01pp (t 0.07, n 420 days); the drawdown leg
+  is *inverted* — heating themes drew DEEPER 21d drawdowns than idle (−0.35pp, t −2.38).
+  Velocity-chasing, measured. Same story at the ±1 sensitivity.
+- **hot — REFUTED**: no rel edge (t −0.88); drawdown leg mildly inverted (t −2.15).
+- **cooling — NOT CONFIRMED** (t −0.75): the rank-drop leg dilutes the *validated*
+  fading label into noise — the label-level fading/deteriorating grades remain the
+  backtested risk reads.
+- **broken — CONFIRMED risk timer**: −0.41pp deeper dd21 vs same-day idle (t −4.34,
+  BH q≈0), consistent with the deteriorating label's baskets_calibration verdict.
+- Live 3y lane: nothing significant (hot rel +8.1pp at t 1.9 on 62 hindsight-curated
+  days — context only). Archive lane: 10 snapshots, 0 gradeable 21d windows yet.
+
+**Shipped**: tiers stay display-only (validate-before-weight honored); the payload now
+carries the grade the way `theme_scoring._signal_strength` does — per-row
+`heat_strength` (grade/kind/measured/t/en/zh, with the chase-caution text on the
+inverted heating read), top-level `heat_grades`, and `pulse_heat_grade` in the
+theme_intel merge. `_heat_strength` reads only the verdict block; artifact absent →
+None everywhere (honest-descriptive fallback). Re-run the script once the archive
+lane matures (≥90 sessions, ~2026-11) to confirm/deny on the real shipped snapshots.

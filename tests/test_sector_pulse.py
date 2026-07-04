@@ -786,6 +786,134 @@ def test_no_module_level_logging_disable():
                     f"logging.disable() found at module level (line {node.lineno})")
 
 
+# ---------------------------------------------------------------------------
+# _heat_strength: kill-test grading of the heat tiers (phase-0, 2026-07-03)
+# ---------------------------------------------------------------------------
+
+_HEAT_CAL = {
+    "heating": {"verdict": "not_measurable", "claim": "fwd 21d rel-return / drawdown vs same-day idle",
+                "via": None, "inverted": ["heating_dd21"], "t_hac": 0.067,
+                "mean_pct": 0.01, "n_days": 420, "bh_q": 0.9469},
+    "hot": {"verdict": "not_measurable", "claim": "fwd 21d rel-return / drawdown vs same-day idle",
+            "via": None, "inverted": ["hot_dd21"], "t_hac": -0.879,
+            "mean_pct": -0.18, "n_days": 524, "bh_q": 0.5458},
+    "cooling": {"verdict": "not_measurable", "claim": "fwd 21d drawdown deeper than same-day idle",
+                "via": None, "inverted": None, "t_hac": -0.747,
+                "mean_pct": -0.06, "n_days": 862, "bh_q": 0.5458},
+    "broken": {"verdict": "measurable_edge", "claim": "fwd 21d drawdown deeper than same-day idle",
+               "via": "broken_dd21", "inverted": None, "t_hac": -4.339,
+               "mean_pct": -0.41, "n_days": 1266, "bh_q": 0.0},
+    "idle": {"verdict": "baseline", "claim": None},
+    "GO": True,
+    "decision": "grades_upgraded",
+}
+
+
+class TestHeatStrength:
+    def test_empty_cal_returns_none(self):
+        assert sp._heat_strength("heating", {}) is None
+        assert sp._heat_strength("broken", {}) is None
+
+    def test_idle_and_none_carry_no_claim(self):
+        assert sp._heat_strength("idle", _HEAT_CAL) is None
+        assert sp._heat_strength(None, _HEAT_CAL) is None
+
+    def test_measured_risk_tier_is_backtested(self):
+        hs = sp._heat_strength("broken", _HEAT_CAL)
+        assert hs["grade"] == "backtested"
+        assert hs["kind"] == "risk"
+        assert hs["measured"] is True
+        assert hs["t_hac"] == pytest.approx(-4.339)
+
+    def test_unmeasured_risk_tier_is_unconfirmed(self):
+        hs = sp._heat_strength("cooling", _HEAT_CAL)
+        assert hs["grade"] == "unconfirmed"
+        assert hs["kind"] == "risk"
+        assert hs["measured"] is False
+
+    def test_unmeasured_continuation_is_descriptive_with_inverted_caution(self):
+        hs = sp._heat_strength("heating", _HEAT_CAL)
+        assert hs["grade"] == "descriptive"
+        assert hs["kind"] == "continuation"
+        assert hs["measured"] is False
+        # the inverted drawdown tripwire must surface as a chase caution
+        assert "DEEPER" in hs["en"]
+
+    def test_measured_continuation_is_backtested(self):
+        cal = {"heating": {"verdict": "measurable_edge", "claim": "x",
+                           "t_hac": 3.0, "mean_pct": 0.5, "n_days": 100}}
+        hs = sp._heat_strength("heating", cal)
+        assert hs["grade"] == "backtested"
+        assert hs["measured"] is True
+
+    def test_unknown_tier_returns_none(self):
+        assert sp._heat_strength("volcanic", _HEAT_CAL) is None
+
+    def test_never_raises_on_garbage_cal(self):
+        assert sp._heat_strength("heating", {"heating": None}) is None
+        assert sp._heat_strength("heating", {"heating": {}}) is None
+
+
+class TestHeatGradeWiring:
+    def test_build_pulse_rows_carry_heat_strength(self, monkeypatch):
+        themes = [_make_theme("t1", 80, 1, "dominant"),
+                  _make_theme("t2", 55, 5, "fading")]
+        monkeypatch.setattr(sp, "_load_theme_intel", lambda r: _make_ti(themes))
+        monkeypatch.setattr(sp, "_load_archive_snapshots", lambda r: [])
+        monkeypatch.setattr(sp, "_heat_calibration", lambda: _HEAT_CAL)
+        result = sp.build_pulse("us")
+        by_id = {r["id"]: r for r in result["themes"]}
+        # t1: dominant rank 1 of 2 → hot (no archive deltas) → descriptive
+        assert by_id["t1"]["heat"] == "hot"
+        assert by_id["t1"]["heat_strength"]["grade"] == "descriptive"
+        # t2: fading → cooling → unconfirmed risk
+        assert by_id["t2"]["heat"] == "cooling"
+        assert by_id["t2"]["heat_strength"]["grade"] == "unconfirmed"
+        # top-level per-tier grade summary
+        assert result["heat_grades"] == {"heating": "descriptive", "hot": "descriptive",
+                                         "cooling": "unconfirmed", "broken": "backtested"}
+
+    def test_build_pulse_without_calibration_degrades(self, monkeypatch):
+        themes = [_make_theme("t1", 80, 1, "dominant")]
+        monkeypatch.setattr(sp, "_load_theme_intel", lambda r: _make_ti(themes))
+        monkeypatch.setattr(sp, "_load_archive_snapshots", lambda r: [])
+        monkeypatch.setattr(sp, "_heat_calibration", lambda: {})
+        result = sp.build_pulse("us")
+        assert result["themes"][0]["heat_strength"] is None
+        assert result["heat_grades"] == {}
+
+    def test_write_pulse_payload_carries_heat_grades(self, monkeypatch):
+        themes = [_make_theme("t1", 80, 1, "dominant")]
+        monkeypatch.setattr(sp, "_load_archive_snapshots", lambda r: [])
+        monkeypatch.setattr(sp, "_heat_calibration", lambda: _HEAT_CAL)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sp.write_pulse(_make_ti(themes), "us", tmpdir)
+            payload = json.loads((Path(tmpdir) / "sector_pulse.json").read_text())
+            assert payload["heat_grades"]["broken"] == "backtested"
+            assert payload["themes"][0]["heat_strength"]["grade"] == "descriptive"
+
+    def test_merge_sets_pulse_heat_grade(self, monkeypatch):
+        themes = [_make_theme("t1", 80, 1, "dominant"),
+                  _make_theme("t2", 40, 15, "neutral")]
+        ti = _make_ti(themes)
+        monkeypatch.setattr(sp, "_load_archive_snapshots", lambda r: [])
+        monkeypatch.setattr(sp, "_heat_calibration", lambda: _HEAT_CAL)
+        sp.merge_pulse_into_theme_intel(ti, "us")
+        # t1 hot (rank 1 of 2) → descriptive; t2 idle → no claim → None
+        assert ti["themes"][0]["pulse_heat_grade"] == "descriptive"
+        assert ti["themes"][1]["pulse_heat"] == "idle"
+        assert ti["themes"][1]["pulse_heat_grade"] is None
+
+    def test_heat_calibration_never_raises(self, monkeypatch):
+        from lib import config as cfg
+
+        def _boom():
+            raise RuntimeError("disk dead")
+
+        monkeypatch.setattr(cfg, "data_dir", _boom)
+        assert sp._heat_calibration() == {}
+
+
 # ── write_score_snapshot: the regional velocity-accrual writer (audit follow-up) ──
 class TestWriteScoreSnapshot:
     def _ti(self):
