@@ -675,3 +675,37 @@ def test_crossed_below_semantics():
     # Must NOT fire on days 0-4 (value above threshold)
     for i in range(5):
         assert result.iloc[i] == False, f"False positive on day {i}"
+
+
+class TestBreadthCountsDistinctNodes:
+    def test_refiring_single_node_does_not_satisfy_breadth(self):
+        """Review fix on #1285: 3 OUT episodes from ONE node must NOT satisfy
+        min_count=3 (cascade breadth = distinct nodes). FAILS on the
+        episode-count implementation."""
+        import pandas as pd
+        from engine.oracle.compounds import _eval_episode_event
+
+        eps = pd.DataFrame({
+            "node": ["semiscompute"] * 3,
+            "direction": ["out"] * 3,
+            "tier": ["onset"] * 3,
+            "onset_date": pd.to_datetime(["2024-01-05", "2024-01-12", "2024-01-19"]),
+        })
+        node_to_complex = {"semiscompute": "cx", "semismemory": "cx", "target_node": "cx"}
+        risk = {"cx": "risk_on"}
+        dates = pd.bdate_range("2024-01-01", periods=30)
+        rule = {"direction": "out", "tier": "onset", "complex_scope": "same"}
+
+        fired = _eval_episode_event(rule, "target_node", pd.Timestamp("2024-01-22"),
+                                    eps, node_to_complex, risk,
+                                    within_sessions=20, min_count=3,
+                                    panel_dates=dates)
+        assert not fired, "single re-firing node satisfied a breadth-3 gate"
+
+        eps3 = eps.copy()
+        eps3["node"] = ["semiscompute", "semismemory", "target_node"]
+        fired3 = _eval_episode_event(rule, "semismemory", pd.Timestamp("2024-01-22"),
+                                     eps3, node_to_complex, risk,
+                                     within_sessions=20, min_count=3,
+                                     panel_dates=dates)
+        assert fired3, "3 distinct nodes failed to satisfy breadth-3"

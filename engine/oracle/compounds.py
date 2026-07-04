@@ -351,7 +351,10 @@ def _eval_episode_event(
     else:
         matching = candidate_eps
 
-    return len(matching) >= min_count
+    # BREADTH = DISTINCT NODES (review fix on #1285): an episode COUNT would let
+    # one re-firing subsector satisfy a "cascade breadth >= 3" gate — the library's
+    # A2 semantics are distinct same-complex nodes.
+    return int(matching["node"].nunique()) >= min_count
 
 
 # ---------------------------------------------------------------------------
