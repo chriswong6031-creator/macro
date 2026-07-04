@@ -48,6 +48,28 @@ from lib import config
 
 log = logging.getLogger("qledger")
 
+
+def _json_default(o: Any):
+    """json.dumps `default=` for the claim/grade store.
+
+    qledger is the serialization boundary for dicts assembled by many desks and
+    stamped here with the US regime_vector (read from a parquet). A parquet read
+    yields numpy scalars (np.int64/float64/bool_), which json.dumps cannot
+    serialize natively — a single leaked np.int64 raised TypeError and, under a
+    broad except in a caller, silently zeroed a whole batch of claims. Every
+    claim-write routes through this so no numpy scalar can ever break the ledger.
+    """
+    if isinstance(o, (datetime, date)):
+        return o.isoformat()
+    item = getattr(o, "item", None)   # numpy scalar → native python
+    if callable(item):
+        try:
+            return item()
+        except Exception:  # noqa: BLE001
+            pass
+    return str(o)
+
+
 # --------------------------------------------------------------------------- #
 # store layout
 # --------------------------------------------------------------------------- #
@@ -333,7 +355,7 @@ def register(claim: dict, root: Path | str | None = None,
                 return existing  # idempotent — adapters re-run freely
 
     with p.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(stored, ensure_ascii=False) + "\n")
+        fh.write(json.dumps(stored, ensure_ascii=False, default=_json_default) + "\n")
     return stored
 
 
@@ -385,7 +407,7 @@ def register_batch(claims: Iterable[dict], root: Path | str | None = None,
     if new_rows:
         with p.open("a", encoding="utf-8") as fh:  # ONE write for the batch
             for row in new_rows:
-                fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+                fh.write(json.dumps(row, ensure_ascii=False, default=_json_default) + "\n")
     return results
 
 
@@ -420,7 +442,7 @@ def backfill_regime_stamps(root: Path | str | None = None) -> dict:
         tmp = p.with_name(p.name + ".tmp")
         with tmp.open("w", encoding="utf-8") as fh:
             for c in claims:
-                fh.write(json.dumps(c, ensure_ascii=False) + "\n")
+                fh.write(json.dumps(c, ensure_ascii=False, default=_json_default) + "\n")
         tmp.replace(p)
     return {"n_claims": len(claims), "n_backfilled": n_backfilled,
             "n_unstamped": n_unstamped}
