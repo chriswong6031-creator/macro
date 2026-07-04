@@ -203,6 +203,22 @@ jobs:
 
           hub() { run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
 
+          # US Sector Central hub — reads baskets.json (cl_baskets) + sector_cycles_data.js
+          # (sector_cycles/country_cycles, both present in render/daily cl_misc but intentionally
+          # omitted from engine-render cl_misc per the suspect divergence) + the committed heatmap.
+          # W5a fix: sector_central was absent from engine-render (runtime ~34s per 2026-07-03
+          # daily run log — well under the 3-minute threshold). Its two direct deps
+          # (baskets.json from cl_baskets, regime/latest.json from engine.run) ARE satisfied
+          # by the time the band barrier fires. sector_cycles_data.js is consumed from the
+          # COMMITTED artifact on disk (the last daily's write); the page renders the last
+          # nightly's cycle data rather than a fresh recompute — matching the express lane's
+          # stated contract ("re-render from committed data"). Call AFTER band so cl_baskets
+          # has completed. Additive (returns 0 on any failure), so it can never break the deploy.
+          # Ledger-safe: this lane's commit step is `git add site/` ONLY (engine-render.yml:340),
+          # so data/sector_central/calls.parquet is discarded; the nightly daily.yml run is the
+          # sole advancer of that forward ledger.
+          central() { run_py "US sector central intelligence (build_sector_central)" scripts.build_sector_central; }
+
           band() {
             local ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
             brun() {
@@ -304,7 +320,7 @@ jobs:
 
           case "$SCOPE" in
             all)
-              spine; band; hub; us_pages; libs ;;
+              spine; band; central; hub; us_pages; libs ;;
             macro)
               spine; hub; us_pages ;;
             china)
