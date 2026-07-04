@@ -611,8 +611,8 @@
       var live = data.source === 'polygon-live';
       var srcEn, srcZh;
       if (IS_THEMES) {
-        srcEn = 'Finviz themes · ' + (data.asof || '—');
-        srcZh = 'Finviz 主题 · ' + (data.asof || '—');
+        srcEn = 'Themes · ' + (data.asof || '—');
+        srcZh = '主题 · ' + (data.asof || '—');
       } else {
         srcEn = (live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + (data.asof || '—');
         srcZh = (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + (data.asof || '—');

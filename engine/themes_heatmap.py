@@ -4,7 +4,7 @@ Builds the JSON contract consumed by ``site/sector_heatmap.html`` (the themes
 map-type of the shared ``heatmap.js`` renderer): the Finviz narrative-basket
 treemap rendered **Theme → Subsector tile**, each tile coloured by the
 subsector's % move over the selected timeframe, with the member tickers (and
-their own moves) surfaced on hover — exactly the Finviz themes map, in our theme.
+their own moves) surfaced on hover — exactly the themes map, in our theme.
 
 Contract mirrors ``engine/sp500_heatmap.py`` so the same renderer draws it; the
 only differences are ``map_type="themes"`` (two levels: theme → subsector-leaf,

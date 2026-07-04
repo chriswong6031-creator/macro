@@ -408,7 +408,7 @@ def compute_subsector_confluence() -> dict:
         "subsectors": subs,
         "sectors": sectors,
         "double_gated": ff,
-        "notes": ("Equal-weight synthetic member-average index per Finviz sub-industry; "
+        "notes": ("Equal-weight synthetic member-average index per sub-industry; "
                   "owner's T1-T4 MACDRSI×StochRSI cascade = the ENTRY gate, the validated "
                   "sector state machine = the rotation CONTEXT. Today's S&P-500 membership "
                   "(descriptive, not out-of-sample); EOD daily; calendar 3D buckets. A risk / "
@@ -587,7 +587,7 @@ def _compute_index_desk(ns: str, benchmark_default: str, universe: str,
     out = _compute_partition(
         mem.get("subsectors") or {}, mem.get("amalgamations") or {},
         benchmark=bench, universe=universe, region=ns,
-        notes=(f"Equal-weight synthetic member-average index per Finviz sub-industry within the "
+        notes=(f"Equal-weight synthetic member-average index per sub-industry within the "
                f"{index_label}, plus curated amalgamation complexes (the rollup). Owner's T1-T4 "
                f"MACDRSI×StochRSI cascade = the ENTRY gate; the sector state machine = rotation "
                f"CONTEXT; benchmarked to {blab} so rs_60d reads WITHIN-index leadership. Today's "
