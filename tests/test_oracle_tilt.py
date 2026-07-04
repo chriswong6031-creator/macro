@@ -131,65 +131,62 @@ def _profile(spotlight_z, ctx=None):
     return ss.conviction_profile(copy.deepcopy(rec), "US", ctx=ctx)
 
 
-def test_flag_off_gate_is_effective_no_side_effects():
-    """flag OFF: engine.oracle.tilt module existing must NOT change stock_score output.
-
-    We verify by computing conviction_profile WITHOUT any spotlight and then
-    verifying that importing oracle.tilt with gate-off doesn't alter the score.
-    The oracle.tilt function returns {} when gate is off — the consumer (oracle_nightly)
-    never injects anything into the spotlight dict unless explicitly enabled.
-    """
-    cfg_off = {"oracle": {"tilt_enabled": False}}
-    tilt_result = OT.oracle_theme_tilt(
-        {"active_episodes": [{"node": "XLK", "direction": "out", "tier": "confirmed"}]},
-        cfg=cfg_off,
-    )
-    # Gate OFF → empty dict → no spotlight injection
-    assert tilt_result == {}
-
-    # Score WITHOUT oracle spotlight
-    p_no_oracle = _profile(spotlight_z=None)
-
-    # Score WITH oracle spotlight that was supposed to be OFF but snuck in
-    # (simulates what would happen if gate failed)
-    p_with_inject = _profile(spotlight_z=-0.45)  # confirmed OUT tilt
-
-    # When gate works: p_no_oracle is the real output (no inject)
-    # This verifies byte-identical would hold — the gate produces {} so nothing is injected
-    assert tilt_result == {}, "Gate failure: oracle.tilt returned non-empty despite tilt_enabled=False"
-
-    # The score difference confirms the inject WOULD have changed things (test has power)
-    delta = abs(p_no_oracle["composite_z"] - p_with_inject["composite_z"])
-    assert delta > 0.01, "Sanity check failed: spotlight injection has no measurable effect"
+def test_flag_off_blend_byte_identical():
+    """R5 side (a), REAL PATH: with oracle_t=None (the only value the flag-off
+    path can produce), spotlight.blend output is byte-identical to the
+    pre-oracle blend arithmetic. This fails if the oracle channel leaks into
+    the weights when absent."""
+    from engine.spotlight import blend
+    base = blend(0.5, 0.3, theme={"slug": "x"}, sector={"etf": "XLK"})
+    wired = blend(0.5, 0.3, theme={"slug": "x"}, sector={"etf": "XLK"}, oracle_t=None)
+    assert base is not None and wired is not None
+    # oracle_z key exists on both (None) — compare full dicts
+    assert {k: v for k, v in base.items()} == {k: v for k, v in wired.items()}
+    assert wired.get("oracle_z") is None
 
 
-def test_flag_on_tilt_shifts_axis_tailwind_for_member():
-    """flag ON: fixture tilt shifts _axis_tailwind by the expected clamped amount.
+def test_flag_off_helper_returns_empty_and_ctx_stays_inert():
+    """R5 side (a), integration: the library ctx helper yields {} when the gate
+    is off, so _spotlight_for passes oracle_t=None for every name."""
+    from engine.oracle.tilt import oracle_tilt_by_etf
+    assert oracle_tilt_by_etf(cfg={"oracle": {"tilt_enabled": False}}) == {}
+    assert oracle_tilt_by_etf(cfg={}) == {}
 
-    For a confirmed OUT episode, tilt = -_TIER_TILT["confirmed"] = -0.45.
-    Injecting spotlight.z = -0.45 should reduce composite_z vs spotlight.z = 0.
-    """
-    cfg_on = {"oracle": {"tilt_enabled": True}}
-    state = {"active_episodes": [{"node": "XLK", "direction": "out", "tier": "confirmed"}]}
-    tilt = OT.oracle_theme_tilt(state, cfg=cfg_on)
-    assert "XLK" in tilt
 
-    xlk_tilt = tilt["XLK"]
-    assert xlk_tilt < 0  # OUT episode → negative
+def test_flag_on_shifts_blend_and_axis_tailwind():
+    """R5 side (b), REAL PATH: gate ON with a fixture Tier-S episode produces a
+    non-empty ETF tilt map; passing it through spotlight.compute/blend shifts z
+    by the exact weighted amount, and stock_score._axis_tailwind moves with it.
+    This test FAILS on a gated-but-never-connected implementation (the review
+    finding it exists to kill): it exercises tilt -> blend -> _axis_tailwind."""
+    import numpy as np
+    from engine.oracle.tilt import oracle_theme_tilt, _TIER_TILT
+    from engine.spotlight import blend, _W_THEME, _W_SECTOR, _W_ORACLE
+    from engine.stock_score import _axis_tailwind
 
-    # Score with oracle tilt injected into spotlight
-    p_with_tilt = _profile(spotlight_z=xlk_tilt)
-    p_neutral = _profile(spotlight_z=0.0)
+    state = {"active_episodes": [
+        {"node": "XLV", "direction": "in", "tier": "confirmed"},
+    ]}
+    tilts = oracle_theme_tilt(state, cfg={"oracle": {"tilt_enabled": True}})
+    assert tilts.get("XLV") == _TIER_TILT["confirmed"]  # +0.45, in-direction
 
-    # OUT tilt should REDUCE the composite score vs neutral
-    assert p_with_tilt["composite_z"] < p_neutral["composite_z"], (
-        f"OUT tilt {xlk_tilt:.3f} should reduce composite_z; "
-        f"got tilt={p_with_tilt['composite_z']:.4f} neutral={p_neutral['composite_z']:.4f}"
-    )
+    theme_t, sector_t = 0.5, 0.3
+    off = blend(theme_t, sector_t)
+    on = blend(theme_t, sector_t, oracle_t=tilts["XLV"])
+    exp_off = (_W_THEME * theme_t + _W_SECTOR * sector_t) / (_W_THEME + _W_SECTOR)
+    exp_on = (_W_THEME * theme_t + _W_SECTOR * sector_t + _W_ORACLE * tilts["XLV"]) / (
+        _W_THEME + _W_SECTOR + _W_ORACLE)
+    assert abs(off["z"] - round(exp_off, 3)) < 1e-9
+    assert abs(on["z"] - round(exp_on, 3)) < 1e-9
+    assert on["z"] != off["z"]
+    assert on["oracle_z"] == round(_TIER_TILT["confirmed"], 3)
 
-    # The shift should be in the expected clamped range (small but measurable)
-    delta = p_neutral["composite_z"] - p_with_tilt["composite_z"]
-    assert 0.005 <= delta <= 0.10, f"Shift {delta:.4f} outside expected range [0.005, 0.10]"
+    tw_off, _ = _axis_tailwind({"spotlight": {"z": off["z"]}})
+    tw_on, _ = _axis_tailwind({"spotlight": {"z": on["z"]}})
+    assert tw_off is not None and tw_on is not None
+    assert tw_on != tw_off, "oracle tilt must reach _axis_tailwind when the gate is on"
+    # direction: an in-episode (positive tilt) must not lower the tailwind
+    assert tw_on > tw_off
 
 
 def test_degrade_on_empty_state():

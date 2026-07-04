@@ -717,8 +717,17 @@ def _spotlight_context() -> dict:
     alloc_by_id = _basket_alloc_map(theme_by_id)
     log.info("spotlight context: %d scored themes · %d sector stages · %d basket alloc states",
              len(theme_by_id), len(sector_by_etf), len(alloc_by_id))
+    # Oracle dark-tilt channel — {} unless config oracle.tilt_enabled (R4: default off).
+    try:
+        from engine.oracle.tilt import oracle_tilt_by_etf
+        oracle_by_etf = oracle_tilt_by_etf()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("oracle tilt channel unavailable (%s)", e)
+        oracle_by_etf = {}
+    if oracle_by_etf:
+        log.info("spotlight context: oracle tilt ENABLED for %d sector ETFs", len(oracle_by_etf))
     return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf,
-            "alloc_by_id": alloc_by_id, "unmapped": set()}
+            "alloc_by_id": alloc_by_id, "oracle_tilt_by_etf": oracle_by_etf, "unmapped": set()}
 
 
 def _basket_alloc_map(theme_by_id: dict) -> dict:
@@ -772,8 +781,9 @@ def _spotlight_for(sector: str | None, memberships: list[dict] | None,
     if sec and etf is None:
         ctx.setdefault("unmapped", set()).add(sec)
     sector_row = (ctx.get("sector_by_etf") or {}).get(etf) if etf else None
+    oracle_t = ((ctx.get("oracle_tilt_by_etf") or {}).get(etf)) if etf else None
     return _sp.compute(memberships, ctx.get("theme_by_id") or {},
-                       sector_etf=etf, sector_row=sector_row)
+                       sector_etf=etf, sector_row=sector_row, oracle_t=oracle_t)
 
 
 def main() -> int:

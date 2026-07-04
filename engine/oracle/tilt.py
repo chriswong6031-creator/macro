@@ -97,3 +97,31 @@ def oracle_theme_tilt(
             best[node] = (rank, tilt)
 
     return {node: round(v[1], 4) for node, v in best.items()}
+
+
+def oracle_tilt_by_etf(cfg: dict | None = None, state_path=None) -> dict[str, float]:
+    """{sector ETF → tilt} from ACTIVE Tier-S episodes — the map the stock-library
+    spotlight context consumes (scripts/build_stock_library._spotlight_for).
+
+    Empty dict when the gate (oracle.tilt_enabled) is OFF, when the oracle state
+    payload is absent, or on any error — flag OFF must leave stock scoring
+    byte-identical (R5 two-sided contract; tests enforce both sides)."""
+    if not _is_gate_on(cfg):
+        return {}
+    try:
+        import json
+        from pathlib import Path
+        if state_path is None:
+            from lib import config as _lib_cfg
+            site = _lib_cfg.ROOT / _lib_cfg.load()["storage"]["site_dir"]
+            state_path = Path(site) / "basketdata" / "oracle_state.json"
+        state = json.loads(Path(state_path).read_text())
+    except Exception:  # noqa: BLE001 — degrade, never break scoring
+        return {}
+    tilts = oracle_theme_tilt(state, cfg)
+    try:
+        from engine.spotlight import GICS_TO_ETF
+        etfs = set(GICS_TO_ETF.values())
+    except Exception:  # noqa: BLE001
+        etfs = {"XLK", "XLV", "XLF", "XLY", "XLC", "XLI", "XLP", "XLE", "XLU", "XLRE", "XLB"}
+    return {node: t for node, t in tilts.items() if node in etfs}

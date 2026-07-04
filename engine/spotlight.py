@@ -42,6 +42,11 @@ _STAGE_TILT = {"leading": 0.8, "improving": 0.3, "weakening": -0.3, "lagging": -
 
 # blend weights — the theme channel leads (it carries the macro+crowding-gated reco).
 _W_THEME, _W_SECTOR = 0.60, 0.40
+# Oracle rotation channel (engine.oracle.tilt) — smallest weight: its edge is
+# display-with-edge tier (P3 adjudication R4), never dominant. The channel only
+# enters blend() when a non-None oracle_t is passed, which only happens when
+# config oracle.tilt_enabled is true — flag OFF leaves the arithmetic untouched.
+_W_ORACLE = 0.25
 # the scored-theme tilt = _RECO_W*reco + _SCORE_W*((score-50)/30); reco dominates, score breaks ties.
 _RECO_W, _SCORE_W = 0.70, 0.30
 # an extended/"don't chase" sector can never read better than this (mirrors the avoid list).
@@ -87,10 +92,14 @@ def sector_tilt(stage: str | None, extended: bool | None,
 
 
 def blend(theme_t: float | None, sector_t: float | None, *,
-          theme: dict | None = None, sector: dict | None = None) -> dict | None:
-    """Combine the theme + sector channels into one tilt block, or None if neither fires.
-    Weighted over the PRESENT channels only (a name with no sector mapping still gets the
-    theme tilt at full weight, and vice versa)."""
+          theme: dict | None = None, sector: dict | None = None,
+          oracle_t: float | None = None) -> dict | None:
+    """Combine the theme + sector (+ optional gated oracle) channels into one tilt block,
+    or None if none fires. Weighted over the PRESENT channels only (a name with no sector
+    mapping still gets the theme tilt at full weight, and vice versa). ``oracle_t`` is the
+    dark Oracle rotation channel — callers pass non-None ONLY when oracle.tilt_enabled;
+    when None the arithmetic is identical to the pre-oracle blend (the R5 flag-off
+    byte-identical contract)."""
     num = den = 0.0
     if theme_t is not None:
         num += _W_THEME * theme_t
@@ -98,6 +107,9 @@ def blend(theme_t: float | None, sector_t: float | None, *,
     if sector_t is not None:
         num += _W_SECTOR * sector_t
         den += _W_SECTOR
+    if oracle_t is not None:
+        num += _W_ORACLE * _clip(oracle_t)
+        den += _W_ORACLE
     if den == 0.0:
         return None
     z = _clip(num / den)
@@ -107,6 +119,7 @@ def blend(theme_t: float | None, sector_t: float | None, *,
         "dir": "tailwind" if z >= _DIR_BAND else ("out_of_play" if z <= -_DIR_BAND else "neutral"),
         "theme_z": round(theme_t, 3) if theme_t is not None else None,
         "sector_z": round(sector_t, 3) if sector_t is not None else None,
+        "oracle_z": round(_clip(oracle_t), 3) if oracle_t is not None else None,
         "theme": theme,
         "sector": sector,
     }
@@ -120,7 +133,8 @@ def _theme_meta(slug: str | None, th: dict) -> dict:
 
 
 def compute(memberships: list[dict] | None, theme_by_id: dict[str, dict],
-            sector_etf: str | None = None, sector_row: dict | None = None) -> dict | None:
+            sector_etf: str | None = None, sector_row: dict | None = None,
+            oracle_t: float | None = None) -> dict | None:
     """Per-name spotlight block.
 
     ``memberships`` — the name's active baskets (list of {slug, ...}); the STRONGEST theme
@@ -155,4 +169,4 @@ def compute(memberships: list[dict] | None, theme_by_id: dict[str, dict],
                            "extended": bool(sector_row.get("extended")),
                            "pctile_252d": sector_row.get("pctile_252d")}
 
-    return blend(theme_t, sector_t, theme=theme_meta, sector=sector_meta)
+    return blend(theme_t, sector_t, theme=theme_meta, sector=sector_meta, oracle_t=oracle_t)
