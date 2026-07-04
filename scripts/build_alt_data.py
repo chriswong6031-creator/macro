@@ -18,8 +18,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader  # noqa: E402
 
+from datetime import date  # noqa: E402
 from engine import (altdata, altdata_alerts, altdata_brain, altdata_emit,  # noqa: E402
-                    altdata_ledger, altdata_picks, altdata_signals)
+                    altdata_ledger, altdata_picks, altdata_signals, desk_grader)
 from engine.influence import graph as influence_graph  # noqa: E402
 from engine.qledger_ui import chips_for_desks, load_track_record  # noqa: E402
 from lib import config  # noqa: E402
@@ -82,6 +83,27 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("alt-data signals/graph/emit step failed (non-fatal): %s", e)
 
+    # UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d) — snapshot today's surfaced set (main
+    # board + broken quarantine, ranked), diff for departures, grade matured names. Degrade-safe.
+    grader = {}
+    try:
+        desk_grader.seed_notes()
+        sigs = mastermind.get("signals") or []
+        broken = mastermind.get("broken_signals") or []
+        rows = ([{"ticker": s.get("ticker"), "rank": i + 1, "score": s.get("signal_score"),
+                  "lean": 1, "entry_tier": s.get("entry_tier"), "broken": False}
+                 for i, s in enumerate(sigs)]
+                + [{"ticker": s.get("ticker"), "rank": None, "score": s.get("signal_score"),
+                    "lean": 1, "entry_tier": s.get("entry_tier"), "broken": True}
+                   for s in broken])
+        today = date.today()
+        rep = desk_grader.snapshot_desk("alt_data", rows, today)
+        grader = desk_grader.compute("alt_data", today)
+        log.info("desk_grader (alt_data): +%d snap, %d departed, %d live",
+                 rep.get("n_new", 0), rep.get("n_departed", 0), grader.get("n_snapshots_live", 0))
+    except Exception as e:  # noqa: BLE001
+        log.warning("desk_grader (alt_data) step failed: %s", e)
+
     site = config.ROOT / "site"
     site.mkdir(exist_ok=True)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -100,7 +122,7 @@ def main() -> int:
         html = env.get_template("alt_data.html.j2").render(
             feed=feed, alerts=alerts, track=track, influence=influence, picks=picks,
             brain=brain, mastermind=mastermind, generated_utc=built,
-            qledger_chips=qledger_chips,
+            qledger_chips=qledger_chips, desk_grader=grader,
             active_section="research", active_page="alt_data",
         )
     except Exception as e:  # noqa: BLE001

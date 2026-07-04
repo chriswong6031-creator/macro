@@ -1497,6 +1497,83 @@
   </section>
 
   
+  <style>
+  .dg-wrap{border:1px solid rgba(128,128,128,.18);border-radius:14px;padding:16px 18px;background:color-mix(in srgb,var(--panel,#161a22) 60%,transparent)}
+  .dg-h2{font-size:16px;margin:0 0 10px;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+  .dg-note{font-size:11.5px;font-weight:400;opacity:.6}
+  .dg-lead{font-size:13px;line-height:1.55;padding:10px 12px;border-radius:9px;background:color-mix(in srgb,var(--info,#4a9eff) 9%,transparent);margin-bottom:12px}
+  .dg-lead-alarm{background:color-mix(in srgb,var(--down,#e5484d) 14%,transparent)}
+  .dg-counts{display:block;margin-top:4px;font-size:11px;opacity:.6}
+  .dg-tblwrap{overflow-x:auto}
+  .dg-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  .dg-tbl th,.dg-tbl td{padding:6px 9px;text-align:left;border-bottom:1px solid rgba(128,128,128,.12)}
+  .dg-tbl th.num,.dg-tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .dg-tbl thead th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;opacity:.7;font-weight:600}
+  .dg-row-alarm{background:color-mix(in srgb,var(--down,#e5484d) 10%,transparent)}
+  .dg-pos{color:var(--up,#30a46c)}.dg-neg{color:var(--down,#e5484d)}
+  .mut2{opacity:.55}
+  .dg-badge{font-size:10.5px;padding:2px 7px;border-radius:20px;white-space:nowrap}
+  .dg-proven{background:color-mix(in srgb,var(--up,#30a46c) 20%,transparent);color:var(--up,#30a46c)}
+  .dg-measuring{background:color-mix(in srgb,var(--muted,#8b95a5) 20%,transparent);color:var(--muted,#8b95a5)}
+  .dg-alarm{background:color-mix(in srgb,var(--down,#e5484d) 22%,transparent);color:var(--down,#e5484d);font-weight:700}
+  .dg-fine,.dg-disc{font-size:11px;opacity:.55;line-height:1.5;margin:8px 0 0}
+  .dg-sub{margin-top:14px}
+  .dg-sub h3{font-size:13px;margin:0 0 7px}.dg-sub h3 small{font-weight:400;opacity:.6}
+  .dg-ev{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;margin:3px 0}
+  .dg-ev-h{font-weight:700;min-width:34px}.dg-ev-tag{padding:2px 8px;border-radius:7px;background:rgba(128,128,128,.1)}
+  .dg-findings,.dg-notes{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
+  .dg-find{font-size:12.5px;line-height:1.5;display:flex;gap:7px;padding:6px 9px;border-radius:8px;background:rgba(128,128,128,.07)}
+  .dg-find.dg-alarm{background:color-mix(in srgb,var(--down,#e5484d) 11%,transparent)}
+  .dg-find.dg-warn{background:color-mix(in srgb,var(--warn,#f5a623) 11%,transparent)}
+  .dg-sev{flex:0 0 auto}
+  .dg-notes li{font-size:12px;line-height:1.5;padding:5px 0;border-top:1px solid rgba(128,128,128,.1)}
+  .dg-nd{display:inline-block;min-width:78px;opacity:.5;font-variant-numeric:tabular-nums;font-size:11px}
+</style>
+  
+<section class="dg-wrap" style="margin-top:22px">
+  <h2 class="dg-h2">📊
+    <span class="l-en">Desk scorecard — is this desk beating the market?</span><span class="l-zh">研究台记分卡 —— 本台是否跑赢大盘？</span>
+    <span class="dg-note">
+      <span class="l-en">every name this desk surfaces is graded against realized SPY-relative forward returns · context-only</span>
+      <span class="l-zh">本台每个入选标的均以实际相对标普前瞻收益评分 · 仅作参考</span></span>
+  </h2>
+
+  
+  <div class="dg-lead ">
+    <b><span class="l-en">Accruing</span><span class="l-zh">累积中</span></b> —
+      <span class="l-en">the desk records its surfaced set daily and grades each name at 5 / 10 / 20 / 30 / 60 / 90 trading days.
+        First 5-day grades land ~2026-07-13. Until a horizon clears a Newey-West significance bar it is shown, not trusted.</span>
+      <span class="l-zh">本台每日记录入选名单，并在 5 / 10 / 20 / 30 / 60 / 90 交易日为每个标的评分。首批 5 日评分约于 2026-07-13 产生；信号通过 Newey-West 显著性检验前仅展示、不采信。</span>
+    
+    <span class="dg-counts">
+      <span class="l-en">54 live snapshots · 0 departures tracked</span>
+      <span class="l-zh">54 条在册快照 · 已追踪 0 次离场</span></span>
+  </div>
+
+  
+
+  
+  
+
+  
+  
+  <div class="dg-sub">
+    <h3><span class="l-en">Notes &amp; lessons</span><span class="l-zh">笔记与经验</span>
+      <small><span class="l-en">— what we've learned, so the desk's engine keeps improving as data accrues</span><span class="l-zh">—— 已学到的经验，使本台引擎随数据累积持续改进</span></small></h3>
+    <ul class="dg-notes">
+      
+      <li><span class="dg-nd">2026-07-04</span>
+        <span class="l-en">PRICE LESSON: grade off data/yahoo/&lt;T&gt;.parquet adjusted closes ONLY. The S&amp;P-1500 breadth close cache (data/breadth/_closes_cache.parquet) is SPLIT-CORRUPTED — using it silently poisons every RS / forward-return number. A name missing from yahoo is a coverage skip here, never a wrong return.</span><span class="l-zh">PRICE LESSON: grade off data/yahoo/&lt;T&gt;.parquet adjusted closes ONLY. The S&amp;P-1500 breadth close cache (data/breadth/_closes_cache.parquet) is SPLIT-CORRUPTED — using it silently poisons every RS / forward-return number. A name missing from yahoo is a coverage skip here, never a wrong return.</span></li>
+      
+    </ul>
+  </div>
+  
+
+  <p class="dg-disc">A falsifiable scorecard of this desk&#39;s own surfaced names — its ranking score (level AND velocity) graded against realized SPY-relative forward returns at 5/10/20/30/60/90 trading days, split on-desk vs after-leaving. A signal is &#39;proven&#39; only past n&gt;=40 with a significant Newey-West t of the right sign; a significant negative IC is an &#39;alarm&#39;. Context-only — nothing here sizes a position.</p>
+</section>
+
+
+  
   <section class="sid-sec">
     <h2>📰 <span class="l-en">News on these names</span><span class="l-zh">这些标的的新闻</span>
       <span class="h-note"><span class="l-en">the demand-side tape beside the supply-side signal — context only, never blended</span><span class="l-zh">需求侧舆情与供给侧信号并列——仅作背景，绝不混合</span></span></h2>
