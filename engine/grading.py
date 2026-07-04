@@ -81,6 +81,7 @@ __all__ = [
     "TerminalState",
     "cushion_incidence",
     "post_cushion_breach",
+    "REJECTION_TAXONOMY",
     "STOP_BARRIER",
     "CUSHION_BARRIER",
     "LIFTOFF_15",
@@ -91,6 +92,24 @@ __all__ = [
     "DEAD_MONEY_CAP",
     "SPINE_HORIZONS",
 ]
+
+# W0.2 Stage C — the CLOSED near-miss rejection taxonomy (masterplan Appendix A).
+# "Near-miss" = a candidate failing EXACTLY ONE of these conditions at evaluation
+# time. Adding or renaming a reason requires a §8 status row + monthly-review
+# sign-off — never a silent enum append by a runner. Hosted here (the shared
+# spine module) so every capturing ledger validates against ONE set.
+REJECTION_TAXONOMY = frozenset({
+    "freshness_expired",      # signal_gate FRESH_TICKS window — chasing an aged cross
+    "not_topped_veto",        # signal_gate not-topped check — buying a topped oscillator
+    "tier_cutoff",            # confluence_tiers T4-excluded / below-tier
+    "extension_demote",       # anti-chase EXT_PENALTY / extension-since-cross
+    "knife_demote",           # HK _falling_knife_demote quintile (ported to US/CA)
+    "sector_cap_displaced",   # board sector-concentration cap
+    "board_rank_cutoff",      # blend_sorted position below board width
+    "hygiene_screen",         # ST/ADV/staleness/mcap screens (NOT graded as predictions)
+    "event_blackout",         # earnings-proximity exclusions (where wired)
+    "cohort_null",            # §3.3 coverage law (coverage_pct < 70%)
+})
 
 # The horizons the live track record grades on (kept aligned with track_record._FWD_HORIZONS).
 DEFAULT_HORIZONS = (20, 60, 180)

@@ -458,6 +458,27 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
             "hold_basing": ((r.get("hold") or {}).get("state") == "intact") if r.get("hold") else None,
             "dt_compress": ((r.get("dt_contra") or {}).get("state") not in (None, "neutral")) if r.get("dt_contra") else None,
         })
+    # W0.2 Stage C (§5.2 move 2): the CA WATCH strip was never appended — its
+    # strong-but-blocked rows are exactly the near-miss cohort the rejection
+    # ledger exists to grade ("rejection ≠ blacklist" is a pre-registered
+    # hypothesis feeding S6, so these are natural controls, not noise).
+    # watch_reason='knife' maps to the CLOSED-taxonomy 'knife_demote' (Appendix A
+    # anchors that row to the HK quintile "port to US/CA" — CA's knife IS that);
+    # 'blocked' (alignment gate) has NO taxonomy row yet → reason stays null and
+    # the free-text block_reason is carried for display/audit (extending the
+    # taxonomy needs a §8 row + monthly-review sign-off).
+    for w in (setups or {}).get("watch") or []:
+        if not w.get("ticker"):
+            continue
+        calls.append({
+            "ticker": w.get("ticker"),
+            "group": "watch",
+            "edge_z": w.get("alpha"),              # same screen z as board rows
+            "primary_rejection_reason": ("knife_demote"
+                                         if w.get("watch_reason") == "knife" else None),
+            "block_reason": w.get("block_reason"),
+            "knife_demoted": (w.get("watch_reason") == "knife"),
+        })
     health: list[dict] = []
     try:
         from engine import board_ledger

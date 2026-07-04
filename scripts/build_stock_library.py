@@ -918,45 +918,6 @@ def main() -> int:
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
     bsk_mem = _basket_membership_map()          # all active basket memberships (display-only)
     spotlight_ctx = _spotlight_context()        # theme intel + sector stage for the spotlight tilt
-    # Sector Pulse — per-ticker theme-heat context for the stockdata JSON and standout cards.
-    # Computed ONCE here: build_pulse + ticker_themes, then looked up per name.
-    # DISPLAY-ONLY; additive + never-fatal (pulse failure cannot break the stockdata build).
-    _sector_pulse_map: "dict[str, dict]" = {}   # ticker → compact pulse block (or absent)
-    _sector_pulse_as_of: "str | None" = None
-    try:
-        from engine.sector_pulse import build_pulse as _sp_build, ticker_themes as _sp_themes
-        _sp_payload = _sp_build("us")
-        if _sp_payload:
-            _sector_pulse_as_of = _sp_payload.get("as_of")
-            _sp_n_themes = _sp_payload.get("n_themes")
-            # Index pulse rows by theme id for O(1) lookup below
-            _sp_by_id: "dict[str, dict]" = {r["id"]: r for r in (_sp_payload.get("themes") or [])}
-            # Map each ticker → list of theme ids it belongs to (point-in-time)
-            _sp_tk_map = _sp_themes("us")
-            for _sp_tick, _sp_ids in _sp_tk_map.items():
-                if not _sp_ids:
-                    continue
-                # Best = lowest rank number (highest position) among all of the ticker's themes
-                _sp_cands = [_sp_by_id[tid] for tid in _sp_ids if tid in _sp_by_id]
-                if not _sp_cands:
-                    continue
-                _sp_best = min(_sp_cands, key=lambda r: (r["rank"] is None, r["rank"] or 9999))
-                _sector_pulse_map[_sp_tick] = {
-                    "as_of": _sector_pulse_as_of,
-                    "theme_id": _sp_best.get("id"),
-                    "theme_name": _sp_best.get("name"),
-                    "theme_name_zh": _sp_best.get("name_zh"),
-                    "heat": _sp_best.get("heat"),
-                    "label": _sp_best.get("label"),
-                    "reco": _sp_best.get("reco"),
-                    "rank": _sp_best.get("rank"),
-                    "n_themes": _sp_n_themes,
-                    "rank_delta_5d": _sp_best.get("rank_delta_5d"),
-                    "theme_ids": list(_sp_ids),
-                }
-        log.info("sector_pulse: %d tickers mapped to themes", len(_sector_pulse_map))
-    except Exception as _spe:  # noqa: BLE001 — additive; pulse failure must not break the build
-        log.warning("sector_pulse precompute skipped (%s)", _spe)
     # per-stock Macro-sensitivity context (rate-beta tier + duration + live-regime
     # head/tailwind + inflation label) — reads factor_betas.json (written by build_site
     # just before this) + data/transmission/latest.json (the Rate & Inflation Transmission
@@ -1568,14 +1529,6 @@ def main() -> int:
         # W6-C HOLD: attach per-name basing state to the stockdata JSON (BLOCKED names get it too)
         if _hold_state.get(ticker):
             rec["hold"] = _hold_state[ticker]
-        # Sector Pulse — top-level block in each stockdata JSON (DISPLAY-ONLY, never scored).
-        # Null/absent when the ticker maps to no live theme. Never fatal.
-        try:
-            _sp_row = _sector_pulse_map.get(ticker) or _sector_pulse_map.get(ticker.upper())
-            if _sp_row:
-                rec["sector_pulse"] = _sp_row
-        except Exception as _spe2:  # noqa: BLE001 — additive; must not break the stockdata build
-            pass
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
@@ -1669,6 +1622,29 @@ def main() -> int:
         except Exception as _w3e:  # noqa: BLE001 — W3 evidence is additive, never fatal
             log.warning("W3 evidence collection for %s failed (%s)", ticker, _w3e)
         built += 1
+    # ---- W0.2 Stage C: US signal_gate NEAR-MISS capture (masterplan §5.2 move 2) ----
+    # signal_gate.gate() annotates verdicts that failed EXACTLY ONE Appendix-A
+    # condition (freshness_expired / not_topped_veto — the two signal_gate-emitted
+    # taxonomy reasons). Log them to the track-record ledger where they mature under
+    # the same one-grader as fires ("grade rejections as predictions", §5.2 move 3).
+    # Fail-open LOUD: capture failure never breaks the render but always logs.
+    try:
+        from engine import track_record as _tr
+        _near = []
+        for _t, _v in sig_verdict.items():
+            _r = (_v or {}).get("near_miss_reason")
+            if _r:
+                _near.append({
+                    "ticker": _t,
+                    "date": str(_v.get("asof") or alpha_asof or ""),
+                    "primary_rejection_reason": _r,
+                    "reason_detail": _v.get("reason"),
+                })
+        if _near:
+            _nm_out = _tr.log_near_misses(_near)
+            log.info("near-miss capture: %s", _nm_out)
+    except Exception as _nme:  # noqa: BLE001
+        log.warning("near-miss capture failed (%s) — fires unaffected", _nme)
     # surface any GICS sector strings the spotlight sector-channel couldn't bridge to an SPDR
     # ETF (the theme channel still fires for these names) so the alias map can be widened.
     _unmapped = spotlight_ctx.get("unmapped") if spotlight_ctx else None
@@ -2074,11 +2050,6 @@ def main() -> int:
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
-            # Sector Pulse heat chip (DISPLAY-ONLY, never scores/ranks). Propagated from the
-            # per-ticker pulse map built above; absent when the ticker is not in any live theme.
-            _sp_r = _sector_pulse_map.get(t) or _sector_pulse_map.get((t or "").upper())
-            if _sp_r:
-                r["sector_pulse"] = _sp_r
             cb = coiled_by.get(t)                  # COILED wave-2 ranking bonus chip (display only)
             if cb and (cb.get("coiled") or cb.get("washout_ctx")):
                 r["coiled"] = cb

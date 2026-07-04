@@ -96,6 +96,9 @@ _IDENTITY_COLS = [
     "vol_annual_at_entry",    # float/null  trailing-63d σ × √252
     "er_at_entry",            # float/null  Kaufman Efficiency Ratio (20-bar)
     "first_seen_asof",        # str  mtf asof when row first written
+    # W0.2 Stage C near-miss identity (null on fire rows):
+    "primary_rejection_reason",  # str/null  CLOSED Appendix-A taxonomy reason
+    "reason_detail",             # str/null  the gate's free-text why (display/audit)
     # W0-stageB: macro regime_vector stamp (§3.4) — US primary, distinct from regime_at_entry
     "rate_pressure",          # str/null  relief / neutral / pressure / panic
     "quad_hard_label",        # str/null  e.g. "goldilocks" / "stagflation" / …
@@ -153,6 +156,10 @@ _KEY = ("ticker", "date", "type")
 # Which marker types carry the buy-filter verdict
 _ENTRY_TYPES = {"buy", "rebuy"}
 _EXIT_TYPES  = {"sell", "cut"}
+# W0.2 Stage C: the near-miss row type (candidates failing EXACTLY ONE Appendix-A
+# condition at signal_gate). Graded as predictions (§5.2 move 3: same spine, same
+# horizons) but NEVER an entry — excluded from every entry/outcome stat by type.
+NEAR_MISS_TYPE = "near_miss"
 _FWD_HORIZONS = [20, 60, 180]
 # Spine horizons for fwd_mfe + terminal_state (§5.1, §1.1)
 _SPINE_HORIZONS = list(grading.SPINE_HORIZONS)  # (5, 10, 21, 63, 126)
@@ -679,6 +686,21 @@ def _empty_df() -> pd.DataFrame:
     return pd.DataFrame(columns=_ALL_COLS)
 
 
+def _load_close(ticker: str, stocks_dir: Path, dead_prices: dict) -> "pd.Series | None":
+    """Daily close for one ticker (split- AND dividend-back-adjusted total-return —
+    see the module docstring's price-store caveat; leak-neutral for splits, small
+    dividend residual on forward drawdowns; not point-in-time), extended with the
+    dead-name terminal series so a delisting grades as a loss instead of the row
+    dropping silently. None when no usable series exists."""
+    stock_fp = Path(stocks_dir) / f"{ticker}.parquet"
+    try:
+        close = pd.read_parquet(stock_fp)["close"].dropna()
+        close = close.sort_index()
+    except Exception:  # noqa: BLE001
+        close = None
+    return grading.resolve_series(ticker, close, dead_prices=dead_prices)
+
+
 def _read_existing(out_path: Path) -> pd.DataFrame:
     """Read existing parquet or return empty DataFrame.  Safe if file absent."""
     if not out_path.exists():
@@ -833,19 +855,7 @@ def update_track_record(
 
     # --- process each ticker's signal file ---
     for ticker, markers in _iter_marker_files(signals_dir):
-        # Load daily close for this ticker (skip gracefully if absent).
-        # NOTE: this `close` is split- AND dividend-back-adjusted total-return (see the
-        # module docstring's price-store caveat) — leak-neutral for splits, small
-        # dividend residual on forward drawdowns. Not point-in-time.
-        stock_fp = stocks_dir / f"{ticker}.parquet"
-        try:
-            close = pd.read_parquet(stock_fp)["close"].dropna()
-            close = close.sort_index()
-        except Exception:
-            close = None
-        # extend with (or fall back to) the dead-name terminal series so a delisting is
-        # graded as a loss rather than dropping the row silently.
-        close = grading.resolve_series(ticker, close, dead_prices=dead_prices)
+        close = _load_close(ticker, stocks_dir, dead_prices)
         if close is None or close.empty:
             logger.debug("No price data for %s — skipping", ticker)
             continue
@@ -898,6 +908,37 @@ def update_track_record(
                 existing_keys[key] = row
                 new_rows.append(row)
 
+    # --- W0.2 Stage C: mature near-miss rows (graded as predictions, §5.2 move 3).
+    # Their keys never re-appear in the §7 marker stream, so the marker loop above
+    # cannot mature them; this pass fills their NULL forward columns from the same
+    # price store + fill conventions. hygiene_screen rows are never graded
+    # (Appendix A: hygiene is not a forecast). Keep-FIRST throughout (fill-null-only).
+    _nm_close_cache: dict[str, Any] = {}
+    for row in existing_keys.values():
+        if row.get("type") != NEAR_MISS_TYPE:
+            continue
+        if row.get("primary_rejection_reason") == "hygiene_screen":
+            continue
+        tkr = row["ticker"]
+        if tkr not in _nm_close_cache:
+            _nm_close_cache[tkr] = _load_close(tkr, stocks_dir, dead_prices)
+        nm_close = _nm_close_cache[tkr]
+        if nm_close is None or nm_close.empty:
+            continue
+        nm_marker = {"date": row["date"], "type": NEAR_MISS_TYPE}
+        changed = _fill_maturation(row, [nm_marker], 0, nm_close, run_asof)
+        if _is_null(row.get("vector_asof")):
+            rv_back = _regime_stamp(row["date"], data_dir=data_dir)
+            if not _is_null(rv_back.get("vector_asof")):
+                for col in ("rate_pressure", "quad_hard_label", "fused_risk_label",
+                            "vol_regime", "risk_radar_state", "regime_vector_degraded",
+                            "vector_asof", "staleness_hours"):
+                    if _is_null(row.get(col)):
+                        row[col] = rv_back.get(col)
+                        changed = True
+        if changed:
+            matured_rows += 1
+
     # --- assemble final DataFrame ---
     all_rows = list(existing_keys.values())
     if not all_rows:
@@ -930,3 +971,111 @@ def update_track_record(
         "out_path": str(out_path),
         "unstamped_count": unstamped_count,
     }
+
+
+# --------------------------------------------------------------------------- #
+# W0.2 Stage C — the near-miss capture API (masterplan §5.2 move 2, Appendix A)
+# --------------------------------------------------------------------------- #
+def log_near_misses(
+    near: list[dict],
+    repo_root: "Path | None" = None,
+    *,
+    out_path: "Path | None" = None,
+    stocks_dir: "Path | None" = None,
+    data_dir: "Path | None" = None,
+    stockdata_dir: "Path | None" = None,
+) -> dict:
+    """Append near-miss rows to the track-record ledger, keyed
+    ``(ticker, date, NEAR_MISS_TYPE)``, keep-FIRST.
+
+    A near-miss is a candidate failing EXACTLY ONE Appendix-A condition at
+    evaluation time. ``near`` rows carry:
+      {ticker, date, primary_rejection_reason, reason_detail?}
+
+    * ``primary_rejection_reason`` MUST be in ``grading.REJECTION_TAXONOMY``
+      (the CLOSED set) — unknown reasons are rejected and counted, never a
+      silent enum extension (§8 row required to extend).
+    * rows get the same identity / regime-vector / species / archetype stamps
+      as fires (via ``_build_row``) and mature under the same one-grader fill
+      conventions — "grade rejections as predictions" (§5.2 move 3).
+    * ``hygiene_screen`` rows are captured but NEVER graded (Appendix A:
+      hygiene is not a forecast) — their maturation columns stay null.
+
+    Pre-registered hypothesis this ledger encodes from birth (§5.2):
+    **rejection ≠ blacklist** — the failed2/S6 evidence suggests some rejection
+    cohorts may OUTPERFORM their accepted siblings; near-miss cohorts are the
+    natural controls that make gate P&L attribution estimable at all.
+
+    Returns {n_submitted, n_new, n_duplicate, n_rejected_reason, n_no_price}.
+    """
+    if repo_root is None:
+        repo_root = Path(__file__).resolve().parents[1]
+    repo_root = Path(repo_root)
+    if out_path is None:
+        out_path = repo_root / "data" / "signal_archive" / "track_record.parquet"
+    if stocks_dir is None:
+        stocks_dir = repo_root / "data" / "stocks"
+    if data_dir is None:
+        data_dir = repo_root / "data"
+    if stockdata_dir is None:
+        stockdata_dir = repo_root / "site" / "stockdata"
+    out_path = Path(out_path)
+
+    _reset_per_run_caches()
+    global _archetype_stockdata_dir  # noqa: PLW0603
+    _archetype_stockdata_dir = Path(stockdata_dir)
+    registry = _load_species_registry(repo_root, data_dir=data_dir)
+    mtype_to_species = _build_mtype_to_species(registry)
+    try:
+        dead_prices = grading.load_dead_prices()
+    except Exception:  # noqa: BLE001
+        dead_prices = {}
+
+    existing = _read_existing(out_path)
+    existing_keys: dict[tuple, dict] = {}
+    for rec in existing.to_dict(orient="records"):
+        existing_keys[(rec.get("ticker"), rec.get("date"), rec.get("type"))] = rec
+
+    out = {"n_submitted": len(near or []), "n_new": 0, "n_duplicate": 0,
+           "n_rejected_reason": 0, "n_no_price": 0}
+    close_cache: dict[str, Any] = {}
+    for nm in (near or []):
+        tkr = nm.get("ticker")
+        d = str(nm.get("date") or "")
+        reason = nm.get("primary_rejection_reason")
+        if not tkr or not d:
+            out["n_rejected_reason"] += 1
+            continue
+        if reason not in grading.REJECTION_TAXONOMY:
+            logger.warning("log_near_misses: %s carries non-taxonomy reason %r — "
+                           "REJECTED (Appendix A is a closed set)", tkr, reason)
+            out["n_rejected_reason"] += 1
+            continue
+        key = (tkr, d, NEAR_MISS_TYPE)
+        if key in existing_keys:
+            out["n_duplicate"] += 1        # keep-FIRST: never overwrite
+            continue
+        if tkr not in close_cache:
+            close_cache[tkr] = _load_close(tkr, stocks_dir, dead_prices)
+        close = close_cache[tkr]
+        if close is None or close.empty:
+            out["n_no_price"] += 1
+            continue
+        marker = {"date": d, "type": NEAR_MISS_TYPE}
+        asof_str = str(close.index.max().date())
+        row = _build_row(tkr, marker, [marker], 0, close, asof_str,
+                         mtype_to_species=mtype_to_species,
+                         data_dir=data_dir, stockdata_dir=stockdata_dir)
+        row["primary_rejection_reason"] = reason
+        row["reason_detail"] = (str(nm.get("reason_detail"))
+                                if nm.get("reason_detail") else None)
+        if reason != "hygiene_screen":     # hygiene is not a forecast — never graded
+            _fill_maturation(row, [marker], 0, close, asof_str)
+        existing_keys[key] = row
+        out["n_new"] += 1
+
+    if out["n_new"]:
+        all_rows = list(existing_keys.values())
+        _write_parquet(pd.DataFrame(all_rows, columns=_ALL_COLS), out_path)
+    logger.info("log_near_misses: %s", out)
+    return out

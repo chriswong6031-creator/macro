@@ -184,6 +184,15 @@ def gate(ticker: str, daily_close) -> dict:
     if take_active and tier_c != "T1":
         why = "topped/rolled-over" if topped else "risen for many days (cross 2+ ticks ago)"
         v.update(eligible=False, tier=None, reason=f"held but {why} — no longer a fresh entry")
+        # W0.2 Stage C near-miss annotation (Appendix A): stamped ONLY when the name
+        # failed EXACTLY ONE condition — topped AND stale together is two failures,
+        # which is a plain rejection, not a near-miss.
+        if topped and not fresh:
+            pass
+        elif topped:
+            v["near_miss_reason"] = "not_topped_veto"
+        else:
+            v["near_miss_reason"] = "freshness_expired"
     # A forming 'pending' master counts as T1, but only while it is JUST-fired (<= FRESH_TICKS)
     # and not already topping -- otherwise it too is stale and drops off the board.
     if tier_c is None and v.get("sub") == "pending":
@@ -192,6 +201,13 @@ def gate(ticker: str, daily_close) -> dict:
         else:
             why = "already topping" if topped else "risen for many days"
             v.update(eligible=False, tier=None, reason=f"forming master {why} — not a fresh entry")
+            # W0.2 Stage C: same exactly-one near-miss rule as the held-take branch.
+            if topped and not fresh:
+                pass
+            elif topped:
+                v["near_miss_reason"] = "not_topped_veto"
+            else:
+                v["near_miss_reason"] = "freshness_expired"
     v["tier_cascade"] = tier_c
     v["weight"] = confluence_tiers.WEIGHTS.get(tier_c, 0.0)
     v["tier_sub"] = casc.get("sub")           # deep|shallow (display modifier; equal weight)
