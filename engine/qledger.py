@@ -36,6 +36,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
+import numpy as np
 import pandas as pd
 
 # Reuse the exact price layer the rest of the suite grades on. `_close_series`
@@ -303,6 +304,20 @@ def _prepare_claim(claim: dict) -> dict:
     return stored
 
 
+def _json_default(o):
+    """json.dumps fallback: coerce numpy scalars to native Python. Every claim
+    carries a US regime_vector PIT stamp (§3.4) whose fields are loaded from
+    parquet as numpy scalars (np.int64 / np.bool_ / np.float64). Without this the
+    stdlib encoder raises "Object of type int64 is not JSON serializable"; the
+    whitehouse adapter (build_whitehouse._register_wh_claim) swallows that at
+    WARNING and silently registers zero claims (W5 — reproduces only where the
+    regime vector resolves, e.g. CI, not on a dev box lacking the parquet)."""
+    if isinstance(o, np.generic):     # np.int64 / np.bool_ / np.float64 → python
+        return o.item()
+    raise TypeError(
+        f"Object of type {type(o).__name__} is not JSON serializable")
+
+
 def register(claim: dict, root: Path | str | None = None,
              *, dedupe: bool = True) -> dict:
     """Register ONE claim. Validates against the schema, stamps `claim_id`,
@@ -333,7 +348,7 @@ def register(claim: dict, root: Path | str | None = None,
                 return existing  # idempotent — adapters re-run freely
 
     with p.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(stored, ensure_ascii=False) + "\n")
+        fh.write(json.dumps(stored, ensure_ascii=False, default=_json_default) + "\n")
     return stored
 
 
@@ -385,7 +400,7 @@ def register_batch(claims: Iterable[dict], root: Path | str | None = None,
     if new_rows:
         with p.open("a", encoding="utf-8") as fh:  # ONE write for the batch
             for row in new_rows:
-                fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+                fh.write(json.dumps(row, ensure_ascii=False, default=_json_default) + "\n")
     return results
 
 
@@ -420,7 +435,7 @@ def backfill_regime_stamps(root: Path | str | None = None) -> dict:
         tmp = p.with_name(p.name + ".tmp")
         with tmp.open("w", encoding="utf-8") as fh:
             for c in claims:
-                fh.write(json.dumps(c, ensure_ascii=False) + "\n")
+                fh.write(json.dumps(c, ensure_ascii=False, default=_json_default) + "\n")
         tmp.replace(p)
     return {"n_claims": len(claims), "n_backfilled": n_backfilled,
             "n_unstamped": n_unstamped}
