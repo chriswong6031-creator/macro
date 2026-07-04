@@ -209,3 +209,11 @@ data/oracle/gauntlet/p8_results.json
 data/oracle/gauntlet/p8_trial_ledger.json
 # Oracle B1 personality output — heavy local artifact, mirrors panel_*.parquet pattern
 data/oracle/personality.json
+# Oracle Research Factory (W-B1/B3) — governance + ledger files ARE committed.
+# registry.jsonl is the compound spec registry (small governance data).
+# trial_ledger.jsonl and live_ledger.jsonl are append-only result ledgers.
+# promotion_queue.json is the Fable-adjudicated promotion candidate list.
+!data/oracle/compounds/registry.jsonl
+!data/oracle/compounds/trial_ledger.jsonl
+!data/oracle/compounds/live_ledger.jsonl
+!data/oracle/promotion_queue.json
