@@ -87,69 +87,49 @@ def _annotation(msg: str) -> None:
 # Step helpers
 # ---------------------------------------------------------------------------
 
-def _step_panel(data_dir: Path, dry_run: bool) -> bool:
-    """Re-run build_oracle_panel (Tier S only for nightly speed)."""
+def _delegate(step_name: str, module: str, data_dir: Path, dry_run: bool,
+              extra: list[str] | None = None) -> bool:
+    """Run a build CLI as a subprocess — the CLIs are the tested, canonical
+    entry points; re-imagining their internals here is how the original
+    step_panel/step_graph shipped calls against nonexistent signatures and
+    step_episodes silently dropped Tier M (the alert tier)."""
+    import subprocess
     t0 = time.time()
-    log.info("=== Step 1: Panel update (Tier S) ===")
-    try:
-        from engine.oracle.panel import build_panel_s
-        if not dry_run:
-            panel_s = build_panel_s(data_dir=data_dir)
-            panel_s.to_parquet(data_dir / "oracle" / "panel_s.parquet")
-        log.info("Panel S built in %.1fs", time.time() - t0)
+    cmd = [sys.executable, "-m", module, "--data-dir", str(data_dir)] + (extra or [])
+    if dry_run:
+        log.info("DRY-RUN: would run %s", " ".join(cmd))
         return True
-    except Exception as e:  # noqa: BLE001
-        _annotation(f"oracle_nightly: panel_s rebuild FAILED: {e}")
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT))
+    if result.returncode != 0:
+        _annotation(f"oracle_nightly: {step_name} FAILED (rc={result.returncode}): "
+                    f"{(result.stderr or result.stdout)[-400:]}")
         return False
+    log.info("%s done in %.1fs", step_name, time.time() - t0)
+    return True
+
+
+def _step_panel(data_dir: Path, dry_run: bool) -> bool:
+    """Rebuild BOTH panel tiers via the canonical CLI (Tier M is the alert
+    layer — a Tier-S-only nightly would run every subsector alert on stale
+    data as the massive store advances)."""
+    log.info("=== Step 1: Panel update (Tier S + M) ===")
+    return _delegate("panel", "scripts.build_oracle_panel", data_dir, dry_run,
+                     ["--tier", "all"])
 
 
 def _step_graph(data_dir: Path, dry_run: bool) -> bool:
-    """Re-run build_oracle_graph."""
-    t0 = time.time()
-    log.info("=== Step 2: Graph update ===")
-    try:
-        from engine.oracle.graph import build_graph
-        import pandas as pd
-        panel_path = data_dir / "oracle" / "panel_s.parquet"
-        if not panel_path.exists():
-            log.warning("oracle_nightly: panel_s.parquet not found — skipping graph")
-            return False
-        panel = pd.read_parquet(panel_path)
-        rg = _read_json(data_dir / "oracle" / "rotation_groups.json") or {}
-        backbone = rg.get("complexes") or []
-        graph = build_graph(panel, backbone)
-        if not dry_run:
-            (data_dir / "oracle" / "graph_s.json").write_text(
-                json.dumps(graph, separators=(",", ":"), default=str)
-            )
-        log.info("Graph built in %.1fs", time.time() - t0)
-        return True
-    except Exception as e:  # noqa: BLE001
-        _annotation(f"oracle_nightly: graph rebuild FAILED: {e}")
-        return False
+    """Rebuild BOTH graphs via the canonical CLI (graph_m carries the routing
+    matrix and complex edges the display surfaces read)."""
+    log.info("=== Step 2: Graph update (Tier S + M) ===")
+    return _delegate("graph", "scripts.build_oracle_graph", data_dir, dry_run,
+                     ["--tier", "all"])
 
 
 def _step_episodes(data_dir: Path, dry_run: bool) -> bool:
-    """Re-run build_oracle_episodes."""
-    t0 = time.time()
-    log.info("=== Step 3: Episodes rebuild ===")
-    try:
-        from engine.oracle.episodes import build_episodes
-        import pandas as pd
-        panel_path = data_dir / "oracle" / "panel_s.parquet"
-        if not panel_path.exists():
-            log.warning("oracle_nightly: panel_s.parquet not found — skipping episodes")
-            return False
-        panel = pd.read_parquet(panel_path)
-        rg = _read_json(data_dir / "oracle" / "rotation_groups.json")
-        ep = build_episodes(panel, rotation_groups=rg)
-        if not dry_run:
-            ep.to_parquet(data_dir / "oracle" / "episodes_s.parquet")
-        log.info("Episodes built: %d rows in %.1fs", len(ep), time.time() - t0)
-        return True
-    except Exception as e:  # noqa: BLE001
-        _annotation(f"oracle_nightly: episodes rebuild FAILED: {e}")
-        return False
+    """Rebuild BOTH episode catalogs via the canonical CLI."""
+    log.info("=== Step 3: Episodes rebuild (Tier S + M) ===")
+    return _delegate("episodes", "scripts.build_oracle_episodes", data_dir, dry_run,
+                     ["--tier", "all"])
 
 
 def _step_memory_base_rates(data_dir: Path, dry_run: bool) -> bool:
