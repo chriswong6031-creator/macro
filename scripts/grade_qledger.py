@@ -421,6 +421,16 @@ def run(root: Path | str | None = None, today: date | None = None,
     root = Path(root) if root else config.ROOT
     today_dt = today or date.today()
 
+    # W0 Stage B-e (§3.4): backfill missing regime stamps from the persisted
+    # daily vector (PIT; fill-null-only) BEFORE loading claims, and surface the
+    # residual unstamped count — required visible by the stamping rules.
+    regime_backfill = {"n_claims": 0, "n_backfilled": 0, "n_unstamped": 0}
+    if not dry_run:
+        try:
+            regime_backfill = q.backfill_regime_stamps(root)
+        except Exception as exc:  # noqa: BLE001 — never sink the grader
+            log.warning("regime stamp backfill failed: %s", exc)
+
     claims = q.load_claims(root)
     open_claims = [c for c in claims if c.get("status") == q.STATUS_OPEN]
     existing_keys = _existing_grade_keys(root)
@@ -521,6 +531,7 @@ def run(root: Path | str | None = None, today: date | None = None,
         "n_already_graded": n_already_graded,
         "dry_run": dry_run,
         "w6_readiness": w6_readiness,
+        "regime_stamp_backfill": regime_backfill,
     }
 
     # Write run_status.json — broken != quiet.
@@ -533,7 +544,9 @@ def run(root: Path | str | None = None, today: date | None = None,
     msg = (
         f"[grade_qledger] open={n_open} graded_today={n_graded_today} "
         f"blocked={n_blocked_by_coverage} ungradeable={n_ungradeable} "
-        f"already_graded={n_already_graded}"
+        f"already_graded={n_already_graded} "
+        f"regime_backfilled={regime_backfill.get('n_backfilled', 0)} "
+        f"regime_unstamped={regime_backfill.get('n_unstamped', 0)}"
         + (" [DRY RUN]" if dry_run else "")
     )
     log.info(msg)

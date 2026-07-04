@@ -68,7 +68,7 @@ _ROOT = _HERE.parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from engine.qledger import make_claim, register  # noqa: E402
+from engine.qledger import make_claim, register_batch  # noqa: E402
 
 log = logging.getLogger("placebo_sampler")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -233,6 +233,9 @@ def _register_one_event(
     covered = _covered_tickers(tickers_raw, corpus, root) if tickers_raw else []
 
     counts = {"n_registered": 0, "n_blocked": 0, "n_rejected": 0}
+    # W0 Stage B-e: claims accumulate here and register in ONE batch write
+    # (register() re-reads the whole claims file per call — O(file)/call).
+    pending: list[dict] = []
 
     if covered:
         # Entity-level placebo: one claim per covered ticker (mirrors real backfill)
@@ -262,13 +265,7 @@ def _register_one_event(
                 if dry_run:
                     counts["n_registered"] += 1
                     continue
-                stored = register(claim, root=root)
-                if stored.get("status") == "rejected":
-                    counts["n_rejected"] += 1
-                    log.warning("Placebo rejected: %s — %s", ticker,
-                                stored.get("reject_reason"))
-                else:
-                    counts["n_registered"] += 1
+                pending.append(claim)
     else:
         # No covered tickers — register a basket/macro-proxy claim on the bench
         # (records that this low-importance diffuse event produced no move).
@@ -300,11 +297,15 @@ def _register_one_event(
             if dry_run:
                 counts["n_registered"] += 1
                 continue
-            stored = register(claim, root=root)
-            if stored.get("status") == "rejected":
+            pending.append(claim)
+
+    # ONE batch write for everything this event produced (W0 Stage B-e)
+    if pending:
+        for stored in register_batch(pending, root=root):
+            if stored.get("status") in ("rejected", "error"):
                 counts["n_rejected"] += 1
-                log.warning("Placebo (no ticker) rejected: %s — %s",
-                            event_id, stored.get("reject_reason"))
+                log.warning("Placebo rejected: %s — %s", event_id,
+                            stored.get("reject_reason") or stored.get("error"))
             else:
                 counts["n_registered"] += 1
 

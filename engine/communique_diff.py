@@ -418,14 +418,18 @@ def register_claims(result: dict, root: Path | str | None = None) -> int:
         log.warning("communique_diff: qledger import failed (%s)", e)
         return 0
 
-    n = 0
+    # W0 Stage B-e: build the claim list first, then ONE register_batch() call —
+    # register() re-reads the whole claims file per call (O(file)); this loop was
+    # the ledger's highest-volume writer. Per-claim error isolation is preserved
+    # (make_claim failures skip the event; batch slots that error are counted out).
+    pending: list[dict] = []
     for e in result.get("events", []):
         asof = e.get("asof") or result.get("asof")
         ents = _entities_for(e)
         try:
             if ents:
                 for tk in ents:
-                    claim = qledger.make_claim(
+                    pending.append(qledger.make_claim(
                         desk=DESK, asof=asof, scope_type="entity", scope_key=tk,
                         direction=0, horizon_d=HORIZON_D,
                         timestamp_quality="CRAWL_BOUNDED",
@@ -437,12 +441,10 @@ def register_claims(result: dict, root: Path | str | None = None) -> int:
                                "polarity": e.get("polarity"),
                                "review_status": e.get("review_status"),
                                "salt": e.get("event_id")},
-                    )
-                    qledger.register(claim, root=root)
-                    n += 1
+                    ))
             else:
                 # macro claim vs the CSI-300 ETF (machine-checkable observable, D4)
-                claim = qledger.make_claim(
+                pending.append(qledger.make_claim(
                     desk=DESK, asof=asof, scope_type="macro",
                     scope_key="510300.SS", direction=0, horizon_d=HORIZON_D,
                     timestamp_quality="CRAWL_BOUNDED",
@@ -454,12 +456,14 @@ def register_claims(result: dict, root: Path | str | None = None) -> int:
                            "polarity": e.get("polarity"),
                            "review_status": e.get("review_status"),
                            "salt": e.get("event_id")},
-                )
-                qledger.register(claim, root=root)
-                n += 1
+                ))
         except Exception as ex:  # noqa: BLE001 — one bad event never sinks the batch
-            log.debug("communique_diff: claim register failed for %s (%s)",
+            log.debug("communique_diff: claim build failed for %s (%s)",
                       e.get("event_id"), ex)
+    if not pending:
+        return 0
+    results = qledger.register_batch(pending, root=root)
+    n = sum(1 for r in results if r.get("status") != "error")
     return n
 
 

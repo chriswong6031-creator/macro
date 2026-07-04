@@ -355,3 +355,203 @@ def test_ungraded_family_state(tmp_path):
     assert tr["counts"]["n_claims"] == 1
     assert tr["counts"]["n_grades"] == 0
     assert q.derive_state(0) == q.STATE_UNGRADED
+
+
+# --------------------------------------------------------------------------- #
+# W0 Stage B-e — register_batch, next-bar fill discontinuity, regime stamps
+# --------------------------------------------------------------------------- #
+def _mk_claim(asof="2026-02-02", key="CARR", h=21, salt=""):
+    return q.make_claim(desk="altdata", asof=asof, scope_type="entity",
+                        scope_key=key, direction=1, horizon_d=h,
+                        timestamp_quality="CRAWL_BOUNDED", sector=None,
+                        extra={"salt": salt} if salt else None) | (
+                            {"salt": salt} if salt else {})
+
+
+@pytest.fixture
+def null_regime(monkeypatch):
+    """Hermetic regime stamps: the vector lookup returns all-None (no store)."""
+    q._regime_stamp_cached.cache_clear()
+    import engine.regime_vector as rv
+    monkeypatch.setattr(rv, "get_vector_for_date",
+                        lambda asof, data_dir=None: {k: None for k in
+                                                     q._REGIME_STAMP_KEYS})
+    yield
+    q._regime_stamp_cached.cache_clear()
+
+
+def test_register_batch_equivalent_to_loop(prices, null_regime, tmp_path):
+    """N register() calls and one register_batch() produce identical stores
+    (modulo the registration timestamp)."""
+    claims = [_mk_claim(salt=f"s{i}") for i in range(5)]
+    loop_root = tmp_path / "loop"
+    batch_root = tmp_path / "batch"
+    for c in claims:
+        q.register(dict(c), root=loop_root)
+    q.register_batch([dict(c) for c in claims], root=batch_root)
+
+    a = q.load_claims(loop_root)
+    b = q.load_claims(batch_root)
+    assert len(a) == len(b) == 5
+    strip = lambda r: {k: v for k, v in r.items() if k != "timestamp"}  # noqa: E731
+    assert [strip(r) for r in a] == [strip(r) for r in b]
+
+
+def test_register_batch_error_isolation(prices, null_regime, tmp_path):
+    """One malformed entry must not sink the batch: its slot reports error,
+    every other claim still registers."""
+    good1, good2 = _mk_claim(salt="a"), _mk_claim(salt="b")
+    results = q.register_batch([good1, "not-a-claim", good2], root=tmp_path)
+    assert len(results) == 3
+    assert results[0].get("status") == q.STATUS_OPEN
+    assert results[1].get("status") == "error" and results[1].get("error")
+    assert results[2].get("status") == q.STATUS_OPEN
+    assert len(q.load_claims(tmp_path)) == 2
+
+
+def test_register_batch_dedupe_keep_first(prices, null_regime, tmp_path):
+    """Dedupe by claim_id: the store's existing row wins; within a batch the
+    first occurrence wins — later duplicates return the stored row."""
+    c = _mk_claim(salt="dup")
+    first = q.register(dict(c), root=tmp_path)
+    results = q.register_batch([dict(c), dict(c)], root=tmp_path)
+    assert len(q.load_claims(tmp_path)) == 1
+    assert all(r["claim_id"] == first["claim_id"] for r in results)
+    assert all(r["timestamp"] == first["timestamp"] for r in results)
+
+
+def test_register_batch_one_store_read(prices, null_regime, tmp_path, monkeypatch):
+    """The batch loads the store ONCE regardless of batch size — the whole
+    point of §5.2 (register() is O(file) per call)."""
+    calls = {"n": 0}
+    real = q.load_claims
+
+    def counting(root=None):
+        calls["n"] += 1
+        return real(root)
+
+    monkeypatch.setattr(q, "load_claims", counting)
+    q.register_batch([_mk_claim(salt=f"x{i}") for i in range(10)], root=tmp_path)
+    assert calls["n"] == 1
+
+
+def test_fwd_ret_next_bar_vs_legacy(prices, tmp_path):
+    """The stamped discontinuity: next_bar enters at the FIRST close STRICTLY
+    AFTER the asof; asof_legacy entered at the close ON/BEFORE it."""
+    s = prices["CARR"]
+    asof = str(s.index[10].date())
+    legacy = q._fwd_ret("CARR", tmp_path, asof, 5,
+                        fill_convention=q.FILL_ASOF_LEGACY)
+    nxt = q._fwd_ret("CARR", tmp_path, asof, 5)
+
+    e0_legacy = float(s.iloc[10])
+    e0_next = float(s.iloc[11])
+    assert e0_legacy != e0_next
+    # exits: legacy anchored at asof+5d, next_bar anchored at fill+5d
+    end_leg = s[s.index <= s.index[10] + pd.Timedelta(days=5)].iloc[-1]
+    end_nxt = s[s.index <= s.index[11] + pd.Timedelta(days=5)].iloc[-1]
+    assert legacy == pytest.approx(round(end_leg / e0_legacy - 1.0, 6))
+    assert nxt == pytest.approx(round(end_nxt / e0_next - 1.0, 6))
+    # (on this constant-drift fixture the two RATIOS coincide even though the
+    # entry bars differ — the window-pinning asserts above are the proof of
+    # the convention change, not the return values)
+
+
+def test_fwd_ret_next_bar_requires_covered_exit(prices, tmp_path):
+    """Never grade a shortened window: when the series ends before fill+h the
+    next-bar path returns None instead of grading to the last available bar."""
+    s = prices["CARR"]
+    late_asof = str(s.index[-2].date())     # fill = last bar; fill+21d uncovered
+    assert q._fwd_ret("CARR", tmp_path, late_asof, 21) is None
+
+
+def test_grade_rows_carry_fill_convention(prices, null_regime, tmp_path):
+    """New grade rows are stamped next_bar + entry_fill_date; the discontinuity
+    is visible, never silent."""
+    c = q.register(_mk_claim(asof="2026-02-02", h=21), root=tmp_path)
+    rows = q.grade_claim(c, root=tmp_path, today=date(2026, 6, 1))
+    assert rows, "expected matured grade rows"
+    s = prices["CARR"]
+    expected_fill = str(s[s.index > pd.Timestamp("2026-02-02")].index[0].date())
+    for r in rows:
+        assert r["fill_convention"] == q.FILL_NEXT_BAR
+        assert r["entry_fill_date"] == expected_fill
+
+
+def test_track_record_counts_convention_and_unstamped(prices, null_regime, tmp_path):
+    """compute_track_record prints the per-convention grade split (missing
+    field == asof_legacy) and the §3.4 residual unstamped-claim count."""
+    c = q.register(_mk_claim(asof="2026-02-02", h=21), root=tmp_path)
+    rows = q.grade_claim(c, root=tmp_path, today=date(2026, 6, 1))
+    gp = tmp_path / "data" / "qledger" / "grades.jsonl"
+    gp.parent.mkdir(parents=True, exist_ok=True)
+    with gp.open("w", encoding="utf-8") as fh:
+        legacy = {"claim_id": "deadbeef", "horizon_d": 5, "excess": 0.01,
+                  "hit": True}          # pre-B-e row: no fill_convention
+        fh.write(json.dumps(legacy) + "\n")
+        for r in rows:
+            fh.write(json.dumps(r) + "\n")
+    tr = q.compute_track_record(tmp_path)
+    conv = tr["counts"]["grades_by_fill_convention"]
+    assert conv.get(q.FILL_ASOF_LEGACY) == 1
+    assert conv.get(q.FILL_NEXT_BAR) == len(rows)
+    # null_regime fixture → the registered claim carries no vector stamp
+    assert tr["counts"]["n_claims_unstamped_regime"] == 1
+
+
+def test_regime_stamp_on_register(prices, tmp_path, monkeypatch):
+    """Claims registered while the persisted vector covers their asof carry the
+    full PIT stamp; the lookup is called with the claim's own asof."""
+    q._regime_stamp_cached.cache_clear()
+    import engine.regime_vector as rv
+    seen = {}
+
+    def fake(asof, data_dir=None):
+        seen["asof"] = asof
+        return {"rate_pressure": "neutral", "quad_hard_label": "Q1",
+                "fused_risk_label": None, "vol_regime": "normalizing",
+                "risk_radar_state": "calm", "regime_vector_degraded": 0,
+                "vector_asof": "2026-02-02", "staleness_hours": 0.0}
+
+    monkeypatch.setattr(rv, "get_vector_for_date", fake)
+    stored = q.register(_mk_claim(asof="2026-02-02"), root=tmp_path)
+    q._regime_stamp_cached.cache_clear()
+    assert seen["asof"] == "2026-02-02"
+    assert stored["rate_pressure"] == "neutral"
+    assert stored["vector_asof"] == "2026-02-02"
+    assert stored["species_id"] is None and stored["archetype"] is None
+
+
+def test_backfill_regime_stamps_null_only(prices, tmp_path, monkeypatch):
+    """Backfill fills ONLY missing stamps (keep-FIRST): an existing non-null
+    value is never altered; the residual unstamped count is honest."""
+    q._regime_stamp_cached.cache_clear()
+    import engine.regime_vector as rv
+    covered = {"rate_pressure": "pressure", "quad_hard_label": "Q2",
+               "fused_risk_label": "risk_on", "vol_regime": "warning",
+               "risk_radar_state": "watch", "regime_vector_degraded": 0,
+               "vector_asof": "2026-02-02", "staleness_hours": 0.0}
+    monkeypatch.setattr(
+        rv, "get_vector_for_date",
+        lambda asof, data_dir=None: (dict(covered) if asof == "2026-02-02"
+                                     else {k: None for k in q._REGIME_STAMP_KEYS}))
+
+    p = tmp_path / "data" / "qledger" / "claims.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    row_a = {"claim_id": "a1", "asof": "2026-02-02", "status": "open"}
+    row_b = {"claim_id": "b2", "asof": "2026-02-02", "status": "open",
+             "vector_asof": "2026-01-30", "rate_pressure": "keepme"}
+    row_c = {"claim_id": "c3", "asof": "1999-01-01", "status": "open"}
+    with p.open("w", encoding="utf-8") as fh:
+        for r in (row_a, row_b, row_c):
+            fh.write(json.dumps(r) + "\n")
+
+    out = q.backfill_regime_stamps(tmp_path)
+    q._regime_stamp_cached.cache_clear()
+    assert out == {"n_claims": 3, "n_backfilled": 1, "n_unstamped": 1}
+    rows = {r["claim_id"]: r for r in q.load_claims(tmp_path)}
+    assert rows["a1"]["rate_pressure"] == "pressure"          # filled
+    assert rows["a1"]["vector_asof"] == "2026-02-02"
+    assert rows["b2"]["rate_pressure"] == "keepme"            # never altered
+    assert rows["b2"]["vector_asof"] == "2026-01-30"
+    assert rows["c3"].get("vector_asof") is None              # honest residual
