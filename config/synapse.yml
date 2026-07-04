@@ -2325,7 +2325,8 @@ artifacts:
     tier: infrastructure
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/kernel.py
     external_consumers: []
     notes: >
       Read-side derived index: unions spine (data/spine/predictions.parquet),
@@ -2341,6 +2342,38 @@ artifacts:
       is correct. Envelope sidecar written alongside the parquet. Registration sweep for
       the 21 currently-unregistered source ledgers (board_ledger, china_standout_track,
       track_record) = PR2.
+
+  # --- Neural Web W3: reliability kernel estimates ---
+  kernel-estimates:
+    path: data/neuralweb/kernel_estimates.parquet
+    format: parquet
+    producer: engine/neuralweb/kernel.py
+    known_extra_writers:
+      - "scripts/build_kernel_estimates.py — thin CLI wrapper; calls write_estimates() defined in the producer; no independent write logic"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      DISPLAY-FIRST LAW: zero behavior-changing consumers. This artifact carries
+      (engine × regime_bucket × horizon) reliability cells with hierarchical shrinkage
+      posteriors (engine/pooling.py reused verbatim), Wilson-CI lower bounds, and
+      per-family arming status. Display surfaces may read shrunken_ic for informational
+      display only. No cell may feed behavior-changing consumers (alert_triage caps,
+      board ordering, allocation weights) until it passes the quarterly pre-registered
+      FDR decision batch (PR2). Regime-conditioned cells are honest-but-thin (track_record
+      stamps began 2026-07; qledger stamps null pending backfill); marginal '__all__'
+      cells carry the real depth from the deep 1962-present signal-engine archive.
+      Input: data/neuralweb/spine_index.parquet (sole dependency). Envelope sidecar
+      written alongside the parquet (byte_sha256 is the integrity check for binary
+      sidecars — do NOT call envelope.verify() on this artifact).
 
   # --- Feeds plane (R2) ---
   world-state:
