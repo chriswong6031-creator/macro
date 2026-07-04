@@ -666,6 +666,18 @@ jobs:
           cat /tmp/kernel_diagnostics.log
           [ "$rc" -ne 0 ] && echo "::warning title=build_kernel_diagnostics::rc=$rc (non-fatal)"
           exit 0
+      - name: Confluence Graph (Neural Web W4 — display-only typed graph)
+        # Builds data/neuralweb/confluence_graph.json — typed nodes (engine/sector/regime/
+        # thesis/episode) and five edge families (feeds/stable/leads/contradicts/confirms).
+        # Contradiction detector covers 6 typed pairs; all edges display_only=True.
+        # HARD LAW: confluence never gates, never ranks, never raises a priority.
+        # Gaps (missing oracle files — gitignored) logged as warnings, never failures.
+        run: |
+          set +e
+          python -m scripts.build_confluence_graph > /tmp/confluence_graph.log 2>&1; rc=$?
+          cat /tmp/confluence_graph.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_confluence_graph::rc=$rc (non-fatal)"
+          exit 0
       - name: Alt-Data Brain (Claude-Opus convergence analyst; actionable + falsifiable)
         # Reads the deterministic weighted-convergence substrate + influence graph (written by
         # build_alt_data above) as an evidence pack and writes an ACTIONABLE scored read
