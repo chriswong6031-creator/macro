@@ -799,6 +799,23 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         # intra-basket breadth divergence — mc_closes is additive; None-safe in theme_textures)
         textures = basket_score.theme_textures(lvl, fp, fp5, crowd, breadth_d, perf,
                                                mc_closes=mc_closes)
+        # DON'T-CHASE demotion (continuation VERB only, non-US) — twin of the regime_demoted
+        # stand-down above. A DOMINANT leader that is simultaneously (a) OVERBOUGHT, (b)
+        # DECELERATING (its 3-day member impulse leg has turned negative — more names rolling
+        # over than advancing), AND (c) already within a session of the validated rollover guard
+        # (flip_distance route_a armed) is leadership being DISTRIBUTED at the top, not a trend to
+        # add to. Soften ACCUMULATE -> HOLD ("keep, don't chase") WITHOUT fading the DOMINANT
+        # label or crossing to the reduce/avoid side. The continuation verbs carry NO measured
+        # forward edge (rank-IC~0, see _signal_strength), so this only makes the verb honest — it
+        # never touches the validated fading/deteriorating risk thresholds, and the US rs_pctile
+        # path (ext_abs is None) is left byte-identical. Fix: A-share 'cn_semis' read
+        # DOMINANT/ACCUMULATE ("room to add") while overbought, impulse net -6, ~1 session from FADING.
+        chase_demoted = False
+        if (reco == "accumulate" and label == "dominant" and fp.get("ext_abs") is not None
+                and impulse is not None and impulse < 0
+                and (textures.get("overbought") or {}).get("band") in ("overbought", "extreme")
+                and flip_dist.get("route_a_bps") is not None):
+            reco, chase_demoted = "hold", True
         # achieved-lead-time forward log for the divergence texture: stamp elevated/high
         # reads keyed (date, basket, region) — keep-first, so intraday rebuilds can't drift
         # the stamp — so a later grader can measure the lead vs the fading/deteriorating
@@ -837,6 +854,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "reco": reco, "reco_en": RECOS[reco][0], "reco_zh": RECOS[reco][1],
             "reco_why_en": _RECO_WHY[reco][0], "reco_why_zh": _RECO_WHY[reco][1],
             "regime_demoted": regime_demoted,
+            "chase_demoted": chase_demoted,
             "reasons": reasons,
             "signal_strength": _signal_strength(label, cal),
             "flip_distance": flip_dist,
