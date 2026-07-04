@@ -2151,6 +2151,14 @@ quality:
   macro_outlier_z: 5             # |z| of the latest change beyond this = FLAG only (log, never fail)
   # --- configured universe (audit_universe: config.yml sector/basket/intl lists) ---
   universe_min_bars: 250         # a configured ticker with fewer rows is flagged "short"
+  # --- massive_stock_day whole-market store (audit_massive_store) ---
+  # 2026-07-03 incident tripwire: the store's manifest claimed latest=2026-06-30 over a
+  # 110-day content hole (2026-03-13→2026-06-30). Ground truth = anchor parquets
+  # (SPY/QQQ/AAPL/MSFT/IWM), never the manifest.
+  massive_max_gap_bdays: 5       # > this many consecutive missing BUSINESS days in an anchor = coverage hole (fail)
+  massive_stale_bdays: 5         # newest anchor bar older than this many business days = stale FLAG only
+  massive_manifest_ahead_bdays: 2  # manifest latest_date > this many business days ahead of anchor content = lie (fail)
+  massive_min_files: 100         # fewer parquets than this = store absent (CI runner checkout) -> skipped, never a fail
   # --- governance gate (collect.py) ---
   abort_fail_pct: 5              # > this % of a universe failing aborts the collect run
   warn_fail_pct: 1               # 1-5% only warns + logs

@@ -57,6 +57,7 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     "prediction_markets": "polymarket", "treasury_auctions": "treasurydirect",
     "jodi": "jodi", "french": "french", "frbsf_sentiment": "frbsf",
     "bis": "bis", "uncertainty_indices": "uncertainty",
+    "federal_register": "federalregister",  # federalregister.gov — distinct host, runs in parallel
 }
 
 
@@ -142,6 +143,7 @@ def all_adapters() -> dict:
         ("polygon_news", "collectors.polygon_news", "PolygonNewsAdapter"),  # Polygon news-sentiment roll-up (existing POLYGON key) -> news_sentiment channel
         ("github_repos", "collectors.github_repos", "GithubReposAdapter"),  # GitHub star velocity (optional GITHUB_TOKEN) -> github_momentum channel
         ("sam_gov", "collectors.sam_gov", "SamGovAdapter"),               # SAM.gov pre-award solicitations by NAICS (theme_event radar leg); GATED on SAM_API_KEY -> 'blocked' without it
+        ("federal_register", "collectors.federal_register", "FederalRegisterAdapter"),  # Federal Register policy-doc velocity (keyless; two-stage AGENCY-SLUG x TERM filter; theme_event radar leg); degrades gracefully when absent
         ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
         ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
@@ -248,6 +250,11 @@ def all_adapters() -> dict:
         # SEC EDGAR full-text search for Trump-linked entity filings — the genuinely-early
         # channel (8-K/S-4/425/EX-99 at filing time). Keyless (UA only). See collectors/edgar_trumpflow.py.
         ("edgar_trumpflow", "collectors.edgar_trumpflow", "EdgarTrumpflowAdapter"),
+        # LBNL "Queued Up" annual interconnection-queue — total queued GW -> YoY% ->
+        # data/eia/interconnection_queue.json; arms engine.power_scarcity._queue_pull()
+        # (the queue_buildout leg). Keyless; emp.lbl.gov is Cloudflare-gated so a
+        # committed seed JSON keeps the engine live when network fetches fail.
+        ("lbnl_queue", "collectors.lbnl_queue", "LbnlQueueAdapter"),
     ]
     for key, mod, cls in specs:
         try:
@@ -271,6 +278,7 @@ _SLOW = set(_QUIVER_KEYS) | {
     "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership", "cot",
     "openfda", "huggingface", "grants_gov", "clinicaltrials", "finnhub_altdata",
     "polygon_news", "github_repos", "sam_gov", "usaspending", "prediction_markets",
+    "lbnl_queue", "federal_register",
 }
 
 
@@ -306,7 +314,7 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
     cfg = cfg or audit_common.quality_cfg()
     if audit_fns is None:
         from scripts import (audit_prices, audit_macro, audit_universe,
-                             audit_fred_groups, audit_price_basis)
+                             audit_fred_groups, audit_massive_store, audit_price_basis)
         audit_fns = [
             ("prices", lambda: audit_prices.run(cfg=cfg)),
             ("macro", lambda: audit_macro.run(cfg=cfg)),
@@ -316,6 +324,10 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
             # basis preservation, no-TR-in-structure AST scan, golden-fixture flip proof,
             # forward-log basis homogeneity, narrative epoch versioning.
             ("price_basis", lambda: audit_price_basis.run(cfg=cfg)),
+            # 2026-07-03 incident: manifest claimed freshness over a 110-day content
+            # hole. Anchor-parquet continuity + manifest-lie tripwire; skips itself on
+            # checkouts without the heavy store (CI runners).
+            ("massive_store", lambda: audit_massive_store.run(cfg=cfg)),
         ]
 
     docs: list[tuple[str, dict]] = []
@@ -582,11 +594,16 @@ def main() -> int:
     # per-strike open interest the Cboe path throws away (the one thing that can't be
     # backfilled — OI is point-in-time only). Foundation for the validate-gated GEX
     # drawdown leg. No-op without POLYGON_API_KEY. Additive, never fatal.
+    # W0.4: capture the result dict so the status write below makes missed days
+    # circuit-breaker-visible (the accrual ran before store.write_status previously,
+    # so any failure was invisible in run_status.json).
+    _polygon_gex_status: dict = {"status": "not_run"}
     try:
         from scripts.build_polygon_gex import accrue as accrue_polygon_gex
         log.info("=== accruing Polygon options OI (GEX foundation) ===")
-        accrue_polygon_gex(datetime.now(timezone.utc))
+        _polygon_gex_status = accrue_polygon_gex(datetime.now(timezone.utc))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
+        _polygon_gex_status = {"status": "failed", "error": str(e)}
         log.warning("Polygon GEX accrual step failed: %s", e)
 
     # Polygon intraday (hourly) US bars -> data/intraday/<T>.parquet, powering the 4H
@@ -598,6 +615,18 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("Polygon intraday accrual step failed: %s", e)
 
+    # W0.4: options-flow accrual status — build_options_flow runs in the render job
+    # (daily.yml render step, not here), but we record whether the S3 creds that power
+    # it are present so daily collect can surface the "creds absent" state as a
+    # circuit-breaker warning rather than a silent no-op.
+    _options_flow_status: dict = {"status": "not_run"}
+    try:
+        from collectors import massive_flatfiles as _mf
+        _options_flow_status = ({"status": "creds_present"}
+                                if _mf.enabled() else {"status": "no_creds"})
+    except Exception as e:  # noqa: BLE001
+        _options_flow_status = {"status": "check_failed", "error": str(e)}
+
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
     # merge: a partial --only run must not wipe the health of sources it skipped
@@ -605,6 +634,12 @@ def main() -> int:
     for r in results:
         sources[r.source] = {**asdict(r), "elapsed_sec": timings.get(r.source),
                              "checked_at": datetime.now(timezone.utc).isoformat()}
+    # W0.4: register additive accrual steps so their health is circuit-breaker-visible.
+    # These run outside the FetchResult loop above (they are not Adapter subclasses), so
+    # they would otherwise be invisible in run_status.json.
+    _now = datetime.now(timezone.utc).isoformat()
+    sources["polygon_gex_accrual"] = {**_polygon_gex_status, "checked_at": _now}
+    sources["options_flow_creds"] = {**_options_flow_status, "checked_at": _now}
     status["sources"] = sources
     status["circuit_breaker"], status["circuit_breaker_probe"] = update_breaker(
         results, status.get("circuit_breaker_probe"))

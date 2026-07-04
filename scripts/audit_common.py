@@ -50,6 +50,11 @@ _DEFAULTS = {
     "abort_fail_pct": 5.0,          # > this % of a universe failing aborts the collect (RuntimeError)
     "warn_fail_pct": 1.0,           # 1-this% warns + logs
     "macro_outlier_z": 5.0,         # |z| of the latest change beyond this = FLAG (log only)
+    # --- massive_stock_day whole-market store (audit_massive_store) ---
+    "massive_max_gap_bdays": 5,     # > this many consecutive missing BUSINESS days in an anchor = coverage hole (fail)
+    "massive_stale_bdays": 5,       # newest anchor bar older than this many business days = stale FLAG
+    "massive_manifest_ahead_bdays": 2,  # manifest latest_date this far ahead of anchor content = manifest lie (fail)
+    "massive_min_files": 100,       # fewer parquets than this = store absent (CI checkout) -> universe skipped
     "email_alerts": False,          # NEVER email — deterministic file + conspicuous log only
 }
 

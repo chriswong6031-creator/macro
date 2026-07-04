@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_snapshot.v1",
-  "generated_at": "2026-07-03T12:25:00Z",
+  "generated_at": "2026-07-03T22:25:00Z",
   "default_book": "flagship",
   "live_url": "http://localhost:8000",
   "books": [
@@ -2038,7 +2038,7 @@
         "disclaimer": "仅纸面/仅展示；从不自动执行。"
       },
       "performance": {
-        "inception_date": "2026-07-02",
+        "inception_date": "2026-07-03",
         "starting_nav": 1000000.0,
         "current_nav": 0.0,
         "cash": 0.0,
@@ -2048,7 +2048,7 @@
         "benchmark": "SPY",
         "day_change_pct": -100.0,
         "max_drawdown_pct": -100.0,
-        "realized_since": "2026-07-02",
+        "realized_since": "2026-07-03",
         "series": [
           {
             "date": "2026-02-20",
@@ -2597,7 +2597,7 @@
             "kind": "pre_inception"
           }
         ],
-        "note": "Portfolio starts at $1,000,000 on 2026-07-02; flat until the live daily track accrues. SPY shown over the same window for comparison (real history)."
+        "note": "Portfolio starts at $1,000,000 on 2026-07-03; flat until the live daily track accrues. SPY shown over the same window for comparison (real history)."
       }
     },
     {

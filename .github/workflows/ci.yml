@@ -296,7 +296,8 @@ jobs:
           tests/test_fear_euphoria.py tests/test_froth_fragility.py
           tests/test_missing_tape.py tests/test_price_basis_flip.py
           tests/test_risk_lead_lag.py tests/test_anticipation.py
-          tests/test_canon.py tests/test_whitehouse_w5.py -q
+          tests/test_canon.py tests/test_whitehouse_w5.py
+          tests/test_board_ledger.py tests/test_grade_us_board.py -q
 
   collector-registry:
     # 2026-07-03 (#1052 post-mortem): PR #1052's squash-merge shipped scripts/collect.py as

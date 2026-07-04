@@ -94,6 +94,13 @@ def main() -> int:
     fdir = site / "chinabasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    # SECTOR PULSE — compact per-theme rotation data product. Additive — never breaks build.
+    try:
+        if data.get("theme_intel"):
+            from engine import sector_pulse as _sp
+            _sp.write_pulse(data["theme_intel"], "china", fdir)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector_pulse china hook failed: %s", e)
     if emergence:
         (fdir / "narrative_emergence.json").write_text(
             json.dumps(emergence, separators=(",", ":"), ensure_ascii=False, default=str))

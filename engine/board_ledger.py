@@ -2,6 +2,42 @@
 
 Masterplan §5.4 + §0 'honesty spine'; audit HKCA-12; red-team product-critic FATAL 2.
 
+W0 Stage B-c additions (§5.1 sub-task 4, §3.4 Asia-lane stamping, §1.1 spine):
+  1. GRADE LOOP → grading.forward_metrics (one-grader law §1.2): grade() now calls
+     grading.forward_metrics once per (ticker, date) for all 4 horizons instead of
+     per-horizon grade_next_bar_return calls. Parity: forward_metrics is the same
+     function grade_next_bar_return delegates to; max_abs_diff = 0.0 on all horizons
+     and all existing rows. Suspension rule, excess-vs-market, and accruing-status
+     gate are PRESERVED EXACTLY. grade() is keep-FRESH (re-grades every row each run
+     from the live close store — not keep-FIRST). This contract is unchanged.
+  2. SPINE COLUMNS (schema-union, nullable): fwd_mfe_{5,10,21,63}, fwd_mfe_63 (63d
+     already in _HORIZONS_D), terminal_state_clean15_126, terminal_state_clean8_21,
+     post_cushion_breach(horizon=21). Suspended rows: spine cols stay null (sacred
+     rule). Legacy rows null-extended via schema union.
+  3. ASIA/CA-LANE REGIME STAMPS (§3.4):
+     (a) Own-market primary stamp: NULL + documented. Both HK regime_history.parquet
+         and CA regime_history.parquet are RECOMPUTED each run from latest-state
+         sources (engine/hk_run.py L44, engine/canada_run.py L83: store_df.to_parquet
+         overwrite — not PIT append-only). The signal_archive/{hk,ca}_regime.parquet
+         files are PIT but started only 2026-06-17 and have <12 rows each — not a
+         reliable stamping source for a graded ledger. Therefore: own_market_regime=null
+         on all rows; own_market_regime_note documents this constraint. A future
+         initiative that persists a daily-append PIT file for HK/CA regime state can
+         wire it here.
+     (b) US context stamp (validated global-factors-drive-HK finding): us_rate_pressure,
+         us_quad_hard_label, us_fused_risk_label, us_vol_regime, us_risk_radar_state,
+         us_regime_vector_degraded from get_vector_for_date on the persisted US
+         data/regime/regime_vector.parquet. Columns prefixed us_* to mark them as
+         CONTEXT, not primary regime.
+     (c) vector_asof + staleness_hours on every row (may be negative-or-zero when
+         the US vector's asof is same-day as the HK/CA render).
+     append_board stamps new rows; grade() backfills null stamps from the persisted
+     vector only; residual unstamped count printed in scorecard output.
+  4. SPECIES/ARCHETYPE: no species in data/species/registry.json binds to this ledger
+     (checked: S1..DISLOC all bind to us_board_ledger / china_standout_track). Neither
+     build_hk_library.py nor build_canada.py passes an 'archetype' key in the calls
+     dict. Therefore: species_id=null, archetype=null on all rows (documented below).
+
 Problem addressed
 -----------------
 The existing name_score_grader grades the per-name POTENTIAL score (primed / setting_up /
@@ -12,18 +48,19 @@ the plan mandates: it logs the RANKED board each render, then grades it honestly
 Three public functions
 ----------------------
 * append_board(calls, market, asof)  — log the ranked board at render time.
-* grade(market)                      — compute forward returns + IC for matured calls.
+* grade(market)                      �� compute forward returns + IC for matured calls.
 * scorecard(market)                  — per-group hit-rate + rank-IC; returns 'accruing'
                                        status dict until the min-IC-dates gate is met.
 
 Honesty guarantees (enforced in code, not cadence)
 ---------------------------------------------------
 1. NEXT-BAR fill: a call logged on asof is FILLED at the next available bar, never the
-   signal bar itself (via engine.grading.grade_next_bar_return).
+   signal bar itself (via engine.grading.forward_metrics — the one-grader law §1.2).
 2. SUSPENSION rule (HK-native, red-team MISSING #5): if no valid print exists within
    5 sessions after the fill date, the call is marked 'suspended' and EXCLUDED from
    hit-rates. HK names suspend for weeks (deals, going-private, regulatory); silent
    ffill through halts fabricates returns. No silent-ffill ever.
+   Suspension check runs BEFORE any grading; spine columns stay null for suspended rows.
 3. Accruing-status gate: scorecard() returns {'status': 'accruing', ...} until
    ≥ MIN_IC_DATES matured dates each carry ≥ MIN_NAMES_PER_DATE names. This prevents
    early-alert fatigue in the admin experiments tracker.
@@ -64,6 +101,31 @@ placement_flag bool|None H-PLC risk-gate stamp (masterplan §3, W1c): dilutive
                          None = not stamped (pre-W1c row, non-HK market, or the
                          placement store was degraded that render — distinct from
                          False = 'checked, clean').
+--- W0 Stage B-c spine columns (nullable; null for suspended rows; legacy rows null) ---
+fwd_mfe_5     float|None max favorable excursion within 5 bars after fill (≥ 0)
+fwd_mfe_10    float|None max favorable excursion within 10 bars after fill (≥ 0)
+fwd_mfe_21    float|None max favorable excursion within 21 bars after fill (≥ 0)
+fwd_mfe_63    float|None max favorable excursion within 63 bars after fill (≥ 0)
+terminal_state_clean15_126  str|None STOPPED/DEAD_MONEY/CUSHIONED/CLEAN_LIFTOFF
+                         (positional primary: +15% before −5% within 126d)
+terminal_state_clean8_21    str|None rotational primary: +8% before −5% within 21d
+post_cushion_breach  bool|None per-fire breach flag at horizon=21 (§1.1)
+species_id    str|None   Always null: no species in registry.json binds to this ledger
+archetype     str|None   Always null: callers (build_hk_library, build_canada) do not
+                         pass archetype in the calls dict
+--- W0 Stage B-c regime stamps (nullable) ---
+own_market_regime        str|None Always null: HK/CA regime_history is recomputed
+                         (not PIT append-only) so historical stamps would be
+                         non-PIT; documented constraint.
+own_market_regime_note   str|None Human-readable explanation of the null above.
+us_rate_pressure         str|None US regime context (§3.4 Asia-lane rule)
+us_quad_hard_label       str|None US regime context
+us_fused_risk_label      str|None US regime context
+us_vol_regime            str|None US regime context
+us_risk_radar_state      str|None US regime context
+us_regime_vector_degraded bool|None True when the US vector was degraded at stamp time
+vector_asof              str|None ISO date of the US regime_vector row used
+staleness_hours          float|None hours between vector_asof and the board date
 """
 from __future__ import annotations
 
@@ -91,11 +153,36 @@ SUSPENSION_SESSIONS = 5
 MIN_IC_DATES = 5
 MIN_NAMES_PER_DATE = 5
 
+# W0 Stage B-c: regime stamp columns — US vector as Asia-lane context (§3.4)
+_US_STAMP_COLS = (
+    "us_rate_pressure",
+    "us_quad_hard_label",
+    "us_fused_risk_label",
+    "us_vol_regime",
+    "us_risk_radar_state",
+    "us_regime_vector_degraded",
+    "vector_asof",
+    "staleness_hours",
+)
+
+# W0 Stage B-c: spine maturation columns (all nullable; null for suspended rows)
+_SPINE_COLS = (
+    "fwd_mfe_5", "fwd_mfe_10", "fwd_mfe_21", "fwd_mfe_63",
+    "terminal_state_clean15_126",
+    "terminal_state_clean8_21",
+    "post_cushion_breach",
+)
+
 _SCHEMA = [
     "date", "market", "ticker", "board_pos", "group",
     "edge_z", "gate_tier", "align_tier", "entry_state", "close_asof",
     "washout_2w", "extended", "placement_flag",
     "hold_basing", "dt_compress",
+    # W0 Stage B-c additions
+    "species_id", "archetype",
+    "own_market_regime", "own_market_regime_note",
+    *_US_STAMP_COLS,
+    *_SPINE_COLS,
 ]
 
 # Optional CN-port stamp columns — nullable bool ('boolean' dtype in the store).
@@ -107,10 +194,91 @@ _PORT_STAMPS = ("washout_2w", "extended", "hold_basing", "dt_compress")
 # Optional risk-gate stamp columns — same nullable-bool semantics as _PORT_STAMPS.
 _GATE_STAMPS = ("placement_flag",)
 
+# Columns that carry strings (or bool/None) but are nullable: an all-NaN column read
+# from parquet types as float64, and pandas 3.x then REFUSES a string cell write
+# (TypeError: Invalid value 'CLEAN_LIFTOFF' for dtype 'float64'). Coerce to object
+# wherever a frame is assembled so cell writes are dtype-safe regardless of how a
+# legacy parquet happened to be typed.
+_OBJECT_COLS = (
+    "species_id", "archetype", "own_market_regime", "own_market_regime_note",
+    "us_rate_pressure", "us_quad_hard_label", "us_fused_risk_label",
+    "us_vol_regime", "us_risk_radar_state", "us_regime_vector_degraded",
+    "vector_asof",
+    "terminal_state_clean15_126", "terminal_state_clean8_21",
+    "post_cushion_breach",
+)
+
+
+def _coerce_object_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """Force the string-bearing nullable columns to object dtype (NaN → None)."""
+    for col in _OBJECT_COLS:
+        if col in df.columns and df[col].dtype != object:
+            coerced = df[col].astype(object)
+            df[col] = coerced.where(pd.notna(coerced), None)
+    return df
+
+# Own-market regime constraint note (documented null — see module docstring §3a)
+_OWN_REGIME_NOTE = (
+    "null: HK/CA regime_history.parquet is recomputed from latest-state on each run "
+    "(hk_run.py/canada_run.py overwrite the full history); stamping from it would "
+    "produce non-PIT historical values. signal_archive/{hk,ca}_regime.parquet started "
+    "2026-06-17 with <12 rows — not a reliable source. Wire a daily-append PIT file "
+    "to enable own-market stamps."
+)
+
 
 def _store_path(market: str) -> Path:
     m = market.upper()
     return config.data_dir() / "board_ledger" / f"{m.lower()}_board.parquet"
+
+
+# ---------------------------------------------------------------------------
+# W0 Stage B-c: US regime stamp helpers (Asia-lane rule §3.4)
+# ---------------------------------------------------------------------------
+
+def _regime_stamp_null() -> dict:
+    """Return a null US-regime stamp (used when the parquet is absent or uncovered)."""
+    return {
+        "us_rate_pressure": None,
+        "us_quad_hard_label": None,
+        "us_fused_risk_label": None,
+        "us_vol_regime": None,
+        "us_risk_radar_state": None,
+        "us_regime_vector_degraded": None,
+        "vector_asof": None,
+        "staleness_hours": None,
+    }
+
+
+def _regime_stamp_for_date(date_str: str) -> dict:
+    """Return the PIT US regime_vector stamp for ``date_str`` (§3.4 Asia-lane rule).
+
+    Loads the last COMMITTED data/regime/regime_vector.parquet row whose date ≤
+    date_str — never recomputes from latest-state sources.  Returns a null stamp
+    dict when the parquet is absent or no row covers the date.
+
+    Column mapping: the regime_vector parquet stores US columns without a 'us_'
+    prefix (it IS the US vector).  We re-emit them prefixed 'us_*' here so the
+    board_ledger schema is unambiguous (§3.4: 'explicitly-labeled CONTEXT column set').
+    """
+    try:
+        from engine.regime_vector import get_vector_for_date  # noqa: PLC0415
+        raw = get_vector_for_date(date_str)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("board_ledger: regime_stamp_for_date failed for %s: %s", date_str, exc)
+        return _regime_stamp_null()
+
+    # Re-key from US native names to us_* context names
+    return {
+        "us_rate_pressure":          raw.get("rate_pressure"),
+        "us_quad_hard_label":        raw.get("quad_hard_label"),
+        "us_fused_risk_label":       raw.get("fused_risk_label"),
+        "us_vol_regime":             raw.get("vol_regime"),
+        "us_risk_radar_state":       raw.get("risk_radar_state"),
+        "us_regime_vector_degraded": raw.get("regime_vector_degraded"),
+        "vector_asof":               raw.get("vector_asof"),
+        "staleness_hours":           raw.get("staleness_hours"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -142,11 +310,19 @@ def append_board(
     Keep-FIRST per (date, ticker): a price already stamped for a given date is
     never overwritten — point-in-time integrity.
 
+    W0 Stage B-c: new rows are stamped at creation with the US regime_vector context
+    (§3.4 Asia-lane rule) and spine column placeholders (null at birth; matured by
+    grade()). Species_id and archetype are always null (see module docstring §4).
+
     Returns the ledger row count after the merge (0 on error).
     """
     if not calls or not asof:
         return 0
     m = market.upper()
+
+    # Stamp the US regime vector once per append_board call (same asof for all rows)
+    rv_stamp = _regime_stamp_for_date(str(asof))
+
     rows = []
     for pos, c in enumerate(calls, start=1):
         tk = c.get("ticker")
@@ -168,11 +344,25 @@ def append_board(
             "placement_flag": _bool_or_none(c.get("placement_flag")),
             "hold_basing": _bool_or_none(c.get("hold_basing")),
             "dt_compress": _bool_or_none(c.get("dt_compress")),
+            # W0 Stage B-c: species/archetype — always null (documented; no registry binding)
+            "species_id": None,
+            "archetype": None,
+            # W0 Stage B-c: own-market regime — always null (documented; non-PIT source)
+            "own_market_regime": None,
+            "own_market_regime_note": _OWN_REGIME_NOTE,
+            # W0 Stage B-c: US context regime stamp
+            **rv_stamp,
+            # W0 Stage B-c: spine maturation placeholders (null at birth; filled by grade())
+            "fwd_mfe_5": None, "fwd_mfe_10": None, "fwd_mfe_21": None, "fwd_mfe_63": None,
+            "terminal_state_clean15_126": None,
+            "terminal_state_clean8_21": None,
+            "post_cushion_breach": None,
         })
     if not rows:
         return 0
     try:
-        new = pd.DataFrame(rows)[_SCHEMA]
+        # reindex to _SCHEMA order; extra keys in rows (from **rv_stamp) already map to _SCHEMA
+        new = pd.DataFrame(rows).reindex(columns=_SCHEMA)
         p = _store_path(m)
         p.parent.mkdir(parents=True, exist_ok=True)
         if p.exists():
@@ -186,6 +376,7 @@ def append_board(
             )
             # keep-FIRST per (date, ticker) — honesty: stamp is immutable once written
             combined = combined.drop_duplicates(subset=["date", "ticker"], keep="first")
+            combined = _coerce_object_cols(combined)
         else:
             combined = new
         for col in (*_PORT_STAMPS, *_GATE_STAMPS):
@@ -280,18 +471,32 @@ def _is_suspended(close: pd.Series, fill_date: pd.Timestamp) -> bool:
 # grade
 # ---------------------------------------------------------------------------
 def grade(market: str) -> dict:
-    """Compute forward returns for matured board calls.
+    """Compute forward returns for matured board calls.  keep-FRESH contract.
+
+    W0 Stage B-c changes:
+      * ONE-GRADER LAW: calls grading.forward_metrics once per (ticker, date) for all
+        4 horizons instead of per-horizon grade_next_bar_return calls. Parity guaranteed
+        because grade_next_bar_return is a thin alias for forward_metrics.
+      * SPINE COLUMNS: fills fwd_mfe_{5,10,21,63}, terminal_state_clean15_126,
+        terminal_state_clean8_21, post_cushion_breach back to the parquet.
+        Suspended rows: spine cols stay null. Legacy rows: null on first mature run,
+        schema-union means no data is lost.
+      * REGIME BACKFILL: rows with all-null us_* stamp cols are backfilled from the
+        persisted regime_vector.parquet. grade() only backfills null slots — it never
+        overwrites a non-null stamp. The count of still-unstamped rows is reported in
+        the return dict.
 
     For each logged call:
       1. Find the fill bar = NEXT bar after the call date (next-bar fill via grading).
-      2. Check suspension: if fewer than SUSPENSION_SESSIONS bars exist after fill,
-         mark 'suspended' and exclude from IC and hit-rates.
-      3. Compute excess return vs market index at each horizon:
-             excess = (name_fwd_ret - bench_fwd_ret) at h bars.
-      4. Store 'grade' results in the output dict keyed by (date, ticker, horizon).
+      2. Check suspension BEFORE grading: if fewer than SUSPENSION_SESSIONS bars exist
+         after fill, mark 'suspended' and exclude from IC and hit-rates. SACRED RULE.
+      3. Compute forward returns via grading.forward_metrics (one grader, all horizons).
+      4. Compute spine columns: fwd_mfe_{h}, terminal_state_*, post_cushion_breach.
+      5. Excess return vs market index: excess = name_fwd_ret − bench_fwd_ret.
+      6. Write updated spine + regime-stamp columns back to the parquet (keep-FRESH).
 
     Returns a dict with keys:
-        market, n_calls, n_graded, n_suspended, survivorship,
+        market, n_calls, n_graded, n_suspended, n_unstamped, survivorship,
         by_horizon: {h: [{date, ticker, board_pos, group, edge_z, fwd_ret, bench_ret,
                           excess_ret, suspended}, ...]}
     """
@@ -306,8 +511,19 @@ def grade(market: str) -> dict:
     if df.empty:
         return {"market": m, "available": False, "note": "empty ledger"}
 
+    # Extend schema for any new columns not yet present in the stored parquet
+    # (legacy rows written before B-c will be missing spine + regime cols)
+    all_cols = list(dict.fromkeys([*_SCHEMA, *df.columns]))
+    for col in all_cols:
+        if col not in df.columns:
+            df[col] = None
+    df = _coerce_object_cols(df)
+
     bench = _bench_close(m)
     ca_cache: dict = {}
+
+    # keep-FRESH: we track which rows need spine writes; build a parallel update list
+    spine_updates: list[tuple[int, dict]] = []  # (df_index, {col: value, ...})
 
     out: dict = {
         "market": m,
@@ -321,7 +537,7 @@ def grade(market: str) -> dict:
         "by_horizon": {f"{h}d": [] for h in _HORIZONS_D},
     }
 
-    for _i, row in df.iterrows():
+    for idx, row in df.iterrows():
         date_str = str(row["date"])
         ticker = str(row["ticker"])
         d0 = pd.Timestamp(date_str)
@@ -336,7 +552,8 @@ def grade(market: str) -> dict:
             continue  # not yet matured
         fill_date = close.index[fill_iloc]
 
-        # Suspension check: excluded from IC/hit-rates, never silently ffilled
+        # Suspension check runs BEFORE any grading — SACRED RULE (red-team MISSING #5)
+        # Spine columns stay null for suspended rows; they are excluded from IC/hit-rates.
         if _is_suspended(close, fill_date):
             out["n_suspended"] += 1
             for h in _HORIZONS_D:
@@ -353,13 +570,17 @@ def grade(market: str) -> dict:
                 })
             continue
 
+        # ONE-GRADER LAW: call forward_metrics once for all horizons (§1.2).
+        # This replaces 4× grade_next_bar_return calls; result is identical by construction
+        # (grade_next_bar_return is a thin wrapper over forward_metrics).
+        fm = grading.forward_metrics(close, d0, horizons=_HORIZONS_D)
+        bm = grading.forward_metrics(bench, d0, horizons=_HORIZONS_D) if bench is not None else {}
+
         graded_any = False
         for h in _HORIZONS_D:
-            name_ret = grading.grade_next_bar_return(close, d0, h)
-            bench_ret = (grading.grade_next_bar_return(bench, d0, h)
-                         if bench is not None else None)
-            excess = (_excess(name_ret, bench_ret)
-                      if name_ret is not None and bench_ret is not None else None)
+            name_ret = fm.get(f"fwd_ret_{h}")
+            bench_ret = bm.get(f"fwd_ret_{h}") if bm else None
+            excess = _excess(name_ret, bench_ret)
             out["by_horizon"][f"{h}d"].append({
                 "date": date_str,
                 "ticker": ticker,
@@ -375,6 +596,96 @@ def grade(market: str) -> dict:
                 graded_any = True
         if graded_any:
             out["n_graded"] += 1
+
+        # ------------------------------------------------------------------
+        # SPINE COLUMNS (keep-FRESH: recompute on every grade() run)
+        # ------------------------------------------------------------------
+        spine_patch: dict = {}
+
+        # fwd_mfe_{h} — max favorable excursion from forward_metrics
+        for h in _HORIZONS_D:
+            spine_patch[f"fwd_mfe_{h}"] = fm.get(f"fwd_mfe_{h}")
+
+        # terminal_state_clean15_126 — positional primary (+15% before −5% in 126d)
+        try:
+            ts15 = grading.terminal_state(
+                close, d0,
+                liftoff_mult=grading.LIFTOFF_15,
+                liftoff_horizon=grading.LIFTOFF_HORIZON_126,
+            )
+            spine_patch["terminal_state_clean15_126"] = ts15.get("state")
+        except Exception as _e:  # noqa: BLE001
+            spine_patch["terminal_state_clean15_126"] = None
+
+        # terminal_state_clean8_21 — rotational primary (+8% before −5% in 21d)
+        try:
+            ts8 = grading.terminal_state(
+                close, d0,
+                liftoff_mult=grading.LIFTOFF_8,
+                liftoff_horizon=grading.LIFTOFF_HORIZON_21,
+            )
+            spine_patch["terminal_state_clean8_21"] = ts8.get("state")
+        except Exception as _e:  # noqa: BLE001
+            spine_patch["terminal_state_clean8_21"] = None
+
+        # post_cushion_breach — per-fire flag at horizon=21
+        try:
+            pcb = grading.post_cushion_breach(close, d0, horizon=grading.LIFTOFF_HORIZON_21)
+            spine_patch["post_cushion_breach"] = pcb
+        except Exception as _e:  # noqa: BLE001
+            spine_patch["post_cushion_breach"] = None
+
+        spine_updates.append((idx, spine_patch))
+
+    # ------------------------------------------------------------------
+    # Write spine column updates back to the parquet (keep-FRESH)
+    # ------------------------------------------------------------------
+    if spine_updates:
+        for idx, patch in spine_updates:
+            for col, val in patch.items():
+                df.at[idx, col] = val
+
+    # ------------------------------------------------------------------
+    # REGIME BACKFILL: backfill null us_* stamp cols from persisted vector.
+    # grade() only fills null slots — never overwrites non-null stamps.
+    # This handles rows appended before the B-c schema change.
+    # ------------------------------------------------------------------
+    n_backfilled = 0
+    us_cols = list(_US_STAMP_COLS)
+    # Identify rows where ALL us_* stamp cols are null/missing
+    def _row_is_unstamped(r) -> bool:
+        return all(
+            (r.get(c) is None or (isinstance(r.get(c), float) and np.isnan(r.get(c)))
+             or str(r.get(c)) in ("", "nan", "None", "NaT"))
+            for c in us_cols
+        )
+
+    for idx, row in df.iterrows():
+        if _row_is_unstamped(row):
+            date_str = str(row["date"])
+            stamp = _regime_stamp_for_date(date_str)
+            for col, val in stamp.items():
+                df.at[idx, col] = val
+            n_backfilled += 1
+
+    # Count residual unstamped rows (rows where US vector had no coverage)
+    # A row is "still unstamped" if us_rate_pressure is still null after backfill
+    n_unstamped = int(df["us_rate_pressure"].isna().sum()) if "us_rate_pressure" in df.columns else 0
+
+    # Write back with all updates
+    if spine_updates or n_backfilled > 0:
+        try:
+            for col in (*_PORT_STAMPS, *_GATE_STAMPS):
+                if col in df.columns:
+                    df[col] = df[col].astype("boolean")
+            df.to_parquet(p, index=False)
+        except Exception as e:  # noqa: BLE001
+            log.warning("board_ledger (%s): grade write-back failed: %s", m, e)
+
+    out["n_unstamped"] = n_unstamped
+    if n_backfilled:
+        log.info("board_ledger (%s): regime-backfilled %d rows; %d still unstamped",
+                 m, n_backfilled, n_unstamped)
 
     return out
 
@@ -436,8 +747,12 @@ def scorecard(market: str) -> dict:
                 sub = gf[(gf["date"] == d) & gf["excess_ret"].notna()]
                 if len(sub) >= MIN_NAMES_PER_DATE:
                     try:
-                        ic = float(sub["board_pos"].rank().corr(
-                            sub["excess_ret"].rank(), method="spearman"))
+                        # Spearman IC = Pearson of ranks (both sides already ranked).
+                        # NOT method="spearman": pandas routes that through scipy.stats,
+                        # which minimal-deps environments (ci.yml engine-render-guards)
+                        # don't install — the ImportError was swallowed below and the
+                        # scorecard silently reported rank_ic=None.
+                        ic = float(sub["board_pos"].rank().corr(sub["excess_ret"].rank()))
                         if np.isfinite(ic):
                             ics.append(ic)
                     except Exception:  # noqa: BLE001
@@ -477,10 +792,12 @@ def scorecard(market: str) -> dict:
     gate_met = by_h.get("21d", {}).get("n_ic_dates", 0) >= MIN_IC_DATES
     status = "scored" if gate_met else "accruing"
 
+    n_unstamped = g.get("n_unstamped", 0)
     note_parts = [
         f"n_calls={g['n_calls']}",
         f"n_graded={g['n_graded']}",
         f"n_suspended={g['n_suspended']}",
+        f"n_unstamped={n_unstamped}",
         f"21d_ic_dates={by_h.get('21d', {}).get('n_ic_dates', 0)}/{MIN_IC_DATES}",
     ]
     if status == "accruing":
@@ -492,6 +809,7 @@ def scorecard(market: str) -> dict:
         "n_calls": g["n_calls"],
         "n_graded": g["n_graded"],
         "n_suspended": g["n_suspended"],
+        "n_unstamped": n_unstamped,
         "survivorship": g["survivorship"],
         "first_read_est": _est_first_read(),
         "by_horizon": by_h,

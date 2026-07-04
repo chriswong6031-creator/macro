@@ -36,7 +36,42 @@ published is unbiased — CN-1 masterplan §W6-CN):
 This is the honest prerequisite for promoting the anti-chase extension DEMOTE to a HARD veto: only
 once grade() shows extended top-of-board names underperform (CSI300-relative, fill-realistic) should
 the veto go live. Append-only, point-in-time, keep-first (leak-free). RESEARCH / display telemetry —
-never a trade trigger. Mirrors engine/name_score_grader. See [[signal-track-record-logger]]."""
+never a trade trigger. Mirrors engine/name_score_grader. See [[signal-track-record-logger]].
+
+W0 Stage B-d additions (§5.1 sub-task 5, §3.4 Asia-lane stamping):
+  1. CN-NATIVE SPINE AXES on top of _t1_fill (NOT via grading.fill_index — that is the US
+     next-bar convention; CN uses the T+1 HL2 fill with locked-limit exclusion preserved):
+     (a) terminal-state partition at clean15_126 and clean8_21 — barrier race on CN close
+         path FROM the T+1 HL2 fill (straddle tie: stop wins); barrier CONSTANTS imported
+         from engine.grading (STOP_BARRIER, CUSHION_BARRIER, LIFTOFF_15, LIFTOFF_8,
+         LIFTOFF_HORIZON_126, LIFTOFF_HORIZON_21) so definitions are shared even though
+         the fill convention differs.
+     (b) fwd_mfe at horizons 5/10/21/63 from the T+1 HL2 fill.
+     (c) post_cushion_breach per-fire flag (cushioned-then-stopped = True) from CN fill.
+     (d) fill_basis="t1_hl2" provenance column on every row so cross-market readers can
+         never confuse fill conventions with board_ledger (HK/CA) which uses grading fill.
+     Locked-limit-excluded rows: all new axes null (unfillable is unfillable).
+  2. _slice_table STRATIFIER COLUMNS: species_id, archetype added as nullable stratifiers.
+  3. REGIME STAMPS (§3.4 Asia-lane rules):
+     (a) own_market_regime=null + own_market_regime_note documenting the constraint.
+         data/china_regime/regime_history.parquet is recomputed from scratch each run
+         (china_run.py L41: store_df.to_parquet overwrite) — NOT PIT append-only.
+         Stamping from it would produce non-PIT historical values.
+     (b) US vector as explicitly-labeled context: us_rate_pressure, us_quad_hard_label,
+         us_fused_risk_label, us_vol_regime, us_risk_radar_state, us_regime_vector_degraded
+         + vector_asof + staleness_hours via get_vector_for_date called with the ROW'S OWN
+         DATE (PIT; asia-lane: last COMMITTED vector, never recomputed mid-lane).
+     (c) Backfill null stamps ONLY from the persisted vector for covered dates; residual
+         unstamped count printed in grade() output.
+  4. SPECIES/ARCHETYPE nullable columns:
+     CN-WASHOUT and CN-REVERSAL both bind "china_standout_track" (registry.json), but
+     board rows don't distinguish which species fired → species_id=null (ambiguous binding).
+     T1-T4 and S1 also bind "us_board_ledger + china_standout_track" — same ambiguity.
+     archetype: CN callers (build_china_library) don't pass an 'archetype' key → null.
+  5. DTYPE HARDENING (_coerce_object_cols): pandas 3.x refuses string/bool cell writes to
+     all-NaN columns typed float64 (loaded from legacy parquet). Coerce ALL string/bool
+     nullable columns to object dtype at every frame-assembly point. Complete column set
+     documented in _OBJECT_COLS_CN below."""
 from __future__ import annotations
 
 import logging
@@ -44,6 +79,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from engine import grading as _grading
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -65,9 +101,374 @@ _PRICE_GROUPS = ("china_stocks", "china")
 ENTRY_BASIS = "t1_hl2"                    # T+1 (H+L)/2 proxy; upgrades to true T+1 open when collected
 _MIN_GRADED = 8                           # per-horizon rows required before a number is published
 
+# W0 Stage B-d: MFE horizons for CN-native spine (superset of _HORIZONS_D — added 5 and 10)
+_MFE_HORIZONS = (5, 10, 21, 63)
+
+# W0 Stage B-d: US-context regime stamp columns (prefixed us_* — explicitly context, not primary)
+_US_STAMP_COLS = (
+    "us_rate_pressure",
+    "us_quad_hard_label",
+    "us_fused_risk_label",
+    "us_vol_regime",
+    "us_risk_radar_state",
+    "us_regime_vector_degraded",
+    "vector_asof",
+    "staleness_hours",
+)
+
+# W0 Stage B-d: CN-native spine maturation columns (all nullable)
+_SPINE_COLS = (
+    "fwd_mfe_5", "fwd_mfe_10", "fwd_mfe_21", "fwd_mfe_63",
+    "terminal_state_clean15_126",
+    "terminal_state_clean8_21",
+    "post_cushion_breach",
+    "fill_basis",
+)
+
+# W0 Stage B-d: species/archetype + regime stamp columns
+_SPECIES_COLS = ("species_id", "archetype")
+_OWN_REGIME_COLS = ("own_market_regime", "own_market_regime_note")
+
+# Columns that carry strings (or bools) but are nullable: an all-NaN column loaded from parquet
+# types float64 and pandas 3.x then REFUSES a string/bool cell write (TypeError: Invalid value
+# 'CLEAN_LIFTOFF' for dtype 'float64'). Coerce to object at every frame-assembly point.
+# Complete column set — B-c review found a missed bool column; list every string/bool nullable
+# column explicitly.
+_OBJECT_COLS_CN = (
+    "species_id",
+    "archetype",
+    "own_market_regime",
+    "own_market_regime_note",
+    "us_rate_pressure",
+    "us_quad_hard_label",
+    "us_fused_risk_label",
+    "us_vol_regime",
+    "us_risk_radar_state",
+    "us_regime_vector_degraded",   # bool but nullable — coerce to object
+    "vector_asof",
+    "terminal_state_clean15_126",
+    "terminal_state_clean8_21",
+    "post_cushion_breach",         # bool but nullable — coerce to object
+    "fill_basis",
+)
+
+# Own-market regime constraint note (documented null — see module docstring §3a)
+# china_run.py L41: store_df.to_parquet(p / "regime_history.parquet") — full overwrite, non-PIT.
+_OWN_REGIME_NOTE_CN = (
+    "null: data/china_regime/regime_history.parquet is recomputed from scratch on each "
+    "run (china_run.py: store_df.to_parquet full overwrite — NOT PIT append-only). "
+    "Stamping historical rows from it would produce non-PIT values. Wire a daily-append "
+    "PIT file to enable own-market stamps. CN single-macro-regime caveat applies until "
+    "a second regime accrues in the forward ledger."
+)
+
+# Species binding note: multiple species bind this ledger; board rows don't disambiguate.
+# CN-WASHOUT and CN-REVERSAL both bind 'china_standout_track'; T1-T4 and S1 bind
+# 'us_board_ledger + china_standout_track'. A row's tier/marker doesn't map unambiguously
+# to one species — therefore species_id=null. archetype: CN callers don't pass it → null.
+_SPECIES_NOTE = (
+    "null: CN-WASHOUT, CN-REVERSAL, T1-T4, and S1 all bind 'china_standout_track'; "
+    "board rows do not carry a field that disambiguates which species fired."
+)
+
+
+def _coerce_object_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """Force the string-bearing and bool-nullable columns to object dtype (NaN → None).
+
+    Pandas 3.x refuses string/bool writes to all-NaN float64 columns loaded from legacy
+    parquet. Call this at every frame-assembly point where spine/regime cols may appear.
+    Column set is complete: see _OBJECT_COLS_CN.
+    """
+    for col in _OBJECT_COLS_CN:
+        if col in df.columns and df[col].dtype != object:
+            coerced = df[col].astype(object)
+            df[col] = coerced.where(pd.notna(coerced), None)
+    return df
+
 
 def _store_path():
     return config.data_dir() / _STORE / "board.parquet"
+
+
+# ---------------------------------------------------------------------------
+# W0 Stage B-d: US regime stamp helpers (Asia-lane rule §3.4)
+# Mirrors board_ledger._regime_stamp_for_date — reuse the same get_vector_for_date
+# PIT lookup so CN rows carry the same US context as HK/CA rows.
+# ---------------------------------------------------------------------------
+
+def _regime_stamp_null() -> dict:
+    """Return a null US-regime stamp (used when the parquet is absent or uncovered)."""
+    return {
+        "us_rate_pressure": None,
+        "us_quad_hard_label": None,
+        "us_fused_risk_label": None,
+        "us_vol_regime": None,
+        "us_risk_radar_state": None,
+        "us_regime_vector_degraded": None,
+        "vector_asof": None,
+        "staleness_hours": None,
+    }
+
+
+def _regime_stamp_for_date(date_str: str) -> dict:
+    """Return the PIT US regime_vector stamp for ``date_str`` (§3.4 Asia-lane rule).
+
+    Loads the last COMMITTED data/regime/regime_vector.parquet row whose date ≤
+    date_str — never recomputes from latest-state sources. Returns a null stamp
+    dict when the parquet is absent or no row covers the date.
+
+    Column mapping: regime_vector stores US columns without a 'us_' prefix.
+    We re-emit them prefixed 'us_*' so the schema is unambiguous (§3.4:
+    'explicitly-labeled CONTEXT column set').
+    """
+    try:
+        from engine.regime_vector import get_vector_for_date  # noqa: PLC0415
+        raw = get_vector_for_date(date_str)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("china_standout_track: regime_stamp_for_date failed for %s: %s", date_str, exc)
+        return _regime_stamp_null()
+
+    return {
+        "us_rate_pressure":          raw.get("rate_pressure"),
+        "us_quad_hard_label":        raw.get("quad_hard_label"),
+        "us_fused_risk_label":       raw.get("fused_risk_label"),
+        "us_vol_regime":             raw.get("vol_regime"),
+        "us_risk_radar_state":       raw.get("risk_radar_state"),
+        "us_regime_vector_degraded": raw.get("regime_vector_degraded"),
+        "vector_asof":               raw.get("vector_asof"),
+        "staleness_hours":           raw.get("staleness_hours"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# W0 Stage B-d: CN-native spine scan helpers
+# These use the T+1 HL2 fill from _t1_fill — NOT grading.fill_index (that is the
+# US next-bar convention). The barrier CONSTANTS are shared with grading.py so the
+# partition DEFINITIONS are identical even though the FILL differs.
+# ---------------------------------------------------------------------------
+
+def _cn_terminal_state(
+    close: pd.Series,
+    d0: pd.Timestamp,
+    fill: float,
+    *,
+    liftoff_mult: float,
+    liftoff_horizon: int,
+) -> str | None:
+    """Terminal-state partition from the CN T+1 HL2 fill price.
+
+    Parameters mirror grading.terminal_state but the entry price is supplied
+    externally (the T+1 HL2 fill, already computed by _t1_fill) so this function
+    does NOT re-run fill_index. The close series is the CN name's close path.
+
+    Returns one of 'STOPPED' / 'DEAD_MONEY' / 'CUSHIONED' / 'CLEAN_LIFTOFF',
+    or None when the horizon has not matured yet.
+
+    Partition rules (mirroring grading.terminal_state §1.1):
+      - Barrier race on close path starting from the bar AFTER the T+1 fill bar.
+      - STRADDLE TIE: stop wins (checked first on each bar).
+      - STOPPED:       first bar ≤ fill * STOP_BARRIER
+      - CLEAN_LIFTOFF: first bar ≥ fill * liftoff_mult (before stop)
+      - CUSHIONED:     first bar ≥ fill * CUSHION_BARRIER (before stop, no liftoff)
+      - DEAD_MONEY:    ±DEAD_MONEY_BAND never breached AND ret < DEAD_MONEY_CAP
+
+    CN caveat: uses the same dividend-adjusted close series as the excess return.
+    Barriers as ratios to fill cancel the adjustment (consistent basis).
+    CN single-macro-regime caveat: re-grade when second regime accrues.
+    """
+    # Forward close bars after d0 (T+1 is index[0]; the scan window is T+2 onwards for
+    # the barrier race, consistent with grading.terminal_state which starts from fill+1).
+    # We need the T+1 fill bar itself to know fill_date, then scan from fill+1.
+    fwd_all = close[close.index > d0]  # bars strictly after board date
+    if len(fwd_all) == 0:
+        return None
+    # T+1 fill bar is fwd_all.iloc[0]; barrier scan starts from the bar AFTER that
+    scan = fwd_all.iloc[1: 1 + liftoff_horizon]  # (T+2 .. T+1+liftoff_horizon)
+    if len(scan) < liftoff_horizon:
+        return None  # not yet matured
+
+    arr = scan.to_numpy(dtype=float)
+    stop_b    = fill * _grading.STOP_BARRIER
+    cushion_b = fill * _grading.CUSHION_BARRIER
+    liftoff_b = fill * liftoff_mult
+    dead_upper = fill * (1.0 + _grading.DEAD_MONEY_BAND)
+    dead_lower = fill * (1.0 - _grading.DEAD_MONEY_BAND)
+
+    stopped_at: int | None = None
+    liftoff_at: int | None = None
+    cushion_at: int | None = None
+
+    for k, cl in enumerate(arr, start=1):
+        if not np.isfinite(cl):
+            continue
+        if cl <= stop_b:
+            stopped_at = k
+            break
+        if cl >= liftoff_b:
+            liftoff_at = k
+            if cushion_at is None:
+                for j, c2 in enumerate(arr[:k], start=1):
+                    if c2 >= cushion_b:
+                        cushion_at = j
+                        break
+                if cushion_at is None:
+                    cushion_at = k
+            break
+        if cushion_at is None and cl >= cushion_b:
+            cushion_at = k
+
+    band_breached = bool(np.any(arr >= dead_upper) or np.any(arr <= dead_lower))
+    ret_at_read = float(arr[-1]) / fill - 1.0
+
+    if stopped_at is not None:
+        return _grading.TerminalState.STOPPED
+    if liftoff_at is not None:
+        return _grading.TerminalState.CLEAN_LIFTOFF
+    if cushion_at is not None:
+        return _grading.TerminalState.CUSHIONED
+    if not band_breached and ret_at_read < _grading.DEAD_MONEY_CAP:
+        return _grading.TerminalState.DEAD_MONEY
+    return _grading.TerminalState.DEAD_MONEY  # conservative edge case
+
+
+def _cn_post_cushion_breach(
+    close: pd.Series,
+    d0: pd.Timestamp,
+    fill: float,
+    horizon: int,
+) -> bool | None:
+    """Post-cushion breakeven-breach flag from the CN T+1 HL2 fill (§1.1 semantics).
+
+    Same semantics as grading.post_cushion_breach: cushioned-then-stopped = True.
+    None when the name never reached the cushion barrier within the horizon.
+    Operates on the close path from T+2 onwards (consistent with _cn_terminal_state).
+    """
+    fwd_all = close[close.index > d0]
+    if len(fwd_all) == 0:
+        return None
+    scan = fwd_all.iloc[1: 1 + horizon]  # T+2 .. T+1+horizon
+    if len(scan) < horizon:
+        return None
+
+    arr = scan.to_numpy(dtype=float)
+    stop_b    = fill * _grading.STOP_BARRIER
+    cushion_b = fill * _grading.CUSHION_BARRIER
+
+    cushion_bar: int | None = None
+    stop_bar: int | None = None
+    for k, cl in enumerate(arr, start=1):
+        if not np.isfinite(cl):
+            continue
+        if cl <= stop_b:
+            stop_bar = k
+            break
+        if cl >= cushion_b and cushion_bar is None:
+            cushion_bar = k
+
+    # Reuse board_ledger's _breach_after_cushion semantics inline (no import needed):
+    # None if never cushioned (or stopped before cushion); True if cushioned then any
+    # later close fell back below fill (entry_price); False if held above fill.
+    if cushion_bar is None or (stop_bar is not None and stop_bar <= cushion_bar):
+        return None
+    for cl in arr[cushion_bar:]:
+        if np.isfinite(cl) and cl < fill:
+            return True
+    return False
+
+
+def _cn_fwd_mfe(
+    close: pd.Series,
+    d0: pd.Timestamp,
+    fill: float,
+    horizon: int,
+) -> float | None:
+    """Max favorable excursion from the CN T+1 HL2 fill within ``horizon`` bars.
+
+    Window: T+2 .. T+1+horizon (consistent with _cn_terminal_state and grading.forward_metrics
+    fwd_mfe_H — strictly forward from the fill bar). Always >= 0, or None if not matured.
+    """
+    fwd_all = close[close.index > d0]
+    if len(fwd_all) == 0:
+        return None
+    scan = fwd_all.iloc[1: 1 + horizon]  # T+2 .. T+1+horizon
+    if len(scan) < horizon:
+        return None
+    vals = pd.to_numeric(scan, errors="coerce").dropna()
+    if vals.empty:
+        return None
+    return max(0.0, float(vals.max()) / fill - 1.0)
+
+
+def _cn_spine_axes(ticker: str, d0: pd.Timestamp) -> dict:
+    """Compute all CN-native spine axes for one board row anchored at board-date ``d0``.
+
+    Uses _t1_fill to get the T+1 HL2 fill (with locked-limit exclusion). If the fill is
+    None or locked, ALL axes are returned as None (unfillable is unfillable — we do not
+    fabricate a fill). The fill_basis provenance column is always set to ENTRY_BASIS
+    ("t1_hl2") so a cross-market reader can never confuse fill conventions.
+
+    Returns a dict with keys: fill_basis, fwd_mfe_5/10/21/63,
+    terminal_state_clean15_126, terminal_state_clean8_21, post_cushion_breach.
+    """
+    null_result = {
+        "fill_basis": ENTRY_BASIS,
+        "fwd_mfe_5": None, "fwd_mfe_10": None, "fwd_mfe_21": None, "fwd_mfe_63": None,
+        "terminal_state_clean15_126": None,
+        "terminal_state_clean8_21": None,
+        "post_cushion_breach": None,
+    }
+    df = _price_frame(ticker)
+    if df is None:
+        return null_result
+    close = pd.to_numeric(df["close"], errors="coerce").dropna()
+    if close.empty:
+        return null_result
+
+    fill, locked, _pinned = _t1_fill(df, d0)
+    if fill is None or locked:
+        return null_result
+
+    result = {"fill_basis": ENTRY_BASIS}
+
+    # fwd_mfe at each MFE horizon
+    for h in _MFE_HORIZONS:
+        result[f"fwd_mfe_{h}"] = _cn_fwd_mfe(close, d0, fill, h)
+
+    # Terminal-state partition (positional: clean15_126)
+    try:
+        result["terminal_state_clean15_126"] = _cn_terminal_state(
+            close, d0, fill,
+            liftoff_mult=_grading.LIFTOFF_15,
+            liftoff_horizon=_grading.LIFTOFF_HORIZON_126,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("china_standout_track: terminal_state_clean15_126 failed for %s/%s: %s",
+                  ticker, d0, exc)
+        result["terminal_state_clean15_126"] = None
+
+    # Terminal-state partition (rotational: clean8_21)
+    try:
+        result["terminal_state_clean8_21"] = _cn_terminal_state(
+            close, d0, fill,
+            liftoff_mult=_grading.LIFTOFF_8,
+            liftoff_horizon=_grading.LIFTOFF_HORIZON_21,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("china_standout_track: terminal_state_clean8_21 failed for %s/%s: %s",
+                  ticker, d0, exc)
+        result["terminal_state_clean8_21"] = None
+
+    # Post-cushion breach at the rotational horizon (horizon=21)
+    try:
+        result["post_cushion_breach"] = _cn_post_cushion_breach(
+            close, d0, fill, _grading.LIFTOFF_HORIZON_21,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("china_standout_track: post_cushion_breach failed for %s/%s: %s",
+                  ticker, d0, exc)
+        result["post_cushion_breach"] = None
+
+    return result
 
 
 def session_status(asof: str | None = None) -> dict:
@@ -133,6 +534,10 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
     if sess.get("partial_session"):
         log.warning("china standout board-track: REFUSING append — %s", sess.get("reason"))
         return 0
+
+    # W0 Stage B-d: stamp the US regime vector once per append call (same asof for all rows)
+    rv_stamp = _regime_stamp_for_date(str(asof))
+
     out = []
     for i, r in enumerate(rows[:top_n]):
         tk = r.get("ticker")
@@ -194,6 +599,22 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             "narr_rel20":   (r.get("narrative") or {}).get("rel20"),
             "narr_breadth": (r.get("narrative") or {}).get("breadth"),
             "ab_tier":      r.get("ab_tier"),
+            # W0 Stage B-d: species/archetype — always null (documented in _SPECIES_NOTE above).
+            # Multiple species bind this ledger; board rows don't disambiguate which fired.
+            "species_id": None,
+            "archetype": None,
+            # W0 Stage B-d: own-market regime — always null (documented in _OWN_REGIME_NOTE_CN).
+            "own_market_regime": None,
+            "own_market_regime_note": _OWN_REGIME_NOTE_CN,
+            # W0 Stage B-d: US context regime stamp (Asia-lane rule §3.4).
+            **rv_stamp,
+            # W0 Stage B-d: CN-native spine placeholders (null at birth; matured by grade()).
+            # fill_basis is always "t1_hl2" — provenance for cross-market readers.
+            "fill_basis": ENTRY_BASIS,
+            "fwd_mfe_5": None, "fwd_mfe_10": None, "fwd_mfe_21": None, "fwd_mfe_63": None,
+            "terminal_state_clean15_126": None,
+            "terminal_state_clean8_21": None,
+            "post_cushion_breach": None,
         })
     if not out:
         return 0
@@ -203,8 +624,14 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
         p.parent.mkdir(parents=True, exist_ok=True)
         if p.exists():
             prior = pd.read_parquet(p)
-            combined = pd.concat([prior, new], ignore_index=True).drop_duplicates(
-                subset=["date", "ticker"], keep="first")
+            # schema union: prior frames may predate spine/regime columns — reindex both sides
+            # so concat never drops a column; new columns in prior (non-B-d extras) are preserved.
+            cols = list(dict.fromkeys([*new.columns, *prior.columns]))
+            combined = pd.concat(
+                [prior.reindex(columns=cols), new.reindex(columns=cols)],
+                ignore_index=True,
+            ).drop_duplicates(subset=["date", "ticker"], keep="first")
+            combined = _coerce_object_cols(combined)
         else:
             combined = new
         combined.to_parquet(p, index=False)
@@ -294,9 +721,21 @@ def _fwd_excess(ticker: str, d0: pd.Timestamp, h: int,
 
 
 def grade() -> dict:
-    """Score every matured board row, CSI300-relative + fill-realistic. {available, n_rows, dates,
-    grading, by_horizon} where each horizon carries top-decile vs rest mean forward EXCESS, the
-    board rank-IC, extended-vs-not forward excess, and a Wilson-CI hit rate vs CSI300."""
+    """Score every matured board row, CSI300-relative + fill-realistic.
+
+    Returns {available, n_rows, dates, n_graded, n_unstamped, grading, by_horizon} where each
+    horizon carries top-decile vs rest mean forward EXCESS, the board RANK-IC (rank vs forward —
+    NEGATIVE = a well-ordered board), extended-vs-not forward EXCESS, and a Wilson-CI hit rate vs
+    CSI300.
+
+    W0 Stage B-d additions:
+      * CN-NATIVE SPINE AXES: computes fwd_mfe_{5,10,21,63}, terminal_state_clean15_126,
+        terminal_state_clean8_21, post_cushion_breach from the T+1 HL2 fill via _cn_spine_axes.
+        Writes back to the parquet (keep-FRESH per _fwd_excess convention).
+      * REGIME BACKFILL: backfills null us_* stamp cols from the persisted vector for covered
+        dates only. Never overwrites non-null stamps. Residual unstamped count in output.
+      * SPECIES/ARCHETYPE in grade records for _slice_table stratification (nullable).
+    """
     p = _store_path()
     if not p.exists():
         return {"available": False, "note": "no board rows logged yet"}
@@ -307,8 +746,72 @@ def grade() -> dict:
     if df.empty:
         return {"available": False, "note": "empty"}
 
+    # Extend schema for any new columns not yet present in the stored parquet
+    # (legacy rows written before B-d will be missing spine + regime + species cols).
+    new_cols = [
+        *_SPINE_COLS, *_US_STAMP_COLS, *_SPECIES_COLS, *_OWN_REGIME_COLS,
+    ]
+    for col in new_cols:
+        if col not in df.columns:
+            df[col] = None
+    df = _coerce_object_cols(df)
+
+    # ------------------------------------------------------------------
+    # CN-NATIVE SPINE AXES (keep-FRESH: recompute on every grade() run)
+    # Uses _cn_spine_axes which calls _t1_fill internally — never via grading.fill_index.
+    # Locked-limit rows: all spine cols remain null (unfillable is unfillable).
+    # ------------------------------------------------------------------
+    spine_updates: list[tuple] = []  # (idx, patch_dict)
+    for idx, row in df.iterrows():
+        d0 = pd.Timestamp(str(row["date"]))
+        ticker = str(row["ticker"])
+        spine = _cn_spine_axes(ticker, d0)
+        spine_updates.append((idx, spine))
+
+    if spine_updates:
+        for idx, patch in spine_updates:
+            for col, val in patch.items():
+                df.at[idx, col] = val
+
+    # ------------------------------------------------------------------
+    # REGIME BACKFILL: backfill null us_* stamp cols from persisted vector.
+    # grade() only fills null slots — never overwrites non-null stamps.
+    # Handles rows appended before the B-d schema change.
+    # ------------------------------------------------------------------
+    us_cols = list(_US_STAMP_COLS)
+
+    def _row_is_unstamped(r) -> bool:
+        return all(
+            (r.get(c) is None or (isinstance(r.get(c), float) and np.isnan(r.get(c)))
+             or str(r.get(c)) in ("", "nan", "None", "NaT"))
+            for c in us_cols
+        )
+
+    n_backfilled = 0
+    for idx, row in df.iterrows():
+        if _row_is_unstamped(row):
+            date_str = str(row["date"])
+            stamp = _regime_stamp_for_date(date_str)
+            for col, val in stamp.items():
+                df.at[idx, col] = val
+            n_backfilled += 1
+
+    n_unstamped = int(df["us_rate_pressure"].isna().sum()) if "us_rate_pressure" in df.columns else 0
+    if n_backfilled:
+        log.info("china_standout_track: regime-backfilled %d rows; %d still unstamped",
+                 n_backfilled, n_unstamped)
+
+    # Write spine + regime updates back (keep-FRESH)
+    if spine_updates or n_backfilled > 0:
+        try:
+            df = _coerce_object_cols(df)
+            df.to_parquet(p, index=False)
+        except Exception as e:  # noqa: BLE001
+            log.warning("china_standout_track: grade write-back failed: %s", e)
+
     bench = _bench_close()
     out = {"available": True, "n_rows": int(len(df)),
+           "n_unstamped": n_unstamped,
            "dates": sorted(df["date"].dropna().unique().tolist()),
            "horizons_d": list(_HORIZONS_D),
            "grading": {
@@ -316,6 +819,7 @@ def grade() -> dict:
                "excludes_locked_limit": True, "flags_pinned": True,
                "anchor": "board_close_then_t1_fill", "marker_dates": "forbidden",
                "bench_available": bench is not None,
+               "spine_fill_basis": ENTRY_BASIS,  # provenance: CN-native, not grading.fill_index
            },
            "by_horizon": {}}
     for h in _HORIZONS_D:
@@ -350,6 +854,11 @@ def grade() -> dict:
                 # sector_turn: W0.10 sector first-tick-up state ("bottoming" or None).
                 # Old rows pre-W0.10 will show NaN here (grouped as "None" in _slice_table).
                 "sector_turn": row.get("sector_turn"),
+                # W0 Stage B-d: species_id and archetype — nullable stratifier columns.
+                # Always null for this ledger (documented in _SPECIES_NOTE): multiple species
+                # bind it and rows don't disambiguate which fired.
+                "species_id": row.get("species_id"),
+                "archetype": row.get("archetype"),
             })
         if len(recs) < _MIN_GRADED:
             out["by_horizon"][f"{h}d"] = {"n": len(recs), "note": "accruing"}
@@ -392,6 +901,10 @@ def grade() -> dict:
             # W0.10 — sector first-tick-up stratification (display/ledger only; bonus/rank
             # change ONLY after ledger matures per F3 discipline). "bottoming" vs None.
             "by_sector_turn":  _slice_table(g, "sector_turn"),
+            # W0 Stage B-d — species/archetype stratification (nullable; always null for now
+            # since rows don't disambiguate which species fired — documented constraint).
+            "by_species_id":   _slice_table(g, "species_id"),
+            "by_archetype":    _slice_table(g, "archetype"),
         }
     out["n_graded"] = max((v.get("n", 0) for v in out["by_horizon"].values()), default=0)
     return out
