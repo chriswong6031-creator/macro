@@ -139,6 +139,7 @@ artifacts:
     consumers:
       - engine/alerts.py
       - engine/board_ledger.py
+      - engine/neuralweb/lagging.py
       - engine/regime_hmm.py
       - engine/regime_one.py
       - engine/regime_vector.py
@@ -174,6 +175,7 @@ artifacts:
     consumers:
       - engine/anticipation.py
       - engine/basket_score.py
+      - engine/neuralweb/lagging.py
       - engine/neuralweb/world_state.py
       - engine/baskets_intl.py
       - engine/froth_fragility.py
@@ -2328,6 +2330,8 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/kernel.py
+      - engine/neuralweb/decay.py
+      - engine/neuralweb/lagging.py
     external_consumers: []
     notes: >
       Read-side derived index: unions spine (data/spine/predictions.parquet),
@@ -2360,7 +2364,8 @@ artifacts:
     tier: infrastructure
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/decay.py
     external_consumers: []
     notes: >
       DISPLAY-FIRST LAW: zero behavior-changing consumers. This artifact carries
@@ -2375,6 +2380,66 @@ artifacts:
       Input: data/neuralweb/spine_index.parquet (sole dependency). Envelope sidecar
       written alongside the parquet (byte_sha256 is the integrity check for binary
       sidecars — do NOT call envelope.verify() on this artifact).
+
+  # --- Neural Web W3 PR3: decay curves ---
+  kernel-families:
+    path: data/neuralweb/kernel_families.json
+    format: json
+    producer: engine/neuralweb/decay.py
+    known_extra_writers:
+      - "scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_families() defined in the producer; no independent write logic"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      DISPLAY-FIRST LAW: zero behavior-changing consumers. Per-engine-family decay
+      diagnostics: horizon_curve (shrunken_ic per horizon from __all__ marginal cells in
+      kernel_estimates.parquet), recency_trend (mean signed excess over trailing 252d/756d/all
+      windows — NO shrinkage across windows because windows are temporal subsets not
+      independent members; document in module docstring), staleness (date_last +
+      days_since_last_fire), armed (propagated from kernel_estimates). Generated-from field
+      is the byte_sha256 of kernel_estimates.parquet. Input: kernel_estimates.parquet
+      (primary) + spine_index.parquet (recency_trend). Envelope sibling-stamped per
+      wrapper-prohibition law.
+
+  # --- Neural Web W3 PR3: lagging-signal detector ---
+  lagging-signals:
+    path: data/neuralweb/lagging_signals.json
+    format: json
+    producer: engine/neuralweb/lagging.py
+    known_extra_writers:
+      - "scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_lagging() defined in the producer; no independent write logic"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      DISPLAY-FIRST LAW: zero behavior-changing consumers. Three per-fire flags over
+      trailing-63d entity fires in spine_index.parquet: (1) fired_in_hostile_regime —
+      join as_of to regime_history.parquet quad column (hostile = Q3/Q4 OR recession=True
+      OR inflation_shock=True; QUAD mapping from engine/regime.py: Q1=Goldilocks,
+      Q2=Reflation, Q3=Stagflation, Q4=Growth-scare/Deflation); (2)
+      fired_breadth_unconfirmed — pct_above_50 on fire date below trailing-63d median
+      (simple, no tuning); (3) repeat_fire — HONESTLY NAMED PROXY for extension:
+      (engine,symbol) fired >=3 times in prior 21d; artifact notes this is a proxy until
+      per-ticker price context lands. Fail-open on missing regime/breadth stores (nulls +
+      gaps[]). Input: spine_index.parquet + data/regime/regime_history.parquet +
+      data/breadth/breadth.parquet. Envelope sibling-stamped.
 
   # --- Feeds plane (R2) ---
   world-state:
