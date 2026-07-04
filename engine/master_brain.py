@@ -987,6 +987,29 @@ def gather_state(root: Path | None = None) -> dict:
             "SAME tape_family = one observation, not independent confirmation."
         )
         state["entry_quality_breadth"] = eqb
+    # Oracle rotation directive — optional additive block (data/oracle/rotation_directive.json).
+    # Surfaces rolling-over leaders and rotation context so the Brain can temper conviction
+    # and raise cash; never a directional buy signal. Degrades silently when absent.
+    try:
+        _od = _read_json(root / "data" / "oracle" / "rotation_directive.json")
+        if isinstance(_od, dict) and _od.get("rolling_over_leaders") is not None:
+            oracle_block = {
+                "rolling_over_leaders": _od.get("rolling_over_leaders"),
+                "strengthening_complexes": _od.get("strengthening_complexes"),
+                "regime_aggregate": _od.get("regime_aggregate"),
+                "instruction": _od.get("instruction"),
+                "asof": _od.get("asof"),
+                "_tape_family": "price_regime",
+                "_lead_lag": "coincident",
+                "_tape_note": (
+                    "Oracle rotation context: rolling-over leaders for conviction tempering "
+                    "and cash-raising guidance. Display-only. NOT a directional buy signal. "
+                    "Primaries NULL per P3 gauntlet; onset secondaries DISPLAY-WITH-EDGE only."
+                ),
+            }
+            state["oracle_rotation"] = oracle_block
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
     return state
 
 

@@ -5102,3 +5102,15 @@ pit:
   #   release_lags:
   #     core_pce: {lag_bd: 20, cadence: M, note: "..."}
   release_lags: {}
+
+
+# --------------------------------------------------------------------------- #
+# Oracle — Rotation Intelligence Web (engine/oracle/, P5).
+# ADD NEW KEYS AT THE END OF THIS BLOCK ONLY — never reorder.
+# --------------------------------------------------------------------------- #
+oracle:
+  # tilt_enabled: gates engine.oracle.tilt → stock_score._axis_tailwind.
+  # R4 binding (ORACLE_GAUNTLET_P3_ADJUDICATION.md): stays false until a Phase-0
+  # survival is registered in the forward ledger.  Two-sided regression test in
+  # tests/test_oracle_tilt.py verifies the gate is effective (not dead code).
+  tilt_enabled: false

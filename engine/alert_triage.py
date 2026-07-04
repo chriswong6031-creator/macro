@@ -101,6 +101,17 @@ _DEMAND_TIER = {"demand_ahead": "context", "demand_at_risk": "context"}
 # numbers and carry no validated forward edge — a rotate-in is the loudest at
 # 'watch'; a leader rolling over is 'context'.
 _ROTATION_TIER = {"rotation_emerging": "watch", "rotation_fading": "context"}
+# Oracle rotation engine (engine.oracle.alerts) — onset/confirmed descriptive detections.
+# oracle_rollover and oracle_two_sided are high-severity at the source so they reach 'watch';
+# onset/confirmed are display_with_edge (onset secondary survived FDR — DISPLAY-WITH-EDGE per R4)
+# but are never promoted above 'watch' here.  oracle_regime breadth-aggregate crosses 'watch'.
+_ORACLE_TIER = {
+    "oracle_onset": "watch",
+    "oracle_confirmed": "watch",
+    "oracle_rollover": "watch",
+    "oracle_two_sided": "watch",
+    "oracle_regime": "watch",
+}
 
 # Source display metadata: label (EN/ZH), icon, and the page each alert deep-links to.
 SOURCES = {
@@ -114,6 +125,7 @@ SOURCES = {
     "altdata":   {"label": "Alternative Data",  "label_zh": "替代数据",   "icon": "📊", "page": "alt_data.html"},
     "demand":    {"label": "Demand Desk",      "label_zh": "需求台",     "icon": "🧭", "page": "demand.html"},
     "rotation":  {"label": "Subsector Rotation","label_zh": "子行业轮动", "icon": "🌀", "page": "subsector_rotation.html"},
+    "oracle":    {"label": "Oracle Rotation",  "label_zh": "Oracle 轮动", "icon": "🔭", "page": "subsector_rotation.html"},
 }
 
 # Risk-OFF / stress alert families whose sign is unambiguous — only these get a
@@ -469,6 +481,7 @@ def _jsonl_raw(source: str, today: pd.Timestamp, cutoff: pd.Timestamp,
             "altdata": "altdata_alerts",
             "demand": "demand_alerts",
             "rotation": "subsector_rotation_alerts",
+            "oracle": "oracle.alerts",
         }[source]
         m = __import__("engine." + mod, fromlist=[mod])
         for e in m.load_events():
@@ -525,6 +538,7 @@ def build_triage(days: int = 30, today: date | None = None,
     raw += _jsonl_raw("altdata", today_ts, cutoff, _ALTDATA_TIER)
     raw += _jsonl_raw("demand", today_ts, cutoff, _DEMAND_TIER)
     raw += _jsonl_raw("rotation", today_ts, cutoff, _ROTATION_TIER)
+    raw += _jsonl_raw("oracle", today_ts, cutoff, _ORACLE_TIER)
 
     enriched: list[dict] = []
     for a in raw:
