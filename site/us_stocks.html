@@ -723,6 +723,18 @@
   .nb-spot.spot-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
                      background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
   .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
+  /* ---- sector-pulse heat chip on standout cards (DISPLAY-ONLY, no rank power) ---- */
+  .nb-pulse-heat { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 700;
+                   padding: 1px 6px; border-radius: 7px; white-space: nowrap; max-width: 9em;
+                   overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line);
+                   color: var(--muted); background: var(--panel); cursor: help; flex: none; }
+  .nb-pulse-heat.ph-heating { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+                              background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
+  .nb-pulse-heat.ph-hot { color: var(--up); border-color: color-mix(in srgb, var(--up) 55%, var(--line));
+                          background: color-mix(in srgb, var(--up) 15%, var(--panel)); font-weight: 800; }
+  .nb-pulse-heat.ph-cooling { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
+                              background: color-mix(in srgb, var(--down) 9%, var(--panel)); }
+  .nb-pulse-heat.ph-broken { color: var(--muted); border-color: var(--line); opacity: .75; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
   .nb-conv { display: flex; align-items: center; gap: 7px; margin: 3px 0 1px; min-width: 0; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -1314,6 +1326,25 @@
   body.page-macro #risk-state .rs-driver { display:flex; align-items:baseline; gap:8px; padding:3px 0; }
   body.page-macro #risk-state .rs-bar { height:6px; border-radius:3px; background:var(--rs); opacity:.85; }
   @keyframes rspulse { 0%,100% { box-shadow: 0 0 0 0 var(--rs-glow); } 50% { box-shadow: 0 0 16px 2px var(--rs-glow); } }
+  /* ---- Sector heat strip (macro-only, DISPLAY-ONLY) ---- */
+  .sh-strip { padding: 8px 14px 10px; }
+  .sh-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .sh-title { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+              color: var(--ink-2); }
+  .sh-asof { font-size: 10px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .sh-chips { display: flex; flex-wrap: wrap; gap: 5px 6px; align-items: center; }
+  .sh-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 20px;
+             font-size: 11px; font-weight: 700; border: 1px solid var(--line); color: var(--muted);
+             background: var(--panel2); text-decoration: none; white-space: nowrap;
+             transition: filter .1s; }
+  .sh-chip:hover { filter: brightness(1.07); border-color: currentColor; }
+  .sh-heat { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+             background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
+  .sh-cool { color: var(--down); border-color: color-mix(in srgb, var(--down) 30%, var(--line));
+             background: color-mix(in srgb, var(--down) 8%, var(--panel)); }
+  .sh-arr { font-size: 9px; flex: none; }
+  .sh-rk { font-size: 9px; opacity: .7; font-variant-numeric: tabular-nums; }
+  .sh-div { color: var(--muted); font-size: 12px; padding: 0 2px; }
   /* Market Risk Radar v2 (engine/risk_radar.py) — the PRIMARY top-of-page risk read. Floats above
      the regime hero (below the acute dislocation filter) and pulses when the gated loud banner fires. */
   body.page-macro #risk-radar { scroll-margin-top: 16px; border-left: 4px solid var(--rr); }
@@ -1939,6 +1970,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="AAPL" data-mkt="us">$294.38</span>
           </div>
           
@@ -2079,6 +2113,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="CVSA" data-mkt="us">$129.88</span>
           </div>
           
@@ -2198,6 +2235,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $67.98 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $67.98。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -2332,6 +2372,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="REZI" data-mkt="us">$30.66</span>
           </div>
           
@@ -2459,6 +2502,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $52.01 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $52.01。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -2593,6 +2639,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="NGVT" data-mkt="us">$72.49</span>
           </div>
           
@@ -2721,6 +2770,9 @@
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
+            
+            
+            
             
             
             <span class="nb-px" data-sym="SPGI" data-mkt="us">$414.97</span>
@@ -2854,6 +2906,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="WMB" data-mkt="us">$72.77</span>
           </div>
           
@@ -2982,6 +3037,9 @@
             
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -3125,6 +3183,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="ELV" data-mkt="us">$416.19</span>
           </div>
           
@@ -3256,6 +3317,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="XEL" data-mkt="us">$79.70</span>
           </div>
           
@@ -3378,6 +3442,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="RITM" data-mkt="us">$9.09</span>
           </div>
           
@@ -3497,6 +3564,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 11d · inv $44.33 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期11天 · 止损 $44.33。仅供参考。"><span class="l-en">Base 11d</span><span class="l-zh">筑底11天</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -3639,6 +3709,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="CPK" data-mkt="us">$125.00</span>
           </div>
           
@@ -3767,6 +3840,9 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 58d · inv $56.47 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期58天 · 止损 $56.47。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -3901,6 +3977,9 @@
             
             
             
+            
+            
+            
             <span class="nb-px" data-sym="AEP" data-mkt="us">$135.05</span>
           </div>
           
@@ -4032,6 +4111,9 @@
             
             
             <span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>
+            
+            
+            
             <span class="nb-px" data-sym="PCG" data-mkt="us">$16.57</span>
           </div>
           
@@ -4165,6 +4247,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="FG" data-mkt="us">$27.94</span>
           </div>
           
@@ -4285,6 +4370,9 @@
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
+            
+            
+            
             
             
             <span class="nb-px" data-sym="OGE" data-mkt="us">$49.44</span>
@@ -4415,6 +4503,9 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 18d · inv $70.26 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期18天 · 止损 $70.26。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -4549,6 +4640,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="KAI" data-mkt="us">$309.00</span>
           </div>
           
@@ -4679,6 +4773,9 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             
+            
+            
+            
             <span class="nb-px" data-sym="CUBE" data-mkt="us">$40.98</span>
           </div>
           
@@ -4798,6 +4895,9 @@
             
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
+            
             
             
             
@@ -4921,6 +5021,9 @@
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
+            
+            
+            
             
             
             <span class="nb-px" data-sym="COIN" data-mkt="us">$165.48</span>
