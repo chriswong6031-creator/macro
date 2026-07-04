@@ -418,6 +418,36 @@ def build_world_state(
         alerts_block = _compose_alerts(at)
     sources[str(at_path.relative_to(repo))] = (at or {}).get("asof")
 
+    # ── 7. Contradictions summary (W4) ───────────────────────────────────────
+    contradictions_block: dict | None = None
+    try:
+        from engine.neuralweb.contradictions import detect_contradictions  # noqa: PLC0415
+        contra_records, contra_gaps = detect_contradictions(root=repo)
+        by_severity: dict[str, int] = {}
+        for rec in contra_records:
+            sev = rec.get("severity") or "unknown"
+            by_severity[sev] = by_severity.get(sev, 0) + 1
+        top5 = [rec.get("pair_id") for rec in contra_records[:5]]
+        contradictions_block = {
+            "n": len(contra_records),
+            "by_severity": by_severity,
+            "top_pair_ids": top5,
+            "gaps": contra_gaps,
+            "display_only": True,
+            "note": (
+                "W4 contradiction detector: 6 typed pairs "
+                "(regime-vs-market_state, regime_vector-vs-risk_radar, "
+                "oracle-vs-sector_central, vol_regime-vs-market_state, "
+                "briefing-divergences, cross_asset_confirm-diverge).  "
+                "Display-only; no gate, no rank raise."
+            ),
+        }
+        if contra_gaps:
+            gaps.extend([f"contradictions/{g}" for g in contra_gaps])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: contradictions block failed — %s", exc)
+        gaps.append(f"contradictions: {exc}")
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "verdict": verdict_block,
@@ -437,6 +467,7 @@ def build_world_state(
             "do not aggregate raw qbus here (border law §9)"
         ),
         "live_overlay": live_overlay_block,
+        "contradictions": contradictions_block,
         "gaps": gaps,
         "sources": sources,
     }

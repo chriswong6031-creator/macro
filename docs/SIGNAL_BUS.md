@@ -17,7 +17,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| neural-web | 6 |
+| neural-web | 9 |
 | options-alpha | 2 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
@@ -29,8 +29,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 42 |
-| infrastructure | 18 |
+| display | 43 |
+| infrastructure | 20 |
 | scored | 4 |
 | shadow | 28 |
 
@@ -38,7 +38,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 89 |
+| git | 92 |
 | gitignored-local | 2 |
 | r2 | 1 |
 
@@ -80,8 +80,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 29 | 3 |
-| breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 16 | 0 |
-| regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 16 | 0 |
+| breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 17 | 0 |
+| regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 17 | 0 |
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
 | market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 7 | 0 |
 | risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 5 | 0 |
@@ -124,8 +124,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
-| spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
-| kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
+| spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
+| kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 0 | 0 |
+| kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 0 | 0 |
+| lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
 
 ### options-alpha
 
@@ -219,6 +222,18 @@ flowchart LR
     C_engine_china_intel_analysis_py["engine/china_intel_analysis.py"]
     C_engine_china_intel_bus_py["engine/china_intel_bus.py"]
     OVF_regime_latest["...+28 more"]
+    P_collectors_breadth_py(("collectors/breadth.py"))
+    A_breadth_breadth["breadth-breadth"]
+    C_engine_anticipation_py["engine/anticipation.py"]
+    C_engine_basket_score_py["engine/basket_score.py"]
+    C_engine_neuralweb_lagging_py["engine/neuralweb/lagging.py"]
+    C_engine_neuralweb_world_state_py["engine/neuralweb/world_state.py"]
+    OVF_breadth_breadth["...+13 more"]
+    A_regime_history["regime-history"]
+    C_engine_alerts_py["engine/alerts.py"]
+    C_engine_board_ledger_py["engine/board_ledger.py"]
+    C_engine_regime_hmm_py["engine/regime_hmm.py"]
+    OVF_regime_history["...+13 more"]
     P_scripts_seed_us_sector_baskets_py(("scripts/seed_us_sector_baskets.py"))
     A_baskets_membership["baskets-membership"]
     C_engine_demand_ledger_py["engine/demand_ledger.py"]
@@ -226,19 +241,6 @@ flowchart LR
     C_engine_froth_fragility_py["engine/froth_fragility.py"]
     C_engine_news_common_py["engine/news_common.py"]
     OVF_baskets_membership["...+12 more"]
-    P_collectors_breadth_py(("collectors/breadth.py"))
-    A_breadth_breadth["breadth-breadth"]
-    C_engine_anticipation_py["engine/anticipation.py"]
-    C_engine_basket_score_py["engine/basket_score.py"]
-    C_engine_neuralweb_world_state_py["engine/neuralweb/world_state.py"]
-    C_engine_baskets_intl_py["engine/baskets_intl.py"]
-    OVF_breadth_breadth["...+12 more"]
-    A_regime_history["regime-history"]
-    C_engine_alerts_py["engine/alerts.py"]
-    C_engine_board_ledger_py["engine/board_ledger.py"]
-    C_engine_regime_hmm_py["engine/regime_hmm.py"]
-    C_engine_regime_one_py["engine/regime_one.py"]
-    OVF_regime_history["...+12 more"]
     P_engine_altdata_signals_py(("engine/altdata_signals.py"))
     A_altdata_by_ticker["altdata-by-ticker"]
     C_engine_altdata_brain_py["engine/altdata_brain.py"]
@@ -311,24 +313,24 @@ flowchart LR
     A_regime_latest --> C_engine_china_intel_analysis_py
     A_regime_latest --> C_engine_china_intel_bus_py
     A_regime_latest --> OVF_regime_latest
+    P_collectors_breadth_py --> A_breadth_breadth
+    A_breadth_breadth --> C_engine_anticipation_py
+    A_breadth_breadth --> C_engine_basket_score_py
+    A_breadth_breadth --> C_engine_neuralweb_lagging_py
+    A_breadth_breadth --> C_engine_neuralweb_world_state_py
+    A_breadth_breadth --> OVF_breadth_breadth
+    P_engine_run_py --> A_regime_history
+    A_regime_history --> C_engine_alerts_py
+    A_regime_history --> C_engine_board_ledger_py
+    A_regime_history --> C_engine_neuralweb_lagging_py
+    A_regime_history --> C_engine_regime_hmm_py
+    A_regime_history --> OVF_regime_history
     P_scripts_seed_us_sector_baskets_py --> A_baskets_membership
     A_baskets_membership --> C_engine_demand_ledger_py
     A_baskets_membership --> C_engine_financial_news_py
     A_baskets_membership --> C_engine_froth_fragility_py
     A_baskets_membership --> C_engine_news_common_py
     A_baskets_membership --> OVF_baskets_membership
-    P_collectors_breadth_py --> A_breadth_breadth
-    A_breadth_breadth --> C_engine_anticipation_py
-    A_breadth_breadth --> C_engine_basket_score_py
-    A_breadth_breadth --> C_engine_neuralweb_world_state_py
-    A_breadth_breadth --> C_engine_baskets_intl_py
-    A_breadth_breadth --> OVF_breadth_breadth
-    P_engine_run_py --> A_regime_history
-    A_regime_history --> C_engine_alerts_py
-    A_regime_history --> C_engine_board_ledger_py
-    A_regime_history --> C_engine_regime_hmm_py
-    A_regime_history --> C_engine_regime_one_py
-    A_regime_history --> OVF_regime_history
     P_engine_altdata_signals_py --> A_altdata_by_ticker
     A_altdata_by_ticker --> C_engine_altdata_brain_py
     A_altdata_by_ticker --> C_engine_altdata_confirmers_py
@@ -443,6 +445,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - engine/china_sector_cycles_grader.py — grader also appends grade rows to the same parquet
 
+### confluence-graph
+
+- **path:** `data/neuralweb/confluence_graph.json`
+- **declared producer:** `engine/neuralweb/confluence.py`
+- **extra writers:**
+  - scripts/build_confluence_graph.py — thin CLI wrapper; calls build_and_write() defined in the producer; no independent write logic
+
 ### experiments-registry-seed
 
 - **path:** `data/experiments/registry_seed.json`
@@ -471,6 +480,20 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/kernel.py`
 - **extra writers:**
   - scripts/build_kernel_estimates.py — thin CLI wrapper; calls write_estimates() defined in the producer; no independent write logic
+
+### kernel-families
+
+- **path:** `data/neuralweb/kernel_families.json`
+- **declared producer:** `engine/neuralweb/decay.py`
+- **extra writers:**
+  - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_families() defined in the producer; no independent write logic
+
+### lagging-signals
+
+- **path:** `data/neuralweb/lagging_signals.json`
+- **declared producer:** `engine/neuralweb/lagging.py`
+- **extra writers:**
+  - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_lagging() defined in the producer; no independent write logic
 
 ### market-state-latest
 

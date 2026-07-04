@@ -2479,6 +2479,42 @@ artifacts:
       incident contract. First producer adoption of the envelope stamp (produced_at = build
       timestamp; per-block asofs live in sources). Consumers migrate in PR2.
 
+  # --- Neural Web W4: confluence graph ---
+  confluence-graph:
+    path: data/neuralweb/confluence_graph.json
+    format: json
+    producer: engine/neuralweb/confluence.py
+    known_extra_writers:
+      - "scripts/build_confluence_graph.py — thin CLI wrapper; calls build_and_write() defined in the producer; no independent write logic"
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: neuralweb.confluence_graph.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      DISPLAY-ONLY HARD LAW: confluence never gates, never ranks, never raises a priority.
+      All edges carry display_only=True. Cross-engine hard gates require their own
+      pre-registered gauntlet (China falsification precedent). Edge promotion beyond
+      display requires a registered gauntlet result in config/qual_ladder.yml.
+      Typed graph: nodes=(engine, sector, regime, thesis, episode); edges=(feeds from
+      config/synapse.yml structural wiring; stable from Oracle edge_stability READ-ONLY;
+      leads from Oracle graph_m.json leadlag records; contradicts from
+      engine/neuralweb/contradictions.py 6-pair detector; confirms = co-firing lift from
+      spine_index with MIN_N=10 floor). Contradiction detector v1 pairs: (a)
+      regime-quad-vs-market_state, (b) regime_vector-growth-vs-risk_radar-scare, (c)
+      oracle-complex-direction-vs-sector_central-call, (d) vol_regime-vs-market_state,
+      (e) briefing-divergences-ingest (read-only), (f) cross_asset_confirm-diverge.
+      world_state.json gains a contradictions summary block (n, by_severity, top_pair_ids)
+      sourced from the same detector — fail-open, seed regenerated.
+      Absent Oracle graph files (gitignored/Mac-local) → stable/leads edges empty + gap
+      noted; graph always produced. zero behavior-changing consumers today.
+
   feeds-plane:
     path: site/feeds/
     format: json

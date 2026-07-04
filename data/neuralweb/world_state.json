@@ -4811,7 +4811,7 @@
   },
   "alerts": {
     "asof": "2026-07-01",
-    "generated_utc": "2026-07-04 14:32",
+    "generated_utc": "2026-07-04 19:46",
     "total": 60,
     "critical": 2,
     "major": 58,
@@ -4828,6 +4828,23 @@
     "age_days": 3,
     "stale": true
   },
+  "contradictions": {
+    "n": 7,
+    "by_severity": {
+      "tension": 6,
+      "note": 1
+    },
+    "top_pair_ids": [
+      "regime-vs-market_state",
+      "regime_vector-vs-risk_radar",
+      "oracle-vs-sector_central:software",
+      "oracle-vs-sector_central:healthcare_defensive",
+      "vol_regime-vs-market_state"
+    ],
+    "gaps": [],
+    "display_only": true,
+    "note": "W4 contradiction detector: 6 typed pairs (regime-vs-market_state, regime_vector-vs-risk_radar, oracle-vs-sector_central, vol_regime-vs-market_state, briefing-divergences, cross_asset_confirm-diverge).  Display-only; no gate, no rank raise."
+  },
   "gaps": [],
   "sources": {
     "data/market_state/latest.json": "2026-07-01",
@@ -4839,7 +4856,7 @@
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-07-04T16:37:01Z",
-  "inputs_hash": "sha256:f632c09a7204594d28fb2e6a5a5d6ff44304da3bc02f5c78d738877378e40bdb",
+  "produced_at": "2026-07-04T21:23:55Z",
+  "inputs_hash": "sha256:ac6a4c4986695296a5b19203c785d77e274f3b21a8e12d6e68156b31c1d431e9",
   "tier": "infrastructure"
 }
