@@ -97,6 +97,12 @@ on:
       # test pins producer (AST) + template consumer, so the builder must trigger CI.
       - "scripts/build_stock_library.py"
       - "tests/test_sector_pulse_wiring.py"
+      # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
+      # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
+      - "config/synapse.yml"
+      - "scripts/check_synapse_reads.py"
+      - "data/neuralweb/read_gate_baseline.json"
+      - "tests/test_synapse_read_gate.py"
   workflow_dispatch:
 
 permissions:
@@ -378,3 +384,26 @@ jobs:
         run: python3 scripts/check_cycle_consistency.py site
       - name: consistency + phase-coherence regression tests
         run: python -m pytest tests/test_cycle_consistency.py tests/test_cycle_ontology.py -q
+
+  synapse-read-gate:
+    # W0 PR3: literal-path scan over engine/*.py, scripts/*.py, collectors/*.py.
+    # WARN tier (exit 0): any undeclared reader of a registered artifact.
+    # HARD FAIL (exit 1): an undeclared reader that is an Article-2 money-path
+    # surface (alert_triage / board_ordering / top_setups).
+    # Baseline: data/neuralweb/read_gate_baseline.json (only-shrinks ratchet).
+    # Runs check_synapse_registry.py (integrity, hard) first, then
+    # check_synapse_reads.py (warn + Article-2 hard) + the unit test suite.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: synapse registry integrity (hard gate)
+        run: python3 scripts/check_synapse_registry.py
+      - name: synapse read-gate — warn tier + Article-2 hard fail
+        run: python3 scripts/check_synapse_reads.py
+      - name: synapse read-gate unit tests
+        run: python -m pytest tests/test_synapse_read_gate.py -q

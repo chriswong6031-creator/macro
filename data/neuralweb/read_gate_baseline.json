@@ -1,0 +1,120 @@
+{
+  "schema": "synapse-read-gate-baseline-v1",
+  "description": "Snapshot of all undeclared-reader findings at baseline generation time. Only-shrinks ratchet: new findings that do NOT appear here trigger WARN or HARD FAIL. Stale entries (no longer firing) are reported as 'stale baseline entry \u2014 prune'.",
+  "findings": [
+    {
+      "module": "collectors/edgar_deadnames.py",
+      "artifact_id": "breadth-sp1500-pit",
+      "line_no": 8,
+      "severity": "WARN"
+    },
+    {
+      "module": "collectors/quiver_watchlist.py",
+      "artifact_id": "altdata-by-ticker",
+      "line_no": 6,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/base_effect.py",
+      "artifact_id": "regime-base-effect-fwd",
+      "line_no": 228,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/eightk_magnitude.py",
+      "artifact_id": "baskets-membership",
+      "line_no": 13,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/neuralweb/__init__.py",
+      "artifact_id": "feeds-plane",
+      "line_no": 25,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/neuralweb/__init__.py",
+      "artifact_id": "qbus-items",
+      "line_no": 42,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/neuralweb/envelope.py",
+      "artifact_id": "feeds-plane",
+      "line_no": 20,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/neuralweb/envelope.py",
+      "artifact_id": "regime-latest",
+      "line_no": 57,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/oracle/__init__.py",
+      "artifact_id": "site-basket-oracle-state",
+      "line_no": 16,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/oracle/panel.py",
+      "artifact_id": "breadth-sp1500-pit",
+      "line_no": 428,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/radar_ticker.py",
+      "artifact_id": "site-radar-ticker",
+      "line_no": 14,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/regime_prior.py",
+      "artifact_id": "site-regime-prior-js",
+      "line_no": 24,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/signal_gate.py",
+      "artifact_id": "site-signals-per-ticker",
+      "line_no": 156,
+      "severity": "WARN"
+    },
+    {
+      "module": "engine/signal_quality.py",
+      "artifact_id": "site-signals-per-ticker",
+      "line_no": 184,
+      "severity": "WARN"
+    },
+    {
+      "module": "scripts/build_subsector_rotation_pages.py",
+      "artifact_id": "site-marketdata-subsector-rotation",
+      "line_no": 5,
+      "severity": "WARN"
+    },
+    {
+      "module": "scripts/check_board_contradictions.py",
+      "artifact_id": "site-us-standouts",
+      "line_no": 2,
+      "severity": "WARN"
+    },
+    {
+      "module": "scripts/export_signal_contracts.py",
+      "artifact_id": "site-signals-per-ticker",
+      "line_no": 167,
+      "severity": "WARN"
+    },
+    {
+      "module": "scripts/export_signal_contracts.py",
+      "artifact_id": "site-us-standouts",
+      "line_no": 171,
+      "severity": "WARN"
+    },
+    {
+      "module": "scripts/seed_china_baskets.py",
+      "artifact_id": "baskets-membership",
+      "line_no": 3,
+      "severity": "WARN"
+    }
+  ]
+}
