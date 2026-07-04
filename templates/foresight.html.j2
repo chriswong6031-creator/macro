@@ -445,7 +445,7 @@
     <div class="fx-div-thin">{{ t('Cross-section too thin for reliable ranks', '跨截面样本量不足') }} (n={{ divergence_board.n_cross_section }} &lt; 6) — {{ t('accruing', '累积中') }}</div>
     {% else %}
     <div class="fx-div-grid">
-      {% for it in divergence_board.items %}{% if not it.excluded %}
+      {% for it in divergence_board['items'] %}{% if not it.excluded %}
       <div class="fx-div-card q-{{ it.quadrant | replace('-','_') if it.quadrant else 'none' }}">
         <div class="fx-div-name">{{ it.name or it.theme }}</div>
         <div class="fx-div-quad">{% if it.quadrant %}{{ it.quadrant.replace('-',' ').upper() }}{% else %}—{% endif %}</div>
