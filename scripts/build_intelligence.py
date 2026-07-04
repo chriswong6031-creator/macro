@@ -7,7 +7,7 @@ Merges two already-built per-ticker artifacts into ONE the Mastermind bot pulls:
 
 Single-writer fix (neural-web W0 PR5):
   Previously this module called _crosssurface_radar(), which mutated
-  site/basketdata/radar.json in-place after build_baskets had already written it.
+  the basketdata radar artifact in-place after build_baskets had already written it.
   That was second-writer rot (census-flagged).  The fix: build_intelligence now
   writes site/basketdata/radar_news.json as its OWN artifact (keyed by basket_id →
   {headlines: [...]}).  radar_panel.js fetches both radar.json and radar_news.json

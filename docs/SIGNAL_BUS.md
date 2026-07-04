@@ -17,7 +17,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | neural-web | 3 |
 | options-alpha | 2 |
-| oracle | 9 |
+| oracle | 11 |
 | qualitative-intelligence | 14 |
 | sector-pulse | 3 |
 | setup-species | 5 |
@@ -27,7 +27,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 40 |
+| display | 42 |
 | infrastructure | 14 |
 | scored | 4 |
 | shadow | 6 |
@@ -36,7 +36,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 61 |
+| git | 63 |
 | gitignored-local | 2 |
 | r2 | 1 |
 
@@ -114,11 +114,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | radar-theses | `data/radar/theses.jsonl` | jsonl | daily-engine | display | 8 | 0 |
 | site-radar-json | `site/basketdata/radar.json` | json | daily-engine | display | 7 | 0 |
+| site-basketdata-radar-enriched | `site/basketdata/radar_enriched.json` | json | daily-engine | display | 6 | 0 |
 | site-radar-ticker | `site/basketdata/radar_ticker.json` | json | daily-engine | display | 4 | 0 |
 | site-basket-flow | `site/basketdata/flow.json` | json | daily-engine | display | 2 | 1 |
 | site-basket-oracle-state | `site/basketdata/oracle_state.json` | json | daily-engine | display | 3 | 0 |
 | radar-track-record | `data/radar/track_record.json` | json | daily-engine | display | 2 | 0 |
 | site-marketdata-subsector-rotation | `site/marketdata/subsector_rotation.json` | json | daily-engine | display | 2 | 0 |
+| site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
 | site-member-context | `site/basketdata/member_context.json` | json | daily-engine | display | 1 | 0 |
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |
 
@@ -448,13 +450,6 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/qledger.py`
 - **extra writers:**
   - scripts/grade_qledger.py — reads + merges ladder_states into track_record.json at line 576
-
-### site-radar-json
-
-- **path:** `site/basketdata/radar.json`
-- **declared producer:** `scripts/build_baskets.py`
-- **extra writers:**
-  - scripts/build_intelligence.py — _crosssurface_radar mutates the file in-place post-emit (census-flagged rot; neural-web masterplan targets this in N0)
 
 ### species-registry
 
