@@ -1588,6 +1588,7 @@ artifacts:
       - engine/validation.py
       - scripts/check_trial_registration.py
       - scripts/measure_incremental_ic.py
+      - scripts/run_kernel_decisions.py
       - scripts/strategy_lab.py
     external_consumers: []
     notes: >

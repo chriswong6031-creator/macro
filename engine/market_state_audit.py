@@ -66,12 +66,58 @@ def _write(p: Path, rows: list[dict]) -> None:
     p.write_text("\n".join(json.dumps(r, separators=(",", ":"), default=str) for r in rows) + "\n")
 
 
+def _extract_components(ms: dict) -> dict | None:
+    """Extract per-component scores from a market_state_snapshot() result.
+
+    The 'components' key in the snapshot is a list of dicts, each with
+    {key, score, weight, ...}. We store a compact dict {key: {score, weight}}
+    so the weights-vs-equal-weight measurement harness can reconstruct the
+    hand-weighted raw_score and the equal-weight counterfactual from the same
+    logged data (PIT-honest: whatever resolved that day).
+
+    Returns None if the components field is absent or malformed — the caller
+    omits the 'components' key from the log entry in that case, which is safe:
+    the log is forward-append-only and older entries without 'components' are
+    parsed by readers that treat the key as optional (additive-safe).
+    """
+    raw = ms.get("components")
+    if not raw or not isinstance(raw, list):
+        return None
+    out: dict = {}
+    for c in raw:
+        if not isinstance(c, dict):
+            continue
+        key = c.get("key")
+        score = c.get("score")
+        weight = c.get("weight")
+        if key is None:
+            continue
+        # score and weight may be None if a component failed to resolve;
+        # store what is available so the harness can detect partial resolves.
+        out[str(key)] = {
+            "score": score,
+            "weight": weight,
+        }
+    return out if out else None
+
+
 def _entry_from_snapshot(ms: dict) -> dict | None:
-    """Slim a market_state_snapshot() result to the loggable fields (no recompute)."""
+    """Slim a market_state_snapshot() result to the loggable fields (no recompute).
+
+    Existing fields (additive-safe — readers must not require 'components'):
+      asof, verdict, score, raw_score, radar_state, radar_top, amp, amp_keys,
+      severe_gated, logged_at, graded
+
+    Added in W3 PR2 (additive key — old entries without it parse safely):
+      components: {key: {score, weight}} for each resolved component.
+        Enables the pre-registered market-state-weights-vs-equal measurement
+        (h21 drawdown-concordance Brier, hand vs equal-weight counterfactual).
+        Absent when the snapshot carries no 'components' list.
+    """
     if not ms or not ms.get("asof") or not ms.get("verdict"):
         return None
     rd = ms.get("radar") or {}
-    return {
+    entry: dict = {
         "asof": str(ms["asof"]),
         "verdict": ms.get("verdict"),
         "score": ms.get("score"),
@@ -84,6 +130,11 @@ def _entry_from_snapshot(ms: dict) -> dict | None:
         "logged_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "graded": None,
     }
+    # W3 PR2 addition: per-component scores (additive — old entries lack this key)
+    components = _extract_components(ms)
+    if components is not None:
+        entry["components"] = components
+    return entry
 
 
 def log_snapshot(ms: dict, root=None) -> bool:
