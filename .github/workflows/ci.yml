@@ -144,10 +144,21 @@ jobs:
       # PR (like the one introducing this guard) must not be judged against an artifact
       # built by OLDER code. The always-on tripwire for freshly rendered artifacts
       # lives in pages.yml (deploy gate) — see the twin step there.
+      # 2026-07-04 incident (#1195 run): a PR squash-merged before this job started, so by
+      # run time origin/main's tip WAS the squash commit — and the old `--depth=1` fetch
+      # shallow-cut it, so `origin/main...HEAD` had NO merge base. `git diff --quiet` then
+      # exited fatal (non-zero), the skip branch was not taken, and the checker FAILED OPEN
+      # against a stale artifact the PR never touched. Fix: fetch without --depth (checkout
+      # is already fetch-depth 0), and treat a missing merge base as SKIP — fail closed to
+      # the always-on deploy-gate twin in pages.yml, which grades every fresh render.
       - name: board invariants must hold when this PR ships the standouts artifact
         run: |
-          git fetch origin ${{ github.base_ref }} --depth=1
-          if git diff --quiet origin/${{ github.base_ref }}...HEAD -- site/factordata/us_standouts.json; then
+          git fetch origin ${{ github.base_ref }}
+          if ! mb=$(git merge-base "origin/${{ github.base_ref }}" HEAD); then
+            echo "no merge base with ${{ github.base_ref }} (base moved under a fast merge) — deploy-gate twin covers fresh renders; skipping"
+            exit 0
+          fi
+          if git diff --quiet "$mb" HEAD -- site/factordata/us_standouts.json; then
             echo "us_standouts.json untouched by this PR — deploy-gate twin covers fresh renders; skipping"
             exit 0
           fi
