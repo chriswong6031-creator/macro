@@ -2412,6 +2412,19 @@ notify:
   # have to watch the admin Experiments tab. Fires once per experiment, on transition only.
   experiments_alerts: true
 
+# Neural Web W6a — Push spine (engine/alert_triage.py:push_priority_alerts).
+# CONFIG-GATED OFF by default.  Enabling this is an operator + Article-2 event:
+# it converts the display-only triage priority score into automated outbound
+# dispatch.  Priority inputs are unvalidated hand-weights (W_TIER/W_SEVERITY)
+# and the cross-asset verdict — these are Article-2 surfaces.  No score is
+# RAISED by push_priority_alerts; it only dispatches alerts that already cleared
+# the threshold.  W6b: sender migration (routing existing 11 senders through this
+# spine) follows when this gate is opened and the dedup window is measured.
+alert_push:
+  enabled: false            # OPERATOR GATE: set true only after W6b gauntlet design
+  threshold: 60             # priority floor (0-100); 60 = act/critical or act/major-fresh
+  window_hours: 6           # dedup: same (source,type,asset) silenced for N hours after send
+
 # Public R2 data-plane freshness tripwire (scripts/audit_r2.py). The heavy per-ticker
 # stores are served to the live site from Cloudflare R2 (templates/data_base.js); every
 # CI publish is non-fatal and no-ops without creds, so ONLY this probe notices a dead

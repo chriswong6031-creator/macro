@@ -149,8 +149,37 @@ def refresh(force: bool = False) -> dict:
         log.error("market_state persist after refresh failed (non-fatal): %s", e)
     new = _regime_asof()
     log.info("regime refreshed -> asof=%s quad=%s", new, latest.get("quad_name"))
-    return {"status": "refreshed", "asof": new, "prev": regime_date,
-            "store": store_date, "quad": latest.get("quad_name"), "repull": repull}
+    result = {"status": "refreshed", "asof": new, "prev": regime_date,
+              "store": store_date, "quad": latest.get("quad_name"), "repull": repull}
+
+    # W6a MIRROR: record this self-heal firing to the reflex firings ledger.
+    # Single-writer law: ONLY the intraday-fastpath lane calls this.
+    # The append is additive — existing behavior is unchanged.
+    try:
+        from datetime import datetime, timezone  # noqa: PLC0415
+        from engine.neuralweb.reflexes import record_firing  # noqa: PLC0415
+        record_firing("regime_stale_selfheal", {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "trigger_type": "staleness_check",
+            "trigger_key": f"regime:{regime_date}:store:{store_date}",
+            "action_taken": "rerun_engine",
+            "scope_type": "macro",
+            "scope_key": "regime",
+            "direction": 0,      # infrastructure; no directional bet
+            "horizon_d": None,   # not gradeable
+            "asof": new or store_date,
+            "extra": {
+                "prev_asof": regime_date,
+                "new_asof": new,
+                "store_date": store_date,
+                "repull_healed": bool(repull and repull.get("healed")),
+                "quad": latest.get("quad_name"),
+            },
+        })
+    except Exception as e:  # noqa: BLE001 — firings append must never fail the fast-path
+        log.warning("W6a record_firing skipped (non-fatal): %s", e)
+
+    return result
 
 
 def main() -> int:

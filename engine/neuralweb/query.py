@@ -115,6 +115,7 @@ log = logging.getLogger(__name__)
 __all__ = [
     "COLUMNS",
     "LEDGER_ENUM",
+    "adapt_reflexes",
     "build_index",
     "write_index",
     "load_index",
@@ -176,6 +177,7 @@ LEDGER_ENUM: tuple[str, ...] = (
     "cycles_us",
     "cycles_china",
     "cycles_country",
+    "reflexes",      # Neural Web W6a: per-reflex firings ledgers
 )
 
 # ---------------------------------------------------------------------------
@@ -944,6 +946,7 @@ def build_index(
         ("board_ca",       lambda: adapt_board("ca", root)),
         ("board_cn",       lambda: adapt_china_board(root)),
         ("forward_logs",   lambda: adapt_forward_logs(root)),
+        ("reflexes",       lambda: adapt_reflexes(root)),    # W6a — reflex firings ledgers
     ]
 
     for name, fn in adapters:
@@ -1178,3 +1181,122 @@ def query(
         mask &= graded_col
 
     return df[mask].copy().reset_index(drop=True)
+
+
+# ---------------------------------------------------------------------------
+# ADAPTER h) reflexes (Neural Web W6a)
+# ---------------------------------------------------------------------------
+
+def adapt_reflexes(
+    root: Path | str | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt ``data/reflexes/<name>/firings.jsonl`` files → ledger='reflexes'.
+
+    GRADING DESIGN — UNGRADED-HONEST
+    ---------------------------------
+    All reflex firings ship as ``outcome_graded=False``.  Reflexes are
+    operational event records, not calibrated forward-return predictions.
+    Grading design is documented as future work:
+
+      - Infrastructure reflexes (e.g. regime_stale_selfheal, circuit_breaker_trip):
+        direction=0, ungradeable by design.  Even if a grading study were
+        desired, the relevant outcome would be operational (did the engine catch
+        up?) not a financial return.
+
+      - Signal reflexes (e.g. commodity_shock, btc_flash_crash): direction
+        carried from the event (±1); a forward-return study could in principle
+        be pre-registered against a commodity ETF / BTC bench.  That study is
+        DEFERRED to a post-W6 gauntlet.  No grading is fabricated here.
+
+    The ``outcome_graded=False`` path in the spine query layer's graded_before
+    filter retains these rows correctly as "legitimately pre-cutoff candidates"
+    (they existed before the cutoff and have not yet been graded).
+
+    SCOPE TYPE MAPPING
+    ------------------
+    Firing records carry ``scope_type`` from the event payload.  Accepted values:
+    'macro', 'entity', 'sector', 'basket'.  Anything else is normalised to 'macro'.
+
+    Returns (df, gap_notes).
+    """
+    gaps: list[str] = []
+
+    try:
+        from engine.neuralweb.reflexes import discover_all_firings  # noqa: PLC0415
+        all_firings = discover_all_firings(root)
+    except Exception as e:  # noqa: BLE001 — fail-open
+        gaps.append(f"reflexes: discover_all_firings failed ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if not all_firings:
+        gaps.append("reflexes: no firings.jsonl files found under data/reflexes/ — zero rows")
+        return _empty_df(), gaps
+
+    _VALID_SCOPE = {"macro", "entity", "sector", "basket"}
+    rows: list[dict] = []
+    skipped = 0
+
+    for name, records in all_firings.items():
+        if not records:
+            continue
+        for rec in records:
+            ts = rec.get("ts") or rec.get("asof") or ""
+            asof = _str_date(rec.get("asof") or ts)
+            if not asof:
+                skipped += 1
+                continue
+
+            claim_id = _safe_str(rec.get("claim_id"))
+            trigger_key = _safe_str(rec.get("trigger_key")) or ""
+            sig = f"reflexes:{name}:{asof}:{claim_id or trigger_key}"
+
+            scope_raw = _safe_str(rec.get("scope_type")) or "macro"
+            scope_type = scope_raw if scope_raw in _VALID_SCOPE else "macro"
+
+            direction = rec.get("direction")
+            try:
+                direction = int(direction) if direction is not None else 0
+            except (TypeError, ValueError):
+                direction = 0
+
+            horizon = rec.get("horizon_d")
+            try:
+                horizon = int(horizon) if horizon is not None else None
+            except (TypeError, ValueError):
+                horizon = None
+
+            row: dict[str, Any] = {c: None for c in COLUMNS}
+            row["signal_id"]      = sig
+            row["engine"]         = f"reflex.{name}"
+            row["family"]         = f"reflex.{name}:{_safe_str(rec.get('trigger_type')) or 'event'}"
+            row["ledger"]         = "reflexes"
+            row["as_of"]          = asof
+            row["symbol"]         = _safe_str(rec.get("scope_key")) or "macro"
+            row["scope_type"]     = scope_type
+            row["universe"]       = f"reflexes.{name}"
+            row["horizon"]        = horizon
+            row["direction"]      = direction
+            row["size_binding"]   = False
+            row["fill_basis"]     = "reflex_event"
+            row["score"]          = None
+            row["outcome_excess"] = None
+            # UNGRADED-HONEST: outcome_graded=False for all reflex firings.
+            # Grading design is documented above; no fabrication.
+            row["outcome_graded"] = False
+            row["graded_at"]      = None
+            rows.append(row)
+
+    if skipped:
+        gaps.append(f"reflexes: {skipped} firing records skipped (no asof/ts)")
+
+    total_records = sum(len(v) for v in all_firings.values())
+    gaps.append(
+        f"reflexes: {len(all_firings)} streams, {total_records} total records, "
+        f"{len(rows)} rows emitted"
+    )
+
+    if not rows:
+        return _empty_df(), gaps
+
+    df = pd.DataFrame(rows)
+    return _ensure_columns(df), gaps

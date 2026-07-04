@@ -35,7 +35,8 @@ empty section, never a failed build.
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
 import pandas as pd
 
@@ -614,3 +615,220 @@ def build_triage(days: int = 30, today: date | None = None,
         "alerts": kept,
         "weights": {"tier": W_TIER, "severity": W_SEVERITY, "confirm": W_CONFIRM},
     }
+
+
+# ---------------------------------------------------------------------------
+# PUSH SPINE — Neural Web W6a (config-gated OFF by default)
+# ---------------------------------------------------------------------------
+# Article-2 surface: priority inputs are unvalidated hand-weights. This function
+# is CONFIG-GATED (alert_push.enabled=false by default). Enabling it is an
+# operator event — it changes a display-only priority score into automated
+# outbound dispatch. Per Article 2: no ranking/priority surface may RAISE a
+# score without SHADOW-with-track-record tier. This function never raises scores;
+# it only dispatches alerts that already cleared the priority threshold.
+#
+# W6b: sender migration (routing existing senders through this spine) follows
+# in a subsequent PR. No existing sender is modified in W6a.
+#
+# WHITEHOUSE: the whitehouse pattern (single-writer hourly sentinel) is SACRED
+# and is NOT migrated here. It remains untouched until W6b scopes the migration
+# explicitly. This function never reads data/whitehouse/alerts.jsonl.
+
+_PUSH_SENT_PATH = "alert_triage/push_sent.jsonl"  # relative to data_dir()
+
+
+def _push_sent_path(root: Path | str | None = None) -> Path:
+    if root is not None:
+        return Path(root) / "data" / _PUSH_SENT_PATH
+    return config.data_dir() / _PUSH_SENT_PATH
+
+
+def _load_recent_sends(
+    p: Path,
+    window_hours: int,
+    now: datetime,
+) -> set[tuple[str, str, str]]:
+    """Load (source, type, asset) keys sent within the dedup window."""
+    cutoff = now - timedelta(hours=window_hours)
+    seen: set[tuple[str, str, str]] = set()
+    if not p.exists():
+        return seen
+    try:
+        with open(p, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                    sent_at_raw = rec.get("sent_at", "")
+                    sent_at = datetime.fromisoformat(sent_at_raw.replace("Z", "+00:00"))
+                    if sent_at >= cutoff.replace(tzinfo=timezone.utc):
+                        seen.add((
+                            str(rec.get("source", "")),
+                            str(rec.get("type", "")),
+                            str(rec.get("asset", "")),
+                        ))
+                except Exception:  # noqa: BLE001 — skip malformed lines
+                    pass
+    except Exception:  # noqa: BLE001 — file read failure → empty dedup store
+        pass
+    return seen
+
+
+def _append_sent(p: Path, alert: dict, sent_at: datetime) -> None:
+    """Append a sent-record to the push_sent.jsonl dedup store."""
+    rec = {
+        "source": alert.get("source", ""),
+        "type": alert.get("type", ""),
+        "asset": alert.get("asset", ""),
+        "headline": alert.get("headline", "")[:120],
+        "priority": alert.get("priority", 0),
+        "sent_at": sent_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(rec) + "\n")
+    except Exception as e:  # noqa: BLE001 — never fail the dispatch on append
+        log.warning("push_sent append failed (non-fatal): %s", e)
+
+
+def _format_push_payload(alert: dict) -> str:
+    """Format one alert into a Telegram-ready push message."""
+    icon = alert.get("source_icon", "•")
+    headline = alert.get("headline", "")
+    detail = (alert.get("detail") or "")[:200]
+    action = alert.get("action", "")
+    score = alert.get("priority", 0)
+    site_url = (config.load().get("notify") or {}).get("site_url", "")
+    link = alert.get("link", "")
+    url_part = f"\n  <a href='{site_url}/{link}'>→ view</a>" if site_url and link else ""
+    lines = [
+        f"{icon} <b>{headline}</b>",
+    ]
+    if detail and detail.strip():
+        lines.append(detail.strip())
+    lines.append(f"  conviction: {action} | priority: {score}/100{url_part}")
+    return "\n".join(lines)
+
+
+# Explicit push-suppress list: families whose IC is documented-null or capped —
+# these must never push regardless of score (Article-2 hard floor exception).
+_PUSH_SUPPRESS = frozenset({
+    ("rotation", "entered_book"),
+    ("rotation", "left_book"),
+    ("rotation", "leadership_rotation"),
+})
+
+
+def push_priority_alerts(
+    threshold: int = 60,
+    window_hours: int = 6,
+    root: Path | str | None = None,
+    *,
+    today: date | None = None,
+    _dedup_store: Path | None = None,  # injectable for tests
+) -> list[dict]:
+    """Run ``build_triage()``, filter to priority >= threshold, dedup against
+    recent sends, dispatch via ``scripts.notify``.
+
+    CONFIG-GATED: reads ``alert_push.enabled`` from config.yml.  Default is
+    ``false``.  When disabled this function is a pure no-op (returns []).
+    Enabling it is an **operator + Article-2 event** — it converts the
+    display-only priority score into automated outbound dispatch.
+
+    Parameters
+    ----------
+    threshold:
+        Priority floor (0-100).  Alerts with priority < threshold are not
+        dispatched.  Default 60 = act/critical or act/major-fresh minimum.
+    window_hours:
+        Dedup window.  An alert with the same (source, type, asset) key is
+        silenced for this many hours after its last send.
+    root:
+        Optional repo root override (used in tests).
+    today:
+        Date override (used in tests).
+    _dedup_store:
+        Path override for push_sent.jsonl (used in tests).
+
+    Returns
+    -------
+    list[dict]
+        Newly dispatched alerts (empty list if gated off, no new alerts, or
+        dispatch failed).
+
+    Never raises — exits 0 whether it dispatched, skipped, or errored.
+    """
+    # --- CONFIG GATE (default OFF) ------------------------------------------
+    try:
+        cfg = config.load()
+        push_cfg = cfg.get("alert_push") or {}
+        if not push_cfg.get("enabled", False):
+            log.debug("push_priority_alerts: disabled (alert_push.enabled=false)")
+            return []
+    except Exception as e:  # noqa: BLE001 — never fail the call site
+        log.warning("push_priority_alerts: config read failed (%s) — no-op", e)
+        return []
+
+    # --- BUILD TRIAGE -------------------------------------------------------
+    try:
+        triage = build_triage(today=today)
+        alerts = triage.get("alerts") or []
+    except Exception as e:  # noqa: BLE001
+        log.warning("push_priority_alerts: build_triage failed (%s) — no-op", e)
+        return []
+
+    # --- FILTER: priority floor + explicit suppress list --------------------
+    candidates = [
+        a for a in alerts
+        if a.get("priority", 0) >= threshold
+        and (a.get("source", ""), a.get("type", "")) not in _PUSH_SUPPRESS
+    ]
+    if not candidates:
+        log.debug("push_priority_alerts: no alerts above threshold=%d", threshold)
+        return []
+
+    # --- DEDUP --------------------------------------------------------------
+    now = datetime.now(timezone.utc)
+    dedup_path = _dedup_store if _dedup_store is not None else _push_sent_path(root)
+    recent = _load_recent_sends(dedup_path, window_hours, now)
+    to_send = [
+        a for a in candidates
+        if (a.get("source", ""), a.get("type", ""), a.get("asset", "")) not in recent
+    ]
+    if not to_send:
+        log.info("push_priority_alerts: all %d candidates in dedup window — nothing new",
+                 len(candidates))
+        return []
+
+    # --- DISPATCH -----------------------------------------------------------
+    try:
+        from scripts.notify import send_discord, send_telegram  # noqa: PLC0415
+    except Exception as e:  # noqa: BLE001
+        log.warning("push_priority_alerts: cannot import notify (%s) — no-op", e)
+        return []
+
+    dispatched: list[dict] = []
+    for a in to_send:
+        msg = _format_push_payload(a)
+        ok_tg = ok_dc = False
+        try:
+            ok_tg = send_telegram(msg)
+        except Exception as e:  # noqa: BLE001
+            log.warning("push_priority_alerts: send_telegram failed (%s)", e)
+        try:
+            ok_dc = send_discord(msg)
+        except Exception as e:  # noqa: BLE001
+            log.warning("push_priority_alerts: send_discord failed (%s)", e)
+        if ok_tg or ok_dc:
+            _append_sent(dedup_path, a, now)
+            dispatched.append(a)
+            log.info("push_priority_alerts: dispatched %s/%s priority=%d",
+                     a.get("source"), a.get("type"), a.get("priority", 0))
+        else:
+            log.info("push_priority_alerts: no channel available for %s/%s",
+                     a.get("source"), a.get("type"))
+
+    return dispatched

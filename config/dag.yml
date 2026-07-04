@@ -171,6 +171,9 @@ lanes:
         module: scripts.build_ai_desk_page
       - id: notify
         module: scripts.notify
+      - id: push_alerts
+        module: scripts.push_alerts
+        # W6a: config-gated OFF (alert_push.enabled=false); pure no-op until operator enables
       - id: archive_signals
         module: scripts.archive_signals
       - id: signal_sanity

@@ -17,7 +17,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| neural-web | 9 |
+| neural-web | 13 |
 | options-alpha | 2 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
@@ -30,15 +30,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 43 |
-| infrastructure | 20 |
+| infrastructure | 22 |
 | scored | 4 |
-| shadow | 28 |
+| shadow | 30 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 92 |
+| git | 96 |
 | gitignored-local | 2 |
 | r2 | 1 |
 
@@ -126,6 +126,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
 | spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
 | kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
+| reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
+| reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 0 | 0 |
 | kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
