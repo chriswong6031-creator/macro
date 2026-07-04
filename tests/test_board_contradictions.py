@@ -272,3 +272,93 @@ class TestEvidenceHealthMarker:
         assert health["altdata"] == "artifact_absent"
         assert "news" not in health
         assert health["smartmoney"] == "artifact_absent"
+
+
+# ---------------------------------------------------------------------------
+# 6. Blocked signal must never carry actionable urgency (W6-US invariant (b))
+# ---------------------------------------------------------------------------
+
+class TestBlockedUrgencyInvariant:
+    """Regression for the 2026-07 deploy-gate incident: REZI/NGVT/ATMU/PCG shipped
+    with label='BOTTOMING (blocked)' + urgency='imminent'. The builder pass that
+    suffixes '(blocked)' only downgraded urgency=='now', so 'imminent' slipped
+    through; their states (HOLD / TURN SIGNALED) also dodged the W8 arbiter's
+    BOTTOMING-class rule. These tests exercise the real builder function, not a
+    re-implementation."""
+
+    @staticmethod
+    def _blocked_row(ticker: str, state: str, urgency: str) -> dict:
+        # Exact shape of the violating rows in site/factordata/us_standouts.json
+        return {
+            "ticker": ticker, "state": state, "label": "BOTTOMING",
+            "label_zh": "筑底", "urgency": urgency, "lane": "buy",
+            "signal": {"last": {"quality": "block"}, "ticks": 1},
+            "entry_signal": {"status": "buy_soon"},
+        }
+
+    def _incident_rows(self) -> list[dict]:
+        return [
+            self._blocked_row("REZI", "TURN SIGNALED", "imminent"),
+            self._blocked_row("NGVT", "HOLD", "imminent"),
+            self._blocked_row("ATMU", "HOLD", "imminent"),
+            self._blocked_row("PCG", "HOLD", "imminent"),
+        ]
+
+    def test_imminent_blocked_rows_downgraded(self):
+        from scripts.build_stock_library import _enforce_blocked_buy_invariant
+        rows = self._incident_rows()
+        touched = _enforce_blocked_buy_invariant(rows)
+        assert touched == 4
+        for r in rows:
+            assert r["urgency"] == "caution", f"{r['ticker']}: imminent must not survive block"
+            assert "(blocked)" in r["label"]
+            assert "（受阻）" in r["label_zh"]
+
+    def test_now_blocked_still_downgraded(self):
+        from scripts.build_stock_library import _enforce_blocked_buy_invariant
+        rows = [self._blocked_row("X", "FRESH BUY", "now")]
+        _enforce_blocked_buy_invariant(rows)
+        assert rows[0]["urgency"] == "caution"
+
+    def test_unblocked_rows_untouched(self):
+        from scripts.build_stock_library import _enforce_blocked_buy_invariant
+        rows = [{"ticker": "OK", "state": "FRESH BUY", "label": "FRESH BUY",
+                 "urgency": "imminent", "signal": {"last": {"quality": "clean"}}}]
+        touched = _enforce_blocked_buy_invariant(rows)
+        assert touched == 0
+        assert rows[0]["urgency"] == "imminent"
+        assert rows[0]["label"] == "FRESH BUY"
+
+    def test_idempotent_no_double_suffix(self):
+        from scripts.build_stock_library import _enforce_blocked_buy_invariant
+        rows = self._incident_rows()
+        _enforce_blocked_buy_invariant(rows)
+        _enforce_blocked_buy_invariant(rows)
+        for r in rows:
+            assert r["label"].count("(blocked)") == 1
+            assert r["label_zh"].count("（受阻）") == 1
+
+    def test_checker_passes_on_enforced_artifact(self, tmp_path):
+        """End-to-end: the deploy-gate checker must accept what the builder emits."""
+        import json as _json
+        from scripts.build_stock_library import _enforce_blocked_buy_invariant
+        from scripts.check_board_contradictions import _check
+        rows = self._incident_rows()
+        _enforce_blocked_buy_invariant(rows)
+        artifact = tmp_path / "us_standouts.json"
+        artifact.write_text(_json.dumps({"buy": rows}))
+        assert _check(str(artifact)) == []
+
+    def test_checker_catches_pre_fix_shape(self, tmp_path):
+        """The exact artifact shape that shipped must trip invariant (b) — proves
+        the pages.yml gate catches this class if the builder regresses."""
+        import json as _json
+        from scripts.check_board_contradictions import _check
+        rows = self._incident_rows()
+        for r in rows:  # pre-fix builder: label suffixed, urgency left imminent
+            r["label"] = f"{r['label']} (blocked)"
+        artifact = tmp_path / "us_standouts.json"
+        artifact.write_text(_json.dumps({"buy": rows}))
+        violations = _check(str(artifact))
+        assert len(violations) == 4
+        assert all("(b)" in v and "block" in v for v in violations)

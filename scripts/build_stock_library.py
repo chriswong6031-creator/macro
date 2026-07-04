@@ -623,6 +623,38 @@ def _json_safe(o):
     return o
 
 
+# Urgency values that read as actionable on the board. A blocked signal must never
+# carry any of these (check_board_contradictions.py invariant (b) asserts the
+# artifact side; this is the builder side).
+_ACTIONABLE_URGENCIES = ("now", "imminent")
+
+
+def _enforce_blocked_buy_invariant(buy_rows: list[dict]) -> int:
+    """W6-US invariant (b): a BUY row whose signal.last.quality == 'block' must not
+    carry actionable urgency, and its label must carry the '(blocked)' marker.
+
+    Downgrades urgency in _ACTIONABLE_URGENCIES → 'caution'. The original pass only
+    downgraded 'now'; 'imminent' slipped through and shipped rows with
+    label='BOTTOMING (blocked)' + urgency='imminent' (REZI/NGVT/ATMU/PCG, 2026-07),
+    tripping the pages.yml deploy gate. Mutates rows in place; returns rows touched.
+    """
+    touched = 0
+    for _r in buy_rows:
+        _last = (_r.get("signal") or {}).get("last") or {}
+        if _last.get("quality") != "block":
+            continue
+        touched += 1
+        if _r.get("urgency") in _ACTIONABLE_URGENCIES:
+            _r["urgency"] = "caution"
+        _lbl = _r.get("label")
+        if _lbl and "(blocked)" not in str(_lbl):
+            _r["label"] = f"{_lbl} (blocked)"
+        _lbl_zh = _r.get("label_zh")
+        if _lbl_zh and "（受阻）" not in str(_lbl_zh):
+            _r["label_zh"] = f"{_lbl_zh}（受阻）"
+    return touched
+
+
 def _basket_membership_map() -> dict[str, list[dict]]:
     """All active thematic basket memberships per ticker — for the detail page.
     Reads membership.json (no live performance data needed). Returns
@@ -2237,11 +2269,18 @@ def main() -> int:
                         _ra["label"] = "Hold — entry aged" if not _ext_extended_a else "Hold — extended"
                         _ra["label_zh"] = "持有—入场信号陈旧" if not _ext_extended_a else "持有—已过热"
                     _arbiter_downgrade_count += 1
-                # Rule 2: urgency=imminent with blocked/BOTTOMING state
-                if _ra.get("urgency") == "imminent" and _state_a in _BOTM_STATES:
+                # Rule 2: urgency=imminent with blocked signal or BOTTOMING state.
+                # The blocked-quality leg was missing until 2026-07 (rule text said
+                # "blocked" but the code only checked _BOTM_STATES): HOLD/TURN-SIGNALED
+                # rows with quality=block kept urgency=imminent, then invariant (b)
+                # suffixed their label '(blocked)' → deploy-gate contradiction.
+                _blocked_a = (_sig_a.get("last") or {}).get("quality") == "block"
+                if _ra.get("urgency") == "imminent" and (_state_a in _BOTM_STATES or _blocked_a):
                     _ra["urgency"] = "caution"
                     if not _ra.get("arbiter_note"):
-                        _ra["arbiter_note"] = f"urgency imminent downgraded (state={_state_a})"
+                        _why2 = (f"state={_state_a}" if _state_a in _BOTM_STATES
+                                 else "blocked signal")
+                        _ra["arbiter_note"] = f"urgency imminent downgraded ({_why2})"
                     _arbiter_downgrade_count += 1
                 # Rule 3 (W2): band high/constructive while verdict is lagging/no-clear-edge
                 # → demote band one step so the visual band reflects the conviction read.
@@ -2283,24 +2322,10 @@ def main() -> int:
                 + "; ".join(_band_verdict_violations))
 
         # (b) BUY label with blocked signal: downgrade label+urgency so a row labeled
-        #     BUY/FRESH never shows urgency='now' when signal.last.quality=='block'.
-        #     We mutate the row (not just log) so the invariant enforces itself in the artifact.
-        _blocked_buy_count = 0
-        for _r in wide["buy"]:
-            _sig3 = _r.get("signal") or {}
-            _last3 = _sig3.get("last") or {}
-            if _last3.get("quality") == "block":
-                _blocked_buy_count += 1
-                # downgrade urgency from "now" to "caution" if present
-                if _r.get("urgency") == "now":
-                    _r["urgency"] = "caution"
-                # downgrade label: prefix with "(blocked)" marker
-                _lbl3 = _r.get("label")
-                if _lbl3 and "(blocked)" not in str(_lbl3):
-                    _r["label"] = f"{_lbl3} (blocked)"
-                _lbl3_zh = _r.get("label_zh")
-                if _lbl3_zh:
-                    _r["label_zh"] = f"{_lbl3_zh}（受阻）"
+        #     BUY/FRESH never shows actionable urgency (now/imminent) when
+        #     signal.last.quality=='block'. We mutate the row (not just log) so the
+        #     invariant enforces itself in the artifact (see _enforce_blocked_buy_invariant).
+        _blocked_buy_count = _enforce_blocked_buy_invariant(wide["buy"])
         if _blocked_buy_count:
             log.warning("W6-US invariant (b): %d BUY rows have signal.last.quality=block — "
                         "urgency downgraded to caution, label suffixed (blocked)",
