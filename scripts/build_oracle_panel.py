@@ -59,9 +59,15 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
+# --data-dir override for off-render-path runs: the heavy stores
+# (massive_stock_day) live only in the MAIN checkout's data/, while this
+# script often runs from a worktree whose data/ carries just the committed
+# files. Set once by main() before any build; None = config default.
+_DATA_DIR_OVERRIDE: Path | None = None
+
 
 def _data_dir() -> Path:
-    return config.data_dir()
+    return _DATA_DIR_OVERRIDE if _DATA_DIR_OVERRIDE is not None else config.data_dir()
 
 
 def _out_dir() -> Path:
@@ -291,7 +297,15 @@ def main() -> None:
                         help="End date (inclusive)")
     parser.add_argument("--limit", type=int, default=None, metavar="N",
                         help="Cap member ticker loads per node (smoke run)")
+    parser.add_argument("--data-dir", default=None, metavar="PATH",
+                        help="Override the data directory (off-render-path runs "
+                             "from a worktree read the MAIN checkout's stores)")
     args = parser.parse_args()
+
+    if args.data_dir:
+        global _DATA_DIR_OVERRIDE
+        _DATA_DIR_OVERRIDE = Path(args.data_dir)
+        log.info("data dir override: %s", _DATA_DIR_OVERRIDE)
 
     panel_s: pd.DataFrame | None = None
     panel_m: pd.DataFrame | None = None
