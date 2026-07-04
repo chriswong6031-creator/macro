@@ -2006,6 +2006,42 @@
       "state": "Phase-0 verdict SHIPPED (#1185): GO=grades_upgraded — heating/hot/cooling graded descriptive/unconfirmed, broken graded backtested. Archive lane as of 2026-07-02: 10 snapshots, 161 heat rows (2026-06-18 → 2026-07-02), 0 gradeable at 21d yet.",
       "next_step": "python -m scripts.calibrate_sector_pulse_heat — regrades automatically from the accrued archive lane; check whether the broken dd21 edge reproduces on the live board and whether any refuted tier (heating/hot/cooling) turns measurable at 46-wide rank-delta firing rates.",
       "phase_hint": "sector_pulse W6 — proxy verdict shipped, archive confirmation accruing"
+    },
+    {
+      "id": "neuralweb-kernel-q1-batch",
+      "name": "Neural Web — Reliability Kernel Q1 Decision Batch",
+      "kind": "parked_research",
+      "priority": "high",
+      "cadence": "quarterly (manual: python3 scripts/run_kernel_decisions.py)",
+      "what": "Quarterly FDR batch over kernel_estimates.parquet cells. Pre-registered rule: eligible = n_eff >= 25 AND wilson_ci_low not None AND date_last within 380d. P-value: one-sided sign test (binomial, H0=0.5). BH FDR alpha=0.10 across ALL eligible cells as ONE family ('reliability_kernel'). Trial ledger registered BEFORE p-values (anti-peeking code-enforced). Survivors written to data/neuralweb/kernel_decisions.json; only survivors[] may feed behavior-changing consumers.",
+      "source": "scripts/run_kernel_decisions.py",
+      "storage": "data/neuralweb/kernel_decisions.json",
+      "started": "2026-07-04",
+      "come_back_on": "2026-10-01",
+      "come_back_note": "2026-10-01 — FIRST_BATCH_DUE. Run: python3 scripts/run_kernel_decisions.py. Gate spec: n_eff >= 25, wilson_ci_low not None, date_last within 380d, BH FDR alpha=0.10, sign test H0=0.5, trial_family='reliability_kernel'. Only survivors[] may feed behavior-changing consumers; each hookup needs its own PR + registry event.",
+      "maturation": "n_eff >= 25 per cell AND date_last within 380d; quarterly cadence enforced in code (exits 1 before FIRST_BATCH_DUE).",
+      "status": "accruing",
+      "state": "pre-registration only; kernel_decisions.json seeded empty (batch_id=null, survivors=[]); first batch due 2026-10-01.",
+      "next_step": "Run scripts/run_kernel_decisions.py on or after 2026-10-01; review survivors list; wire each survivor individually via its own PR + registry event.",
+      "phase_hint": "Neural Web W3 PR2 — decision machinery armed, not fired"
+    },
+    {
+      "id": "market-state-weights-vs-equal",
+      "name": "Market State — hand weights vs equal-weight Brier (h21 drawdown-concordance)",
+      "kind": "parked_research",
+      "priority": "medium",
+      "cadence": "quarterly measurement (not nightly; components accrue nightly via market_state_audit)",
+      "what": "Pre-registered measurement: do market_state's hand weights (trend .24/risk .18/vol .16/breadth .16/liquidity .14/stress .12) beat equal-weight-renormalized on h21 drawdown-concordance (any_dd5_within_h21 Brier skill vs intercept-only base rate)? Primary metric: Brier skill score for hand-weighted raw_score vs equal-weight counterfactual recomputed from the SAME logged per-component scores. N floor: 250 trading days of component-logged forward_log.jsonl entries. Verdict printed either way — do-no-harm gate: if hand weights fail (Brier_hand < Brier_equal OR fp_hand > fp_equal), print 'equal-weight baseline meets or beats hand weights', no reweighting. Component history does not exist pre-2026-07-04 (4 entries, no components logged); logger patched in W3 PR2 to accrue per-component scores nightly from today.",
+      "source": "engine/market_state_audit.py (_entry_from_snapshot now logs components)",
+      "storage": "data/market_state/forward_log.jsonl (components key additive — old entries lack it, new entries carry it)",
+      "started": "2026-07-04",
+      "come_back_on": "2027-05-01",
+      "come_back_note": "2027-05-01 (~250 trading days of component-logged entries from 2026-07-04). Measurement: load all forward_log.jsonl rows with 'components' key AND graded.any_dd5_within_h21 resolved (h21 matured); compute hand_raw_score (already logged) and equal_weight counterfactual (sum(score*1/n_components) renormalized); map both to verdicts; Brier skill + F1/precision/fp comparison. Today's honest verdict: INSUFFICIENT PIT HISTORY — 4 forward-log entries, components never logged; accrual armed from 2026-07-04.",
+      "maturation": "n >= 250 trading days of component-logged entries with graded.any_dd5_within_h21 resolved (h21 matured ~21bd after as_of).",
+      "status": "accruing",
+      "state": "TODAY'S VERDICT (printed either way): INSUFFICIENT PIT HISTORY — accrual armed, honest verdict due ~2027-05. 4 forward-log entries pre-patch, components never logged. Logger patched 2026-07-04 (W3 PR2) to accrue per-component scores nightly.",
+      "next_step": "Return 2027-05-01: load forward_log.jsonl rows with 'components' key + graded, compute Brier skill hand vs equal-weight, print verdict either way, update this registry note with the outcome.",
+      "phase_hint": "Neural Web W3 PR2 — pre-registration only, measurement pending 250d accrual"
     }
   ]
 }
