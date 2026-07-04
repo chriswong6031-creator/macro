@@ -84,8 +84,8 @@
 
   <div class="sd-head">
     <div>
-      <h1>{{ sub.name }}</h1>
-      <div class="sd-theme">{{ t('Theme', '主题') }}: <b>{{ sub.theme }}</b> · {{ sub.n_members }} {{ t('stocks', '只成分股') }}
+      <h1>{{ t(sub.name, sub.name_zh) }}</h1>
+      <div class="sd-theme">{{ t('Theme', '主题') }}: <b>{{ t(sub.theme, sub.theme_zh) }}</b> · {{ sub.n_members }} {{ t('stocks', '只成分股') }}
         · {{ t('heat rank', '热度排名') }} #{{ sub.rank }}{{ ' / ' ~ n_total }}</div>
     </div>
     <span class="sd-q {{ q_cls }}">{{ t(q_en, q_zh) }} · {{ t(qx_en, qx_zh) }}</span>

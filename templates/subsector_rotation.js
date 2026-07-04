@@ -51,9 +51,10 @@
   function drawStrip(el){
     el.className='sr-scope sr-strip';
     var m={}; _data.subsectors.forEach(function(s){m[s.key]=s;});
+    function dual(en,zh){return '<span class="l-en">'+esc(en)+'</span><span class="l-zh">'+esc(zh||en)+'</span>';}
     function chip(s){var v=s.perf&&s.perf['1W'];var q=QUAD[s.quadrant];
       return '<a class="srx-chip" href="subsector_rotation.html"><span class="srx-q '+q.cls+'"></span>'
-        +'<b>'+esc(s.name)+'</b><span class="srx-th">'+esc(s.theme)+'</span>'
+        +'<b>'+dual(s.name,s.name_zh)+'</b><span class="srx-th">'+dual(s.theme,s.theme_zh)+'</span>'
         +'<span class="srx-pc '+pcCls(v)+'">'+fmtPc(v)+'</span></a>';}
     var em=(_data.highlights.emerging||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,5);
     var fa=(_data.highlights.fading||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,4);
@@ -92,18 +93,19 @@
       +'<div class="sr-tr-hd">📊 '+L('Track record','跟踪记录')
         +'<span class="sr-tr-q" style="color:var('+vb[2]+');border-color:var('+vb[2]+')">'+L(vb[0],vb[1])+'</span>'
         +'<span class="sr-tr-meta">'+(tr.n_days||0)+' '+L('days logged','天')+' · '+(tr.n_snapshots||0)+' '+L('calls logged','次记录')+'</span></div>'
-      +'<div class="sr-tr-note">'+esc(tr.note||'')+'</div>'
+      +'<div class="sr-tr-note">'+L(esc(tr.note||''),esc(tr.note_zh||tr.note||''))+'</div>'
       +'<div class="sr-tr-body"><table class="sr-tr-tbl"><thead><tr>'
         +'<th>'+L('Horizon','周期')+'</th><th class="num">'+L('Matured','已到期')+'</th>'
         +'<th class="num">'+L('Emerging hit','升温命中')+'</th><th class="num">'+L('Fading hit','退潮命中')+'</th>'
         +'<th class="num">'+L('Score IC','评分IC')+'</th><th class="num">'+L('HAC t','HAC t')+'</th></tr></thead>'
         +'<tbody>'+rows+'</tbody></table></div>'
       +(misses?'<div class="sr-tr-misses"><span class="sr-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')+'</span>'+misses+'</div>':'')
-      +'<div class="sr-tr-disc">'+esc(tr.disclaimer||'')+'</div>';
+      +'<div class="sr-tr-disc">'+L(esc(tr.disclaimer||''),esc(tr.disclaimer_zh||tr.disclaimer||''))+'</div>';
   }
 
   function items(){return _unit==='themes'?_data.themes:_data.subsectors;}
-  function nameOf(it){return _unit==='themes'?it.theme:it.name;}
+  function themeOf(it){return isZh()?(it.theme_zh||it.theme):it.theme;}
+  function nameOf(it){return _unit==='themes'?themeOf(it):(isZh()?(it.name_zh||it.name):it.name);}
   function keyOf(it){return _unit==='themes'?it.theme:it.key;}
   // per-subsector detail page (themes have none). Relative to the rotation page.
   function detailHref(k){return 'rotation/'+encodeURIComponent(k)+'.html';}
@@ -366,7 +368,7 @@
         +'<span class="sr-vs-rk">'+(i+1)+'</span>'
         +'<span class="sr-vs-q '+q.cls+'"></span>'
         +'<span class="sr-vs-main">'+(hasDetail()?'<a class="sr-vs-nm" href="'+detailHref(keyOf(d))+'">'+esc(nameOf(d))+'</a>':'<span class="sr-vs-nm">'+esc(nameOf(d))+'</span>')
-          +(_unit==='subsectors'?'<span class="sr-vs-th">'+esc(d.theme)+'</span>':'')+'</span>'
+          +(_unit==='subsectors'?'<span class="sr-vs-th">'+esc(themeOf(d))+'</span>':'')+'</span>'
         +'<b class="'+pcCls(w1)+'">'+fmtPc(w1)+'</b>'
         +'<b class="'+pcCls(m1)+'">'+fmtPc(m1)+'</b>'
         +'<b class="sr-vs-k '+pcCls(key)+'">'+kt+'</b>'
@@ -411,7 +413,7 @@
     {k:'rs_mom',en:'Mom',zh:'动量',num:true},
     {k:'emerging_score',en:'Heat',zh:'热度',num:true}
   ];
-  function cellVal(d,c){ if(c.perf) return d.perf?d.perf[c.k]:null; if(c.k==='name') return nameOf(d); return d[c.k]; }
+  function cellVal(d,c){ if(c.perf) return d.perf?d.perf[c.k]:null; if(c.k==='name') return nameOf(d); if(c.k==='theme') return themeOf(d); return d[c.k]; }
   function drawTable(el){
     if(_unit==='themes') COLS[0].en='Theme';else COLS[0].en='Subsector';
     var its=items().slice().sort(function(a,b){
@@ -460,7 +462,7 @@
     var mem=(d.members||[]).slice(0,8).map(function(m){return '<span class="sr-chip '+pcCls(m['1M'])+'">'+esc(m.t)+' '+fmtPc(m['1M'])+'</span>';}).join('');
     var el=tipEl();
     el.innerHTML='<div class="sr-tip-hd"><b>'+esc(nameOf(d))+'</b><span class="sr-q '+q.cls+'">'+(isZh()?q.zh:q.en)+'</span></div>'
-      +(_unit==='subsectors'?'<div class="sr-tip-th">'+esc(d.theme)+' · '+d.n_members+' '+L('names','只')+'</div>':'<div class="sr-tip-th">'+d.n_subs+' '+L('subsectors','子行业')+'</div>')
+      +(_unit==='subsectors'?'<div class="sr-tip-th">'+esc(themeOf(d))+' · '+d.n_members+' '+L('names','只')+'</div>':'<div class="sr-tip-th">'+d.n_subs+' '+L('subsectors','子行业')+'</div>')
       +'<div class="sr-tsp-row">'+sp+'</div>'
       +'<div class="sr-tip-mt">'+L('accel','加速')+' <b class="'+pcCls(d.accel)+'">'+(d.accel==null?'—':(d.accel>0?'+':'')+d.accel.toFixed(1))+'</b> · '
         +L('RS','相对强度')+' <b>'+(d.rs_ratio>0?'+':'')+d.rs_ratio.toFixed(2)+'</b> · '+L('mom','动量')+' <b class="'+pcCls(d.rs_mom)+'">'+(d.rs_mom>0?'+':'')+d.rs_mom.toFixed(2)+'</b></div>'

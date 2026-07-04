@@ -54,6 +54,7 @@ def _fmt_pc(v) -> str:
 def _lede(sub: dict) -> tuple[str, str]:
     """Plain-language 'where it sits' sentence, per quadrant + acceleration."""
     name, q = sub["name"], sub["quadrant"]
+    name_zh = sub.get("name_zh") or name
     accel = sub.get("accel")
     accel_up = accel is not None and accel > 0
     en = {
@@ -63,10 +64,10 @@ def _lede(sub: dict) -> tuple[str, str]:
         "lagging":   f"{name} is lagging — weaker than the median subsector and its relative strength is still falling.",
     }[q]
     zh = {
-        "leading":   f"{name} 是仍在走强的市场领先者——相对中位数子行业偏强，且其相对强度仍在上升。",
-        "weakening": f"{name} 是正在走弱的昔日龙头——绝对水平仍强于大盘，但相对强度已掉头向下（资金常从这里轮出）。",
-        "improving": f"{name} 正从落后中触底回升——水平弱于中位数，但相对强度正在改善（早期轮入常在此显现）。",
-        "lagging":   f"{name} 处于落后——弱于中位数子行业，且相对强度仍在下行。",
+        "leading":   f"{name_zh} 是仍在走强的市场领先者——相对中位数子行业偏强，且其相对强度仍在上升。",
+        "weakening": f"{name_zh} 是正在走弱的昔日龙头——绝对水平仍强于大盘，但相对强度已掉头向下（资金常从这里轮出）。",
+        "improving": f"{name_zh} 正从落后中触底回升——水平弱于中位数，但相对强度正在改善（早期轮入常在此显现）。",
+        "lagging":   f"{name_zh} 处于落后——弱于中位数子行业，且相对强度仍在下行。",
     }[q]
     tail_en = (" Acceleration is positive, so the move is picking up pace."
                if accel_up else " Acceleration is negative, so the pace is fading.") if accel is not None else ""
