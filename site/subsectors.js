@@ -38,29 +38,13 @@
   function stockHref(tk) { return 'stock.html#' + encodeURIComponent(tk); }
   function groupsOf(ds) { return (DATA[ds] || {})[DS[ds].groupsKey] || []; }
 
-  /* ----- index leadership (rising star + drivers + per-tab running/coiling) ----- */
+  /* ----- index leadership data — per-tab running / coiling + the rising-star tab badge
+     (the full leadership-rotation scorecard was moved to sector_central.html) ----- */
   var LEAD = null;
   function quadInfo(q) { return ({ leading: ['Leading', '领先', 'var(--up)'], improving: ['Improving', '改善', 'var(--info)'], weakening: ['Weakening', '走弱', 'var(--orange)'], lagging: ['Lagging', '落后', 'var(--down)'] })[q] || ['—', '—', 'var(--muted)']; }
   function quadPill(q) { var i = quadInfo(q); return '<span class="qp" style="color:' + i[2] + ';border-color:' + i[2] + '">' + L(i[0], i[1]) + '</span>'; }
   function stageBadge(st) { var m = ({ primed: ['Primed', '就绪', 'var(--up)'], coiling: ['Coiling', '蓄势', 'var(--info)'], watch: ['Watch', '观察', 'var(--muted)'], knife: ['Knife', '刀口', 'var(--down)'] })[st] || ['—', '—', 'var(--muted)']; return '<span class="qp" style="color:' + m[2] + ';border-color:' + m[2] + '">' + L(m[0], m[1]) + '</span>'; }
   function tfChip(lbl, dir) { var c = dir === 'up' ? 'var(--up)' : dir === 'down' ? 'var(--down)' : 'var(--muted)'; var a = dir === 'up' ? '▲' : dir === 'down' ? '▼' : dir === 'flat' ? '–' : '·'; return '<span class="tfc" style="color:' + c + '">' + lbl + ' ' + a + '</span>'; }
-  function trackBox(tr) {
-    if (!tr) return '';
-    var vcol = tr.verdict === 'validated' ? 'var(--up)' : tr.verdict === 'measuring' ? 'var(--info)' : 'var(--muted)';
-    var vlab = tr.verdict === 'validated' ? L('Validated', '已验证') : tr.verdict === 'measuring' ? L('Measuring', '测量中') : L('Accruing', '积累中');
-    var days = tr.n_days || 0;
-    var h = '<div class="lead-track"><span class="tr-badge" style="color:' + vcol + ';border-color:' + vcol + '">📊 ' + L('Forward track record', '前瞻战绩') + ': ' + vlab + '</span> '
-      + '<span class="tr-txt">' + L((tr.n_snapshots || 0) + ' calls logged over ' + days + (days === 1 ? ' day' : ' days'), (tr.n_snapshots || 0) + ' 条记录，历时 ' + days + ' 天') + '</span>';
-    var h21 = (tr.horizons || {})['21'];
-    if (tr.any_matured && h21 && h21.n_matured) {
-      var bs = h21.by_stage || {}, parts = [];
-      ['running', 'coiling', 'coiling_primed'].forEach(function (st) { if (bs[st] && bs[st].hit_rate != null) parts.push((st === 'coiling_primed' ? 'coil✓' : st) + ' ' + Math.round(bs[st].hit_rate * 100) + '% (' + bs[st].n + ')'); });
-      if (parts.length) h += ' · <span class="tr-txt">' + L('21d hit-rate: ', '21日命中率：') + parts.join(', ') + '</span>';
-    } else {
-      h += ' · <span class="tr-txt" style="color:var(--muted)">' + L('grades mature at 5 / 10 / 21 / 63d — measured, not asserted', '5 / 10 / 21 / 63 日后成熟评级——实测而非断言') + '</span>';
-    }
-    return h + '</div>';
-  }
   // theme.js wrapTables() runs on DOMContentLoaded, BEFORE this file async-injects its tables,
   // so our tables never get the .tbl-scroll wrapper and bleed past the viewport on mobile.
   // Re-apply the house wrap (theme.css styles .tbl-scroll) to any table we render.
@@ -71,53 +55,6 @@
       var w = document.createElement('div'); w.className = 'tbl-scroll';
       t.parentNode.insertBefore(w, t); w.appendChild(t);
     });
-  }
-
-  function leadershipStrip() {
-    var el = document.getElementById('sc-leadership'); if (!el) return;
-    var d = LEAD; if (!d || !d.ok) { el.innerHTML = ''; return; }
-    var star = d.rising_star, ln = d.leader_now, T = d.tabs || {};
-    var order = ['subsectors', 'nasdaq', 'russell', 'baskets'].filter(function (t) { return T[t]; });
-    var whyTxt = (star && star.why && star.why.length) ? star.why.map(function (w) { return w.leg; }).join(' · ') : L('mixed legs', '综合');
-    var lnQuad = ln ? (T[ln.tab] || {}).quadrant : null;
-    var lnNote = (lnQuad === 'weakening' || lnQuad === 'lagging') ? L(' · but weakening', ' · 但走弱') : '';
-    var hero = '<div class="lead-hero">';
-    if (star) hero += '<div class="lead-star"><div class="lbl">⭐ ' + L('Rising star', '上升之星') + '</div><div class="big">' + L(star.label[0], star.label[1]) + ' <span class="las">LAS ' + (star.las >= 0 ? '+' : '') + num(star.las, 2) + '</span></div><div class="why">' + L('leadership accelerating fastest — ', '领导加速最快——') + esc(whyTxt) + '</div></div>';
-    if (ln) hero += '<div class="lead-leader"><div class="lbl">' + L('Leader now', '当前领导') + '</div><div class="big">' + L(ln.label[0], ln.label[1]) + '</div><div class="why">' + L('highest RS level', '相对强弱水平最高') + lnNote + '</div></div>';
-    hero += '</div>';
-    var rows = order.map(function (t) {
-      var v = T[t], isStar = star && star.tab === t;
-      return '<tr' + (isStar ? ' class="star"' : '') + '><td class="u">' + (isStar ? '⭐ ' : '') + L(v.label[0], v.label[1]) + '</td>'
-        + '<td class="b">' + (v.las >= 0 ? '+' : '') + num(v.las, 2) + '</td>'
-        + '<td>' + num(v.rs_ratio, 2) + '</td>'
-        + '<td>' + signed(v.rs_mom, 2) + '</td>'
-        + '<td style="text-align:right">' + quadPill(v.quadrant) + '</td>'
-        + '<td>' + signed(v.breadth_thrust != null ? v.breadth_thrust * 100 : null, 1) + '</td>'
-        + '<td>' + (v.participation != null ? num(v.participation * 100, 0) + '%' : '–') + '</td></tr>';
-    }).join('');
-    var tbl = '<table class="lead-tbl"><thead><tr><th>' + L('Universe', '指数域') + '</th><th>LAS</th><th>' + L('RS level', 'RS水平') + '</th><th>' + L('RS mom', 'RS动量') + '</th><th>' + L('Quadrant', '象限') + '</th><th>' + L('Breadth thrust', '广度推力') + '</th><th>' + L('Particip.', '参与度') + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
-    var chips = ((d.drivers && d.drivers.ratios) || []).map(function (r) {
-      var up = r.rising;
-      return '<div class="chip ' + (up ? 'up' : 'dn') + '"><div class="ct">' + L(r.label_en, r.label_zh) + '</div>'
-        + '<div class="cv">' + (up ? '▲ ' : '▼ ') + L(r.read_en, r.read_zh) + '</div>'
-        + '<div class="cm">20d ' + signed(r.mom20, 1) + ' · 60d ' + signed(r.mom60, 1) + (r.pctile != null ? ' · ' + L('pctile', '分位') + ' ' + num(r.pctile, 0) : '') + '</div></div>';
-    }).join('');
-    var rg = d.regime, regLine = '';
-    if (rg) {
-      var liqZh = ({ expanding: '扩张', contracting: '收缩', neutral: '中性', unknown: '未知' })[rg.liquidity] || rg.liquidity;
-      var liqTxt = rg.liquidity ? ' · ' + L('liquidity ' + rg.liquidity, '流动性' + liqZh) : '';
-      regLine = '<div class="lead-regime">🌐 ' + L('Regime backdrop', '宏观象限') + ': <b>' + esc(rg.quad) + ' ' + L(rg.name_en, rg.name_zh) + '</b> (' + L(rg.axes_en, rg.axes_zh) + ')' + liqTxt
-        + ' → ' + L('expected tilt: ', '预期倾向：') + L(rg.tilt_en, rg.tilt_zh) + '. <span class="rg-cav">' + L('Odds-tilt, not a rule — compare to what is actually leading.', '仅为概率倾向，非规则——请对照上方实际领涨。') + '</span></div>';
-    }
-    var drivers = (chips || regLine) ? '<div class="lead-drivers"><div class="dh">' + L('Why — leadership drivers (macro cause + observable ratios)', '为什么——领导驱动（宏观成因 + 可观测比率）') + '</div>' + regLine + (chips ? '<div class="chips">' + chips + '</div>' : '') + '</div>' : '';
-    var mac = d.macro, macLine = '';
-    if (mac) {
-      var dot = mac.color === 'red' ? '🔴' : mac.color === 'yellow' ? '🟡' : mac.color === 'green' ? '🟢' : '⚪';
-      var held = mac.severity === 'risk_off' ? L(' — coil calls held back (let washouts confirm)', ' — 蓄势信号已收敛（待清洗确认）') : '';
-      macLine = '<div class="lead-macro">' + L('Macro backdrop', '宏观背景') + ': ' + dot + ' ' + L(mac.label_en || mac.verdict || '—', mac.label_zh || mac.verdict || '—') + (mac.score != null ? ' <span style="color:var(--muted)">(' + mac.score + '/100)</span>' : '') + held + '</div>';
-    }
-    el.innerHTML = '<div class="lead-head"><h2>🧭 ' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + macLine + tbl + drivers + trackBox(d.track_record);
-    wrapTbls(el);
   }
 
   function leadCard(e) {
@@ -213,7 +150,7 @@
 
   function funnelSection(payload, ds) {
     var dg = payload.double_gated || {};
-    dg.double_buy = dg.double_buy || []; dg.headwind_warn = dg.headwind_warn || [];  // tolerate a partial payload
+    dg.double_buy = dg.double_buy || [];  // tolerate a partial payload
     var maxs = Math.max.apply(null, [0.01].concat(dg.double_buy.map(function (r) { return r.combined_score || 0; })));
     var rows = dg.double_buy.map(function (r) {
       var w = Math.round(60 * (r.combined_score || 0) / maxs);
@@ -224,20 +161,10 @@
         + '<td class="num">' + (r.combined_score == null ? '–' : r.combined_score.toFixed(2)) + ' <span class="scbar" style="width:' + w + 'px"></span></td>'
         + '<td>' + signed(r.vs_subsector_20d) + '</td></tr>';
     }).join('');
-    var warnRows = dg.headwind_warn.map(function (r) {
-      return '<tr><td class="tk"><a href="' + stockHref(r.ticker) + '">' + esc(r.ticker) + '</a></td>'
-        + '<td>' + tierBadge(r.stock_tier) + '</td>'
-        + '<td><a href="' + detailHref(ds, r.subsector_key) + '">' + esc(r.subsector) + '</a></td>'
-        + '<td><span class="pill avoid">' + esc(r.subsector_state) + '</span></td></tr>';
-    });
     var h = '<div class="sec"><h2>🎯 ' + L('Double-confluence buys', '双重汇聚买入') + ' <span class="n" style="color:var(--muted);font-weight:500">' + dg.double_buy.length + '</span></h2>'
       + '<div class="desc">' + L('Stocks whose OWN T1-T4 cascade is buyable AND whose subsector has a tailwind. Ranked by combined conviction = stock weight × subsector buyability factor (T1×T1 = 1.0).',
         '自身 T1-T4 级联可买且所在子行业顺风的个股。按综合把握度排序 = 个股权重 × 子行业可买系数（T1×T1 = 1.0）。') + '</div>';
     h += dg.double_buy.length ? '<table class="tbl"><thead><tr><th>' + L('Stock', '个股') + '</th><th>' + L('Stock tier', '个股层级') + '</th><th>' + L('Subsector', '子行业') + '</th><th>' + L('Subsector', '子行业') + '</th><th>' + L('Conviction', '综合把握') + '</th><th>' + L('vs sub 20d', '相对子行业20日') + '</th></tr></thead><tbody>' + rows + '</tbody></table>' : '<div class="empty">' + L('No double-confluence buys right now.', '当前无双重汇聚买入。') + '</div>';
-    if (warnRows.length) h += '<h2 style="margin-top:20px">⚠️ ' + L('Headwind warnings', '逆风警示') + ' <span class="n" style="color:var(--muted);font-weight:500">' + dg.headwind_warn.length + '</span></h2>'
-      + '<div class="desc">' + L('A great-looking stock (its own cascade fires) but its subsector is TOPPING / SELLING — the validated "don\'t chase the leadership institutions are distributing into" flag. Not a buy.',
-        '个股看似强势（自身级联触发），但所在子行业正见顶/派发——已验证的“别去追机构正在派发的领涨股”信号。非买入。') + '</div>'
-      + collapsibleTable('<tr><th>' + L('Stock', '个股') + '</th><th>' + L('Stock tier', '个股层级') + '</th><th>' + L('Subsector', '子行业') + '</th><th>' + L('Subsector regime', '子行业状态') + '</th></tr>', warnRows, 4);
     return h + '</div>';
   }
 
@@ -254,7 +181,7 @@
         + '<td>' + signed(r.rs_60d) + '</td>'
         + '<td class="num">' + (g.n_priced || g.n_members) + '</td></tr>';
     });
-    return '<div class="sec"><h2>📋 ' + L('All gateable ' + noun[0], '全部可评' + noun[1]) + ' <span class="n" style="color:var(--muted);font-weight:500">' + groups.length + '</span></h2>'
+    return '<div class="sec"><h2>📋 ' + L('All ' + noun[0], '全部' + noun[1]) + ' <span class="n" style="color:var(--muted);font-weight:500">' + groups.length + '</span></h2>'
       + collapsibleTable('<tr><th>' + L('Subsector', '子行业') + '</th><th>' + L('Sector', '板块') + '</th><th>' + L('Entry', '入场') + '</th><th>' + L('Regime', '状态') + '</th><th>' + L('Freshness', '新鲜度') + '</th><th>RS60</th><th>' + L('N', '数') + '</th></tr>', rows, 10) + '</div>';
   }
 
@@ -279,8 +206,8 @@
     var payload = DATA[ds];
     if (!payload || !payload.ok) { app.innerHTML = '<div class="empty">' + L('No data yet — run the nightly build.', '暂无数据——请运行夜间构建。') + '</div>'; return; }
     var cov = payload.coverage || {};
-    document.getElementById('sc-asof').innerHTML = L('as of ' + (payload.as_of || '—'), '截至 ' + (payload.as_of || '—')) + (cov.n_gateable != null ? ' · ' + cov.n_gateable + '/' + cov.n_subsectors + ' ' + L('gateable', '可评') : '');
-    var h = tabLeadership(ds) + entryNowSection(payload, ds) + funnelSection(payload, ds) + sectorStrip(payload, ds) + allGroupsSection(payload, ds);
+    document.getElementById('sc-asof').innerHTML = L('as of ' + (payload.as_of || '—'), '截至 ' + (payload.as_of || '—')) + (cov.n_gateable != null ? ' · ' + cov.n_gateable + '/' + cov.n_subsectors + ' ' + L('covered', '覆盖') : '');
+    var h = entryNowSection(payload, ds) + tabLeadership(ds) + funnelSection(payload, ds) + sectorStrip(payload, ds) + allGroupsSection(payload, ds);
     app.innerHTML = h;
     wrapTbls(app);
   }
@@ -309,7 +236,6 @@
       return fetch('marketdata/index_leadership.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
     }).then(function (lead) {
       LEAD = lead;
-      leadershipStrip();
       if (LEAD && LEAD.ok && LEAD.rising_star) {
         var el = document.querySelector('.sc-tab[data-tab="' + LEAD.rising_star.tab + '"]');
         if (el && !el.querySelector('.star-badge')) { var b = document.createElement('span'); b.className = 'star-badge'; b.textContent = ' ⭐'; b.title = 'Rising star — leadership accelerating fastest'; el.appendChild(b); }
