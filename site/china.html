@@ -67,16 +67,6 @@
               color: color-mix(in srgb, var(--c, var(--muted)) 84%, var(--text)); }
   .tip .lad.up { --c: var(--up); } .tip .lad.down { --c: var(--down); } .tip .lad.warn { --c: var(--warn); }
   .tip .lad.orange { --c: var(--orange); } .tip .lad.info { --c: var(--info); } .tip .lad.muted { --c: var(--muted); }
-  /* residual-alpha entry tags (extended/pullback/intact/laggard) */
-  .alpha-entry { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
-                 border-radius:9px; text-transform:capitalize; border:1px solid var(--line);
-                 white-space:nowrap; }
-  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
-                 border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text);
-                 border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
-  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
-  .ae-laggard,.ae-neutral { background:var(--panel2,var(--panel)); color:var(--muted); }
   /* consolidated stock-screener: segmented mode toggle */
   .sb-seg { display:inline-flex; flex-wrap:wrap; gap:4px; padding:4px; border-radius:11px;
             background:var(--panel2,color-mix(in srgb,var(--muted) 10%,var(--panel)));
