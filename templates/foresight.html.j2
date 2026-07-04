@@ -655,13 +655,13 @@
   </div>
   {% endif %}
 
-  {# ---- SUBSECTOR RADAR: the cascade signature over all 113 Finviz sub-industries ---- #}
+  {# ---- SUBSECTOR RADAR: the cascade signature over all 113 sub-industries ---- #}
   {% if subsectors and subsectors.subsectors %}
   <div class="fx-panel fx-radar">
     <h2>📡 {{ t('Subsector radar — the whole S&P 500 at sub-industry granularity', '子行业雷达——以子行业粒度覆盖整个标普500') }}</h2>
     <div class="sub">{{ t(
-      'The cascade runs the same <b>bottleneck × revision</b> signature over all <b>113 Finviz sub-industries</b> (503 names), not just the 18 curated themes — so you can see, market-wide, <b>where supply scarcity and estimate revisions are aligning</b>. The bottleneck here is a <b>text-only proxy</b> (EDGAR scarcity language), not FRED-confirmed — a screen to investigate, not a confirmed thesis.',
-      '级联将同一<b>瓶颈 × 预期修正</b>信号运行于全部<b>113个 Finviz 子行业</b>（503只成分股），而不仅是18个精选主题——从而在全市场范围看到<b>供给短缺与盈利预期在何处共振</b>。此处瓶颈为<b>纯文本代理</b>（EDGAR 短缺用语），非 FRED 确认——是待查筛选，而非确认论点。') }}
+      'The cascade runs the same <b>bottleneck × revision</b> signature over all <b>113 sub-industries</b> (503 names), not just the 18 curated themes — so you can see, market-wide, <b>where supply scarcity and estimate revisions are aligning</b>. The bottleneck here is a <b>text-only proxy</b> (EDGAR scarcity language), not FRED-confirmed — a screen to investigate, not a confirmed thesis.',
+      '级联将同一<b>瓶颈 × 预期修正</b>信号运行于全部<b>113个子行业</b>（503只成分股），而不仅是18个精选主题——从而在全市场范围看到<b>供给短缺与盈利预期在何处共振</b>。此处瓶颈为<b>纯文本代理</b>（EDGAR 短缺用语），非 FRED 确认——是待查筛选，而非确认论点。') }}
       <b>{{ subsectors.n_scarcity_aligned }}</b> / {{ subsectors.all_count }} {{ t('scanned sub-industries currently pair scarcity language with their revision read.', '个已扫描子行业当前将短缺用语与其预期读数配对。') }}</div>
     <table class="fx-radar-tbl">
       <thead><tr>

@@ -12,10 +12,10 @@
   // dataset registry — url, detail-page dir + key prefix, the group array key, and whether the
   // dataset carries an amalgamation/sector rollup strip + what to call it.
   var DS = {
-    subsectors: { url: 'marketdata/subsector_confluence.json', dir: 'subsector/', prefix: '', groupsKey: 'subsectors', noun: ['subsectors', '子行业'], rollup: ['Sector rollup', '板块汇总'], rollupDesc: ['Each Finviz sector as one equal-weight basket — the backdrop the subsectors live inside.', '每个 Finviz 板块作为一个等权篮子——子行业所处的大背景。'] },
+    subsectors: { url: 'marketdata/subsector_confluence.json', dir: 'subsector/', prefix: '', groupsKey: 'subsectors', noun: ['subsectors', '子行业'], rollup: ['Sector rollup', '板块汇总'], rollupDesc: ['Each sector as one equal-weight basket — the backdrop the subsectors live inside.', '每个 板块作为一个等权篮子——子行业所处的大背景。'] },
     baskets: { url: 'marketdata/basket_confluence.json', dir: 'subsector/', prefix: 'b-', groupsKey: 'baskets', noun: ['baskets', '篮子'], rollup: null },
     nasdaq: { url: 'marketdata/subsector_confluence_nasdaq.json', dir: 'subsector_nasdaq/', prefix: '', groupsKey: 'subsectors', noun: ['subsectors', '子行业'], rollup: ['Amalgamated complexes', '汇聚综合体'], rollupDesc: ['Higher-level complexes (semis, software, internet, the ex-tech bucket) — watch whether leadership rotates among them or bleeds out of tech. RS is vs QQQ (within-index).', '高层级综合体（半导体、软件、互联网、非科技桶）——观察领导地位是在它们之间轮动还是流出科技。相对强弱基准为 QQQ（指数内）。'] },
-    russell: { url: 'marketdata/subsector_confluence_russell.json', dir: 'subsector_russell/', prefix: '', groupsKey: 'subsectors', noun: ['subsectors', '子行业'], rollup: ['Sector amalgamations', '板块汇聚'], rollupDesc: ['The 11 Finviz sectors as equal-weight baskets — the natural small-cap rotation buckets. RS is vs IWM (within-index).', '11 个 Finviz 板块作为等权篮子——小盘股自然的轮动桶。相对强弱基准为 IWM（指数内）。'] }
+    russell: { url: 'marketdata/subsector_confluence_russell.json', dir: 'subsector_russell/', prefix: '', groupsKey: 'subsectors', noun: ['subsectors', '子行业'], rollup: ['Sector amalgamations', '板块汇聚'], rollupDesc: ['The 11 sectors as equal-weight baskets — the natural small-cap rotation buckets. RS is vs IWM (within-index).', '11 个 板块作为等权篮子——小盘股自然的轮动桶。相对强弱基准为 IWM（指数内）。'] }
   };
   var DATA = {};
   var TAB = 'subsectors';
