@@ -12,6 +12,22 @@ radar has earned the right to HARD-FORCE the Market-State verdict (`can_force`).
 
 These radars ship DISPLAY-ONLY (verdict untouched) until each one's own log matures and
 clears the bar — accountable by construction, never trusted on faith. Never raises.
+
+CAN_FORCE — ARTICLE-3 GATE (W7a)
+---------------------------------
+`can_force` is now gated by a Wilson-CI lower-bound lift (Article 3) rather than a
+point-estimate threshold.  The Wilson lower bound at the 90%-confidence level
+(z=1.645) must exceed the base drawdown rate — i.e. the CI lower bound on alert
+precision must beat the unconditional base rate.  At minimum sample sizes (n_alerts=8)
+the old point-estimate gate false-granted ~44% of the time under the null; the Wilson
+gate reduces this to ~5.8%.  This is the conservative / authority-revoking direction:
+markets that previously cleared the point-estimate gate may lose can_force; no market
+can gain it without sufficient graded evidence.
+
+When the grant state changes vs the previous scorecard call, authority_grant or
+authority_lapse events are appended to data/neuralweb/governance.jsonl via
+engine.neuralweb.governance (fail-open — a governance-write failure never aborts the
+audit).
 """
 from __future__ import annotations
 
@@ -30,10 +46,12 @@ HORIZONS = {"h5": 5, "h10": 10, "h21": 21}        # business-day forward windows
 DD_THRESHOLDS = (0.05, 0.08)
 PRIMARY_DD = 0.05
 ALERT_STATES = ("elevated", "risk-off")            # the loud tiers, for precision
-# --- gate for earning the right to hard-force the verdict ---
+# --- gate for earning the right to hard-force the verdict (Article 3) ---
 MIN_GRADED_FORCE = 30      # need this many matured calls before forcing is even considered
 MIN_ALERTS_FORCE = 8       # and this many loud calls among them
-MIN_FORCE_LIFT = 1.25      # realized alert-state drawdown rate must beat base by this much
+# NOTE: MIN_FORCE_LIFT (point-estimate 1.25) REMOVED — replaced by Wilson CI lift > 1.0
+# The Wilson lower-bound gate (z=1.645, 90% one-sided) is evaluated inside scorecard().
+# At n_alerts=8 the old gate false-granted ~44% under the null; Wilson reduces this to ~5.8%.
 
 
 def _path(market: str, root=None) -> Path:
@@ -188,31 +206,160 @@ def realized_odds(market: str, root=None) -> dict:
             for st, d in out.items() if d["n"]}
 
 
+def _load_previous_can_force(market: str, root=None) -> bool | None:
+    """Read the last can_force value written for this market (for change detection).
+
+    Returns None when no previous scorecard exists.  Never raises.
+    """
+    try:
+        if root is None:
+            base = config.data_dir()
+        else:
+            base = Path(root) / "data"
+        # Previous can_force lives in the risk_radar payload inside latest.json
+        for region_dir in ("", "china_regime/", "hk_regime/", "canada_regime/"):
+            p = Path(base) / f"{region_dir}latest.json"
+            if p.exists():
+                try:
+                    obj = json.loads(p.read_text())
+                    fwd = (obj.get("risk_radar") or {}).get("forward_log") or {}
+                    if fwd.get("market") == market and "can_force" in fwd:
+                        return bool(fwd["can_force"])
+                except Exception:  # noqa: BLE001
+                    pass
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+def _log_can_force_governance(
+    market: str,
+    can_force: bool,
+    prev_can_force: bool | None,
+    hits: int,
+    n_alerts: int,
+    base: float,
+    wilson_lb: float | None,
+    lift_lb: float | None,
+    grant_reason: str,
+    evidence_asof: str | None,
+    root=None,
+) -> None:
+    """Append authority_grant or authority_lapse to the governance ledger when can_force changes.
+
+    Fail-open: exceptions are logged but never propagated.
+    """
+    try:
+        if prev_can_force is None or can_force == prev_can_force:
+            return  # no state change — nothing to log
+        from engine.neuralweb.governance import append_event  # type: ignore[import]
+        event_type = "authority_grant" if can_force else "authority_lapse"
+        target = f"engine/risk_radar_intl_audit.can_force:{market}"
+        append_event(
+            event_type,
+            target,
+            article=3,
+            authored_by="risk_radar_intl_audit",
+            evidence={
+                "hits": hits,
+                "n_alerts": n_alerts,
+                "base_rate": round(base, 4),
+                "wilson_lb": wilson_lb,
+                "lift_lb": lift_lb,
+                "evidence_asof": evidence_asof,
+            },
+            before={"can_force": prev_can_force},
+            after={"can_force": can_force},
+            note=grant_reason,
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("risk_radar_intl_audit: governance log failed for %s: %s", market, exc)
+
+
 def scorecard(market: str, root=None) -> dict:
     """Rolling realized-accuracy scorecard from the graded log. Carries `can_force`: whether this
-    market's radar has earned the right to hard-force the Market-State verdict. Never raises."""
+    market's radar has earned the right to hard-force the Market-State verdict. Never raises.
+
+    ARTICLE-3 GATE (W7a): can_force is now granted via Wilson CI lower-bound lift > 1.0
+    at z=1.645 (90% one-sided), not the old point-estimate >= 1.25.  Additive scorecard
+    fields: wilson_lift_lb, grant_reason, evidence_asof.  Existing consumers read only
+    the can_force bool — these additions are backward-compatible.
+    """
     try:
         rows = [r for r in _read(_path(market, root)) if r.get("graded")]
     except Exception:  # noqa: BLE001
         rows = []
     if not rows:
         return {"market": market, "n_graded": 0, "can_force": False,
+                "wilson_lift_lb": None, "grant_reason": "accruing",
+                "evidence_asof": None,
                 "note": "accruing — grades begin once calls mature (~21 trading days)"}
     n = len(rows)
     base = sum(int(r["graded"].get("any_dd5_within_h21")) for r in rows) / n
     alerts = [r for r in rows if r.get("alert")]
     tp = [r for r in alerts if r["graded"]["outcome"] == "true_positive"]
-    alert_hit = (sum(int(r["graded"].get("any_dd5_within_h21")) for r in alerts) / len(alerts)
-                 if alerts else None)
+    alert_hit_count = sum(int(r["graded"].get("any_dd5_within_h21")) for r in alerts)
+    alert_hit = alert_hit_count / len(alerts) if alerts else None
     by_state = {}
     for r in rows:
         d = by_state.setdefault(r.get("state"), {"n": 0, "dd": 0})
         d["n"] += 1
         d["dd"] += int(bool(r["graded"].get("any_dd5_within_h21")))
     by_state = {k: {"n": v["n"], "hit_rate": round(v["dd"] / v["n"], 3)} for k, v in by_state.items()}
+    # point-estimate lift kept for display only (not the gate)
     force_lift = round(alert_hit / base, 2) if (alert_hit is not None and base) else None
-    can_force = bool(n >= MIN_GRADED_FORCE and len(alerts) >= MIN_ALERTS_FORCE
-                     and force_lift is not None and force_lift >= MIN_FORCE_LIFT)
+
+    # Article-3 Wilson CI gate (replaces point-estimate >= 1.25)
+    evidence_asof = rows[-1]["asof"] if rows else None
+    wilson_lb: float | None = None
+    lift_lb: float | None = None
+    grant_reason: str = "accruing"
+    can_force: bool = False
+
+    n_alerts = len(alerts)
+    if n >= MIN_GRADED_FORCE and n_alerts >= MIN_ALERTS_FORCE:
+        try:
+            from engine.neuralweb.constitution import grant_authority  # type: ignore[import]
+            result = grant_authority(
+                evidence={
+                    "hits": alert_hit_count,
+                    "n": n_alerts,
+                    "base_rate": base,
+                    "evidence_asof": evidence_asof,
+                },
+                floors={"min_n": MIN_GRADED_FORCE, "min_events": MIN_ALERTS_FORCE},
+            )
+            can_force = result.granted
+            wilson_lb = result.wilson_lb
+            lift_lb = result.lift_lb
+            grant_reason = result.reason
+        except Exception as exc:  # noqa: BLE001
+            log.warning("risk_radar_intl_audit: constitution gate failed for %s: %s", market, exc)
+            grant_reason = f"gate-error: {exc}"
+    else:
+        grant_reason = (f"n-floors-not-met: n_graded={n} (need {MIN_GRADED_FORCE}), "
+                        f"n_alerts={n_alerts} (need {MIN_ALERTS_FORCE})")
+
+    # Governance ledger: log when grant state changes
+    try:
+        prev_cf = _load_previous_can_force(market, root)
+        _log_can_force_governance(
+            market=market,
+            can_force=can_force,
+            prev_can_force=prev_cf,
+            hits=alert_hit_count,
+            n_alerts=n_alerts,
+            base=base,
+            wilson_lb=wilson_lb,
+            lift_lb=lift_lb,
+            grant_reason=grant_reason,
+            evidence_asof=evidence_asof,
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("risk_radar_intl_audit: governance logging failed for %s: %s", market, exc)
+
     mistakes = [{"asof": r["asof"], "state": r["state"], "dominant_scare": r.get("dominant_scare"),
                  "fwd_dd_h21": r["graded"]["fwd_dd"].get("h21"), "kind": r["graded"]["outcome"]}
                 for r in rows if r["graded"]["outcome"] == "false_positive"
@@ -222,10 +369,14 @@ def scorecard(market: str, root=None) -> dict:
         "n_graded": n,
         "base_rate_dd5_h21": round(base, 3),
         "alert_precision": round(len(tp) / len(alerts), 3) if alerts else None,
-        "n_alerts": len(alerts),
+        "n_alerts": n_alerts,
         "alert_hit_rate": round(alert_hit, 3) if alert_hit is not None else None,
         "force_lift": force_lift,
         "can_force": can_force,
+        # Additive Article-3 fields (existing consumers read only the bool above)
+        "wilson_lift_lb": lift_lb,
+        "grant_reason": grant_reason,
+        "evidence_asof": evidence_asof,
         "by_state": by_state,
         "realized_odds": realized_odds(market, root),
         "recent_mistakes": sorted(mistakes, key=lambda m: m["asof"], reverse=True)[:20],
