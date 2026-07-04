@@ -862,7 +862,7 @@
       },
       "regime_scope": {
         "hypothesized_supportive": ["rotation-active", "breadth improving"],
-        "hypothesized_hostile": ["mega-cap-dominance regime (2024–26 sign flip)"],
+        "hypothesized_hostile": ["mega-cap-dominance — MEASURED W1 phase-0: 2024-01→2026-06 sleeve excess −11.8%/yr (t −2.42) vs pre-flip +5.7%/yr DSR 0.981; hostile cell LIVE at phase-0 date"],
         "learnable_projection": {
           "axes": ["sector_rotation", "breadth"],
           "cells": ["rotation-active", "mega-cap-dominance", "risk-off"],
@@ -882,9 +882,9 @@
         "flip_criteria": "Safety-net axes (stop-out, dead-money, cushion incidence at rotational horizons) PLUS sleeve-level excess-vs-SPY (CN-2 pattern). Pre-registered kill criteria: modern-era decay + mega-cap sign flip. assert_no_gate() must remain enforced."
       },
       "gating": {
-        "come_back_on": "2026-10-01",
+        "come_back_on": "2026-08-01",
         "cadence": "monthly",
-        "maturation": "W1 phase-0 on existing deep panel. Runs NOW. Pre-registered kill criteria must be checked: modern-era decay (IC −0.011, t −2.4) and 2024–26 mega-cap sign flip. Tencent trap analogue: watch for single-name concentration in the quintile."
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S13_REPORT.md): PASSED as the 3M-formation construction (PIT-era +0.49%/mo excess, DSR 0.991 SURVIVES; modern era +0.34%/mo DSR 0.908 marginal); 1M variant CLOSED (modern DSR 0.760 fails). K2 TRIGGERED: mega-cap flip measured (2024–26 −11.8%/yr) → REGIME-SCOPED, hostile cell live — no surface may imply current tradability. K3 clean (top name 3.1%), K4 sign sanity passed (IC −0.011). Survivorship bound: 69.4% member-price coverage — positives are optimistic; re-confirm on the massive-store panel before promotion past display. Monthly review re-reads the regime cell."
       },
       "trial_count": 3
     }
