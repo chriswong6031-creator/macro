@@ -35,7 +35,7 @@ R4 binding (ORACLE_GAUNTLET_P3_ADJUDICATION.md):
   - No personality class may feed any score, size, or gate.
 
 Usage (CLI):
-  python -m scripts.build_oracle_personality --data-dir PATH
+  runs in-process via scripts/oracle_nightly.py Step 3b (no standalone CLI)
   (wired as Step 3b in oracle_nightly.py, after episodes, before state)
 """
 from __future__ import annotations
@@ -349,15 +349,18 @@ def build_personality(
         except Exception:  # noqa: BLE001
             log.warning("personality: could not extract series for node %s", node, exc_info=True)
 
-    # Build complex mean rs_chg per complex_id
-    complex_mean_rs_chg: dict[str, pd.Series] = {}
+    # Build the member rs_chg FRAME per complex (leave-one-out at scoring time:
+    # the benchmark must exclude the node being scored, else a single-member
+    # complex regresses on itself → R²=1 → idiosyncrasy=0, exactly backwards —
+    # review fix on #1281).
+    complex_chg_frames: dict[str, pd.DataFrame] = {}
     for c in complexes_def:
         cid = c.get("id", "")
         members = [m for m in (c.get("members") or []) if m in node_rs_chg]
         if not members:
             continue
-        chg_df = pd.concat([node_rs_chg[m].rename(m) for m in members], axis=1)
-        complex_mean_rs_chg[cid] = chg_df.mean(axis=1)
+        complex_chg_frames[cid] = pd.concat(
+            [node_rs_chg[m].rename(m) for m in members], axis=1)
 
     # --- Classify each node ---
     result_nodes: dict[str, Any] = {}
@@ -383,9 +386,16 @@ def build_personality(
             }
             continue
 
-        # Complex mean rs_chg for idiosyncrasy
+        # Complex benchmark for idiosyncrasy — LEAVE-ONE-OUT: exclude the node
+        # itself; <2 other members → no valid systematic benchmark → None
+        # (downstream treats None as idiosyncrasy=1.0, the honest default).
         cid = complex_map.get(str(node))
-        cmplx_rs_chg = complex_mean_rs_chg.get(cid) if cid else None
+        cmplx_rs_chg = None
+        frame = complex_chg_frames.get(cid) if cid else None
+        if frame is not None:
+            others = [col for col in frame.columns if col != str(node)]
+            if len(others) >= 2:
+                cmplx_rs_chg = frame[others].mean(axis=1)
 
         stats = _compute_node_stats(rs, rs_chg, tlt, cmplx_rs_chg)
         personality = _classify(stats)

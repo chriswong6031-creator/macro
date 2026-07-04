@@ -103,6 +103,11 @@ SCHEMA = "oracle_state.v1"
 # that complex to count as source/sink.  0.0 means ANY confirmed+ episode
 # in the complex qualifies (conservative: avoids missing a real rotation).
 # Source: spec A3 "confirmed+ tier covering ≥ a config fraction of members".
+# 0.0 DISABLES the fraction gate: required = max(1, int(n*0.0)) = 1, i.e. any
+# single confirmed member qualifies its complex as source/sink (intended v1
+# behavior — the tag is display-only and never gates). NOTE: a complex with
+# both confirmed-out and confirmed-in members counts as BOTH source and sink,
+# so intra-complex two-sided flow alone can yield the global "rotation" tag.
 REGIME_CONFIRMED_FRACTION: float = 0.0
 # Minimum number of source complexes to call "liquidation" (≥2 sources, 0 sinks)
 REGIME_LIQUIDATION_MIN_SOURCES: int = 2  # spec: "≥2 sources, 0 sinks"

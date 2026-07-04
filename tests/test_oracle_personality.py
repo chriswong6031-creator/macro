@@ -365,3 +365,38 @@ def test_thresholds_in_payload(tmp_path):
     assert "thresh_trend" in thresholds
     assert thresholds["thresh_reversion"] == THRESH_REVERSION
     assert thresholds["thresh_trend"] == THRESH_TREND
+
+
+class TestLeaveOneOutIdiosyncrasy:
+    def test_solo_complex_member_is_fully_idiosyncratic(self, tmp_path):
+        """Review fix on #1281: a single-member complex previously regressed the
+        node on a benchmark CONTAINING ITSELF (R²=1 → idiosyncrasy=0, exactly
+        backwards). With leave-one-out, <2 other members = no valid systematic
+        benchmark → idiosyncrasy 1.0. FAILS on the self-inclusion
+        implementation."""
+        import json
+        import numpy as np
+        import pandas as pd
+        from engine.oracle.personality import build_personality
+
+        rng = np.random.default_rng(7)
+        idx = pd.bdate_range("2021-01-04", periods=600, name="date")
+        rs = pd.Series(np.cumsum(rng.normal(0, 0.002, 600)), index=idx)
+        panel = pd.DataFrame({
+            "rs": rs.values,
+            "tlt_ret_10d": rng.normal(0, 0.01, 600),
+        }, index=pd.MultiIndex.from_product([["SOLO"], idx], names=["node", "date"]))
+
+        oracle_dir = tmp_path / "oracle"
+        oracle_dir.mkdir(parents=True)
+        panel.to_parquet(oracle_dir / "panel_m.parquet")
+        # empty tier-s panel so the loader degrades gracefully
+        (oracle_dir / "rotation_groups.json").write_text(json.dumps(
+            {"complexes": [{"id": "cx_solo", "name": "cx_solo", "members": ["SOLO"]}]}))
+
+        payload = build_personality(data_dir=tmp_path)
+        node = payload["nodes"]["SOLO"]
+        assert node["stats"]["idiosyncrasy"] == 1.0, (
+            f"solo-complex idiosyncrasy must be 1.0 (no valid benchmark), "
+            f"got {node['stats']['idiosyncrasy']}"
+        )
