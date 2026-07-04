@@ -97,6 +97,12 @@ on:
       # test pins producer (AST) + template consumer, so the builder must trigger CI.
       - "scripts/build_stock_library.py"
       - "tests/test_sector_pulse_wiring.py"
+      # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
+      # the test file must re-prove the conformance check still holds.
+      - ".github/workflows/**"
+      - "config/dag.yml"
+      - "scripts/check_dag_conformance.py"
+      - "tests/test_dag_conformance.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
@@ -445,3 +451,31 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
         run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py -q
+
+  dag-conformance:
+    # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;
+    # scripts/check_dag_conformance.py diffs the declared sequences against the LIVE
+    # .github/workflows/ files and exits 1 on any mismatch not covered by a divergences
+    # entry.  ANY undeclared drift between dag.yml and the real workflow now reds CI here
+    # before merging — ending the hand-sync problem.
+    #
+    # Three checks in sequence:
+    #   1. Hard: check_dag_conformance.py against the repo (exits 1 on undeclared drift)
+    #   2. Hard: pytest tests/test_dag_conformance.py (selftest + live conformance assertion)
+    #
+    # Suspect divergences count as covered (declared), but are PRINTED in every run
+    # so they stay visible.  The suspect list may only SHRINK (only-shrinks ratchet).
+    #
+    # Triggers on: .github/workflows/**, config/dag.yml, the checker, and the test file.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: DAG conformance check (hard — exits 1 on undeclared lane drift)
+        run: python scripts/check_dag_conformance.py --verbose
+      - name: DAG conformance selftest + live conformance tests
+        run: python -m pytest tests/test_dag_conformance.py -q
