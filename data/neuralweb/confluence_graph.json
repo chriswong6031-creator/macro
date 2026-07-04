@@ -2,7 +2,6 @@
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
   "asof": "2026-07-01",
-  "tier": "display",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -6940,6 +6939,86 @@
       "note": "structural: engine/neuralweb/confluence.py writes data/neuralweb/confluence_graph.json"
     },
     {
+      "src": "module:engine/neuralweb/reflexes.py",
+      "dst": "artifact:reflex-firings-pattern",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/neuralweb/reflexes.py writes data/reflexes/<NAME>/firings.jsonl"
+    },
+    {
+      "src": "artifact:reflex-firings-pattern",
+      "dst": "module:engine/neuralweb/query.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/reflexes/<NAME>/firings.jsonl consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "module:scripts/refresh_regime_if_stale.py",
+      "dst": "artifact:reflex-firings-regime-selfheal",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/refresh_regime_if_stale.py writes data/reflexes/regime_stale_selfheal/firings.jsonl"
+    },
+    {
+      "src": "artifact:reflex-firings-regime-selfheal",
+      "dst": "module:engine/neuralweb/query.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/reflexes/regime_stale_selfheal/firings.jsonl consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "module:scripts/commodity_sentinel.py",
+      "dst": "artifact:reflex-firings-commodity-shock",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/commodity_sentinel.py writes data/reflexes/commodity_shock/firings.jsonl"
+    },
+    {
+      "src": "artifact:reflex-firings-commodity-shock",
+      "dst": "module:engine/neuralweb/query.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/reflexes/commodity_shock/firings.jsonl consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "module:engine/alert_triage.py",
+      "dst": "artifact:reflex-push-dedup-store",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/alert_triage.py writes data/alert_triage/push_sent.jsonl"
+    },
+    {
+      "src": "artifact:reflex-push-dedup-store",
+      "dst": "module:engine/alert_triage.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/alert_triage/push_sent.jsonl consumed by engine/alert_triage.py"
+    },
+    {
       "src": "module:scripts/build_feeds.py",
       "dst": "artifact:feeds-plane",
       "edge_type": "feeds",
@@ -6987,7 +7066,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=oracle-vs-sector_central:software kind=directional-opposition severity=tension a=complex=software direction=out tier=undeniable b=sector_central majority=bullish (1/4 Constructive/Accumulate"
+      "note": "pair_id=oracle-vs-sector_central:software kind=directional-opposition severity=tension a=complex=software direction=out tier=undeniable b=sector_central plurality=bullish (1/4 Constructive/Accumulat"
     },
     {
       "src": "site/basketdata/oracle_state.json",
@@ -6997,7 +7076,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=oracle-vs-sector_central:healthcare_defensive kind=directional-opposition severity=tension a=complex=healthcare_defensive direction=in tier=undeniable b=sector_central majority=bearish (2/4 Reduce/Cautious calls, "
+      "note": "pair_id=oracle-vs-sector_central:healthcare_defensive kind=directional-opposition severity=tension a=complex=healthcare_defensive direction=in tier=undeniable b=sector_central plurality=bearish (2/4 Reduce/Cautious calls,"
     },
     {
       "src": "data/regime/latest.json:vol_regime",
@@ -7017,7 +7096,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=69 ticker-level demand-vs-supply divergences b=n_divergences=69, top tickers=['ELV', 'AMZN', 'GOOGL', 'MSFT"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=51 ticker-level demand-vs-supply divergences b=n_divergences=51, top tickers=['ELV', 'AMZN', 'CI', 'AEIS', "
     },
     {
       "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
@@ -7151,12 +7230,12 @@
       },
       "b": {
         "artifact": "data/sector_central/calls.parquet",
-        "reading": "sector_central majority=bullish (1/4 Constructive/Accumulate calls, n_matched=4)"
+        "reading": "sector_central plurality=bullish (1/4 Constructive/Accumulate calls, rest Neutral/mixed, n_matched=4)"
       },
       "kind": "directional-opposition",
       "severity": "tension",
       "as_of": "2026-07-02",
-      "note": "Oracle marks complex 'software' as out while sector_central shows mostly Constructive/Accumulate calls (1/4 matched members).  Rotation vs sector-level signal disagree.  Display-only; both are context signals.",
+      "note": "Oracle marks complex 'software' as out while sector_central shows plurality Constructive/Accumulate calls (1/4 matched members, rest Neutral/mixed).  Rotation vs sector-level signal disagree.  Display-only; both are context signals.",
       "display_only": true
     },
     {
@@ -7167,12 +7246,12 @@
       },
       "b": {
         "artifact": "data/sector_central/calls.parquet",
-        "reading": "sector_central majority=bearish (2/4 Reduce/Cautious calls, n_matched=4)"
+        "reading": "sector_central plurality=bearish (2/4 Reduce/Cautious calls, rest Neutral/mixed, n_matched=4)"
       },
       "kind": "directional-opposition",
       "severity": "tension",
       "as_of": "2026-07-02",
-      "note": "Oracle marks complex 'healthcare_defensive' as in while sector_central shows mostly Reduce/Cautious calls (2/4 matched members).  Rotation vs sector-level signal disagree.  Display-only; both are context signals.",
+      "note": "Oracle marks complex 'healthcare_defensive' as in while sector_central shows plurality Reduce/Cautious calls (2/4 matched members, rest Neutral/mixed).  Rotation vs sector-level signal disagree.  Display-only; both are context signals.",
       "display_only": true
     },
     {
@@ -7195,16 +7274,16 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "69 ticker-level demand-vs-supply divergences"
+        "reading": "51 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=69, top tickers=['ELV', 'AMZN', 'GOOGL', 'MSFT', 'CI']"
+        "reading": "n_divergences=51, top tickers=['ELV', 'AMZN', 'CI', 'AEIS', 'HPE']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
       "as_of": "2026-07-04",
-      "note": "69 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: ELV, AMZN, GOOGL, MSFT, CI.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "note": "51 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: ELV, AMZN, CI, AEIS, HPE.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     },
     {
@@ -7229,6 +7308,9 @@
     "stable edges (Tier-S): data/oracle/graph_s.json absent — gitignored/Mac-local on this run",
     "stable edges (Tier-M): data/oracle/graph_m.json absent — gitignored/Mac-local on this run"
   ],
+  "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-04T21:23:47Z"
+  "produced_at": "2026-07-04T22:01:35Z",
+  "inputs_hash": "sha256:9a9b9b16de5cb547fb902c860babc4dd830a5ff4849fe86c2971e0d570b618c6",
+  "tier": "display"
 }

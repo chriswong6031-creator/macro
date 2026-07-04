@@ -345,17 +345,17 @@ def _pair_c_oracle_vs_sector_central(
                     a_reading=f"complex={cx_id} direction={cx_direction} tier={cx_tier}",
                     b_artifact="data/sector_central/calls.parquet",
                     b_reading=(
-                        f"sector_central majority=bearish "
+                        f"sector_central plurality=bearish "
                         f"({n_bearish}/{n_total} Reduce/Cautious calls, "
-                        f"n_matched={n_total})"
+                        f"rest Neutral/mixed, n_matched={n_total})"
                     ),
                     kind="directional-opposition",
                     severity="tension",
                     as_of=as_of,
                     note=(
                         f"Oracle marks complex '{cx_id}' as {cx_direction} while "
-                        f"sector_central shows mostly Reduce/Cautious calls "
-                        f"({n_bearish}/{n_total} matched members).  "
+                        f"sector_central shows plurality Reduce/Cautious calls "
+                        f"({n_bearish}/{n_total} matched members, rest Neutral/mixed).  "
                         "Rotation vs sector-level signal disagree.  "
                         "Display-only; both are context signals."
                     ),
@@ -368,17 +368,17 @@ def _pair_c_oracle_vs_sector_central(
                     a_reading=f"complex={cx_id} direction={cx_direction} tier={cx_tier}",
                     b_artifact="data/sector_central/calls.parquet",
                     b_reading=(
-                        f"sector_central majority=bullish "
+                        f"sector_central plurality=bullish "
                         f"({n_bullish}/{n_total} Constructive/Accumulate calls, "
-                        f"n_matched={n_total})"
+                        f"rest Neutral/mixed, n_matched={n_total})"
                     ),
                     kind="directional-opposition",
                     severity="tension",
                     as_of=as_of,
                     note=(
                         f"Oracle marks complex '{cx_id}' as {cx_direction} while "
-                        f"sector_central shows mostly Constructive/Accumulate calls "
-                        f"({n_bullish}/{n_total} matched members).  "
+                        f"sector_central shows plurality Constructive/Accumulate calls "
+                        f"({n_bullish}/{n_total} matched members, rest Neutral/mixed).  "
                         "Rotation vs sector-level signal disagree.  "
                         "Display-only; both are context signals."
                     ),
