@@ -85,9 +85,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
 | market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 7 | 0 |
 | risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 5 | 0 |
+| trial-ledger | `data/trial_ledger.jsonl` | jsonl | on-demand | infrastructure | 5 | 0 |
 | regime-vector | `data/regime/regime_vector.parquet` | parquet | daily-engine | infrastructure | 4 | 0 |
 | site-regime-timeline | `site/regime_timeline.json` | json | daily-engine | display | 2 | 2 |
-| trial-ledger | `data/trial_ledger.jsonl` | jsonl | on-demand | infrastructure | 4 | 0 |
 | market-state-forward-log | `data/market_state/forward_log.jsonl` | jsonl | daily-engine | display | 3 | 0 |
 | regime-base-effect-fwd | `data/regime/base_effect_fwd.jsonl` | jsonl | daily-engine | display | 3 | 0 |
 | archetypes-history | `data/archetypes/history.parquet` | parquet | on-demand | display | 2 | 0 |

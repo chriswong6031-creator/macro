@@ -242,8 +242,29 @@ def _run_batch(
     dry_run :       if True, skip the cadence guard; accepts fixture_dir.
     fixture_dir :   alternative data root (only valid with dry_run=True;
                     must NOT point at the real data dir).
-    _now_override : override today's date string (for testing).
+    _now_override : override today's date string (for testing; only valid
+                    when dry_run=True — production runs must use real time).
     """
+    # --- Guard: _now_override is only permitted in dry-run mode. ---
+    # Allowing fake dates on a live run would silently launder a stale-data
+    # bypass into the production cadence check. Fail loudly instead.
+    if _now_override is not None and not dry_run:
+        raise ValueError(
+            "_now_override is only permitted when dry_run=True. "
+            "Production runs must use the real current date."
+        )
+
+    # --- Guard: dry_run without a fixture_dir seals the internal bypass. ---
+    # Without a fixture_dir the code would silently fall back to reading and
+    # writing the production paths with the cadence check skipped — exactly
+    # the anti-peeking hole the dry-run isolation is meant to close.
+    if dry_run and fixture_dir is None:
+        raise ValueError(
+            "dry_run=True requires a fixture_dir (pass --dry-run-on-fixtures). "
+            "Running dry_run without a fixture_dir would evaluate real production "
+            "data with the cadence gate skipped."
+        )
+
     import pandas as pd
     from engine.trial_ledger import TrialLedger, register_trials
     from engine.validation import benjamini_hochberg
@@ -292,7 +313,16 @@ def _run_batch(
     df = pd.read_parquet(estimates_path)
     if df.empty:
         log.warning("kernel_decisions: estimates parquet is empty — writing null batch")
-        _write_seed(root)
+        # DRY-RUN ISOLATION: mirror the same guard used at the main write path.
+        # When dry_run is active, write the null seed under the scratch dir so
+        # the production kernel_decisions.json is never touched (even by the
+        # empty-branch early return).
+        if dry_run and fixture_dir is not None:
+            _scratch = fixture_dir / "dry_run_scratch"
+            _scratch.mkdir(parents=True, exist_ok=True)
+            _write_seed(_scratch, decisions_rel=Path("kernel_decisions.json"))
+        else:
+            _write_seed(root)
         return {"n_eligible": 0, "n_survivors": 0, "survivors": []}
 
     # --- Eligibility filter (pre-registered criteria) ---
@@ -454,8 +484,18 @@ def _run_batch(
 # Seed writer (idempotent — called when estimates are empty)
 # ---------------------------------------------------------------------------
 
-def _write_seed(root: Path) -> None:
-    """Write the null-batch seed (same shape as a real run, all empty)."""
+def _write_seed(root: Path, *, decisions_rel: Path | None = None) -> None:
+    """Write the null-batch seed (same shape as a real run, all empty).
+
+    Parameters
+    ----------
+    root :           Base directory for the output file.
+    decisions_rel :  Path relative to *root* for the output file.
+                     Defaults to _DECISIONS_REL (production path).
+                     Pass a plain filename (e.g. Path("kernel_decisions.json"))
+                     when writing into a scratch directory to avoid creating
+                     the nested data/neuralweb/ sub-tree inside the scratch dir.
+    """
     payload = {
         "batch_id": None,
         "run_at": None,
@@ -487,7 +527,7 @@ def _write_seed(root: Path) -> None:
             "law — it is not documentation."
         ),
     }
-    out_path = root / _DECISIONS_REL
+    out_path = root / (decisions_rel if decisions_rel is not None else _DECISIONS_REL)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(
         json.dumps(payload, indent=2, default=str, ensure_ascii=False) + "\n",

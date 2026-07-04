@@ -12,6 +12,9 @@ Coverage:
   (6) Sign test p-value correctness — hand-computed extreme cases.
   (7) Dry-run-on-fixtures accepts a fixture dir but rejects the real parquet path.
   (8) Empty estimates → null batch (no crash, seed shape).
+  (9) Sentinel protection — empty-fixture dry-run must NOT touch production sentinel.
+  (10) Hardening nit guards — dry_run without fixture_dir raises; _now_override outside
+       dry-run raises.
 """
 from __future__ import annotations
 
@@ -92,9 +95,15 @@ class TestEligibilityRules:
     """Pre-registered decision rule: n_eff >= 25, ci_low notna, staleness <= 380d."""
 
     def _run(self, tmp_path: Path, rows: list[dict], now: str = "2026-10-01") -> dict:
-        _write_estimates(tmp_path, rows)
+        # fixture_dir holds the test parquet; real_root is an empty separate dir
+        # (dry_run requires fixture_dir to be distinct from root per the nit-1 guard).
+        fixture_dir = tmp_path / "fixture"
+        _write_estimates(fixture_dir, rows)
+        real_root = tmp_path / "real_root"
+        real_root.mkdir(parents=True, exist_ok=True)
         from scripts.run_kernel_decisions import _run_batch
-        return _run_batch(tmp_path, dry_run=True, _now_override=now)
+        return _run_batch(real_root, dry_run=True, fixture_dir=fixture_dir,
+                          _now_override=now)
 
     def test_n_eff_floor_excludes_low_n(self, tmp_path):
         """Cells with n_eff < 25 are excluded from the batch."""
@@ -246,10 +255,13 @@ class TestRegisterBeforeEvaluate:
 
     def test_ledger_write_precedes_pvalue_computation(self, tmp_path):
         """log_declared_budget is called before _sign_test_p_value in _run_batch."""
-        _write_estimates(tmp_path, [
+        fixture_dir = tmp_path / "fixture"
+        _write_estimates(fixture_dir, [
             _est_row(engine="ord_e", n_eff=30, wilson_ci_low=0.45,
                      date_last="2026-07-01"),
         ])
+        real_root = tmp_path / "real_root"
+        real_root.mkdir(parents=True, exist_ok=True)
 
         call_log: list[str] = []
 
@@ -274,7 +286,8 @@ class TestRegisterBeforeEvaluate:
 
         with patch.object(tl, "TrialLedger", _RecordingLedger):
             with patch.object(m, "_sign_test_p_value", _recording_sign_test):
-                m._run_batch(tmp_path, dry_run=True, _now_override="2026-10-01")
+                m._run_batch(real_root, dry_run=True, fixture_dir=fixture_dir,
+                             _now_override="2026-10-01")
 
         # Find positions
         ledger_pos = next(
@@ -526,9 +539,132 @@ class TestEmptyEstimates:
 
     def test_empty_estimates_writes_seed_shape(self, tmp_path):
         """Empty parquet → n_eligible=0, n_survivors=0, survivors=[]."""
-        _write_estimates(tmp_path, [])
+        fixture_dir = tmp_path / "fixture"
+        _write_estimates(fixture_dir, [])
+        real_root = tmp_path / "real_root"
+        real_root.mkdir(parents=True, exist_ok=True)
         from scripts.run_kernel_decisions import _run_batch
-        result = _run_batch(tmp_path, dry_run=True, _now_override="2026-10-01")
+        result = _run_batch(real_root, dry_run=True, fixture_dir=fixture_dir,
+                            _now_override="2026-10-01")
         assert result.get("n_eligible", 0) == 0
         assert result.get("n_survivors", 0) == 0
         assert result.get("survivors", []) == []
+
+
+# ---------------------------------------------------------------------------
+# (9) Sentinel protection — empty-fixture dry-run must NOT touch production path
+# ---------------------------------------------------------------------------
+
+class TestSentinelProtection:
+    """A dry-run against an empty fixture parquet must leave any sentinel
+    kernel_decisions.json in the production (root) path completely untouched.
+
+    This is the reviewer's missing test: it proves the BLOCKER fix — the
+    if df.empty: early-return branch — no longer writes to the production path
+    when dry_run=True and fixture_dir is provided.
+    """
+
+    SENTINEL_CONTENT = json.dumps({
+        "batch_id": "SENTINEL_DO_NOT_OVERWRITE",
+        "run_at": None,
+        "alpha": 0.10,
+        "trial_family": "reliability_kernel",
+        "decision_rule": {},
+        "n_eligible": 0,
+        "n_survivors": 0,
+        "survivors": [],
+        "trial_ledger_ref": None,
+        "next_batch_due": "2026-10-01",
+        "note": "sentinel",
+        "standing_law": "sentinel",
+    }, indent=2) + "\n"
+
+    def test_empty_fixture_dry_run_does_not_overwrite_sentinel(self, tmp_path):
+        """An empty-fixture dry-run must leave the sentinel kernel_decisions.json
+        in the production root untouched.
+
+        Arrange:
+          - real_root holds a sentinel kernel_decisions.json with a known value.
+          - fixture_dir holds an EMPTY kernel_estimates.parquet (triggers the
+            early-return branch).
+        Act:
+          - Run _run_batch(real_root, dry_run=True, fixture_dir=fixture_dir).
+        Assert:
+          - real_root/data/neuralweb/kernel_decisions.json is UNCHANGED (sentinel
+            content byte-for-byte identical after the run).
+          - fixture_dir/dry_run_scratch/kernel_decisions.json EXISTS (the null
+            seed was written to scratch instead).
+        """
+        from scripts.run_kernel_decisions import _run_batch, _DECISIONS_REL
+
+        real_root = tmp_path / "real_root"
+        fixture_dir = tmp_path / "fixture"
+
+        # Plant the sentinel in the production path
+        sentinel_path = real_root / _DECISIONS_REL
+        sentinel_path.parent.mkdir(parents=True, exist_ok=True)
+        sentinel_path.write_text(self.SENTINEL_CONTENT, encoding="utf-8")
+
+        # Write an EMPTY parquet into the fixture dir (triggers the empty branch)
+        _write_estimates(fixture_dir, [])
+
+        # Run the dry-run
+        result = _run_batch(
+            real_root,
+            dry_run=True,
+            fixture_dir=fixture_dir,
+            _now_override="2026-10-01",
+        )
+
+        # 1. Sentinel must be untouched
+        actual_sentinel = sentinel_path.read_text(encoding="utf-8")
+        assert actual_sentinel == self.SENTINEL_CONTENT, (
+            "BLOCKER: dry-run with empty fixture overwrote the production "
+            "kernel_decisions.json sentinel.\n"
+            f"Expected (unchanged):\n{self.SENTINEL_CONTENT[:300]}\n"
+            f"Got:\n{actual_sentinel[:300]}"
+        )
+
+        # 2. Scratch seed must exist under fixture_dir/dry_run_scratch/
+        scratch_seed = fixture_dir / "dry_run_scratch" / "kernel_decisions.json"
+        assert scratch_seed.exists(), (
+            "dry-run empty-branch must write null seed to "
+            "fixture_dir/dry_run_scratch/kernel_decisions.json"
+        )
+
+        # 3. Result must reflect a null batch
+        assert result == {"n_eligible": 0, "n_survivors": 0, "survivors": []}
+
+
+# ---------------------------------------------------------------------------
+# (10) Hardening nit guards
+# ---------------------------------------------------------------------------
+
+class TestHardeningNitGuards:
+    """Guards added as hardening nits:
+      Nit 1 — dry_run without fixture_dir raises ValueError (seals cadence bypass).
+      Nit 2 — _now_override outside dry_run raises ValueError (seals fake-date bypass).
+    """
+
+    def test_dry_run_without_fixture_dir_raises(self, tmp_path):
+        """_run_batch must raise ValueError when dry_run=True and fixture_dir is None.
+
+        Before this guard existed, dry_run=True without a fixture_dir would silently
+        evaluate real production data with the cadence gate skipped.
+        """
+        from scripts.run_kernel_decisions import _run_batch
+
+        with pytest.raises(ValueError, match="fixture_dir"):
+            _run_batch(tmp_path, dry_run=True, fixture_dir=None)
+
+    def test_now_override_outside_dry_run_raises(self, tmp_path):
+        """_run_batch must raise ValueError when _now_override is set but dry_run=False.
+
+        _now_override is a test-only escape hatch. Allowing it on a production run
+        would let callers launder a fake date past the cadence check without the
+        dry-run isolation guarantees.
+        """
+        from scripts.run_kernel_decisions import _run_batch
+
+        with pytest.raises(ValueError, match="_now_override"):
+            _run_batch(tmp_path, dry_run=False, _now_override="2030-01-01")
