@@ -666,6 +666,102 @@ class TestLoadArchiveSnapshots:
 
 
 # ---------------------------------------------------------------------------
+# merge_pulse_into_theme_intel: W4 velocity merge into theme_intel rows
+# ---------------------------------------------------------------------------
+
+class TestMergePulseIntoThemeIntel:
+    """build_baskets calls merge_pulse_into_theme_intel() after write_pulse().
+
+    The function mutates the theme_intel dict IN PLACE, adding pulse_* keys
+    to each theme row. Keys use the pulse_ prefix to avoid shadowing the
+    existing rank_5d / delta_5d keys that theme_scoring already writes.
+    """
+
+    def test_merges_heat_and_deltas_when_archive_available(self, monkeypatch):
+        """When archive history is sufficient, heat and rank delta keys are set."""
+        themes = [
+            _make_theme("t1", score=80, rank=1, label="dominant"),
+            _make_theme("t2", score=55, rank=5, label="fading"),
+        ]
+        ti = _make_ti(themes)
+        # Provide 6 archive rows so the 5-session look-back resolves.
+        old_row = [{"id": "t1", "rank": 6, "score": 73},
+                   {"id": "t2", "rank": 3, "score": 60}]
+        archive = [{"asof": f"2026-06-{20+i}", "themes": old_row} for i in range(6)] + [
+            {"asof": "2026-07-02", "themes": [{"id": "t1", "rank": 1, "score": 80},
+                                               {"id": "t2", "rank": 5, "score": 55}]}
+        ]
+        monkeypatch.setattr(sp, "_load_archive_snapshots", lambda r: archive)
+        sp.merge_pulse_into_theme_intel(ti, "us")
+
+        t1 = ti["themes"][0]
+        # heat is set (dominant, rank improved 5 positions → heating)
+        assert t1["pulse_heat"] in ("heating", "hot", "cooling", "broken", "idle")
+        # rank_delta_5d: 6 - 1 = +5
+        assert t1["pulse_rank_delta_5d"] == 5
+        # score_delta_5d: 80 - 73 = +7
+        assert t1["pulse_score_delta_5d"] == 7
+        # t2 has fading label → cooling
+        t2 = ti["themes"][1]
+        assert t2["pulse_heat"] == "cooling"
+
+    def test_sets_none_deltas_when_insufficient_archive(self, monkeypatch):
+        """Fewer archive rows than needed → None for 5d deltas (history accruing)."""
+        themes = [_make_theme("t1", score=70, rank=1, label="dominant")]
+        ti = _make_ti(themes)
+        # Only 3 rows — not enough for offset=5 (needs 6)
+        archive = [{"asof": f"2026-06-{28+i}", "themes": [{"id": "t1", "rank": 2, "score": 65}]}
+                   for i in range(3)]
+        monkeypatch.setattr(sp, "_load_archive_snapshots", lambda r: archive)
+        sp.merge_pulse_into_theme_intel(ti, "us")
+
+        t1 = ti["themes"][0]
+        assert t1["pulse_rank_delta_5d"] is None
+        assert t1["pulse_score_delta_5d"] is None
+        # heat is still set (falls back to 0 for None deltas)
+        assert "pulse_heat" in t1
+
+    def test_never_fatal_when_archive_raises(self, monkeypatch):
+        """An archive error leaves theme_intel without pulse_ keys but never raises."""
+        themes = [_make_theme("t1", score=70, rank=1, label="dominant")]
+        ti = _make_ti(themes)
+
+        def _bad_archive(r):
+            raise RuntimeError("disk dead")
+
+        monkeypatch.setattr(sp, "_load_archive_snapshots", _bad_archive)
+        try:
+            sp.merge_pulse_into_theme_intel(ti, "us")
+        except Exception as exc:  # noqa: BLE001
+            pytest.fail(f"merge_pulse_into_theme_intel raised: {exc}")
+        # Function is additive; theme_intel themes are still intact
+        assert len(ti["themes"]) == 1
+
+    def test_additive_never_overwrites_existing_keys(self, monkeypatch):
+        """If a theme row already has pulse_heat set, setdefault must not overwrite it."""
+        themes = [_make_theme("t1", score=70, rank=1, label="dominant")]
+        ti = _make_ti(themes)
+        ti["themes"][0]["pulse_heat"] = "SENTINEL"
+        monkeypatch.setattr(sp, "_load_archive_snapshots", lambda r: [])
+        sp.merge_pulse_into_theme_intel(ti, "us")
+        # setdefault semantics: pre-existing value preserved
+        assert ti["themes"][0]["pulse_heat"] == "SENTINEL"
+
+    def test_heat_key_present_in_all_themes(self, monkeypatch):
+        """Every theme row gets a pulse_heat key after the merge, even with no archive."""
+        themes = [
+            _make_theme("t1", 80, 1, "dominant"),
+            _make_theme("t2", 60, 3, "emerging"),
+            _make_theme("t3", 40, 6, "neutral"),
+        ]
+        ti = _make_ti(themes)
+        monkeypatch.setattr(sp, "_load_archive_snapshots", lambda r: [])
+        sp.merge_pulse_into_theme_intel(ti, "us")
+        for th in ti["themes"]:
+            assert "pulse_heat" in th, f"pulse_heat missing from theme {th['id']}"
+
+
+# ---------------------------------------------------------------------------
 # AST guard: no module-level logging.disable
 # ---------------------------------------------------------------------------
 

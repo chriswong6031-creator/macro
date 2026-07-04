@@ -461,6 +461,68 @@ def for_ticker(ticker: str, region: str = "us") -> dict | None:
         return None
 
 
+def merge_pulse_into_theme_intel(ti: dict, region: str) -> None:
+    """Merge per-theme velocity/heat keys from the pulse into a freshly-computed theme_intel dict.
+
+    Adds the following keys to each theme row IN PLACE (additive — existing keys are never
+    modified, missing keys default to None so JS can degrade safely on pre-W4 payloads):
+
+        pulse_heat          — str: "heating" | "hot" | "cooling" | "broken" | "idle" | None
+        pulse_rank_delta_1d — int | None   (positive = rank improved, i.e. number went down)
+        pulse_rank_delta_5d — int | None
+        pulse_rank_delta_20d — int | None
+        pulse_score_delta_5d — float | None
+
+    Keys use a `pulse_` prefix to avoid shadowing the existing `rank_5d` / `delta_5d` keys
+    that engine.theme_scoring already writes on each theme row.
+
+    Additive and never-fatal: a failure logs a warning and leaves theme_intel untouched.
+    """
+    try:
+        themes_raw = ti.get("themes") or []
+        if not themes_raw:
+            return
+
+        n = len(themes_raw)
+        snapshots = _load_archive_snapshots(region)
+        rank_1d = _rank_map_at(snapshots, 1)
+        rank_5d = _rank_map_at(snapshots, 5)
+        rank_20d = _rank_map_at(snapshots, 20)
+        score_5d = _score_map_at(snapshots, 5)
+        score_20d = _score_map_at(snapshots, 20)
+
+        for th in themes_raw:
+            try:
+                tid = th.get("id")
+                cur_rank = th.get("rank")
+                cur_score = th.get("score")
+                label = th.get("label", "neutral")
+
+                def _rd(cur, hist):
+                    return (hist[tid] - cur) if (cur is not None and tid in hist) else None
+
+                def _sd(cur, hist):
+                    return (cur - hist[tid]) if (cur is not None and tid in hist) else None
+
+                rd1 = _rd(cur_rank, rank_1d)
+                rd5 = _rd(cur_rank, rank_5d)
+                rd20 = _rd(cur_rank, rank_20d)
+                sd5 = _sd(cur_score, score_5d)
+                heat = _heat_tier(cur_rank or 9999, n, label, rd5, sd5)
+
+                # Additive: set only if not already present (never overwrite existing data)
+                th.setdefault("pulse_heat", heat)
+                th.setdefault("pulse_rank_delta_1d", rd1)
+                th.setdefault("pulse_rank_delta_5d", rd5)
+                th.setdefault("pulse_rank_delta_20d", rd20)
+                th.setdefault("pulse_score_delta_5d", sd5)
+            except Exception:  # noqa: BLE001
+                log.debug("merge_pulse_into_theme_intel: skipping theme %s", th.get("id"),
+                          exc_info=True)
+    except Exception:  # noqa: BLE001
+        log.warning("merge_pulse_into_theme_intel failed for region=%s", region, exc_info=True)
+
+
 def write_pulse(ti: dict, region: str, out_dir: Any) -> None:
     """Write the Sector Pulse JSON for a region to out_dir.
 
