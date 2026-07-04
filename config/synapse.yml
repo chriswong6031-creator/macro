@@ -1361,8 +1361,9 @@ artifacts:
       via get_vector_for_date; species_id present (unambiguous mtype→species_id only).
       CHARTER §2b: DRAWDOWN / entry-quality framing only — not return-alpha.
       Distinct from signal-archive-mtf (data/signal_archive/mtf_signals_latest.json) which
-      is a display artifact. Adapts into spine via adapt_us_board if routed through
-      grade_us_board. Producer write call: engine/track_record.py:update_track_record.
+      is a display artifact. Adapted into the neural-web spine index via
+      engine/neuralweb/query.py:adapt_track_record (ledger='track_record').
+      Producer write call: engine/track_record.py:update_track_record.
 
   # --- W2 sweep 15: Foresight Cascade Forward Log ---
   foresight-log:

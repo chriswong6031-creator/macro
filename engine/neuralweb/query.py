@@ -77,7 +77,7 @@ US/HK/CA post Stage B-e, "asof_legacy" for older qledger rows).
 ADAPTERS (one per source — all fail-open)
 -----------------------------------------
 a) adapt_spine()         → ledger='spine'
-b) adapt_track_record()  → ledger='track_record' (gitignored-local; fail-open is load-bearing)
+b) adapt_track_record()  → ledger='track_record' (data/signal_archive/; fail-open: absent on fresh clone)
 c) adapt_board('hk')     → ledger='board_hk'
 d) adapt_board('ca')     → ledger='board_ca'
 e) adapt_china_board()   → ledger='board_cn'
@@ -396,18 +396,24 @@ def adapt_spine(
 # ---------------------------------------------------------------------------
 
 def adapt_track_record(root: Path | str | None = None) -> tuple[pd.DataFrame, list[str]]:
-    """Adapt data/track_record/track_record.parquet → ledger='track_record'.
+    """Adapt data/signal_archive/track_record.parquet → ledger='track_record'.
 
-    This file is gitignored-local and may be ABSENT in CI — fail-open is
-    load-bearing (the spine's degrade-never-raise law).
+    The canonical path is data/signal_archive/track_record.parquet (git-tracked,
+    registered in config/synapse.yml as signal-archive-track-record).  The old
+    path data/track_record/track_record.parquet was never written by any producer
+    and caused all US track-record rows to be silently dropped from the index
+    (fail-open reported it as a benign gap).
+
+    Fail-open is still load-bearing — the file may be absent in a fresh clone
+    that has not yet run the engine (degrade-never-raise law).
 
     Returns (df, gap_notes).
     """
     gaps: list[str] = []
-    p = _data_dir(root) / "track_record" / "track_record.parquet"
+    p = _data_dir(root) / "signal_archive" / "track_record.parquet"
     if not p.exists():
-        gaps.append("track_record: data/track_record/track_record.parquet absent "
-                    "(gitignored-local — expected in CI) — zero rows")
+        gaps.append("track_record: data/signal_archive/track_record.parquet absent "
+                    "— zero rows")
         return _empty_df(), gaps
     try:
         raw = pd.read_parquet(p)
