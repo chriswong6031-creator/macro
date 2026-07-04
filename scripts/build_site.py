@@ -1389,6 +1389,42 @@ def _froth_fragility_view(latest: dict) -> dict | None:
         return None
 
 
+def _sector_heat_view() -> dict | None:
+    """Compact sector-heat strip for the macro.html dashboard: up to 4 heating themes
+    and up to 4 cooling/broken themes, each with a link to baskets.html#theme-<id>.
+    DISPLAY-ONLY — data comes from engine.sector_pulse.build_pulse('us') at build time.
+    Returns None (never raises) so the strip is simply hidden when pulse is unavailable."""
+    try:
+        from engine.sector_pulse import build_pulse as _sp_build
+        pulse = _sp_build("us")
+        if not pulse:
+            return None
+        themes = pulse.get("themes") or []
+        heating = [t for t in themes if t.get("heat") in ("heating", "hot")][:4]
+        cooling = [t for t in themes if t.get("heat") in ("cooling", "broken")][:4]
+        if not heating and not cooling:
+            return None
+        def _row(t):
+            return {
+                "id": t.get("id"),
+                "name": t.get("name"),
+                "name_zh": t.get("name_zh"),
+                "heat": t.get("heat"),
+                "rank": t.get("rank"),
+                "rank_delta_5d": t.get("rank_delta_5d"),
+                "label": t.get("label"),
+                "reco": t.get("reco"),
+            }
+        return {
+            "as_of": pulse.get("as_of"),
+            "heating": [_row(t) for t in heating],
+            "cooling": [_row(t) for t in cooling],
+        }
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("sector_heat_view failed (%s)", e)
+        return None
+
+
 def holdings_rows() -> list[dict]:
     """Compact teaser for the dashboard's "real fund moves" panel: the top
     conviction-ranked ACCUMULATION decisions across the thematic/active fund
@@ -3049,6 +3085,7 @@ def main() -> int:
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
         vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)
         froth_fragility=_froth_fragility_view(latest),  # euphoria + hidden-distribution top-risk gauge (display-only)
+        sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
     # view-model so scripts/render_macro_fast.py can re-render macro.html /

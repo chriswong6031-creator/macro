@@ -96,6 +96,60 @@
   </div>
 </div>
 
+{% if spender_burden %}
+{# W0c — Payer-side capex burden for demand-chain SPENDER cohorts.
+   Fingerprint-class (annual XBRL lag); display-only; score_cap=60. #}
+<div class="panel">
+  <div class="sec">{{ t('Payer-side capex burden (spender cohorts)', '支付方资本开支负担（需求链发起方）') }}
+    <span class="help">?<span class="tip"><span class="l-en">Annual XBRL data (fingerprint-class, lag ~90 days). Capex/OCF &gt; 80% with negative FCF = FCF-trap flag. Net-debt delta uses balance-sheet YoY (may include acquisitions). Display-only; score cap 60. Not a sell signal — intentional investment cycles can look like traps.</span><span class="l-zh">年度XBRL数据（指纹级，滞后约90天）。资本开支/OCF &gt; 80% 且FCF为负 = FCF陷阱标记。净债务变化基于资产负债表同比（可能包含收购）。仅展示；评分上限60。非卖出信号——战略性投资周期也可能触发此标记。</span></span></span>
+  </div>
+  {% for chain_key, burden_map in spender_burden.items() %}
+  {% if burden_map %}
+  <details class="fold" open>
+    <summary>
+      {% if chain_key == 'ai_datacenter' %}{{ t('AI / datacenter spenders', 'AI／数据中心支付方') }}
+      {% elif chain_key == 'housing' %}{{ t('Homebuilder revenue spenders', '建筑商营收来源方') }}
+      {% else %}{{ chain_key }}{% endif %}
+    </summary>
+    <table class="dt" style="margin-top:6px">
+      <tr>
+        <th>{{ t('Spender','支出方') }}</th>
+        <th>{{ t('Capex/OCF','资本开支/OCF') }}</th>
+        <th>{{ t('Trend','趋势') }}</th>
+        <th>{{ t('FCF ($B)','自由现金流（十亿）') }}</th>
+        <th>{{ t('Net-debt Δ ($B)','净债务变化（十亿）') }}</th>
+        <th>{{ t('FY','财年') }}</th>
+        <th>{{ t('Flag','标记') }}</th>
+      </tr>
+      {% for ticker, b in burden_map.items() %}
+      {% if b is not none %}
+      <tr>
+        <td class="tk"><a href="stock.html#{{ ticker }}">{{ ticker }}</a></td>
+        <td class="num">
+          {% if b.capex_ocf_latest is not none %}
+            <span class="{{ 'neg' if b.capex_ocf_latest > 80 else '' }}">{{ '%.0f'|format(b.capex_ocf_latest) }}%</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="faint">{{ t(b.capex_ocf_trend, b.capex_ocf_trend) }}</td>
+        <td class="num {% if b.fcf_latest_bn is not none and b.fcf_latest_bn >= 0 %}pos{% elif b.fcf_latest_bn is not none %}neg{% endif %}">
+          {% if b.fcf_latest_bn is not none %}{{ '%+.1f'|format(b.fcf_latest_bn) }}{% else %}—{% endif %}
+        </td>
+        <td class="num {% if b.net_debt_delta_bn is not none and b.net_debt_delta_bn > 0 %}neg{% elif b.net_debt_delta_bn is not none %}pos{% endif %}">
+          {% if b.net_debt_delta_bn is not none %}{{ '%+.1f'|format(b.net_debt_delta_bn) }}{% else %}—{% endif %}
+        </td>
+        <td class="faint">FY{{ b.fy_latest }}</td>
+        <td>{% if b.fcf_trap %}<span class="badge risk">{{ t('FCF trap','FCF陷阱') }}</span>{% endif %}</td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </table>
+  </details>
+  {% endif %}
+  {% endfor %}
+  <p class="cav">{{ t('Annual XBRL (fingerprint-class); lag ~90 days from fiscal-year-end. Net-debt delta from balance-sheet YoY — may include acquisitions. Not a sell signal. Display-only.', '年度XBRL（指纹级）；财年末后约90天滞后。净债务变化来自资产负债表同比——可能包含并购。非卖出信号。仅展示。') }}</p>
+</div>
+{% endif %}
+
 {% macro rowtable(rows) -%}
 <table class="dt">
   <tr><th>{{ t('Name','标的') }}</th><th>{{ t('Chain','链条') }}</th><th>{{ t('Independent signal','独立信号') }}</th><th>{{ t('Consensus','共识') }}</th></tr>

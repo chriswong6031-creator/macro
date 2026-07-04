@@ -970,6 +970,9 @@
   .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
   .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
   .idx-trend { margin-top: 3px; color: var(--muted); }
+  .idx-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .idx-tkr { font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 5px; }
+  .idx-chg { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; white-space: nowrap; }
   .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
   .idx-risk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   @media (max-width: 900px) { .idx-risk { grid-template-columns: 1fr; } }

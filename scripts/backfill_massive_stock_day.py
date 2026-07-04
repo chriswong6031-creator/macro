@@ -1,15 +1,15 @@
 """One-time (resumable) backfill of the massive.com whole-market daily OHLCV store.
 
-URGENCY: massive.com's entitlement is a ROLLING ~2025-→present window.  Each month of
-delay permanently loses a month of history.  Run this ASAP on a machine with
-MASSIVE_S3_* credentials.
+URGENCY: massive.com's entitlement is a ROLLING ~5-year→present window (probed
+2026-07-03: floor = 2021-07-06).  Each month of delay permanently loses a month of
+history.  Run this ASAP on a machine with MASSIVE_S3_* credentials.
 
-The backfill is RESUMABLE: it writes data/massive_stock_day/_backfill_state.json after
-every batch so a killed run can be restarted without re-fetching completed days.
+The backfill is RESUMABLE and GAP-AWARE: it records every processed day in
+data/massive_stock_day/_backfill_state.json (processed_days, v2), so a killed run
+restarts on exactly the missing days — including interior holes, not just the tip.
 
-Expected run time: ~370 trading days × ~0.5 s/day (download + write) ≈ 3–4 hours
-  on a fast connection.  The per-day gzip is ~0.8 MB; total download ≈ 300 MB.
-  Per-ticker parquets: ~12,400 tickers × ~350 rows × 56 bytes ≈ 240 MB total store.
+Expected run time: ~40 s per trading day (the ~12k-parquet per-day upsert dominates,
+  not the ~0.8 MB download) ≈ 4-5 h per captured year.  Total download ≈ 200 MB/yr.
 
 Usage:
   # Full backfill (earliest-first, resumable):
@@ -61,7 +61,7 @@ def main() -> int:
     args = ap.parse_args()
 
     from collectors.massive_stock_day import (
-        backfill, _store_dir, _backfill_state_path, _manifest_path,
+        backfill, _store_dir, _backfill_state_path, _manifest_path, EARLIEST_ENTITLED,
     )
     from collectors.massive_flatfiles import latest_available, enabled
 
@@ -82,7 +82,7 @@ def main() -> int:
             state_p.unlink()
             log.info("Resume state cleared (--force)")
 
-    start = date.fromisoformat(args.start) if args.start else date(2025, 1, 2)
+    start = date.fromisoformat(args.start) if args.start else EARLIEST_ENTITLED
     end = date.fromisoformat(args.end) if args.end else None
 
     if args.smoke:
@@ -107,27 +107,16 @@ def main() -> int:
     if result.get("blocked"):
         return 1
 
-    # Estimate completion if we stopped early
-    if args.max_days and result["days_fetched"] >= args.max_days:
-        days_remaining = result.get("days_remaining_estimate")
-        if days_remaining is None:
-            # rough estimate: 2025-01-02 → today ≈ 370 trading days; we did max_days
-            from datetime import datetime
-            total_trading = 0
-            d = date(2025, 1, 2)
-            today = date.today()
-            while d <= today:
-                if d.weekday() < 5:
-                    total_trading += 1
-                d += timedelta(days=1)
-            remaining = total_trading - result["days_fetched"]
-            secs_per_day = 0.5 + args.pace
-            log.info(
-                "Partial run: %d / ~%d trading days done.  "
-                "Estimated remaining: %d days × %.1fs ≈ %.0f min",
-                result["days_fetched"], total_trading, remaining,
-                secs_per_day, remaining * secs_per_day / 60,
-            )
+    # Report remaining work if we stopped early (backfill() counts it exactly now)
+    remaining = int(result.get("days_remaining", 0) or 0)
+    if remaining:
+        secs_per_day = 40 + args.pace   # observed ~40 s/day (per-day 12k-parquet upsert)
+        log.info(
+            "Partial run: %d day(s) fetched, %d still missing in the window.  "
+            "Estimated remaining: %d days × ~%.0fs ≈ %.1f h — re-run to resume.",
+            result["days_fetched"], remaining, remaining,
+            secs_per_day, remaining * secs_per_day / 3600,
+        )
 
     log.info("Store location: %s", _store_dir())
     log.info("Manifest:       %s", _manifest_path())

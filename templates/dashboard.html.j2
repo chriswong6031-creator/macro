@@ -579,6 +579,18 @@
   .nb-spot.spot-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
                      background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
   .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
+  /* ---- sector-pulse heat chip on standout cards (DISPLAY-ONLY, no rank power) ---- */
+  .nb-pulse-heat { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 700;
+                   padding: 1px 6px; border-radius: 7px; white-space: nowrap; max-width: 9em;
+                   overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line);
+                   color: var(--muted); background: var(--panel); cursor: help; flex: none; }
+  .nb-pulse-heat.ph-heating { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+                              background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
+  .nb-pulse-heat.ph-hot { color: var(--up); border-color: color-mix(in srgb, var(--up) 55%, var(--line));
+                          background: color-mix(in srgb, var(--up) 15%, var(--panel)); font-weight: 800; }
+  .nb-pulse-heat.ph-cooling { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
+                              background: color-mix(in srgb, var(--down) 9%, var(--panel)); }
+  .nb-pulse-heat.ph-broken { color: var(--muted); border-color: var(--line); opacity: .75; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
   .nb-conv { display: flex; align-items: center; gap: 7px; margin: 3px 0 1px; min-width: 0; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -828,6 +840,9 @@
   .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
   .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
   .idx-trend { margin-top: 3px; color: var(--muted); }
+  .idx-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .idx-tkr { font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 5px; }
+  .idx-chg { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; white-space: nowrap; }
   .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
   .idx-risk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   @media (max-width: 900px) { .idx-risk { grid-template-columns: 1fr; } }
@@ -844,8 +859,7 @@
   .rm-tbl td.l, .rm-tbl th.l { text-align: left; }
   .rm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 
-  /* ======================================================================
-     MACRO TERMINAL — scoped enhancement layer (macro.html only)
+  /* ===============================================================     MACRO TERMINAL — scoped enhancement layer (macro.html only)
      Everything here is gated under body.page-macro, which is emitted ONLY for
      mode != 'stocks' (line ~528). The US Stock Dashboard + every other page
      are byte-untouched. NO theme.css edits — all colour routes through the
@@ -1169,6 +1183,25 @@
   body.page-macro #risk-state .rs-driver { display:flex; align-items:baseline; gap:8px; padding:3px 0; }
   body.page-macro #risk-state .rs-bar { height:6px; border-radius:3px; background:var(--rs); opacity:.85; }
   @keyframes rspulse { 0%,100% { box-shadow: 0 0 0 0 var(--rs-glow); } 50% { box-shadow: 0 0 16px 2px var(--rs-glow); } }
+  /* ---- Sector heat strip (macro-only, DISPLAY-ONLY) ---- */
+  .sh-strip { padding: 8px 14px 10px; }
+  .sh-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .sh-title { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+              color: var(--ink-2); }
+  .sh-asof { font-size: 10px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .sh-chips { display: flex; flex-wrap: wrap; gap: 5px 6px; align-items: center; }
+  .sh-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 20px;
+             font-size: 11px; font-weight: 700; border: 1px solid var(--line); color: var(--muted);
+             background: var(--panel2); text-decoration: none; white-space: nowrap;
+             transition: filter .1s; }
+  .sh-chip:hover { filter: brightness(1.07); border-color: currentColor; }
+  .sh-heat { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+             background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
+  .sh-cool { color: var(--down); border-color: color-mix(in srgb, var(--down) 30%, var(--line));
+             background: color-mix(in srgb, var(--down) 8%, var(--panel)); }
+  .sh-arr { font-size: 9px; flex: none; }
+  .sh-rk { font-size: 9px; opacity: .7; font-variant-numeric: tabular-nums; }
+  .sh-div { color: var(--muted); font-size: 12px; padding: 0 2px; }
   /* Market Risk Radar v2 (engine/risk_radar.py) — the PRIMARY top-of-page risk read. Floats above
      the regime hero (below the acute dislocation filter) and pulses when the gated loud banner fires. */
   body.page-macro #risk-radar { scroll-margin-top: 16px; border-left: 4px solid var(--rr); }
@@ -1236,6 +1269,24 @@
   {% endif %}
 
   {% if mode != 'stocks' %}
+  {% if market_tiles %}
+  <!-- ======================= LIVE MARKET TAPE ======================= -->
+  <div class="panel span12" id="market-tape">
+    <h2 style="margin-bottom:10px">{{ t('Market tape', '市场行情') }}
+      {{ help('The headline cross-asset levels in one glance — indices, rates, the dollar, oil and volatility — each with its 1-day move. A quick orientation; the read and the why live in the panels below.', '一眼看尽关键跨资产水平 — 指数、利率、美元、原油与波动率 — 各附单日变动。用于快速定位；解读与原因见下方面板。') }}
+    </h2>
+    <div class="mtiles">
+      {% for tl in market_tiles %}
+      <div class="mtile">
+        <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
+        <div class="mtile-val">{{ tl.level }}</div>
+        <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} ({{ tl.pct }})</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ======================= HEADER ======================= -->
   <div class="panel span12" id="regime-radar">
   <input type="checkbox" id="ms-alerts-toggle" class="ms-alerts-cb" hidden aria-hidden="true">
@@ -1263,6 +1314,15 @@
   body.page-macro .ms-alerts .dot{width:6px;height:6px;border-radius:50%;background:var(--act);flex:none}
   body.page-macro .ms-alerts .ct{font-family:var(--num);font-weight:700;color:var(--ink-1)}
   body.page-macro .ms-alerts .ct.is-zero{color:var(--ink-3)}
+
+  /* one-line reconciliation: names the slow backdrop and the fast risk read as two
+     DIFFERENT questions, so "Goldilocks" + "Risk-off" don't read as a contradiction */
+  body.page-macro .ms-oneline{display:flex;align-items:baseline;gap:7px 10px;flex-wrap:wrap;
+    margin:0 0 15px;padding-bottom:14px;border-bottom:var(--rule) solid var(--hair-strong);font-family:var(--num)}
+  body.page-macro .ms-oneline .olk{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+  body.page-macro .ms-oneline b{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink-1)}
+  body.page-macro .ms-oneline .olsep{color:var(--hair-strong);font-weight:700}
+  html[data-lang="zh"] body.page-macro .ms-oneline .olk{letter-spacing:0}
 
   /* ===== FRONT BOARD — Market State (left) + Macro Backdrop (right), side by side =====
      Base = mobile: one tight stack (radar → eyebrow → verdict/evidence → tape → divider →
@@ -1497,6 +1557,15 @@
     {% set MS = market_state %}
     {% set _va = {'green':'▲','yellow':'▶','red':'▼'}.get(MS.color, '▶') %}
     {% set _nalerts = (alerts|length if alerts else 0) + (1 if (latest.dislocation and latest.dislocation.dislocation_active) else 0) %}
+    {% endif %}
+    {% if market_state %}
+    {# plain-English reconciliation, above everything: the slow backdrop vs the fast risk
+       read are two different questions — stated so they never look like a contradiction. #}
+    <div class="ms-oneline ms ms-{{ market_state.color }}">
+      <span class="olk">{{ t('Backdrop','大背景') }}</span> <b>{{ td(latest.quad_name) }}</b>
+      <span class="olsep">·</span>
+      <span class="olk">{{ t('Right now','当下') }}</span> <b style="color:var(--ms-c)">{{ t(MS.label_en, MS.label_zh) }} {{ _va }}</b>
+    </div>
     {% endif %}
     {# ===== ONE side-by-side command board: Market State (left) + Macro Backdrop (right).
        Radar banner + eyebrow span the full width across the top; the multi-timeframe tape
@@ -1854,11 +1923,11 @@
   </div>
 
 
-  {% include "_regime_prob_panel.html.j2" %}
-
+  {# Combined "Regime — now & where it's headed": the current-regime HMM probability and the
+     base-effect forward path, merged into one scorecard (were two near-identical panels). #}
   {% set be_note_en = 'Growth is point-in-time back to 1997; inflation uses latest-revision data until the core-CPI/PCE vintages backfill.' %}
   {% set be_note_zh = '增长为 1997 年以来的时点数据；通胀在核心 CPI／PCE 修订版历史回填前使用最新修订数据。' %}
-  {% include "_base_effect_strip.html.j2" %}
+  {% include "_regime_read_panel.html.j2" %}
 
   <!-- Heads-up strip — compact live flags (next catalyst / Fed stance / fragility).
        Replaces the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
@@ -1904,14 +1973,55 @@
   </a>
 
 
-  <!-- ===================== SENTIMENT REGIME — Froth & Fragility + Fear↔Euphoria (display-only conditioning lenses; merged scorecard) ===================== -->
+  {# ===================== SECTOR HEAT STRIP — compact one-row rotation read (macro only) =====================
+     DISPLAY-ONLY: shows up to 4 heating (▲) and 4 cooling/broken (▽) themes, each linking to
+     baskets.html#theme-<id>. Hidden when sector_heat is None (pulse unavailable). Never fatal.
+     i18n: dual l-en/l-zh spans; no translated text in attributes; data-tip-en/zh for tooltips.
+     Jinja key access: sector_heat is a Python dict — use .get() style via d.key (Jinja) or
+     the 'is defined' guard on every nested key to avoid crashes on missing keys. #}
+  {% if mode != 'stocks' and sector_heat %}
+  {% set _sh = sector_heat %}
+  <div class="panel span12 sh-strip" id="sector-heat">
+    <div class="sh-head">
+      <span class="sh-title"><span class="l-en">Sector heat</span><span class="l-zh">板块热度</span></span>
+      {{ help("Sector-pulse heat tier — describes the current rank/score trajectory of each US thematic basket (heating ▲ / hot / cooling ▽ / broken). DISPLAY-ONLY: carries no forward-return forecast. Derived from the sector-rotation scoring engine (engine.sector_pulse). Click a chip to open the basket page.", "板块脉冲热度——描述各美股主题篮子当前的排名/得分走势（升温▲／热门／降温▽／破位）。仅供展示，不代表前瞻收益预测。来源：板块轮动评分引擎（engine.sector_pulse）。点击标签可打开篮子页面。") }}
+      {% if _sh.get('as_of') %}<span class="sh-asof muted">{{ _sh.as_of }}</span>{% endif %}
+    </div>
+    <div class="sh-chips">
+      {% for _ht in (_sh.get('heating') or []) %}
+      <a class="sh-chip sh-heat" href="baskets.html#theme-{{ _ht.get('id')|e }}">
+        <span class="sh-arr">▲</span>
+        <span class="l-en">{{ _ht.get('name')|e }}</span>
+        <span class="l-zh">{{ (_ht.get('name_zh') or _ht.get('name'))|e }}</span>
+        {% if _ht.get('rank') is not none %}<span class="sh-rk">#{{ _ht.rank }}</span>{% endif %}
+      </a>
+      {% endfor %}
+      {% if (_sh.get('heating') or []) and (_sh.get('cooling') or []) %}
+      <span class="sh-div">·</span>
+      {% endif %}
+      {% for _ct in (_sh.get('cooling') or []) %}
+      <a class="sh-chip sh-cool" href="baskets.html#theme-{{ _ct.get('id')|e }}">
+        <span class="sh-arr">▽</span>
+        <span class="l-en">{{ _ct.get('name')|e }}</span>
+        <span class="l-zh">{{ (_ct.get('name_zh') or _ct.get('name'))|e }}</span>
+        {% if _ct.get('rank') is not none %}<span class="sh-rk">#{{ _ct.rank }}</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===================== SENTIMENT REGIME — Froth & Fragility + Fear↔Euphoria (context-only lenses; collapsed by default) ===================== -->
   {% if mode != 'stocks' and (froth_fragility or fear_euphoria) %}
-  <div class="panel span12" id="sentiment-regime">
-    <h2>{{ t('Sentiment regime — froth, fear &amp; euphoria', '情绪周期 — 狂热、恐惧与欣喜') }}
-      {{ help("Two display-only regime lenses in one card. Froth & Fragility — a top-risk gauge that fuses retail EUPHORIA (semis/AI parabolicity) with hidden DISTRIBUTION (a rotating decline under a pinned index) — the leading internals a single VIX read misses; only EUPHORIC AND FRAGILE together is a distribution-top risk, and the only sanctioned response is SIZING (de-risk), never selection. Fear ↔ Euphoria — a conditioning read that synthesises the cross-asset RORO risk-appetite composite, the dislocation verdict and the capitulation gauge into one 0-100 regime score. NEITHER scores direction or sizes positions; neither feeds the quad, the macro-risk score or any axis.", "两个仅供展示的周期视角合于一卡。狂热与脆弱 — 顶部风险计，融合零售欣喜（半导体/AI 抛物化）与隐性派发（被托住指数下的轮动式下行）——单看 VIX 会错过的领先内部指标；唯有“欣喜且脆弱”同时出现才是派发顶部风险，唯一被许可的回应是减仓，绝非选股。恐惧↔欣喜 — 综合跨资产 RORO 风险偏好综合、错位读数与投降指标，形成单一的 0-100 周期评分。两者都不评分方向、不决定仓位；都不进入象限、宏观风险评分或任何轴。") }}
-      <a href="macro_signals.html" class="muted" style="font-size:12px;font-weight:400;margin-left:auto">{{ t('full breakdown →','完整拆解 →') }}</a>
-    </h2>
-    <p class="muted sm" style="margin:-4px 0 14px">{{ t('Conditioning lenses, not signals — they synthesise components this dashboard already computes and never score direction or size positions.', '环境视角，而非信号 — 仅综合本仪表盘已计算的成分，绝不评分方向或决定仓位。') }}</p>
+  {% set ff = froth_fragility %}
+  {% set FE = fear_euphoria %}
+  {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
+  <details class="panel span12 fold" id="sentiment-regime">
+    <summary>{{ t('Sentiment regime','情绪周期') }}
+      {{ help("Two context-only lenses — how frothy and fragile the top is, and where the market sits on fear↔euphoria. Neither calls direction or sizes trades.","两个仅供参考的视角 — 顶部有多狂热与脆弱，以及市场处于恐惧↔欣喜的哪一端。两者都不判断方向或决定仓位。") }}
+      <span class="fold-stat">{% if ff and ff.band %}{{ t('Froth','狂热') }} {{ t(ff.band|capitalize, ff.band_zh) }}{% endif %}{% if ff and FE %} · {% endif %}{% if FE %}{{ t('Fear↔Euphoria','恐惧↔欣喜') }} {{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}{% endif %}</span>
+      <span class="fold-caret">▾</span>
+    </summary>
     <div style="display:flex;flex-wrap:wrap;gap:18px 22px">
 
       <!-- Froth & Fragility -->
@@ -1923,7 +2033,7 @@
       <section id="froth-fragility" style="flex:1 1 320px;min-width:0;border-left:3px solid {{ ffc }};padding-left:14px">
         <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Froth & Fragility', '狂热与脆弱') }}
           {% if ff.headline is not none %}<span style="margin-left:auto;color:{{ ffc }};font-weight:800;font-size:16px">{{ ff.headline|round|int }}<small style="font-size:12px;font-weight:600;color:var(--muted)">/100 · {{ t(ff.band|capitalize, ff.band_zh) }}</small></span>{% endif %}
-          {{ help("A top-risk gauge that measures what a single VIX read cannot: retail EUPHORIA (semis/AI parabolicity) AND hidden DISTRIBUTION (a rotating decline under a pinned index, where the cap-weighted index and VIX stay calm because the leaders take turns falling / rotation holds the tape up). The honest read is the 2D danger-quadrant: only EUPHORIC AND FRAGILE together is a distribution-top risk. VIX is coincident index implied-vol — it is √ρ·σ̄, so falling single-stock correlation mechanically pins it low while internal risk builds; this gauge fuses the LEADING internals it misses. DISPLAY-ONLY / validation-accruing: it feeds NO score and NO allocation — the only sanctioned response is SIZING (de-risk), never selection. Each firing is logged and graded on forward QQQ/SMH drawdown + VIX jump.", "一个顶部风险计，衡量单看 VIX 无法捕捉的两面：零售欣喜（半导体/AI 抛物化）与隐性派发（被托住的指数下的轮动式下行：龙头轮流下跌或板块轮动撑住大盘，使市值加权指数与 VIX 保持平静）。诚实读法是二维危险象限：唯有“欣喜且脆弱”同时出现才是派发顶部风险。VIX 是同步的指数隐含波动率——约等于 √ρ·σ̄，因此个股相关性下降会机械地把它压低，而内部风险却在累积；本计融合它错过的领先内部指标。仅供展示／积累验证：不计分、不驱动仓位——唯一被许可的回应是减仓，绝非选股。每次触发都会记录并以未来 QQQ/SMH 回撤与 VIX 跳升评分。") }}
+          {{ help("A top-risk gauge for froth: retail euphoria (semis/AI going parabolic) plus hidden distribution (leaders quietly rolling over while the index still holds). Only euphoric AND fragile together is a real top risk. Context only — the response is to trim size, not to pick names.","顶部风险计：零售狂热（半导体/AI 抛物线）叠加隐性派发（龙头悄然见顶而指数仍被托住）。唯有“狂热且脆弱”同时出现才是真正的顶部风险。仅供参考 — 应对是减仓，而非选股。") }}
         </h3>
         {% if ff.face_a.score is not none or ff.face_b.score is not none %}
         <div style="margin-top:2px;font-weight:700;color:{{ ffc }}">{{ t(ff.quadrant_en, ff.quadrant_zh) }}
@@ -1944,7 +2054,7 @@
       {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
       <section style="flex:1 1 320px;min-width:0">
         <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Fear ↔ Euphoria: regime synthesis', '恐惧 ↔ 欣喜：周期综合') }}
-          {{ help("A conditioning lens, NOT a signal. It synthesises components this dashboard already computes — the cross-asset RORO risk-appetite composite, the dislocation verdict and the capitulation gauge — into one Fear↔Euphoria regime read. It does NOT score direction or size positions, and never feeds the quad, the macro-risk score or any axis. 'Contrarian at extremes' is regime-dependent: fear is buyable only when the Fed put is present; in put-absent regimes extreme fear can be a falling knife.", "这是环境视角，不是信号。它综合本仪表盘已计算的成分 — 跨资产 RORO 风险偏好综合、错位读数与投降指标 — 形成单一的恐惧↔欣喜周期读数。它不评分方向、不决定仓位，也绝不进入象限、宏观风险评分或任何轴。'极端时反向操作'取决于周期：只有在美联储托底在位时，恐惧才可买入；托底缺失时，极端恐惧可能是下跌中的刀子。") }}
+          {{ help("Where the market sits between fear and euphoria, built from cross-asset risk appetite, the stress read and capitulation. Context only — it doesn't call direction. Buying fear works only when the Fed has your back; without it, extreme fear can be a falling knife.","市场处于恐惧与欣喜之间的位置，由跨资产风险偏好、压力读数与投降指标合成。仅供参考 — 不判断方向。只有美联储托底时，抄底恐惧才有效；否则极端恐惧可能是接飞刀。") }}
         </h3>
         <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
           <div style="font-weight:700">{{ t('Fear ↔ Euphoria', '恐惧 ↔ 欣喜') }}
@@ -1967,7 +2077,8 @@
       {% endif %}
 
     </div>
-  </div>
+    <a href="macro_signals.html" class="muted sm" style="display:inline-block;margin-top:12px">{{ t('Full breakdown →','完整拆解 →') }}</a>
+  </details>
   {% endif %}
 
   <!-- ===================== CROSS-ASSET MACRO — Rates & inflation transmission + Bonds & FX cross-check (merged scorecard; context-only) ===================== -->
@@ -1976,10 +2087,9 @@
   {% if _rit or _cac %}
   <div class="panel span12" id="cross-asset-macro">
     <h2>{{ t('Rates, bonds &amp; FX — cross-asset check', '利率、债券与外汇 — 跨资产校验') }}
-      {{ help("Two context-only cross-asset reads in one card. Rates & inflation — how today's rates and inflation help or hurt each asset class (green = tailwind, red = headwind): a read on pressure, not a buy/sell call. Bonds & FX cross-check — bonds and the dollar move faster than stocks, so this checks whether they confirm the equity read (AGREE = the move has support; DIVERGE = a yellow flag). Neither is a buy/sell signal; the full cause-and-effect breakdown is on the Transmission page.", "两个仅供参考的跨资产读数合于一卡。利率与通胀 — 当前利率与通胀如何利好或利空各类资产（绿色＝顺风，红色＝逆风）：判断压力，而非买卖信号。债券与外汇交叉验证 — 债券与美元比股票反应更快，因此检查它们是否确认股市读数（一致＝走势有支撑；背离＝黄旗）。两者都不是买卖信号；完整的因果分解见“传导”页面。") }}
+      {{ help("Context only. Rates & inflation: who today's rates and inflation help or hurt (green = tailwind, red = headwind). Bonds & FX: bonds and the dollar move first, so do they confirm the stock read? Agree = support; diverge = a yellow flag. Full cause-and-effect on the Transmission page.", "仅供参考。利率与通胀：当前利率与通胀利好或利空谁（绿＝顺风，红＝逆风）。债券与外汇：债券和美元先动，它们是否确认股市？一致＝有支撑；背离＝黄旗。完整因果见“传导”页面。") }}
       <a href="transmission.html" style="margin-left:auto;font-size:12px;font-weight:600">{{ t('Transmission page →', '传导页面 →') }}</a>
     </h2>
-    <p class="muted sm" style="margin:-4px 0 14px">{{ t('Context only, never a buy/sell signal — macro pressure on each asset class, and whether the fast markets confirm the equity move.', '仅供参考，绝非买卖信号 — 各类资产承受的宏观压力，以及快速市场是否确认股票走势。') }}</p>
     <div style="display:flex;flex-wrap:wrap;gap:18px 22px">
 
       <!-- Rates & inflation — who it helps, who it hurts -->
@@ -2057,8 +2167,9 @@
     <div class="idx-grid">
       {% for ix in index_health %}
       <div class="idx-tile">
-        <div class="idx-top"><b>{{ t(ix.label, ix.label_zh) }}</b> <span class="idx-px">{{ '%.2f'|format(ix.price) }}</span></div>
+        <div class="idx-top"><span class="idx-name"><b>{{ t(ix.label, ix.label_zh) }}</b><span class="idx-tkr">{{ ix.ticker|replace('_','') }}</span></span> <span class="idx-chg {{ 'pos' if ix.chg > 0 else ('neg' if ix.chg < 0 else 'muted') }}">{{ '%+.2f'|format(ix.chg) }}%</span></div>
         <div class="idx-row">
+          <span class="idx-px">{{ '%.2f'|format(ix.price) }}</span>
           <span class="{{ 'pos' if ix.dd >= -1 else ('warn' if ix.dd >= -10 else 'neg') }}">{{ '%+.1f'|format(ix.dd) }}% {{ t('off high', '距高点') }}</span>
           <span>RSI {{ ix.rsi if ix.rsi is not none else '—' }}</span>
         </div>
@@ -2120,6 +2231,14 @@
       (<b style="color:{{ rdcol }}">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} {{ rd.top_score }}/100{% endif %}</b>{% if rd.label_en %} — {{ t(rd.label_en, rd.label_zh) }}{% endif %}){{ t(' — it is the ≤21-day read to trust for timing.', ' — 它是择时应信赖的≤21日读数。') }}
     </p>
     {% endif %}
+    {% set _idx_deep = ((risk_model and risk_model.legs) or chart_risk_model or chart_curve or chart_vix_term) %}
+    {% if mode != 'stocks' and _idx_deep %}
+    {# fold the deep risk-model table + Plotly charts behind a toggle on macro; the index
+       tiles, drawdown/recession/allocation gauges and radar note above stay at a glance.
+       Charts are responsive:true, so re-fire a resize when the fold opens (Plotly sizes at
+       0-width while display:none). Stocks keeps everything inline. #}
+    <details class="jarg" id="idx-deep" style="margin-top:14px"><summary>{{ t('Risk-model breakdown + recession, yield-curve &amp; volatility charts','风险模型拆解 + 衰退、收益率曲线与波动率图表') }}</summary>
+    {% endif %}
     {% if risk_model and risk_model.legs %}
     <h3 style="margin-top:16px">{{ t('Index risk model — what is driving de-risk', '指数风险模型 — 降险信号由什么驱动') }}
       {{ help("The S&P Vector de-risk score (0-100) and the legs that build it: macro-stress drawdown gauge, recession risk, financial conditions, credit-spread widening, and net-liquidity. Each leg's points sum to the score, so the bar shows exactly what is risk-on or risk-off now. The full allocation strategy + backtest lives on the S&P Vector page.", "标普向量降险评分（0-100）及其构成分项：宏观压力回撤计、衰退风险、金融条件、信用利差走阔、净流动性。各分项贡献分相加即为总分，进度条直观显示当前什么在加／降风险。完整仓位策略与回测见标普向量页。") }}
@@ -2161,6 +2280,13 @@
       </div>
       {% endif %}
     </div>
+    {% endif %}
+    {% if mode != 'stocks' and _idx_deep %}
+    </details>
+    <script>
+    (function(){var d=document.getElementById('idx-deep');if(!d)return;
+      d.addEventListener('toggle',function(){if(d.open)setTimeout(function(){window.dispatchEvent(new Event('resize'));},30);});})();
+    </script>
     {% endif %}
   </div>
 
@@ -2566,6 +2692,16 @@
                is in washout at build time. SAFETY CONTEXT only — no rank/admission effect. #}
             {% set _cc = n.get('cohort_capitulation') %}
             {% if _cc and _cc.get('conditioned') %}<span class="nb-cohort-cap" data-tip-en="Sector capitulating — {{ '%.0f'|format((_cc.frac or 0) * 100) }}% of same-sector names in weekly StochRSI washout at build time. stop-out −2.7pp (deep panel) / −3.5pp (OOS), sign-stable all splits — safety context, not a ranking signal." data-tip-zh="板块承压出清——同板块 {{ '%.0f'|format((_cc.frac or 0) * 100) }}% 标的处于周线 StochRSI 洗盘区。止损率 −2.7pp（深历史面板）/−3.5pp（样本外），各分组符号一致——安全背景信息，非排名信号。"><span class="l-en">⚡ Sector cap.</span><span class="l-zh">⚡ 板块出清</span></span>{% endif %}
+=======
+            {# Sector-pulse heat chip — DISPLAY-ONLY, never in score/rank.
+               Shows only when the name belongs to a live theme with a non-idle heat tier.
+               Bilingual via l-en/l-zh; no translated text in attributes (check_title_i18n). #}
+            {% set _sph = n.get('sector_pulse') %}
+            {% if _sph and _sph.get('heat') and _sph.heat != 'idle' %}
+            {% set _heat_cls = {'heating':'ph-heating','hot':'ph-hot','cooling':'ph-cooling','broken':'ph-broken'}.get(_sph.heat, '') %}
+            {% set _heat_arrow = '▲' if _sph.heat in ('heating','hot') else '▽' %}
+            <span class="nb-pulse-heat {{ _heat_cls }}" data-tip-en="Sector theme heat: {{ _sph.heat }} — {{ _sph.get('theme_name','') }}. Rank {{ _sph.get('rank','?') }}/{{ _sph.get('n_themes','?') }}{% if _sph.get('rank_delta_5d') is not none %} ({{ '%+d'|format(_sph.rank_delta_5d) }} vs 5d ago){% endif %}. Display-only — no ranking power." data-tip-zh="板块主题热度：{{ _sph.heat }} — {{ _sph.get('theme_name_zh') or _sph.get('theme_name','') }}。排名 {{ _sph.get('rank','?') }}/{{ _sph.get('n_themes','?') }}。仅供展示，不影响排名。"><span class="l-en">{{ _heat_arrow }} {{ _sph.get('theme_name','') }}</span><span class="l-zh">{{ _heat_arrow }} {{ _sph.get('theme_name_zh') or _sph.get('theme_name','') }}</span></span>
+            {% endif %}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           {# Context line LEADS with the specific narrative basket (de-blurs "Technology"

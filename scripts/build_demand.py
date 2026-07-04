@@ -74,7 +74,20 @@ def _collect(root: Path):
         r = dc.hiring_read(rows, revs.get(tkr))
         if r:
             reads[tkr] = r
-    return signals, reads
+    # W0c — payer-side capex burden for SPENDER cohorts (fingerprint-class,
+    # display-only; score_cap=60).  Absent statements.parquet → empty dict.
+    spender_burden: dict[str, dict] = {}
+    try:
+        from engine import gov_exposure as _ge
+        if sp.exists():
+            _stmt_df = pd.read_parquet(sp)
+            for chain in dc.CHAINS:
+                burden_map = _ge.spender_capex_burden(_stmt_df, chain["key"])
+                if burden_map:
+                    spender_burden[chain["key"]] = burden_map
+    except Exception as _sbe:  # noqa: BLE001 — additive, never fatal
+        log.warning("spender_burden skipped (%s)", _sbe)
+    return signals, reads, spender_burden
 
 
 def _chain_cards(signals: dict, reads: dict) -> list[dict]:
@@ -115,7 +128,7 @@ def _ticker_of(read: dict, reads: dict) -> str:
 
 def build(root=None) -> str:
     root = Path(root or config.ROOT)
-    signals, reads = _collect(root)
+    signals, reads, spender_burden = _collect(root)
     cards = _chain_cards(signals, reads)
 
     groups = {k: [] for k in _DIV_ORDER}
@@ -155,7 +168,8 @@ def build(root=None) -> str:
     env.globals.update(tr=tr, td=td)
     html = env.get_template("demand.html.j2").render(
         cards=cards, groups=groups, div_order=_DIV_ORDER, div_meta=_DIV_META,
-        track=track, phase0=phase0, n_variants=n_variants, as_of=as_of, built=built)
+        track=track, phase0=phase0, n_variants=n_variants, as_of=as_of, built=built,
+        spender_burden=spender_burden)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
     write_page(site / "demand.html", html)

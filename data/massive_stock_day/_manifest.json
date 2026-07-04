@@ -1,6 +1,20 @@
 {
   "store": "massive_stock_day",
-  "n_tickers": 12664,
-  "latest_date": "2026-06-30",
-  "updated_at": "2026-07-03T17:23:41.656528+00:00"
+  "n_tickers": 14906,
+  "latest_date": "2026-07-02",
+  "updated_at": "2026-07-03T23:58:44.251678+00:00",
+  "coverage": {
+    "first_day": "2025-01-02",
+    "last_day": "2026-07-02",
+    "n_processed_days": 391,
+    "max_missing_run_weekdays": 0,
+    "missing_sample": []
+  },
+  "anchor": {
+    "ticker": "SPY",
+    "first": "2025-01-02",
+    "last": "2026-07-02",
+    "n_rows": 375,
+    "max_gap_calendar_days": 4
+  }
 }
