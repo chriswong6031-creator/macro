@@ -105,7 +105,7 @@ def confluence_verdict(a: dict, composite_state: str | None = None,
     # ME falls back to the calibrated engine's "M" when the month-end resample is
     # absent (baskets feed cycles.analyze output directly, which has no ME/2W —
     # without the fallback the verdict is BLIND to the monthly trend there).
-    _me = mtf.get("ME") or mtf.get("M")
+    _me = mtf.get("ME") if mtf.get("ME") is not None else mtf.get("M")
     _tfd = {"D": mtf.get("D"), "3D": mtf.get("3D"), "W": mtf.get("W"),
             "2W": mtf.get("2W"), "ME": _me}
     per_tf = {tf: ("up" if _tf_sign(d) > 0 else ("down" if _tf_sign(d) < 0 else "flat"))
