@@ -529,9 +529,9 @@
         "flip_criteria": "Primary: (failed2 × COILED) vs COILED alone on OOS basket panel, episode-clustered p-value, BH-FDR q≤0.10, n≥300 per side, both halves sign-stable. Secondary: standalone inversion. Clean kill is acceptable and closes the graveyard row properly."
       },
       "gating": {
-        "come_back_on": "2026-10-01",
-        "cadence": "quarterly",
-        "maturation": "W1 phase-0 on OOS basket panel. Interaction marginal primary. Expectations low."
+        "come_back_on": "2026-08-01",
+        "cadence": "monthly",
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S6_REPORT.md): PASSED both variants — failed2×COILED clean8_21 spread +4.29pp (m2d_s3d, q=0.032) / +3.79pp (base3d, q=0.080), n floors met, both halves positive, per-name majority 52-53%; failed2 side ALSO stops out less within COILED (−4.9pp m2d_s3d). Standalone form buys liftoff with WORSE stop-outs — interaction only, as registered. OOS came in stronger than in-sample. CONSTRAINT: spreads below the ≥5pp §1.2 promotion floor → DISPLAY-CHIP CANDIDACY ONLY; monthly review decides chip wiring; near-miss ledger accrues the forward read."
       },
       "trial_count": 2
     },
