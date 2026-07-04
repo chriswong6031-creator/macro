@@ -29,5 +29,15 @@
 - `ep_in_onset_21d` and `ep_out_onset_5d` get forward-ledger rows from day 1 of live operation (Tier-L accrual toward any future re-registration).
 - P4 (analogue memory) proceeds as a **descriptive** layer under its own future registration; nothing here licenses a predictive claim for it.
 
+## R2 — RESOLVED (P3b routing placebo, 2026-07-04)
+
+The registered placebo leg ran (200 regime-matched, count-matched draws per cell, seed 20260704; fixes to count-matching/reproducibility/instrumentation applied after adversarial review; final run **independently re-executed by the verifier with byte-identical results**). Outcome:
+
+- **6 of 34** previously-BH-rejected cells survive the placebo (6 of all 90 sufficient cells) — the R2 suspicion was correct in bulk: 28 of the 34 bootstrap rejections were artifacts of the weak small-n null.
+- The surviving set is economically coherent and all high-VIX: `software→ai_compute` @5d & @10d (the software→AI cannibalization of this cycle), `ai_compute→energy_commodities` @10d and its reciprocal `energy_commodities→ai_compute` @10d, `consumer_staples_defensive→financials_rates` @5d, `software→financials_rates` @15d.
+- **Verdict (mechanical): DISPLAY-WITH-EDGE** for the 6 — the ceiling for secondary endpoints, and independently capped by the Tier-M watermark law (all routing rides the 2021→ survivorship-flagged panel, single era, n=10–22 per cell). They may render on display surfaces WITH the watermark + n printed; they may not feed any score, size, or gate. The other 28 revert to display-accruing candidates.
+- All routing cells continue accruing on the Tier-L ledger; a future re-registration on longer PIT-true history is the only path above this ceiling.
+
 ## Status
 - 2026-07-04 — Adjudicated. Primaries NULL · onset secondaries DISPLAY-WITH-EDGE · routing NOT ADJUDICATED (R2, placebo leg outstanding) · registration deviations and mislabel logged. Program continues to P4/P6 with R4 constraints binding.
+- 2026-07-04 (later) — **R2 resolved**: 6 routing cells DISPLAY-WITH-EDGE (placebo survivors, watermark-capped), 28 reverted to accruing candidates. P6 Time Machine shipped (#1239). P4 memory + P5 live wiring in build.
