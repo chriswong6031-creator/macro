@@ -104,6 +104,33 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("foresight_cascade failed: %s", e)
 
+    # W1c — 8-K Item 1.01/2.03 contract-dollar magnitude + pre-drift panel.
+    # Runs incremental enrichment (filings <= 45d old, unprocessed rows only) first,
+    # then emits eightk_magnitude.json for the themed panel.
+    try:
+        import pandas as pd
+        from collectors.edgar_8k import enrich_contract_amounts
+        from lib import config as _cfg
+
+        events_path = _cfg.data_dir() / "edgar" / "material_8k_events.parquet"
+        if events_path.exists():
+            _ev = pd.read_parquet(events_path)
+            _ev_enriched = enrich_contract_amounts(_ev, incremental=True)
+            _ev_enriched.to_parquet(events_path)
+            log.info("eightk_magnitude: enriched events written back (%d rows)", len(_ev_enriched))
+        else:
+            log.info("eightk_magnitude: no material_8k_events.parquet — skipping enrichment")
+    except Exception as e:  # noqa: BLE001 — enrichment failure never blocks page
+        log.error("eightk_magnitude enrichment failed: %s", e)
+
+    try:
+        from engine.eightk_magnitude import compute_eightk_magnitude
+        mag = compute_eightk_magnitude(write_ledger=True)
+        if _dump(fdir, "eightk_magnitude.json", mag):
+            wrote.append("eightk_magnitude")
+    except Exception as e:  # noqa: BLE001
+        log.error("eightk_magnitude engine failed: %s", e)
+
     log.info("theme add-ons built -> %s (%s)", fdir, ", ".join(wrote) or "nothing")
     return 0
 
