@@ -13,7 +13,8 @@ build_graph(root) constructs the confluence graph over the signal bus:
 
   Edges:
     feeds       — structural data-flow from config/synapse.yml producer→artifact→consumer
-    stable      — Oracle edge_stability where stable==True (READ-ONLY)
+    stable      — Oracle edge_stability where stable==True (READ-ONLY): graph_s Tier-S
+                  all stable pairs + graph_m Tier-M capped to complex-level
     leads       — Oracle graph_m.json leadlag records (include honest nulls)
     contradicts — from detect_contradictions() output
     confirms    — co-firing lift from spine_index (same symbol+as_of+direction+horizon
@@ -697,7 +698,11 @@ def build_and_write(
 ) -> dict:
     """Build the confluence graph, write to data/neuralweb/confluence_graph.json.
 
-    Returns the payload dict.  Never raises; write failures propagate as OSError.
+    Stamps the payload with the five envelope keys (schema_version, produced_by,
+    produced_at, inputs_hash, tier) using stamp_if_changed so the artifact stays
+    byte-identical when data is unchanged — prevents daily churn on unchanged graphs.
+
+    Returns the stamped payload dict.  Never raises; write failures propagate as OSError.
     """
     repo = _repo_root(root)
     if out_path is None:
@@ -707,6 +712,26 @@ def build_and_write(
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     payload = build_graph(root=repo, now=now)
+
+    # Read existing on-disk artifact for stamp_if_changed byte-identity path.
+    prev_payload: dict | None = None
+    if dest.exists():
+        try:
+            prev_payload = json.loads(dest.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            prev_payload = None
+
+    # Stamp with envelope (sibling keys — NOT a nested wrapper).
+    try:
+        from engine.neuralweb.envelope import stamp_if_changed  # noqa: PLC0415
+        payload = stamp_if_changed(
+            payload,
+            prev_payload,
+            artifact_id="confluence-graph",
+            now=now,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("confluence.build_and_write: envelope stamp failed: %s", e)
 
     dest.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False, default=str),
