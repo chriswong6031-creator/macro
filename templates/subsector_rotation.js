@@ -34,7 +34,7 @@
   };
   function pcCls(v){return v==null?'':(v>=0?'up':'dn');}
 
-  var _data=null, _unit='subsectors', _sortKey='emerging_score', _sortDir=-1, _zoom=null, _fs=false;
+  var _data=null, _unit='subsectors', _sortKey='emerging_score', _sortDir=-1, _zoom=null, _fs=false, _vsMore=false;
 
   function boot(){
     injectStyle();
@@ -357,13 +357,13 @@
   /* ---------- head-to-head: rotating IN vs rotating OUT ---------- */
   function drawVersus(el){
     function itemByKey(k){var a=items(),i;for(i=0;i<a.length;i++)if(keyOf(a[i])===k)return a[i];return null;}
-    var em,fa,N=6;
+    var em,fa,MAX=12,N=_vsMore?MAX:6;   // 6 collapsed → up to 12 on "see more"
     if(_unit==='themes'){ var ts=items().slice();
-      em=ts.filter(function(d){return d.rs_mom>0;}).sort(function(a,b){return b.emerging_score-a.emerging_score;}).slice(0,N);
-      fa=ts.filter(function(d){return d.rs_ratio>0&&d.rs_mom<0;}).sort(function(a,b){return a.rs_mom-b.rs_mom;}).slice(0,N);
+      em=ts.filter(function(d){return d.rs_mom>0;}).sort(function(a,b){return b.emerging_score-a.emerging_score;}).slice(0,MAX);
+      fa=ts.filter(function(d){return d.rs_ratio>0&&d.rs_mom<0;}).sort(function(a,b){return a.rs_mom-b.rs_mom;}).slice(0,MAX);
     } else {
-      em=(_data.highlights.emerging||[]).map(itemByKey).filter(Boolean).slice(0,N);
-      fa=(_data.highlights.fading||[]).map(itemByKey).filter(Boolean).slice(0,N);
+      em=(_data.highlights.emerging||[]).map(itemByKey).filter(Boolean).slice(0,MAX);
+      fa=(_data.highlights.fading||[]).map(itemByKey).filter(Boolean).slice(0,MAX);
     }
     function row(d,i){
       // "trend" = rs_mom (the map's vertical axis: heating +, cooling −) shown on
@@ -397,13 +397,16 @@
       +'</div>'
       +'<div class="sr-vs-key">'+L('1W · 1M = return · trend = heating (+) or cooling (−), the map’s vertical axis',
                                     '1周 · 1月 = 涨跌 · 趋势 = 升温(+)/降温(−)，即图中纵轴')+'</div>'
-      +'<div class="sr-vs-body">'+col(em,'in')+'<div class="sr-vs-spine"></div>'+col(fa,'out')+'</div>'
+      +'<div class="sr-vs-body">'+col(em.slice(0,N),'in')+'<div class="sr-vs-spine"></div>'+col(fa.slice(0,N),'out')+'</div>'
+      +((em.length>6||fa.length>6)?'<button type="button" class="sr-vs-more">'+(_vsMore?L('See less','收起')+' ↑':L('See more','查看更多')+' ↓')+'</button>':'')
     +'</div>';
     Array.prototype.forEach.call(el.querySelectorAll('.sr-vs-row'),function(c){
       c.addEventListener('mousemove',function(e){showTip(c.getAttribute('data-k'),e.clientX,e.clientY);});
       c.addEventListener('mouseleave',hideTip);
       c.addEventListener('click',function(e){if(e.target.closest('a'))return;var k=c.getAttribute('data-k');if(hasDetail())location.href=detailHref(k);else flashRow(k);});
     });
+    var mb=el.querySelector('.sr-vs-more');
+    if(mb)mb.addEventListener('click',function(){_vsMore=!_vsMore;drawVersus(el);});
   }
 
   /* ---------- table ---------- */
@@ -520,6 +523,7 @@
     +'.sr-vs-key{font-size:10px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.4;}'
     +'.sr-vs-body{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 18px;margin-top:8px;} .sr-vs-spine{background:var(--line);}'
     +'.sr-vs-empty{padding:16px 6px;text-align:center;font-size:11px;color:var(--muted);}'
+    +'.sr-vs-more{display:block;margin:12px auto 0;font:700 12px Inter,sans-serif;color:var(--link);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 18px;cursor:pointer;} .sr-vs-more:hover{border-color:color-mix(in srgb,var(--link) 55%,var(--line));background:color-mix(in srgb,var(--link) 8%,transparent);}'
     +'.sr-vs-col{min-width:0;}'
     +'.sr-vs-chd,.sr-vs-row{display:grid;grid-template-columns:18px 10px minmax(0,1fr) 54px 54px 50px;gap:9px;align-items:center;}'
     +'.sr-vs-chd{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);padding:1px 6px 5px;} .sr-vs-chd>span:nth-child(n+4){text-align:right;}'
