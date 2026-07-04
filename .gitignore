@@ -161,6 +161,16 @@ data/massive_stock_day/*.parquet
 # NEVER committed to git; content is re-downloadable from massive.com entitlement.
 # See research/OPTIONS_ALPHA_MASTERPLAN.md §3 rulings A4 and A8.
 data/massive_options_day/
+# ThetaData Phase-A T1 backfill store (rulings A4/A8 + §7.2 of LIVE_ORDER_FLOW_BRAINSTORM).
+# ~30–80 GB raw EOD chains + OI + Greeks; published to R2 via publish_r2 --dirs thetadata_eod.
+# NEVER committed to git; re-downloadable from ThetaData entitlement.
+# Committed (git-tracked): _backfill_state.json (resume state) + _manifest.json (R2 anchor).
+data/thetadata_eod/eod/
+data/thetadata_eod/oi/
+data/thetadata_eod/greeks/
+# Negation: keep the committed state + manifest files tracked even though the data subdirs above are excluded
+!data/thetadata_eod/_backfill_state.json
+!data/thetadata_eod/_manifest.json
 # (NOT R2) — not regenerable without re-scraping; critical H2a phase-0 evidence.
 # data/hk_shorts/ is intentionally NOT listed here; all files are committed.
 # ---- Slice G store decisions (2026-07-03) ------------------------------------
