@@ -1,6 +1,6 @@
 /* subsector_rotation.js — the Subsector Rotation desk.
  *
- * Reads marketdata/subsector_rotation.json (built from Finviz's broad-universe
+ * Reads marketdata/subsector_rotation.json (built from a broad-universe
  * theme→subsector performance) and renders three linked views:
  *   • a Relative-Rotation map (RS-Ratio × RS-Momentum) with the four rotation
  *     quadrants — Leading / Weakening / Improving / Lagging;
@@ -58,7 +58,7 @@
     var em=(_data.highlights.emerging||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,5);
     var fa=(_data.highlights.fading||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,4);
     el.innerHTML='<div class="srx-hd"><span>🌀 '+L('Subsector rotation','子行业轮动')
-      +'<i>'+L('Finviz broad-universe · velocity','Finviz 全市场 · 速度')+'</i></span>'
+      +'<i>'+L('Broad-universe · velocity','全市场 · 速度')+'</i></span>'
       +'<a class="srx-more" href="subsector_rotation.html">'+L('full rotation map','完整轮动图')+' →</a></div>'
       +'<div class="srx-cols">'
       +'<div class="srx-col"><span class="srx-lab up">▲ '+L('Emerging','升温')+'</span>'+em.map(chip).join('')+'</div>'
@@ -115,12 +115,12 @@
           +'<button type="button" data-u="themes" class="'+(_unit==='themes'?'on':'')+'">'+L('Themes','主题')+' <b>'+_data.n_themes+'</b></button>'
         +'</div>'
         +'<div class="sr-grow"></div>'
-        +'<div class="sr-meta">'+L('Finviz broad-universe · multi-horizon','Finviz 全市场 · 多周期')+'</div>'
+        +'<div class="sr-meta">'+L('Broad-universe · multi-horizon velocity','全市场 · 多周期速度')+'</div>'
       +'</div>'
       +'<div class="sr-map-card"></div>'
       +'<div class="sr-versus-wrap"></div>'
-      +'<div class="sr-tr-wrap"></div>'
-      +'<div class="sr-table-wrap"></div>';
+      +'<div class="sr-table-wrap"></div>'
+      +'<div class="sr-tr-wrap"></div>';
 
     Array.prototype.forEach.call(root.querySelectorAll('.sr-toggle button'),function(b){
       b.addEventListener('click',function(){_unit=b.getAttribute('data-u'); _sortKey='emerging_score'; _sortDir=-1; _zoom=null; render(root);});
@@ -255,28 +255,39 @@
     else {['emerging','fading','leaders'].forEach(function(b){(_data.highlights[b]||[]).slice(0,10).forEach(function(k){lab[k]=1;});});}
     var fast={};
     if(_zoom){ its.slice().sort(function(a,b){return tl[keyOf(b)].speed-tl[keyOf(a)].speed;}).slice(0,3).forEach(function(d,i){fast[keyOf(d)]=i+1;}); }
-    function tailSvg(d){
-      var t=tl[keyOf(d)]; if(!t||t.speed<0.15)return '';
-      var col='var('+QCOL[d.quadrant]+')';
-      var s0=[X(t.p0[0]),Y(t.p0[1])],s1=[X(t.p1[0]),Y(t.p1[1])],s2=[X(t.p2[0]),Y(t.p2[1])];
-      var g='<path d="M'+s0[0].toFixed(1)+' '+s0[1].toFixed(1)+' L'+s1[0].toFixed(1)+' '+s1[1].toFixed(1)+'" stroke="'+col+'" stroke-width="1.6" stroke-opacity=".22" fill="none" stroke-linecap="round"></path>'
-        +'<path d="M'+s1[0].toFixed(1)+' '+s1[1].toFixed(1)+' L'+s2[0].toFixed(1)+' '+s2[1].toFixed(1)+'" stroke="'+col+'" stroke-width="2.6" stroke-opacity=".5" fill="none" stroke-linecap="round"></path>';
-      var dx=s2[0]-s1[0],dy=s2[1]-s1[1];
-      if(dx===0&&dy===0){dx=s2[0]-s0[0];dy=s2[1]-s0[1];} // p1==p2 → fall back to p0→p2 heading
-      var ang=Math.atan2(dy,dx),al=8,aw=0.42;
-      g+='<path d="M'+s2[0].toFixed(1)+' '+s2[1].toFixed(1)+' L'+(s2[0]-al*Math.cos(ang-aw)).toFixed(1)+' '+(s2[1]-al*Math.sin(ang-aw)).toFixed(1)
-        +' L'+(s2[0]-al*Math.cos(ang+aw)).toFixed(1)+' '+(s2[1]-al*Math.sin(ang+aw)).toFixed(1)+' Z" fill="'+col+'" fill-opacity=".62"></path>';
-      return g;
-    }
-    var tails='',dots='',cands=[];
+    // Only genuine movers get a trail — a speed floor plus a hard cap in the overview
+    // (the fastest N) keep the map from becoming a hairball. Each trail is ONE gradient
+    // stroke (faint at the origin → bold near the dot) capped with a big arrowhead that
+    // lands ON the circle edge, not buried inside it.
+    var TAILMIN=_zoom?0.30:0.65;
+    var tailKeys={};
+    (function(){
+      var cand=its.filter(function(d){var tt=tl[keyOf(d)];return lab[keyOf(d)]&&tt&&tt.speed>=TAILMIN;})
+        .sort(function(a,b){return tl[keyOf(b)].speed-tl[keyOf(a)].speed;});
+      cand.slice(0,_zoom?15:12).forEach(function(d){tailKeys[keyOf(d)]=1;});
+    })();
+    var defs='',tails='',dots='',cands=[],gi=0;
     its.forEach(function(d){
-      var k=keyOf(d),x=X(d.rs_ratio),y=Y(d.rs_mom),q=d.quadrant;
-      var base=_unit==='themes'?7:(4.5+Math.min(5,Math.sqrt((d.n_members||4))/1.7));
-      var r=_zoom?base+1.6:base, hot=d.emerging_score>0;
-      if(lab[k])tails+=tailSvg(d);
-      if(fast[k])dots+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(r+4).toFixed(1)+'" fill="none" stroke="var('+QCOL[q]+')" stroke-width="1.5" stroke-opacity=".9"></circle>';
-      dots+='<circle class="sr-dot" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+qFill(q,hot?80:55)+'" stroke="var('+QCOL[q]+')" stroke-opacity=".75" data-k="'+esc(k)+'"></circle>';
-      if(lab[k])cands.push({x:x,y:y,r:r,txt:(fast[k]?('#'+fast[k]+' '):'')+nameOf(d),hot:!!fast[k],rank:fast[k]||99,spd:(tl[k]||{}).speed||0});
+      var k=keyOf(d),x=X(d.rs_ratio),y=Y(d.rs_mom),q=d.quadrant,col='var('+QCOL[q]+')';
+      var base=_unit==='themes'?7:(4+Math.min(9,(d.n_members||4)*0.55));      // wider size spread
+      var r=_zoom?base+1.8:base, hot=d.emerging_score>0, t=tl[k];
+      if(tailKeys[k]&&t){
+        var gid='srg'+(gi++);
+        var s0=[X(t.p0[0]),Y(t.p0[1])],s1=[X(t.p1[0]),Y(t.p1[1])],s2=[x,y];
+        var ddx=s2[0]-s1[0],ddy=s2[1]-s1[1],dl=Math.sqrt(ddx*ddx+ddy*ddy);
+        if(dl<0.5){ddx=s2[0]-s0[0];ddy=s2[1]-s0[1];dl=Math.sqrt(ddx*ddx+ddy*ddy)||1;} // degenerate → use p0→now
+        ddx/=dl;ddy/=dl;
+        var tip=[s2[0]-(r+2)*ddx, s2[1]-(r+2)*ddy];                            // stop at the dot edge
+        defs+='<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+s0[0].toFixed(1)+'" y1="'+s0[1].toFixed(1)+'" x2="'+tip[0].toFixed(1)+'" y2="'+tip[1].toFixed(1)+'">'
+          +'<stop offset="0" stop-color="'+col+'" stop-opacity="0.06"></stop><stop offset="0.5" stop-color="'+col+'" stop-opacity="0.38"></stop><stop offset="1" stop-color="'+col+'" stop-opacity="0.95"></stop></linearGradient>';
+        tails+='<path d="M'+s0[0].toFixed(1)+' '+s0[1].toFixed(1)+' L'+s1[0].toFixed(1)+' '+s1[1].toFixed(1)+' L'+tip[0].toFixed(1)+' '+tip[1].toFixed(1)+'" stroke="url(#'+gid+')" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
+        var ang=Math.atan2(ddy,ddx),al=13,aw=0.46;
+        tails+='<path d="M'+tip[0].toFixed(1)+' '+tip[1].toFixed(1)+' L'+(tip[0]-al*Math.cos(ang-aw)).toFixed(1)+' '+(tip[1]-al*Math.sin(ang-aw)).toFixed(1)
+          +' L'+(tip[0]-al*Math.cos(ang+aw)).toFixed(1)+' '+(tip[1]-al*Math.sin(ang+aw)).toFixed(1)+' Z" fill="'+col+'" fill-opacity="0.95"></path>';
+      }
+      if(fast[k])dots+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(r+4.5).toFixed(1)+'" fill="none" stroke="'+col+'" stroke-width="1.8" stroke-opacity=".9"></circle>';
+      dots+='<circle class="sr-dot" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+qFill(q,hot?84:58)+'" stroke="'+col+'" stroke-opacity=".82" stroke-width="1.3" data-k="'+esc(k)+'"></circle>';
+      if(lab[k])cands.push({x:x,y:y,r:r,txt:(fast[k]?('#'+fast[k]+' '):'')+nameOf(d),hot:!!fast[k],rank:fast[k]||99,spd:(t||{}).speed||0});
     });
     // Labels: place greedily by priority (ringed movers first, then fastest) and DROP
     // any that would overprint a placed one — the dropped dot stays hoverable and its
@@ -301,21 +312,27 @@
     if(_zoom){ qlab=corner(_zoom,plotX+8,plotY+18,'start'); }
     else { qlab=corner('leading',plotX+plotW-8,plotY+18,'end')+corner('improving',plotX+8,plotY+18,'start')
         +corner('weakening',plotX+plotW-8,plotY+plotH-26,'end')+corner('lagging',plotX+8,plotY+plotH-26,'start'); }
-    // layman axis captions
-    var xL=isZh()?'← 弱于大盘':'← weaker', xR=isZh()?'强于大盘 →':'stronger →', xCap=isZh()?'相对大盘强弱':'STRENGTH vs. MARKET';
-    var yUp=isZh()?'升温 ▲':'heating up ▲', yDn=isZh()?'▼ 降温':'▼ cooling';
-    // center caption on its own upper baseline; ← weaker / stronger → below, so the
-    // wide EN cap never collides with the side labels at the narrow width floor.
-    var axis='<text class="sr-axc sr-axc-cap" x="'+(plotX+plotW/2)+'" y="'+(H-25)+'" text-anchor="middle">'+esc(xCap)+'</text>'
-      +'<text class="sr-axc" x="'+(plotX)+'" y="'+(H-9)+'" text-anchor="start">'+esc(xL)+'</text>'
-      +'<text class="sr-axc" x="'+(plotX+plotW)+'" y="'+(H-9)+'" text-anchor="end">'+esc(xR)+'</text>'
-      +'<text class="sr-axc" x="15" y="'+(plotY+14)+'" text-anchor="middle" transform="rotate(-90 15 '+(plotY+14)+')">'+esc(yUp)+'</text>'
-      +'<text class="sr-axc" x="15" y="'+(plotY+plotH-14)+'" text-anchor="middle" transform="rotate(-90 15 '+(plotY+plotH-14)+')">'+esc(yDn)+'</text>';
+    // Axis clarity: coloured gradient rails (red weaker → green stronger on X;
+    // green heating → red cooling on Y) plus big bold coloured end-labels with
+    // arrows. No tiny grey text — you read direction from colour at a glance.
+    var axDefs='<linearGradient id="sr-xg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--down)" stop-opacity="0.6"></stop><stop offset="0.5" stop-color="var(--muted)" stop-opacity="0.18"></stop><stop offset="1" stop-color="var(--up)" stop-opacity="0.75"></stop></linearGradient>'
+      +'<linearGradient id="sr-yg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--up)" stop-opacity="0.75"></stop><stop offset="0.5" stop-color="var(--muted)" stop-opacity="0.18"></stop><stop offset="1" stop-color="var(--down)" stop-opacity="0.6"></stop></linearGradient>';
+    var axBars='<rect x="'+plotX+'" y="'+(plotY+plotH+9).toFixed(1)+'" width="'+plotW.toFixed(1)+'" height="5" rx="2.5" fill="url(#sr-xg)"></rect>'
+      +'<rect x="'+(plotX-17)+'" y="'+plotY+'" width="5" height="'+plotH.toFixed(1)+'" rx="2.5" fill="url(#sr-yg)"></rect>';
+    var xLo=isZh()?'弱于大盘':'WEAKER', xHi=isZh()?'强于大盘':'STRONGER';
+    var yHi=isZh()?'升温':'HEATING UP', yLo=isZh()?'降温':'COOLING';
+    var axis=axBars
+      +'<text class="sr-axc sr-ax-dn" x="'+plotX+'" y="'+(H-11)+'" text-anchor="start">◀ '+esc(xLo)+'</text>'
+      +'<text class="sr-axc sr-ax-up" x="'+(plotX+plotW)+'" y="'+(H-11)+'" text-anchor="end">'+esc(xHi)+' ▶</text>'
+      +'<text class="sr-axc sr-ax-up" x="16" y="'+(plotY+4)+'" text-anchor="end" transform="rotate(-90 16 '+(plotY+4)+')">'+esc(yHi)+' ▲</text>'
+      +'<text class="sr-axc sr-ax-dn" x="16" y="'+(plotY+plotH-4)+'" text-anchor="start" transform="rotate(-90 16 '+(plotY+plotH-4)+')">▼ '+esc(yLo)+'</text>';
     var empty=_zoom&&!its.length?'<text class="sr-axc" x="'+(plotX+plotW/2)+'" y="'+(plotY+plotH/2)+'" text-anchor="middle">'+esc(isZh()?'该象限暂无成分':'nothing in this quadrant')+'</text>':'';
     var aria='Rotation map — '+its.length+' '+(_unit==='themes'?'themes':'subsectors')+(_zoom?(' in the '+_zoom+' quadrant'):'')
       +'. Horizontal axis strength vs market, vertical axis heating vs cooling.';
-    var svg='<svg class="sr-map'+(_zoom?' sr-zoomed':'')+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+esc(aria)+'">'
-      +bg+lines+qlab+axis+tails+dots+labels+empty+'</svg>';
+    // zoom animation emanates from the clicked quadrant's corner (camera push-in).
+    var org={leading:'right top',improving:'left top',weakening:'right bottom',lagging:'left bottom'}[_zoom]||'center center';
+    var svg='<svg class="sr-map'+(_zoom?' sr-zoomed':'')+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+esc(aria)+'" style="transform-origin:'+org+'">'
+      +'<defs>'+defs+axDefs+'</defs>'+bg+lines+qlab+axis+tails+dots+labels+empty+'</svg>';
     wrap.innerHTML=svg;
     var sv=wrap.querySelector('svg');
     sv.addEventListener('mousemove',function(e){var t=e.target.closest('.sr-dot');if(!t){hideTip();return;}showTip(t.getAttribute('data-k'),e.clientX,e.clientY);});
@@ -475,12 +492,13 @@
     +'.sr-zc.on{color:var(--text);border-color:var(--zc,var(--link));box-shadow:inset 0 0 0 1px var(--zc,var(--link));background:color-mix(in srgb,var(--zc,var(--link)) 9%,var(--panel2));}'
     +'.sr-legend{display:flex;flex-wrap:wrap;gap:5px 15px;margin:0 0 6px;font-size:10.5px;color:var(--muted);} .sr-lg{display:inline-flex;align-items:center;gap:5px;} .sr-lg-hint{margin-left:auto;font-style:italic;opacity:.85;}'
     +'.sr-lg-tail{width:22px;height:0;border-top:2.5px solid color-mix(in srgb,var(--text) 42%,transparent);border-radius:2px;} .sr-lg-arw{color:color-mix(in srgb,var(--text) 55%,transparent);font-size:12px;line-height:1;} .sr-lg-dot{width:10px;height:10px;border-radius:50%;background:color-mix(in srgb,var(--text) 28%,transparent);}'
-    +'.sr-map-wrap{width:100%;} .sr-map{width:100%;height:auto;display:block;overflow:hidden;} .sr-map .sr-qz{cursor:zoom-in;} .sr-map path{pointer-events:none;}'
-    +'.sr-dot{cursor:pointer;transition:r .1s,fill-opacity .1s;} .sr-dot:hover{stroke-width:2.5;}'
+    +'.sr-map-wrap{width:100%;} .sr-map{width:100%;height:auto;display:block;overflow:hidden;animation:sr-mapin .4s cubic-bezier(.2,.7,.25,1);} .sr-map.sr-zoomed{animation:sr-zoomin .5s cubic-bezier(.2,.7,.25,1);} .sr-map .sr-qz{cursor:zoom-in;} .sr-map path{pointer-events:none;}'
+    +'@keyframes sr-mapin{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}} @keyframes sr-zoomin{from{opacity:0;transform:scale(1.14)}to{opacity:1;transform:scale(1)}}'
+    +'.sr-dot{cursor:pointer;transition:r .12s,fill-opacity .12s;} .sr-dot:hover{stroke-width:2.8;}'
     +'.sr-dlab{font:600 11px Inter,sans-serif;fill:color-mix(in srgb,var(--text) 82%,transparent);pointer-events:none;} .sr-dlab-hot{font-weight:800;font-size:12.5px;fill:var(--text);}'
-    +'.sr-qlab{font:800 16px Inter,sans-serif;letter-spacing:.06em;opacity:.5;pointer-events:none;} .sr-qsub{font:700 11px Inter,sans-serif;opacity:.6;pointer-events:none;}'
+    +'.sr-qlab{font:800 15px Inter,sans-serif;letter-spacing:.05em;opacity:.5;pointer-events:none;} .sr-qsub{font:700 8.5px Inter,sans-serif;opacity:.62;letter-spacing:.02em;pointer-events:none;}'
     +'.sr-qlab.q-lead,.sr-qsub.q-lead{fill:var(--up);} .sr-qlab.q-weak,.sr-qsub.q-weak{fill:var(--warn);} .sr-qlab.q-impr,.sr-qsub.q-impr{fill:var(--link);} .sr-qlab.q-lag,.sr-qsub.q-lag{fill:var(--down);}'
-    +'.sr-axc{font:700 11px Inter,sans-serif;fill:color-mix(in srgb,var(--text) 52%,transparent);letter-spacing:.02em;pointer-events:none;} .sr-axc-cap{font-weight:800;fill:color-mix(in srgb,var(--text) 64%,transparent);letter-spacing:.08em;}'
+    +'.sr-axc{font:700 11px Inter,sans-serif;fill:color-mix(in srgb,var(--text) 52%,transparent);letter-spacing:.02em;pointer-events:none;} .sr-ax-up{font:800 12.5px Inter,sans-serif;fill:var(--up);letter-spacing:.06em;} .sr-ax-dn{font:800 12.5px Inter,sans-serif;fill:var(--down);letter-spacing:.06em;}'
     // ---- head-to-head scorecard ----
     +'.sr-versus{margin-top:14px;padding:12px 15px 14px;}'
     +'.sr-vs-hd{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding-bottom:9px;border-bottom:1px solid var(--line);}'
@@ -490,14 +508,14 @@
     +'.sr-vs-body{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 18px;margin-top:8px;} .sr-vs-spine{background:var(--line);}'
     +'.sr-vs-empty{padding:16px 6px;text-align:center;font-size:11px;color:var(--muted);}'
     +'.sr-vs-col{min-width:0;}'
-    +'.sr-vs-chd,.sr-vs-row{display:grid;grid-template-columns:16px 9px minmax(0,1fr) 46px 46px 46px;gap:6px;align-items:center;}'
+    +'.sr-vs-chd,.sr-vs-row{display:grid;grid-template-columns:18px 10px minmax(0,1fr) 54px 54px 50px;gap:9px;align-items:center;}'
     +'.sr-vs-chd{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);padding:1px 6px 5px;} .sr-vs-chd>span:nth-child(n+4){text-align:right;}'
     +'.sr-vs-row{padding:6px;border-radius:8px;cursor:pointer;} .sr-vs-row:hover{background:color-mix(in srgb,var(--text) 4%,transparent);}'
     +'.sr-vs-rk{font-size:10px;font-weight:800;color:var(--muted);text-align:center;} .sr-vs-q{width:8px;height:8px;border-radius:50%;flex:none;}'
     +'.sr-vs-q.q-lead{background:var(--up);} .sr-vs-q.q-weak{background:var(--warn);} .sr-vs-q.q-impr{background:var(--link);} .sr-vs-q.q-lag{background:var(--down);}'
     +'.sr-vs-main{min-width:0;display:flex;flex-direction:column;line-height:1.14;} .sr-vs-nm{font-weight:700;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .sr-vs-th{font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
     +'.sr-vs-row>b{font-size:11px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;} .sr-vs-k{font-weight:800;}'
-    +'@media (max-width:640px){.sr-vs-body{grid-template-columns:1fr;gap:0;} .sr-vs-spine{display:none;} .sr-vs-col.out{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);}}'
+    +'@media (max-width:640px){.sr-vs-body{grid-template-columns:1fr;gap:0;} .sr-vs-spine{display:none;} .sr-vs-col.out{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);} .sr-vs-chd,.sr-vs-row{grid-template-columns:16px 9px minmax(0,1fr) 48px 48px 44px;gap:7px;}}'
     +'.sr-q{font-size:10px;font-weight:800;padding:1px 7px;border-radius:6px;white-space:nowrap;}'
     +'.sr-q.q-lead{color:var(--up);background:color-mix(in srgb,var(--up) 15%,transparent);} .sr-q.q-weak{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,transparent);} .sr-q.q-impr{color:var(--link);background:color-mix(in srgb,var(--link) 15%,transparent);} .sr-q.q-lag{color:var(--down);background:color-mix(in srgb,var(--down) 15%,transparent);}'
     +'.sr-table-wrap{margin-top:14px;overflow:auto;max-height:640px;}'
@@ -521,7 +539,7 @@
     +'.srx-col{display:flex;flex-wrap:wrap;align-items:center;gap:6px;} .srx-lab{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-right:2px;} .srx-lab.up{color:var(--up);} .srx-lab.dn{color:var(--down);}'
     +'.srx-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);} .srx-chip:hover{border-color:color-mix(in srgb,var(--link) 50%,var(--line));} .srx-chip b{font-size:12px;color:var(--text);} .srx-th{font-size:9.5px;color:var(--muted);} .srx-pc{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;}'
     +'.srx-q{width:7px;height:7px;border-radius:50%;flex:none;} .srx-q.q-lead{background:var(--up);} .srx-q.q-weak{background:var(--warn);} .srx-q.q-impr{background:var(--link);} .srx-q.q-lag{background:var(--down);}'
-    +'@media (prefers-reduced-motion:reduce){.sr-tip,.sr-dot{transition:none;}}';
+    +'@media (prefers-reduced-motion:reduce){.sr-tip,.sr-dot{transition:none;} .sr-map,.sr-map.sr-zoomed{animation:none;}}';
     var st=document.createElement('style'); st.id='sr-style'; st.textContent=c; document.head.appendChild(st);
   }
 
