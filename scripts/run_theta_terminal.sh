@@ -1,35 +1,40 @@
 #!/usr/bin/env bash
-# scripts/run_theta_terminal.sh — launch the ThetaData Terminal Java client.
+# scripts/run_theta_terminal.sh — launch the ThetaData Terminal v3 Java client.
 #
-# The Theta Terminal is a local Java process that serves the ThetaData REST API on
-# http://127.0.0.1:25510.  It must be running before any collectors/thetadata.py call.
+# The Theta Terminal v3 is a local Java process that serves the ThetaData v3 REST API on
+# http://127.0.0.1:25503.  It must be running before any collectors/thetadata.py call.
+#
+# v2 (ThetaTerminal.jar, port 25510) is DEAD — all /v2/* paths return HTTP 410 Gone.
+# This script launches v3 (ThetaTerminalv3.jar, port 25503) only.
 #
 # Credentials (never echoed):
-#   - Primary: THETA_USERNAME / THETA_PASSWORD environment variables
+#   - Primary: THETA_API_KEY environment variable (v3 uses --api-key flag, not user/pass)
 #   - Fallback: .env file at the repo root (KEY=VALUE format, one per line)
 #
-# Jar location: ~/theta/ThetaTerminal.jar
-#   If absent, instructions are printed.  The stable jar is downloaded from:
-#   https://download-stable.thetadata.us/ThetaTerminal.jar
+# Jar location: ~/theta/ThetaTerminalv3.jar
+#   If absent, instructions are printed.
 #
-# Java requirement: Java 17+.  The script checks and exits with a clear error if
-# the installed java is older or absent.
+# Java requirement: Java 21 (measured requirement — ThetaTerminalv3 requires JDK 21).
+#   Install: brew install openjdk@21
+#   The script sets JAVA_HOME to /opt/homebrew/opt/openjdk@21 if it exists and java is not 21.
+#
+# Health check endpoint (v3): GET http://127.0.0.1:25503/v3/option/list/symbols
 #
 # Usage:
 #   scripts/run_theta_terminal.sh
-#   THETA_USERNAME=user@example.com THETA_PASSWORD=secret scripts/run_theta_terminal.sh
+#   THETA_API_KEY=your_key scripts/run_theta_terminal.sh
 
 set -euo pipefail
 
 THETA_DIR="$HOME/theta"
-JAR_PATH="$THETA_DIR/ThetaTerminal.jar"
-LOG_PATH="$THETA_DIR/terminal.log"
-STABLE_JAR_URL="https://download-stable.thetadata.us/ThetaTerminal.jar"
-MIN_JAVA_VERSION=17
+JAR_PATH="$THETA_DIR/ThetaTerminalv3.jar"
+LOG_PATH="$THETA_DIR/terminal_v3.log"
+HEALTH_URL="http://127.0.0.1:25503/v3/option/list/symbols"
+MIN_JAVA_VERSION=21
+REQUIRED_JAVA_HOME="/opt/homebrew/opt/openjdk@21"
 
-# ── Credential resolution (never echo the password) ───────────────────────────
+# ── Credential resolution (never echo the key) ────────────────────────────────
 _load_env() {
-    # Load .env from repo root if it exists
     REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
     ENV_FILE="$REPO_ROOT/.env"
     if [[ -f "$ENV_FILE" ]]; then
@@ -43,45 +48,58 @@ _load_env() {
 
 _load_env
 
-THETA_USER="${THETA_USERNAME:-}"
-# THETA_PASSWORD is read but never printed — only passed directly to the JVM call
-THETA_PASS="${THETA_PASSWORD:-}"
+# THETA_API_KEY is read but never printed — only passed as --api-key flag to the JVM
+THETA_KEY="${THETA_API_KEY:-}"
 
-if [[ -z "$THETA_USER" || -z "$THETA_PASS" ]]; then
-    echo "ERROR: THETA_USERNAME and/or THETA_PASSWORD not set."
+if [[ -z "$THETA_KEY" ]]; then
+    echo "ERROR: THETA_API_KEY not set."
     echo ""
-    echo "Set them in your environment:"
-    echo "  export THETA_USERNAME=your@email.com"
-    echo "  export THETA_PASSWORD=yourpassword"
+    echo "Set it in your environment:"
+    echo "  export THETA_API_KEY=your_api_key"
     echo ""
-    echo "Or add them to .env at the repo root:"
-    echo "  THETA_USERNAME=your@email.com"
-    echo "  THETA_PASSWORD=yourpassword"
+    echo "Or add it to .env at the repo root:"
+    echo "  THETA_API_KEY=your_api_key"
+    echo ""
+    echo "Find your API key at https://thetadata.us/account"
     exit 1
 fi
 
-# ── Java version check ────────────────────────────────────────────────────────
+# ── Java 21 check + JAVA_HOME setup ──────────────────────────────────────────
+# ThetaTerminalv3 requires Java 21 exactly (measured 2026-07-04).
+# If JAVA_HOME is already set to Java 21, use it; otherwise try the brew path.
+
+if [[ -d "$REQUIRED_JAVA_HOME" ]]; then
+    export JAVA_HOME="$REQUIRED_JAVA_HOME"
+    export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
 if ! command -v java &>/dev/null; then
     echo "ERROR: 'java' not found in PATH."
-    echo "Install Java 17+ from https://adoptium.net/ or via Homebrew:"
-    echo "  brew install --cask temurin@21"
+    echo ""
+    echo "Install Java 21 via Homebrew:"
+    echo "  brew install openjdk@21"
+    echo "  export JAVA_HOME=/opt/homebrew/opt/openjdk@21"
+    echo "  export PATH=\$JAVA_HOME/bin:\$PATH"
     exit 1
 fi
 
 JAVA_VERSION_OUTPUT=$(java -version 2>&1 | head -1)
-# java -version prints: java version "17.0.x" or openjdk version "21.0.x"
 JAVA_MAJOR=$(java -version 2>&1 | grep -oE '"[0-9]+' | head -1 | tr -d '"')
 if [[ -z "$JAVA_MAJOR" ]]; then
     echo "WARNING: Could not parse Java version from: $JAVA_VERSION_OUTPUT"
-    echo "Proceeding anyway — if the terminal fails, install Java 17+."
+    echo "Proceeding — if the terminal fails, install Java 21:"
+    echo "  brew install openjdk@21"
 elif [[ "$JAVA_MAJOR" -lt "$MIN_JAVA_VERSION" ]]; then
-    echo "ERROR: Java $MIN_JAVA_VERSION+ required; found Java $JAVA_MAJOR."
+    echo "ERROR: Java $MIN_JAVA_VERSION required; found Java $JAVA_MAJOR."
     echo "Output: $JAVA_VERSION_OUTPUT"
-    echo "Install Java 17+ from https://adoptium.net/ or:"
-    echo "  brew install --cask temurin@21"
+    echo ""
+    echo "Install Java 21:"
+    echo "  brew install openjdk@21"
+    echo "  export JAVA_HOME=/opt/homebrew/opt/openjdk@21"
+    echo "  export PATH=\$JAVA_HOME/bin:\$PATH"
     exit 1
 else
-    echo "Java OK: $(java -version 2>&1 | head -1)"
+    echo "Java OK (major=$JAVA_MAJOR): $JAVA_VERSION_OUTPUT"
 fi
 
 # ── Jar presence check ────────────────────────────────────────────────────────
@@ -89,45 +107,45 @@ mkdir -p "$THETA_DIR"
 
 if [[ ! -f "$JAR_PATH" ]]; then
     echo ""
-    echo "ERROR: ThetaTerminal.jar not found at $JAR_PATH"
+    echo "ERROR: ThetaTerminalv3.jar not found at $JAR_PATH"
     echo ""
-    echo "Download the stable jar:"
+    echo "Download from your ThetaData account or the stable release:"
     echo "  mkdir -p $THETA_DIR"
-    echo "  curl -L -o $JAR_PATH $STABLE_JAR_URL"
+    echo "  # Download ThetaTerminalv3.jar to $JAR_PATH"
     echo ""
-    echo "Or visit https://download-stable.thetadata.us/ to download manually."
+    echo "Visit https://thetadata.us/account to download."
     echo "Then re-run this script."
     exit 1
 fi
 
 # ── Kill any existing terminal process ───────────────────────────────────────
-EXISTING=$(pgrep -f "ThetaTerminal.jar" 2>/dev/null || true)
+EXISTING=$(pgrep -f "ThetaTerminalv3.jar" 2>/dev/null || true)
 if [[ -n "$EXISTING" ]]; then
-    echo "Existing Theta Terminal process found (PID $EXISTING) — killing..."
+    echo "Existing Theta Terminal v3 process found (PID $EXISTING) — killing..."
     kill "$EXISTING" 2>/dev/null || true
     sleep 1
 fi
 
 # ── Launch ────────────────────────────────────────────────────────────────────
 echo ""
-echo "Launching Theta Terminal..."
+echo "Launching ThetaData Terminal v3..."
 echo "  Jar:  $JAR_PATH"
 echo "  Log:  $LOG_PATH"
-echo "  User: $THETA_USER"
-echo "  (Password not echoed)"
+echo "  JAVA_HOME: ${JAVA_HOME:-not set}"
+echo "  (API key not echoed)"
 echo ""
 
-# Launch headless; nohup so it survives the shell exit
-# NEVER echo the password — it is passed directly to the process
-nohup java -jar "$JAR_PATH" "$THETA_USER" "$THETA_PASS" \
+# Launch headless; nohup so it survives the shell exit.
+# NEVER echo the API key — it is passed directly as --api-key flag.
+nohup java -jar "$JAR_PATH" --api-key "$THETA_KEY" \
     > "$LOG_PATH" 2>&1 &
 THETA_PID=$!
 
-echo "Theta Terminal launched — PID $THETA_PID"
+echo "ThetaData Terminal v3 launched — PID $THETA_PID"
 echo "Log: tail -f $LOG_PATH"
 echo ""
 echo "Health check (give it 5–10s to start):"
-echo "  curl -s http://127.0.0.1:25510/v2/list/roots/option | head -c 200"
+echo "  curl -s '$HEALTH_URL' | head -5"
 echo ""
 echo "Or probe via the backfill driver:"
 echo "  python -m scripts.backfill_thetadata_eod --probe"

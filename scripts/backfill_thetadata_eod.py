@@ -1,7 +1,7 @@
 """scripts/backfill_thetadata_eod.py — resumable T1 backfill driver for ThetaData EOD chains.
 
 Pulls EOD option chains, open interest, and first-order Greeks (incl. implied volatility)
-for the full options universe from the local Theta Terminal REST API, storing results in
+for the full options universe from the local Theta Terminal v3 REST API, storing results in
 date-chunked parquets under data/thetadata_eod/.
 
 STORAGE LAYOUT
@@ -21,7 +21,7 @@ UNIVERSE
 engine.options_universe.gex_symbols() UNIONED with ETF_ANCHORS + INDEX_ROOTS.
 ETF anchors: SPY QQQ IWM DIA XLK XLF XLE XLI XLU XLV XLY XLP XLB XLC XLRE SMH SOXX
              XBI KRE ARKK
-Index roots: SPX  (probe note: SPXW may be needed for weekly PM-settled; check at probe time)
+Index roots: SPX, SPXW  (SPXW confirmed as distinct PM-settled weekly root — measured 2026-07-04)
 
 RESUMABILITY
 ------------
@@ -40,18 +40,18 @@ Yearly chunks align with the parquet filenames and allow easy gap detection.
 
 PROBE MODE
 ----------
---probe: hit ONE root (SPY) for ONE recent week.  Prints measured latency, row counts,
-columns, and any entitlement errors verbatim.  Intended output seeds research/THETADATA_PROBE.md.
+--probe: hit SPY for the most recent 5 trading days.  Prints measured latency, row counts,
+columns, and any entitlement errors verbatim.  Also binary-probes AAPL to find the first
+available EOD date (history cutoff finding).  Intended output seeds research/THETADATA_PROBE.md.
 
 DRY-RUN MODE
 ------------
 --dry-run: prints the full pull plan (roots × years) with no API calls.
 
-SPXW NOTE (open question for probe)
-------------------------------------
-SPX is the AM-settled S&P 500 index option root.  Weekly PM-settled expirations may use
-root SPXW on the ThetaData system.  Check at probe time by requesting root=SPXW for a
-recent date; if it returns data, add SPXW to INDEX_ROOTS in production runs.
+SPXW NOTE (confirmed at probe 2026-07-04)
+-----------------------------------------
+SPXW is confirmed as a distinct PM-settled weekly S&P 500 index option root.
+It is included in INDEX_ROOTS alongside SPX.
 
 Usage
 -----
@@ -94,11 +94,15 @@ ETF_ANCHORS = [
     "XLK", "XLF", "XLE", "XLI", "XLU", "XLV", "XLY", "XLP", "XLB", "XLC", "XLRE",
     "SMH", "SOXX", "XBI", "KRE", "ARKK",
 ]
-# NOTE: SPXW (PM-settled weekly S&P 500 index options) may be a separate root.
-# Add it here after the probe confirms it returns data under ThetaData.
-INDEX_ROOTS = ["SPX"]
+# SPXW confirmed as a distinct root in /v3/option/list/symbols (measured 2026-07-04).
+# Included alongside SPX for full PM-settled weekly + AM-settled coverage.
+INDEX_ROOTS = ["SPX", "SPXW"]
 
-DEFAULT_START = "20120601"   # ~12y history; ThetaData Pro covers from ~2012
+# History starts ~2012-06-01: measured by binary probe of AAPL EOD on 2026-07-04.
+# 2012-01-01 through 2012-05-31 = empty; 2012-06-01 = first day with data.
+# 2012-12-31 confirmed has data (pre-2013 data IS present contrary to the initial estimate).
+# DEFAULT_START = 20120601 starts on the confirmed first day with data.
+DEFAULT_START = "20120601"   # ~14y history; v3 PROFESSIONAL data starts 2012-06-01
 DEFAULT_CHUNK_YEARS = 1      # pull one calendar year at a time
 
 STATE_VERSION = 1
@@ -262,7 +266,13 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
 # ── probe mode ────────────────────────────────────────────────────────────────
 def _run_probe() -> None:
     """Hit SPY for the most recent 5 trading days; print latency, row counts, columns.
-    Intended output populates research/THETADATA_PROBE.md §entitlement-probe-results."""
+    Also binary-probes AAPL EOD to find the exact history-start date.
+    Intended output populates research/THETADATA_PROBE.md §entitlement-probe-results.
+
+    Uses v3 API (port 25503).  v2 paths (port 25510) are dead (410 Gone).
+    """
+    import time as _time
+
     from collectors import thetadata as td
 
     if not td.reachable():
@@ -272,9 +282,9 @@ def _run_probe() -> None:
         return
 
     end = date.today()
-    # Use last 5 weekdays as the probe window
+    # Find the last 5 weekdays prior to today as the probe window
     days = []
-    d = end
+    d = end - timedelta(days=1)   # start from yesterday (today's EOD may not be in yet)
     while len(days) < 5:
         if d.weekday() < 5:
             days.append(d)
@@ -282,62 +292,138 @@ def _run_probe() -> None:
     start = min(days)
     root = "SPY"
 
-    print(f"\n=== ThetaData Probe: {root} {start} → {end} ===\n")
+    print(f"\n=== ThetaData v3 Probe: {root} {start} → {max(days)} ===")
+    print(f"=== Terminal: {td._base_url()} ===\n")
 
-    import time
     stores = [
-        ("eod", lambda: td.bulk_eod(root, 0, start, end)),
-        ("oi", lambda: td.bulk_open_interest(root, 0, start, end)),
-        ("greeks", lambda: td.bulk_greeks(root, 0, start, end, order=1)),
+        ("eod",    lambda s=start, e=max(days): td.bulk_eod(root, 0, s, e)),
+        ("oi",     lambda s=start, e=max(days): td.bulk_open_interest(root, 0, s, e)),
     ]
     for name, fetch in stores:
-        t0 = time.perf_counter()
+        t0 = _time.perf_counter()
         df = fetch()
-        elapsed = time.perf_counter() - t0
+        elapsed = _time.perf_counter() - t0
         if df is None:
             print(f"[{name}] FAILED — None returned (permission/unreachable?)")
         elif df.empty:
-            print(f"[{name}] EMPTY — API returned 472 NO_DATA or range has no data")
+            print(f"[{name}] EMPTY — no data for range")
         else:
             print(f"[{name}] OK — {len(df):,} rows in {elapsed:.2f}s")
             print(f"  columns: {list(df.columns)}")
-            print(f"  date range: {df['date'].min().date() if 'date' in df.columns else '?'}"
-                  f" → {df['date'].max().date() if 'date' in df.columns else '?'}")
+            if "date" in df.columns:
+                try:
+                    print(f"  date range: {df['date'].min().date()} → {df['date'].max().date()}")
+                except Exception:  # noqa: BLE001
+                    pass
             if "strike" in df.columns:
-                print(f"  strikes: {df['strike'].nunique()} unique"
-                      f" (sample: {sorted(df['strike'].unique())[:5]})")
-            if "implied_vol" in df.columns:
-                iv_ok = df["implied_vol"].dropna()
-                print(f"  implied_vol: {len(iv_ok)} non-null ({iv_ok.mean():.4f} mean)")
+                uniq = sorted(df["strike"].dropna().unique())
+                print(f"  strikes: {len(uniq)} unique (sample: {uniq[:5]})")
         print()
 
-    # Quick trade_quote probe on a single ATM contract
-    print("--- trade_quote probe (SPY, nearest ATM, recent expiry) ---")
+    # Greeks probe: requires a specific expiration (no wildcard); use the nearest expiry
+    print("--- greeks probe (SPY, nearest expiry with data) ---")
     import requests as _req
+    nearest_exp = None
     try:
-        r = _req.get(f"{td._base_url()}/v2/list/expirations",
-                     params={"root": "SPY"}, timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            exps = (data.get("response") or [])
-            if exps:
-                exp = exps[0]   # nearest expiry
-                t0 = time.perf_counter()
-                tq = td.trade_quote("SPY", exp, "C", 580.0, start, end)
-                elapsed = time.perf_counter() - t0
-                if tq is None:
-                    print("  trade_quote: FAILED (None)")
-                elif tq.empty:
-                    print("  trade_quote: empty (try a different strike/expiry)")
-                else:
-                    print(f"  trade_quote: {len(tq):,} rows in {elapsed:.2f}s, "
-                          f"columns: {list(tq.columns)}")
-        else:
-            print(f"  list/expirations: HTTP {r.status_code} — skip trade_quote probe")
-    except Exception as e:  # noqa: BLE001
-        print(f"  trade_quote probe error: {e}")
+        # Find a valid expiry from the EOD data we just pulled
+        eod_probe = td.bulk_eod(root, 0, start, max(days))
+        if eod_probe is not None and not eod_probe.empty and "expiration" in eod_probe.columns:
+            exps = eod_probe["expiration"].dropna().sort_values().unique()
+            if len(exps) > 0:
+                nearest_exp = int(exps[0].strftime("%Y%m%d")) if hasattr(exps[0], "strftime") else None
+    except Exception:  # noqa: BLE001
+        pass
 
-    print("\n=== Probe complete. Paste output into research/THETADATA_PROBE.md ===\n")
+    if nearest_exp:
+        t0 = _time.perf_counter()
+        gdf = td.bulk_greeks(root, nearest_exp, start, max(days), order=1)
+        elapsed = _time.perf_counter() - t0
+        if gdf is None:
+            print(f"  greeks(exp={nearest_exp}): FAILED (None)")
+        elif gdf.empty:
+            print(f"  greeks(exp={nearest_exp}): EMPTY")
+        else:
+            print(f"  greeks(exp={nearest_exp}): {len(gdf):,} rows in {elapsed:.2f}s")
+            print(f"  columns: {list(gdf.columns)}")
+            if "implied_vol" in gdf.columns:
+                iv_ok = gdf["implied_vol"].dropna()
+                print(f"  implied_vol: {len(iv_ok)} non-null (mean={iv_ok.mean():.4f})")
+    else:
+        print("  greeks probe skipped — could not determine nearest expiry from EOD data")
+    print()
+
+    # trade_quote probe on a single near-ATM contract for a recent day
+    print("--- trade_quote probe (SPY, near-ATM call, most recent trading day) ---")
+    probe_day = max(days)
+    # Use a round strike near the current SPY price (~550-600 range)
+    probe_strike = 560.0
+    # Find nearest available expiry
+    probe_exp = None
+    try:
+        if nearest_exp:
+            probe_exp = nearest_exp
+        else:
+            # Fallback: try today's date as expiry
+            probe_exp = int(probe_day.strftime("%Y%m%d"))
+    except Exception:  # noqa: BLE001
+        probe_exp = int(probe_day.strftime("%Y%m%d"))
+
+    t0 = _time.perf_counter()
+    tq = td.trade_quote(root, probe_exp, "C", probe_strike, probe_day, probe_day)
+    elapsed = _time.perf_counter() - t0
+    if tq is None:
+        print(f"  trade_quote(exp={probe_exp}, strike={probe_strike}): FAILED (None)")
+    elif tq.empty:
+        print(f"  trade_quote(exp={probe_exp}, strike={probe_strike}): EMPTY (try different strike/expiry)")
+    else:
+        print(f"  trade_quote(exp={probe_exp}, strike={probe_strike}): "
+              f"{len(tq):,} rows in {elapsed:.2f}s")
+        print(f"  columns: {list(tq.columns)}")
+    print()
+
+    # History-start probe: binary boundary check for AAPL EOD data availability
+    print("--- AAPL EOD history-start probe ---")
+    aapl_root = "AAPL"
+
+    def _has_data(probe_date: date) -> bool:
+        day_int = int(probe_date.strftime("%Y%m%d"))
+        r = _req.get(f"{td._base_url()}/v3/option/history/eod",
+                     params={"symbol": aapl_root, "expiration": "*",
+                             "start_date": day_int, "end_date": day_int,
+                             "format": "csv"},
+                     timeout=10, stream=True)
+        if r.status_code not in (200,):
+            r.close()
+            return False
+        # Read first chunk; if it contains AAPL data, we have data
+        chunk = next(r.iter_content(512), b"")
+        r.close()
+        return b'"AAPL"' in chunk
+
+    # Measured 2026-07-04: data starts ~2012-06-01; 2012-01-01 through 2012-05-31 empty.
+    # Verify the boundaries.
+    t0 = _time.perf_counter()
+    known_start = date(2012, 6, 1)
+    known_empty_early = date(2012, 1, 1)
+    has_start = _has_data(known_start)
+    has_empty_early = _has_data(known_empty_early)
+    # Also probe first/last of 2012 and 2013
+    has_2012_dec = _has_data(date(2012, 12, 31))
+    has_2013_jan = _has_data(date(2013, 1, 2))
+    elapsed = _time.perf_counter() - t0
+
+    print(f"  AAPL {known_empty_early}: {'DATA' if has_empty_early else 'EMPTY'}")
+    print(f"  AAPL {known_start}: {'DATA' if has_start else 'EMPTY'}")
+    print(f"  AAPL 2012-12-31: {'DATA' if has_2012_dec else 'EMPTY'}")
+    print(f"  AAPL 2013-01-02: {'DATA' if has_2013_jan else 'EMPTY'}")
+    if not has_empty_early and has_start:
+        print("  History starts: ~2012-06-01 (confirmed; DEFAULT_START=20120601)")
+    else:
+        print(f"  History start: UNEXPECTED — re-probe (has_2012_early={has_empty_early}, has_2012_06={has_start})")
+    print(f"  ({elapsed:.1f}s for boundary check)")
+    print()
+
+    print("=== Probe complete. Paste output into research/THETADATA_PROBE.md ===\n")
 
 
 # ── main backfill loop ────────────────────────────────────────────────────────

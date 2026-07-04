@@ -29,5 +29,30 @@
     "tick_minute_agreement": 0.556,
     "delta_adj_minute_agreement": 0.526,
     "note": "no improvement on bars \u2014 bid-ask-bounce-limited; reliable direction needs the trade-level NBBO tape"
+  },
+  "thetadata_tape": {
+    "status": "measured",
+    "asof": "2026-07-04",
+    "generated": "2026-07-04T23:42:51.077185+00:00",
+    "signing_source": "tape",
+    "n_trades": 3,
+    "calibration_contract": {
+      "root": "SPY",
+      "right": "C",
+      "strike": 580.0,
+      "exp": 20260618,
+      "date": "2026-06-18"
+    },
+    "per_trade_agreement": 1.0,
+    "per_trade_size_weighted": 1.0,
+    "net_sign_recovery": 1.0,
+    "acceptance_criteria": {
+      "agreement_bar": 0.75,
+      "recovery_bar": 0.75,
+      "agreement_ok": true,
+      "recovery_ok": true
+    },
+    "direction_reliable_tape": true,
+    "note": "ThetaData tape-sourced calibration (trade+NBBO at execution). Per \u00a77.1 of LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE.md, direction_reliable in the root gate is flipped only by Fable adjudication after both acceptance bars are met. Agreement: 1.0 (bar 0.75), recovery: 1.0 (bar 0.75)."
   }
 }

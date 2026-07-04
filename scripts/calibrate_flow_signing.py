@@ -194,13 +194,17 @@ def _run_thetadata_source(universe: list[str], window: tuple[str, str]) -> dict:
 
     # Build a trades DataFrame in the format flow_signing expects:
     # [ticker, ts, price, size, bid, ask]
-    trades = tq.rename(columns={"ts_ms": "ts"}).copy()
+    trades = tq.copy()
     # Add synthetic ticker column (OCC-style not needed; flow_signing works on raw trades)
     trades["ticker"] = f"SPY_CAL_{int(CALIBRATION_STRIKE)}"
-    # ts_ms is milliseconds since midnight ET — convert to Timestamp for minute binning
-    if "ts" in trades.columns and trades["ts"].dtype in ("int64", "float64"):
+    # v3 trade_quote returns trade_timestamp as ISO datetime string (e.g. "2026-06-18T14:30:00.123")
+    # Map it to "ts" (Timestamp) for minute-binning in flow_signing.
+    if "trade_timestamp" in trades.columns:
+        trades["ts"] = pd.to_datetime(trades["trade_timestamp"], errors="coerce")
+    elif "ts_ms" in trades.columns:
+        # Backward compat: v2 used ts_ms = milliseconds since midnight ET
         base = pd.Timestamp(day)
-        trades["ts"] = base + pd.to_timedelta(trades["ts"], unit="ms")
+        trades["ts"] = base + pd.to_timedelta(trades["ts_ms"], unit="ms")
 
     trades = trades[(trades["bid"] > 0) & (trades["ask"] >= trades["bid"])] if not trades.empty else trades
 
