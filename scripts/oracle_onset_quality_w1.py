@@ -691,12 +691,20 @@ def run_loeo(
     label_col: str,
     feature_cols: list[str],
     m0_features: list[str],
+    smoke: bool = False,
 ) -> dict:
     """Run full LOEO protocol per spec §4.
+
+    smoke=True skips the 200-permutation null loop (0 perms) so the end-to-end
+    path can be exercised cheaply.  Produces valid AUCs but no null p-value.
 
     Returns a dict with per-era and pooled metrics for M0, M1, M2.
     """
     from sklearn.metrics import roc_auc_score
+
+    n_perms = 0 if smoke else NULL_PERMS
+    if smoke:
+        log.info("SMOKE MODE: skipping permutation null (0 perms)")
 
     rng = np.random.default_rng(SEED)
 
@@ -829,11 +837,11 @@ def run_loeo(
     log.info("Chosen model: %s (M1 mean_auc=%.4f, M2 mean_auc=%s)",
              chosen_model, m1_auc, m2_auc if m2_valid else "N/A")
 
-    # ---- Shuffled-label null: 200 within-era permutations through IDENTICAL pipeline ----
-    log.info("Running %d shuffled-label nulls …", NULL_PERMS)
+    # ---- Shuffled-label null: within-era permutations through IDENTICAL pipeline ----
+    log.info("Running %d shuffled-label nulls …", n_perms)
     chosen_auc = results[chosen_model]["mean_auc"]
     null_mean_aucs: list[float] = []
-    for perm_i in range(NULL_PERMS):
+    for perm_i in range(n_perms):
         # Permute labels WITHIN each era separately (within-era permutation)
         y_perm = all_y.copy()
         for era in eras:
@@ -1092,8 +1100,16 @@ def write_report(
     gates: dict,
     base_rate: float,
     out_dir: Path,
+    label_mode: str = "pos63_goodset",
+    report_filename: str = "W1_REPORT.md",
+    smoke: bool = False,
 ) -> Path:
-    """Write W1_REPORT.md per spec §6.1."""
+    """Write W1_REPORT.md (or W1B_REPORT.md) per spec §6.1.
+
+    label_mode: 'pos63_goodset' (default) or 'reversion21'
+    report_filename: output filename within out_dir
+    smoke: if True, adds a SMOKE RUN note to the header
+    """
     chosen = results["chosen_model"]
     lines: list[str] = []
 
@@ -1105,23 +1121,59 @@ def write_report(
         lines.extend(args)
         lines.append("")
 
-    h("OTA W1 — Onset-Quality Discriminator — Protocol Report", 1)
-    p(
-        "**Pre-registered spec:** research/oracle_asymmetry/W1_SPEC.md",
+    is_w1b = label_mode == "reversion21"
+    title = "OTA W1b — Onset-Quality Discriminator (reversion21 label) — Protocol Report" \
+        if is_w1b else "OTA W1 — Onset-Quality Discriminator — Protocol Report"
+    h(title, 1)
+
+    header_lines = [
+        "**Pre-registered spec:** research/oracle_asymmetry/W1_SPEC.md §Amendment log (W1b REGISTRATION)",
         f"**Seed:** {SEED}",
         f"**Date:** 2026-07-05",
         "",
         "> 'validated' is banned from this file. Every table carries n + base rate.",
         "> Gate verdicts are pre-bound: results are printed as-is.",
-    )
+    ]
+    if is_w1b:
+        header_lines = [
+            "**Pre-registered spec:** research/oracle_asymmetry/W1_SPEC.md §Amendment log (W1b REGISTRATION)",
+            "**Label definition (reversion21):** absolute forward return at 21 sessions > 0 "
+            "(next-bar fill per grading.fill_index; div-adjusted close; TIME-exit only; "
+            "ABSOLUTE, not SPY-excess).",
+            f"**Base rate (label=1 / n_labeled):** {base_rate:.4f} ({base_rate*100:.1f}%)",
+            f"**Seed:** {SEED}",
+            f"**Date:** 2026-07-05",
+            "",
+            "> 'validated' is banned from this file. Every table carries n + base rate.",
+            "> Gate verdicts are pre-bound: results are printed as-is.",
+            "> Pre-stated expectation: LOW — W1's AUCs were sub-coin-flip on primary and "
+            "secondary labels; W1b exists because the label postdated the wave, not because "
+            "a different result is expected.",
+        ]
+    if smoke:
+        header_lines.append("> **SMOKE RUN**: permutation null skipped (0 perms). "
+                            "AUCs are valid; null p-value is not computed.")
+    p(*header_lines)
+
+    # Determine the active label column for population reporting
+    label_col = "label_reversion21" if is_w1b else "label_good"
 
     # ---- Population ----
     h("1. Population & Labels")
     n_total = len(df)
-    n_good = int(df["label_good"].sum())
+    n_good = int(df[label_col].sum())
+    if is_w1b:
+        pop_desc = (
+            f"- Population: ep_onset_in × pos63 (matured, filtered to rows with ≥21 fwd bars) "
+            f"— **n = {n_total}**"
+        )
+        label_desc = f"- label_reversion21=1 (abs fwd_ret_21 > 0): **n = {n_good}**"
+    else:
+        pop_desc = f"- Population: ep_onset_in × pos63 × matured — **n = {n_total}**"
+        label_desc = f"- Good-set (CUSHIONED | CLEAN_LIFTOFF): **n = {n_good}**"
     p(
-        f"- Population: ep_onset_in × pos63 × matured — **n = {n_total}**",
-        f"- Good-set (CUSHIONED | CLEAN_LIFTOFF): **n = {n_good}**",
+        pop_desc,
+        label_desc,
         f"- Base rate: **{base_rate:.4f}** ({base_rate*100:.1f}%)",
         "",
         "| Era | n | n_good | base_rate |",
@@ -1130,7 +1182,7 @@ def write_report(
     for era_name, _, _ in _ERA_CUTS:
         era_df = df[df["era"] == era_name]
         n_e = len(era_df)
-        ng_e = int(era_df["label_good"].sum())
+        ng_e = int(era_df[label_col].sum()) if label_col in era_df.columns else 0
         br_e = ng_e / n_e if n_e > 0 else float("nan")
         lines.append(f"| {era_name} | {n_e} | {ng_e} | {br_e:.4f} |")
     lines.append("")
@@ -1331,22 +1383,128 @@ def write_report(
             f"**False-start 5d:** n={n_fs}, false_start_rate={n_fs_pos/n_fs:.4f}" if n_fs > 0 else "false_start_5d: n=0",
         )
 
-    out_path = out_dir / "W1_REPORT.md"
+    out_path = out_dir / report_filename
     out_path.write_text("\n".join(lines) + "\n")
     log.info("Report written to %s", out_path)
     return out_path
 
 
 # ---------------------------------------------------------------------------
+# Reversion-21 label computation (W1b registration)
+# ---------------------------------------------------------------------------
+
+def compute_reversion21_labels(
+    pop: pd.DataFrame,
+    data_dir: Path,
+) -> pd.DataFrame:
+    """Compute the reversion21 primary label for W1b.
+
+    Label definition (W1_SPEC.md §Amendment log, W1b REGISTRATION):
+      label_reversion21 = 1.0 if absolute forward return at 21 sessions > 0, else 0.0.
+      - Fill convention: next bar strictly after trigger_date via grading.fill_index
+        (i.e. iloc position = first bar strictly after trigger_date).
+      - fwd_ret_21 = close[fill + 21] / close[fill] − 1  (div-adjusted close).
+      - TIME-exit only — no barriers, no SPY excess, ABSOLUTE (not SPY-excess).
+      - Rows without 21 forward bars after fill are DROPPED from the labeled set
+        (counted and printed).
+
+    Returns a copy of pop filtered to rows with valid labels, with 'label_reversion21'
+    column added (float 0.0 or 1.0).
+
+    Raises FileNotFoundError if any node's yahoo parquet is missing.
+    """
+    from engine.grading import fill_index as _fill_index  # type: ignore
+
+    yahoo_dir = data_dir / "yahoo"
+    nodes = pop["node"].unique()
+
+    # Pre-load close series for all nodes
+    close_by_node: dict[str, pd.Series] = {}
+    for node in nodes:
+        ypath = yahoo_dir / f"{node}.parquet"
+        if not ypath.exists():
+            raise FileNotFoundError(
+                f"reversion21: yahoo parquet missing for node {node!r}: {ypath}"
+            )
+        df_y = pd.read_parquet(ypath)
+        # close column is div-adjusted per memory note [yahoo close is total return]
+        close_s = df_y["close"].copy()
+        close_s.index = pd.to_datetime(close_s.index)
+        close_s = close_s.sort_index()
+        close_by_node[node] = close_s
+
+    results = []
+    n_dropped_no_fill = 0
+    n_dropped_no_fwd = 0
+    for _, ev in pop.iterrows():
+        node = str(ev["node"])
+        trigger = pd.Timestamp(ev["trigger_date"])
+        close_s = close_by_node.get(node)
+        if close_s is None:
+            n_dropped_no_fill += 1
+            continue
+
+        fill = _fill_index(close_s, trigger)
+        if fill is None:
+            # No next bar after trigger
+            n_dropped_no_fill += 1
+            continue
+
+        # Need fill + 21 to be a valid index (0-based iloc)
+        if fill + 21 >= len(close_s):
+            n_dropped_no_fwd += 1
+            continue
+
+        entry_price = float(close_s.iloc[fill])
+        exit_price = float(close_s.iloc[fill + 21])
+        if not (np.isfinite(entry_price) and np.isfinite(exit_price)
+                and entry_price > 0 and exit_price > 0):
+            n_dropped_no_fwd += 1
+            continue
+
+        fwd_ret_21 = exit_price / entry_price - 1.0
+        label = 1.0 if fwd_ret_21 > 0 else 0.0
+        results.append({**ev.to_dict(), "label_reversion21": label})
+
+    n_total = len(pop)
+    n_labeled = len(results)
+    n_dropped = n_total - n_labeled
+    log.info(
+        "reversion21 labels: n_total=%d, n_labeled=%d, n_dropped=%d "
+        "(no_fill=%d, no_21_fwd_bars=%d)",
+        n_total, n_labeled, n_dropped, n_dropped_no_fill, n_dropped_no_fwd,
+    )
+    print(
+        f"\nreversion21 label summary: n_labeled={n_labeled} / n_total={n_total}  "
+        f"dropped={n_dropped} (no_fill={n_dropped_no_fill}, "
+        f"no_21_fwd_bars={n_dropped_no_fwd})"
+    )
+    if n_labeled == 0:
+        raise RuntimeError("reversion21: zero rows labeled — check yahoo data and trigger dates")
+
+    labeled_df = pd.DataFrame(results)
+    labeled_df["trigger_date"] = pd.to_datetime(labeled_df["trigger_date"])
+    return labeled_df
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
-def main(data_dir: Optional[Path] = None) -> None:
+def main(
+    data_dir: Optional[Path] = None,
+    label: str = "pos63_goodset",
+    smoke: bool = False,
+) -> None:
     if data_dir is None:
         data_dir = ROOT / "data"
 
     data_dir = Path(data_dir)
-    log.info("Data dir: %s", data_dir)
+    log.info("Data dir: %s  label=%s  smoke=%s", data_dir, label, smoke)
+
+    valid_labels = ("pos63_goodset", "reversion21")
+    if label not in valid_labels:
+        raise ValueError(f"--label must be one of {valid_labels}, got {label!r}")
 
     # ---- 1. Load population from committed W0_2 CSV ----
     w0_csv = ROOT / "research" / "oracle_asymmetry" / "W0_2_events_graded.csv"
@@ -1377,25 +1535,21 @@ def main(data_dir: Optional[Path] = None) -> None:
 
     # Labels (from committed CSV — cannot drift)
     pop["label_good"] = pop["state"].isin(GOOD_STATES).astype(int)
-    base_rate = float(pop["label_good"].mean())
-    log.info("Base rate (CUSHIONED|CLEAN_LIFTOFF): %.4f (n_good=%d / n=%d)",
-             base_rate, int(pop["label_good"].sum()), n_pop)
 
-    # Secondary labels
-    # rot21: CUSHIONED | CLEAN_LIFTOFF under rot21 parameterization
-    rot21 = ep_onset_rows[ep_onset_rows["parameterization"] == "rot21"].copy()
-    rot21_matured = rot21[rot21["state_immature"] == False].copy()
-    rot21_good = rot21_matured.set_index(["node", "trigger_date"])["state"].isin(GOOD_STATES)
-    pop_idx = pop.set_index(["node", "trigger_date"]).index
-    pop["label_rot21"] = pop_idx.map(
-        lambda x: 1 if rot21_good.get(x, False) else 0
-    )
+    # Secondary labels (always computed for pos63_goodset mode; W1b omits these)
+    if label == "pos63_goodset":
+        # rot21: CUSHIONED | CLEAN_LIFTOFF under rot21 parameterization
+        rot21 = ep_onset_rows[ep_onset_rows["parameterization"] == "rot21"].copy()
+        rot21_matured = rot21[rot21["state_immature"] == False].copy()
+        rot21_good = rot21_matured.set_index(["node", "trigger_date"])["state"].isin(GOOD_STATES)
+        pop_idx = pop.set_index(["node", "trigger_date"]).index
+        pop["label_rot21"] = pop_idx.map(
+            lambda x: 1 if rot21_good.get(x, False) else 0
+        )
+        # false_start_5d: direction-adjusted 5d outcome < 0
+        pop["label_false_start_5d"] = (pop["fwd_ret_5"] < 0).astype(int)
 
-    # false_start_5d: direction-adjusted 5d outcome < 0
-    # "direction-adjusted" for IN episodes: fwd_ret_5 < 0 is a false start
-    pop["label_false_start_5d"] = (pop["fwd_ret_5"] < 0).astype(int)
-
-    # Era assignment
+    # Era assignment (done pre-feature-computation so reversion21 filtering preserves era col)
     pop["trigger_date"] = pd.to_datetime(pop["trigger_date"])
     pop["era"] = pop["trigger_date"].apply(assign_era)
     n_unassigned = pop["era"].isna().sum()
@@ -1426,10 +1580,6 @@ def main(data_dir: Optional[Path] = None) -> None:
     log.info("ETF complex map: %s", etf_complex_map)
 
     # ---- 3b. Build W0 state lookup for F15 ----
-    # F15 requires the QUALITY outcome (good/bad = CUSHIONED|CLEAN_LIFTOFF) of
-    # each prior same-node episode, not the maturity flag.
-    # We build a (node, onset_date_str) -> 1.0/0.0 dict from ALL pos63 W0 rows
-    # (matured and immature — the cutoff_date law already restricts to matured).
     w0_state_lookup: dict = {}
     for _, r in pos63.iterrows():
         onset_key = str(pd.Timestamp(r["trigger_date"]).date())
@@ -1437,58 +1587,127 @@ def main(data_dir: Optional[Path] = None) -> None:
         w0_state_lookup[(str(r["node"]), onset_key)] = label_val
     log.info("W0 state lookup built: %d entries", len(w0_state_lookup))
 
-    # ---- 4. Compute features ----
+    # ---- 4. For reversion21 mode: compute labels BEFORE features so we only
+    #         compute features for the labeled subset ----
+    if label == "reversion21":
+        log.info("Computing reversion21 labels from yahoo div-adjusted close …")
+        pop = compute_reversion21_labels(pop, data_dir)
+        # Era must be re-derived after filtering (drop events that lost era in filter)
+        pop["era"] = pop["trigger_date"].apply(assign_era)
+        pop = pop.dropna(subset=["era"])
+        base_rate = float(pop["label_reversion21"].mean())
+        log.info(
+            "reversion21 base rate: %.4f (n_good=%d / n=%d)",
+            base_rate, int(pop["label_reversion21"].sum()), len(pop),
+        )
+        active_label_col = "label_reversion21"
+        feat_csv_name = "W1B_features.csv"
+        report_filename = "W1B_REPORT.md"
+        run_label = "W1b"
+    else:
+        base_rate = float(pop["label_good"].mean())
+        log.info("Base rate (CUSHIONED|CLEAN_LIFTOFF): %.4f (n_good=%d / n=%d)",
+                 base_rate, int(pop["label_good"].sum()), n_pop)
+        active_label_col = "label_good"
+        feat_csv_name = "W1_features.csv"
+        report_filename = "W1_REPORT.md"
+        run_label = "W1"
+
+    # ---- 5. Compute features ----
     df_feat = compute_features(pop, panel, episodes_s, etf_complex_map, opposite_risk_map,
                                w0_state_lookup=w0_state_lookup)
 
-    # ---- 5. Emit W1_features.csv ----
+    # ---- 6. Emit features CSV ----
     out_dir = ROOT / "research" / "oracle_asymmetry"
-    # Build output column list (meta + feature cols), deduplicating while preserving order
-    _meta_cols = ["family", "node", "trigger_date", "era", "state",
-                  "label_good", "label_rot21", "label_false_start_5d"]
+    if label == "reversion21":
+        _meta_cols = ["family", "node", "trigger_date", "era", "state", "label_reversion21"]
+    else:
+        _meta_cols = ["family", "node", "trigger_date", "era", "state",
+                      "label_good", "label_rot21", "label_false_start_5d"]
     _all_out = _meta_cols + FEATURE_COLS
-    # Deduplicate preserving order
     _seen: set = set()
     feat_out_cols = []
     for c in _all_out:
         if c not in _seen:
             _seen.add(c)
             feat_out_cols.append(c)
-    # Keep only cols that exist in df_feat
     feat_out_cols = [c for c in feat_out_cols if c in df_feat.columns]
-    feat_csv = out_dir / "W1_features.csv"
+    feat_csv = out_dir / feat_csv_name
     df_feat[feat_out_cols].to_csv(feat_csv, index=False)
-    log.info("W1_features.csv written: %d rows × %d cols", len(df_feat), len(feat_out_cols))
+    log.info("%s written: %d rows × %d cols", feat_csv_name, len(df_feat), len(feat_out_cols))
 
-    # ---- 6. Run LOEO protocol ----
-    log.info("Starting LOEO protocol …")
-    results = run_loeo(df_feat, "label_good", FEATURE_COLS, M0_FEATURES)
+    # ---- 7. Run LOEO protocol ----
+    log.info("Starting LOEO protocol (label=%s, smoke=%s) …", label, smoke)
+    results = run_loeo(df_feat, active_label_col, FEATURE_COLS, M0_FEATURES, smoke=smoke)
 
-    # ---- 7. Evaluate gates ----
+    # ---- 8. Evaluate gates ----
     gates = evaluate_gates(results, base_rate)
 
-    # ---- 8. Print gate verdicts to stdout (loud) ----
+    # ---- 9. Print gate verdicts to stdout (loud) ----
+    run_hdr = f"{run_label} GATE VERDICTS (label={label})"
+    if smoke:
+        run_hdr += " [SMOKE RUN — 0 perms]"
     print("\n" + "=" * 70)
-    print("W1 GATE VERDICTS")
+    print(run_hdr)
     print("=" * 70)
+    chosen = results["chosen_model"]
+    for era in [e for e, _, _ in _ERA_CUTS]:
+        auc = results[chosen]["per_era_auc"].get(era, float("nan"))
+        print(f"  {era}: {chosen} AUC = {auc:.4f}" if auc == auc else f"  {era}: {chosen} AUC = N/A")
+    print(f"\n  {chosen} MEAN AUC: {results[chosen]['mean_auc']:.4f}")
+    print(f"  M0 MEAN AUC:     {results['M0']['mean_auc']:.4f}")
+    print(f"  Label base rate: {base_rate:.4f}")
+    null_p = results["null"]["p_value"]
+    if smoke:
+        print("  Null p-value:    N/A (smoke mode — 0 perms)")
+    else:
+        print(f"  Null p-value:    {null_p:.4f}")
+    print("")
     for gate_name in ["G-A", "G-B", "G-C"]:
         g = gates[gate_name]
-        print(f"\n{gate_name}: {g['verdict']}")
+        print(f"{gate_name}: {g['verdict']}")
     print("=" * 70 + "\n")
 
-    # ---- 9. Write report ----
-    write_report(df_feat, results, gates, base_rate, out_dir)
+    # ---- 10. Write report ----
+    write_report(
+        df_feat, results, gates, base_rate, out_dir,
+        label_mode=label,
+        report_filename=report_filename,
+        smoke=smoke,
+    )
 
-    log.info("W1 complete.")
+    log.info("%s complete.", run_label)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="OTA W1 onset-quality discriminator")
+    parser = argparse.ArgumentParser(description="OTA W1/W1b onset-quality discriminator")
     parser.add_argument(
         "--data-dir",
         type=Path,
         default=None,
         help="Path to data/ directory (default: <repo-root>/data/)",
     )
+    parser.add_argument(
+        "--label",
+        choices=["pos63_goodset", "reversion21"],
+        default="pos63_goodset",
+        help=(
+            "Primary label to use. "
+            "'pos63_goodset' (default) = CUSHIONED|CLEAN_LIFTOFF from W0.2 CSV (byte-identical "
+            "to original W1 behavior). "
+            "'reversion21' = absolute forward return at 21 sessions > 0 (W1b registration); "
+            "outputs W1B_features.csv + W1B_REPORT.md."
+        ),
+    )
+    parser.add_argument(
+        "--smoke",
+        action="store_true",
+        default=False,
+        help=(
+            "Smoke-test mode: skip the 200-permutation null loop (0 perms). "
+            "LOEO AUCs are computed normally; null p-value is not reported. "
+            "Use to verify the end-to-end path without the long permutation run."
+        ),
+    )
     args = parser.parse_args()
-    main(data_dir=args.data_dir)
+    main(data_dir=args.data_dir, label=args.label, smoke=args.smoke)
