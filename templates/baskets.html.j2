@@ -304,8 +304,8 @@
     </div>
     <p class="story" id="story"></p>
     <p class="tagline">{{ t(
-      'Curated thematic stock baskets — every membership decision dated and documented; equal-weighted, monthly-rebalanced, buy-and-hold between rebalances. Where a listed sector ETF approximates the theme the basket is cross-checked against it daily. A monitoring/structure frame, not a buy list.',
-      '精选主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
+      'Equal-weight theme baskets with dated membership changes. Monthly rebalance; monitored vs relevant ETFs where available. Structure only, not a buy list.',
+      '等权主题篮子，成分调整均有日期记录。按月再平衡；有相关 ETF 时同步监测。仅作结构参考，并非买入清单。') }}</p>
   </header>
 
   {# Market Risk Radar strip — the SAME canonical drawdown-risk read shown on macro.html
@@ -336,8 +336,8 @@
     <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
       <span class="sect-tag">{{ t('buy now · wait for a pullback · reduce / avoid', '立即买入 · 等待回调 · 减仓回避') }}</span></h2>
     <p class="sub">{{ t(
-      'The executional shortlist, split honestly: "Buy now" lists only in-favour themes that ALSO have a clean entry setup right now; in-favour themes without one sit in the wait-for-a-pullback column — being in favour is not the same as being buyable today. Plus the reduce / avoid side. Click any theme to see the specific stocks. If nothing has a clean entry, the right move is patience.',
-      '可执行清单，如实拆分："立即买入"仅列出既被看好、又当前具备干净入场点的主题；被看好但无干净入场点的主题列于"等待回调"一栏 — 被看好并不等于当下可买。另有减仓/回避一侧。点击任一主题可查看具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
+      'Buy now = in favour plus a clean entry. In favour without an entry waits for a pullback; weak themes move to reduce / avoid.',
+      '立即买入 = 看好且有干净入场点。看好但无入场点则等待回调；弱主题进入减仓/回避。') }}</p>
     <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
@@ -363,8 +363,8 @@
     <h2><span class="idx">★</span>🛑 {{ t('Market concentration & theme leadership', '市场集中度与主题领导力') }}
       <span class="sect-tag">{{ t('who owns the advance vs the decline', '谁主导上涨 vs 谁在下跌') }}</span></h2>
     <p class="sub">{{ t(
-      'The tape can narrow — a few names carry the index while breadth rots underneath. This reads the broad-market advance-decline (daily → monthly), which THEMES own the advancers vs sit in the decline, and the clean entries vs roll-over watch — so you accumulate the right theme and step out of the topping one.',
-      '行情会变窄 — 少数个股拉动指数，而广度在底下恶化。此处读取大盘涨跌家数（日→月）、哪些主题主导上涨、哪些处于下跌，以及干净入场 vs 回落观察 — 帮助你加仓正确的主题、退出见顶的主题。') }}</p>
+      'Breadth check: which themes own the advancers, which sit in the decline, and where entries are still clean.',
+      '广度检查：哪些主题主导上涨，哪些落在下跌端，哪里仍有干净入场点。') }}</p>
     <div id="concentration"></div>
   </section>
 
@@ -372,8 +372,8 @@
     <h2><span class="idx">★</span>📆 {{ t('5-Day Theme Rotation', '5日主题轮动') }}
       <span class="sect-tag">{{ t('weekly climbers & fallers', '本周上升与下降') }}</span></h2>
     <p class="sub">{{ t(
-      'Who moved this week — ranked by 5-day return relative to the S&P 500, with the change in 20-day relative-strength rank over the same 5 sessions. A fast read on which themes to lean into and which are losing the tape.',
-      '本周谁在动 — 以相对标普 500 的 5 日回报排名，并标注同期 20 日相对强度排名的变化。快速判断该倾向哪些主题、哪些正在失去走势。') }}</p>
+      '5-day return vs the S&P 500, plus the change in 20-day RS rank. A fast rotation read.',
+      '相对标普 500 的5日回报，加上20日相对强度排名变化。快速读取轮动。') }}</p>
     <div class="rotwrap" id="rotation"></div>
   </section>
 
@@ -441,8 +441,8 @@
       <span class="fl-verdict">{{ t('Verdict', '结论') }}: <b>{{ flow.verdict }}</b></span>
       <details class="fl-more"><summary>{{ t('What this is &amp; how it was validated', '这是什么 · 如何验证') }}</summary>
         <p class="muted" style="font-size:11.5px;margin:6px 0 0;line-height:1.55;max-width:95ch">{{ t(
-          'A detection + description layer, NOT a forecast. It ranks where cross-sectional flow is concentrating across the unbiased point-in-time GICS sectors and the thematic baskets, and maps the cross-group cluster. Rigorously validated to have NO forward edge (rank-IC ~0 on clean sectors; the basket "edge" was survivorship) — the read-quality bar measures data/coherence, not directional confidence. The cohesion gate is the one measured-but-modest, stress-conditional signal (a dispersion-recovery proxy, not inflows). Built on a ~3y cache; reconfirm as data accrues. A wide detector that focuses a separate inference layer — never scored, never an axis.',
-          '这是探测+描述层，并非预测。它在无偏的时点 GICS 行业与主题篮子中排出资金横截面集中之处，并刻画跨组集群结构。经严格验证无前瞻优势（干净行业 rank-IC≈0；篮子的"优势"实为幸存者偏差）— 读数质量条衡量数据/一致性，而非方向置信度。共动门是唯一实测但有限、压力条件下的信号（压力离散修复代理，并非资金流入）。基于约3年缓存，随数据积累需复核。这是聚焦独立推断层的"宽探测器" — 从不评分、绝不入轴。') }}
+          'Flow clustering map. Read-quality means data coherence, not directional confidence. The cohesion gate is the only measured stress signal; everything else is context.',
+          '资金聚集地图。读数质量代表数据一致性，不代表方向置信度。共动门是唯一实测压力信号；其余仅作背景。') }}
           <a href="#" onclick="return false" class="muted" style="text-decoration:underline" title="See data/group_flow/validation_meta.json">{{ t('validation meta', '验证元数据') }}</a></p>
       </details>
     </div>
@@ -458,8 +458,8 @@
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "All baskets, watchlist-style. Click a column to sort; toggle the value between raw return, vs S&P 500, and σ (the move z-scored vs the basket's own trailing year — computed horizons only). Click a name to jump to its members.",
-        '全部篮子，自选股式表格。点击列标题排序；可在原始回报、相对标普 500、σ（相对该篮子自身过去一年的 z 分数 — 仅限定窗）之间切换。点击名称跳转至成分。') }}</p>
+        "All baskets. Sort columns, switch raw / vs S&P 500 / σ, click a name for members.",
+        '全部篮子。可排序、切换原始/相对标普500/σ，点击名称查看成分。') }}</p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
     </section>
@@ -467,8 +467,8 @@
     <section id="chart-section">
       <h2><span class="idx">02</span>{{ t('Performance', '走势对比') }}</h2>
       <p class="sub">{{ t(
-        'Rebased to 0% at the start of the selected window. Click legend entries to toggle baskets. The full "All" range is ~3 years (our free-cache ceiling); series before a basket\'s creation date are a backtest of the membership at creation. Powered by TradingView Lightweight Charts.',
-        '在所选窗口起点重设为 0%。点击图例可切换篮子。"全部"区间约 3 年（免费缓存上限）；篮子创建日之前为按创建时成分的回测。由 TradingView Lightweight Charts 提供。') }}</p>
+        'Rebased to 0% at the selected window start. Toggle baskets in the legend; "All" is about 3 years.',
+        '在所选窗口起点重设为0%。点击图例切换篮子；“全部”约3年。') }}</p>
       <div class="chartbar">
         <span class="tabs" id="chart-modes" role="group"></span>
         <span class="tabs" id="chart-ranges" role="group"></span>
@@ -486,10 +486,8 @@
   </div>
 
   <footer>
-    {{ t(
-      'Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE S&P-1500 price cache (~3y). Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.',
-      '仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费标普 1500 价格缓存（约 3 年）。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。') }}
-    {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
+    {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span><br>
+    <span class="made">© 2026 MastermindX Inc</span>
   </footer>
 
 <script src="lightweight-charts.js"></script>
@@ -823,8 +821,8 @@ function termStrip(t){
   if(a!=null&&b2!=null&&c!=null&&a>0&&b2>0&&c>0){ pat='aligned up'; patZh='同向向上'; }
   else if(a!=null&&c!=null&&a<0&&c>0){ pat='rolling from the front'; patZh='前端回落'; }
   else if(a!=null&&b2!=null&&c!=null&&a<0&&b2<0&&c<0){ pat='aligned down'; patZh='同向向下'; }
-  return `<div class="termstrip" title="descriptive — a shape/fragility read, not a forecast">${cells}
-    <span class="tspat">${L(pat,patZh)}</span><span class="tstag">${L('shape read, not a signal','形态读数，非信号')}</span></div>`;
+  return `<div class="termstrip" title="descriptive — current momentum shape">${cells}
+    <span class="tspat">${L(pat,patZh)}</span></div>`;
 }
 function themeCard(t){
   const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[t.reco]||RECO_COLOR.hold;

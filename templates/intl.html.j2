@@ -240,7 +240,7 @@
     <span style="flex:1"></span>
     <span class="muted small">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }}</span>
   </div>
-  <p class="muted small" style="margin:6px 0 0">{{ t('Standout names pooled from the top constituents of Japan, South Korea, Taiwan, India, Australia, the UK (FTSE 100 + 250) and Europe — ranked by sector-neutral residual momentum computed WITHIN each market (a relative-strength lens, not a forward-edge claim). Each name is flagged by country. Search any name from the box above.', '汇集日本、韩国、台湾、印度、澳大利亚、英国（富时100＋250）与欧洲主要成分股中的精选个股 — 按各自市场内部的板块中性残差动量排名（相对强弱视角，非前瞻收益主张）。每只个股标注所属国家。可在上方搜索框查询。') }}
+  <p class="muted small" style="margin:6px 0 0">{{ t('Standout names from major non-US markets, ranked within their own market. Search any name above.', '主要非美市场精选个股，按各自市场内部排序。可在上方搜索。') }}
     <a href="intl.html" style="color:var(--link);font-weight:600">← {{ t('Macro comparison', '宏观对比') }}</a></p>
 </div>
 {% endif %}
@@ -277,14 +277,14 @@
     {% if CR and CR.avg_offdiag is not none %}<div class="kpi"><div class="k">{{ t('Avg correlation', '平均相关性') }}</div>
       <div class="v">{{ '%.2f'|format(CR.avg_offdiag) }}</div><div class="s">{{ t('cross-market, USD', '跨市场，美元') }}</div></div>{% endif %}
   </div>
-  <p class="caveat" style="margin-top:13px">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }} · {{ t('display-only / descriptive — nothing here is a scored buy/sell', '仅供展示 / 描述性 — 此处无评分买卖') }}
+  <p class="caveat" style="margin-top:13px">{{ t('data through', '数据截至') }} {{ latest.date }} · {{ t('built', '生成') }} {{ built }} · {{ t('context only', '仅作背景') }}
     · <a href="intl_stocks.html" style="color:var(--link);font-weight:700">{{ t('Stock dashboard', '股票看板') }} →</a></p>
 </div>
 
 <!-- ===== USD performance leaderboard (centerpiece) ===== -->
 {% if LB %}
 <div class="panel accent">
-  <div class="sec-h"><h2>{{ t('Performance in US dollars', '以美元计的表现') }} {{ help('Each market’s primary index rebuilt in US dollars (local index × FX, or ÷ FX for USD-quoted pairs) and ranked over the chosen horizon. The bar splits the USD move into its EQUITY leg (the local index) and its CURRENCY leg (FX) — which sum exactly to the USD return by construction — so you can see when a roaring local market is handed back to a weak currency (Japan ran +90% locally but a sliding yen left only +58% in USD). Price-return indices, not total return.', '每个市场的主指数以美元重建（本币指数 × 汇率，USD 报价对则 ÷ 汇率）并按所选周期排名。柱状图将美元涨跌拆分为股票腿（本币指数）与货币腿（汇率）—— 二者精确相加等于美元收益 —— 由此可见火热的本币市场被弱势货币吞噬（日本本币 +90%，但日元走弱后美元仅 +58%）。价格指数，非全收益。') }}</h2>
+  <div class="sec-h"><h2>{{ t('Performance in US dollars', '以美元计的表现') }} {{ help('Shows each market in USD, split into local stock return and currency effect. Price return only.', '以美元看各市场表现，并拆成股市涨跌与汇率影响。仅价格回报。') }}</h2>
     <span class="sub">{{ t('local equity + currency = USD return', '本币股票 + 货币 = 美元收益') }}</span>
     <span style="flex:1"></span>
     <div class="seg" id="lb-seg">{% for h in perf.horizons %}<button type="button" data-h="{{ h.key }}"{% if h.key == '12m' %} class="on"{% endif %}>{{ t(h.en, h.zh) }}</button>{% endfor %}</div>
@@ -302,7 +302,7 @@
 <!-- ===== US vs the World rotation (RRG) ===== -->
 {% if RG %}
 <div class="panel">
-  <div class="sec-h"><h2>{{ t('US vs the World — capital rotation', '美国 vs 全球 — 资本轮动') }} {{ help('A relative-rotation map. Each market’s relative-strength line vs the US (S&P 500 price index, already in USD) is placed by RELATIVE LEVEL (left↔right: behind vs ahead of the US over the past year) and RELATIVE MOMENTUM (down↔up: losing vs gaining ground). The four corners: Leading (ahead & accelerating), Weakening (ahead but rolling over), Improving (behind but catching up), Lagging (behind & still slipping). The tilt verdict reads whether capital is, net, rotating out of US exceptionalism. Display-only.', '相对轮动图。每个市场相对美国（标普500价格指数，已是美元）的相对强弱线，按相对水平（左右：过去一年落后/领先美国）与相对动量（上下：失去/获得动能）定位。四角：领先（领先且加速）、走弱（领先但回落）、改善（落后但追赶）、落后（落后且继续下滑）。倾向判断衡量资本是否净流出美国例外论。仅供展示。') }}</h2>
+  <div class="sec-h"><h2>{{ t('US vs the World — capital rotation', '美国 vs 全球 — 资本轮动') }} {{ help('Maps who is beating the US and whether that lead is improving or fading. Display-only.', '显示谁跑赢美国，以及领先是在增强还是减弱。仅展示。') }}</h2>
     <span style="flex:1"></span><span class="tilt {{ RG.tilt }}">{{ t(RG.tilt_en, RG.tilt_zh) }}</span></div>
   <div class="twocol">
     <div class="rrg">
@@ -335,7 +335,7 @@
         {% endfor %}
         </tbody>
       </table>
-      <p class="caveat" style="margin-top:10px">{{ t('Relative to the S&P 500 price index (USD). Positive = the market out-ran the US over that window. A relative-strength lens, not a forward-edge claim.', '相对标普500价格指数（美元）。正值 = 该市场在该周期跑赢美国。相对强弱视角，非前瞻收益主张。') }}</p>
+      <p class="caveat" style="margin-top:10px">{{ t('Positive = beat the S&P 500 over that window. Relative-strength lens only.', '正值 = 该周期跑赢标普500。仅相对强弱视角。') }}</p>
     </div>
   </div>
 </div>
@@ -343,7 +343,7 @@
 
 <!-- ===== Cross-country comparison grid (the reference table) ===== -->
 <div class="panel">
-  <h2>{{ t('Cross-country comparison', '跨国对比') }} {{ help('Every economy on the same axes. Regime = growth×inflation quad (with confidence). Recession & drawdown-risk are 0-100 history-anchored display gauges. Real yield = 10y − latest CPI. CPI/GDP/unemployment show the latest official print with its as-of month (greyed when stale — FRED OECD series are discontinued for several economies). The 1Y spark is the index in USD.', '所有经济体使用相同坐标轴。周期 = 增长×通胀象限（含置信度）。衰退与回撤风险为 0-100 历史锚定展示型刻度。实际收益 = 10年 − 最新 CPI。CPI/GDP/失业率显示最新官方数据及截至月份（滞后则置灰 — 多国 FRED OECD 序列已停更）。1年走势为美元计指数。') }}</h2>
+  <h2>{{ t('Cross-country comparison', '跨国对比') }} {{ help('Same scorecard for every economy: regime, recession risk, rates, CPI, FX, and equity stretch.', '每个经济体用同一套表：周期、衰退风险、利率、CPI、汇率与股市拉伸。') }}</h2>
   <div class="gridwrap">
   <table class="cmp">
     <thead><tr>
@@ -388,14 +388,14 @@
     </tbody>
   </table>
   </div>
-  <p class="caveat" style="margin-top:9px">{{ t('Display-only / descriptive — no per-country forward backtest is claimed and nothing here feeds a scored signal. No keyless implied-vol exists for these markets, so equity stretch uses own-history extension (in-trend / stretched / parabolic).', '仅供展示 / 描述性 — 不作任何分国前瞻回测主张，亦不构成评分信号。这些市场无免密钥隐含波动率，故股市拉伸采用自身历史的扩张度（趋势内／拉伸／抛物）。') }}</p>
+  <p class="caveat" style="margin-top:9px">{{ t('Descriptive only. Equity stretch uses each market’s own history.', '仅描述。股市拉伸按各市场自身历史衡量。') }}</p>
 </div>
 
 <!-- ===== Rates & curve desk ===== -->
 {% if rates %}
 {% set AN = rates.anchor %}
 <div class="panel">
-  <div class="sec-h"><h2>{{ t('Rates & curve desk', '利率与曲线室') }} {{ help('The rates story made visual: each market’s yield-curve shape (10y − 3m), real 10y (10y − latest CPI), the 3-month drift of the long end, and the CARRY each 10y offers over the US 10y anchor — the biggest single pull on global fixed-income flows. The mini-curve plots the 3m and 10y points; the spark is the 10y-yield history. Monthly OECD/ECB data on FRED; several series lag or are discontinued and are dated honestly.', '将利率故事可视化：每个市场的收益率曲线形态（10年 − 3月）、实际10年（10年 − 最新CPI）、长端的3月漂移，以及各国10年相对美国10年锚的套息 —— 全球固收资金的最大单一引力。迷你曲线绘制3月与10年两点；走势线为10年收益率历史。FRED 上的月度 OECD/ECB 数据；部分序列滞后或停更，均如实标注。') }}</h2>
+  <div class="sec-h"><h2>{{ t('Rates & curve desk', '利率与曲线室') }} {{ help('Compares yield curves, real yields, 10-year yield drift, and carry vs the US.', '比较收益率曲线、实际利率、10年利率变化，以及相对美国的套息。') }}</h2>
     <span style="flex:1"></span>
     {% if AN.y10 is not none %}<span class="sub">{{ t('US anchor', '美国锚') }}: <b style="color:var(--text)">{{ AN.y10 }}%</b> 10y · {{ AN.y2 }}% 2y · {{ t('curve', '曲线') }} {{ '%+.2f'|format(AN.curve) if AN.curve is not none else '—' }}</span>{% endif %}
   </div>
@@ -430,7 +430,7 @@
     <!-- Eurozone periphery -->
     {% if rates.periphery %}
     <div>
-      <h3>🇪🇺 {{ t('Eurozone fragmentation — peripheral spreads over Bund', '欧元区分化 — 外围国相对德债利差') }} {{ help('Peripheral 10y yields minus the German Bund, in basis points. Widening = stress / fragmentation risk; tightening = convergence. The classic Eurozone tail-risk gauge.', '外围国 10 年期收益率减德国国债，单位基点。走阔 = 外围压力／分化风险；收窄 = 收敛。经典的欧元区尾部风险指标。') }}</h3>
+      <h3>🇪🇺 {{ t('Eurozone fragmentation — peripheral spreads over Bund', '欧元区分化 — 外围国相对德债利差') }} {{ help('Wider spreads mean more Eurozone stress; tighter spreads mean calmer conditions.', '利差走阔代表欧元区压力上升；收窄代表环境更稳。') }}</h3>
       <table class="sb">
         <thead><tr><th class="l">{{ t('Spread', '利差') }}</th><th>{{ t('bps', '基点') }}</th><th>{{ t('3m', '3月') }}</th><th class="l">{{ t('Read', '读数') }}</th></tr></thead>
         <tbody>
@@ -458,7 +458,7 @@
         <span class="rk">{{ t('As of', '截至') }}</span><span class="rv" style="font-weight:600;color:var(--muted)">{{ LQ.asof }}</span>
       </div>
       {% if LQ.spark_svg %}<div style="margin-top:8px;opacity:.85">{{ LQ.spark_svg|safe }}</div>{% endif %}
-      <p class="caveat" style="margin-top:6px">{{ t(LQ.read_en, LQ.read_zh) }} · {{ t('ECB only — the one major CB with a clean keyless weekly series here.', '仅欧央行 — 此处唯一具有干净免密钥周度序列的主要央行。') }}</p>
+      <p class="caveat" style="margin-top:6px">{{ t(LQ.read_en, LQ.read_zh) }} · {{ t('ECB-only clean weekly series.', '仅欧央行周度序列。') }}</p>
     </div>
     {% endif %}
   </div>
@@ -467,7 +467,7 @@
 
 <!-- ===== Growth × inflation regime map ===== -->
 <div class="panel">
-  <h2>{{ t('Regime map — growth × inflation', '周期图 — 增长 × 通胀') }} {{ help('Where each economy sits on the macro clock. Horizontal = growth score, vertical = inflation score (−1…+1). Reflation (top-right) and Goldilocks (bottom-right) are growth-positive; Stagflation (top-left) and Growth-scare (bottom-left) are growth-negative. The inflation axis leans on each economy’s current CPI direction where fresh, plus oil and the long-yield trend.', '每个经济体在宏观时钟上的位置。横轴 = 增长得分，纵轴 = 通胀得分（−1…+1）。再通胀（右上）与金发女孩（右下）增长为正；滞胀（左上）与增长恐慌（左下）增长为负。通胀轴在数据新鲜处采用各自当前 CPI 方向，并结合油价与长端收益趋势。') }}</h2>
+  <h2>{{ t('Regime map — growth × inflation', '周期图 — 增长 × 通胀') }} {{ help('Places each economy on the growth/inflation clock. Right side = better growth; top = more inflation pressure.', '把每个经济体放在增长/通胀时钟上。右侧增长更好；上方通胀压力更高。') }}</h2>
   <div class="scatter">
     <div class="axx"></div><div class="axy"></div>
     <div class="ql" style="left:8px;top:8px">↖ {{ t('Stagflation', '滞胀') }}</div>
@@ -482,13 +482,13 @@
       </div>
     {% endfor %}
   </div>
-  <p class="caveat" style="margin-top:8px">{{ t('Most economies cluster risk-on (growth positive). Descriptive snapshot of the growth/inflation mix — not a forward forecast.', '多数经济体聚集于风险偏好区（增长为正）。增长／通胀组合的描述性快照 — 非前瞻预测。') }}</p>
+  <p class="caveat" style="margin-top:8px">{{ t('Snapshot only, not a forecast.', '仅快照，非预测。') }}</p>
 </div>
 
 <!-- ===== Correlation & diversification heatmap ===== -->
 {% if CR %}
 <div class="panel">
-  <div class="sec-h"><h2>{{ t('Cross-market correlation', '跨市场相关性') }} {{ help('Pairwise correlation of the daily USD-return streams (every international market + the US) over the trailing window. High everywhere = these markets move together and offer little diversification; lower = real diversification on offer. The average off-diagonal is the one-number read.', '过去窗口内各市场每日美元收益的两两相关性（所有国际市场 + 美国）。处处偏高 = 同涨同跌、分散价值低；偏低 = 存在真正的分散空间。平均非对角值为单一读数。') }}</h2>
+  <div class="sec-h"><h2>{{ t('Cross-market correlation', '跨市场相关性') }} {{ help('Shows whether markets are moving together. Lower correlation means better diversification.', '显示各市场是否同涨同跌。相关性越低，分散越好。') }}</h2>
     <span style="flex:1"></span>{% if CR.avg_offdiag is not none %}<span class="sub">{{ t('avg', '平均') }} <b style="color:var(--text)">{{ '%.2f'|format(CR.avg_offdiag) }}</b> · {{ CR.window_d }}d</span>{% endif %}</div>
   <div class="heatwrap">
     <table class="heat">
@@ -509,7 +509,7 @@
       </tbody>
     </table>
   </div>
-  <p class="caveat" style="margin-top:9px">{% if CR.read_en %}{{ t(CR.read_en, CR.read_zh) }} · {% endif %}{{ t('Redder = more correlated (less diversification); greener = lower correlation. USD weekly returns (week-end closes, so the markets’ different holiday calendars line up without injecting spurious zero-return days). Display-only.', '越红 = 相关性越高（分散越少）；越绿 = 相关性越低。美元周度收益（采用周末收盘价，使各市场不同的假期日历对齐，避免引入虚假的零收益日）。仅供展示。') }}</p>
+  <p class="caveat" style="margin-top:9px">{% if CR.read_en %}{{ t(CR.read_en, CR.read_zh) }} · {% endif %}{{ t('Red = more correlated; green = more diversifying. Display-only.', '红 = 相关更高；绿 = 更能分散。仅展示。') }}</p>
 </div>
 {% endif %}
 
@@ -535,25 +535,11 @@
   </div>
 </div>
 
-<!-- ===== Method & honest limits ===== -->
-<div class="panel">
-  <h2>{{ t('Method & honest limits', '方法与诚实声明') }}</h2>
-  <ul class="small muted" style="margin:0;padding-left:18px;line-height:1.7">
-    <li>{{ t('All keyless: equity indices & FX via Yahoo; macro via FRED OECD/ECB CSV; the stock universe via iShares UCITS holdings files.', '全部免密钥：股指与汇率来自 Yahoo；宏观来自 FRED OECD/ECB CSV；个股范围来自 iShares UCITS 持仓文件。') }}</li>
-    <li>{{ t('USD performance rebuilds each price index in dollars (index × FX, or ÷ FX for USD-quoted pairs like USD/JPY); the equity and currency legs are both measured on the same calendar and sum exactly to the USD return. These are PRICE-return indices (no dividends) — fine for cross-market comparison, not a total-return claim.', '美元表现将每个价格指数以美元重建（指数 × 汇率，USD 报价对如美元／日元则 ÷ 汇率）；股票腿与货币腿在同一日历上计量，且精确相加等于美元收益。这些是价格指数（不含股息）—— 适合跨市场对比，非全收益主张。') }}</li>
-    <li>{{ t('US-vs-world rotation & correlation use the S&P 500 PRICE index for an apples-to-apples comparison with the other price indices. Relative strength is a focus lens, not a scored signal.', '美国对全球轮动与相关性采用标普500价格指数，以与其他价格指数同口径对比。相对强弱是聚焦视角，非评分信号。') }}</li>
-    <li>{{ t('Regime / recession / drawdown / bubble reads are descriptive and history-anchored — no forward edge is claimed and none drives a scored buy/sell.', '周期／衰退／回撤／泡沫读数均为描述性且以历史锚定 — 不主张前瞻优势，且不驱动评分买卖。') }}</li>
-    <li>{{ t('CPI: FRED OECD series are discontinued for Japan (2021) and lag for the UK/Korea/India/Australia (the latter quarterly) — shown with as-of dates and dropped from scoring when stale. Eurozone uses current Eurostat HICP.', 'CPI：日本（2021 年）FRED OECD 序列已停更，英国／韩国／印度／澳大利亚滞后（澳为季度）— 标注截至日期并在过时时退出评分。欧元区采用当前 Eurostat HICP。') }}</li>
-    <li>{{ t('Taiwan has the thinnest keyless macro coverage (no yields/CPI on FRED) — flagged data-limited; its read leans on the equity tape. The liquidity impulse is ECB-only (the one clean keyless weekly CB series).', '台湾的免密钥宏观覆盖最薄（FRED 无收益率/CPI）— 标注数据有限；其读数依赖股市行情。流动性脉冲仅含欧央行（唯一干净的免密钥周度央行序列）。') }}</li>
-    <li>{{ t('No keyless implied-vol (VSTOXX / Nikkei-VI / VKOSPI) is available, so equity risk uses realised vol + own-history extension.', '无免密钥隐含波动率（VSTOXX / 日经VI / VKOSPI），故股市风险采用已实现波动率 + 自身历史扩张度。') }}</li>
-  </ul>
-</div>
-
 {% else %}{# ================= STOCK DASHBOARD ================= #}
 
 <!-- ===== What to act on now (sector board) ===== -->
 <div class="panel">
-  <h2>{{ t('What to act on now — sector rotation', '现在该关注什么 — 板块轮动') }} {{ help('Region × GICS-sector equal-weight baskets built from the pooled universe constituents, ranked by 3-month relative strength. Each row is flagged by market so you know where the sector is (the buyable analogue is a country/regional sector ETF). Display-only RS — not a forward-edge claim.', '由汇总成分股构建的 地区 × GICS 板块 等权篮子，按 3 个月相对强弱排名。每行标注所属市场（可买入的对应物为相应国家／地区的板块 ETF）。仅展示相对强弱 — 非前瞻收益主张。') }}</h2>
+  <h2>{{ t('What to act on now — sector rotation', '现在该关注什么 — 板块轮动') }} {{ help('Ranks regional sectors by 3-month relative strength. Display-only.', '按3个月相对强弱排列地区板块。仅展示。') }}</h2>
   {% if sector_board %}
   <table class="sb sortable">
     <thead><tr><th>#</th><th class="l">{{ t('Market', '市场') }}</th><th class="l">{{ t('Sector', '板块') }}</th><th>{{ t('60d', '60日') }}</th><th>{{ t('20d', '20日') }}</th><th>{{ t('Trend', '趋势') }}</th><th>{{ t('Names', '数量') }}</th></tr></thead>
@@ -577,7 +563,7 @@
 
 <!-- ===== Standout stocks ===== -->
 <div class="panel">
-  <h2>{{ t('Standout individual stocks', '个股精选') }} {{ help('Pooled from every market top constituents, ranked by sector-neutral residual momentum computed within each name own market (alpha-led, with the cycle entry as timing). Flagged by country. A relative-strength lens — not a forward-edge claim.', '汇集各市场主要成分股，按各自市场内部的板块中性残差动量排名（阿尔法主导，周期入场为时机）。标注国家。相对强弱视角 — 非前瞻收益主张。') }}</h2>
+  <h2>{{ t('Standout individual stocks', '个股精选') }} {{ help('Stocks showing stronger momentum than peers in their own market and sector. Not a forecast.', '相对本市场、本板块更强的个股。非预测。') }}</h2>
   {% set buys = (setups.buy if setups else []) %}
   {% if buys %}
   <div class="cards">
@@ -597,7 +583,7 @@
       {% set _vs = b.vol_squeeze %}
       {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
       <div class="nb-vf">
-        <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }}" data-tip-zh="波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
+        <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="{{ 'Volatility is compressed; a move may be setting up.' if _vs.state=='COILED' else 'Volatility has already expanded.' }}" data-tip-zh="{{ '波动压缩，可能在酝酿行情。' if _vs.state=='COILED' else '波动已扩张。' }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
       </div>{% endif %}
       {# forward-cone honesty note (favourable risk SHAPE the factor axes don't price) #}
       {% if b.notes %}{% for nt in b.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
@@ -605,7 +591,7 @@
     {% endfor %}
   </div>
   {% if buys|length > 12 %}<button class="more-btn" data-more="stmore">{{ t('Show more', '显示更多') }} ({{ buys|length }})</button>{% endif %}
-  <p class="caveat" style="margin-top:10px">{{ t('Standout within its own market — alpha is sector-neutral residual momentum computed per market, never pooled raw across currencies. Click a card for the full cycle / momentum breakdown.', '相对其所在市场的精选 — 阿尔法为各市场内部计算的板块中性残差动量，绝不跨币种原始汇总。点击卡片查看完整周期／动量拆解。') }}</p>
+  <p class="caveat" style="margin-top:10px">{{ t('Each card is ranked against its own market. Click for details.', '每张卡片都相对自身市场排序。点击查看详情。') }}</p>
   {% else %}<p class="muted small">{{ t('Standouts unavailable — universe still building.', '精选不可用 — 个股库构建中。') }}</p>{% endif %}
 </div>
 
