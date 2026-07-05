@@ -635,7 +635,7 @@
         </div>
         <div class="desk-verdict {{ _rscls }}">
           {% if RS == 'Risk-off' %}
-          <span class="rv-lead">{{ t('Risk-off — lead with defense, value & flow', '风险规避 — 以防御、价值与资金为主') }}</span>
+          <span class="rv-lead">{{ t('Risk-off — favour cushions & flow', '风险规避 — 偏好缓冲与资金流') }}</span>
           <span class="rv-body">{{ t('Favor <b>cushions</b> (low global-risk beta defensives), <b>cheap-A/H</b> H lines, and names the <b>mainland is accumulating</b>. High-beta amplifiers carry the biggest drawdown here.', '偏好<b>缓冲股</b>（低全球风险贝塔的防御股）、<b>A/H 折价</b>的 H 股，以及<b>内地正在加仓</b>的标的。高贝塔放大器在此回撤最大。') }}</span>
           {% elif RS == 'Risk-on' %}
           <span class="rv-lead">{{ t('Risk-on — lead with amplifiers & leaders', '风险偏好 — 以放大器与领先股为主') }}</span>
@@ -1527,7 +1527,7 @@
     </h2>
     <p class="note" style="margin:0 0 12px;text-transform:none">
       {% if RS == 'Risk-on' %}{{ t('Global risk is <b>ON</b> — amplifiers are the leveraged play; cushions lag the rally.', '全球风险<b>开启</b> — 放大器是杠杆首选；缓冲滞后于上涨。') }}
-      {% elif RS == 'Risk-off' %}{{ t('Global risk is <b>OFF</b> — amplifiers are the most exposed to the drawdown; cushions defend.', '全球风险<b>关闭</b> — 放大器回撤敞口最大；缓冲防守。') }}
+      {% elif RS == 'Risk-off' %}{{ t('Global risk is <b>OFF</b> — amplifiers draw down more; cushions defend.', '全球风险<b>关闭</b> — 放大器回撤更大；缓冲防守。') }}
       {% else %}{{ t('Global risk is <b>neutral</b> — these are exposures, not a tilt; amplifiers will move more in EITHER direction when the regime turns.', '全球风险<b>中性</b> — 这是敞口而非倾向；当风险状态转变时，放大器在任一方向都会波动更大。') }}{% endif %}
       {{ t('Current state:', '当前状态：') }} <b>{{ RS }}</b>.
     </p>

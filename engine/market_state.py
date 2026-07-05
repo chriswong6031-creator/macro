@@ -348,8 +348,8 @@ _HEADLINES = {
                 "风险偏好 — 价格、广度与跨资产信号一致。顺势交易与逢强加仓得到支持。"),
     "MIXED": ("Mixed / transition — the signals disagree. Trade smaller, favour quality, take profits faster; don't position aggressively.",
               "混合 / 转换 — 信号分歧。缩小仓位、偏好质量、更快获利了结；勿激进布局。"),
-    "RISK_OFF": ("Risk-off — the market is under stress and trend is down. Defend capital first; let washouts confirm before buying.",
-                 "避险 — 市场承压、趋势向下。优先保住本金；待清洗确认后再买入。"),
+    "RISK_OFF": ("Risk-off — stress is elevated; defend capital first.",
+                 "避险 — 压力升高；优先防守。"),
 }
 _POSTURE = {
     "RISK_ON": ("Risk-on", "风险偏好"), "MIXED": ("Mixed / transition", "混合 / 转换"),
@@ -510,12 +510,12 @@ def _radar_override_intl(latest: dict, overrides: list) -> dict:
         mkt_en, mkt_zh = _RADAR_MARKET.get(rr.get("market"), ("", ""))
         if ceil is not None and ceil < 42:
             overrides.append({"kind": "radar",
-                "note_en": f"Forced to Risk-off by the {mkt_en} Risk Radar (validated track record).",
-                "note_zh": f"由经验证的{mkt_zh}风险雷达强制为「避险」。"})
+                "note_en": f"{mkt_en} Risk Radar forces Risk-off.",
+                "note_zh": f"{mkt_zh}风险雷达强制为「避险」。"})
         else:
             overrides.append({"kind": "radar",
-                "note_en": "Capped at Mixed by the Risk Radar (validated track record).",
-                "note_zh": "由经验证的风险雷达封顶为「混合」。"})
+                "note_en": "Risk Radar caps at Mixed.",
+                "note_zh": "风险雷达封顶为「混合」。"})
     return out
 
 
@@ -599,12 +599,10 @@ def _radar_override(latest: dict, overrides: list) -> dict:
     # it only explains the CONSEQUENCE (forced / capped) plus the severe-but-gated nuance the
     # banner doesn't surface. Restating "Risk Radar {state} ({score}/100) amplified by N…"
     # duplicated the banner headline word-for-word.
-    sev_en = " (underlying read already risk-off)" if severe_gated else ""
-    sev_zh = "（底层读数已为避险）" if severe_gated else ""
     if ceiling < 42:
         overrides.append({"kind": "radar",
-            "note_en": f"Forced to Risk-off by the Risk Radar above{sev_en}.",
-            "note_zh": f"由上方风险雷达强制为「避险」{sev_zh}。"})
+            "note_en": "Risk Radar forces Risk-off.",
+            "note_zh": "风险雷达强制为「避险」。"})
     else:
         overrides.append({"kind": "radar",
             "note_en": "Capped at Mixed by the Risk Radar above.",
@@ -769,7 +767,7 @@ def _flip_text(comps: list, verdict: str) -> tuple[str, str]:
         return (f"→ Mixed if {weakest['label_en'].lower()} rolls over (now {weakest['score']}/100, the weakest leg).",
                 f"→ 若{weakest['label_zh']}转弱（现 {weakest['score']}/100，最弱项）则转为「混合」。")
     if verdict == "RISK_OFF":
-        return (f"→ Mixed once {strongest['label_en'].lower()} stabilises and the stress guards stand down.",
+        return (f"→ Mixed when {strongest['label_en'].lower()} stabilises and stress fades.",
                 f"→ 待{strongest['label_zh']}企稳且压力护栏解除后转为「混合」。")
     return (f"→ Green if {weakest['label_en'].lower()} firms up (now {weakest['score']}/100); "
             f"→ Red if it deteriorates further.",
