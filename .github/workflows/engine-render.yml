@@ -256,6 +256,10 @@ jobs:
               brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
               brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
               brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
+              # options_entry_state IS a pure function of committed data/ (polygon_gex,
+              # options_skew/ivspread snapshots, options_flow, site/flow JSON) — no
+              # network, ~2s — so unlike gex_board it belongs in this lane.
+              brun options_entry "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
             }
             cl_baskets() {
               brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
