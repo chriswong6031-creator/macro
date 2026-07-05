@@ -442,15 +442,235 @@ def _run_thetadata_source(universe: list[str], window: tuple[str, str]) -> dict:
     return {"status": "ok", "thetadata_tape": td_result}
 
 
+# ─── Multi-session signing extension (P0.4) ──────────────────────────────────
+#
+# CONSTITUTION (must not be violated):
+#   • MUST NOT alter any existing top-level signing_gate.json key
+#     (scored, direction_reliable, magnitude_reliable, net_sign_recovery,
+#      per_trade_agreement, per_trade_size_weighted, bar, note, asof,
+#      generated, n_trades, universe, enabled, delta_adjusted, thetadata_tape).
+#   • MUST NOT flip direction_reliable=true — that flip is a Fable-adjudicated
+#     decision after the multi-session bar is met (§1 row 1 of the roadmap).
+#   • Writes ONLY into thetadata_tape.sessions[] — purely additive.
+#   • Existing invocations (no --append-session flag) are byte-identical.
+#
+# Extension pass bar (hardcoded, not auto-adjudicated):
+#   ≥5 sessions spanning both a high-VIX day AND a calm day,
+#   AND ≥2 distinct roots across all sessions,
+#   each session with per_trade_agreement ≥0.75 AND net_sign_recovery ≥0.75.
+#
+# PASS/SUSPEND adjudication stays human/Fable — this script prints a summary
+# block so the operator can read it; it never flips direction_reliable.
+
+# Thresholds for the multi-session extension pass (informational only — not auto-flipped)
+_SESSION_AGREEMENT_BAR = 0.75
+_SESSION_RECOVERY_BAR = 0.75
+_SESSION_MIN_COUNT = 5       # minimum sessions before PASS is achievable
+_SESSION_ROOTS_MIN = 2       # minimum distinct roots across all sessions
+
+
+def _vix_close(day: date) -> float | None:
+    """Try to fetch VIX closing price for `day` from Yahoo Finance (yfinance).
+    Returns None if unavailable — callers record None and move on."""
+    try:
+        import yfinance as yf  # optional; not a hard dep
+        end_day = (datetime.combine(day, datetime.min.time()) + timedelta(days=1)).date()
+        df = yf.download("^VIX", start=str(day), end=str(end_day),
+                         progress=False, auto_adjust=False)
+        if df is not None and not df.empty:
+            close_col = "Close" if "Close" in df.columns else df.columns[-1]
+            return float(round(float(df[close_col].iloc[-1]), 2))
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+def append_session(
+    roots: list[str],
+    window: tuple[str, str],
+    per_trade_agreement: float | None,
+    net_sign_recovery: float | None,
+    n_trades: int,
+    vix_close: float | None = None,
+) -> dict:
+    """Append one calibration session record into thetadata_tape.sessions[].
+
+    CONTRACT:
+      • Reads signing_gate.json; verifies existing top-level keys are unchanged
+        before writing (raises RuntimeError if anything has been touched).
+      • Appends one dict to thetadata_tape.sessions[]; creates the sessions list
+        and/or thetadata_tape sub-key if absent.
+      • Prints a summary block with the running session count and whether the
+        multi-session extension pass threshold is met.
+      • NEVER flips direction_reliable — adjudication is Fable/human.
+
+    Session record schema:
+      date, window_start, window_end, roots, n_trades,
+      per_trade_agreement, net_sign_recovery, vix_close,
+      agreement_ok (bool | None), recovery_ok (bool | None).
+    """
+    gate_path = config.data_dir() / "options_flow" / "signing_gate.json"
+    gate_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load existing gate (may not exist)
+    existing_gate: dict = {}
+    if gate_path.exists():
+        raw_bytes = gate_path.read_bytes()
+        try:
+            existing_gate = json.loads(raw_bytes)
+        except Exception:  # noqa: BLE001
+            existing_gate = {}
+
+    # --- Constitution check: snapshot of all existing top-level keys ----------
+    # We capture the serialized form of every existing key so that after our
+    # write we can assert they are byte-identical (caught in the test).
+    protected_snapshot = {k: json.dumps(v, sort_keys=True)
+                          for k, v in existing_gate.items()
+                          if k != "thetadata_tape"}
+
+    # Build the session record
+    session_record: dict = {
+        "date": str(date.today()),
+        "recorded": datetime.now(timezone.utc).isoformat(),
+        "window_start": window[0],
+        "window_end": window[1],
+        "roots": sorted(roots),
+        "n_trades": n_trades,
+        "per_trade_agreement": per_trade_agreement,
+        "net_sign_recovery": net_sign_recovery,
+        "vix_close": vix_close,
+        "agreement_ok": (
+            bool(per_trade_agreement >= _SESSION_AGREEMENT_BAR)
+            if per_trade_agreement is not None else None
+        ),
+        "recovery_ok": (
+            bool(net_sign_recovery >= _SESSION_RECOVERY_BAR)
+            if net_sign_recovery is not None else None
+        ),
+    }
+
+    # Merge into thetadata_tape.sessions[]
+    td_block: dict = dict(existing_gate.get("thetadata_tape") or {})
+    sessions: list = list(td_block.get("sessions") or [])
+    sessions.append(session_record)
+    td_block["sessions"] = sessions
+    td_block["sessions_updated"] = datetime.now(timezone.utc).isoformat()
+
+    # Write — only thetadata_tape changes
+    new_gate = dict(existing_gate)
+    new_gate["thetadata_tape"] = td_block
+    gate_path.write_text(json.dumps(new_gate, indent=2))
+
+    # --- Constitution post-write check ---------------------------------------
+    written = json.loads(gate_path.read_text())
+    for key, snap_val in protected_snapshot.items():
+        actual_val = json.dumps(written.get(key), sort_keys=True)
+        if actual_val != snap_val:
+            raise RuntimeError(
+                f"append_session: BUG — existing key '{key}' was altered. "
+                "This violates the MUST-NOT constitution. "
+                f"Before={snap_val!r}, After={actual_val!r}"
+            )
+
+    # --- Summary block (human/Fable adjudication input) ----------------------
+    all_sessions = written["thetadata_tape"]["sessions"]
+    ok_sessions = [
+        s for s in all_sessions
+        if s.get("agreement_ok") and s.get("recovery_ok")
+    ]
+    all_roots: set[str] = set()
+    for s in all_sessions:
+        all_roots.update(s.get("roots") or [])
+    vix_vals = [s["vix_close"] for s in all_sessions if s.get("vix_close") is not None]
+    has_high_vix = any(v >= 20 for v in vix_vals)
+    has_calm = any(v < 20 for v in vix_vals)
+
+    pass_ready = (
+        len(ok_sessions) >= _SESSION_MIN_COUNT
+        and len(all_roots) >= _SESSION_ROOTS_MIN
+        and has_high_vix
+        and has_calm
+    )
+
+    summary_lines = [
+        "",
+        "=== Multi-session signing extension summary (P0.4) ===",
+        f"  Total sessions recorded : {len(all_sessions)}",
+        f"  Sessions passing bars   : {len(ok_sessions)} / {len(all_sessions)}"
+        f"  (bar: agreement>={_SESSION_AGREEMENT_BAR}, recovery>={_SESSION_RECOVERY_BAR})",
+        f"  Distinct roots          : {sorted(all_roots)}  (need >={_SESSION_ROOTS_MIN})",
+        f"  High-VIX session (>=20) : {has_high_vix}",
+        f"  Calm-day session (<20)  : {has_calm}",
+        f"  Min sessions threshold  : {_SESSION_MIN_COUNT}",
+        "",
+        f"  EXTENSION PASS READY    : {pass_ready}",
+        "  NOTE: direction_reliable flip requires Fable/human adjudication.",
+        "        This script does NOT auto-flip any gate key.",
+        "=============================================================",
+        "",
+    ]
+    summary = "\n".join(summary_lines)
+    print(summary)
+    log.info("append_session: session appended (total=%d, pass_ready=%s)",
+             len(all_sessions), pass_ready)
+    return {"session": session_record, "summary": {
+        "total_sessions": len(all_sessions),
+        "ok_sessions": len(ok_sessions),
+        "all_roots": sorted(all_roots),
+        "has_high_vix": has_high_vix,
+        "has_calm": has_calm,
+        "pass_ready": pass_ready,
+    }}
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--start", default="2026-06-18T14:30", help="window start (ISO, UTC)")
-    ap.add_argument("--end", default="2026-06-18T14:50", help="window end (ISO, UTC)")
+    ap.add_argument("--start", default="2026-06-18T14:30", help="window start (ISO, ET)")
+    ap.add_argument("--end", default="2026-06-18T14:50", help="window end (ISO, ET)")
     ap.add_argument("--source", default="databento",
                     choices=["databento", "thetadata"],
                     help="signing calibration source (default: databento)")
+    # P0.4: multi-session extension append mode
+    ap.add_argument("--append-session", action="store_true",
+                    help=(
+                        "Append a new session record to thetadata_tape.sessions[] "
+                        "in signing_gate.json WITHOUT touching any existing key. "
+                        "Requires --agreement, --recovery, --n-trades; "
+                        "--roots defaults to SPY. Use after each manual calibration run "
+                        "to accrue the multi-session extension evidence."
+                    ))
+    ap.add_argument("--roots", default=None,
+                    help=(
+                        "Comma-separated list of roots for this session "
+                        "(e.g. --roots SPY,QQQ,IWM). "
+                        "Required with --append-session when calibrating multiple names."
+                    ))
+    ap.add_argument("--agreement", type=float, default=None,
+                    help="per_trade_agreement value from this session's calibration run")
+    ap.add_argument("--recovery", type=float, default=None,
+                    help="net_sign_recovery value from this session's calibration run")
+    ap.add_argument("--n-trades", type=int, default=0,
+                    help="trade count for this session")
+    ap.add_argument("--vix-close", type=float, default=None,
+                    help="VIX closing level on the calibration day "
+                         "(auto-fetched from Yahoo if omitted)")
     args = ap.parse_args()
+
+    if args.append_session:
+        roots = [r.strip() for r in args.roots.split(",")] if args.roots else ["SPY"]
+        day = datetime.strptime(args.start[:10], "%Y-%m-%d").date()
+        vix = args.vix_close if args.vix_close is not None else _vix_close(day)
+        result = append_session(
+            roots=roots,
+            window=(args.start, args.end),
+            per_trade_agreement=args.agreement,
+            net_sign_recovery=args.recovery,
+            n_trades=args.n_trades,
+            vix_close=vix,
+        )
+        print(json.dumps(result["session"], indent=2))
+        return 0
 
     if args.source == "thetadata":
         syms = list((config.load().get("polygon", {}).get("gex", {}) or {}).get("symbols") or ["SPY"])

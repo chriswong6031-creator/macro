@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.thetadata-backfill.plist
+  launchd keepalive for the ThetaData EOD backfill job.
+
+  Behaviour:
+    • Runs theta_backfill_keepalive.sh on login (RunAtLoad=true).
+    • KeepAlive=true + ThrottleInterval=60s: if the script exits (either because
+      a duplicate was found and it exited-0, or because the chained command
+      finished / crashed), launchd restarts it after 60 s.
+    • The guard inside the wrapper prevents duplicate spawning: if a process is
+      already running, the wrapper exits immediately and launchd waits another 60 s.
+
+  Install / uninstall — see scripts/launchd/theta_backfill_keepalive.sh header
+  or research/THETADATA_OPS_RUNBOOK.md §3.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.macro.thetadata-backfill</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/scripts/launchd/theta_backfill_keepalive.sh</string>
+    </array>
+
+    <!-- Start immediately on load / login -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Restart if the script exits for any reason (guard exits 0 when dupe found) -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Wait 60 s before restarting (prevents tight-loop if the job crashes immediately) -->
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <!-- Working directory: the ops worktree; the wrapper also cd's there explicitly -->
+    <key>WorkingDirectory</key>
+    <string>/Users/chriswong/theta-ops-wt</string>
+
+    <!-- Redirect stdout/stderr so launchd itself captures the pre-cd guard message -->
+    <key>StandardOutPath</key>
+    <string>/Users/chriswong/theta-ops-wt/backfill.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/chriswong/theta-ops-wt/backfill.log</string>
+
+    <!-- Only run for the specific user session — not as a system daemon -->
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+</dict>
+</plist>
