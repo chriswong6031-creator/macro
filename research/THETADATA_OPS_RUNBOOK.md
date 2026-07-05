@@ -33,8 +33,11 @@ If it is not running, start it:
 
 ```bash
 cd /Users/chriswong/theta && java -jar ThetaTerminalv3.jar \
-    --api-key td1_prod_4c2f8707c4274a50b077b19b27d402e6 &
+    --api-key "$THETA_API_KEY" &
 # Allow 30–60 seconds for the terminal to become reachable
+# THETA_API_KEY must be set in the operator's shell profile or fetched from
+# the local secret store (e.g. `export THETA_API_KEY=$(op read "op://Private/ThetaData/api_key")`).
+# Never commit the literal key to git.
 ```
 
 **Step 2 — Check whether the backfill is already running.**
@@ -137,11 +140,12 @@ These limits come from the ThetaData v3 API and the ops constitution:
 ## §6 Concurrency cap: 8-concurrent ceiling
 
 The ThetaTerminal v3 window-stall law: exceeding 8 concurrent connections causes
-the terminal to stall and requires a restart.  The backfill script uses sequential
-pulls (one root at a time) which is inherently safe.  If you run manual `trade_quote`
-or `bulk_eod` calls concurrently, add them to the count:
+the terminal to stall and requires a restart.  The backfill script uses up to
+6 concurrent windows (ThreadPoolExecutor max_workers=6), staying safely under the
+8-concurrent terminal ceiling.  If you run manual `trade_quote` or `bulk_eod` calls
+concurrently, add them to the count:
 
-- Backfill (1 active pull) + manual calls <= 8 total.
+- Backfill (up to 6 concurrent pulls) + manual calls <= 8 total.
 - Never run multiple backfill instances simultaneously (the keepalive guard prevents this).
 
 ---

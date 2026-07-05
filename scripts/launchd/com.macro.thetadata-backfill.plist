@@ -7,11 +7,12 @@
 
   Behaviour:
     • Runs theta_backfill_keepalive.sh on login (RunAtLoad=true).
-    • KeepAlive=true + ThrottleInterval=60s: if the script exits (either because
-      a duplicate was found and it exited-0, or because the chained command
-      finished / crashed), launchd restarts it after 60 s.
-    • The guard inside the wrapper prevents duplicate spawning: if a process is
-      already running, the wrapper exits immediately and launchd waits another 60 s.
+    • KeepAlive={SuccessfulExit=false} + ThrottleInterval=60s:
+        - exit 0 (universe pass complete, or normal clean finish) → launchd does NOT restart.
+        - exit non-zero (crash, duplicate guard) → launchd restarts after 60 s.
+    • The wrapper checks _manifest.json first; if the universe pass is marked complete it
+      exits 0 and launchd stops restarting — no infinite loop after the work is done.
+    • The duplicate guard exits 1 so launchd retries until the running instance finishes.
 
   Install / uninstall — see scripts/launchd/theta_backfill_keepalive.sh header
   or research/THETADATA_OPS_RUNBOOK.md §3.
@@ -31,9 +32,12 @@
     <key>RunAtLoad</key>
     <true/>
 
-    <!-- Restart if the script exits for any reason (guard exits 0 when dupe found) -->
+    <!-- Restart only on non-zero exit (crash or duplicate guard); exit-0 = done, no restart -->
     <key>KeepAlive</key>
-    <true/>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
 
     <!-- Wait 60 s before restarting (prevents tight-loop if the job crashes immediately) -->
     <key>ThrottleInterval</key>
