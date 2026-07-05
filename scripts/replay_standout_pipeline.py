@@ -61,6 +61,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import random
 import sys
 import time
@@ -1104,6 +1105,7 @@ def run_golden_test(
 
 # Extension thresholds for the board-stage demote reasons (mirror engine/extension).
 from engine.extension import STRETCHED_Z as _STRETCHED_Z  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
 
 
 def board_post_pass(df: pd.DataFrame) -> pd.DataFrame:
@@ -1203,6 +1205,236 @@ def board_post_pass(df: pd.DataFrame) -> pd.DataFrame:
         except Exception:
             pass
     return df
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 6c. DELAYED-FILL STALENESS SWEEP (Item D — nwqs-d, FR-11)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Spec: FR-11 flat delay sweep ONLY (close fills at t+1…t+5).
+# Operates on already-logged fire rows from replay_boarded.parquet; NO gate
+# re-runs, NO recall assertion, NO modification of any PIT gate logic.
+#
+# Delay convention:
+#   delay_n=1: entry at close.iloc[fill_index(close, signal_date)]      — baseline t+1
+#   delay_n=k: entry at close.iloc[fill_index(close, signal_date)+(k-1)] — k bars after signal
+#
+# CANONICAL_DATA is already defined at the module top (line ~81-83); the output
+# path uses it so running from any worktree writes to the canonical data store.
+
+_DELAY_GRID = (1, 2, 3, 4, 5)
+_REPLAY_DELAY_OUT = CANONICAL_DATA / "replay" / "replay_delay.parquet"
+_DELAY_FAMILY = "staleness_delay_v1"
+_DELAY_HORIZONS = SPINE_HORIZONS  # (5, 10, 21, 63, 126)
+
+# Stamps carried from source fire row to delay output row
+_DELAY_SOURCE_COLS = [
+    "ticker", "signal_date", "episode_id",
+    "survivor_bias", "era_memo_version", "year",
+]
+
+
+def _register_delay_grid(ledger: TrialLedger | None = None) -> TrialLedger:
+    """Log the delay grid to the trial ledger, family staleness_delay_v1.
+
+    Must be called BEFORE any fitting — satisfies check_trial_registration.py.
+    """
+    if ledger is None:
+        led_path = CANONICAL_DATA / "trial_ledger.jsonl"
+        ledger = TrialLedger(path=led_path, family=_DELAY_FAMILY)
+    configs = [{"delay_n": d, "horizons": list(_DELAY_HORIZONS)} for d in _DELAY_GRID]
+    n_new = ledger.log_grid(
+        configs, family=_DELAY_FAMILY,
+        info_cutoff=str(pd.Timestamp.today().date()),
+        source="grid",
+        note="staleness_delay_v1 prereg: flat delay sweep close fills t+1..t+5 "
+             "on verdict_type=fire rows from replay_boarded.parquet",
+    )
+    log.info("delay grid: registered %d new trial configs (family=%s)", n_new, _DELAY_FAMILY)
+    return ledger
+
+
+def _load_close_massive(ticker: str) -> pd.Series | None:
+    """Full split-adjusted close series from massive_stock_day/ for delay grading."""
+    fp = MASSIVE_DIR / f"{ticker}.parquet"
+    if not fp.exists():
+        return None
+    try:
+        df = pd.read_parquet(fp, columns=["close"])
+        s = df["close"].dropna()
+        if not isinstance(s.index, pd.DatetimeIndex):
+            s.index = pd.to_datetime(s.index)
+        return split_adjust(s.sort_index())
+    except Exception as e:  # noqa: BLE001
+        log.warning("delay: close load failed for %s: %s", ticker, e)
+        return None
+
+
+def _grade_at_delay(
+    close: pd.Series,
+    signal_date: str,
+    delay_n: int,
+    horizons: tuple[int, ...] = _DELAY_HORIZONS,
+) -> dict[str, Any]:
+    """Grade one fire row at a specific delay_n.
+
+    delay_n=1 reproduces baseline t+1 close fill (house convention).
+    delay_n=k means entry at close.iloc[fill_index + (k-1)].
+
+    Returns dict with forward metrics, horizon_censored, delay_n.
+    Out-of-bounds (delayed_fill >= len(close)) → all None metrics, horizon_censored=True.
+
+    Spec gotcha: fill_offset in existing parquets is always 1 (diagnostic output,
+    hardcoded in fill_index). Do NOT try to set fill_offset as input — pass a
+    modified fill position directly (delayed_fill = base_fill + (delay_n - 1)).
+    """
+    result: dict[str, Any] = {"delay_n": delay_n, "horizon_censored": True}
+    for h in horizons:
+        for k in (f"fwd_ret_{h}", f"fwd_mdd_{h}", f"fwd_mfe_{h}"):
+            result[k] = None
+
+    base_fill = fill_index(close, signal_date)
+    if base_fill is None:
+        return result
+
+    # delayed_fill = base_fill + (delay_n - 1);  delay_n=1 → base_fill (baseline)
+    delayed_fill = base_fill + (delay_n - 1)
+    if delayed_fill >= len(close):
+        # out-of-bounds for this delay: skip row (horizon_censored=True already set)
+        return result
+
+    entry_price = float(close.iloc[delayed_fill])
+    if not np.isfinite(entry_price) or entry_price <= 0:
+        return result
+
+    # forward window starts STRICTLY AFTER the delayed entry bar (grading window
+    # starts delay_n−1 bars later than baseline — verified requirement, spec §1)
+    fwd = close.iloc[delayed_fill + 1:]
+
+    any_mature = False
+    for h in horizons:
+        if len(fwd) >= h:
+            p_h = float(fwd.iloc[h - 1])
+            if not np.isfinite(p_h):
+                continue
+            result[f"fwd_ret_{h}"] = p_h / entry_price - 1.0
+            window = fwd.iloc[:h]
+            result[f"fwd_mdd_{h}"] = min(0.0, float(window.min()) / entry_price - 1.0)
+            result[f"fwd_mfe_{h}"] = max(0.0, float(window.max()) / entry_price - 1.0)
+            any_mature = True
+
+    # horizon_censored = True only when ALL horizons are immature for this delay
+    result["horizon_censored"] = not any_mature
+    return result
+
+
+def run_delay_sweep(
+    fires: pd.DataFrame,
+    *,
+    year_filter: int | None = None,
+    verbose: bool = False,
+) -> pd.DataFrame:
+    """Grade every fire row at each delay_n in _DELAY_GRID.
+
+    Returns long-format DataFrame keyed by
+    (ticker, signal_date, episode_id, delay_n) + forward metrics + stamps.
+
+    Era law respected: survivor_bias stamps carried from source row; pre-2021
+    rows carry survivor_bias=True — carried and never mixed in fitted curves
+    without splitting (spec gotcha / Era law).
+    """
+    if year_filter is not None:
+        fires = fires[fires["year"] == year_filter].copy()
+        log.info("year_filter=%d: %d fire rows selected", year_filter, len(fires))
+
+    rows: list[dict] = []
+    close_cache: dict[str, pd.Series | None] = {}
+    n_fire = len(fires)
+    n_skipped = 0
+    t0 = time.time()
+
+    for i, (_, row) in enumerate(fires.iterrows()):
+        if verbose and i % 200 == 0:
+            log.info("  delay sweep: %d/%d rows (%.1fs)", i, n_fire, time.time() - t0)
+
+        ticker = str(row["ticker"])
+        signal_date = str(row["signal_date"])
+
+        if ticker not in close_cache:
+            close_cache[ticker] = _load_close_massive(ticker)
+        close = close_cache[ticker]
+
+        if close is None:
+            n_skipped += 1
+            continue
+
+        # carry source stamps
+        stamp: dict[str, Any] = {}
+        for col in _DELAY_SOURCE_COLS:
+            if col in row.index:
+                stamp[col] = row[col]
+
+        for delay_n in _DELAY_GRID:
+            metrics = _grade_at_delay(close, signal_date, delay_n)
+            rec: dict[str, Any] = {}
+            rec.update(stamp)
+            rec.update(metrics)
+            rows.append(rec)
+
+    elapsed = time.time() - t0
+    log.info(
+        "delay sweep complete: %d fire rows, %d tickers with no close, "
+        "%d output rows, %.1fs",
+        n_fire, n_skipped, len(rows), elapsed,
+    )
+
+    if not rows:
+        return pd.DataFrame()
+
+    out = pd.DataFrame(rows)
+    if "survivor_bias" in out.columns:
+        out["survivor_bias"] = out["survivor_bias"].astype(bool)
+    if "horizon_censored" in out.columns:
+        out["horizon_censored"] = out["horizon_censored"].astype(bool)
+    return out
+
+
+def _write_delay_parquet_atomic(df: pd.DataFrame, out_path: Path = _REPLAY_DELAY_OUT) -> None:
+    """Atomically write replay_delay.parquet via tmp + os.replace.
+
+    Only writes the NEW delay-sweep file; never rewrites replay_boarded.parquet
+    or per-year parts (spec: write only NEW files atomically).
+    """
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_path.with_suffix(".parquet.tmp")
+    df.to_parquet(tmp, index=False, engine="pyarrow", compression="snappy")
+    os.replace(tmp, out_path)
+    log.info("wrote %s: %d rows", out_path, len(df))
+
+
+def _print_delay_summary(df: pd.DataFrame, fires: pd.DataFrame, elapsed: float) -> None:
+    """Print a brief run summary for the PR body / benchmark."""
+    n_fire = len(fires)
+    n_out = len(df)
+    print("\n===== DELAY SWEEP SUMMARY =====")
+    print(f"  fire rows in:   {n_fire}")
+    print(f"  output rows:    {n_out} (fire rows × delay grid)")
+    print(f"  wall time:      {elapsed:.1f}s")
+    if "year" in df.columns:
+        years = sorted(int(y) for y in df["year"].dropna().unique())
+        print(f"  years covered:  {years}")
+
+    if "delay_n" in df.columns and "fwd_ret_21" in df.columns:
+        print("\n  mean fwd_ret_21 by delay_n (horizon_censored=False, survivor_bias=False):")
+        mask = ~df["horizon_censored"]
+        if "survivor_bias" in df.columns:
+            mask = mask & (~df["survivor_bias"])
+        sub = df[mask]
+        if len(sub) > 0:
+            by_d = sub.groupby("delay_n")["fwd_ret_21"].agg(["mean", "count"])
+            for d, r in by_d.iterrows():
+                print(f"    delay_{d}: mean={r['mean']:+.4f}  n={int(r['count'])}")
+        else:
+            print("    (no uncensored non-survivor-bias rows)")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1381,6 +1613,65 @@ def print_summary(replay_dir: Path) -> dict[str, Any]:
 # 9. MAIN ENTRYPOINT
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def _run_delay_sweep_mode(args) -> None:
+    """Orchestrate the --delay-sweep mode (Item D, nwqs-d, FR-11).
+
+    1. Register trial grid BEFORE any fitting (check_trial_registration.py).
+    2. Load fire rows from replay_boarded.parquet.
+    3. Run delay sweep (no gate re-runs, no PIT-gate changes).
+    4. Write replay_delay.parquet atomically.
+    5. Print benchmark summary.
+    """
+    boarded_path: Path = args.delay_boarded
+    out_path: Path = args.delay_out
+
+    log.info("=== replay_standout_pipeline --delay-sweep (Item D, FR-11) ===")
+    log.info("CANONICAL_DATA:  %s", CANONICAL_DATA)
+    log.info("boarded input:   %s", boarded_path)
+    log.info("delay output:    %s", out_path)
+
+    # Step 1: Register trial grid BEFORE fitting
+    ledger = _register_delay_grid()
+
+    # Step 2: Load fire rows
+    if not boarded_path.exists():
+        log.error("replay_boarded.parquet not found: %s", boarded_path)
+        sys.exit(1)
+    df_boarded = pd.read_parquet(boarded_path)
+    fires = df_boarded[df_boarded["verdict_type"] == "fire"].copy()
+    log.info("loaded %d fire rows from %s", len(fires), boarded_path)
+
+    # Optional year-range filter
+    if args.delay_year is not None:
+        fires = fires[fires["year"] == args.delay_year].copy()
+        log.info("delay_year=%d: %d fire rows selected", args.delay_year, len(fires))
+    elif args.delay_max_years is not None:
+        all_years = sorted(fires["year"].dropna().unique().astype(int), reverse=True)
+        keep = all_years[: args.delay_max_years]
+        fires = fires[fires["year"].isin(keep)].copy()
+        log.info("delay_max_years=%d: years=%s (%d rows)",
+                 args.delay_max_years, sorted(keep), len(fires))
+
+    if fires.empty:
+        log.error("no fire rows to sweep after filtering")
+        sys.exit(1)
+
+    # Step 3: Run sweep
+    t0 = time.time()
+    df_out = run_delay_sweep(fires, verbose=True)
+    elapsed = time.time() - t0
+
+    if df_out.empty:
+        log.error("no output rows from delay sweep — check close data availability")
+        sys.exit(1)
+
+    # Step 4: Atomic write
+    _write_delay_parquet_atomic(df_out, out_path)
+
+    # Step 5: Summary
+    _print_delay_summary(df_out, fires, elapsed)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="P0.1 Production Replay Harness — Entry Intelligence §4/P0.1"
@@ -1428,6 +1719,29 @@ def main() -> None:
              "ordered). Enables an all-bars (recall-complete) run to finish in a "
              "bounded session; per-year parts are resumable to extend later."
     )
+    # ── Item D: delayed-fill staleness sweep (nwqs-d, FR-11) ─────────────
+    parser.add_argument(
+        "--delay-sweep", action="store_true",
+        help="Run the delayed-fill staleness sweep on already-logged fire rows "
+             "(from replay_boarded.parquet). No gate re-runs. Writes "
+             "data/replay/replay_delay.parquet atomically. FR-11 scope only."
+    )
+    parser.add_argument(
+        "--delay-year", type=int, default=None,
+        help="Filter delay sweep to a single signal_date year (e.g. 2024 for benchmark)"
+    )
+    parser.add_argument(
+        "--delay-max-years", type=int, default=None,
+        help="Delay sweep at most this many recent years (starting from most recent)"
+    )
+    parser.add_argument(
+        "--delay-out", type=Path, default=_REPLAY_DELAY_OUT,
+        help=f"Output parquet for delay sweep (default: {_REPLAY_DELAY_OUT})"
+    )
+    parser.add_argument(
+        "--delay-boarded", type=Path, default=CANONICAL_DATA / "replay" / "replay_boarded.parquet",
+        help="Input replay_boarded.parquet path for delay sweep"
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -1435,6 +1749,11 @@ def main() -> None:
         format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
         datefmt="%H:%M:%S",
     )
+
+    # ── Item D: delayed-fill staleness sweep (nwqs-d, FR-11) ──────────
+    if args.delay_sweep:
+        _run_delay_sweep_mode(args)
+        return
 
     # ── Setup output directory ─────────────────────────────────────────
     REPLAY_DIR.mkdir(parents=True, exist_ok=True)
