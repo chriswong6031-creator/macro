@@ -385,3 +385,69 @@ def test_empty_vm_no_jinja_undefined_error():
     # the render call would have raised before this assertion.
     html = _render_empty()
     assert html is not None
+
+
+# --------------------------------------------------------------------------- #
+# Tests — Delta Board sort (W3 fix: build_site.py ev_heads pre-sort)
+# --------------------------------------------------------------------------- #
+
+def _make_ev_head(title: str, novelty_z, seendate: str) -> dict:
+    return {
+        "title": title,
+        "seendate": seendate,
+        "novelty_z": novelty_z,
+        "event": {"name": "rate_decision", "direction": "bearish"},
+    }
+
+
+def _apply_ev_heads_sort(heads: list) -> list:
+    """Replicate the sort logic from scripts/build_site.py for unit testing."""
+    _ev = [h for h in heads if h.get("event")]
+    _ev.sort(key=lambda h: h.get("seendate") or "", reverse=True)
+    _ev.sort(
+        key=lambda h: abs(float(h["novelty_z"])) if h.get("novelty_z") is not None else 0.0,
+        reverse=True,
+    )
+    return _ev
+
+
+def test_delta_board_sort_by_novelty_z_desc():
+    """Headlines with higher |novelty_z| appear first."""
+    heads = [
+        _make_ev_head("low novelty",  novelty_z=0.5, seendate="20260704T100000Z"),
+        _make_ev_head("high novelty", novelty_z=3.2, seendate="20260704T090000Z"),
+        _make_ev_head("mid novelty",  novelty_z=1.8, seendate="20260704T080000Z"),
+    ]
+    sorted_heads = _apply_ev_heads_sort(heads)
+    titles = [h["title"] for h in sorted_heads]
+    assert titles == ["high novelty", "mid novelty", "low novelty"], titles
+
+
+def test_delta_board_sort_negative_novelty_z_uses_abs():
+    """Negative novelty_z with large magnitude ranks above smaller |z|."""
+    heads = [
+        _make_ev_head("small positive", novelty_z=1.0, seendate="20260704T100000Z"),
+        _make_ev_head("large negative", novelty_z=-2.5, seendate="20260704T090000Z"),
+    ]
+    sorted_heads = _apply_ev_heads_sort(heads)
+    assert sorted_heads[0]["title"] == "large negative"
+
+
+def test_delta_board_sort_recency_tiebreak():
+    """Equal |novelty_z| — most recent seendate wins."""
+    heads = [
+        _make_ev_head("older",  novelty_z=1.5, seendate="20260703T100000Z"),
+        _make_ev_head("newer",  novelty_z=1.5, seendate="20260704T100000Z"),
+    ]
+    sorted_heads = _apply_ev_heads_sort(heads)
+    assert sorted_heads[0]["title"] == "newer"
+
+
+def test_delta_board_sort_none_novelty_z_goes_last():
+    """Headlines with novelty_z=None sort below those with a real z-score."""
+    heads = [
+        _make_ev_head("no novelty",   novelty_z=None, seendate="20260704T120000Z"),
+        _make_ev_head("has novelty",  novelty_z=0.1,  seendate="20260704T060000Z"),
+    ]
+    sorted_heads = _apply_ev_heads_sort(heads)
+    assert sorted_heads[0]["title"] == "has novelty"

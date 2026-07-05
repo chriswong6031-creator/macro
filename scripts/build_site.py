@@ -3135,9 +3135,35 @@ def main() -> int:
             _news_calibration_data = json.loads(_cal_path.read_text())
     except Exception as _e:  # noqa: BLE001 — additive, never fatal
         log.warning("news calibration.json load failed: %s", _e)
+    # W3 fix: sort event-typed headlines by |novelty_z| desc then seendate desc so
+    # the Delta Board renders in spec order without relying on Jinja abs().  Context
+    # (non-event) headlines are left in their original intelligence_score order and
+    # appended after event headlines.  A shallow copy avoids mutating the shared vm.
+    _news_vm_macro_news = vm.get("macro_news")
+    if _news_vm_macro_news and _news_vm_macro_news.get("headlines"):
+        try:
+            _raw_heads = _news_vm_macro_news["headlines"]
+            _ev   = [h for h in _raw_heads if h.get("event")]
+            _ctx  = [h for h in _raw_heads if not h.get("event")]
+            # Two-pass stable sort: secondary (seendate desc) first, then primary
+            # (abs novelty_z desc).  Python's Timsort is stable so equal-primary items
+            # preserve their secondary order.
+            _ev.sort(key=lambda h: h.get("seendate") or "", reverse=True)
+            _ev.sort(
+                key=lambda h: abs(float(h["novelty_z"])) if h.get("novelty_z") is not None else 0.0,
+                reverse=True,
+            )
+            _sorted_macro_news = dict(_news_vm_macro_news)
+            _sorted_macro_news["headlines"] = _ev + _ctx
+        except Exception as _e:  # noqa: BLE001 — sort is best-effort; degrade to raw order
+            log.warning("news ev_heads sort failed: %s", _e)
+            _sorted_macro_news = _news_vm_macro_news
+    else:
+        _sorted_macro_news = _news_vm_macro_news
     out_news = site / "news.html"
     write_page(out_news, env.get_template("news.html.j2").render(
         **vm,
+        macro_news=_sorted_macro_news,
         macro_releases=_macro_releases_data,
         news_rejected=_news_rejected_data,
         news_calibration=_news_calibration_data,
