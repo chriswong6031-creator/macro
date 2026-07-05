@@ -10,9 +10,14 @@ study code runs; see git log order)
 
 **Revision note (fix-round 2026-07-05):** This memo was updated in response to adversarial
 review findings. The §Statistical Corrections section below documents all deviations from
-the original prereg and the corrected methods. Results tables in §Results reflect the
-corrected analysis; the original (anti-conservative) figures are described in §Statistical
-Corrections for transparency.
+the original prereg and the corrected methods.
+
+**Revision note (fix-round-2, 2026-07-05):** A second adversarial review (Opus) found the
+§Results tables had not been regenerated and the HAC lag under-corrected overlapping
+windows (SC-7). Fable (main loop) implemented SC-7/SC-8 directly and re-ran the full study
+(subagent session limit; Fable acted as the round-2 stats reviewer of record). §Results now
+carries the FINAL fix-round-2 numbers; both earlier result sets are quarantined in the
+SUPERSEDED appendix. Statistical-review sign-off: Fable, 2026-07-05.
 
 ---
 
@@ -330,157 +335,171 @@ table itself was unaffected by this bug; only the per-study display was wrong).
   Fixed to derive from the single global BH result.
 - **`_run_global_bh`:** Now returns the bh dict so `_print_summary` can use it.
 
+### SC-7. Horizon-aware HAC lag (Blocker→fixed; prereg amendment, fix-round-2 2026-07-05)
+
+**Problem:** The rule-of-thumb auto-lag `floor(4*(n/100)^(2/9))` (≈6 at n≈750) badly
+under-corrects overlapping-window serial dependence. The adversarial review measured the
+GEXR Era1 21d per-date gap series (n=738): autocorrelation 0.156/0.178/0.103/0.106/0.149 at
+lags 1/5/10/21/42 — NOT decayed at lag 42. At auto-lag 6 the test printed t=4.72 (p≈0.0000);
+at the honest lag 42 it falls to t=2.68 (p=0.0075); at lag 63 to t=2.30 (p=0.0216) — roughly
+two orders of magnitude of p-inflation.
+
+**Fix applied (labeled amendment to P-2):** for every overlapping-window target the
+Newey-West lag is now `max(auto_lag, 2 × horizon_days)`, capped at n−2 (`_overlap_lag`):
+21d targets → lag ≥ 42; 10d → ≥ 20; 5d → ≥ 10. Applied at ALL four call sites (GEXR, SKEW,
+CWIV rank-IC series, DOI). This is a post-hoc statistical-method correction, visibly
+documented per house law — never silent.
+
+### SC-8. Per-study BH tables removed; survivor-count and decay-commentary fixes (fix-round-2)
+
+- Per-study tables previously printed BH columns computed with the GLOBAL k=52 but
+  WITHIN-STUDY ranks — incoherent adjusted p-values that contradicted the registered global
+  family table (e.g. CWIV.Era3.5d printed adj 0.157 per-study vs 0.0261 global). Per-study BH
+  is now REMOVED entirely; BH verdicts appear ONLY in the single global family table.
+- `_print_summary` per-study survivor counts parsed the study prefix as
+  `"S-GEXR-H".split("-")[0] == "S"`, matching SKEW cells instead of GEXR (printed 1 instead
+  of 6). Now counted over each study's own p-value keys against the global BH dict.
+- Post-publication-decay commentary now (a) reads the GLOBAL verdicts, and (b) applies the
+  era-amendment auto-death rule only to genuinely pre-2016 eras (DOI Era1 2012-15). For
+  greeks-window studies (eras start 2017), early-only concentration prints a decay WARNING
+  with review flag — not auto-death.
+
 ---
 
-## §Results
+## §Results — FINAL (fix-round-2 run, 2026-07-05; horizon-aware HAC lags per SC-7)
 
-**PRELIMINARY — Opus stats review MANDATORY before any verdict prints.**
-**Conclusions framed as display/context evidence informing §4 gates only.**
+**Run:** `python scripts/research/options_history_gauntlet.py --study all`, 42s, store
+verified complete (24 roots; AAPL excluded; greeks from 2017-01-03, OI from 2012-06-01).
+**Family:** single global BH-FDR, alpha=0.10, pre-stated k=52; 51 valid cells, 1 SPARSE.
+**Survivors: 8 / 51.** Opus stats review remains MANDATORY before any §4 gate consumes
+these as verdict inputs; everything below is display/context evidence only.
 
-**CORRECTED METHOD:** All BH-family p-values now use the dependence-robust HAC t-test on
-per-date cross-sectional gaps (as described in §Statistical Corrections SC-1). The corrected
-results require re-running the script against the ThetaData store to produce final numbers.
-The tables below show the corrected output structure; numerical values will differ from the
-original anti-conservative run.
+> In plain English: we tested four options signals on 15 years of sector-ETF/index history
+> with the strictest correction for overlapping windows. What survived: gamma regime is a
+> strong VOLATILITY-conditioning signal (but its direction flips between eras, so it is
+> weather, not a compass); the call-put IV spread shows a real 5-day cross-sectional edge
+> in the current era only; skew-deceleration shows nothing supportive — its one surviving
+> cell points the WRONG way for the bullish hypothesis; and ΔOI persistence is dead at the
+> sector level. Nulls are printed, not hidden.
 
-> In plain English: four studies tested on 15 years of ThetaData EOD history (24 roots,
-> AAPL excluded). After correcting for pseudo-replication (overlapping windows + cross-root
-> correlation), the effective sample sizes are substantially smaller than the original run
-> suggested. Results are display/context evidence only — not deployed, not scored.
+### Global BH-FDR family table (authoritative; the ONLY BH surface)
 
-### S-GEXR-H: Gamma regime → forward realized volatility
+| Rank | Cell | raw_p | bh_adj_p | reject |
+|---|---|---|---|---|
+| 1 | GEXR.Era3.5d | 0.0000 | 0.0001 | YES |
+| 2 | GEXR.Era2.5d | 0.0000 | 0.0001 | YES |
+| 3 | GEXR.Era2.21d | 0.0000 | 0.0001 | YES |
+| 4 | GEXR.Era1.5d | 0.0000 | 0.0003 | YES |
+| 5 | GEXR.Era3.21d | 0.0005 | 0.0052 | YES |
+| 6 | CWIV.Era3.5d | 0.0030 | 0.0261 | YES |
+| 7 | GEXR.Era1.21d | 0.0075 | 0.0556 | YES |
+| 8 | SKEW.Era1.HIGH_FALLING.rel_ret21 | 0.0142 | 0.0921 | YES |
+| 9 | CWIV.Era3.21d | 0.0511 | 0.2953 | no |
+| 10–51 | remainder (all SKEW/DOI/CWIV cells) | ≥0.1027 | ≥0.5343 | no |
 
-**Corrected method:** per-date mean(rv_long_roots) − mean(rv_short_roots), HAC t-test on
-time-series. The original pooled MW (16k+ obs) overstated significance; the honest n is
-~750 dates per era. The directional finding (SHORT gamma → higher realized vol) remains
-mechanistically plausible, but the BH-corrected p-values will be larger after the correction.
+Per-study survivor counts (from the global family): GEXR 6/6, SKEW 1/27, CWIV 1/6, DOI 0/12.
 
-**Original (anti-conservative) pooled MW results for reference:**
+### S-GEXR-H: Gamma regime → forward realized volatility — 6/6 survive; SIGN IS ERA-DEPENDENT
 
-| era   | horizon | n_long | n_short | mean_rv_long | mean_rv_short | mw_p (descriptive) |
-|---|---|---|---|---|---|---|
-| Era1  | 5d  | 5057 | 11638 | 0.177 | 0.148 | 0.000 |
-| Era1  | 21d | 5057 | 11638 | 0.183 | 0.161 | 0.000 |
-| Era2  | 5d  | 8565 | 8823  | 0.268 | 0.282 | 0.000 |
-| Era2  | 21d | 8565 | 8823  | 0.283 | 0.304 | 0.000 |
-| Era3  | 5d  | 7339 | 12717 | 0.204 | 0.214 | 0.066 |
-| Era3  | 21d | 7159 | 12529 | 0.228 | 0.239 | 0.005 |
+Per-date mean RV gap (long-gamma roots − short-gamma roots), HAC lag ≥ 2×horizon:
 
-The HAC-based p-values (from the corrected run) will appear in the script output above.
-
-**Critical Opus review items:**
-1. The `net_gamma` computed here uses unweighted greeks sum (no OI in greeks store). This
-   biases toward options with many strikes/expirations. Verify whether OI-weighted approach
-   changes the regime classification materially.
-2. The n_short >> n_long imbalance across all eras should be explained mechanistically.
-3. After HAC correction, if GEXR Era1/Era2 still survive, the directional claim is more
-   credible. If only Era3 survives, treat as recent-data artifact.
-
-### SKEW-DEESC-H: Sector skew → forward max drawdown / return vs SPY
-
-**Corrected method:** per-date mean(condition_target) − mean(NEUTRAL_target) across sector
-ETF roots, HAC t-test. The original pooled MW overstated significance; the honest n is
-~750 dates per era for the per-date time-series.
-
-**Note on benchmark deviation:** NEUTRAL (mid-tercile) used as benchmark; LOW tested as
-condition. This deviates from P-3 (see §SC-4). Results for LOW condition test LOW-vs-NEUTRAL,
-not the registered LOW-as-benchmark contrasts.
-
-**Directional finding (context only, pending corrected run):** HIGH skew (steep put premium)
-is associated with LARGER 21d max drawdown in Era1/Era2, consistent with informed put-buying
-preceding drawdowns. Effect direction is consistent, but significance after HAC correction
-is unknown without the corrected run.
-
-**Post-publication decay:** Effect was present in Era1/Era2 but attenuated in Era3. After
-honest correction, the Era1/Era2 effect may remain if the cross-sectional daily mean is
-consistent; Era3 is expected to be null.
-
-### CWIV-H: CW ivspread cross-sectional rank-IC
-
-**NOTE: The CWIV method already uses the correct dependence-robust approach (per-date
-rank-IC + HAC t-test). No change to CWIV's test statistic. CWIV results are unchanged.**
-
-**The original memo incorrectly reported "NULL across all eras at global BH correction"
-using a per-study partial BH figure (0.106) rather than the global BH figure. The correct
-global BH figure for the original run was:**
-- CWIV.Era3.5d: bh_adj_p=0.0118 (YES at global BH)
-- CWIV.Era3.21d: bh_adj_p=0.0420 (YES at global BH)
-
-**Corrected CWIV verdict:** CWIV is NOT null across all eras. Era3 survives at the
-original global BH level. However, this is an Era3-only result — caution is warranted
-(possible recent-data artifact; only ~880 trading days; insufficient cross-era robustness).
-Per the era-amendment, an Era3-only survivor requires careful scrutiny and cannot be
-treated as a robust signal.
-
-**Context:** CWIV rank-IC tests only 6 cells (not the registered 12) because the secondary
-tercile-sort test was not implemented. The 0.0118 and 0.0420 figures are from the original
-pooled-MW run where GEXR/SKEW/DOI p-values were inflated — after correcting GEXR/SKEW/DOI
-to use HAC, the BH family p-value for CWIV.Era3.5d will change (BH adj-p depends on all
-family members' ranks). Re-run to obtain final figures.
-
-**Caveat on ivspread computation:** equal-weight matched pairs (no OI weighting; greeks store
-lacks per-strike OI). OI weighting must be checked in W-E0 with single-name data.
-
-### DOI-H: 5-day ΔOI persistence
-
-**Corrected method:** per-date mean(condition_return) − mean(OI_FLAT_return) across roots,
-HAC t-test. The original pooled MW was anti-conservative.
-
-**NOTE: The original memo incorrectly stated "single survivor Era1-only, DEAD." The correct
-original global BH output showed DOI.Era3.OI_UP.10d surviving at bh_adj_p=0.0490 (YES).
-This was an anti-conservative result (pooled MW); after HAC correction it is expected to
-disappear. The Era1 survivor (DOI.Era1.OI_UP.10d) is also expected to shrink toward null
-after HAC correction reduces the effective n from ~6,834 pooled obs to ~250 per-date obs.**
-
-**Pending corrected run verdict:** after HAC correction, if no DOI cells survive the global
-BH family, the DOI DEAD verdict holds. If Era3 still survives, revisit with era-amendment
-scrutiny. Do not treat any DOI result as confirmed without the corrected run output.
-
-**Era0 SPARSE note:** DOI-H Era0 (2012–2015) produces SPARSE because underlying price data
-is only available from 2017 via the greeks store. Honest limitation, not a computation error.
-
-### Global BH-FDR family summary
-
-**NOTE: The global BH table from the ORIGINAL (anti-conservative) run is reproduced here
-for reference. After SC-1 correction (HAC for GEXR/SKEW/DOI), the survivor set will change.
-The corrected table must be produced by re-running the script against the ThetaData store.**
-
-Original anti-conservative run (15/51 survivors, inflated by pooled MW):
-
-| Rank | Cell | raw_p | bh_adj_p | reject | note |
+| era | horizon | mean_rv_long | mean_rv_short | sign of gap | raw_p (HAC) |
 |---|---|---|---|---|---|
-| 1 | GEXR.Era1.5d | 0.0000 | 0.0000 | YES | anti-conservative |
-| 2 | GEXR.Era1.21d | 0.0000 | 0.0000 | YES | anti-conservative |
-| 3 | GEXR.Era2.21d | 0.0000 | 0.0000 | YES | anti-conservative |
-| 4 | GEXR.Era2.5d | 0.0000 | 0.0000 | YES | anti-conservative |
-| 5 | SKEW.Era1.HIGH_FALLING.max_dd21 | 0.0000 | 0.0000 | YES | anti-conservative |
-| 6 | SKEW.Era1.HIGH_RISING.max_dd21 | 0.0001 | 0.0006 | YES | anti-conservative |
-| 7 | DOI.Era1.OI_UP.10d | 0.0001 | 0.0011 | YES → expected DEAD | anti-conservative |
-| 8 | SKEW.Era2.LOW.max_dd21 | 0.0002 | 0.0011 | YES | anti-conservative |
-| 9 | CWIV.Era3.5d | 0.0020 | 0.0118 | YES → CAUTION | CWIV already HAC-correct |
-| 10 | CWIV.Era3.21d | ~0.005 | 0.0420 | YES → CAUTION | CWIV already HAC-correct |
-| 11–15 | GEXR.Era3.21d + DOI survivors | 0.005–0.026 | 0.024–0.090 | YES | anti-conservative |
-| 16–51 | remainder | >0.05 | >0.17 | no | — |
+| Era1 (2017-19) | 5d | 0.177 | 0.148 | **long HIGHER** | 0.0000 |
+| Era1 (2017-19) | 21d | 0.183 | 0.161 | **long HIGHER** | 0.0075 |
+| Era2 (2020-22) | 5d | 0.268 | 0.282 | short higher | 0.0000 |
+| Era2 (2020-22) | 21d | 0.283 | 0.304 | short higher | 0.0000 |
+| Era3 (2023→) | 5d | 0.204 | 0.214 | short higher | 0.0000 |
+| Era3 (2023→) | 21d | 0.228 | 0.239 | short higher | 0.0005 |
 
-**After era-amendment filtering (on original anti-conservative results):**
-- S-GEXR-H survivors: mechanistically plausible direction. After HAC correction, significance
-  is unknown — may survive (effect is directionally consistent) or shrink to null.
-- SKEW drawdown survivors: concentrated in Era1/Era2. After HAC correction, expected to
-  attenuate; may or may not survive.
-- DOI.Era1.OI_UP.10d: expected DEAD after HAC correction (inflated by pooled MW).
-- CWIV.Era3.5d and Era3.21d: these used the already-correct HAC method. Era3-only —
-  **CAUTION** (possible recent data artifact; insufficient cross-era robustness).
+**Verdict (context):** gamma regime robustly STRATIFIES 5-21d realized vol in every era at
+honest lags — but the SIGN FLIPS: Era1 long-gamma roots ran hotter; Era2/Era3 short-gamma
+roots ran hotter (the dealer-hedging mechanism direction). A sign-flipping two-sided
+rejection is NOT evidence for a stable directional mechanism. Treat as REGIME-CONTEXT
+(vol-conditioning weather for the `options_weather` lobe and stop-width context), never a
+directional or even fixed-sign vol forecast. Era1 composition caveat stands (unweighted
+greeks sum, n_short >> n_long imbalance; roots self-select into regimes).
 
-**Implications for §4 gates (pending corrected re-run):**
-- S-GEXR-H → S-GEXR gate: directional context consistent with mechanism. Gate stays
-  `scored=false`; informs `options_weather` lobe (display-only). Requires corrected run.
-- S-SKEW_DECEL / S-TOP_RISK gates: skew-drawdown direction plausible but significance
-  unknown after correction. Must not claim survival until corrected run confirms.
-- S-CWIV gate: Era3 survivor present in original run (CWIV already HAC-correct). Era3-only;
-  caution. W-E0 single-name extension required before stronger verdict.
-- S-DOI gate: expected null after correction. W-E0 single-name extension may differ.
+### CWIV-H: CW ivspread cross-sectional rank-IC — Era3 5d survives; earlier eras null
 
-**All above are display/context evidence only. No scoring, no deployment, no gate flips.**
+| era | horizon | n_dates | mean_ic | hac_t | raw_p |
+|---|---|---|---|---|---|
+| Era1 | 5d | 754 | 0.0269 | 1.63 | 0.103 |
+| Era1 | 21d | 754 | 0.0263 | 1.29 | 0.196 |
+| Era2 | 5d | 756 | 0.0137 | 0.92 | 0.358 |
+| Era2 | 21d | 756 | 0.0085 | 0.46 | 0.648 |
+| Era3 | 5d | 872 | **0.0414** | **2.97** | **0.003** |
+| Era3 | 21d | 856 | 0.0424 | 1.95 | 0.051 |
+
+**Verdict (context):** positive 5d rank-IC in the CURRENT era only (bh_adj_p=0.0261);
+21d narrowly misses (raw 0.0511). Era3-only survival warrants recent-era caution, but note
+the FULL-history IC is monotonically positive in every era — the pattern reads as a weak
+persistent effect that only reaches significance with Era3's cleaner data, not as a
+data-mined artifact. Supports continuing the live S-CWIV gate accrual; W-E0 single-name
+breadth (only ~23 roots here vs the literature's full cross-section) required before any
+stronger read. Under-tested vs prereg by half (SC-3: tercile-sort secondary not run).
+
+### SKEW-DEESC-H: sector skew → forward drawdown/return — 1/27 survives, WRONG DIRECTION for the hypothesis
+
+The single survivor, SKEW.Era1.HIGH_FALLING.rel_ret21 (raw 0.0142, adj 0.0921), has
+descriptive means of −0.29% (HIGH_FALLING) vs −0.26% (NEUTRAL): the skew-deceleration
+condition slightly UNDERPERFORMS neutral at 21d in Era1 (2017-19), and the effect is absent
+in Era2/Era3.
+
+**Verdict (context):** the sector-ETF history provides NO support for the bullish
+skew-deceleration hypothesis (S-SKEW_DECEL's premise that fear-decay after a spike marks
+cleaner longs) — the lone surviving cell points the OPPOSITE way, in the oldest era only,
+at the weakest adjusted p among survivors. Not pre-2016, so the era-amendment auto-death
+rule does not apply, but the live S-SKEW_DECEL gate now carries a SKEPTICAL prior from this
+study: recent-era absence must be weighted heavily at its Q4-26 verdict. All 21d-MaxDD
+cells (the crash-protection read) are null at honest lags. Benchmark deviation SC-4 stands.
+
+### DOI-H: 5-day ΔOI persistence — 0/12 survive; DEAD at sector level
+
+No DOI cell survives in any era (best raw_p 0.2848). The anti-conservative Era1/Era3
+"survivors" from the original run disappeared under the honest per-date HAC treatment,
+as predicted in SC-1/SC-2.
+
+**Verdict (context):** ΔOI persistence carries no 5-10d relative-return information at the
+sector-ETF level on 14 years of history. The live S-DOI gate (single names, Pan-Poteshman's
+actual setting) keeps accruing — sector aggregation may simply wash out the effect — but
+the prior from this study is negative. Era0 (2012-15) remains SPARSE (price series from
+2017 via greeks store), an honest limitation.
+
+### Implications for §4 gates (display/context only; NO gate flips)
+
+- **S-GEXR:** gamma-regime evidence is strong as VOL-conditioning context with era-dependent
+  sign → feeds the `options_weather` lobe and stop-width/path context; must never be read
+  as directional. Gate stays `scored=false`.
+- **S-CWIV:** hypothesis alive — Era3 5d cross-sectional edge at the sector level; live
+  single-name accrual continues to its ~Dec-26 verdict; W-E0 extension is the highest-value
+  next data step.
+- **S-SKEW_DECEL / S-TOP_RISK:** skeptical prior — no supportive cell; the lone survivor
+  contradicts the bullish deceleration premise. Live gates keep accruing (single names may
+  differ) with recent-era absence weighted heavily.
+- **S-DOI:** negative prior at sector level; single-name live accrual continues.
+- **W-E0 (single-name backfill extension)** is now clearly the binding constraint on every
+  cross-sectional read above.
+
+**All of the above is display/context evidence. No scoring, no deployment, no gate flips,
+no kernel conditioning.**
+
+---
+
+## §Appendix: SUPERSEDED results (audit trail — do NOT cite)
+
+Two earlier result sets are preserved for the audit trail only. Both are known-wrong:
+
+1. **Original run (pooled Mann-Whitney fed to BH; 15/51 "survivors")** — anti-conservative
+   by construction (SC-1): pseudo-replication across overlapping windows and correlated
+   roots. Headline artifacts included SKEW max_dd21 "survivors" in Era1/Era2 and
+   DOI.Era1/Era3 "survivors", none of which exist under the honest treatment.
+2. **Fix-round-1 run (per-date HAC at auto-lag≈6; "8/51" with different membership)** —
+   under-corrected 21d overlap (SC-7): GEXR cells printed p≈0.0000 that belong at
+   p≈0.0075 (Era1 21d); CWIV.Era3.21d printed adj 0.0577 (YES) but is 0.2953 (no) at
+   honest lags.
+
+The authoritative surface is the fix-round-2 global table in §Results above.
 
 ---
 

@@ -174,6 +174,20 @@ def _hac_ttest(x: np.ndarray, lag: int | None = None) -> tuple[float, float]:
     return float(t), p
 
 
+def _overlap_lag(n: int, horizon_days: int) -> int:
+    """Horizon-aware Newey-West lag for OVERLAPPING-window targets (prereg amendment P-6).
+
+    The rule-of-thumb auto-lag floor(4*(n/100)**(2/9)) (~6 at n~750) badly under-corrects
+    h-day overlapping forward windows: the adversarial review measured autocorrelation
+    still ~0.15 at lag 42 on a 21d-overlap gap series (GEXR Era1: p 0.0000 at lag 6 ->
+    0.0075 at lag 42 -- ~2 orders of magnitude of p-inflation). Standard guidance for
+    h-period overlapping data is lag >= h; we use 2*h to be conservative, capped at n-2
+    so the NW weights stay well-defined.
+    """
+    auto = max(int(np.floor(4.0 * (n / 100.0) ** (2.0 / 9.0))), 1)
+    return max(1, min(max(auto, 2 * horizon_days), n - 2))
+
+
 def _mannwhitney(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
     """Two-sided Mann-Whitney U test. Returns (stat, p_value)."""
     a = a[np.isfinite(a)]; b = b[np.isfinite(b)]
@@ -337,7 +351,7 @@ def run_sgexr_h() -> dict[str, Any]:
                               - per_date_short.reindex(common_dates)).values
 
             n_dates = len(gap_series[np.isfinite(gap_series)])
-            t_stat, hac_p = _hac_ttest(gap_series)
+            t_stat, hac_p = _hac_ttest(gap_series, lag=_overlap_lag(n_dates, horizon))
 
             row = {
                 "era": era_name,
@@ -358,21 +372,17 @@ def run_sgexr_h() -> dict[str, Any]:
             if n_dates >= _MIN_N_BUCKET and np.isfinite(hac_p):
                 pvals_for_bh[cell_key] = hac_p
 
-    # BH-FDR (partial family — this study's cells only; for display)
-    bh = _bh_fdr(pvals_for_bh)
-    for row in result_rows:
-        cell_key = f"GEXR.{row['era']}.{row['horizon']}"
-        if cell_key in bh:
-            row["bh_adj_p"] = f"{bh[cell_key]['bh_adj_p']:.3f}"
-            row["reject"] = "YES" if bh[cell_key]["reject_h0"] else "no"
+    # BH verdicts are NOT computed per-study: the pre-registered family is the single
+    # GLOBAL k=52 BH pass (see the global family table). A per-study BH with the global
+    # k but local ranks produced incoherent adj-p values (Fable review 2026-07-05).
+    print("  BH-FDR verdicts appear ONLY in the global family table (pre-registered k=52).")
 
     cols = ["era", "horizon", "n_long", "n_short", "mean_rv_long", "mean_rv_short",
-            "mw_p", "hac_p", "bh_adj_p", "reject"]
-    widths = [8, 8, 8, 9, 14, 15, 8, 8, 10, 8]
+            "mw_p", "hac_p"]
+    widths = [8, 8, 8, 9, 14, 15, 8, 8]
     _print_table(result_rows, cols, widths)
 
-    _print_post_decay_commentary("S-GEXR-H", result_rows, "reject", "era")
-    return {"study": "S-GEXR-H", "rows": result_rows, "pvals": pvals_for_bh, "bh": bh}
+    return {"study": "S-GEXR-H", "rows": result_rows, "pvals": pvals_for_bh}
 
 
 # ---------------------------------------------------------------------------
@@ -585,7 +595,7 @@ def run_skew_deesc_h() -> dict[str, Any]:
     pvals_for_bh = {}
 
     conditions = ["HIGH_RISING", "HIGH_FALLING", "LOW"]
-    targets = [("max_dd21", "21d MaxDD"), ("rel_ret5", "5d RelRet"), ("rel_ret21", "21d RelRet")]
+    targets = [("max_dd21", "21d MaxDD", 21), ("rel_ret5", "5d RelRet", 5), ("rel_ret21", "21d RelRet", 21)]
 
     # Benchmark = NEUTRAL (mid-tercile)
     for era_name, era_start, era_end in _GREEKS_ERAS:
@@ -596,7 +606,7 @@ def run_skew_deesc_h() -> dict[str, Any]:
         for cond in conditions:
             cond_data = era_panel[era_panel["cond"] == cond]
 
-            for tgt_col, tgt_label in targets:
+            for tgt_col, tgt_label, tgt_horizon in targets:
                 cond_vals = cond_data[tgt_col].dropna().values
                 neutral_vals = era_neutral[tgt_col].dropna().values
 
@@ -628,7 +638,7 @@ def run_skew_deesc_h() -> dict[str, Any]:
                 if n_dates >= _MIN_N_ERA:
                     gap_series = (per_date_cond.reindex(common_dates)
                                   - per_date_neutral.reindex(common_dates)).values
-                    t_stat, hac_p = _hac_ttest(gap_series)
+                    t_stat, hac_p = _hac_ttest(gap_series, lag=_overlap_lag(n_dates, tgt_horizon))
                 else:
                     t_stat, hac_p = float("nan"), float("nan")
                     n_dates = 0
@@ -647,26 +657,17 @@ def run_skew_deesc_h() -> dict[str, Any]:
                 if n_dates >= _MIN_N_BUCKET and np.isfinite(hac_p):
                     pvals_for_bh[cell_key] = hac_p
 
-    # BH-FDR: use exact cell_key match (fixes per-study overwrite bug)
-    bh = _bh_fdr(pvals_for_bh)
-    for row in result_rows:
-        tgt_key = {"21d MaxDD": "max_dd21", "5d RelRet": "rel_ret5",
-                   "21d RelRet": "rel_ret21"}.get(row["target"], "")
-        cell_key = f"SKEW.{row['era']}.{row['condition']}.{tgt_key}"
-        if cell_key in bh:
-            row["bh_adj_p"] = f"{bh[cell_key]['bh_adj_p']:.3f}"
-            row["reject"] = "YES" if bh[cell_key]["reject_h0"] else "no"
+    # BH verdicts are NOT computed per-study: the pre-registered family is the single
+    # GLOBAL k=52 BH pass (see the global family table). A per-study BH with the global
+    # k but local ranks produced incoherent adj-p values (Fable review 2026-07-05).
+    print("  BH-FDR verdicts appear ONLY in the global family table (pre-registered k=52).")
 
     cols = ["era", "condition", "target", "n_cond", "n_neutral",
-            "mean_cond", "mean_neutral", "mw_p", "hac_p", "bh_adj_p", "reject"]
-    widths = [6, 12, 14, 8, 10, 12, 14, 8, 8, 10, 8]
+            "mean_cond", "mean_neutral", "mw_p", "hac_p"]
+    widths = [6, 12, 14, 8, 10, 12, 14, 8, 8]
     _print_table(result_rows, cols, widths)
 
-    _print_post_decay_commentary("SKEW-DEESC-H", result_rows, "reject", "era")
-    return {
-        "study": "SKEW-DEESC-H", "rows": result_rows,
-        "pvals": pvals_for_bh, "bh": bh,
-    }
+    return {"study": "SKEW-DEESC-H", "rows": result_rows, "pvals": pvals_for_bh}
 
 
 # ---------------------------------------------------------------------------
@@ -845,7 +846,8 @@ def run_cwiv_h() -> dict[str, Any]:
                 })
                 continue
 
-            t_stat, p_val = _hac_ttest(ic_vals)
+            t_stat, p_val = _hac_ttest(
+                ic_vals, lag=_overlap_lag(n, 5 if target == "5d" else 21))
             result_rows.append({
                 "era": era_name, "horizon": target, "n_dates": n,
                 "mean_ic": f"{mean_ic:.4f}",
@@ -857,19 +859,16 @@ def run_cwiv_h() -> dict[str, Any]:
             if n >= _MIN_N_BUCKET and np.isfinite(p_val):
                 pvals_for_bh[cell_key] = p_val
 
-    bh = _bh_fdr(pvals_for_bh)
-    for row in result_rows:
-        cell_key = f"CWIV.{row['era']}.{row['horizon']}"
-        if cell_key in bh:
-            row["bh_adj_p"] = f"{bh[cell_key]['bh_adj_p']:.3f}"
-            row["reject"] = "YES" if bh[cell_key]["reject_h0"] else "no"
+    # BH verdicts are NOT computed per-study: the pre-registered family is the single
+    # GLOBAL k=52 BH pass (see the global family table). A per-study BH with the global
+    # k but local ranks produced incoherent adj-p values (Fable review 2026-07-05).
+    print("  BH-FDR verdicts appear ONLY in the global family table (pre-registered k=52).")
 
-    cols = ["era", "horizon", "n_dates", "mean_ic", "hac_t", "raw_p", "bh_adj_p", "reject"]
-    widths = [6, 8, 9, 10, 8, 8, 10, 8]
+    cols = ["era", "horizon", "n_dates", "mean_ic", "hac_t", "raw_p"]
+    widths = [6, 8, 9, 10, 8, 8]
     _print_table(result_rows, cols, widths)
 
-    _print_post_decay_commentary("CWIV-H", result_rows, "reject", "era")
-    return {"study": "CWIV-H", "rows": result_rows, "pvals": pvals_for_bh, "bh": bh}
+    return {"study": "CWIV-H", "rows": result_rows, "pvals": pvals_for_bh}
 
 
 # ---------------------------------------------------------------------------
@@ -1019,7 +1018,7 @@ def run_doi_h() -> dict[str, Any]:
                 if n_dates >= _MIN_N_ERA:
                     gap_series = (per_date_cond.reindex(common_dates)
                                   - per_date_flat.reindex(common_dates)).values
-                    t_stat, hac_p = _hac_ttest(gap_series)
+                    t_stat, hac_p = _hac_ttest(gap_series, lag=_overlap_lag(n_dates, horizon))
                 else:
                     t_stat, hac_p = float("nan"), float("nan")
                     n_dates = 0
@@ -1038,20 +1037,17 @@ def run_doi_h() -> dict[str, Any]:
                 if n_dates >= _MIN_N_BUCKET and np.isfinite(hac_p):
                     pvals_for_bh[cell_key] = hac_p
 
-    bh = _bh_fdr(pvals_for_bh)
-    for row in result_rows:
-        cell_key = f"DOI.{row['era']}.{row['condition']}.{row['horizon']}"
-        if cell_key in bh:
-            row["bh_adj_p"] = f"{bh[cell_key]['bh_adj_p']:.3f}"
-            row["reject"] = "YES" if bh[cell_key]["reject_h0"] else "no"
+    # BH verdicts are NOT computed per-study: the pre-registered family is the single
+    # GLOBAL k=52 BH pass (see the global family table). A per-study BH with the global
+    # k but local ranks produced incoherent adj-p values (Fable review 2026-07-05).
+    print("  BH-FDR verdicts appear ONLY in the global family table (pre-registered k=52).")
 
     cols = ["era", "condition", "horizon", "n_cond", "n_flat",
-            "mean_cond", "mean_flat", "mw_p", "hac_p", "bh_adj_p", "reject"]
-    widths = [6, 10, 8, 7, 7, 12, 12, 8, 8, 10, 8]
+            "mean_cond", "mean_flat", "mw_p", "hac_p"]
+    widths = [6, 10, 8, 7, 7, 12, 12, 8, 8]
     _print_table(result_rows, cols, widths)
 
-    _print_post_decay_commentary("DOI-H", result_rows, "reject", "era")
-    return {"study": "DOI-H", "rows": result_rows, "pvals": pvals_for_bh, "bh": bh}
+    return {"study": "DOI-H", "rows": result_rows, "pvals": pvals_for_bh}
 
 
 # ---------------------------------------------------------------------------
@@ -1059,8 +1055,15 @@ def run_doi_h() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def _print_post_decay_commentary(study: str, rows: list[dict],
-                                  reject_col: str, era_col: str) -> None:
-    """Print post-publication-decay commentary for a study result set."""
+                                  reject_col: str, era_col: str,
+                                  pre2016_eras: set[str] | None = None) -> None:
+    """Print post-publication-decay commentary for a study result set.
+
+    pre2016_eras: era labels that lie entirely pre-2016 (era-amendment DEAD rule
+    applies only to these). For greeks-window studies (eras start 2017) this is
+    empty — early-only concentration there is a decay WARNING, not auto-death.
+    """
+    pre2016_eras = pre2016_eras or set()
     print(f"\n  >>> Post-publication decay commentary ({study}):")
 
     by_era: dict[str, list[str]] = {}
@@ -1090,11 +1093,19 @@ def _print_post_decay_commentary(study: str, rows: list[dict],
                        if str(row.get(reject_col, "")) == "YES"
                        and row.get(era_col, "") in late_eras)
 
+    pre2016_rejects = sum(1 for row in rows
+                          if str(row.get(reject_col, "")) == "YES"
+                          and row.get(era_col, "") in pre2016_eras)
     if early_rejects > 0 and late_rejects == 0:
         print(f"    WARNING: Rejections concentrated in early eras only.")
-        print(f"    Per era-partition amendment §5: a signal alive only pre-2016 is DEAD.")
-        print(f"    This is consistent with post-publication arbitrage decay.")
-        print(f"    Verdict: DEAD (early-era artifact; not carried forward as live signal).")
+        if pre2016_rejects == early_rejects:
+            print(f"    Per era-partition amendment §5: a signal alive only pre-2016 is DEAD.")
+            print(f"    Verdict: DEAD (early-era artifact; not carried forward as live signal).")
+        else:
+            print(f"    These eras are NOT pre-2016 (greeks window starts 2017), so the")
+            print(f"    era-amendment auto-death rule does NOT apply — but absence in recent")
+            print(f"    eras is consistent with post-publication decay. Flagged for review;")
+            print(f"    the corresponding live gate must weight recent-era absence heavily.")
     elif early_rejects > 0 and late_rejects > 0:
         print(f"    Signal survives into recent eras (Era2/Era3).")
         print(f"    Early-era effect size may exceed recent — check magnitudes for decay pattern.")
@@ -1103,6 +1114,42 @@ def _print_post_decay_commentary(study: str, rows: list[dict],
         print(f"    Signal appears only in recent eras — may reflect data artifacts")
         print(f"    (fewer observations, regime shift, or selection bias). Treat with caution.")
         print(f"    Requires Opus stats review before any verdict is printed.")
+
+
+_SKEW_TGT_KEY = {"21d MaxDD": "max_dd21", "5d RelRet": "rel_ret5",
+                 "21d RelRet": "rel_ret21"}
+
+_CELL_KEY_FNS = {
+    "S-GEXR-H": lambda r: f"GEXR.{r['era']}.{r['horizon']}",
+    "SKEW-DEESC-H": lambda r: (
+        f"SKEW.{r['era']}.{r['condition']}.{_SKEW_TGT_KEY.get(r['target'], '')}"),
+    "CWIV-H": lambda r: f"CWIV.{r['era']}.{r['horizon']}",
+    "DOI-H": lambda r: f"DOI.{r['era']}.{r['condition']}.{r['horizon']}",
+}
+
+# Only the OI-window study has genuinely pre-2016 eras (Era1 = 2012-15).
+_PRE2016_ERAS = {"DOI-H": {"Era1"}}
+
+
+def _fill_global_rejects_and_decay(results: dict, global_bh: dict[str, dict]) -> None:
+    """Populate per-row reject verdicts from the SINGLE global BH pass, then print
+    decay commentary per study. Runs only after the global family is computed —
+    there is no per-study BH (Fable review 2026-07-05)."""
+    for res in results.values():
+        study = res.get("study")
+        keyfn = _CELL_KEY_FNS.get(study)
+        if keyfn is None:
+            continue
+        for row in res.get("rows", []):
+            try:
+                key = keyfn(row)
+            except Exception:
+                continue
+            if key in global_bh:
+                row["reject"] = "YES" if global_bh[key]["reject_h0"] else "no"
+                row["bh_adj_p"] = f"{global_bh[key]['bh_adj_p']:.4f}"
+        _print_post_decay_commentary(study, res.get("rows", []), "reject", "era",
+                                     pre2016_eras=_PRE2016_ERAS.get(study))
 
 
 # ---------------------------------------------------------------------------
@@ -1190,11 +1237,12 @@ def _print_summary(results: dict, elapsed: float,
     for study_key, res in results.items():
         study = res.get("study", study_key)
         n_pvals = len(res.get("pvals", {}))
-        prefix = study.split("-")[0]  # "GEXR", "SKEW", "CWIV", "DOI"
         if global_bh:
+            # Count survivors among THIS study's own cell keys (prefix parsing broke on
+            # "S-GEXR-H".split("-")[0] == "S", which matched SKEW.* cells instead).
             n_survive = sum(
-                1 for k, v in global_bh.items()
-                if v.get("reject_h0") and k.startswith(prefix)
+                1 for k in res.get("pvals", {})
+                if global_bh.get(k, {}).get("reject_h0")
             )
             print(f"  {study}: {n_pvals} valid cells → {n_survive} survive global BH correction")
         else:
@@ -1251,6 +1299,7 @@ def main() -> None:
     global_bh: dict[str, dict] = {}
     if args.study == "all":
         global_bh = _run_global_bh(all_pvals)
+        _fill_global_rejects_and_decay(results, global_bh)
 
     elapsed = time.time() - t0
     _print_summary(results, elapsed, global_bh=global_bh)
