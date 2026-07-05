@@ -255,18 +255,9 @@ def fetch_earnings_8k_for_cik(ticker: str, cik: int) -> tuple[list[dict], int]:
     Follows the older-files pagination referenced in the submissions JSON to
     retrieve full history beyond the most-recent ~1000 filings.
 
-    The older-files entries are relative paths such as
-    "submissions/CIK##########-submissions-001.json".  The SEC serves them
-    under https://data.sec.gov/<fname> — i.e. the path already starts with
-    "submissions/", so the correct URL is
-    https://data.sec.gov/submissions/CIK…-submissions-001.json.
-    The bug in the original code (https://data.sec.gov/{fname} with fname
-    already containing "submissions/") produced valid URLs, but the original
-    *intent* comment said "relative paths like submissions/…" which is correct.
-    The real bug is that fname comes back as e.g. "CIK0000320193-submissions-001.json"
-    WITHOUT the "submissions/" prefix, and the old code constructed
-    "https://data.sec.gov/CIK…" which 404s. The correct base is
-    https://data.sec.gov/submissions/{fname}.
+    The older-files "name" entries are bare filenames such as
+    "CIK0000320193-submissions-001.json" (no "submissions/" prefix).
+    The correct URL is https://data.sec.gov/submissions/{name}.
 
     Returns a tuple (rows, n_shards_missing) so callers can surface the
     missing-shard count in run summaries and the coverage JSON.
