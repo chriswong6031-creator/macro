@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="theme.css">
 <script>
   window.SUPABASE_CFG = {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "FAKE"};
-  window.COMMITTEE_GENERATED = "2026-07-05T04:17:49Z";
+  window.COMMITTEE_GENERATED = "2026-07-05T00:00:00Z";
 </script>
 <style>
 * { box-sizing:border-box; }
@@ -94,6 +94,36 @@ body { padding-bottom:56px; }
 .memo-summary { line-height:1.65; font-size:14px; }
 .fired-list { margin:8px 0; padding-left:18px; }
 .fired-list li { margin:3px 0; font-size:13px; color:var(--muted); }
+
+/* ── Ask the brain ── */
+.ask-box { display:flex; flex-direction:column; gap:12px; }
+.ask-row { display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap; }
+.ask-q { flex:1; min-width:200px; padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:14px; outline:none; resize:vertical; min-height:58px; }
+.ask-q:focus { border-color:var(--link); }
+.ask-ticker { width:110px; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:13px; outline:none; text-transform:uppercase; }
+.ask-ticker:focus { border-color:var(--link); }
+.ask-ticker::placeholder { text-transform:none; }
+.ask-btn { padding:11px 22px; background:var(--link); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.ask-btn:hover:not(:disabled) { opacity:.88; }
+.ask-btn:disabled { opacity:.45; cursor:default; }
+.ask-charcount { font-size:11px; color:var(--muted); align-self:center; }
+.ask-examples { font-size:12px; color:var(--muted); }
+.ask-examples span { font-style:italic; }
+.ask-state-loading { display:none; padding:14px 0; color:var(--muted); font-size:14px; }
+.ask-state-loading.active { display:block; }
+.ask-answer { display:none; }
+.ask-answer.active { display:block; }
+.ask-mode-badge { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:7px; font-size:11px; font-weight:700; letter-spacing:.05em; margin-bottom:10px; }
+.ask-mode-live { background:color-mix(in srgb,var(--up) 16%,var(--panel2)); color:var(--up); }
+.ask-mode-memo { background:color-mix(in srgb,var(--warn) 16%,var(--panel2)); color:var(--warn); }
+.ask-degraded { background:color-mix(in srgb,var(--warn) 12%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); border-radius:8px; padding:8px 12px; margin-bottom:10px; font-size:13px; color:var(--warn); }
+.ask-answer-text { font-size:14px; line-height:1.7; margin:8px 0 14px; white-space:pre-wrap; }
+.ask-citations { margin:0; padding-left:18px; }
+.ask-citations li { font-size:12.5px; color:var(--muted); margin:3px 0; }
+.ask-citations-head { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:12px 0 5px; }
+.ask-disclaimer { font-size:11px; color:var(--muted); border-top:1px solid var(--line); margin-top:12px; padding-top:8px; }
+.ask-error { display:none; background:color-mix(in srgb,var(--down) 12%,var(--panel2)); border:1px solid color-mix(in srgb,var(--down) 35%,transparent); border-radius:9px; padding:10px 14px; font-size:13px; color:var(--down); }
+.ask-error.active { display:block; }
 
 /* ── Kernel family cards ── */
 .kf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
@@ -470,7 +500,61 @@ body { padding-bottom:56px; }
     </div>
   </div>
 
-  <!-- 4. KERNEL FAMILY CARDS -->
+  <!-- 4. ASK THE BRAIN -->
+  <div class="panel section-lazy" id="cm_ask_section">
+    <div class="panel-head">
+      <h1><span class="l-en">Ask the Brain</span><span class="l-zh">问问大脑</span></h1>
+      <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
+    </div>
+    <div class="plain-eng">
+      <strong><span class="l-en">In plain English:</span><span class="l-zh">用白话说：</span></strong>
+      <span class="l-en">Ask the Neural Web brain an explanatory question about the signals, regime, or track record shown on this page. The brain reads its own ledgers — spine index, confluence graph, kernel estimates, world state — and replies with cited, graded sources. It never advises on what to buy or sell.</span><span class="l-zh">向神经网络大脑提出关于本页面所示信号、周期或历史记录的解释性问题。大脑会读取自己的账本——脊梁指数、汇聚图、核心估计、市场状态——并以引用的、经过评分的来源回复。它从不建议买卖任何标的。</span>
+    </div>
+    <div class="ask-box" id="ask_box">
+      <div class="ask-row">
+        <textarea id="ask_q" class="ask-q" maxlength="500" rows="2"
+          placeholder="Ask an explanatory question…提问…"></textarea>
+        <input id="ask_ticker" class="ask-ticker" type="text" maxlength="12"
+          placeholder="Ticker (opt.)代码（可选）" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+        <button id="ask_btn" class="ask-btn"><span class="l-en">Ask</span><span class="l-zh">提问</span></button>
+      </div>
+      <div class="ask-row" style="align-items:center;gap:14px">
+        <span class="ask-charcount" id="ask_charcount">0 / 500</span>
+        <span class="ask-examples">
+          <span class="l-en">e.g. &ldquo;Why did the radar fire for semis?&rdquo; &nbsp;·&nbsp; &ldquo;What contradicts the current regime read?&rdquo; &nbsp;·&nbsp; &ldquo;What is us_board&rsquo;s track record in Goldilocks?&rdquo;</span>
+          <span class="l-zh">例如：「雷达为何对半导体触发信号？」· 「当前周期判断有哪些矛盾信号？」· 「us_board 在 Goldilocks 周期的历史记录如何？」</span>
+        </span>
+      </div>
+      <div class="ask-state-loading" id="ask_loading">
+        <span class="l-en">The brain is reading its ledgers… (20–30 s)</span>
+        <span class="l-zh">大脑正在读取账本……（约 20–30 秒）</span>
+      </div>
+      <div class="ask-error" id="ask_error">
+        <span class="l-en">Something went wrong. Please try again in a moment — or the live brain may not be armed; the memo-quote fallback gives a partial answer without it.</span>
+        <span class="l-zh">出现错误，请稍后重试——或实时大脑可能未就绪；无实时大脑时备忘录模式可给出部分回答。</span>
+      </div>
+      <div class="ask-answer" id="ask_answer">
+        <div id="ask_mode_badge"></div>
+        <div id="ask_degraded_notice" class="ask-degraded" style="display:none">
+          <span class="l-en"><strong>Memo-quote mode:</strong> the live brain is not armed on this deployment. This answer comes from a matched excerpt of the committed cortex memo — it is context, not a live reasoning session.</span>
+          <span class="l-zh"><strong>备忘录模式：</strong>本次部署中实时大脑未就绪。此回答来自提交的皮层备忘录中的匹配摘录——仅供参考，非实时推理。</span>
+        </div>
+        <div class="ask-answer-text" id="ask_answer_text"></div>
+        <div id="ask_citations_wrap" style="display:none">
+          <div class="ask-citations-head">
+            <span class="l-en">Citations</span><span class="l-zh">引用来源</span>
+          </div>
+          <ul class="ask-citations" id="ask_citations_list"></ul>
+        </div>
+        <div class="ask-disclaimer">
+          <span class="l-en">Research &amp; education only — not investment advice. No signal here is a recommendation to buy or sell any security.</span>
+          <span class="l-zh">仅供研究与教育用途，非投资建议。此处任何信号均不构成买卖任何证券的建议。</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. KERNEL FAMILY CARDS -->
   <div class="panel section-lazy" id="cm_kernel_section">
     <div class="panel-head">
       <h1><span class="l-en">Kernel Family Estimates</span><span class="l-zh">核心族估计</span></h1>
@@ -626,6 +710,8 @@ body { padding-bottom:56px; }
 
   // ── Load + render ticker committee ────────────────────────────────────────
   function loadTicker(ticker) {
+    // Pre-fill the ask-the-brain ticker context when a ticker is selected
+    if (window._prefillAskTicker) window._prefillAskTicker(ticker);
     var safe = ticker.replace(/=/g, '_').replace(/\^/g, '_');
     var view = document.getElementById('cm_ticker_view');
     view.innerHTML = '<div class="cm-loading" style="display:block">Loading ' + esc(ticker) + '…</div>';
@@ -1043,6 +1129,132 @@ body { padding-bottom:56px; }
 
     el.innerHTML = html;
   }
+
+  // ── Ask the brain ─────────────────────────────────────────────────────────
+  (function () {
+    var qEl     = document.getElementById('ask_q');
+    var tickerEl= document.getElementById('ask_ticker');
+    var btnEl   = document.getElementById('ask_btn');
+    var charEl  = document.getElementById('ask_charcount');
+    var loadEl  = document.getElementById('ask_loading');
+    var errEl   = document.getElementById('ask_error');
+    var ansEl   = document.getElementById('ask_answer');
+    var modeEl  = document.getElementById('ask_mode_badge');
+    var degradEl= document.getElementById('ask_degraded_notice');
+    var textEl  = document.getElementById('ask_answer_text');
+    var citWrap = document.getElementById('ask_citations_wrap');
+    var citList = document.getElementById('ask_citations_list');
+
+    if (!qEl) return;
+
+    // Char counter
+    qEl.addEventListener('input', function () {
+      var n = qEl.value.length;
+      charEl.textContent = n + ' / 500';
+      charEl.style.color = n > 450 ? 'var(--down)' : n > 380 ? 'var(--warn)' : '';
+    });
+
+    // If a ticker is selected in the committee view, pre-fill the ask ticker field
+    // (called from loadTicker() below via prefillAskTicker()).
+    window._prefillAskTicker = function (t) {
+      if (tickerEl) tickerEl.value = t;
+    };
+
+    function setLoading(on) {
+      btnEl.disabled = on;
+      loadEl.classList.toggle('active', on);
+      if (on) {
+        errEl.classList.remove('active');
+        ansEl.classList.remove('active');
+      }
+    }
+
+    function showError() {
+      setLoading(false);
+      errEl.classList.add('active');
+    }
+
+    function showAnswer(data) {
+      setLoading(false);
+
+      // Mode badge
+      var isLive = data.mode === 'live';
+      modeEl.innerHTML = isLive
+        ? '<span class="ask-mode-badge ask-mode-live"><span class="l-en">LIVE brain</span><span class="l-zh">实时大脑</span></span>'
+        : '<span class="ask-mode-badge ask-mode-memo">'
+          + '<span class="l-en">MEMO-QUOTE — the committed cortex memo (no live reasoning)</span>'
+          + '<span class="l-zh">备忘录模式——已提交的皮层备忘录（无实时推理）</span>'
+          + '</span>';
+
+      // Degraded notice
+      degradEl.style.display = data.degraded ? '' : 'none';
+
+      // Answer text (esc plain text)
+      textEl.textContent = data.answer || '';
+
+      // Citations
+      var cits = data.citations || [];
+      if (cits.length) {
+        citList.innerHTML = '';
+        cits.forEach(function (c) {
+          var li = document.createElement('li');
+          li.textContent = typeof c === 'string' ? c : (c.label || c.id || JSON.stringify(c));
+          citList.appendChild(li);
+        });
+        citWrap.style.display = '';
+      } else {
+        citWrap.style.display = 'none';
+      }
+
+      ansEl.classList.add('active');
+    }
+
+    btnEl.addEventListener('click', function () {
+      var q = qEl.value.trim();
+      if (!q) { qEl.focus(); return; }
+      if (q.length > 500) { return; }
+
+      // Fetch the Supabase Bearer token
+      if (!window.MDXAuth || !window.MDXAuth.getSession) {
+        showError(); return;
+      }
+      window.MDXAuth.getSession(function (session) {
+        if (!session || !session.access_token) { showError(); return; }
+        setLoading(true);
+
+        var body = { question: q };
+        var ticker = tickerEl ? tickerEl.value.trim().toUpperCase() : '';
+        if (ticker) body.context_ticker = ticker;
+
+        fetch('/api/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + session.access_token
+          },
+          body: JSON.stringify(body)
+        })
+        .then(function (r) {
+          if (!r.ok) throw new Error('http ' + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          showAnswer(data);
+        })
+        .catch(function () {
+          showError();
+        });
+      });
+    });
+
+    // Also submit on Ctrl/Cmd+Enter inside the textarea
+    qEl.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        btnEl.click();
+      }
+    });
+  })();
 
   // ── Kernel families ───────────────────────────────────────────────────────
   function loadKernelFamilies() {

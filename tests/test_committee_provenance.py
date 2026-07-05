@@ -443,3 +443,127 @@ class TestCommitteePageRenderSmoke:
             supabase_cfg_json="null",
         )
         assert "2026-07-04T12:00:00Z" in html
+
+    # ── W8b PR3: ask-the-brain box ────────────────────────────────────────────
+
+    def _render(self, utc="2026-07-05T00:00:00Z", cfg="null"):
+        env, _ = _jinja_env()
+        return env.get_template("committee.html.j2").render(
+            generated_utc=utc,
+            supabase_cfg_json=cfg,
+        )
+
+    def test_ask_section_present(self):
+        """Ask the Brain panel must appear in the rendered page."""
+        html = self._render()
+        assert "cm_ask_section" in html
+
+    def test_ask_heading_bilingual(self):
+        """Section heading must be bilingual (EN + ZH)."""
+        html = self._render()
+        assert "Ask the Brain" in html
+        assert "问问大脑" in html  # 问问大脑
+
+    def test_ask_question_textarea_present(self):
+        html = self._render()
+        assert 'id="ask_q"' in html
+
+    def test_ask_ticker_input_present(self):
+        html = self._render()
+        assert 'id="ask_ticker"' in html
+
+    def test_ask_button_present_bilingual(self):
+        html = self._render()
+        assert 'id="ask_btn"' in html
+        # Button must have bilingual label
+        assert "Ask" in html
+        assert "提问" in html  # 提问
+
+    def test_ask_maxlength_500_enforced(self):
+        """Textarea must carry the 500-char cap client-side."""
+        html = self._render()
+        assert 'maxlength="500"' in html
+
+    def test_ask_api_origin_relative(self):
+        """API call must use a relative /api/ask path (same Caddy block serves both)."""
+        html = self._render()
+        assert "'/api/ask'" in html or '"/api/ask"' in html
+
+    def test_ask_bearer_auth_wired(self):
+        """POST must include Authorization: Bearer header from the Supabase session."""
+        html = self._render()
+        assert "access_token" in html
+        assert "Authorization" in html
+        assert "Bearer" in html
+
+    def test_ask_loading_state_bilingual(self):
+        html = self._render()
+        # Loading message must appear in EN
+        assert "reading its ledgers" in html
+        # And ZH
+        assert "读取账本" in html  # 读取账本
+
+    def test_ask_mode_badges_present(self):
+        """Both LIVE and MEMO-QUOTE mode badge strings must be present."""
+        html = self._render()
+        assert "LIVE brain" in html
+        assert "MEMO-QUOTE" in html
+
+    def test_ask_degraded_notice_bilingual(self):
+        html = self._render()
+        # EN degraded notice
+        assert "Memo-quote mode" in html or "memo-quote" in html.lower()
+        # ZH degraded notice
+        assert "备忘录模式" in html  # 备忘录模式
+
+    def test_ask_error_message_bilingual(self):
+        html = self._render()
+        assert "Something went wrong" in html
+        assert "出现错误" in html  # 出现错误
+
+    def test_ask_disclaimer_present(self):
+        """Ask box must carry its own inline disclaimer."""
+        html = self._render()
+        # The ask section has its own "not investment advice" disclaimer
+        assert html.count("not investment advice") >= 1 or html.count("Research") >= 2
+
+    def test_ask_no_advice_placeholder(self):
+        """No placeholder text should suggest buy/sell actions."""
+        import re
+        html = self._render()
+        placeholder_vals = re.findall(r'placeholder="([^"]*)"', html)
+        bad_terms = ("buy", "sell", "invest", "position", "trade", "recommend")
+        for p in placeholder_vals:
+            for term in bad_terms:
+                assert term not in p.lower(), (
+                    f"ask placeholder must not contain advice term {term!r}: {p!r}"
+                )
+
+    def test_ask_example_questions_interrogative(self):
+        """Example questions must be interrogative (end with ?)."""
+        html = self._render()
+        # At least one of the canonical example questions must appear
+        assert "Why did the radar fire" in html or "What contradicts" in html or "track record" in html
+
+    def test_ask_context_only_badge(self):
+        """Ask section must carry the CONTEXT ONLY badge."""
+        html = self._render()
+        # The section panel-head has the is-context-badge
+        idx = html.find("cm_ask_section")
+        assert idx >= 0
+        nearby = html[idx:idx+500]
+        assert "CONTEXT ONLY" in nearby or "仅供参考" in nearby  # 仅供参考
+
+    def test_ask_no_validated_word(self):
+        """The CI-enforced forbidden word must not appear in the new ask sections."""
+        env, _ = _jinja_env()
+        import inspect
+        template_src = Path(__file__).resolve().parent.parent / "templates" / "committee.html.j2"
+        raw = template_src.read_text(encoding="utf-8")
+        # Only check lines we added (ask_box related)
+        ask_lines = [l for l in raw.splitlines()
+                     if "ask" in l.lower() or "brain" in l.lower()]
+        for line in ask_lines:
+            assert "validated" not in line.lower(), (
+                f"forbidden word 'validated' found in ask-box line: {line!r}"
+            )
