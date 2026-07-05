@@ -859,10 +859,23 @@
   .oc-dot.flat{background:var(--muted)}
   .oc-pct.az-up{color:var(--up);font-weight:700}
   .oc-pct.az-dn{color:var(--down);font-weight:700}
-  /* W8 dual-lane admission chips (display-only, US standouts) */
+  /* P2.4 board contract v2: lane chips (display-only, US standouts) */
   .nb-lane{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
-  .lane-trend{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+  /* v2 lane taxonomy (bottoming/continuation/watch) + legacy names (trend/recovery) for backward compat */
+  .lane-bottoming,.lane-trend{background:color-mix(in srgb,var(--up) 10%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+  .lane-continuation{background:color-mix(in srgb,var(--cont,var(--warn)) 12%,transparent);color:var(--cont,var(--warn));border:1px solid color-mix(in srgb,var(--cont,var(--warn)) 35%,transparent)}
+  .lane-watch{background:color-mix(in srgb,var(--muted) 10%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
   .lane-recovery{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+  /* P2.4 above_trend context badge (display-only; T4 sub-partition context) */
+  .nb-200dma{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help}
+  .dma-above{background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent)}
+  .dma-below{background:color-mix(in srgb,var(--up) 8%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
+  /* P2.4 ext_z extension chip (display-only; F3 anti-chase context per P1.3) */
+  .nb-extz{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 18%,transparent)}
+  .nb-extz.extz-warn{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+  /* P2.4 lane_counts pill row (monitoring display) */
+  .lane-counts-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px;align-items:center}
+  .lc-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;border:1px solid var(--line);color:var(--muted)}
   /* α laggard chip (alpha_entry=laggard, honest copy) */
   .ent-lag{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent);font-size:8px;font-weight:700;padding:1px 5px;border-radius:6px;white-space:nowrap}
   /* W8-B postcross lifecycle chip (SHAKEN; ARMED display removed per W8-A-OOS FAIL) */
@@ -2781,6 +2794,20 @@
         <span class="donor-meta muted"><span class="l-en">display-only · G6a context</span><span class="l-zh">仅供参考 · G6a 情境</span></span>
       </div>
       {% endif %}
+      {# P2.4 lane_counts pill row — monitoring display for lane distribution (R7 transparency).
+         Shows counts per lane (bottoming/continuation/watch/recovery) emitted by the builder.
+         Uses data-tip-en/data-tip-zh; no title= attribute per t-macro law. #}
+      {% if _su and _su.get('lane_counts') %}
+      <div class="lane-counts-row">
+        {% for _ln, _lct in _su.lane_counts.items() %}
+        <span class="lc-pill lc-{{ _ln }}"
+              data-tip-en="P2.4 board count: {{ _lct }} {{ _ln }} row{% if _lct != 1 %}s{% endif %} (buy+watch combined)"
+              data-tip-zh="P2.4 看板数量：{{ _lct }} 个{{ {'bottoming':'筑底','continuation':'延续','watch':'观察','recovery':'复苏','trend':'趋势'}.get(_ln, _ln) }}行（买入+观察合计）">
+          <span class="l-en">{{ _ln.capitalize() }}: {{ _lct }}</span><span class="l-zh">{{ {'bottoming':'筑底','continuation':'延续','watch':'观察','recovery':'复苏','trend':'趋势'}.get(_ln, _ln) }}: {{ _lct }}</span>
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
       <div class="nbgrid" data-showmore-rows="3">
       {% if _su %}
       {# BOTTOMING-ALIGNED board: shows only names whose weekly/3-day/daily cycles are
@@ -2823,8 +2850,32 @@
                OOS, sign-unstable) — armed fields still computed + emitted for silent
                forward-ledger accrual, but nothing renders. SHAKEN confirmed both panels
                (W8-B-OOS PASS: stop5 −4.6pp vs FRESH, NI clean15, sign-stable all splits). #}
+            {# P2.4 v2 lane chips — bottoming/continuation/watch/recovery (additive, R7).
+               Legacy "trend" chip kept for backward compatibility (old snapshots). #}
             {% if n.get('lane') == 'recovery' %}<span class="nb-lane lane-recovery" data-tip-en="Recovery lane — counter-trend name passing the validated entry confluence (T1–T3), not extended. Measured equal to aligned names on stop-out and upside (wave-8 CT-LANE, n=7,392). No ranking edge claimed." data-tip-zh="复苏通道——通过经验证入场共振（T1–T3）且未过热的逆势标的。在止损与上涨方面与顺势标的等量齐观（第8波 CT-LANE，n=7,392）。不声称任何排名优势。"><span class="l-en">Recovery</span><span class="l-zh">复苏</span></span>
+            {% elif n.get('lane') == 'continuation' %}<span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从"趋势"重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
+            {% elif n.get('lane') == 'bottoming' %}<span class="nb-lane lane-bottoming" data-tip-en="Bottoming lane — PRIME-equivalent: fresh base setup entering from washout (weekly just turning up). P2.4 v2 label." data-tip-zh="筑底通道——PRIME等级：从洗盘底部新鲜起步（周线刚刚转上）。P2.4 v2标签。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span>
+            {% elif n.get('lane') == 'watch' %}<span class="nb-lane lane-watch" data-tip-en="Watch lane — not yet triggering (positive conviction, board-visible). P2.4 v2 label." data-tip-zh="观察通道——尚未触发（信念度正向，可见于看板）。P2.4 v2标签。"><span class="l-en">Watch</span><span class="l-zh">观察</span></span>
             {% elif n.get('lane') == 'trend' %}<span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>{% endif %}
+            {# P2.4 above_trend context badge — continuation rows only; T4 sub-partition context.
+               T4: below-200DMA continuation fires +12pp vs above-200DMA (BH q=0.0000, sign-stable).
+               Sub-partition finding — does NOT override T1 verdict per PREREG §6. Display-only. #}
+            {% if n.get('lane') == 'continuation' and n.get('above_trend') is not none %}
+            {% if n.above_trend %}
+            <span class="nb-200dma dma-above" data-tip-en="Above 200DMA — continuation at elevation (T4 context: +12pp below-200 peers outperform; this name is on the higher-return side of that split). Sub-partition finding, not a gate." data-tip-zh="站上200日均线——高位延续（T4背景：200日线下方同类高出12pp；该标的处于该拆分中回报较低的一侧）。子拆分发现，非门槛。"><span class="l-en">200DMA+</span><span class="l-zh">站上200日线</span></span>
+            {% else %}
+            <span class="nb-200dma dma-below" data-tip-en="Below 200DMA — continuation from washout base (T4 context: +12pp vs above-200 peers, BH q=0.0000, sign-stable). Sub-partition finding — does not override T1 verdict per PREREG §6." data-tip-zh="200日均线下方——从洗盘底部延续（T4背景：较高位同类高出12pp，BH q=0.0000，各拆分稳定）。子拆分发现，不覆盖T1结论。"><span class="l-en">200DMA−</span><span class="l-zh">200日线下</span></span>
+            {% endif %}
+            {% endif %}
+            {# P2.4 ext_z extension chip — all rows; F3 anti-chase context (P1.3: ext_z>2 gate
+               reduces stop-outs 5pp, dead-money 3.6pp; BH q≤0.01, sign-stable). Display-only.
+               No title= attribute (t-macro law); use data-tip-en/data-tip-zh. #}
+            {% if n.get('ext_z') is not none %}
+            {% set _ez = n.ext_z %}
+            <span class="nb-extz{% if _ez > 2.0 %} extz-warn{% endif %}"
+                  data-tip-en="Extension z={{ '%.1f'|format(_ez) }}{% if _ez > 2.0 %} — extended (F3 anti-chase context: ext_z&gt;2 gate reduces stop-outs and dead-money, P1.3 validated; display context only — gate not wired in P2.4){% endif %}. Display-only per R10."
+                  data-tip-zh="延伸z={{ '%.1f'|format(_ez) }}{% if _ez > 2.0 %} — 过度延伸（F3反追涨背景：ext_z>2门槛减少止损和死钱，P1.3验证；仅为展示背景，P2.4暂不接入门槛）{% endif %}。仅供参考。">ext {{ '%.1f'|format(_ez) }}</span>
+            {% endif %}
             {% if n.get('alpha_entry') == 'laggard' %}<span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>{% endif %}
             {% set _pc = n.get('postcross') %}
             {% if _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}

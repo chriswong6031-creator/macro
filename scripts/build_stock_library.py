@@ -2148,10 +2148,124 @@ def main() -> int:
                            if (profiles.get(t) or {}).get("composite_z", 0) > 0]
         watch = _overflow_watch + watch
 
-        def _tag(t, tier, lane="trend"):
+        # ── P2.4 Board Contract v2: lane taxonomy + weekly_phase capture ─────
+        # Spec: research/entry_intel/P2_4_BOARD_CONTRACT_V2_DESIGN.md
+        # Step A: populate weekly_phase on every cand row from
+        #         profiles[t]["alignment"]["weekly"] BEFORE _tag() is called.
+        # Step B: _lane_for() derives the lane from align_tier + weekly_phase,
+        #         handling both live vocab (aligned/near) and replay vocab
+        #         (PRIME/ARMED/APPROACHING) with an UNKNOWN guard.
+        # Vocabulary sets — verified 2026-07-05 against live us_standouts.json.
+        # Live board: align_tier in {"aligned", "near", None}.
+        # Replay/conviction layer: alignment.tier in {"PRIME", "ARMED", ...}.
+        # Both vocabularies are handled explicitly; unknown values log a warning.
+        _PRIME_EQUIV   = {"PRIME", "aligned"}         # bottoming-type tiers
+        _ARMED_EQUIV   = {"ARMED"}                    # continuation-type (requires rising weekly)
+        _NEAR_EQUIV    = {"APPROACHING", "near", "bear_recovering", "turning"}  # near-aligned
+
+        def _lane_for(align_tier_val, weekly_phase_val):
+            """Derive the v2 lane label from align_tier + weekly_phase.
+
+            Handles both the live production vocabulary (aligned/near/None) and
+            the replay/conviction vocabulary (PRIME/ARMED/APPROACHING).
+            Logs a warning on any unknown tier and defaults to 'bottoming'.
+            """
+            tier = None if align_tier_val in (None, "None", "") else align_tier_val
+            if tier in _PRIME_EQUIV:
+                return "bottoming"
+            if tier in _ARMED_EQUIV and weekly_phase_val == "rising":
+                return "continuation"
+            if tier in _NEAR_EQUIV and weekly_phase_val == "rising":
+                return "continuation"  # near/APPROACHING with rising phase → continuation
+            if tier in _ARMED_EQUIV or tier in _NEAR_EQUIV:
+                return "bottoming"     # non-rising ARMED or near → bottoming group
+            if tier is None:
+                return "bottoming"     # null align_tier → structural default
+            # UNKNOWN vocabulary: log loudly, default gracefully
+            log.warning(
+                "P2.4 _lane_for: UNKNOWN align_tier value %r (weekly_phase=%r) — "
+                "defaulting to 'bottoming'. Update _PRIME_EQUIV/_ARMED_EQUIV/_NEAR_EQUIV "
+                "if the builder vocabulary has changed.", align_tier_val, weekly_phase_val
+            )
+            return "bottoming"
+
+        # Step A: capture weekly_phase + above_trend from profiles onto cand rows.
+        # weekly_phase comes from profiles[t]["alignment"]["weekly"] (the _tf_phase()
+        # value: "rising"/"rolling"/"falling"/"turning"/"unknown"). This is the primary
+        # discriminator for ARMED-continuation vs PRIME-bottoming lane detection.
+        # above_trend: sourced from rec["tech"]["above200"] (bool: price > 200d SMA)
+        # which is computed by stock_technicals.snapshot(). Fallback chain:
+        #   tech.above200 → row.above_trend (if already set earlier).
+        def _get_above_trend(r_dict):
+            """Extract above_trend bool from the most reliable source."""
+            # Primary: tech snapshot (computed by stock_technicals.snapshot)
+            _tech = r_dict.get("tech") or {}
+            _ab200 = _tech.get("above200")
+            if _ab200 is not None:
+                return bool(_ab200)
+            # Fallback: already set on the row (e.g., from a prior propagation pass)
+            _existing = r_dict.get("above_trend")
+            if _existing is not None:
+                return bool(_existing)
+            return None
+
+        # buyable = (t, p, tier) triples; _recovery_cands = (t, p) pairs — iterate separately
+        for _t_a, _p_a, _tier_a in buyable:
+            _r_a = row_by_t.get(_t_a)
+            if _r_a is None:
+                continue
+            _align_a = (_p_a.get("alignment") or {})
+            _wph_a = _align_a.get("weekly")
+            if _wph_a is not None:
+                _r_a["weekly_phase"] = _wph_a
+            _atrd_a = _get_above_trend(_r_a)
+            if _atrd_a is not None:
+                _r_a["above_trend"] = _atrd_a
+        for _t_a, _p_a in _recovery_cands:
+            _r_a = row_by_t.get(_t_a)
+            if _r_a is None:
+                continue
+            _prof_a = profiles.get(_t_a) or {}
+            _align_a = (_prof_a.get("alignment") or {})
+            _wph_a = _align_a.get("weekly")
+            if _wph_a is not None:
+                _r_a["weekly_phase"] = _wph_a
+            _atrd_a = _get_above_trend(_r_a)
+            if _atrd_a is not None:
+                _r_a["above_trend"] = _atrd_a
+        # Also propagate weekly_phase + above_trend for watch rows.
+        # watch is a mixed list [(t, p_or_row)]; ignore the second element and always
+        # look up from profiles for alignment (consistent source for both list variants).
+        for _t_a, _ in watch:
+            _r_a = row_by_t.get(_t_a)
+            if _r_a is None:
+                continue
+            _prof_a = profiles.get(_t_a) or {}
+            _align_a = (_prof_a.get("alignment") or {})
+            _wph_a = _align_a.get("weekly")
+            if _wph_a is not None:
+                _r_a["weekly_phase"] = _wph_a
+            _atrd_a = _get_above_trend(_r_a)
+            if _atrd_a is not None:
+                _r_a["above_trend"] = _atrd_a
+
+        def _tag(t, tier, lane=None):
+            """Tag a board row with align_tier and derive the v2 lane label.
+
+            tier: the alignment tier string (from conviction.alignment.tier:
+                  PRIME/ARMED/APPROACHING, or from _atier(): aligned/near).
+                  Stored as r["align_tier"] for display/downstream consumers.
+            lane: if explicitly supplied (e.g. "recovery") the lane is set
+                  directly; otherwise derived by _lane_for(tier, weekly_phase).
+            """
             r = row_by_t[t]
-            r["align_tier"] = tier
-            r["lane"] = lane
+            # Use the richer conviction.alignment.tier (PRIME/ARMED) when available,
+            # falling back to the _atier() board-level tier (aligned/near).
+            _conv_tier = (profiles.get(t) or {}).get("alignment", {}).get("tier")
+            _eff_tier = _conv_tier if _conv_tier else tier
+            r["align_tier"] = _eff_tier
+            weekly_ph = r.get("weekly_phase")
+            r["lane"] = lane if lane is not None else _lane_for(_eff_tier, weekly_ph)
             return r
 
         # ── W8 alpha-within-lane ordering ─────────────────────────────────────
@@ -2170,8 +2284,9 @@ def main() -> int:
             for t, p in _recovery_cands
         ]
 
-        # Trend rows (tag them last so _tag mutation runs after recovery tagging)
-        _trend_rows_ordered = [_tag(t, tier, lane="trend") for t, _, tier in buyable_trend[:120]]
+        # Trend rows: P2.4 v2 — lane is derived by _lane_for(tier, weekly_phase)
+        # (no explicit lane= override so the continuation branch fires).
+        _trend_rows_ordered = [_tag(t, tier) for t, _, tier in buyable_trend[:120]]
 
         _all_buy_rows = _trend_rows_ordered + _recovery_rows_ordered
 
@@ -2186,6 +2301,23 @@ def main() -> int:
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
+            # P2.4 Step D: ext_z top-level field — extension z-score for the anti-chase
+            # context chip (display-only per R10; F3 gate promotion is P3's jurisdiction).
+            _extz_p = (profiles.get(t) or {})
+            _extz_v = ((_extz_p.get("axes") or {}).get("extension") or {}).get("z")
+            if _extz_v is not None:
+                try:
+                    r["ext_z"] = round(float(_extz_v), 2)
+                except (TypeError, ValueError):
+                    pass
+            # P2.4 Step C: above_trend propagation — final catch-all for rows that
+            # weren't captured in Step A (e.g. laggard rows not in buy/watch lists).
+            # Source: tech.above200 (from stock_technicals.snapshot, verified path).
+            if r.get("above_trend") is None:
+                _tech_e = r.get("tech") or {}
+                _atrd_e = _tech_e.get("above200")
+                if _atrd_e is not None:
+                    r["above_trend"] = bool(_atrd_e)
             r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
             if entry_sig.get(t):
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
@@ -2367,6 +2499,34 @@ def main() -> int:
         wide["universe"] = len(cand)
         if disp_regime:                            # selection-regime gross dial (board + bot)
             wide["dispersion_regime"] = disp_regime
+
+        # P2.4 Step E: lane_counts top-level field — nightly monitoring primitive.
+        # Counts rows per lane (bottoming/continuation/watch/recovery) across buy+watch.
+        # Logged so the build log carries the distribution for AC-2 verification.
+        from collections import Counter as _Counter
+        _lane_ct = _Counter(r.get("lane") for r in wide["buy"] + wide["watch"])
+        wide["lane_counts"] = dict(_lane_ct)
+        log.info("P2.4 lane_counts: %s", wide["lane_counts"])
+
+        # P2.4 Step F: setups.json lane backfill — same taxonomy, shared lane labels.
+        # The setups object is still in memory (written initially at L1948). Update it
+        # with lane values from the standout board and re-write to ensure shared taxonomy.
+        # rank_by backfill: AC-6 requires non-null "alpha" value.
+        _standout_lane_map = {r["ticker"]: r.get("lane") for r in wide.get("buy", [])}
+        _setups_updated = False
+        for _sr in setups.get("buy", []):
+            _st = _sr.get("ticker")
+            _sl = _standout_lane_map.get(_st, "bottoming")  # default: bottoming if not on board
+            _sr["lane"] = _sl
+            _setups_updated = True
+        if "rank_by" not in setups or setups.get("rank_by") is None:
+            setups["rank_by"] = "alpha"
+            _setups_updated = True
+        if _setups_updated:
+            (site / "factordata" / "setups.json").write_text(
+                json.dumps(setups, separators=(",", ":"), default=str))
+            log.info("P2.4 setups.json lane backfill: %d buy rows updated, rank_by=%s",
+                     len(setups.get("buy", [])), setups.get("rank_by"))
 
         # --- W6-US fix 7: urgency must respect the gated entry status ---
         # Row-level urgency="now" is derived from the cycle-state dict, but the
