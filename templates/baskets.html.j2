@@ -304,8 +304,8 @@
     </div>
     <p class="story" id="story"></p>
     <p class="tagline">{{ t(
-      'Equal-weight theme baskets with dated membership changes. Monthly rebalance; monitored vs relevant ETFs where available. Structure only, not a buy list.',
-      '等权主题篮子，成分调整均有日期记录。按月再平衡；有相关 ETF 时同步监测。仅作结构参考，并非买入清单。') }}</p>
+      'Equal-weight US theme baskets measured against the S&P 500. Use them to see which themes are leading or fading.',
+      '等权重美国主题篮子，对标标普 500。用于观察哪些主题在走强或走弱。') }}</p>
   </header>
 
   {# Market Risk Radar strip — the SAME canonical drawdown-risk read shown on macro.html
@@ -324,8 +324,8 @@
       {% if risk_state and risk_state.gross_factor %}<span class="muted" style="font-size:12px">{{ t('suggested gross', '建议总仓位') }} ×{{ '%.2f'|format(risk_state.gross_factor) }}</span>{% endif %}
     </div>
     <div class="muted" style="font-size:12.5px;margin-top:5px">{{ t(
-      'Drawdown risk is elevated — this leadership-driven page is for structure, not a buy list. De-gross and favor good entries (multi-timeframe bottoming alignment) over chasing extended leaders.',
-      '回撤风险偏高 — 本页以龙头为主，仅供结构参考而非买入清单。降低总仓位，择优入场（多周期筑底对齐）而非追逐已延展的龙头。') }}{% if risk_state and risk_state.cap_leadership %} {{ t('Leadership chases are capped at this risk level.', '当前风险水平下，追逐龙头的仓位被上限约束。') }}{% endif %}</div>
+      'Risk is elevated. Keep sizing modest and prefer clean entries over chasing extended leaders.',
+      '风险偏高。控制仓位，优先选择干净入场点，避免追涨已延展的龙头。') }}{% if risk_state and risk_state.cap_leadership %} {{ t('Leadership chases are capped at this risk level.', '当前风险水平下，追逐龙头的仓位被上限约束。') }}{% endif %}</div>
   </div>
   {% endif %}
 
@@ -336,8 +336,8 @@
     <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
       <span class="sect-tag">{{ t('buy now · wait for a pullback · reduce / avoid', '立即买入 · 等待回调 · 减仓回避') }}</span></h2>
     <p class="sub">{{ t(
-      'Buy now = in favour plus a clean entry. In favour without an entry waits for a pullback; weak themes move to reduce / avoid.',
-      '立即买入 = 看好且有干净入场点。看好但无入场点则等待回调；弱主题进入减仓/回避。') }}</p>
+      'Shortlist by action: buy now, wait for a pullback, or reduce / avoid. Click a theme to see the stocks.',
+      '按操作分类：立即买入、等待回调、减仓/回避。点击主题查看成分股。') }}</p>
     <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
@@ -346,8 +346,8 @@
     <h2><span class="idx">★</span>🧭 {{ t('Theme Rotation Desk', '主题轮动台') }}
       <span class="sect-tag">{{ t('scored · labeled · actionable', '评分 · 标注 · 可执行') }}</span></h2>
     <p class="sub">{{ t(
-      'Every theme scored 0–100 from transparent legs — trend, breadth, ±3% impulse, macro tailwind and a crowding penalty — then labeled (dominant / emerging / fading / deteriorating) with an actionable read. The verb accounts for dominant themes topping out vs less-dominant themes just emerging.',
-      '每个主题以透明分项打分 0–100 — 趋势、广度、±3% 脉冲、宏观顺风与拥挤惩罚 — 并标注（主导／新兴／退潮／走弱）及可执行结论。结论会区分见顶的主导主题与刚刚新兴的次主导主题。') }}</p>
+      'Each theme gets a 0-100 score, a label, and an action read based on trend, breadth, impulse, macro and crowding.',
+      '每个主题按趋势、广度、脉冲、宏观和拥挤度给出 0-100 分、标签和操作结论。') }}</p>
     <div class="mctx" id="macro-ctx"></div>
     <p class="muted" id="theme-disclaimer" style="font-size:11.5px;margin:0 0 11px"></p>
     <div class="desk" id="theme-desk"></div>
@@ -363,8 +363,8 @@
     <h2><span class="idx">★</span>🛑 {{ t('Market concentration & theme leadership', '市场集中度与主题领导力') }}
       <span class="sect-tag">{{ t('who owns the advance vs the decline', '谁主导上涨 vs 谁在下跌') }}</span></h2>
     <p class="sub">{{ t(
-      'Breadth check: which themes own the advancers, which sit in the decline, and where entries are still clean.',
-      '广度检查：哪些主题主导上涨，哪些落在下跌端，哪里仍有干净入场点。') }}</p>
+      'Shows whether leadership is broad or narrow, which themes own the advance, and which ones are rolling over.',
+      '显示行情是广泛还是集中，哪些主题主导上涨，哪些正在回落。') }}</p>
     <div id="concentration"></div>
   </section>
 
@@ -372,8 +372,8 @@
     <h2><span class="idx">★</span>📆 {{ t('5-Day Theme Rotation', '5日主题轮动') }}
       <span class="sect-tag">{{ t('weekly climbers & fallers', '本周上升与下降') }}</span></h2>
     <p class="sub">{{ t(
-      '5-day return vs the S&P 500, plus the change in 20-day RS rank. A fast rotation read.',
-      '相对标普 500 的5日回报，加上20日相对强度排名变化。快速读取轮动。') }}</p>
+      'Weekly movers ranked by 5-day return versus S&P 500, plus the change in 20-day relative-strength rank.',
+      '按相对标普 500 的 5 日回报排名，并显示 20 日相对强度排名变化。') }}</p>
     <div class="rotwrap" id="rotation"></div>
   </section>
 
@@ -381,8 +381,8 @@
     <h2><span class="idx">★</span>⚡ {{ t('Impulse & Extremes', '脉冲与极值') }}
       <span class="sect-tag">{{ t('across the thematic universe', '覆盖全部主题成分') }}</span></h2>
     <p class="sub">{{ t(
-      'Breadth of the daily move across every name in the baskets: how many jumped ≥3% vs fell ≥3% (impulse / volatility), and how many printed a fresh 52-week high vs low. Net counts read the tape\'s pressure at a glance.',
-      '篮子内所有个股当日波动的广度：多少只上涨≥3%、多少只下跌≥3%（脉冲／波动），以及多少只创 52 周新高对新低。净数一眼读出走势压力。') }}</p>
+      'Daily breadth across basket members: big movers and new 52-week highs or lows.',
+      '篮子成分的日内广度：大幅波动和 52 周新高/新低。') }}</p>
     <div class="scards" id="scorecards"></div>
   </section>
 
@@ -392,7 +392,7 @@
   <div class="panel pad" id="flow-lens" style="margin-top:10px;border-left:3px solid var(--muted)">
     <h2 style="margin:0 0 2px"><span class="idx">00</span>🌐 {{ t('Flow lens — where rotation is concentrating', '资金流透视 — 轮动集中在哪里') }}
       <span class="chip" style="vertical-align:middle">{{ t('display-only', '仅展示') }}</span></h2>
-    <p class="sub" style="margin:0">{{ t('A wide detector of where cross-sectional flow is clustering — focus, not forecast (no forward edge).', '探测资金横截面集中之处的"宽镜头" — 用于聚焦而非预测（无前瞻优势）。') }}</p>
+    <p class="sub" style="margin:0">{{ t('Shows where cross-sectional flow is clustering. Focus tool, not a forecast.', '显示横截面资金正在集中在哪里。用于聚焦，不是预测。') }}</p>
 
     <div class="fl-strip">
       {% if flow.cluster %}{% set CL = flow.cluster %}
@@ -420,7 +420,7 @@
       </div>
     </div>
 
-    <div class="fl-legend">{{ t('▲ emerging · ● confirmed · ▽ cooling — bar = read-quality (data coherence), NOT directional confidence. Sectors are unbiased; baskets are hindsight-curated — don\'t rank one type against the other.', '▲ 新兴 · ● 确认 · ▽ 降温 — 长条为读数质量（数据一致性），并非方向置信度。行业无偏，篮子为事后筛选 — 勿跨类型排名。') }}</div>
+    <div class="fl-legend">{{ t('▲ emerging · ● confirmed · ▽ cooling — bar = read quality, not directional confidence.', '▲ 新兴 · ● 确认 · ▽ 降温 — 长条为读数质量，不是方向置信度。') }}</div>
     <div class="fl-cols">
       {% for col, label, lzh in [(flow.sectors, 'GICS sectors (unbiased)', 'GICS 行业（无偏）'), (flow.baskets, 'Thematic baskets (capped)', '主题篮子（封顶）')] %}
       <div class="fl-col">
@@ -441,8 +441,8 @@
       <span class="fl-verdict">{{ t('Verdict', '结论') }}: <b>{{ flow.verdict }}</b></span>
       <details class="fl-more"><summary>{{ t('What this is &amp; how it was validated', '这是什么 · 如何验证') }}</summary>
         <p class="muted" style="font-size:11.5px;margin:6px 0 0;line-height:1.55;max-width:95ch">{{ t(
-          'Flow clustering map. Read-quality means data coherence, not directional confidence. The cohesion gate is the only measured stress signal; everything else is context.',
-          '资金聚集地图。读数质量代表数据一致性，不代表方向置信度。共动门是唯一实测压力信号；其余仅作背景。') }}
+          'Descriptive detector of where flow is clustering across sectors and theme baskets. Read quality measures data coherence, not directional confidence. Use it to focus research; it is not scored.',
+          '这是描述性探测器，用来观察行业和主题篮子中的资金集中位置。读数质量衡量数据一致性，不是方向置信度。用于聚焦研究，不参与评分。') }}
           <a href="#" onclick="return false" class="muted" style="text-decoration:underline" title="See data/group_flow/validation_meta.json">{{ t('validation meta', '验证元数据') }}</a></p>
       </details>
     </div>
@@ -458,8 +458,8 @@
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "All baskets. Sort columns, switch raw / vs S&P 500 / σ, click a name for members.",
-        '全部篮子。可排序、切换原始/相对标普500/σ，点击名称查看成分。') }}</p>
+        "Sortable snapshot of every basket. Toggle between raw return, return versus S&P 500, and each basket's own z-score. Click a basket to see members.",
+        '所有篮子的可排序快照。可切换原始回报、相对标普 500 回报和篮子自身 z 分数。点击篮子查看成分。') }}</p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
     </section>
@@ -467,8 +467,8 @@
     <section id="chart-section">
       <h2><span class="idx">02</span>{{ t('Performance', '走势对比') }}</h2>
       <p class="sub">{{ t(
-        'Rebased to 0% at the selected window start. Toggle baskets in the legend; "All" is about 3 years.',
-        '在所选窗口起点重设为0%。点击图例切换篮子；“全部”约3年。') }}</p>
+        'Lines are rebased to 0% at the start of the window. Toggle baskets from the legend; "All" covers the available cache history.',
+        '曲线在窗口起点重设为 0%。可在图例中开关篮子；"全部"覆盖可用缓存历史。') }}</p>
       <div class="chartbar">
         <span class="tabs" id="chart-modes" role="group"></span>
         <span class="tabs" id="chart-ranges" role="group"></span>
@@ -486,8 +486,10 @@
   </div>
 
   <footer>
-    {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span><br>
-    <span class="made">© 2026 MastermindX Inc</span>
+    {{ t(
+      'Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the S&P 500. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.',
+      '仅供参考，非投资建议。篮子等权重，并以标普 500 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。') }}
+    {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>
@@ -821,8 +823,8 @@ function termStrip(t){
   if(a!=null&&b2!=null&&c!=null&&a>0&&b2>0&&c>0){ pat='aligned up'; patZh='同向向上'; }
   else if(a!=null&&c!=null&&a<0&&c>0){ pat='rolling from the front'; patZh='前端回落'; }
   else if(a!=null&&b2!=null&&c!=null&&a<0&&b2<0&&c<0){ pat='aligned down'; patZh='同向向下'; }
-  return `<div class="termstrip" title="descriptive — current momentum shape">${cells}
-    <span class="tspat">${L(pat,patZh)}</span></div>`;
+  return `<div class="termstrip" title="descriptive — a shape/fragility read, not a forecast">${cells}
+    <span class="tspat">${L(pat,patZh)}</span><span class="tstag">${L('shape read, not a signal','形态读数，非信号')}</span></div>`;
 }
 function themeCard(t){
   const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[t.reco]||RECO_COLOR.hold;
@@ -964,7 +966,7 @@ function renderRotation(){
     return `<div class="rotrow">${dot}<span class="rn"><a href="basket/${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a></span>
       <span class="rv ${cls(t.delta_5d)}">${fmtPct(t.delta_5d)}</span>
       <span class="rk ${ac}" title="5d rank change${traj?' · '+traj:''}">${ar}${t.rank_5d?Math.abs(t.rank_5d):''}${traj?`<span class="rk20"> · ${traj}</span>`:''}</span></div>`;};
-  const subtitle=`<p class="rot-sub">${L('Rank velocity across the theme board — descriptive, not a forecast','主题榜排名速度——描述性，非预测')}</p>`;
+  const subtitle=`<p class="rot-sub">${L('Rank changes across themes; descriptive only.','主题排名变化；仅作描述。')}</p>`;
   const col=(en,zh,emo,arr)=>`<div class="rotcol"><h4>${emo} ${L(en,zh)}</h4>${arr.length?arr.map(row).join(''):`<div class="muted sm" style="padding:6px 0">${L('none','无')}</div>`}</div>`;
   const rotEl=document.getElementById('rotation');
   rotEl.innerHTML=subtitle+`<div class="rotwrap" style="margin-top:6px">${col('Weekly climbers','本周上升','▲',rot.climbers||[])}${col('Weekly fallers','本周下降','▽',rot.fallers||[])}</div>`;
@@ -1027,7 +1029,7 @@ function renderRegimeSizing(){
     <div class="rs-head"><span class="rs-ic">⚠</span>
       <span class="rs-main">${L('Choppy markets — basket positions trimmed to','市场波动加大 — 篮子仓位已缩减至常规水平的')} <b>${pct}%</b>${L(' of normal','')}${(cautionScored&&regLbl)?' ('+regLbl+')':''}</span></div>
     <div class="rs-decomp muted sm">${L('How it\'s set','计算方式')}: ${decompStr}${demoted?` · ${demoted} ${L('theme(s) eased to hold-only','个主题降为仅持有')}`:''}</div>
-    <div class="rs-note muted xs">${L('Why: when the market gets more volatile we automatically hold smaller positions to limit losses. This only changes how much you hold — never which baskets are worth owning.','原因：市场波动加大时，我们会自动减小仓位以控制回撤。这只调整持仓大小，绝不改变哪些篮子值得持有。')}</div>
+    <div class="rs-note muted xs">${L('Volatile markets get smaller position sizes. This does not change the basket ranking.','市场波动加大时仓位会缩小，但不改变篮子排名。')}</div>
     ${shadowLine}
   </div>`;
 }
@@ -1085,7 +1087,7 @@ function openSc(kind){
   const ov=_scOverlay(); let hd='',sub='',bd='';
   if(kind==='impulse'){
     hd=L('±3% daily impulse','±3% 当日脉冲');
-    sub=L('Every basket member that moved ≥3% today — the impulse / volatility tape.','今日波动≥3%的所有篮子成分 — 脉冲／波动一览。');
+    sub=L('Basket members that moved at least 3% today.','今日涨跌至少 3% 的篮子成分。');
     bd=`<div class="scm-2col">${_scCol(L('Surged ≥3%','涨≥3%'),s.up_names,true,'up')}${_scCol(L('Dropped ≥3%','跌≥3%'),s.down_names,true,'dn')}</div>`;
   } else if(kind==='extremes'){
     hd=L('52-week extremes','52周极值');
@@ -1093,7 +1095,7 @@ function openSc(kind){
     bd=`<div class="scm-2col">${_scCol(L('New 52-wk highs','创52周新高'),s.nh_names,false,'up')}${_scCol(L('New 52-wk lows','创52周新低'),s.nl_names,false,'dn')}</div>`;
   } else if(kind==='reco'){
     hd=L('Recommendation tally','建议统计');
-    sub=L('Where every theme lands on the desk read. Click a theme to open it.','每个主题的台面结论分布。点击主题可打开详情。');
+    sub=L('Action buckets for every theme. Click a theme to open it.','每个主题的操作分组。点击主题打开详情。');
     const grp=(en,zh,keys,tone)=>{ const arr=[].concat(...keys.map(k=>rc[k]||[]));
       const rows=arr.length?arr.map(t=>`<a class="scm-row" href="${_bbase()}${esc(t.id)}.html"><span class="scm-nm">${L(esc(t.name),esc(t.name_zh||t.name))}</span><span class="scm-th">${esc((t.label||'').toUpperCase())}</span><span class="scm-r">${t.score}</span></a>`).join(''):`<div class="scm-empty">${L('none','无')}</div>`;
       return `<div class="scm-col"><div class="scm-colh ${tone}">${L(en,zh)} <b>${arr.length}</b></div>${rows}</div>`; };
