@@ -2035,18 +2035,53 @@
   </div>
   {% endif %}
 
-  <!-- ===================== SENTIMENT REGIME — Froth & Fragility + Fear↔Euphoria (context-only lenses; collapsed by default) ===================== -->
-  {% if mode != 'stocks' and (froth_fragility or fear_euphoria) %}
+  <!-- ===================== SENTIMENT REGIME — Froth & Fragility + Fear↔Euphoria + Fear/Greed composite (context-only lenses; collapsed by default) ===================== -->
+  {% if mode != 'stocks' and (froth_fragility or fear_euphoria or fear_greed) %}
   {% set ff = froth_fragility %}
   {% set FE = fear_euphoria %}
+  {% set FG = fear_greed %}
+  {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
   {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
   <details class="panel span12 fold" id="sentiment-regime">
     <summary>{{ t('Sentiment regime','情绪周期') }}
-      {{ help("Two context-only lenses — how frothy and fragile the top is, and where the market sits on fear↔euphoria. Neither calls direction or sizes trades.","两个仅供参考的视角 — 顶部有多狂热与脆弱，以及市场处于恐惧↔欣喜的哪一端。两者都不判断方向或决定仓位。") }}
-      <span class="fold-stat">{% if ff and ff.band %}{{ t('Froth','狂热') }} {{ t(ff.band|capitalize, ff.band_zh) }}{% endif %}{% if ff and FE %} · {% endif %}{% if FE %}{{ t('Fear↔Euphoria','恐惧↔欣喜') }} {{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}{% endif %}</span>
+      {{ help("Sentiment context lenses — Fear/Greed composite, froth/fragility gauge, and fear↔euphoria synthesis. None of these call direction or size trades.","情绪背景视角 — 恐惧/贪婪合成、狂热/脆弱指标及恐惧↔欣喜综合。均不判断方向或决定仓位。") }}
+      <span class="fold-stat">{% if FG %}{{ t('Fear/Greed','恐惧/贪婪') }} {{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }} {{ FG.dial }}/100{% endif %}{% if ff and ff.band %} · {{ t('Froth','狂热') }} {{ t(ff.band|capitalize, ff.band_zh) }}{% endif %}{% if FE %} · {{ t('Fear↔Euphoria','恐惧↔欣喜') }} {{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}{% endif %}</span>
       <span class="fold-caret">▾</span>
     </summary>
     <div style="display:flex;flex-wrap:wrap;gap:18px 22px">
+
+      <!-- Fear / Greed composite (P1.2) -->
+      {% if fear_greed %}
+      {% set FG = fear_greed %}
+      {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
+      {% set _fgc = 'var(--down)' if FG.dial < 30 else ('var(--warn)' if FG.dial < 45 else ('var(--up)' if FG.dial > 70 else 'var(--up)' if FG.dial > 55 else 'var(--muted)')) %}
+      <section id="fear-greed" style="flex:1 1 320px;min-width:0;border-left:3px solid {{ _fgc }};padding-left:14px">
+        <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Fear / Greed sentiment context','恐惧/贪婪情绪参考') }}
+          <span style="margin-left:auto;color:{{ _fgc }};font-weight:800;font-size:16px">{{ FG.dial }}<small style="font-size:12px;font-weight:600;color:var(--muted)">/100 · {{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }}</small></span>
+          {{ help("Equal-weight z-mean of qualifying market indicators (legs), each oriented so a positive z-score points toward greed. Display-only context — not a signal, not a timed call, never scored. Young series (putcall, AAII) are shown separately.","合格市场指标（分量）的等权 z 均值，每项方向均以正 z 为贪婪。仅供展示参考 — 非信号，非择时判断，不计分。过短序列（看跌/看涨比、AAII）单独展示。") }}
+        </h3>
+        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+          <div class="pgauge" style="width:100%"><i style="left:{{ FG.dial }}%"></i></div>
+          <div class="pends" style="margin-top:3px">
+            <span{% if FG.label_en == 'Extreme Fear' %} style="color:var(--down);font-weight:700"{% endif %}>{{ t('Extreme Fear','极度恐惧') }}</span>
+            <span{% if FG.label_en == 'Fear' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Fear','恐惧') }}</span>
+            <span{% if FG.label_en == 'Neutral' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Neutral','中性') }}</span>
+            <span{% if FG.label_en == 'Greed' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Greed','贪婪') }}</span>
+            <span{% if FG.label_en == 'Extreme Greed' %} style="color:var(--up);font-weight:700"{% endif %}>{{ t('Extreme Greed','极度贪婪') }}</span>
+          </div>
+          <div class="muted sm" style="margin-top:8px">{{ FG.n_legs_qualifying }} {{ t('legs in composite','分量入合成') }} · <a href="macro_signals.html#fear-greed-detail" class="muted">{{ t('full breakdown →','完整拆解 →') }}</a></div>
+        </div>
+        {% if FG.young_tiles %}
+        <div class="muted sm" style="margin-top:8px">
+          <b>{{ t('Context tiles (too young to z-score)','背景小块（序列过短，无法计算 z 分数）') }}</b>
+          {% for yt in FG.young_tiles %}{% if yt.value is not none %}
+          <span style="margin-right:12px">{{ t(yt.name_en, yt.name_zh) }}: <b>{{ yt.value }}</b></span>
+          {% endif %}{% endfor %}
+        </div>
+        {% endif %}
+        <p class="muted sm" style="margin:8px 0 0">{{ t(FG.disclaimer_en, FG.disclaimer_zh) }}</p>
+      </section>
+      {% endif %}
 
       <!-- Froth & Fragility -->
       {% if froth_fragility %}

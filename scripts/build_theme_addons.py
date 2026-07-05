@@ -54,6 +54,13 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("vol_sentiment failed: %s", e)
 
+    try:
+        from engine.fear_greed import compute_fear_greed
+        if _dump(fdir, "fear_greed.json", compute_fear_greed()):
+            wrote.append("fear_greed")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("fear_greed failed: %s", e)
+
     # per-theme ATR extension — US always; CN/HK/CA opportunistically (skip on shortfall)
     try:
         from engine.theme_extension import compute_theme_extension

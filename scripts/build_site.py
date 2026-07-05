@@ -1373,6 +1373,23 @@ def _vol_shock_view(latest: dict, event_risk: dict | None) -> dict | None:
         return None
 
 
+def _fear_greed_view() -> dict | None:
+    """Load the Fear/Greed composite from site/basketdata/fear_greed.json (written by
+    build_theme_addons, which runs in the same daily pipeline). Falls back to computing
+    directly when the JSON is absent (e.g. first-run order). Display-only; never fatal."""
+    try:
+        site_dir = config.ROOT / config.load()["storage"]["site_dir"]
+        p = site_dir / "basketdata" / "fear_greed.json"
+        if p.exists():
+            return json.loads(p.read_text())
+        # fallback: compute live (slower but always correct)
+        from engine.fear_greed import compute_fear_greed
+        return compute_fear_greed()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("fear_greed view failed (%s)", e)
+        return None
+
+
 def _froth_fragility_view(latest: dict) -> dict | None:
     """Froth & Fragility gauge (engine.froth_fragility) for the macro page: retail
     euphoria + hidden-distribution top-risk, with the forward-outcome track record
@@ -3085,6 +3102,7 @@ def main() -> int:
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
         vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)
         froth_fragility=_froth_fragility_view(latest),  # euphoria + hidden-distribution top-risk gauge (display-only)
+        fear_greed=_fear_greed_view(),    # Fear/Greed composite dial (display-only, P1.2)
         sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
@@ -3138,6 +3156,7 @@ def main() -> int:
             "conditions": latest.get("conditions"),
             "nowcast_hist": _nh,
             "fear_euphoria": vm.get("fear_euphoria"),
+            "fear_greed": vm.get("fear_greed"),
             "growth_score": latest.get("growth_score"),
             "inflation_score": latest.get("inflation_score"),
             "components_confirming": vm.get("components_confirming"),
