@@ -22,7 +22,7 @@ Three independent evidence lines converged on this charter before any new study 
 
 ### 1.1 Three-way convergence
 
-**Line 1 — Constitution Article 1.** The constitution (`engine/neuralweb/constitution.py`, `AuthorityLevel.A7_ORIGINATE`, ratified 2026-07-04) permanently bans origination of signals, scores, or escalations by any LLM or automated engine. Factors as a selection/escalation engine violate Article 1 at the implementation level. De-escalation (veto, downsize, withhold) is legal from day 1 under A3. Earned escalation via deterministic features entering kernel cells and surviving shadow ledgers is legal under A5 — after the constitutional promotion path.
+**Line 1 — Constitution Article 1.** The constitution (`engine/neuralweb/constitution.py`, `AuthorityLevel.A7_ORIGINATE`) permanently bans origination of signals, scores, or escalations by any LLM or automated engine. Factors as a selection/escalation engine violate Article 1 at the implementation level. De-escalation (veto, downsize, withhold) is legal from day 1 under A3. Earned escalation via deterministic features entering kernel cells and surviving shadow ledgers is legal under A5 — after the constitutional promotion path.
 
 **Line 2 — US anticipation Phase-0.** `research/ANTICIPATION_PHASE0.md` settled direction versus drawdown. Direction-side Brier skill at short horizon: **−0.006** (base up-rate 0.531, cell spread 1.0 pp). At medium horizon: **−0.0** (base 0.606, spread 2.2 pp). Both are coin-flips — no factor-conditional direction edge found. Drawdown side: four legs survived GO with cluster-aware halves stability:
 
@@ -41,7 +41,7 @@ The convergence ruling: factors are a de-escalation and conditioning instrument.
 
 ### 1.2 Two-lane law
 
-**FAST lane — de-escalation:** veto, downsize, withhold on existing per-name clamp mechanisms (engine/altdata_brain.py ACCUMULATE→WATCH and engine/narrative_brain.py ENTER→MONITOR `_reconcile` clamps; standout-board display chip lane). Legal from day 1 under A3. No shadow ledger required before de-escalation teeth attach; the attachment gate is the relevant hypothesis passing its PREREG gate (§4 governs).
+**FAST lane — de-escalation:** veto, downsize, withhold on existing per-name clamp mechanisms (engine/altdata_brain.py ACCUMULATE→WATCH and engine/narrative_brain.py ENTER→MONITOR `_reconcile` clamps; standout-board display chip lane). Legal from day 1 under A3. Teeth attach only after the relevant hypothesis passes its PREREG gate, followed by the per-hypothesis would-have-fired shadow-log step specified in the prereg (§4 governs).
 
 **SLOW lane — earned escalation:** deterministic features enter kernel cells (new `style_regime` shadow coordinate), survive pre-registered shadow ledgers, flip Article-2 surfaces only via the constitutional promotion path (DISPLAY → SHADOW → CONFIRMER → SCORED, one rung at a time, Wilson-gated). The style_regime classifier is a coordinate, not a prior — it carries no folk theory about what works in each state; the kernel measures that.
 
@@ -157,11 +157,13 @@ All parameters in this section are frozen. Definition changes require v2, never 
 
 For window W in {5, 20, 60}:
 - `contrib_{stream}_W` — contribution share: `beta_stream × realized_stream_return_W / abs(realized_return_W)` (signed; sums to 1 + noise from residual); clipped to [−2, +2]
-- `alibi_share_W` — `Σ|contrib_W| / (Σ|contrib_W| + |resid_ret_W|)`, bounded [0,1] by construction, no clipping. `contrib_W` = beta×stream-return contributions per Block-A stream over window W; `resid_ret_W` = the residual return. The formula is bounded [0,1] algebraically; no separate clip is applied.
+- `alibi_share_W` — `Σ|contrib_W| / (Σ|contrib_W| + |resid_ret_W|)`, bounded [0,1] by construction, no clipping. `contrib_W` = beta×stream-return contributions per Block-A stream over window W; `resid_ret_W` = the residual return. The formula is bounded [0,1] algebraically; no separate clip is applied. It is scale-invariant (identical whether computed from raw contributions or normalized shares). Under the zero-return guard (below), `alibi_share_W` is also None.
 - `resid_ret_W` — the residual return itself (realized return minus sum of factor contributions), in raw return units
 - `resid_ret_1d` — the Block-A residual return for the single trading day (daily one-day residual return). Used by study harnesses to cumulate a residual price series PIT for H1's `resid_led` feature. Note: H1's transformed-series oscillator crosses (sector-ratio series, residual series) are computed AT STUDY TIME by the P3 harness from panel columns + price data using engine/cycles.py functions; they require NOTHING from the replay artifact beyond the (ticker, signal_date) join keys.
 
 The P1-A run log prints the alibi_share distribution (p5/p25/p50/p75/p95) per window (5d, 20d, 60d).
+
+**`alpha_z_house` panel column (required for PREREG H2):** in addition to Block-A attribution outputs, the panel carries `alpha_z_house` — the sector-neutral residual-momentum z from `engine/residual_alpha.py`, copied PIT from the nightly residual_alpha computation at date t (data ≤ t only). This is the stratification variable for the H2 second gate clause (§2.5 in PREREGISTRATION.md). It is carried as a read-through from the existing residual_alpha nightly output, not recomputed inside the factor panel builder.
 
 **Zero-return guard:** if `abs(realized_return_W) < 1e-6`, all contribution shares are set to `None` for that window (division guard; do not impute zero).
 
@@ -195,11 +197,11 @@ DNA class is a deterministic priority-ordered threshold cascade over Block-B per
 |---|---|
 | `quality_growth` | quality pct ≥ 70 AND value pct < 60 AND beta_growth > 0.3 |
 | `high_beta_liquidity` | beta_mkt > 1.3 AND beta_growth > 0.4 AND low_vol pct < 35 |
-| `cyclical_value` | value pct ≥ 65 AND (beta_sector_energy OR beta_sector_industrials OR beta_sector_materials > 0.2) |
+| `cyclical_value` | value pct ≥ 65 AND own GICS sector ∈ {Energy, Industrials, Materials} AND beta_sector > 0.2 |
 | `defensive_quality` | quality pct ≥ 65 AND low_vol pct ≥ 60 AND beta_mkt < 0.85 |
 | `rate_duration_sensitive` | abs(beta_rates) > 0.25 AND (payout pct ≥ 55 OR low_vol pct ≥ 55) |
 | `china_crypto_proxy` | beta_china > 0.30 (requires china stream present) OR (beta_mkt > 1.1 AND sector in {Information Technology, Communication Services} AND value pct < 30) |
-| `small_spec` | size pct < 30 AND low_vol pct < 40 AND quality pct < 45 |
+| `small_spec` | `size_pct` < 30 AND low_vol pct < 40 AND quality pct < 45 |
 | `mixed` | none of the above triggered, OR two classes tied at equal priority |
 
 Threshold values are set here and frozen for v1. The drafter (Sonnet) must implement these exactly and include a unit test asserting that `mixed` is the output when all conditions are false. Any threshold adjustment requires a v2 version stamp. The `mixed` class is never treated as a failure — it is the honest classification for names that do not fit a clean archetype.
@@ -244,7 +246,7 @@ Threshold values are set here and frozen for v1. The drafter (Sonnet) must imple
 - `twin_rel_20d` — the name's 20d realized return minus the twin basket's 20d realized return (signed; positive = outperformed twin)
 - `twin_bleed_flag` — boolean: True if the twin 20d return is negative AND the twin is below its own 20d high by more than its trailing median pullback (median of all 20d max-drawdown observations in the prior 252d). The drafter must implement the trailing-median-pullback computation deterministically and include a unit test.
 
-**Purpose:** `twin_rel_20d` feeds H3 (conditional drawdown when twin bleeds) and H4 (de-escalation when name is the sole survivor in a bleeding twin basket).
+**Purpose:** `twin_bleed_flag` is H4's feature (de-escalation validity when the twin basket is bleeding at entry). `twin_rel_20d` is a display/context output and an input to H5's decay context.
 
 ### 3.6 Panel data plane (D-1)
 
@@ -259,6 +261,7 @@ Threshold values are set here and frozen for v1. The drafter (Sonnet) must imple
 - `style_regime` (str, §3.4) — the day's confirmed classifier state
 - `style_regime_pending` (str, nullable, §3.4) — the tentative next state during hysteresis; display-diagnostic only; null when no flip is pending
 - Twin outputs (§3.5): `twin_rel_20d`, `twin_bleed_flag`, `twin_n_peers`, `twin_fallback` (bool, True if fell back to industry EW)
+- `alpha_z_house` (float) — the sector-neutral residual-momentum z from `engine/residual_alpha.py`, copied from the nightly residual_alpha computation at date t (PIT: computed from data ≤ t); required as stratification variable for PREREG H2's second gate clause
 
 **R2 rule:** if the panel exceeds the git-heaviness norm (assessed at first build: if any monthly partition exceeds ~5 MB or the trailing-12-month panel exceeds ~50 MB), it rides R2 per the r2-data-plane law. The builder must measure and report partition sizes in its first run log.
 
@@ -278,7 +281,7 @@ Threshold values are set here and frozen for v1. The drafter (Sonnet) must imple
 | Block-B DNA percentiles (display) | A1 | DISPLAY | None |
 | DNA class (display chip) | A1 | DISPLAY | None — deterministic classification, not a signal |
 | style_regime coordinate (world_state lobe) | A1 | DISPLAY | A5 promotion via kernel shadow ledger after PREREG gate (§5.1) |
-| De-escalation (veto/downsize) — FAST lane | A3 — requires hypothesis gate | DISPLAY (log-only) | Gate per relevant PREREG (H1–H4); teeth attach only after gate passes |
+| De-escalation (veto/downsize) — FAST lane | A3 — requires hypothesis gate | DISPLAY (log-only) | Gate per relevant PREREG (H1–H4); teeth attach only after gate passes + per-prereg shadow-log step |
 | Twin bleed flag (display) | A1 | DISPLAY | None |
 | H5 factor-decay attention items | A2 — rank what deserves operator attention | DISPLAY → SHADOW | After P3 ledger n≥25 cluster floor (§7) |
 | Any new board_ordering influence | A5 (min) | SHADOW | Full constitutional promotion path; Article 2 shadow period |
@@ -339,13 +342,13 @@ Cell population note: splitting by `(quad_regime × style_regime)` creates up to
 
 **Pair G — borrowed_strength** is implemented in a DEDICATED per-name detector: `engine/neuralweb/factor_contradictions.py` (P2 deliverable), writing `data/neuralweb/factor_contradictions.jsonl`. It is NOT merged into `detect_contradictions`' macro list. It is surfaced only on per-name panels + the committee factor section; the macro top-5 priority surface is untouched. Cardinality expectation: 0–20 records/day among fired names.
 
-Pair G fires when a name's entry signal is strong (fires as T1 or T2) but the `alibi_share_20d` is high (≥ 0.65) — meaning most of the recent move is explained by factor streams, not the name's own residual. This raises the question of whether the signal is genuine stock selection or factor-stream attribution laundered through the technicals.
+Pair G fires when a name's entry signal is strong (fires as T1 or T2) but `high_alibi_flag` is True (`alibi_share_20d` ≥ trailing-252d Q80 — the same flag defined in §3.1 and PREREG H2; no separate threshold) — meaning most of the recent move is explained by factor streams, not the name's own residual. This raises the question of whether the signal is genuine stock selection or factor-stream attribution laundered through the technicals.
 
 The record shape mirrors the contradictions.py `_record()` convention (pair_id, a_artifact, a_reading, b_artifact, b_reading, kind='label-tension', severity='note', as_of, note) but is written by the dedicated module.
 
 `display_only` is hardcoded True by `_record()` (contradictions.py:178); the assertion enforces severity ∈ {note, tension}.
 
-`severity` starts at `"note"` unconditionally. It can only be promoted to `"tension"` after H1 passes its PREREG gate (the empirical check that high alibi_share correlates with worse entry outcomes). The `detect_contradictions()` function must fail open (never raise; gaps list maintained).
+`severity` starts at `"note"` unconditionally. It can only be promoted to `"tension"` after H2 passes its PREREG gate (the empirical check that high alibi_share correlates with worse entry outcomes). The dedicated detector must fail open (never raise; gaps list maintained).
 
 ### 5.3 Cortex A2 curriculum — factor contradictions as attention items
 
@@ -429,7 +432,7 @@ No in-flight work collides with the factor panel. The five open PRs on main as o
 | P1-A | `scripts/build_factor_panel.py` — Block-A attribution engine + Block-B DNA percentile reader; PIT audit by Opus; render-path exclusion verified; partition sizes reported |
 | P1-B | Twin computation (`twin_rel_20d`, `twin_bleed_flag`); unit tests for trailing-median-pullback and GICS+size filter; twin fallback logic |
 | P1-C | style_regime classifier + world_state `_compose_factor_weather()` + factor_weather lobe wiring; DNA class threshold cascade + unit test for all-false → `mixed` |
-| P1-D | Contradiction Pair G (`borrowed_strength`) in contradictions.py; cortex attention item writer for factor contradictions; display-only graded-log pipeline |
+| P1-D | Pair G detector `engine/neuralweb/factor_contradictions.py` (dedicated module, §5.2) + `factor_attention` reflex writer (Lane 1, §5.3); display-only graded-log pipeline |
 
 **Model routing:** Sonnet builds all four PRs. Opus reviews each (PIT audit focus on P1-A, threshold correctness on P1-C). Fable merges after Opus sign-off.
 
@@ -437,9 +440,9 @@ No in-flight work collides with the factor panel. The five open PRs on main as o
 
 ### P2 — Hypothesis registration + interim substrates (gated on P1 green)
 
-**Exit gate:** all 5 PREREG drafts Fable-approved; machine registration filed for H1–H5 in metabolism (≥2 ISO weeks for budget); PRE-FDR INTERIM interim runs reported with survivorship stamps.
+**Exit gate:** machine registrations filed for H1–H5 in metabolism (≥2 ISO weeks for budget); PRE-FDR INTERIM runs reported with survivorship stamps. (The PREREGISTRATION.md companion locked at P0 merge; P2 files the machine registrations against it.)
 
-**Deliverables:** `research/factor_intelligence/PREREGISTRATION.md` (companion doc, locked at merge of this masterplan); per-hypothesis interim study notebooks; borrowed_strength contradiction severity promoted if H1 interim shows directional signal (still PRE-FDR INTERIM — no gate powers until PREREG runs).
+**Deliverables:** per-hypothesis interim study notebooks; borrowed_strength severity stays `"note"` until H2 GATE-PASSED (§5.2) — an interim directional signal does NOT promote it.
 
 **Model routing:** Sonnet builds study scaffolding; Opus reviews interim results + flags methodological issues; Fable approves PREREGs.
 
@@ -447,19 +450,19 @@ No in-flight work collides with the factor panel. The five open PRs on main as o
 
 ### P3 — Gauntlet runs (gated on #1312 merge + n≥25 cluster floor)
 
-**Exit gate:** H1–H5 run on full replay/ledger substrate; BH-FDR within the 5-hypothesis family; verdicts printed (GO / NO-GO / NULL) for each; kernel shadow coordinate `kernel_style_regime_shadow.parquet` accruing.
+**Exit gate:** H1–H5 run on full replay/ledger substrate; BH-FDR within the 5-hypothesis family; verdicts printed for each per the prereg's pre-bound vocabulary (GATE-PASSED / DISPLAY-WITH-EDGE / NULL); kernel shadow coordinate `kernel_style_regime_shadow.parquet` accruing.
 
 **Deliverables:**
 - `research/factor_intelligence/H{1-5}_VERDICT.md` — one verdict memo per hypothesis, Opus-authored, Fable-approved
 - `engine/neuralweb/kernel_style.py` — `build_style_estimates()` function; shadow table first build
-- De-escalation teeth for GO hypotheses: H1/H2/H3/H4 GO → the relevant `_reconcile` clamp is wired to the factor contradiction signal (A3; no board_ordering touch)
+- De-escalation path for GATE-PASSED hypotheses: H2/H4 → would-have-fired shadow ledger, then the relevant per-name `_reconcile` clamp wiring (A3; no board_ordering touch); H1 → logged annotation field only; H3 → cell-discrimination observation added to the factor_weather lobe descriptive text
 
 **H1–H4 dependency:** PR #1312 must be merged. Studies join replay artifact on `(ticker, signal_date)`. Do not run H1–H4 before merge.
 **H5 dependency:** board ledger (held names with entry dates) + factor panel. No replay requirement. Interim-capable in P2.
 
 **Inference:** month-block bootstrap (calendar-month resampling unit, ≥2000 resamples; see PREREGISTRATION.md §2.2). Fixed n-floors per hypothesis: H1/H2: ≥10 contributing months AND ≥150 deduped fires per arm; H3: ≥12 contributing months AND ≥8 qualifying cells; H4: ≥10 months AND ≥60 flagged fires; H5: ≥10 months AND ≥40 flagged names. These floors are fixed ex ante and do not change based on observed data.
 
-**CI-compliance:** any scripts/ harness matching `validate_*/*_phase0/*_phase1.py` that calls `deflated_sharpe` must register via the TrialLedger (`register_trials` / `log_declared_budget` / `ledger=` param). Planned harness prefix: `scripts/validate_factor_h*.py`. This obligation is separate from metabolism registration (`metabolism.register_hypothesis`), which is also required.
+**CI-compliance:** any scripts/ harness matching `validate_*/*_phase0/*_phase1.py` that calls `deflated_sharpe` must register via the TrialLedger (`register_trials` / `log_declared_budget` / `ledger=` param). These harnesses do not call `deflated_sharpe`; they nonetheless register for auditability: `from engine.trial_ledger import TrialLedger` + `ledger.log_declared_budget(5, family="factor_intelligence_v1", reason="factor_intelligence_v1 5-test family")` (positional n first). Harness names: `scripts/validate_factor_h1.py`, `scripts/validate_factor_h2.py`, `scripts/validate_factor_h3.py`, `scripts/validate_factor_h4.py`, `scripts/validate_factor_h5.py` for the five primary tests; `scripts/validate_factor_family.py` for the pre-committed BH runner. BH across the five primary p-values is computed ONLY by `scripts/validate_factor_family.py`; hand-computed BH is an audit finding. This obligation is separate from metabolism registration (`metabolism.register_hypothesis`), which is also required.
 
 **Model routing:** Sonnet runs study code; Opus reviews statistical methodology + month-block bootstrap inference; Fable adjudicates GO/NO-GO.
 
@@ -470,7 +473,7 @@ No in-flight work collides with the factor panel. The five open PRs on main as o
 **Deliverables:**
 - committee.html factor panel extension (§5.5) — regime-conditional report cards with PRE-FDR INTERIM labels until sweep
 - `_compose_board_summary()` in world_state.py (§5 of EI masterplan — stock-level lobe carrying per-stock DNA + style_regime coordinate; reads `site/factordata/us_standouts.json`)
-- Any Article-2 surface influence (board_ordering) ONLY after a specific hypothesis passes both P3 GO and the A5 shadow period — explicit Fable ruling required before any PR touches board_ordering
+- Any Article-2 surface influence (board_ordering) ONLY after a specific hypothesis passes both P3 GATE-PASSED and the A5 shadow period — explicit Fable ruling required before any PR touches board_ordering
 
 **Dependencies:** kernel-FDR clock (2026-10 scheduled sweep); A2 earn-in from cortex grading loop (accrues from P1-D launch); EI program P4.4 (board summary as stock-level lobe is joint — coordinate with EI program owner).
 
@@ -500,7 +503,7 @@ The following are permanently killed in this program. No subagent PR may include
 | **H1 circularity vs the residual rank key:** `alibi_share` is defined relative to Block-A betas, which partially overlap with residual_alpha.py's computation | H1 tests entry-oscillator cross quality (terminal state) conditional on `alibi_share_20d`; the independent variable is the entry trigger (2D MACD × 3D StochRSI cross), not the alpha score; the PREREG mandates an ablation vs `alpha_z` as a co-variate to isolate the alibi_share effect |
 | **Render budget:** the factor panel adds a new nightly computation | Off-render-path builder (`scripts/build_factor_panel.py`); measured runtime reported in first run log; if it exceeds 5 minutes it must be optimized before merging P1-A |
 | **Schema drift vs #1312:** if #1312 schema changes post-merge, study joins break | JOIN-only architecture; no shared files; the factor panel reads only `(ticker, date)` from replay — if the column names change, only the join key needs updating; the panel itself is independent |
-| **Factor soup:** 8 Block-A streams + 6 Block-B legs might encourage ad hoc composite construction | Block-A is capped at 8 streams (D-2), Block-B uses only existing legs; the kill list bans new factor formulas and mega-scores; the DNA class is the only composite construct, and it is deterministic not scored |
+| **Factor soup:** 8 Block-A streams + 5 Block-B legs might encourage ad hoc composite construction | Block-A is capped at 8 streams (D-2), Block-B uses only existing legs; the kill list bans new factor formulas and mega-scores; the DNA class is the only composite construct, and it is deterministic not scored |
 | **PIT holes in twin membership:** correlation window could see future composition changes | Twin membership frozen monthly on the first trading day; correlation window ends at t−1; both enforced at build time; the unit test for P1-B must assert that no future data enters the window |
 | **Survivorship in interim substrates:** close caches contain currently-listed names only | All interim runs labeled PRE-FDR INTERIM; the survivorship stamp follows the EI program's convention from R1 (pre-2015 rows carry survivor-bias stamp); the scorecard's "optimistic bound" disclaimer is carried into every interim report |
 | **ACC_RES anti-predictive ghost:** the kill list bans factor velocity, but it could re-enter via a new name | The kill list is standing and enforced by Fable review; any PR adding a momentum-of-factor-return input triggers automatic rejection |
@@ -511,10 +514,11 @@ The following are permanently killed in this program. No subagent PR may include
 
 ### Entry pipeline de-escalation chips (P2 → P3)
 
-When hypotheses H1–H4 pass their PREREG gates, the de-escalation teeth attach to existing clamp mechanisms:
-- H1 GO: `factor_annotated=True` → logged annotation field on every fire for the thesis-decay track (H5); no behavioral consequence at day 1
-- H2 GO: `high_alibi_flag=True` (`alibi_share_20d ≥ Q80`) → the altdata/narrative `_reconcile` clamp (`engine/altdata_brain.py` ACCUMULATE→WATCH, `engine/narrative_brain.py` ENTER→MONITOR) is flagged with a 'borrowed-strength entry' context chip; operator sees chip and may choose to pass or downsize
-- H3/H4 GO: `twin_bleed_flag=True` → adds a "twin bleeding" de-escalation annotation to the board entry; the clamp threshold is pre-registered in the relevant PREREG
+When hypotheses reach GATE-PASSED, consequences attach per the prereg's unlock clauses:
+- H1 GATE-PASSED: `factor_annotated=True` → logged annotation field on every fire for the thesis-decay track (H5); no behavioral consequence at day 1
+- H2 GATE-PASSED: `high_alibi_flag=True` (`alibi_share_20d ≥ Q80`) → after the would-have-fired shadow-log step, the altdata/narrative `_reconcile` clamp (`engine/altdata_brain.py` ACCUMULATE→WATCH, `engine/narrative_brain.py` ENTER→MONITOR) is flagged with a 'borrowed-strength entry' context chip; operator sees chip and may choose to pass or downsize
+- H4 GATE-PASSED: `twin_bleed_flag=True` → after the shadow-log step, adds a "twin bleeding" de-escalation annotation to the board entry
+- H3 GATE-PASSED: the DNA × style_regime discrimination observation is added to the factor_weather lobe descriptive text (no per-name chip)
 
 These are annotation-and-ceiling adjustments, not board rank changes. They route through A3, not A5.
 
