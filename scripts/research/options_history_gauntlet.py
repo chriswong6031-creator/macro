@@ -236,11 +236,23 @@ def _compute_daily_gamma_regime(root: str) -> pd.DataFrame | None:
 
 
 def run_sgexr_h() -> dict[str, Any]:
-    """S-GEXR-H: does gamma regime condition forward 5/21d realized vol?"""
+    """S-GEXR-H: does gamma regime condition forward 5/21d realized vol?
+
+    Dependence-robust test path (addressing pseudo-replication):
+    Observations across roots and dates are NOT i.i.d.: (a) 5d/21d forward RV uses
+    overlapping windows (21d window shares ~20/21 days with the next day's), and
+    (b) on any date all roots share the same market regime (cross-root correlation).
+    To avoid feeding pooled non-i.i.d. observations into BH, we:
+      1. Per date, compute the cross-root mean RV gap: mean(rv_long_roots) - mean(rv_short_roots).
+      2. Run a HAC-robust t-test on that per-date time-series (handles serial overlap).
+    This is the same collapse-first approach used by CWIV (rank-IC per date).
+    Mann-Whitney on the pooled obs is reported as descriptive context but NOT fed into BH.
+    """
     _print_section("S-GEXR-H: Gamma regime → forward realized volatility")
     print("  Roots: all 23 non-AAPL | Eras: 2017-19, 2020-22, 2023→")
     print("  Target: 5d and 21d annualized realized vol (NOT direction)")
-    print("  Method: Mann-Whitney U + HAC t-test on continuous gamma proxy")
+    print("  Method: per-date RV gap (long minus short roots) → HAC t-test on time-series")
+    print("  NOTE: pooled MW p-values shown for context but NOT used for BH decision")
     print()
 
     all_daily = []
@@ -299,16 +311,33 @@ def run_sgexr_h() -> dict[str, Any]:
                     "era": era_name, "horizon": f"{horizon}d",
                     "n_long": n_long, "n_short": n_short,
                     "mean_rv_long": "SPARSE", "mean_rv_short": "SPARSE",
-                    "mw_p": "SPARSE", "bh_adj_p": "SPARSE", "reject": "SPARSE",
-                    "note": "n < floor",
+                    "mw_p": "SPARSE", "hac_p": "SPARSE", "bh_adj_p": "SPARSE",
+                    "reject": "SPARSE", "note": "n < floor",
                 })
                 continue
 
-            mw_stat, mw_p = _mannwhitney(short_rv, long_rv)  # does SHORT > LONG (vol)?
+            # Descriptive: pooled MW (not i.i.d. — context only, NOT fed to BH)
+            mw_stat, mw_p = _mannwhitney(short_rv, long_rv)
 
-            # HAC t-test on difference (continuous proxy)
-            diff = era_data.loc[long_mask, col].values - np.nanmean(era_data.loc[short_mask, col].values)
-            t_stat, t_p = _hac_ttest(era_data[col].values - era_data[col].mean())
+            # Dependence-robust path: collapse to per-date cross-root RV gap,
+            # then HAC t-test on the resulting time-series.
+            # Per date: mean rv across LONG-regime roots minus mean rv across SHORT-regime roots.
+            per_date_long = (era_data.loc[long_mask, ["date", col]]
+                             .dropna().groupby("date")[col].mean())
+            per_date_short = (era_data.loc[short_mask, ["date", col]]
+                              .dropna().groupby("date")[col].mean())
+            common_dates = per_date_long.index.intersection(per_date_short.index)
+            if len(common_dates) < _MIN_N_ERA:
+                # Fallback: just use long or short daily mean vs grand mean
+                per_date_all = era_data[["date", col]].dropna().groupby("date")[col].mean()
+                long_dates = era_data.loc[long_mask, ["date", col]].dropna().groupby("date")[col].mean()
+                gap_series = (long_dates - per_date_all.reindex(long_dates.index)).dropna().values
+            else:
+                gap_series = (per_date_long.reindex(common_dates)
+                              - per_date_short.reindex(common_dates)).values
+
+            n_dates = len(gap_series[np.isfinite(gap_series)])
+            t_stat, hac_p = _hac_ttest(gap_series)
 
             row = {
                 "era": era_name,
@@ -318,16 +347,18 @@ def run_sgexr_h() -> dict[str, Any]:
                 "mean_rv_long": f"{np.mean(long_rv):.3f}",
                 "mean_rv_short": f"{np.mean(short_rv):.3f}",
                 "mw_p": f"{mw_p:.3f}" if np.isfinite(mw_p) else "nan",
+                "hac_p": f"{hac_p:.3f}" if np.isfinite(hac_p) else "nan",
                 "bh_adj_p": "—",
                 "reject": "—",
-                "note": "",
+                "note": f"n_dates={n_dates}",
             }
             result_rows.append(row)
 
-            if min(n_long, n_short) >= _MIN_N_BUCKET and np.isfinite(mw_p):
-                pvals_for_bh[cell_key] = mw_p
+            # Use HAC p-value (dependence-robust) for the BH family
+            if n_dates >= _MIN_N_BUCKET and np.isfinite(hac_p):
+                pvals_for_bh[cell_key] = hac_p
 
-    # BH-FDR (partial family — this study's cells only)
+    # BH-FDR (partial family — this study's cells only; for display)
     bh = _bh_fdr(pvals_for_bh)
     for row in result_rows:
         cell_key = f"GEXR.{row['era']}.{row['horizon']}"
@@ -336,8 +367,8 @@ def run_sgexr_h() -> dict[str, Any]:
             row["reject"] = "YES" if bh[cell_key]["reject_h0"] else "no"
 
     cols = ["era", "horizon", "n_long", "n_short", "mean_rv_long", "mean_rv_short",
-            "mw_p", "bh_adj_p", "reject"]
-    widths = [8, 8, 8, 9, 14, 15, 8, 10, 8]
+            "mw_p", "hac_p", "bh_adj_p", "reject"]
+    widths = [8, 8, 8, 9, 14, 15, 8, 8, 10, 8]
     _print_table(result_rows, cols, widths)
 
     _print_post_decay_commentary("S-GEXR-H", result_rows, "reject", "era")
@@ -432,12 +463,29 @@ def _compute_daily_skew(root: str) -> pd.DataFrame | None:
 
 
 def run_skew_deesc_h() -> dict[str, Any]:
-    """SKEW-DEESC-H: sector skew level + 5d change → fwd max drawdown + return vs SPY."""
+    """SKEW-DEESC-H: sector skew level + 5d change → fwd max drawdown + return vs SPY.
+
+    Dependence-robust test path (addressing pseudo-replication):
+    Pooled MW on overlapping-window targets with cross-root correlation is anti-conservative.
+    Fix: collapse to per-date cross-sectional statistics (mean condition target minus
+    mean neutral target across roots on that date), then HAC t-test on that time-series.
+    MW on pooled obs is shown as descriptive context but NOT fed to BH.
+
+    Prereg deviation note (P-3 amendment):
+    P-3 registers 'Skew LOW (benchmark/neutral condition)'. The implementation uses
+    NEUTRAL (mid-tercile, neither top nor bottom third) as benchmark, and LOW (bottom
+    tercile) as an additional tested condition alongside HIGH_RISING and HIGH_FALLING.
+    This change was made to have a more clearly defined benchmark (equal-sized mid-tercile
+    vs the complement of HIGH). The deviation is documented here as a post-registration
+    amendment to P-3.
+    """
     _print_section("SKEW-DEESC-H: Sector skew → forward drawdown / return vs SPY")
     print("  Roots: 11 sector ETFs | Eras: 2017-19, 2020-22, 2023→")
     print("  Conditions: skew HIGH+RISING, skew HIGH+FALLING, skew LOW")
+    print("  Benchmark: NEUTRAL (mid-tercile) [P-3 amendment: LOW not used as benchmark]")
     print("  Targets: 21d max drawdown, 5d ret-vs-SPY, 21d ret-vs-SPY")
     print("  HOUSE YARDSTICK: 5d and 21d only (no 3-6mo)")
+    print("  NOTE: pooled MW p-values shown for context but NOT used for BH decision")
     print()
 
     print("  Computing daily skews for sector ETFs...", flush=True)
@@ -519,9 +567,13 @@ def run_skew_deesc_h() -> dict[str, Any]:
         g["skew_low"] = g["skew_rank252"] < 0.333    # bottom tercile
 
         # Condition buckets
+        # NaN guard: days where skew_5d_chg is NaN (first ~5 rows or gaps) stay NEUTRAL,
+        # NOT reclassified as HIGH_FALLING (which requires skew_5d_chg <= 0).
+        # Explicitly gate on notna() to prevent NaN rows from polluting the benchmark bucket.
         g["cond"] = "NEUTRAL"
-        g.loc[g["skew_high"] & (g["skew_5d_chg"] > 0), "cond"] = "HIGH_RISING"
-        g.loc[g["skew_high"] & (g["skew_5d_chg"] <= 0), "cond"] = "HIGH_FALLING"
+        chg_valid = g["skew_5d_chg"].notna()
+        g.loc[g["skew_high"] & chg_valid & (g["skew_5d_chg"] > 0), "cond"] = "HIGH_RISING"
+        g.loc[g["skew_high"] & chg_valid & (g["skew_5d_chg"] <= 0), "cond"] = "HIGH_FALLING"
         g.loc[g["skew_low"], "cond"] = "LOW"
 
         fwd_frames.append(g)
@@ -535,12 +587,10 @@ def run_skew_deesc_h() -> dict[str, Any]:
     conditions = ["HIGH_RISING", "HIGH_FALLING", "LOW"]
     targets = [("max_dd21", "21d MaxDD"), ("rel_ret5", "5d RelRet"), ("rel_ret21", "21d RelRet")]
 
-    # Benchmark = NEUTRAL (not in the conditions above)
-    neutral_data = panel[panel["cond"] == "NEUTRAL"]
-
+    # Benchmark = NEUTRAL (mid-tercile)
     for era_name, era_start, era_end in _GREEKS_ERAS:
-        era_mask = _era_mask(panel["date"], era_start, era_end)
-        era_panel = panel[era_mask].copy()
+        era_mask_ser = _era_mask(panel["date"], era_start, era_end)
+        era_panel = panel[era_mask_ser].copy()
         era_neutral = era_panel[era_panel["cond"] == "NEUTRAL"]
 
         for cond in conditions:
@@ -559,38 +609,57 @@ def run_skew_deesc_h() -> dict[str, Any]:
                         "era": era_name, "condition": cond, "target": tgt_label,
                         "n_cond": n_cond, "n_neutral": n_neutral,
                         "mean_cond": "SPARSE", "mean_neutral": "SPARSE",
-                        "mw_p": "SPARSE", "bh_adj_p": "SPARSE", "reject": "SPARSE",
+                        "mw_p": "SPARSE", "hac_p": "SPARSE",
+                        "bh_adj_p": "SPARSE", "reject": "SPARSE",
                     })
                     continue
 
+                # Descriptive: pooled MW (not i.i.d. — context only, NOT fed to BH)
                 mw_stat, mw_p = _mannwhitney(cond_vals, neutral_vals)
+
+                # Dependence-robust path: collapse to per-date cross-sectional gap,
+                # then HAC t-test on the resulting time-series.
+                per_date_cond = (cond_data[["date", tgt_col]]
+                                 .dropna().groupby("date")[tgt_col].mean())
+                per_date_neutral = (era_neutral[["date", tgt_col]]
+                                    .dropna().groupby("date")[tgt_col].mean())
+                common_dates = per_date_cond.index.intersection(per_date_neutral.index)
+                n_dates = len(common_dates)
+                if n_dates >= _MIN_N_ERA:
+                    gap_series = (per_date_cond.reindex(common_dates)
+                                  - per_date_neutral.reindex(common_dates)).values
+                    t_stat, hac_p = _hac_ttest(gap_series)
+                else:
+                    t_stat, hac_p = float("nan"), float("nan")
+                    n_dates = 0
+
                 result_rows.append({
                     "era": era_name, "condition": cond, "target": tgt_label,
                     "n_cond": n_cond, "n_neutral": n_neutral,
                     "mean_cond": f"{np.nanmean(cond_vals):.4f}",
                     "mean_neutral": f"{np.nanmean(neutral_vals):.4f}",
                     "mw_p": f"{mw_p:.3f}" if np.isfinite(mw_p) else "nan",
+                    "hac_p": f"{hac_p:.3f}" if np.isfinite(hac_p) else "nan",
                     "bh_adj_p": "—",
                     "reject": "—",
                 })
-                if min(n_cond, n_neutral) >= _MIN_N_BUCKET and np.isfinite(mw_p):
-                    pvals_for_bh[cell_key] = mw_p
+                # Use HAC p-value (dependence-robust) for the BH family
+                if n_dates >= _MIN_N_BUCKET and np.isfinite(hac_p):
+                    pvals_for_bh[cell_key] = hac_p
 
-    # BH-FDR
+    # BH-FDR: use exact cell_key match (fixes per-study overwrite bug)
     bh = _bh_fdr(pvals_for_bh)
     for row in result_rows:
-        cell_key = f"SKEW.{row['era']}.{row['condition']}.{row['target'].replace(' ', '_')}"
-        # try matching by era + cond + target label
-        for k, v in bh.items():
-            era_part = row["era"]
-            cond_part = row["condition"]
-            if era_part in k and cond_part in k:
-                row["bh_adj_p"] = f"{v['bh_adj_p']:.3f}"
-                row["reject"] = "YES" if v["reject_h0"] else "no"
+        tgt_key = {"21d MaxDD": "max_dd21", "5d RelRet": "rel_ret5",
+                   "21d RelRet": "rel_ret21"}.get(row["target"], "")
+        cell_key = f"SKEW.{row['era']}.{row['condition']}.{tgt_key}"
+        if cell_key in bh:
+            row["bh_adj_p"] = f"{bh[cell_key]['bh_adj_p']:.3f}"
+            row["reject"] = "YES" if bh[cell_key]["reject_h0"] else "no"
 
     cols = ["era", "condition", "target", "n_cond", "n_neutral",
-            "mean_cond", "mean_neutral", "mw_p", "bh_adj_p", "reject"]
-    widths = [6, 12, 14, 8, 10, 12, 14, 8, 10, 8]
+            "mean_cond", "mean_neutral", "mw_p", "hac_p", "bh_adj_p", "reject"]
+    widths = [6, 12, 14, 8, 10, 12, 14, 8, 8, 10, 8]
     _print_table(result_rows, cols, widths)
 
     _print_post_decay_commentary("SKEW-DEESC-H", result_rows, "reject", "era")
@@ -605,8 +674,8 @@ def run_skew_deesc_h() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def _compute_daily_ivspread(root: str) -> pd.DataFrame | None:
-    """OI-weighted (equal-weight fallback) mean matched-pair CW ivspread.
-    Vectorized: avoids per-date Python loop."""
+    """Equal-weight mean matched-pair CW ivspread (no OI weighting — greeks store has no
+    per-strike OI column; always equal-weight across matched pairs). Vectorized."""
     years = list(range(2017, 2027))
     gr = _load_greeks_root(root, years,
                            cols=["date", "expiration", "strike", "right",
@@ -823,12 +892,20 @@ def _compute_daily_doi(root: str) -> pd.DataFrame | None:
 
 
 def run_doi_h() -> dict[str, Any]:
-    """DOI-H: 5d ΔOI persistence → 5/10d forward relative return vs SPY."""
+    """DOI-H: 5d ΔOI persistence → 5/10d forward relative return vs SPY.
+
+    Dependence-robust test path (addressing pseudo-replication):
+    Pooled MW on forward returns with overlapping 5d/10d windows and cross-root correlation
+    is anti-conservative. Fix: collapse to per-date cross-sectional statistics (mean
+    condition return minus mean flat return across roots on that date), then HAC t-test on
+    that per-date time-series. MW on pooled obs is shown as descriptive context only.
+    """
     _print_section("DOI-H: 5d ΔOI persistence → forward relative return vs SPY")
     print("  Roots: 23 non-AAPL | Eras: Era0 2012-15, Era1 2016-19, Era2 2020-22, Era3 2023→")
     print("  Conditions: OI_UP (>+5%), OI_DOWN (<-5%), OI_FLAT (benchmark)")
     print("  Targets: 5d and 10d relative return vs SPY")
     print("  HOUSE YARDSTICK: 5d and 10d only")
+    print("  NOTE: pooled MW p-values shown for context but NOT used for BH decision")
     print()
 
     print("  Computing daily DOI + price series...", flush=True)
@@ -904,8 +981,8 @@ def run_doi_h() -> dict[str, Any]:
     pvals_for_bh = {}
 
     for era_name, era_start, era_end in _OI_ERAS:
-        era_mask = _era_mask(panel["date"], era_start, era_end)
-        era_panel = panel[era_mask].copy()
+        era_mask_ser = _era_mask(panel["date"], era_start, era_end)
+        era_panel = panel[era_mask_ser].copy()
         flat_data = era_panel[era_panel["cond"] == "OI_FLAT"]
 
         for cond in ["OI_UP", "OI_DOWN"]:
@@ -923,22 +1000,43 @@ def run_doi_h() -> dict[str, Any]:
                         "era": era_name, "condition": cond, "horizon": f"{horizon}d",
                         "n_cond": n_cond, "n_flat": n_flat,
                         "mean_cond": "SPARSE", "mean_flat": "SPARSE",
-                        "mw_p": "SPARSE", "bh_adj_p": "SPARSE", "reject": "SPARSE",
+                        "mw_p": "SPARSE", "hac_p": "SPARSE",
+                        "bh_adj_p": "SPARSE", "reject": "SPARSE",
                     })
                     continue
 
+                # Descriptive: pooled MW (not i.i.d. — context only, NOT fed to BH)
                 mw_stat, mw_p = _mannwhitney(cond_vals, flat_vals)
+
+                # Dependence-robust path: collapse to per-date cross-sectional gap,
+                # then HAC t-test on the resulting time-series.
+                per_date_cond = (cond_data[["date", col]]
+                                 .dropna().groupby("date")[col].mean())
+                per_date_flat = (flat_data[["date", col]]
+                                 .dropna().groupby("date")[col].mean())
+                common_dates = per_date_cond.index.intersection(per_date_flat.index)
+                n_dates = len(common_dates)
+                if n_dates >= _MIN_N_ERA:
+                    gap_series = (per_date_cond.reindex(common_dates)
+                                  - per_date_flat.reindex(common_dates)).values
+                    t_stat, hac_p = _hac_ttest(gap_series)
+                else:
+                    t_stat, hac_p = float("nan"), float("nan")
+                    n_dates = 0
+
                 result_rows.append({
                     "era": era_name, "condition": cond, "horizon": f"{horizon}d",
                     "n_cond": n_cond, "n_flat": n_flat,
                     "mean_cond": f"{np.nanmean(cond_vals):.4f}",
                     "mean_flat": f"{np.nanmean(flat_vals):.4f}",
                     "mw_p": f"{mw_p:.3f}" if np.isfinite(mw_p) else "nan",
+                    "hac_p": f"{hac_p:.3f}" if np.isfinite(hac_p) else "nan",
                     "bh_adj_p": "—",
                     "reject": "—",
                 })
-                if min(n_cond, n_flat) >= _MIN_N_BUCKET and np.isfinite(mw_p):
-                    pvals_for_bh[cell_key] = mw_p
+                # Use HAC p-value (dependence-robust) for the BH family
+                if n_dates >= _MIN_N_BUCKET and np.isfinite(hac_p):
+                    pvals_for_bh[cell_key] = hac_p
 
     bh = _bh_fdr(pvals_for_bh)
     for row in result_rows:
@@ -948,8 +1046,8 @@ def run_doi_h() -> dict[str, Any]:
             row["reject"] = "YES" if bh[cell_key]["reject_h0"] else "no"
 
     cols = ["era", "condition", "horizon", "n_cond", "n_flat",
-            "mean_cond", "mean_flat", "mw_p", "bh_adj_p", "reject"]
-    widths = [6, 10, 8, 7, 7, 12, 12, 8, 10, 8]
+            "mean_cond", "mean_flat", "mw_p", "hac_p", "bh_adj_p", "reject"]
+    widths = [6, 10, 8, 7, 7, 12, 12, 8, 8, 10, 8]
     _print_table(result_rows, cols, widths)
 
     _print_post_decay_commentary("DOI-H", result_rows, "reject", "era")
@@ -1011,8 +1109,8 @@ def _print_post_decay_commentary(study: str, rows: list[dict],
 # BH-FDR global family across all studies
 # ---------------------------------------------------------------------------
 
-def _run_global_bh(all_pvals: dict[str, float]) -> None:
-    """Run global BH-FDR across the full pre-stated family of 52 tests."""
+def _run_global_bh(all_pvals: dict[str, float]) -> dict[str, dict]:
+    """Run global BH-FDR across the full pre-stated family. Returns the bh result dict."""
     _print_section("Global BH-FDR Family (alpha=0.10, pre-stated k=52)")
     print(f"  Cells with n >= {_MIN_N_BUCKET} and valid p-value: {len(all_pvals)}")
     print(f"  Cells excluded (SPARSE / nan): {_BH_FAMILY_K - len(all_pvals)}")
@@ -1020,7 +1118,7 @@ def _run_global_bh(all_pvals: dict[str, float]) -> None:
 
     if not all_pvals:
         print("  No valid p-values to adjust — all cells SPARSE or NULL.")
-        return
+        return {}
 
     bh = _bh_fdr(all_pvals, k_family=_BH_FAMILY_K, alpha=_BH_ALPHA)
 
@@ -1046,14 +1144,20 @@ def _run_global_bh(all_pvals: dict[str, float]) -> None:
     else:
         print("  NOTE: Survivors are context evidence only; Opus stats review required before")
         print("  any verdict is printed. No deployment or scoring permitted.")
+    return bh
 
 
 # ---------------------------------------------------------------------------
 # Summary and appendix
 # ---------------------------------------------------------------------------
 
-def _print_summary(results: dict, elapsed: float) -> None:
-    """Print overall summary memo section."""
+def _print_summary(results: dict, elapsed: float,
+                   global_bh: dict[str, dict] | None = None) -> None:
+    """Print overall summary memo section.
+    global_bh: the single registered global BH result dict (from _run_global_bh).
+    Per-study survivor counts are derived from this global dict, not per-study partial
+    families, to avoid the conflicting-counts issue (minor fix).
+    """
     _print_section("Summary")
     print(f"  Runtime: {elapsed:.1f}s")
     print()
@@ -1081,12 +1185,20 @@ def _print_summary(results: dict, elapsed: float) -> None:
     print("     (23 roots) is thin for rank-IC studies. Single-name breadth (W-E0) is needed")
     print("     before any confident conclusion on CW ivspread or XZZ skew.")
     print()
+    # Per-study survivor counts from the single global BH result (the authoritative family).
+    # Do NOT use per-study partial BH dicts here — they are not the registered family.
     for study_key, res in results.items():
         study = res.get("study", study_key)
         n_pvals = len(res.get("pvals", {}))
-        bh = res.get("bh", {})
-        n_survive = sum(1 for v in bh.values() if v.get("reject_h0")) if bh else 0
-        print(f"  {study}: {n_pvals} valid cells → {n_survive} survive global BH correction")
+        prefix = study.split("-")[0]  # "GEXR", "SKEW", "CWIV", "DOI"
+        if global_bh:
+            n_survive = sum(
+                1 for k, v in global_bh.items()
+                if v.get("reject_h0") and k.startswith(prefix)
+            )
+            print(f"  {study}: {n_pvals} valid cells → {n_survive} survive global BH correction")
+        else:
+            print(f"  {study}: {n_pvals} valid cells (global BH not computed — run with --study all)")
 
 
 # ---------------------------------------------------------------------------
@@ -1136,11 +1248,12 @@ def main() -> None:
         results["DOI-H"] = r
         all_pvals.update(r.get("pvals", {}))
 
+    global_bh: dict[str, dict] = {}
     if args.study == "all":
-        _run_global_bh(all_pvals)
+        global_bh = _run_global_bh(all_pvals)
 
     elapsed = time.time() - t0
-    _print_summary(results, elapsed)
+    _print_summary(results, elapsed, global_bh=global_bh)
 
     print("\n  Opus stats review MANDATORY before any verdict prints.")
     print("  Conclusions are context evidence informing §4 gates only.")

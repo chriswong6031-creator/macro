@@ -289,3 +289,63 @@ def test_preregistration_file_exists():
     assert "0.10" in text
     # Must forbid 3-6mo returns
     assert "3-6" in text or "63-day" in text
+
+
+# ---------------------------------------------------------------------------
+# Test 11 — SKEW BH assignment: exact cell_key match (no cross-target clobber)
+# ---------------------------------------------------------------------------
+
+def test_skew_bh_exact_key_match():
+    """BH result assignment must use exact cell_key, not substring matching.
+    Three cells in the same era+condition with different targets must get
+    independent bh_adj_p / reject values (not all overwritten with one value).
+    """
+    # Build a pvals dict with three SKEW cells sharing era+condition but different targets
+    # and with very different p-values so the distinction is clear.
+    pvals = {
+        "SKEW.Era1.HIGH_RISING.max_dd21": 0.0001,
+        "SKEW.Era1.HIGH_RISING.rel_ret5": 0.9000,
+        "SKEW.Era1.HIGH_RISING.rel_ret21": 0.8500,
+    }
+    bh = g._bh_fdr(pvals, k_family=52, alpha=0.10)
+    # max_dd21 should reject; the other two should not
+    assert bh["SKEW.Era1.HIGH_RISING.max_dd21"]["reject_h0"] is True
+    assert bh["SKEW.Era1.HIGH_RISING.rel_ret5"]["reject_h0"] is False
+    assert bh["SKEW.Era1.HIGH_RISING.rel_ret21"]["reject_h0"] is False
+    # All three must have distinct bh_adj_p values (not the same value)
+    adj_ps = [bh[k]["bh_adj_p"] for k in pvals]
+    assert len(set(adj_ps)) > 1, "BH adj-p must differ across cells with different raw_p"
+
+
+# ---------------------------------------------------------------------------
+# Test 12 — _run_global_bh returns a dict (not None)
+# ---------------------------------------------------------------------------
+
+def test_run_global_bh_returns_dict():
+    """_run_global_bh must return a dict of BH results (used by _print_summary)."""
+    pvals = {"GEXR.Era1.5d": 0.001, "CWIV.Era3.5d": 0.05, "DOI.Era1.OI_UP.10d": 0.9}
+    import io, contextlib
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        result = g._run_global_bh(pvals)
+    assert isinstance(result, dict), "_run_global_bh must return dict"
+    assert len(result) == len(pvals)
+    assert all("reject_h0" in v for v in result.values())
+
+
+# ---------------------------------------------------------------------------
+# Test 13 — Memo documents SC corrections and prereg deviations
+# ---------------------------------------------------------------------------
+
+def test_memo_documents_corrections():
+    """The memo must document the statistical corrections and prereg deviations."""
+    memo = pathlib.Path(__file__).parent.parent / "research/OPTIONS_HISTORY_GAUNTLET_E1.md"
+    text = memo.read_text()
+    # Must have the SC section
+    assert "§Statistical Corrections" in text, "Memo must have §Statistical Corrections section"
+    # Must document the benchmark deviation
+    assert "P-3 AMENDMENT" in text, "Memo must document SKEW benchmark prereg deviation"
+    # Must document the CWIV under-testing
+    assert "secondary test" in text.lower(), "Memo must note secondary test not implemented"
+    # Must acknowledge the anti-conservative blocker
+    assert "anti-conservative" in text.lower() or "pseudo-replication" in text.lower()
