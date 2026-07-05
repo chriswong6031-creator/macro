@@ -1,0 +1,214 @@
+{
+  "definition_version": "v1",
+  "generated_at": "2026-07-05T16:58:56",
+  "date_span": {
+    "start": "2002-01-02",
+    "end": "2026-07-03",
+    "total_rows": 6393
+  },
+  "pit_basis": {
+    "vix": {
+      "source_event_date": "market_close",
+      "known_date": "same_evening (T+0 close); usable at T+1 fill under harness convention",
+      "pit_basis": "same_evening",
+      "note": "VIX close = CBOE publication same evening; no extra shift applied"
+    },
+    "spy_dd126": {
+      "source_event_date": "market_close",
+      "known_date": "same_evening (T+0 close); usable at T+1 fill under harness convention",
+      "pit_basis": "same_evening",
+      "note": "SPY adj-close dividend-adjusted; rolling-126td max drawdown; no extra shift"
+    },
+    "hy_oas": {
+      "source_event_date": "market_close (reference date)",
+      "known_date": "T+1 business day (FRED daily BAMLH0A0HYM2 publishes next business day)",
+      "pit_basis": "+1_business_day",
+      "shift_applied": "+1 business day"
+    },
+    "hy_oas_roc21": {
+      "source_event_date": "market_close",
+      "known_date": "same as hy_oas (+1bd)",
+      "pit_basis": "+1_business_day",
+      "note": "21-trading-day first difference of hy_oas (after shift)"
+    },
+    "hy_oas_pctile_exp": {
+      "source_event_date": "market_close",
+      "known_date": "same as hy_oas (+1bd)",
+      "pit_basis": "+1_business_day",
+      "note": "EXPANDING-window percentile \u2014 no look-ahead; recomputed from shifted series"
+    },
+    "ofr_fsi": {
+      "source_event_date": "OFR publication date",
+      "known_date": "T+1 business day (OFR FSI ~2bd publication lag; conservative T+1)",
+      "pit_basis": "+1_business_day",
+      "shift_applied": "+1 business day"
+    },
+    "ofr_fsi_pctile_exp": {
+      "source_event_date": "OFR publication date",
+      "known_date": "same as ofr_fsi (+1bd)",
+      "pit_basis": "+1_business_day",
+      "note": "EXPANDING-window percentile \u2014 no look-ahead"
+    },
+    "ofr_fsi_mom15": {
+      "source_event_date": "OFR publication date",
+      "known_date": "same as ofr_fsi (+1bd)",
+      "pit_basis": "+1_business_day",
+      "note": "15-trading-day momentum (diff) of ofr_fsi (after shift)"
+    },
+    "stlfsi4_vintage": {
+      "source_event_date": "STLFSI4 reference week (Thursday-ending)",
+      "known_date": "realtime_start (ALFRED initial-release date)",
+      "pit_basis": "alfred_vintage_as_of_join",
+      "coverage_note": "partial_vintage_available_2022-11-17_to_2026-06-10",
+      "note": "STLFSI4 ALFRED-vintaged; local store partial (2022-11-11 onward, 187 rows). Dates before 2022-11-11 are NaN. Full history requires FRED API key + collectors/fred.py fetch_vintages(). NFCI excluded per RUL-23 (re-revises all history, no vintage)."
+    },
+    "macro_m1_fsi_turn": {
+      "source_event_date": "derived from ofr_fsi",
+      "known_date": "same as ofr_fsi (+1bd)",
+      "pit_basis": "+1_business_day",
+      "definition": "ofr_fsi_pctile_exp >= 0.80 AND ofr_fsi_mom15 < 0"
+    },
+    "macro_m2_oas_turn": {
+      "source_event_date": "derived from hy_oas",
+      "known_date": "same as hy_oas (+1bd)",
+      "pit_basis": "+1_business_day",
+      "definition": "hy_oas_pctile_exp >= 0.80 AND hy_oas_roc21 < 0"
+    },
+    "pos_p1_naaim_reset": {
+      "source_event_date": "NAAIM Wednesday survey close",
+      "known_date": "publish_date + 7 calendar days (Thursday publish + 7d)",
+      "pit_basis": "+7_calendar_days",
+      "note": "NAAIM publishes Thursday; 7-day forward lag matches naaim_overlay_phase0.py convention. Forward-filled. Trailing 3y (156 weekly obs) rolling percentile <= 0.20 AND latest > 2-weeks-prior publish. Value NOT visible before publish+7d.",
+      "definition": "trailing_156wk_pctile(naaim_exposure) <= 0.20 AND naaim_exposure > naaim_exposure.shift(2)"
+    },
+    "pos_p2_cot_reset": {
+      "source_event_date": "COT Tuesday as-of",
+      "known_date": "Friday publish date (embedded in store index \u2014 store is Friday-indexed)",
+      "pit_basis": "friday_publish_date",
+      "note": "COT net spec = ES+NDX combined. Forward-filled from Friday publish. No additional lag: Friday publish IS the known_date per RUL-23. 3-day lag to Tuesday as-of already embedded in the published date.",
+      "definition": "trailing_156wk_pctile(cot_es+ndx_net_spec) <= 0.20 AND cot_combined > cot_combined.shift(2)"
+    }
+  },
+  "market_state_label": {
+    "status": "unavailable_v1",
+    "reason": "engine/market_state.py is a point-in-time snapshot engine only \u2014 it requires a live feature frame (latest dict from engine/inputs.py) and has no historical series mode. Reconstruction would require re-deriving the full composite across every date (~23yr \u00d7 daily), which would drift from live due to data updates. Per RUL-24, VIX + SPY-drawdown are the mandatory controls for R1-M; market_state/risk_regime are supplementary and shared-source-excluded for M1/M2 families anyway."
+  },
+  "risk_regime_label": {
+    "status": "unavailable_v1",
+    "reason": "Same as market_state_label \u2014 same snapshot engine (engine/risk_radar.py)."
+  },
+  "frozen_thresholds": {
+    "ofr_fsi_pctile_exp_threshold_m1": 0.8,
+    "hy_oas_pctile_exp_threshold_m2": 0.8,
+    "ofr_fsi_mom15_sign_m1": "< 0",
+    "hy_oas_roc21_sign_m2": "< 0",
+    "ofr_fsi_mom15_window_td": 15,
+    "hy_oas_roc21_window_td": 21,
+    "naaim_pctile_3y_threshold_p1": 0.2,
+    "naaim_pctile_3y_window_wks_p1": 156,
+    "naaim_rising_lag_wks_p1": 2,
+    "naaim_forward_lag_calendar_days": 7,
+    "cot_pctile_3y_threshold_p2": 0.2,
+    "cot_pctile_3y_window_wks_p2": 156,
+    "cot_rising_lag_wks_p2": 2
+  },
+  "column_coverage": {
+    "vix": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    },
+    "spy_dd126": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    },
+    "hy_oas": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    },
+    "hy_oas_roc21": {
+      "non_null": 6373,
+      "total": 6393,
+      "coverage_frac": 0.9969,
+      "first_valid": "2002-01-30",
+      "last_valid": "2026-07-03"
+    },
+    "hy_oas_pctile_exp": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    },
+    "ofr_fsi": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    },
+    "ofr_fsi_pctile_exp": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    },
+    "ofr_fsi_mom15": {
+      "non_null": 6379,
+      "total": 6393,
+      "coverage_frac": 0.9978,
+      "first_valid": "2002-01-22",
+      "last_valid": "2026-07-03"
+    },
+    "stlfsi4_vintage": {
+      "non_null": 947,
+      "total": 6393,
+      "coverage_frac": 0.1481,
+      "first_valid": "2022-11-17",
+      "last_valid": "2026-07-03"
+    },
+    "macro_m1_fsi_turn": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    },
+    "macro_m2_oas_turn": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    },
+    "pos_p1_naaim_reset": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    },
+    "pos_p2_cot_reset": {
+      "non_null": 6393,
+      "total": 6393,
+      "coverage_frac": 1.0,
+      "first_valid": "2002-01-02",
+      "last_valid": "2026-07-03"
+    }
+  },
+  "flag_base_rates": {
+    "macro_m1_fsi_turn": 0.0488,
+    "macro_m2_oas_turn": 0.0432,
+    "pos_p1_naaim_reset": 0.04,
+    "pos_p2_cot_reset": 0.0984
+  }
+}
