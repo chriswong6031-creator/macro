@@ -2421,7 +2421,19 @@ notify:
 # the threshold.  W6b: sender migration (routing existing 11 senders through this
 # spine) follows when this gate is opened and the dedup window is measured.
 alert_push:
-  enabled: false            # OPERATOR GATE: set true only after W6b gauntlet design
+  # W6b OPERATOR GATE — Article-2 event: this converts the display-only priority
+  # score into automated outbound dispatch. RATIONALE: the three migrating senders
+  # (basket_freeze, signal_sanity, healthcheck) already push raw Telegram today with
+  # NO dedup and NO priority floor. Routing them through push_ops_alert() reduces
+  # operator noise strictly — the dedup window + priority floor suppress repeat fires
+  # that would otherwise reach the phone. enabled: false turns off ONLY the
+  # dedup/priority/ledger layer — the migrated ops senders fall back to raw direct
+  # dispatch (ops/liveness alerts are never silenced). enabled: true is the
+  # noise-REDUCED mode (priority floor + 6h dedup). Signal-sentinel migrations
+  # (vector/commodity) are phase 3 and are
+  # NOT enabled here. Per design adjudication 2026-07-04: this IS the Article-2
+  # operator-attention event; it is stated plainly in the W6b PR body.
+  enabled: true
   threshold: 60             # priority floor (0-100); 60 = act/critical or act/major-fresh
   window_hours: 6           # dedup: same (source,type,asset) silenced for N hours after send
 
