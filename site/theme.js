@@ -110,18 +110,42 @@
   // new-tab / modified clicks alone.
   // null-prototype map so an href-derived key can't hit Object.prototype ('constructor', etc.)
   var TERMINAL_PAGES = Object.assign(Object.create(null), { 'stock.html': 1, 'china_lookup.html': 1, 'hk_lookup.html': 1, 'canada_stock.html': 1, 'intl_stock.html': 1 });
+  // The ticker a Terminal-covered analyzer link points at (else null). Shared by the
+  // hover-prefetch and the click-reroute below so the two can never drift.
+  function terminalTicker(a) {
+    if (!a || a.target === '_blank') return null;
+    var href = a.getAttribute('href') || '', h = href.indexOf('#');
+    if (h < 0) return null;
+    var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
+    if (!TERMINAL_PAGES[page]) return null;       // only Terminal-covered analyzers
+    var t = href.slice(h + 1);
+    return t ? decodeURIComponent(t) : null;
+  }
+  // Warm the SPECIFIC destination on hover / touch intent so the click navigation lands
+  // on an already-fetched document (the origin is pre-connected above; this adds the
+  // ?sym= page itself). Deduped per ticker; a failed/uncacheable prefetch is a silent no-op.
+  var _mmPrefetched = Object.create(null);
+  function prefetchTerminal(t) {
+    if (!t || _mmPrefetched[t] || !document.head) return;
+    _mmPrefetched[t] = 1;
+    var l = document.createElement('link');
+    l.rel = 'prefetch'; l.as = 'document'; l.href = terminalUrl(t);
+    document.head.appendChild(l);
+  }
+  ['pointerover', 'touchstart'].forEach(function (evt) {
+    document.addEventListener(evt, function (e) {
+      if (!mmTerminalOn()) return;
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      prefetchTerminal(terminalTicker(a));
+    }, { capture: true, passive: true });
+  });
   document.addEventListener('click', function (e) {
     if (!mmTerminalOn() || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-    if (!a || a.target === '_blank') return;
-    var href = a.getAttribute('href') || '', h = href.indexOf('#');
-    if (h < 0) return;
-    var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
-    if (!TERMINAL_PAGES[page]) return;            // only Terminal-covered analyzers
-    var t = href.slice(h + 1);
+    var t = terminalTicker(a);
     if (!t) return;
     e.preventDefault();
-    location.href = terminalUrl(decodeURIComponent(t));
+    location.href = terminalUrl(t);
   }, true);
 
   /* ---- account / profile panel loader -------------------------------------

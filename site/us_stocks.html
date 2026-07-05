@@ -968,6 +968,12 @@
   .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W9-A sector-capitulating safety chip (display-only; no rank power) */
   .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+  /* W5b liquidity chip (display-only; no rank/gate power) */
+  .nb-liq{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help}
+  .nb-liq.liq-deep{color:var(--up);background:color-mix(in srgb,var(--up) 9%,transparent);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
+  .nb-liq.liq-ok{color:var(--g-cold);background:color-mix(in srgb,var(--g-cold) 9%,transparent);border:1px solid color-mix(in srgb,var(--g-cold) 28%,transparent)}
+  .nb-liq.liq-thin{color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,transparent);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  .nb-liq.liq-illiquid{color:var(--down);background:color-mix(in srgb,var(--down) 9%,transparent);border:1px solid color-mix(in srgb,var(--down) 28%,transparent)}
   /* W2 merge note: chip explanatory copy uses the repo-standard data-tip-en/data-tip-zh
      + theme.js popover (check_title_i18n.py-guarded); the bespoke .nb-chip-pop is retired. */
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
@@ -1862,6 +1868,8 @@
             
             
             
+            
+            
             <span class="nb-px" data-sym="SBUX" data-mkt="us">$104.27</span>
           </div>
           
@@ -1981,6 +1989,8 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $93.19 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $93.19。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
             
             
             
@@ -2116,6 +2126,9 @@
             
             
             
+            
+            
+            <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Communication Services (Equal-Weight). Rank 31/46. Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 通信服务（等权）。排名 31/46。仅供展示，不影响排名。"><span class="l-en">▽ Communication Services (Equal-Weight)</span><span class="l-zh">▽ 通信服务（等权）</span></span>
             
             
             <span class="nb-pulse-heat ph-broken" data-tip-en="Sector theme heat: broken — Communication Services (Equal-Weight). Rank 31/46. Display-only — no ranking power." data-tip-zh="板块主题热度：broken — 通信服务（等权）。排名 31/46。仅供展示，不影响排名。"><span class="l-en">▽ Communication Services (Equal-Weight)</span><span class="l-zh">▽ 通信服务（等权）</span></span>
@@ -2257,6 +2270,8 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 11d · inv $390.93 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期11天 · 止损 $390.93。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
             
             
             
@@ -2410,6 +2425,8 @@
             
             
             
+            
+            
             <span class="nb-px" data-sym="REZI" data-mkt="us">$30.66</span>
           </div>
           
@@ -2537,6 +2554,8 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 11d · inv $61.71 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期11天 · 止损 $61.71。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
             
             
             
@@ -2680,6 +2699,8 @@
             
             
             
+            
+            
             <span class="nb-px" data-sym="FG" data-mkt="us">$27.94</span>
           </div>
           
@@ -2799,6 +2820,8 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $52.01 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $52.01。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
             
             
             
@@ -2943,6 +2966,8 @@
             
             
             
+            
+            
             <span class="nb-px" data-sym="BA" data-mkt="us">$226.49</span>
           </div>
           
@@ -3073,6 +3098,8 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 11d · inv $44.33 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期11天 · 止损 $44.33。仅供参考。"><span class="l-en">Base 11d</span><span class="l-zh">筑底11天</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
             
             
             
@@ -3225,6 +3252,8 @@
             
             
             
+            
+            
             <span class="nb-px" data-sym="RITM" data-mkt="us">$9.09</span>
           </div>
           
@@ -3345,6 +3374,8 @@
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
+            
+            
             
             
             
@@ -3480,6 +3511,8 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 58d · inv $56.47 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期58天 · 止损 $56.47。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
             
             
             
@@ -3624,6 +3657,8 @@
             
             
             
+            
+            
             <span class="nb-px" data-sym="OGE" data-mkt="us">$49.44</span>
           </div>
           
@@ -3752,6 +3787,8 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 18d · inv $70.26 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期18天 · 止损 $70.26。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
             
             
             
@@ -3896,6 +3933,8 @@
             
             
             
+            
+            
             <span class="nb-px" data-sym="NJR" data-mkt="us">$57.49</span>
           </div>
           
@@ -4032,6 +4071,8 @@
             
             
             
+            
+            
             <span class="nb-px" data-sym="CUBE" data-mkt="us">$40.98</span>
           </div>
           
@@ -4151,6 +4192,8 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 9d · inv $101.20 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期9天 · 止损 $101.20。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
             
             
             
@@ -4306,6 +4349,8 @@
             
             
             
+            
+            
             <span class="nb-pulse-heat ph-hot" data-tip-en="Sector theme heat: hot — Financials (Equal-Weight). Rank 7/46. Display-only — no ranking power." data-tip-zh="板块主题热度：hot — 金融（等权）。排名 7/46。仅供展示，不影响排名。"><span class="l-en">▲ Financials (Equal-Weight)</span><span class="l-zh">▲ 金融（等权）</span></span>
             
             <span class="nb-px" data-sym="COIN" data-mkt="us">$165.48</span>
@@ -4436,6 +4481,8 @@
             
             
             <span class="nb-lane lane-trend" data-tip-en="Trend lane — weekly/3-day/daily cycle aligned to the upside (the board's classic admission)." data-tip-zh="趋势通道——周线/3日/日线周期向上共振（看板经典准入条件）。"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
+            
+            
             
             
             
@@ -4579,6 +4626,8 @@
             <span class="nb-ent ent-lag" data-tip-en="Sector-neutral momentum is negative — this name is currently a sector laggard. Context, not a veto." data-tip-zh="行业中性动量为负——该标的目前是板块落后者。仅为背景信息，非否决条件。"><span class="l-en">α laggard</span><span class="l-zh">α 落后</span></span>
             
             <span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>
+            
+            
             
             
             
