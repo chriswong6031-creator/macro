@@ -80,8 +80,8 @@ def test_reflex_log_shape():
     assert "n_mirroring" in rl
     assert "per_reflex" in rl
     assert isinstance(rl["per_reflex"], list)
-    # should have the 16 reflexes defined in config/reflexes.yml
-    assert rl["n_registered"] == 16
+    # should have the 17 reflexes defined in config/reflexes.yml
+    assert rl["n_registered"] == 17
 
 
 def test_bus_graph_shape():
