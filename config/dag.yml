@@ -83,6 +83,7 @@ lanes:
             - scripts.build_options_flow
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_darkpool_desk
           cl_baskets:
             - scripts.build_baskets
             - scripts.build_subsector_confluence
