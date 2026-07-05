@@ -36,15 +36,15 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-
-import pytz  # type: ignore[import-untyped]
+from zoneinfo import ZoneInfo
 
 from lib import config
 
 log = logging.getLogger(__name__)
 
 # ── constants ─────────────────────────────────────────────────────────────────
-ET = pytz.timezone("America/New_York")
+# Stdlib zoneinfo (repo convention, e.g. engine/options_flow.py) — no pytz dependency.
+ET = ZoneInfo("America/New_York")
 PROBE_ROOT   = "SPY"        # root used for delta_mode probe
 PROBE_WINDOW = 90           # seconds to subtract from "now" for time-windowed probe
 ARCHIVE_HOUR_CADENCE = 3600  # write hourly archive every ~3600s
