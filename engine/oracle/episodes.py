@@ -636,6 +636,30 @@ def _parse_complex_map(rotation_groups: dict | None) -> dict[str, str]:
     return out
 
 
+def _build_etf_complex_sets() -> dict[str, frozenset[str]]:
+    """Return ETF-node → frozenset of complex-ids via COMPLEX_ETF_MAP.
+
+    Ruling XR-PAIR: Tier-S ETF nodes (e.g. XLK ∈ {ai_compute, software}) map
+    via union semantics — they participate in ALL complexes listed for them.
+    Mirrors the compounds.py precedent (_build_complex_index).
+
+    Returns {} if COMPLEX_ETF_MAP is unavailable (graceful degrade).
+    """
+    try:
+        from engine.oracle.graph import COMPLEX_ETF_MAP
+    except ImportError:
+        log.warning("_build_etf_complex_sets: could not import COMPLEX_ETF_MAP from engine.oracle.graph")
+        return {}
+
+    etf_sets: dict[str, frozenset[str]] = {}
+    for complex_id, etf_list in COMPLEX_ETF_MAP.items():
+        for etf in etf_list:
+            if isinstance(etf, str) and isinstance(complex_id, str):
+                existing = etf_sets.get(etf, frozenset())
+                etf_sets[etf] = existing | {complex_id}
+    return etf_sets
+
+
 def _pair_episodes(
     episodes_df: pd.DataFrame,
     rotation_groups: dict | None,
@@ -652,6 +676,12 @@ def _pair_episodes(
     two_sided_min_cohesion on BOTH legs (a one-name move is not a complex
     rotation), and ≥ two_sided_min_overlap_sessions of overlap counted in
     TRADING SESSIONS via date_index (calendar days overstate ~5/7).
+
+    Tier-S ETF nodes (XLK, XLV, etc.) are mapped via COMPLEX_ETF_MAP from
+    engine.oracle.graph.  Multi-complex ETFs (e.g. XLK ∈ {ai_compute,
+    software}) use UNION semantics (ruling XR-PAIR / compounds.py precedent):
+    they can pair with any complex they belong to as long as the counterpart
+    belongs to a DIFFERENT complex.
 
     When rotation_groups is absent/unparseable there is NO fallback:
     two_sided stays pd.NA, pairing_unavailable=True, and the Atlas prints a
@@ -671,6 +701,27 @@ def _pair_episodes(
         df["paired_episode_id"] = None
         df["pairing_unavailable"] = True
         return df
+
+    # Ruling XR-PAIR: overlay Tier-S ETF nodes via COMPLEX_ETF_MAP.
+    # rotation_groups.json members are subsector slugs (83 nodes); Tier-S ETF
+    # nodes (XLK, XLV, etc.) are absent from that file.  COMPLEX_ETF_MAP is
+    # the registered Tier-S join — mirror the compounds.py precedent
+    # (_build_complex_index).  Multi-complex ETFs (XLK ∈ {ai_compute, software};
+    # XLB ∈ {energy_commodities, short_duration_value}) use UNION semantics:
+    # they participate in ALL listed complexes.
+    etf_complex_sets: dict[str, frozenset[str]] = _build_etf_complex_sets()
+
+    # Build node → frozenset[str] for all nodes.
+    # Subsector (tier-M) nodes: frozenset has exactly one element from rotation_groups.json.
+    # Tier-S ETF nodes: frozenset may have >1 element (XLK, XLB).
+    node_to_complexes: dict[str, frozenset[str]] = {}
+    all_nodes = set(node_to_complex) | set(etf_complex_sets)
+    for n in all_nodes:
+        s1 = frozenset({node_to_complex[n]}) if n in node_to_complex else frozenset()
+        s2 = etf_complex_sets.get(n, frozenset())
+        merged = s1 | s2
+        if merged:
+            node_to_complexes[n] = merged
 
     min_overlap = cfg["two_sided_min_overlap_sessions"]
     min_cohesion = cfg["two_sided_min_cohesion"]
@@ -696,6 +747,25 @@ def _pair_episodes(
     def _coh_ok(v) -> bool:
         return v is not None and not pd.isnull(v) and float(v) >= min_cohesion
 
+    def _cross_complex(node_a: str, node_b: str) -> bool:
+        """True iff node_a and node_b belong to at least one DIFFERENT complex pair.
+
+        Union semantics (ruling XR-PAIR): an ETF in {ai_compute, software} can
+        pair with any node NOT in all of its complexes.  Concretely: if the OUT
+        node's complex-set and the IN node's complex-set are NOT identical (i.e.
+        there exists at least one complex of the OUT node that is NOT in the IN
+        node's set), pairing is permitted.  This is equivalent to: the two sets
+        are not subsets of each other in both directions — i.e. they have at
+        least one element that differs.
+        """
+        ca = node_to_complexes.get(node_a)
+        cb = node_to_complexes.get(node_b)
+        if not ca or not cb:
+            return False
+        # "Different complex" = the two sets are not equal (at least one complex
+        # differs).  Equal sets (e.g. both XLK × XLK) = same-complex churn.
+        return ca != cb
+
     in_eps = df[df["direction"] == _DIR_IN]
     out_eps = df[df["direction"] == _DIR_OUT]
     paired_ids: set[str] = set()
@@ -703,19 +773,18 @@ def _pair_episodes(
     for in_row in in_eps.itertuples():
         if in_row.episode_id in paired_ids:
             continue
-        in_complex = node_to_complex.get(in_row.node)
-        if in_complex is None or not _coh_ok(in_row.cohesion_at_onset):
+        if in_row.node not in node_to_complexes or not _coh_ok(in_row.cohesion_at_onset):
             continue
 
         in_start = in_row.onset_date
         _exhausted = in_row.exhausted_date
         in_end = _exhausted if (_exhausted is not None and not pd.isnull(_exhausted)) else _open_end
 
-        # Candidates: OUT episodes on a node mapped to a DIFFERENT complex,
+        # Candidates: OUT episodes on a node mapped to a DIFFERENT complex set,
         # cohesion-qualified, not yet paired.
         cand_mask = (
-            out_eps["node"].map(node_to_complex).notna()
-            & (out_eps["node"].map(node_to_complex) != in_complex)
+            out_eps["node"].isin(node_to_complexes)
+            & out_eps["node"].map(lambda n: _cross_complex(in_row.node, n)).astype(bool)
             & (~out_eps["episode_id"].isin(paired_ids))
             & out_eps["cohesion_at_onset"].apply(_coh_ok)
         )
