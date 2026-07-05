@@ -93,6 +93,11 @@ _READ_TOOLS = frozenset({
     "read_contradictions",
     "read_governance",
     "read_artifact",
+    # Options→NW W-B (RO-7): read-only options entry state tools
+    "read_options_entry_state",
+    "explain_options_context",
+    "query_options_confluence",
+    "list_options_contradictions",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -556,6 +561,125 @@ def _tool_stake_hypothesis(root: Path, params: dict, now_str: str) -> dict:
 # Tool dispatcher (A7 guard)
 # ---------------------------------------------------------------------------
 
+def _read_options_state(root: Path):
+    """Shared loader for the options entry state table (display-tier snapshot)."""
+    p = _data(root, "options_entry", "state.parquet")
+    if not p.exists():
+        return None, "options_entry/state.parquet absent"
+    try:
+        import pandas as pd  # noqa: PLC0415
+        return pd.read_parquet(p), None
+    except Exception as exc:  # noqa: BLE001
+        return None, f"options_entry/state.parquet unreadable: {exc}"
+
+
+_OPTIONS_ROW_CAP = 100
+
+
+def _tool_read_options_entry_state(root: Path, params: dict) -> dict:
+    """Read the options entry state snapshot (RO-7). Raw fields only — the table
+    carries NO composites (RO-2); rows sort alphabetically to avoid implying rank."""
+    df, err = _read_options_state(root)
+    if df is None:
+        return {"rows": [], "error": err}
+    ticker = params.get("ticker")
+    if ticker:
+        df = df[df["ticker"] == str(ticker).upper()]
+    top_n = min(int(params.get("top_n") or 25), _OPTIONS_ROW_CAP)
+    df = df.sort_values("ticker").head(top_n)
+    rows = json.loads(df.to_json(orient="records"))
+    return {"rows": rows, "n_total": int(len(df)),
+            "note": "display-tier raw fields; iv_rank_* structurally null (A9); "
+                    "gamma_regime structurally constant per name (audit #29)"}
+
+
+def _tool_explain_options_context(root: Path, params: dict) -> dict:
+    """Plain-language render of one ticker's options state, with caveats (RO-7)."""
+    ticker = str(params.get("ticker") or "").upper()
+    if not ticker:
+        return {"error": "ticker required"}
+    df, err = _read_options_state(root)
+    if df is None:
+        return {"error": err}
+    sub = df[df["ticker"] == ticker]
+    if sub.empty:
+        return {"ticker": ticker, "note": "no options state row (thin/absent coverage)"}
+    r = json.loads(sub.iloc[[0]].to_json(orient="records"))[0]
+    lines: list[str] = []
+    if r.get("gex_confirm_verdict"):
+        lines.append(f"GEX structure verdict: {r['gex_confirm_verdict']} (display-only).")
+    if r.get("gamma_regime"):
+        lines.append(
+            f"Gamma regime {r['gamma_regime']} — CAVEAT: structurally constant per name "
+            "(audit #29); do not read as time-varying.")
+    if r.get("skew") is not None:
+        d = r.get("skew_5d_chg")
+        lines.append(f"OTM-put skew {r['skew']:.4f}"
+                     + (f", 5d change {d:+.4f}" if d is not None else " (5d change null)") + ".")
+    if r.get("ivspread_rel") is not None:
+        lines.append(f"CW ivspread {r['ivspread_rel']:+.4f} (relative; >0 = calls rich).")
+    if r.get("pin_risk"):
+        lines.append(f"PIN RISK: within 2% of a wall/max-pain with long gamma, "
+                     f"opex in {r.get('opex_days')}d.")
+    lines.append(f"Evidence quality: {r.get('evidence_quality')}; iv_rank fields are "
+                 "structurally null until the A9 IV-backfill lands.")
+    return {"ticker": ticker, "state": r, "plain_english": lines,
+            "mandate": "display/context only — no score, no rank, no origination (Article 1)"}
+
+
+def _tool_query_options_confluence(root: Path, params: dict) -> dict:
+    """Options edges from the display-only confluence graph (RO-7)."""
+    p = _data(root, "neuralweb", "confluence_graph.json")
+    try:
+        graph = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {"edges": [], "error": f"confluence_graph unreadable: {exc}"}
+    edges = [e for e in graph.get("edges", [])
+             if str(e.get("src", "")).startswith("options.")]
+    ticker = params.get("ticker")
+    if ticker:
+        t = str(ticker).upper()
+        edges = [e for e in edges if t in str(e.get("note", ""))]
+    return {"edges": edges, "display_only": True}
+
+
+def _tool_list_options_contradictions(root: Path, _params: dict) -> dict:
+    """Buy-lane names whose options state contradicts the long thesis (RO-7).
+    Reads display surfaces only: state.parquet + latest board lane membership."""
+    df, err = _read_options_state(root)
+    if df is None:
+        return {"contradictions": [], "error": err}
+    lp = _data(root, "us_board_ledger", "retro_grades.parquet")
+    if not lp.exists():
+        return {"contradictions": [], "error": "us_board_ledger absent"}
+    try:
+        import pandas as pd  # noqa: PLC0415
+        board = pd.read_parquet(lp, columns=["as_of", "ticker", "lane"])
+        latest = board["as_of"].max()
+        buys = set(board[(board["as_of"] == latest) & (board["lane"] == "buy")]["ticker"])
+    except Exception as exc:  # noqa: BLE001
+        return {"contradictions": [], "error": f"board read failed: {exc}"}
+    out: list[dict] = []
+    st = df.set_index("ticker")
+    for t in sorted(buys):
+        if t not in st.index:
+            continue
+        r = st.loc[t]
+        reasons: list[str] = []
+        try:
+            if r.get("skew_5d_chg") is not None and float(r["skew_5d_chg"]) > 0:
+                reasons.append("OTM-put skew rising over 5d")
+            if r.get("ivspread_rel") is not None and float(r["ivspread_rel"]) < 0:
+                reasons.append("matched puts rich vs calls (ivspread<0)")
+        except Exception:  # noqa: BLE001
+            continue
+        if reasons:
+            out.append({"ticker": t, "reasons": reasons})
+    return {"as_of_board": str(latest), "contradictions": out,
+            "display_only": True,
+            "mandate": "de-escalation context only; never a short signal (RO-3)"}
+
+
 def dispatch_tool(
     tool_name: str,
     tool_params: dict,
@@ -586,6 +710,14 @@ def dispatch_tool(
         return _tool_read_governance(root, tool_params)
     elif tool_name == "read_artifact":
         return _tool_read_artifact(root, tool_params)
+    elif tool_name == "read_options_entry_state":
+        return _tool_read_options_entry_state(root, tool_params)
+    elif tool_name == "explain_options_context":
+        return _tool_explain_options_context(root, tool_params)
+    elif tool_name == "query_options_confluence":
+        return _tool_query_options_confluence(root, tool_params)
+    elif tool_name == "list_options_contradictions":
+        return _tool_list_options_contradictions(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -605,6 +737,41 @@ def _tool_schemas() -> list[dict]:
         {
             "name": "read_world_state",
             "description": "Read data/neuralweb/world_state.json — the N1 blackboard with verdict, regime, breadth, rotation, alerts summary.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        {
+            "name": "read_options_entry_state",
+            "description": "Read data/options_entry/state.parquet — display-tier per-ticker options state (raw fields only, no composites). Alphabetical order; optional ticker filter.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "ticker": {"type": "string", "description": "Optional: single ticker"},
+                    "top_n": {"type": "integer", "description": "Row cap (default 25, max 100)"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "explain_options_context",
+            "description": "Plain-language render of one ticker's options entry state with caveats (A9 nulls, gamma structurally-constant, evidence quality). Display/context only.",
+            "input_schema": {
+                "type": "object",
+                "properties": {"ticker": {"type": "string", "description": "Ticker symbol"}},
+                "required": ["ticker"],
+            },
+        },
+        {
+            "name": "query_options_confluence",
+            "description": "Display-only options edges from the confluence graph (confirms/contradicts vs board lanes). Optional ticker filter against edge notes.",
+            "input_schema": {
+                "type": "object",
+                "properties": {"ticker": {"type": "string", "description": "Optional ticker"}},
+                "required": [],
+            },
+        },
+        {
+            "name": "list_options_contradictions",
+            "description": "Buy-lane names whose options state contradicts the long thesis (skew rising / puts rich). De-escalation context only — never a short signal.",
             "input_schema": {"type": "object", "properties": {}, "required": []},
         },
         {
