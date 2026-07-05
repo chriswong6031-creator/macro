@@ -178,12 +178,8 @@ def _compute_ticker_stats(panel: pd.DataFrame, yahoo_vol: dict[str, pd.Series]) 
     return rows
 
 
-def _sector_rollup(ticker_stats: list[dict]) -> list[dict]:
-    """Simple sector rollup: group by first-letter sector proxy.
-
-    Without an external sector mapping, we rely on sector ETF names.
-    Returns top N names by off-exchange share for a high-level view.
-    """
+def _sort_ticker_stats(ticker_stats: list[dict]) -> list[dict]:
+    """Sort ticker rows by off-exchange share (desc), then by short_ratio (desc) for rows without share data."""
     # Sort by oe_share desc (those with data), then by short_ratio
     with_share = [r for r in ticker_stats if r["oe_share"] is not None]
     without_share = [r for r in ticker_stats if r["oe_share"] is None]
@@ -226,7 +222,20 @@ def main() -> int:
     cfg = config.load()
     dp_cfg = cfg.get("darkpool", {}) or {}
     if not dp_cfg.get("enabled", True):
-        log.info("darkpool.enabled=false in config — skipping page build")
+        log.info("darkpool.enabled=false in config — writing disabled stub (noindex + banner)")
+        site = config.ROOT / "site"
+        site.mkdir(parents=True, exist_ok=True)
+        stub_html = (
+            "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>"
+            "<meta name='robots' content='noindex,nofollow'>"
+            "<title>Dark Pool Desk — disabled</title>"
+            "<link rel='stylesheet' href='theme.css'></head>"
+            "<body style='padding:40px;font-family:system-ui,sans-serif'>"
+            "<h1>Dark Pool Desk</h1>"
+            "<p style='color:var(--muted,#888)'>This feature is currently disabled.</p>"
+            "</body></html>"
+        )
+        write_page(site / "darkpool.html", stub_html)
         return 0
 
     # Load panel
@@ -258,7 +267,7 @@ def main() -> int:
 
     # Compute per-name stats
     ticker_stats = _compute_ticker_stats(panel_universe, yahoo_vol)
-    ticker_stats = _sector_rollup(ticker_stats)
+    ticker_stats = _sort_ticker_stats(ticker_stats)
 
     # Cap table for rendering
     table_rows = ticker_stats[:TABLE_CAP]
