@@ -1,0 +1,82 @@
+# Oracle Compound Gauntlet — Round 1 (washout-stress cluster)
+
+**Date:** 2026-07-04 · **Harness:** `scripts/oracle_gauntlet_compound.py` ·
+**Status:** first-pass OOS + timing-placebo gauntlet. This is a Tier-1.5 bridge,
+**not** the canonical P3 pre-registration. A PASS here is a promotion candidate
+pending the formal P3 gauntlet; it does not license a "gauntleted" claim in
+user-facing surfaces.
+
+## Context
+
+Four brainstorm rounds (44 screened compounds) established that the tier-S
+participation-state basin is dead and the **washout × active-flow-stress** basin
+is live (see `research/ORACLE_COMPOUND_LIBRARY.md` and the trial ledger). Five
+compounds cleared the mechanical promotion floor (A9, A15, A16, A17, C6). This
+round subjects the two headline candidates plus A9 to an out-of-sample and
+placebo test — the question the in-sample screen cannot answer.
+
+## Pre-registered criteria (frozen before computing holdout stats)
+
+- **G1 — OOS holdout** (split 2019-12-31): holdout `effect_63d` same sign as
+  dev, holdout `hit_63d` ≥ 0.52, holdout `n` ≥ 100.
+- **G2 — per-era persistence:** ≥ 3 of 4 eras with positive real mean (n≥20/era).
+- **G3 — timing placebo:** real mean₆₃ > 95th pctile of 500 random-timing draws
+  (per-node count-matched resample of that node's realizable 63d outcomes).
+- **PASS = G1 ∧ G2 ∧ G3.**
+
+Reused verbatim from `oracle_screen.py`: `get_entry_dates` (grammar firewall)
+and `_compute_forward_returns` (as-of-t stored forward RS). No new forward math.
+
+## Results
+
+| id | rule (washout_w>0 ×…) | n | eff₆₃ | dev≤2019 | **holdout>2019** | eras+ | placebo p | verdict |
+|---|---|---|---|---|---|---|---|---|
+| **A15** | ≥2 opposite-complex outflow nodes | 2351 | +1.30% | +1.35% | **+1.19% / 53.4% / n=663** | **4/4** | 0.000 | **PASS** |
+| A9 | ≥2 same-complex outflow nodes | 438 | +1.06% | +0.13% | +2.27% / 65.4% / n=191 | 3/4 | 0.000 | PASS (lumpy) |
+| A17 | same-complex outflow + vel_1w<0 | 262 | +1.68% | −0.03% | +3.83% / 71.6% / n=116 | 3/4 | 0.000 | **FAIL (G1)** |
+
+### A15 — clean pass, the lead candidate
+Per-era effect is nearly constant for 27 years: **+1.42% / +1.07% / +1.25% /
++1.12%** (1999-2014 / 2015-2019 / 2020-2022 / 2023-2026). Dev +1.35% → holdout
++1.19% — the edge held at almost identical magnitude on data it was never fit
+to. Placebo: random washout-day entries average +0.08%; requiring ≥2
+opposite-complex outflow nodes lifts it to +1.30% (p=0.000).
+
+### A17 — fails, and this is the point of the gauntlet
+Its headline +1.68% (the largest of the cluster) is **entirely a recent-regime
+effect**: 1999-2014 was *negative* (−0.92%, 40% hit), the dev period is flat
+(−0.03%), and all the return is post-2019. The screen ranked A17 first by
+effect; the OOS split correctly demotes it. Chasing the biggest number would
+have selected the overfit rule.
+
+### A9 — passes but recent-loaded
+Also negative in 1999-2014 (−1.35%) with a flat dev period (+0.13%). Passes G1
+on the letter (holdout positive, hit>52%, n>100) but lacks A15's time-stability.
+
+## Read
+
+The gauntlet **reversed the screen ranking** (screen: A17 > A15 > A9 by effect;
+gauntlet: A15 durable, A9 lumpy, A17 overfit). **A15** — buy a sector in weekly
+capitulation when ≥2 nodes of the opposite risk complex are simultaneously
+seeing outflow onset — is the only candidate with a time-stable, out-of-sample
+edge. Mechanism: rotation-driven mean reversion (local capitulation coincident
+with active displacement from the opposite risk pole).
+
+**Guardrails:** effect is modest (~+1.3% 63d excess, ~57% hit) — a tilt, not a
+fortune, net of costs on liquid sector ETFs. A15 is 1 of 44 screened, but OOS
+magnitude-stability + p=0.000 + 4/4 flat-magnitude eras far exceed a
+multiple-testing artifact. This first-pass gauntlet omits the P3 refinements
+(regime-matched direction-adjusted placebo, BH correction, bootstrap CIs).
+
+## Next step
+
+Take **A15** to the formal P3-style pre-registration to earn the CI-gated
+label. A17 is fenced as an OOS-fail (recent-regime); do not re-propose. A9
+remains a secondary, weaker candidate.
+
+Reproduce:
+```
+python -m scripts.oracle_gauntlet_compound \
+    --ids A15_WASHOUT_OPP_OUT_2NODE A9_WASHOUT_SAME_OUTFLOW_DENSE A17_WASHOUT_SAME_OUT_NEG_VEL \
+    --data-dir data --compounds-dir data/oracle/compounds
+```
