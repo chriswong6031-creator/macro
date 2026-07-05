@@ -809,18 +809,25 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.notify
-      - name: push priority alerts (W6a — config-gated OFF; no-op until operator enables)
-        # Neural Web W6a: push high-priority alerts above `alert_push.threshold` (default 60)
+      - name: push priority alerts (W6b — ops-tier push spine ENABLED; operator Article-2 event 2026-07-04)
+        # Neural Web W6b: push high-priority alerts above `alert_push.threshold` (default 60)
         # through Telegram/Discord with a dedup window (`alert_push.window_hours`).
-        # Gate: `alert_push.enabled: false` in config.yml — a pure no-op until an operator
-        # explicitly flips it (Article-2 event: priority inputs may never be raised by a model).
-        # Dedup store: data/alert_triage/push_sent.jsonl (single-writer, append-only).
+        # Gate: `alert_push.enabled: true` in config.yml (W6b operator decision — see comment
+        # block there). The three migrating senders (basket_freeze, signal_sanity, healthcheck)
+        # already push raw Telegram today with NO dedup; routing them through push_ops_alert()
+        # reduces operator noise strictly (dedup window + per-lane ledgers suppress repeat fires).
+        # The operator can disable at any time by setting alert_push.enabled: false.
+        # Dedup stores: data/alert_triage/push_sent.jsonl (priority lane) +
+        #   data/alert_triage/push_sent_basket_freeze.jsonl (single-writer: basket_freeze lane)
+        #   data/alert_triage/push_sent_signal_sanity.jsonl (single-writer: signal_sanity lane)
+        #   data/alert_triage/push_sent_healthcheck.jsonl   (single-writer: heartbeat lane)
         # Resilient: always exits 0 — a dispatch error never blocks the daily build.
+        # Signal-sentinel migrations (vector/commodity) are phase 3 — not in this step.
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python -m scripts.push_alerts || echo "::warning::push_alerts failed (non-fatal — push spine is gated off by default)"
+        run: python -m scripts.push_alerts || echo "::warning::push_alerts failed (non-fatal)"
       - name: archive signal layer (append-only point-in-time model outputs; resilient)
         # LAST data-producing step: append today's latest.json / bond_health.json /
         # regime_snap.json / forex + commodity reads to data/signal_archive/<label>.parquet
@@ -889,6 +896,14 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ site/ reports/
+          # W6b per-lane push dedup ledgers: covered by 'git add data/' above since
+          # data/alert_triage/ is under data/. Explicit add as staging-law documentation:
+          # basket_freeze lane (single-writer: engine/basket_freeze.py),
+          # signal_sanity lane (single-writer: scripts/signal_sanity.py),
+          # healthcheck lane (single-writer: scripts/healthcheck.py).
+          # SENTINEL STAGING LAW: all three per-lane JSONL paths are synapse-registered
+          # (ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck).
+          git add data/alert_triage/ 2>/dev/null || true
           # LLM stock briefs (site/stockbrief) are gitignored for local-dev cleanliness
           # but must be TRACKED on main so the committed-tree deploy (pages.yml) ships
           # them — same as the force-tracked stock-search libraries. -f overrides the

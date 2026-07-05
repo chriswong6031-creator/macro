@@ -618,23 +618,42 @@ def build_triage(days: int = 30, today: date | None = None,
 
 
 # ---------------------------------------------------------------------------
-# PUSH SPINE — Neural Web W6a (config-gated OFF by default)
+# PUSH SPINE — Neural Web W6a/W6b
 # ---------------------------------------------------------------------------
-# Article-2 surface: priority inputs are unvalidated hand-weights. This function
-# is CONFIG-GATED (alert_push.enabled=false by default). Enabling it is an
-# operator event — it changes a display-only priority score into automated
-# outbound dispatch. Per Article 2: no ranking/priority surface may RAISE a
-# score without SHADOW-with-track-record tier. This function never raises scores;
-# it only dispatches alerts that already cleared the priority threshold.
+# Article-2 surface: priority inputs are unvalidated hand-weights. These
+# functions are CONFIG-GATED (alert_push.enabled=false by default in W6a;
+# enabled=true in W6b — operator decision, see config.yml comment block).
+# Enabling is an operator event — it converts a display-only priority score
+# into automated outbound dispatch. Per Article 2: no ranking/priority surface
+# may RAISE a score without SHADOW-with-track-record tier. These functions
+# never raise scores; they only dispatch alerts that already cleared the floor.
 #
-# W6b: sender migration (routing existing senders through this spine) follows
-# in a subsequent PR. No existing sender is modified in W6a.
+# W6b DESIGN: per-lane dedup stores (push_sent_<lane>.jsonl) preserve single-
+# writer law per file. The dedup window check reads ALL stores (read-many,
+# write-one). This means basket_freeze, signal_sanity, and healthcheck each
+# own their own ledger file and are the SOLE writer to that file — no race,
+# no lock needed. push_priority_alerts() continues to use push_sent.jsonl
+# (the original lane). The dedup check for ops alerts reads all push_sent*
+# files so cross-lane duplicates are also suppressed.
 #
 # WHITEHOUSE: the whitehouse pattern (single-writer hourly sentinel) is SACRED
-# and is NOT migrated here. It remains untouched until W6b scopes the migration
-# explicitly. This function never reads data/whitehouse/alerts.jsonl.
+# and is NOT migrated here. It remains untouched. push_ops_alert() never
+# reads data/whitehouse/alerts.jsonl.
+#
+# SIGNAL SENTINELS (vector/commodity): PHASE 3 — not migrated in this PR.
+# They have existing dedup; the migration would add priority context only.
+# Noted as follow-up in the W6b masterplan entry.
 
 _PUSH_SENT_PATH = "alert_triage/push_sent.jsonl"  # relative to data_dir()
+
+# Per-lane ledger file names (relative to data/alert_triage/).
+# Each lane is the SOLE writer to its own file (single-writer law per file).
+# The dedup check reads all of them (read-many, write-one).
+_OPS_LANES: dict[str, str] = {
+    "basket_freeze": "push_sent_basket_freeze.jsonl",
+    "signal_sanity": "push_sent_signal_sanity.jsonl",
+    "healthcheck": "push_sent_healthcheck.jsonl",
+}
 
 
 def _push_sent_path(root: Path | str | None = None) -> Path:
@@ -832,3 +851,176 @@ def push_priority_alerts(
                      a.get("source"), a.get("type"))
 
     return dispatched
+
+
+# ---------------------------------------------------------------------------
+# OPS-TIER PUSH ADAPTER — Neural Web W6b
+# ---------------------------------------------------------------------------
+# push_ops_alert() is the single entry point for ops-tier senders
+# (basket_freeze, signal_sanity, healthcheck) that previously called
+# send_telegram/send_discord directly with no dedup and no priority floor.
+#
+# DESIGN INVARIANTS:
+# 1. CONFIG-GATED: same alert_push.enabled gate as push_priority_alerts().
+#    When disabled → pure no-op (returns False). No fallback to direct send.
+# 2. PER-LANE SINGLE-WRITER: the caller names its lane; the dedup record is
+#    appended ONLY to data/alert_triage/push_sent_<lane>.jsonl. Single-writer
+#    law per file is preserved. No lock needed.
+# 3. DEDUP WINDOW: before dispatch, reads ALL push_sent*.jsonl files (the
+#    original push_sent.jsonl + all per-lane files) so cross-lane duplicates
+#    are also suppressed within the window_hours window.
+# 4. MESSAGE PRESERVED: the caller supplies the message text verbatim; no
+#    content rewriting. The ops message is wrapped in a minimal envelope only
+#    for the dedup key (source + type_ + "").
+# 5. NEVER RAISES: always returns bool; exceptions are logged, never re-raised.
+# 6. WHITEHOUSE UNTOUCHED: this function never reads whitehouse/ or calls any
+#    whitehouse-specific path.
+
+def _ops_lane_path(lane: str, root: Path | str | None = None) -> Path:
+    """Return path to per-lane dedup store for `lane`."""
+    fname = _OPS_LANES.get(lane, f"push_sent_{lane}.jsonl")
+    if root is not None:
+        return Path(root) / "data" / "alert_triage" / fname
+    return config.data_dir() / "alert_triage" / fname
+
+
+def _load_recent_sends_all_lanes(
+    window_hours: int,
+    now: datetime,
+    root: Path | str | None = None,
+) -> set[tuple[str, str, str]]:
+    """Load (source, type, asset) dedup keys from ALL push_sent* files.
+
+    This is read-many: it scans push_sent.jsonl plus every per-lane file so
+    cross-lane duplicates are suppressed. Each file is still written by exactly
+    one lane (single-writer per file).
+    """
+    base = config.data_dir() if root is None else Path(root) / "data"
+    triage_dir = base / "alert_triage"
+    seen: set[tuple[str, str, str]] = set()
+    if not triage_dir.exists():
+        return seen
+    # Collect all push_sent* files (the original + per-lane)
+    store_paths = list(triage_dir.glob("push_sent*.jsonl"))
+    for p in store_paths:
+        seen |= _load_recent_sends(p, window_hours, now)
+    return seen
+
+
+def push_ops_alert(
+    source: str,
+    type_: str,
+    message: str,
+    severity: str = "major",
+    lane: str = "",
+    window_hours: int | None = None,
+    root: Path | str | None = None,
+    _now: datetime | None = None,
+    _dedup_store: Path | None = None,
+) -> bool:
+    """Dispatch a single ops-tier alert through the push spine.
+
+    This is the W6b adapter for senders that previously called send_telegram/
+    send_discord directly. It applies the config-gate, per-lane dedup, and
+    dispatches via the same channels as push_priority_alerts().
+
+    Parameters
+    ----------
+    source:
+        Alert source identifier (e.g. "basket_freeze", "signal_sanity",
+        "healthcheck"). Used as the dedup key component.
+    type_:
+        Alert type within the source (e.g. "churn_guard", "tripwire_failed",
+        "heartbeat_failed"). Used as the dedup key component.
+    message:
+        The human-readable message text to dispatch verbatim.
+    severity:
+        "critical", "major", or "minor". Used only for logging; does not gate
+        dispatch (the config threshold applies).
+    lane:
+        The per-lane ledger name (one of: "basket_freeze", "signal_sanity",
+        "healthcheck"). Determines which push_sent_<lane>.jsonl is written.
+        Defaults to source if empty.
+    window_hours:
+        Dedup window override (hours). If None, reads from config
+        alert_push.window_hours (default 6).
+    root:
+        Repo root override (used in tests).
+    _now:
+        datetime override (used in tests).
+    _dedup_store:
+        Explicit dedup store path override (used in tests; overrides lane
+        resolution).
+
+    Returns
+    -------
+    bool
+        True if dispatched on at least one channel, False otherwise.
+
+    Never raises — always returns bool.
+    """
+    # --- CONFIG GATE --------------------------------------------------------
+    try:
+        cfg = config.load()
+        push_cfg = cfg.get("alert_push") or {}
+        if not push_cfg.get("enabled", False):
+            log.debug("push_ops_alert(%s/%s): disabled (alert_push.enabled=false)", source, type_)
+            return False
+        _window_hours = window_hours if window_hours is not None else int(push_cfg.get("window_hours", 6))
+    except Exception as e:  # noqa: BLE001
+        log.warning("push_ops_alert(%s/%s): config read failed (%s) — no-op", source, type_, e)
+        return False
+
+    now = _now if _now is not None else datetime.now(timezone.utc)
+    _lane = lane or source
+
+    # --- DEDUP: read ALL lanes (read-many) ----------------------------------
+    try:
+        dedup_key = (str(source), str(type_), "")
+        all_recent = _load_recent_sends_all_lanes(_window_hours, now, root=root)
+        if dedup_key in all_recent:
+            log.info("push_ops_alert(%s/%s): in dedup window (%dh) — skipped", source, type_, _window_hours)
+            return False
+    except Exception as e:  # noqa: BLE001
+        log.warning("push_ops_alert(%s/%s): dedup check failed (%s) — proceeding", source, type_, e)
+
+    # --- DISPATCH -----------------------------------------------------------
+    try:
+        from scripts.notify import send_discord, send_telegram  # noqa: PLC0415
+    except Exception as e:  # noqa: BLE001
+        log.warning("push_ops_alert(%s/%s): cannot import notify (%s) — no-op", source, type_, e)
+        return False
+
+    ok_tg = ok_dc = False
+    try:
+        ok_tg = send_telegram(message)
+    except Exception as e:  # noqa: BLE001
+        log.warning("push_ops_alert(%s/%s): send_telegram failed (%s)", source, type_, e)
+    try:
+        ok_dc = send_discord(message)
+    except Exception as e:  # noqa: BLE001
+        log.warning("push_ops_alert(%s/%s): send_discord failed (%s)", source, type_, e)
+
+    if ok_tg or ok_dc:
+        # --- WRITE: per-lane ledger only (write-one) ------------------------
+        rec = {
+            "source": source,
+            "type": type_,
+            "asset": "",
+            "headline": message[:120],
+            "priority": -1,   # ops alerts have no triage priority score
+            "severity": severity,
+            "sent_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        write_path = _dedup_store if _dedup_store is not None else _ops_lane_path(_lane, root=root)
+        try:
+            write_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(write_path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(rec) + "\n")
+        except Exception as e:  # noqa: BLE001
+            log.warning("push_ops_alert: lane ledger append failed (non-fatal): %s", e)
+        log.info("push_ops_alert: dispatched %s/%s severity=%s", source, type_, severity)
+        return True
+
+    log.info("push_ops_alert: no channel available for %s/%s", source, type_)
+    return False

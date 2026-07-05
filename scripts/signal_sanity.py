@@ -127,13 +127,19 @@ def _write_reports(report: dict, now: datetime) -> None:
 
 
 def _notify(report: dict) -> None:
-    """Best-effort outbound alert (Telegram/Discord), silent if secrets unset. The non-zero
-    exit is the primary signal; mirrors scripts/healthcheck.py._notify."""
+    """Best-effort outbound alert via the W6b push spine (dedup + priority floor applied).
+    The non-zero exit is the primary signal; push_ops_alert() is a no-op when disabled.
+    W6b: replaces the former direct send_telegram/send_discord call."""
     msg = "🚨 signal-sanity tripwire FAILED — " + "; ".join(report["fail_reasons"][:6])
     try:
-        from scripts.notify import send_discord, send_telegram
-        send_telegram(msg)
-        send_discord(msg)
+        from engine.alert_triage import push_ops_alert  # noqa: PLC0415
+        push_ops_alert(
+            source="signal_sanity",
+            type_="tripwire_failed",
+            message=msg,
+            severity="critical",
+            lane="signal_sanity",
+        )
     except Exception:  # noqa: BLE001
         pass
 

@@ -358,12 +358,19 @@ def _freeze_domain_inner(
         result["freeze_skipped"] = True
         result["skip_reason"] = f"churn_guard: {'; '.join(churn_violations[:3])}"
         result["n_skipped_churn"] = len(churn_violations)
-        # Fire notify channels (best-effort, never fatal)
+        # Fire notify via the W6b push spine (dedup + priority floor applied).
+        # push_ops_alert() is a pure no-op when alert_push.enabled=false.
+        # W6b: replaces the former direct send_telegram/send_discord call.
         try:
-            from scripts.notify import send_telegram, send_discord
+            from engine.alert_triage import push_ops_alert  # noqa: PLC0415
             alert_msg = f"⚠️ BASKET FREEZE SKIPPED [{domain.upper()}]\n{msg}"
-            send_telegram(alert_msg)
-            send_discord(alert_msg)
+            push_ops_alert(
+                source="basket_freeze",
+                type_="churn_guard",
+                message=alert_msg,
+                severity="critical",
+                lane="basket_freeze",
+            )
         except Exception:  # noqa: BLE001
             pass
         raise FreezeSkipped(msg)
