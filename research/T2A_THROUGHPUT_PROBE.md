@@ -118,7 +118,7 @@ With 5,536 traded contracts on SPY 2026-07-02 at ~8s average: **44,000s (~12.3 h
 | 91–365d | 0.8% | 9.0% |
 | 365d+ | 0.2% | 6.7% |
 
-0DTE/weekly dominates volume but longer-dated contracts carry disproportionate premium per contract. A DTE-quality filter (e.g., 8–90d) for signed flow features would capture 29.4% of volume but 29.4% of premium is misleading — the 8–90d bucket covers 29.6% of premium ($6.9M) and excludes mostly noise from 0DTE scalping.
+0DTE/weekly dominates volume but longer-dated contracts carry disproportionate premium per contract. A DTE-quality filter (e.g., 8–90d) for signed flow features would capture ~10.5% of volume (8.7% + 1.3% + 0.5% from the DTE table above) but 29.6% of premium ($6.9M) — a 2.8× premium-to-volume ratio that reflects genuine institutional positioning rather than 0DTE scalping noise.
 
 ---
 
@@ -185,11 +185,11 @@ Scope: 20 ETF roots × 252 trading days/year × 9 years (2017–2025) = 45,360 r
 | | Value |
 |---|---|
 | Requests (×2 per root-day) | 90,720 |
-| Serial time (ETF avg 15s/req — heavier history years) | ~378 hours |
-| Wall clock at 6-concurrent | ~63 hours |
-| Nightly 4h sessions needed | **~16 nights** |
+| Serial time (ETF avg 20s/req — heavier history years) | ~504 hours |
+| Wall clock at 6-concurrent | ~84 hours |
+| Nightly 4h sessions needed | **~21 nights** |
 | Caveat | 2017–2020 ETF chains are smaller; actual time likely 25% less |
-| Adjusted estimate | **~12–16 nights** |
+| Adjusted estimate | **~16–21 nights** |
 
 Can run in parallel with episode backfill since they use different roots.
 
@@ -199,7 +199,7 @@ Can run in parallel with episode backfill since they use different roots.
 |---|---|---|---|
 | Forward-daily (360 roots) | 13 min/night | 1 (ongoing) | Trivially fits |
 | Episode backfill 2022+ | ~62h total | ~16 nights | Feasible (background) |
-| ETF history 2017→ | ~63h total | ~16 nights | Feasible (parallel) |
+| ETF history 2017→ | ~84h total | ~21 nights | Feasible (parallel) |
 | Single-name history 2022→ | NOT measured | >> 100 nights | Defer; measure separately |
 
 ---
@@ -218,7 +218,7 @@ Can run in parallel with episode backfill since they use different roots.
 
 3. **Episode backfill 2022→ (R6 priority 2):** Loop 195 post-2022 episodes × 11 ETF roots × ±15d calendar days. Use per-day wildcard pulls. Aggregate features only (no raw tape) unless the root is an ETF anchor. Run in the 3.8h headroom after forward-daily. ETA: ~16 nights from start.
 
-4. **ETF history 2017→ (R6 priority 3):** Loop 20 ETF roots × 252 days × 9 years. Retain raw tapes (ETFs are the backtest backbone). Run concurrently with episode backfill once that completes or in parallel on separate nights. ETA: ~16 additional nights.
+4. **ETF history 2017→ (R6 priority 3):** Loop 20 ETF roots × 252 days × 9 years. Retain raw tapes (ETFs are the backtest backbone). Run concurrently with episode backfill once that completes or in parallel on separate nights. ETA: ~21 additional nights.
 
 5. **Single-name history:** NOT recommended pre-gate. Throughput is fine (3–10s per name-day) but the storage and time accumulate fast at 340 single-name roots × 3 years = >300K root-days. Wait for gate results from O-OPT before committing.
 
