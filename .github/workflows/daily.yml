@@ -118,6 +118,18 @@ jobs:
           # --exclude-group asia: China/HK collectors run in their own asia-close shard
           # (after the Asia cash close), not here — keeps this US-evening run lean.
           python -m scripts.collect --exclude-group asia
+      - name: T2a tape-flow features — forward accrual (collect lane, non-fatal)
+        # Pulls prior-trading-day trade+NBBO tape for the full gex_symbols() universe
+        # (~360 roots) via wildcard-bulk ThetaData endpoint (2 requests/root-day).
+        # Aggregates inline to signed-flow features; discards raw tape for single names.
+        # Requires ThetaData Terminal running on the self-hosted runner (port 25503).
+        # Budget: ~13 min/night at 6-concurrent (T2A_THROUGHPUT_PROBE.md §6a).
+        # Concurrency auto-capped to 2 when backfill_thetadata_eod is alive (pgrep).
+        # Non-fatal: terminal absent or any error logs a warning and does not fail the build.
+        # run_status.json registration: sources["tape_flow_forward"] (P0.7 pattern).
+        run: |
+          python -m scripts.build_tape_flow_daily --mode forward \
+            || echo "::warning::T2a tape-flow forward accrual failed (non-fatal)"
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
         # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
