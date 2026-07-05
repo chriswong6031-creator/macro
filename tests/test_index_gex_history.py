@@ -119,8 +119,39 @@ def test_overlap_audit_runs_and_reports_agreement():
                          "gamma_regime": ["long", "short", "long", "long"]}, index=idx)
     rep = audit_overlap(recon, live)
     assert rep["n_overlap"] == 4
-    assert -1.0 <= rep["net_gex_corr"] <= 1.0
-    assert rep["regime_agreement"] == pytest.approx(0.75)  # 3/4 regimes agree
+    assert -1.0 <= rep["net_gex_corr_raw"] <= 1.0
+    assert rep["regime_agreement_raw"] == pytest.approx(0.75)  # 3/4 regimes agree
+
+
+def test_same_spot_filter_isolates_timing_matched_rows():
+    """Same-spot filter: rows where reconstructed and live spot differ >= 0.5% are
+    excluded from net_gex_corr_same_spot.  This separates T-1-lag mismatch from
+    model mismatch.  Synthetic: two timing-matched rows (high corr) + one mismatched
+    row (spot shifts by >0.5%) that would drag the raw corr down."""
+    idx = pd.to_datetime(["2026-06-15", "2026-06-16", "2026-06-17"])
+    # Reconstructed (T+0 same-session spot)
+    recon = pd.DataFrame({
+        "net_gex_bn": [5.0, -3.0, 8.0],
+        "spot":        [100.0, 101.0, 102.0],  # spot_r
+        "gamma_regime": ["long", "short", "long"],
+    }, index=idx)
+    # Live (T-1 settlement): first two rows match spot; third shifts by >1% (timing lag)
+    live = pd.DataFrame({
+        "net_gex_bn": [4.8, -2.9, 2.0],   # last row is divergent (timing lag)
+        "spot":        [100.05, 101.02, 99.5],  # third spot differs >0.5% from 102.0
+        "gamma_regime": ["long", "short", "short"],
+    }, index=idx)
+    rep = audit_overlap(recon, live)
+    assert rep["n_overlap"] == 3
+    # Same-spot filter: only first two rows pass (|102-99.5|/102 ~2.45% > 0.5%)
+    assert rep["n_same_spot"] == 2
+    # Same-spot corr should be near-perfect on the two matched rows
+    assert rep["net_gex_corr_same_spot"] is not None
+    assert rep["net_gex_corr_same_spot"] > 0.99
+    # Regime agreement on same-spot rows: both are "long"/"short" matching -> 1.0
+    assert rep["regime_agreement_same_spot"] == pytest.approx(1.0)
+    # Raw corr includes the bad row and is lower
+    assert rep["net_gex_corr_raw"] < rep["net_gex_corr_same_spot"]
 
 
 # ---------------------------------------------- market_gamma context upgrade --

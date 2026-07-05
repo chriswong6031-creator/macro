@@ -69,33 +69,60 @@
   "overlap_audit_2026_06_15_onward": {
     "SPY": {
       "n_overlap": 13,
-      "net_gex_corr": 0.8605,
-      "regime_agreement": 0.8462,
-      "mean_abs_net_gex_diff": 2.5441
+      "net_gex_corr_raw": 0.8605,
+      "regime_agreement_raw": 0.8462,
+      "mean_abs_net_gex_diff_raw": 2.5441,
+      "spot_tol_frac": 0.005,
+      "n_same_spot": 9,
+      "net_gex_corr_same_spot": 0.9727,
+      "regime_agreement_same_spot": 0.8889,
+      "mean_abs_net_gex_diff_same_spot": 1.5889
     },
     "QQQ": {
       "n_overlap": 13,
-      "net_gex_corr": 0.7385,
-      "regime_agreement": 0.8462,
-      "mean_abs_net_gex_diff": 1.6597
+      "net_gex_corr_raw": 0.7385,
+      "regime_agreement_raw": 0.8462,
+      "mean_abs_net_gex_diff_raw": 1.6597,
+      "spot_tol_frac": 0.005,
+      "n_same_spot": 5,
+      "net_gex_corr_same_spot": 0.9707,
+      "regime_agreement_same_spot": 1.0,
+      "mean_abs_net_gex_diff_same_spot": 0.6332
     },
     "IWM": {
       "n_overlap": 13,
-      "net_gex_corr": 0.3341,
-      "regime_agreement": 1.0,
-      "mean_abs_net_gex_diff": 0.4686
+      "net_gex_corr_raw": 0.3341,
+      "regime_agreement_raw": 1.0,
+      "mean_abs_net_gex_diff_raw": 0.4686,
+      "spot_tol_frac": 0.005,
+      "n_same_spot": 6,
+      "net_gex_corr_same_spot": 0.9262,
+      "regime_agreement_same_spot": 1.0,
+      "mean_abs_net_gex_diff_same_spot": 0.2518,
+      "audit_note": "FRAGILE: same-spot corr 0.9262 is tolerance-sensitive (0.2%->0.9977 n=4, 0.5%->0.9262 n=6, 1.0%->0.3341 n=13). Unlike SPY/QQQ/DIA which degrade monotonically (consistent with timing-lag confound), IWM collapses as rows in the 0.5-1.0% drift band are added, suggesting genuine model divergence at those sessions. regime_agreement_same_spot=1.0 is uninformative: the IWM all-short cluster (-0.4 to -2.0 $bn) means every row agrees by default. Registration is provisional; widen evidence as polygon_gex accumulates more IWM overlap days."
     },
     "DIA": {
       "n_overlap": 13,
-      "net_gex_corr": 0.8669,
-      "regime_agreement": 0.7692,
-      "mean_abs_net_gex_diff": 0.0572
+      "net_gex_corr_raw": 0.8669,
+      "regime_agreement_raw": 0.7692,
+      "mean_abs_net_gex_diff_raw": 0.0572,
+      "spot_tol_frac": 0.005,
+      "n_same_spot": 10,
+      "net_gex_corr_same_spot": 0.9105,
+      "regime_agreement_same_spot": 0.8,
+      "mean_abs_net_gex_diff_same_spot": 0.0452
     },
     "SPY_vs_cboe_SPX": {
       "n_overlap": 15,
-      "net_gex_corr": 0.9221,
-      "regime_agreement": null,
-      "mean_abs_net_gex_diff": 52.4643
+      "net_gex_corr_raw": 0.9221,
+      "regime_agreement_raw": null,
+      "mean_abs_net_gex_diff_raw": 52.4643,
+      "spot_tol_frac": 0.005,
+      "n_same_spot": 0,
+      "net_gex_corr_same_spot": null,
+      "regime_agreement_same_spot": null,
+      "mean_abs_net_gex_diff_same_spot": null,
+      "note": "directional only: SPX cboe store vs SPY reconstructed (different underlyings; SPX/SPXW excluded from reconstruction \u2014 backfill_state does not list them complete as of this run)"
     }
   }
 }
