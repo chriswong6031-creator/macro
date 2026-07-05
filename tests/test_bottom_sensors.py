@@ -827,19 +827,19 @@ class TestSponsorshipState:
         state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
         assert state == "stale"
 
-    def test_stale_null_vel(self):
-        """vel_1m is NaN → stale."""
+    def test_unavailable_null_vel_fresh_row(self):
+        """vel_1m is NaN on a fresh (date-current) row → unavailable (data-absence, not date-staleness)."""
         mapping = SectorMapping(sector_node="XLK", subsector_node=None)
         panel = _make_panel("XLK", "2026-07-02", vel_1m=float("nan"), accel=0.1)
         state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
-        assert state == "stale"
+        assert state == "unavailable"
 
-    def test_stale_null_accel(self):
-        """accel is NaN → stale."""
+    def test_unavailable_null_accel_fresh_row(self):
+        """accel is NaN on a fresh (date-current) row → unavailable (data-absence, not date-staleness)."""
         mapping = SectorMapping(sector_node="XLK", subsector_node=None)
         panel = _make_panel("XLK", "2026-07-02", vel_1m=0.5, accel=float("nan"))
         state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
-        assert state == "stale"
+        assert state == "unavailable"
 
     # ── Sector arm → subsector arm fallback ──────────────────────────────────
 

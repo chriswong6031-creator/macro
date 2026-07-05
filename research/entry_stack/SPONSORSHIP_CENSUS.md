@@ -149,24 +149,55 @@ sponsorship_state := f(vel_sign, accel_sign) at latest completed panel date
   vel < 0  AND accel < 0  → "headwind"
   mixed signs              → "neutral"
   latest panel row older than 5 trading days → "stale"
-  name unmapped from any panel node         → "unavailable"
+  vel_1m or accel is NaN on a fresh row      → "unavailable"
+  name unmapped from any panel node          → "unavailable"
 ```
 
 **vel** = `vel_1m` (primary; 1-month velocity, broadest signal-to-noise of the three horizons);  
-**accel** = `accel` (signed acceleration of vel_1m).
+**accel** = `accel` column as emitted by `engine/oracle/panel.py:286`, which is **vel_1w − vel_3m**
+(1-week-minus-3-month velocity spread, not the derivative of vel_1m).
 
 Rationale for vel_1m: vel_1w is noisy; vel_3m is slow. vel_1m matches the 21d primary horizon
-per RUL-13. Both vel_1m and accel must be non-null; if either is null, state degrades to `stale`.
+per RUL-13. The `accel` spread (vel_1w − vel_3m) captures short-horizon acceleration relative to
+the medium trend and is a read-only Oracle output — it is bound as-is per §C3 ("accel column at the
+latest completed panel date"). Both vel_1m and accel must be non-null; if either is null on a
+fresh row, state is stamped `unavailable`; a date-stale row is stamped `stale`.
 
 ---
 
 ## 4. Deviations from Amendment Spec
 
-None. The amendment states "velocity sign + acceleration sign at the latest completed date →
-tailwind / neutral / headwind / stale / unavailable." This is implemented exactly.
+**accel column clarification:** the amendment refers to "the accel column at the latest completed
+panel date." The Oracle emits `accel = vel_1w − vel_3m` (panel.py:286) — a 1w-minus-3m velocity
+spread, not the derivative of vel_1m. The census previously mislabelled it "signed acceleration of
+vel_1m." Corrected: `accel` is read-only from the panel; the frozen §C3 definition binds whichever
+column Oracle names `accel`, regardless of its internal derivation.
+
+**NaN input → unavailable (not stale):** when a fresh panel row exists (within the 5-trading-day
+window) but vel_1m or accel is NaN, the state is stamped `unavailable` rather than `stale`. This
+aligns with the amendment's rule that "an input that does not exist is stamped unavailable."
+The `stale` label is reserved for date-age staleness only.
+
+**Stale sector arm does not fall through to subsector:** when the sector arm exists but its latest
+row is > 5 trading days old, the function returns `stale` immediately without consulting the
+subsector arm. This is conservative: a stale sector reading is treated as terminal rather than
+silently superseded by a potentially-misleading subsector signal. The precedence is: sector-fresh >
+subsector-fresh > sector-stale (terminal) > unavailable. This is intentional and documented here.
 
 The 5-trading-day staleness threshold is evaluated against `computed_at` (today) vs the latest
 date index in the panel. No smoothing, no threshold tuning.
+
+**Distribution note:** the §5 "live" distribution is approximated from panel data available at the
+time of filing (panel_s last date 2026-07-01; panel_m last date 2026-07-02; `today` = 2026-07-05).
+Running `assemble(today=date(2026,7,5))` against those panel dates yields approximately
+tailwind ~51.5% / neutral ~22.8% / headwind ~17.5% / unavailable ~8.2% / stale ~0%.
+Any distribution computed with a later `today` that crosses the 5-trading-day staleness threshold
+(busday_count(2026-07-01, today) > 5, i.e. today >= 2026-07-09) will show elevated `stale` and
+deflated tailwind/headwind. Consumers must recompute against the freshest available panel.
+
+**XLY sector holdings file:** `data/sector_holdings/XLY.parquet` is present in the repo store
+and is used by the mapping builder (§2.1 source #2). Any earlier claim that XLY.parquet was
+absent was from a different data vintage and does not reflect the current state.
 
 ---
 

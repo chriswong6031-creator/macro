@@ -38,13 +38,16 @@ KNIFE condition binding law (Amendment §C2):
   >= 15% AND dist_21d_low_pct < 0 (close below 21d low), exactly per the Amendment.
 
 Sponsorship state definition (Amendment §C3, FROZEN — no tuning):
-  vel = vel_1m; accel = accel column.  At the latest completed date in panel_s (sector arm)
-  or panel_m (subsector arm, 2021+ only).  Sector arm is primary; subsector arm is fallback.
-    tailwind : vel > 0 AND accel > 0
-    headwind : vel < 0 AND accel < 0
-    neutral  : mixed signs
-    stale    : latest panel row older than 5 trading days
-    unavailable: unmapped ticker (no sector or subsector node found)
+  vel = vel_1m; accel = accel column (Oracle-emitted: vel_1w − vel_3m per panel.py:286;
+  bound read-only — NOT the derivative of vel_1m).  At the latest completed date in
+  panel_s (sector arm) or panel_m (subsector arm, 2021+ only).  Sector arm is primary;
+  subsector arm is fallback.  A stale sector arm (> 5 trading days old) short-circuits
+  without falling through to subsector.
+    tailwind    : vel > 0 AND accel > 0
+    headwind    : vel < 0 AND accel < 0
+    neutral     : mixed signs
+    stale       : latest panel row older than 5 trading days (date-age gate only)
+    unavailable : unmapped ticker, OR vel_1m/accel is NaN on an otherwise-fresh row
 
 Never raises publicly.  All failures degrade gracefully (return empty frame / partial rows).
 """
@@ -195,16 +198,18 @@ def _sponsorship_state(
     """Compute sponsorship_state for one ticker.
 
     Definition (frozen, §C3):
-      vel = vel_1m;  accel = accel column.
+      vel = vel_1m;  accel = accel column (Oracle-emitted: vel_1w − vel_3m, bound read-only).
       Sector arm (panel_s, primary) → subsector arm (panel_m, fallback).
-      tailwind : vel > 0 AND accel > 0
-      headwind : vel < 0 AND accel < 0
-      neutral  : mixed signs
-      stale    : latest panel row older than 5 trading days
-      unavailable: no mapping found or both panels missing/empty
+      tailwind    : vel > 0 AND accel > 0
+      headwind    : vel < 0 AND accel < 0
+      neutral     : mixed signs
+      stale       : latest panel row older than 5 trading days (date-age gate; sector arm is
+                    terminal — stale sector does NOT fall through to subsector arm)
+      unavailable : no mapping, both panels missing/empty, OR vel_1m/accel is NaN on a
+                    fresh row (data-absence, not date-staleness)
 
     Stale check uses numpy.busday_count (no holiday calendar; conservative per §C2 note).
-    Both vel_1m AND accel must be non-null; if either is null → stale.
+    Both vel_1m AND accel must be non-null; if either is NaN on a fresh row → unavailable.
     """
     if mapping is None:
         return "unavailable"
@@ -242,7 +247,9 @@ def _sponsorship_state(
         ) or (
             isinstance(accel, float) and np.isnan(accel)
         ):
-            return "stale"
+            # NaN vel/accel on a fresh (date-current) row is data-absence, not date-staleness.
+            # Per amendment law: "an input that does not exist is stamped unavailable."
+            return "unavailable"
 
         vel = float(vel)
         accel = float(accel)
