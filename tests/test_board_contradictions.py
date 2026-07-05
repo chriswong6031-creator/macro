@@ -362,3 +362,187 @@ class TestBlockedUrgencyInvariant:
         violations = _check(str(artifact))
         assert len(violations) == 4
         assert all("(b)" in v and "block" in v for v in violations)
+
+
+# ---------------------------------------------------------------------------
+# 7. Invariant (e): W4 reflexivity N_eff per-lane comparison
+# ---------------------------------------------------------------------------
+
+class TestInvariantEReflexivityNeff:
+    """Invariant (e) compares per-lane n_eff from the overlay against per-lane
+    board effective_bets.  Both numbers must be computed over the SAME population
+    (the same per-lane candidate set) to avoid false-trip / false-pass.
+
+    The fix: check_board_contradictions uses n_eff_by_lane[lane] from the overlay
+    rather than the union board_concentration.n_eff.
+
+    NOTE: invariant (e) reads companion artifacts at hardcoded paths relative to
+    module ROOT (site/factordata/us_standouts_v2.json + reflexivity_overlay.json).
+    Tests that exercise the live check use monkeypatch to redirect ROOT; tests
+    that exercise the check logic directly call the inner comparison block.
+    """
+
+    def _write_companion_artifacts(
+        self, root, eff_v2_eo, eff_v2_su, neff_by_lane_eo, neff_by_lane_su,
+        union_neff=6.0,
+    ):
+        """Write companion artifacts under root/site/factordata/."""
+        import json as _json
+        v2_dir = root / "site" / "factordata"
+        v2_dir.mkdir(parents=True, exist_ok=True)
+
+        standouts_v2 = {
+            "as_of": "2026-07-05",
+            "lanes": {"entry_open": [], "setting_up": []},
+            "concentration": {
+                "entry_open": {
+                    "n": 5, "n_sectors": 2, "top2_sector_share": 0.4,
+                    "effective_bets": eff_v2_eo,
+                    "effective_bets_basis": "membership-jaccard+high-tier-factor-cosine",
+                    "concentrated": False, "by_sector": {},
+                },
+                "setting_up": {
+                    "n": 3, "n_sectors": 2, "top2_sector_share": 0.5,
+                    "effective_bets": eff_v2_su,
+                    "effective_bets_basis": "membership-jaccard+high-tier-factor-cosine",
+                    "concentrated": False, "by_sector": {},
+                },
+            },
+        }
+        (v2_dir / "us_standouts_v2.json").write_text(_json.dumps(standouts_v2))
+
+        overlay = {
+            "schema": "reflexivity_overlay.v1",
+            "is_context_only": True,
+            "board_concentration": {"n": 8, "n_eff": union_neff, "basis": "membership-jaccard"},
+            "n_eff_by_lane": {
+                "entry_open": neff_by_lane_eo,
+                "setting_up": neff_by_lane_su,
+            },
+            "by_ticker": {}, "pair_basis": {}, "verdicts": {},
+        }
+        (v2_dir / "reflexivity_overlay.json").write_text(_json.dumps(overlay))
+        (v2_dir / "us_standouts.json").write_text(_json.dumps({"buy": []}))
+        return str(v2_dir / "us_standouts.json")
+
+    def test_consistent_per_lane_neff_no_violation(self, tmp_path, monkeypatch):
+        """Per-lane effective_bets and n_eff_by_lane within 3x → no violation."""
+        import scripts.check_board_contradictions as cbc_mod
+        monkeypatch.setattr(cbc_mod, "ROOT", tmp_path)
+        from scripts.check_board_contradictions import _check
+
+        artifact = self._write_companion_artifacts(
+            tmp_path,
+            eff_v2_eo=3.5, eff_v2_su=2.0,
+            neff_by_lane_eo=3.8, neff_by_lane_su=2.2,
+        )
+        violations = _check(artifact)
+        e_violations = [v for v in violations if "(e)" in v]
+        assert e_violations == [], f"No (e) violation expected, got: {e_violations}"
+
+    def test_divergent_per_lane_neff_fires_violation(self, tmp_path, monkeypatch):
+        """Per-lane effective_bets and n_eff_by_lane diverge >3x → (e) violation."""
+        import scripts.check_board_contradictions as cbc_mod
+        monkeypatch.setattr(cbc_mod, "ROOT", tmp_path)
+        from scripts.check_board_contradictions import _check
+
+        artifact = self._write_companion_artifacts(
+            tmp_path,
+            eff_v2_eo=1.5, eff_v2_su=2.0,
+            neff_by_lane_eo=9.0,   # ratio=6x > 3x → VIOLATION
+            neff_by_lane_su=2.2,
+        )
+        violations = _check(artifact)
+        e_violations = [v for v in violations if "(e)" in v]
+        assert len(e_violations) == 1, f"Expected 1 (e) violation, got: {e_violations}"
+        assert "entry_open" in e_violations[0]
+
+    def test_none_per_lane_neff_skips_check(self, tmp_path, monkeypatch):
+        """If n_eff_by_lane[lane] is None (empty lane), invariant (e) does not fire."""
+        import scripts.check_board_contradictions as cbc_mod
+        monkeypatch.setattr(cbc_mod, "ROOT", tmp_path)
+        from scripts.check_board_contradictions import _check
+
+        artifact = self._write_companion_artifacts(
+            tmp_path,
+            eff_v2_eo=3.0, eff_v2_su=2.0,
+            neff_by_lane_eo=3.2,
+            neff_by_lane_su=None,  # empty lane
+        )
+        violations = _check(artifact)
+        e_violations = [v for v in violations if "(e)" in v]
+        assert e_violations == [], f"None n_eff_by_lane should skip check, got: {e_violations}"
+
+    def test_missing_n_eff_by_lane_skips_check(self, tmp_path, monkeypatch):
+        """If overlay has no n_eff_by_lane (old schema), invariant (e) does not fire."""
+        import json as _json
+        import scripts.check_board_contradictions as cbc_mod
+        monkeypatch.setattr(cbc_mod, "ROOT", tmp_path)
+        from scripts.check_board_contradictions import _check
+
+        v2_dir = tmp_path / "site" / "factordata"
+        v2_dir.mkdir(parents=True)
+
+        standouts_v2 = {
+            "concentration": {
+                "entry_open": {"effective_bets": 2.0, "effective_bets_basis": "X",
+                               "n": 3, "n_sectors": 1, "top2_sector_share": 0.8,
+                               "concentrated": False, "by_sector": {}},
+                "setting_up": {"effective_bets": 1.5, "effective_bets_basis": "X",
+                               "n": 2, "n_sectors": 1, "top2_sector_share": 1.0,
+                               "concentrated": False, "by_sector": {}},
+            },
+        }
+        # Old overlay schema: no n_eff_by_lane — would diverge if union n_eff were used
+        overlay_old = {
+            "schema": "reflexivity_overlay.v1",
+            "board_concentration": {"n": 5, "n_eff": 50.0},
+        }
+        (v2_dir / "us_standouts_v2.json").write_text(_json.dumps(standouts_v2))
+        (v2_dir / "reflexivity_overlay.json").write_text(_json.dumps(overlay_old))
+        (v2_dir / "us_standouts.json").write_text(_json.dumps({"buy": []}))
+
+        violations = _check(str(v2_dir / "us_standouts.json"))
+        e_violations = [v for v in violations if "(e)" in v]
+        assert e_violations == [], (
+            "Old overlay without n_eff_by_lane should not fire invariant (e)"
+        )
+
+    def test_docstring_does_not_promise_basis_check(self):
+        """Docstring for invariant (e) must NOT contain the old false clause about
+        'effective_bets_basis must NOT be sector-only-hhi' — that check was never
+        implemented, and the false promise has been removed."""
+        import inspect
+        import scripts.check_board_contradictions as cbc_mod
+        module_doc = cbc_mod.__doc__ or ""
+        # The old false clause mentioned both conditions together
+        assert "sector-only-hhi" not in module_doc, (
+            "False docstring clause about sector-only-hhi must be removed from module docstring"
+        )
+        # The word 'duplicate verdicts' as a checked condition must also be gone
+        assert "duplicate verdicts" not in module_doc, (
+            "False docstring clause about duplicate verdicts must be removed from module docstring"
+        )
+
+    def test_invariant_e_uses_n_eff_by_lane_not_union(self, tmp_path, monkeypatch):
+        """Critical: invariant (e) must use n_eff_by_lane, NOT board_concentration.n_eff.
+        If it still uses union n_eff, a large union value (99.9) far from per-lane
+        board effective_bets (3.0, 2.0) would false-trip.  Verify no violation when
+        per-lane n_eff values are within 3x of board effective_bets."""
+        import scripts.check_board_contradictions as cbc_mod
+        monkeypatch.setattr(cbc_mod, "ROOT", tmp_path)
+        from scripts.check_board_contradictions import _check
+
+        artifact = self._write_companion_artifacts(
+            tmp_path,
+            eff_v2_eo=3.0, eff_v2_su=2.0,
+            neff_by_lane_eo=3.2,  # within 3x of 3.0 → no violation
+            neff_by_lane_su=1.8,  # within 3x of 2.0 → no violation
+            union_neff=99.9,      # union far from board: would false-trip if used
+        )
+        violations = _check(artifact)
+        e_violations = [v for v in violations if "(e)" in v]
+        assert e_violations == [], (
+            f"Invariant (e) must use per-lane n_eff, not union n_eff. "
+            f"Got violations: {e_violations}"
+        )

@@ -589,12 +589,21 @@ def compute(site=None) -> dict:
 # --------------------------------------------------------------------------- #
 #  render (unlinked preview page)                                              #
 # --------------------------------------------------------------------------- #
-def render(payload: dict, site=None) -> None:
+def render(payload: dict, site=None, overlay: dict | None = None) -> None:
+    """Render the v2 preview page.
+
+    overlay: reflexivity_overlay artifact dict.  When present, the template
+    receives ``rx=overlay`` so the card chips and board banner can display
+    per-ticker verdicts and the board-level n_eff_by_lane read.
+    When absent (first render pass, before the overlay is written), rx=None
+    and the template suppresses the reflexivity sections gracefully.
+    """
     site = site or (config.ROOT / "site")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")),
                       autoescape=True)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    html = env.get_template("us_stocks_v2.html.j2").render(d=payload, built=built)
+    html = env.get_template("us_stocks_v2.html.j2").render(
+        d=payload, built=built, rx=overlay)
     write_page(site / "us_stocks_v2.html", html)
     log.info("wrote %s (%.0f KB)", site / "us_stocks_v2.html",
              (site / "us_stocks_v2.html").stat().st_size / 1024)

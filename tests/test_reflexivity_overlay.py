@@ -11,6 +11,9 @@ Invariants tested:
   - is_context_only: always True in artifact (R-F ruling)
   - schema: always "reflexivity_overlay.v1"
   - Basis flag printed for thin-beta names
+  - n_eff_by_lane emitted per-lane (population-fix for invariant e)
+  - _lane_tickers extracts correct per-lane set
+  - empty overlay includes n_eff_by_lane with None values
 """
 from __future__ import annotations
 
@@ -454,3 +457,142 @@ class TestBuilderDegradation:
         # so just verify the function exists and is callable returning 0 when inputs present
         # (end-to-end with real data is an integration concern)
         assert callable(builder_main)
+
+    def test_n_eff_by_lane_emitted_with_two_lanes(self, tmp_path):
+        """compute() must emit n_eff_by_lane keyed by entry_open and setting_up."""
+        from scripts.build_reflexivity_overlay import compute as builder_compute
+
+        site_dir = tmp_path / "site"
+        fd = site_dir / "factordata"
+        fd.mkdir(parents=True)
+        standouts = {
+            "as_of": "2026-07-05",
+            "lanes": {
+                "entry_open": [
+                    {"ticker": "AAPL", "sector": "Information Technology"},
+                    {"ticker": "MSFT", "sector": "Information Technology"},
+                ],
+                "setting_up": [
+                    {"ticker": "NVDA", "sector": "Information Technology"},
+                ],
+            },
+        }
+        (fd / "us_standouts_v2.json").write_text(json.dumps(standouts))
+
+        result = builder_compute(site=site_dir)
+        assert "n_eff_by_lane" in result, "n_eff_by_lane must be present in artifact"
+        by_lane = result["n_eff_by_lane"]
+        assert "entry_open" in by_lane
+        assert "setting_up" in by_lane
+        # entry_open has 2 names → n_eff should be a number between 1 and 2
+        eo_neff = by_lane["entry_open"]
+        assert isinstance(eo_neff, float), f"entry_open n_eff should be float, got {eo_neff!r}"
+        assert 0.9 <= eo_neff <= 2.1
+        # setting_up has 1 name → n_eff = 1.0
+        su_neff = by_lane["setting_up"]
+        assert su_neff == 1.0, f"single-name lane n_eff should be 1.0, got {su_neff}"
+
+    def test_n_eff_by_lane_none_for_empty_lane(self, tmp_path):
+        """Empty lane → n_eff_by_lane[lane] is None (no population)."""
+        from scripts.build_reflexivity_overlay import compute as builder_compute
+
+        site_dir = tmp_path / "site"
+        fd = site_dir / "factordata"
+        fd.mkdir(parents=True)
+        standouts = {
+            "as_of": "2026-07-05",
+            "lanes": {
+                "entry_open": [
+                    {"ticker": "AAPL", "sector": "IT"},
+                    {"ticker": "MSFT", "sector": "IT"},
+                ],
+                "setting_up": [],  # empty
+            },
+        }
+        (fd / "us_standouts_v2.json").write_text(json.dumps(standouts))
+
+        result = builder_compute(site=site_dir)
+        by_lane = result.get("n_eff_by_lane", {})
+        assert by_lane.get("setting_up") is None, (
+            "Empty lane must produce None n_eff, not a numeric value"
+        )
+
+    def test_empty_overlay_has_n_eff_by_lane(self, tmp_path):
+        """_empty_overlay must include n_eff_by_lane with None values (schema completeness)."""
+        from scripts.build_reflexivity_overlay import compute as builder_compute
+
+        # Absent us_standouts_v2.json → empty overlay path
+        (tmp_path / "site" / "factordata").mkdir(parents=True)
+        result = builder_compute(site=tmp_path / "site")
+        assert "n_eff_by_lane" in result
+        by_lane = result["n_eff_by_lane"]
+        assert by_lane.get("entry_open") is None
+        assert by_lane.get("setting_up") is None
+
+    def test_lane_tickers_extracts_correct_lane(self):
+        """_lane_tickers returns only the tickers for the named lane."""
+        from scripts.build_reflexivity_overlay import _lane_tickers
+
+        standouts = {
+            "lanes": {
+                "entry_open": [
+                    {"ticker": "A", "sector": "IT"},
+                    {"ticker": "B", "sector": "IT"},
+                ],
+                "setting_up": [
+                    {"ticker": "C", "sector": "Health"},
+                ],
+            }
+        }
+        assert _lane_tickers(standouts, "entry_open") == ["A", "B"]
+        assert _lane_tickers(standouts, "setting_up") == ["C"]
+        assert _lane_tickers(standouts, "nonexistent") == []
+
+    def test_lane_tickers_deduplicates(self):
+        """_lane_tickers deduplicates repeated tickers (first occurrence wins)."""
+        from scripts.build_reflexivity_overlay import _lane_tickers
+
+        standouts = {
+            "lanes": {
+                "entry_open": [
+                    {"ticker": "A", "sector": "IT"},
+                    {"ticker": "A", "sector": "IT"},  # duplicate
+                    {"ticker": "B", "sector": "IT"},
+                ],
+            }
+        }
+        result = _lane_tickers(standouts, "entry_open")
+        assert result == ["A", "B"], f"Expected deduplication, got {result}"
+
+    def test_per_lane_neff_independent_of_other_lane(self, tmp_path):
+        """n_eff_by_lane values are computed per lane, not over the union."""
+        from scripts.build_reflexivity_overlay import compute as builder_compute
+
+        site_dir = tmp_path / "site"
+        fd = site_dir / "factordata"
+        fd.mkdir(parents=True)
+        # entry_open: same sector only → medium similarity, small N_eff
+        # setting_up: different sector → low similarity, N_eff closer to N
+        standouts = {
+            "as_of": "2026-07-05",
+            "lanes": {
+                "entry_open": [
+                    {"ticker": "AAPL", "sector": "IT"},
+                    {"ticker": "MSFT", "sector": "IT"},
+                    {"ticker": "GOOG", "sector": "IT"},
+                ],
+                "setting_up": [
+                    {"ticker": "JNJ", "sector": "Health Care"},
+                    {"ticker": "UNH", "sector": "Health Care"},
+                ],
+            },
+        }
+        (fd / "us_standouts_v2.json").write_text(json.dumps(standouts))
+
+        result = builder_compute(site=site_dir)
+        by_lane = result["n_eff_by_lane"]
+        # Both lanes should have distinct numeric n_eff
+        for lane_name in ("entry_open", "setting_up"):
+            val = by_lane[lane_name]
+            assert isinstance(val, float), f"{lane_name}: expected float, got {val!r}"
+            assert val >= 1.0, f"{lane_name}: n_eff must be >= 1"

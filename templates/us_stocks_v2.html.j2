@@ -8,20 +8,32 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
-{# one row card: the glyph PAIR + chips. `lane` sets the accent. #}
+{# one row card: the glyph PAIR + chips. `lane` sets the accent.              #}
+{# rx: the reflexivity_overlay artifact dict (may be None on first render pass) #}
 {% macro row_card(r, lane) -%}
+{%- set rx_rec = rx.by_ticker.get(r.ticker) if rx else none -%}
 <a class="v2-card" data-lane="{{ lane }}" data-tone="{{ r.edge_glyph.tone }}"
    href="stock.html?t={{ r.ticker }}">
   <div class="v2-top">
     <span class="v2-rank">#{{ r.rank }}</span>
     <span class="v2-tk">{{ r.ticker }}</span>
     {# GLYPH 1 — EDGE grade, colored by verdict (never green on a Lagging name) #}
-    <span class="glyph edge tone-{{ r.edge_glyph.tone }}"{% if r.edge_glyph.verdict %} title="{{ r.edge_glyph.verdict }}"{% endif %}>
+    <span class="glyph edge tone-{{ r.edge_glyph.tone }}"{% if r.edge_glyph.verdict %} data-tip-en="{{ r.edge_glyph.verdict }}" data-tip-zh="{{ r.edge_glyph.verdict }}"{% endif %}>
       {{ r.edge_glyph.grade }}</span>
     {# GLYPH 2 — ENTRY state (tier + freshness) #}
     <span class="glyph entry tone-{{ r.entry_glyph.tone }}">
       {{ r.entry_glyph.tier or '—' }}{% if r.entry_glyph.freshness %} · {{ r.entry_glyph.freshness }}{% endif %}</span>
-    {% if r.provisional %}<span class="glyph prov" title="Provisional — may repaint. Graded on the incomplete 2D/3D resample bucket; the W6 #22 replay measured 23.8% of US T3 fresh fires (41/172) vanishing within 4 sessions of the bucket completing (calibration/provisional_replay.json).">provisional</span>{% endif %}
+    {% if r.provisional %}<span class="glyph prov" data-tip-en="Provisional — may repaint. Graded on the incomplete 2D/3D resample bucket." data-tip-zh="暂定，可能重绘。基于未完成的 2D/3D 重采样桶评级。">provisional</span>{% endif %}
+    {# W4 reflexivity chip — verdict=duplicate/partial shown as a chip with bilingual tooltip #}
+    {%- if rx_rec and rx_rec.get('verdict') in ('duplicate', 'partial') -%}
+    {%- set rv = rx_rec.get('verdict') -%}
+    {%- set chip_tone = 'tone-neg' if rv == 'duplicate' else 'tone-warn' -%}
+    {%- set chip_label_en = '⚠ same bet' if rv == 'duplicate' else '~ partial overlap' -%}
+    {%- set chip_label_zh = '⚠ 重复押注' if rv == 'duplicate' else '~ 部分重叠' -%}
+    <span class="chip rx-chip {{ chip_tone }}"
+          data-tip-en="{{ rx_rec.get('why_en', '') }}"
+          data-tip-zh="{{ rx_rec.get('why_zh', '') }}"><span class="l-en">{{ chip_label_en }}</span><span class="l-zh">{{ chip_label_zh }}</span></span>
+    {%- endif -%}
   </div>
   <div class="v2-name">{{ r.name }}{% if r.sector %} · <span class="v2-sec">{{ r.sector }}</span>{% endif %}</div>
   <div class="v2-lead">
@@ -42,13 +54,35 @@
   </div>
 </a>
 {%- endmacro %}
-{# concentration banner for a lane #}
-{% macro conc_banner(c) -%}
+{# concentration banner for a lane                                              #}
+{# rx: reflexivity overlay (may be None). lane_name: 'entry_open'/'setting_up'. #}
+{# Shows overlay n_eff_by_lane when available; falls back to board effective_bets. #}
+{% macro conc_banner(c, lane_name) -%}
+{%- set rx_neff = rx.n_eff_by_lane.get(lane_name) if (rx and rx.get('n_eff_by_lane')) else none -%}
+{%- set neff_display = rx_neff if rx_neff is not none else c.effective_bets -%}
+{%- set neff_source = 'reflexivity' if rx_neff is not none else 'sector-hhi' -%}
 <div class="conc {{ 'warn' if c.concentrated else '' }}">
   {{ c.n }} {{ t('names','只') }} · {{ c.n_sectors }} {{ t('sectors','行业') }} ·
   {{ t('top-2 share','前2行业占比') }} {{ (c.top2_sector_share*100)|round|int }}% ·
-  ≈ {{ c.effective_bets }} {{ t('effective bets','有效仓位') }}
+  ≈ {{ neff_display }} {{ t('effective bets','有效仓位') }}
+  {%- if rx_neff is not none %} <span class="rx-basis" data-tip-en="W4 reflexivity overlay — membership-Jaccard + high-tier-factor-cosine similarity" data-tip-zh="W4 相关性叠加 — 持仓 Jaccard + 高层因子余弦相似度">({{ t('reflexivity','相关性') }})</span>{% endif -%}
 </div>
+{%- endmacro %}
+{# W4 reflexivity board-level banner — only rendered when overlay is present #}
+{% macro rx_board_banner() -%}
+{%- if rx -%}
+{%- set bc = rx.get('board_concentration') or {} -%}
+{%- set n = bc.get('n', 0) -%}
+{%- set neff = bc.get('n_eff', 0) -%}
+{%- set caveat = rx.get('factor_caveat', '') -%}
+<div class="rx-banner">
+  <span class="l-en">W4 Reflexivity — {{ n }} candidates ≈ <b>{{ neff }}</b> independent bets
+    (union board; per-lane in concentration banners above)</span>
+  <span class="l-zh">W4 相关性分析 — {{ n }} 候选 ≈ <b>{{ neff }}</b> 独立押注
+    （合并口径；各分栏浓度栏可见分栏口径）</span>
+  {% if caveat %}<span class="rx-caveat" data-tip-en="{{ caveat }}" data-tip-zh="{{ caveat }}">?</span>{% endif %}
+</div>
+{%- endif -%}
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -118,6 +152,16 @@
   .pass { font-size:11.5px; color:var(--muted); margin:6px 0 0; }
   .foot { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; }
   code { font-size:11px; background:color-mix(in srgb,var(--muted) 12%,transparent); padding:1px 4px; border-radius:4px; }
+  /* W4 reflexivity overlay */
+  .rx-chip { cursor:help; }
+  .rx-basis { font-size:10px; color:var(--muted); cursor:help; margin-left:4px; }
+  .rx-banner { font-size:11.5px; color:var(--muted); margin:0 0 10px;
+    padding:5px 12px; border:1px solid color-mix(in srgb,var(--muted) 30%,var(--line));
+    border-radius:9px; display:inline-block; }
+  .rx-banner b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .rx-caveat { display:inline-block; font-size:10px; cursor:help; margin-left:6px;
+    color:var(--muted); border:1px solid var(--line); border-radius:50%;
+    width:15px; height:15px; text-align:center; line-height:13px; vertical-align:middle; }
 </style>
 </head>
 <body>
@@ -126,38 +170,39 @@
   'Names that are BOTH good to buy (trajectory up, not Lagging) AND a good entry, not chasing — hard-gated by the validated MACD-2D × StochRSI-3D confluence (the same gate that guards setups.json). Rotation context from sector / subsector / theme engines sets PRIORITY, never a gate. Two glyphs, never one fused score: EDGE grade (colored by verdict) and ENTRY state (tier + freshness).',
   '同时满足“值得买入”（趋势向上、非落后）与“入场点好、不追高”——由已验证的 MACD-2D × StochRSI-3D 共振硬门槛把关（与 setups.json 同一门槛）。板块/子行业/主题轮动仅决定优先级，绝不作为门槛。两个字形，绝不融合为单一分数：优势评级（按判定着色）与入场状态（层级+新鲜度）。') }}</p>
 
-<div class="strip">
-  <span class="stat">{{ t('as of','截至') }} <b>{{ d.as_of }}</b></span>
-  <span class="stat">{{ t('candidates','候选') }} <b>{{ d.counts.candidates }}</b></span>
-  <span class="stat">{{ t('entry open','入场开放') }} <b>{{ d.counts.entry_open }}</b></span>
-  <span class="stat">{{ t('setting up','酝酿中') }} <b>{{ d.counts.setting_up }}</b></span>
-  <span class="stat">{{ t('knobs','参数') }} <b>{{ d.knobs_basis }}</b></span>
+<div class=”strip”>
+  <span class=”stat”>{{ t('as of','截至') }} <b>{{ d.as_of }}</b></span>
+  <span class=”stat”>{{ t('candidates','候选') }} <b>{{ d.counts.candidates }}</b></span>
+  <span class=”stat”>{{ t('entry open','入场开放') }} <b>{{ d.counts.entry_open }}</b></span>
+  <span class=”stat”>{{ t('setting up','酝酿中') }} <b>{{ d.counts.setting_up }}</b></span>
+  <span class=”stat”>{{ t('knobs','参数') }} <b>{{ d.knobs_basis }}</b></span>
 </div>
+{{ rx_board_banner() }}
 
 {# ---- ENTRY OPEN lane ---- #}
-<div class="sec"><h2>{{ t('Entry open','入场开放') }}</h2><span class="cnt">{{ d.counts.entry_open }} {{ t('names','只') }}</span></div>
-<p class="sub">{{ t('Both gates pass — a fresh confluence cross is live now. Ordered by group leadership → edge percentile → entry freshness. Zero fill pressure: however many qualify (an empty lane is honest).','双门槛通过——共振金叉刚刚触发。按行业领先→优势分位→入场新鲜度排序。零填充压力：合格多少就显示多少（空榜也是诚实的）。') }}</p>
-{{ conc_banner(d.concentration.entry_open) }}
+<div class=”sec”><h2>{{ t('Entry open','入场开放') }}</h2><span class=”cnt”>{{ d.counts.entry_open }} {{ t('names','只') }}</span></div>
+<p class=”sub”>{{ t('Both gates pass — a fresh confluence cross is live now. Ordered by group leadership → edge percentile → entry freshness. Zero fill pressure: however many qualify (an empty lane is honest).','双门槛通过——共振金叉刚刚触发。按行业领先→优势分位→入场新鲜度排序。零填充压力：合格多少就显示多少（空榜也是诚实的）。') }}</p>
+{{ conc_banner(d.concentration.entry_open, 'entry_open') }}
 {% if d.lanes.entry_open %}
-<div class="grid">
+<div class=”grid”>
   {% for r in d.lanes.entry_open %}{{ row_card(r, 'entry_open') }}{% endfor %}
 </div>
 {% else %}
-<div class="empty">{{ t('No names clear both gates today. An empty actionable lane is honest — see Setting up for the pipeline.','今日无名单同时通过双门槛。空的可执行榜是诚实的——请看“酝酿中”了解在途标的。') }}</div>
+<div class=”empty”>{{ t('No names clear both gates today. An empty actionable lane is honest — see Setting up for the pipeline.','今日无名单同时通过双门槛。空的可执行榜是诚实的——请看”酝酿中”了解在途标的。') }}</div>
 {% endif %}
-<p class="pass">{{ t('Passport','护照') }}: basis <code>dual-gate</code> · frame <code>cross-sectional</code> · rotation sources
+<p class=”pass”>{{ t('Passport','护照') }}: basis <code>dual-gate</code> · frame <code>cross-sectional</code> · rotation sources
   {% for k,v in d.rotation_coverage.items() %}{{ k }}=<code>{{ 'ok' if not v.degraded else 'degraded' }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</p>
 
 {# ---- SETTING UP lane ---- #}
-<div class="sec"><h2>{{ t('Setting up','酝酿中') }}</h2><span class="cnt">{{ d.counts.setting_up }} {{ t('names','只') }}</span></div>
-<p class="sub">{{ t('Trajectory passes and a cross is IMMINENT (projected tier / small bars-to-cross / early advance-warning). Every row is provisional — the “about to cross” detector is unvalidated until the W6 replay (audit #22).','趋势通过且金叉即将出现（预测层级/距离交叉很近/提前预警）。每行均为暂定——“即将交叉”检测在 W6 回放验证前尚未确认（审计 #22）。') }}</p>
-{{ conc_banner(d.concentration.setting_up) }}
+<div class=”sec”><h2>{{ t('Setting up','酝酿中') }}</h2><span class=”cnt”>{{ d.counts.setting_up }} {{ t('names','只') }}</span></div>
+<p class=”sub”>{{ t('Trajectory passes and a cross is IMMINENT (projected tier / small bars-to-cross / early advance-warning). Every row is provisional — the “about to cross” detector is unvalidated until the W6 replay (audit #22).','趋势通过且金叉即将出现（预测层级/距离交叉很近/提前预警）。每行均为暂定——“即将交叉”检测在 W6 回放验证前尚未确认（审计 #22）。') }}</p>
+{{ conc_banner(d.concentration.setting_up, 'setting_up') }}
 {% if d.lanes.setting_up %}
-<div class="grid">
+<div class=”grid”>
   {% for r in d.lanes.setting_up %}{{ row_card(r, 'setting_up') }}{% endfor %}
 </div>
 {% else %}
-<div class="empty">{{ t('No imminent-cross names today.','今日无即将交叉标的。') }}</div>
+<div class=”empty”>{{ t('No imminent-cross names today.','今日无即将交叉标的。') }}</div>
 {% endif %}
 
 <div class="foot">
