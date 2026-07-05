@@ -1,4 +1,4 @@
-"""Factor Intelligence panel builder — Block-A attribution + Block-B percentiles.
+"""Factor Intelligence panel builder — Block-A attribution + Block-B percentiles + Twin.
 
 OFF-RENDER-PATH PLACEMENT: this script is a standalone nightly step that runs
 BEFORE build_site.py in CI.  It writes data/factordata/panel/YYYY-MM/panel.parquet
@@ -10,20 +10,63 @@ JOIN CONTRACT: studies join this panel against the replay artifact
 No other program may write to data/factordata/panel/.  No panel column may be added
 without a v2 version stamp.
 
-V1 FREEZE: all Block-A and Block-B parameters are frozen as of the adjudication
-ruling 2026-07-04.  See research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §3
-for the authoritative spec.  Any parameter change requires a v2 stamp.
+V1 FREEZE: all Block-A, Block-B, and Twin parameters are frozen as of the
+adjudication rulings 2026-07-04 (P1-A) and 2026-07-05 (P1-B).
+See research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §3 for the authoritative
+spec.  Any parameter change requires a v2 stamp.
 
-SCOPE (P1-A only — see masterplan §7):
+SCOPE (P1-A + P1-B — see masterplan §7):
   - Block-A: per-(ticker,date) rolling attribution vs ordered orthogonal streams
   - Block-B: trailing cross-sectional percentiles of equity_factors legs
   - alpha_z_house read-through from site/factordata/alpha.json (nightly residual_alpha)
   - Panel schema + partitioning + version stamp
+  - Twin computation (P1-B): twin_rel_20d, twin_bleed_flag, twin_n_peers, twin_fallback
 
 OUT OF SCOPE FOR THIS PR (added by later PRs):
-  - Twin computation (P1-B): twin_rel_20d, twin_bleed_flag, twin_n_peers, twin_fallback
   - Style-regime classifier (P1-C): dna_class, style_regime, style_regime_pending
   - Pair G detector / factor_attention reflex (P1-D)
+
+TWIN COMPUTATION (P1-B — masterplan §3.5 + RULING-1 + RULING-2):
+
+  INDUSTRY FIELD — SECTOR-PROXY DEVIATION (flagged for Fable ruling before merge):
+    The masterplan §3.5 specifies twins grouped by GICS industry (sub-sector level).
+    However, local caches (data/{breadth,smallcap_breadth,midcap_breadth}/constituents.parquet
+    and site/factordata/factors.json) contain ONLY the 'sector' field (GICS sector
+    level, 11 categories).  NO GICS industry field exists in any local cache.
+    Therefore, twin grouping uses SECTOR as the proxy for industry.
+    This is flagged as SECTOR-PROXY throughout the twin code and run log.
+    A proper GICS industry mapping (4-digit code + label) is required to implement
+    the spec as written.  That mapping must be sourced externally (e.g. EDGAR GICS
+    classification files or the index provider's mapping table) and will be supplied
+    in the pre-P3 follow-up that also handles per-date mktcap for historical backfill.
+
+  NULL-BACKFILL (RULING-2, 2026-07-05):
+    Twin columns (twin_rel_20d, twin_bleed_flag, twin_n_peers, twin_fallback) are
+    computed ONLY for build dates in the CURRENT freeze month (the calendar month
+    whose first-trading-day freeze uses the live factors.json mktcap snapshot for
+    the size-tercile filter).  All earlier (backfill) dates receive None — same R3
+    semantics as Block-B.  Historical twin backfill joins the pre-P3 follow-up that
+    supplies per-date mktcap via equity_factors backtest mode.
+
+  twin_bleed_flag definition (RULING-1, PREREG H4 governs over masterplan §3.5):
+    True iff BOTH:
+      (a) twin basket 20d return < 0
+      (b) twin basket drawdown-from-20d-high at evaluation date t >
+          median of the PRIOR 60d distribution of 20d-drawdown-from-20d-high
+          observations (rolling 20d drawdown from 20d high, one per calendar day,
+          computed from twin basket daily returns up to and including t).
+    The masterplan §3.5 parenthetical originally said "prior 252d"; corrected below
+    to match the locked PREREG H4.
+
+  Freeze schedule: membership is frozen on the first trading day of each calendar
+    month (first_bday_of_month).  The same frozen membership is used for all
+    evaluation dates in that calendar month.
+
+  Correlation window for member selection: [freeze_date - 253, freeze_date - 1]
+    (252 business days of residual returns ending the day before the freeze date).
+
+  Minimum peers: 8 after sector + size-tercile filter.  If fewer than 8, fall back
+    to sector EW (all sector members, self-excluded), twin_fallback=True.
 
 NOTE (F3 ruling 2026-07-05): trailing-252d study breakpoints (alibi Q80, alpha_z
 quintiles) are STUDY-TIME derivations from accumulated panel history — Block-A
@@ -152,10 +195,15 @@ CHINA_SECTORS: frozenset[str] = frozenset({
     "Industrials",
 })
 
-# R4 — FIXED SCHEMA: frozen 40-column v1 set.  Every partition is reindexed to
-# exactly these columns (missing → None) before writing.  China contrib columns
-# are always present; non-china tickers have None for those columns.
-# Adding a column requires a v2 version stamp and a new migration PR.
+# R4 — FIXED SCHEMA: frozen 44-column v1 set (40 from P1-A + 4 twin from P1-B).
+# Every partition is reindexed to exactly these columns (missing → None) before
+# writing.  China contrib columns are always present; non-china tickers have None.
+# Twin columns are always present; backfill dates (pre-current-month) have None.
+# P1-B NOTE: the four twin columns are §3.6-listed v1 columns delivered by their
+# scheduled PR (P1-B).  The "no new columns without v2" clause is satisfied because
+# twin columns were listed in the v1 schema in §3.6 from the original spec;
+# P1-A shipped without them only because they were scoped to the next PR.
+# Adding any FURTHER column requires a v2 version stamp and a new migration PR.
 PANEL_COLUMNS: list[str] = [
     # ── identity ──────────────────────────────────────────────────────────────
     "ticker",
@@ -213,6 +261,13 @@ PANEL_COLUMNS: list[str] = [
     "low_vol_pct",
     # ── Residual alpha read-through (PIT: snapshot as_of date only) ───────────
     "alpha_z_house",
+    # ── Twin outputs (P1-B, §3.5 — PIT: current-freeze-month dates only) ──────
+    # NULL-BACKFILL (RULING-2): prior months get None.  Historical backfill
+    # joins the pre-P3 follow-up (per-date mktcap via equity_factors backtest).
+    "twin_rel_20d",      # name 20d return − twin EW 20d return (signed)
+    "twin_bleed_flag",   # bool: twin deteriorating at entry (RULING-1 / PREREG H4)
+    "twin_n_peers",      # int: number of peers in the twin basket
+    "twin_fallback",     # bool: True if fell back to sector EW (< 8 valid peers)
 ]
 
 
@@ -670,6 +725,292 @@ def _compute_block_b_percentiles(factors_df: pd.DataFrame,
     return out
 
 
+# ── Twin constants (frozen v1, masterplan §3.5 + RULING-1 + RULING-2) ────────
+
+# Correlation window for twin member selection (business days before freeze_date):
+TWIN_CORR_WIN = 252      # window = [freeze_date-253, freeze_date-1]
+TWIN_CORR_MINP = 126     # min_periods for Spearman correlation (same as BETA_WIN halving)
+TWIN_TOP_N = 12          # take top-12 peers by 252d residual-return correlation
+TWIN_MIN_PEERS = 8       # minimum peers after sector+size filter → else fallback
+
+# RULING-1 (PREREG H4 governs): twin_bleed_flag uses prior 60d of 20d-drawdown-from-20d-high
+# observations.  (Masterplan §3.5 originally said "prior 252d"; corrected here to match
+# the locked PREREG H4 text; see also §3.5 correction note below.)
+TWIN_BLEED_LOOKBACK = 60  # calendar days of 20d-drawdown observations for the pullback median
+
+# Size-tercile filter: ±1 tercile of the name within its sector group.
+# Terciles are computed from factors.json mktcap_bn (current snapshot, RULING-2).
+# Tercile labels: 0=small, 1=mid, 2=large (qcut with 3 buckets).
+TWIN_SIZE_TERCILE_TOLERANCE = 1   # ±1 tercile
+
+# Return from the same breadth closes cache (total-return adjusted) used by Block-A.
+TWIN_RET_WIN = 20  # 20d compounded return for twin_rel_20d and twin_bleed inputs
+
+
+def _get_first_bday_of_month(year: int, month: int,
+                              bday_index: pd.DatetimeIndex) -> pd.Timestamp | None:
+    """Return the first business day of (year, month) present in bday_index.
+
+    Used for freeze-date determination.  Returns None if no dates in that
+    month are present in bday_index.
+    """
+    month_mask = (bday_index.year == year) & (bday_index.month == month)
+    candidates = bday_index[month_mask]
+    return candidates[0] if len(candidates) > 0 else None
+
+
+def _compute_size_terciles(factors_df: pd.DataFrame, sector_map: dict[str, str]
+                            ) -> dict[str, int]:
+    """Compute within-sector size tercile (0=small, 1=mid, 2=large) per ticker.
+
+    Uses factors_df['mktcap_bn'] (current snapshot per RULING-2).
+    Terciles are computed within each GICS sector group.
+
+    SECTOR-PROXY: groups by 'sector' (GICS sector level) because 'industry'
+    (GICS sub-sector) is NOT available in local caches.  This is a frozen v1
+    deviation flagged for Fable ruling before merge.
+
+    Returns {ticker: tercile_label (0/1/2)} for all tickers with valid mktcap.
+    Missing or NaN mktcap → excluded (not in output dict).
+    """
+    if factors_df is None or "mktcap_bn" not in factors_df.columns:
+        return {}
+
+    # Build (ticker, sector, mktcap_bn) frame:
+    rows = []
+    for ticker in factors_df.index:
+        mktcap = factors_df.at[ticker, "mktcap_bn"]
+        if pd.isna(mktcap) or mktcap <= 0:
+            continue
+        # Prefer sector from factors_df; fall back to sector_map.
+        sector = None
+        if "sector" in factors_df.columns:
+            sector = str(factors_df.at[ticker, "sector"]) if not pd.isna(
+                factors_df.at[ticker, "sector"]) else None
+        if not sector or sector == "nan":
+            sector = sector_map.get(ticker, ("", "—"))[1] if isinstance(
+                sector_map.get(ticker), tuple) else "—"
+        rows.append({"ticker": ticker, "sector": sector, "mktcap_bn": float(mktcap)})
+
+    if not rows:
+        return {}
+
+    df = pd.DataFrame(rows).set_index("ticker")
+    tercile_map: dict[str, int] = {}
+
+    for sector_name, grp in df.groupby("sector"):
+        if len(grp) < 3:
+            # Too few for tercile — assign all to middle (1)
+            for t in grp.index:
+                tercile_map[t] = 1
+            continue
+        try:
+            labels = pd.qcut(grp["mktcap_bn"], q=3, labels=[0, 1, 2], duplicates="drop")
+            for t, lbl in labels.items():
+                if not pd.isna(lbl):
+                    tercile_map[t] = int(lbl)
+        except Exception:
+            # qcut failed (e.g. all same mktcap) — assign all to middle
+            for t in grp.index:
+                tercile_map[t] = 1
+
+    return tercile_map
+
+
+def _build_twin_membership(
+    freeze_date: pd.Timestamp,
+    ticker: str,
+    sector: str,
+    size_tercile: int | None,
+    all_resid_1d: dict[str, pd.Series],  # {ticker: resid_ret_1d series, index=dates}
+    size_tercile_map: dict[str, int],
+    ns: dict[str, tuple[str, str]],  # {ticker: (name, sector)}
+    bday_index: pd.DatetimeIndex,
+) -> tuple[list[str], bool]:
+    """Determine twin basket membership at freeze_date for one ticker.
+
+    Steps (masterplan §3.5 + RULING-2):
+    1. Candidate pool: same sector as ticker, within ±1 size tercile, self-excluded.
+       SECTOR-PROXY: uses 'sector' (GICS sector level, 11 categories) because
+       'industry' (GICS industry level) is NOT in local caches.
+    2. Rank candidates by 252d Pearson correlation of residual-return series,
+       window = [freeze_date-253, freeze_date-1] (PIT: data <= freeze_date-1 only).
+    3. Take top-12 by correlation.
+    4. If <TWIN_MIN_PEERS survivors: fall back to sector EW (all sector members,
+       self-excluded), twin_fallback=True.
+
+    Returns (member_tickers, twin_fallback_flag).
+    """
+    # ── 1. Candidate pool ─────────────────────────────────────────────────────
+    # SECTOR-PROXY: group by sector (not GICS industry — see module docstring)
+    same_sector = [
+        t for t, (_, s) in ns.items()
+        if s == sector and t != ticker and t in all_resid_1d
+    ]
+
+    if size_tercile is not None:
+        # Filter ±1 size tercile within sector:
+        filtered = [
+            t for t in same_sector
+            if abs(size_tercile_map.get(t, size_tercile) - size_tercile) <= TWIN_SIZE_TERCILE_TOLERANCE
+        ]
+    else:
+        filtered = same_sector
+
+    # ── 2. Correlation ranking: window [freeze_date-253, freeze_date-1] ───────
+    # PIT: use data up to and including freeze_date-1 (not freeze_date itself).
+    # The .shift(1) in resid_ret_1d computation means each value is already causal;
+    # we additionally ensure the window endpoint is freeze_date-1.
+    win_end_idx = bday_index.get_loc(freeze_date) if freeze_date in bday_index else None
+    if win_end_idx is None or win_end_idx < 1:
+        # Can't compute correlation window — fall back to sector EW
+        fallback_members = [t for t in same_sector if t != ticker and t in all_resid_1d]
+        return fallback_members, True
+
+    # Window is [win_end_idx - TWIN_CORR_WIN, win_end_idx - 1] (252 bdays ending at t-1)
+    win_start_idx = max(0, win_end_idx - TWIN_CORR_WIN)
+    win_dates = bday_index[win_start_idx: win_end_idx]  # exclusive of freeze_date itself
+
+    if len(win_dates) < TWIN_CORR_MINP or ticker not in all_resid_1d:
+        fallback_members = [t for t in same_sector if t != ticker and t in all_resid_1d]
+        return fallback_members, True
+
+    ref_series = all_resid_1d[ticker].reindex(win_dates).dropna()
+    if len(ref_series) < TWIN_CORR_MINP:
+        fallback_members = [t for t in same_sector if t != ticker and t in all_resid_1d]
+        return fallback_members, True
+
+    # Compute correlations for each candidate (vectorized per candidate):
+    corr_pairs: list[tuple[float, str]] = []
+    for cand in filtered:
+        if cand not in all_resid_1d:
+            continue
+        cand_series = all_resid_1d[cand].reindex(win_dates).dropna()
+        # Align on common non-null dates:
+        common_idx = ref_series.index.intersection(cand_series.index)
+        if len(common_idx) < TWIN_CORR_MINP:
+            continue
+        r = ref_series.reindex(common_idx).values
+        c = cand_series.reindex(common_idx).values
+        # Pearson correlation (same as np.corrcoef row 0,1):
+        r_std = r.std()
+        c_std = c.std()
+        if r_std < 1e-12 or c_std < 1e-12:
+            continue
+        corr_val = float(np.corrcoef(r, c)[0, 1])
+        if np.isnan(corr_val):
+            continue
+        corr_pairs.append((corr_val, cand))
+
+    # ── 3. Top-12 by correlation ───────────────────────────────────────────────
+    corr_pairs.sort(key=lambda x: x[0], reverse=True)
+    top_members = [t for _, t in corr_pairs[:TWIN_TOP_N]]
+
+    # ── 4. Min-peers check / fallback ─────────────────────────────────────────
+    if len(top_members) >= TWIN_MIN_PEERS:
+        return top_members, False
+    else:
+        # Fall back to all same-sector names (self-excluded):
+        fallback_members = [t for t in same_sector if t != ticker and t in all_resid_1d]
+        return fallback_members, True
+
+
+def _compute_twin_ew_returns(
+    member_tickers: list[str],
+    closes: pd.DataFrame,
+    date_index: pd.DatetimeIndex,
+) -> pd.Series:
+    """Compute equal-weight twin basket daily return series from closes.
+
+    Uses the same total-return-adjusted close cache as Block-A.
+    Returns a daily return series aligned to date_index.
+    """
+    if not member_tickers:
+        return pd.Series(np.nan, index=date_index, name="twin_ew")
+
+    member_rets = []
+    for t in member_tickers:
+        if t not in closes.columns:
+            continue
+        ret = closes[t].astype(float).pct_change(fill_method=None)
+        member_rets.append(ret)
+
+    if not member_rets:
+        return pd.Series(np.nan, index=date_index, name="twin_ew")
+
+    # Equal-weight mean of daily returns:
+    ew = pd.concat(member_rets, axis=1).mean(axis=1, skipna=True)
+    return ew.reindex(date_index).rename("twin_ew")
+
+
+def _compute_twin_bleed_flag(
+    twin_ew_rets: pd.Series,
+    eval_date: pd.Timestamp,
+) -> bool | None:
+    """Compute twin_bleed_flag at eval_date using RULING-1 / PREREG H4 definition.
+
+    RULING-1 (PREREG H4 governs, 2026-07-05):
+    twin_bleed_flag = True iff:
+      (a) twin basket 20d return at eval_date < 0
+      (b) twin basket drawdown-from-20d-high at eval_date >
+          median of the prior 60d distribution of 20d-drawdown-from-20d-high
+          observations (one observation per calendar day, rolling 20d drawdown
+          from 20d high, computed from twin basket returns up to and including t).
+
+    NOTE: Masterplan §3.5 originally said "prior 252d"; this has been corrected
+    to match the locked PREREG H4 text: prior 60d of observations.
+    Correction note: "(corrected 2026-07-05 to match locked PREREG H4; drift caught in P1-B)"
+
+    Returns True/False, or None if data is insufficient.
+
+    PIT guard: all inputs must be data <= eval_date.  The twin_ew_rets series
+    must be pre-filtered to dates <= eval_date before calling.
+    """
+    # Filter to data <= eval_date (PIT):
+    hist = twin_ew_rets[twin_ew_rets.index <= eval_date].dropna()
+
+    if len(hist) < TWIN_RET_WIN + 1:
+        return None  # Not enough data for 20d return or 20d high
+
+    # (a) 20d compounded return at eval_date:
+    twin_20d_ret = float(((1 + hist.tail(TWIN_RET_WIN)).prod() - 1))
+
+    if twin_20d_ret >= 0:
+        # Condition (a) fails — flag is False
+        return False
+
+    # (b) Drawdown-from-20d-high at eval_date and the prior 60d distribution:
+    # Build a price series (rebased to 1.0 at start of available history):
+    price = (1 + hist).cumprod()
+
+    # Rolling 20d high (using at least 1 period):
+    rolling_high = price.rolling(TWIN_RET_WIN, min_periods=1).max()
+
+    # 20d-drawdown-from-20d-high series: drawdown = (price / rolling_20d_high) - 1
+    # This is <= 0 by construction.  We take abs() to get a non-negative pullback depth.
+    drawdown_series = ((price / rolling_high) - 1).abs()  # non-negative pullback depth
+
+    # Current drawdown (at eval_date):
+    if eval_date not in drawdown_series.index:
+        return None
+    current_drawdown = float(drawdown_series.loc[eval_date])
+
+    # Prior 60d distribution: observations on dates strictly BEFORE eval_date,
+    # up to 60 calendar days back.
+    cutoff_60d = eval_date - pd.Timedelta(days=TWIN_BLEED_LOOKBACK)
+    prior_dd = drawdown_series[
+        (drawdown_series.index >= cutoff_60d) &
+        (drawdown_series.index < eval_date)
+    ].dropna()
+
+    if len(prior_dd) < 1:
+        return None  # No prior observations for the distribution
+
+    median_pullback = float(prior_dd.median())
+
+    return bool(current_drawdown > median_pullback)
+
+
 # ── main build function ──────────────────────────────────────────────────────
 def build_panel(
     data_root: Path,
@@ -734,7 +1075,7 @@ def build_panel(
     # Sector ETF cache (loaded lazily per sector key):
     etf_cache: dict[str, pd.Series | None] = {}
 
-    # ── 4. Load Block-B factors snapshot ─────────────────────────────────────
+    # ── 4. Load Block-B factors snapshot (also used for twin size-tercile) ───────
     log.info("loading Block-B factors snapshot...")
     factors_df, factors_as_of = _read_factors_json(data_root)
     if factors_df is None:
@@ -856,6 +1197,134 @@ def build_panel(
         for W in ATT_WINDOWS:
             name_roll[ticker][W] = ret.rolling(W, min_periods=1).apply(
                 lambda x: (1 + x).prod() - 1, raw=True)
+
+    # ── 8b. Twin pre-computation (P1-B, RULING-2) ────────────────────────────
+    # Determine the "current freeze month": the calendar month of factors_as_of
+    # (the live mktcap snapshot).  Twin columns are emitted ONLY for build dates
+    # in this month; all earlier dates receive None (NULL-BACKFILL, RULING-2).
+    #
+    # SECTOR-PROXY deviation: twin groups by 'sector' (GICS sector level, 11 cats)
+    # because GICS 'industry' (sub-sector) is NOT present in local caches.
+    # Flagged for Fable ruling; logged prominently in run log.
+    log.info(
+        "SECTOR-PROXY WARNING: twin groups by GICS sector (not industry) — "
+        "no 'industry' field exists in local caches "
+        "(breadth/constituents.parquet + factors.json have only 'sector'). "
+        "This is a DEVIATION from masterplan §3.5.  Flagged for Fable ruling before merge."
+    )
+
+    twin_freeze_month: tuple[int, int] | None = None  # (year, month) of current freeze
+    if factors_as_of is not None:
+        twin_freeze_month = (factors_as_of.year, factors_as_of.month)
+        log.info("twin current freeze month: %04d-%02d (factors_as_of=%s)",
+                 twin_freeze_month[0], twin_freeze_month[1], factors_as_of.date())
+    else:
+        log.warning("twin: no factors_as_of — twin columns will be null for all dates")
+
+    # Determine freeze dates for each calendar month in build_dates:
+    # The freeze date is the first business day of the month (first_bday_of_month).
+    # We only compute twin for the current_freeze_month; other months → None.
+    all_bday_index = all_dates  # pd.DatetimeIndex of all business days in closes
+
+    # Build per-ticker resid_ret_1d series for twin correlation:
+    # We use the SAME resid_ret_1d as already computed in the attribution block
+    # (not yet computed here — we'll compute it on-the-fly per ticker using the
+    # shrunk betas).  For efficiency, build a full resid_1d series per ticker
+    # from the Block-A betas (post-shrinkage).
+    #
+    # PERFORMANCE NOTE: we compute all_resid_1d for all tickers, over all_dates,
+    # using the existing shrunk_betas.  This is vectorized per ticker (O(n_dates)
+    # per ticker).  The twin correlation ranking is then O(n_tickers × n_sector_peers)
+    # per freeze date — one freeze per month, so ~12 freeze computations/year.
+    log.info("building resid_ret_1d series for twin correlation...")
+    all_resid_1d: dict[str, pd.Series] = {}
+    for ticker in closes.columns:
+        if ticker not in shrunk_betas:
+            continue
+        ret_1d_series = closes[ticker].astype(float).pct_change(fill_method=None)
+        sector_tk = ns.get(ticker, (ticker, "—"))[1]
+        etf_sym_tk = GICS_ETF.get(sector_tk, "SPY")
+        # Compute explained_1d for every date in one vectorized pass:
+        explained_cols: list[pd.Series] = []
+        for beta_col, beta_series in shrunk_betas[ticker].items():
+            stream_key = beta_col.replace("beta_", "")
+            if stream_key == "sector":
+                stream_s = etf_cache.get(etf_sym_tk)
+            else:
+                stream_s = stream_raw.get(stream_key)
+            if stream_s is None:
+                continue
+            contrib = beta_series.shift(0) * stream_s  # both already aligned to all_dates
+            explained_cols.append(contrib)
+        if explained_cols:
+            explained_total = pd.concat(explained_cols, axis=1).sum(axis=1, skipna=False)
+            resid = ret_1d_series - explained_total
+        else:
+            resid = ret_1d_series.copy()
+        all_resid_1d[ticker] = resid
+
+    # Twin size-tercile map (from current factors.json snapshot per RULING-2):
+    size_tercile_map: dict[str, int] = {}
+    if factors_df is not None and factors_as_of is not None:
+        # Build sector_map for _compute_size_terciles: {ticker: (name, sector)}
+        size_tercile_map = _compute_size_terciles(factors_df, ns)
+        log.info("twin size-tercile map: %d tickers", len(size_tercile_map))
+    else:
+        log.warning("twin: no factors.json — size-tercile filter disabled (all ±1 = all)")
+
+    # Precompute freeze-date twin memberships (one per freeze date in build window):
+    # Key = (year, month) of a build date → (freeze_date, {ticker: ([members], fallback)})
+    # Only compute for the current_freeze_month (RULING-2 null-backfill).
+    twin_memberships: dict[tuple[int, int], dict[str, tuple[list[str], bool]]] = {}
+
+    if twin_freeze_month is not None:
+        # Find the freeze date for the current_freeze_month:
+        freeze_date_cur = _get_first_bday_of_month(
+            twin_freeze_month[0], twin_freeze_month[1], all_bday_index
+        )
+        if freeze_date_cur is not None:
+            log.info("twin freeze date for current month: %s", freeze_date_cur.date())
+            # Compute membership for every ticker in the universe:
+            month_membership: dict[str, tuple[list[str], bool]] = {}
+            for ticker in closes.columns:
+                sector_tk = ns.get(ticker, (ticker, "—"))[1]
+                size_tercile_tk = size_tercile_map.get(ticker)
+                try:
+                    members, fallback = _build_twin_membership(
+                        freeze_date=freeze_date_cur,
+                        ticker=ticker,
+                        sector=sector_tk,
+                        size_tercile=size_tercile_tk,
+                        all_resid_1d=all_resid_1d,
+                        size_tercile_map=size_tercile_map,
+                        ns=ns,
+                        bday_index=all_bday_index,
+                    )
+                    month_membership[ticker] = (members, fallback)
+                except Exception as e:
+                    log.warning("twin membership failed for %s: %s", ticker, e)
+                    month_membership[ticker] = ([], True)
+            twin_memberships[twin_freeze_month] = month_membership
+            n_fallback = sum(1 for _, (_, fb) in month_membership.items() if fb)
+            n_valid = len(month_membership) - n_fallback
+            log.info(
+                "twin membership: %d tickers total, %d with ≥8-peer twin, "
+                "%d fallback-to-sector (SECTOR-PROXY)",
+                len(month_membership), n_valid, n_fallback
+            )
+        else:
+            log.warning("twin: could not find first bday of freeze month %s-%02d",
+                        twin_freeze_month[0], twin_freeze_month[1])
+
+    # Precompute twin EW return series per ticker (for current-freeze-month only):
+    # {ticker: pd.Series of twin basket daily EW returns, aligned to all_dates}
+    twin_ew_series: dict[str, pd.Series] = {}
+    if twin_freeze_month in twin_memberships:
+        month_membership = twin_memberships[twin_freeze_month]
+        for ticker, (members, _fallback) in month_membership.items():
+            twin_ew = _compute_twin_ew_returns(members, closes, all_bday_index)
+            twin_ew_series[ticker] = twin_ew
+        log.info("twin EW return series built for %d tickers", len(twin_ew_series))
 
     # ── 9. Assemble panel rows ────────────────────────────────────────────────
     log.info("assembling panel rows for %d build dates...", len(build_dates))
@@ -985,6 +1454,52 @@ def build_panel(
                 else None
             )
 
+            # Twin outputs — RULING-2 NULL-BACKFILL:
+            # Emit ONLY for build dates in the current freeze month.
+            # All other dates receive None (same R3 semantics as Block-B).
+            date_month = (date.year, date.month)
+            twin_in_freeze_month = (
+                twin_freeze_month is not None
+                and date_month == twin_freeze_month
+                and ticker in twin_ew_series
+            )
+            if twin_in_freeze_month:
+                members, fallback = twin_memberships[twin_freeze_month].get(
+                    ticker, ([], True)
+                )
+                twin_ew = twin_ew_series[ticker]
+
+                # twin_rel_20d: name 20d return − twin EW 20d return at date (PIT):
+                # Name 20d return (already computed in name_roll):
+                name_20d = name_roll[ticker][20].get(date)
+                # Twin EW 20d return (from twin_ew daily returns, compounded):
+                twin_hist_to_date = twin_ew[twin_ew.index <= date].dropna()
+                if (name_20d is not None and not np.isnan(name_20d)
+                        and len(twin_hist_to_date) >= TWIN_RET_WIN):
+                    twin_20d = float(
+                        (1 + twin_hist_to_date.tail(TWIN_RET_WIN)).prod() - 1
+                    )
+                    row["twin_rel_20d"] = float(name_20d) - twin_20d
+                else:
+                    row["twin_rel_20d"] = None
+
+                # twin_bleed_flag (RULING-1 / PREREG H4):
+                try:
+                    bleed = _compute_twin_bleed_flag(twin_ew, date)
+                    row["twin_bleed_flag"] = bleed
+                except Exception as e:
+                    log.warning("twin_bleed_flag failed for %s at %s: %s", ticker, date_str, e)
+                    row["twin_bleed_flag"] = None
+
+                row["twin_n_peers"] = int(len(members))
+                row["twin_fallback"] = bool(fallback)
+            else:
+                # Not in current freeze month → NULL-BACKFILL (RULING-2):
+                row["twin_rel_20d"] = None
+                row["twin_bleed_flag"] = None
+                row["twin_n_peers"] = None
+                row["twin_fallback"] = None
+
             rows.append(row)
 
     if not rows:
@@ -1009,6 +1524,53 @@ def build_panel(
                 np.percentile(arr, 50), np.percentile(arr, 75),
                 np.percentile(arr, 95),
             )
+
+    # ── 10b. Twin coverage report ─────────────────────────────────────────────
+    if twin_freeze_month is not None:
+        twin_cols = ["twin_rel_20d", "twin_bleed_flag", "twin_n_peers", "twin_fallback"]
+        twin_panel = pd.DataFrame(rows) if rows else pd.DataFrame()
+        if not twin_panel.empty and "twin_n_peers" in twin_panel.columns:
+            cur_month_mask = (
+                pd.to_datetime(twin_panel["date"]).dt.year == twin_freeze_month[0]
+            ) & (
+                pd.to_datetime(twin_panel["date"]).dt.month == twin_freeze_month[1]
+            )
+            twin_rows = twin_panel[cur_month_mask]
+            n_total = len(twin_rows["ticker"].unique()) if len(twin_rows) > 0 else 0
+            has_twin = twin_rows["twin_n_peers"].notna()
+            n_with_twin = int(has_twin.sum())
+            if n_with_twin > 0:
+                n_fallback_rows = int(twin_rows.loc[has_twin, "twin_fallback"].sum())
+                n_valid_twin = n_with_twin - n_fallback_rows
+                bleed_col = twin_rows.loc[has_twin, "twin_bleed_flag"]
+                bleed_rate = float(bleed_col.mean()) if bleed_col.notna().any() else float("nan")
+                rel20_col = twin_rows.loc[has_twin & twin_rows["twin_rel_20d"].notna(),
+                                          "twin_rel_20d"]
+                log.info(
+                    "=== twin coverage (freeze month %04d-%02d) ===",
+                    twin_freeze_month[0], twin_freeze_month[1]
+                )
+                log.info(
+                    "  names with valid twin (≥8 peers): %d  fallback-to-sector: %d  "
+                    "excluded (0 peers): %d",
+                    n_valid_twin, n_fallback_rows,
+                    n_total - (n_valid_twin + n_fallback_rows)
+                )
+                log.info(
+                    "  twin_bleed_flag fire rate: %.1f%%  (prereg power table: ~10-20%% of fires)",
+                    bleed_rate * 100 if not np.isnan(bleed_rate) else float("nan")
+                )
+                if len(rel20_col) > 0:
+                    log.info(
+                        "  twin_rel_20d distribution (n=%d): "
+                        "p5=%.3f  p25=%.3f  p50=%.3f  p75=%.3f  p95=%.3f",
+                        len(rel20_col),
+                        float(rel20_col.quantile(0.05)),
+                        float(rel20_col.quantile(0.25)),
+                        float(rel20_col.quantile(0.50)),
+                        float(rel20_col.quantile(0.75)),
+                        float(rel20_col.quantile(0.95)),
+                    )
 
     # ── 11. Write monthly partitions ──────────────────────────────────────────
     log.info("writing monthly partitions to %s...", out_root)
