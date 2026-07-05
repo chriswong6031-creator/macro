@@ -1,4 +1,4 @@
-"""Prediction-markets collector — market-implied odds for macro events.
+"""Prediction-markets collector — market-implied odds + flow for macro events.
 
 Keyless Polymarket Gamma API ("fully public, no auth"): the market-implied
 probabilities for the macro questions that pair with our regime/catalyst reads —
@@ -7,9 +7,25 @@ the next Fed decision (cut/hold/hike), how many cuts this year, recession, etc.
 Event titles rotate ("Fed Decision in June" → "July"), so we MATCH by a configured
 title substring and pick the nearest-expiry / highest-volume event dynamically. Each
 run appends a dated SNAPSHOT to data/prediction_markets/snapshots.parquet
-(append-only) — so a probability history accrues and the leg becomes backtestable
-later (the feed itself is snapshot-only). Private-use dashboard, so re-displaying the
-probabilities is fine; framed as market-expectation CONTEXT, never a score.
+(append-only) — so a probability + flow history accrues and the leg becomes
+backtestable later (the feed itself is snapshot-only). Private-use dashboard, so
+re-displaying the probabilities is fine; framed as market-expectation CONTEXT, never
+a score.
+
+Schema (append-safe — new nullable float columns added 2026-07-05):
+  snapshot_date, source, event_key, event_title, end_date, outcome, prob
+  [new] volume24hr    — event-level 24-hour volume (USD notional, Gamma API field)
+  [new] volume_total  — event-level all-time cumulative volume
+  [new] liquidity     — event-level liquidity (open interest proxy, Gamma API field)
+  [new] open_interest — event-level open interest (Gamma API field openInterest)
+  [new] mkt_volume24hr — per-outcome sub-market 24-hr volume
+
+Kalshi note: api.elections.kalshi.com returns market data keyless (HTTP 200, no
+auth header required as of 2026-07-05). It is NOT integrated in this PR because
+Kalshi's market taxonomy diverges from our Polymarket event_key scheme, and a
+key-matched config approach requires operator opt-in on the event mapping.  The
+endpoint is confirmed working; a follow-up PR can add a KalshiAdapter with the
+same snapshot pattern.
 """
 from __future__ import annotations
 
@@ -27,10 +43,24 @@ log = logging.getLogger(__name__)
 GAMMA = "https://gamma-api.polymarket.com/events"
 
 
+def _safe_float(val: object) -> float | None:
+    """Convert a value that may be str/int/float/None to float or None."""
+    if val is None:
+        return None
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return None
+
+
 def extract_outcomes(event: dict) -> list[dict]:
-    """[{outcome, prob}] from a Polymarket event's sub-markets. PURE.
+    """[{outcome, prob, mkt_volume24hr}] from a Polymarket event's sub-markets. PURE.
     Each sub-market's groupItemTitle is the outcome label and outcomePrices[0] is
-    P(Yes) for that outcome. Multi-outcome events' probs sum to ~1."""
+    P(Yes) for that outcome. Multi-outcome events' probs sum to ~1.
+
+    mkt_volume24hr is the per-outcome sub-market 24-hour volume (USD notional).
+    Field verified on Gamma API 2026-07-05: markets[*].volume24hr (float).
+    """
     out = []
     for m in event.get("markets", []) or []:
         op = m.get("outcomePrices")
@@ -46,7 +76,9 @@ def extract_outcomes(event: dict) -> list[dict]:
             prob = float(op[0])
         except (TypeError, ValueError, IndexError):
             continue
-        out.append({"outcome": str(label)[:48], "prob": round(prob, 4)})
+        mkt_vol24 = _safe_float(m.get("volume24hr"))
+        out.append({"outcome": str(label)[:48], "prob": round(prob, 4),
+                    "mkt_volume24hr": mkt_vol24})
     return out
 
 
@@ -86,11 +118,31 @@ class PredictionMarketsAdapter(Adapter):
             ev = match_event(all_events, spec.get("match", ""), spec.get("pick", "nearest_end"))
             if not ev:
                 continue
+            # Event-level volume/liquidity fields — verified on Gamma API 2026-07-05.
+            # volume24hr: float (USD notional last 24h)
+            # volume: float (all-time cumulative)
+            # liquidity: float (open interest proxy / maker liquidity)
+            # openInterest: float (open interest in USD)
+            ev_vol24 = _safe_float(ev.get("volume24hr"))
+            ev_vol = _safe_float(ev.get("volume"))
+            ev_liq = _safe_float(ev.get("liquidity"))
+            ev_oi = _safe_float(ev.get("openInterest"))
             for o in extract_outcomes(ev):
-                rows.append({"snapshot_date": today, "source": "polymarket",
-                             "event_key": key, "event_title": str(ev.get("title", ""))[:80],
-                             "end_date": (ev.get("endDate", "") or "")[:10],
-                             "outcome": o["outcome"], "prob": o["prob"]})
+                rows.append({
+                    "snapshot_date": today,
+                    "source": "polymarket",
+                    "event_key": key,
+                    "event_title": str(ev.get("title", ""))[:80],
+                    "end_date": (ev.get("endDate", "") or "")[:10],
+                    "outcome": o["outcome"],
+                    "prob": o["prob"],
+                    # Flow fields (nullable; None for legacy rows loaded from old parquet)
+                    "volume24hr": ev_vol24,
+                    "volume_total": ev_vol,
+                    "liquidity": ev_liq,
+                    "open_interest": ev_oi,
+                    "mkt_volume24hr": o["mkt_volume24hr"],
+                })
         if not rows:
             raise RuntimeError("no configured events matched")
         self._append_snapshot(pd.DataFrame(rows))
@@ -129,6 +181,11 @@ class PredictionMarketsAdapter(Adapter):
         return all_events
 
     def _append_snapshot(self, new: pd.DataFrame) -> None:
+        """Append-safe snapshot writer.
+
+        Old rows that predate the flow columns will have NaN for the five new
+        nullable float columns — concat + dedup preserves them untouched.
+        """
         p = config.data_dir() / "prediction_markets" / "snapshots.parquet"
         p.parent.mkdir(parents=True, exist_ok=True)
         if p.exists():
