@@ -60,6 +60,9 @@ lanes:
         module: scripts.build_site
       - id: build_stock_board_v2
         module: scripts.build_stock_board_v2
+      - id: build_reflexivity_overlay
+        module: scripts.build_reflexivity_overlay
+        note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
       - id: build_impulse
         module: scripts.build_impulse
       - id: build_congress
@@ -366,6 +369,9 @@ lanes:
         module: scripts.build_site
       - id: build_stock_board_v2
         module: scripts.build_stock_board_v2
+      - id: build_reflexivity_overlay
+        module: scripts.build_reflexivity_overlay
+        note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
       - id: build_congress
         module: scripts.build_congress
       # parallel band (scope=all)

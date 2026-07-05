@@ -341,6 +341,11 @@ jobs:
           # (us_stocks_v2.html) + the shadow JSON — nothing live consumes it. main() swallows all
           # failures and returns 0, so this can NEVER break the render.
           run_py "buy board 2.0 shadow (build_stock_board_v2)" scripts.build_stock_board_v2
+          # Reflexivity overlay — W4, Signal Commons. Runs AFTER build_stock_board_v2 (reads
+          # us_standouts_v2.json) and AFTER build_site (reads factor_betas.json). Writes
+          # site/factordata/reflexivity_overlay.json — display-only duplicate-exposure read.
+          # returns 0 always, never breaks the render.
+          run_py "reflexivity overlay (build_reflexivity_overlay)" scripts.build_reflexivity_overlay
           # Impulse Tracker — AFTER build_site (a US-stocks sibling page): writes impulse.html +
           # factordata/impulse.json from the breadth close/volume caches + the regime read
           # (engine.run, above). Reactive early-ignition momentum screen; display/context only.

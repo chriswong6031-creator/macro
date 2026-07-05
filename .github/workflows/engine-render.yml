@@ -184,6 +184,7 @@ jobs:
             # setups.json + the rotation artifacts (tolerant readers). Unlinked preview + shadow
             # JSON only; main() returns 0 on any failure so it can never break the render.
             run_py "buy board 2.0 shadow (build_stock_board_v2)"   scripts.build_stock_board_v2
+            run_py "reflexivity overlay (build_reflexivity_overlay)" scripts.build_reflexivity_overlay
             run_py "congressional trades desk (build_congress)"    scripts.build_congress
           }
 

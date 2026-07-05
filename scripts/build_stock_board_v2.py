@@ -433,24 +433,77 @@ def _order(rows: list[dict]) -> list[dict]:
     return out
 
 
-def _concentration(rows: list[dict]) -> dict:
+def _concentration(rows: list[dict], site=None) -> dict:
     """Surface concentration (top-2 sector share, effective bets) — NOT capped
-    away. Leadership-driven concentration is intentional rotation-following."""
+    away. Leadership-driven concentration is intentional rotation-following.
+
+    W4 (reflexivity overlay, R-B ruling): effective_bets is now computed via the
+    similarity-based participation-ratio (membership-Jaccard + high-tier-factor-cosine)
+    from engine.reflexivity, superseding the sector-only HHI proxy.  The field name
+    is preserved for consumer compatibility.  The basis string is updated so readers
+    know what the number means.  If the reflexivity engine is unavailable (missing
+    betas / membership), we fall back to the sector-only HHI with a degraded basis
+    flag — never a crash, never two divergent numbers.
+    """
     from collections import Counter
     n = len(rows)
     secs = Counter(r.get("sector") or "?" for r in rows)
     top2 = sum(c for _, c in secs.most_common(2))
     top2_share = round(top2 / n, 3) if n else 0.0
-    # effective bets ≈ 1 / sum(share^2) over sectors (inverse-HHI, a rough
-    # "how many independent sector bets" estimate).
-    if n:
-        shares = [c / n for c in secs.values()]
-        eff = round(1.0 / sum(s * s for s in shares), 1)
-    else:
-        eff = 0.0
-    return {"n": n, "n_sectors": len(secs), "top2_sector_share": top2_share,
-            "effective_bets": eff, "by_sector": dict(secs.most_common()),
-            "concentrated": bool(top2_share >= KNOBS["concentration_warn_share"] and n >= 4)}
+
+    # ── W4 similarity-based effective bets (supersedes sector-only HHI) ──
+    effective_bets = 0.0
+    effective_bets_basis = "none"
+    if n >= 2:
+        try:
+            import json as _json
+            from pathlib import Path as _Path
+            from engine.reflexivity import (
+                build_groups_index, pairwise_similarity, n_eff_participation_ratio,
+            )
+            _site = site or (config.ROOT / "site")
+            # Load betas index (may be absent on first run)
+            _betas_path = _site / "factor_betas.json"
+            _betas_index: dict = {}
+            if _betas_path.exists():
+                _raw = _json.loads(_betas_path.read_text())
+                if isinstance(_raw.get("betas"), dict):
+                    _betas_index = _raw["betas"]
+            # Load membership (gitignored, may be absent on CI)
+            _mem_path = config.ROOT / "data" / "baskets" / "membership.json"
+            _mem_data = None
+            if _mem_path.exists():
+                _mem_data = _json.loads(_mem_path.read_text())
+            # Build groups index from row sector fields + baskets membership
+            _tickers = [r.get("ticker", "").upper() for r in rows if r.get("ticker")]
+            _sector_by = {r.get("ticker", "").upper(): r.get("sector") or ""
+                          for r in rows if r.get("ticker")}
+            _groups = build_groups_index(_mem_data, _tickers, _sector_by)
+            import numpy as _np
+            _S, _, _ = pairwise_similarity(_tickers, _groups, _betas_index)
+            _neff = n_eff_participation_ratio(_S)
+            effective_bets = round(float(_neff), 1)
+            effective_bets_basis = "membership-jaccard+high-tier-factor-cosine"
+        except Exception as _e:  # noqa: BLE001
+            # Fallback: sector-only HHI (degraded — never crash)
+            log.debug("_concentration: reflexivity N_eff failed (%s); using sector HHI", _e)
+            if n:
+                shares = [c / n for c in secs.values()]
+                effective_bets = round(1.0 / sum(s * s for s in shares), 1)
+            effective_bets_basis = "sector-only-hhi-fallback"
+    elif n == 1:
+        effective_bets = 1.0
+        effective_bets_basis = "single-candidate"
+
+    return {
+        "n": n,
+        "n_sectors": len(secs),
+        "top2_sector_share": top2_share,
+        "effective_bets": effective_bets,
+        "effective_bets_basis": effective_bets_basis,
+        "by_sector": dict(secs.most_common()),
+        "concentrated": bool(top2_share >= KNOBS["concentration_warn_share"] and n >= 4),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -511,8 +564,8 @@ def compute(site=None) -> dict:
         "counts": {"entry_open": len(entry_open), "setting_up": len(setting_up),
                    "candidates": len(cands)},
         "concentration": {
-            "entry_open": _concentration(entry_open),
-            "setting_up": _concentration(setting_up),
+            "entry_open": _concentration(entry_open, site=site),
+            "setting_up": _concentration(setting_up, site=site),
         },
         "knobs": KNOBS,
         "knobs_basis": "prior",          # calibrate via US-2's ledger (US_BOARD_MEASUREMENT.md)

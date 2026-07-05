@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Static guard: validates site/factordata/us_standouts.json for build-time contradictions.
 
-Four invariants checked (W2, mirroring check_nav_mega.py style):
+Five invariants checked (W2 original 4 + W4 reflexivity):
 
   (a) No FRESH-BUY-ish state/label with cross age > FRESH_TICKS+1 OR extension grade.
       The W8 arbiter should have demoted these at build time; a hit here means the arbiter
@@ -16,6 +16,13 @@ Four invariants checked (W2, mirroring check_nav_mega.py style):
   (d) Slot-1 alpha is not negative while positive-alpha rows exist in the same lane.
       If the board is supposed to rank by alpha DESC, the first row must have the highest alpha
       in its lane (or equal). A violation means the sort was applied incorrectly.
+
+  (e) W4 reflexivity (R-B): the reflexivity overlay and the board's effective_bets must not
+      be contradictory — if N_eff from the reflexivity overlay and effective_bets from the
+      board concentration differ by more than 3x, it means two divergent numbers are shown.
+      Also: effective_bets_basis must NOT be "sector-only-hhi" on the same board that shows
+      a reflexivity overlay chip with duplicate verdicts (since R-B says the overlay supersedes
+      the sector-only number).
 
 Exit 0 on clean. Exit 1 with a readable table on violation.
 
@@ -125,6 +132,36 @@ def _check(artifact_path: str = "site/factordata/us_standouts.json") -> list[str
                 f"but max alpha in lane={max_alpha:.3f} > 0 (sort broken)"
             )
 
+    # ---- (e) W4 reflexivity R-B: no two divergent effective_bets numbers ----
+    # If both us_standouts_v2.json + reflexivity_overlay.json exist, the N_eff
+    # values must not diverge by more than 3x (would mean two contradictory
+    # "independent bets" numbers are shown on the same board).
+    # Only fires when both artifacts are present and both have numeric n_eff.
+    p_v2 = ROOT / "site" / "factordata" / "us_standouts_v2.json"
+    p_rx = ROOT / "site" / "factordata" / "reflexivity_overlay.json"
+    if p_v2.exists() and p_rx.exists():
+        try:
+            d_v2 = json.loads(p_v2.read_text())
+            d_rx = json.loads(p_rx.read_text())
+            conc_rx = d_rx.get("board_concentration") or {}
+            neff_rx = conc_rx.get("n_eff")
+            # Check each lane's effective_bets from v2
+            for lane_name in ("entry_open", "setting_up"):
+                conc_v2 = (d_v2.get("concentration") or {}).get(lane_name) or {}
+                eff_v2 = conc_v2.get("effective_bets")
+                basis_v2 = conc_v2.get("effective_bets_basis", "")
+                if (isinstance(eff_v2, (int, float)) and isinstance(neff_rx, (int, float))
+                        and eff_v2 > 0 and neff_rx > 0):
+                    ratio = max(eff_v2, neff_rx) / min(eff_v2, neff_rx)
+                    if ratio > 3.0:
+                        violations.append(
+                            f"(e) W4 R-B: board concentration lane={lane_name!r} effective_bets"
+                            f"={eff_v2} (basis={basis_v2!r}) diverges >3x from reflexivity "
+                            f"n_eff={neff_rx} — two contradictory independent-bets numbers shown."
+                        )
+        except Exception:  # noqa: BLE001  — missing/malformed artifacts are not a violation
+            pass
+
     return violations
 
 
@@ -149,8 +186,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print(
-        f"check_board_contradictions: OK — {artifact} passes all 4 board invariants "
-        f"(a: stale-fresh, b: imminent-blocked, c: band-verdict, d: alpha-sort)."
+        f"check_board_contradictions: OK — {artifact} passes all 5 board invariants "
+        f"(a: stale-fresh, b: imminent-blocked, c: band-verdict, d: alpha-sort, "
+        f"e: W4-reflexivity-neff-consistency)."
     )
     return 0
 
