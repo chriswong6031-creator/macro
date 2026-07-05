@@ -1,0 +1,101 @@
+{
+  "reconstructed": true,
+  "engine": "engine.gex_engine.compute_gex",
+  "dealer_sign": "long-call/short-put (call +1, put -1); regime long above flip, short below",
+  "era_min_year": 2017,
+  "roots_read": {
+    "SPY": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "QQQ": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "IWM": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "DIA": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ]
+  },
+  "roots_excluded_native_index": [
+    "SPX",
+    "SPXW"
+  ],
+  "note": "SPX/SPXW excluded unless _backfill_state 'completed' lists them; read only completed roots/years (house mid-write law).",
+  "cfg": {
+    "strike_window_pct": 0.25,
+    "max_expiry_days": 365,
+    "pct_move": 0.01,
+    "contract_multiplier": 100.0,
+    "r": 0.0,
+    "q": 0.0
+  },
+  "overlap_audit_2026_06_15_onward": {
+    "SPY": {
+      "n_overlap": 13,
+      "net_gex_corr": 0.8605,
+      "regime_agreement": 0.8462,
+      "mean_abs_net_gex_diff": 2.5441
+    },
+    "QQQ": {
+      "n_overlap": 13,
+      "net_gex_corr": 0.7385,
+      "regime_agreement": 0.8462,
+      "mean_abs_net_gex_diff": 1.6597
+    },
+    "IWM": {
+      "n_overlap": 13,
+      "net_gex_corr": 0.3341,
+      "regime_agreement": 1.0,
+      "mean_abs_net_gex_diff": 0.4686
+    },
+    "DIA": {
+      "n_overlap": 13,
+      "net_gex_corr": 0.8669,
+      "regime_agreement": 0.7692,
+      "mean_abs_net_gex_diff": 0.0572
+    },
+    "SPY_vs_cboe_SPX": {
+      "n_overlap": 15,
+      "net_gex_corr": 0.9221,
+      "regime_agreement": null,
+      "mean_abs_net_gex_diff": 52.4643
+    }
+  }
+}
