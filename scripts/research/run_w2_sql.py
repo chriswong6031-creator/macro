@@ -13,11 +13,17 @@ LANE SCOPE (S-QL only):
   fwd_mdd_126)? This lane is EXPLICITLY NOT about entry timing; 21d
   metrics are printed as CONTEXT ONLY with a mandatory banner.
 
-Family: esx_ql_overlay (budget=12, pre-registered at W0).
-  12 trials = 3 quality defs × 2 horizons × 2 forms
+Family: esx_ql_overlay (budget=10, pre-registered at W0; amended below).
+  Pre-registered: 12 trials = 3 quality defs × 2 horizons × 2 forms
+  Amendment: 63d holdability outcomes are NOT computed in this run (deep panel only;
+    fwd_mdd_63 / clean-liftoff@63d absent from the graded DataFrame). Only the 126d
+    horizon is run. Budget spent = 10 (3 defs × 2 forms minus 2 Sloan interaction slots).
+    63d trials are removed from QL_TRIALS to prevent a pre-registration/execution mismatch
+    in the trial ledger. A future run must explicitly add fwd_mdd_63 / clean15_63 and
+    reintroduce the 63d arm.
   Quality defs: Piotroski F-score tercile, Altman Z-score tercile,
                 Sloan accruals tercile (main-effect only — not in interaction arms)
-  Horizons: 63d (intermediate), 126d (positional/primary)
+  Horizons: 126d (positional/primary) — 63d deferred (see amendment above)
   Forms: standalone stratification, interaction with washout depth
          (Piotroski/Altman only for interaction — Sloan excluded per masterplan §3 F5)
 
@@ -395,6 +401,10 @@ def assign_quality_terciles(fires: pd.DataFrame) -> pd.DataFrame:
     cross-sectionally per fire-year (calendar year of the fire date).
     Tercile 0 = bottom (worst quality), 1 = middle, 2 = top (best quality).
 
+    LOOK-AHEAD NOTE: cut-points (q33/q67) are computed over the FULL calendar year
+    of fires (see _assign_tercile docstring). The quality SCORES are PIT-safe.
+    This is analysis-grade only; a live chip must use trailing-window terciles.
+
     Direction: Piotroski high = better quality (top tercile = T2).
                Altman approx high = better (top tercile = T2).
                Sloan accruals high = WORSE quality (top tercile = worst).
@@ -410,7 +420,16 @@ def assign_quality_terciles(fires: pd.DataFrame) -> pd.DataFrame:
 
     def _assign_tercile(series: pd.Series, fire_year: pd.Series,
                         reverse: bool = False) -> pd.Series:
-        """Cross-sectional per-fire-year tercile assignment."""
+        """Cross-sectional per-fire-year tercile assignment.
+
+        LOOK-AHEAD DISCLOSURE: tercile cut-points (q33/q67) are computed over
+        the FULL calendar year of fires, so a January fire's tercile uses
+        boundaries that incorporate later-in-year (e.g. December) fire scores.
+        The quality SCORES themselves are PIT-safe (asof_date<=fire_date).
+        This is analysis-grade (per masterplan §3 F5 'cross-sectional per fire-year')
+        and acceptable for a holdability study; it is NOT live-deployable.
+        A future live chip must switch to trailing-window terciles.
+        """
         result = pd.Series(np.nan, index=series.index, dtype=float)
         for yr, idx in series.groupby(fire_year).groups.items():
             vals = series.loc[idx].dropna()
@@ -527,23 +546,27 @@ CONTEXT_21D_OUTCOMES = [
     "stop_vol_21",
 ]
 
-# Trial registration config: 12 trials for esx_ql_overlay
-# 3 quality defs × 2 horizons × 2 forms (standalone + interaction)
-# Interaction arm: Piotroski/Altman only (Sloan excluded per masterplan §3 F5)
+# Trial registration config for esx_ql_overlay.
+# Pre-registered budget was 12 (3 defs × 2 horizons × 2 forms).
+# Amendment: 63d horizon trials OMITTED from this run — fwd_mdd_63 / clean15_63 are
+# not computed (deep panel only; grade_fires does not emit 63d holdability metrics).
+# Registering 63d trials without executing them would create a ledger mismatch.
+# Trials omitted: pio_63d_standalone, alt_63d_standalone, slo_63d_standalone,
+#                 pio_63d_interaction, alt_63d_interaction (5 trials).
+# Trials run: 7 (3 standalone 126d + 2 interaction 126d + [note: see count below]).
+# Actually: 3 standalone 126d + 2 interaction 126d = 5 trials registered here.
+# Sloan has no interaction arm (§3 F5 masterplan restriction), so 2 interaction slots
+# are not used. Total trials registered and executed: 5.
+# Pre-reg budget remaining for 63d arm: reserved for future --panel baskets run
+# that adds fwd_mdd_63 / clean15_63 metrics.
 QL_TRIALS = [
     # (name, quality_tercile_col, form, interaction_allowed)
-    ("pio_63d_standalone",  "piotroski_t", "standalone", False),
     ("pio_126d_standalone", "piotroski_t", "standalone", False),
-    ("pio_63d_interaction", "piotroski_t", "interaction", True),
     ("pio_126d_interaction","piotroski_t", "interaction", True),
-    ("alt_63d_standalone",  "altman_t",   "standalone", False),
     ("alt_126d_standalone", "altman_t",   "standalone", False),
-    ("alt_63d_interaction", "altman_t",   "interaction", True),
     ("alt_126d_interaction","altman_t",   "interaction", True),
-    ("slo_63d_standalone",  "sloan_t",    "standalone", False),
     ("slo_126d_standalone", "sloan_t",    "standalone", False),
-    # Sloan: no interaction arms (§3 F5 masterplan restriction)
-    # Remaining 2 slots: covered by the above 10 + 2 Sloan standalones = 12 total
+    # Sloan: no interaction arm (§3 F5 masterplan restriction)
 ]
 
 
@@ -704,8 +727,9 @@ def _interaction_arm(
     Tests whether the quality premium concentrates in deep-washout fires.
     R1 FE estimator; holdability outcomes only.
 
-    Sloan excluded from this arm (§3 F5: interaction ban on margin-dependent defs —
-    we extend to Sloan to match the spirit of the restriction and cover-pool concerns).
+    Sloan excluded from this arm per masterplan §3 F5 (interaction arms restricted to
+    Piotroski/Altman only). Sloan is NOT margin-dependent; it is excluded because the
+    masterplan's explicit restriction names only Piotroski/Altman for interaction arms.
     """
     df = _prepare_binary_outcomes(graded)
     df_ok = df[df["gradable"].fillna(False)].copy()
@@ -788,7 +812,10 @@ def _coverage_report(fires: pd.DataFrame, graded: pd.DataFrame) -> dict[str, Any
     n_excluded_alt = n_fires - cov_alt
     n_excluded_slo = n_fires - cov_slo
 
-    # Check how many fires are in names without ANY EDGAR coverage
+    # Check how many fires are in names without Piotroski-computable EDGAR history.
+    # NOTE: this keyed on Piotroski availability (strictest def — requires >=2 FY rows).
+    # Some of these fires may have Altman/Sloan coverage; they are included in those arms.
+    # Label: 'tickers without Piotroski-computable EDGAR history', not 'no EDGAR at all'.
     tickers_with_edgar = set(fires[fires["piotroski_f"].notna()]["ticker"].unique())
     tickers_no_edgar = set(fires["ticker"].unique()) - tickers_with_edgar
     n_excluded_tickers = len(tickers_no_edgar)
@@ -1084,7 +1111,11 @@ def _write_tercile_table_md(lines: list[str], terc_rows: list[dict[str, Any]]) -
 
 
 def _headline_delta(def_result: dict[str, Any]) -> str:
-    """Extract T3-vs-T1 positional_liftoff and dead_money delta from effect table."""
+    """Extract T2-vs-T0 positional_liftoff and dead_money delta from effect table.
+
+    Terciles are 0/1/2 (bottom/mid/top). The estimator compares T2 (top quality)
+    vs T0 (bottom quality). There is no T3 — the label 'T3-vs-T1' was incorrect.
+    """
     hold = def_result.get("holdability_effect", {})
     effects = {e.get("label"): e for e in hold.get("effects", [])}
     bh = {b["label"]: b for b in hold.get("bh_panel", [])}
@@ -1118,10 +1149,71 @@ def _headline_delta(def_result: dict[str, Any]) -> str:
     return "; ".join(parts) + f"{recall_str} n_T2={n_top} n_T0={n_bot}"
 
 
+def _build_family_bh(all_results: dict[str, Any]) -> dict[str, dict]:
+    """Pre-compute the esx_ql_overlay family-level BH panel.
+
+    Pools ALL holdability p-values from standalone and interaction arms
+    per masterplan §5 ('BH q<=0.10 applied per family').  Returns a dict
+    keyed by canonical label → {q_value, rejected} for patching effect dicts.
+    """
+    all_pvals: list[tuple[str, float | None]] = []
+    for panel_name, res in all_results.items():
+        if "error" in res:
+            continue
+        for def_name in ("piotroski", "altman", "sloan"):
+            dr = res.get(def_name, {})
+            hold = dr.get("holdability_effect", {})
+            for e in hold.get("effects", []):
+                label = f"{panel_name}/{def_name}/standalone/{e.get('label','?')}"
+                all_pvals.append((label, e.get("p_value")))
+            ia = dr.get("interaction_arm", {})
+            if ia.get("effects"):
+                for e in ia.get("effects", []):
+                    label = f"{panel_name}/{def_name}/interaction/{e.get('label','?')}"
+                    all_pvals.append((label, e.get("p_value")))
+    if not all_pvals:
+        return {}
+    labels_bh = [x[0] for x in all_pvals]
+    pvals_bh  = [x[1] for x in all_pvals]
+    bh_results = bh_correction(pvals_bh, labels_bh)
+    return {b["label"]: {"q_value": b.get("q_value"), "rejected": b.get("rejected")}
+            for b in bh_results}
+
+
+def _patch_bh_panel(
+    effect_dict: dict[str, Any],
+    family_bh: dict[str, dict],
+    panel_name: str,
+    def_name: str,
+    arm: str,  # "standalone" or "interaction"
+) -> dict[str, Any]:
+    """Return a copy of effect_dict with bh_panel replaced by family-level BH values."""
+    import copy
+    patched = copy.copy(effect_dict)
+    new_bh = []
+    for e in patched.get("effects", []):
+        outcome_label = e.get("label", "?")
+        family_key = f"{panel_name}/{def_name}/{arm}/{outcome_label}"
+        fam = family_bh.get(family_key, {})
+        new_bh.append({
+            "label":    outcome_label,
+            "p_value":  e.get("p_value"),
+            "q_value":  fam.get("q_value"),
+            "rejected": fam.get("rejected"),
+        })
+    patched = dict(patched)
+    patched["bh_panel"] = new_bh
+    return patched
+
+
 def write_report(all_results: dict[str, Any], out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     lines: list[str] = []
     a = lines.append
+
+    # Pre-compute family-level BH (pools standalone + interaction arms)
+    # to drive per-arm 'BH rej?' columns consistently with the family panel.
+    family_bh = _build_family_bh(all_results)
 
     a("# W2 S-QL Quality Holdability Overlay — Entry-Stack Expansion")
     a("")
@@ -1154,6 +1246,14 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
     a("  accruals = best accounting quality. STANDALONE ONLY (no interaction arm")
     a("  per masterplan §3 F5).")
     a("")
+    a("**Tercile PIT / look-ahead disclosure:**")
+    a("Quality SCORES are PIT-safe (asof_date <= fire_date, assumed-120d-lag).")
+    a("Tercile BOUNDARIES (q33/q67) are computed over the full calendar year of fires")
+    a("(within-year cross-section), so a January fire's tercile rank uses boundaries")
+    a("that include later-year fire scores. This is analysis-grade per masterplan §3 F5")
+    a("('cross-sectional per fire-year') and acceptable for a holdability study.")
+    a("It is NOT live-deployable: a future live chip must switch to trailing-window terciles.")
+    a("")
     a("---")
     a("")
     a("## NC Yardstick (RUL-3: must appear first)")
@@ -1178,15 +1278,20 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
     a("")
     a("## Trial Registration")
     a("")
-    a("Family: `esx_ql_overlay` (budget=12, pre-registered at W0).")
-    a("12 trials: 3 quality defs × 2 horizons × 2 forms")
-    a("(interaction arms: Piotroski/Altman only; Sloan standalone only).")
+    a("Family: `esx_ql_overlay` (pre-registered budget=12 at W0; amended for this run).")
+    a("Pre-registered: 3 quality defs × 2 horizons × 2 forms = 12 trials.")
+    a("Amendment: 63d horizon arm OMITTED (fwd_mdd_63/clean15_63 not computed in")
+    a("deep-only run). Trials registered and executed: 5")
+    a("  (pio_126d_standalone, pio_126d_interaction, alt_126d_standalone,")
+    a("   alt_126d_interaction, slo_126d_standalone).")
+    a("Interaction arms: Piotroski/Altman only; Sloan standalone only (§3 F5).")
+    a("63d arm reserved for future --panel baskets run with 63d metrics added.")
     a("")
     a("---")
     a("")
 
     # ---- Headline numbers section ------------------------------------------
-    a("## Headline Numbers (T3-vs-T1 deltas per def per panel)")
+    a("## Headline Numbers (T2-vs-T0 deltas per def per panel)")
     a("")
     a("Format: pos_liftoff Δ=... [CI]; dead_money Δ=... [CI]; recall T2=%; n_T2; n_T0")
     a("Direction: pos_liftoff (+) = better; dead_money (-) = better.")
@@ -1229,9 +1334,12 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
         cov = res.get("coverage", {})
         a("### Coverage Report")
         a("")
-        a("Fires on names without EDGAR coverage are excluded from BOTH arms.")
+        a("The exclusion count below is keyed on Piotroski availability (strictest def,")
+        a("requires >=2 FY rows). Fires in these tickers are excluded from the Piotroski")
+        a("arm but may have Altman/Sloan coverage. See per-def coverage rows for actual")
+        a("arm-level fire counts.")
         a("")
-        a(f"- Fires without any EDGAR-eligible ticker: "
+        a(f"- Fires on tickers without Piotroski-computable EDGAR history: "
           f"{cov.get('n_excluded_fires_no_edgar', '?'):,} fires "
           f"({cov.get('n_excluded_no_edgar_ticker', '?')} tickers)")
         a(f"- Piotroski coverage (gradable fires): "
@@ -1270,12 +1378,15 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
             a("")
             _write_tercile_table_md(lines, dr.get("tercile_table", []))
 
-            # Holdability effect (primary)
+            # Holdability effect (primary) — patched with family-level BH
             hold = dr.get("holdability_effect", {})
             if hold.get("effects"):
                 a("#### Holdability Effect (T2 vs T0, R1 FE, positional/126d primary)")
                 a("")
-                _write_effect_md(lines, hold, "Holdability R1 FE Table")
+                hold_patched = _patch_bh_panel(
+                    hold, family_bh, panel_name, def_name, "standalone"
+                )
+                _write_effect_md(lines, hold_patched, "Holdability R1 FE Table")
             else:
                 a("_No holdability effect table (insufficient rows)._")
                 a("")
@@ -1333,7 +1444,10 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
                 a("Stratum = 1 iff quality tercile = 2 (top) AND washout depth tercile = 2 (deep).")
                 a("Tests whether the quality holdability premium concentrates in deep-washout fires.")
                 a("")
-                _write_effect_md(lines, ia, "Interaction R1 FE Table")
+                ia_patched = _patch_bh_panel(
+                    ia, family_bh, panel_name, def_name, "interaction"
+                )
+                _write_effect_md(lines, ia_patched, "Interaction R1 FE Table")
             elif ia.get("note") and "excluded" not in str(ia.get("note", "")):
                 a(f"**Interaction arm:** {ia.get('note', 'n/a')}")
                 a("")
@@ -1345,7 +1459,9 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
     a("## BH FDR Summary (esx_ql_overlay family)")
     a("")
     a("BH q<=0.10 applied within the esx_ql_overlay family.")
-    a("All p-values from holdability R1 FE tables pooled for the family-level BH panel.")
+    a("All holdability p-values (standalone + interaction arms) pooled for the family-level BH.")
+    a("Per masterplan §5: BH q<=0.10 applies per family across ALL pre-registered forms.")
+    a("The per-arm 'BH rej?' columns above are driven by this family-level panel.")
     a("")
 
     all_pvals: list[tuple[str, float | None]] = []
@@ -1354,17 +1470,25 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
             continue
         for def_name in ("piotroski", "altman", "sloan"):
             dr = res.get(def_name, {})
+            # Standalone arm holdability
             hold = dr.get("holdability_effect", {})
             for e in hold.get("effects", []):
-                label = f"{panel_name}/{def_name}/{e.get('label','?')}"
+                label = f"{panel_name}/{def_name}/standalone/{e.get('label','?')}"
                 all_pvals.append((label, e.get("p_value")))
+            # Interaction arm holdability (Piotroski/Altman only)
+            ia = dr.get("interaction_arm", {})
+            if ia.get("effects"):
+                for e in ia.get("effects", []):
+                    label = f"{panel_name}/{def_name}/interaction/{e.get('label','?')}"
+                    all_pvals.append((label, e.get("p_value")))
 
     if all_pvals:
         labels_bh  = [x[0] for x in all_pvals]
         pvals_bh   = [x[1] for x in all_pvals]
         bh_results = bh_correction(pvals_bh, labels_bh)
         rej_count  = sum(1 for b in bh_results if b.get("rejected"))
-        a(f"Total holdability tests: {len(all_pvals)} | BH rejections (q<=0.10): {rej_count}")
+        a(f"Total holdability tests (standalone + interaction): {len(all_pvals)} | "
+          f"BH rejections (q<=0.10): {rej_count}")
         a("")
         a("| Test | p-value | q-value | BH rej? |")
         a("|---|---|---|---|")
@@ -1381,6 +1505,12 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
     a("Any outcome with CI-including-0 is a NULL result. Nulls are printed here,")
     a("not hidden. A null means the quality tercile does NOT show distinguishable")
     a("holdability improvement (beyond tier/date noise) at this sample size.")
+    a("")
+    a("**S-QL verdict: BLOCKED** — this deep-only run cannot satisfy the §3 F5")
+    a("dev/holdout-replication requirement ('tercile spread replicated in sign on")
+    a("dev/holdout'). No S-QL verdict is drawn from this report. A final verdict")
+    a("requires the baskets panel dev/holdout split run:")
+    a("`python scripts/research/run_w2_sql.py --panel baskets`")
     a("")
     a("*No promotion language. The word 'validated' is deliberately absent.*")
     a("*Studies only. No product change from this PR.*")
