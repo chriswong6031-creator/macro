@@ -1,0 +1,3 @@
+symbol,expiration,strike,right,timestamp,open_interest
+"SPY","2026-01-17",580.000,"CALL",2026-01-01T06:30:16.218,125000
+"SPY","2026-01-17",580.000,"CALL",2026-01-02T06:30:02.343,123500
