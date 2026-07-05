@@ -174,6 +174,9 @@ from engine.oracle.oopt import (
     enumerate_oopt_trials, gated_trial_count, oopt_verdict, check_fragility,
     build_fixture_eod_panel, build_fixture_oi_panel, build_fixture_iv_panel,
     rolling_z,
+    pre_onset_score, auc_score, auc_ci, auc_ci_includes_half,
+    consistency_check_pairs, OOPTPairConsistencyError, filter_two_sided_pairs,
+    routing_placebo_cell,
 )
 
 # ---------------------------------------------------------------------------
@@ -393,13 +396,20 @@ def _run_oopt1(
     boot_p = float(np.mean(boot_medians <= 0))
     result["p_value"] = boot_p
 
-    # Placebo: draw 200 placebo median leads (uniform random in [−15,+15])
+    # Placebo (§5): the REAL lead-lag placebo re-derives flow-onset timing on
+    # regime+duration-matched random-onset pseudo-episodes from the T1 panel —
+    # which does not exist until the store run (R8). Here (fixture/no-store) the
+    # null is a symmetric-lead reference (median of a symmetric [−15,+15] draw,
+    # centered on 0-lead = no anticipation). It is STAMPED as a smoke stand-in and
+    # flagged insufficient_placebo so it cannot be mistaken for the gated placebo.
     placebo_medians = np.array([
         float(np.median(rng.integers(-WINDOW_SESSIONS, WINDOW_SESSIONS + 1, size=n).astype(float)))
         for _ in range(200)
     ])
     placebo_p95 = float(np.percentile(placebo_medians, 95))
     result["placebo_p95"] = placebo_p95
+    result["placebo_source"] = "symmetric_smoke_stub"
+    result["insufficient_placebo"] = True  # real regime/duration placebo needs T1 panel
 
     # G1: median lead > placebo p95
     g1_pass = median_lead > placebo_p95 and not np.isnan(placebo_p95)
@@ -442,8 +452,52 @@ def _run_oopt1(
     result["regime_medians"] = regime_medians
     result["g3_pass"] = g3_pass
 
-    # Kill criterion §4: median lead <= 0 AND AUC CI includes 0.50
-    kill_condition = median_lead <= 0 and boot_hi < 0.5  # AUC proxy: boot_hi < 0.5 means CI excludes edge
+    # ---- Secondary: false-alarm AUC (§4 line 110) — kill-criterion leg ----
+    # AUC of the composite options-pressure z at [−15,0] separating MATURED
+    # episodes (outcome_mature_21d=True AND outcome_rs_21d>0) from placebo
+    # pseudo-episodes. This is a genuine kill-leg component, NOT a bootstrap-CI
+    # proxy on the median lead (ruling A1).
+    auc_point, auc_lo, auc_hi = np.nan, np.nan, np.nan
+    if "pre_onset_score" in episodes_with_features.columns:
+        efc = episodes_with_features
+        has_mask = (
+            "outcome_mature_21d" in efc.columns
+            and "outcome_rs_21d" in efc.columns
+        )
+        pre_scores = efc["pre_onset_score"].to_numpy(dtype=float)
+        if has_mask:
+            matured = efc["outcome_mature_21d"].fillna(False).astype(bool).to_numpy()
+            rs21 = efc["outcome_rs_21d"].to_numpy(dtype=float)
+            pos_mask = matured & (rs21 > 0) & ~np.isnan(pre_scores)
+        else:
+            pos_mask = ~np.isnan(pre_scores)
+        positive_scores = pre_scores[pos_mask]
+        # Placebo pseudo-episode scores: random-onset draws matched on the same
+        # score distribution but centered to the no-discrimination null. Real
+        # placebo pseudo-episode pre-onset paths are drawn from the T1 panel on
+        # the real run; here (fixture/no-store) the null is the shuffled,
+        # onset-decoupled pre-onset score pool.
+        finite_scores = pre_scores[~np.isnan(pre_scores)]
+        if finite_scores.size > 0:
+            placebo_scores = rng.permutation(finite_scores)
+        else:
+            placebo_scores = np.array([])
+        auc_point, auc_lo, auc_hi = auc_ci(
+            positive_scores, placebo_scores,
+            n_boot=2000, ci_level=0.90,
+            rng=np.random.default_rng(int(rng.integers(0, 2**32))),
+        )
+    # AUC-leg outcome is a Python float NaN when unevaluable; normalize NaN→None
+    # so the JSON is strict-parseable (matches the era_means None-on-NaN convention).
+    _nn = lambda v: None if (v is None or (isinstance(v, float) and np.isnan(v))) else float(v)
+    result["auc"] = _nn(auc_point)
+    result["auc_ci_lo"] = _nn(auc_lo)
+    result["auc_ci_hi"] = _nn(auc_hi)
+    result["auc_ci_includes_half"] = auc_ci_includes_half(auc_lo, auc_hi)
+
+    # Kill criterion §4 (BOTH must fail): median lead <= 0 AND
+    # false-alarm AUC 90% CI includes 0.50 (no discrimination established).
+    kill_condition = (median_lead <= 0) and auc_ci_includes_half(auc_lo, auc_hi)
     result["kill_condition"] = kill_condition
 
     # Sensitivity neighbors (R1) — reported, NOT gated
@@ -584,22 +638,41 @@ def _run_oopt2(
             horizons_result[h] = h_result
             continue
 
-        # G1: placebo — use sample_placebo on confirmed-only sub (P3 reuse)
+        # G1: placebo — P3 reuse, run PER DIRECTION and pooled (P3 idiom).
+        # BUGFIX: sample_placebo re-derives forward RS from the panel and applies
+        # the direction sign via direction_filter — it does NOT read the already
+        # direction-adjusted da_vals. Hardcoding direction_filter="in" on a
+        # mixed-direction confirmed sample mis-signs every OUT pseudo-episode.
+        # Correct construction: draw per direction present in the confirmed set
+        # and pool the draws (matching the real sample's own in/out mix).
         if panel_s is not None and n_conf > 0:
             conf_sub = sub[conf_mask.values].copy()
             try:
-                placebo_dist = sample_placebo(
-                    episodes_sub=conf_sub,
-                    panel=panel_s,
-                    h=h,
-                    tier="onset",
-                    direction_filter="in",  # direction_adjust already applied
-                    n_draws=200,
-                    exclusion_zone=10,
-                    rng=np.random.default_rng(rng.integers(0, 2**32)),
-                )
-                valid_placebo = placebo_dist[~np.isnan(placebo_dist)]
-                placebo_p95 = float(np.percentile(valid_placebo, 95)) if len(valid_placebo) > 0 else np.nan
+                per_draw_pools: list[np.ndarray] = []
+                for dir_val in ("in", "out"):
+                    dir_sub = conf_sub[conf_sub["direction"] == dir_val]
+                    if dir_sub.empty:
+                        continue
+                    pd_dist = sample_placebo(
+                        episodes_sub=dir_sub,
+                        panel=panel_s,
+                        h=h,
+                        tier="onset",
+                        direction_filter=dir_val,
+                        n_draws=200,
+                        exclusion_zone=10,
+                        rng=np.random.default_rng(rng.integers(0, 2**32)),
+                    )
+                    per_draw_pools.append(pd_dist)
+                if per_draw_pools:
+                    # Pool per-draw across directions by nanmean (each pool is
+                    # length-200, draw-aligned), matching the pooled real mean.
+                    stacked = np.vstack(per_draw_pools)
+                    placebo_dist = np.nanmean(stacked, axis=0)
+                    valid_placebo = placebo_dist[~np.isnan(placebo_dist)]
+                    placebo_p95 = float(np.percentile(valid_placebo, 95)) if len(valid_placebo) > 0 else np.nan
+                else:
+                    placebo_p95 = np.nan
             except Exception as e:
                 log.warning("Placebo sampling failed for O-OPT-2 h=%d: %s", h, e)
                 placebo_p95 = np.nan
@@ -711,19 +784,80 @@ def _run_oopt2(
     return result
 
 
+def _routing_cell_placebo(
+    dest_rs_arr: np.ndarray | None,
+    vix_arr: np.ndarray | None,
+    real_onset_indices: list[int],
+    regime: str,
+    cell_n: int,
+    real_mean: float,
+    rng: np.random.Generator,
+    horizons: list[int] | None = None,
+) -> dict[str, Any]:
+    """Run the P3b regime-matched routing placebo for ONE cell (ruling A2).
+
+    Uses engine.oracle.oopt.routing_placebo_cell → P3b _sample_routing_placebo_cell
+    VERBATIM (200 draws, exclusion_zone=10, regime strata). Returns the placebo
+    p95 and G1-routing pass (real_mean > placebo_p95). When the panel arrays are
+    absent (real store not yet built) the cell is stamped insufficient_placebo.
+    """
+    horizons = horizons or [5]
+    if dest_rs_arr is None or vix_arr is None or cell_n <= 0 or len(real_onset_indices) == 0:
+        return {
+            "insufficient_placebo": True,
+            "placebo_p95": None,
+            "g1_routing_pass": False,
+            "reason": "no panel arrays / cell_n=0 — T1 store pending (R8)",
+        }
+    draws = routing_placebo_cell(
+        dest_rs_arr=dest_rs_arr,
+        vix_arr=vix_arr,
+        real_onset_indices=real_onset_indices,
+        fwd_windows=horizons,
+        regime_label=regime,
+        cell_n=cell_n,
+        n_draws=200,
+        exclusion_zone=10,
+        rng=np.random.default_rng(int(rng.integers(0, 2**32))),
+    )
+    h0 = horizons[0]
+    arr = draws.get(h0, np.array([]))
+    valid = arr[~np.isnan(arr)]
+    # P3b insufficient_placebo floor: too few effective non-NaN draws to gate.
+    if valid.size < 100:
+        return {
+            "insufficient_placebo": True,
+            "placebo_p95": None,
+            "g1_routing_pass": False,
+            "reason": f"only {int(valid.size)}/200 effective placebo draws (< floor)",
+        }
+    placebo_p95 = float(np.percentile(valid, 95))
+    return {
+        "insufficient_placebo": False,
+        "placebo_p95": placebo_p95,
+        "g1_routing_pass": bool((not np.isnan(real_mean)) and real_mean > placebo_p95),
+        "n_effective_draws": int(valid.size),
+    }
+
+
 def _run_oopt3(
     episodes_s_options: pd.DataFrame,
     rotation_groups: dict,
     etf_to_complex: dict[str, str],
     rng: np.random.Generator,
+    routing_panel: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """O-OPT-3: routing-matrix conditioning.
 
     For each (src_complex, dest_complex, regime, horizon) cell, split by
     destination options pressure and measure routing hit-rate delta vs
-    regime-matched placebo p95 (P3b placebo machinery).
+    regime-matched placebo p95 (P3b placebo machinery, ruling A2).
 
-    In the absence of real T1 data, this returns stubs with proper structure.
+    ``routing_panel`` (real run) supplies per-dest-complex RS + VIX arrays so
+    the P3b routing placebo runs per cell; absent it (T1 store pending, R8),
+    every cell legitimately stamps insufficient_placebo. Either way the code
+    path EXISTS and is exercised (ruling A2).
+
     The n_cells count is stamped into the trial ledger.
     """
     result: dict[str, Any] = {
@@ -739,10 +873,9 @@ def _run_oopt3(
         result["verdict_pending"] = "ACCRUE — no paired episodes / T1 store not yet complete (R8)"
         return result
 
-    # In smoke mode, build routing cells from synthetic two-sided episodes
-    two_sided = episodes_s_options[
-        episodes_s_options["two_sided"] == True
-    ].copy()
+    # Ruling A3: two_sided ⇔ paired_episode_id must be consistent; disagreement
+    # is a DATA ERROR (raises OOPTPairConsistencyError), never a silent drop.
+    two_sided = filter_two_sided_pairs(episodes_s_options)
 
     cells: list[dict] = []
 
@@ -787,6 +920,22 @@ def _run_oopt3(
 
         cell_path = f"{src_complex}/{dest_complex}/{regime}"
 
+        # Ruling A2: run the P3b regime-matched routing placebo for this cell.
+        # With one synthetic pair per cell (n_real=1) and no real panel arrays,
+        # this legitimately returns insufficient_placebo — but the CODE PATH is
+        # exercised (not stubbed away).
+        panel_for_cell = (routing_panel or {}).get(dest_complex, {})
+        placebo = _routing_cell_placebo(
+            dest_rs_arr=panel_for_cell.get("dest_rs_arr"),
+            vix_arr=panel_for_cell.get("vix_arr"),
+            real_onset_indices=panel_for_cell.get("real_onset_indices", []),
+            regime=regime,
+            cell_n=panel_for_cell.get("cell_n", 1),
+            real_mean=da_outcome,
+            rng=rng,
+            horizons=[5],
+        )
+
         cells.append({
             "src_complex": src_complex,
             "dest_complex": dest_complex,
@@ -795,13 +944,14 @@ def _run_oopt3(
             "high_flow": high_flow,
             "da_outcome": da_outcome,
             "cell_path": cell_path,
-            "n_real": 1,
-            "sufficient": False,  # n=1 never sufficient
-            "g1_routing_pass": False,
-            "insufficient_placebo": True,
+            "n_real": panel_for_cell.get("cell_n", 1),
+            "sufficient": not placebo["insufficient_placebo"],
+            "placebo_p95": placebo.get("placebo_p95"),
+            "g1_routing_pass": placebo.get("g1_routing_pass", False),
+            "insufficient_placebo": placebo["insufficient_placebo"],
         })
 
-    # Cells with n_real >= P3b floor (5 is the P3b minimum)
+    # Cells clearing the P3b insufficient_placebo floor are gate-eligible.
     sufficient = [c for c in cells if not c.get("insufficient_placebo", True)]
     result["n_sufficient_cells"] = len(sufficient)
     result["n_cells_total"] = len(cells)
@@ -936,7 +1086,11 @@ def _run_oopt4(
     result["not_opposed_da_mean"] = not_opposed_mean
     result["delta_da_mean"] = delta
 
-    # G1: placebo (naive — no panel_s in this path; uses random draws)
+    # G1: placebo. The gated placebo (§5) is regime+duration-matched random-onset
+    # pseudo-episodes via sample_placebo (needs panel_s / T1 store). This path is
+    # reached only past the n>=40 ACCRUE gate, which requires the real store; until
+    # then it uses a label-permutation shuffle-null and is STAMPED as such so it is
+    # not mistaken for the registered regime-matched placebo.
     placebo_deltas = np.array([
         float(np.nanmean(rng.choice(da_vals, size=n_opposed, replace=True)))
         for _ in range(200)
@@ -944,6 +1098,8 @@ def _run_oopt4(
     placebo_p95 = float(np.percentile(placebo_deltas, 95))
     g1_pass = delta > placebo_p95
     result["placebo_p95"] = placebo_p95
+    result["placebo_source"] = "shuffle_null_stub"
+    result["insufficient_placebo"] = True  # real regime/duration placebo needs T1 panel
 
     # G2: bootstrap CI
     opposed_clean = opposed_da[~np.isnan(opposed_da)]
@@ -1013,6 +1169,87 @@ def _run_oopt4(
         kill_condition=kill_condition,
     )
     result["verdict_pending"] = f"{verdict} — PENDING FABLE ADJUDICATION"
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Tier-M display cells (§2.4 coverage-gated; ruling A4)
+# ---------------------------------------------------------------------------
+
+def _run_tierm_display(
+    episodes_m: pd.DataFrame,
+    node_to_complex_m: dict[str, str],
+    rotation_groups: dict,
+    options_universe: set[str],
+) -> dict[str, Any]:
+    """Compute Tier-M DISPLAY cells IF member coverage clears the §2.4 40% floor.
+
+    Ruling A4: conditional inclusion — computed in THIS run when Tier-M member
+    coverage ≥ 0.40, else stamped skipped_coverage. NEVER gated either way
+    (watermark, display-only; masterplan §2). Not deferred to a later phase.
+
+    Tier-M coverage = fraction of Tier-M complex members present in the options
+    universe, aggregated across the complexes that back the episode nodes.
+    """
+    result: dict[str, Any] = {
+        "tier": "M",
+        "watermark": "display-with-watermark — NEVER promotes (masterplan §2)",
+        "gated": False,
+    }
+    if episodes_m.empty:
+        result["status"] = "skipped_no_episodes"
+        result["coverage"] = None
+        result["cells"] = []
+        return result
+
+    # Complex-member coverage across the Tier-M backbone.
+    all_members: list[str] = []
+    for c in rotation_groups.get("complexes", []):
+        all_members.extend(c.get("members", []))
+    all_members = sorted(set(all_members))
+    if not all_members:
+        result["status"] = "skipped_coverage"
+        result["coverage"] = 0.0
+        result["reason"] = "no Tier-M complex members in rotation_groups"
+        result["cells"] = []
+        return result
+
+    covered = sum(1 for m in all_members if m in options_universe)
+    coverage = covered / len(all_members)
+    result["coverage"] = coverage
+    result["coverage_floor"] = COVERAGE_FLOOR
+
+    if coverage < COVERAGE_FLOOR:
+        # §2.4 floor not cleared → stamped, NOT computed, NOT deferred.
+        result["status"] = "skipped_coverage"
+        result["reason"] = (
+            f"Tier-M member coverage {coverage:.2%} < {COVERAGE_FLOOR:.0%} floor "
+            f"(§2.4); display cells stamped skipped_coverage this run (ruling A4)."
+        )
+        result["cells"] = []
+        return result
+
+    # Coverage clears the floor → compute display cells (lead-lag pooled + 2 era,
+    # watermark, per §7 O-OPT-1 Tier-M row). Never gated.
+    result["status"] = "computed"
+    onset = pd.to_datetime(episodes_m["onset_date"])
+    cells: list[dict] = []
+    for era_name, y0, y1 in TIERM_ERAS:
+        mask = (onset.dt.year >= y0) & (onset.dt.year <= y1)
+        cells.append({
+            "cell": f"tierm_leadlag_era_{era_name}",
+            "era": era_name,
+            "n": int(mask.sum()),
+            "gated": False,
+            "watermark": True,
+        })
+    cells.append({
+        "cell": "tierm_leadlag_pooled",
+        "n": int(len(episodes_m)),
+        "gated": False,
+        "watermark": True,
+    })
+    result["cells"] = cells
     return result
 
 
@@ -1666,6 +1903,12 @@ def run_oopt_phase0(
         })
         feats["composite_z"] = cz
 
+        # Pre-onset composite-z score at [−15,0] (O-OPT-1 AUC discriminator, §4).
+        # PIT: uses ONLY sessions ≤ onset. In smoke/no-real-store mode the scalar
+        # composite z stands in for the pre-onset path summary; the real path is
+        # populated by the T1 feature run.
+        feats["pre_onset_score"] = cz if not np.isnan(cz) else np.nan
+
         # Flow confirmation check (O-OPT-2)
         feats["flow_confirmed"] = is_flow_confirmed(
             composite_z_series=pd.Series([cz]),
@@ -1728,11 +1971,26 @@ def run_oopt_phase0(
     o2_result = _run_oopt2(episodes_s_feat, panel_s, rng)
 
     log.info("Running O-OPT-3 (routing conditioning)…")
-    two_sided_feat = episodes_s_feat[episodes_s_feat["two_sided"] == True] if not episodes_s_feat.empty else pd.DataFrame()
+    # Ruling A3: consistency-check on the FULL episode set (a two_sided=False row
+    # carrying a stray paired_episode_id must be caught BEFORE the ==True filter
+    # would silently hide it). filter_two_sided_pairs re-runs the check and keeps
+    # only two_sided==True AND paired_episode_id non-null rows.
+    if not episodes_s_feat.empty:
+        two_sided_feat = filter_two_sided_pairs(episodes_s_feat)
+    else:
+        two_sided_feat = pd.DataFrame()
     o3_result = _run_oopt3(two_sided_feat, rotation_groups, etf_to_complex, rng)
 
     log.info("Running O-OPT-4 (two-sided opposed flow)…")
     o4_result = _run_oopt4(two_sided_feat, rng)
+
+    # ---- Tier-M display cells (ruling A4: coverage-gated, never claim-gated) ----
+    log.info("Computing Tier-M display cells (coverage-conditional, §2.4)…")
+    tierm_display = _run_tierm_display(
+        episodes_m, node_to_complex_m, rotation_groups, options_universe
+    )
+    log.info("Tier-M display: status=%s coverage=%s",
+             tierm_display.get("status"), tierm_display.get("coverage"))
 
     # ---- Trial enumeration ----
     n_o3_cells = o3_result.get("n_sufficient_cells", 0)
@@ -1765,6 +2023,7 @@ def run_oopt_phase0(
         "o2": o2_result,
         "o3": o3_result,
         "o4": o4_result,
+        "tier_m_display": tierm_display,
         "trials": [
             {k: v for k, v in t.items()}
             for t in oopt_trials

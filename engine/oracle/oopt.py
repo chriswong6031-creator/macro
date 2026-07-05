@@ -633,6 +633,113 @@ def compute_lead(
 
 
 # ---------------------------------------------------------------------------
+# O-OPT-1 SECONDARY: false-alarm AUC (§4 line 110) — kill-criterion leg
+# ---------------------------------------------------------------------------
+
+def pre_onset_score(composite_z_window: pd.Series, onset_idx_in_window: int) -> float:
+    """Per-episode false-alarm discrimination score = composite-z at [−15,0].
+
+    §4 O-OPT-1 secondary: "AUC of the composite options-pressure z at [−15,0]".
+    The scalar summary of the pre-onset composite-z path is the equal-weight
+    mean over sessions [−15, 0] inclusive (NO invented weights, §6). Sessions
+    strictly after onset are excluded so the discriminator is PIT at onset.
+
+    Returns NaN if the pre-onset window has no finite composite-z values.
+    """
+    lo = 0
+    hi = min(len(composite_z_window) - 1, onset_idx_in_window)  # [−15, 0] inclusive
+    if hi < lo:
+        return float("nan")
+    pre = composite_z_window.iloc[lo: hi + 1].to_numpy(dtype=float)
+    pre = pre[~np.isnan(pre)]
+    if pre.size == 0:
+        return float("nan")
+    return float(np.mean(pre))
+
+
+def auc_score(positive_scores: np.ndarray, negative_scores: np.ndarray) -> float:
+    """Mann-Whitney U based AUC — P(score(pos) > score(neg)), ties = 0.5.
+
+    §4 O-OPT-1: false-alarm AUC separating matured episodes (positives) from
+    placebo pseudo-episodes (negatives). 0.5 = no discrimination.
+
+    Returns NaN if either class is empty.
+    """
+    pos = np.asarray(positive_scores, dtype=float)
+    neg = np.asarray(negative_scores, dtype=float)
+    pos = pos[~np.isnan(pos)]
+    neg = neg[~np.isnan(neg)]
+    n_pos, n_neg = pos.size, neg.size
+    if n_pos == 0 or n_neg == 0:
+        return float("nan")
+    # Rank-based U statistic (handles ties as 0.5 via average ranks)
+    combined = np.concatenate([pos, neg])
+    order = combined.argsort(kind="mergesort")
+    sorted_vals = combined[order]
+    avg_ranks = np.empty(combined.size, dtype=float)
+    i = 0
+    while i < sorted_vals.size:
+        j = i
+        while j + 1 < sorted_vals.size and sorted_vals[j + 1] == sorted_vals[i]:
+            j += 1
+        r = (i + 1 + j + 1) / 2.0  # average of 1-based ranks in the tie block
+        avg_ranks[order[i: j + 1]] = r
+        i = j + 1
+    rank_sum_pos = float(avg_ranks[:n_pos].sum())
+    u_pos = rank_sum_pos - n_pos * (n_pos + 1) / 2.0
+    auc = u_pos / (n_pos * n_neg)
+    return float(auc)
+
+
+def auc_ci(
+    positive_scores: np.ndarray,
+    negative_scores: np.ndarray,
+    n_boot: int = 2000,
+    ci_level: float = 0.90,
+    rng: "np.random.Generator | None" = None,
+) -> tuple[float, float, float]:
+    """Bootstrap CI for the false-alarm AUC (§4 O-OPT-1, 90% CI default).
+
+    Resamples positives and negatives independently with replacement.
+
+    Returns (auc, ci_lo, ci_hi). All NaN if either class is empty.
+    """
+    if rng is None:
+        rng = np.random.default_rng(SEED)
+    pos = np.asarray(positive_scores, dtype=float)
+    neg = np.asarray(negative_scores, dtype=float)
+    pos = pos[~np.isnan(pos)]
+    neg = neg[~np.isnan(neg)]
+    point = auc_score(pos, neg)
+    if pos.size == 0 or neg.size == 0 or np.isnan(point):
+        return float("nan"), float("nan"), float("nan")
+    boot = np.empty(n_boot, dtype=float)
+    for b in range(n_boot):
+        p = rng.choice(pos, size=pos.size, replace=True)
+        q = rng.choice(neg, size=neg.size, replace=True)
+        boot[b] = auc_score(p, q)
+    boot = boot[~np.isnan(boot)]
+    if boot.size == 0:
+        return point, float("nan"), float("nan")
+    alpha = (1.0 - ci_level) / 2.0
+    lo = float(np.percentile(boot, 100 * alpha))
+    hi = float(np.percentile(boot, 100 * (1.0 - alpha)))
+    return point, lo, hi
+
+
+def auc_ci_includes_half(ci_lo: float, ci_hi: float) -> bool:
+    """§4 O-OPT-1 kill leg: does the AUC 90% CI include 0.50 (no discrimination)?
+
+    A NaN CI (unevaluable — e.g. no placebo negatives) is treated as
+    'no discrimination established' → returns True, so the AUC leg cannot
+    rescue a non-positive median lead when it was never measured.
+    """
+    if np.isnan(ci_lo) or np.isnan(ci_hi):
+        return True
+    return ci_lo <= 0.50 <= ci_hi
+
+
+# ---------------------------------------------------------------------------
 # O-OPT-2: confirmation split at [−5,+1] around onset
 # ---------------------------------------------------------------------------
 
@@ -667,6 +774,149 @@ def is_flow_confirmed(
     z_ok = float(z_window.mean()) >= z_threshold
     b_ok = float(b_window.mean()) >= breadth_threshold
     return z_ok and b_ok
+
+
+# ---------------------------------------------------------------------------
+# O-OPT-3/4: two-sided PAIR filter (§2.1 columns; ruling A3)
+# ---------------------------------------------------------------------------
+
+class OOPTPairConsistencyError(ValueError):
+    """Raised when `two_sided` and `paired_episode_id` disagree on any episode.
+
+    Ruling A3: a pair requires two_sided==True AND paired_episode_id non-null.
+    Any row where the two columns disagree is a DATA ERROR — abort, never
+    silently drop.
+    """
+
+
+def _is_pair_id_null(v: Any) -> bool:
+    """True if a paired_episode_id value is null/empty (NaN, None, '')."""
+    if v is None:
+        return True
+    try:
+        if isinstance(v, float) and np.isnan(v):
+            return True
+    except (TypeError, ValueError):
+        pass
+    if isinstance(v, str) and v.strip() == "":
+        return True
+    # pandas NA / NaT
+    try:
+        if pd.isna(v):
+            return True
+    except (TypeError, ValueError):
+        pass
+    return False
+
+
+def consistency_check_pairs(episodes: pd.DataFrame) -> None:
+    """Validate two_sided ⇔ (paired_episode_id non-null) consistency (ruling A3).
+
+    Aborts with OOPTPairConsistencyError on ANY disagreeing row. `pairing_unavailable`
+    (§2.1) is the ONE sanctioned exemption: a row may be two_sided=True with a null
+    paired_episode_id ONLY when pairing_unavailable=True (the pairing was known but
+    the counterparty is out of sample), and such rows are excluded from pair studies
+    by the caller rather than flagged as data errors.
+
+    Raises
+    ------
+    OOPTPairConsistencyError
+        Listing every offending episode_id.
+    """
+    if episodes.empty or "two_sided" not in episodes.columns:
+        return
+    ts = episodes["two_sided"].fillna(False).astype(bool)
+    pid = episodes["paired_episode_id"] if "paired_episode_id" in episodes.columns \
+        else pd.Series([None] * len(episodes), index=episodes.index)
+    pid_null = pid.map(_is_pair_id_null)
+    pairing_unavail = (
+        episodes["pairing_unavailable"].fillna(False).astype(bool)
+        if "pairing_unavailable" in episodes.columns
+        else pd.Series([False] * len(episodes), index=episodes.index)
+    )
+
+    # Disagreement A: two_sided=True but paired id null AND not sanctioned by
+    # pairing_unavailable.
+    bad_true_null = ts & pid_null & (~pairing_unavail)
+    # Disagreement B: two_sided=False but a paired id IS present.
+    bad_false_present = (~ts) & (~pid_null)
+
+    offenders = episodes[bad_true_null | bad_false_present]
+    if not offenders.empty:
+        ids = offenders["episode_id"].tolist() if "episode_id" in offenders.columns \
+            else offenders.index.tolist()
+        raise OOPTPairConsistencyError(
+            f"{len(ids)} episode(s) with inconsistent two_sided/paired_episode_id "
+            f"(A3 data error, not silently dropped): {ids[:20]}"
+            + (" …" if len(ids) > 20 else "")
+        )
+
+
+def filter_two_sided_pairs(episodes: pd.DataFrame) -> pd.DataFrame:
+    """Return the pair-eligible subset: two_sided==True AND paired_episode_id non-null.
+
+    Runs consistency_check_pairs FIRST (ruling A3) so any column disagreement
+    aborts rather than being masked by the filter.
+    """
+    consistency_check_pairs(episodes)
+    if episodes.empty or "two_sided" not in episodes.columns:
+        return episodes.iloc[0:0].copy()
+    ts = episodes["two_sided"].fillna(False).astype(bool)
+    if "paired_episode_id" in episodes.columns:
+        pid_ok = ~episodes["paired_episode_id"].map(_is_pair_id_null)
+    else:
+        pid_ok = pd.Series([False] * len(episodes), index=episodes.index)
+    return episodes[ts & pid_ok].copy()
+
+
+# ---------------------------------------------------------------------------
+# O-OPT-3: routing-cell placebo (§5 / P3b VERBATIM; ruling A2)
+# ---------------------------------------------------------------------------
+
+def routing_placebo_cell(
+    dest_rs_arr: np.ndarray,
+    vix_arr: np.ndarray,
+    real_onset_indices: list[int],
+    fwd_windows: list[int],
+    regime_label: str,
+    high_vix_thresh: float = 0.60,
+    cell_n: int | None = None,
+    n_draws: int = 200,
+    exclusion_zone: int = 10,
+    rng: "np.random.Generator | None" = None,
+) -> dict[int, np.ndarray]:
+    """Regime-matched random-onset routing placebo — P3b scheme VERBATIM (ruling A2).
+
+    Thin wrapper over scripts.oracle_gauntlet_p3._sample_routing_placebo_cell so
+    the O-OPT-3 routing path uses the EXACT P3b machinery (200 draws,
+    exclusion_zone=10, regime strata) rather than a re-implementation. Returns
+    {h: array(n_draws)} of placebo cell means.
+
+    The heavy panel arrays (dest_rs_arr, vix_arr aligned to panel_m dates) are
+    supplied by the caller from the real store; until the store run they come
+    from fixtures (which is why this is fixture-testable and cells legitimately
+    stub to insufficient_placebo).
+    """
+    from scripts.oracle_gauntlet_p3 import _sample_routing_placebo_cell  # noqa: PLC0415
+
+    if rng is None:
+        rng = np.random.default_rng(SEED)
+    n_panel = int(len(dest_rs_arr))
+    return _sample_routing_placebo_cell(
+        src_id="src",
+        dest_id="dest",
+        regime_label=regime_label,
+        fwd_windows=fwd_windows,
+        real_onset_indices=list(real_onset_indices),
+        n_panel=n_panel,
+        vix_arr=np.asarray(vix_arr, dtype=float),
+        dest_rs_arr=np.asarray(dest_rs_arr, dtype=float),
+        high_vix_thresh=high_vix_thresh,
+        n_draws=n_draws,
+        exclusion_zone=exclusion_zone,
+        rng=rng,
+        cell_n=cell_n,
+    )
 
 
 # ---------------------------------------------------------------------------

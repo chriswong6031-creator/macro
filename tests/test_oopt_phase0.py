@@ -73,6 +73,10 @@ from engine.oracle.oopt import (
     oopt_verdict, check_fragility,
     build_fixture_eod_panel, build_fixture_oi_panel, build_fixture_iv_panel,
     rolling_z, DOI_WINDOW,
+    # ruling A1-A3 machinery
+    pre_onset_score, auc_score, auc_ci, auc_ci_includes_half,
+    consistency_check_pairs, filter_two_sided_pairs, OOPTPairConsistencyError,
+    routing_placebo_cell,
 )
 
 # Re-import _era_means_oopt from runner (it's a module-level function there)
@@ -774,6 +778,299 @@ class TestRollingZ:
         z = rolling_z(s, window=252)
         valid = z.dropna()
         assert abs(float(valid.mean())) < 0.5, "Rolling z mean should be near 0"
+
+
+# ---------------------------------------------------------------------------
+# 14. Ruling A1 — false-alarm AUC (O-OPT-1 kill leg)
+# ---------------------------------------------------------------------------
+
+class TestFalseAlarmAUC:
+    def test_pre_onset_score_is_pit_at_onset(self):
+        """pre_onset_score uses ONLY [−15,0] = window indices [0..onset_idx]."""
+        s = pd.Series(np.arange(31, dtype=float))  # window [−15..+15], onset at 15
+        # mean of indices 0..15 inclusive = mean(0..15) = 7.5; post-onset excluded
+        assert pre_onset_score(s, 15) == pytest.approx(7.5)
+
+    def test_pre_onset_score_excludes_post_onset(self):
+        """A huge post-onset spike must not leak into the pre-onset score (PIT)."""
+        vals = [0.0] * 16 + [1e9] * 15  # onset at 15; post-onset spike
+        s = pd.Series(vals, dtype=float)
+        assert pre_onset_score(s, 15) == pytest.approx(0.0)
+
+    def test_auc_perfect_separation(self):
+        assert auc_score(np.array([3.0, 4.0, 5.0]), np.array([0.0, 1.0, 2.0])) == 1.0
+
+    def test_auc_no_discrimination(self):
+        assert auc_score(np.array([1.0, 2.0]), np.array([1.0, 2.0])) == 0.5
+
+    def test_auc_reversed(self):
+        assert auc_score(np.array([0.0, 1.0]), np.array([3.0, 4.0])) == 0.0
+
+    def test_auc_empty_class_is_nan(self):
+        assert np.isnan(auc_score(np.array([]), np.array([1.0])))
+        assert np.isnan(auc_score(np.array([1.0]), np.array([])))
+
+    def test_auc_ci_includes_half_discriminating(self):
+        """Discriminating series → AUC CI ABOVE 0.5 → does NOT include 0.50."""
+        rng = np.random.default_rng(0)
+        pos = rng.normal(2.0, 0.5, 60)
+        neg = rng.normal(-2.0, 0.5, 60)
+        auc, lo, hi = auc_ci(pos, neg, n_boot=500, rng=np.random.default_rng(1))
+        assert auc > 0.9
+        assert not auc_ci_includes_half(lo, hi), f"CI [{lo},{hi}] should exclude 0.50"
+
+    def test_auc_ci_includes_half_non_discriminating(self):
+        """Non-discriminating series → AUC CI straddles 0.50."""
+        rng = np.random.default_rng(2)
+        pos = rng.normal(0.0, 1.0, 60)
+        neg = rng.normal(0.0, 1.0, 60)
+        _, lo, hi = auc_ci(pos, neg, n_boot=500, rng=np.random.default_rng(3))
+        assert auc_ci_includes_half(lo, hi), f"CI [{lo},{hi}] should include 0.50"
+
+    def test_auc_ci_nan_treated_as_no_discrimination(self):
+        """Unevaluable AUC (empty class) → treated as 'includes 0.50' (kill leg fails)."""
+        assert auc_ci_includes_half(np.nan, np.nan) is True
+
+    def test_kill_criterion_both_legs_must_fail(self):
+        """§4 O-OPT-1: KILL only when median_lead<=0 AND AUC CI includes 0.50.
+
+        A discriminating AUC (excludes 0.50) must PREVENT the kill even when the
+        median lead is non-positive (coincident-but-discriminating → DISPLAY).
+        """
+        # discriminating AUC → not-includes-half → kill leg False
+        rng = np.random.default_rng(4)
+        pos = rng.normal(3.0, 0.4, 80)
+        neg = rng.normal(-3.0, 0.4, 80)
+        _, lo, hi = auc_ci(pos, neg, n_boot=400, rng=np.random.default_rng(5))
+        median_lead = -1.0  # non-positive
+        kill = (median_lead <= 0) and auc_ci_includes_half(lo, hi)
+        assert kill is False, "Discriminating AUC must block the kill even at lead<=0"
+
+    def test_runner_o1_has_real_auc_fields(self):
+        """The runner stamps auc / auc_ci_lo / auc_ci_hi (not a boot_hi proxy)."""
+        if not _RUNNER_AVAILABLE:
+            pytest.skip("runner not importable")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            data_dir = Path(tmpdir) / "data"
+            (data_dir / "oracle" / "gauntlet").mkdir(parents=True)
+            (data_dir / "experiments").mkdir(parents=True)
+            results = run_oopt_phase0(data_dir=data_dir, smoke=True, out_dir=Path("/tmp"))
+            o1 = results["o1"]
+            assert "auc" in o1 and "auc_ci_lo" in o1 and "auc_ci_hi" in o1
+            assert "auc_ci_includes_half" in o1
+
+
+# ---------------------------------------------------------------------------
+# 15. Ruling A2 — O-OPT-3 routing placebo path (P3b VERBATIM)
+# ---------------------------------------------------------------------------
+
+class TestRoutingPlaceboPath:
+    def test_routing_placebo_returns_200_draws(self):
+        """routing_placebo_cell wraps P3b _sample_routing_placebo_cell (200 draws)."""
+        rng = np.random.default_rng(7)
+        n = 500
+        dest_rs = np.cumsum(rng.standard_normal(n)) * 0.01
+        vix = rng.uniform(0, 1, n)
+        onsets = [50, 120, 200, 310, 400]
+        draws = routing_placebo_cell(
+            dest_rs, vix, onsets, [5], "high_vix",
+            cell_n=3, n_draws=200, exclusion_zone=10, rng=np.random.default_rng(1),
+        )
+        assert 5 in draws
+        assert draws[5].shape == (200,), "P3b placebo must yield 200 draws"
+
+    def test_routing_placebo_regime_matched(self):
+        """Placebo pseudo-onsets are drawn only from regime-matching sessions.
+
+        A cell requesting 'high_vix' with all-low VIX panel yields no valid pool
+        → all-NaN draws (regime strata are actually enforced, not ignored).
+        """
+        n = 400
+        dest_rs = np.cumsum(np.random.default_rng(8).standard_normal(n)) * 0.01
+        vix = np.full(n, 0.1)  # all LOW vix
+        draws = routing_placebo_cell(
+            dest_rs, vix, [50, 100, 200], [5], "high_vix",
+            cell_n=2, n_draws=200, high_vix_thresh=0.6, rng=np.random.default_rng(9),
+        )
+        assert np.all(np.isnan(draws[5])), "high_vix cell on all-low-VIX panel must find no regime match"
+
+    def test_runner_o3_exercises_placebo_path(self):
+        """Runner O-OPT-3 invokes the placebo path per cell (insufficient without panel)."""
+        if not _RUNNER_AVAILABLE:
+            pytest.skip("runner not importable")
+        from scripts.run_oopt_phase0 import _routing_cell_placebo
+        # No panel arrays → insufficient_placebo (legitimate stub), path exercised
+        out = _routing_cell_placebo(
+            dest_rs_arr=None, vix_arr=None, real_onset_indices=[],
+            regime="high_vix", cell_n=1, real_mean=0.01,
+            rng=np.random.default_rng(0), horizons=[5],
+        )
+        assert out["insufficient_placebo"] is True
+        # WITH panel arrays and enough draws → real P3b placebo p95 + g1 decision
+        rng = np.random.default_rng(11)
+        n = 600
+        dest_rs = np.cumsum(rng.standard_normal(n)) * 0.01
+        vix = rng.uniform(0.6, 1.0, n)  # all high-vix → ample regime pool
+        out2 = _routing_cell_placebo(
+            dest_rs_arr=dest_rs, vix_arr=vix,
+            real_onset_indices=[50, 150, 250, 350, 450],
+            regime="high_vix", cell_n=5, real_mean=10.0,
+            rng=np.random.default_rng(12), horizons=[5],
+        )
+        assert out2["insufficient_placebo"] is False
+        assert out2["placebo_p95"] is not None
+        assert out2["g1_routing_pass"] is True  # real_mean=10 >> placebo p95
+
+
+# ---------------------------------------------------------------------------
+# 16. Ruling A3 — pair consistency (two_sided ⇔ paired_episode_id)
+# ---------------------------------------------------------------------------
+
+class TestPairConsistency:
+    def _df(self, rows):
+        return pd.DataFrame(rows)
+
+    def test_consistent_pairs_no_raise(self):
+        df = self._df([
+            {"episode_id": "a", "two_sided": True, "paired_episode_id": "b", "pairing_unavailable": False},
+            {"episode_id": "b", "two_sided": False, "paired_episode_id": None, "pairing_unavailable": False},
+        ])
+        consistency_check_pairs(df)  # must not raise
+
+    def test_two_sided_true_null_pair_raises(self):
+        """two_sided=True with null pair (and not pairing_unavailable) → abort."""
+        df = self._df([
+            {"episode_id": "a", "two_sided": True, "paired_episode_id": None, "pairing_unavailable": False},
+        ])
+        with pytest.raises(OOPTPairConsistencyError):
+            consistency_check_pairs(df)
+
+    def test_two_sided_false_with_pair_raises(self):
+        """two_sided=False but a paired id present → abort (not silent drop)."""
+        df = self._df([
+            {"episode_id": "a", "two_sided": False, "paired_episode_id": "b", "pairing_unavailable": False},
+        ])
+        with pytest.raises(OOPTPairConsistencyError):
+            consistency_check_pairs(df)
+
+    def test_pairing_unavailable_exemption(self):
+        """two_sided=True + null pair is OK when pairing_unavailable=True (§2.1)."""
+        df = self._df([
+            {"episode_id": "a", "two_sided": True, "paired_episode_id": None, "pairing_unavailable": True},
+        ])
+        consistency_check_pairs(df)  # must not raise
+
+    def test_filter_keeps_only_valid_pairs(self):
+        df = self._df([
+            {"episode_id": "a", "two_sided": True, "paired_episode_id": "b", "pairing_unavailable": False},
+            {"episode_id": "b", "two_sided": False, "paired_episode_id": None, "pairing_unavailable": False},
+        ])
+        kept = filter_two_sided_pairs(df)
+        assert kept["episode_id"].tolist() == ["a"]
+
+    def test_filter_raises_on_inconsistency(self):
+        """filter runs the consistency check first — a data error aborts the filter."""
+        df = self._df([
+            {"episode_id": "a", "two_sided": False, "paired_episode_id": "b", "pairing_unavailable": False},
+        ])
+        with pytest.raises(OOPTPairConsistencyError):
+            filter_two_sided_pairs(df)
+
+
+# ---------------------------------------------------------------------------
+# 17. Ruling A4 — Tier-M display cells (coverage-gated, never claim-gated)
+# ---------------------------------------------------------------------------
+
+class TestTierMDisplayCells:
+    def test_below_floor_stamps_skipped_coverage(self):
+        if not _RUNNER_AVAILABLE:
+            pytest.skip("runner not importable")
+        from scripts.run_oopt_phase0 import _run_tierm_display
+        episodes_m = pd.DataFrame({
+            "onset_date": pd.to_datetime(["2022-03-01", "2024-05-01"]),
+        })
+        rotation_groups = {"complexes": [
+            {"id": "c1", "members": ["m1", "m2", "m3", "m4", "m5"], "risk_sign": "risk_on"},
+        ]}
+        # options_universe covers 1/5 = 0.20 < 0.40 floor
+        out = _run_tierm_display(episodes_m, {}, rotation_groups, {"m1"})
+        assert out["status"] == "skipped_coverage"
+        assert out["gated"] is False
+        assert out["coverage"] == pytest.approx(0.2)
+
+    def test_above_floor_computes_watermarked_cells(self):
+        if not _RUNNER_AVAILABLE:
+            pytest.skip("runner not importable")
+        from scripts.run_oopt_phase0 import _run_tierm_display
+        episodes_m = pd.DataFrame({
+            "onset_date": pd.to_datetime(["2022-03-01", "2024-05-01", "2021-06-01"]),
+        })
+        rotation_groups = {"complexes": [
+            {"id": "c1", "members": ["m1", "m2", "m3", "m4", "m5"], "risk_sign": "risk_on"},
+        ]}
+        # coverage 3/5 = 0.60 >= floor
+        out = _run_tierm_display(episodes_m, {}, rotation_groups, {"m1", "m2", "m3"})
+        assert out["status"] == "computed"
+        assert out["gated"] is False
+        # every produced cell is watermarked and NOT gated
+        for cell in out["cells"]:
+            assert cell["gated"] is False
+            assert cell.get("watermark") is True
+
+    def test_tierm_never_gated_either_way(self):
+        """Ruling A4: Tier-M cells never gated whether computed or skipped."""
+        if not _RUNNER_AVAILABLE:
+            pytest.skip("runner not importable")
+        from scripts.run_oopt_phase0 import _run_tierm_display
+        rg = {"complexes": [{"id": "c1", "members": ["m1", "m2"], "risk_sign": "risk_on"}]}
+        em = pd.DataFrame({"onset_date": pd.to_datetime(["2023-01-01"])})
+        computed = _run_tierm_display(em, {}, rg, {"m1", "m2"})   # 100% coverage
+        skipped = _run_tierm_display(em, {}, rg, set())            # 0% coverage
+        assert computed["gated"] is False
+        assert skipped["gated"] is False
+        assert skipped["status"] == "skipped_coverage"
+
+
+# ---------------------------------------------------------------------------
+# 18. O-OPT-2 placebo direction — per-direction (P3 idiom, not hardcoded "in")
+# ---------------------------------------------------------------------------
+
+class TestOOPT2PlaceboDirection:
+    def test_mixed_direction_placebo_runs_per_direction(self):
+        """O-OPT-2 G1 placebo pools per-direction draws (P3 idiom), not direction_filter='in'.
+
+        A mixed in/out confirmed sample must produce a finite placebo_p95 with the
+        placebo direction-matched to the real sample's own in/out mix.
+        """
+        if not _RUNNER_AVAILABLE:
+            pytest.skip("runner not importable")
+        from scripts.run_oopt_phase0 import _run_oopt2
+        dates = pd.date_range("2013-01-01", periods=400, freq="B")
+        rng = np.random.default_rng(0)
+        rows = []
+        for nd in ["XLK", "XLV"]:
+            rs = np.cumsum(rng.standard_normal(len(dates))) * 0.01
+            for d, r in zip(dates, rs):
+                rows.append({"node": nd, "date": d, "rs": r})
+        panel = pd.DataFrame(rows).set_index(["node", "date"])
+
+        eps = []
+        for i, (nd, dr) in enumerate([("XLK", "in"), ("XLV", "out")] * 40):
+            eps.append({
+                "episode_id": f"e{i}", "node": nd, "direction": dr,
+                "onset_date": dates[30 + i % 300],
+                "exhausted_date": dates[min(60 + i % 300, 399)],
+                "outcome_rs_21d": float(rng.standard_normal() * 0.03),
+                "outcome_mature_21d": True, "flow_confirmed": True, "composite_z": 1.0,
+                "regime_vix_pctile": rng.uniform(0, 1),
+                "regime_spy_above_200d": float(rng.integers(0, 2)),
+            })
+        out = _run_oopt2(pd.DataFrame(eps), panel, np.random.default_rng(1),
+                         horizons=[21], primary_horizon=21)
+        h = out["horizons"][21]
+        assert h["n_confirmed"] == 80
+        # Both directions present → per-direction pooling yields a finite p95.
+        assert h["placebo_p95"] is not None and not np.isnan(h["placebo_p95"])
 
 
 # ---------------------------------------------------------------------------
