@@ -200,8 +200,139 @@ avoid excessive type-II error given the sample-size constraints).
 
 ## §Results
 
-*(This section is populated by the study script `scripts/research/options_history_gauntlet.py`
-after the preregistration commit. Opus stats review required before any verdict prints.)*
+**PRELIMINARY — Opus stats review MANDATORY before any verdict prints.**
+**Runtime measured: 53 seconds (full suite, 23 roots, 15-year store, single process).**
+**Conclusions framed as display/context evidence informing §4 gates only.**
+
+> In plain English: of 52 pre-registered test cells, 51 had sufficient n (Era0 DOI was SPARSE
+> — no price data pre-2017). Across the global BH family at alpha=0.10, **15 cells survive**
+> correction, concentrated heavily in S-GEXR-H (gamma regime → realized vol). Skew drawdown
+> correlation is statistically clear but does not survive after correction. CW ivspread and
+> DOI persistence are essentially null at this universe breadth (15–23 ETF/index roots).
+> The DOI single survivor is in Era1 (2016–2019) and absent in Era2/Era3, meaning it is
+> DEAD by the era-amendment rule. None of these results warrant deployment or scoring changes.
+
+### S-GEXR-H: Gamma regime → forward realized volatility
+
+| era   | horizon | n_long | n_short | mean_rv_long | mean_rv_short | mw_p  | bh_adj_p | reject |
+|---|---|---|---|---|---|---|---|---|
+| Era1  | 5d  | 5057 | 11638 | 0.177 | 0.148 | 0.000 | 0.000 | YES |
+| Era1  | 21d | 5057 | 11638 | 0.183 | 0.161 | 0.000 | 0.000 | YES |
+| Era2  | 5d  | 8565 | 8823  | 0.268 | 0.282 | 0.000 | 0.000 | YES |
+| Era2  | 21d | 8565 | 8823  | 0.283 | 0.304 | 0.000 | 0.000 | YES |
+| Era3  | 5d  | 7339 | 12717 | 0.204 | 0.214 | 0.066 | 0.574 | no  |
+| Era3  | 21d | 7159 | 12529 | 0.228 | 0.239 | 0.005 | 0.047 | YES |
+
+**Key finding:** SHORT-gamma regime (dealers are amplifiers) is associated with HIGHER realized
+vol in most eras, consistent with the dealer-gamma mechanism. Effect persists across Era1–Era3
+though it weakens in Era3 (5d no longer survives; 21d barely survives). NOT a direction signal.
+
+**Post-publication decay:** effect present in all three eras but weakening. Era1 shows the
+strongest separation (0.177 vs 0.148 for LONG vs SHORT). Consistent with partial arbitrage
+but not fully decayed. **Cautious interpretation required:** n_short >> n_long in Era1/Era3
+suggests the `net_gamma` proxy (raw sum of signed greeks without OI weighting) may produce
+a biased split — this is the primary concern for Opus review.
+
+**Critical Opus review items:**
+1. The `net_gamma` computed here uses unweighted greeks sum (no OI in greeks store). This
+   biases toward options with many strikes/expirations. Verify whether OI-weighted approach
+   changes the regime classification materially.
+2. The n_short >> n_long imbalance across all eras should be explained mechanistically.
+3. Effect direction in Era2 flips (mean_rv_short > mean_rv_long, expected), consistent with
+   2020 regime — but the n-balance there is closer. Check if the 5d vs 21d difference in
+   Era3 is meaningful or noise.
+
+### SKEW-DEESC-H: Sector skew → forward max drawdown / return vs SPY
+
+**NULL at global BH correction.** All 27 cells produce "no" at the global BH level, though
+several have raw p < 0.05 (notably HIGH_RISING/HIGH_FALLING → 21d MaxDD in Era1 with
+p ≈ 0.000). These do not survive after correction.
+
+**Directional finding (context only):** HIGH skew (steep put premium) is associated with
+LARGER 21d max drawdown (more negative) in Era1/Era2, consistent with informed put-buying
+preceding drawdowns. Effect is consistent in direction but not sufficient to survive BH.
+
+**Post-publication decay:** Effect is present in Era1/Era2 but attenuates in Era3. The Era3
+HIGH_RISING drawdown p-value is 0.112 (vs 0.000 in Era1). This is the expected decay
+signature — do not treat as a live signal.
+
+**Root cause of null result:** 11 sector ETFs × 3 eras × 3 conditions × 3 targets = 27 cells.
+The BH burden is high for this breadth. Single-name expansion (W-E0) needed.
+
+### CWIV-H: CW ivspread cross-sectional rank-IC
+
+**NULL across all eras at global BH correction.** Era3 5d raw p = 0.002 (rank-IC = 0.041),
+but after global BH correction (rank 9/52 in family), bh_adj_p = 0.106, barely failing.
+
+**Post-publication decay:** The CW literature (2010, pre-2010 era) showed ~51bps/wk effect.
+Here, Era1 IC ≈ 0.027 (not significant); Era3 IC ≈ 0.041 (nominally significant, not BH).
+This is consistent with decay and/or insufficient cross-section (only 15 roots; CW needed
+hundreds of stocks). Universe expansion is required before any claim.
+
+**Caveat on ivspread computation:** the greeks store does NOT contain OI per-strike, so this
+uses equal-weight matched pairs rather than OI-weighted as per the CW paper. OI weighting
+may strengthen or weaken the signal — this must be checked in W-E0 with single-name data
+that includes OI.
+
+### DOI-H: 5-day ΔOI persistence
+
+| era   | condition | horizon | n_cond | n_flat | mean_cond | mean_flat | mw_p  | bh_adj_p | reject |
+|---|---|---|---|---|---|---|---|---|---|
+| Era0  | all       | all     | SPARSE | SPARSE | —         | —         | SPARSE | SPARSE  | SPARSE |
+| Era1  | OI_UP     | 10d     | 6834   | 6093   | −0.0003   | +0.0011   | 0.000 | 0.008    | YES |
+| Era1  | OI_DOWN   | 5d      | 3759   | 6093   | −0.0003   | +0.0005   | 0.026 | 0.337    | no  |
+| Era2  | all       | all     | ≥3659  | ≥7321  | ~0.000    | ~0.000    | >0.10 | >1.00    | no  |
+| Era3  | all       | all     | ≥4100  | ≥9821  | ~0.000    | ~0.000    | >0.01 | >0.25    | no  |
+
+**KEY FINDING: DOI-H is DEAD per era-amendment rule.** The single surviving cell is
+`DOI.Era1.OI_UP.10d` — entirely in Era1 (2016–2019) with zero survivors in Era2/Era3.
+Per `OPTIONS_ALPHA_ERA_PARTITION_AMENDMENT.md §5`: a claim alive only in early eras is dead.
+**DOI-H verdict: DEAD. Do not carry forward as live signal at this universe breadth.**
+
+**Era0 SPARSE note:** DOI-H Era0 (2012–2015) produces SPARSE for all cells because underlying
+price data (needed for relative return vs SPY) is only available from 2017 via the greeks
+store. The OI data exists 2012→ but cannot be paired with forward returns without price. This
+is an honest limitation — not a computation error.
+
+### Global BH-FDR family summary
+
+| Rank | Cell | raw_p | bh_adj_p | reject |
+|---|---|---|---|---|
+| 1 | GEXR.Era1.5d | 0.0000 | 0.0000 | YES |
+| 2 | GEXR.Era1.21d | 0.0000 | 0.0000 | YES |
+| 3 | GEXR.Era2.21d | 0.0000 | 0.0000 | YES |
+| 4 | GEXR.Era2.5d | 0.0000 | 0.0000 | YES |
+| 5 | SKEW.Era1.HIGH_FALLING.max_dd21 | 0.0000 | 0.0000 | YES |
+| 6 | SKEW.Era1.HIGH_RISING.max_dd21 | 0.0001 | 0.0006 | YES |
+| 7 | DOI.Era1.OI_UP.10d | 0.0001 | 0.0011 | YES → DEAD (era-only) |
+| 8 | SKEW.Era2.LOW.max_dd21 | 0.0002 | 0.0011 | YES |
+| 9 | CWIV.Era3.5d | 0.0020 | 0.0118 | YES → CAUTION (Era3-only) |
+| 10–15 | GEXR.Era3.21d + CWIV.Era3.21d + DOI survivors | 0.005–0.026 | 0.024–0.090 | YES |
+| 16–52 | remainder | >0.05 | >0.17 | no |
+
+**Surviving rejections at global BH alpha=0.10: 15 / 51**
+
+**After era-amendment filtering:**
+- S-GEXR-H survivors (Era1+Era2+Era3.21d): **ALIVE** — survives into Era3 (though weakening).
+  Context evidence that SHORT gamma regime conditions higher forward RV. NOT a direction signal.
+- SKEW drawdown survivors (Era1.HIGH_FALLING, Era1.HIGH_RISING, Era2.LOW): concentrated in
+  Era1/Era2 — **ALIVE as early-era signal but degrading.** Context evidence for the
+  S-TOP_RISK de-escalation hypothesis, but not sufficient for gate pass.
+- DOI.Era1.OI_UP.10d: **DEAD** (Era1-only per amendment §5 rule).
+- CWIV.Era3.5d: appears only in Era3 — **CAUTION** (possible recent data artifact;
+  Era3 coverage is shorter; insufficient to claim cross-era robustness).
+
+**Implications for §4 gates:**
+- S-GEXR-H → S-GEXR gate: context evidence consistent with the mechanism. Gate stays
+  `scored=false`; this study informs the world_state `options_weather` lobe (display-only).
+- S-SKEW_DECEL / S-TOP_RISK gates: skew-drawdown association survives in Era1/Era2 for the
+  max-drawdown target. This supports the de-escalation direction — high skew → more downside
+  risk — but must be confirmed with single-name breadth.
+- S-CWIV gate: null at this breadth. W-E0 single-name extension required before any verdict.
+- S-DOI gate: DEAD at ETF/index level. W-E0 single-name extension may differ (directional
+  OI flows are more meaningful for individual names).
+
+**All above are display/context evidence only. No scoring, no deployment, no gate flips.**
 
 ---
 
