@@ -34,9 +34,17 @@ BASE SERIES (v1)
 
 PIT LAW (structural, tested)
 -----------------------------
-Every formula is evaluated as-of the fire date using ONLY bars strictly ≤ fire date.
-The evaluator receives ``close.iloc[:fire_iloc+1]`` (the pre-fire slice) and nothing
-else.  ``fire_iloc`` is derived via ``engine.grading._snap_loc`` on each ticker's
+Every formula's value at a fire date depends ONLY on bars ≤ that fire date.
+The shipped vectorized artifact path (``_compute_signal_for_candidate`` in
+``scripts/research/compile_alpha_candidates.py``) evaluates each formula ONCE
+over the ticker's FULL close series and extracts the value at ``fire_iloc``;
+PIT safety derives from the trailing-window property of every v1 primitive
+(the value at bar t is a function of bars ≤ t only, unchanged by the presence
+of future bars), NOT from pre-fire slicing.  This is proven by the spike tests
+``test_pit_spike_vectorized_path`` / ``test_pit_spike_vectorized_cs_rank_inner``
+in ``tests/test_alpha_grammar.py``.  (``eval_formula_at_fire`` below is the
+per-fire reference path and does evaluate on ``close.iloc[:fire_iloc+1]``.)
+``fire_iloc`` is derived via ``engine.grading._snap_loc`` on each ticker's
 close series and asserted to equal the fire date (the snapped bar's date must match
 the fire date).  A fire date missing from a ticker's close series produces NaN for
 that event (never an off-by-one anchor).
@@ -201,12 +209,15 @@ CLOSE_RETURNS = FormulaNode(op="close_returns", args=())
 
 def _eval_node(node: FormulaNode, close_slice: pd.Series,
                cohort_values: dict[str, float] | None = None) -> pd.Series:
-    """Evaluate a formula node on a PIT close slice (bars up to and including fire bar).
+    """Evaluate a formula node on a close series.
 
     Parameters
     ----------
     close_slice:
-        close.iloc[:fire_iloc+1] — strictly no post-fire bars visible.
+        Either the pre-fire slice ``close.iloc[:fire_iloc+1]`` (the
+        ``eval_formula_at_fire`` reference path) or the FULL close series
+        (the vectorized artifact path) — PIT-equivalent either way because
+        every v1 primitive is a trailing-window op (see PIT LAW header).
     cohort_values:
         For cs_rank nodes: {ticker: raw_value} for all tickers in the same-date
         cohort.  If None or cohort is below MIN_COHORT_SIZE, cs_rank emits NaN.
@@ -487,7 +498,8 @@ def enumerate_candidates(
     """Enumerate candidates deterministically up to ``cap``.
 
     The full enumerated grid (before capping) is the true search space:
-    ~9 primitives × close base × 4 windows × depth-2 compositions.
+    8 enumerated primitives (7 windowed + cs_rank; roll_corr reserved for v2)
+    × close base × 4 windows × depth-2 compositions.
     The grid is logged to the ledger BEFORE grading via log_grid in the runner.
 
     Volume-based candidates are DROPPED (not NaN-filled) since the deep panel

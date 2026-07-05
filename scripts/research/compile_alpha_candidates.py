@@ -402,8 +402,8 @@ def run(dry_run: bool = False, deep_only: bool = True) -> None:
 
     # Log the full enumerated grid (365 entries) exactly once.  The 200 graded
     # candidates are a subset — logging them separately would inflate the DSR
-    # haircut by ~78% and is incorrect (the full grid already covers the entire
-    # multiple-testing burden).
+    # haircut by ~55% (565 vs 365 entries) and is incorrect (the full grid
+    # already covers the entire multiple-testing burden).
     #
     # HISTORICAL NOTE: an earlier run (pre-2026-07-05 fix) logged both the
     # 365 grid entries AND the 200 candidate configs separately, producing 565
