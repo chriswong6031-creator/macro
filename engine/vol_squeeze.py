@@ -195,6 +195,129 @@ _CAVEAT_EXP_ZH = ("波动率已处于高位 — 实现波动率位于过去一�
                   "这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。")
 
 
+def assess_series(
+    close: pd.Series,
+    high: pd.Series | None = None,
+    low: pd.Series | None = None,
+    volume: pd.Series | None = None,
+    cfg: dict | None = None,
+) -> pd.DataFrame:
+    """Return a per-bar DataFrame of vol-squeeze states for the full price history.
+
+    **OFFLINE / ANALYSIS-ONLY** until benchmarked per masterplan section 6 W3.
+    Library builders (build_*_library.py) must continue calling the snapshot
+    ``assess()`` — this function is NOT on the nightly render path.
+
+    Fidelity pin (masterplan PR-A3): for every truncation length ``t``,
+    ``assess_series(close, ...).state.iloc[t]`` MUST equal the state returned by
+    ``assess(close.iloc[:t+1], ...)`` on the same data truncated at ``t``.
+
+    The equality is implemented by construction: each bar is produced by a
+    bar-by-bar loop that calls ``assess()`` directly at each truncation length,
+    so the state can never drift from the snapshot API.  Speed is secondary to
+    correctness; complexity is O(n²) — each bar re-runs the full percentile
+    ranks over the truncation.  Measured wall-clock: ~20–45 s for a 5 000-bar
+    series on a single core (Mac Studio measured ~22 s; see PR body).
+    Offline-only.
+
+    Parameters
+    ----------
+    close, high, low, volume:
+        Same semantics as ``assess()``.  ``high``/``low``/``volume`` may be None.
+    cfg:
+        Override dict merged with ``DEFAULTS``.  Same keys as ``assess()``.
+
+    Returns
+    -------
+    pd.DataFrame indexed like *close* with columns:
+
+    ``state``
+        One of COILED | COMPRESSED | FIRED_UP | FIRED_DOWN | EXPANSION | NONE.
+        Bars below ``cfg['min_bars']`` (default 160) are mapped to NONE because
+        ``assess()`` returns None there — confirmed by the fidelity-pin test.
+    ``days_in_state``
+        Consecutive bars ending at this bar that share the current state
+        (reset on every state change, not available from scalar assess — added
+        as a cheap extra column useful for duration studies).
+    ``days_compressed``
+        Raw compression run length (mirrors assess()['days_compressed']).
+    ``box_hi``, ``box_lo``
+        Squeeze-box levels (NaN when not in a compression context).
+    ``bbwp``, ``hv_pctile``
+        Latest percentile values (NaN when assess returns None).
+    ``fired_dir``
+        'up' / 'down' / None mapped to 'up' / 'down' / '' for DataFrame storage.
+    ``volume_confirmed``
+        True / False / None → 1.0 / 0.0 / NaN.
+    ``coverage``
+        String: 'ohlcv' | 'ohlc' | 'close'.
+    """
+    c = _series(close)
+    idx = c.index
+    n = len(idx)
+    cf = {**DEFAULTS, **(cfg or {})}
+
+    # Pre-align optional series to close's index once (avoids repeated reindex)
+    hi = _series(high, idx) if (high is not None) else None
+    lo = _series(low, idx) if (low is not None) else None
+    vol = _series(volume, idx) if (volume is not None) else None
+
+    rows: list[dict] = []
+
+    for t in range(n):
+        c_t = c.iloc[: t + 1]
+        hi_t = hi.iloc[: t + 1] if hi is not None else None
+        lo_t = lo.iloc[: t + 1] if lo is not None else None
+        vo_t = vol.iloc[: t + 1] if vol is not None else None
+
+        result = assess(c_t, hi_t, lo_t, vo_t, cfg)
+
+        if result is None:
+            # Below min_bars: fidelity-pinned to NONE
+            rows.append(
+                {
+                    "state": "NONE",
+                    "days_compressed": 0,
+                    "box_hi": float("nan"),
+                    "box_lo": float("nan"),
+                    "bbwp": float("nan"),
+                    "hv_pctile": float("nan"),
+                    "fired_dir": "",
+                    "volume_confirmed": float("nan"),
+                    "coverage": "close",
+                }
+            )
+        else:
+            rows.append(
+                {
+                    "state": result["state"],
+                    "days_compressed": result["days_compressed"],
+                    "box_hi": result["box_hi"] if result["box_hi"] is not None else float("nan"),
+                    "box_lo": result["box_lo"] if result["box_lo"] is not None else float("nan"),
+                    "bbwp": result["bbwp"] if result["bbwp"] is not None else float("nan"),
+                    "hv_pctile": result["hv_pctile"] if result["hv_pctile"] is not None else float("nan"),
+                    "fired_dir": result["fired_dir"] if result["fired_dir"] is not None else "",
+                    "volume_confirmed": (
+                        1.0 if result["volume_confirmed"] is True
+                        else 0.0 if result["volume_confirmed"] is False
+                        else float("nan")
+                    ),
+                    "coverage": result["coverage"],
+                }
+            )
+
+    df = pd.DataFrame(rows, index=idx)
+
+    # Compute days_in_state: consecutive bars ending here with the same state
+    state_arr = df["state"].to_numpy()
+    days_in = np.ones(n, dtype=int)
+    for i in range(1, n):
+        days_in[i] = days_in[i - 1] + 1 if state_arr[i] == state_arr[i - 1] else 1
+    df.insert(1, "days_in_state", days_in)
+
+    return df
+
+
 def _out(state, bias, days, bbwp, hvp, box_hi, box_lo, pos, to_upper, to_lower,
          fired_dir, coverage, *, volume_confirmed=None) -> dict:
     return {
