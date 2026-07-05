@@ -50,6 +50,21 @@ A compound PASSES the reversion gate only if ALL hold:
 PASS = 1^2^3^4^5^6. (Gauntlet-reversion harness to be built adds legs 5-6; the
 screener supplies 1-4.)
 
+## Amendment 1 — Single-regime path (frozen 2026-07-05, BEFORE running any single-regime candidate)
+
+**Motivation.** Leg 4's dual-regime requirement ("ret>0 in BOTH risk_on and risk_off") cannot be satisfied by a signal STRUCTURALLY confined to one regime — bear-tape signals gated on `spy_above_200d==0` (which IS risk_off by definition), or any signal explicitly gated to risk-off (`spy_above_200d==0 OR vix_pctile>=0.70`). Such a signal has ~0 entries in the opposite regime, so Leg 4 fails *by construction* — not because it's a beta timer, but because the test is category-inapplicable. This blocks the operator's CORE thesis (defensive/risk-off rotation to escape drawdowns). Confirmed on two mechanisms: the bear-tape family, and (once risk-off-gated) credit-relief, whose tier-M pooled WR fails only because risk_on WR ~0.50 drags it down.
+
+**This amendment is STRICTER, not a loophole.** It replaces the inapplicable dual-regime leg with a within-operating-regime test AND replaces the all-history placebo with a REGIME-MATCHED placebo. The current all-history placebo lets a risk-off-only signal claim credit for risk-off *beta* (risk-off periods bounce harder); the regime-matched placebo removes that free pass — the signal must beat random RISK-OFF-timed entries. The single-regime path therefore demands MORE evidence of genuine timing edge, not less.
+
+**Trigger (non-gameable).** A compound takes the single-regime path IFF the minority regime has **n < 30 entries** (structurally confined; cannot be evaluated as dual-regime). A signal with ≥30 entries in BOTH regimes takes the STANDARD dual-regime path unchanged — the single-regime path is NOT available to a signal that merely performs poorly in one regime with meaningful n (that genuinely fails "works in both").
+
+**Amended legs (single-regime path only; all numeric thresholds otherwise UNCHANGED):**
+- **Leg 4′:** ret_exit ≥ +1.0% overall AND ret_exit > 0 in the OPERATING regime AND **n_operating ≥ 100**. (The empty regime is exempt.)
+- **Leg 6′ — regime-matched placebo:** the per-node placebo pool is restricted to dates where that node was in the OPERATING regime (risk_off ≡ `spy_above_200d==0 OR vix_pctile>=0.70`). Count-matched draws sample only that regime's realizable outcomes. PASS iff real mean ret_exit > 95th pctile of 500 draws (one-sided p<0.05) — the signal's timing must beat random within-regime timing.
+- **Legs 1, 2, 3, 5 UNCHANGED** (n≥100, WR≥0.62, asym≥1.5; OOS holdout WR≥0.58 + sign-match + holdout-n≥100), computed on all entries (≈ operating-regime entries since minority<30).
+
+**Standing.** A single-regime PASS means "beats random within-regime timing with drawdown-safe asymmetry" = genuine entry alpha within the operating regime, NOT regime beta. Display-only + transaction-cost haircut still required. Implementation (`scripts/oracle_reversion_screen.py`) to be built to THIS spec and Opus-reviewed for faithfulness; a known dual-regime signal (A15) must be verified UNCHANGED by the code as a positive control.
+
 ## Standing notes
 
 - ABSOLUTE returns include market beta by design (operator's call: the P&L of a
