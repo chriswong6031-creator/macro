@@ -58,6 +58,22 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("track record failed: %s", e)
 
+    # Sector ETF cross-section (additive — degrade-safe).
+    try:
+        sector_perf = sr.compute_sector_etf_perf(_data("yahoo"))
+        if sector_perf:
+            sector_metrics = sr._rotation_metrics(sector_perf)
+            sectors_array = sr.build_sectors_array(sector_metrics)
+            payload["sectors"] = sectors_array
+            payload["n_sectors"] = len(sectors_array)
+            log.info("sector ETFs: %d rows, quadrants=%s",
+                     len(sectors_array),
+                     {s["quadrant"] for s in sectors_array})
+        else:
+            log.warning("sector ETF perf empty — omitting sectors from payload")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector ETF build failed: %s", e)
+
     outdir = site / "marketdata"
     outdir.mkdir(parents=True, exist_ok=True)
     out = outdir / "subsector_rotation.json"

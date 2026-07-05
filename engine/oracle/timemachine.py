@@ -5,9 +5,10 @@ No side effects; no network; numpy + pandas only.
 
 Granularity:
   Tier S — quarterly chunks, DAILY data (11 nodes × ~63 dates ≈ 9 KB/chunk).
-  Tier M — monthly chunks, WEEKLY data (Friday-only; 354 nodes × ~12 dates ≈ 35 KB/chunk).
-  Total uncompressed budget: ~1 MB (S) + ~1 MB (M) + ~1 MB episodes ≈ 3 MB, well within the
-  6 MB ceiling.  Months where accel_z is 100 % null (2021-07 → 2022-01) are skipped for Tier M
+  Tier M — monthly chunks, DAILY data (354 nodes × ~21 dates ≈ 145 KB/chunk).
+  Chunks are lazy-loaded per year by the UI, so per-chunk size is what matters;
+  total feed size scales to ~20 MB uncompressed across all years.
+  Months where accel_z is 100 % null (2021-07 → 2022-01) are skipped for Tier M
   (the RRG visualization needs both axes).
 
 Chunk format (per tier per period):
@@ -27,7 +28,7 @@ Manifest format:
       "s": {"label": "Sectors", "granularity": "daily", "period_type": "Q",
              "date_from": "1998-12-22", "date_to": "...",
              "chunks": [{"key": "1999Q1", "file": "tm_s_1999Q1.json", ...}]},
-      "m": {"label": "Subsectors + Themes", "granularity": "weekly",
+      "m": {"label": "Subsectors + Themes", "granularity": "daily",
              "period_type": "M", "date_from": "2022-02-04", "date_to": "...",
              "chunks": [{"key": "2022M02", "file": "tm_m_2022M02.json", ...}]}
     },
@@ -229,8 +230,9 @@ def build_chunks_m(
     registry: list[dict],
     period_key: str = "M",
 ) -> list[dict[str, Any]]:
-    """Build Tier-M chunks, one per calendar month, WEEKLY granularity (Fridays only).
+    """Build Tier-M chunks, one per calendar month, DAILY granularity.
 
+    All trading days present in the panel are emitted — no day-of-week filter.
     Months where ``accel_z`` is 100% null are skipped — the RRG scatter requires
     both axes.  Period format: "YYYYMmm" e.g. "2022M02".
     """
@@ -238,48 +240,24 @@ def build_chunks_m(
     id_by_name = {r["name"]: str(r["id"]) for r in registry}
 
     dates_idx = panel_m.index.get_level_values("date")
-    all_dates = dates_idx.unique().sort_values()
-
-    # Keep only Fridays (weekday == 4); fall back to Thursday if a Friday is missing
-    friday_dates: set = set()
-    for d in all_dates:
-        if d.weekday() == 4:  # Friday
-            friday_dates.add(d)
-    # For weeks where Friday is absent, include Thursday as fallback
-    thursdays = {d for d in all_dates if d.weekday() == 3}
-    for th in thursdays:
-        # Check if the Friday of the same week is present
-        try:
-            fri = th + pd.Timedelta(days=1)
-        except Exception:
-            continue
-        if fri not in friday_dates:
-            friday_dates.add(th)
-
-    friday_dates_sorted = sorted(friday_dates)
 
     periods = dates_idx.to_period("M").unique().sort_values()
 
     chunks = []
     for period in periods:
-        # Only use Friday dates that fall in this period
-        period_fridays = [
-            d for d in friday_dates_sorted
-            if d.to_period("M") == period
-        ]
-        if not period_fridays:
-            continue
-
-        # Skip months where accel_z is 100% null (early Tier-M warm-up period)
         mask = dates_idx.to_period("M") == period
         sub = panel_m[mask]
+
+        # Skip months where accel_z is 100% null (early Tier-M warm-up period)
         if sub["accel_z"].isna().all():
             log.debug("Skipping %s: accel_z 100%% null", period)
             continue
 
+        unique_dates = sub.index.get_level_values("date").unique().sort_values()
+
         data: dict[str, list] = {}
         valid_dates = []
-        for date in period_fridays:
+        for date in unique_dates:
             try:
                 day_df = sub.xs(date, level="date")
             except KeyError:
@@ -538,7 +516,7 @@ def build_manifest(
             },
             "m": {
                 "label": "Subsectors + Themes",
-                "granularity": "weekly",
+                "granularity": "daily",
                 "period_type": "M",
                 "survivorship_note": (
                     "Membership as of 2026-06 — historical composition approximated"
