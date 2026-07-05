@@ -3111,8 +3111,37 @@ def main() -> int:
 
     # Dedicated macro news feed. Uses the same context-only news/catalyst/sentiment
     # view model as the dashboard tab, but gives it a first-class reading surface.
+    # W3: load the news side-artifacts written by build_news.py (macro_releases,
+    # rejected log, calibration).  All are additive/optional — never fatal.
+    _news_dir = site / "news"
+    _macro_releases_data = None
+    _news_rejected_data = None
+    _news_calibration_data = None
+    try:
+        _mr_path = _news_dir / "macro_releases.json"
+        if _mr_path.exists():
+            _macro_releases_data = json.loads(_mr_path.read_text())
+    except Exception as _e:  # noqa: BLE001 — additive, never fatal
+        log.warning("news macro_releases.json load failed: %s", _e)
+    try:
+        _rj_path = _news_dir / "rejected.json"
+        if _rj_path.exists():
+            _news_rejected_data = json.loads(_rj_path.read_text())
+    except Exception as _e:  # noqa: BLE001 — additive, never fatal
+        log.warning("news rejected.json load failed: %s", _e)
+    try:
+        _cal_path = _news_dir / "calibration.json"
+        if _cal_path.exists():
+            _news_calibration_data = json.loads(_cal_path.read_text())
+    except Exception as _e:  # noqa: BLE001 — additive, never fatal
+        log.warning("news calibration.json load failed: %s", _e)
     out_news = site / "news.html"
-    write_page(out_news, env.get_template("news.html.j2").render(**vm))
+    write_page(out_news, env.get_template("news.html.j2").render(
+        **vm,
+        macro_releases=_macro_releases_data,
+        news_rejected=_news_rejected_data,
+        news_calibration=_news_calibration_data,
+    ))
     log.info("wrote %s (%.0f KB)", out_news, out_news.stat().st_size / 1024)
 
     # US Stock Dashboard — same VM, the "looking for stocks" half of the split.
