@@ -1,0 +1,136 @@
+{
+  "definition_version": "v1",
+  "built_date": "2026-07-05T06:26:55.859398",
+  "frozen_thresholds": {
+    "washout_lookback_td": 45,
+    "washout_high_window_td": 126,
+    "washout_threshold": -0.2,
+    "cluster_window_45d": 45,
+    "cluster_window_20d": 20,
+    "cluster_post15d": 15,
+    "cluster_min_buyers_i1_i2": 2,
+    "cluster_min_buyers_i1_3": 3,
+    "i3_net_usd_months": 6,
+    "i3_percentile": 80,
+    "computable_3y_td": 756
+  },
+  "columns": {
+    "ins_computable": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "Ticker present in Form-4 panel with \u22651 filing of any kind in trailing 3y at t. Computable_mask basis (Amendment 2 \u00a7C2)."
+    },
+    "washout_flag": {
+      "source_event_date": "price_date",
+      "known_date": "price_date",
+      "pit_basis": "close_history_leq_t",
+      "pit_at_entry": true,
+      "description": "Min (close/rolling126d_high \u2212 1) over [t-45td, t] \u2264 \u22120.20. Uses strictly prior bars for the 126d high (no current-bar lookahead)."
+    },
+    "ins_buyers_45d": {
+      "source_event_date": "trans_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "Distinct buyer CIKs (code=P) with filing_date in [t-45, t]."
+    },
+    "ins_cluster_washout": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "I1: washout_flag AND ins_buyers_45d \u2265 2. Threshold frozen at registration (RUL-26)."
+    },
+    "ins_cluster_washout_3": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "I1 sensitivity: washout_flag AND ins_buyers_45d \u2265 3 (RUL-26 pre-registered sensitivity)."
+    },
+    "ins_cluster_pre20": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "I2 PIT stratum: distinct buyers in [t-20, t] \u2265 2 (filing_date window)."
+    },
+    "ins_cluster_post15": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "NOT_PIT_study_time_only",
+      "pit_at_entry": false,
+      "description": "DESCRIPTIVE ONLY \u2014 distinct buyers in (t, t+15] by filing_date. This is a STUDY-TIME DESCRIPTIVE, NOT a PIT stratum. The Codex \u221220/+15 window is not knowable at entry. NEVER use as a stratum in r1_estimate/grade_fires."
+    },
+    "ins_netusd_mcap_sn_p80": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "I3: trailing 6-month net_usd/mcap (FDR-survivor construction), sector-neutral percentile \u2265 80 at t. CMP opportunistic filter EXCLUDED (negative-IC prior, RUL-26). mcap proxy = close_at_t (shares unavailable off-path; documented)."
+    },
+    "ins_i3_sector_neutral": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "Bool: True = sector-neutral pctile used for I3; False = universe-wide fallback (sector unmapped or fewer than 3 sector peers at date)."
+    }
+  },
+  "panels": {
+    "deep": {
+      "runtime_seconds": 0.0
+    },
+    "baskets": {
+      "runtime_seconds": 211.9,
+      "panel": "baskets",
+      "total_fires": 113542,
+      "n_computable": 96798,
+      "pct_computable": 85.25,
+      "n_i1": 2868,
+      "n_i1_3": 1372,
+      "n_i2": 1837,
+      "n_i3": 18125,
+      "era_breakdown": [
+        {
+          "era": "2012-2015",
+          "n_fires": 10880,
+          "pct_computable": 80.48,
+          "n_i1": 207,
+          "n_i1_3": 101,
+          "n_i2": 188,
+          "n_i3": 1707
+        },
+        {
+          "era": "2016-2019",
+          "n_fires": 33191,
+          "pct_computable": 81.78,
+          "n_i1": 717,
+          "n_i1_3": 332,
+          "n_i2": 547,
+          "n_i3": 5268
+        },
+        {
+          "era": "2020-2022",
+          "n_fires": 29794,
+          "pct_computable": 85.32,
+          "n_i1": 938,
+          "n_i1_3": 489,
+          "n_i2": 493,
+          "n_i3": 4753
+        },
+        {
+          "era": "2023-2026",
+          "n_fires": 39677,
+          "pct_computable": 89.42,
+          "n_i1": 1006,
+          "n_i1_3": 450,
+          "n_i2": 609,
+          "n_i3": 6397
+        }
+      ]
+    }
+  }
+}
