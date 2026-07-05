@@ -318,7 +318,21 @@ def main() -> None:
     out_dir = Path(args.out) if args.out else (data_root / "live_flow_out" / "options_hub")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    theta_store = args.theta_store or (data_root / "thetadata_eod")
+    theta_store = Path(args.theta_store) if args.theta_store else (data_root / "thetadata_eod")
+
+    # If the configured store has no eod/ or greeks/ subdirectories, fall back to the
+    # canonical Mac ops-wt path (the brief: "T1 store via symlink data/thetadata_eod ->
+    # /Users/chriswong/theta-ops-wt/data/thetadata_eod (create if missing)").
+    # In CI the THETADATA_STORE env var should point directly to the real store.
+    _OPS_WT_STORE = Path("/Users/chriswong/theta-ops-wt/data/thetadata_eod")
+    if (not (theta_store / "eod").exists() and
+            not (theta_store / "greeks").exists() and
+            _OPS_WT_STORE.exists()):
+        log.info(
+            "options_hub_builder: %s has no eod/greeks subdirs — falling back to %s",
+            theta_store, _OPS_WT_STORE,
+        )
+        theta_store = _OPS_WT_STORE
 
     # ── resolve roots ─────────────────────────────────────────────────────────
     if args.roots:
