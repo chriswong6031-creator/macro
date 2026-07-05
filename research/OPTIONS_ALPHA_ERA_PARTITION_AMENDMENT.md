@@ -1,8 +1,9 @@
 # Options-Alpha Era-Partition Registration Amendment
 
-**Status: DRAFT — pre-registration for Fable ratification. NOT yet ratified.**
-_Opus drafts (roadmap item P0.5); Fable ratifies. Until Fable ratifies and this line
-is updated, no era-partitioned verdict may be reported against these partitions._
+**Status: RATIFIED by Fable 2026-07-04 — partitions REGISTERED as of this commit.**
+_Opus drafted (roadmap item P0.5); Fable adjudicated same-day (Opus review verdict: APPROVE,
+no findings). The partitions in §3 are frozen; P1.1 gate harnesses may run against them once
+the R8 manifest-complete condition holds._
 
 Roadmap of record: `research/LIVE_FLOW_PRODUCTION_ROADMAP_BY_FABLE.md` (ruling **R2**).
 Canonical program doc: `research/OPTIONS_ALPHA_MASTERPLAN.md` (§4 signal & gate registry).
@@ -133,7 +134,7 @@ literature effect that has decayed post-publication is caught and refused live s
 ## 7. Ratification
 
 - **Drafted by:** Opus (P0.5).
-- **Ratified by:** _pending Fable._ On ratification, update the status line at the top of this
-  file and add a §8 status-log entry in `OPTIONS_ALPHA_MASTERPLAN.md`.
+- **Ratified by:** Fable, 2026-07-04. Partitions frozen exactly as drafted (§3.1 three-era
+  greeks/IV partition; §3.2 four-era OI partition). No amendments at ratification.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
