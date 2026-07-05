@@ -141,10 +141,13 @@ def compute_features(
     episodes_s: pd.DataFrame,
     etf_complex_map: dict,
     opposite_risk_map: dict,
+    w0_state_lookup: Optional[dict] = None,
 ) -> pd.DataFrame:
     """Build all 16 PIT features for each row in pop.
 
     pop: the matured pos63 onset events (one row per episode onset).
+    w0_state_lookup: dict mapping (node, onset_date_str) -> 1.0/0.0 for F15.
+        If None, F15 will always emit 0.0 (no prior quality info).
     Returns pop with feature columns appended.
     """
     log.info("Computing features for %d events …", len(pop))
@@ -340,9 +343,13 @@ def compute_features(
             row["active_in_episodes"] = int(len(eps_in_active))
 
         # ---- F15: previous same-node episode's good/bad outcome ----
-        # Most recent episode fully matured >= 63 sessions before t; 0 if none.
-        # "fully matured >= 63 sessions before t" means the episode's onset_date
-        # is <= t minus 63 sessions. We use the business-day calendar.
+        # Most recent same-node IN episode whose onset is fully matured
+        # >= 63 sessions before t (leakage-lawful cutoff).
+        # "good" = CUSHIONED | CLEAN_LIFTOFF (the W0 good-set label from the
+        # committed W0_2_events_graded.csv, pos63 rows).
+        # outcome_mature_63d in episodes_s is a MATURITY FLAG (True for 98%
+        # of IN episodes), NOT a quality signal — spec §2 F15 requires the
+        # prior episode's good/bad quality outcome, so we use the W0 state lookup.
         cutoff_idx = np.searchsorted(all_dates_arr, np.datetime64(t.date(), "D"), side="right")
         cutoff_idx = max(0, cutoff_idx - 63)
         if cutoff_idx > 0:
@@ -355,16 +362,19 @@ def compute_features(
             & (eps_in["onset_date"] < cutoff_date)
         ].sort_values("onset_date", ascending=False)
 
-        if len(prev_episodes) == 0:
+        if len(prev_episodes) == 0 or w0_state_lookup is None:
             row["prev_same_node_outcome"] = 0.0
         else:
             latest = prev_episodes.iloc[0]
-            # "good" = outcome_mature_63d = True  (spec says good/bad; use 63d maturity)
-            outcome_col = "outcome_mature_63d"
-            if outcome_col in latest.index and pd.notna(latest[outcome_col]):
-                row["prev_same_node_outcome"] = 1.0 if bool(latest[outcome_col]) else 0.0
-            else:
+            onset_key = str(pd.Timestamp(latest["onset_date"]).date())
+            lookup_key = (str(node), onset_key)
+            label = w0_state_lookup.get(lookup_key, None)
+            if label is None:
+                # Prior episode not in W0 pos63 sample (different direction/param);
+                # emit 0.0 (no information) rather than crashing.
                 row["prev_same_node_outcome"] = 0.0
+            else:
+                row["prev_same_node_outcome"] = label
 
         # ---- F16: sigma20 from the W0 CSV row ----
         row["sigma20"] = float(ev["sigma20"]) if pd.notna(ev.get("sigma20", np.nan)) else np.nan
@@ -608,6 +618,70 @@ def gc_report(
     return results
 
 
+def gc_report_fold_thresholds(
+    y_true: np.ndarray,
+    proba: np.ndarray,
+    era_labels: np.ndarray,
+    threshold_40_per_event: np.ndarray,
+    threshold_60_per_event: np.ndarray,
+    base_rate: float,
+    avg_thresh_40: float,
+    avg_thresh_60: float,
+) -> dict:
+    """G-C lift table using per-event thresholds derived from train folds only.
+
+    Each OOF event is kept/filtered by the threshold computed from the train
+    fold that held it out — no test-distribution contamination (spec §5/§7).
+    avg_thresh_40/avg_thresh_60 are the pooled-average thresholds, reported
+    for display only.
+    """
+    results: dict = {"pooled_40": {}, "pooled_60": {}, "per_era_40": {}, "per_era_60": {}}
+
+    for key_suffix, threshold_per_event, avg_thresh in [
+        ("40", threshold_40_per_event, avg_thresh_40),
+        ("60", threshold_60_per_event, avg_thresh_60),
+    ]:
+        # Keep events whose OOF proba >= their fold's train-derived threshold
+        covered = ~np.isnan(threshold_per_event)
+        mask = covered & (proba >= threshold_per_event)
+        k = int(y_true[mask].sum())
+        n = int(mask.sum())
+        n_total_covered = int(covered.sum())
+        rate = float(y_true[mask].mean()) if n > 0 else float("nan")
+        lb = wilson_lb(k, n)
+        results[f"pooled_{key_suffix}"] = {
+            "threshold": round(avg_thresh, 4),
+            "n_kept": n,
+            "n_total": n_total_covered,
+            "good_rate": round(rate, 4) if n > 0 else float("nan"),
+            "base_rate": round(base_rate, 4),
+            "lift": round(rate - base_rate, 4) if n > 0 else float("nan"),
+            "wilson_lb_95": round(lb, 4),
+        }
+        # Per era
+        era_rows = {}
+        for era in np.unique(era_labels):
+            em = era_labels == era
+            em_covered = em & covered
+            em_keep = em & mask
+            k_e = int(y_true[em_keep].sum())
+            n_e = int(em_keep.sum())
+            n_era = int(em_covered.sum())
+            br_e = float(y_true[em_covered].mean()) if n_era > 0 else float("nan")
+            rate_e = float(y_true[em_keep].mean()) if n_e > 0 else float("nan")
+            lb_e = wilson_lb(k_e, n_e)
+            era_rows[str(era)] = {
+                "n_era": n_era,
+                "n_kept": n_e,
+                "good_rate": round(rate_e, 4) if n_e > 0 else float("nan"),
+                "base_rate": round(br_e, 4),
+                "lift": round(rate_e - br_e, 4) if n_e > 0 else float("nan"),
+                "wilson_lb_95": round(lb_e, 4),
+            }
+        results[f"per_era_{key_suffix}"] = era_rows
+    return results
+
+
 # ---------------------------------------------------------------------------
 # Main LOEO protocol
 # ---------------------------------------------------------------------------
@@ -816,22 +890,82 @@ def run_loeo(
              null_p, chosen_model, chosen_auc,
              results["null"]["null_mean_auc"], len(null_mean_aucs))
 
-    # ---- G-C thresholds (fit on train folds only) ----
-    # Fit a single final model on all data to get thresholds, then compute OOF stats
-    # Actually spec says threshold fit on train folds only — so we use OOF probas
-    # with threshold = percentile(1 - keep_top_pct) of OOF proba
+    # ---- G-C thresholds (fit on train folds only — spec §5 / §7) ----
+    # Per spec: "threshold fit on train folds only".  The previous implementation
+    # computed percentiles of the pooled OOF (test) probas and applied them back
+    # to those same OOF events — train/test contamination.
+    #
+    # Correct approach: for each fold, fit the chosen model on the train set,
+    # compute train-fold predicted probas, derive the keep-top-X% threshold from
+    # those train probas, then apply that threshold to the held-out (test) OOF
+    # probas already accumulated in results[chosen_model]["oof_proba"].
+    # Each OOF event is scored against the threshold from its own fold's train set.
+    log.info("Computing G-C thresholds from per-fold train probabilities …")
+    base_rate = float(all_y.mean())
+
+    # We need per-event thresholds.  Accumulate: for each test event index,
+    # store (threshold_40, threshold_60) derived from its fold's train probas.
+    gc_threshold_40_per_event = np.full(len(df), float("nan"))
+    gc_threshold_60_per_event = np.full(len(df), float("nan"))
+
+    for test_era in eras:
+        test_era_start, test_era_end = get_era_date_bounds(test_era)
+        test_mask = all_era == test_era
+        n_test = int(test_mask.sum())
+        if n_test == 0:
+            continue
+
+        train_dates_gc = pd.to_datetime(df["trigger_date"])
+        purge_lo = test_era_start - pd.tseries.offsets.BusinessDay(n=LOEO_PURGE_SESSIONS)
+        purge_hi = test_era_end + pd.tseries.offsets.BusinessDay(n=LOEO_PURGE_SESSIONS)
+        purge_mask = (train_dates_gc >= purge_lo) & (train_dates_gc <= purge_hi)
+        train_mask = (~test_mask) & (~purge_mask)
+
+        n_train = int(train_mask.sum())
+        if n_train < 10:
+            continue
+
+        X_tr = all_X[train_mask]
+        y_tr = all_y[train_mask]
+        X_tr_f, _, _ = _fill_nans_train_median(X_tr, X_tr)  # medians from train only
+
+        # Fit chosen model on this fold's train set
+        if chosen_model == "M1":
+            clf_gc = fit_m1(X_tr_f, y_tr)
+        else:
+            clf_gc = fit_m2(X_tr_f, y_tr, feature_cols)
+            if clf_gc is None:
+                clf_gc = fit_m1(X_tr_f, y_tr)
+
+        # Train-fold predicted probas → derive thresholds
+        p_train = predict_proba_pos(clf_gc, X_tr_f)
+        thresh_40 = float(np.percentile(p_train, (1 - KEEP_TOP_40) * 100))
+        thresh_60 = float(np.percentile(p_train, (1 - KEEP_TOP_60) * 100))
+
+        # Assign per-event threshold for every event in this test fold
+        te_indices_gc = np.where(test_mask)[0]
+        gc_threshold_40_per_event[te_indices_gc] = thresh_40
+        gc_threshold_60_per_event[te_indices_gc] = thresh_60
+
     p_chosen_oof = results[chosen_model]["oof_proba"]
     y_chosen_oof = results[chosen_model]["oof_y"]
     era_chosen_oof = all_era
 
-    threshold_40 = float(np.percentile(p_chosen_oof, (1 - KEEP_TOP_40) * 100))
-    threshold_60 = float(np.percentile(p_chosen_oof, (1 - KEEP_TOP_60) * 100))
-    base_rate = float(all_y.mean())
-
-    results["gc"] = gc_report(
-        y_chosen_oof, p_chosen_oof, era_chosen_oof,
-        threshold_40, threshold_60, base_rate,
-    )
+    # Build G-C report using per-fold thresholds.
+    # gc_report_per_fold_thresholds is a local variant that uses per-event thresholds.
+    covered_mask = ~np.isnan(gc_threshold_40_per_event)
+    if covered_mask.sum() == 0:
+        log.error("G-C: no covered OOF events — all fold thresholds missing; G-C skipped")
+        results["gc"] = {"chosen_model": chosen_model, "_gc_skipped": True}
+    else:
+        # Report average thresholds for display
+        avg_thresh_40 = float(np.nanmean(gc_threshold_40_per_event))
+        avg_thresh_60 = float(np.nanmean(gc_threshold_60_per_event))
+        results["gc"] = gc_report_fold_thresholds(
+            y_chosen_oof, p_chosen_oof, era_chosen_oof,
+            gc_threshold_40_per_event, gc_threshold_60_per_event,
+            base_rate, avg_thresh_40, avg_thresh_60,
+        )
     results["gc"]["chosen_model"] = chosen_model
 
     # ---- Calibration tables ----
@@ -853,8 +987,39 @@ def run_loeo(
         results[chosen_model]["coef"] = dict(zip(feature_cols, clf_chosen_full.coef_[0].tolist()))
     else:
         clf_chosen_full = fit_m2(X_full, all_y, feature_cols)
-        if clf_chosen_full is not None and hasattr(clf_chosen_full, "feature_importances_"):
-            results[chosen_model]["importances"] = dict(zip(feature_cols, clf_chosen_full.feature_importances_.tolist()))
+        if clf_chosen_full is not None:
+            if hasattr(clf_chosen_full, "feature_importances_"):
+                results[chosen_model]["importances"] = dict(
+                    zip(feature_cols, clf_chosen_full.feature_importances_.tolist())
+                )
+            else:
+                # HistGradientBoostingClassifier has no feature_importances_.
+                # Use permutation_importance on full data (seed-fixed, for reproducibility).
+                # This is NOT a CV-based estimate — it is a full-data diagnostic for the
+                # report's mechanism-sign commentary, consistent with M1's full-data coef.
+                try:
+                    from sklearn.inspection import permutation_importance
+                    perm_result = permutation_importance(
+                        clf_chosen_full, X_full, all_y,
+                        n_repeats=20, random_state=SEED, scoring="roc_auc",
+                    )
+                    results[chosen_model]["importances"] = dict(
+                        zip(feature_cols, perm_result.importances_mean.tolist())
+                    )
+                    log.info(
+                        "M2: permutation_importance computed (n_repeats=20, scoring=roc_auc)"
+                    )
+                except Exception as exc:
+                    # Loud error — spec house law: loud errors, not silent omissions.
+                    log.error(
+                        "DELIVERABLE GAP: chosen model %s importance table could not be "
+                        "computed (permutation_importance failed: %s). "
+                        "Spec §6.1 requires coefficient/importance table — aborting.",
+                        chosen_model, exc,
+                    )
+                    raise RuntimeError(
+                        f"Chosen model {chosen_model} importance table unavailable: {exc}"
+                    ) from exc
 
     return results
 
@@ -1260,8 +1425,21 @@ def main(data_dir: Optional[Path] = None) -> None:
     opposite_risk_map = build_opposite_risk_map(rotation_groups)
     log.info("ETF complex map: %s", etf_complex_map)
 
+    # ---- 3b. Build W0 state lookup for F15 ----
+    # F15 requires the QUALITY outcome (good/bad = CUSHIONED|CLEAN_LIFTOFF) of
+    # each prior same-node episode, not the maturity flag.
+    # We build a (node, onset_date_str) -> 1.0/0.0 dict from ALL pos63 W0 rows
+    # (matured and immature — the cutoff_date law already restricts to matured).
+    w0_state_lookup: dict = {}
+    for _, r in pos63.iterrows():
+        onset_key = str(pd.Timestamp(r["trigger_date"]).date())
+        label_val = 1.0 if r["state"] in GOOD_STATES else 0.0
+        w0_state_lookup[(str(r["node"]), onset_key)] = label_val
+    log.info("W0 state lookup built: %d entries", len(w0_state_lookup))
+
     # ---- 4. Compute features ----
-    df_feat = compute_features(pop, panel, episodes_s, etf_complex_map, opposite_risk_map)
+    df_feat = compute_features(pop, panel, episodes_s, etf_complex_map, opposite_risk_map,
+                               w0_state_lookup=w0_state_lookup)
 
     # ---- 5. Emit W1_features.csv ----
     out_dir = ROOT / "research" / "oracle_asymmetry"
