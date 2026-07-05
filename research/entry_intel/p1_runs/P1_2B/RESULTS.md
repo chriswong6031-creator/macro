@@ -1,5 +1,7 @@
 # P1.2b Gate P&L — Taxonomy Extension: RESULTS
 
+2026-07-05 — Fable adjudication: verdict-of-record corrected per REVIEW_P1_2B.md.
+
 **Study ID:** P1_2B
 **Run timestamp:** 2026-07-05T17:59:05.602186Z
 **Spec:** research/entry_intel/P1_2B_TAXONOMY_EXTENSION_SPEC.md
@@ -112,10 +114,18 @@ Wilson LB = one-sided 95% Wilson lower bound on rate.
 | 63d | Δ_cushion | -0.0302 | 0.5145 | 1.0000 | no |
 | 63d | Δ_clean_lift | +0.0336 | 0.5060 | 1.0000 | no |
 
-### tier_cutoff — **KEEP**
-*No significant axis at q≤0.10 (KEEP by default)*
+### tier_cutoff — **INSUFFICIENT-POWER** (verdict of record)
 
-**THIN:** n_survived=10 < 50 (FLIP floor). Power is limited.
+*Registered rule (spec §2.1 no-overwrite): only 37 previously-null rows qualify; n=37 < 50 V3 floor. Verdict of record: INSUFFICIENT-POWER.*
+
+#### Post-hoc exploratory trial (recorded per species §8)
+
+> **Label:** post-hoc exploratory trial (recorded per species §8; overwrote 121 board_rank_cutoff rows contrary to spec §2.1 no-overwrite rule)
+>
+> n_total=131 (includes 121 rows overwriting non-null board_rank_cutoff, contrary to spec §2.1).
+> Verdict under exploratory variant: **INCONCLUSIVE-THIN** (n_survived=10 < 25; §3.4 POWER NOTE governs over AC-3 n<10 floor; spec internal contradiction resolved in §3.4's favor per REVIEW_P1_2B.md ADVISORY-2).
+
+**THIN:** n_survived=10 < 25 (§3.4 POWER NOTE floor). Power is insufficient.
 
 | Horizon | Cohort | STOP | DEAD | CUSH | LIFT | n |
 |---|---|---|---|---|---|---|
@@ -202,6 +212,6 @@ P1.2b scope is the gate-stage re-tag only (spec AC-5).
 | date | wave | status | code | notes | PR |
 |---|---|---|---|---|---|
 | 2026-07-05 | P1.2b | KEEP | `freshness_expired` | Re-tagged 8,789 rows; verdict from ei_gate_pnl_p12b family | — |
-| 2026-07-05 | P1.2b | KEEP | `tier_cutoff` | Re-tagged 158 rows (includes override of board_rank_cutoff for T4 rows); n_survived=10 | — |
+| 2026-07-05 | P1.2b | INSUFFICIENT-POWER | `tier_cutoff` | Registered rule (n=37 < 50 floor); post-hoc exploratory override variant INCONCLUSIVE-THIN (n=131, overwrote 121 board_rank_cutoff rows contrary to spec §2.1) | — |
 | 2026-07-05 | P1.2b | NOT-AVAILABLE | `event_blackout` | Genuinely absent in substrate; earnings-proximity gate not wired in replay; deferred to P1.2c | — |
 | 2026-07-05 | P1.2b | NOT-AVAILABLE | `cohort_null` | Genuinely absent in substrate; §3.3 coverage gate not plumbed into replay path; deferred to P1.2c | — |

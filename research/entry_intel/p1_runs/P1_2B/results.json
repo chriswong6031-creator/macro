@@ -399,8 +399,8 @@
       "sign_stable": null,
       "sign_details": {},
       "is_thin": true,
-      "verdict": "KEEP",
-      "verdict_notes": "No significant axis at q\u22640.10 (KEEP by default)",
+      "verdict": "INSUFFICIENT-POWER",
+      "verdict_notes": "Verdict of record under registered no-overwrite rule (spec \u00a72.1): n=37 (null-only rows) < 50 V3 floor. Post-hoc exploratory variant (n=131, overwrote 121 board_rank_cutoff rows contrary to spec \u00a72.1): INCONCLUSIVE-THIN (n_survived=10 < 25; \u00a73.4 POWER NOTE governs over AC-3 n<10 floor per REVIEW_P1_2B.md ADVISORY-2).",
       "bh_q_21": {
         "stop_out": 1.0,
         "dead_money": 1.0,
@@ -413,7 +413,26 @@
         "cushion": 1.0,
         "clean_lift": 1.0
       },
-      "n_clusters_rej": 0
+      "n_clusters_rej": 0,
+      "n_registered_null_only": 37,
+      "exploratory_variant": {
+        "label": "post-hoc exploratory trial (recorded per species \u00a78; overwrote 121 board_rank_cutoff rows contrary to spec \u00a72.1)",
+        "n_total": 131,
+        "n_overwritten_board_rank_cutoff": 121,
+        "verdict": "INCONCLUSIVE-THIN",
+        "verdict_basis": "n_survived=10 < 25 per \u00a73.4 POWER NOTE; spec contradiction (n<10 AC-3 vs n<25 \u00a73.4) resolved in \u00a73.4's favor per REVIEW_P1_2B.md ADVISORY-2"
+      }
     }
+  },
+  "adjudication": {
+    "date": "2026-07-05",
+    "authority": "Fable",
+    "source": "REVIEW_P1_2B.md",
+    "changes": [
+      "tier_cutoff verdict-of-record changed to INSUFFICIENT-POWER (registered rule n=37 < 50 V3 floor)",
+      "n=131 override variant re-labeled post-hoc exploratory (overwrote 121 board_rank_cutoff rows contrary to spec \u00a72.1)",
+      "exploratory variant verdict label changed KEEP-THIN -> INCONCLUSIVE-THIN (\u00a73.4 n<25 floor governs over AC-3 n<10; spec contradiction resolved in \u00a73.4's favor)",
+      "freshness_expired KEEP unchanged (n=872, registered rule, no overwrite)"
+    ]
   }
 }
