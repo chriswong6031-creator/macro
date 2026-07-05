@@ -28,6 +28,7 @@
  * (green up / red down) computed from prevClose — used by the index/futures strips.
  */
 (function () {
+  if (window.__mmLiveInit) return; window.__mmLiveInit = true; // idempotency guard — second include is a no-op
   if (!window.LIVE_ENABLED) return;                          // static-site no-op
   var URL = window.LIVE_QUOTES_URL || "";
   var SNAP = window.LIVE_SNAPSHOT_URL || "";                 // keyless no-Worker fallback
