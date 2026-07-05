@@ -404,3 +404,15 @@ else:
 *Design authored 2026-07-05. Acceptance criteria are falsifiable and machine-checkable. No git operations performed. This document is data for the Fable orchestrator.*
 
 *2026-07-05 — red-team blocking fixes applied (P2_REDTEAM.md) incl. Fable rulings R-P2.1 (flip floor 100 clusters + 2 quarters) and R-P2.2 (single concordance authority).*
+
+---
+
+## Amendments (Fable, 2026-07-05)
+
+*Source: REVIEW_P2_4.md advisories; amendments do not reopen acceptance criteria and carry no rank or gate change.*
+
+**(a) RATIFIED — align_tier lane source and emitted vocabulary (ADVISORY-1).** The production board assembles `align_tier` from `conviction.alignment.tier` (PRIME/ARMED vocabulary on trend rows) rather than from the raw `_atier` board value (`aligned`/`near`). This is the mechanism that allows the continuation branch inside `_lane_for()` to fire on live data — the original spec Step-B source (board `_atier` value: `aligned`/`near`) could never fire the continuation branch because the live vocabulary probe returned only `['None', 'aligned']`, which falls exclusively into `_PRIME_EQUIV`. The implementation's `_eff_tier = conviction.alignment.tier or tier` is hereby ratified as the canonical lane source. **CONTRACT NOTE:** downstream consumers of `us_standouts.json` that stratify by `align_tier` — specifically the P2.1a shadow ledger and P3 cell rollups — will read the NEW emitted vocabulary (PRIME/ARMED) on trend rows where `conviction.alignment.tier` is populated, rather than the prior `aligned`/`None` vocabulary. Those consumers must handle both vocabularies in their own lane/tier lookups (the `_PRIME_EQUIV`/`_ARMED_EQUIV` mapping in `_lane_for()` already handles this for board-internal purposes).
+
+**(b) §4.2 template reference corrected (ADVISORY-4).** Section 4.2 of this document incorrectly named `templates/us_stocks_v2.html.j2` as the target for the display changes. That template renders the separate `us_standouts_v2.json` shadow artifact (a different pipeline) and carries a different lane vocabulary (`entry_open`/`setting_up`). The production standout board (`us_standouts.json`, populated via `_su`) is rendered by `templates/dashboard.html.j2` at approximately L2659+, written by the builder at L2478. The implementation correctly modified `dashboard.html.j2`; this amendment corrects the spec record so P3 references to §4.2 name the right file.
+
+**(c) ADVISORY-3 noted — cosmetic (unreachable `_NEAR_EQUIV` values).** The implementation expanded `_NEAR_EQUIV` to include `"bear_recovering"` and `"turning"`. These are `weekly_phase`-domain values, not `align_tier`-domain values; they will never match as an `align_tier` tier and the branches they guard are therefore unreachable. This is a cosmetic inconsistency — no rank, gate, or display effect. The values may be removed in a future cleanup pass; they are noted here so the P3 build does not inherit or extend the pattern.

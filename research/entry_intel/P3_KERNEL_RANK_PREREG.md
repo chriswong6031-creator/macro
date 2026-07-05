@@ -491,3 +491,11 @@ Nothing changes for users until and unless the flip criterion fires and Fable ap
 *Registered 2026-07-05. Immutable after Fable approval. Results recorded in P3_KERNEL_RANK_BUILD_REPORT.md; this document is never edited to accommodate observed outcomes.*
 
 *2026-07-05 — red-team blocking fixes applied (P2_REDTEAM.md) incl. Fable rulings R-P2.1 (flip floor 100 clusters + 2 quarters) and R-P2.2 (single concordance authority).*
+
+---
+
+## Amendment (Fable, 2026-07-05)
+
+*Source: REVIEW_P3.md ADVISORY-1; resolves the prereg-internal flip-floor inconsistency before the evaluator wave is built.*
+
+**R-P2.1 scope clarification — flip-floor ownership.** The approval-stamp header (and the matching footer) of this document cite Fable ruling R-P2.1 as "flip floor = 100 clusters + 2 quarters." That citation is program-wide context: R-P2.1 governs the **P2.1a anti-chase gate** flip — specifically the shadow-ledger flip condition for promoting F3 as a hard gate (100 episode clusters AND 2 full quarters of shadow accrual before the gate may fire). It does NOT override the P3 flip criterion, which is an independently registered and independently evidenced decision. The operative body of this document (§5.2, §5.4, §7 trial ledger, §11 downstream routing, and the plain-English summary) uniformly specifies **300 independent episode clusters** as the kernel-rank shadow flip floor, with no "2 quarters" clause. The build's `build_meta.json` encodes `n_floor_episode_clusters: 300` and that value is **correct**. The evaluator (`evaluate_kernel_rank_flip.py`, scheduled for a subsequent wave) must implement exactly §5.2's registered criterion: n_episode_clusters ≥ 300 AND Wilson lower bound > 0.0 AND permutation p_one_sided < 0.10. No "2 quarters" cadence gate applies to P3's flip criterion.
