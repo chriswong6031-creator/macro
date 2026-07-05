@@ -413,6 +413,61 @@ def _run_one_k(
     # Recall
     recall = compute_recall(graded, stratum_col)
 
+    # ── mae21 addendum (RUL-13 Amendment 1: computed at adjudication) ───────
+    # mae21 = fwd_mdd_21 (max adverse excursion at 21 trading days, signed negative
+    # or zero).  Degradation direction: MORE negative = worse outcome = positive
+    # coefficient when sign-flipped or equivalently negative coefficient when kept
+    # as-is and the treatment arm is MORE negative.
+    # Outside the pre-registered BH family (mae21 is a co-primary, not a BH member
+    # per Amendment 1 §4).  Descriptive: mean per arm + Welch t-test CI.
+    mae21_result: dict[str, Any] = {}
+    try:
+        graded_ok = graded[graded["gradable"].fillna(False)].copy()
+        if "fwd_mdd_21" in graded_ok.columns and stratum_col in graded_ok.columns:
+            treat21 = graded_ok.loc[graded_ok[stratum_col] == 1, "fwd_mdd_21"].dropna()
+            ctrl21  = graded_ok.loc[graded_ok[stratum_col] == 0, "fwd_mdd_21"].dropna()
+            if len(treat21) >= 5 and len(ctrl21) >= 5:
+                from scipy import stats as _scipy_stats  # noqa: PLC0415
+                coef = float(treat21.mean() - ctrl21.mean())
+                se_t = float(treat21.std(ddof=1) / np.sqrt(len(treat21)))
+                se_c = float(ctrl21.std(ddof=1) / np.sqrt(len(ctrl21)))
+                se_diff = np.sqrt(se_t**2 + se_c**2)
+                tstat, pval = _scipy_stats.ttest_ind(treat21, ctrl21, equal_var=False)
+                df_w = (se_t**2 + se_c**2)**2 / (
+                    se_t**4 / max(len(treat21) - 1, 1) +
+                    se_c**4 / max(len(ctrl21) - 1, 1)
+                )
+                t_crit = float(_scipy_stats.t.ppf(0.975, df=df_w))
+                ci_lo = coef - t_crit * se_diff
+                ci_hi = coef + t_crit * se_diff
+                excl_zero = (ci_lo > 0 or ci_hi < 0)
+                # Degradation: treatment mean MORE negative than control → coef < 0
+                degrades = excl_zero and coef < 0
+                mae21_result = {
+                    "treat_mean": round(float(treat21.mean()), 5),
+                    "ctrl_mean": round(float(ctrl21.mean()), 5),
+                    "coef": round(coef, 5),
+                    "ci_lo": round(ci_lo, 5),
+                    "ci_hi": round(ci_hi, 5),
+                    "p_value": round(float(pval), 4),
+                    "n_treat": len(treat21),
+                    "n_ctrl": len(ctrl21),
+                    "excl_zero": excl_zero,
+                    "degrades": degrades,
+                    "estimator": "Welch_t_descriptive",
+                }
+                log.info(
+                    "mae21 k=%d %s: coef=%.4f CI=[%.4f, %.4f] p=%.4f degrades=%s",
+                    k, panel_name, coef, ci_lo, ci_hi, float(pval), degrades,
+                )
+            else:
+                mae21_result = {"note": "insufficient_gradable_rows"}
+        else:
+            mae21_result = {"note": "fwd_mdd_21_not_in_graded"}
+    except Exception as _mae21_exc:  # noqa: BLE001
+        log.warning("mae21 computation failed for k=%d %s: %s", k, panel_name, _mae21_exc)
+        mae21_result = {"note": f"error: {_mae21_exc}"}
+
     return {
         "k": k,
         "panel": panel_name,
@@ -427,6 +482,7 @@ def _run_one_k(
         "effect_table": eff,
         "era_table": era.to_dict(orient="records") if era is not None else [],
         "recall": recall,
+        "mae21": mae21_result,
     }
 
 
@@ -917,6 +973,49 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
               "worse → do not wire. Null printed, not hidden.")
         a("")
         a("No promotion, no wiring decision. Reports only (RUL-4).")
+
+        # mae21 addendum — Amendment 1 RUL-13: must be computed at adjudication.
+        # Outside the pre-registered BH family; Welch t descriptive only.
+        mae21 = pooled_k3.get("mae21", {})
+        a("")
+        a("### mae21 Addendum (Amendment 1 RUL-13 — computed at adjudication)")
+        a("")
+        a("> Amendment 1 §4: mae21 supersedes mae63 as the co-primary and must be")
+        a("> computed at adjudication for the in-flight W1-SEV study (grandfathered).")
+        a("> Estimator: Welch t-test descriptive (mean per arm, 95% CI) — outside")
+        a("> the pre-registered BH panel (mae63 was the pre-registered member).")
+        a("")
+        if mae21.get("note"):
+            a(f"**mae21 result:** {mae21['note']} — cannot compute.")
+        else:
+            m21_coef = mae21.get("coef")
+            m21_ci_lo = mae21.get("ci_lo")
+            m21_ci_hi = mae21.get("ci_hi")
+            m21_p = mae21.get("p_value")
+            m21_dg = mae21.get("degrades", False)
+            m21_n_t = mae21.get("n_treat", "?")
+            m21_n_c = mae21.get("n_ctrl", "?")
+            m21_tm = mae21.get("treat_mean")
+            m21_cm = mae21.get("ctrl_mean")
+            a(f"| Field | Value |")
+            a(f"|---|---|")
+            a(f"| Treatment arm (in-window) mean mae21 | {_fmt_f(m21_tm, 5)} |")
+            a(f"| Control arm (outside-window) mean mae21 | {_fmt_f(m21_cm, 5)} |")
+            a(f"| coef (treatment − control) | {_fmt_f(m21_coef, 5)} |")
+            a(f"| 95% CI | [{_fmt_f(m21_ci_lo, 5)}, {_fmt_f(m21_ci_hi, 5)}] |")
+            a(f"| p-value (Welch) | {_fmt_f(m21_p, 4)} |")
+            a(f"| n treatment | {m21_n_t:,} |")
+            a(f"| n control | {m21_n_c:,} |")
+            a(f"| CI excludes 0 | {'YES' if mae21.get('excl_zero') else 'NO'} |")
+            a(f"| mae21 degrades (coef<0 and CI-excl-0) | {'YES' if m21_dg else 'NO'} |")
+            a("")
+            if m21_dg:
+                a("**mae21 verdict:** CI-excluding-0 degradation PRESENT. "
+                  "Consistent with stop5 primary. Ship ruling stands.")
+            else:
+                a("**mae21 verdict:** CI includes 0 (null). "
+                  "Not independently significant at 21d horizon. "
+                  "Stop5 primary is the operative clause; ruling unchanged.")
     else:
         a("*(Pooled k=3 result not available — see above for individual panels)*")
 

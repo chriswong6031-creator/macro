@@ -19,7 +19,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | neural-web | 25 |
-| options-alpha | 6 |
+| options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
@@ -32,7 +32,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 58 |
+| display | 59 |
 | infrastructure | 31 |
 | scored | 4 |
 | shadow | 34 |
@@ -41,7 +41,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 122 |
+| git | 123 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -162,6 +162,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | polygon-gex-summaries | `data/polygon_gex/summary_*.parquet` | parquet | collect | display | 4 | 0 |
 | vol-regime-gate | `data/vol_regime/gate.json` | json | on-demand | scored | 3 | 0 |
+| gex-state-history | `data/index_gex_history/*.parquet` | parquet | weekly | display | 2 | 0 |
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
 | options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 | options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |
@@ -510,6 +511,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/backfill_forward_logs.py — additive experiment entries from historical backfill
   - scripts/build_measurement.py — measurement entries; additive, idempotent
+
+### gex-state-history
+
+- **path:** `data/index_gex_history/*.parquet`
+- **declared producer:** `scripts/build_index_gex_history.py`
+- **extra writers:**
+  - engine/market_gamma.py
 
 ### governance-ledger
 

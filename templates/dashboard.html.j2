@@ -885,6 +885,11 @@
   .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W9-A sector-capitulating safety chip (display-only; no rank power) */
   .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+  /* W1.5 earnings-blackout chip (display-only; no rank power; hygiene context) */
+  .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  /* W1.5 board-level suppressed-today note + stale-store warning */
+  .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
+  .nb-eb-stale{color:var(--muted);border-color:var(--line);background:transparent}
   /* W5b liquidity chip (display-only; no rank/gate power) */
   .nb-liq{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help}
   .nb-liq.liq-deep{color:var(--up);background:color-mix(in srgb,var(--up) 9%,transparent);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
@@ -2810,6 +2815,24 @@
         {% endfor %}
       </div>
       {% endif %}
+      {# W1.5 earnings-blackout: suppressed-today compact note.
+         Shown only when 1+ fresh-buy candidates were suppressed today (store must be fresh).
+         The note names the suppressed tickers so the user can look them up manually.
+         Bilingual via l-en/l-zh spans; no translated text in attributes (check_title_i18n). #}
+      {% if _su and _su.get('earnings_blackout_note') %}
+      {% set _ebn = _su.earnings_blackout_note %}
+      {% if _ebn.store_stale %}
+      <div class="nb-eb-note nb-eb-stale"
+        data-tip-en="W1.5 earnings calendar is stale (last updated >10 trading days ago). Earnings-blackout hygiene gate is inactive — no setups are suppressed."
+        data-tip-zh="W1.5 财报日历数据陈旧（超过10个交易日未更新）。财报屏蔽门控未激活——未屏蔽任何形态。"
+      ><span class="l-en">📅 Earnings calendar stale — blackout gate inactive</span><span class="l-zh">📅 财报日历陈旧——屏蔽门控未激活</span></div>
+      {% elif _ebn.count %}
+      <div class="nb-eb-note"
+        data-tip-en="W1.5 earnings-blackout hygiene (adjudicated 2026-07-05): fresh entries within 3 trading days of an earnings date are suppressed from this board. The setup signal itself is unchanged — you can review these names on their stock detail pages."
+        data-tip-zh="W1.5 财报屏蔽规则（2026-07-05裁定）：财报前3个交易日内的新鲜入场信号不出现在本榜单。形态信号本身未变——可在各股票详情页查看这些标的。"
+      ><span class="l-en">📅 {{ _ebn.count }} setup{{ 's' if _ebn.count != 1 else '' }} suppressed today (earnings ≤3d): {{ _ebn.tickers | join(', ') }}</span><span class="l-zh">📅 今日{{ _ebn.count }}个形态因财报（≤3天）被屏蔽：{{ _ebn.tickers | join(', ') }}</span></div>
+      {% endif %}
+      {% endif %}
       <div class="nbgrid" data-showmore-rows="3">
       {% if _su %}
       {# BOTTOMING-ALIGNED board: shows only names whose weekly/3-day/daily cycles are
@@ -2847,6 +2870,18 @@
                mechanism (guarded by check_title_i18n.py); W2's bespoke .nb-chip-pop is retired and
                its explanatory copy carried into data-tip attributes. #}
             {% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" data-tip-en="Base {{ _hd.get('days_basing',0) }}d · inv ${{ '%.2f'|format(_hd.get('invalidation',0)) }}{% if _hd.get('provisional') %} · est{% endif %} · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期{{ _hd.get('days_basing',0) }}天 · 止损 ${{ '%.2f'|format(_hd.get('invalidation',0)) }}。仅供参考。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}
+            {# W1.5 earnings-blackout chip — displayed when earnings ≤7d away (context chip).
+               For fresh-buy candidates with ≤3d: suppressed from board (never reaches here).
+               For HOLD/LAUNCHED or 4-7d range: context chip only — setup itself is unchanged.
+               Bilingual via l-en/l-zh; no translated text in attributes (check_title_i18n).
+               data-tip explains fresh-entry suppression semantics and that the setup is intact. #}
+            {% set _es = n.get('earnings_soon') %}
+            {% if _es and _es.get('days_to') is not none %}
+            <span class="nb-earn-soon"
+              data-tip-en="Earnings in {{ _es.days_to }}d ({{ _es.next_date }}{% if _es.next_time %}, {{ _es.next_time }}{% endif %}). W1.5 hygiene: fresh entries ≤3d before earnings are suppressed from the buy board — the setup itself is unchanged."
+              data-tip-zh="财报还有{{ _es.days_to }}天（{{ _es.next_date }}{% if _es.next_time %}，{{ _es.next_time }}{% endif %}）。W1.5 规则：财报前3天内的新鲜入场信号不出现在买入列表——该形态本身未变。"
+            ><span class="l-en">📅 Earnings {{ _es.days_to }}d</span><span class="l-zh">📅 财报{{ _es.days_to }}天</span></span>
+            {% endif %}
             {# W8 lane + postcross chips — explanatory copy via data-tip (W2).
                ARMED chip removed 2026-07-03: W8-A-OOS FAILED (stop5 edge did not transfer
                OOS, sign-unstable) — armed fields still computed + emitted for silent
