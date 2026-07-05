@@ -619,7 +619,7 @@ def test_news_events_no_score_path_imports():
 _FIXTURE_CASES: list[tuple[str, str | None]] = [
     # (title, expected_event_type or None)
     ("Company cuts full-year revenue guidance as orders slow",               "guidance_cut"),
-    ("Netflix raises quarterly ad-tier pricing",                              "guidance_raise"),
+    ("Netflix raises quarterly ad-tier pricing",                              None),  # pricing raise, NOT guidance
     ("Apple raises FY guidance after record iPhone quarter",                  "guidance_raise"),
     ("Chipmaker warns of weak quarterly revenue below expectations",          "guidance_cut"),
     ("Adobe pre-announces Q3 results",                                        "preannouncement"),
