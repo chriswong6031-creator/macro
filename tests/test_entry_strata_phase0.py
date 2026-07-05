@@ -247,13 +247,18 @@ class TestR1EstimatorKnownAnswer:
         )
 
     def test_naive_differs_from_r1(self, confounded_data):
-        """Naive unmatched difference is DIFFERENT from the R1 estimate.
+        """R1 FE estimator is strictly closer to the engineered delta than naive.
 
-        The naive difference mixes the confounding bad-date effect.
-        On bad dates, BOTH strata have high stop rates, but the treatment arm
-        may be overrepresented on bad dates (random), making the naive difference
-        wrong. This test confirms the R1 estimator and naive differ.
+        The confounded fixture has:
+          - engineered_delta = 0.25 (treatment stops 25pp more than control on balanced dates)
+          - bad dates: all treatment, high stop5 → naive OVERESTIMATES the delta
+
+        This test asserts the core claim of the R1 estimator:
+          |FE_coef - true_delta| < |naive_diff - true_delta|
+        i.e. date-FE demeaning removes the confounding and brings the estimate
+        closer to the ground truth than a naive group-mean difference.
         """
+        TRUE_DELTA = 0.25  # matches confounded_data fixture
         fires, closes, graded = confounded_data
         graded = graded.copy()
         graded = graded[graded["gradable"].fillna(False)].copy()
@@ -271,18 +276,91 @@ class TestR1EstimatorKnownAnswer:
         assert coef is not None, "coef is None"
         assert naive is not None, "naive_diff is None"
 
-        # They should differ — if they are identical, the confounding was not
-        # effective or something is wrong with the demeaning
-        # (Allow up to 0.001 difference — floating point; expect > 0.001)
-        diff = abs(float(coef) - float(naive))
-        # This is a soft assertion — we just confirm they're not identically equal.
-        # In confounded data, they will typically differ by 0.02–0.15
-        # We don't assert a direction since confounding direction is random.
-        # The core property: the R1 coef should be closer to true_delta than naive
-        # is a probabilistic claim; we just assert they differ.
-        assert diff > 1e-6, (
-            f"R1 coef ({coef:.4f}) == naive ({naive:.4f}): "
-            f"confounding not working or demeaning collapsed."
+        fe_err   = abs(float(coef)  - TRUE_DELTA)
+        naive_err = abs(float(naive) - TRUE_DELTA)
+
+        assert fe_err < naive_err, (
+            f"R1 FE estimator ({coef:.4f}) is NOT closer to true delta "
+            f"({TRUE_DELTA}) than naive ({naive:.4f}). "
+            f"FE error={fe_err:.4f}, naive error={naive_err:.4f}. "
+            f"This means date-FE demeaning failed to remove confounding."
+        )
+
+    def test_naive_differs_from_r1_flipped_confounding(self):
+        """R1 also beats naive when confounding direction is flipped (control on bad dates).
+
+        Builds a fixture where BAD dates are control-only (stratum=0) so the naive
+        estimator UNDERESTIMATES the treatment delta.  R1 should still recover it.
+        """
+        TRUE_DELTA = 0.25
+
+        # Build a mirrored fixture: bad dates have stratum=0 (control), not 1
+        rng = np.random.default_rng(17)
+        n_dates, n_per_date, n_bad_dates = 50, 8, 15
+        dates = pd.bdate_range(BDATE_START, periods=n_dates * 3, freq="5B")[:n_dates]
+        bad_date_idx = set(rng.choice(n_dates, size=n_bad_dates, replace=False))
+
+        n_bars = 280
+        all_dates_idx = pd.bdate_range(BDATE_START, periods=n_bars + 20)
+        rows, closes, ticker_counter = [], {}, 0
+
+        for d_idx, date in enumerate(dates):
+            is_bad = d_idx in bad_date_idx
+            fires_this_date = []
+            if is_bad:
+                # Control-only bad dates: naive UNDERESTIMATES treatment delta
+                for _ in range(n_per_date):
+                    fires_this_date.append({"stratum": 0, "will_stop": True})
+            else:
+                half = n_per_date // 2
+                for i in range(n_per_date):
+                    stratum = 1 if i < half else 0
+                    stop_prob = 0.30 + TRUE_DELTA if stratum == 1 else 0.30
+                    fires_this_date.append({"stratum": stratum,
+                                            "will_stop": rng.random() < stop_prob})
+
+            for fire_info in fires_this_date:
+                ticker = f"FLIP_{ticker_counter:04d}"
+                ticker_counter += 1
+                sig_pos = int(np.searchsorted(all_dates_idx, date))
+                if sig_pos >= n_bars - 130:
+                    sig_pos = max(0, n_bars - 135)
+                close = _make_stop5_close(
+                    entry_at=sig_pos, n_total=n_bars + 20,
+                    stop=fire_info["will_stop"],
+                    seed=ticker_counter * 7 + d_idx,
+                )
+                closes[ticker] = close
+                rows.append({
+                    "ticker": ticker, "date": date,
+                    "tier": "T1", "sub": "deep", "ticks": 0,
+                    "not_topped": True, "eligible": True, "panel": "deep",
+                    "stratum": fire_info["stratum"], "is_bad_date": is_bad,
+                })
+
+        fires = pd.DataFrame(rows)
+        graded = ph.grade_fires(fires, closes)
+        graded = graded[graded["gradable"].fillna(False)].copy()
+        graded["stratum"] = graded["stratum"].astype(float)
+
+        result = ph.r1_estimate(
+            graded, "stop5", "stratum",
+            fe_granularity="date",
+            n_bootstrap=100,
+            rng_seed=17,
+        )
+        coef  = result["coef"]
+        naive = result["naive_diff"]
+        assert coef is not None and naive is not None
+
+        fe_err    = abs(float(coef)  - TRUE_DELTA)
+        naive_err = abs(float(naive) - TRUE_DELTA)
+
+        assert fe_err < naive_err, (
+            f"Flipped-confounding: R1 FE ({coef:.4f}) NOT closer to true delta "
+            f"({TRUE_DELTA}) than naive ({naive:.4f}). "
+            f"FE error={fe_err:.4f}, naive error={naive_err:.4f}. "
+            f"R1 must remove confounding in both directions."
         )
 
     def test_ci_is_finite_and_ordered(self, confounded_data):

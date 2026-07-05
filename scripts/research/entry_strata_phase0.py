@@ -451,14 +451,20 @@ def _make_blocks(
         grp_dates = dates.iloc[grp_idx].sort_values()
         sorted_idx = grp_dates.index.to_numpy()
 
-        # sliding window: gather consecutive dates within 2*BLOCK_RADIUS calendar days
+        # sliding window: gather consecutive dates within BLOCK_RADIUS_CALENDAR_DAYS.
+        # BLOCK_RADIUS = 10 trading bars (RUL-12).  1 trading day ≈ 1.4 calendar days,
+        # so +/-10 bars one-sided ≈ 14 calendar days one-sided.
+        # Using abs(days) <= 14 gives an effective ±10-bar window (±14 calendar days),
+        # consistent with the spec.  The previous expression 2*BLOCK_RADIUS*1.5 = 30
+        # was ~2x wider than intended.
+        BLOCK_RADIUS_CALENDAR_DAYS = 14  # ≈ +/-10 trading bars, per RUL-12
         used = np.zeros(len(sorted_idx), dtype=bool)
         for i in range(len(sorted_idx)):
             if used[i]:
                 continue
             anchor = grp_dates.iloc[i]
             window_mask = np.array([
-                abs((grp_dates.iloc[j] - anchor).days) <= 2 * BLOCK_RADIUS * 1.5
+                abs((grp_dates.iloc[j] - anchor).days) <= BLOCK_RADIUS_CALENDAR_DAYS
                 for j in range(len(sorted_idx))
             ])
             block_positions = sorted_idx[window_mask]
@@ -646,10 +652,13 @@ def r1_estimate(
     ci_hi = float(np.percentile(boot_arr, 97.5))
 
     # bootstrap p-value (two-sided: fraction as extreme as observed)
-    p_value = float(2.0 * min(
+    # Clamped to [0, 1]: 2*min(...) can exceed 1.0 when both tail fractions
+    # approach 0.5 (e.g. degenerate or near-zero coefficient), producing a
+    # malformed p-value that would confuse BH monotonicity displays.
+    p_value = float(min(1.0, 2.0 * min(
         (boot_arr <= 0).mean(),
         (boot_arr >= 0).mean(),
-    ))
+    )))
 
     n_treatment = int((df[stratum_col] == 1).sum())
     n_control   = int((df[stratum_col] == 0).sum())
@@ -787,6 +796,13 @@ def effect_table(
     # Only keep gradable rows
     df_gradable = df[df["gradable"].fillna(False)].copy() if "gradable" in df.columns else df.copy()
 
+    # NOTE: days_to_10 is excluded from this FDR panel because it is a
+    # selection-biased (collider) outcome: it is defined only for fires that
+    # reached +10%, so the stratum effect on *whether* a fire reaches +10%
+    # (essentially a liftoff outcome) opens a selection channel in the
+    # days_to_10 coefficient.  It is computed descriptively in the era_table
+    # (days_to_10_median) where the conditioning is clearly labelled.
+    # See W0_BASELINES.md § days_to_10 note.
     outcomes_to_run = [
         ("stop5",             "stop5"),
         ("rotational_liftoff","rotational_liftoff"),
@@ -795,7 +811,6 @@ def effect_table(
         ("cushion_rot",       "cushion_rot"),
         ("mae63",             "mae63"),
         ("mfe63",             "mfe63"),
-        ("days_to_10",        "days_to_10"),
     ]
 
     effects = []

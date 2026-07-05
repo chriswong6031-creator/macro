@@ -111,6 +111,28 @@ Post-hoc switching between FE granularities is banned (RUL-12).
 
 ---
 
+## Statistical notes
+
+### days_to_10 — descriptive only, excluded from FDR promotion panel
+
+`days_to_10` (median bars to +10% gain) is computed and reported in the era × tier
+tables as a descriptive speed metric.  It is **not** included in the `effect_table`
+BH-corrected FDR panel.
+
+Reason: `days_to_10` is defined only for fires that *reached* +10%, making it a
+selection-biased (collider) outcome.  Whether a fire ever reaches +10% is itself
+a near-equivalent of the positional-liftoff endpoint.  Conditioning on "reached +10%"
+opens a selection channel: the stratum coefficient in the conditional population is
+not a clean causal stratum effect.  This does not affect the primary endpoint
+(`stop5`) or the other FDR-panelled outcomes.
+
+Correct interpretation: the `days_to_10_median` column in the era table shows the
+**conditional speed** (given the fire reaches +10%), stratified by era and tier.
+Comparison across tiers should be read as "among fires that did reach +10%, how
+quickly did each tier reach it?" — not as an unconditional stratum causal effect.
+
+---
+
 ## Deferrals
 
 ### NC-2 Entry Quality Bands (RUL-3)
