@@ -152,6 +152,15 @@ body { padding-bottom:56px; }
 /* ── Empty / loading states ── */
 .cm-empty { color:var(--muted); font-style:italic; padding:20px 0; text-align:center; }
 .cm-loading { display:none; color:var(--muted); font-size:13px; padding:10px 0; }
+
+/* ── W1 Role badges (Spine v2) ── */
+/* One badge per provenance row; precedence: veto > alpha > sizing > timing > context */
+.role-badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:10.5px; font-weight:700; letter-spacing:.04em; cursor:default; }
+.role-veto    { background:color-mix(in srgb,var(--down)  18%,var(--panel2)); color:var(--down); }
+.role-alpha   { background:color-mix(in srgb,var(--up)    18%,var(--panel2)); color:var(--up); }
+.role-sizing  { background:color-mix(in srgb,var(--link)  18%,var(--panel2)); color:var(--link); }
+.role-timing  { background:color-mix(in srgb,var(--warn)  18%,var(--panel2)); color:var(--warn); }
+.role-context { background:var(--panel); color:var(--muted); }
 </style>
 </head>
 <body>
@@ -483,7 +492,7 @@ body { padding-bottom:56px; }
     } else {
       html += '<div style="overflow-x:auto"><table class="prov-table">'
         + '<thead><tr>'
-        + '<th>Source</th><th>Family</th><th>Ladder</th><th data-tip-en="Shrunken information coefficient — correlation scale, typically &lt;1%" data-tip-zh="压缩信息系数——相关系数尺度，通常&lt;1%">Kernel IC</th><th data-tip-en="Wilson hit-rate CI lower bound — probability scale, not the same unit as Kernel IC" data-tip-zh="Wilson命中率置信区间下界——概率尺度，与IC单位不同">Wilson LB<br><small style=\'font-weight:normal;font-size:10px\'>(hit-rate)</small></th><th>Armed</th><th>Staleness</th><th>Direction</th><th>Graded</th><th>Details</th>'
+        + '<th>Source</th><th>Family</th><th>Ladder</th><th data-tip-en="Shrunken information coefficient — correlation scale, typically &lt;1%" data-tip-zh="压缩信息系数——相关系数尺度，通常&lt;1%">Kernel IC</th><th data-tip-en="Wilson hit-rate CI lower bound — probability scale, not the same unit as Kernel IC" data-tip-zh="Wilson命中率置信区间下界——概率尺度，与IC单位不同">Wilson LB<br><small style=\'font-weight:normal;font-size:10px\'>(hit-rate)</small></th><th>Armed</th><th>Staleness</th><th>Direction</th><th data-tip-en="Role: veto=short/avoid, alpha=sized long conviction, sizing=real money, timing=level-vs-timing (W2+), context=graded-but-unsized. Falsifier tooltip available when source carries one." data-tip-zh="角色：否决=做空/回避，阿尔法=有仓位的多头判断，仓位=实际资金，择时=时机判断(W2+)，背景=已评分但无仓位">Role</th><th>Graded</th><th>Details</th>'
         + '</tr></thead><tbody>';
       provRows.forEach(function (row, i) {
         html += renderProvRow(row, i);
@@ -534,6 +543,28 @@ body { padding-bottom:56px; }
                : (dir === 0) ? '<span class="dir-neu">0</span>'
                : '<span class="kernel-null">—</span>';
 
+    // W1 Role badge — precedence: veto > alpha > sizing > timing > context
+    var roleKey = row.role || 'context';
+    var roleEn  = row.role_en || roleKey;
+    var roleZh  = row.role_zh || roleEn;
+    var roleEsc = esc(roleEn);
+    var roleBadge = '<span class="role-badge role-' + esc(roleKey) + '">'
+      + '<span class="l-en">' + roleEsc + '</span>'
+      + '<span class="l-zh">' + esc(roleZh) + '</span>'
+      + '</span>';
+    // Falsifier tooltip — data-tip-en / data-tip-zh, NO title= (CI guard: check_title_i18n.py)
+    // Reuse EN text in ZH when no ZH source (conservative default per open-question ruling).
+    // Attribute-escape the text (& < > " ') to prevent XSS in data-tip attrs.
+    if (row.falsifier) {
+      var ftEsc = String(row.falsifier)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      roleBadge = '<span class="role-badge role-' + esc(roleKey) + '" data-tip-en="' + ftEsc + '" data-tip-zh="' + ftEsc + '">'
+        + '<span class="l-en">' + roleEsc + '</span>'
+        + '<span class="l-zh">' + esc(roleZh) + '</span>'
+        + '</span>';
+    }
+
     var gradedStr = row.outcome_graded ? '<span class="stale-warn">Yes</span>' : '<span class="kernel-null">No</span>';
 
     // Detail block
@@ -568,6 +599,7 @@ body { padding-bottom:56px; }
       + '<td>' + armedStr + '</td>'
       + '<td>' + staleStr + '</td>'
       + '<td>' + dirStr + '</td>'
+      + '<td>' + roleBadge + '</td>'
       + '<td>' + gradedStr + '</td>'
       + '<td><span class="source-expand">▼ source</span>'
         + '<div class="source-detail">' + detailHtml + '</div></td>'
