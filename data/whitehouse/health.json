@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-05T21:19:15.047576+00:00",
-  "posts_seen": 3,
-  "seen_total": 9,
-  "evaluated": 0,
+  "as_of": "2026-07-05T23:18:21.399440+00:00",
+  "posts_seen": 4,
+  "seen_total": 10,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-05-presidential-message-on-the-anniversary-of-the-united-states-secret-service",
+      "importance": null,
+      "activated": false,
+      "degraded_reason": "llm_error"
+    }
+  ]
 }
