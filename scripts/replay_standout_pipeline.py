@@ -1270,8 +1270,8 @@ def replay_year(
 def print_summary(replay_dir: Path) -> dict[str, Any]:
     """Load all per-year part files and print summary stats."""
     all_dfs = []
-    for f in sorted(replay_dir.glob("replay_*.parquet")):
-        try:
+    for f in sorted(replay_dir.glob("replay_2*.parquet")):  # per-year parts only
+        try:                                                  # (exclude replay_boarded)
             df = pd.read_parquet(f)
             all_dfs.append(df)
         except Exception:
@@ -1566,7 +1566,7 @@ def main() -> None:
                     last_replay_date=last_replay_date)
 
     # ── Board post-pass (F6/F7) applied to the full ledger ────────────
-    parts = sorted(REPLAY_DIR.glob("replay_*.parquet"))
+    parts = sorted(REPLAY_DIR.glob("replay_2*.parquet"))  # per-year parts only
     if parts:
         full = pd.concat([pd.read_parquet(p) for p in parts], ignore_index=True)
         boarded = board_post_pass(full)
