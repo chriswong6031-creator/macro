@@ -45,6 +45,11 @@ R2 registration: NOT needed at this scale. Revisit if universe exceeds 800 names
 - Sequential per-root-day; one ThreadPoolExecutor request per right (2 concurrent
   per root-day) within the terminal's 8-concurrent ceiling.
 - INERT on terminal unreachable (returns exit 1, writes nothing, logs one warning).
+- BOTH-RIGHTS-OR-NO-ROW law (house empty-vs-failed): the collector returns None
+  on FAILURE (unreachable / stream truncated) and an EMPTY DataFrame on
+  SUCCESS-with-no-trades. build_one writes a day row ONLY if BOTH the call and
+  put legs succeeded (neither is None). A failed leg → no row (a partial day must
+  never be persisted as if complete).
 """
 from __future__ import annotations
 
@@ -221,13 +226,31 @@ def build_one(root: str, trade_date: date, dry_run: bool = False) -> dict | None
         log.warning("tape_flow: fetch failed for %s %s: %s", root, trade_date, e)
         return None
 
-    n_calls = len(calls_df) if calls_df is not None and not calls_df.empty else 0
-    n_puts  = len(puts_df)  if puts_df  is not None and not puts_df.empty  else 0
+    # House empty-vs-failed law: the collector returns None on FAILURE
+    # (terminal unreachable / stream truncated) and an EMPTY DataFrame on
+    # SUCCESS-with-no-trades. A day row is a complete both-rights aggregate;
+    # writing one when a right's fetch FAILED would persist a partial day as if
+    # it were complete (the KRE 2026-06-30 puts-only bug). Require BOTH legs to
+    # have succeeded (neither is None). Empty-but-successful legs are fine.
+    if calls_df is None or puts_df is None:
+        failed = []
+        if calls_df is None:
+            failed.append("call")
+        if puts_df is None:
+            failed.append("put")
+        log.warning(
+            "tape_flow: %s %s — %s leg(s) FAILED (None); refusing to write a "
+            "partial day (both-rights-or-no-row law) — skip",
+            root, trade_date, "+".join(failed))
+        return None
+
+    n_calls = len(calls_df)
+    n_puts  = len(puts_df)
     log.info("tape_flow: %s %s — %d call rows, %d put rows (%.1fs)",
              root, trade_date, n_calls, n_puts, time.perf_counter() - t0)
 
     if n_calls == 0 and n_puts == 0:
-        log.info("tape_flow: no trade data for %s %s — skip", root, trade_date)
+        log.info("tape_flow: no trade data for %s %s (both legs empty-successful) — skip", root, trade_date)
         return None
 
     # Load oi[t-1] and greeks chain for this date

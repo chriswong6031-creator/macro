@@ -629,3 +629,73 @@ class TestFixtureRoundTrip:
         dte_vol_sum = sum(result.get(f"dte_{b}_vol_share", 0.0) or 0.0
                           for b in ("0d","1_7d","8_30d","31_90d","90p"))
         assert abs(dte_vol_sum - 1.0) < 0.02, f"DTE vol shares sum={dte_vol_sum}, expected ~1.0"
+
+
+# ─── 16. Both-rights-or-no-row law (house empty-vs-failed) ────────────────────
+
+class TestBothRightsOrNoRow:
+    """A day row must be written ONLY when BOTH the call and put legs SUCCEEDED.
+
+    Collector contract: None = FAILURE (unreachable / stream truncated);
+    empty DataFrame = SUCCESS with no trades. A failed leg (None) must never be
+    persisted as a partial day (the KRE 2026-06-30 puts-only bug this guards).
+    """
+
+    def _patch_build(self, monkeypatch, calls_ret, puts_ret):
+        """Patch the collector + I/O so build_one runs hermetically.
+
+        Returns a list that captures any (root, df) passed to _write_parquet.
+        """
+        import scripts.build_tape_flow as bld
+        from collectors import thetadata as td
+
+        # build_one does `from collectors import thetadata as td` then calls
+        # td.reachable() and (via _fetch_both_rights) td.bulk_trade_quote(...).
+        # Patch those attributes on the real module so no terminal is contacted.
+        monkeypatch.setattr(td, "reachable", lambda: True)
+
+        def _fake_bulk(root, right, sd, ed):
+            return calls_ret if right == "call" else puts_ret
+
+        monkeypatch.setattr(td, "bulk_trade_quote", _fake_bulk)
+
+        # No OI / greeks lookups (avoid touching the eod store)
+        monkeypatch.setattr(bld, "_load_oi_prev", lambda root, d: None)
+        monkeypatch.setattr(bld, "_load_greeks_chain", lambda root, d: None)
+        monkeypatch.setattr(bld, "_load_existing", lambda root: pd.DataFrame())
+
+        writes: list = []
+        monkeypatch.setattr(bld, "_write_parquet",
+                            lambda root, df, dry_run=False: writes.append((root, df)) or Path("x"))
+        return bld, writes
+
+    def test_calls_leg_none_no_row_written(self, monkeypatch):
+        """Calls fetch FAILED (None), puts succeeded with data → NO row written."""
+        puts = _minimal_trade_df(price=1.85, bid=1.70, ask=1.90, size=5.0, right="P")
+        bld, writes = self._patch_build(monkeypatch, calls_ret=None, puts_ret=puts)
+        result = bld.build_one("KRE", date(2026, 6, 30))
+        assert result is None, "build_one must return None when a leg failed"
+        assert writes == [], "no parquet may be written when the calls leg failed"
+
+    def test_puts_leg_none_no_row_written(self, monkeypatch):
+        """Puts fetch FAILED (None), calls succeeded with data → NO row written."""
+        calls = _minimal_trade_df(price=2.55, bid=2.40, ask=2.60, size=10.0, right="C")
+        bld, writes = self._patch_build(monkeypatch, calls_ret=calls, puts_ret=None)
+        result = bld.build_one("KRE", date(2026, 6, 30))
+        assert result is None, "build_one must return None when a leg failed"
+        assert writes == [], "no parquet may be written when the puts leg failed"
+
+    def test_both_legs_succeed_row_written(self, monkeypatch):
+        """Both legs succeed (calls has data, puts empty-successful) → row written."""
+        calls = _minimal_trade_df(price=2.55, bid=2.40, ask=2.60, size=10.0, right="C")
+        bld, writes = self._patch_build(monkeypatch, calls_ret=calls, puts_ret=pd.DataFrame())
+        result = bld.build_one("KRE", date(2026, 6, 30))
+        assert result is not None, "build_one must produce a row when both legs succeeded"
+        assert len(writes) == 1, "exactly one parquet write when both legs succeeded"
+
+    def test_both_legs_empty_successful_no_row(self, monkeypatch):
+        """Both legs empty-successful (no trades) → no row (nothing to aggregate)."""
+        bld, writes = self._patch_build(monkeypatch, calls_ret=pd.DataFrame(), puts_ret=pd.DataFrame())
+        result = bld.build_one("KRE", date(2026, 6, 30))
+        assert result is None
+        assert writes == []
