@@ -63,6 +63,7 @@ import numpy as np
 import pandas as pd
 
 from engine.neuralweb.sector_map import SectorMapping, build_sector_map
+from engine.stock_fundamentals import _leverage_ratios, _load_statements
 
 log = logging.getLogger(__name__)
 
@@ -667,6 +668,12 @@ def assemble(
     standouts = _load_us_standouts(root)
     earnings_df = _load_earnings(root)
 
+    # ── Survival-quality leverage ratios (FR-9/FR-10; display-only) ──────────
+    # Load statements once; degrade gracefully when parquet is absent (CI runners,
+    # first run before the drip has fired).  Uses the latest filed fiscal year
+    # (PIT-safe for a current snapshot; rows[-1] = most recently filed FY).
+    statements_by_ticker = _load_statements()
+
     # ── Sponsorship connector (Amendment §C3) — load once, pass through ──────
     # build_sector_map is fast (parquet reads from existing stores, cached on disk).
     # Oracle panels are loaded once and reused across all ticker rows.
@@ -713,6 +720,17 @@ def assemble(
                 panel_s=panel_s,
                 panel_m=panel_m,
             )
+            # ── Bottom-survival-quality leverage ratios (FR-9/FR-10) ──────────
+            # Additive per-ticker columns: None when statements absent or ratio
+            # uncomputable (Financial-sector names, sparse filers).  Use the full
+            # statement history — no additional PIT truncation needed here because
+            # the rows are already ordered ascending-fy by _load_statements() and
+            # _leverage_ratios() uses only the latest row.
+            stmt_rows = statements_by_ticker.get(ticker) or []
+            lev = _leverage_ratios(stmt_rows)
+            row["interest_coverage"] = lev.get("interest_coverage")
+            row["net_debt_to_op_income"] = lev.get("net_debt_to_op_income")
+            row["net_debt_to_ebitda"] = lev.get("net_debt_to_ebitda")
             rows.append(row)
             n_ok += 1
         except Exception as exc:  # noqa: BLE001
