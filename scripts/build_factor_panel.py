@@ -599,11 +599,15 @@ def _compute_block_b_percentiles(factors_df: pd.DataFrame,
     cross-section snapshot).
 
     PIT guard (PREREG §2.5): breakpoints are computed on the cross-section
-    available at the panel build date, never panel-global. Since factors.json
-    is a nightly snapshot (single-date cross-section), each panel build date
-    uses that date's cross-section — this is PIT-correct for same-day builds.
-    For historical backfills we use the same snapshot, which may not be PIT-
-    correct for historical rows; this is labeled in the run log.
+    available at the panel build date, never panel-global.
+
+    R3 RULING (2026-07-04): this function is ONLY called for the snapshot's
+    own as_of date.  Historical (backfill) build dates receive None for all
+    Block-B columns — they are NOT filled from this snapshot.  Historical
+    backfill of Block-B columns is a separate follow-up task (equity_factors
+    backtest mode asof=date + residual_alpha recompute) required BEFORE P3
+    H3/H2-stratification runs on history.  The caller enforces this gate via
+    the factors_pit_ok guard in build_panel().
     """
     out: dict[str, float | None] = {}
     if ticker not in factors_df.index:

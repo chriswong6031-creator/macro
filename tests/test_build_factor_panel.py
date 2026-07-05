@@ -684,3 +684,419 @@ class TestVasicekShrinkage:
         np.testing.assert_allclose(
             shrunk.mean(axis=1).values, beta.mean(axis=1).values, rtol=1e-8,
         )
+
+
+# ---------------------------------------------------------------------------
+# Shared fixture writer used by C-3 integration tests
+# ---------------------------------------------------------------------------
+def _write_c3_fixtures(root: Path, tickers: list[str], n_dates: int = 350,
+                       seed: int = 7) -> pd.DatetimeIndex:
+    """Write a complete minimal fixture tree for build_panel.
+
+    Returns the DatetimeIndex of all business dates in the fixture.
+
+    IMPORTANT: each asset uses an INDEPENDENT seeded RNG derived from (seed, asset_name)
+    so that changing n_dates does not perturb other assets' return series.  This
+    is required for truncation-invariance tests: the first n_T rows of every stream
+    must be identical whether the fixture has n_T or n_T+60 rows.
+    """
+    def _asset_rng(base_seed: int, name: str) -> np.random.Generator:
+        """Per-asset deterministic RNG — independent of n_dates."""
+        h = abs(hash(name)) % (2**31)
+        return np.random.default_rng(base_seed * 100_003 + h)
+
+    dates = pd.bdate_range("2025-01-02", periods=n_dates)
+    as_of_date = dates[-1]
+
+    bdir = root / "data" / "breadth"
+    bdir.mkdir(parents=True, exist_ok=True)
+    closes = pd.DataFrame(
+        {t: 100.0 * (1 + _asset_rng(seed, t).normal(0, 0.01, n_dates)).cumprod()
+         for t in tickers},
+        index=dates,
+    )
+    closes.to_parquet(bdir / "_closes_cache.parquet")
+    sectors = ["Information Technology"] * len(tickers)
+    meta = pd.DataFrame({"name": tickers, "sector": sectors}, index=tickers)
+    meta.to_parquet(bdir / "constituents.parquet")
+
+    ydir = root / "data" / "yahoo"
+    ydir.mkdir(exist_ok=True)
+    for sym in ["SPY", "IWM", "QQQ", "TLT", "DX-Y.NYB", "FXI", "XLK"]:
+        df = pd.DataFrame(
+            {"close": 100.0 * (1 + _asset_rng(seed, sym).normal(0, 0.01, n_dates)).cumprod()},
+            index=dates,
+        )
+        df.to_parquet(ydir / f"{sym}.parquet")
+
+    sdir = root / "site" / "basketdata"
+    sdir.mkdir(parents=True, exist_ok=True)
+    ai_levels = list(
+        100.0 * (1 + _asset_rng(seed, "ai_infra").normal(0, 0.01, n_dates)).cumprod()
+    )
+    (sdir / "baskets.json").write_text(json.dumps({
+        "chart": {
+            "dates": [str(d.date()) for d in dates],
+            "bench": [1.0] * n_dates,
+            "baskets": {"ai_infra": ai_levels},
+        }
+    }))
+
+    fddir = root / "site" / "factordata"
+    fddir.mkdir(parents=True, exist_ok=True)
+    alpha_rng = _asset_rng(seed, "alpha_json")
+    per_ticker = {t: {"alpha": float(alpha_rng.normal(0, 1))} for t in tickers}
+    (fddir / "alpha.json").write_text(json.dumps({
+        "as_of": str(as_of_date.date()), "per_ticker": per_ticker,
+    }))
+    factors_rng = _asset_rng(seed, "factors_json")
+    factors_table = [
+        {"ticker": t, **{leg: float(factors_rng.normal(0, 1)) for leg in BLOCK_B_LEGS},
+         "mktcap_bn": 10.0}
+        for t in tickers
+    ]
+    (fddir / "factors.json").write_text(json.dumps({
+        "as_of": str(as_of_date.date()), "table": factors_table,
+    }))
+    return dates
+
+
+# ---------------------------------------------------------------------------
+# C-3(a) Future-perturbation invariance
+# ---------------------------------------------------------------------------
+class TestFuturePerturbationInvariance:
+    """C-3(a): Perturbing a strictly-future ETF price must not change any
+    historical Block-A value (beta_, contrib_, resid_, alibi_).
+
+    Two sub-cases: SPY (mkt stream) and IWM (size stream).
+
+    This test discriminates causal rolling orth from static orth: with static
+    orth the full-history covariance matrix changes when future data changes,
+    propagating backward into historical orth coefficients and therefore
+    historical betas.  The rolled .shift(1) variant is immune.
+    """
+
+    def _run_build(self, tmp_path: Path, tickers: list[str],
+                   dates: pd.DatetimeIndex,
+                   start_offset: int = -20, end_offset: int = -1) -> pd.DataFrame:
+        """Build panel over [dates[start_offset], dates[end_offset]]."""
+        start = dates[start_offset]
+        end = dates[end_offset]
+        panel = build_panel(
+            data_root=tmp_path, out_root=tmp_path,
+            start_date=start, end_date=end, tickers=tickers,
+        )
+        return panel.sort_values(["ticker", "date"]).reset_index(drop=True)
+
+    def _perturb_yahoo(self, tmp_path: Path, sym: str, after_row: int,
+                       delta: float = 5.0) -> None:
+        """Overwrite the yahoo parquet for sym, adding delta to all rows > after_row."""
+        p = tmp_path / "data" / "yahoo" / f"{sym}.parquet"
+        df = pd.read_parquet(p)
+        df_new = df.copy()
+        df_new.iloc[after_row + 1:] += delta
+        df_new.to_parquet(p)
+
+    def _get_block_a_cols(self, panel: pd.DataFrame) -> list[str]:
+        """Return all Block-A numeric columns: beta_, contrib_, resid_, alibi_."""
+        return [c for c in panel.columns
+                if any(c.startswith(pfx)
+                       for pfx in ("beta_", "contrib_", "resid_", "alibi_"))]
+
+    def test_spy_future_perturbation_does_not_affect_past_betas(self, tmp_path):
+        """Perturbing SPY at strictly future dates must not change Block-A values at past dates.
+
+        Strategy: build panel over dates[-20:-10] (a window ending well before the end).
+        Then perturb SPY at dates[-9:] (strictly future relative to the build window).
+        Re-build over the same window — all Block-A values must be byte-identical.
+
+        The perturbation uses dates[-9:] (row index -9 to -1 in a 350-date fixture),
+        which are strictly AFTER the build window end (dates[-10]).  With causal
+        rolling orth (shift-1 coefficients), future data never affects past rows.
+        """
+        n_dates = 350
+        tickers = ["AAPL", "MSFT"]
+        dates = _write_c3_fixtures(tmp_path, tickers, n_dates=n_dates, seed=13)
+
+        # Build over dates[-20] to dates[-10] (20 dates, well before the series end):
+        build_end_idx = -10  # dates[-10] is our historical window end
+        panel_before = self._run_build(tmp_path, tickers, dates,
+                                       start_offset=-20, end_offset=build_end_idx)
+        assert not panel_before.empty, "Pre-perturbation panel is empty"
+
+        # Perturb SPY at rows > (n_dates + build_end_idx) = 340:
+        # dates[-10] is index 340 (0-based), so after_row=340 means rows 341..349 are perturbed.
+        after_row = n_dates + build_end_idx  # = 340
+        self._perturb_yahoo(tmp_path, "SPY", after_row=after_row, delta=5.0)
+
+        panel_after = self._run_build(tmp_path, tickers, dates,
+                                      start_offset=-20, end_offset=build_end_idx)
+        assert not panel_after.empty, "Post-perturbation panel is empty"
+
+        assert len(panel_before) == len(panel_after), (
+            f"Row count changed after SPY perturbation: {len(panel_before)} vs {len(panel_after)}")
+
+        block_a_cols = self._get_block_a_cols(panel_before)
+        assert block_a_cols, "No Block-A columns found"
+
+        p_b = panel_before.reset_index(drop=True)
+        p_a = panel_after.reset_index(drop=True)
+
+        for col in block_a_cols:
+            s1 = p_b[col]
+            s2 = p_a[col]
+            pd.testing.assert_series_equal(
+                s1.isna(), s2.isna(), check_names=False,
+                obj=f"SPY-perturb: null mask mismatch in {col}",
+            )
+            mask = s1.notna()
+            if mask.any():
+                np.testing.assert_allclose(
+                    s1[mask].to_numpy(dtype=float),
+                    s2[mask].to_numpy(dtype=float),
+                    rtol=1e-8,
+                    err_msg=(f"SPY future-perturbation changed historical {col} "
+                             "— causal rolling orth must be immune to future data"),
+                )
+
+    def test_iwm_future_perturbation_does_not_affect_past_betas(self, tmp_path):
+        """Perturbing IWM (size stream) at future dates must not change past Block-A values.
+
+        Same strategy as the SPY test: build window ends at dates[-10], perturb IWM
+        at dates[-9:] (strictly future), re-build over same window — byte-identical.
+        """
+        n_dates = 350
+        tickers = ["AAPL", "MSFT"]
+        dates = _write_c3_fixtures(tmp_path, tickers, n_dates=n_dates, seed=17)
+
+        build_end_idx = -10
+        panel_before = self._run_build(tmp_path, tickers, dates,
+                                       start_offset=-20, end_offset=build_end_idx)
+        assert not panel_before.empty
+
+        after_row = n_dates + build_end_idx  # = 340
+        self._perturb_yahoo(tmp_path, "IWM", after_row=after_row, delta=5.0)
+
+        panel_after = self._run_build(tmp_path, tickers, dates,
+                                      start_offset=-20, end_offset=build_end_idx)
+        assert not panel_after.empty
+
+        assert len(panel_before) == len(panel_after)
+
+        block_a_cols = self._get_block_a_cols(panel_before)
+        p_b = panel_before.reset_index(drop=True)
+        p_a = panel_after.reset_index(drop=True)
+
+        for col in block_a_cols:
+            s1 = p_b[col]
+            s2 = p_a[col]
+            pd.testing.assert_series_equal(
+                s1.isna(), s2.isna(), check_names=False,
+                obj=f"IWM-perturb: null mask mismatch in {col}",
+            )
+            mask = s1.notna()
+            if mask.any():
+                np.testing.assert_allclose(
+                    s1[mask].to_numpy(dtype=float),
+                    s2[mask].to_numpy(dtype=float),
+                    rtol=1e-8,
+                    err_msg=(f"IWM future-perturbation changed historical {col} "
+                             "— causal rolling orth must be immune to future data"),
+                )
+
+
+# ---------------------------------------------------------------------------
+# C-3(b) Truncation invariance
+# ---------------------------------------------------------------------------
+class TestTruncationInvariance:
+    """C-3(b): Rows for dates ≤ T must be identical whether the history ends
+    at T or T+60 (the discriminating test for static orthogonalization).
+
+    With static full-history Gram-Schmidt the covariance matrix includes all
+    rows up to the end of the history, so extending by 60 days changes the
+    orth coefficients at all historical dates.  With causal rolling orth each
+    row's coefficient depends only on the prior 252-day window (shifted 1), so
+    extending the history forward does not affect older rows.
+    """
+
+    def _write_fixture_with_n(self, tmp_path: Path, tickers: list[str],
+                               n_dates: int, seed: int = 21) -> pd.DatetimeIndex:
+        """Write fixture with n_dates and return the date index."""
+        return _write_c3_fixtures(tmp_path, tickers, n_dates=n_dates, seed=seed)
+
+    def test_truncation_invariance_block_a(self, tmp_path):
+        """T-length and T+60-length history → identical Block-A rows for all dates ≤ T."""
+        tickers = ["AAPL", "MSFT", "GOOGL"]
+        n_T = 300        # shorter history ends here
+        n_T60 = n_T + 60  # extended history
+
+        # Build with shorter history:
+        dates_short = pd.bdate_range("2025-01-02", periods=n_T)
+        T_end = dates_short[-1]
+
+        # tmp_path is for the SHORT fixture; use a sub-dir for the LONG one
+        short_root = tmp_path / "short"
+        long_root = tmp_path / "long"
+        short_root.mkdir(); long_root.mkdir()
+
+        _write_c3_fixtures(short_root, tickers, n_dates=n_T, seed=21)
+        _write_c3_fixtures(long_root, tickers, n_dates=n_T60, seed=21)
+        # NOTE: both fixtures must share the SAME underlying return series prefix
+        # so that rows at dates ≤ T use the same data.  Since _write_c3_fixtures
+        # uses the same seed, the first n_T rows of both are byte-identical.
+
+        # Build from both roots using the same output start/end window:
+        start_date = dates_short[-10]  # last 10 dates of short
+        panel_short = build_panel(
+            data_root=short_root, out_root=short_root,
+            start_date=start_date, end_date=T_end, tickers=tickers,
+        )
+        panel_long = build_panel(
+            data_root=long_root, out_root=long_root,
+            start_date=start_date, end_date=T_end, tickers=tickers,
+        )
+
+        assert not panel_short.empty, "Short panel produced no rows"
+        assert not panel_long.empty, "Long panel produced no rows"
+
+        p_s = panel_short.sort_values(["ticker", "date"]).reset_index(drop=True)
+        p_l = panel_long.sort_values(["ticker", "date"]).reset_index(drop=True)
+
+        assert len(p_s) == len(p_l), (
+            f"Row count differs: short={len(p_s)}, long={len(p_l)}")
+
+        block_a_cols = [c for c in p_s.columns
+                        if any(c.startswith(pfx)
+                               for pfx in ("beta_", "contrib_", "resid_", "alibi_"))]
+        assert block_a_cols, "No Block-A columns found"
+
+        for col in block_a_cols:
+            s_s = p_s[col].reset_index(drop=True)
+            s_l = p_l[col].reset_index(drop=True)
+            pd.testing.assert_series_equal(
+                s_s.isna(), s_l.isna(), check_names=False,
+                obj=f"Truncation test: null mask mismatch in {col}",
+            )
+            mask = s_s.notna()
+            if mask.any():
+                np.testing.assert_allclose(
+                    s_s[mask].to_numpy(dtype=float),
+                    s_l[mask].to_numpy(dtype=float),
+                    rtol=1e-8,
+                    err_msg=(f"Truncation invariance failure in {col}: "
+                             "extending history by 60d must not change rows at ≤ T "
+                             "(static orth would fail this test)"),
+                )
+
+
+# ---------------------------------------------------------------------------
+# C-3(c) Schema stability across universe types
+# ---------------------------------------------------------------------------
+class TestSchemaStability:
+    """C-3(c): china-only, non-china-only, and mixed universes must produce
+    identical parquet column sets (exactly PANEL_COLUMNS — 40 columns).
+
+    China-eligible tickers (IT sector) get non-null beta_china values.
+    Non-china tickers get null beta_china values.  But the COLUMN must always
+    be present — it is part of the frozen v1 schema.
+    """
+
+    def _build_and_read_parquet_cols(self, tmp_path: Path, tickers: list[str],
+                                     sectors: list[str]) -> list[str]:
+        rng_local = np.random.default_rng(55)
+        n_dates = 350
+        dates = pd.bdate_range("2025-01-02", periods=n_dates)
+        as_of_date = dates[-1]
+
+        bdir = tmp_path / "data" / "breadth"
+        bdir.mkdir(parents=True, exist_ok=True)
+        closes = pd.DataFrame(
+            {t: 100.0 * (1 + rng_local.normal(0, 0.01, n_dates)).cumprod()
+             for t in tickers}, index=dates,
+        )
+        closes.to_parquet(bdir / "_closes_cache.parquet")
+        meta = pd.DataFrame({"name": tickers, "sector": sectors}, index=tickers)
+        meta.to_parquet(bdir / "constituents.parquet")
+
+        ydir = tmp_path / "data" / "yahoo"
+        ydir.mkdir(exist_ok=True)
+        for sym in ["SPY", "IWM", "QQQ", "TLT", "DX-Y.NYB", "FXI", "XLK", "XLV"]:
+            df = pd.DataFrame(
+                {"close": 100.0 * (1 + rng_local.normal(0, 0.01, n_dates)).cumprod()},
+                index=dates,
+            )
+            df.to_parquet(ydir / f"{sym}.parquet")
+
+        sdir = tmp_path / "site" / "basketdata"
+        sdir.mkdir(parents=True, exist_ok=True)
+        ai_levels = list(100.0 * (1 + rng_local.normal(0, 0.01, n_dates)).cumprod())
+        (sdir / "baskets.json").write_text(json.dumps({
+            "chart": {
+                "dates": [str(d.date()) for d in dates],
+                "bench": [1.0] * n_dates,
+                "baskets": {"ai_infra": ai_levels},
+            }
+        }))
+
+        fddir = tmp_path / "site" / "factordata"
+        fddir.mkdir(parents=True, exist_ok=True)
+        per_ticker = {t: {"alpha": float(rng_local.normal(0, 1))} for t in tickers}
+        (fddir / "alpha.json").write_text(json.dumps({
+            "as_of": str(as_of_date.date()), "per_ticker": per_ticker,
+        }))
+        factors_table = [
+            {"ticker": t, **{leg: float(rng_local.normal(0, 1)) for leg in BLOCK_B_LEGS},
+             "mktcap_bn": 10.0}
+            for t in tickers
+        ]
+        (fddir / "factors.json").write_text(json.dumps({
+            "as_of": str(as_of_date.date()), "table": factors_table,
+        }))
+
+        build_panel(
+            data_root=tmp_path, out_root=tmp_path,
+            start_date=dates[-3], end_date=dates[-1], tickers=tickers,
+        )
+        # Read back the written parquet to get its columns:
+        for p in sorted((tmp_path / "data" / "factordata" / "panel").rglob("panel.parquet")):
+            return list(pd.read_parquet(p).columns)
+        return []
+
+    def test_china_only_universe_schema(self, tmp_path):
+        """China-only universe (IT sector) → parquet columns == PANEL_COLUMNS."""
+        cols = self._build_and_read_parquet_cols(
+            tmp_path / "china",
+            tickers=["AAPL", "MSFT"],
+            sectors=["Information Technology", "Information Technology"],
+        )
+        assert cols == PANEL_COLUMNS, (
+            f"China-only: parquet columns differ from PANEL_COLUMNS.\n"
+            f"Extra: {set(cols) - set(PANEL_COLUMNS)}\n"
+            f"Missing: {set(PANEL_COLUMNS) - set(cols)}"
+        )
+
+    def test_non_china_universe_schema(self, tmp_path):
+        """Non-china universe (Health Care) → parquet columns == PANEL_COLUMNS."""
+        cols = self._build_and_read_parquet_cols(
+            tmp_path / "nonchina",
+            tickers=["JNJ", "PFE"],
+            sectors=["Health Care", "Health Care"],
+        )
+        assert cols == PANEL_COLUMNS, (
+            f"Non-china: parquet columns differ from PANEL_COLUMNS.\n"
+            f"Extra: {set(cols) - set(PANEL_COLUMNS)}\n"
+            f"Missing: {set(PANEL_COLUMNS) - set(cols)}"
+        )
+
+    def test_mixed_universe_schema(self, tmp_path):
+        """Mixed universe (IT + Health Care) → parquet columns == PANEL_COLUMNS."""
+        cols = self._build_and_read_parquet_cols(
+            tmp_path / "mixed",
+            tickers=["AAPL", "JNJ"],
+            sectors=["Information Technology", "Health Care"],
+        )
+        assert cols == PANEL_COLUMNS, (
+            f"Mixed: parquet columns differ from PANEL_COLUMNS.\n"
+            f"Extra: {set(cols) - set(PANEL_COLUMNS)}\n"
+            f"Missing: {set(PANEL_COLUMNS) - set(cols)}"
+        )
