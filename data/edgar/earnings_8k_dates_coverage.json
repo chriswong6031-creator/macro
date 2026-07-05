@@ -1,12 +1,13 @@
 {
   "gate_pass": true,
   "gate_verdict": "PASS",
-  "gate_reason": "927 names with \u22658y \u2014 meets threshold of 800",
-  "names_total": 1313,
-  "names_ge8y": 927,
+  "gate_reason": "1143 names with \u22658y \u2014 meets threshold of 800",
+  "names_total": 1314,
+  "names_ge8y": 1143,
   "gate_names_threshold": 800,
   "gate_years_threshold": 8,
-  "overall_span": "2004-09-07 .. 2026-07-02",
-  "total_rows": 57856,
-  "as_of": "2026-07-05"
+  "overall_span": "2004-08-24 .. 2026-07-02",
+  "total_rows": 98975,
+  "as_of": "2026-07-05",
+  "n_shards_missing": 0
 }

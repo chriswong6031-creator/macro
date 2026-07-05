@@ -249,40 +249,62 @@ def _extract_8k_rows(ticker: str, cik: int, rec: dict) -> list[dict]:
     return rows
 
 
-def fetch_earnings_8k_for_cik(ticker: str, cik: int) -> list[dict]:
+def fetch_earnings_8k_for_cik(ticker: str, cik: int) -> tuple[list[dict], int]:
     """Fetch all 8-K Item-2.02 filings for one CIK from the submissions API.
 
     Follows the older-files pagination referenced in the submissions JSON to
     retrieve full history beyond the most-recent ~1000 filings.
 
-    Returns a list of row dicts with keys: ticker, cik, filing_date,
-    acceptance_datetime, items. Empty list on any failure.
+    The older-files entries are relative paths such as
+    "submissions/CIK##########-submissions-001.json".  The SEC serves them
+    under https://data.sec.gov/<fname> — i.e. the path already starts with
+    "submissions/", so the correct URL is
+    https://data.sec.gov/submissions/CIK…-submissions-001.json.
+    The bug in the original code (https://data.sec.gov/{fname} with fname
+    already containing "submissions/") produced valid URLs, but the original
+    *intent* comment said "relative paths like submissions/…" which is correct.
+    The real bug is that fname comes back as e.g. "CIK0000320193-submissions-001.json"
+    WITHOUT the "submissions/" prefix, and the old code constructed
+    "https://data.sec.gov/CIK…" which 404s. The correct base is
+    https://data.sec.gov/submissions/{fname}.
+
+    Returns a tuple (rows, n_shards_missing) so callers can surface the
+    missing-shard count in run summaries and the coverage JSON.
     """
     url = SUBMISSIONS_URL.format(int(cik))
     data = _sec_get_json(url)
     time.sleep(PACE_S)
     if not data:
-        return []
+        return [], 0
 
     filings = data.get("filings") or {}
     recent = filings.get("recent") or {}
     rows = _extract_8k_rows(ticker, cik, recent)
 
-    # Follow older-files pagination (data.sec.gov returns a list of file paths)
+    # Follow older-files pagination (data.sec.gov returns a list of shard file names).
+    # Each entry's "name" field is a bare filename like
+    # "CIK0000320193-submissions-001.json" (NO leading "submissions/" prefix).
+    # The correct URL is https://data.sec.gov/submissions/<name>.
     older_files = filings.get("files") or []
+    n_shards_missing = 0
     for f in older_files:
         fname = f.get("name") if isinstance(f, dict) else str(f)
         if not fname:
             continue
-        # older-files entries are relative paths like "submissions/CIK##########-submissions-001.json"
-        older_url = f"https://data.sec.gov/{fname}"
+        # Build the correct shard URL: always under /submissions/
+        older_url = f"https://data.sec.gov/submissions/{fname}"
         older_data = _sec_get_json(older_url)
         time.sleep(PACE_S)
-        if not older_data:
+        if older_data is None:
+            n_shards_missing += 1
+            log.warning(
+                "edgar_earnings_8k: shard fetch FAILED for %s (CIK %s) — url=%s",
+                ticker, cik, older_url,
+            )
             continue
         rows.extend(_extract_8k_rows(ticker, cik, older_data))
 
-    return rows
+    return rows, n_shards_missing
 
 
 # ---------------------------------------------------------------------------
@@ -331,11 +353,27 @@ def load_existing() -> pd.DataFrame:
 
 
 def append_and_dedup(existing: pd.DataFrame, new_rows: list[dict]) -> pd.DataFrame:
-    """Append new rows to existing and dedup on (ticker, filing_date)."""
+    """Append new rows to existing and dedup on (ticker, filing_date).
+
+    Dedup semantics: for duplicate (ticker, filing_date) pairs, retain the row
+    with the lexicographically earliest acceptance_datetime (i.e. the original
+    filing, not an amendment arriving later the same day). Rows are sorted by
+    (ticker, filing_date, acceptance_datetime) before drop_duplicates so that
+    keep='first' is deterministic regardless of concatenation order.
+    """
     if not new_rows:
         return existing
     new_df = pd.DataFrame(new_rows)
     combined = pd.concat([existing, new_df], ignore_index=True)
+    # Sort so that for same (ticker, filing_date), the earliest non-empty
+    # acceptance_datetime comes first — keep='first' then deterministically
+    # retains it.  Empty strings sort before any real ISO timestamp
+    # lexicographically, which would wrongly prefer a row with no precision
+    # over one with a known time; replace "" with a high sentinel so empty
+    # values sort last within the same (ticker, filing_date) bucket.
+    _SENTINEL = "9999-99-99"
+    sort_key = combined["acceptance_datetime"].replace("", _SENTINEL)
+    combined = combined.iloc[sort_key.argsort(kind="stable")]
     combined = combined.drop_duplicates(subset=["ticker", "filing_date"], keep="first")
     combined = combined.sort_values(["ticker", "filing_date"]).reset_index(drop=True)
     return combined
@@ -445,6 +483,7 @@ def run_backfill(
     n_fetched = 0
     n_skipped = 0
     n_error = 0
+    n_shards_missing_total = 0
 
     for ticker, cik in cik_map.items():
         cik_key = str(cik)
@@ -459,7 +498,7 @@ def run_backfill(
             continue
 
         try:
-            rows = fetch_earnings_8k_for_cik(ticker, cik)
+            rows, n_shards_missing = fetch_earnings_8k_for_cik(ticker, cik)
         except Exception as e:  # noqa: BLE001
             n_error += 1
             log.warning("edgar_earnings_8k: CIK %s (%s) failed: %s", cik, ticker, e)
@@ -475,6 +514,7 @@ def run_backfill(
                 break
             continue
 
+        n_shards_missing_total += n_shards_missing
         n_rows = len(rows)
         if n_rows == 0:
             log.debug("edgar_earnings_8k: CIK %s (%s) — 0 Item-2.02 8-Ks found", cik, ticker)
@@ -485,25 +525,36 @@ def run_backfill(
             "ticker": ticker,
             "status": "ok",
             "n_filings": n_rows,
+            "n_shards_missing": n_shards_missing,
             "ts": datetime.now(timezone.utc).isoformat(),
         }
         n_fetched += 1
 
         # Checkpoint every 50 CIKs: save manifest + parquet
         if n_fetched % 50 == 0:
-            log.info("edgar_earnings_8k: checkpoint — %d fetched, %d skipped, %d errors",
-                     n_fetched, n_skipped, n_error)
+            log.info(
+                "edgar_earnings_8k: checkpoint — %d fetched, %d skipped, %d errors, %d shards missing",
+                n_fetched, n_skipped, n_error, n_shards_missing_total,
+            )
             _checkpoint(all_rows, existing_df, manifest)
 
     # Final save
     final_df = _checkpoint(all_rows, existing_df, manifest)
     log.info(
-        "edgar_earnings_8k: done — %d fetched, %d skipped, %d errors; store=%d rows, %d tickers",
-        n_fetched, n_skipped, n_error, len(final_df), final_df["ticker"].nunique() if not final_df.empty else 0,
+        "edgar_earnings_8k: done — %d fetched, %d skipped, %d errors, %d shards missing; store=%d rows, %d tickers",
+        n_fetched, n_skipped, n_error, n_shards_missing_total,
+        len(final_df), final_df["ticker"].nunique() if not final_df.empty else 0,
     )
+    if n_shards_missing_total > 0:
+        log.warning(
+            "edgar_earnings_8k: %d older-filing shard(s) could not be fetched — "
+            "history for those CIKs may be incomplete",
+            n_shards_missing_total,
+        )
 
     # Coverage verdict
     cov = compute_coverage(final_df)
+    cov["n_shards_missing"] = n_shards_missing_total
     cov_path = _coverage_json_path()
     cov_path.parent.mkdir(parents=True, exist_ok=True)
     cov_path.write_text(json.dumps(cov, indent=2))
@@ -513,6 +564,7 @@ def run_backfill(
     print(f"  Names total                                  : {cov['names_total']}")
     print(f"  Overall date span                            : {cov['overall_span']}")
     print(f"  Total rows                                   : {cov['total_rows']}")
+    print(f"  Older-filing shards missing (fetch failures) : {n_shards_missing_total}")
     print(f"\n  S-EV Gate ({COVERAGE_GATE_NAMES} names × {COVERAGE_GATE_YEARS}y): {cov['gate_verdict']}")
     print(f"  ({cov['gate_reason']})")
     print(f"\n  Coverage JSON: {cov_path}")
