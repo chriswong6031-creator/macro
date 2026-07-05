@@ -13,7 +13,7 @@
 <title>Bonds & Bond Health — {{ as_of }}</title>
 {% set seo_title = 'Bonds and Bond Health — Yields, Curve and Credit | Mastermind' %}{% set seo_desc = 'A bonds hub tracking Treasury yields, the yield curve, credit spreads and bond-market health with regime-aware reads.' %}{% set seo_path = 'bonds.html' %}
 {% include "_seo_head.html.j2" %}
-<script src="plotly-2.32.0.min.js"></script>
+{% include '_plotly_head.html.j2' %}
 <style>
 :root{
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
