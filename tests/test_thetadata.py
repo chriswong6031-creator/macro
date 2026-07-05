@@ -1092,3 +1092,44 @@ class TestConcurrencyOrdering:
         assert 1 <= td.WINDOW_DAYS <= 7, (
             f"WINDOW_DAYS={td.WINDOW_DAYS} exceeds measured-reliable 7-day limit"
         )
+
+
+# ── 13. _endpoint_label — greeks path produces "greeks" not "eod" ─────────────
+
+class TestEndpointLabel:
+    """_endpoint_label: log-line label is human-readable for multi-segment paths."""
+
+    def test_plain_eod_path(self):
+        from collectors.thetadata import _endpoint_label
+        assert _endpoint_label("/v3/option/history/eod") == "eod"
+
+    def test_greeks_eod_path_returns_greeks(self):
+        """The greeks/eod path must label as 'greeks', not 'eod'.
+
+        Bug: path.split('/')[-1] on /v3/option/history/greeks/eod returns 'eod',
+        making greeks windows log as 'eod' — indistinguishable from the plain EOD
+        endpoint in the log.  _endpoint_label uses the parent segment when the last
+        path component is 'eod' under 'greeks'.
+        """
+        from collectors.thetadata import _endpoint_label
+        label = _endpoint_label("/v3/option/history/greeks/eod")
+        assert label == "greeks", (
+            f"Expected 'greeks' but got {label!r} — greeks windows would log as 'eod'"
+        )
+
+    def test_open_interest_path(self):
+        from collectors.thetadata import _endpoint_label
+        assert _endpoint_label("/v3/option/history/open_interest") == "open_interest"
+
+    def test_trade_quote_path(self):
+        from collectors.thetadata import _endpoint_label
+        assert _endpoint_label("/v3/option/history/trade_quote") == "trade_quote"
+
+    def test_greeks_all_path_returns_greeks(self):
+        """Hypothetical /greeks/all path also labels as 'greeks'."""
+        from collectors.thetadata import _endpoint_label
+        assert _endpoint_label("/v3/option/history/greeks/all") == "greeks"
+
+    def test_bare_path_segment(self):
+        from collectors.thetadata import _endpoint_label
+        assert _endpoint_label("eod") == "eod"

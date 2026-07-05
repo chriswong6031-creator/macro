@@ -53,11 +53,19 @@ DEFAULT_DIRS = [
     "massive_stock_day",  # whole-market daily OHLCV per-ticker parquets
                           # (data/massive_stock_day/*.parquet, gitignored); ~240 MB
                           # — Setup-Species §7 W0.6a (collectors/massive_stock_day.py)
+    "thetadata_eod",      # ThetaData EOD options chain parquets — one per root per year
+                          # (data/thetadata_eod/<root>/<year>.parquet, gitignored); ~GB-class
+                          # — Options Alpha masterplan ruling A4 (raw vendor pulls are never
+                          # git-committed — local cache + R2 with manifest + audit tripwire).
+                          # Store lives on the ops host; publish via:
+                          #   THETADATA_STORE env (default data/thetadata_eod) + --dirs thetadata_eod
+                          # Must run from the ops host (store host) where the parquets are
+                          # materialised; the _DATA_DIR_MIN_FILES guard refuses CI partial checkouts.
 ]
 
 # Dirs whose source lives under data/ rather than site/ (per-ticker parquet stores
 # that are never rendered into site/ — published straight from the data plane).
-_DATA_DIRS = {"hk_stocks_ext", "massive_stock_day"}
+_DATA_DIRS = {"hk_stocks_ext", "massive_stock_day", "thetadata_eod"}
 # A data-dir tree with fewer files than this is a PARTIAL CHECKOUT (the parquets are
 # gitignored — a CI runner checkout holds just the committed _manifest.json +
 # _backfill_state.json), not the store. Syncing it would overwrite R2's full-history
@@ -172,10 +180,16 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
     site = config.ROOT / config.load()["storage"]["site_dir"]
     up = skip = 0
     data = config.ROOT / config.load()["storage"]["data_dir"]
+    # Per-dir store-path overrides: env vars let the ops host publish stores that live
+    # outside the repo checkout (e.g. THETADATA_STORE for the theta-ops worktree).
+    # If the env var is absent, the default repo-relative data/<dir> path is used.
+    _store_overrides: dict[str, Path] = {}
+    if ts := os.environ.get("THETADATA_STORE"):
+        _store_overrides["thetadata_eod"] = Path(ts)
     for d in dirs:
         # Per-ticker parquet stores live under data/<dir>, not site/<dir>.
         if d in _DATA_DIRS:
-            base = data / d
+            base = _store_overrides.get(d, data / d)
         else:
             base = site / d
         if not base.is_dir():
