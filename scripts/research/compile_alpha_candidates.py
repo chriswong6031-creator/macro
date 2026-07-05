@@ -386,9 +386,8 @@ def run(dry_run: bool = False, deep_only: bool = True) -> None:
     candidates = enumerate_candidates(cap=CANDIDATE_CAP, include_cs_rank=True)
     n_candidates = len(candidates)
     n_cs_rank = sum(1 for c in candidates if c.uses_cs_rank)
-    n_volume = sum(1 for c in candidates if c.formula_ast.get("op") == "volume_returns")
-    # Volume candidates are 0 because we enumerate close-only
-    n_volume_dropped = 0  # declared: no volume candidates enumerated (close-only panel)
+    # close-only panel: no volume primitives enumerated
+    n_volume_dropped = 0
     grid_total = full_grid_size()
 
     log.info(

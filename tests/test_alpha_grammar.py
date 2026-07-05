@@ -548,7 +548,8 @@ def test_cluster_sensitivity_three_thresholds():
 # (14) Full grid size > CANDIDATE_CAP
 # ---------------------------------------------------------------------------
 
-def test_full_grid_exceeds_cap():
+def test_full_grid_exceeds_cap_constraining():
+    """Cap must be strictly less than the full grid, confirming it is binding."""
     grid = full_grid_size()
     assert grid > CANDIDATE_CAP, (
         f"full_grid_size={grid} should exceed CANDIDATE_CAP={CANDIDATE_CAP}; "

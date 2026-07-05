@@ -601,50 +601,6 @@ def apply_cs_rank_pass(
 # De-overlap: episode-level deduplication of overlapping forward windows
 # ---------------------------------------------------------------------------
 
-def deoverlap_fires(
-    fire_panel: pd.DataFrame,
-    horizon: int = 21,
-) -> pd.DataFrame:
-    """Remove overlapping forward-return windows per ticker.
-
-    For each ticker, among consecutive fires whose ``fwd_ret_{horizon}``
-    windows overlap (within ``horizon`` calendar days of each other), keep
-    only the earliest fire and discard the rest.  This prevents serial
-    correlation of outcomes from inflating IC t-stats.
-
-    Returns the de-overlapped subset of ``fire_panel``.
-    """
-    if "date" not in fire_panel.columns or "ticker" not in fire_panel.columns:
-        return fire_panel
-
-    keep_mask = np.ones(len(fire_panel), dtype=bool)
-    panel_sorted = fire_panel.sort_values(["ticker", "date"]).copy()
-    idx_map = {orig: new for new, orig in enumerate(panel_sorted.index)}
-
-    for ticker, grp in panel_sorted.groupby("ticker"):
-        dates = grp["date"].values
-        positions = list(grp.index)
-        suppressed = set()
-        for i, (d_i, pos_i) in enumerate(zip(dates, positions)):
-            if pos_i in suppressed:
-                continue
-            for j in range(i + 1, len(dates)):
-                d_j = dates[j]
-                diff_days = int((d_j - d_i) / np.timedelta64(1, "D"))
-                if diff_days >= horizon:
-                    break
-                suppressed.add(positions[j])
-        for pos in suppressed:
-            keep_mask[idx_map[pos]] = False
-
-    return fire_panel[keep_mask[list(range(len(fire_panel)))]
-                      if False else  # keep index-aligned
-                      fire_panel.index.isin(panel_sorted.index[keep_mask[
-                          [list(panel_sorted.index).index(i)
-                           for i in panel_sorted.index]
-                      ]])]
-
-
 def deoverlap_fires_v2(
     fire_panel: pd.DataFrame,
     horizon: int = 21,
