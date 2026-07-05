@@ -16,6 +16,11 @@ Two operating modes:
   STEADY STATE — at least one root has been completed (parquets exist).  Freshness
     check: newest parquet mtime must be ≤ max_age_days behind now.  Stale → WARN/FAIL.
 
+Dup-rate spot-check (2026-07-05): a sample of N_DUP_SAMPLE_FILES parquet files from
+the eod/ tier is read and checked for full-row duplicates.  A file with a dup rate
+>= DUP_WARN_THRESHOLD emits a WARN.  This catches stores written before the API-dedup
+fix shipped and prompts the operator to run scripts/repair_thetadata_dedup.py.
+
 Writes data/quality/thetadata_accrual_audit.json (observability; read-only over stores).
 Stdlib-only on purpose (same pattern as audit_options_accrual.py).
 
@@ -28,6 +33,7 @@ import argparse
 import glob
 import json
 import os
+import random
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -38,6 +44,8 @@ from lib import config  # noqa: E402
 
 DEFAULT_MAX_AGE_DAYS = 3   # newest parquet mtime must be ≤ 3 days old in steady state
 STORE_SUBDIR = "thetadata_eod"
+N_DUP_SAMPLE_FILES = 5         # number of eod parquet files sampled for dup-rate check
+DUP_WARN_THRESHOLD = 0.01      # warn if dup rate ≥ 1% in any sampled file
 
 
 def _store_dir(data_root: Path | None = None) -> Path:
@@ -63,6 +71,66 @@ def _load_manifest(store: Path) -> dict | None:
         return json.loads(p.read_text())
     except Exception:  # noqa: BLE001
         return None
+
+
+def _dup_rate_spot_check(
+    store: Path,
+    n_sample: int = N_DUP_SAMPLE_FILES,
+    threshold: float = DUP_WARN_THRESHOLD,
+    seed: int | None = None,
+) -> dict:
+    """Sample up to n_sample eod parquet files and compute full-row dup rates.
+
+    Returns a dict with keys:
+      files_sampled (int), files_above_threshold (list[str]),
+      max_dup_rate (float), detail (list[{file, n_rows, n_dups, dup_rate}])
+
+    Uses pandas for parquet reading (optional dep — skips gracefully if not installed).
+    """
+    result: dict = {
+        "files_sampled": 0,
+        "files_above_threshold": [],
+        "max_dup_rate": 0.0,
+        "detail": [],
+        "error": None,
+    }
+    try:
+        import pandas as pd  # noqa: PLC0415
+    except ImportError:
+        result["error"] = "pandas not available; dup-rate check skipped"
+        return result
+
+    eod_parquets = glob.glob(str(store / "eod" / "**" / "*.parquet"), recursive=True)
+    if not eod_parquets:
+        return result
+
+    rng = random.Random(seed)
+    sample = rng.sample(eod_parquets, min(n_sample, len(eod_parquets)))
+    result["files_sampled"] = len(sample)
+
+    for fpath in sample:
+        try:
+            df = pd.read_parquet(fpath)
+            n_rows = len(df)
+            if n_rows == 0:
+                continue
+            n_dups = int(df.duplicated().sum())
+            dup_rate = n_dups / n_rows
+            entry = {
+                "file": fpath,
+                "n_rows": n_rows,
+                "n_dups": n_dups,
+                "dup_rate": round(dup_rate, 6),
+            }
+            result["detail"].append(entry)
+            if dup_rate > result["max_dup_rate"]:
+                result["max_dup_rate"] = round(dup_rate, 6)
+            if dup_rate >= threshold:
+                result["files_above_threshold"].append(fpath)
+        except Exception as e:  # noqa: BLE001
+            result["detail"].append({"file": fpath, "error": str(e)})
+
+    return result
 
 
 def audit(max_age_days: int = DEFAULT_MAX_AGE_DAYS,
@@ -169,6 +237,21 @@ def audit(max_age_days: int = DEFAULT_MAX_AGE_DAYS,
                 f"{state_age_days:.1f} days ago (> {max_age_days * 2}d) — "
                 "nightly incremental collect may not be running"
             )
+
+    # ── dup-rate spot-check ──────────────────────────────────────────────────
+    # Sample N_DUP_SAMPLE_FILES eod parquets; warn if any have ≥ DUP_WARN_THRESHOLD
+    # full-row dup rate.  Catches pre-fix stores written before 2026-07-05.
+    dup_check = _dup_rate_spot_check(store)
+    detail["dup_spot_check"] = dup_check
+    if dup_check.get("files_above_threshold"):
+        above = dup_check["files_above_threshold"]
+        max_rate = dup_check["max_dup_rate"]
+        warn.append(
+            f"THETADATA DUP RATE HIGH: {len(above)} of {dup_check['files_sampled']} "
+            f"sampled eod parquets have ≥{DUP_WARN_THRESHOLD:.0%} full-row dup rate "
+            f"(max observed: {max_rate:.1%}). "
+            "Run: python -m scripts.repair_thetadata_dedup --apply"
+        )
 
     return {"ok": not fail, "fail_reasons": fail, "warnings": warn, "detail": detail}
 
