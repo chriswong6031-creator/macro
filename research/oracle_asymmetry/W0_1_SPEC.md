@@ -73,3 +73,12 @@ Module-run: `python -m scripts.oracle_asymmetry_regrade --data-dir …`. Reuse (
   The correct excess formula is node_ret - spy_ret (same as long side, because node_ret
   is direction-adjusted). The initial build used spy_ret - node_ret for direction=='out',
   which is the arithmetic negation of the correct value. Fixed to node_ret - spy_ret.
+- **2026-07-05 — Adjudicator countersign (Fable).** The three amendments above are APPROVED.
+  Qualifications: (1) on the ±5% gate — a9/a17 drift (+1.8%/+2.3%) slightly exceeds what
+  one day of natural accrual should produce, so while acceptable for W0's descriptive
+  purpose (population re-derived deterministically from the current panel, drift printed
+  loudly), **W1 must re-pin its own vintage targets at kickoff** before training on these
+  events. (2) routing_6 ruling: enumeration gated to the 6 p3b survivor cells (b6762671d6);
+  the panel_s full-history population (66–84 src onsets/cell) is an ETF-proxy extrapolation
+  of the Tier-M-validated cells — adjudicator note added to the atlas; faithful Tier-M
+  enumeration deferred (panel_m absent, rebuild required).

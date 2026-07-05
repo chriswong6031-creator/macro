@@ -1066,6 +1066,8 @@ n=44, immature=2, matured n=42
 
 ## Family: routing_6
 
+> **Adjudicator note (Fable, 2026-07-05):** this family's enumeration runs the surviving-cell detection rule on **panel_s over full history (1998→)** with complexes proxied by Tier-S ETFs — yielding 66–84 source onsets per cell, NOT the ~10–12 Tier-M (2021+) events on which the p3b placebo survival was established. It is an ETF-proxy **extrapolation** of the validated cells (for some cells source and destination collapse onto the same proxy ETF family). Read nothing here as placebo-surviving evidence; a faithful Tier-M enumeration is deferred to a later wave (panel_m absent from current stores; rebuild required).
+
 ### routing_6 | rot21
 **p3b placebo-survivor cells only; n_src onsets per cell printed; DESCRIPTIVE ONLY — thin n** | close-to-close approximation; intraday H/L unwired (W0.2)
 
