@@ -1120,6 +1120,57 @@ jobs:
         # full ~5000-name one — and bulk consumers prune against that list.
         run: python -m scripts.publish_r2 --dirs stockdata --no-manifest || echo "::warning::R2 stockdata sync failed (non-fatal)"
 
+  # ── Neural Web W7b: cortex deliberation job ──────────────────────────────
+  # Runs after the engine job; own checkout + own commit lane.
+  # A slow or failed cortex can never gate the deploy (publish needs: engine, not cortex).
+  # Shadow probation: A2 refused today — attention queue and memo are shadow-tier.
+  cortex:
+    needs: engine
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 30
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: cortex deliberation (Opus-class tool loop — attention queue, memo, hypothesis inbox)
+        run: |
+          set +e
+          python -m engine.neuralweb.cortex > /tmp/cortex.log 2>&1; rc=$?
+          cat /tmp/cortex.log
+          [ "$rc" -ne 0 ] && echo "::warning title=cortex::rc=$rc (non-fatal — last committed outputs remain valid)"
+          exit 0
+      - name: commit cortex outputs
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Own commit lane: only these three path subtrees — STAGING LAW
+          git add data/reflexes/cortex_attention/ 2>/dev/null || true
+          git add data/neuralweb/cortex/ 2>/dev/null || true
+          git add site/neuralweb/ 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
+          git commit -m "cortex: attention queue + committee memo $(date -u +%F)"
+          # Retry-rebase push loop (stock_briefs pattern)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed cortex outputs on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "cortex push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push cortex after 5 attempts (non-fatal — downstream reads last committed)"
+
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the
     # artifact instead (repo Settings -> Pages -> Source: GitHub Actions)

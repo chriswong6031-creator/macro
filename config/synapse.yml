@@ -2570,7 +2570,8 @@ artifacts:
       (ledger='reflexes', outcome_graded=False).  Currently mirroring:
       regime_stale_selfheal (intraday-fastpath lane) and commodity_shock
       (commodity-sentinel lane).  See config/reflexes.yml for the full
-      registry of 12 registered-only + 2 mirroring = 14 total reflexes.
+      registry of 12 registered-only + 2 mirroring = 14 total reflexes.  W7b adds
+      cortex_attention as a 3rd mirroring reflex (15 total).
 
   reflex-firings-regime-selfheal:
     path: data/reflexes/regime_stale_selfheal/firings.jsonl
@@ -2709,3 +2710,83 @@ artifacts:
       All writers run inside the engine lane (serially), so no concurrent-write race.
       Estimated append rate: 5-20 events per quarter.  Schema version bumped on breaking
       field changes; backward-incompatible reader must gate on schema field.
+
+  # --- 0 consumers (tier shadow, W7b) — cortex artifacts ---
+
+  cortex-memo:
+    path: data/neuralweb/cortex/memo.json
+    format: json
+    producer: engine/neuralweb/cortex.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: nightly-cortex
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.cortex_memo.v1
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      W7b: Nightly committee memo produced by the cortex deliberation loop.
+      Schema neuralweb.cortex_memo.v1: {as_of, summary, what_fired,
+      contradictions_review, decaying_families, deserves_operator[], probation,
+      tool_call_census, is_context_only:true}.  Shadow tier — display-only,
+      never feeds a ranked surface.  Mirrored to site/neuralweb/cortex_memo.json
+      when site/ exists.  Single-writer: cortex job ONLY.  A2 refused today
+      (probation); memo carries probation status honestly.
+      Reads: world_state, spine_index, kernel_estimates, confluence_graph,
+      governance, reflexes.
+
+  cortex-attention-firings:
+    path: data/reflexes/cortex_attention/firings.jsonl
+    format: jsonl
+    producer: engine/neuralweb/cortex.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: nightly-cortex
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: reflex.cortex_attention
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/query.py
+    external_consumers: []
+    notes: >
+      W7b: Cortex attention queue — claim-shaped firings.jsonl following the
+      reflex pattern (engine.neuralweb.reflexes.record_firing).  Each row
+      carries claim_family=reflex.cortex_attention, is_context_only=True,
+      direction, horizon_d, falsifier.  Folded into spine via adapt_reflexes
+      with ledger=cortex_attention.  A2 earn-in: when n>=30 graded rows and
+      hits>=8 and wilson_ci_low/base>1.25, constitution.grant_authority returns
+      granted=True and an authority_grant event lands in governance.jsonl.
+      SINGLE-WRITER: only engine/neuralweb/cortex.py via the cortex job.
+
+  hypothesis-inbox:
+    path: data/neuralweb/cortex/hypothesis_inbox.jsonl
+    format: jsonl
+    producer: engine/neuralweb/cortex.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: nightly-cortex
+    storage: git
+    asof_field: proposed_at
+    freshness_sla_hours: 9999
+    schema: neuralweb.hypothesis_inbox.v1
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      W7b PR1 STUB: cortex-proposed hypothesis drafts.  status=inbox-not-registered
+      always in PR1.  The metabolism (machine-registration + evaluation path via
+      generic evaluator + qledger) lands in PR2.  No grading path exists yet —
+      no mining possible.  Schema: {id, status, proposed_at, subject, claim,
+      falsifier, horizon_d, pre_committed_gate, spine_query, metabolism_note,
+      is_context_only}.  Single-writer: cortex job ONLY.

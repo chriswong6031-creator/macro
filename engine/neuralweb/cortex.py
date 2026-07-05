@@ -1,0 +1,1108 @@
+"""engine.neuralweb.cortex — The Cortex Runtime (Neural Web W7b PR1).
+
+SHADOW PROBATION — READ CAREFULLY
+----------------------------------
+The cortex is on shadow probation.  It may OBSERVE and EXPLAIN unconditionally
+(A0/A1).  It may NOT influence any ranked or scored surface (A2 refused today
+by constitution.grant_authority — no track record yet).  Its outputs carry
+is_context_only=True everywhere.  Nothing it writes may rank or gate any
+money-path surface.
+
+ARTICLE 1 — ORIGINATION BAN (enforced here)
+The cortex may NEVER originate a signal, trade, or escalation.  The tool
+dispatcher (dispatch_tool) refuses any write tool outside the three shadow
+surfaces below.  No dynamic tools — the whitelist is hard-coded and A7 is
+permanently refused.
+
+ARCHITECTURE
+------------
+A plain anthropic tool-use loop — NO claude_agent_sdk dependency.
+  * client.messages.create(tools=[...]) iterated until stop_reason==end_turn
+    or budget exhausted.
+  * READ tools: read_world_state, query_spine, read_kernel, read_graph,
+    read_contradictions, read_governance, read_artifact
+  * WRITE tools (shadow-tier only, three):
+      flag_attention   → data/reflexes/cortex_attention/firings.jsonl
+      write_memo       → data/neuralweb/cortex/memo.json + site/neuralweb/cortex_memo.json
+      stake_hypothesis → data/neuralweb/cortex/hypothesis_inbox.jsonl (STUB in PR1)
+  * Dispatcher refuses any tool name outside this exact whitelist (A7 guard).
+
+STALENESS GATE (cost control)
+Before any LLM call: compare (world_state inputs_hash + spine row count +
+contradictions hash) against data/neuralweb/cortex/last_run_state.json.
+Unchanged → skip with a log line.  Content-hash reply caching is NOT enough
+for a tool loop; this gate is the spend control.
+
+CONSTITUTION WIRING
+At startup: call constitution.grant_authority for the 'cortex_attention'
+family A2 claim.  Today it refuses (no track record) → the memo carries
+probation status honestly.  The loop runs regardless at A0/A1.
+
+BUDGETS
+max_tool_calls (default 24).  On budget hit → force write_memo from what has
+accumulated.
+
+SINGLE-CALL FALLBACK
+If the tool loop errors (auth/API), fall back to ONE plain completion over
+gather_state() + world_state summary producing just the memo
+(degraded_reason stamped).  Degrade-never-raise; exit 0 always.
+
+MODEL (D8 ruling)
+Primary: claude-opus-4-8 (Opus-class), via engine.llm_auth.make_call
+waterfall (CLAUDE_CODE_OAUTH_TOKEN → ANTHROPIC_API_KEY).
+DeepSeek NOT in the deliberation path.  DeepSeek Flash ONLY for zh
+translation of the memo (reuses master_brain's _translate pattern).
+
+DENY ROOTS (bot_mcp pattern)
+READ_ROOTS = [data/, site/, docs/, research/]
+DENY_ROOTS = [config.yml, .env, .git]  (config.yml denied in full)
+Size cap per read_artifact: 50 KB.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import logging
+import os
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+log = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Constants / config keys
+# ---------------------------------------------------------------------------
+_SCHEMA_MEMO = "neuralweb.cortex_memo.v1"
+_SCHEMA_ATTN = "reflex.cortex_attention"
+_SCHEMA_HYPO = "neuralweb.hypothesis_inbox.v1"
+_DEFAULT_MODEL = "claude-opus-4-8"
+_DEFAULT_MAX_TOOL_CALLS = 24
+_READ_SIZE_CAP = 50 * 1024          # 50 KB per read_artifact
+_SPINE_ROW_CAP = 200                 # max rows serialized from query_spine
+_DENY_FILENAME_EXACT = {".env", "config.yml"}   # deny entire file (not path-prefix)
+_DENY_PATH_FRAGMENTS = [".git", ".ssh"]          # deny if any component matches
+
+# Tool whitelist — A7 guard: dispatcher refuses any name outside this set
+_READ_TOOLS = frozenset({
+    "read_world_state",
+    "query_spine",
+    "read_kernel",
+    "read_graph",
+    "read_contradictions",
+    "read_governance",
+    "read_artifact",
+})
+_WRITE_TOOLS = frozenset({
+    "flag_attention",
+    "write_memo",
+    "stake_hypothesis",
+})
+_ALLOWED_TOOLS = _READ_TOOLS | _WRITE_TOOLS
+
+
+# ---------------------------------------------------------------------------
+# Path helpers
+# ---------------------------------------------------------------------------
+
+def _repo_root(root: Path | None = None) -> Path:
+    if root is not None:
+        return Path(root)
+    return Path(__file__).resolve().parent.parent.parent
+
+
+def _data(root: Path, *parts: str) -> Path:
+    return root / "data" / Path(*parts)
+
+
+def _site(root: Path, *parts: str) -> Path:
+    return root / "site" / Path(*parts)
+
+
+def _cortex_dir(root: Path) -> Path:
+    return _data(root, "neuralweb", "cortex")
+
+
+def _attn_dir(root: Path) -> Path:
+    return _data(root, "reflexes", "cortex_attention")
+
+
+# ---------------------------------------------------------------------------
+# Config loader
+# ---------------------------------------------------------------------------
+
+def _cfg(root: Path | None = None) -> dict:
+    """Load cortex config section from config.yml.  Fail-open; returns defaults."""
+    base = _repo_root(root)
+    cfg_path = base / "config.yml"
+    try:
+        import yaml
+        text = cfg_path.read_text(encoding="utf-8")
+        doc = yaml.safe_load(text) or {}
+        return dict(doc.get("cortex") or {})
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cortex: config.yml not readable (%s); using defaults", exc)
+        return {}
+
+
+# ---------------------------------------------------------------------------
+# Auth / client builders  (reuse llm_auth.build_providers pattern)
+# ---------------------------------------------------------------------------
+
+def _build_providers(cfg: dict) -> list[dict]:
+    """Build Anthropic-only provider list.  DeepSeek excluded from deliberation path."""
+    from engine import llm_auth  # noqa: PLC0415
+    model = cfg.get("llm_model", _DEFAULT_MODEL)
+    return llm_auth.build_providers(
+        cfg,
+        opus_model=model,
+        deepseek_model=None,  # not used in deliberation
+    )
+
+
+def _build_deepseek_provider(cfg: dict) -> list[dict]:
+    """Build DeepSeek provider for zh translation ONLY."""
+    from engine import llm_auth  # noqa: PLC0415
+    ds_model = cfg.get("translate_model", "deepseek-v4-flash")
+    return llm_auth.build_providers(
+        {"provider_order": ["deepseek"],
+         "deepseek_model": ds_model,
+         "deepseek_key_env": cfg.get("deepseek_key_env", "DEEPSEEK_API_KEY")},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Deny-roots path guard  (bot_mcp pattern)
+# ---------------------------------------------------------------------------
+
+def _check_deny_roots(requested_path: str, root: Path) -> str | None:
+    """Return an error string if the path is in deny-roots; else None."""
+    rp = Path(requested_path)
+    # Check exact deny filenames
+    if rp.name in _DENY_FILENAME_EXACT:
+        return f"deny-roots: {rp.name!r} is in the deny list"
+    # Check path fragment deny
+    parts_lower = {p.lower() for p in rp.parts}
+    for frag in _DENY_PATH_FRAGMENTS:
+        if frag in parts_lower:
+            return f"deny-roots: path contains denied fragment {frag!r}"
+    # Resolve and check read-roots
+    try:
+        resolved = (root / rp).resolve()
+        read_roots = [
+            (root / "data").resolve(),
+            (root / "site").resolve(),
+            (root / "docs").resolve(),
+            (root / "research").resolve(),
+        ]
+        if not any(str(resolved).startswith(str(rr)) for rr in read_roots):
+            return f"deny-roots: {requested_path!r} is outside allowed read roots"
+    except Exception as exc:  # noqa: BLE001
+        return f"deny-roots: path resolution error ({exc})"
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Staleness gate
+# ---------------------------------------------------------------------------
+
+def _compute_run_state_hash(root: Path) -> dict:
+    """Compute the inputs hash tuple for the staleness gate."""
+    pieces: dict[str, Any] = {}
+
+    # 1. world_state inputs_hash
+    ws_path = _data(root, "neuralweb", "world_state.json")
+    try:
+        ws = json.loads(ws_path.read_text(encoding="utf-8"))
+        pieces["ws_inputs_hash"] = ws.get("inputs_hash") or ws.get("envelope", {}).get("inputs_hash", "")
+    except Exception:  # noqa: BLE001
+        pieces["ws_inputs_hash"] = ""
+
+    # 2. spine row count
+    spine_path = _data(root, "neuralweb", "spine_index.parquet")
+    try:
+        import pandas as pd
+        pieces["spine_rows"] = len(pd.read_parquet(spine_path, columns=["signal_id"]))
+    except Exception:  # noqa: BLE001
+        pieces["spine_rows"] = -1
+
+    # 3. contradictions hash
+    contra_path = _data(root, "neuralweb", "confluence_graph.json")
+    try:
+        contra_text = contra_path.read_text(encoding="utf-8")
+        pieces["contradictions_hash"] = hashlib.sha256(contra_text.encode()).hexdigest()[:16]
+    except Exception:  # noqa: BLE001
+        pieces["contradictions_hash"] = ""
+
+    return pieces
+
+
+def _load_last_run_state(root: Path) -> dict:
+    p = _cortex_dir(root) / "last_run_state.json"
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _save_last_run_state(root: Path, state: dict) -> None:
+    p = _cortex_dir(root) / "last_run_state.json"
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(state, default=str), encoding="utf-8")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cortex: could not save last_run_state (%s)", exc)
+
+
+def _state_changed(current: dict, last: dict) -> bool:
+    """Return True if the run state has changed since last run."""
+    if not last:
+        return True
+    return (
+        current.get("ws_inputs_hash") != last.get("ws_inputs_hash")
+        or current.get("spine_rows") != last.get("spine_rows")
+        or current.get("contradictions_hash") != last.get("contradictions_hash")
+    )
+
+
+# ---------------------------------------------------------------------------
+# Tool implementations — read tools
+# ---------------------------------------------------------------------------
+
+def _tool_read_world_state(root: Path, _params: dict) -> dict:
+    """Read data/neuralweb/world_state.json (the N1 blackboard)."""
+    p = _data(root, "neuralweb", "world_state.json")
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"world_state unreadable: {exc}"}
+
+
+def _tool_query_spine(root: Path, params: dict) -> dict:
+    """Query spine_index.parquet with filters, capped at _SPINE_ROW_CAP rows."""
+    try:
+        from engine.neuralweb.query import load_index, query  # noqa: PLC0415
+        df = load_index(root)
+        if df is None or df.empty:
+            return {"rows": [], "total_available": 0, "note": "spine empty or unavailable"}
+
+        # Build filter kwargs from params
+        filter_kw: dict[str, Any] = {}
+        if params.get("engine"):
+            filter_kw["engine"] = params["engine"]
+        if params.get("family"):
+            filter_kw["family"] = params["family"]
+        if params.get("symbol"):
+            filter_kw["symbol"] = params["symbol"]
+        if params.get("horizon"):
+            filter_kw["horizon"] = int(params["horizon"])
+        if params.get("graded_only") is True or params.get("graded_only") == "true":
+            filter_kw["graded_only"] = True
+        if params.get("ledger"):
+            filter_kw["ledger"] = params["ledger"]
+
+        filtered = query(df, **filter_kw)
+        total = len(filtered)
+        cap = min(total, _SPINE_ROW_CAP)
+        rows = filtered.head(cap).to_dict(orient="records")
+        # Coerce non-JSON-serializable types
+        rows = json.loads(json.dumps(rows, default=str))
+        return {
+            "rows": rows,
+            "total_available": total,
+            "returned": cap,
+            "capped": cap < total,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"query_spine failed: {exc}"}
+
+
+def _tool_read_kernel(root: Path, params: dict) -> dict:
+    """Read kernel_estimates.parquet — reliability profiles."""
+    try:
+        import pandas as pd
+        p = _data(root, "neuralweb", "kernel_estimates.parquet")
+        df = pd.read_parquet(p)
+        if params.get("engine"):
+            df = df[df["engine"] == params["engine"]]
+        rows = df.head(100).to_dict(orient="records")
+        return {"rows": json.loads(json.dumps(rows, default=str)), "total": len(df)}
+    except Exception as exc:  # noqa: BLE001
+        # Also try kernel_families.json as fallback
+        try:
+            p2 = _data(root, "neuralweb", "kernel_families.json")
+            return json.loads(p2.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            return {"error": f"read_kernel failed: {exc}"}
+
+
+def _tool_read_graph(root: Path, params: dict) -> dict:
+    """Read confluence_graph.json (filterable by edge_type)."""
+    try:
+        p = _data(root, "neuralweb", "confluence_graph.json")
+        graph = json.loads(p.read_text(encoding="utf-8"))
+        edge_type = params.get("edge_type")
+        if edge_type and "edges" in graph:
+            graph["edges"] = [
+                e for e in graph["edges"]
+                if e.get("edge_type") == edge_type or e.get("type") == edge_type
+            ]
+        return graph
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"read_graph failed: {exc}"}
+
+
+def _tool_read_contradictions(root: Path, _params: dict) -> dict:
+    """Read contradictions from confluence_graph.json (contradicts edges only)."""
+    try:
+        p = _data(root, "neuralweb", "confluence_graph.json")
+        graph = json.loads(p.read_text(encoding="utf-8"))
+        edges = graph.get("edges") or []
+        contras = [e for e in edges if e.get("edge_type") in ("contradicts", "contradict", "conflict")]
+        return {"contradictions": contras, "count": len(contras)}
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"read_contradictions failed: {exc}"}
+
+
+def _tool_read_governance(root: Path, params: dict) -> dict:
+    """Read recent events from data/neuralweb/governance.jsonl."""
+    try:
+        p = _data(root, "neuralweb", "governance.jsonl")
+        if not p.exists():
+            return {"events": [], "note": "governance.jsonl not yet populated"}
+        events = []
+        with p.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    events.append(json.loads(line))
+                except Exception:  # noqa: BLE001
+                    pass
+        tenant = params.get("tenant")
+        if tenant:
+            events = [e for e in events if e.get("target") == tenant or e.get("authored_by") == tenant]
+        # Return most recent 50
+        return {"events": events[-50:], "total": len(events)}
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"read_governance failed: {exc}"}
+
+
+def _tool_read_artifact(root: Path, params: dict) -> dict:
+    """Path-based read with deny-roots check and 50 KB size cap."""
+    path_str = params.get("path", "")
+    if not path_str:
+        return {"error": "read_artifact: 'path' parameter is required"}
+
+    # Deny-roots check
+    deny_err = _check_deny_roots(path_str, root)
+    if deny_err:
+        log.warning("cortex: read_artifact DENIED — %s", deny_err)
+        return {"error": deny_err}
+
+    try:
+        p = (root / path_str).resolve()
+        if not p.exists():
+            return {"error": f"read_artifact: path not found: {path_str}"}
+        size = p.stat().st_size
+        if size > _READ_SIZE_CAP:
+            return {
+                "error": f"read_artifact: file too large ({size} bytes > {_READ_SIZE_CAP} cap). "
+                         f"Use query_spine or read_graph for structured data.",
+            }
+        text = p.read_text(encoding="utf-8", errors="replace")
+        # Try JSON parse for structured return
+        try:
+            return {"content": json.loads(text), "size_bytes": size}
+        except Exception:  # noqa: BLE001
+            return {"content": text[:10000], "size_bytes": size, "format": "text"}
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"read_artifact failed: {exc}"}
+
+
+# ---------------------------------------------------------------------------
+# Tool implementations — write tools (shadow-tier only)
+# ---------------------------------------------------------------------------
+
+def _tool_flag_attention(root: Path, params: dict, now_str: str) -> dict:
+    """Append claim-shaped rows to data/reflexes/cortex_attention/firings.jsonl."""
+    items = params.get("items") or []
+    if not items:
+        # Also accept a single item dict
+        if params.get("scope_key") or params.get("direction") is not None:
+            items = [params]
+        else:
+            return {"error": "flag_attention: no items provided"}
+
+    from engine.neuralweb import reflexes as _reflexes  # noqa: PLC0415
+    written = []
+    for item in items[:10]:  # cap batch
+        payload = {
+            "ts": now_str,
+            "trigger_type": "cortex_attention",
+            "trigger_key": item.get("scope_key", "macro"),
+            "action_taken": "attention_flagged",
+            "asof": now_str[:10],
+            "scope_type": item.get("scope_type", "entity"),
+            "scope_key": item.get("scope_key", ""),
+            "direction": item.get("direction", 0),
+            "horizon_d": item.get("horizon_d", 5),
+            "claim_family": _SCHEMA_ATTN,
+            "falsifier": item.get("falsifier", ""),
+            "is_context_only": True,
+            "extra": item.get("extra", {}),
+        }
+        rec = _reflexes.record_firing("cortex_attention", payload, root)
+        written.append(rec.get("claim_id"))
+    return {"written": len(written), "claim_ids": written}
+
+
+def _tool_write_memo(root: Path, params: dict, now_str: str, probation_status: dict) -> dict:
+    """Write the committee memo to data/neuralweb/cortex/memo.json."""
+    memo = {
+        "schema": _SCHEMA_MEMO,
+        "as_of": now_str,
+        "summary": params.get("summary", ""),
+        "what_fired": params.get("what_fired", []),
+        "contradictions_review": params.get("contradictions_review", ""),
+        "decaying_families": params.get("decaying_families", []),
+        "deserves_operator": params.get("deserves_operator", []),
+        "probation": probation_status,
+        "tool_call_census": params.get("tool_call_census", {}),
+        "is_context_only": True,
+    }
+
+    cortex_dir = _cortex_dir(root)
+    cortex_dir.mkdir(parents=True, exist_ok=True)
+
+    memo_path = cortex_dir / "memo.json"
+    memo_path.write_text(json.dumps(memo, indent=2, default=str), encoding="utf-8")
+
+    # Mirror to site/neuralweb/ when site/ exists
+    site_nw = _site(root, "neuralweb")
+    if site_nw.parent.exists():
+        site_nw.mkdir(parents=True, exist_ok=True)
+        (site_nw / "cortex_memo.json").write_text(
+            json.dumps(memo, indent=2, default=str), encoding="utf-8"
+        )
+
+    return {"written": str(memo_path), "as_of": now_str}
+
+
+def _tool_stake_hypothesis(root: Path, params: dict, now_str: str) -> dict:
+    """STUB in PR1 — appends to hypothesis_inbox.jsonl with status=inbox-not-registered."""
+    inbox_path = _cortex_dir(root) / "hypothesis_inbox.jsonl"
+    inbox_path.parent.mkdir(parents=True, exist_ok=True)
+
+    h_id = hashlib.sha256(
+        f"{now_str}:{params.get('subject', '')}:{params.get('claim', '')}".encode()
+    ).hexdigest()[:16]
+
+    record = {
+        "schema": _SCHEMA_HYPO,
+        "id": h_id,
+        "status": "inbox-not-registered",
+        "registered_at": None,
+        "proposed_at": now_str,
+        "proposed_by": "cortex",
+        "subject": params.get("subject", ""),
+        "claim": params.get("claim", ""),
+        "falsifier": params.get("falsifier", ""),
+        "horizon_d": params.get("horizon_d"),
+        "pre_committed_gate": params.get("pre_committed_gate"),
+        "spine_query": params.get("spine_query"),
+        "metabolism_note": (
+            "The metabolism (registration + evaluation) lands in PR2. "
+            "No grading path exists yet — no mining possible."
+        ),
+        "is_context_only": True,
+    }
+
+    with inbox_path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(record, default=str) + "\n")
+
+    return {
+        "id": h_id,
+        "status": "inbox-not-registered",
+        "note": "Metabolism lands in PR2; this is a draft only.",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Tool dispatcher (A7 guard)
+# ---------------------------------------------------------------------------
+
+def dispatch_tool(
+    tool_name: str,
+    tool_params: dict,
+    root: Path,
+    now_str: str,
+    probation_status: dict,
+    tool_call_census: dict,
+) -> dict:
+    """Route a tool call.  Refuses any name outside _ALLOWED_TOOLS (A7 guard)."""
+    if tool_name not in _ALLOWED_TOOLS:
+        log.warning("cortex: tool dispatcher REFUSED unknown tool %r (A7 guard)", tool_name)
+        return {"error": f"tool not allowed: {tool_name!r}. Whitelist: {sorted(_ALLOWED_TOOLS)}"}
+
+    # Track census
+    tool_call_census[tool_name] = tool_call_census.get(tool_name, 0) + 1
+
+    if tool_name == "read_world_state":
+        return _tool_read_world_state(root, tool_params)
+    elif tool_name == "query_spine":
+        return _tool_query_spine(root, tool_params)
+    elif tool_name == "read_kernel":
+        return _tool_read_kernel(root, tool_params)
+    elif tool_name == "read_graph":
+        return _tool_read_graph(root, tool_params)
+    elif tool_name == "read_contradictions":
+        return _tool_read_contradictions(root, tool_params)
+    elif tool_name == "read_governance":
+        return _tool_read_governance(root, tool_params)
+    elif tool_name == "read_artifact":
+        return _tool_read_artifact(root, tool_params)
+    elif tool_name == "flag_attention":
+        return _tool_flag_attention(root, tool_params, now_str)
+    elif tool_name == "write_memo":
+        return _tool_write_memo(root, tool_params, now_str, probation_status)
+    elif tool_name == "stake_hypothesis":
+        return _tool_stake_hypothesis(root, tool_params, now_str)
+
+    return {"error": f"dispatcher: unhandled tool {tool_name!r}"}  # unreachable
+
+
+# ---------------------------------------------------------------------------
+# Anthropic tool schema definitions
+# ---------------------------------------------------------------------------
+
+def _tool_schemas() -> list[dict]:
+    return [
+        {
+            "name": "read_world_state",
+            "description": "Read data/neuralweb/world_state.json — the N1 blackboard with verdict, regime, breadth, rotation, alerts summary.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        {
+            "name": "query_spine",
+            "description": "Query spine_index.parquet with optional filters. Returns up to 200 rows.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "engine": {"type": "string", "description": "Filter by engine name"},
+                    "family": {"type": "string", "description": "Filter by claim family"},
+                    "symbol": {"type": "string", "description": "Filter by ticker symbol"},
+                    "horizon": {"type": "integer", "description": "Filter by horizon in days"},
+                    "ledger": {"type": "string", "description": "Filter by ledger source (spine, qledger, track_record, etc.)"},
+                    "graded_only": {"type": "boolean", "description": "If true, return only graded rows"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_kernel",
+            "description": "Read kernel_estimates.parquet — per-engine reliability profiles (regime-conditional IC, sample n, tier).",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "engine": {"type": "string", "description": "Optional: filter by engine name"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_graph",
+            "description": "Read confluence_graph.json — the N4 confluence graph. Optionally filter by edge_type.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "edge_type": {"type": "string", "description": "Filter edges by type (e.g. 'contradicts', 'confirms', 'feeds')"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_contradictions",
+            "description": "Read contradicting signal pairs from the confluence graph.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        {
+            "name": "read_governance",
+            "description": "Read recent events from data/neuralweb/governance.jsonl.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "tenant": {"type": "string", "description": "Optional: filter by target or authored_by"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "read_artifact",
+            "description": "Read any file within allowed read roots (data/, site/, docs/, research/). Deny-roots checked. 50 KB size cap.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Relative path from repo root (e.g. 'data/regime/latest.json')"},
+                },
+                "required": ["path"],
+            },
+        },
+        {
+            "name": "flag_attention",
+            "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "description": "List of attention items",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "scope_type": {"type": "string", "enum": ["entity", "sector", "macro"]},
+                                "scope_key": {"type": "string"},
+                                "direction": {"type": "integer", "enum": [-1, 0, 1]},
+                                "horizon_d": {"type": "integer"},
+                                "falsifier": {"type": "string", "description": "Pre-committed falsifiable criterion"},
+                                "extra": {"type": "object"},
+                            },
+                            "required": ["scope_key", "falsifier"],
+                        },
+                    },
+                },
+                "required": ["items"],
+            },
+        },
+        {
+            "name": "write_memo",
+            "description": "SHADOW-TIER WRITE: Write the nightly committee memo. Envelope-stamped. is_context_only always true.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "summary": {"type": "string"},
+                    "what_fired": {"type": "array", "items": {"type": "string"}},
+                    "contradictions_review": {"type": "string"},
+                    "decaying_families": {"type": "array", "items": {"type": "string"}},
+                    "deserves_operator": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["summary"],
+            },
+        },
+        {
+            "name": "stake_hypothesis",
+            "description": "STUB in PR1 — drafts a hypothesis to hypothesis_inbox.jsonl. No grading/registration path exists yet. status=inbox-not-registered always.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "subject": {"type": "string"},
+                    "claim": {"type": "string"},
+                    "falsifier": {"type": "string"},
+                    "horizon_d": {"type": "integer"},
+                    "pre_committed_gate": {"type": "object"},
+                    "spine_query": {"type": "object"},
+                },
+                "required": ["subject", "claim", "falsifier"],
+            },
+        },
+    ]
+
+
+# ---------------------------------------------------------------------------
+# System prompt
+# ---------------------------------------------------------------------------
+
+_SYSTEM_PROMPT = """You are the Macro Dashboard Cortex — an Opus-class deliberative model on SHADOW PROBATION.
+
+AUTHORITY YOU HOLD TODAY:
+• A0 OBSERVE — read any artifact in data/, site/, docs/, research/
+• A1 EXPLAIN — narrate, produce the committee memo, flag contradictions
+• A2 ATTEND — REFUSED TODAY (no track record). Your attention flags are recorded for earn-in grading.
+
+WHAT YOU MAY NEVER DO:
+• A7 ORIGINATE — you may NEVER originate a signal, trade, escalation, or claim. This is permanently banned.
+• Write to any money-path / scored surface (alert_triage, board_ordering, top_setups).
+• Influence any ranking outside the three shadow write-tools available to you.
+
+YOUR TOOLS:
+READ (7): read_world_state, query_spine, read_kernel, read_graph, read_contradictions, read_governance, read_artifact
+WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
+
+DELIBERATION PROTOCOL:
+1. Start by reading world_state to understand the current macro regime.
+2. Query the spine for recently graded claims — look for patterns, contradictions, decaying families.
+3. Read contradictions from the confluence graph.
+4. Read the kernel for regime-conditional reliability of key engines.
+5. Flag any items that deserve operator attention with a pre-committed falsifiable criterion.
+6. Draft hypotheses for metabolism in PR2 (stub only — use stake_hypothesis).
+7. Always finish by calling write_memo summarising what you found.
+
+PROBATION DISCIPLINE:
+• Everything you write carries is_context_only=True.
+• You are being observed; your attention flags will be graded for accuracy over the next 30+ items.
+• Until the A2 authority grant clears (n>=30, hits>=8, wilson_lb/base>1.25), your queue is SHADOW — visible but not ranked.
+
+CONSTITUTIONAL RULES:
+• Article 1: Never originate. You annotate; you never create.
+• Article 2: Never touch a ranked surface.
+• Article 3: All authority requires earned evidence.
+
+Be specific, honest about uncertainty, and always provide falsifiable criteria when flagging attention items.
+"""
+
+
+# ---------------------------------------------------------------------------
+# Single-call fallback (degrade path)
+# ---------------------------------------------------------------------------
+
+def _single_call_fallback(
+    root: Path,
+    cfg: dict,
+    providers: list[dict],
+    now_str: str,
+    probation_status: dict,
+    degraded_reason: str,
+) -> dict:
+    """Fall back to a single non-tool completion producing just the memo."""
+    log.warning("cortex: single-call fallback (reason=%s)", degraded_reason)
+
+    # Gather world state summary for the fallback prompt
+    ws = _tool_read_world_state(root, {})
+    ws_summary = json.dumps(ws, default=str)[:4000]  # truncate for prompt size
+
+    system = (
+        "You are the Macro Dashboard Cortex in DEGRADED MODE (tool loop unavailable). "
+        "Summarise the world state and write a brief committee memo. "
+        "Be concise. Output JSON with keys: summary, what_fired, contradictions_review, "
+        "decaying_families, deserves_operator."
+    )
+    user = f"World state summary:\n{ws_summary}\n\nWrite the committee memo JSON."
+
+    max_tokens = int(cfg.get("max_tokens", 2000))
+
+    def _do_call(client, model: str):
+        resp = client.messages.create(
+            model=model,
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": user}],
+            temperature=0,
+        )
+        text = "".join(
+            b.text for b in resp.content if getattr(b, "type", "") == "text"
+        )
+        return text, None
+
+    memo_params: dict = {
+        "summary": f"[DEGRADED:{degraded_reason}] Fallback memo — tool loop unavailable.",
+        "what_fired": [],
+        "contradictions_review": "",
+        "decaying_families": [],
+        "deserves_operator": [],
+    }
+
+    from engine import llm_auth  # noqa: PLC0415
+    try:
+        text, _, _ = llm_auth.make_call(providers, _do_call, context="cortex_fallback")
+        if text:
+            try:
+                # Strip markdown code fences if present
+                clean = text.strip()
+                if clean.startswith("```"):
+                    clean = clean.split("```", 2)[1]
+                    if clean.startswith("json"):
+                        clean = clean[4:]
+                parsed = json.loads(clean)
+                memo_params.update({k: v for k, v in parsed.items()
+                                     if k in memo_params})
+            except Exception:  # noqa: BLE001
+                memo_params["summary"] = text[:500]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cortex: single-call fallback LLM call also failed (%s)", exc)
+
+    memo_params["tool_call_census"] = {"fallback_call": 1}
+    probation_status["degraded_reason"] = degraded_reason
+
+    result = _tool_write_memo(root, memo_params, now_str, probation_status)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Main tool loop
+# ---------------------------------------------------------------------------
+
+def _run_tool_loop(
+    root: Path,
+    cfg: dict,
+    providers: list[dict],
+    now_str: str,
+    probation_status: dict,
+) -> dict:
+    """Run the bounded tool-use loop.  Returns the final memo result dict."""
+    import anthropic as _anthropic  # noqa: PLC0415
+    from engine import llm_auth  # noqa: PLC0415
+
+    max_tool_calls = int(cfg.get("max_tool_calls", _DEFAULT_MAX_TOOL_CALLS))
+    model = cfg.get("llm_model", _DEFAULT_MODEL)
+    max_tokens = int(cfg.get("max_tokens", 4096))
+    tool_call_census: dict[str, int] = {}
+    memo_written = False
+    memo_result: dict = {}
+
+    messages: list[dict] = [
+        {"role": "user", "content": "Begin deliberation. Read the world state first, then explore the spine and contradictions, then flag attention items and write your memo."},
+    ]
+
+    tool_call_count = 0
+    n_tool_calls_total = 0
+
+    def _call_with_tools(client, _model: str):
+        resp = client.messages.create(
+            model=_model,
+            max_tokens=max_tokens,
+            system=_SYSTEM_PROMPT,
+            tools=_tool_schemas(),
+            messages=messages,
+        )
+        return resp, None
+
+    # We need direct client access for the tool loop (make_call abstraction
+    # doesn't return the response object, only text).  Use the first live provider.
+    client = None
+    effective_model = model
+    for p in providers:
+        if p.get("cred") and p.get("client"):
+            client = p["client"]
+            effective_model = p.get("model", model)
+            break
+
+    if client is None:
+        return _single_call_fallback(root, cfg, providers, now_str, probation_status,
+                                     "no_provider")
+
+    while tool_call_count < max_tool_calls:
+        try:
+            resp = client.messages.create(
+                model=effective_model,
+                max_tokens=max_tokens,
+                system=_SYSTEM_PROMPT,
+                tools=_tool_schemas(),
+                messages=messages,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("cortex: model call failed at turn %d: %s", tool_call_count, exc)
+            break
+
+        # Add assistant message to conversation
+        messages.append({"role": "assistant", "content": resp.content})
+
+        stop_reason = getattr(resp, "stop_reason", None)
+
+        if stop_reason == "end_turn":
+            break
+
+        if stop_reason != "tool_use":
+            # Unexpected stop
+            log.info("cortex: stop_reason=%s at turn %d", stop_reason, tool_call_count)
+            break
+
+        # Process tool calls
+        tool_results = []
+        for block in resp.content:
+            if getattr(block, "type", "") != "tool_use":
+                continue
+
+            tool_name = block.name
+            tool_params = block.input or {}
+            tool_id = block.id
+            n_tool_calls_total += 1
+
+            result = dispatch_tool(
+                tool_name, tool_params, root, now_str, probation_status, tool_call_census
+            )
+
+            if tool_name == "write_memo":
+                memo_written = True
+                memo_result = result
+
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tool_id,
+                "content": json.dumps(result, default=str),
+            })
+
+        tool_call_count += 1
+
+        if tool_results:
+            messages.append({"role": "user", "content": tool_results})
+
+    # If budget hit without a memo, force write one
+    if not memo_written:
+        log.warning("cortex: budget exhausted (%d/%d tool calls) — forcing write_memo",
+                    tool_call_count, max_tool_calls)
+        memo_params = {
+            "summary": (
+                f"Budget exhausted after {tool_call_count} tool-call batches "
+                f"({n_tool_calls_total} individual calls). Partial deliberation only."
+            ),
+            "what_fired": [],
+            "contradictions_review": "Incomplete — budget exhausted before contradictions review.",
+            "decaying_families": [],
+            "deserves_operator": [],
+            "tool_call_census": tool_call_census,
+        }
+        memo_result = _tool_write_memo(root, memo_params, now_str, probation_status)
+
+    # Stamp census into memo if it already exists
+    if memo_result and not memo_result.get("error"):
+        try:
+            memo_path = _cortex_dir(root) / "memo.json"
+            memo = json.loads(memo_path.read_text(encoding="utf-8"))
+            memo["tool_call_census"] = tool_call_census
+            memo_path.write_text(json.dumps(memo, indent=2, default=str), encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            pass
+
+    return memo_result
+
+
+# ---------------------------------------------------------------------------
+# Constitution wiring
+# ---------------------------------------------------------------------------
+
+def _check_constitution(root: Path) -> dict:
+    """Check A2 grant for cortex_attention.  Returns probation_status dict."""
+    from engine.neuralweb.constitution import (  # noqa: PLC0415
+        AuthorityLevel, GrantResult, grant_authority,
+    )
+
+    # Attempt to read existing attention grading from spine
+    evidence = {"hits": 0, "n": 0, "base_rate": 0.01, "evidence_asof": None}
+    try:
+        from engine.neuralweb.query import load_index, query  # noqa: PLC0415
+        df = load_index(root)
+        if df is not None and not df.empty:
+            # Look for cortex_attention rows with outcome_graded
+            if "ledger" in df.columns:
+                attn_df = df[df["ledger"] == "cortex_attention"]
+                if not attn_df.empty:
+                    graded = attn_df[attn_df.get("outcome_graded", False) == True]  # noqa: E712
+                    n = len(graded)
+                    hits = int((graded.get("outcome_excess", 0) > 0).sum()) if n > 0 else 0
+                    evidence = {
+                        "hits": hits,
+                        "n": n,
+                        "base_rate": 0.01,
+                        "evidence_asof": str(graded["graded_at"].max()) if n > 0 else None,
+                    }
+    except Exception:  # noqa: BLE001
+        pass
+
+    result: GrantResult = grant_authority(
+        evidence,
+        floors={"min_n": 30, "min_events": 8},
+        target_level=AuthorityLevel.A2_ATTEND,
+    )
+
+    tier = "A0/A1 shadow" if not result.granted else "A2 granted"
+    probation_status = {
+        "tier": tier,
+        "granted": result.granted,
+        "reason": result.reason,
+        "lift_lb": result.lift_lb,
+        "wilson_lb": result.wilson_lb,
+        "attention_track_record": {
+            "n": evidence["n"],
+            "hits": evidence["hits"],
+            "base_rate": evidence["base_rate"],
+        },
+        "lapses_at": result.lapses_at,
+    }
+
+    if not result.granted:
+        log.info(
+            "cortex: A2 REFUSED (on shadow probation) — %s. "
+            "n=%d, hits=%d. Running at A0/A1 (observe+explain unconditional).",
+            result.reason, evidence["n"], evidence["hits"],
+        )
+    else:
+        log.info("cortex: A2 GRANTED — %s. Lapses at: %s", result.reason, result.lapses_at)
+
+    return probation_status
+
+
+# ---------------------------------------------------------------------------
+# Public entrypoint
+# ---------------------------------------------------------------------------
+
+def run(root: Path | None = None, force: bool = False) -> int:
+    """Main cortex run.  Returns exit code (always 0 — degrade-never-raise)."""
+    t0 = time.monotonic()
+    root = _repo_root(root)
+    now_str = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    cfg = _cfg(root)
+
+    log.info("cortex: starting run (now=%s, root=%s)", now_str, root)
+
+    # 1. Staleness gate
+    current_state = _compute_run_state_hash(root)
+    last_state = _load_last_run_state(root)
+
+    if not force and not _state_changed(current_state, last_state):
+        log.info(
+            "cortex: inputs unchanged (ws_hash=%s, spine_rows=%s) — skipping LLM spend",
+            current_state.get("ws_inputs_hash", "")[:8],
+            current_state.get("spine_rows"),
+        )
+        return 0
+
+    # 2. Constitution wiring
+    probation_status = _check_constitution(root)
+
+    # 3. Build providers (Anthropic-only deliberation path)
+    providers = _build_providers(cfg)
+    if not providers:
+        log.warning("cortex: no Anthropic providers configured — single-call fallback")
+        _single_call_fallback(root, cfg, [], now_str, probation_status, "no_provider")
+        _save_last_run_state(root, current_state)
+        return 0
+
+    # 4. Run tool loop (with single-call fallback on any error)
+    try:
+        memo_result = _run_tool_loop(root, cfg, providers, now_str, probation_status)
+        log.info("cortex: tool loop complete — memo at %s", memo_result.get("written", "?"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cortex: tool loop raised (%s) — falling back to single-call", exc)
+        _single_call_fallback(root, cfg, providers, now_str, probation_status, f"loop_error:{exc}")
+
+    # 5. Save run state (so next run staleness gate works)
+    _save_last_run_state(root, current_state)
+
+    elapsed = time.monotonic() - t0
+    log.info("cortex: run complete in %.1fs", elapsed)
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# CLI entrypoint  (python -m engine.neuralweb.cortex)
+# ---------------------------------------------------------------------------
+
+def _cli() -> None:
+    import argparse
+    import sys
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s [cortex] %(message)s",
+    )
+    p = argparse.ArgumentParser(description="Cortex deliberation runtime (W7b PR1)")
+    p.add_argument("--root", type=Path, default=None, help="Repo root override")
+    p.add_argument("--force", action="store_true", help="Skip staleness gate")
+    args = p.parse_args()
+    rc = run(root=args.root, force=args.force)
+    sys.exit(rc)
+
+
+if __name__ == "__main__":
+    _cli()
