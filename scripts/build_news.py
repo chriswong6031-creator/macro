@@ -257,6 +257,45 @@ def build(write: bool = True) -> dict:
     except Exception as e:  # noqa: BLE001
         log.warning("rejected.json artifact failed (%s)", e)
 
+    # ---- W4: persist kept events + reject sample (fire-and-forget) ----------
+    # Collect kept events from macro and financial feeds. Each kept headline dict
+    # may carry an 'event' field (from news_events.classify_event enrichment).
+    try:
+        from engine import news_event_ledger as _nel  # noqa: PLC0415
+        kept_all: list[dict] = []
+        if macro and macro.get("headlines"):
+            kept_all.extend(macro["headlines"])
+        if fin:
+            kept_all.extend(fin.get("market", []))
+            for t in nc.MAG7:
+                kept_all.extend(fin.get("mag7", {}).get(t, {}).get("headlines", []))
+            for etf in nc.SECTOR_ETFS:
+                kept_all.extend(fin.get("sectors", {}).get(etf, {}).get("headlines", []))
+            for bk in (fin.get("baskets") or {}).values():
+                kept_all.extend(bk.get("headlines", []))
+        n_evt = _nel.persist_kept_events(kept_all, asof_utc=now.isoformat())
+        if n_evt:
+            log.info("news_event_ledger: %d new event rows persisted", n_evt)
+    except Exception as _nel_exc:  # noqa: BLE001 — never breaks the build
+        log.warning("news_event_ledger persist_kept_events failed (non-fatal): %s", _nel_exc)
+
+    try:
+        from engine import news_event_ledger as _nel  # noqa: PLC0415, F811
+        macro_rejected = (macro or {}).get("rejected") or []
+        fin_rejected = (fin or {}).get("rejected") or []
+        rejected_by_feed: dict[str, list] = {}
+        if macro_rejected:
+            rejected_by_feed["macro"] = macro_rejected
+        if fin_rejected:
+            rejected_by_feed["financial"] = fin_rejected
+        if rss_rejected:
+            rejected_by_feed["rss"] = rss_rejected
+        n_rej = _nel.persist_reject_sample(rejected_by_feed, asof_utc=now.isoformat())
+        if n_rej:
+            log.info("news_event_ledger: %d new reject-sample rows persisted", n_rej)
+    except Exception as _rej_exc:  # noqa: BLE001 — never breaks the build
+        log.warning("news_event_ledger persist_reject_sample failed (non-fatal): %s", _rej_exc)
+
     log.info("built site/news/*.json (llm=%s)", vm["llm_provider"] or "off")
     return vm
 
