@@ -363,6 +363,86 @@ def _compose_live_overlay(reg: dict) -> dict | None:
 # Factor weather lobe (§5.4 + RULING-B)
 # ─────────────────────────────────────────────────────────────────────────────
 
+_OPTIONS_WEATHER_ROOTS = {
+    "SPY", "QQQ", "IWM", "DIA",
+    "XLB", "XLC", "XLE", "XLF", "XLI", "XLK", "XLP", "XLRE", "XLU", "XLV", "XLY",
+    "SMH", "SOXX", "XBI", "KRE",
+}
+_OPTIONS_WEATHER_MIN_ROOTS = 5
+
+
+def _compose_options_weather(
+    root: "Path | str | None" = None,
+) -> dict:
+    """Compose the options_weather sub-block (Options→NW W-B, RO-1/RO-6).
+
+    Follows the _compose_factor_weather discipline exactly: all data loading
+    internal, _clean() on every value, display_only=True, try/except at the
+    wiring site returns a null-filled fallback.
+
+    Reads data/options_entry/state.parquet and aggregates ONLY over the
+    deep-liquidity sector-ETF/index roots (the set with 15y ThetaData history —
+    the W-E1 gauntlet's universe). Raw aggregate fields only — NO composite
+    score (RO-2). Aggregates suppress to null below
+    _OPTIONS_WEATHER_MIN_ROOTS contributing roots.
+
+    W-E1 context baked into the field notes: gamma regime stratifies realized
+    vol with an ERA-DEPENDENT sign (regime context, not direction).
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "options_entry" / "state.parquet"
+
+    out: dict[str, Any] = {
+        "as_of": None,
+        "n_roots": None,
+        "median_iv30": None,
+        "median_skew": None,
+        "median_skew_5d_chg": None,
+        "share_skew_rising": None,
+        "median_ivspread_rel": None,
+        "share_pin_risk": None,
+        "opex_days": None,
+        "note": (
+            "sector-ETF/index options weather (raw aggregates; no composite — RO-2). "
+            "Gamma-regime evidence is vol-conditioning with era-dependent sign (W-E1); "
+            "never directional."
+        ),
+        "display_only": True,
+    }
+    if not path.exists():
+        return out
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(path)
+        df = df[df["ticker"].isin(_OPTIONS_WEATHER_ROOTS)]
+        if df.empty:
+            return out
+
+        def _med(col: str):
+            s = df[col].dropna() if col in df.columns else None
+            return float(s.median()) if s is not None and len(s) >= _OPTIONS_WEATHER_MIN_ROOTS else None
+
+        def _share(col: str, pred):
+            s = df[col].dropna() if col in df.columns else None
+            if s is None or len(s) < _OPTIONS_WEATHER_MIN_ROOTS:
+                return None
+            return float(pred(s).mean())
+
+        out["as_of"] = _clean(df["as_of"].max())
+        out["n_roots"] = int(len(df))
+        out["median_iv30"] = _clean(_med("iv30"))
+        out["median_skew"] = _clean(_med("skew"))
+        out["median_skew_5d_chg"] = _clean(_med("skew_5d_chg"))
+        out["share_skew_rising"] = _clean(_share("skew_5d_chg", lambda s: s > 0))
+        out["median_ivspread_rel"] = _clean(_med("ivspread_rel"))
+        out["share_pin_risk"] = _clean(_share("pin_risk", lambda s: s.astype(bool)))
+        od = df["opex_days"].dropna()
+        out["opex_days"] = int(od.iloc[0]) if len(od) else None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("options_weather: compose failed — %s", exc)
+    return out
+
+
 def _compose_factor_weather(
     root: "Path | str | None" = None,
 ) -> dict:
@@ -731,6 +811,18 @@ def build_world_state(
             "ratio_iwm_spy_20d": None,
             "display_only": True,
         }
+    try:
+        options_weather_block: dict = _compose_options_weather(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: options_weather lobe failed — %s", exc)
+        gaps.append(f"options_weather: {exc}")
+        options_weather_block = {
+            "as_of": None, "n_roots": None, "median_iv30": None,
+            "median_skew": None, "median_skew_5d_chg": None,
+            "share_skew_rising": None, "median_ivspread_rel": None,
+            "share_pin_risk": None, "opex_days": None,
+            "note": "lobe failed — null fallback", "display_only": True,
+        }
 
     # ── 7. Contradictions summary (W4) ───────────────────────────────────────
     contradictions_block: dict | None = None
@@ -775,6 +867,7 @@ def build_world_state(
         "data_health": data_health_block,
         "alerts": alerts_block,
         "factor_weather": factor_weather_block,  # §5.4 wiring line (RULING-B)
+        "options_weather": options_weather_block,  # Options→NW W-B wiring line (RO-1)
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "

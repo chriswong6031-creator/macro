@@ -117,6 +117,7 @@ __all__ = [
     "LEDGER_ENUM",
     "adapt_reflexes",
     "adapt_cortex_attention",
+    "adapt_options_entry",
     "build_index",
     "write_index",
     "load_index",
@@ -198,6 +199,7 @@ LEDGER_ENUM: tuple[str, ...] = (
     "cycles_country",
     "reflexes",             # Neural Web W6a: per-reflex firings ledgers
     "cortex_attention",     # Neural Web W7b PR2: graded cortex attention claims
+    "options_entry",        # Options→NW W-B (RO-5): ungraded-honest options state context
 )
 
 # ---------------------------------------------------------------------------
@@ -1005,6 +1007,7 @@ def build_index(
         ("forward_logs",   lambda: adapt_forward_logs(root)),
         ("reflexes",       lambda: adapt_reflexes(root)),            # W6a — reflex firings ledgers
         ("cortex_attention", lambda: adapt_cortex_attention(root)),  # W7b PR2 — graded cortex attention
+        ("options_entry",  lambda: adapt_options_entry(root)),       # Options→NW W-B — ungraded-honest context
     ]
 
     for name, fn in adapters:
@@ -1424,6 +1427,83 @@ def adapt_reflexes(
 
     df = pd.DataFrame(rows)
     return _ensure_columns(df), gaps
+
+
+# ---------------------------------------------------------------------------
+# adapt_options_entry — Options→NW Entry Intelligence W-B (RO-5)
+# ---------------------------------------------------------------------------
+
+def adapt_options_entry(
+    root: Path | str | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt ``data/options_entry/state.parquet`` → ledger='options_entry'.
+
+    GRADING DESIGN — UNGRADED-HONEST (RO-5, OPTIONS_NW masterplan §2)
+    -----------------------------------------------------------------
+    The options entry state table is a display-tier per-ticker LATEST snapshot
+    of raw options fields (no composites — those are REJECTED under Signal
+    Commons R3 / RO-2).  Every row folds as ``outcome_graded=False`` and
+    ``direction=0``: these are CONTEXT records, not directional claims.  Future
+    grading joins the us_board retro_grades fwd_mfe_* columns READ-ONLY (A9
+    single-writer preserved) via the harness in the options-alpha program —
+    never here, and never via qledger writes (blocked until the QI co-sign).
+
+    Fail-open: missing/unreadable state.parquet → gap note + zero rows.
+    """
+    gaps: list[str] = []
+
+    path = _data_dir(root) / "options_entry" / "state.parquet"
+    if not path.exists():
+        gaps.append("options_entry: state.parquet absent — zero rows")
+        return _empty_df(), gaps
+
+    try:
+        state = pd.read_parquet(path)
+    except Exception as e:  # noqa: BLE001 — fail-open
+        gaps.append(f"options_entry: state.parquet unreadable ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if state.empty:
+        gaps.append("options_entry: state.parquet empty — zero rows")
+        return _empty_df(), gaps
+
+    rows: list[dict] = []
+    skipped = 0
+    for rec in state.to_dict("records"):
+        asof = _str_date(rec.get("as_of"))
+        ticker = _safe_str(rec.get("ticker"))
+        if not asof or not ticker:
+            skipped += 1
+            continue
+        row: dict[str, Any] = {c: None for c in COLUMNS}
+        row["signal_id"]      = f"options_entry:{asof}:{ticker}"
+        row["engine"]         = "options_entry"
+        row["family"]         = "options.entry_state"
+        row["ledger"]         = "options_entry"
+        row["as_of"]          = asof
+        row["symbol"]         = ticker
+        row["scope_type"]     = "entity"
+        row["universe"]       = "options_entry.state"
+        row["horizon"]        = None
+        # CONTEXT record: direction=0 always (RO-9: no signed-flow direction).
+        row["direction"]      = 0
+        row["size_binding"]   = False
+        row["fill_basis"]     = "options_state"
+        row["score"]          = None
+        row["outcome_excess"] = None
+        # UNGRADED-HONEST: outcome_graded=False for all options state rows.
+        row["outcome_graded"] = False
+        row["graded_at"]      = None
+        row["is_context"]     = True
+        rows.append(row)
+
+    if skipped:
+        gaps.append(f"options_entry: {skipped} rows skipped (no as_of/ticker)")
+    gaps.append(f"options_entry: {len(rows)} context rows emitted (ungraded-honest)")
+
+    if not rows:
+        return _empty_df(), gaps
+    return _ensure_columns(pd.DataFrame(rows)), gaps
 
 
 # ---------------------------------------------------------------------------
