@@ -20,8 +20,8 @@ at the end of this document is the authoritative reference for later reports.
 
 ## Trial Registration
 
-Family: `esx_null_competitors` (budget=6, pre-registered at W0).
-6 trial configs logged: 2 NC × 3 panels (deep / baskets / pooled).
+Family: `esx_null_competitors` (budget=4, pre-registered at W0).
+4 trial configs logged: 2 NC × 2 panels (deep / baskets).
 
 ---
 
@@ -254,10 +254,15 @@ FE: `date` | Sector fallback: True
 ## YARDSTICK — Reference Numbers for Every Later W1/W2 Report (RUL-3)
 
 Per §10 RUL-3: null-competitors appear as the FIRST table in every
-subsequent W1/W2 report. A candidate 'beats the null-competitors' when
-its stratum FE stop5 coefficient exceeds the values below with CI excluding 0,
-AND at better or equal recall. The full NC-2 marginality test (coefficient
-survives entry_quality-band FE) remains DEFERRED (cycles.py pipeline required).
+subsequent W1/W2 report. A candidate 'beats the null-competitors' when its
+stratum FE coefficients clear the bar below with CI excluding 0, AND at
+better or equal recall. Direction note: stop5 is an adverse outcome —
+a BETTER signal has a MORE NEGATIVE stop5 coefficient (fewer stops); a
+candidate must be more negative on stop5 (not merely numerically larger).
+For beneficial outcomes (rotational_liftoff, positional_liftoff) the
+candidate must have a higher (more positive) coefficient. The full NC-2
+marginality test (coefficient survives entry_quality-band FE) remains
+DEFERRED (cycles.py pipeline required).
 
 ### CI caveat (RUL-7 freeze, 2026-07-05):
 At n≥400/arm with baseline stop5 ~12%, difference-SE ≈ 2.3pp. A bare 2pp

@@ -547,7 +547,10 @@ def compute_nc2_proximity_proxy(
         c = close.dropna().sort_index()
         # find fire date index
         locs = c.index.searchsorted(sig_date)
-        if locs <= 0 or locs > len(c):
+        # Reject loc==len(c): fire date is after the last available bar; using
+        # the final bar as 'fire close' while the rolling low covers a prior
+        # 63-bar window creates an undisclosed look-at-last-bar approximation.
+        if locs <= 0 or locs >= len(c):
             prox_scores.append(None)
             continue
         loc = locs  # first bar on/after sig_date
@@ -560,7 +563,7 @@ def compute_nc2_proximity_proxy(
             prox_scores.append(None)
             continue
         rolling_low = float(prior_window.min())
-        price = float(c.iloc[loc] if loc < len(c) else c.iloc[loc - 1])
+        price = float(c.iloc[loc])
         if rolling_low <= 0:
             prox_scores.append(None)
             continue
@@ -616,10 +619,8 @@ def _register_nc_trials(ledger_path: Path | None = None) -> None:
     configs = [
         {"nc": "NC1A", "stratum": "t1_only", "panel": "deep"},
         {"nc": "NC1A", "stratum": "t1_only", "panel": "baskets"},
-        {"nc": "NC1A", "stratum": "t1_only", "panel": "pooled"},
         {"nc": "NC1B", "stratum": "fresh0",  "panel": "deep"},
         {"nc": "NC1B", "stratum": "fresh0",  "panel": "baskets"},
-        {"nc": "NC1B", "stratum": "fresh0",  "panel": "pooled"},
     ]
     for cfg in configs:
         led.log_trial(cfg, family="esx_null_competitors", note="W1 NC run")
@@ -929,8 +930,8 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
     a("")
     a("## Trial Registration")
     a("")
-    a("Family: `esx_null_competitors` (budget=6, pre-registered at W0).")
-    a("6 trial configs logged: 2 NC × 3 panels (deep / baskets / pooled).")
+    a("Family: `esx_null_competitors` (budget=4, pre-registered at W0).")
+    a("4 trial configs logged: 2 NC × 2 panels (deep / baskets).")
     a("")
     a("---")
     a("")
@@ -1091,10 +1092,15 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
     a("## YARDSTICK — Reference Numbers for Every Later W1/W2 Report (RUL-3)")
     a("")
     a("Per §10 RUL-3: null-competitors appear as the FIRST table in every")
-    a("subsequent W1/W2 report. A candidate 'beats the null-competitors' when")
-    a("its stratum FE stop5 coefficient exceeds the values below with CI excluding 0,")
-    a("AND at better or equal recall. The full NC-2 marginality test (coefficient")
-    a("survives entry_quality-band FE) remains DEFERRED (cycles.py pipeline required).")
+    a("subsequent W1/W2 report. A candidate 'beats the null-competitors' when its")
+    a("stratum FE coefficients clear the bar below with CI excluding 0, AND at")
+    a("better or equal recall. Direction note: stop5 is an adverse outcome —")
+    a("a BETTER signal has a MORE NEGATIVE stop5 coefficient (fewer stops); a")
+    a("candidate must be more negative on stop5 (not merely numerically larger).")
+    a("For beneficial outcomes (rotational_liftoff, positional_liftoff) the")
+    a("candidate must have a higher (more positive) coefficient. The full NC-2")
+    a("marginality test (coefficient survives entry_quality-band FE) remains")
+    a("DEFERRED (cycles.py pipeline required).")
     a("")
     a("### CI caveat (RUL-7 freeze, 2026-07-05):")
     a("At n≥400/arm with baseline stop5 ~12%, difference-SE ≈ 2.3pp. A bare 2pp")

@@ -168,7 +168,13 @@ class TestFastR1EstimateIndexAlignment:
     """
 
     def test_survivors_sector_is_correct(self):
-        """Block builder sees survivors' sector label after leading-row drops."""
+        """Block builder sees survivors' sector label after leading-row drops.
+
+        Sector_Z leads (NaN outcome → dropped). Sector_A is survivors-only.
+        The pre-fix bug would inject sector_Z into the first 2 survivor rows,
+        creating a 2-sector block structure. We assert n_blocks matches the
+        survivors-only (sector_A) structure computed from _fast_make_blocks.
+        """
         n_lead = 2   # 2 leading NaN rows (will be dropped)
         n_dates = 15
         rpr = 4  # rows per date
@@ -209,6 +215,32 @@ class TestFastR1EstimateIndexAlignment:
         assert result["n_blocks"] > 0, (
             f"Expected >0 blocks for survivors; got n_blocks={result['n_blocks']}."
         )
+
+        # --- STRUCTURAL ASSERTION: block count must match survivors-only structure ---
+        # Survivors all have sector_A → single-sector block structure.
+        # The buggy code (df.loc[work.index, sector_col]) injects sector_Z into
+        # the first 2 survivor rows, producing a 2-sector structure.
+        survivor_dates_ns = dates_ns[n_lead:]
+        survivor_sec_ids = np.zeros(len(survivor_dates_ns), dtype=np.intp)
+        expected_blocks = _fast_make_blocks(
+            survivor_dates_ns, survivor_sec_ids, block_radius_days=14
+        )
+        n_blocks_expected = len(expected_blocks)
+
+        buggy_sec_ids = np.array(
+            [1] * n_lead + [0] * (n - n_lead), dtype=np.intp
+        )
+        buggy_blocks = _fast_make_blocks(
+            dates_ns, buggy_sec_ids, block_radius_days=14
+        )
+        n_blocks_buggy = len(buggy_blocks)
+
+        if n_blocks_expected != n_blocks_buggy:
+            assert result["n_blocks"] == n_blocks_expected, (
+                f"n_blocks={result['n_blocks']} should match survivors-only "
+                f"count={n_blocks_expected}; buggy count={n_blocks_buggy}. "
+                f"sector_Z was injected into the survivor frame (pre-fix bug)."
+            )
 
     def test_agrees_with_w0_harness_r1_on_small_frame(self):
         """fast_r1_estimate and W0 harness r1_estimate agree on a known frame.
@@ -339,7 +371,16 @@ class TestDroppedRowsRegression:
     """
 
     def test_distinct_sector_survivors_not_leading(self):
-        """Drop 2 leading rows; assert block builder still works for survivors."""
+        """Drop 2 leading rows; assert block builder sees only survivors' sector.
+
+        The pre-fix bug (df.loc[work.index, sector_col] with positional labels
+        from reset_index) would inject BAD_SECTOR into the first two survivor
+        rows. This creates a 2-sector block structure (BAD_SECTOR + GOOD_SECTOR)
+        with more total blocks than the survivors-only (GOOD_SECTOR) structure.
+        We compute the expected n_blocks from the survivors-only frame directly
+        via _fast_make_blocks and assert the estimator matches, not the mixed
+        structure that the buggy code would produce.
+        """
         n_lead = 2
         n_dates = 12
         rpr = 5
@@ -385,4 +426,126 @@ class TestDroppedRowsRegression:
         n_survivors = n - n_lead
         assert result["n_total"] <= n_survivors, (
             f"n_total {result['n_total']} > survivor count {n_survivors}"
+        )
+
+        # --- STRUCTURAL ASSERTION: n_blocks must match survivors-only structure ---
+        # Compute the expected block count from survivors only (all GOOD_SECTOR).
+        # The buggy code would inject BAD_SECTOR into the first 2 survivor rows,
+        # producing a 2-sector block structure with MORE blocks than expected.
+        # After singleton FE-cell drops, survivors are the n_dates * rpr - n_lead rows.
+        # All survivors share GOOD_SECTOR → sector_id = 0 for all.
+        survivor_dates_ns = dates_ns[n_lead:]
+        survivor_sector_ids = np.zeros(len(survivor_dates_ns), dtype=np.intp)
+        expected_blocks_survivors = _fast_make_blocks(
+            survivor_dates_ns, survivor_sector_ids, block_radius_days=14
+        )
+        n_blocks_survivors = len(expected_blocks_survivors)
+
+        # The buggy code would produce a 2-sector structure with a different
+        # (typically larger) block count because BAD_SECTOR dates land in
+        # separate blocks from GOOD_SECTOR dates.
+        buggy_sector_ids = np.array(
+            [1] * n_lead + [0] * (n - n_lead), dtype=np.intp
+        )
+        buggy_blocks = _fast_make_blocks(
+            dates_ns, buggy_sector_ids, block_radius_days=14
+        )
+        n_blocks_buggy = len(buggy_blocks)
+
+        # The two structures should differ (otherwise the test is not sensitive).
+        # Only assert survivors match if they're distinguishable.
+        if n_blocks_survivors != n_blocks_buggy:
+            assert result["n_blocks"] == n_blocks_survivors, (
+                f"n_blocks={result['n_blocks']} does not match survivors-only "
+                f"block count={n_blocks_survivors}; buggy (mixed-sector) count "
+                f"would be={n_blocks_buggy}. This indicates BAD_SECTOR was "
+                f"injected into the survivor frame (the pre-fix bug)."
+            )
+
+
+# ---------------------------------------------------------------------------
+# Finding (4): fast_r1_estimate vs W0 harness parity with sector column
+# ---------------------------------------------------------------------------
+
+class TestFastVsHarnessSectoredParity:
+    """fast_r1_estimate and W0 harness r1_estimate agree on n_blocks and coef
+    when a sector column is present.
+
+    The unsectored agreement test (TestFastR1EstimateIndexAlignment.
+    test_agrees_with_w0_harness_r1_on_small_frame) only checks the
+    sector_col=None path. This class verifies that _fast_make_blocks and
+    harness _make_blocks produce identical overlapping-block structure when a
+    sector_col is supplied, so divergence in the sectored path is caught.
+    """
+
+    def test_sectored_coef_and_n_blocks_parity(self):
+        """fast_r1_estimate and W0 harness agree on coef and n_blocks with sector."""
+        rng = np.random.default_rng(77)
+        n_dates = 10
+        rpr = 8
+        n = n_dates * rpr
+
+        dates_unique = pd.bdate_range("2020-03-02", periods=n_dates, freq="5B")
+        dates = dates_unique.repeat(rpr)
+        dates_ns = dates.values.astype("datetime64[ns]").astype(np.int64)
+
+        outcome = rng.integers(0, 2, size=n).astype(float)
+        stratum = rng.integers(0, 2, size=n).astype(float)
+        fe_vals = dates.strftime("%Y-%m-%d").tolist()
+
+        # Two sectors alternating across rows to exercise sector-split blocks.
+        sector = ["sector_A" if i % 2 == 0 else "sector_B" for i in range(n)]
+
+        df = pd.DataFrame({
+            "outcome": outcome,
+            "stratum": stratum,
+            "_fe": fe_vals,
+            "sector": sector,
+            "_date_ts": dates_ns,
+            # W0 harness _prepare_binary_outcomes columns:
+            "date": dates,
+            "gradable": np.ones(n, dtype=bool),
+            "state_rot": ["CUSHIONED"] * n,
+            "state_pos": ["CUSHIONED"] * n,
+            "stop5": outcome,
+            "mae63": rng.uniform(-0.1, 0.0, size=n),
+            "mfe63": rng.uniform(0.0, 0.1, size=n),
+            "cushion_rot": np.zeros(n, dtype=float),
+        })
+
+        res_fast = fast_r1_estimate(
+            df, "outcome", "stratum",
+            fe_col="_fe",
+            sector_col="sector",
+            n_bootstrap=50,
+            rng_seed=42,
+        )
+
+        res_w0 = ph.r1_estimate(
+            df, "outcome", "stratum",
+            fe_granularity="date",
+            sector_col="sector",
+            n_bootstrap=50,
+            rng_seed=42,
+        )
+
+        coef_fast = res_fast.get("coef")
+        coef_w0 = res_w0.get("coef")
+        assert coef_fast is not None, f"fast_r1_estimate coef is None: {res_fast}"
+        assert coef_w0 is not None, f"w0 r1_estimate coef is None: {res_w0}"
+
+        assert abs(float(coef_fast) - float(coef_w0)) < 1e-4, (
+            f"Sectored fast coef {coef_fast:.6f} differs from w0 coef "
+            f"{coef_w0:.6f} by more than 1e-4. _fast_make_blocks and "
+            f"harness _make_blocks may diverge under sector_col."
+        )
+
+        n_blk_fast = res_fast.get("n_blocks", 0)
+        n_blk_w0 = res_w0.get("n_blocks", 0)
+        assert n_blk_fast > 0, f"fast n_blocks={n_blk_fast} is zero"
+        assert n_blk_w0 > 0, f"w0 n_blocks={n_blk_w0} is zero"
+        assert n_blk_fast == n_blk_w0, (
+            f"Sectored n_blocks differ: fast={n_blk_fast}, w0={n_blk_w0}. "
+            f"Block construction diverges between fast and harness paths "
+            f"when sector_col is supplied."
         )
