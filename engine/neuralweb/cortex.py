@@ -24,7 +24,7 @@ A plain anthropic tool-use loop — NO claude_agent_sdk dependency.
   * WRITE tools (shadow-tier only, three):
       flag_attention   → data/reflexes/cortex_attention/firings.jsonl
       write_memo       → data/neuralweb/cortex/memo.json + site/neuralweb/cortex_memo.json
-      stake_hypothesis → data/neuralweb/cortex/hypothesis_inbox.jsonl (STUB in PR1)
+      stake_hypothesis → machine_registry.jsonl via metabolism (PR2 — live)
   * Dispatcher refuses any tool name outside this exact whitelist (A7 guard).
 
 STALENESS GATE (cost control)
@@ -485,41 +485,70 @@ def _tool_write_memo(root: Path, params: dict, now_str: str, probation_status: d
 
 
 def _tool_stake_hypothesis(root: Path, params: dict, now_str: str) -> dict:
-    """STUB in PR1 — appends to hypothesis_inbox.jsonl with status=inbox-not-registered."""
+    """Register a hypothesis via the metabolism module (PR2 — live registration path).
+
+    Calls engine.neuralweb.metabolism.register_hypothesis() directly.
+    The inbox row is also appended for audit-trail purposes with a status transition.
+    Server-side registered_at is set by the metabolism module — never cortex-supplied.
+    """
+    from engine.neuralweb.metabolism import register_hypothesis as _register  # noqa: PLC0415
+    from datetime import datetime, timezone  # noqa: PLC0415
+
+    # Build the hypothesis dict for registration
+    h = {
+        "hypothesis": params.get("claim") or params.get("hypothesis", ""),
+        "claim_shape": params.get("claim_shape", "lead_lag"),
+        "spine_query": params.get("spine_query") or {"subject": params.get("subject", "")},
+        "pre_committed_gate": params.get("pre_committed_gate"),
+        "horizon_d": params.get("horizon_d"),
+        "registered_by": "cortex",
+    }
+
+    # Attempt registration (budget enforcement + validation in metabolism)
+    try:
+        result = _register(h, root=str(root))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cortex: stake_hypothesis metabolism failed (%s)", exc)
+        result = {"id": "error", "status": "invalid", "reason": str(exc)}
+
+    reg_status = result.get("status", "invalid")
+
+    # Append to inbox as audit trail with status transition
     inbox_path = _cortex_dir(root) / "hypothesis_inbox.jsonl"
     inbox_path.parent.mkdir(parents=True, exist_ok=True)
 
-    h_id = hashlib.sha256(
-        f"{now_str}:{params.get('subject', '')}:{params.get('claim', '')}".encode()
-    ).hexdigest()[:16]
-
     record = {
         "schema": _SCHEMA_HYPO,
-        "id": h_id,
-        "status": "inbox-not-registered",
-        "registered_at": None,
+        "id": result.get("id", "unknown"),
+        "status": reg_status,
+        "registered_at": result.get("registered_at"),
         "proposed_at": now_str,
         "proposed_by": "cortex",
         "subject": params.get("subject", ""),
-        "claim": params.get("claim", ""),
+        "claim": h["hypothesis"],
+        "hypothesis": h["hypothesis"],
+        "claim_shape": h["claim_shape"],
         "falsifier": params.get("falsifier", ""),
         "horizon_d": params.get("horizon_d"),
         "pre_committed_gate": params.get("pre_committed_gate"),
         "spine_query": params.get("spine_query"),
-        "metabolism_note": (
-            "The metabolism (registration + evaluation) lands in PR2. "
-            "No grading path exists yet — no mining possible."
-        ),
+        "registration_result": result,
         "is_context_only": True,
     }
 
-    with inbox_path.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(record, default=str) + "\n")
+    try:
+        with inbox_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, default=str) + "\n")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cortex: inbox append failed (%s)", exc)
 
     return {
-        "id": h_id,
-        "status": "inbox-not-registered",
-        "note": "Metabolism lands in PR2; this is a draft only.",
+        "id": result.get("id"),
+        "status": reg_status,
+        "registered_at": result.get("registered_at"),
+        "come_back": result.get("come_back"),
+        "reason": result.get("reason"),
+        "budget_state": result.get("budget_state"),
     }
 
 
@@ -686,18 +715,44 @@ def _tool_schemas() -> list[dict]:
         },
         {
             "name": "stake_hypothesis",
-            "description": "STUB in PR1 — drafts a hypothesis to hypothesis_inbox.jsonl. No grading/registration path exists yet. status=inbox-not-registered always.",
+            "description": (
+                "Register a hypothesis via the metabolism module (PR2 — live). "
+                "Server-side registered_at is set by metabolism — never cortex-supplied. "
+                "Budget: max 3/week; beyond that a retire() is required first. "
+                "pre_committed_gate is required (metric, threshold, min_n, horizon_d). "
+                "Status: registered | budget-rejected | invalid."
+            ),
             "input_schema": {
                 "type": "object",
                 "properties": {
-                    "subject": {"type": "string"},
-                    "claim": {"type": "string"},
-                    "falsifier": {"type": "string"},
-                    "horizon_d": {"type": "integer"},
-                    "pre_committed_gate": {"type": "object"},
-                    "spine_query": {"type": "object"},
+                    "subject": {"type": "string", "description": "Short subject label (e.g. ticker or sector)"},
+                    "claim": {"type": "string", "description": "Natural-language claim statement"},
+                    "hypothesis": {"type": "string", "description": "Alias for claim"},
+                    "claim_shape": {
+                        "type": "string",
+                        "enum": ["lead_lag", "conditional_regime", "entry_quality", "sector_conditional"],
+                        "description": "Claim shape — determines evaluator path",
+                    },
+                    "falsifier": {"type": "string", "description": "Pre-committed falsifiable criterion string"},
+                    "horizon_d": {"type": "integer", "description": "Trading-day evaluation horizon"},
+                    "pre_committed_gate": {
+                        "type": "object",
+                        "description": "Required: {metric, threshold, min_n, horizon_d}",
+                        "properties": {
+                            "metric": {"type": "string"},
+                            "threshold": {"type": "number"},
+                            "min_n": {"type": "integer"},
+                            "horizon_d": {"type": "integer"},
+                            "direction_expected": {"type": "integer", "enum": [-1, 0, 1]},
+                        },
+                        "required": ["metric", "threshold", "min_n", "horizon_d"],
+                    },
+                    "spine_query": {
+                        "type": "object",
+                        "description": "Machine-readable claim spec: {subject, lead_series, lag_series, lead_days, condition_field, condition_value}",
+                    },
                 },
-                "required": ["subject", "claim", "falsifier"],
+                "required": ["claim", "pre_committed_gate", "horizon_d"],
             },
         },
     ]
@@ -735,7 +790,7 @@ DELIBERATION PROTOCOL:
 PROBATION DISCIPLINE:
 • Everything you write carries is_context_only=True.
 • You are being observed; your attention flags will be graded for accuracy over the next 30+ items.
-• Until the A2 authority grant clears (n>=30, hits>=8, wilson_lb/base>1.25), your queue is SHADOW — visible but not ranked.
+• Until the A2 authority grant clears (n>=25, hits>=8, wilson_lb/base>1.25), your queue is SHADOW — visible but not ranked.
 
 CONSTITUTIONAL RULES:
 • Article 1: Never originate. You annotate; you never create.
@@ -973,41 +1028,43 @@ def _run_tool_loop(
 # ---------------------------------------------------------------------------
 
 def _check_constitution(root: Path) -> dict:
-    """Check A2 grant for cortex_attention.  Returns probation_status dict."""
+    """Check A2 grant for cortex_attention.  Returns probation_status dict.
+
+    PR2: reads data/neuralweb/cortex/probation.json (single source, written by
+    grade_cortex_attention.py nightly).  Falls back to inline evaluation when
+    probation.json is absent (fresh clone, first run).
+    """
     from engine.neuralweb.constitution import (  # noqa: PLC0415
         AuthorityLevel, GrantResult, grant_authority,
     )
 
-    # Attempt to read existing attention grading from spine
-    evidence = {"hits": 0, "n": 0, "base_rate": 0.01, "evidence_asof": None}
-    try:
-        from engine.neuralweb.query import load_index, query  # noqa: PLC0415
-        df = load_index(root)
-        if df is not None and not df.empty:
-            # Look for cortex_attention rows with outcome_graded
-            if "ledger" in df.columns:
-                attn_df = df[df["ledger"] == "cortex_attention"]
-                if not attn_df.empty:
-                    graded = attn_df[attn_df.get("outcome_graded", False) == True]  # noqa: E712
-                    n = len(graded)
-                    hits = int((graded.get("outcome_excess", 0) > 0).sum()) if n > 0 else 0
-                    evidence = {
-                        "hits": hits,
-                        "n": n,
-                        "base_rate": 0.01,
-                        "evidence_asof": str(graded["graded_at"].max()) if n > 0 else None,
-                    }
-    except Exception:  # noqa: BLE001
-        pass
+    # PR2: single source of truth for A2 earn-in is probation.json
+    probation_path = _cortex_dir(root) / "probation.json"
+    if probation_path.exists():
+        try:
+            stored = json.loads(probation_path.read_text(encoding="utf-8"))
+            log.info(
+                "cortex: A2 status from probation.json — granted=%s reason=%s n=%d",
+                stored.get("granted"),
+                stored.get("reason", ""),
+                stored.get("attention_track_record", {}).get("n", 0),
+            )
+            return stored
+        except Exception as exc:  # noqa: BLE001
+            log.warning("cortex: could not read probation.json (%s) — inline fallback", exc)
+
+    # Fallback: inline A2 evaluation (no graded data yet — refused)
+    evidence = {"hits": 0, "n": 0, "base_rate": 0.5, "evidence_asof": None}
 
     result: GrantResult = grant_authority(
         evidence,
-        floors={"min_n": 30, "min_events": 8},
+        floors={"min_n": 25, "min_events": 8},
         target_level=AuthorityLevel.A2_ATTEND,
     )
 
     tier = "A0/A1 shadow" if not result.granted else "A2 granted"
     probation_status = {
+        "schema": "neuralweb.cortex_probation.v1",
         "tier": tier,
         "granted": result.granted,
         "reason": result.reason,
@@ -1019,16 +1076,15 @@ def _check_constitution(root: Path) -> dict:
             "base_rate": evidence["base_rate"],
         },
         "lapses_at": result.lapses_at,
+        "is_context_only": True,
     }
 
-    if not result.granted:
-        log.info(
-            "cortex: A2 REFUSED (on shadow probation) — %s. "
-            "n=%d, hits=%d. Running at A0/A1 (observe+explain unconditional).",
-            result.reason, evidence["n"], evidence["hits"],
-        )
-    else:
-        log.info("cortex: A2 GRANTED — %s. Lapses at: %s", result.reason, result.lapses_at)
+    log.info(
+        "cortex: A2 %s (inline fallback) — %s. n=%d, hits=%d. Running at %s.",
+        "REFUSED" if not result.granted else "GRANTED",
+        result.reason, evidence["n"], evidence["hits"],
+        "A0/A1 (observe+explain)" if not result.granted else "A2/ATTEND",
+    )
 
     return probation_status
 

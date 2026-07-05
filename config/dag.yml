@@ -234,25 +234,65 @@ lanes:
       - id: cortex_deliberation
         module: engine.neuralweb.cortex
         note: >
-          Neural Web W7b — Opus-class bounded tool-use loop over world_state/
-          spine/kernel/graph/governance.  Write surfaces: attention firings
+          Neural Web W7b PR2 — Opus-class bounded tool-use loop over world_state/
+          spine/kernel/graph/governance.  stake_hypothesis now calls
+          metabolism.register_hypothesis directly (live registration path).
+          Write surfaces: attention firings
           (data/reflexes/cortex_attention/), committee memo
           (data/neuralweb/cortex/memo.json + site/neuralweb/cortex_memo.json),
-          hypothesis inbox (data/neuralweb/cortex/hypothesis_inbox.jsonl).
+          hypothesis inbox (data/neuralweb/cortex/hypothesis_inbox.jsonl),
+          machine registry (data/neuralweb/machine_registry.jsonl via metabolism).
           Staleness-gated spend; single-call fallback on error; always exits 0.
           needs_secrets: true (CLAUDE_CODE_OAUTH_TOKEN + ANTHROPIC_API_KEY).
           impure: true (LLM non-determinism).
-          A2 refused today — shadow probation.
+          A2 refused today — shadow probation (empty attention record).
           inputs: [data/neuralweb/world_state.json,
                    data/neuralweb/spine_index.parquet,
                    data/neuralweb/confluence_graph.json,
                    data/neuralweb/kernel_estimates.parquet,
-                   data/neuralweb/governance.jsonl]
+                   data/neuralweb/governance.jsonl,
+                   data/neuralweb/cortex/probation.json]
           outputs: [data/reflexes/cortex_attention/firings.jsonl,
                     data/neuralweb/cortex/memo.json,
                     site/neuralweb/cortex_memo.json,
                     data/neuralweb/cortex/hypothesis_inbox.jsonl,
-                    data/neuralweb/cortex/last_run_state.json]
+                    data/neuralweb/cortex/last_run_state.json,
+                    data/neuralweb/machine_registry.jsonl]
+      - id: grade_cortex_attention
+        module: scripts.grade_cortex_attention
+        note: >
+          W7b PR2 — Nightly cortex attention grader + A2 earn-in evaluation.
+          Runs AFTER cortex_deliberation in the same cortex job.
+          Single-writer for grades.jsonl and probation.json.
+          Falsifier classes: realized_move (forward_metrics vs SPY),
+          escalation (alert artifact check), verdict_change (world_state history).
+          A2 earn-in: constitution.grant_authority with min_n=25, min_events=8.
+          Governance events on transitions only (refused→granted or granted→refused).
+          Today: granted=False (empty attention record — n=0 < 25).
+          inputs: [data/reflexes/cortex_attention/firings.jsonl,
+                   data/yahoo/*.parquet,
+                   data/neuralweb/world_state.json]
+          outputs: [data/reflexes/cortex_attention/grades.jsonl,
+                    data/neuralweb/cortex/probation.json,
+                    data/neuralweb/governance.jsonl]
+      - id: evaluate_cortex_hypotheses
+        module: scripts.evaluate_cortex_hypotheses
+        note: >
+          W7b PR2 — Generic cortex hypothesis evaluator.
+          Runs AFTER spine-index build (needs: engine via cortex job needs chain).
+          For each registered hypothesis with come_back <= today:
+            STRICT post-registration filter: as_of > registered_at enforced at entry.
+            PATH A (lead_lag/sector_conditional/conditional_regime): spine/qledger join.
+            PATH B (entry_quality): walk_forward stop-out harness.
+            Verdict against PRE-COMMITTED gate ONLY (no metric switching).
+            Passed → queued for quarterly cortex FDR batch (promotion requires gauntlet).
+          impure: false.
+          inputs: [data/neuralweb/machine_registry.jsonl,
+                   data/neuralweb/spine_index.parquet,
+                   data/yahoo/*.parquet]
+          outputs: [data/neuralweb/machine_registry.jsonl (status update),
+                    data/neuralweb/cortex/evaluator_run.json,
+                    data/neuralweb/governance.jsonl]
 
   # ── asia-close.yml / asia ───────────────────────────────────────────────
   - workflow: .github/workflows/asia-close.yml

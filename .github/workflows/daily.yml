@@ -1144,23 +1144,39 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
-      - name: cortex deliberation (Opus-class tool loop — attention queue, memo, hypothesis inbox)
+      - name: cortex deliberation (Opus-class tool loop — attention queue, memo, hypothesis metabolism)
         run: |
           set +e
           python -m engine.neuralweb.cortex > /tmp/cortex.log 2>&1; rc=$?
           cat /tmp/cortex.log
           [ "$rc" -ne 0 ] && echo "::warning title=cortex::rc=$rc (non-fatal — last committed outputs remain valid)"
           exit 0
+      - name: grade cortex attention + A2 earn-in (W7b PR2)
+        run: |
+          set +e
+          python -m scripts.grade_cortex_attention > /tmp/cortex_grade.log 2>&1; rc=$?
+          cat /tmp/cortex_grade.log
+          [ "$rc" -ne 0 ] && echo "::warning title=cortex_grade::rc=$rc (non-fatal)"
+          exit 0
+      - name: evaluate due cortex hypotheses (W7b PR2)
+        run: |
+          set +e
+          python -m scripts.evaluate_cortex_hypotheses > /tmp/cortex_eval.log 2>&1; rc=$?
+          cat /tmp/cortex_eval.log
+          [ "$rc" -ne 0 ] && echo "::warning title=cortex_eval::rc=$rc (non-fatal)"
+          exit 0
       - name: commit cortex outputs
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          # Own commit lane: only these three path subtrees — STAGING LAW
+          # Own commit lane (W7b PR2): all cortex subtrees — STAGING LAW
           git add data/reflexes/cortex_attention/ 2>/dev/null || true
           git add data/neuralweb/cortex/ 2>/dev/null || true
+          git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
+          git add data/neuralweb/governance.jsonl 2>/dev/null || true
           git add site/neuralweb/ 2>/dev/null || true
           if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
-          git commit -m "cortex: attention queue + committee memo $(date -u +%F)"
+          git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"
           # Retry-rebase push loop (stock_briefs pattern)
           for i in 1 2 3 4 5; do
             if git pull --rebase -X theirs origin main && git push; then

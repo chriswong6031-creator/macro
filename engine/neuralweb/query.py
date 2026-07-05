@@ -116,6 +116,7 @@ __all__ = [
     "COLUMNS",
     "LEDGER_ENUM",
     "adapt_reflexes",
+    "adapt_cortex_attention",
     "build_index",
     "write_index",
     "load_index",
@@ -177,7 +178,8 @@ LEDGER_ENUM: tuple[str, ...] = (
     "cycles_us",
     "cycles_china",
     "cycles_country",
-    "reflexes",      # Neural Web W6a: per-reflex firings ledgers
+    "reflexes",             # Neural Web W6a: per-reflex firings ledgers
+    "cortex_attention",     # Neural Web W7b PR2: graded cortex attention claims
 )
 
 # ---------------------------------------------------------------------------
@@ -946,7 +948,8 @@ def build_index(
         ("board_ca",       lambda: adapt_board("ca", root)),
         ("board_cn",       lambda: adapt_china_board(root)),
         ("forward_logs",   lambda: adapt_forward_logs(root)),
-        ("reflexes",       lambda: adapt_reflexes(root)),    # W6a — reflex firings ledgers
+        ("reflexes",       lambda: adapt_reflexes(root)),            # W6a — reflex firings ledgers
+        ("cortex_attention", lambda: adapt_cortex_attention(root)),  # W7b PR2 — graded cortex attention
     ]
 
     for name, fn in adapters:
@@ -1300,3 +1303,168 @@ def adapt_reflexes(
 
     df = pd.DataFrame(rows)
     return _ensure_columns(df), gaps
+
+
+# ---------------------------------------------------------------------------
+# adapt_cortex_attention — W7b PR2
+# ---------------------------------------------------------------------------
+
+def adapt_cortex_attention(
+    root: Path | str | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt cortex attention firings + grades → ledger='cortex_attention'.
+
+    Reads data/reflexes/cortex_attention/firings.jsonl and joins
+    data/reflexes/cortex_attention/grades.jsonl by claim_id.
+
+    When a grade exists: outcome_graded=True, graded_at=grade.graded_at,
+    outcome_excess computed from outcome_hit and direction.
+    Without a grade: outcome_graded=False (ungraded-honest).
+
+    Infrastructure reflexes (direction=0) stay outcome_graded=False by design —
+    ungradeable on a financial return basis.
+
+    This makes graded attention claims queryable in the spine index with
+    the standard query(graded_only=True) filter, enabling the A2 earn-in
+    evidence accumulation from the spine.
+    """
+    gaps: list[str] = []
+
+    if root is not None:
+        root_p = Path(root)
+    else:
+        try:
+            from lib import config as _cfg  # noqa: PLC0415
+            root_p = Path(_cfg.ROOT)
+        except Exception:  # noqa: BLE001
+            root_p = Path(".")
+
+    firings_path = root_p / "data" / "reflexes" / "cortex_attention" / "firings.jsonl"
+    grades_path = root_p / "data" / "reflexes" / "cortex_attention" / "grades.jsonl"
+
+    if not firings_path.exists():
+        gaps.append("cortex_attention: no firings.jsonl — zero rows")
+        return _empty_df(), gaps
+
+    # Load firings
+    firings_raw: list[dict] = []
+    try:
+        for line in firings_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                firings_raw.append(json.loads(line))
+            except Exception:  # noqa: BLE001
+                pass
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"cortex_attention: firings read failed ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    # Load grades (sidecar; absent until first grading run)
+    grades_by_claim: dict[str, dict] = {}
+    if grades_path.exists():
+        try:
+            for line in grades_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    g = json.loads(line)
+                    cid = g.get("claim_id")
+                    if cid:
+                        grades_by_claim[cid] = g
+                except Exception:  # noqa: BLE001
+                    pass
+        except Exception as e:  # noqa: BLE001
+            gaps.append(f"cortex_attention: grades read failed ({e}) — using ungraded")
+
+    _VALID_SCOPE = {"macro", "entity", "sector", "basket"}
+    rows: list[dict] = []
+    skipped = 0
+
+    for rec in firings_raw:
+        ts = rec.get("ts") or rec.get("asof") or ""
+        asof = _str_date(rec.get("asof") or ts)
+        if not asof:
+            skipped += 1
+            continue
+
+        claim_id = _safe_str(rec.get("claim_id"))
+        sig = (
+            f"cortex_attention:{asof}:"
+            f"{claim_id or _safe_str(rec.get('trigger_key')) or 'unk'}"
+        )
+
+        scope_raw = _safe_str(rec.get("scope_type")) or "macro"
+        scope_type = scope_raw if scope_raw in _VALID_SCOPE else "macro"
+
+        direction = rec.get("direction")
+        try:
+            direction = int(direction) if direction is not None else 0
+        except (TypeError, ValueError):
+            direction = 0
+
+        horizon = rec.get("horizon_d")
+        try:
+            horizon = int(horizon) if horizon is not None else None
+        except (TypeError, ValueError):
+            horizon = None
+
+        # Join grade if available
+        grade = grades_by_claim.get(claim_id or "")
+        outcome_graded = False
+        outcome_excess: float | None = None
+        graded_at_val = None
+
+        if grade is not None:
+            hit = bool(grade.get("outcome_hit"))
+            # Infrastructure (direction=0): ungradeable by design
+            if direction != 0:
+                outcome_graded = True
+                # ±0.01 is a SIGN PLACEHOLDER, not a real excess return.
+                # The sign encodes directional correctness (hit + direction>0
+                # → positive; miss + direction>0 → negative).  The magnitude
+                # 0.01 is arbitrary and must NOT be used for any return or
+                # volatility calculation.  Consumers needing real magnitudes
+                # must read the full grade record from grades.jsonl.
+                outcome_excess = 0.01 if hit else -0.01
+                graded_at_val = grade.get("graded_at")
+            # direction=0: stays outcome_graded=False
+
+        row: dict[str, Any] = {c: None for c in COLUMNS}
+        row["signal_id"]      = sig
+        row["engine"]         = "reflex.cortex_attention"
+        row["family"]         = (
+            f"reflex.cortex_attention:"
+            f"{_safe_str(rec.get('trigger_type')) or 'event'}"
+        )
+        row["ledger"]         = "cortex_attention"
+        row["as_of"]          = asof
+        row["symbol"]         = _safe_str(rec.get("scope_key")) or "macro"
+        row["scope_type"]     = scope_type
+        row["universe"]       = "cortex_attention"
+        row["horizon"]        = horizon
+        row["direction"]      = direction
+        row["size_binding"]   = False
+        row["fill_basis"]     = "cortex_attention_event"
+        row["score"]          = None
+        row["outcome_excess"] = outcome_excess
+        row["outcome_graded"] = outcome_graded
+        row["graded_at"]      = graded_at_val
+        rows.append(row)
+
+    if skipped:
+        gaps.append(f"cortex_attention: {skipped} records skipped (no asof/ts)")
+
+    gaps.append(
+        f"cortex_attention: {len(firings_raw)} firings, "
+        f"{len(grades_by_claim)} grades joined, "
+        f"{len(rows)} rows emitted"
+    )
+
+    if not rows:
+        return _empty_df(), gaps
+
+    df_out = pd.DataFrame(rows)
+    return _ensure_columns(df_out), gaps
