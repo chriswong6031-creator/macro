@@ -76,6 +76,17 @@ STAMP_COLS: list[str] = [
     "opt_wall_dist_down_pct",    # float: (wall_down/spot - 1)*100 — negative = how far below spot
 ]
 
+# Coverage-gated columns: these require an external data store (polygon_gex, skew snapshots,
+# ivspread snapshots) to be non-null.  opt_opex_days is EXCLUDED because it is computed from
+# a local calendar (engine/opex.py) and will be non-null on virtually every valid business date
+# regardless of whether any options store has coverage for the ticker.
+#
+# The stamp_ledger retry gate (scripts/stamp_options_state.py) uses STAMP_COVERAGE_COLS — NOT
+# STAMP_COLS — to decide whether a row is "unstamped" and eligible for future re-stamping.
+# This preserves the W1.3 design: rows with only calendar-derived columns (opt_opex_days) remain
+# fully retryable when GEX/skew/ivspread coverage later arrives.
+STAMP_COVERAGE_COLS: list[str] = [c for c in STAMP_COLS if c != "opt_opex_days"]
+
 # every stamp starts as all-None so a name with no options coverage yields a clean null row
 _NULL_STAMP: dict = {c: None for c in STAMP_COLS}
 

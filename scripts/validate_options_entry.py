@@ -272,26 +272,42 @@ def _wall_touch_study(df: pd.DataFrame, horizon: int = 21) -> dict:
 
 # ── W-C: new pre-registered bucket tests ─────────────────────────────────────
 
-def _verdict_for_caution_test(t: dict) -> str:
-    """Verdict for a CAUTION-ONLY test (S-TOP_RISK, S-PIN_RISK).
+def _verdict_for_top_risk(t: dict) -> str:
+    """Verdict for S-TOP_RISK (caution-only de-escalation flag).
 
-    Beneficial direction is INVERTED vs standard: for a de-escalation flag, a PASS means
-    the flagged fires show WORSE outcomes (correctly identifies bad entries):
-      breach delta > 0 (MORE stop-outs in flagged bucket — flag catches bad entries)
-      clean delta < 0 (FEWER clean liftoffs in flagged bucket)
-    mfe21 is secondary for de-escalation; we check it as a corroborating signal.
-    These signals MAY ONLY LOWER confidence, never short (RO-3)."""
+    Pre-registered primitives (§4): {breach, clean}.
+    Beneficial direction (conjunction, per §4 registration):
+      breach delta > 0 (MORE stop-outs in flagged bucket) AND
+      clean delta < 0 (FEWER clean liftoffs in flagged bucket).
+    Both conditions must hold for a 'signal' verdict — OR would deviate from the
+    written pre-registration.  This signal MAY ONLY LOWER confidence, never short (RO-3)."""
     if not t["ready"]:
         return "building_history"
-    passes = []
     b, c = t["breach"], t["clean"]
-    # for caution: flagged fires should have MORE breaches
-    if b["excludes_zero"] and b["delta"] is not None and b["delta"] > 0:
-        passes.append("breach_elevated_in_flagged")
-    # and FEWER clean liftoffs
-    if c["excludes_zero"] and c["delta"] is not None and c["delta"] < 0:
-        passes.append("clean_reduced_in_flagged")
-    return "signal" if passes else "no_effect"
+    breach_ok = b["excludes_zero"] and b["delta"] is not None and b["delta"] > 0
+    clean_ok = c["excludes_zero"] and c["delta"] is not None and c["delta"] < 0
+    return "signal" if (breach_ok and clean_ok) else "no_effect"
+
+
+def _verdict_for_pin_risk(t: dict) -> str:
+    """Verdict for S-PIN_RISK (caution-only pin-risk flag).
+
+    Pre-registered primitives (§4): {clean, mfe21} — breach is NOT a registered
+    S-PIN_RISK primitive.  Beneficial direction:
+      clean delta < 0 (FEWER clean liftoffs — pin mechanics suppress liftoff) AND/OR
+      mfe21 delta < 0 (LOWER mfe21 — pin mechanics suppress follow-through).
+    §4 registers 'LOWER clean rate + LOWER mfe21' as the signal pattern; we require
+    both conditions for a 'signal' verdict to match the conjunction wording in the
+    pre-registration.  This signal MAY ONLY LOWER confidence, never short (RO-3)."""
+    if not t["ready"]:
+        return "building_history"
+    c = t.get("clean")
+    m = t.get("mfe21")
+    if c is None or m is None:
+        return "building_history"
+    clean_ok = c["excludes_zero"] and c["delta"] is not None and c["delta"] < 0
+    mfe21_ok = m["excludes_zero"] and m["delta"] is not None and m["delta"] < 0
+    return "signal" if (clean_ok and mfe21_ok) else "no_effect"
 
 
 def _ivspread_f_test(df: pd.DataFrame) -> dict:
@@ -535,15 +551,23 @@ def build_gate(df: pd.DataFrame) -> dict:
 
     # per-test verdicts (only bucket-delta tests carry a verdict; S-WALL is counts-only)
     _standard_tests = ("S-DOI", "S-IVR", "S-VOI", "S-IVSPREAD-F", "S-SKEW_DECEL", "S-VOI2")
-    _caution_tests = ("S-TOP_RISK", "S-PIN_RISK")  # beneficial = flagged fires WORSE
     verdicts = {}
     for tid in _standard_tests:
         t = tests[tid]
         verdicts[tid] = _verdict_for_test(t) if "breach" in t else "building_history"
-    for tid in _caution_tests:
-        t = tests[tid]
-        verdicts[tid] = _verdict_for_caution_test(t) if "breach" in t else "building_history"
+    # Caution tests use per-bucket verdict functions (different registered primitives):
+    #   S-TOP_RISK: {breach, clean} — _verdict_for_top_risk
+    #   S-PIN_RISK: {clean, mfe21} — _verdict_for_pin_risk (breach is NOT registered for S-PIN_RISK)
+    verdicts["S-TOP_RISK"] = (
+        _verdict_for_top_risk(tests["S-TOP_RISK"])
+        if "breach" in tests["S-TOP_RISK"] else "building_history"
+    )
+    verdicts["S-PIN_RISK"] = (
+        _verdict_for_pin_risk(tests["S-PIN_RISK"])
+        if "clean" in tests["S-PIN_RISK"] else "building_history"
+    )
 
+    _caution_tests = ("S-TOP_RISK", "S-PIN_RISK")
     any_ready = any(
         tests[t].get("ready") for t in (*_standard_tests, *_caution_tests, "S-IVR", "S-VOI")
     )
