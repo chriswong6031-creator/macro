@@ -519,3 +519,29 @@ routing: Sonnet builds, Opus reviews stats-heavy designs, Fable adjudicates._
 |---|---|
 | 2026-07-04 | Brainstorm/assessment authored (Fable): codebase-grounded read of both external docs; constraint-reversal analysis vs OPTIONS_ALPHA F5–F7; unlock table; per-engine designs; licensing research (Pro $160/mo confirmed; redistribution prohibited w/o commercial agreement; derived-display = gray zone); phased roadmap as amendments to options-alpha / Oracle P7 / Neural Web. Fire-ledger depth verified (2026-06-15→, 950 rows): fire-conditioned claims stay accrual-bound; episode/cross-sectional claims unlock immediately. At operator STOP. |
 | 2026-07-04 | Phase-A PR opened (`feat/thetadata-plumbing`): `collectors/thetadata.py` (terminal client, INERT until subscription active), `scripts/backfill_thetadata_eod.py` (resumable T1 driver, --probe/--dry-run), `scripts/run_theta_terminal.sh` (launcher), `research/THETADATA_PROBE.md` (skeleton + API ambiguities A1–A8), `scripts/calibrate_flow_signing.py --source thetadata` (additive; existing keys untouched). §5.3 updated: Neural Web W0+W1+W2 SHIPPED; Phase G unblocked once Phase D lands. Tests: hermetic, all pass. Subscription not yet active; probe pending. |
+
+---
+
+## §13 Amendment (2026-07-04 evening) — licensing reversal + reassessment corrections
+
+**Superseding note:** execution planning moved to `research/LIVE_FLOW_PRODUCTION_ROADMAP_BY_FABLE.md`
+(the plan of record). This section records what changed in THIS doc's rulings.
+
+1. **STOP D5 + §6 rejection #7 LIFTED (scoped).** Operator purchased display/redistribution
+   rights ($1,000 one-off atop Pro $160/mo) — "full display of data on our front-end website."
+   §5.5's operator-internal-only ruling is lifted for vendor-data display/aggregation surfaces.
+   Fused surfaces (vendor data × our engine outputs, e.g. heuristic-ranked feeds) get a
+   pre-publish check against the filed terms (roadmap P0.6) before going public.
+2. **D-list resolutions:** D1 = Pro tier (confirmed, running). D2 = as recommended (T1 2012→;
+   the chained default pass covers the full ~360-root universe — the §7.2 "400→800" sizing was
+   high). D3/D4/D6/D7 = as recommended (D7: exit overlay runs parallel, prioritized).
+3. **Corrections to this doc's data assumptions** (verified 2026-07-04 evening):
+   - Greeks/IV history starts **2017**, not 2012 (2012–2016 greeks rows=0). §4's S-CWIV/S-XZZ/
+     S-GEXR windows are ~9y; era partitions registered first (roadmap R2). S-DOI keeps 2012→.
+   - §5.1/§7.2 "T2a 2021→" is corrected to **2022→** for Tier-M episode windows (O-OPT prereg
+     R3: earliest Tier-M onset 2022-02-08; zero pre-2022 subsector episodes).
+   - The signing re-calibration (§7.1) RAN and was RATIFIED same-day (#1292: 0.8848/0.80,
+     n=16,366, scoped tape-only, single-session single-name; multi-session multi-root
+     extension outstanding; UI tone stays `~`-soft until it confirms).
+   - Neural Web W0–W8a completed 2026-07-04 → §5.3 nerve registrations are unblocked.
+   - `trade_quote` has no bulk endpoint → T2a is throughput-probe-gated (roadmap R6/P2.0).
