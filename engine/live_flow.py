@@ -18,6 +18,22 @@ EPISTEMIC LAWS (binding):
 
 Bucket functions and signing are IMPORTED from engine.tape_flow and
 engine.flow_signing — never re-derived here.
+
+Tide accumulator contract (day-state keys added by this module):
+  market_tide_minutes  : {HH:MM → {ncp, npp, gross, vol}}  cumulative signed prem per minute
+  sector_tide_minutes  : {group → {ncp, npp, gross, minutes: {HH:MM → {ncp, npp}}}}
+  dte_tide_minutes     : {bucket → [{t, ncp, npp}]}         cumulative per DTE bucket per minute
+  root_minutes         : {root → {HH:MM → {ncp, npp, vol}}} per-root cumulative minute series
+  root_strikes         : {root → {strike → {call_prem, put_prem, vol}}}  day rollup
+  root_expiries        : {root → {exp → {call_prem, put_prem, vol}}}     day rollup
+  root_top_contracts   : {root → [{right, exp, strike, premium, vol, vol_gt_oi}x<=10]}
+  sweep_events         : {(exp,strike,right) → [{ts, exchange}]}  pending sweep cluster
+
+NCP / NPP convention (tide):
+  ncp = cumulative net call premium: calls signed ~buy add (+), calls signed ~sell subtract (−).
+  npp = cumulative net put premium:  puts  signed ~buy add (+), puts  signed ~sell subtract (−).
+  Both are soft (signing_source=tape; direction is approximate, not directional advice).
+  This is the standard Lee-Ready tape-signing convention accumulated intraday.
 """
 from __future__ import annotations
 
@@ -378,6 +394,27 @@ def process_batch(
     # FIX 2 — per-contract max sequence seen (row-level dedup for overlapping windows)
     seen_sequences: dict             = dict(ps.get("seen_sequences", {}))
 
+    # ── Tide accumulator state (persisted across cycles for day-cumulative values) ──
+    # market_tide_minutes: {HH:MM → {ncp, npp, gross, vol}}
+    market_tide_minutes: dict        = dict(ps.get("market_tide_minutes", {}))
+    # sector_tide: {group → {ncp, npp, gross, group_zh, minutes: {HH:MM → {ncp, npp}}}}
+    sector_tide: dict                = {k: dict(v) for k, v in ps.get("sector_tide", {}).items()}
+    for grp in sector_tide:
+        if "minutes" in sector_tide[grp]:
+            sector_tide[grp]["minutes"] = dict(sector_tide[grp]["minutes"])
+    # dte_tide: {bucket → {HH:MM → {ncp, npp}}}
+    dte_tide: dict                   = {k: dict(v) for k, v in ps.get("dte_tide", {}).items()}
+    # per-root minute series: {root → {HH:MM → {ncp, npp, vol}}}
+    root_minutes: dict               = {k: dict(v) for k, v in ps.get("root_minutes", {}).items()}
+    # per-root strike rollups: {root → {strike_str → {call_prem, put_prem, vol}}}
+    root_strikes: dict               = {k: dict(v) for k, v in ps.get("root_strikes", {}).items()}
+    # per-root expiry rollups: {root → {exp → {call_prem, put_prem, vol}}}
+    root_expiries: dict              = {k: dict(v) for k, v in ps.get("root_expiries", {}).items()}
+    # per-root top_contracts: {root → [{right, exp, strike, premium, vol, vol_gt_oi}]}
+    root_top_contracts: dict         = {k: list(v) for k, v in ps.get("root_top_contracts", {}).items()}
+    # sweep cluster tracking: {(exp, strike, right) key → [{ts_epoch, exchange}]}
+    sweep_clusters: dict             = dict(ps.get("sweep_clusters", {}))
+
     # Names/sectors for group labeling
     ns = names_sectors if names_sectors is not None else _load_names_sectors()
 
@@ -402,6 +439,14 @@ def process_batch(
                 "notability_history": notability_hist,
                 "root_gross_today": root_gross_today,
                 "seen_sequences": seen_sequences,
+                "market_tide_minutes": market_tide_minutes,
+                "sector_tide": sector_tide,
+                "dte_tide": dte_tide,
+                "root_minutes": root_minutes,
+                "root_strikes": root_strikes,
+                "root_expiries": root_expiries,
+                "root_top_contracts": root_top_contracts,
+                "sweep_clusters": sweep_clusters,
             },
             "meta_notes": ["batch empty — no prints"],
         }
@@ -453,6 +498,14 @@ def process_batch(
                 "notability_history": notability_hist,
                 "root_gross_today": root_gross_today,
                 "seen_sequences": seen_sequences,
+                "market_tide_minutes": market_tide_minutes,
+                "sector_tide": sector_tide,
+                "dte_tide": dte_tide,
+                "root_minutes": root_minutes,
+                "root_strikes": root_strikes,
+                "root_expiries": root_expiries,
+                "root_top_contracts": root_top_contracts,
+                "sweep_clusters": sweep_clusters,
             },
             "meta_notes": ["batch empty after signing filter"],
         }
@@ -502,6 +555,14 @@ def process_batch(
                 "notability_history": notability_hist,
                 "root_gross_today": root_gross_today,
                 "seen_sequences": seen_sequences,
+                "market_tide_minutes": market_tide_minutes,
+                "sector_tide": sector_tide,
+                "dte_tide": dte_tide,
+                "root_minutes": root_minutes,
+                "root_strikes": root_strikes,
+                "root_expiries": root_expiries,
+                "root_top_contracts": root_top_contracts,
+                "sweep_clusters": sweep_clusters,
             },
             "meta_notes": [],
         }
@@ -516,6 +577,27 @@ def process_batch(
         contract_vol[contract_key] = (
             contract_vol.get(contract_key, 0.0) + float(row.get("size", 0))
         )
+
+    # ── 4b. Tide accumulation (market, sector, DTE, per-root minute/strike/expiry) ─
+    _accumulate_tide(
+        combined=combined,
+        root=root,
+        group_en=group_en,
+        group_zh=group_zh,
+        batch_ts=batch_ts,
+        session_date=session_date,
+        market_tide_minutes=market_tide_minutes,
+        sector_tide=sector_tide,
+        dte_tide=dte_tide,
+        root_minutes=root_minutes,
+        root_strikes=root_strikes,
+        root_expiries=root_expiries,
+        sweep_clusters=sweep_clusters,
+    )
+
+    # ── 4c. Sweep-like detection on coalesced rows ────────────────────────────
+    # Flags are attached to events in step 5.
+    sweep_flags = _detect_sweeps(combined, sweep_clusters)
 
     # ── 5. Notability gate + event construction ───────────────────────────────
     new_events: list[dict] = []
@@ -559,6 +641,10 @@ def process_batch(
         except Exception:  # noqa: BLE001
             ts_str = batch_ts
 
+        # Sweep-like heuristic flag (labeled — never described as "institutional")
+        sweep_key = (exp_str, strike, right)
+        is_swept = sweep_flags.get(sweep_key, False)
+
         event: dict = {
             "id":              ev_id,
             "ts":              ts_str,
@@ -582,6 +668,8 @@ def process_batch(
             "repeated":        repeated,
             "zerodte":         enrich["zerodte"],
             "signing_source":  "tape",
+            # Additive: sweep-like heuristic label (>=3 prints, >=2 exchanges, <=2s span)
+            "swept":           is_swept,
         }
         new_events.append(event)
         emitted_ids.add(ev_id)
@@ -589,6 +677,17 @@ def process_batch(
     # ── 6. unusual_names ──────────────────────────────────────────────────────
     unusual = _unusual_row(root, root_gross_today.get(root, 0.0), baselines)
     unusual["top_contracts"] = _top_contracts(coalesced, max_n=3)
+
+    # ── 6b. Persist per-root top_contracts (for ticker JSON) ─────────────────
+    # Build from coalesced rows (all contracts this session have vol in contract_vol).
+    _update_root_top_contracts(
+        root=root,
+        coalesced=coalesced,
+        contract_vol=contract_vol,
+        oi_prev=oi_prev,
+        root_top_contracts=root_top_contracts,
+        max_n=10,
+    )
 
     return {
         "events": new_events,
@@ -600,6 +699,14 @@ def process_batch(
             "notability_history": notability_hist,
             "root_gross_today": root_gross_today,
             "seen_sequences": seen_sequences,
+            "market_tide_minutes": market_tide_minutes,
+            "sector_tide": sector_tide,
+            "dte_tide": dte_tide,
+            "root_minutes": root_minutes,
+            "root_strikes": root_strikes,
+            "root_expiries": root_expiries,
+            "root_top_contracts": root_top_contracts,
+            "sweep_clusters": sweep_clusters,
         },
         "meta_notes": ["moneyness vs prior-session close (approx.)"],
     }
@@ -731,3 +838,528 @@ def aggregate_heat(heat_rows: list[dict]) -> list[dict]:
 
     result.sort(key=lambda r: r["gross_premium"], reverse=True)
     return result
+
+
+# ── Tide accumulation helpers ─────────────────────────────────────────────────
+
+# DTE bucket order for dte_tide
+_DTE_BUCKETS = ("0d", "1_7d", "8_30d", "31_90d", "90p")
+
+
+def _minute_key(ts_val: Any, batch_ts: str) -> str:
+    """Return America/New_York "HH:MM" string from a trade_timestamp value.
+
+    Falls back to batch_ts on any parse failure.  All minute keys are in ET to
+    align with the 9:30–16:00 RTH axis.
+    """
+    from zoneinfo import ZoneInfo
+    _ET = ZoneInfo("America/New_York")
+    try:
+        ts = pd.Timestamp(ts_val)
+        if ts.tzinfo is None:
+            ts = ts.tz_localize("UTC")
+        return ts.astimezone(_ET).strftime("%H:%M")
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        ts = pd.Timestamp(batch_ts)
+        if ts.tzinfo is None:
+            ts = ts.tz_localize("UTC")
+        return ts.astimezone(_ET).strftime("%H:%M")
+    except Exception:  # noqa: BLE001
+        return "00:00"
+
+
+def _accumulate_tide(
+    combined: pd.DataFrame,
+    root: str,
+    group_en: str,
+    group_zh: str,
+    batch_ts: str,
+    session_date: str,
+    market_tide_minutes: dict,
+    sector_tide: dict,
+    dte_tide: dict,
+    root_minutes: dict,
+    root_strikes: dict,
+    root_expiries: dict,
+    sweep_clusters: dict,
+) -> None:
+    """Accumulate tide minute-buckets in-place from a signed combined DataFrame.
+
+    Only NOVEL (sequence-deduped) rows should be passed here; called from
+    process_batch after the dedup step.
+
+    NCP / NPP convention:
+      ncp = net call premium: calls sign>0 → +prem, calls sign<0 → -prem
+      npp = net put premium:  puts  sign>0 → +prem, puts  sign<0 → -prem
+    """
+    if combined.empty:
+        return
+
+    # Minute key per row (vectorised)
+    ts_col = combined["trade_timestamp"] if "trade_timestamp" in combined.columns \
+        else pd.Series([batch_ts] * len(combined), index=combined.index)
+
+    # Pre-compute per-row fields
+    combined = combined.copy()
+    combined["_prem"]        = combined["price"] * combined["size"] * 100.0
+    combined["_signed_prem"] = combined["_prem"] * combined["sign"].fillna(0.0)
+    combined["_right_norm"]  = combined["right"].astype(str).str.upper().str[:1]
+    combined["_mkey"]        = ts_col.apply(lambda v: _minute_key(v, batch_ts))
+
+    for mkey, grp in combined.groupby("_mkey"):
+        mkey = str(mkey)
+        g_prem        = float(grp["_prem"].sum())
+        g_signed      = float(grp["_signed_prem"].sum())
+        g_call_signed = float(grp.loc[grp["_right_norm"] == "C", "_signed_prem"].sum())
+        g_put_signed  = float(grp.loc[grp["_right_norm"] == "P", "_signed_prem"].sum())
+        g_vol         = int(grp["size"].sum())
+
+        # Market tide
+        m = market_tide_minutes.setdefault(mkey, {"ncp": 0.0, "npp": 0.0, "gross": 0.0, "vol": 0})
+        m["ncp"]   += g_call_signed
+        m["npp"]   += g_put_signed
+        m["gross"] += g_prem
+        m["vol"]   += g_vol
+
+        # Sector tide
+        sg = sector_tide.setdefault(group_en, {
+            "group": group_en, "group_zh": group_zh, "ncp": 0.0, "npp": 0.0, "gross": 0.0,
+            "minutes": {},
+        })
+        sg["group_zh"] = group_zh  # keep fresh
+        sg["ncp"]   += g_call_signed
+        sg["npp"]   += g_put_signed
+        sg["gross"] += g_prem
+        sm = sg["minutes"].setdefault(mkey, {"ncp": 0.0, "npp": 0.0})
+        sm["ncp"] += g_call_signed
+        sm["npp"] += g_put_signed
+
+        # DTE tide — split by DTE bucket
+        if "expiration" in grp.columns:
+            try:
+                sess_dt = pd.Timestamp(session_date)
+                for dte_bkt, bkt_grp in grp.groupby(
+                    grp["expiration"].apply(
+                        lambda e: str(_dte_bucket(
+                            pd.Series([max(int((pd.Timestamp(e) - sess_dt).days), 0)])
+                        ).iloc[0])
+                    )
+                ):
+                    bkt_str = str(dte_bkt)
+                    db = dte_tide.setdefault(bkt_str, {})
+                    dm = db.setdefault(mkey, {"ncp": 0.0, "npp": 0.0})
+                    dm["ncp"] += float(bkt_grp.loc[bkt_grp["_right_norm"] == "C", "_signed_prem"].sum())
+                    dm["npp"] += float(bkt_grp.loc[bkt_grp["_right_norm"] == "P", "_signed_prem"].sum())
+            except Exception:  # noqa: BLE001
+                pass
+
+    # ── per-root minute series ────────────────────────────────────────────────
+    rm = root_minutes.setdefault(root, {})
+    for mkey, grp in combined.groupby("_mkey"):
+        mkey = str(mkey)
+        rcm = rm.setdefault(mkey, {"ncp": 0.0, "npp": 0.0, "vol": 0})
+        rcm["ncp"] += float(grp.loc[grp["_right_norm"] == "C", "_signed_prem"].sum())
+        rcm["npp"] += float(grp.loc[grp["_right_norm"] == "P", "_signed_prem"].sum())
+        rcm["vol"] += int(grp["size"].sum())
+
+    # ── per-root strike rollups ───────────────────────────────────────────────
+    if "strike" in combined.columns:
+        rs = root_strikes.setdefault(root, {})
+        for stk, sgrp in combined.groupby(
+            combined["strike"].apply(lambda s: str(round(float(s), 3)))
+        ):
+            sv = rs.setdefault(str(stk), {"call_prem": 0.0, "put_prem": 0.0, "vol": 0})
+            sv["call_prem"] += float(sgrp.loc[sgrp["_right_norm"] == "C", "_prem"].sum())
+            sv["put_prem"]  += float(sgrp.loc[sgrp["_right_norm"] == "P", "_prem"].sum())
+            sv["vol"]       += int(sgrp["size"].sum())
+
+    # ── per-root expiry rollups ───────────────────────────────────────────────
+    if "expiration" in combined.columns:
+        re = root_expiries.setdefault(root, {})
+        for exp, egrp in combined.groupby(
+            pd.to_datetime(combined["expiration"], errors="coerce").dt.strftime("%Y-%m-%d")
+        ):
+            exp = str(exp)
+            if exp in ("NaT", "nat", ""):
+                continue
+            ev2 = re.setdefault(exp, {"call_prem": 0.0, "put_prem": 0.0, "vol": 0})
+            ev2["call_prem"] += float(egrp.loc[egrp["_right_norm"] == "C", "_prem"].sum())
+            ev2["put_prem"]  += float(egrp.loc[egrp["_right_norm"] == "P", "_prem"].sum())
+            ev2["vol"]       += int(egrp["size"].sum())
+
+    # ── sweep cluster update ──────────────────────────────────────────────────
+    # Record raw prints (exchange, timestamp) per contract for sweep detection.
+    if "expiration" in combined.columns and "exchange" in combined.columns:
+        for _, row in combined.iterrows():
+            exp_str   = str(pd.to_datetime(row.get("expiration", ""), errors="coerce").strftime("%Y-%m-%d"))
+            strike_v  = float(row.get("strike", 0))
+            right_v   = str(row.get("right", "C")).upper()[:1]
+            exch      = str(row.get("exchange", ""))
+            ts_v      = row.get("trade_timestamp", batch_ts)
+            try:
+                ts_epoch = pd.Timestamp(ts_v).timestamp()
+            except Exception:  # noqa: BLE001
+                ts_epoch = 0.0
+            ckey = f"{exp_str}|{strike_v:.3f}|{right_v}"
+            cluster = sweep_clusters.setdefault(ckey, [])
+            cluster.append({"ts": ts_epoch, "exchange": exch})
+            # Prune entries older than 60s to bound memory
+            if len(cluster) > 500:
+                cluster[:] = cluster[-500:]
+
+
+def _detect_sweeps(combined: pd.DataFrame, sweep_clusters: dict) -> dict:
+    """Return {contract_key: True} for contracts qualifying as sweep-like.
+
+    A contract is sweep-like in this batch if, across all recorded prints
+    (current batch + sweep_clusters state):
+      - >= 3 prints
+      - >= 2 distinct exchanges
+      - all prints within a 2-second window
+
+    Returns a mapping from (exp, strike, right) tuples (as str keys matching
+    the format used in process_batch) to True.
+
+    This is a LABELED HEURISTIC — not a directional indicator or edge claim.
+    """
+    if combined.empty or "exchange" not in combined.columns:
+        return {}
+
+    flags: dict = {}
+
+    # Group by contract
+    contract_cols = [c for c in ("expiration", "strike", "right") if c in combined.columns]
+    if not contract_cols:
+        return {}
+
+    for keys, grp in combined.groupby(contract_cols):
+        if isinstance(keys, (str, float)):
+            keys = (keys,)
+        exp_raw   = str(keys[0]) if len(keys) > 0 else ""
+        strike_v  = float(keys[1]) if len(keys) > 1 else 0.0
+        right_v   = str(keys[2]).upper()[:1] if len(keys) > 2 else "C"
+        try:
+            exp_str = pd.to_datetime(exp_raw, errors="coerce").strftime("%Y-%m-%d")
+        except Exception:  # noqa: BLE001
+            exp_str = exp_raw
+
+        n_prints = len(grp)
+        if n_prints < 3:
+            continue
+
+        exchanges = set(grp["exchange"].astype(str).tolist())
+        if len(exchanges) < 2:
+            continue
+
+        # Check timestamp span <= 2s
+        if "trade_timestamp" in grp.columns:
+            try:
+                ts_vals = pd.to_datetime(grp["trade_timestamp"], errors="coerce").dropna()
+                if len(ts_vals) >= 3:
+                    span = (ts_vals.max() - ts_vals.min()).total_seconds()
+                    if span <= 2.0:
+                        ckey = (exp_str, strike_v, right_v)
+                        flags[ckey] = True
+            except Exception:  # noqa: BLE001
+                pass
+
+    return flags
+
+
+def _update_root_top_contracts(
+    root: str,
+    coalesced: pd.DataFrame,
+    contract_vol: dict,
+    oi_prev: "pd.DataFrame | None",
+    root_top_contracts: dict,
+    max_n: int = 10,
+) -> None:
+    """Rebuild top-contracts list for `root` from all coalesced data this session.
+
+    Uses contract_vol (cumulative day vol) for the vol field.
+    vol_gt_oi checked against oi_prev (t-1); None if OI unavailable.
+    Stored in root_top_contracts[root] as a list sorted by premium desc.
+    """
+    if coalesced.empty:
+        return
+
+    existing = {
+        (r["exp"], float(r["strike"]), r["right"]): r
+        for r in root_top_contracts.get(root, [])
+    }
+
+    for _, row in coalesced.iterrows():
+        exp_str  = str(row.get("expiration", ""))
+        strike   = float(row.get("strike", 0))
+        right    = str(row.get("right", "C")).upper()[:1]
+        premium  = float(row.get("premium", 0.0))
+        ckey     = (exp_str, strike, right)
+        cum_vol  = float(contract_vol.get(ckey, row.get("size", 0)))
+
+        # vol_gt_oi
+        vgt: bool | None = None
+        if oi_prev is not None and not oi_prev.empty:
+            try:
+                oi_match = oi_prev[
+                    (pd.to_datetime(oi_prev.get("expiration", pd.Series(dtype=str)),
+                                    errors="coerce").dt.strftime("%Y-%m-%d") == exp_str) &
+                    (oi_prev.get("right", pd.Series(dtype=str)).astype(str).str.upper().str[:1] == right) &
+                    (pd.to_numeric(oi_prev.get("strike", pd.Series(dtype=float)),
+                                   errors="coerce") == strike)
+                ]
+                if not oi_match.empty and "open_interest" in oi_match.columns:
+                    vgt = bool(cum_vol > float(oi_match["open_interest"].iloc[0]))
+            except Exception:  # noqa: BLE001
+                pass
+
+        existing[ckey] = {
+            "right":      right,
+            "exp":        exp_str,
+            "strike":     round(strike, 3),
+            "premium":    round(premium, 0),
+            "vol":        int(cum_vol),
+            "vol_gt_oi":  vgt,
+        }
+
+    sorted_contracts = sorted(existing.values(), key=lambda c: c["premium"], reverse=True)
+    root_top_contracts[root] = sorted_contracts[:max_n]
+
+
+# ── Tide JSON builders ────────────────────────────────────────────────────────
+
+def build_tide_current(
+    session_date: str,
+    asof: str,
+    day_state: dict,
+    spy_minute_prices: list[dict] | None = None,
+) -> dict:
+    """Build the tide_current.json payload from day_state.
+
+    Output schema: live_flow.tide/v1
+    {
+      "schema": "live_flow.tide/v1",
+      "asof": str,
+      "session_date": str,
+      "method": "ncp/npp=cumulative signed tape premium (Lee-Ready ~-soft)",
+      "minutes": [{"t","ncp","npp","gross","vol"} sorted by t],
+      "spy": [{"t","px"}] or [],
+      "sectors": [{"group","group_zh","ncp","npp","gross","minutes":[{"t","ncp","npp"}]}],
+      "top_net_impact": [{"root","net_prem_soft","gross"} x<=20],
+    }
+    """
+    market_minutes = day_state.get("market_tide_minutes", {})
+    sector_tide    = day_state.get("sector_tide", {})
+    root_gross     = day_state.get("root_gross_today", {})
+    root_minutes   = day_state.get("root_minutes", {})
+
+    # Minutes series: cumulative NCP/NPP — convert per-minute deltas to cumulative
+    sorted_keys = sorted(market_minutes.keys())
+    cum_ncp = 0.0
+    cum_npp = 0.0
+    minutes_out: list[dict] = []
+    for t in sorted_keys:
+        m = market_minutes[t]
+        cum_ncp += float(m.get("ncp", 0.0))
+        cum_npp += float(m.get("npp", 0.0))
+        minutes_out.append({
+            "t":     t,
+            "ncp":   round(cum_ncp, 0),
+            "npp":   round(cum_npp, 0),
+            "gross": round(float(m.get("gross", 0.0)), 0),
+            "vol":   int(m.get("vol", 0)),
+        })
+
+    # Sectors
+    sectors_out: list[dict] = []
+    for grp, sd in sector_tide.items():
+        sm = sd.get("minutes", {})
+        sorted_sm = sorted(sm.keys())
+        sec_cum_ncp = 0.0
+        sec_cum_npp = 0.0
+        sec_minutes: list[dict] = []
+        for t in sorted_sm:
+            dm = sm[t]
+            sec_cum_ncp += float(dm.get("ncp", 0.0))
+            sec_cum_npp += float(dm.get("npp", 0.0))
+            sec_minutes.append({"t": t, "ncp": round(sec_cum_ncp, 0), "npp": round(sec_cum_npp, 0)})
+        sectors_out.append({
+            "group":    sd.get("group", grp),
+            "group_zh": sd.get("group_zh", grp),
+            "ncp":      round(float(sd.get("ncp", 0.0)), 0),
+            "npp":      round(float(sd.get("npp", 0.0)), 0),
+            "gross":    round(float(sd.get("gross", 0.0)), 0),
+            "minutes":  sec_minutes,
+        })
+    sectors_out.sort(key=lambda s: abs(s["ncp"]) + abs(s["npp"]), reverse=True)
+
+    # Top net impact: top 20 roots by |net_prem_soft| from root_minutes cumulative
+    top_net: list[dict] = []
+    for r, rmin in root_minutes.items():
+        net_c = sum(v.get("ncp", 0.0) for v in rmin.values())
+        net_p = sum(v.get("npp", 0.0) for v in rmin.values())
+        net   = net_c + net_p
+        gross = root_gross.get(r, 0.0)
+        top_net.append({"root": r, "net_prem_soft": round(net, 0), "gross": round(gross, 0)})
+    top_net.sort(key=lambda x: abs(x["net_prem_soft"]), reverse=True)
+    top_net = top_net[:20]
+
+    return {
+        "schema":       "live_flow.tide/v1",
+        "asof":         asof,
+        "session_date": session_date,
+        "method":       "ncp/npp=cumulative signed tape premium (Lee-Ready ~-soft)",
+        "minutes":      minutes_out,
+        "spy":          spy_minute_prices or [],
+        "sectors":      sectors_out,
+        "top_net_impact": top_net,
+    }
+
+
+def build_dte_tide_current(session_date: str, asof: str, day_state: dict) -> dict:
+    """Build dte_tide_current.json payload from day_state.
+
+    Output schema: live_flow.dte_tide/v1
+    {
+      "schema": "live_flow.dte_tide/v1",
+      "asof": str,
+      "buckets": {
+        "0d":    [{"t","ncp","npp"} cumulative sorted by t],
+        "1_7d":  [...],
+        "8_30d": [...],
+        "31_90d":[...],
+        "90p":   [...],
+      }
+    }
+    """
+    dte_tide = day_state.get("dte_tide", {})
+    buckets_out: dict = {}
+    for bkt in _DTE_BUCKETS:
+        bkt_minutes = dte_tide.get(bkt, {})
+        sorted_keys = sorted(bkt_minutes.keys())
+        cum_ncp = 0.0
+        cum_npp = 0.0
+        series: list[dict] = []
+        for t in sorted_keys:
+            dm = bkt_minutes[t]
+            cum_ncp += float(dm.get("ncp", 0.0))
+            cum_npp += float(dm.get("npp", 0.0))
+            series.append({"t": t, "ncp": round(cum_ncp, 0), "npp": round(cum_npp, 0)})
+        buckets_out[bkt] = series
+    return {
+        "schema":  "live_flow.dte_tide/v1",
+        "asof":    asof,
+        "buckets": buckets_out,
+    }
+
+
+def build_ticker_json(
+    root: str,
+    session_date: str,
+    asof: str,
+    day_state: dict,
+    root_gross_today: dict | None = None,
+    baselines: dict | None = None,
+    names_sectors: dict | None = None,
+    oi_prev: "pd.DataFrame | None" = None,
+) -> dict:
+    """Build tickers/{ROOT}.json payload from day_state.
+
+    Output schema: live_flow.ticker/v1
+    """
+    root = root.upper()
+    rmin  = day_state.get("root_minutes", {}).get(root, {})
+    rstk  = day_state.get("root_strikes", {}).get(root, {})
+    rexp  = day_state.get("root_expiries", {}).get(root, {})
+    rtop  = day_state.get("root_top_contracts", {}).get(root, [])
+    rg    = (root_gross_today or day_state.get("root_gross_today", {})).get(root, 0.0)
+
+    # Per-root group labels
+    ns_map = names_sectors or {}
+    grp_en, grp_zh = _root_to_group(root, ns_map)
+
+    # Day stats
+    net_soft = sum(v.get("ncp", 0.0) + v.get("npp", 0.0) for v in rmin.values())
+    total_vol = sum(v.get("vol", 0) for v in rmin.values())
+    # call_share from strikes
+    total_call = sum(s.get("call_prem", 0.0) for s in rstk.values())
+    total_prem_stk = total_call + sum(s.get("put_prem", 0.0) for s in rstk.values())
+    call_share = (total_call / total_prem_stk) if total_prem_stk > 0 else 0.0
+
+    # prem_z from baselines
+    prem_z = None
+    baseline_source = "none"
+    if baselines and root in baselines:
+        b = baselines[root]
+        m, s = b.get("mean"), b.get("std")
+        if m is not None and s and float(s) > 0:
+            prem_z = round((rg - float(m)) / float(s), 2)
+            baseline_source = "eod252"
+
+    # Cumulative minute series
+    sorted_keys = sorted(rmin.keys())
+    cum_ncp = 0.0
+    cum_npp = 0.0
+    minutes_out: list[dict] = []
+    for t in sorted_keys:
+        m = rmin[t]
+        cum_ncp += float(m.get("ncp", 0.0))
+        cum_npp += float(m.get("npp", 0.0))
+        minutes_out.append({
+            "t": t, "ncp": round(cum_ncp, 0), "npp": round(cum_npp, 0),
+            "vol": int(m.get("vol", 0)),
+        })
+
+    # Strike ladder
+    strikes_out: list[dict] = []
+    for stk_str, sv in sorted(rstk.items(), key=lambda kv: float(kv[0])):
+        strikes_out.append({
+            "strike":     round(float(stk_str), 3),
+            "call_prem":  round(sv.get("call_prem", 0.0), 0),
+            "put_prem":   round(sv.get("put_prem", 0.0), 0),
+            "vol":        int(sv.get("vol", 0)),
+        })
+
+    # Expiry bars
+    expiries_out: list[dict] = []
+    for exp, ev in sorted(rexp.items()):
+        expiries_out.append({
+            "exp":       exp,
+            "call_prem": round(ev.get("call_prem", 0.0), 0),
+            "put_prem":  round(ev.get("put_prem", 0.0), 0),
+            "vol":       int(ev.get("vol", 0)),
+        })
+
+    return {
+        "schema":       "live_flow.ticker/v1",
+        "asof":         asof,
+        "root":         root,
+        "group":        grp_en,
+        "group_zh":     grp_zh,
+        "day": {
+            "gross":           round(rg, 0),
+            "net_soft":        round(net_soft, 0),
+            "call_share":      round(call_share, 4),
+            "n_events":        len(rtop),
+            "prem_z":          prem_z,
+            "baseline_source": baseline_source,
+        },
+        "minutes":       minutes_out,
+        "strikes":       strikes_out,
+        "expiries":      expiries_out,
+        "top_contracts": rtop,
+    }
+
+
+def build_top_net_impact(day_state: dict, max_n: int = 20) -> list[dict]:
+    """Return top max_n roots by |net_prem_soft| from root_minutes + root_gross_today."""
+    root_minutes = day_state.get("root_minutes", {})
+    root_gross   = day_state.get("root_gross_today", {})
+    rows: list[dict] = []
+    for r, rmin in root_minutes.items():
+        net = sum(v.get("ncp", 0.0) + v.get("npp", 0.0) for v in rmin.values())
+        gross = root_gross.get(r, 0.0)
+        rows.append({"root": r, "net_prem_soft": round(net, 0), "gross": round(gross, 0)})
+    rows.sort(key=lambda x: abs(x["net_prem_soft"]), reverse=True)
+    return rows[:max_n]

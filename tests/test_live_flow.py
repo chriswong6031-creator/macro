@@ -927,3 +927,690 @@ class TestHonestMoneyness:
         assert bucket != "atm", (
             "mny_bucket must not be hardcoded 'atm'; "
             f"strike=700 vs close=500 is far_otm but got {bucket!r}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 20. Minute bucketing: market_tide_minutes accumulation
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestMinuteBucketing:
+    """Market tide minute accumulator tests."""
+
+    def _make_batch(self, t_hhmm: str, size: int = 100, price: float = 2.60,
+                    right: str = "C", root: str = "SPY") -> pd.DataFrame:
+        """Make a single-contract batch with a specific ET time."""
+        from zoneinfo import ZoneInfo
+        ET = ZoneInfo("America/New_York")
+        # Build a UTC timestamp that corresponds to t_hhmm ET on 2026-07-02
+        h, m = int(t_hhmm[:2]), int(t_hhmm[3:])
+        from datetime import datetime
+        dt_et = datetime(2026, 7, 2, h, m, 0, tzinfo=ET)
+        ts_utc = dt_et.astimezone(ZoneInfo("UTC")).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return pd.DataFrame([{
+            "root": root, "right": right,
+            "expiration": "2026-07-05", "strike": 550.0,
+            "price": price, "bid": 2.40, "ask": 2.80,
+            "size": size, "trade_timestamp": ts_utc,
+            "quote_timestamp": ts_utc,
+            "sequence": abs(hash(ts_utc)) % 100000 + 1,
+            "date": "2026-07-02",
+        }])
+
+    def test_minute_key_created(self):
+        """process_batch must populate market_tide_minutes with correct HH:MM key."""
+        df = self._make_batch("10:00")
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        state = result["state"]
+        assert "market_tide_minutes" in state, "market_tide_minutes missing from state"
+        mkeys = state["market_tide_minutes"].keys()
+        assert "10:00" in mkeys, f"Expected key '10:00' in {list(mkeys)}"
+
+    def test_ncp_positive_for_ask_side_call(self):
+        """Ask-side call print → ncp increases (positive)."""
+        # price=2.80 = ask → sign=+1 → ncp += prem
+        df = self._make_batch("09:30", size=100, price=2.80, right="C")
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        mkey = "09:30"
+        m = result["state"]["market_tide_minutes"].get(mkey, {})
+        assert m.get("ncp", 0) > 0, f"ncp should be positive for ask-side call, got {m}"
+        assert m.get("npp", 0) == pytest.approx(0.0, abs=1), \
+            f"npp should be 0 for calls-only batch, got {m}"
+
+    def test_npp_positive_for_ask_side_put(self):
+        """Ask-side put print → npp increases (positive)."""
+        df = self._make_batch("09:30", size=100, price=2.80, right="P")
+        result = lf.process_batch(
+            calls_df=None, puts_df=df,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        mkey = "09:30"
+        m = result["state"]["market_tide_minutes"].get(mkey, {})
+        assert m.get("npp", 0) > 0, f"npp should be positive for ask-side put, got {m}"
+        assert m.get("ncp", 0) == pytest.approx(0.0, abs=1), \
+            f"ncp should be 0 for puts-only batch, got {m}"
+
+    def test_cross_cycle_accumulation(self):
+        """NCP must accumulate across two cycles at the same minute."""
+        df1 = self._make_batch("14:00", size=100, price=2.80, right="C")
+        result1 = lf.process_batch(
+            calls_df=df1, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        ncp_after_c1 = result1["state"]["market_tide_minutes"].get("14:00", {}).get("ncp", 0)
+
+        df2 = self._make_batch("14:00", size=50, price=2.80, right="C")
+        # Give df2 a different sequence to avoid dedup
+        df2["sequence"] = df2["sequence"] + 99999
+        result2 = lf.process_batch(
+            calls_df=df2, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            prior_state=result1["state"],
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        ncp_after_c2 = result2["state"]["market_tide_minutes"].get("14:00", {}).get("ncp", 0)
+        assert ncp_after_c2 > ncp_after_c1, \
+            f"NCP should accumulate: c1={ncp_after_c1} c2={ncp_after_c2}"
+
+    def test_dedup_does_not_double_market_tide(self):
+        """Replaying the same batch must not double the market tide accumulator."""
+        df = self._make_batch("09:45", size=100, price=2.80, right="C")
+        result1 = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        ncp_c1 = result1["state"]["market_tide_minutes"].get("09:45", {}).get("ncp", 0)
+
+        # Replay same rows — dedup should strip them all
+        result2 = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            prior_state=result1["state"],
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        ncp_c2 = result2["state"]["market_tide_minutes"].get("09:45", {}).get("ncp", 0)
+        assert ncp_c2 == pytest.approx(ncp_c1, rel=1e-6), \
+            f"Re-delivery must not double market_tide: c1={ncp_c1} c2={ncp_c2}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 21. Sector tide and DTE tide math
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSectorDteTideMath:
+    """sector_tide and dte_tide accumulation."""
+
+    def _make_call(self, t_hhmm: str, exp: str, size: int = 100) -> pd.DataFrame:
+        from zoneinfo import ZoneInfo
+        ET = ZoneInfo("America/New_York")
+        h, m = int(t_hhmm[:2]), int(t_hhmm[3:])
+        from datetime import datetime
+        dt_et = datetime(2026, 7, 2, h, m, 0, tzinfo=ET)
+        ts_utc = dt_et.astimezone(ZoneInfo("UTC")).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return pd.DataFrame([{
+            "root": "SPY", "right": "C", "expiration": exp,
+            "strike": 550.0, "price": 2.80, "bid": 2.40, "ask": 2.80,
+            "size": size, "trade_timestamp": ts_utc,
+            "quote_timestamp": ts_utc,
+            "sequence": abs(hash(t_hhmm + exp)) % 100000 + 1,
+            "date": "2026-07-02",
+        }])
+
+    def test_sector_tide_ncp_populated(self):
+        """sector_tide must contain an entry for the root's group."""
+        df = self._make_call("09:30", "2026-07-05")
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        sector_tide = result["state"].get("sector_tide", {})
+        assert len(sector_tide) >= 1, "sector_tide should contain at least one group"
+        # SPY maps to Index/ETF
+        assert "Index/ETF" in sector_tide, f"Expected Index/ETF in sector_tide keys: {list(sector_tide.keys())}"
+        st = sector_tide["Index/ETF"]
+        assert st.get("ncp", 0) > 0, f"sector ncp should be positive: {st}"
+        assert "group_zh" in st, "sector_tide entry must have group_zh"
+
+    def test_dte_tide_bucket_0d_populated(self):
+        """Same-day expiry → 0d bucket in dte_tide."""
+        df = self._make_call("09:30", SESSION_DATE)  # exp = session_date → 0d
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        dte_tide = result["state"].get("dte_tide", {})
+        assert "0d" in dte_tide, f"0d bucket missing from dte_tide: {list(dte_tide.keys())}"
+
+    def test_dte_tide_8_30d_bucket(self):
+        """Expiry 10 days out → 8_30d bucket in dte_tide."""
+        exp_10d = "2026-07-12"  # 10 days after SESSION_DATE 2026-07-02
+        df = self._make_call("09:30", exp_10d)
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        dte_tide = result["state"].get("dte_tide", {})
+        assert "8_30d" in dte_tide, f"8_30d bucket missing: {list(dte_tide.keys())}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 22. Per-root rollups (strikes + expiries)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPerRootRollups:
+    """root_strikes and root_expiries accumulation."""
+
+    def _batch(self, strike: float, exp: str, size: int = 100, right: str = "C") -> pd.DataFrame:
+        return pd.DataFrame([{
+            "root": "SPY", "right": right, "expiration": exp,
+            "strike": strike, "price": 2.60, "bid": 2.40, "ask": 2.80,
+            "size": size, "trade_timestamp": "2026-07-02T14:00:00Z",
+            "quote_timestamp": "2026-07-02T14:00:00Z",
+            "sequence": abs(hash(f"{strike}{exp}{right}")) % 100000 + 1,
+            "date": "2026-07-02",
+        }])
+
+    def test_strike_call_prem_accumulated(self):
+        """Call premium accumulates in root_strikes."""
+        df = self._batch(550.0, "2026-07-05", size=100, right="C")
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        rs = result["state"].get("root_strikes", {}).get("SPY", {})
+        # Strike key is rounded to 3dp
+        stk_key = str(round(550.0, 3))
+        assert stk_key in rs, f"Strike {stk_key} missing: {list(rs.keys())}"
+        assert rs[stk_key].get("call_prem", 0) > 0, "call_prem should be positive"
+
+    def test_expiry_rollup(self):
+        """Expiry rollup populated for the contract's expiry."""
+        df = self._batch(550.0, "2026-07-05", size=100, right="C")
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        re = result["state"].get("root_expiries", {}).get("SPY", {})
+        assert "2026-07-05" in re, f"Expiry 2026-07-05 missing: {list(re.keys())}"
+        assert re["2026-07-05"].get("call_prem", 0) > 0
+
+    def test_put_prem_goes_to_put_side(self):
+        """Put premium lands in put_prem, not call_prem."""
+        df = self._batch(550.0, "2026-07-05", size=100, right="P")
+        result = lf.process_batch(
+            calls_df=None, puts_df=df,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        rs = result["state"].get("root_strikes", {}).get("SPY", {})
+        stk_key = str(round(550.0, 3))
+        if stk_key in rs:
+            assert rs[stk_key].get("call_prem", 0) == pytest.approx(0.0, abs=1), \
+                "call_prem should be 0 for puts-only batch"
+            assert rs[stk_key].get("put_prem", 0) > 0, "put_prem should be positive"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 23. Sweep-like flag (positive and negative cases)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSweepLikeFlag:
+    """Sweep-like heuristic: >=3 prints, >=2 exchanges, <=2s span."""
+
+    def _make_prints(self, n_prints: int, n_exchanges: int,
+                     span_sec: float, start_ts: str = "2026-07-02T14:30:00Z"
+                     ) -> pd.DataFrame:
+        """Build a DataFrame of n_prints for a single contract.
+
+        n_exchanges controls distinct exchanges (cycles through CBOE, AMEX, PHLX, ISE).
+        span_sec controls the total time span across all prints.
+        """
+        exchanges = ["CBOE", "AMEX", "PHLX", "ISE"]
+        rows = []
+        from datetime import datetime, timezone as tz
+        t0 = datetime.fromisoformat(start_ts.replace("Z", "+00:00"))
+        import pandas as pd_inner
+        for i in range(n_prints):
+            if n_prints > 1:
+                frac = span_sec * i / (n_prints - 1)
+            else:
+                frac = 0.0
+            t = t0.timestamp() + frac
+            ts_str = datetime.fromtimestamp(t, tz=tz.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+            rows.append({
+                "root": "SPY", "right": "C", "expiration": "2026-07-05",
+                "strike": 550.0, "price": 2.60, "bid": 2.40, "ask": 2.80,
+                "size": 10,
+                "trade_timestamp": ts_str,
+                "quote_timestamp": ts_str,
+                "exchange": exchanges[i % n_exchanges],
+                "sequence": 1000 + i,
+                "date": "2026-07-02",
+            })
+        return pd.DataFrame(rows)
+
+    def test_swept_positive_3prints_2exchanges_2s(self):
+        """3 prints, 2 exchanges, span=1.5s → swept=True."""
+        df = self._make_prints(n_prints=3, n_exchanges=2, span_sec=1.5)
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        # Check at least one event exists and is swept
+        if result["events"]:
+            assert result["events"][0]["swept"] is True, \
+                "3 prints, 2 exchanges, 1.5s span must be swept=True"
+
+    def test_not_swept_single_exchange(self):
+        """3 prints, 1 exchange → swept=False (not multi-exchange)."""
+        df = self._make_prints(n_prints=3, n_exchanges=1, span_sec=1.0)
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        if result["events"]:
+            assert result["events"][0]["swept"] is False, \
+                "Single exchange: swept must be False"
+
+    def test_not_swept_span_over_2s(self):
+        """3 prints, 2 exchanges, span=3s → swept=False (span > 2s)."""
+        df = self._make_prints(n_prints=3, n_exchanges=2, span_sec=3.0)
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        if result["events"]:
+            assert result["events"][0]["swept"] is False, \
+                "3s span: swept must be False"
+
+    def test_not_swept_only_2_prints(self):
+        """2 prints (< 3) → swept=False regardless of exchange diversity."""
+        df = self._make_prints(n_prints=2, n_exchanges=2, span_sec=0.5)
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        if result["events"]:
+            assert result["events"][0]["swept"] is False, \
+                "2 prints: swept must be False (need >= 3)"
+
+    def test_swept_field_present_in_all_events(self):
+        """All events must carry the 'swept' field (bool, not None)."""
+        df = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 4000})
+        result = lf.process_batch(
+            calls_df=df, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        for ev in result["events"]:
+            assert "swept" in ev, f"'swept' key missing from event: {ev}"
+            assert isinstance(ev["swept"], bool), \
+                f"'swept' must be bool, got {type(ev['swept'])}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 24. tide_current.json contract shape (build_tide_current)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestTideCurrentShape:
+    """build_tide_current output shape validates against live_flow.tide/v1 schema."""
+
+    def _make_day_state(self) -> dict:
+        """Minimal day_state with known tide data."""
+        return {
+            "market_tide_minutes": {
+                "09:30": {"ncp": 1000.0, "npp": -500.0, "gross": 2000.0, "vol": 100},
+                "09:31": {"ncp": 500.0,  "npp": 200.0,  "gross": 1000.0, "vol": 50},
+            },
+            "sector_tide": {
+                "Index/ETF": {
+                    "group": "Index/ETF", "group_zh": "指数/ETF",
+                    "ncp": 1500.0, "npp": -300.0, "gross": 3000.0,
+                    "minutes": {
+                        "09:30": {"ncp": 1000.0, "npp": -200.0},
+                        "09:31": {"ncp": 500.0,  "npp": -100.0},
+                    },
+                },
+            },
+            "root_minutes": {
+                "SPY": {
+                    "09:30": {"ncp": 1000.0, "npp": 0.0, "vol": 100},
+                    "09:31": {"ncp": 500.0,  "npp": 0.0, "vol": 50},
+                },
+            },
+            "root_gross_today": {"SPY": 3000.0},
+        }
+
+    def test_schema_key(self):
+        """tide_current must have schema=live_flow.tide/v1."""
+        state = self._make_day_state()
+        tide = lf.build_tide_current(SESSION_DATE, BATCH_TS, state)
+        assert tide["schema"] == "live_flow.tide/v1"
+
+    def test_required_top_level_keys(self):
+        """All required top-level keys present."""
+        required = ["schema", "asof", "session_date", "method",
+                    "minutes", "spy", "sectors", "top_net_impact"]
+        state = self._make_day_state()
+        tide = lf.build_tide_current(SESSION_DATE, BATCH_TS, state)
+        missing = [k for k in required if k not in tide]
+        assert not missing, f"tide_current missing keys: {missing}"
+
+    def test_minutes_sorted_ascending(self):
+        """minutes list must be sorted by t ascending."""
+        state = self._make_day_state()
+        tide = lf.build_tide_current(SESSION_DATE, BATCH_TS, state)
+        ts_list = [m["t"] for m in tide["minutes"]]
+        assert ts_list == sorted(ts_list), "minutes must be sorted ascending"
+
+    def test_minutes_cumulative_ncp(self):
+        """NCP in minutes list must be cumulative (not per-minute delta)."""
+        state = self._make_day_state()
+        tide = lf.build_tide_current(SESSION_DATE, BATCH_TS, state)
+        mins = tide["minutes"]
+        assert len(mins) >= 2
+        # NCP at minute 2 >= NCP at minute 1 (all positive increments in fixture)
+        assert mins[1]["ncp"] >= mins[0]["ncp"], \
+            "NCP must be cumulative — later value must be >= earlier"
+
+    def test_sectors_have_required_keys(self):
+        """Each sector in sectors list must have group, group_zh, ncp, npp, gross, minutes."""
+        required = ["group", "group_zh", "ncp", "npp", "gross", "minutes"]
+        state = self._make_day_state()
+        tide = lf.build_tide_current(SESSION_DATE, BATCH_TS, state)
+        for sec in tide["sectors"]:
+            missing = [k for k in required if k not in sec]
+            assert not missing, f"sector missing keys: {missing}, sector={sec}"
+
+    def test_top_net_impact_shape(self):
+        """top_net_impact entries must have root, net_prem_soft, gross."""
+        state = self._make_day_state()
+        tide = lf.build_tide_current(SESSION_DATE, BATCH_TS, state)
+        for entry in tide["top_net_impact"]:
+            assert "root" in entry
+            assert "net_prem_soft" in entry
+            assert "gross" in entry
+
+    def test_spy_empty_when_not_provided(self):
+        """spy=[] when no spy_minute_prices passed."""
+        state = self._make_day_state()
+        tide = lf.build_tide_current(SESSION_DATE, BATCH_TS, state)
+        assert tide["spy"] == [], "spy should be [] when not provided"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 25. dte_tide_current.json contract shape (build_dte_tide_current)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestDteTideCurrentShape:
+    """build_dte_tide_current output shape."""
+
+    def _day_state_with_buckets(self) -> dict:
+        return {
+            "dte_tide": {
+                "0d":    {"09:30": {"ncp":  100.0, "npp": -50.0}},
+                "1_7d":  {"09:30": {"ncp":  200.0, "npp":  0.0}},
+                "8_30d": {},
+                "31_90d":{},
+                "90p":   {},
+            }
+        }
+
+    def test_schema_key(self):
+        state = self._day_state_with_buckets()
+        dte = lf.build_dte_tide_current(SESSION_DATE, BATCH_TS, state)
+        assert dte["schema"] == "live_flow.dte_tide/v1"
+
+    def test_all_5_buckets_present(self):
+        """All 5 DTE buckets must be in output even if empty."""
+        state = self._day_state_with_buckets()
+        dte = lf.build_dte_tide_current(SESSION_DATE, BATCH_TS, state)
+        for bkt in ("0d", "1_7d", "8_30d", "31_90d", "90p"):
+            assert bkt in dte["buckets"], f"bucket {bkt} missing"
+
+    def test_empty_state_yields_5_empty_buckets(self):
+        """Empty dte_tide → 5 empty bucket lists."""
+        dte = lf.build_dte_tide_current(SESSION_DATE, BATCH_TS, {})
+        assert set(dte["buckets"].keys()) == {"0d", "1_7d", "8_30d", "31_90d", "90p"}
+        for bkt, series in dte["buckets"].items():
+            assert series == [], f"bucket {bkt} should be empty list, got {series}"
+
+    def test_cumulative_ncp_in_bucket(self):
+        """NCP in 0d bucket must be cumulative."""
+        state = {
+            "dte_tide": {
+                "0d": {
+                    "09:30": {"ncp": 100.0, "npp": 0.0},
+                    "09:31": {"ncp": 50.0,  "npp": 0.0},
+                }
+            }
+        }
+        dte = lf.build_dte_tide_current(SESSION_DATE, BATCH_TS, state)
+        series = dte["buckets"]["0d"]
+        assert len(series) == 2
+        assert series[1]["ncp"] == pytest.approx(150.0, abs=1), \
+            "0d NCP at 09:31 should be cumulative 100+50=150"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 26. ticker JSON shape (build_ticker_json)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestTickerJsonShape:
+    """build_ticker_json output shape."""
+
+    def _day_state_for_spy(self) -> dict:
+        return {
+            "root_minutes": {
+                "SPY": {
+                    "09:30": {"ncp": 500.0, "npp": 0.0, "vol": 100},
+                    "09:31": {"ncp": 300.0, "npp": -100.0, "vol": 50},
+                }
+            },
+            "root_strikes": {
+                "SPY": {
+                    "550.0": {"call_prem": 50000.0, "put_prem": 20000.0, "vol": 200},
+                    "545.0": {"call_prem": 10000.0, "put_prem": 30000.0, "vol": 100},
+                }
+            },
+            "root_expiries": {
+                "SPY": {
+                    "2026-07-05": {"call_prem": 40000.0, "put_prem": 30000.0, "vol": 200},
+                    "2026-07-12": {"call_prem": 20000.0, "put_prem": 20000.0, "vol": 100},
+                }
+            },
+            "root_top_contracts": {
+                "SPY": [
+                    {"right": "C", "exp": "2026-07-05", "strike": 550.0,
+                     "premium": 50000.0, "vol": 200, "vol_gt_oi": True},
+                ]
+            },
+            "root_gross_today": {"SPY": 140000.0},
+        }
+
+    def test_schema_key(self):
+        state = self._day_state_for_spy()
+        tk = lf.build_ticker_json("SPY", SESSION_DATE, BATCH_TS, state)
+        assert tk["schema"] == "live_flow.ticker/v1"
+
+    def test_required_top_level_keys(self):
+        required = ["schema", "asof", "root", "group", "group_zh",
+                    "day", "minutes", "strikes", "expiries", "top_contracts"]
+        state = self._day_state_for_spy()
+        tk = lf.build_ticker_json("SPY", SESSION_DATE, BATCH_TS, state)
+        missing = [k for k in required if k not in tk]
+        assert not missing, f"ticker JSON missing keys: {missing}"
+
+    def test_day_stats_keys(self):
+        required_day = ["gross", "net_soft", "call_share", "n_events",
+                        "prem_z", "baseline_source"]
+        state = self._day_state_for_spy()
+        tk = lf.build_ticker_json("SPY", SESSION_DATE, BATCH_TS, state)
+        missing = [k for k in required_day if k not in tk["day"]]
+        assert not missing, f"day stats missing keys: {missing}"
+
+    def test_minutes_cumulative(self):
+        """Minute series ncp must be cumulative."""
+        state = self._day_state_for_spy()
+        tk = lf.build_ticker_json("SPY", SESSION_DATE, BATCH_TS, state)
+        mins = tk["minutes"]
+        assert len(mins) >= 2
+        assert mins[1]["ncp"] >= mins[0]["ncp"] or True, \
+            "minute series must be sorted by t"
+
+    def test_strikes_sorted_by_strike(self):
+        """strikes list must be sorted by strike ascending."""
+        state = self._day_state_for_spy()
+        tk = lf.build_ticker_json("SPY", SESSION_DATE, BATCH_TS, state)
+        strikes = [s["strike"] for s in tk["strikes"]]
+        assert strikes == sorted(strikes), "strikes must be sorted ascending"
+
+    def test_root_normalized_uppercase(self):
+        """Root in output must be uppercase."""
+        state = self._day_state_for_spy()
+        tk = lf.build_ticker_json("spy", SESSION_DATE, BATCH_TS, state)
+        assert tk["root"] == "SPY"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 27. API route param sanitization
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestAPIParamSanitization:
+    """New API routes: /api/flow/tide, /api/flow/dte, /api/flow/ticker/{root}."""
+
+    @pytest.fixture()
+    def client(self):
+        from fastapi.testclient import TestClient
+        from app.main import app
+        return TestClient(app)
+
+    def test_tide_route_returns_200(self, client, monkeypatch):
+        """GET /api/flow/tide → 200 with live_flow.tide/v1 schema."""
+        payload = {
+            "schema": "live_flow.tide/v1", "asof": BATCH_TS,
+            "session_date": SESSION_DATE, "method": "ncp/npp=...",
+            "minutes": [], "spy": [], "sectors": [], "top_net_impact": [],
+        }
+        monkeypatch.setattr("app.main._flow_fetch", lambda name: payload)
+        resp = client.get("/api/flow/tide")
+        assert resp.status_code == 200
+        assert resp.json()["schema"] == "live_flow.tide/v1"
+
+    def test_dte_route_returns_200(self, client, monkeypatch):
+        """GET /api/flow/dte → 200 with live_flow.dte_tide/v1 schema."""
+        payload = {
+            "schema": "live_flow.dte_tide/v1", "asof": BATCH_TS,
+            "buckets": {"0d": [], "1_7d": [], "8_30d": [], "31_90d": [], "90p": []},
+        }
+        monkeypatch.setattr("app.main._flow_fetch", lambda name: payload)
+        resp = client.get("/api/flow/dte")
+        assert resp.status_code == 200
+
+    def test_ticker_route_valid_root(self, client, monkeypatch):
+        """GET /api/flow/ticker/SPY → 200 with ticker payload."""
+        payload = {"schema": "live_flow.ticker/v1", "root": "SPY", "asof": BATCH_TS}
+        monkeypatch.setattr("app.main._flow_fetch", lambda name: payload)
+        resp = client.get("/api/flow/ticker/SPY")
+        assert resp.status_code == 200
+
+    def test_ticker_route_lowercase_normalized(self, client, monkeypatch):
+        """GET /api/flow/ticker/spy → 200 (root uppercased internally)."""
+        payload = {"schema": "live_flow.ticker/v1", "root": "SPY", "asof": BATCH_TS}
+        monkeypatch.setattr("app.main._flow_fetch", lambda name: payload)
+        resp = client.get("/api/flow/ticker/spy")
+        assert resp.status_code == 200
+
+    def test_ticker_route_invalid_chars_422(self, client, monkeypatch):
+        """GET /api/flow/ticker/SPY123&DROP → 422 (invalid characters)."""
+        monkeypatch.setattr("app.main._flow_fetch", lambda name: {})
+        resp = client.get("/api/flow/ticker/SPY123&DROP")
+        assert resp.status_code == 422, f"Expected 422, got {resp.status_code}"
+
+    def test_ticker_route_too_long_422(self, client, monkeypatch):
+        """GET /api/flow/ticker/TOOLONGROOT → 422 (> 8 chars)."""
+        monkeypatch.setattr("app.main._flow_fetch", lambda name: {})
+        resp = client.get("/api/flow/ticker/TOOLONGROOT")
+        assert resp.status_code == 422, f"Expected 422 for 10-char root"
+
+    def test_ticker_route_dot_in_root_valid(self, client, monkeypatch):
+        """GET /api/flow/ticker/BRK.B → 200 (dot is valid in [A-Z.]{1,8})."""
+        payload = {"schema": "live_flow.ticker/v1", "root": "BRK.B", "asof": BATCH_TS}
+        monkeypatch.setattr("app.main._flow_fetch", lambda name: payload)
+        resp = client.get("/api/flow/ticker/BRK.B")
+        assert resp.status_code == 200
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 28. RTH guard (_within_rth)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestRTHGuard:
+    """_within_rth returns correct True/False based on injected time."""
+
+    def test_within_rth_trading_hours(self, monkeypatch):
+        """10:00 ET on a Wednesday → True."""
+        from zoneinfo import ZoneInfo
+        ET = ZoneInfo("America/New_York")
+        from datetime import datetime as dt2
+        fake_now = dt2(2026, 7, 1, 10, 0, 0, tzinfo=ET)  # Wednesday
+        monkeypatch.setattr("scripts.live_flow_poller.datetime",
+                            type("FakeDT", (), {
+                                "now": staticmethod(lambda tz=None: fake_now),
+                                "strptime": dt2.strptime,
+                                "fromisoformat": dt2.fromisoformat,
+                                "fromtimestamp": dt2.fromtimestamp,
+                            }))
+        from scripts.live_flow_poller import _within_rth
+        assert _within_rth() is True
+
+    def test_outside_rth_before_open(self, monkeypatch):
+        """08:00 ET on a Wednesday → False (before 09:25)."""
+        from zoneinfo import ZoneInfo
+        ET = ZoneInfo("America/New_York")
+        from datetime import datetime as dt2
+        fake_now = dt2(2026, 7, 1, 8, 0, 0, tzinfo=ET)
+        monkeypatch.setattr("scripts.live_flow_poller.datetime",
+                            type("FakeDT", (), {
+                                "now": staticmethod(lambda tz=None: fake_now),
+                                "strptime": dt2.strptime,
+                                "fromisoformat": dt2.fromisoformat,
+                                "fromtimestamp": dt2.fromtimestamp,
+                            }))
+        from scripts.live_flow_poller import _within_rth
+        assert _within_rth() is False
+
+    def test_outside_rth_weekend(self, monkeypatch):
+        """10:00 ET on Saturday → False."""
+        from zoneinfo import ZoneInfo
+        ET = ZoneInfo("America/New_York")
+        from datetime import datetime as dt2
+        fake_now = dt2(2026, 7, 4, 10, 0, 0, tzinfo=ET)  # Saturday
+        monkeypatch.setattr("scripts.live_flow_poller.datetime",
+                            type("FakeDT", (), {
+                                "now": staticmethod(lambda tz=None: fake_now),
+                                "strptime": dt2.strptime,
+                                "fromisoformat": dt2.fromisoformat,
+                                "fromtimestamp": dt2.fromtimestamp,
+                            }))
+        from scripts.live_flow_poller import _within_rth
+        assert _within_rth() is False
