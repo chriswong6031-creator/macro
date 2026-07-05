@@ -22,6 +22,7 @@ from scripts.oracle_asymmetry_regrade import (
     compute_accel_flip_exit,
     grade_event,
     run_fidelity_gate,
+    build_routing_events,
 )
 from engine.grading import TerminalState
 
@@ -596,3 +597,144 @@ class TestSigmaBarriers:
     def test_unknown_raises(self):
         with pytest.raises(ValueError):
             sigma_barriers(0.10, "unknown")
+
+
+# ---------------------------------------------------------------------------
+# §7 Test 9: build_routing_events reads p3b survivor cells dynamically
+# ---------------------------------------------------------------------------
+
+class TestBuildRoutingEventsP3bFilter:
+    """build_routing_events must enumerate only g1_routing_pass==True cells.
+
+    Spec §3 (adjudicator ruling): the function reads g1_routing_pass from the
+    p3b artifact and ignores the routing_cells parameter. A synthetic p3b dict
+    with one passing + one failing cell must produce events only for the passing
+    cell's source complex.
+    """
+
+    def _make_minimal_panel(
+        self,
+        accel_z_series: list[float],
+        vix_pctile_series: list[float],
+        node: str = "XLK",
+        start: str = "2020-01-02",
+    ) -> pd.DataFrame:
+        """Build a minimal panel_s-like DataFrame with accel_z and vix_pctile."""
+        dates = pd.bdate_range(start=start, periods=len(accel_z_series))
+        df = pd.DataFrame({
+            "accel_z": accel_z_series,
+            "vix_pctile": vix_pctile_series,
+        }, index=dates)
+        df.index.name = "date"
+        df["node"] = node
+        df = df.set_index(["node", df.index])
+        df.index.names = ["node", "date"]
+        return df
+
+    def test_only_passing_cell_enumerated(self):
+        """One passing + one failing cell: only the passing cell produces events."""
+        import unittest.mock as mock
+
+        # Build a long panel: 30 bars of moderate accel_z,
+        # then a strong outflow onset (several bars well below -1.0),
+        # then recovery, all with high VIX (>= 0.6).
+        # accel_z structure: 10 bars at 0.0 (quiet), 10 bars at -2.0 (outflow),
+        # 5 bars at 0.5 (recovery), 5 bars at -2.0 (second onset), 5 bars at 0.5
+        accel_vals = [0.0] * 10 + [-2.0] * 10 + [0.5] * 5 + [-2.0] * 10 + [0.5] * 5
+        vix_vals = [0.75] * len(accel_vals)  # always high VIX
+
+        panel = self._make_minimal_panel(accel_vals, vix_vals, node="XLK")
+
+        # Synthetic p3b: one passing cell (src=ai_compute, dest=energy_commodities),
+        # one failing cell (src=software, dest=financials_rates)
+        # Both src complexes (ai_compute, software) map to XLK in COMPLEX_ETF_MAP.
+        synthetic_placebo = {
+            "cells": {
+                "routing_ai_compute/energy_commodities/high_vix_10d": {
+                    "src": "ai_compute",
+                    "dest": "energy_commodities",
+                    "regime": "high_vix",
+                    "horizon_d": 10,
+                    "n_real": 2,
+                    "g1_routing_pass": True,
+                    "was_bh_rejected": False,
+                },
+                "routing_software/financials_rates/high_vix_5d": {
+                    "src": "software",
+                    "dest": "financials_rates",
+                    "regime": "high_vix",
+                    "horizon_d": 5,
+                    "n_real": 2,
+                    "g1_routing_pass": False,  # this cell FAILS
+                    "was_bh_rejected": False,
+                },
+            }
+        }
+
+        # Unused routing_cells arg (superseded by p3b reading)
+        routing_cells_arg = [
+            "routing_ai_compute/energy_commodities/high_vix_10d",
+            "routing_software/financials_rates/high_vix_5d",
+        ]
+
+        rows = build_routing_events(panel, routing_cells_arg, synthetic_placebo)
+
+        # All emitted rows must come from the passing cell only
+        assert len(rows) > 0, (
+            "Expected events from the passing cell; got 0. "
+            "Check that the accel_z series triggers at least one onset."
+        )
+        for row in rows:
+            assert row["routing_cell"] == "routing_ai_compute/energy_commodities/high_vix_10d", (
+                f"Failing cell should not emit events; got routing_cell={row['routing_cell']!r}"
+            )
+            assert row["family"] == "routing_6"
+            # dest ETFs for energy_commodities are XLE and XLB (per COMPLEX_ETF_MAP)
+            assert row["node"] in ("XLE", "XLB"), (
+                f"Expected dest ETFs for energy_commodities (XLE, XLB); got {row['node']!r}"
+            )
+
+    def test_no_passing_cells_returns_empty(self):
+        """If no cells pass g1_routing_pass, build_routing_events returns []."""
+        accel_vals = [0.0] * 20
+        vix_vals = [0.75] * 20
+        panel = self._make_minimal_panel(accel_vals, vix_vals)
+
+        synthetic_placebo = {
+            "cells": {
+                "routing_ai_compute/energy_commodities/high_vix_10d": {
+                    "g1_routing_pass": False,
+                },
+                "routing_software/financials_rates/high_vix_5d": {
+                    "g1_routing_pass": False,
+                },
+            }
+        }
+        rows = build_routing_events(panel, [], synthetic_placebo)
+        assert rows == [], f"Expected empty list when no cells pass; got {len(rows)} rows"
+
+    def test_failing_cell_excluded_even_if_in_routing_cells_arg(self):
+        """Cells in routing_cells arg but failing g1_routing_pass are excluded."""
+        accel_vals = [0.0] * 10 + [-2.0] * 10 + [0.5] * 5 + [-2.0] * 10 + [0.5] * 5
+        vix_vals = [0.75] * len(accel_vals)
+        panel = self._make_minimal_panel(accel_vals, vix_vals, node="XLK")
+
+        synthetic_placebo = {
+            "cells": {
+                "routing_ai_compute/energy_commodities/high_vix_10d": {
+                    "src": "ai_compute",
+                    "dest": "energy_commodities",
+                    "regime": "high_vix",
+                    "horizon_d": 10,
+                    "n_real": 2,
+                    "g1_routing_pass": False,  # fails
+                    "was_bh_rejected": False,
+                },
+            }
+        }
+        # Even though the key is passed in routing_cells_arg, it must be excluded
+        routing_cells_arg = ["routing_ai_compute/energy_commodities/high_vix_10d"]
+        rows = build_routing_events(panel, routing_cells_arg, synthetic_placebo)
+        assert rows == [], (
+            f"Cell with g1_routing_pass=False must not emit events; got {len(rows)} rows"
+        )

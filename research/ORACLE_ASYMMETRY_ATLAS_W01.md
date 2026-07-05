@@ -4,11 +4,11 @@
 **Date:** 2026-07-05
 **Nature:** DESCRIPTIVE measurement only. No new signals. No claim language.
 **Grading basis:** close-to-close approximation; intraday H/L unwired (W0.2)
-**Routing tables:** DESCRIPTIVE ONLY — broad-sweep enumeration over full history (NOT restricted to p3b placebo-survivor fires; actual n reported per table).
+**Routing tables:** DESCRIPTIVE ONLY — p3b placebo-survivor cells only (g1_routing_pass == True); n_src onsets per cell printed at enumeration; thin n.
 
 > IMPORTANT: The word "validated" does not appear in this document per Oracle Constitution §II.
 > Every table carries the close-only honesty label and n + immature count.
-> routing_6 tables are additionally marked "n≤12 descriptive only."
+> routing_6 tables are additionally marked "p3b placebo-survivor cells only; n_src onsets per cell printed; DESCRIPTIVE ONLY — thin n."
 
 ---
 
@@ -1067,7 +1067,7 @@ n=44, immature=2, matured n=42
 ## Family: routing_6
 
 ### routing_6 | rot21
-**DESCRIPTIVE ONLY — broad-sweep enumeration (NOT the p3b placebo-survivor set; n is the full-history onset sweep, not the ~10-12 p3b survivor fires per cell)** | close-to-close approximation; intraday H/L unwired (W0.2)
+**p3b placebo-survivor cells only; n_src onsets per cell printed; DESCRIPTIVE ONLY — thin n** | close-to-close approximation; intraday H/L unwired (W0.2)
 
 n=565, immature=11, matured n=554
 
@@ -1122,7 +1122,7 @@ n=565, immature=11, matured n=554
 | Accel-flip exit | 554 | 0.08 | 0.05 | n/a |
 
 ### routing_6 | pos63
-**DESCRIPTIVE ONLY — broad-sweep enumeration (NOT the p3b placebo-survivor set; n is the full-history onset sweep, not the ~10-12 p3b survivor fires per cell)** | close-to-close approximation; intraday H/L unwired (W0.2)
+**p3b placebo-survivor cells only; n_src onsets per cell printed; DESCRIPTIVE ONLY — thin n** | close-to-close approximation; intraday H/L unwired (W0.2)
 
 n=565, immature=12, matured n=553
 

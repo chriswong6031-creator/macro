@@ -585,30 +585,43 @@ def build_routing_events(
     routing_cells: list[str],
     routing_placebo: dict,
 ) -> list[dict]:
-    """Enumerate PIT entry dates for the 6 surviving routing cells.
+    """Enumerate PIT entry dates for the p3b placebo-surviving routing cells only.
 
-    Each cell: (src_complex, dest_complex, regime, horizon).
-    Entry = dest COMPLEX ETF nodes (via COMPLEX_ETF_MAP) when:
-      - src complex is in outflow onset (as per compute_routing logic)
-      - high-VIX gate: vix_pctile >= 0.6 at trigger
+    Cells are read dynamically from routing_placebo (g1_routing_pass == True);
+    the routing_cells parameter is ignored — it exists for backward-compatibility
+    with the call site but is superseded by the p3b artifact in all cases.
 
-    Because COMPLEX_ETF_MAP maps complex -> ETF list, and node-level panel
-    uses ETF tickers as nodes, dest nodes are the ETFs in COMPLEX_ETF_MAP[dest].
+    For each surviving cell: (src_complex, dest_complex, regime, horizon):
+      - re-derive source-complex outflow-onset dates via the detection loop
+      - apply high-VIX gate: vix_pctile >= 0.6 at the onset trigger date
+      - emit one event row per (cell, dest_etf, trigger_date) via COMPLEX_ETF_MAP
+
+    Per-cell src-onset counts (before dest-ETF expansion) are printed loudly.
     """
-    from engine.oracle.graph import COMPLEX_ETF_MAP, CONFIG, compute_routing
+    from engine.oracle.graph import COMPLEX_ETF_MAP, CONFIG
 
-    # Get the routing onset dates from the panel (rerun the detection loop)
-    # Detect outflow onsets per complex using the same logic as compute_routing
+    # --- 1. Read the p3b placebo-survivor cells dynamically ---
+    placebo_cells: dict = routing_placebo.get("cells", {})
+    surviving_keys: list[str] = [
+        k for k, v in placebo_cells.items()
+        if v.get("g1_routing_pass") is True
+    ]
+    if not surviving_keys:
+        print("  [routing_6] WARNING: no g1_routing_pass cells found in p3b artifact — 0 events")
+        return []
+    print(f"  [routing_6] p3b survivor cells: {len(surviving_keys)}")
+    for k in surviving_keys:
+        meta = placebo_cells[k]
+        print(f"    {k}: n_real={meta.get('n_real', '?')} (p3b-registered count)")
+
+    # --- 2. Build accel_z and VIX series from panel ---
     accel_z_wide = panel["accel_z"].unstack(level="node") if "accel_z" in panel.columns else pd.DataFrame()
     vix_wide = panel["vix_pctile"].unstack(level="node") if "vix_pctile" in panel.columns else pd.DataFrame()
     vix_ser: pd.Series | None = None
     if not vix_wide.empty:
         vix_ser = vix_wide.iloc[:, 0]
 
-    # Build complex-level accel_z
-    # complexes is the COMPLEX_ETF_MAP: complex_id -> [etf_nodes]
-    # But we need complex_id -> node members in the panel
-    # panel nodes are ETF tickers; COMPLEX_ETF_MAP uses ETF tickers as values
+    # Build complex-level accel_z: COMPLEX_ETF_MAP maps complex_id → [etf_nodes]
     complex_accel: dict[str, pd.Series] = {}
     for cid, etfs in COMPLEX_ETF_MAP.items():
         avail = [e for e in etfs if e in accel_z_wide.columns]
@@ -621,9 +634,10 @@ def build_routing_events(
     confirm_m    = cfg["ROUTING_CONFIRM_M"]
     high_vix_t   = cfg["ROUTING_HIGH_VIX_THRESH"]
 
-    # Detect onset indices per source complex
-    onset_dates_by_src: dict[str, list[pd.Timestamp]] = {}
     panel_dates = accel_z_wide.index  # daily dates
+
+    # --- 3. Detect onset dates per source complex (existing detection loop, unchanged) ---
+    onset_dates_by_src: dict[str, list[pd.Timestamp]] = {}
 
     for src_id, src_accel in complex_accel.items():
         accel_arr = src_accel.reindex(panel_dates).values
@@ -656,27 +670,29 @@ def build_routing_events(
 
         onset_dates_by_src[src_id] = [panel_dates[i] for i in onset_indices]
 
-    # Parse the 6 surviving cell keys: "routing_{src}/{dest}/{regime}_{horizon}d"
+    # --- 4. Enumerate events for p3b survivor cells only ---
     rows: list[dict] = []
     vix_arr = vix_ser.values if vix_ser is not None else None
     vix_idx  = vix_ser.index if vix_ser is not None else None
 
-    for cell_key in routing_cells:
+    for cell_key in surviving_keys:
         # parse: routing_ai_compute/energy_commodities/high_vix_10d
         rest = cell_key.removeprefix("routing_")
         parts = rest.rsplit("/", 2)
         if len(parts) != 3:
+            print(f"  [routing_6] WARNING: cannot parse cell key {cell_key!r} — skipping")
             continue
         src, dest, regime_horiz = parts
-        regime = "high_vix" if regime_horiz.startswith("high_vix") else "low_vix"
 
         # entry nodes = COMPLEX_ETF_MAP[dest]
         dest_etfs = COMPLEX_ETF_MAP.get(dest, [])
         if not dest_etfs:
+            print(f"  [routing_6] WARNING: no dest ETFs for complex {dest!r} in cell {cell_key!r}")
             continue
 
+        cell_onset_count = 0
         for onset_date in onset_dates_by_src.get(src, []):
-            # VIX gate: vix_pctile >= 0.6 at trigger (per spec §3)
+            # High-VIX gate: vix_pctile >= 0.6 at trigger date (per spec §3)
             vix_at_trigger = None
             if vix_arr is not None and vix_idx is not None:
                 loc = int(np.searchsorted(vix_idx.values, np.datetime64(onset_date), side="right")) - 1
@@ -685,6 +701,7 @@ def build_routing_events(
             if vix_at_trigger is None or vix_at_trigger < high_vix_t:
                 continue  # VIX gate: skip low-VIX events
 
+            cell_onset_count += 1
             for etf_node in dest_etfs:
                 rows.append({
                     "family": "routing_6",
@@ -693,6 +710,14 @@ def build_routing_events(
                     "exhausted_date": None,
                     "routing_cell": cell_key,
                 })
+
+        # Print per-cell src-onset count loudly (before dest-ETF expansion)
+        print(
+            f"  [routing_6] {cell_key}: "
+            f"src_onsets_high_vix={cell_onset_count} "
+            f"dest_etfs={dest_etfs} "
+            f"rows_emitted={cell_onset_count * len(dest_etfs)}"
+        )
 
     return rows
 
@@ -840,8 +865,8 @@ def _terminal_state_table(
     lines = [f"### {title}"]
     if is_routing:
         lines.append(
-            "**DESCRIPTIVE ONLY — broad-sweep enumeration (NOT the p3b placebo-survivor set; "
-            "n is the full-history onset sweep, not the ~10-12 p3b survivor fires per cell)** | "
+            "**p3b placebo-survivor cells only; n_src onsets per cell printed; "
+            "DESCRIPTIVE ONLY — thin n** | "
             + honesty_label
         )
     elif is_short:
@@ -1081,11 +1106,11 @@ def generate_atlas(graded_df: pd.DataFrame, output_path: Path) -> None:
 **Date:** 2026-07-05
 **Nature:** DESCRIPTIVE measurement only. No new signals. No claim language.
 **Grading basis:** {HONESTY_LABEL}
-**Routing tables:** DESCRIPTIVE ONLY — broad-sweep enumeration over full history (NOT restricted to p3b placebo-survivor fires; actual n reported per table).
+**Routing tables:** DESCRIPTIVE ONLY — p3b placebo-survivor cells only (g1_routing_pass == True); n_src onsets per cell printed at enumeration; thin n.
 
 > IMPORTANT: The word "validated" does not appear in this document per Oracle Constitution §II.
 > Every table carries the close-only honesty label and n + immature count.
-> routing_6 tables are additionally marked "n≤12 descriptive only."
+> routing_6 tables are additionally marked "p3b placebo-survivor cells only; n_src onsets per cell printed; DESCRIPTIVE ONLY — thin n."
 
 ---
 
