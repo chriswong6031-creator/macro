@@ -93,10 +93,14 @@ def test_seo_description_names_true_archetype() -> None:
 
 
 def test_stocks_header_names_washout_base_turn() -> None:
-    """Stocks header subtitle must describe the washout→base→fresh-turn archetype."""
+    """Stocks header must describe the washed-out → fresh-turn archetype (plain wording)."""
     html = _render_stocks_header()
-    assert "washout" in html.lower(), "Header does not mention washout"
-    assert "base" in html.lower() or "筑底" in html, "Header does not mention base/筑底"
+    assert "washed-out" in html.lower() or "washout" in html.lower(), (
+        "Header does not name the washed-out archetype"
+    )
+    assert "turn" in html.lower() or "转向" in html, (
+        "Header does not mention the fresh turn"
+    )
     # Must NOT claim the archetype is mean-reversion
     assert "mean-reversion setups" not in html, (
         "Header still claims 'mean-reversion setups' (old copy)"
@@ -117,19 +121,23 @@ def test_standout_h2_subtitle_is_archetype() -> None:
 
 
 def test_standout_help_contains_three_caveats() -> None:
-    """The help tooltip must include all three mandated caveats (F5)."""
+    """The (?) popup must still carry the three epistemic caveats (F5), in plain wording.
+
+    The insider 'reversal is a separate product' caveat was dropped as jargon; the
+    user-facing honesty invariant it protected is 'research shortlist, not a buy list'.
+    """
     html = _render_standout_header()
-    # Caveat (i): reversal is a SEPARATE product
-    assert "separate product" in html.lower() or "separate" in html.lower(), (
-        "Caveat (i) — reversal is a separate product — not found in help tooltip"
+    # Caveat (i): it is context/research, NOT a buy list
+    assert "not a buy list" in html.lower() or "非买入清单" in html, (
+        "Caveat (i) — research shortlist, not a buy list — not found in (?) popup"
     )
-    # Caveat (ii): 0-100 score is buy-readiness, not conviction-edge
+    # Caveat (ii): 0-100 score is buy-readiness, not a win-rate/edge
     assert "buy-readiness" in html.lower() or "买入就绪" in html, (
-        "Caveat (ii) — buy-readiness / conviction-edge — not found"
+        "Caveat (ii) — buy-readiness (not a win-rate) — not found"
     )
-    # Caveat (iii): forward grades are accruing
+    # Caveat (iii): the board's track record is still accruing
     assert "accruing" in html.lower() or "累积" in html, (
-        "Caveat (iii) — forward grades accruing — not found"
+        "Caveat (iii) — track record still accruing — not found"
     )
 
 
@@ -153,15 +161,16 @@ def test_standout_help_says_rank_not_bottoming_alignment() -> None:
 
 
 def test_standfirst_paragraph_honest() -> None:
-    """Standfirst must describe cascade tier + washout/COILED as the rank driver."""
+    """Header must name the honest rank driver (buy-readiness / the T1–T4 cascade)."""
     html = _render_standout_header()
-    # Must mention cascade tier
-    assert "cascade tier" in html.lower() or "级联层级" in html, (
-        "Standfirst does not name cascade tier as rank driver"
-    )
+    # Must name the honest driver: buy-readiness, or the T1–T4 cascade in the subtitle
+    assert (
+        "buy-readiness" in html.lower() or "买入就绪" in html
+        or "cascade" in html.lower() or "级联" in html
+    ), "Header does not name the honest rank driver (buy-readiness / cascade)"
     # Must not claim ranked by 'alignment quality'
     assert "Ranked by alignment quality" not in html, (
-        "Old alignment-quality ranking claim still present in standfirst"
+        "Old alignment-quality ranking claim still present"
     )
 
 
