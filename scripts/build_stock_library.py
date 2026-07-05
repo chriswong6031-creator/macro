@@ -2332,6 +2332,22 @@ def main() -> int:
                     r["ext_z"] = round(float(_extz_v), 2)
                 except (TypeError, ValueError):
                     pass
+            # P2.1a Step G: antichase_shadow_blocked — F3 anti-chase shadow gate field.
+            # Reads ext_z from the same ext_map source used in Step D above.
+            # Threshold = PARABOLIC_Z = 2.0 (engine/extension.py L36; pre-registered in
+            # P2_1A_ANTICHASE_GATE_PREREG.md §1.3). SHADOW period: label only, ZERO
+            # enforcement — name stays on board at same rank. The blocked field drives:
+            #   (1) Anti-Chase Watch chip in the template (display only),
+            #   (2) the shadow ledger writer below (forward-grading accrual),
+            #   (3) species registry chip rung (F3_ANTICHASE, deployment_status=chip).
+            # It is intentionally present on ALL rows (buy + watch + laggards) so the
+            # shadow ledger can grade non-blocked rows as the control group.
+            _ANTICHASE_Z_THRESH = 2.0   # mirrors PARABOLIC_Z — do not tune here
+            _extz_float = r.get("ext_z")
+            if _extz_float is not None:
+                r["antichase_shadow_blocked"] = bool(_extz_float > _ANTICHASE_Z_THRESH)
+            else:
+                r["antichase_shadow_blocked"] = False
             # P2.4 Step C: above_trend propagation — final catch-all for rows that
             # weren't captured in Step A (e.g. laggard rows not in buy/watch lists).
             # Source: sig_verdict[t].above200 (consistent with Step A fix above).
@@ -2528,6 +2544,59 @@ def main() -> int:
         _lane_ct = _Counter(r.get("lane") for r in wide["buy"] + wide["watch"])
         wide["lane_counts"] = dict(_lane_ct)
         log.info("P2.4 lane_counts: %s", wide["lane_counts"])
+
+        # P2.1a Step H: anti-chase shadow ledger writer.
+        # Appends per-ticker rows to data/signal_archive/antichase_shadow_ledger.parquet.
+        # The ledger records EVERY board row (blocked and unblocked) so the control group
+        # (antichase_shadow_blocked=False) is tracked for the Wilson-bound comparison in
+        # the flip criterion C2 (P2_1A_ANTICHASE_GATE_PREREG.md §2.2).
+        # Pattern: append-only parquet; keep-FIRST per (asof, ticker); never fatal.
+        # Rollback fields per R-P2.1: flip_eligible=False + flip_criteria_met={'C1':False,
+        #   'C2':False,'C3':False} mark this as a shadow row (no flip authority yet).
+        # These fields are set to False throughout the shadow period; only a Fable ruling
+        # + criteria check can set them to True (that logic is in the monthly review, not here).
+        try:
+            import pandas as _pd
+            _shadow_path = config.data_dir() / "signal_archive" / "antichase_shadow_ledger.parquet"
+            _shadow_path.parent.mkdir(parents=True, exist_ok=True)
+            _asof_s = wide.get("as_of")
+            if _asof_s:
+                _asof_str = str(_pd.Timestamp(_asof_s).date())
+                # Load existing to deduplicate by (asof, ticker)
+                _old_shadow = _pd.read_parquet(_shadow_path) if _shadow_path.exists() else None
+                _seen_shadow = set()
+                if _old_shadow is not None and "asof" in _old_shadow.columns and "ticker" in _old_shadow.columns:
+                    _seen_shadow = set(zip(_old_shadow["asof"].astype(str), _old_shadow["ticker"].astype(str)))
+                _new_rows = []
+                for _sr_h in wide["buy"] + wide["watch"]:
+                    _t_h = _sr_h.get("ticker")
+                    if _t_h is None or (_asof_str, _t_h) in _seen_shadow:
+                        continue
+                    _new_rows.append({
+                        "asof": _asof_str,
+                        "ticker": _t_h,
+                        "lane": _sr_h.get("lane"),
+                        "ext_z": _sr_h.get("ext_z"),
+                        "antichase_shadow_blocked": bool(_sr_h.get("antichase_shadow_blocked")),
+                        # Rollback/flip fields (R-P2.1): always False during shadow period.
+                        # Set to True only after Fable ruling + C1+C2+C3 criteria confirmed.
+                        "flip_eligible": False,
+                        "flip_criteria_met": False,   # simplified bool; C1+C2+C3 detail in monthly review
+                        "gate_state": "shadow",        # shadow | enforcing | rolledback
+                        "logged_at": str(_pd.Timestamp.now(tz="UTC").isoformat()),
+                    })
+                if _new_rows:
+                    _new_df = _pd.DataFrame(_new_rows)
+                    _merged_shadow = _pd.concat([_old_shadow, _new_df], ignore_index=True) \
+                        if _old_shadow is not None else _new_df
+                    _merged_shadow.to_parquet(_shadow_path, index=False)
+                    _n_blocked = sum(r["antichase_shadow_blocked"] for r in _new_rows)
+                    log.info("P2.1a antichase shadow ledger: %d rows appended (%d blocked, %d unblocked) for %s",
+                             len(_new_rows), _n_blocked, len(_new_rows) - _n_blocked, _asof_str)
+                else:
+                    log.debug("P2.1a antichase shadow ledger: no new rows for %s (all already logged)", _asof_str)
+        except Exception as _ac_e:  # noqa: BLE001 — shadow ledger is never fatal
+            log.debug("P2.1a antichase shadow ledger write skipped: %s", _ac_e)
 
         # P2.4 Step F: setups.json lane backfill — same taxonomy, shared lane labels.
         # The setups object is still in memory (written initially at L1948). Update it
