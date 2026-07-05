@@ -508,3 +508,50 @@ reflexes:
       SINGLE-WRITER: only the cortex job calls record_firing() for this reflex.
     migration_status: mirroring
     producer: engine/neuralweb/cortex.py
+
+  # ─── P1-D — FACTOR ATTENTION (Lane 1, §5.3) ─────────────────────────────
+
+  factor_attention:
+    description: >
+      Per-name factor contradiction attention firings — Lane 1 of the factor
+      intelligence two-lane attention design (§5.3).  Fires when a name's entry
+      signal (T1 or T2) coincides with a high alibi_share_20d (≥ trailing-252d
+      cross-sectional Q80).  Pair G 'borrowed_strength': the name's recent move
+      is explained mostly by factor streams, not its own idiosyncratic residual.
+      SINGLE-WRITER: only engine.neuralweb.factor_contradictions calls
+      record_firing() for this reflex.  NEVER references cortex_attention.
+      display_only=True unconditionally.  severity='note' until H2 PREREG
+      gate passes (locked in research/factor_intelligence/PREREGISTRATION.md §H2).
+    trigger:
+      type: nightly_factor_panel
+      source: engine/neuralweb/factor_contradictions.py
+      condition: >
+        T1 or T2 fire in site/factordata/us_standouts.json AND
+        alibi_share_20d >= trailing-252d cross-sectional Q80 (from panel history).
+        Dormant until panel has >= 60 distinct dates (RULING-E).
+      cadence_cron: "nightly — runs in factor_panel job after build_factor_panel step"
+      lane: factor_panel
+    action:
+      type: [append_factor_contradictions_ledger, record_firing]
+      ledger: data/neuralweb/factor_contradictions.jsonl
+      firings: data/reflexes/factor_attention/firings.jsonl
+      constitutional_note: >
+        display_only=True.  No Article-2 surface is touched.  severity='note'
+        unconditionally until H2 PREREG gate passes (which requires the replay
+        artifact + >=150 deduped fires per arm).  FAST-lane de-escalation teeth
+        attach ONLY after H2 GATE-PASSED + would-have-fired shadow ledger step.
+    firings_jsonl: data/reflexes/factor_attention/firings.jsonl
+    claim_family: reflex.factor_attention
+    tier: shadow
+    push_tier: false
+    graded: true
+    graded_note: >
+      Shadow tier — each firing carries direction=-1, horizon_d=21, scope_type=entity.
+      Graded by scripts/grade_factor_attention.py (parallel grader, RULING-G):
+      hit = name underperforms SPY at horizon_d=21 (excess < 0).
+      Own probation record at data/reflexes/factor_attention/probation.json.
+      Own grades at data/reflexes/factor_attention/grades.jsonl.
+      Does NOT share paths with cortex_attention (single-writer law).
+      n=0 today (dormant pending panel backfill >= 60 dates — RULING-E).
+    migration_status: mirroring
+    producer: engine/neuralweb/factor_contradictions.py

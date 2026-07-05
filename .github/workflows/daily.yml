@@ -1112,6 +1112,19 @@ jobs:
         run: |
           START=$(python -c "import pandas as pd; print((pd.Timestamp.today() - pd.tseries.offsets.BDay(10)).date())")
           python -m scripts.build_factor_panel --start "$START" || echo "factor panel skipped (additive)"
+      # P1-D: Pair G borrowed_strength detector. Runs AFTER factor_panel step (needs
+      # today's panel partition). Fail-soft: a dormant detector emits no records and
+      # logs a gap note; it never kills the nightly. Output is data/neuralweb/
+      # factor_contradictions.jsonl — explicitly gitignored (R2-candidate; single-copy
+      # runner-local pending R2 sync); NOT gitignored implicitly via default untracked
+      # behavior. The sentinel commit step does not stage it.
+      - name: factor contradictions detector (Pair G borrowed_strength — P1-D)
+        run: |
+          set +e
+          python -m engine.neuralweb.factor_contradictions > /tmp/factor_contradictions.log 2>&1; rc=$?
+          cat /tmp/factor_contradictions.log
+          [ "$rc" -ne 0 ] && echo "::warning title=factor_contradictions::rc=$rc (non-fatal — dormant behavior expected until panel backfill)"
+          exit 0
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
@@ -1238,6 +1251,15 @@ jobs:
           cat /tmp/cortex_grade.log
           [ "$rc" -ne 0 ] && echo "::warning title=cortex_grade::rc=$rc (non-fatal)"
           exit 0
+      # P1-D: grade factor_attention reflex firings. Parallel grader to grade_cortex_attention;
+      # owns data/reflexes/factor_attention/grades.jsonl + probation.json (NOT cortex paths).
+      - name: grade factor attention + A2 earn-in (P1-D)
+        run: |
+          set +e
+          python -m scripts.grade_factor_attention > /tmp/factor_attention_grade.log 2>&1; rc=$?
+          cat /tmp/factor_attention_grade.log
+          [ "$rc" -ne 0 ] && echo "::warning title=factor_attention_grade::rc=$rc (non-fatal)"
+          exit 0
       - name: evaluate due cortex hypotheses (W7b PR2)
         run: |
           set +e
@@ -1249,8 +1271,9 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          # Own commit lane (W7b PR2): all cortex subtrees — STAGING LAW
+          # Own commit lane (W7b PR2 + P1-D): all cortex + factor_attention subtrees — STAGING LAW
           git add data/reflexes/cortex_attention/ 2>/dev/null || true
+          git add data/reflexes/factor_attention/ 2>/dev/null || true
           git add data/neuralweb/cortex/ 2>/dev/null || true
           git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
           git add data/neuralweb/governance.jsonl 2>/dev/null || true
