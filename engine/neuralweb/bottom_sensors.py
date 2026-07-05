@@ -98,6 +98,10 @@ def _data_earnings(root: Path) -> Path:
     return root / "data" / "earnings" / "earnings.parquet"
 
 
+def _data_dilution(root: Path) -> Path:
+    return root / "data" / "edgar" / "dilution_events.parquet"
+
+
 # ── Knife threshold (bind from cycles.py; never reimport to avoid circular) ───
 _ALIGN_KNIFE_BLOCK = 0.7   # mirrors engine/cycles.py:1892
 
@@ -149,6 +153,105 @@ def _load_earnings(root: Path) -> pd.DataFrame:
     except Exception as exc:  # noqa: BLE001
         log.warning("earnings.parquet load failed: %s", exc)
         return pd.DataFrame()
+
+
+# ── Dilution event helpers (nwqs-c; display-only, RENDER_NO_DRIP convention) ──
+
+_SHELF_FORMS = {"S-3", "S-3ASR", "S-3/A"}
+_TAKEDOWN_FORMS = {"424B1", "424B2", "424B3", "424B4", "424B5"}
+
+
+def _load_dilution_index(root: Path) -> pd.DataFrame:
+    """Load data/edgar/dilution_events.parquet.
+
+    RENDER_NO_DRIP convention: absent parquet → return empty DataFrame.
+    The parquet will be absent on CI runners and fresh render paths; all
+    consumers must degrade gracefully to None columns (never fabricate 0).
+    Never raises.
+    """
+    path = _data_dilution(root)
+    if not path.exists():
+        return pd.DataFrame()
+    try:
+        df = pd.read_parquet(path)
+        # Ensure filing_date is datetime so we can do date arithmetic.
+        if "filing_date" in df.columns:
+            df["filing_date"] = pd.to_datetime(df["filing_date"], errors="coerce")
+        return df
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dilution_events.parquet load failed: %s", exc)
+        return pd.DataFrame()
+
+
+def _build_dilution_index(dilution_df: pd.DataFrame) -> dict[str, dict]:
+    """Pre-index dilution events by ticker for O(1) per-ticker lookup.
+
+    Returns dict[ticker → {
+        'latest_shelf': Timestamp | None,
+        'latest_takedown': Timestamp | None,
+        'dates': list[Timestamp],          # all events regardless of form
+    }].
+
+    Unmapped rows (ticker=None/NaN) are excluded; they cannot be consumed.
+    """
+    if dilution_df.empty or "ticker" not in dilution_df.columns:
+        return {}
+    # Drop unmapped rows
+    df = dilution_df.dropna(subset=["ticker"])
+    if df.empty:
+        return {}
+    index: dict[str, dict] = {}
+    for ticker, grp in df.groupby("ticker", sort=False):
+        shelf = grp[grp["form"].isin(_SHELF_FORMS)]
+        takedown = grp[grp["form"].isin(_TAKEDOWN_FORMS)]
+        latest_shelf = shelf["filing_date"].max() if not shelf.empty else None
+        latest_takedown = takedown["filing_date"].max() if not takedown.empty else None
+        all_dates = grp["filing_date"].dropna().tolist()
+        index[str(ticker)] = {
+            "latest_shelf": latest_shelf,
+            "latest_takedown": latest_takedown,
+            "dates": all_dates,
+        }
+    return index
+
+
+def _dilution_fields(
+    ticker: str,
+    dilution_index: dict[str, dict],
+    today: datetime.date,
+) -> tuple[int | None, int | None, int | None]:
+    """Return (days_since_shelf, days_since_takedown, dilution_events_365d) for a ticker.
+
+    RENDER_NO_DRIP convention:
+      - dilution_index empty (parquet absent) → (None, None, None).
+      - ticker not in index → (None, None, None).
+      - Date present but NaT → field = None.
+    Never fabricates 0 for missing data.
+    """
+    if not dilution_index:
+        return None, None, None
+    entry = dilution_index.get(ticker)
+    if entry is None:
+        return None, None, None
+
+    def _days(ts) -> int | None:
+        if ts is None or (hasattr(ts, "is_nat") and ts.is_nat()):
+            return None
+        try:
+            d = pd.Timestamp(ts).date()
+            return max(0, (today - d).days)
+        except Exception:  # noqa: BLE001
+            return None
+
+    days_shelf = _days(entry["latest_shelf"])
+    days_takedown = _days(entry["latest_takedown"])
+
+    # Count events in the trailing 365-day window
+    cutoff = pd.Timestamp(today) - pd.Timedelta(days=365)
+    dates_365 = [d for d in entry["dates"] if pd.notna(d) and pd.Timestamp(d) >= cutoff]
+    events_365: int | None = len(dates_365) if entry["dates"] else None
+
+    return days_shelf, days_takedown, events_365
 
 
 def _data_oracle(root: Path) -> Path:
@@ -647,6 +750,7 @@ def assemble(
       - site/factordata/us_standouts.json  (coiled/hold/squeeze/donor for board names)
       - data/earnings/earnings.parquet    (earnings next_date)
       - data/stocks/<TICKER>.parquet      (rolling distance columns)
+      - data/edgar/dilution_events.parquet  (nwqs-c; absent on CI runners → degrade)
 
     Returns a DataFrame with one row per ticker in signal_gate.json universe.
     Never raises; partial failures degrade gracefully.
@@ -667,6 +771,12 @@ def assemble(
 
     standouts = _load_us_standouts(root)
     earnings_df = _load_earnings(root)
+
+    # ── Dilution context (nwqs-c; display-only, RENDER_NO_DRIP) ──────────────
+    # Absent parquet → empty DataFrame → all dilution fields degrade to None.
+    # Never fabricates 0 for missing data.
+    dilution_df = _load_dilution_index(root)
+    dilution_index = _build_dilution_index(dilution_df)
 
     # ── Survival-quality leverage ratios (FR-9/FR-10; display-only) ──────────
     # Load statements once; degrade gracefully when parquet is absent (CI runners,
@@ -731,6 +841,14 @@ def assemble(
             row["interest_coverage"] = lev.get("interest_coverage")
             row["net_debt_to_op_income"] = lev.get("net_debt_to_op_income")
             row["net_debt_to_ebitda"] = lev.get("net_debt_to_ebitda")
+            # ── Dilution context (nwqs-c; display-only) ───────────────────────
+            # None when dilution_events.parquet absent or ticker unmapped.
+            d_shelf, d_takedown, d_events = _dilution_fields(
+                ticker, dilution_index, today
+            )
+            row["days_since_shelf"] = d_shelf
+            row["days_since_takedown"] = d_takedown
+            row["dilution_events_365d"] = d_events
             rows.append(row)
             n_ok += 1
         except Exception as exc:  # noqa: BLE001

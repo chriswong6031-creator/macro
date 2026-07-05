@@ -47,7 +47,7 @@ _QUIVER_KEYS = (
 _CONCURRENT_HOSTS: dict[str, str] = {
     # SEC EDGAR — fair-access <10 req/s shared across data.sec.gov / www.sec.gov / efts.sec.gov
     "edgar_8k": "sec", "edgar_13f": "sec", "edgar_trumpflow": "sec",
-    "beneficial_ownership": "sec",
+    "beneficial_ownership": "sec", "edgar_dilution": "sec",
     # Quiver — single API host (api.quiverquant.com), no internal pacing
     **{k: "quiver" for k in _QUIVER_KEYS},
     # CFTC — publicreporting.cftc.gov / www.cftc.gov
@@ -134,6 +134,7 @@ def all_adapters() -> dict:
         # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
         ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
         ("beneficial_ownership", "collectors.beneficial_ownership", "BeneficialOwnershipAdapter"),  # keyless SC 13D/13G sweep + filer enrichment -> per-ticker ownership-regime (engine/beneficial_ownership.py)
+        ("edgar_dilution", "collectors.edgar_dilution", "EdgarDilutionAdapter"),  # S-3/S-3ASR/424B* daily-index sweep -> data/edgar/dilution_events.parquet (nwqs-c dilution context; display-only)
         ("openfda", "collectors.openfda", "OpenFdaAdapter"),       # Drugs@FDA approvals/label-expansions -> fda_approval/fda_label_expansion channels (healthcare blind spot)
         ("huggingface", "collectors.huggingface", "HuggingFaceAdapter"),  # HF model-download velocity -> hf_model_momentum channel (AI adoption blind spot)
         ("grants_gov", "collectors.grants_gov", "GrantsGovAdapter"),      # Simpler Grants.gov pre-award FOA flow (theme_event radar leg); GATED on free GRANTS_GOV_API_KEY -> 'blocked' without it
@@ -276,7 +277,9 @@ def all_adapters() -> dict:
 _CRYPTO = {"coinmetrics", "bgeo", "coinbase", "okx", "deribit", "feargreed",
            "coingecko", "defillama", "mempool", "wikipedia_btc", "farside"}
 _SLOW = set(_QUIVER_KEYS) | {
-    "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership", "cot",
+    "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership",
+    "edgar_dilution",  # nwqs-c: S-3/424B daily-index sweep; nightly-only
+    "cot",
     "openfda", "huggingface", "grants_gov", "clinicaltrials", "finnhub_altdata",
     "polygon_news", "github_repos", "sam_gov", "usaspending", "prediction_markets",
     "lbnl_queue", "federal_register",
