@@ -1,9 +1,10 @@
 """engine/neuralweb/bottom_sensors.py — Bottom-sensor envelope for the US board.
 
-Amendment 1, Lane B0, PR-1.  Display-only — is_display_only=True.
-labels_version=labels_v1.  Ranked nothing, gates nothing, alerts nothing.
+Amendment 1, Lane B0, PR-1 (envelope + labels_v1) + PR-3 (sponsorship connector).
+Display-only — is_display_only=True.  labels_version=labels_v1.
+Ranks nothing, gates nothing, alerts nothing.
 
-Source-of-truth document: research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md §C2.
+Source-of-truth document: research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md §C2, §C3.
 
 Bind-first law (Amendment §C2 ⟦RV⟧):
   Every field that an existing engine already emits is BOUND read-only from its
@@ -24,8 +25,10 @@ Field sources (source_artifacts column in output):
   earnings_next_date/days_to        → data/earnings/earnings.parquet
   dist_21d_low_pct                  → computed here (rolling 21d; close series from data/stocks/*.parquet)
   dist_126d_high_pct                → computed here (rolling 126d; close series from data/stocks/*.parquet)
+  sponsorship_state                 → computed here (Amendment §C3); reads data/oracle/panel_s.parquet
+                                       and data/oracle/panel_m.parquet; stock→sector/subsector map
+                                       from engine/neuralweb/sector_map.py (existing repo stores only)
   rs_repair_state                   → stamped unavailable (W0.4 of #1302 not yet shipped)
-  sponsorship_state                 → stamped unavailable (B2 lane not yet complete)
 
 KNIFE condition binding law (Amendment §C2):
   The _ALIGN_KNIFE_BLOCK constant (cycles.py: _ALIGN_KNIFE_BLOCK = 0.7) defines the
@@ -33,6 +36,18 @@ KNIFE condition binding law (Amendment §C2):
   (bound from scripts/build_stock_library.py ~2030 where it is computed via washout()),
   we bind it.  When absent (name not in us_standouts), we fall back to dist_126d_high_pct
   >= 15% AND dist_21d_low_pct < 0 (close below 21d low), exactly per the Amendment.
+
+Sponsorship state definition (Amendment §C3, FROZEN — no tuning):
+  vel = vel_1m; accel = accel column (Oracle-emitted: vel_1w − vel_3m per panel.py:286;
+  bound read-only — NOT the derivative of vel_1m).  At the latest completed date in
+  panel_s (sector arm) or panel_m (subsector arm, 2021+ only).  Sector arm is primary;
+  subsector arm is fallback.  A stale sector arm (> 5 trading days old) short-circuits
+  without falling through to subsector.
+    tailwind    : vel > 0 AND accel > 0
+    headwind    : vel < 0 AND accel < 0
+    neutral     : mixed signs
+    stale       : latest panel row older than 5 trading days (date-age gate only)
+    unavailable : unmapped ticker, OR vel_1m/accel is NaN on an otherwise-fresh row
 
 Never raises publicly.  All failures degrade gracefully (return empty frame / partial rows).
 """
@@ -46,6 +61,8 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+
+from engine.neuralweb.sector_map import SectorMapping, build_sector_map
 
 log = logging.getLogger(__name__)
 
@@ -131,6 +148,119 @@ def _load_earnings(root: Path) -> pd.DataFrame:
     except Exception as exc:  # noqa: BLE001
         log.warning("earnings.parquet load failed: %s", exc)
         return pd.DataFrame()
+
+
+def _data_oracle(root: Path) -> Path:
+    return root / "data" / "oracle"
+
+
+# ── Oracle panel loading (read-only; sponsorship connector) ───────────────────
+
+def _load_oracle_panel(root: Path, filename: str) -> pd.DataFrame | None:
+    """Load data/oracle/{filename}.  Returns DataFrame with MultiIndex[node, date]
+    or None on failure.
+
+    The panels are loaded once per assemble() call and passed through; this function
+    is the single load path so callers never need to handle IOErrors directly.
+    """
+    path = _data_oracle(root) / filename
+    try:
+        df = pd.read_parquet(path)
+        # Ensure date level is datetime
+        if "date" in df.index.names:
+            new_levels = []
+            for i, name in enumerate(df.index.names):
+                if name == "date":
+                    lv = pd.to_datetime(df.index.get_level_values(i))
+                    new_levels.append(lv)
+                else:
+                    new_levels.append(df.index.get_level_values(i))
+            df.index = pd.MultiIndex.from_arrays(new_levels, names=df.index.names)
+        return df
+    except Exception as exc:  # noqa: BLE001
+        log.warning("oracle panel load failed (%s): %s", filename, exc)
+        return None
+
+
+# ── Sponsorship state (Amendment §C3, FROZEN definition) ─────────────────────
+
+# Number of trading days beyond which a panel row is considered stale.
+_SPONSORSHIP_STALE_TRADING_DAYS = 5
+
+
+def _sponsorship_state(
+    ticker: str,
+    mapping: SectorMapping | None,
+    panel_s: pd.DataFrame | None,
+    panel_m: pd.DataFrame | None,
+    today: datetime.date,
+) -> str:
+    """Compute sponsorship_state for one ticker.
+
+    Definition (frozen, §C3):
+      vel = vel_1m;  accel = accel column (Oracle-emitted: vel_1w − vel_3m, bound read-only).
+      Sector arm (panel_s, primary) → subsector arm (panel_m, fallback).
+      tailwind    : vel > 0 AND accel > 0
+      headwind    : vel < 0 AND accel < 0
+      neutral     : mixed signs
+      stale       : latest panel row older than 5 trading days (date-age gate; sector arm is
+                    terminal — stale sector does NOT fall through to subsector arm)
+      unavailable : no mapping, both panels missing/empty, OR vel_1m/accel is NaN on a
+                    fresh row (data-absence, not date-staleness)
+
+    Stale check uses numpy.busday_count (no holiday calendar; conservative per §C2 note).
+    Both vel_1m AND accel must be non-null; if either is NaN on a fresh row → unavailable.
+    """
+    if mapping is None:
+        return "unavailable"
+
+    # Try sector arm first (deeper history), then subsector arm
+    arms = [
+        (mapping.sector_node, panel_s),
+        (mapping.subsector_node, panel_m),
+    ]
+
+    for node, panel in arms:
+        if node is None or panel is None or panel.empty:
+            continue
+        try:
+            node_rows = panel.xs(node, level="node")
+        except KeyError:
+            continue
+        if node_rows.empty:
+            continue
+
+        # Latest completed row
+        latest_date = node_rows.index.max()
+        latest = node_rows.loc[latest_date]
+
+        # Staleness check
+        stale_td = int(np.busday_count(latest_date.date(), today))
+        if stale_td > _SPONSORSHIP_STALE_TRADING_DAYS:
+            return "stale"
+
+        vel = latest.get("vel_1m") if isinstance(latest, pd.Series) else None
+        accel = latest.get("accel") if isinstance(latest, pd.Series) else None
+
+        if vel is None or accel is None or (
+            isinstance(vel, float) and np.isnan(vel)
+        ) or (
+            isinstance(accel, float) and np.isnan(accel)
+        ):
+            # NaN vel/accel on a fresh (date-current) row is data-absence, not date-staleness.
+            # Per amendment law: "an input that does not exist is stamped unavailable."
+            return "unavailable"
+
+        vel = float(vel)
+        accel = float(accel)
+
+        if vel > 0 and accel > 0:
+            return "tailwind"
+        if vel < 0 and accel < 0:
+            return "headwind"
+        return "neutral"
+
+    return "unavailable"
 
 
 def _load_close(root: Path, ticker: str) -> pd.Series | None:
@@ -354,13 +484,18 @@ def _build_row(
     today: datetime.date,
     root: Path,
     sg_asof: str = "",
+    sector_mapping: SectorMapping | None = None,
+    panel_s: "pd.DataFrame | None" = None,
+    panel_m: "pd.DataFrame | None" = None,
 ) -> dict[str, Any]:
     """Assemble one bottom-sensor row for a ticker.
 
-    sg_verdict  : from signal_gate.json['verdicts'][ticker]
-    standout_row: the buy/watch/laggard row from us_standouts.json (may be None)
-    standout_donor: the top-level donor dict from us_standouts.json (board-level)
-    sg_asof     : as_of from signal_gate.json; used as the row-level data vintage.
+    sg_verdict      : from signal_gate.json['verdicts'][ticker]
+    standout_row    : the buy/watch/laggard row from us_standouts.json (may be None)
+    standout_donor  : the top-level donor dict from us_standouts.json (board-level)
+    sg_asof         : as_of from signal_gate.json; used as the row-level data vintage.
+    sector_mapping  : SectorMapping for this ticker (sector_node / subsector_node).
+    panel_s / panel_m : pre-loaded oracle panels; None = load skipped.
 
     Two-clock design: `as_of` reflects the source data vintage (sg_asof) so the
     synapse freshness guard (asof_field: as_of) tracks real data staleness.
@@ -380,9 +515,17 @@ def _build_row(
         "region": REGION,
         "labels_version": LABELS_VERSION,
         "is_display_only": IS_DISPLAY_ONLY,
-        # rs_repair_state and sponsorship_state stamped unavailable in this PR
+        # rs_repair_state stamped unavailable (W0.4 of #1302 not yet shipped)
         "rs_repair_state": "unavailable",
-        "sponsorship_state": "unavailable",
+        # sponsorship_state: computed from oracle panels via frozen §C3 definition.
+        # If panels unavailable/ticker unmapped, degrades to "unavailable" gracefully.
+        "sponsorship_state": _sponsorship_state(
+            ticker=ticker,
+            mapping=sector_mapping,
+            panel_s=panel_s,
+            panel_m=panel_m,
+            today=today,
+        ),
     }
 
     # ── Trigger tier + ticks (source: signal_gate.json) ─────────────────────
@@ -524,6 +667,14 @@ def assemble(
     standouts = _load_us_standouts(root)
     earnings_df = _load_earnings(root)
 
+    # ── Sponsorship connector (Amendment §C3) — load once, pass through ──────
+    # build_sector_map is fast (parquet reads from existing stores, cached on disk).
+    # Oracle panels are loaded once and reused across all ticker rows.
+    # All failures degrade to sponsorship_state="unavailable" gracefully.
+    sector_map_dict = build_sector_map(root)
+    panel_s = _load_oracle_panel(root, "panel_s.parquet")
+    panel_m = _load_oracle_panel(root, "panel_m.parquet")
+
     # Build per-ticker dicts from standouts
     buy_rows: dict[str, dict] = {}
     for r in standouts.get("buy", []):
@@ -547,6 +698,8 @@ def assemble(
         try:
             # Prefer buy row (richer fields); fallback to watch row
             standout_row = buy_rows.get(ticker) or watch_rows.get(ticker)
+            # Sponsorship: look up pre-built sector mapping for this ticker
+            s_mapping = sector_map_dict.get(ticker)  # None = unmapped → unavailable
             row = _build_row(
                 ticker=ticker,
                 sg_verdict=sg_v,
@@ -556,6 +709,9 @@ def assemble(
                 today=today,
                 root=root,
                 sg_asof=sg_asof,
+                sector_mapping=s_mapping,
+                panel_s=panel_s,
+                panel_m=panel_m,
             )
             rows.append(row)
             n_ok += 1
