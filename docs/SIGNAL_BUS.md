@@ -14,6 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-alpha | 7 |
 | cycle-intelligence | 4 |
 | engine-fix | 16 |
+| entry-stack-expansion | 2 |
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
@@ -30,7 +31,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 52 |
+| display | 54 |
 | infrastructure | 30 |
 | scored | 4 |
 | shadow | 33 |
@@ -39,7 +40,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 115 |
+| git | 117 |
 | gitignored-local | 3 |
 | r2 | 1 |
 
@@ -96,6 +97,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-factors | `site/factordata/factors.json` | json | daily-engine | display | 2 | 0 |
 | site-regime-prior-js | `site/regimedata/regime_prior.js` | js | daily-engine | display | 2 | 0 |
 | site-macro-signals | `site/macrodata/macro_signals.json` | json | daily-engine | display | 0 | 1 |
+
+### entry-stack-expansion
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| bottom-sensors-parquet | `data/neuralweb/bottom_sensors.parquet` | parquet | daily-engine | display | 1 | 0 |
+| bottom-sensors-json | `site/neuralwebdata/bottom_sensors.json` | json | daily-engine | display | 0 | 0 |
 
 ### hk-canada
 
