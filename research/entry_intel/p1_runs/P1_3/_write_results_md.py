@@ -1,4 +1,66 @@
-# P1.3 Trio Ablation — RESULTS (v2, ROUND 2 — defect-corrected re-run)
+"""Generate RESULTS.md (v2) for P1.3 round-2 from results.json. No recompute."""
+import json
+from pathlib import Path
+
+OUT = Path(__file__).parent
+r = json.load(open(OUT / "results.json"))
+s = json.load(open(OUT / "_v2_state.json"))
+T = r["trials"]
+FV = r["factor_verdicts"]
+FI = r["fire_rate_impact"]
+CAL = r["calibration"]
+POP = r["population"]
+
+GRID = [
+    ("T01","F1","HG",21,"STOPPED"),("T02","F1","HG",21,"DEAD_MONEY"),("T03","F1","HG",21,"CUSHIONED"),
+    ("T04","F1","HG",63,"STOPPED"),("T05","F1","HG",63,"DEAD_MONEY"),("T06","F1","HG",63,"CUSHIONED"),
+    ("T07","F1","RW",21,"STOPPED"),("T08","F1","RW",21,"CUSHIONED"),("T09","F1","RW",63,"STOPPED"),("T10","F1","RW",63,"CUSHIONED"),
+    ("T11","F2","HG",21,"STOPPED"),("T12","F2","HG",21,"DEAD_MONEY"),("T13","F2","HG",21,"CUSHIONED"),
+    ("T14","F2","HG",63,"STOPPED"),("T15","F2","HG",63,"DEAD_MONEY"),("T16","F2","HG",63,"CUSHIONED"),
+    ("T17","F2","RW",21,"STOPPED"),("T18","F2","RW",21,"CUSHIONED"),("T19","F2","RW",63,"STOPPED"),("T20","F2","RW",63,"CUSHIONED"),
+    ("T21","F3","HG",21,"STOPPED"),("T22","F3","HG",21,"DEAD_MONEY"),("T23","F3","HG",21,"CUSHIONED"),
+    ("T24","F3","HG",63,"STOPPED"),("T25","F3","HG",63,"DEAD_MONEY"),("T26","F3","HG",63,"CUSHIONED"),
+    ("T27","F3","RW",21,"STOPPED"),("T28","F3","RW",21,"CUSHIONED"),("T29","F3","RW",63,"STOPPED"),("T30","F3","RW",63,"CUSHIONED"),
+]
+
+def f(x, fmt="{:+.2f}"):
+    return "N/A" if x is None else fmt.format(x)
+
+# Trial table
+rows = []
+for tid, fac, mode, hz, ts in GRID:
+    t = T[tid]
+    rows.append(
+        f"| {tid} | {fac} | {mode} | {hz}d | {ts} | {t['n_A']:,} | {t['n_ep_A']:,} | "
+        f"{t['n_B']:,} | {t['n_ep_B']:,} | {t['delta_pp']:+.2f} | "
+        f"{'Y' if t['delta_favorable'] else 'N'} | {t['perm_p']:.4f} | {t['param_p']:.2e} | "
+        f"{t['bh_adj_p']:.4f} | {'YES' if t['survives_bh'] else 'no'} | {t['r_biserial']:+.4f} | "
+        f"{'Y' if t['sign_stable'] else 'N'} | {'THIN' if t['is_thin'] else 'OK'} |"
+    )
+trial_table = "\n".join(rows)
+
+# Sign-stability table
+sst = []
+for tid, fac, mode, hz, ts in GRID:
+    t = T[tid]
+    sst.append(f"| {tid} | {fac} | {mode} | {hz}d | {ts} | {t['half1_delta_pp']:+.2f} | "
+               f"{t['half2_delta_pp']:+.2f} | {'YES' if t['sign_stable'] else 'NO'} |")
+sign_table = "\n".join(sst)
+
+# Fire-rate table
+fr = []
+for fk in ["F1","F2","F3"]:
+    fi = FI[fk]
+    fr.append(f"| {fk} | HG | {fi['n_fires_total']:,} | {fi['n_would_block']:,} | "
+              f"{fi['gate_fire_rate_impact_pct']:.1f}% | {fi['n_clusters_would_block']:,} | "
+              f"{'YES' if fi['exceeds_40pct'] else 'no'} | {'YES' if fi['gate_reject'] else 'no'} |")
+for fk in ["F1","F2","F3"]:
+    fr.append(f"| {fk} | RW | {POP['n_fires_verdict_grade']:,} | 0 | 0.0% | 0 | no | no |")
+fire_table = "\n".join(fr)
+
+neg = CAL["negative_control"]; pos = CAL["positive_control"]
+
+md = f"""# P1.3 Trio Ablation — RESULTS (v2, ROUND 2 — defect-corrected re-run)
 
 **WHOLE-STUDY VERDICT: PARTIAL SURVIVORS — the trio is NOT closed.**
 
@@ -13,7 +75,7 @@
 **Study:** P1.3 Trio Ablation | **Round:** 2 (defect-corrected re-run) | **Date:** 2026-07-05
 **PREREG:** research/entry_intel/P1_3_TRIO_ABLATION_PREREG.md (APPROVED, Fable 2026-07-05)
 **Memo:** P0_MEASUREMENT_MEMO.md v1.0 (2026-07-04) + §6 v1.1 amendments
-**Replay MD5:** `906175f9eb8caa351ed6d7d5c56265d3` | **Primary test:** episode-level label-permutation Mann-Whitney U (N_PERM=5,000, two-sided, Phipson–Smyth +1 smoothing)
+**Replay MD5:** `{r['replay_md5']}` | **Primary test:** episode-level label-permutation Mann-Whitney U (N_PERM=5,000, two-sided, Phipson–Smyth +1 smoothing)
 
 ---
 
@@ -47,19 +109,19 @@ Both controls **PASS**. The corrected statistic has correct size under the null 
 
 | Metric | Value | Expectation | Pass |
 |---|---|---|---|
-| Rejection rate @ α=0.05 | **0.035** | ≈0.05 | ✓ (well-controlled; not inflated) |
-| p-value mean / median | 0.488 / 0.495 | ≈0.50 | ✓ |
-| KS-uniformity D / p | 0.081 / 0.140 | large p ⇒ uniform | ✓ (p=0.14, consistent with U(0,1)) |
+| Rejection rate @ α=0.05 | **{neg['rejection_rate_alpha05']:.3f}** | ≈0.05 | ✓ (well-controlled; not inflated) |
+| p-value mean / median | {neg['p_mean']:.3f} / {neg['p_median']:.3f} | ≈0.50 | ✓ |
+| KS-uniformity D / p | {neg['ks_uniform_D']:.3f} / {neg['ks_uniform_p']:.3f} | large p ⇒ uniform | ✓ (p={neg['ks_uniform_p']:.2f}, consistent with U(0,1)) |
 
 The p-value distribution is uniform and the false-positive rate is at/below nominal (3.5% observed vs 5% nominal on n=200 — within sampling noise, slightly conservative). This is exactly the behavior the round-1 statistic **appeared** to have (p≈0.5) but for the wrong reason — round-1 gave p≈0.5 even for true effects; here p≈0.5 **only** under the null.
 
-**(2) Positive control** — inject a synthetic episode-level effect into a copied frame (shift group-A forward returns +0.05, lifting their 21d liftoff rate by **+19.7pp**):
+**(2) Positive control** — inject a synthetic episode-level effect into a copied frame (shift group-A forward returns +0.05, lifting their 21d liftoff rate by **+{pos['injected_liftoff_delta_pp']:.1f}pp**):
 
 | Metric | Value | Expectation | Pass |
 |---|---|---|---|
-| Permutation p | **2.00e-04** | ≪ 0.05 | ✓ |
-| Parametric p | 0.00e+00 | ≪ 0.05 | ✓ |
-| Rank-biserial r | -0.2969 | non-zero | ✓ |
+| Permutation p | **{pos['perm_p']:.2e}** | ≪ 0.05 | ✓ |
+| Parametric p | {pos['param_p']:.2e} | ≪ 0.05 | ✓ |
+| Rank-biserial r | {pos['r_biserial']:+.4f} | non-zero | ✓ |
 
 The injected effect is detected at the permutation floor (p ≈ 2e-4), confirming the test has power against a real episode-level shift. **Calibration overall: PASS.**
 
@@ -70,19 +132,19 @@ The injected effect is detected at the permutation floor (p ≈ 2e-4), confirmin
 | Item | Value |
 |---|---|
 | Replay artifact | `data/replay/replay_boarded.parquet` |
-| Replay MD5 | `906175f9eb8caa351ed6d7d5c56265d3` |
-| Replay shape | 961,656 rows × 66 cols |
+| Replay MD5 | `{r['replay_md5']}` |
+| Replay shape | {r['replay_shape'][0]:,} rows × {r['replay_shape'][1]} cols |
 | Total fires (all) | 57,640 |
-| **Verdict-grade fires (primary)** | **49,939** |
-| Episode clusters (unique) | 22,295 |
+| **Verdict-grade fires (primary)** | **{POP['n_fires_verdict_grade']:,}** |
+| Episode clusters (unique) | {POP['n_episode_clusters']:,} |
 | Horizon-censored fires (pre-excluded) | 7,701 |
-| Stamped rows excluded | 0 (all survivor_bias=False) |
-| Effective verdict window | 2022-06-30 → 2025-12-29 |
-| washout_proximity True / False | 22,965 / 26,974 |
-| rs_sector_quartile null (excluded from F2) | 3,828 |
-| ext_z > 2.0 (F3 would-block) | 2,299 |
-| Both-halves split midpoint | 2024-04-04 (H1 n=23,984, H2 n=25,955) |
-| tier_frac (RW sizing check) | 0.0238 (RW bonus +0.10 ≈ one tier) |
+| Stamped rows excluded | {POP['n_stamped_excluded']} (all survivor_bias=False) |
+| Effective verdict window | {POP['era_min']} → {POP['era_max']} |
+| washout_proximity True / False | {POP['washout_true']:,} / {POP['washout_false']:,} |
+| rs_sector_quartile null (excluded from F2) | {POP['rs_null_excluded']:,} |
+| ext_z > 2.0 (F3 would-block) | {POP['ext_z_gt2']:,} |
+| Both-halves split midpoint | {s['midpoint']} (H1 n={s['n_half1']:,}, H2 n={s['n_half2']:,}) |
+| tier_frac (RW sizing check) | {s['tier_frac']:.4f} (RW bonus +0.10 ≈ one tier) |
 
 **Column-name mapping (PREREG → replay):** `cohort_washout_proximity`→`washout_proximity` (bool), `rs_vs_sector_quartile`→`rs_sector_quartile` (1–4 float), `fwd_21d`→`fwd_ret_21`, `fwd_63d`→`fwd_ret_63`, `episode_cluster_id`→`episode_id` (TICKER_YYYY-WNN), `survivor_bias_stamp`→`survivor_bias`.
 
@@ -98,38 +160,9 @@ perm_p = episode label-permutation two-sided p (primary, feeds BH). param_p = pa
 
 | ID | Fac | Mode | Hz | Terminal | n_A | ep_A | n_B | ep_B | Δpp | Fav | perm_p | param_p | BH_p | BH_ok | r | Sign | Thin |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| T01 | F1 | HG | 21d | STOPPED | 22,965 | 9,581 | 26,974 | 12,764 | +2.41 | N | 0.0002 | 8.68e-128 | 0.0006 | YES | -0.1247 | Y | OK |
-| T02 | F1 | HG | 21d | DEAD_MONEY | 22,965 | 9,581 | 26,974 | 12,764 | -13.19 | Y | 0.0002 | 8.68e-128 | 0.0006 | YES | -0.1247 | Y | OK |
-| T03 | F1 | HG | 21d | CUSHIONED | 22,965 | 9,581 | 26,974 | 12,764 | -4.10 | N | 0.0002 | 8.68e-128 | 0.0006 | YES | -0.1247 | Y | OK |
-| T04 | F1 | HG | 63d | STOPPED | 22,965 | 9,581 | 26,974 | 12,764 | -5.21 | Y | 0.0002 | 1.90e-79 | 0.0006 | YES | -0.0978 | Y | OK |
-| T05 | F1 | HG | 63d | DEAD_MONEY | 22,965 | 9,581 | 26,974 | 12,764 | -0.13 | Y | 0.0002 | 1.90e-79 | 0.0006 | YES | -0.0978 | Y | OK |
-| T06 | F1 | HG | 63d | CUSHIONED | 22,965 | 9,581 | 26,974 | 12,764 | -2.15 | N | 0.0002 | 1.90e-79 | 0.0006 | YES | -0.0978 | Y | OK |
-| T07 | F1 | RW | 21d | STOPPED | 20,698 | 8,910 | 29,241 | 14,106 | +2.58 | N | 0.0002 | 4.40e-96 | 0.0006 | YES | -0.1091 | Y | OK |
-| T08 | F1 | RW | 21d | CUSHIONED | 20,698 | 8,910 | 29,241 | 14,106 | -3.62 | N | 0.0002 | 4.40e-96 | 0.0006 | YES | -0.1091 | Y | OK |
-| T09 | F1 | RW | 63d | STOPPED | 20,698 | 8,910 | 29,241 | 14,106 | -4.55 | Y | 0.0002 | 8.57e-58 | 0.0006 | YES | -0.0840 | Y | OK |
-| T10 | F1 | RW | 63d | CUSHIONED | 20,698 | 8,910 | 29,241 | 14,106 | -1.79 | N | 0.0002 | 8.57e-58 | 0.0006 | YES | -0.0840 | Y | OK |
-| T11 | F2 | HG | 21d | STOPPED | 23,733 | 11,544 | 22,378 | 10,791 | +1.19 | N | 0.1766 | 3.03e-02 | 0.1962 | no | +0.0117 | Y | OK |
-| T12 | F2 | HG | 21d | DEAD_MONEY | 23,733 | 11,544 | 22,378 | 10,791 | -0.43 | Y | 0.1766 | 3.03e-02 | 0.1962 | no | +0.0117 | N | OK |
-| T13 | F2 | HG | 21d | CUSHIONED | 23,733 | 11,544 | 22,378 | 10,791 | -0.48 | N | 0.1766 | 3.03e-02 | 0.1962 | no | +0.0117 | Y | OK |
-| T14 | F2 | HG | 63d | STOPPED | 23,733 | 11,544 | 22,378 | 10,791 | +1.89 | N | 0.2372 | 4.84e-02 | 0.2372 | no | +0.0106 | Y | OK |
-| T15 | F2 | HG | 63d | DEAD_MONEY | 23,733 | 11,544 | 22,378 | 10,791 | -0.11 | Y | 0.2372 | 4.84e-02 | 0.2372 | no | +0.0106 | Y | OK |
-| T16 | F2 | HG | 63d | CUSHIONED | 23,733 | 11,544 | 22,378 | 10,791 | +0.06 | Y | 0.2372 | 4.84e-02 | 0.2372 | no | +0.0106 | N | OK |
-| T17 | F2 | RW | 21d | STOPPED | 21,696 | 10,753 | 28,243 | 13,691 | -0.96 | Y | 0.0684 | 2.70e-03 | 0.0933 | YES | -0.0156 | Y | OK |
-| T18 | F2 | RW | 21d | CUSHIONED | 21,696 | 10,753 | 28,243 | 13,691 | +0.15 | Y | 0.0684 | 2.70e-03 | 0.0933 | YES | -0.0156 | Y | OK |
-| T19 | F2 | RW | 63d | STOPPED | 21,696 | 10,753 | 28,243 | 13,691 | -0.04 | Y | 0.0426 | 5.55e-04 | 0.0752 | YES | -0.0180 | N | OK |
-| T20 | F2 | RW | 63d | CUSHIONED | 21,696 | 10,753 | 28,243 | 13,691 | +0.68 | Y | 0.0426 | 5.55e-04 | 0.0752 | YES | -0.0180 | Y | OK |
-| T21 | F3 | HG | 21d | STOPPED | 47,640 | 21,368 | 2,299 | 1,270 | -0.43 | Y | 0.0026 | 6.87e-07 | 0.0060 | YES | -0.0612 | Y | OK |
-| T22 | F3 | HG | 21d | DEAD_MONEY | 47,640 | 21,368 | 2,299 | 1,270 | -3.63 | Y | 0.0026 | 6.87e-07 | 0.0060 | YES | -0.0612 | Y | OK |
-| T23 | F3 | HG | 21d | CUSHIONED | 47,640 | 21,368 | 2,299 | 1,270 | -0.97 | N | 0.0026 | 6.87e-07 | 0.0060 | YES | -0.0612 | Y | OK |
-| T24 | F3 | HG | 63d | STOPPED | 47,640 | 21,368 | 2,299 | 1,270 | -5.00 | Y | 0.0648 | 2.10e-03 | 0.0933 | YES | -0.0379 | Y | OK |
-| T25 | F3 | HG | 63d | DEAD_MONEY | 47,640 | 21,368 | 2,299 | 1,270 | +0.09 | N | 0.0648 | 2.10e-03 | 0.0933 | YES | -0.0379 | Y | OK |
-| T26 | F3 | HG | 63d | CUSHIONED | 47,640 | 21,368 | 2,299 | 1,270 | -0.23 | N | 0.0648 | 2.10e-03 | 0.0933 | YES | -0.0379 | N | OK |
-| T27 | F3 | RW | 21d | STOPPED | 23,489 | 11,149 | 26,450 | 13,140 | +0.10 | N | 0.0176 | 7.68e-05 | 0.0352 | YES | -0.0205 | N | OK |
-| T28 | F3 | RW | 21d | CUSHIONED | 23,489 | 11,149 | 26,450 | 13,140 | +0.06 | Y | 0.0176 | 7.68e-05 | 0.0352 | YES | -0.0205 | N | OK |
-| T29 | F3 | RW | 63d | STOPPED | 23,489 | 11,149 | 26,450 | 13,140 | -1.70 | Y | 0.1284 | 8.64e-03 | 0.1605 | no | -0.0136 | N | OK |
-| T30 | F3 | RW | 63d | CUSHIONED | 23,489 | 11,149 | 26,450 | 13,140 | +0.30 | Y | 0.1284 | 8.64e-03 | 0.1605 | no | -0.0136 | N | OK |
+{trial_table}
 
-**BH family:** m=30, q≤0.10, standard step-up with monotonicity. **n_survive = 22/30; min BH-adj p = 0.0006.**
+**BH family:** m=30, q≤0.10, standard step-up with monotonicity. **n_survive = {r['n_survive_bh']}/30; min BH-adj p = {r['min_bh_adj_p']:.4f}.**
 
 ---
 
@@ -137,12 +170,7 @@ perm_p = episode label-permutation two-sided p (primary, feeds BH). param_p = pa
 
 | Factor | Mode | n_fires_total | n_would_block | gate_impact_% | clusters_blocked | >40%? | GATE-REJECT (§6.2)? |
 |---|---|---|---|---|---|---|---|
-| F1 | HG | 49,939 | 26,974 | 54.0% | 12,764 | YES | YES |
-| F2 | HG | 46,111 | 22,378 | 48.5% | 10,791 | YES | YES |
-| F3 | HG | 49,939 | 2,299 | 4.6% | 1,270 | no | no |
-| F1 | RW | 49,939 | 0 | 0.0% | 0 | no | no |
-| F2 | RW | 49,939 | 0 | 0.0% | 0 | no | no |
-| F3 | RW | 49,939 | 0 | 0.0% | 0 | no | no |
+{fire_table}
 
 F1 and F2 hard gates each eliminate ~half the board; both are **GATE-REJECTED under §6.2** (impact >40% and 21d stop-out delta does not survive favorable). F3's gate eliminates only 4.6% and is allowed.
 
@@ -150,59 +178,30 @@ F1 and F2 hard gates each eliminate ~half the board; both are **GATE-REJECTED un
 
 ## Both-halves sign-stability table
 
-Split at 2024-04-04 (H1 n=23,984, H2 n=25,955). Sign-stable = terminal-state delta has the same sign in both halves.
+Split at {s['midpoint']} (H1 n={s['n_half1']:,}, H2 n={s['n_half2']:,}). Sign-stable = terminal-state delta has the same sign in both halves.
 
 | ID | Fac | Mode | Hz | Terminal | H1 Δpp | H2 Δpp | Sign-stable |
 |---|---|---|---|---|---|---|---|
-| T01 | F1 | HG | 21d | STOPPED | +1.48 | +4.20 | YES |
-| T02 | F1 | HG | 21d | DEAD_MONEY | -14.00 | -12.29 | YES |
-| T03 | F1 | HG | 21d | CUSHIONED | -4.78 | -3.42 | YES |
-| T04 | F1 | HG | 63d | STOPPED | -8.54 | -1.31 | YES |
-| T05 | F1 | HG | 63d | DEAD_MONEY | -0.14 | -0.11 | YES |
-| T06 | F1 | HG | 63d | CUSHIONED | -1.31 | -3.00 | YES |
-| T07 | F1 | RW | 21d | STOPPED | +1.41 | +4.49 | YES |
-| T08 | F1 | RW | 21d | CUSHIONED | -3.81 | -3.40 | YES |
-| T09 | F1 | RW | 63d | STOPPED | -7.81 | -0.78 | YES |
-| T10 | F1 | RW | 63d | CUSHIONED | -0.84 | -2.75 | YES |
-| T11 | F2 | HG | 21d | STOPPED | +0.69 | +1.30 | YES |
-| T12 | F2 | HG | 21d | DEAD_MONEY | -1.33 | +0.30 | NO |
-| T13 | F2 | HG | 21d | CUSHIONED | -0.39 | -0.59 | YES |
-| T14 | F2 | HG | 63d | STOPPED | +1.21 | +2.23 | YES |
-| T15 | F2 | HG | 63d | DEAD_MONEY | -0.14 | -0.08 | YES |
-| T16 | F2 | HG | 63d | CUSHIONED | -0.10 | +0.23 | NO |
-| T17 | F2 | RW | 21d | STOPPED | -1.95 | -0.29 | YES |
-| T18 | F2 | RW | 21d | CUSHIONED | +0.20 | +0.10 | YES |
-| T19 | F2 | RW | 63d | STOPPED | -1.02 | +0.66 | NO |
-| T20 | F2 | RW | 63d | CUSHIONED | +0.62 | +0.76 | YES |
-| T21 | F3 | HG | 21d | STOPPED | -0.87 | -0.55 | YES |
-| T22 | F3 | HG | 21d | DEAD_MONEY | -3.76 | -3.66 | YES |
-| T23 | F3 | HG | 21d | CUSHIONED | -1.39 | -0.57 | YES |
-| T24 | F3 | HG | 63d | STOPPED | -8.75 | -1.55 | YES |
-| T25 | F3 | HG | 63d | DEAD_MONEY | +0.07 | +0.10 | YES |
-| T26 | F3 | HG | 63d | CUSHIONED | -0.94 | +0.55 | NO |
-| T27 | F3 | RW | 21d | STOPPED | -1.33 | +1.34 | NO |
-| T28 | F3 | RW | 21d | CUSHIONED | +0.55 | -0.40 | NO |
-| T29 | F3 | RW | 63d | STOPPED | -4.10 | +0.46 | NO |
-| T30 | F3 | RW | 63d | CUSHIONED | +0.98 | -0.33 | NO |
+{sign_table}
 
 ---
 
 ## Verdict per factor (PREREG §6, checked in order)
 
 ### F1 — cohort-washout proximity → **GATE-REJECT + SHIPS-AS-RANK-WEIGHT**
-- **§6.1 NO-GO?** No. HG 63d stop-out (T04) Δ=−5.21pp favorable, BH-adj p=0.0006 survives, sign-stable. Not both-fail.
+- **§6.1 NO-GO?** No. HG 63d stop-out (T04) Δ=−5.21pp favorable, BH-adj p={T['T04']['bh_adj_p']:.4f} survives, sign-stable. Not both-fail.
 - **§6.2 GATE-REJECT?** **Yes.** Gate impact 54.0% > 40% AND 21d stop-out (T01) is unfavorable (+2.41pp). The hard-gate design is rejected regardless of BH.
 - **§6.3 SHIP?** Rank weight ships: RW 63d stop-out (T09) Δ=−4.55pp favorable, BH-survive, sign-stable, n_clusters well above floor. Ships as **rank weight only** (per §6.2 clause: a GATE-REJECT factor may still proceed as RW if Mode-B survives).
 - **Signal shape:** strong at 63d and on dead-money (T02: −13.19pp dead-money at 21d, favorable, survives) but adverse on 21d stop-out — a horizon-dependent, net-favorable-longer-horizon effect. Correct role is a tilt, not a block.
 
 ### F2 — RS-inflection (Q2∪Q3) → **SHIPS-AS-RANK-WEIGHT**
-- **§6.1 NO-GO?** No. RW cushioned (T18, 21d) favorable, BH-adj p=0.0933 survives, sign-stable → clears the NO-GO both-fail test on the Mode-B cushioned leg.
+- **§6.1 NO-GO?** No. RW cushioned (T18, 21d) favorable, BH-adj p={T['T18']['bh_adj_p']:.4f} survives, sign-stable → clears the NO-GO both-fail test on the Mode-B cushioned leg.
 - **§6.2 GATE-REJECT?** Gate impact 48.5% > 40% and HG 21d stop-out does not survive → the **hard gate is rejected** on fire-rate; moreover the HG statistics themselves are null (T11/T14 stop-out BH-adj p ≈ 0.20–0.24, not significant). No viable gate.
 - **§6.3 SHIP?** Rank weight ships: T18 (21d cushioned) and T20 (63d cushioned) favorable, BH-survive, sign-stable. Ships as **rank weight only.**
 - **Signal shape:** genuinely weak (|r| ≈ 0.01–0.02) — the non-monotone Q2∪Q3 recode carries only a faint tilt. It clears the bar as an RW tilt but is the weakest of the three; shadow-testing should watch effect size closely.
 
 ### F3 — anti-chase (ext_z ≤ 2.0) → **SHIPS-AS-HARD-GATE**
-- **§6.1 NO-GO?** No. HG 21d stop-out (T21) Δ=−0.43pp favorable, BH-adj p=0.0060 survives, sign-stable.
+- **§6.1 NO-GO?** No. HG 21d stop-out (T21) Δ=−0.43pp favorable, BH-adj p={T['T21']['bh_adj_p']:.4f} survives, sign-stable.
 - **§6.2 GATE-REJECT?** No. Gate impact 4.6% < 40% — the gate is allowed.
 - **§6.3 SHIP?** HG ships: T21 (21d stop) and T24 (63d stop, Δ=−5.00pp favorable, BH-survive, sign-stable). Also strong on dead-money (T22: −3.63pp favorable). Ships as **hard gate** (impact well under 40%). RW does NOT ship (T27/T28/T29/T30 sign-stability fails).
 - **Signal shape:** small but clean stop-out and dead-money reduction; because it touches only the extended ~5% tail it is a low-cost gate.
@@ -251,3 +250,7 @@ Registry §8 transitions: F1 `validation_status: phase0_passed (RW)`; F2 `valida
 - **Sanity gate:** HALT on param/perm divergence of the round-1 defect signature — did NOT trip.
 
 *Round-1 files preserved as `run_P1_3_v1_bounced.py`, `RESULTS_v1_bounced.md`, `results_v1_bounced.json`. This report is the round-2 record of the registered trials with the defect corrected; the PREREG is immutable and unedited.*
+"""
+
+(OUT / "RESULTS.md").write_text(md)
+print(f"Wrote {OUT/'RESULTS.md'} ({len(md)} bytes)")

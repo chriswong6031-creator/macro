@@ -1,12 +1,24 @@
 {
   "study_id": "P1_4",
+  "round": "2 \u2014 defect-corrected re-run",
   "run_date": "2026-07-05",
-  "memo_citation": "P0_MEASUREMENT_MEMO.md v1.0 (2026-07-04)",
+  "memo_citation": "P0_MEASUREMENT_MEMO.md v1.0 (2026-07-04) + \u00a76 v1.1 (2026-07-05)",
   "primary_window": {
     "start": "2022-06-30",
     "end": "2026-07-02"
   },
+  "round1_defect": "verdict lookup built from all rows incl. 127,389 verdict_grade==False (horizon-censored) rows; NEVER-TRIGGERED=0 was an artifact",
+  "round2_fix": "verdict lookup built from verdict_grade==True only; universe from full presence; events with no verdict-grade row = NEVER-TRIGGERED",
+  "n_total_rows": 961656,
   "n_stamped_rows_in_artifact": 0,
+  "n_verdict_grade_rows": 834267,
+  "n_horizon_censored_rows_excluded": 127389,
+  "censored_share": 0.13246836706680976,
+  "censored_by_type": {
+    "rejection": 117154,
+    "fire": 7701,
+    "near_miss": 2534
+  },
   "universe_tickers": 1007,
   "denominator_A": {
     "n": 8242,
@@ -20,10 +32,10 @@
   "T1_recall_A": {
     "n": 8242,
     "fired": {
-      "count": 21,
-      "fraction": 0.002547925260859015,
-      "wilson_lo": 0.0016671505170701454,
-      "wilson_hi": 0.003892209245552508
+      "count": 20,
+      "fraction": 0.0024265954865323952,
+      "wilson_lo": 0.0015714367802207533,
+      "wilson_hi": 0.003745376484783028
     },
     "near_missed": {
       "count": 5,
@@ -32,44 +44,48 @@
       "wilson_hi": 0.0014194685279969267
     },
     "rejected": {
-      "count": 8216,
-      "fraction": 0.9968454258675079,
-      "wilson_lo": 0.9953816363149356,
-      "wilson_hi": 0.9978462714343476
+      "count": 7575,
+      "fraction": 0.9190730405241446,
+      "wilson_lo": 0.9129880231256934,
+      "wilson_hi": 0.9247675796498923
     },
     "never_triggered": {
-      "count": 0,
-      "fraction": 0.0,
-      "wilson_lo": 0.0,
-      "wilson_hi": 0.00046588331262633037
-    }
+      "count": 642,
+      "fraction": 0.07789371511768989,
+      "wilson_lo": 0.07230233323839208,
+      "wilson_hi": 0.08387840154555043
+    },
+    "never_censored": 642,
+    "never_absent": 0
   },
   "T2_recall_B": {
     "n": 25545,
     "fired": {
-      "count": 1414,
-      "fraction": 0.055353298101389704,
-      "wilson_lo": 0.05261536655258964,
-      "wilson_hi": 0.058224946457922755
+      "count": 1308,
+      "fraction": 0.05120375807398708,
+      "wilson_lo": 0.04856763574716026,
+      "wilson_hi": 0.05397484508296865
     },
     "near_missed": {
-      "count": 451,
-      "fraction": 0.017655118418477198,
-      "wilson_lo": 0.016111146621333918,
-      "wilson_hi": 0.019344143844751246
+      "count": 414,
+      "fraction": 0.016206694069289488,
+      "wilson_lo": 0.014729379080731611,
+      "wilson_hi": 0.017829498265785733
     },
     "rejected": {
-      "count": 23680,
-      "fraction": 0.9269915834801331,
-      "wilson_lo": 0.9237367033034465,
-      "wilson_hi": 0.9301180562015794
+      "count": 21542,
+      "fraction": 0.8432961440595028,
+      "wilson_lo": 0.8387866336704501,
+      "wilson_hi": 0.8477024163849542
     },
     "never_triggered": {
-      "count": 0,
-      "fraction": 0.0,
-      "wilson_lo": 1.3552527156068805e-20,
-      "wilson_hi": 0.00015036298162340167
-    }
+      "count": 2281,
+      "fraction": 0.08929340379722059,
+      "wilson_lo": 0.08585782485770732,
+      "wilson_hi": 0.09285249287348876
+    },
+    "never_censored": 2281,
+    "never_absent": 0
   },
   "T3_near_miss_breakdown": {
     "A": {
@@ -77,33 +93,33 @@
       "not_topped_veto": 3
     },
     "B": {
-      "not_topped_veto": 243,
-      "freshness_expired": 208
+      "not_topped_veto": 231,
+      "freshness_expired": 183
     }
   },
   "T4_rejected_breakdown": {
     "A": {
-      "no_signal": 7738,
-      "not_topped_veto": 299,
-      "hygiene_screen": 118,
-      "board_rank_cutoff": 61
+      "no_signal": 7136,
+      "not_topped_veto": 268,
+      "hygiene_screen": 117,
+      "board_rank_cutoff": 54
     },
     "B": {
-      "no_signal": 20595,
-      "not_topped_veto": 2427,
-      "board_rank_cutoff": 464,
-      "hygiene_screen": 194
+      "no_signal": 18682,
+      "not_topped_veto": 2246,
+      "board_rank_cutoff": 424,
+      "hygiene_screen": 190
     }
   },
   "T5_fired_tier": {
     "A": {
       "T2": 7,
-      "T1": 14
+      "T1": 13
     },
     "B": {
-      "T3": 57,
-      "T2": 685,
-      "T1": 672
+      "T3": 51,
+      "T2": 636,
+      "T1": 621
     }
   },
   "QRN": {
@@ -111,17 +127,17 @@
     "window_end": "2026-07-02",
     "A": {
       "n": 1713,
-      "fired": 3,
-      "rate": 0.0017513134851138354,
-      "lo": 0.0005957686442460606,
-      "hi": 0.005136618082636605
+      "fired": 2,
+      "rate": 0.0011675423234092236,
+      "lo": 0.00032023392590702733,
+      "hi": 0.004247222967029396
     },
     "B": {
       "n": 5706,
-      "fired": 253,
-      "rate": 0.044339291973361374,
-      "lo": 0.03929769480575751,
-      "hi": 0.0499940291538003
+      "fired": 149,
+      "rate": 0.02611286365229583,
+      "lo": 0.022282997654953705,
+      "hi": 0.030580395262986438
     }
   },
   "escalation_flags": [
@@ -148,5 +164,67 @@
     "T4",
     "T5"
   ],
-  "post_hoc_trials": []
+  "post_hoc_trials": [],
+  "reconciliation_round1_vs_round2": {
+    "denom_A": {
+      "r1": 8242,
+      "r2": 8242
+    },
+    "denom_B": {
+      "r1": 25545,
+      "r2": 25545
+    },
+    "overlap": {
+      "r1": 943,
+      "r2": 943
+    },
+    "A": {
+      "fired": {
+        "r1": 21,
+        "r2": 20
+      },
+      "near": {
+        "r1": 5,
+        "r2": 5
+      },
+      "rejected": {
+        "r1": 8216,
+        "r2": 7575
+      },
+      "never": {
+        "r1": 0,
+        "r2": 642
+      }
+    },
+    "B": {
+      "fired": {
+        "r1": 1414,
+        "r2": 1308
+      },
+      "near": {
+        "r1": 451,
+        "r2": 414
+      },
+      "rejected": {
+        "r1": 23680,
+        "r2": 21542
+      },
+      "never": {
+        "r1": 0,
+        "r2": 2281
+      }
+    },
+    "QRN_A": {
+      "r1_fired": 3,
+      "r2_fired": 2,
+      "r1_rate": 0.0017513134851138354,
+      "r2_rate": 0.0011675423234092236
+    },
+    "QRN_B": {
+      "r1_fired": 253,
+      "r2_fired": 149,
+      "r1_rate": 0.044339291973361374,
+      "r2_rate": 0.02611286365229583
+    }
+  }
 }

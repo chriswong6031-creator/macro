@@ -1,74 +1,4 @@
 {
-  "study_id": "P1_3",
-  "round": "round 2 \u2014 defect-corrected re-run",
-  "study_date": "2026-07-05",
-  "prereg": "/Users/chriswong/Documents/Cluade/Macro Dashboard/research/entry_intel/P1_3_TRIO_ABLATION_PREREG.md",
-  "memo_version": "P0_MEASUREMENT_MEMO.md v1.0 (2026-07-04) + \u00a76 v1.1 amendments",
-  "primary_test": "episode-level label-permutation Mann-Whitney U (N_PERM=5000, two-sided, Phipson-Smyth +1 smoothing)",
-  "round1_defect": "within-group bootstrap centered null at observed U -> boot_p~0.5 by construction (see REVIEW.md)",
-  "replay_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/replay/replay_boarded.parquet",
-  "replay_md5": "906175f9eb8caa351ed6d7d5c56265d3",
-  "replay_shape": [
-    961656,
-    66
-  ],
-  "population": {
-    "n_fires_verdict_grade": 49939,
-    "n_episode_clusters": 22295,
-    "n_stamped_excluded": 0,
-    "era_min": "2022-06-30",
-    "era_max": "2025-12-29",
-    "effective_verdict_window": "2022-06-30 -> 2025-12-29",
-    "washout_true": 22965,
-    "washout_false": 26974,
-    "rs_null_excluded": 3828,
-    "ext_z_gt2": 2299
-  },
-  "column_map": {
-    "episode_cluster_id": "episode_id",
-    "cohort_washout_proximity": "washout_proximity",
-    "rs_vs_sector_quartile": "rs_sector_quartile",
-    "fwd_21d": "fwd_ret_21",
-    "fwd_63d": "fwd_ret_63",
-    "survivor_bias_stamp": "survivor_bias"
-  },
-  "calibration": {
-    "negative_control": {
-      "n_runs": 200,
-      "rejection_rate_alpha05": 0.035,
-      "p_mean": 0.4879170829170829,
-      "p_median": 0.49500499500499495,
-      "ks_uniform_D": 0.08069930069930076,
-      "ks_uniform_p": 0.13989133847736102,
-      "pass": true
-    },
-    "positive_control": {
-      "injected_liftoff_delta_pp": 19.748084560150826,
-      "perm_p": 0.0001999600079984003,
-      "param_p": 0.0,
-      "r_biserial": -0.2969069502448931,
-      "pass": true
-    },
-    "overall_pass": true
-  },
-  "episode_label_purity": {
-    "F1_HG": 50,
-    "F2_HG": 1729,
-    "F3_HG": 343,
-    "F1_RW": 721,
-    "F2_RW": 2149,
-    "F3_RW": 1994
-  },
-  "sanity_gate": {
-    "tripped": false,
-    "flags": []
-  },
-  "tier_frac_measured": 0.023809523809523808,
-  "bh_family_m": 30,
-  "bh_q": 0.1,
-  "n_perm": 5000,
-  "n_survive_bh": 22,
-  "min_bh_adj_p": 0.0005998800239952009,
   "trials": {
     "T01": {
       "trial_id": "T01",
@@ -873,11 +803,51 @@
       "gate_rejected": false
     }
   },
-  "whole_study_verdict": "PARTIAL_SURVIVORS",
-  "survivors": [
-    "F1",
-    "F2",
-    "F3"
-  ],
-  "no_go": []
+  "calibration": {
+    "negative_control": {
+      "n_runs": 200,
+      "rejection_rate_alpha05": 0.035,
+      "p_mean": 0.4879170829170829,
+      "p_median": 0.49500499500499495,
+      "ks_uniform_D": 0.08069930069930076,
+      "ks_uniform_p": 0.13989133847736102,
+      "pass": true
+    },
+    "positive_control": {
+      "injected_liftoff_delta_pp": 19.748084560150826,
+      "perm_p": 0.0001999600079984003,
+      "param_p": 0.0,
+      "r_biserial": -0.2969069502448931,
+      "pass": true
+    },
+    "overall_pass": true
+  },
+  "population": {
+    "n_fires_verdict_grade": 49939,
+    "n_episode_clusters": 22295,
+    "n_stamped_excluded": 0,
+    "era_min": "2022-06-30",
+    "era_max": "2025-12-29",
+    "effective_verdict_window": "2022-06-30 -> 2025-12-29",
+    "washout_true": 22965,
+    "washout_false": 26974,
+    "rs_null_excluded": 3828,
+    "ext_z_gt2": 2299
+  },
+  "whole": "PARTIAL_SURVIVORS",
+  "n_survive": 22,
+  "min_bh": 0.0005998800239952009,
+  "midpoint": "2024-04-04",
+  "n_half1": 23984,
+  "n_half2": 25955,
+  "tier_frac": 0.023809523809523808,
+  "replay_md5": "906175f9eb8caa351ed6d7d5c56265d3",
+  "purity": {
+    "F1_HG": 50,
+    "F2_HG": 1729,
+    "F3_HG": 343,
+    "F1_RW": 721,
+    "F2_RW": 2149,
+    "F3_RW": 1994
+  }
 }

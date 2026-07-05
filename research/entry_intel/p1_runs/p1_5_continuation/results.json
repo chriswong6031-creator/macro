@@ -1,11 +1,38 @@
 {
-  "study_id": "p1_5_continuation",
+  "study_id": "P1_5_CONTINUATION",
+  "run_label": "round 2 \u2014 defect-corrected re-run",
+  "round1_defect": "arms built on tier_cascade (T1/T2) with silent T1->PRIME/T2->ARMED remap; PREREG registers arms on align_tier literal PRIME/ARMED",
+  "fix": "partition on align_tier literal values (ARMED/PRIME); re-run T1-T5 + BH; re-apply \u00a76 decision table",
   "era_law": "P0_MEASUREMENT_MEMO.md v1.0 (2026-07-04)",
-  "effective_verdict_window": "2022-06-30 \u2192 2026-07-02",
+  "effective_verdict_window_data": "2022-06-30 \u2192 2026-07-02 (replay-data boundary, \u00a76 amdt 1)",
+  "last_graded_fire_date": "2025-12-29",
   "canonical_input": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/replay/replay_boarded.parquet",
   "run_date": "2026-07-05",
-  "primary_verdict": "AMBIGUOUS",
-  "primary_verdict_reason": "GAP CASE: \u0394=-0.0549 (<-5pp, material), BH q=0.0000 (significant), sign stable both halves, majority pass (0.622). BUT stop-out delta = +0.0060 (<+5pp), so H-EXCLUDE's stop-out criterion is NOT met. H-MISLABEL requires |\u0394| < 5pp (not met: |\u0394|=0.0549). No pre-registered branch covers: liftoff material+significant+stable but stop-out immaterial. PREREG decision table has a gap. Returning blocker to Fable per program law.",
+  "primary_verdict": "H-MISLABEL",
+  "primary_verdict_reason": "|\u0394|=0.0279 < 5pp (not materially different) \u2014 H-MISLABEL first disjunct.",
+  "partition_axis": "align_tier (literal PRIME/ARMED/APPROACHING)",
+  "calibration_crosstab_align_tier_x_tier_cascade": {
+    "APPROACHING": {
+      "T1": 1075,
+      "T2": 2100,
+      "T3": 991
+    },
+    "ARMED": {
+      "T1": 620,
+      "T2": 883,
+      "T3": 249
+    },
+    "PRIME": {
+      "T1": 3625,
+      "T2": 1745,
+      "T3": 78
+    },
+    "nan": {
+      "T1": 17696,
+      "T2": 19497,
+      "T3": 1380
+    }
+  },
   "survivor_census": {
     "unstamped": 961656,
     "stamped": 0,
@@ -13,82 +40,102 @@
   },
   "partition_census": {
     "armed_continuation": {
-      "n": 10521,
-      "n_episodes": 5838
+      "n": 1752,
+      "n_episodes": 1322
     },
     "prime_bottoming": {
-      "n": 15145,
-      "n_episodes": 7312
+      "n": 5448,
+      "n_episodes": 3846
     },
     "other_armed": {
-      "n": 13704
-    }
+      "n": 0,
+      "note": "empty \u2014 all ARMED fires are weekly rising"
+    },
+    "armed_null_weekly_phase_excluded": 0
+  },
+  "board_rank_unresolved_descriptive": {
+    "armed_continuation": 418,
+    "prime_bottoming": 1321,
+    "treatment": "descriptive only \u2014 no keep/demote/flip (memo \u00a76.3)"
   },
   "trials": {
     "T1": {
       "description": "ARMED/rising vs PRIME reference (primary)",
-      "delta": -0.05487,
-      "armed_cont_p": 0.27897,
-      "prime_ref_p": 0.33384,
-      "p_value": 0.0,
-      "q_value_bh": 0.0,
-      "significant": true,
+      "delta": -0.02793,
+      "armed_cont_p": 0.30651,
+      "prime_ref_p": 0.33443,
+      "p_value": 0.049,
+      "q_value_bh": 0.1225,
+      "significant": false,
       "sign_stable": true,
       "majority_pass": true,
-      "stop_diff": 0.00597
+      "stop_diff": 0.01059
     },
     "T2": {
       "description": "RS Q1 vs Q2-Q4 within ARMED-continuation",
-      "delta": 0.02297,
-      "p_value": 0.2262,
-      "q_value_bh": 0.308
+      "delta": 0.05951,
+      "p_value": 0.1352,
+      "q_value_bh": 0.22533
     },
     "T3": {
       "description": "RS Q1-Q2 vs Q3-Q4 within ARMED-continuation",
-      "delta": -0.00299,
-      "p_value": 0.8184,
-      "q_value_bh": 0.8184
+      "delta": -0.00403,
+      "p_value": 0.8822,
+      "q_value_bh": 0.8822
     },
     "T4": {
       "description": "above_200dma True vs False within ARMED-continuation",
-      "delta": -0.0676,
+      "delta": -0.12056,
       "p_value": 0.0,
       "q_value_bh": 0.0
     },
     "T5": {
       "description": "Q1+above_200 corner vs all others within ARMED-continuation",
-      "delta": -0.03768,
-      "p_value": 0.2464,
-      "q_value_bh": 0.308
+      "delta": 0.09495,
+      "p_value": 0.216,
+      "q_value_bh": 0.27
     }
   },
   "secondary_context": {
     "armed_continuation": {
-      "n": 10521,
-      "STOPPED": 0.3882710768938314,
-      "DEAD_MONEY": 0.19693945442448438,
-      "CUSHIONED": 0.13582359091341129,
-      "CLEAN_LIFTOFF": 0.278965877768273,
-      "mae_21d": -0.055641202030367536,
-      "mfe_21d": 0.07077272753317103,
-      "ret_5d": 0.0002193522912548326,
-      "ret_10d": 0.005903258144622942,
-      "ret_21d": 0.014355657810432344,
-      "ret_63d": 0.03643525322360533
+      "n": 1752,
+      "STOPPED": 0.4046803652968037,
+      "DEAD_MONEY": 0.17579908675799086,
+      "CUSHIONED": 0.11301369863013698,
+      "CLEAN_LIFTOFF": 0.3065068493150685,
+      "mae_21d": -0.0578825526061331,
+      "mfe_21d": 0.07431718149333849,
+      "ret_5d": 0.002177652688105339,
+      "ret_10d": 0.0069818059188075645,
+      "ret_21d": 0.014274629359726633,
+      "ret_63d": 0.040586308664437146
     },
     "prime_bottoming": {
-      "n": 15145,
-      "STOPPED": 0.3823043908880819,
-      "DEAD_MONEY": 0.16183558930340047,
-      "CUSHIONED": 0.12202046880158468,
-      "CLEAN_LIFTOFF": 0.33383955100693297,
-      "mae_21d": -0.05223003786305052,
-      "mfe_21d": 0.07575130546059834,
-      "ret_5d": 0.004168884736521202,
-      "ret_10d": 0.011658123307204785,
-      "ret_21d": 0.024481274060889686,
-      "ret_63d": 0.05619287015757369
+      "n": 5448,
+      "STOPPED": 0.39408957415565343,
+      "DEAD_MONEY": 0.1527165932452276,
+      "CUSHIONED": 0.11875917767988252,
+      "CLEAN_LIFTOFF": 0.3344346549192364,
+      "mae_21d": -0.05325015902220345,
+      "mfe_21d": 0.07827226338487484,
+      "ret_5d": 0.0028778943237152185,
+      "ret_10d": 0.00894067559059758,
+      "ret_21d": 0.026639557210453458,
+      "ret_63d": 0.06341698924903125
     }
+  },
+  "both_halves": {
+    "midpoint": "2024-03-30",
+    "h1_delta": -0.01464,
+    "h2_delta": -0.05389,
+    "sign_stable": true
+  },
+  "per_name_majority": {
+    "n_agree": 410,
+    "n_names": 642,
+    "fraction": 0.6386,
+    "direction": "lower",
+    "pass": true
   },
   "bh_family_m": 5,
   "bh_threshold": 0.1,
