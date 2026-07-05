@@ -9,7 +9,7 @@
      `null` for a local-only build). A page that sets window.SUPABASE_CFG inline
      (e.g. watchlist.html) wins, so the value is identical either way. The
      publishable key is PUBLIC by design; per-user isolation is enforced by RLS. */
-  window.SUPABASE_CFG = window.SUPABASE_CFG || /*__SUPABASE_CFG__*/null;
+  window.SUPABASE_CFG = window.SUPABASE_CFG || {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"};
 
   /* ---- Google Analytics 4 (gtag.js) ---------------------------------------
      Injected once on EVERY page via this one shared script (every page loads
