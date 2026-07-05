@@ -1,0 +1,3684 @@
+{
+  "battery": "EXIT-CROWD",
+  "leg": "L4",
+  "leg_name": "ETF-flow rolloff (institutional trim, 1-5d lag)",
+  "phase": "Phase-0",
+  "status_label": "PRE-FDR INTERIM",
+  "verdict": "ACCRUE",
+  "verdict_reason": "single_era=True (eras covered: ['2023->']); distinct sector-windows @21d=87 vs floor 60; all flow history is a single ~3-month 2026 slice of the 2023-> era, so the prereg's mandatory era split (2018-19 / 2020-22 / 2023->) is not computable and no cell can be gated. ACCRUE by construction, exactly as the prereg discovery step anticipated. (PRE-FDR INTERIM: verdict language capped at ACCRUE/interim, F3.)",
+  "verdict_language_cap": "ACCRUE/interim only until 16-trial FDR family completes (F3)",
+  "prereg": "research/EXIT_CROWDING_PHASE0_PREREG.md (RATIFIED 2026-07-04, F1-F5)",
+  "run_at": "2026-07-05T04:11:40.353240+00:00",
+  "primary_lane": "11-sector-ETF complex group-days (F1); board buy[] roster = watermarked SECONDARY tag (not run here)",
+  "outcome_currency_SELL_base_rate": {
+    "exc63": -1.24,
+    "hit": 40,
+    "abs63": -0.05,
+    "abs_hit": 59,
+    "n": 169,
+    "_source": "engine.sector_signals.STATE_BASE_RATES['SELL'] (live, read at runtime)",
+    "_stamped_at": "2026-07-05T04:05:40.364845+00:00",
+    "_ladder": {
+      "TOPPING": {
+        "exc63": -0.11,
+        "hit": 48,
+        "abs63": 2.1,
+        "abs_hit": 67,
+        "n": 2335
+      },
+      "EXTENDED": {
+        "exc63": 0.06,
+        "hit": 50,
+        "abs63": 2.52,
+        "abs_hit": 68,
+        "n": 2185
+      }
+    }
+  },
+  "flow_history_discovery": {
+    "n_etfs": 30,
+    "per_etf": {
+      "BETZ": {
+        "n_snaps": 65,
+        "first": "2026-03-31",
+        "last": "2026-07-02"
+      },
+      "BOTZ": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "BUG": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "CHAT": {
+        "n_snaps": 65,
+        "first": "2026-03-31",
+        "last": "2026-07-02"
+      },
+      "CLOU": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "COPX": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "DIA": {
+        "n_snaps": 1,
+        "first": "2026-06-11",
+        "last": "2026-06-11"
+      },
+      "HERO": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "KBE": {
+        "n_snaps": 13,
+        "first": "2026-06-11",
+        "last": "2026-06-30"
+      },
+      "KRE": {
+        "n_snaps": 13,
+        "first": "2026-06-11",
+        "last": "2026-06-30"
+      },
+      "LIT": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "MARS": {
+        "n_snaps": 65,
+        "first": "2026-03-31",
+        "last": "2026-07-02"
+      },
+      "MDY": {
+        "n_snaps": 1,
+        "first": "2026-06-11",
+        "last": "2026-06-11"
+      },
+      "MEME": {
+        "n_snaps": 65,
+        "first": "2026-03-31",
+        "last": "2026-07-02"
+      },
+      "METV": {
+        "n_snaps": 65,
+        "first": "2026-03-31",
+        "last": "2026-07-02"
+      },
+      "MLPX": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "OZEM": {
+        "n_snaps": 65,
+        "first": "2026-03-31",
+        "last": "2026-07-02"
+      },
+      "PAVE": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "QQQ": {
+        "n_snaps": 1,
+        "first": "2026-06-13",
+        "last": "2026-06-13"
+      },
+      "RSP": {
+        "n_snaps": 1,
+        "first": "2026-06-13",
+        "last": "2026-06-13"
+      },
+      "SIL": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "SPY": {
+        "n_snaps": 1,
+        "first": "2026-06-11",
+        "last": "2026-06-11"
+      },
+      "URA": {
+        "n_snaps": 55,
+        "first": "2026-04-14",
+        "last": "2026-07-01"
+      },
+      "XAR": {
+        "n_snaps": 13,
+        "first": "2026-06-11",
+        "last": "2026-06-30"
+      },
+      "XBI": {
+        "n_snaps": 13,
+        "first": "2026-06-11",
+        "last": "2026-06-30"
+      },
+      "XHB": {
+        "n_snaps": 13,
+        "first": "2026-06-11",
+        "last": "2026-06-30"
+      },
+      "XME": {
+        "n_snaps": 13,
+        "first": "2026-06-11",
+        "last": "2026-06-30"
+      },
+      "XOP": {
+        "n_snaps": 13,
+        "first": "2026-06-11",
+        "last": "2026-06-30"
+      },
+      "XRT": {
+        "n_snaps": 13,
+        "first": "2026-06-11",
+        "last": "2026-06-30"
+      },
+      "XSD": {
+        "n_snaps": 13,
+        "first": "2026-06-11",
+        "last": "2026-06-30"
+      }
+    },
+    "union_first": "2026-03-31",
+    "union_last": "2026-07-02",
+    "union_n_dates": 66,
+    "union_dates": [
+      "2026-03-31",
+      "2026-04-01",
+      "2026-04-02",
+      "2026-04-06",
+      "2026-04-07",
+      "2026-04-08",
+      "2026-04-09",
+      "2026-04-10",
+      "2026-04-13",
+      "2026-04-14",
+      "2026-04-15",
+      "2026-04-16",
+      "2026-04-17",
+      "2026-04-20",
+      "2026-04-21",
+      "2026-04-22",
+      "2026-04-23",
+      "2026-04-24",
+      "2026-04-27",
+      "2026-04-28",
+      "2026-04-29",
+      "2026-04-30",
+      "2026-05-01",
+      "2026-05-04",
+      "2026-05-05",
+      "2026-05-06",
+      "2026-05-07",
+      "2026-05-08",
+      "2026-05-11",
+      "2026-05-12",
+      "2026-05-13",
+      "2026-05-14",
+      "2026-05-15",
+      "2026-05-18",
+      "2026-05-19",
+      "2026-05-20",
+      "2026-05-21",
+      "2026-05-22",
+      "2026-05-26",
+      "2026-05-27",
+      "2026-05-28",
+      "2026-05-29",
+      "2026-06-01",
+      "2026-06-02",
+      "2026-06-03",
+      "2026-06-04",
+      "2026-06-05",
+      "2026-06-08",
+      "2026-06-09",
+      "2026-06-10",
+      "2026-06-11",
+      "2026-06-12",
+      "2026-06-13",
+      "2026-06-15",
+      "2026-06-16",
+      "2026-06-17",
+      "2026-06-18",
+      "2026-06-22",
+      "2026-06-23",
+      "2026-06-24",
+      "2026-06-25",
+      "2026-06-26",
+      "2026-06-29",
+      "2026-06-30",
+      "2026-07-01",
+      "2026-07-02"
+    ],
+    "sector_etf_holdings_present": [],
+    "sector_etf_holdings_absent": [
+      "XLB",
+      "XLC",
+      "XLE",
+      "XLF",
+      "XLI",
+      "XLK",
+      "XLP",
+      "XLRE",
+      "XLU",
+      "XLV",
+      "XLY"
+    ],
+    "persisted_flow_score_series_found": false,
+    "note": "theme_flow_rollup reads only the LAST snapshot date; there is NO persisted historical flow_score series. Any time-series is a per-date PIT recomputation bounded by the dated snapshot history above."
+  },
+  "theme_to_sector_mapping": {
+    "basis": "basket `category` field -> GICS sector ETF (CATEGORY_TO_SECTOR_ETF)",
+    "n_mapped_themes": 17,
+    "n_unmapped_themes": 29,
+    "unmapped": [
+      {
+        "theme": "housing",
+        "category": "Consumer Cyclical"
+      },
+      {
+        "theme": "defensives",
+        "category": "Consumer Defensive"
+      },
+      {
+        "theme": "travel",
+        "category": "Consumer Cyclical"
+      },
+      {
+        "theme": "retail",
+        "category": "Consumer Cyclical"
+      },
+      {
+        "theme": "crypto",
+        "category": "Crypto & Digital Assets"
+      },
+      {
+        "theme": "crypto_rails",
+        "category": "Crypto & Digital Assets"
+      },
+      {
+        "theme": "ai_neoclouds",
+        "category": "Artificial Intelligence"
+      },
+      {
+        "theme": "non_ai_software",
+        "category": "Software"
+      },
+      {
+        "theme": "non_ai_tech",
+        "category": "Semiconductors & Hardware"
+      },
+      {
+        "theme": "ai_semiconductors",
+        "category": "Semiconductors"
+      },
+      {
+        "theme": "semicap_equipment",
+        "category": "Semiconductors"
+      },
+      {
+        "theme": "memory_storage",
+        "category": "Semiconductors"
+      },
+      {
+        "theme": "cybersecurity",
+        "category": "Software"
+      },
+      {
+        "theme": "robotics_automation",
+        "category": "Industrials"
+      },
+      {
+        "theme": "uranium_miners",
+        "category": "Materials & Mining"
+      },
+      {
+        "theme": "critical_minerals",
+        "category": "Materials & Mining"
+      },
+      {
+        "theme": "ai_agents",
+        "category": "Artificial Intelligence"
+      },
+      {
+        "theme": "industrial_distribution",
+        "category": "Industrials"
+      },
+      {
+        "theme": "us_sector_tech",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_financials",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_health",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_discretionary",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_comm",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_industrials",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_staples",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_energy",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_utilities",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_realestate",
+        "category": "US Sectors (EW)"
+      },
+      {
+        "theme": "us_sector_materials",
+        "category": "US Sectors (EW)"
+      }
+    ],
+    "lossy_mappings": {
+      "mag7": {
+        "category": "AI & Technology",
+        "sector_etf": "XLK",
+        "loss": "spans Technology (XLK) + Communication Services (XLC)"
+      },
+      "ai_infra": {
+        "category": "AI & Technology",
+        "sector_etf": "XLK",
+        "loss": "spans Technology (XLK) + Communication Services (XLC)"
+      },
+      "ai_software": {
+        "category": "AI & Technology",
+        "sector_etf": "XLK",
+        "loss": "spans Technology (XLK) + Communication Services (XLC)"
+      },
+      "power_grid": {
+        "category": "Energy & Power",
+        "sector_etf": "XLE",
+        "loss": "spans Energy (XLE) + Utilities (XLU)"
+      },
+      "energy_complex": {
+        "category": "Energy & Power",
+        "sector_etf": "XLE",
+        "loss": "spans Energy (XLE) + Utilities (XLU)"
+      },
+      "data_center_power": {
+        "category": "Energy & Power",
+        "sector_etf": "XLE",
+        "loss": "spans Energy (XLE) + Utilities (XLU)"
+      },
+      "nuclear_power": {
+        "category": "Energy & Power",
+        "sector_etf": "XLE",
+        "loss": "spans Energy (XLE) + Utilities (XLU)"
+      },
+      "quantum_computing": {
+        "category": "AI & Technology",
+        "sector_etf": "XLK",
+        "loss": "spans Technology (XLK) + Communication Services (XLC)"
+      }
+    },
+    "OPEN_ITEM": "The theme(category)->GICS-sector mapping is LOSSY for categories that straddle >1 GICS sector (see lossy_mappings). This is flagged, NOT silently resolved \u2014 the sector-ETF PRIMARY lane inherits this coarseness. A per-member GICS rollup would be the fix (future amendment)."
+  },
+  "fire_detection": {
+    "definition": "divergence==True OR flow_score crossing below 0 (t-1>=0, t<0) with coverage>=0.10 (\u00a72.2 L4)",
+    "n_eval_dates": 65,
+    "n_fires_total": 392,
+    "fires": [
+      {
+        "as_of": "2026-04-06",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -1.2838,
+        "n_covered": 3,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-07",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -1.2747,
+        "n_covered": 3,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-08",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.8605,
+        "n_covered": 4,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-09",
+        "theme_id": "ai_infra",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.2814,
+        "n_covered": 4,
+        "n_members": 24
+      },
+      {
+        "as_of": "2026-04-09",
+        "theme_id": "ai_neoclouds",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.0556,
+        "n_covered": 2,
+        "n_members": 13
+      },
+      {
+        "as_of": "2026-04-09",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.5707,
+        "n_covered": 4,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-10",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.1571,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-10",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.636,
+        "n_covered": 7,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-10",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-10",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.3831,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-10",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -1.1475,
+        "n_covered": 3,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-04-10",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.534,
+        "n_covered": 4,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-10",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.2505,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-13",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.4381,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-13",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.2494,
+        "n_covered": 5,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-13",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-13",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -0.1178,
+        "n_covered": 3,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-04-14",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.5019,
+        "n_covered": 5,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-14",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.8088,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-14",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-14",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.3878,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-14",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -1.2428,
+        "n_covered": 3,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-04-14",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.7323,
+        "n_covered": 12,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-14",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.2815,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-15",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -2.8643,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-15",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -1.7099,
+        "n_covered": 7,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-15",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-15",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0412,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-15",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -3.5723,
+        "n_covered": 3,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-04-15",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -1.0344,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-16",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.551,
+        "n_covered": 5,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-16",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.8389,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-16",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-16",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.3997,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-16",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -1.3134,
+        "n_covered": 3,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-04-16",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.308,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-17",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -2.6236,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-17",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -1.5845,
+        "n_covered": 7,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-17",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-17",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0202,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-17",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -3.2452,
+        "n_covered": 3,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-04-17",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.952,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-20",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.5999,
+        "n_covered": 5,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-20",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.8734,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-20",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-20",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.4382,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-20",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.138,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-20",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.3338,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-21",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.5785,
+        "n_covered": 5,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-21",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.8603,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-21",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-21",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.4405,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-21",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.1458,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-21",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.3291,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-22",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.5528,
+        "n_covered": 5,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-22",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.8451,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-22",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-22",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.4363,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-22",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.1307,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-22",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.3208,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-23",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -2.2075,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-23",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -1.543,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-23",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-23",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.8574,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-23",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.1112,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-23",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.7945,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-24",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -2.0818,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-24",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -1.442,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-24",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-24",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.8029,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-24",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.1224,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-24",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.6869,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-27",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.5866,
+        "n_covered": 5,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-27",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.8582,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-27",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-27",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.4353,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-27",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.101,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-27",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.3193,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-28",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -2.3679,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-28",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -1.6289,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-28",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-28",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.9315,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-28",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.4787,
+        "n_covered": 11,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-28",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.7976,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-29",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.7758,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-29",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -1.0233,
+        "n_covered": 7,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-29",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-29",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.649,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-29",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.351,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-29",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.5187,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-04-30",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.1552,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-04-30",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.9239,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-04-30",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-04-30",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.4887,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-04-30",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.3661,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-04-30",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.3448,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-05-01",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.1611,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-01",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.9411,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-05-01",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-01",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.4689,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-01",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.3641,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-01",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.3454,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-05-04",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.1633,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-04",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.9497,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-05-04",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-04",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.4993,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-04",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.5963,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-04",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.3596,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-05-05",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.1555,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-05",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.9401,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-05-05",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-05",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.5071,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-05",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.6057,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-05",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.3609,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-05-05",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.2818,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-06",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.1584,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-06",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.9453,
+        "n_covered": 6,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-05-06",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -1.41,
+        "n_covered": 2,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-06",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.5514,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-06",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -1.6158,
+        "n_covered": 8,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-06",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.6208,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-06",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.3376,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-05-06",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.2571,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-07",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.4082,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-07",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.3657,
+        "n_covered": 8,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-05-07",
+        "theme_id": "non_ai_software",
+        "kind": "divergence",
+        "flow_score": -0.9224,
+        "n_covered": 3,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-07",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.4403,
+        "n_covered": 1,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-07",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -1.0071,
+        "n_covered": 8,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-07",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.5916,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-07",
+        "theme_id": "ai_agents",
+        "kind": "divergence",
+        "flow_score": -0.2417,
+        "n_covered": 1,
+        "n_members": 8
+      },
+      {
+        "as_of": "2026-05-07",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.8941,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-07",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.0613,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-08",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.4465,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-08",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.2733,
+        "n_covered": 14,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-05-08",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0076,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-08",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.9468,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-08",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -0.2859,
+        "n_covered": 5,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-05-08",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.5524,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-08",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.8098,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-11",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.1479,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-11",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.9888,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-11",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -3.7753,
+        "n_covered": 6,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-11",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.5536,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-11",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.5949,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-11",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.0112,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-12",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.0998,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-12",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0071,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-12",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.2516,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-12",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.5411,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-12",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.091,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-12",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.0103,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-13",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.1805,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-13",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.044,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-13",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.277,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-13",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.5467,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-13",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0967,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-13",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.0461,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-14",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.0944,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-14",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0626,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-14",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3055,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-14",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.3638,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-14",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.098,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-14",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.0158,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-15",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.0571,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-15",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0586,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-15",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.2778,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-15",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.3849,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-15",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.094,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-18",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.956,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-18",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.2488,
+        "n_covered": 15,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-05-18",
+        "theme_id": "ai_semiconductors",
+        "kind": "flow_cross_below_0",
+        "flow_score": -1.6485,
+        "n_covered": 10,
+        "n_members": 12
+      },
+      {
+        "as_of": "2026-05-18",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0804,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-18",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.2795,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-18",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.1491,
+        "n_covered": 9,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-18",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0941,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-18",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.4492,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-19",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.6504,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-19",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.0893,
+        "n_covered": 15,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-05-19",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0365,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-19",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3092,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-19",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.107,
+        "n_covered": 11,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-19",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0953,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-19",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.2924,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-20",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.5415,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-20",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.0655,
+        "n_covered": 15,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-05-20",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0454,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-20",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3289,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-20",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.0899,
+        "n_covered": 10,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-20",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1006,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-20",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.2371,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-21",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.1277,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-21",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0376,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-21",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3372,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-21",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.0913,
+        "n_covered": 10,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-21",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1043,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-21",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.007,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-22",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.0911,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-22",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0297,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-22",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3198,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-22",
+        "theme_id": "space_economy",
+        "kind": "divergence",
+        "flow_score": -0.0695,
+        "n_covered": 10,
+        "n_members": 15
+      },
+      {
+        "as_of": "2026-05-22",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0915,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-26",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.0772,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-26",
+        "theme_id": "crypto",
+        "kind": "flow_cross_below_0",
+        "flow_score": -1.8909,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-26",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0047,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-26",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3176,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-26",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0802,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-27",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.1429,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-27",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.116,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-27",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3137,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-27",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0833,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-27",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.0218,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-05-28",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.0305,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-28",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.1621,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-28",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3187,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-28",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0798,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-29",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.4434,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-05-29",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.113,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-05-29",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3571,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-05-29",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0736,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-05-29",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.1974,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-06-01",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.0661,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-01",
+        "theme_id": "ai_neoclouds",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.4377,
+        "n_covered": 4,
+        "n_members": 13
+      },
+      {
+        "as_of": "2026-06-01",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0806,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-01",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.332,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-01",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0608,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-02",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.104,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-02",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.1541,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-02",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3171,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-02",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0619,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-03",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.0455,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-03",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.0422,
+        "n_covered": 13,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-06-03",
+        "theme_id": "ai_neoclouds",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.1477,
+        "n_covered": 3,
+        "n_members": 13
+      },
+      {
+        "as_of": "2026-06-03",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.1135,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-03",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3829,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-03",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1108,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-04",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.2176,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-04",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.1274,
+        "n_covered": 14,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-06-04",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.1351,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-04",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3869,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-04",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1195,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-05",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.0684,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-05",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.1055,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-05",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.3703,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-05",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0878,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-08",
+        "theme_id": "non_ai_tech",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.1754,
+        "n_covered": 2,
+        "n_members": 13
+      },
+      {
+        "as_of": "2026-06-08",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0907,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-08",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.0666,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-08",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.959,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-09",
+        "theme_id": "ai_neoclouds",
+        "kind": "flow_cross_below_0",
+        "flow_score": -1.3325,
+        "n_covered": 4,
+        "n_members": 13
+      },
+      {
+        "as_of": "2026-06-09",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.0859,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-09",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.0953,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-09",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.967,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-09",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.0071,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-06-10",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.2029,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-10",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.0397,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-10",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.9338,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-11",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.6712,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-11",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.0968,
+        "n_covered": 14,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-06-11",
+        "theme_id": "non_ai_tech",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.059,
+        "n_covered": 2,
+        "n_members": 13
+      },
+      {
+        "as_of": "2026-06-11",
+        "theme_id": "ai_semiconductors",
+        "kind": "flow_cross_below_0",
+        "flow_score": -1.0249,
+        "n_covered": 10,
+        "n_members": 12
+      },
+      {
+        "as_of": "2026-06-11",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.2438,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-11",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.0218,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-11",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.9193,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-12",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.246,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-12",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.5241,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-12",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1502,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-13",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.246,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-13",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.5241,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-13",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1502,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-15",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.2989,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-15",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.1746,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-15",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.9965,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-16",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.2933,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-16",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.1588,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-16",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.9845,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-17",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.3139,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-17",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -2.1693,
+        "n_covered": 7,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-17",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.9989,
+        "n_covered": 3,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.4662,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "energy_complex",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.3411,
+        "n_covered": 15,
+        "n_members": 22
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.0603,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "non_ai_tech",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.2251,
+        "n_covered": 6,
+        "n_members": 13
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "ai_semiconductors",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.2668,
+        "n_covered": 11,
+        "n_members": 12
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.3212,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -1.3206,
+        "n_covered": 9,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -0.5771,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.0586,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -0.6718,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-06-18",
+        "theme_id": "us_sector_energy",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.1224,
+        "n_covered": 15,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.3402,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.0438,
+        "n_covered": 14,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.5529,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "payments_fintech",
+        "kind": "divergence",
+        "flow_score": -0.0609,
+        "n_covered": 3,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.07,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.343,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -3.2779,
+        "n_covered": 9,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.2325,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.0843,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -1.8929,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "us_sector_discretionary",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.0359,
+        "n_covered": 17,
+        "n_members": 47
+      },
+      {
+        "as_of": "2026-06-22",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.3445,
+        "n_covered": 4,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -1.9045,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.361,
+        "n_covered": 15,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.5827,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "payments_fintech",
+        "kind": "divergence",
+        "flow_score": -0.2959,
+        "n_covered": 3,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "crypto",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.166,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.3067,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.3471,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -7.1582,
+        "n_covered": 9,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -0.2378,
+        "n_covered": 7,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "critical_minerals",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.0045,
+        "n_covered": 2,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -2.5281,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.1466,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -3.7535,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-06-23",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -1.9581,
+        "n_covered": 5,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.8291,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "ai_software",
+        "kind": "divergence",
+        "flow_score": -0.0619,
+        "n_covered": 15,
+        "n_members": 17
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.6044,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "payments_fintech",
+        "kind": "divergence",
+        "flow_score": -0.1936,
+        "n_covered": 3,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.2244,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.3001,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -3.4726,
+        "n_covered": 10,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -0.0726,
+        "n_covered": 7,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1693,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.1158,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -1.8127,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-06-24",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.7358,
+        "n_covered": 6,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.4318,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.6286,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "payments_fintech",
+        "kind": "divergence",
+        "flow_score": -0.1955,
+        "n_covered": 3,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.2245,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "ai_neoclouds",
+        "kind": "flow_cross_below_0",
+        "flow_score": -0.097,
+        "n_covered": 5,
+        "n_members": 13
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.3349,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -3.4365,
+        "n_covered": 10,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -0.3499,
+        "n_covered": 7,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.145,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.1164,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -1.7951,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-06-25",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.4731,
+        "n_covered": 6,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.4412,
+        "n_covered": 7,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.606,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "payments_fintech",
+        "kind": "divergence",
+        "flow_score": -0.1831,
+        "n_covered": 3,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.1993,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.323,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -3.4616,
+        "n_covered": 10,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1358,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.1126,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -1.8041,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-06-26",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.5049,
+        "n_covered": 6,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.7256,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.5634,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "payments_fintech",
+        "kind": "divergence",
+        "flow_score": -0.1695,
+        "n_covered": 3,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.1612,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.3676,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -3.4661,
+        "n_covered": 10,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -0.805,
+        "n_covered": 5,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.128,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.1074,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -1.8513,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-06-29",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.5116,
+        "n_covered": 6,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.7261,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.5886,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "payments_fintech",
+        "kind": "divergence",
+        "flow_score": -0.1676,
+        "n_covered": 3,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.1589,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -1.3657,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -3.5992,
+        "n_covered": 10,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "quantum_computing",
+        "kind": "divergence",
+        "flow_score": -0.7823,
+        "n_covered": 7,
+        "n_members": 11
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1744,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.1104,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -1.9294,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-06-30",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.5169,
+        "n_covered": 6,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.9837,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.5958,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "payments_fintech",
+        "kind": "divergence",
+        "flow_score": -0.1085,
+        "n_covered": 4,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.1784,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "ai_neoclouds",
+        "kind": "flow_cross_below_0",
+        "flow_score": -1.1315,
+        "n_covered": 5,
+        "n_members": 13
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.8128,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -3.6943,
+        "n_covered": 10,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.1812,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.117,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -1.9319,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-07-01",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.6895,
+        "n_covered": 6,
+        "n_members": 23
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "mag7",
+        "kind": "divergence",
+        "flow_score": -0.6224,
+        "n_covered": 6,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "defense",
+        "kind": "divergence",
+        "flow_score": -0.5928,
+        "n_covered": 18,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "payments_fintech",
+        "kind": "divergence",
+        "flow_score": -0.0989,
+        "n_covered": 4,
+        "n_members": 21
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "crypto_rails",
+        "kind": "divergence",
+        "flow_score": -0.1369,
+        "n_covered": 2,
+        "n_members": 7
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "cybersecurity",
+        "kind": "divergence",
+        "flow_score": -0.8103,
+        "n_covered": 10,
+        "n_members": 10
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "obesity_glp1",
+        "kind": "divergence",
+        "flow_score": -3.2688,
+        "n_covered": 10,
+        "n_members": 14
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "big_pharma",
+        "kind": "divergence",
+        "flow_score": -1.0413,
+        "n_covered": 5,
+        "n_members": 9
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "us_sector_financials",
+        "kind": "divergence",
+        "flow_score": -0.1048,
+        "n_covered": 13,
+        "n_members": 76
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "us_sector_health",
+        "kind": "divergence",
+        "flow_score": -1.797,
+        "n_covered": 9,
+        "n_members": 59
+      },
+      {
+        "as_of": "2026-07-02",
+        "theme_id": "us_sector_comm",
+        "kind": "divergence",
+        "flow_score": -0.4245,
+        "n_covered": 6,
+        "n_members": 23
+      }
+    ]
+  },
+  "cells": {
+    "primary_21d": {
+      "horizon_d": 21,
+      "is_primary": true,
+      "n_matured_fires_raw": 136,
+      "n_distinct_fire_dates": 40,
+      "n_distinct_sector_windows": 87,
+      "independence_note": "raw fires are heavily autocorrelated: the same sector ETF recurs across consecutive dates and multiple themes map to one sector ETF, so distinct (date x sector-ETF) windows are the true ceiling. Raw n is NOT an independent-observation count.",
+      "fire_conditioned_excess_mean_pct": 5.682071995720026,
+      "delta_vs_SELL_base_rate_pct": 6.922071995720026,
+      "sharpens_base_rate": false,
+      "min_n_floor": 60,
+      "eras_covered": [
+        "2023->"
+      ],
+      "single_era": true,
+      "powered_for_gate": false,
+      "lag_label": "1-5d lag (holdings-snapshot cadence; no lead claim tighter than reporting cadence, O6-v)",
+      "sign_convention": "exhaustion payoff = MORE-NEGATIVE forward excess; delta<0 vs -1.24% SELL base rate = sharpening (B2 cross-granularity, informative only \u2014 different universe granularities). NOTE: the interim mean here is POSITIVE (sector outperformance after a flow-rolloff fire), i.e. the OPPOSITE sign to the exhaustion hypothesis \u2014 but on a single ~3-month 2026 window it is uninterpretable and NOT a refutation."
+    },
+    "secondary_63d": {
+      "horizon_d": 63,
+      "is_primary": false,
+      "n_matured_fires_raw": 0,
+      "n_distinct_fire_dates": 0,
+      "n_distinct_sector_windows": 0,
+      "independence_note": "raw fires are heavily autocorrelated: the same sector ETF recurs across consecutive dates and multiple themes map to one sector ETF, so distinct (date x sector-ETF) windows are the true ceiling. Raw n is NOT an independent-observation count.",
+      "fire_conditioned_excess_mean_pct": null,
+      "delta_vs_SELL_base_rate_pct": null,
+      "sharpens_base_rate": null,
+      "min_n_floor": 60,
+      "eras_covered": [
+        "2023->"
+      ],
+      "single_era": true,
+      "powered_for_gate": false,
+      "lag_label": "1-5d lag (holdings-snapshot cadence; no lead claim tighter than reporting cadence, O6-v)",
+      "sign_convention": "exhaustion payoff = MORE-NEGATIVE forward excess; delta<0 vs -1.24% SELL base rate = sharpening (B2 cross-granularity, informative only \u2014 different universe granularities). NOTE: the interim mean here is POSITIVE (sector outperformance after a flow-rolloff fire), i.e. the OPPOSITE sign to the exhaustion hypothesis \u2014 but on a single ~3-month 2026 window it is uninterpretable and NOT a refutation."
+    },
+    "robust_5d": {
+      "horizon_d": 5,
+      "is_primary": false,
+      "n_matured_fires_raw": 194,
+      "n_distinct_fire_dates": 57,
+      "n_distinct_sector_windows": 120,
+      "independence_note": "raw fires are heavily autocorrelated: the same sector ETF recurs across consecutive dates and multiple themes map to one sector ETF, so distinct (date x sector-ETF) windows are the true ceiling. Raw n is NOT an independent-observation count.",
+      "fire_conditioned_excess_mean_pct": 1.140969098957479,
+      "delta_vs_SELL_base_rate_pct": 2.380969098957479,
+      "sharpens_base_rate": false,
+      "min_n_floor": 60,
+      "eras_covered": [
+        "2023->"
+      ],
+      "single_era": true,
+      "powered_for_gate": false,
+      "lag_label": "1-5d lag (holdings-snapshot cadence; no lead claim tighter than reporting cadence, O6-v)",
+      "sign_convention": "exhaustion payoff = MORE-NEGATIVE forward excess; delta<0 vs -1.24% SELL base rate = sharpening (B2 cross-granularity, informative only \u2014 different universe granularities). NOTE: the interim mean here is POSITIVE (sector outperformance after a flow-rolloff fire), i.e. the OPPOSITE sign to the exhaustion hypothesis \u2014 but on a single ~3-month 2026 window it is uninterpretable and NOT a refutation."
+    }
+  },
+  "placebo": {
+    "design": "same-sector leg-not-fired matched held theme-days, regime+duration matched, 200 draws, exclusion_zone=10 (\u00a75 + F1 PRIMARY lane)",
+    "n_candidate_nonevent_days": 101,
+    "n_real_fires_matured": 136,
+    "draws": 200,
+    "exclusion_zone": 10,
+    "placebo_p05_more_negative_tail": -2.704224600062933,
+    "insufficient_placebo": false,
+    "note": "G1 threshold = the more-negative (5th-percentile) tail of the placebo mean distribution, since the exhaustion payoff is a NEGATIVE excess."
+  },
+  "fdr": {
+    "family_size": 16,
+    "family_complete": false,
+    "bh_q_values": null,
+    "note": "BH q-values print ONLY when the 16-trial family (L1-L4 x eras) completes. L1-L3 await data/thetadata_eod manifest. PRE-FDR INTERIM."
+  },
+  "come_back_note": "board+ETF-holdings history accrual; re-run when >=2 eras have data AND distinct sector-windows @21d >= 60 AND the L1-L3 sub-family completes the 16-trial FDR family (then BH q-values print once).",
+  "honesty_stamps": {
+    "sector_etf_holdings_absent": [
+      "XLB",
+      "XLC",
+      "XLE",
+      "XLF",
+      "XLI",
+      "XLK",
+      "XLP",
+      "XLRE",
+      "XLU",
+      "XLV",
+      "XLY"
+    ],
+    "history_depth_note": "Deepest per-ETF holdings history is ~3 months, all in 2026 (see flow_history_discovery). The prereg PRIMARY window is 2018-> with mandatory eras 2018-19 / 2020-22 / 2023->; only the 2023-> era has ANY data, and even that is a single ~3-month slice. Era splits are therefore not computable; this is ACCRUE by construction, exactly as the prereg's discovery step anticipated.",
+    "survivorship": "board ledger powered=false / survivorship-inflated (studies.json); any board-conditioned n optimistic until deep+PIT panel",
+    "no_fabricated_history": true,
+    "prereg_not_relaxed": true
+  }
+}
