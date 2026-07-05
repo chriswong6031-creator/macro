@@ -564,3 +564,97 @@ class TestStagingCoverage:
             "daily.yml engine commit step must stage data/ to cover "
             "data/reflexes/options_flow_attention/"
         )
+
+    def test_daily_yml_engine_invokes_producer(self):
+        """Guard (major-fix): daily.yml engine job must invoke the producer script so
+        firings are written nightly.  Without this step the reflex is inert."""
+        wf_path = ROOT / ".github" / "workflows" / "daily.yml"
+        doc = yaml.safe_load(wf_path.read_text())
+        engine_job = (doc.get("jobs") or {}).get("engine") or {}
+        steps = engine_job.get("steps") or []
+        all_run_text = " ".join(s.get("run", "") for s in steps if s.get("run"))
+        assert "build_options_flow_attention" in all_run_text, (
+            "daily.yml engine job must invoke scripts.build_options_flow_attention "
+            "(or build_options_flow_attention module path) so firings.jsonl is written "
+            "nightly — without this the reflex is inert in production (RO-8)"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 7. End-to-end run() integration: seeded data → firings.jsonl written
+# ---------------------------------------------------------------------------
+
+class TestRunEndToEnd:
+    """Guard: full run() call with seeded data produces a firing and writes it."""
+
+    def test_run_writes_firing_on_burst(self, tmp_path):
+        """Seed a bursting flow summary + board membership; run() must write a
+        firings.jsonl line with direction=0 and is_context_only=True."""
+        from scripts.build_options_flow_attention import run
+
+        # Set up fake repo layout under tmp_path
+        data_root = tmp_path / "data"
+        site_root = tmp_path / "site"
+        (data_root / "options_flow").mkdir(parents=True)
+        (data_root / "polygon_gex").mkdir(parents=True)
+        (site_root / "factordata").mkdir(parents=True)
+
+        # Write board membership
+        _write_standouts(site_root, ["AAPL"])
+
+        # Write a flow summary with a strong z-score burst (latest >> history).
+        # IMPORTANT: history must vary (std > 0) — if all history rows share the
+        # same value then std=0 → _compute_premium_z returns None → no fire.
+        # Use 9 varied history rows (1..3 range) + 1 extreme latest (50.0).
+        n_total = 10
+        dates = pd.date_range(end="2026-07-05", periods=n_total, freq="B")
+        history_vals = [1.0, 2.0, 1.5, 3.0, 2.5, 1.0, 2.0, 3.0, 1.5]  # 9 rows, std ≈ 0.77
+        premium_mn = history_vals + [50.0]  # latest is 50.0 → z ≈ 62; well above 2.0 threshold
+        flow_df = pd.DataFrame(
+            {
+                "spot": [100.0] * n_total,
+                "volume": [1_000_000] * n_total,
+                "premium_mn": premium_mn,
+                "net_premium_mn": [2.0] * n_total,
+                "pc_ratio": [1.0] * n_total,
+                "signed_pc": [0.5] * n_total,
+                "zerodte_share": [0.2] * n_total,
+                "gamma_flow_bn": [0.1] * n_total,
+                "delta_flow_mn": [5.0] * n_total,
+                "assumed_gex_bn": [0.5] * n_total,
+                "fresh_contracts": [5.0] * n_total,
+                "net_doi": [1000] * n_total,
+                "doi_pc": [0.8] * n_total,
+            },
+            index=dates,
+        )
+        _write_parquet(data_root / "options_flow" / "summary_AAPL.parquet", flow_df)
+
+        # Run with dry_run=False so record_firing actually writes
+        result = run(root=str(tmp_path), dry_run=False)
+
+        # Validate output structure
+        assert isinstance(result, dict), "run() must return a dict"
+        assert "fires" in result, "result must have 'fires' key"
+        assert len(result["fires"]) >= 1, (
+            f"expected ≥1 firing from burst seed, got {len(result['fires'])}; "
+            f"gaps={result.get('gaps')}"
+        )
+
+        # Validate every fire: direction=0 and is_context_only=True
+        for fire in result["fires"]:
+            assert fire.get("direction") == 0, (
+                f"all firings must carry direction=0 (RO-8), got {fire.get('direction')}"
+            )
+            assert fire.get("is_context_only") is True, (
+                f"all firings must carry is_context_only=True, got {fire.get('is_context_only')}"
+            )
+
+        # Validate firings.jsonl was actually written
+        firings_path = tmp_path / "data" / "reflexes" / "options_flow_attention" / "firings.jsonl"
+        assert firings_path.exists(), "run() must write firings.jsonl"
+        lines = [l for l in firings_path.read_text().splitlines() if l.strip()]
+        assert len(lines) >= 1, "firings.jsonl must contain ≥1 line"
+        rec = json.loads(lines[0])
+        assert rec.get("direction") == 0
+        assert rec.get("is_context_only") is True

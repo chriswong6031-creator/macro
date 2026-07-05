@@ -154,6 +154,11 @@ def _load_flow_summary(data_root: Path, ticker: str) -> pd.DataFrame | None:
     try:
         df = pd.read_parquet(p)
         df.index = pd.to_datetime(df.index)
+        # Defensive sort: PIT correctness must not depend on writer sort discipline.
+        # lib/store.py:upsert() sorts before writing, but guard here so iloc[-1]
+        # always picks the chronologically latest row even if a future writer appends
+        # unsorted rows.
+        df = df.sort_index()
         return df
     except Exception as e:  # noqa: BLE001
         log.debug("options_flow_attention: flow summary load failed %s: %s", ticker, e)
@@ -168,6 +173,8 @@ def _load_gex_summary(data_root: Path, ticker: str) -> pd.DataFrame | None:
     try:
         df = pd.read_parquet(p)
         df.index = pd.to_datetime(df.index)
+        # Defensive sort: same PIT invariant as _load_flow_summary — see above.
+        df = df.sort_index()
         return df
     except Exception as e:  # noqa: BLE001
         log.debug("options_flow_attention: gex summary load failed %s: %s", ticker, e)
@@ -458,7 +465,11 @@ def run(
     gaps: list[str] = []
     fires: list[dict] = []
 
-    # Live feed stale-guard (stub — feat/flow-desk UNDEPLOYED)
+    # Live feed stale-guard (PLACEHOLDER — feat/flow-desk UNDEPLOYED).
+    # All EOD firings come from parquet paths below regardless of live_status.
+    # The stale-guard gates a FUTURE intraday live-fire path that does not exist
+    # yet; when feat/flow-desk deploys, the live leg must be wired here.
+    # Until then live_status is always available=False and the guard is a no-op.
     live_status = _check_live_feed(data_root)
     if not live_status.get("available"):
         gaps.append(
