@@ -2642,12 +2642,84 @@ artifacts:
     notes: >
       W6a: push_priority_alerts() dedup store.  Single-writer (alert_triage
       only).  Append-only JSONL keyed by (source, type, asset, sent_at).
-      CONFIG-GATED: the writer function is enabled only when alert_push.enabled
-      =true in config.yml (default false — W6a ships gated OFF).  Article-2
-      surface: enabling requires operator + gauntlet design ruling.
+      W6b: enabled=true (operator Article-2 event documented in config.yml).
       Article-2 note: push_sent.jsonl is a dedup store read by no scoring
       surface; push_priority_alerts() never raises a score. scored_path_surfaces
       left empty ([]) to reflect actual behavior.
+
+  # W6b per-lane dedup stores — one file per ops-tier sender (single-writer
+  # law per file; read-many in dedup check).  Each lane is the SOLE writer to
+  # its own file; push_ops_alert() reads all push_sent*.jsonl for cross-lane
+  # dedup but writes only to the caller's own file.
+
+  ops-push-basket-freeze:
+    path: data/alert_triage/push_sent_basket_freeze.jsonl
+    format: jsonl
+    producer: engine/basket_freeze.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: sent_at
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/alert_triage.py
+    notes: >
+      W6b: basket_freeze churn_guard alert dedup store.  Single-writer
+      (engine/basket_freeze.py via push_ops_alert(lane="basket_freeze")).
+      dedup/ledger skipped when disabled; raw dispatch still fires.  W6b
+      shipped with enabled=true (operator Article-2 event 2026-07-04).
+
+  ops-push-signal-sanity:
+    path: data/alert_triage/push_sent_signal_sanity.jsonl
+    format: jsonl
+    producer: scripts/signal_sanity.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: sent_at
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/alert_triage.py
+    notes: >
+      W6b: signal_sanity tripwire_failed alert dedup store.  Single-writer
+      (scripts/signal_sanity.py via push_ops_alert(lane="signal_sanity")).
+      dedup/ledger skipped when disabled; raw dispatch still fires.  6-hour
+      dedup window suppresses repeat fires from the daily + heartbeat lanes.
+
+  ops-push-healthcheck:
+    path: data/alert_triage/push_sent_healthcheck.jsonl
+    format: jsonl
+    producer: scripts/healthcheck.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: sent_at
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/alert_triage.py
+    notes: >
+      W6b: healthcheck heartbeat_failed alert dedup store.  Single-writer
+      (scripts/healthcheck.py via push_ops_alert(lane="healthcheck")).
+      dedup/ledger skipped when disabled; raw dispatch still fires.  Heartbeat
+      lane honesty: push_sent_healthcheck.jsonl is written on the runner but
+      never committed (heartbeat.yml has contents:read, no commit step) — the
+      6-hour dedup window is INERT for this lane; dispatch-always; noise
+      unchanged vs pre-migration.
 
   feeds-plane:
     path: site/feeds/

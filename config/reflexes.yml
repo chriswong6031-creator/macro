@@ -1,4 +1,4 @@
-# config/reflexes.yml — Reflex Registry v1 (Neural Web W6a)
+# config/reflexes.yml — Reflex Registry v1 (Neural Web W6b)
 #
 # WHAT IS A REFLEX?
 # A reflex is a deterministic trigger → scoped chain → bounded action pattern
@@ -19,6 +19,17 @@
 # W6b push tier (VPS FastAPI webhook / systemd timer) is reserved for reflexes
 # where end-to-end latency <= 5 min is the acceptance criterion, measured in
 # production. Push_tier: true here = W6b CANDIDATE; it is not yet active.
+#
+# W6b INLINE PUSH LATENCY (2026-07-04):
+# Sentinels calling push_ops_alert() inline achieve sub-minute dispatch on
+# existing lanes — the sender's own execution time (~seconds), not the next
+# cron tick. The VPS minutes-class endpoint (FastAPI webhook / systemd timer)
+# is EVIDENCE-GATED: it is built only when a documented production miss exists
+# (a reflex with push_tier:true shows trigger_ts→push_ts delta > 10 min in
+# >5% of real firings AND a documented case where the delay caused a missed
+# actionable window). Like W5b, the gate text lives here so the evidence bar
+# is visible to every contributor. No reflex has a documented production miss
+# today.
 
 meta:
   schema_version: 1
@@ -33,11 +44,25 @@ meta:
   push_tier_law: >
     Default tier is sub-hour on existing GitHub Actions lanes (30-min sentinels
     or fastpath, effective 30-75 min end-to-end with runner queue). W6b push tier
-    (VPS FastAPI webhook / systemd timer) is reserved for reflexes where
-    end-to-end latency <= 5 min is the acceptance criterion, measured in
-    production with real events. Enabling W6b for a reflex is an operator +
-    Article-2 event: it must have a gauntlet design + measured latency baseline
-    before the push path is live.
+    (VPS FastAPI webhook / systemd timer) is EVIDENCE-GATED: it is built only
+    when a reflex with push_tier:true shows (a) trigger_ts→push_ts delta > 10 min
+    in >5% of real firings logged to data/alert_triage/push_latency.jsonl AND
+    (b) a documented case where the delay caused a missed actionable window.
+    Enabling the VPS endpoint for a reflex is an operator + Article-2 event: it
+    must have a gauntlet design + measured latency baseline before going live.
+    Inline push (push_ops_alert() called from the sentinel's own run) achieves
+    sub-minute latency on existing lanes without any VPS infrastructure — this
+    is the W6b design. No reflex has a documented production miss today.
+  vps_endpoint_gate: >
+    EVIDENCE REQUIRED before any VPS push-intake endpoint is built: log
+    (trigger_ts, push_ts, delta_seconds, reflex_name) to
+    data/alert_triage/push_latency.jsonl for 2-4 weeks; only build the endpoint
+    when delta_seconds > 600 in >5% of firings for a push_tier:true reflex AND
+    a documented missed-window incident exists. The mastermind.service FastAPI
+    (:8001) already hosts the endpoint skeleton — adding the route is a one-file
+    change + rsync + restart; the build cost is low but the operational cost
+    (another failure surface) is not zero. Gate like W5b. (W6b adjudication
+    2026-07-04).
 
 reflexes:
 

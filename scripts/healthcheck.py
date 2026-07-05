@@ -91,13 +91,20 @@ def check_r2_freshness(now: datetime) -> dict:
 
 
 def _notify(report: dict) -> None:
-    """Best-effort outbound alert reusing the existing notifier (Telegram/Discord);
-    silent if the secrets aren't set. The non-zero exit is the primary signal."""
+    """Best-effort outbound alert via the W6b push spine.
+    The non-zero exit is the primary signal; push_ops_alert() dispatches raw
+    even when alert_push.enabled=false (dedup/ledger skipped, transport fires).
+    W6b: replaces the former direct send_telegram/send_discord call."""
     msg = "🚨 macro-dashboard heartbeat FAILED — " + "; ".join(report["fail_reasons"])
     try:
-        from scripts.notify import send_discord, send_telegram
-        send_telegram(msg)
-        send_discord(msg)
+        from engine.alert_triage import push_ops_alert  # noqa: PLC0415
+        push_ops_alert(
+            source="healthcheck",
+            type_="heartbeat_failed",
+            message=msg,
+            severity="critical",
+            lane="healthcheck",
+        )
     except Exception:  # noqa: BLE001 — alerting is best-effort
         pass
 

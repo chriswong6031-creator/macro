@@ -36,6 +36,7 @@ from datetime import date, datetime, timedelta, timezone
 from lib import config
 from engine import news_common as nc
 from engine import qbus as _qbus          # W2: unified item/event store
+from engine import news_events as _ne     # W2: event-identity layer (display-only)
 
 # Per-call reject collector — set to a fresh list by feed() before any
 # _normalise() calls; None between builds so no state leaks across invocations.
@@ -239,6 +240,20 @@ def _normalise(title: str, url: str, domain: str, seendate: str, source: str,
             _qbus.append_items([row])
         except Exception:  # noqa: BLE001 — never raise into the build
             pass
+
+    # W2: attach event identity + centrality (pure, display-only; never gates keep/drop).
+    try:
+        ev = _ne.classify_event(title, (summary or ""))
+        # use first theme tag as the theme for centrality (or empty string)
+        ev_theme = (_themes[0] if _themes else "")
+        kw = ev_theme.replace("_", " ")
+        centrality = _ne.theme_centrality(title, ev_theme, kw)
+        out["event"] = ev
+        out["centrality"] = centrality
+    except Exception:  # noqa: BLE001 — display-only; never raises
+        out.setdefault("event", None)
+        out.setdefault("centrality", "incidental")
+    # novelty_z and echo are attached in feed() after one qbus load (not per-headline).
 
     return out
 
@@ -629,6 +644,53 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
     # Harvest and reset the per-call reject collector.
     _reject_collector.reset(_tok)
     _collected_rejected = list(_fin_rejected)
+
+    # W2: qbus read-back — ONE load per build, then backfill novelty_z + echo on every
+    # kept headline (display-only; never changes keep/drop). Strictly fail-open.
+    try:
+        _qbus_df = _qbus.read_items()
+        if _qbus_df is not None and len(_qbus_df) > 0:
+            # collect all kept headline lists for iteration
+            _all_kept: list[dict] = list(market)
+            for sec_v in sectors.values():
+                _all_kept.extend(sec_v.get("headlines", []))
+            for mag_v in mag7.values():
+                _all_kept.extend(mag_v.get("headlines", []))
+            for bsk_v in baskets.values():
+                _all_kept.extend(bsk_v.get("headlines", []))
+            for tkr_list in by_ticker.values():
+                _all_kept.extend(tkr_list)
+
+            _asof_date = today
+            _seen_ids: set[str] = set()
+            for _h in _all_kept:
+                _hid = _h.get("_id") or ""
+                if _hid in _seen_ids:
+                    continue
+                _seen_ids.add(_hid)
+                try:
+                    _tickers = _h.get("tickers") or []
+                    _subject = _tickers[0] if _tickers else ""
+                    if _subject:
+                        _h["novelty_z"] = _qbus.novelty_z(_subject, _asof_date, df=_qbus_df)
+                    else:
+                        _h.setdefault("novelty_z", None)
+                    # echo: find event_key via item_id join
+                    if _hid and "item_id" in _qbus_df.columns:
+                        _sub = _qbus_df[_qbus_df["item_id"] == _hid]
+                        if len(_sub) > 0:
+                            _ek = str(_sub.iloc[0].get("event_key") or "")
+                            if _ek:
+                                _raw_echo = _qbus.echo_stats(_ek, df=_qbus_df, asof=_asof_date)
+                                if _raw_echo:
+                                    _h["echo"] = {
+                                        "n_sources": _raw_echo.get("n_sources"),
+                                        "n_desks": _raw_echo.get("n_desks"),
+                                    }
+                except Exception:  # noqa: BLE001
+                    pass
+    except Exception:  # noqa: BLE001 — qbus read-back is always display-only
+        pass
 
     out = {
         "schema": "financial_news.v1", "is_context_only": True,
