@@ -227,6 +227,33 @@ lanes:
         module: scripts.publish_r2
         note: non-fatal; syncs stockdata store to R2
 
+  # ── daily.yml / cortex ───────────────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: cortex
+    steps:
+      - id: cortex_deliberation
+        module: engine.neuralweb.cortex
+        note: >
+          Neural Web W7b — Opus-class bounded tool-use loop over world_state/
+          spine/kernel/graph/governance.  Write surfaces: attention firings
+          (data/reflexes/cortex_attention/), committee memo
+          (data/neuralweb/cortex/memo.json + site/neuralweb/cortex_memo.json),
+          hypothesis inbox (data/neuralweb/cortex/hypothesis_inbox.jsonl).
+          Staleness-gated spend; single-call fallback on error; always exits 0.
+          needs_secrets: true (CLAUDE_CODE_OAUTH_TOKEN + ANTHROPIC_API_KEY).
+          impure: true (LLM non-determinism).
+          A2 refused today — shadow probation.
+          inputs: [data/neuralweb/world_state.json,
+                   data/neuralweb/spine_index.parquet,
+                   data/neuralweb/confluence_graph.json,
+                   data/neuralweb/kernel_estimates.parquet,
+                   data/neuralweb/governance.jsonl]
+          outputs: [data/reflexes/cortex_attention/firings.jsonl,
+                    data/neuralweb/cortex/memo.json,
+                    site/neuralweb/cortex_memo.json,
+                    data/neuralweb/cortex/hypothesis_inbox.jsonl,
+                    data/neuralweb/cortex/last_run_state.json]
+
   # ── asia-close.yml / asia ───────────────────────────────────────────────
   - workflow: .github/workflows/asia-close.yml
     job: asia

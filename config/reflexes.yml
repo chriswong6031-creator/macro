@@ -436,3 +436,50 @@ reflexes:
     graded: false
     migration_status: registered
     producer: scripts/healthcheck.py
+
+  # ─── NEURAL WEB W7b — CORTEX ATTENTION ───────────────────────────────────
+
+  cortex_attention:
+    description: >
+      Nightly cortex deliberation flags items for operator attention.  Each
+      flag carries a pre-committed falsifiable criterion (scope_key, direction,
+      horizon_d, falsifier).  The cortex job is the sole writer of this
+      firings.jsonl — single-writer contract strictly enforced.  is_context_only
+      always true.  A2 authority (ATTEND) is REFUSED today pending earn-in;
+      the queue is shadow tier: visible but not ranked.  A2 unlocks only when
+      n>=30 graded attention rows, hits>=8, and wilson_ci_low/base>1.25
+      (constitution.grant_authority, Article 3).
+    trigger:
+      type: nightly_cortex_deliberation
+      source: engine/neuralweb/cortex.py
+      condition: >
+        world_state.inputs_hash OR spine row count OR contradictions hash
+        changed since last run (staleness gate).
+      cadence_cron: "nightly — runs in the cortex job after engine job"
+      lane: cortex
+    action:
+      type: [llm_tool_loop, flag_attention_items, write_committee_memo,
+             stake_hypothesis_inbox]
+      ledger: data/reflexes/cortex_attention/firings.jsonl
+      also_writes:
+        - data/neuralweb/cortex/memo.json
+        - site/neuralweb/cortex_memo.json
+        - data/neuralweb/cortex/hypothesis_inbox.jsonl
+      constitution_note: >
+        A2 refused today by grant_authority (no track record).  The cortex
+        runs at A0/A1 (observe+explain unconditional).  Probation status is
+        stamped into every memo.  When the earn-in gate clears, an
+        authority_grant event is appended to governance.jsonl.
+    firings_jsonl: data/reflexes/cortex_attention/firings.jsonl
+    claim_family: reflex.cortex_attention
+    tier: shadow
+    push_tier: false
+    graded: true
+    graded_note: >
+      Shadow tier — each attention item carries direction and horizon_d.
+      Graded via adapt_reflexes() fold into spine (ledger=cortex_attention).
+      Outcome: subsequent escalation, realized move, or verdict change within
+      horizon_d days.  n<30 today — pre-earn-in (A2 not armed).
+      SINGLE-WRITER: only the cortex job calls record_firing() for this reflex.
+    migration_status: mirroring
+    producer: engine/neuralweb/cortex.py

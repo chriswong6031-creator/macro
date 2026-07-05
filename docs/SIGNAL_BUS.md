@@ -17,7 +17,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| neural-web | 15 |
+| neural-web | 18 |
 | options-alpha | 2 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
@@ -30,15 +30,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 44 |
-| infrastructure | 23 |
+| infrastructure | 24 |
 | scored | 4 |
-| shadow | 30 |
+| shadow | 32 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 98 |
+| git | 101 |
 | gitignored-local | 2 |
 | r2 | 1 |
 
@@ -79,7 +79,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 29 | 3 |
+| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 30 | 3 |
 | breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 17 | 0 |
 | regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 17 | 0 |
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
@@ -120,18 +120,21 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 7 | 0 |
+| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 8 | 0 |
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
 | spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
+| reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
+| cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
+| governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
 | kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
-| reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 0 | 0 |
-| governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 0 | 0 |
+| cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 0 | 0 |
+| hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
@@ -227,7 +230,7 @@ flowchart LR
     C_engine_briefing_py["engine/briefing.py"]
     C_engine_china_intel_analysis_py["engine/china_intel_analysis.py"]
     C_engine_china_intel_bus_py["engine/china_intel_bus.py"]
-    OVF_regime_latest["...+28 more"]
+    OVF_regime_latest["...+29 more"]
     P_collectors_breadth_py(("collectors/breadth.py"))
     A_breadth_breadth["breadth-breadth"]
     C_engine_anticipation_py["engine/anticipation.py"]
@@ -307,12 +310,13 @@ flowchart LR
     C_engine_spine_py["engine/spine.py"]
     C_engine_track_record_py["engine/track_record.py"]
     OVF_us_board_ledger_retro_grades["...+4 more"]
-    P_engine_market_state_py(("engine/market_state.py"))
-    A_market_state_latest["market-state-latest"]
-    C_engine_regime_prior_py["engine/regime_prior.py"]
-    C_engine_market_state_audit_py["engine/market_state_audit.py"]
-    C_engine_market_state_tune_py["engine/market_state_tune.py"]
-    OVF_market_state_latest["...+3 more"]
+    P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
+    A_world_state["world-state"]
+    C_scripts_build_feeds_py["scripts/build_feeds.py"]
+    C_scripts_notify_py["scripts/notify.py"]
+    C_scripts_build_impulse_py["scripts/build_impulse.py"]
+    C_engine_etf_pulse_py["engine/etf_pulse.py"]
+    OVF_world_state["...+4 more"]
     P_engine_run_py --> A_regime_latest
     A_regime_latest --> C_engine_alert_triage_py
     A_regime_latest --> C_engine_briefing_py
@@ -397,12 +401,12 @@ flowchart LR
     A_us_board_ledger_retro_grades --> C_engine_spine_py
     A_us_board_ledger_retro_grades --> C_engine_track_record_py
     A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
-    P_engine_market_state_py --> A_market_state_latest
-    A_market_state_latest --> C_engine_neuralweb_world_state_py
-    A_market_state_latest --> C_engine_regime_prior_py
-    A_market_state_latest --> C_engine_market_state_audit_py
-    A_market_state_latest --> C_engine_market_state_tune_py
-    A_market_state_latest --> OVF_market_state_latest
+    P_engine_neuralweb_world_state_py --> A_world_state
+    A_world_state --> C_scripts_build_feeds_py
+    A_world_state --> C_scripts_notify_py
+    A_world_state --> C_scripts_build_impulse_py
+    A_world_state --> C_engine_etf_pulse_py
+    A_world_state --> OVF_world_state
 ```
 
 ## Appendix — Known Extra Writers
