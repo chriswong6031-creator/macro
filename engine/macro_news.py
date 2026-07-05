@@ -520,11 +520,16 @@ def enrich_headline(h: dict) -> dict:
     return out
 
 
-def filter_headlines(articles: list[dict], cfg: dict | None = None) -> list[dict]:
+def filter_headlines(articles: list[dict], cfg: dict | None = None,
+                     _rejected: list | None = None) -> list[dict]:
     """Apply the deterministic pipeline to raw GDELT articles: source allowlist ->
     macro-theme relevance gate + tag -> dedup -> recency rank -> top-N. PURE (takes
     a list of {title,url,domain,seendate,...} dicts). This is the 'useful vs
-    useless' filter; no AI involved."""
+    useless' filter; no AI involved.
+
+    _rejected: optional caller-supplied list; low-value/blocked drops are appended as
+    {title, domain, reason} records (cap 200 total).  Blocked-domain drops use
+    reason='blocked_source'."""
     cfg = cfg or {}
     quality = [s.lower() for s in (cfg.get("sources") or _DEFAULT_SOURCES)]
     news = [s.lower() for s in _NEWS_SOURCES]
@@ -536,7 +541,16 @@ def filter_headlines(articles: list[dict], cfg: dict | None = None) -> list[dict
         dom = (a.get("domain") or "").lower()
         # Hard drop: blocklisted pick mills + low-value formats (stock-pick roundup
         # listicles / personal-finance advice columns) before any source/theme gate.
-        if _nc.is_blocked(dom) or _nc.is_low_value(a.get("title", ""), dom):
+        if _nc.is_blocked(dom):
+            if _rejected is not None and len(_rejected) < 200:
+                _rejected.append({"title": a.get("title", ""), "domain": dom,
+                                   "reason": "blocked_source"})
+            continue
+        _lv_reason = _nc.low_value_reason(a.get("title", ""), dom)
+        if _lv_reason is not None:
+            if _rejected is not None and len(_rejected) < 200:
+                _rejected.append({"title": a.get("title", ""), "domain": dom,
+                                   "reason": _lv_reason})
             continue
         official_ok = a.get("source_tier") == "official" or a.get("source") == "official"
         stock_ok = a.get("source_tier") == "stock_wire"
@@ -979,7 +993,9 @@ def macro_headlines(today: date | None = None) -> dict | None:
     raw, reason = _fetch_gdelt(cfg, today)
     official, official_reason = _fetch_official_feeds(cfg, today) if cfg.get("use_official_feeds", True) else ([], None)
     news_rss, news_reason = _fetch_news_feeds(cfg, today) if cfg.get("use_news_feeds", True) else ([], None)
-    kept = _attach_translations(filter_headlines(official + news_rss + raw, cfg), cfg)
+    _rejected: list[dict] = []
+    kept = _attach_translations(filter_headlines(official + news_rss + raw, cfg,
+                                                 _rejected=_rejected), cfg)
     synth = _synthesis(kept)
     return {"schema": "macro_news.v1", "is_context_only": True,
             "fetched_at": datetime.now(timezone.utc).isoformat(), "source": "official_rss+news_rss+gdelt_doc_2.0",
@@ -989,6 +1005,7 @@ def macro_headlines(today: date | None = None) -> dict | None:
             "top_channels": synth.get("top_channels", []),
             "top_tickers": synth.get("top_tickers", []),
             "synthesis": synth,
+            "rejected": _rejected,
             "degraded_reason": (reason or official_reason or news_reason) if not kept else None,
             "disclaimer": DISCLAIMER_TEXT}
 

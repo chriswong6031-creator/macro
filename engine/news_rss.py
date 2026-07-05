@@ -25,11 +25,16 @@ import concurrent.futures as cf
 import logging
 import re
 import xml.etree.ElementTree as ET
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from urllib.parse import quote_plus, urlparse
 
 from engine import news_common as nc
+
+# Per-call reject collector — set to a fresh list by the caller (build_news) to
+# capture every dropped headline with its reason; None between builds.
+_reject_collector: ContextVar[list | None] = ContextVar("rss_reject_collector", default=None)
 
 log = logging.getLogger(__name__)
 
@@ -183,7 +188,15 @@ def _parse(raw: bytes, source_domain: str | None, from_google: bool) -> list[dic
             continue
         # Drop pick-mill / advertorial / advice junk at the source so it never reaches
         # any feed, count or per-ticker index (the only place a byline is available).
-        if nc.is_blocked(domain) or nc.is_low_value(title, domain, author):
+        _col = _reject_collector.get()
+        if nc.is_blocked(domain):
+            if _col is not None and len(_col) < 200:
+                _col.append({"title": title, "domain": domain, "reason": "blocked_source"})
+            continue
+        _lv_reason = nc.low_value_reason(title, domain, author)
+        if _lv_reason is not None:
+            if _col is not None and len(_col) < 200:
+                _col.append({"title": title, "domain": domain, "reason": _lv_reason})
             continue
         out.append({"title": title, "url": url, "domain": domain,
                     "source": source, "seendate": seendate, "summary": summary})
@@ -303,3 +316,22 @@ def batch(queries: dict[str, str], window_days: int = 3, min_tier: int = 2,
         results = list(ex.map(
             lambda k: query(queries[k], window_days, min_tier, max_age_days), keys))
     return dict(zip(keys, results))
+
+
+# --------------------------------------------------------------------------- #
+# Reject-log helpers (build_news uses these to harvest the rss feed bucket)
+# --------------------------------------------------------------------------- #
+def start_reject_log() -> tuple[list[dict], object]:
+    """Activate the per-call reject collector.  Returns (collector_list, token).
+    Call stop_reject_log(token) when done.  Never raises."""
+    col: list[dict] = []
+    tok = _reject_collector.set(col)
+    return col, tok
+
+
+def stop_reject_log(token: object) -> None:
+    """Reset the reject collector (deactivate).  Idempotent.  Never raises."""
+    try:
+        _reject_collector.reset(token)  # type: ignore[arg-type]
+    except Exception:  # noqa: BLE001
+        pass

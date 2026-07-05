@@ -30,11 +30,16 @@ from __future__ import annotations
 import json
 import logging
 import re
+from contextvars import ContextVar
 from datetime import date, datetime, timedelta, timezone
 
 from lib import config
 from engine import news_common as nc
 from engine import qbus as _qbus          # W2: unified item/event store
+
+# Per-call reject collector — set to a fresh list by feed() before any
+# _normalise() calls; None between builds so no state leaks across invocations.
+_reject_collector: ContextVar[list | None] = ContextVar("_reject_collector", default=None)
 
 log = logging.getLogger(__name__)
 
@@ -183,7 +188,15 @@ def _normalise(title: str, url: str, domain: str, seendate: str, source: str,
     # listicles whose picks live untaggably in the body, and personal-finance advice
     # columns. These otherwise outrank real reporting (a fresh tier-1 syndicated
     # column scores ~86). Provider items have no byline here, so title+domain decide.
-    if nc.is_blocked(domain) or nc.is_low_value(title, domain):
+    _col = _reject_collector.get()
+    if nc.is_blocked(domain):
+        if _col is not None and len(_col) < 200:
+            _col.append({"title": title, "domain": domain, "reason": "blocked_source"})
+        return None
+    _lv_reason = nc.low_value_reason(title, domain)
+    if _lv_reason is not None:
+        if _col is not None and len(_col) < 200:
+            _col.append({"title": title, "domain": domain, "reason": _lv_reason})
         return None
     tier = nc.source_tier(domain)
     if tier == 0:
@@ -547,6 +560,10 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
         except Exception:  # noqa: BLE001
             pass
 
+    # Activate per-call reject collector (reset to [] so _normalise() can append).
+    _fin_rejected: list[dict] = []
+    _tok = _reject_collector.set(_fin_rejected)
+
     now = datetime.now(timezone.utc)
     emap = nc.build_entity_map()
     top_market = int(cfg.get("top_market", 18))
@@ -609,6 +626,10 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
     by_ticker = {t: [_public(x) for x in _dedup_rank(v, top_ticker)]
                  for t, v in by_ticker.items()}
 
+    # Harvest and reset the per-call reject collector.
+    _reject_collector.reset(_tok)
+    _collected_rejected = list(_fin_rejected)
+
     out = {
         "schema": "financial_news.v1", "is_context_only": True,
         "fetched_at": now.isoformat(), "asof": today.isoformat(),
@@ -620,6 +641,7 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
                    "tickers_covered": len(by_ticker)},
         "market": market, "sectors": sectors, "mag7": mag7, "baskets": baskets,
         "by_ticker": by_ticker,
+        "rejected": _collected_rejected,
         "disclaimer": DISCLAIMER_TEXT, "disclaimer_zh": DISCLAIMER_TEXT_ZH,
         "degraded_reason": None if all_items else "no_sources",
     }
