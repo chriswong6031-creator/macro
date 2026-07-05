@@ -1,0 +1,2 @@
+CANONICAL: run_P1_3.py (byte-identical to run_P1_3_v2.py; valid episode-permutation null; calibration controls PASS). Reproduces the shipped results.json headline (n_survive=22, min BH-adj p=0.0006, PARTIAL_SURVIVORS) — reproducibility re-run confirmed 2026-07-05.
+run_P1_3_v1_bounced.py retains the ROUND-1 DEFECTIVE within-group bootstrap (p≈0.5 by construction) — kept for the trial record, do NOT rerun as canonical. See REVIEW.md (bounce) + REVIEW_v2.md (CONFORMANT).

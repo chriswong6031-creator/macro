@@ -1,0 +1,88 @@
+========================================================================
+P2_1B_F1_REPROBE — F1 washout reprobe on PRODUCTION COILED values
+========================================================================
+
+Replay path: /Users/chriswong/Documents/Cluade/Macro Dashboard/data/replay/replay_boarded.parquet
+Replay MD5:  906175f9eb8caa351ed6d7d5c56265d3
+  -> matches concordance artifact MD5 (production values reproduce concordance)
+scipy version: 1.18.0
+washout_ctx source: engine.coiled (production S1/COILED machinery)
+
+Loading replay_boarded.parquet ...
+  Full shape: (961656, 66)
+  Verdict-grade fires (primary): 49,939
+  Unique (ticker,signal_date) pairs: 49,939  (1:1 with fires: True)
+  Episode clusters: 22,295
+  Effective window: 2022-06-30 -> 2025-12-29
+
+Computing PRODUCTION washout_ctx (PIT-sliced) for every fire pair ...
+  (path copied verbatim from scripts/p2_1b_concordance_check.py @ 4bebc06716)
+    20,000/49,939 (2s)
+    40,000/49,939 (3s)
+  Done: 49,939 pairs in 4s, errors=0
+  Production: True=36,734  False=10,448  None=2,757
+
+CONCORDANCE REPRODUCTION CHECK (must match concordance_check.json):
+  n_valid_pairs   = 47,182   (ref 47,182)
+  concordance     = 0.664046   (ref 0.664046)
+  n_prod_true     = 36,734   (ref 36,734)
+  proxy_false_prod_true = 15,743
+  REPRODUCED EXACTLY: True
+
+F1 PRODUCTION ENCODING:
+  Reprobe population (prod washout defined): 47,182 fires (94.5% of 49,939); 2,757 None-history fires excluded
+  F1_pass (production washout True):  36,734
+  F1_pass False (not in washout):     10,448
+  Production fire-rate impact if HG-gated: block 10,448/47,182 = 22.1%
+  (P1.3 proxy fire-rate impact was 54.0% = 26,974/49,939 would-block)
+
+────────────────────────────────────────────────────────────────────────
+NEGATIVE CALIBRATION CONTROL (mandatory — on the production-washout encoding)
+────────────────────────────────────────────────────────────────────────
+  draws: 200 (>=100 floor)
+  rejection rate @alpha=0.05: 0.085  (expect ~0.05)
+  p-dist: mean=0.472 median=0.467 min=0.002 max=0.987
+  KS-uniformity: D=0.060, p=0.458
+  NEGATIVE control: PASS
+
+POSITIVE control (inject +0.05 return shift): perm_p=2.00e-04 param_p=0.00e+00 r=-0.3125 -> PASS
+
+
+Both-halves split: midpoint=2024-05-13 | H1 n=22,301 | H2 n=24,881
+
+Episode-label purity (production encoding):
+  F1_HG_prod: impure episodes = 63
+  F1_RW_prod: impure episodes = 2515
+
+────────────────────────────────────────────────────────────────────────
+EXECUTING 10 REPROBE TRIALS (episode label-permutation null, N_PERM=5000)
+────────────────────────────────────────────────────────────────────────
+  P2_1B_F1_REPROBE_T01 (~T01): HG 21d STOPPED      Δ=  +4.84pp fav=N perm_p=0.0002 param_p=4.72e-60 r=-0.1046 sign=Y 
+  P2_1B_F1_REPROBE_T02 (~T02): HG 21d DEAD_MONEY   Δ= -15.11pp fav=Y perm_p=0.0002 param_p=4.72e-60 r=-0.1046 sign=Y 
+  P2_1B_F1_REPROBE_T03 (~T03): HG 21d CUSHIONED    Δ=  -4.49pp fav=N perm_p=0.0002 param_p=4.72e-60 r=-0.1046 sign=Y 
+  P2_1B_F1_REPROBE_T04 (~T04): HG 63d STOPPED      Δ=  -0.87pp fav=Y perm_p=0.0002 param_p=2.03e-21 r=-0.0608 sign=N 
+  P2_1B_F1_REPROBE_T05 (~T05): HG 63d DEAD_MONEY   Δ=  -0.27pp fav=Y perm_p=0.0002 param_p=2.03e-21 r=-0.0608 sign=Y 
+  P2_1B_F1_REPROBE_T06 (~T06): HG 63d CUSHIONED    Δ=  -4.19pp fav=N perm_p=0.0002 param_p=2.03e-21 r=-0.0608 sign=Y 
+  P2_1B_F1_REPROBE_T07 (~T07): RW 21d STOPPED      Δ=  +5.14pp fav=N perm_p=0.5385 param_p=3.07e-01 r=-0.0055 sign=Y 
+  P2_1B_F1_REPROBE_T08 (~T08): RW 21d CUSHIONED    Δ=  -1.68pp fav=N perm_p=0.5385 param_p=3.07e-01 r=-0.0055 sign=Y 
+  P2_1B_F1_REPROBE_T09 (~T09): RW 63d STOPPED      Δ=  +3.34pp fav=N perm_p=0.0320 param_p=2.79e-04 r=+0.0196 sign=Y 
+  P2_1B_F1_REPROBE_T10 (~T10): RW 63d CUSHIONED    Δ=  -2.19pp fav=N perm_p=0.0320 param_p=2.79e-04 r=+0.0196 sign=Y 
+
+Sanity gate: PASS — no param/perm divergence of the round-1 defect signature.
+
+BH q<=0.10 across m=10 (family=P2_1B_f1_concordance_reprobe): n_survive=8, min BH-adj p=0.0003
+
+────────────────────────────────────────────────────────────────────────
+REPROBE VERDICT
+────────────────────────────────────────────────────────────────────────
+  RW 63d stop-out (T09) survives favorable: False
+  HG 21d dead-money (T02) survives favorable: True
+  HG 63d stop-out  (T04) survives favorable: False
+  VERDICT: PROMOTION_DIES_PROXY_ONLY
+  Production-value F1 trials do NOT reproduce a BH-surviving, sign-stable, favorable effect on the RW safety-net axis (T09 63d stop-out). Per PREREG §3.3, F1 rank-weight promotion DIES; the P1.3 F1 verdict is re-scoped 'proxy-definition only'.
+
+Saved: /Users/chriswong/Documents/Cluade/Macro Dashboard/research/entry_intel/p1_runs/P2_1B_F1_REPROBE/results.json
+
+========================================================================
+P2_1B_F1_REPROBE RUN COMPLETE — verdict: PROMOTION_DIES_PROXY_ONLY
+========================================================================

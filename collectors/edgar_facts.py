@@ -42,6 +42,7 @@ FLOW = {
             "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
     "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"],
     "interest_exp": ["InterestExpense", "InterestAndDebtExpense"],
+    "depreciation": ["DepreciationDepletionAndAmortization", "DepreciationAndAmortization"],
 }
 BALANCE = {
     "assets": ["Assets"],

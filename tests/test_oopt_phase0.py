@@ -424,6 +424,35 @@ class TestOOPT4AccruePath:
                 f"Expected ACCRUE in verdict_pending when n<{O4_POWER_FLOOR}, got: {verdict!r}"
             )
 
+    def test_smoke_results_json_is_strict(self):
+        """Smoke oopt_results.json must contain no NaN/Infinity tokens.
+
+        Bare Python-float NaN bypasses json.dump's ``default`` hook and
+        serializes as a literal ``NaN`` token — invalid strict JSON that
+        JS JSON.parse and allow_nan=False consumers reject.
+        """
+        if not _RUNNER_AVAILABLE:
+            pytest.skip("runner not importable")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            data_dir = Path(tmpdir) / "data"
+            (data_dir / "oracle" / "gauntlet").mkdir(parents=True)
+            (data_dir / "experiments").mkdir()
+
+            run_oopt_phase0(data_dir=data_dir, smoke=True, out_dir=Path("/tmp"))
+
+            raw = Path("/tmp/oopt_smoke_results.json").read_text()
+
+            def _reject(token):
+                raise AssertionError(f"non-strict JSON token in smoke results: {token}")
+
+            parsed = json.loads(raw, parse_constant=_reject)
+            # NaN result fields must land as null, not be dropped
+            h21 = parsed["o2"]["horizons"]["21"]
+            for key in ("confirmed_da_mean", "unconfirmed_da_mean",
+                        "delta_da_mean", "boot_ci_lo", "boot_ci_hi",
+                        "placebo_p95"):
+                assert key in h21, f"o2 h21 field {key} missing from strict JSON"
+
 
 # ---------------------------------------------------------------------------
 # 6. Placebo plumbing

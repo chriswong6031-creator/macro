@@ -128,7 +128,7 @@ def test_panels_smoke():
     # blocks present are from the known set; archetype key is valid when present
     assert set(sample).issubset({"profile", "valuation", "financials",
                                  "factors", "positioning", "analyst", "earnings",
-                                 "accounting_quality"})
+                                 "accounting_quality", "leverage_ratios"})
     for rec in list(p.values())[:200]:
         arch = (rec.get("profile") or {}).get("archetype")
         if arch:
@@ -413,6 +413,201 @@ def test_archetype_precedence_cascade_order():
         f"  Expected: {expected_order}\n"
         f"  Got:      {prec}"
     )
+
+
+def test_leverage_ratios_normal_case():
+    """Normal: all fields present.  interest_coverage, net_debt, both debt ratios computed."""
+    rows = [
+        {
+            "op_income": 100.0,
+            "interest_exp": 10.0,
+            "debt_lt": 200.0,
+            "debt_cur": 50.0,
+            "cash": 80.0,
+            "depreciation": 20.0,
+        }
+    ]
+    lev = SF._leverage_ratios(rows)
+    # interest_coverage = 100 / 10 = 10.0
+    assert lev["interest_coverage"] == 10.0, lev
+    # net_debt = 200 + 50 - 80 = 170
+    assert lev["net_debt"] == 170.0, lev
+    # net_debt_to_op_income = 170 / 100 = 1.7
+    assert lev["net_debt_to_op_income"] == 1.7, lev
+    # net_debt_to_ebitda = 170 / (100 + 20) = 170 / 120 ≈ 1.42
+    assert lev["net_debt_to_ebitda"] == round(170 / 120, 2), lev
+
+
+def test_leverage_ratios_interest_exp_none():
+    """interest_exp = None → interest_coverage absent."""
+    rows = [
+        {
+            "op_income": 100.0,
+            "interest_exp": None,
+            "debt_lt": 200.0,
+            "debt_cur": 0.0,
+            "cash": 50.0,
+            "depreciation": None,
+        }
+    ]
+    lev = SF._leverage_ratios(rows)
+    assert "interest_coverage" not in lev, lev
+    # net_debt still computable: 200 + 0 - 50 = 150
+    assert lev.get("net_debt") == 150.0, lev
+
+
+def test_leverage_ratios_interest_exp_zero():
+    """interest_exp = 0 → interest_coverage absent (division by zero guard)."""
+    rows = [
+        {
+            "op_income": 100.0,
+            "interest_exp": 0.0,
+            "debt_lt": 100.0,
+            "debt_cur": None,
+            "cash": 20.0,
+            "depreciation": None,
+        }
+    ]
+    lev = SF._leverage_ratios(rows)
+    assert "interest_coverage" not in lev, lev
+
+
+def test_leverage_ratios_op_income_negative():
+    """Negative op_income: interest_coverage can still compute; debt ratios absent."""
+    rows = [
+        {
+            "op_income": -50.0,
+            "interest_exp": 10.0,
+            "debt_lt": 200.0,
+            "debt_cur": None,
+            "cash": 30.0,
+            "depreciation": 15.0,
+        }
+    ]
+    lev = SF._leverage_ratios(rows)
+    # interest_coverage = -50 / 10 = -5.0 (still computable — interest_exp > 0)
+    assert lev["interest_coverage"] == -5.0, lev
+    # net_debt_to_op_income: op_income <= 0 → absent
+    assert "net_debt_to_op_income" not in lev, lev
+    # net_debt_to_ebitda: ebitda = -50 + 15 = -35 → denominator <= 0 → absent
+    assert "net_debt_to_ebitda" not in lev, lev
+
+
+def test_leverage_ratios_all_debt_fields_none():
+    """All three debt-related fields are None → net_debt absent; no fabricated zero."""
+    rows = [
+        {
+            "op_income": 80.0,
+            "interest_exp": 8.0,
+            "debt_lt": None,
+            "debt_cur": None,
+            "cash": None,
+            "depreciation": 10.0,
+        }
+    ]
+    lev = SF._leverage_ratios(rows)
+    # net_debt not computable → all net_debt ratios absent
+    assert "net_debt" not in lev, lev
+    assert "net_debt_to_op_income" not in lev, lev
+    assert "net_debt_to_ebitda" not in lev, lev
+    # interest_coverage still computable
+    assert lev["interest_coverage"] == 10.0, lev
+
+
+def test_leverage_ratios_depreciation_absent():
+    """Without depreciation, net_debt_to_ebitda is absent; proxy still present."""
+    rows = [
+        {
+            "op_income": 60.0,
+            "interest_exp": 5.0,
+            "debt_lt": 150.0,
+            "debt_cur": 0.0,
+            "cash": 40.0,
+            "depreciation": None,
+        }
+    ]
+    lev = SF._leverage_ratios(rows)
+    # net_debt = 150 + 0 - 40 = 110
+    assert lev.get("net_debt") == 110.0, lev
+    # net_debt_to_op_income = 110 / 60 ≈ 1.83
+    assert lev.get("net_debt_to_op_income") == round(110 / 60, 2), lev
+    # net_debt_to_ebitda: depreciation absent → not computed
+    assert "net_debt_to_ebitda" not in lev, lev
+
+
+def test_leverage_ratios_depreciation_present():
+    """With depreciation present, net_debt_to_ebitda activates."""
+    rows = [
+        {
+            "op_income": 60.0,
+            "interest_exp": 5.0,
+            "debt_lt": 150.0,
+            "debt_cur": 0.0,
+            "cash": 40.0,
+            "depreciation": 20.0,
+        }
+    ]
+    lev = SF._leverage_ratios(rows)
+    net_debt = 110.0  # 150 + 0 - 40
+    ebitda = 80.0     # 60 + 20
+    assert lev.get("net_debt_to_ebitda") == round(net_debt / ebitda, 2), lev
+
+
+def test_leverage_ratios_empty_rows():
+    """Empty rows list → empty dict."""
+    assert SF._leverage_ratios([]) == {}
+
+
+def test_leverage_ratios_uses_latest_row():
+    """Multi-row input: only the LATEST row is used (PIT-filtered by caller)."""
+    rows = [
+        # old row with very different values
+        {"op_income": 10.0, "interest_exp": 1.0, "debt_lt": 50.0,
+         "debt_cur": None, "cash": 10.0, "depreciation": None},
+        # latest row
+        {"op_income": 200.0, "interest_exp": 20.0, "debt_lt": 400.0,
+         "debt_cur": 50.0, "cash": 100.0, "depreciation": None},
+    ]
+    lev = SF._leverage_ratios(rows)
+    # Should use latest: interest_coverage = 200 / 20 = 10.0
+    assert lev["interest_coverage"] == 10.0, lev
+    # net_debt from latest: 400 + 50 - 100 = 350
+    assert lev.get("net_debt") == 350.0, lev
+
+
+def test_leverage_ratios_zero_cash_not_none():
+    """Zero cash must NOT be treated as None (it IS a valid value)."""
+    rows = [
+        {
+            "op_income": 50.0,
+            "interest_exp": 5.0,
+            "debt_lt": 100.0,
+            "debt_cur": 0.0,
+            "cash": 0.0,    # zero cash — valid, not missing
+            "depreciation": None,
+        }
+    ]
+    lev = SF._leverage_ratios(rows)
+    # net_debt = 100 + 0 - 0 = 100 (not None)
+    assert lev.get("net_debt") == 100.0, lev
+
+
+def test_leverage_ratios_output_is_json_safe():
+    """All outputs must be JSON-serializable (no NaN, no Infinity tokens)."""
+    import json
+    rows = [
+        {
+            "op_income": 100.0,
+            "interest_exp": 10.0,
+            "debt_lt": 200.0,
+            "debt_cur": 50.0,
+            "cash": 80.0,
+            "depreciation": 20.0,
+        }
+    ]
+    lev = SF._leverage_ratios(rows)
+    s = json.dumps(lev)
+    assert "NaN" not in s and "Infinity" not in s
 
 
 def _run():

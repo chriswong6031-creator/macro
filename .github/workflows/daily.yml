@@ -130,6 +130,30 @@ jobs:
         run: |
           python -m scripts.build_tape_flow_daily --mode forward \
             || echo "::warning::T2a tape-flow forward accrual failed (non-fatal)"
+      - name: T2a tape-flow features — episode-window backfill (non-fatal, budgeted)
+        # Tier-S episode windows 2022→, ±15d, ETF anchors only (≈11 nodes post-2022).
+        # Runs AFTER the forward step so the daily row always lands first.
+        # Hard-stop at 30 min (budget_deadline): state is persisted after every
+        # completed root-day; the next nightly run resumes from remaining work.
+        # Budget: 30 min — sized so episodes(30) + etf-history(20) + forward(~13)
+        # + collectors + Finviz (~35) < 100-min job timeout, ensuring "commit data"
+        # is always reached before GitHub Actions cancels the collect job.
+        # Outputs (data/tape_flow/daily/*.parquet + data/tape_flow/_state.json)
+        # are covered by the "commit data" step's `git add data/` below.
+        # Non-fatal: terminal absent or any error logs a warning and continues.
+        run: |
+          python -m scripts.build_tape_flow_daily --mode episodes --budget-minutes 30 \
+            || echo "::warning::T2a tape-flow episodes backfill failed (non-fatal)"
+      - name: T2a tape-flow features — ETF history backfill (non-fatal, budgeted)
+        # 20 ETF anchors, full history 2017→. R6 priority 3 — runs last, after forward
+        # and episodes, so earlier steps are never delayed by the large backlog.
+        # Hard-stop at 20 min (budget_deadline): state resumes each night until done.
+        # Budget: 20 min — see episodes comment above for the joint ceiling rationale.
+        # Outputs covered by `git add data/` in the commit step below (same as above).
+        # Non-fatal: terminal absent or any error logs a warning and continues.
+        run: |
+          python -m scripts.build_tape_flow_daily --mode etf-history --budget-minutes 20 \
+            || echo "::warning::T2a tape-flow ETF-history backfill failed (non-fatal)"
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
         # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
@@ -435,8 +459,11 @@ jobs:
             brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
             brun darkpool     "dark pool desk (build_darkpool_desk)"        scripts.build_darkpool_desk
             brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
+            brun flow_desk    "group flow heatmap & market tide (build_flow_desk)" scripts.build_flow_desk
             brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
             brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
+            brun options_screener "US options screener page (build_options_screener)" scripts.build_options_screener
+            brun options_entry "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
           }
           cl_baskets() {
             brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
@@ -464,7 +491,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology seasonality reports policy_intent policy_watch special index_changes"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology seasonality reports policy_intent policy_watch special index_changes"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -924,6 +951,19 @@ jobs:
         # engine-render.yml (express lane) also runs this step — its regime/market_state
         # recompute would otherwise drift ahead of the committed world_state copies.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
+      - name: options_flow_attention reflex trigger (W-D — nightly EOD fold)
+        if: always()
+        # Neural Web W-D (RO-8): direction-free reflex that fires when an on-board
+        # name shows a vol>OI magnitude burst (z-score ≥ 2.0 on fresh_contracts /
+        # premium_mn) or is within 1% of a GEX wall/flip.  Reads EOD parquets from
+        # data/options_flow/ + data/polygon_gex/ (written by the collect job) and
+        # board membership from site/factordata/us_standouts*.json (written by
+        # build_site above — both artifacts are present by this step).
+        # Appends to data/reflexes/options_flow_attention/firings.jsonl.
+        # Covered by 'git add data/' in 'commit engine outputs' below.
+        # Fail-soft: dormant until flow summaries accumulate ≥5 rows of history;
+        # never kills the nightly.
+        run: python -m scripts.build_options_flow_attention || echo "::warning::build_options_flow_attention failed (non-fatal — reflex dormant this run)"
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |

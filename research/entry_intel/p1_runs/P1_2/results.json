@@ -1,0 +1,455 @@
+{
+  "study_id": "P1_2",
+  "run_timestamp": "2026-07-05T16:11:34.128725Z",
+  "era_memo_cite": "P0_MEASUREMENT_MEMO.md v1.0 (2026-07-04)",
+  "effective_window": "2022-06-30 \u2192 2026-07-02",
+  "unstamped_rows_in_era": 834267,
+  "stamped_rows_excluded": 0,
+  "n_episode_clusters": 44,
+  "bh_family_m": 72,
+  "bh_q_threshold": 0.1,
+  "n_bootstrap": 10000,
+  "n_significant_tests": 0,
+  "trial_results": {
+    "freshness_expired": {
+      "verdict": "INCONCLUSIVE",
+      "notes": "Reason not present in replay data (0 rows)",
+      "n_total": 0,
+      "n_survived": 0,
+      "n_fire_matched": 0,
+      "prune_rate": 0,
+      "horizons": {}
+    },
+    "not_topped_veto": {
+      "verdict": "KEEP",
+      "notes": "No significant axis at q\u22640.10 (KEEP by default)",
+      "n_total": 92715,
+      "n_survived": 3503,
+      "n_fire_matched": 7225,
+      "prune_rate": 0.193,
+      "horizons": {
+        "21": {
+          "rej_stop": 0.3942,
+          "rej_dead": 0.1844,
+          "rej_cush": 0.1339,
+          "rej_lift": 0.2875,
+          "fire_stop": 0.3935,
+          "fire_dead": 0.1762,
+          "fire_cush": 0.1348,
+          "fire_lift": 0.2955,
+          "delta_stop": 0.0007,
+          "delta_dead": 0.0082,
+          "delta_cush": -0.0009,
+          "delta_lift": -0.008,
+          "raw_p": {
+            "stop_out": 0.9658,
+            "dead_money": 0.5361,
+            "cushion": 0.9155,
+            "clean_lift": 0.6896
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        },
+        "63": {
+          "rej_stop": 0.5618,
+          "rej_dead": 0.0131,
+          "rej_cush": 0.1556,
+          "rej_lift": 0.2695,
+          "fire_stop": 0.5698,
+          "fire_dead": 0.0079,
+          "fire_cush": 0.1529,
+          "fire_lift": 0.2693,
+          "delta_stop": -0.008,
+          "delta_dead": 0.0052,
+          "delta_cush": 0.0026,
+          "delta_lift": 0.0001,
+          "raw_p": {
+            "stop_out": 0.7062,
+            "dead_money": 0.5071,
+            "cushion": 0.8012,
+            "clean_lift": 0.9935
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        }
+      }
+    },
+    "tier_cutoff": {
+      "verdict": "INCONCLUSIVE",
+      "notes": "Reason not present in replay data (0 rows)",
+      "n_total": 0,
+      "n_survived": 0,
+      "n_fire_matched": 0,
+      "prune_rate": 0,
+      "horizons": {}
+    },
+    "extension_demote": {
+      "verdict": "KEEP",
+      "notes": "No significant axis at q\u22640.10 (KEEP by default)",
+      "n_total": 9638,
+      "n_survived": 1090,
+      "n_fire_matched": 4521,
+      "prune_rate": 0.136,
+      "horizons": {
+        "21": {
+          "rej_stop": 0.4183,
+          "rej_dead": 0.1963,
+          "rej_cush": 0.133,
+          "rej_lift": 0.2523,
+          "fire_stop": 0.3933,
+          "fire_dead": 0.1655,
+          "fire_cush": 0.1316,
+          "fire_lift": 0.3097,
+          "delta_stop": 0.0251,
+          "delta_dead": 0.0309,
+          "delta_cush": 0.0014,
+          "delta_lift": -0.0574,
+          "raw_p": {
+            "stop_out": 0.4948,
+            "dead_money": 0.4799,
+            "cushion": 0.8772,
+            "clean_lift": 0.4836
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        },
+        "63": {
+          "rej_stop": 0.6275,
+          "rej_dead": 0.0083,
+          "rej_cush": 0.1486,
+          "rej_lift": 0.2156,
+          "fire_stop": 0.5791,
+          "fire_dead": 0.0073,
+          "fire_cush": 0.1391,
+          "fire_lift": 0.2745,
+          "delta_stop": 0.0484,
+          "delta_dead": 0.001,
+          "delta_cush": 0.0095,
+          "delta_lift": -0.0589,
+          "raw_p": {
+            "stop_out": 0.4878,
+            "dead_money": 0.7337,
+            "cushion": 0.6404,
+            "clean_lift": 0.4842
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        }
+      }
+    },
+    "knife_demote": {
+      "verdict": "KEEP",
+      "notes": "No significant axis at q\u22640.10 (KEEP by default)",
+      "n_total": 20696,
+      "n_survived": 4790,
+      "n_fire_matched": 8826,
+      "prune_rate": 0.074,
+      "horizons": {
+        "21": {
+          "rej_stop": 0.3816,
+          "rej_dead": 0.1428,
+          "rej_cush": 0.1175,
+          "rej_lift": 0.358,
+          "fire_stop": 0.3873,
+          "fire_dead": 0.1683,
+          "fire_cush": 0.1272,
+          "fire_lift": 0.3172,
+          "delta_stop": -0.0056,
+          "delta_dead": -0.0255,
+          "delta_cush": -0.0097,
+          "delta_lift": 0.0408,
+          "raw_p": {
+            "stop_out": 0.5694,
+            "dead_money": 0.4763,
+            "cushion": 0.4854,
+            "clean_lift": 0.4864
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        },
+        "63": {
+          "rej_stop": 0.5395,
+          "rej_dead": 0.0058,
+          "rej_cush": 0.1363,
+          "rej_lift": 0.3184,
+          "fire_stop": 0.5588,
+          "fire_dead": 0.007,
+          "fire_cush": 0.1501,
+          "fire_lift": 0.284,
+          "delta_stop": -0.0193,
+          "delta_dead": -0.0012,
+          "delta_cush": -0.0138,
+          "delta_lift": 0.0343,
+          "raw_p": {
+            "stop_out": 0.5008,
+            "dead_money": 0.5025,
+            "cushion": 0.4818,
+            "clean_lift": 0.4906
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        }
+      }
+    },
+    "sector_cap_displaced": {
+      "verdict": "KEEP",
+      "notes": "No significant axis at q\u22640.10 (KEEP by default)",
+      "n_total": 8536,
+      "n_survived": 1404,
+      "n_fire_matched": 6536,
+      "prune_rate": 0.036,
+      "horizons": {
+        "21": {
+          "rej_stop": 0.3462,
+          "rej_dead": 0.2023,
+          "rej_cush": 0.1581,
+          "rej_lift": 0.2934,
+          "fire_stop": 0.3655,
+          "fire_dead": 0.1639,
+          "fire_cush": 0.1326,
+          "fire_lift": 0.338,
+          "delta_stop": -0.0194,
+          "delta_dead": 0.0384,
+          "delta_cush": 0.0255,
+          "delta_lift": -0.0445,
+          "raw_p": {
+            "stop_out": 0.4884,
+            "dead_money": 0.4789,
+            "cushion": 0.4973,
+            "clean_lift": 0.4964
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        },
+        "63": {
+          "rej_stop": 0.5249,
+          "rej_dead": 0.0085,
+          "rej_cush": 0.1845,
+          "rej_lift": 0.2821,
+          "fire_stop": 0.5421,
+          "fire_dead": 0.0063,
+          "fire_cush": 0.1455,
+          "fire_lift": 0.3062,
+          "delta_stop": -0.0171,
+          "delta_dead": 0.0023,
+          "delta_cush": 0.039,
+          "delta_lift": -0.0241,
+          "raw_p": {
+            "stop_out": 0.5065,
+            "dead_money": 0.5237,
+            "cushion": 0.4895,
+            "clean_lift": 0.4929
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        }
+      }
+    },
+    "board_rank_cutoff": {
+      "verdict": "KEEP",
+      "notes": "No significant axis at q\u22640.10 (KEEP by default)",
+      "n_total": 13676,
+      "n_survived": 2676,
+      "n_fire_matched": 7341,
+      "prune_rate": 0.214,
+      "horizons": {
+        "21": {
+          "rej_stop": 0.3987,
+          "rej_dead": 0.1528,
+          "rej_cush": 0.1072,
+          "rej_lift": 0.3412,
+          "fire_stop": 0.3874,
+          "fire_dead": 0.1636,
+          "fire_cush": 0.1274,
+          "fire_lift": 0.3216,
+          "delta_stop": 0.0113,
+          "delta_dead": -0.0108,
+          "delta_cush": -0.0201,
+          "delta_lift": 0.0196,
+          "raw_p": {
+            "stop_out": 0.751,
+            "dead_money": 0.5671,
+            "cushion": 0.4749,
+            "clean_lift": 0.767
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        },
+        "63": {
+          "rej_stop": 0.5575,
+          "rej_dead": 0.0097,
+          "rej_cush": 0.1214,
+          "rej_lift": 0.3113,
+          "fire_stop": 0.5578,
+          "fire_dead": 0.0068,
+          "fire_cush": 0.1441,
+          "fire_lift": 0.2912,
+          "delta_stop": -0.0003,
+          "delta_dead": 0.0029,
+          "delta_cush": -0.0227,
+          "delta_lift": 0.02,
+          "raw_p": {
+            "stop_out": 0.994,
+            "dead_money": 0.5084,
+            "cushion": 0.4821,
+            "clean_lift": 0.7437
+          },
+          "bh_q": {
+            "stop_out": 1.0,
+            "dead_money": 1.0,
+            "cushion": 1.0,
+            "clean_lift": 1.0
+          }
+        }
+      }
+    },
+    "event_blackout": {
+      "verdict": "INCONCLUSIVE",
+      "notes": "Reason not present in replay data (0 rows)",
+      "n_total": 0,
+      "n_survived": 0,
+      "n_fire_matched": 0,
+      "prune_rate": 0,
+      "horizons": {}
+    },
+    "cohort_null": {
+      "verdict": "INCONCLUSIVE",
+      "notes": "Reason not present in replay data (0 rows)",
+      "n_total": 0,
+      "n_survived": 0,
+      "n_fire_matched": 0,
+      "prune_rate": 0,
+      "horizons": {}
+    }
+  },
+  "p2_candidates": [],
+  "insufficient_power_cells": [
+    "freshness_expired: n_survived=0 < 10",
+    "tier_cutoff: n_survived=0 < 10",
+    "event_blackout: n_survived=0 < 10",
+    "cohort_null: n_survived=0 < 10"
+  ],
+  "bh_audit": {
+    "m_registered": 72,
+    "n_valid_pvals": 40,
+    "n_significant": 0,
+    "all_raw_pvals_sorted": [
+      [
+        0.4749,
+        "board_rank_cutoff/21d/cushion"
+      ],
+      [
+        0.4763,
+        "knife_demote/21d/dead_money"
+      ],
+      [
+        0.4789,
+        "sector_cap_displaced/21d/dead_money"
+      ],
+      [
+        0.4799,
+        "extension_demote/21d/dead_money"
+      ],
+      [
+        0.4818,
+        "knife_demote/63d/cushion"
+      ],
+      [
+        0.4821,
+        "board_rank_cutoff/63d/cushion"
+      ],
+      [
+        0.4836,
+        "extension_demote/21d/clean_lift"
+      ],
+      [
+        0.4842,
+        "extension_demote/63d/clean_lift"
+      ],
+      [
+        0.4854,
+        "knife_demote/21d/cushion"
+      ],
+      [
+        0.4864,
+        "knife_demote/21d/clean_lift"
+      ],
+      [
+        0.4878,
+        "extension_demote/63d/stop_out"
+      ],
+      [
+        0.4884,
+        "sector_cap_displaced/21d/stop_out"
+      ],
+      [
+        0.4895,
+        "sector_cap_displaced/63d/cushion"
+      ],
+      [
+        0.4906,
+        "knife_demote/63d/clean_lift"
+      ],
+      [
+        0.4929,
+        "sector_cap_displaced/63d/clean_lift"
+      ],
+      [
+        0.4948,
+        "extension_demote/21d/stop_out"
+      ],
+      [
+        0.4964,
+        "sector_cap_displaced/21d/clean_lift"
+      ],
+      [
+        0.4973,
+        "sector_cap_displaced/21d/cushion"
+      ],
+      [
+        0.5008,
+        "knife_demote/63d/stop_out"
+      ],
+      [
+        0.5025,
+        "knife_demote/63d/dead_money"
+      ]
+    ]
+  }
+}

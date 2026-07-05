@@ -1,0 +1,1 @@
+{"type": "schema_note", "note": "Operator tape journal — single writer: scripts/oracle_tape.py. Schema: id (tape::<UTC-seconds>[::N]), type=operator_tape, pit_stamp, nodes[], direction (in|out), note, tickers[], invalidation, conviction (1-5|null), converted (null=pending). This header row is skipped by all readers."}

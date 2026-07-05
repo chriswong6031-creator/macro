@@ -2994,8 +2994,91 @@ artifacts:
 
   # ============================================================
   # OPTIONS NERVES — P4.1 registration (2026-07-05)
-  # gex_state and options_events deferred (producers not live yet)
+  # gex_state nerve registered below; options_events deferred (producer not live yet)
   # ============================================================
+
+  # --- gex_state: reconstructed index dealer-gamma history (P1.1b) ---
+  gex-state-history:
+    path: data/index_gex_history/*.parquet
+    format: parquet
+    producer: scripts/build_index_gex_history.py
+    known_extra_writers:
+      - engine/market_gamma.py
+    owner_program: options-alpha
+    cadence: weekly
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 200
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/market_gamma.py
+      - scripts/build_gex_board.py
+    external_consumers: []
+    provenance:
+      reconstructed: true
+      method: >
+        greeks ⋈ oi join on (root, expiration, strike, right, date) fed to
+        engine.gex_engine.compute_gex — the identical pure function used by the live
+        polygon_gex and cboe/gex paths.  Dealer sign (long-call/short-put), ±25%
+        strike window, ±25% zero-gamma grid, $/1%-move net-GEX scaling, and
+        long-above-flip/short-below regime all inherited verbatim from gex_engine.
+      audit:
+        overlap_window: "2026-06-15 to 2026-07-02 (n=13 trading days per root)"
+        spot_tol_frac: 0.005
+        note: >
+          Raw correlation is diluted by a T-1 settlement-timing lag in the live
+          polygon_gex store (live spot = T-1 close carried forward).  Same-spot
+          filter isolates sessions where both sources report the same underlying
+          price (within 0.5%) — those rows have no timing mismatch and measure
+          pure model agreement.
+        SPY:
+          n_overlap: 13
+          net_gex_corr_raw: 0.8605
+          n_same_spot: 9
+          net_gex_corr_same_spot: 0.9727
+          regime_agreement_same_spot: 0.8889
+        QQQ:
+          n_overlap: 13
+          net_gex_corr_raw: 0.7385
+          n_same_spot: 5
+          net_gex_corr_same_spot: 0.9707
+          regime_agreement_same_spot: 1.0
+        IWM:
+          n_overlap: 13
+          net_gex_corr_raw: 0.3341
+          n_same_spot: 6
+          net_gex_corr_same_spot: 0.9262
+          regime_agreement_same_spot: 1.0
+          fragility_note: >
+            FRAGILE — same-spot corr 0.9262 is tolerance-sensitive:
+            0.2%->0.9977 (n=4), 0.5%->0.9262 (n=6), 1.0%->0.3341 (n=13).
+            Unlike SPY/QQQ/DIA which degrade monotonically (consistent with
+            a timing-lag confound), IWM collapses as rows in the 0.5-1.0%
+            drift band are added, suggesting genuine model divergence at those
+            sessions. regime_agreement_same_spot=1.0 is uninformative: the
+            all-short near-zero cluster (-0.4 to -2.0 bn) means every row
+            trivially agrees. Registration provisional; re-audit once
+            polygon_gex accumulates more IWM overlap days.
+        DIA:
+          n_overlap: 13
+          net_gex_corr_raw: 0.8669
+          n_same_spot: 10
+          net_gex_corr_same_spot: 0.9105
+          regime_agreement_same_spot: 0.8
+        SPX_SPXW: excluded — backfill_state does not list them complete; see
+          roots_excluded_native_index in data/index_gex_history/_manifest.json
+    notes: >
+      Multi-year (2017->) daily dealer-gamma regime and levels series for SPY, QQQ,
+      IWM, DIA.  One row per trading day per root: net_gex_bn, gamma_flip,
+      gamma_regime, dist_to_flip_pct, net_vex, net_cex, charm_anchor, iv30,
+      put_call_oi_ratio, max_pain — plus reconstructed=True flag.
+      SPX/SPXW excluded until backfill_state lists them complete (house mid-write law).
+      Display-only: net-GEX percentile-vs-own-history context surface for the
+      market_gamma engine; MUST NOT feed any scored or arithmetic weight path.
+      Companion live store: data/polygon_gex/summary_*.parquet (short window ~2026-06-15+).
 
   # --- 1 consumer ---
   options-flow-index:
@@ -3057,6 +3140,139 @@ artifacts:
       (deferred; iv_surface upgrade wave not yet started). Display-only: iv30
       consumed via options_stamp for stock-card overlay and gex_board; no
       scored arithmetic path currently reads this store.
+
+  # --- W-A Options Entry State (options-nw-entry-intelligence, 2026-07-05) ---
+
+  options-entry-state:
+    path: data/options_entry/state.parquet
+    format: parquet
+    producer: scripts/build_options_entry_state.py
+    known_extra_writers: []
+    owner_program: options-nw-entry-intelligence
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: options_entry_state.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      Display-only raw-fields fusion table per RO-1 (masterplan W-A).
+      Mandate: display-only raw-fields fusion; composites forbidden per RO-2 /
+      Signal Commons R3. Columns: iv30, ivspread_rel+5d_chg, skew+5d_chg,
+      net_doi/doi_pc/fresh_contracts/fresh_premium_mn/zerodte_share, gamma_regime
+      (with structurally_constant caveat col per audit #29), dist_to_flip_pct,
+      wall_up/down/max_pain dist pcts, opex_days, pin_risk (bool: opex_days<=5 AND
+      long-gamma AND min-wall<=2%), gex_confirm_verdict, evidence_quality, per-source
+      as_of cols. iv_rank_252/iv_rank_5d_chg structurally null until A9 IV-backfill PR.
+      Missing gitignored stores (polygon_gex, options_flow) → null fields + evidence_quality=thin;
+      never fake-neutral. No composite/score columns — any scored use requires gate passage.
+
+  options-entry-gate:
+    path: data/options_entry/gate.json
+    format: json
+    producer: scripts/validate_options_entry.py
+    known_extra_writers: []
+    owner_program: options-nw-entry-intelligence
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: options_entry.gate.v1
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Pre-registered options-entry quality gate (W1.3 machinery). Currently:
+      scored=false, status=building_history (n << 30 per bucket; all gates building).
+      Buckets: S-VOI, S-WALL, S-TOP_RISK (pre-registered; verdicts at n>=30 ~Q4-26).
+      Gate logic: conditioned-vs-unconditioned delta with bootstrap CI on A10 primitives
+      (post_cushion_breach, terminal_state_clean8_21, fwd_mfe_5/21, fwd_ret_5) from
+      us_board_ledger/retro_grades.parquet. Tier=shadow until validation_gate.validated==true.
+
+  options-skew-snapshots:
+    path: data/options_skew/snapshots.parquet
+    format: parquet
+    producer: scripts/build_options_skew.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_skew.snapshots.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_entry_state.py
+    external_consumers: []
+    notes: >
+      Per-underlying 25Δ IV skew snapshots (accrual store; 1 row/day/underlying).
+      Mandate: display-only until validation_gate.validated==true (gate path:
+      data/options_skew/validation_gate.json). 13 trading days / 386 tickers as of
+      2026-07-05. 5d change computed in engine/options_entry_state.py from this store;
+      minimum LOOKBACK_TRADING_DAYS+1 rows required for non-null 5d change.
+      No scored arithmetic path reads this store until the skew gate passes.
+
+  options-ivspread-snapshots:
+    path: data/options_ivspread/snapshots.parquet
+    format: parquet
+    producer: scripts/build_options_ivspread.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_ivspread.snapshots.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_entry_state.py
+    external_consumers: []
+    notes: >
+      Per-underlying IV spread (call-IV minus put-IV, OI-weighted) snapshots.
+      Mandate: display-only until validation_gate.validated==true (gate path:
+      data/options_ivspread/validation_gate.json). 6 trading days / 355 tickers as of
+      2026-07-05. 5d change computed in engine/options_entry_state.py; minimum
+      LOOKBACK_TRADING_DAYS+1 rows required for non-null 5d change.
+      No scored arithmetic path reads this store until the ivspread gate passes.
+
+  live-options-flow-current:
+    path: live_flow/feed_current.json
+    format: json
+    producer: collectors/live_options_flow_poller.py
+    known_extra_writers: []
+    owner_program: options-nw-entry-intelligence
+    cadence: collect
+    storage: r2
+    asof_field: as_of
+    freshness_sla_hours: 1
+    schema: live_flow.feed_current.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:flow-desk-terminal
+    notes: >
+      Intraday R2 live options flow feed (feat/flow-desk, currently UNDEPLOYED).
+      Stale-guard: consumers MUST check as_of staleness before display; this feed
+      can be absent or hours-old outside market hours.
+      Mandate: intraday feed — never coupled to any nightly forward ledger (nightly
+      is the sole advancer of forward-accountability ledgers per house law).
+      EOD site/flow/ and intraday R2 live_flow/ remain architecturally distinct.
+      Signing_gate root false as of 2026-07-05 — direction fields are soft-signed
+      (tick-rule / minute-agg; no NBBO). Only magnitude fields (net dollar flow,
+      gamma_flow, 0DTE pct) are reliable per signing_gate sub-gate audit.
 
   # --- W3 Event Intelligence priors (Signal Commons, 2026-07-05) ---
   event-priors-clinicaltrials:
@@ -3225,6 +3441,14 @@ artifacts:
       Two new rolling columns (dist_21d_low_pct, dist_126d_high_pct) are the only
       new price computations. rs_repair_state and sponsorship_state are unavailable
       until #1302 W0.4 and lane B2 respectively.
+      nw-quant-synthesis item A (FR-9/FR-10): three additive per-ticker columns bound
+      from engine/stock_fundamentals._leverage_ratios() via data/edgar/statements.parquet:
+        interest_coverage, net_debt_to_op_income, net_debt_to_ebitda.
+      All three are None-safe; Financial-sector names and sparse filers produce None.
+      net_debt_to_op_income is an EBITDA proxy (uses operating income as D&A substitute);
+      any future UI surface MUST carry a proxy label for this ratio.
+      net_debt_to_ebitda requires D&A (DepreciationDepletionAndAmortization) which
+      accrues via the collectors/edgar_facts.py weekly drip — mostly None until drip runs.
 
   bottom-sensors-json:
     path: site/neuralwebdata/bottom_sensors.json
@@ -3245,3 +3469,31 @@ artifacts:
     notes: >
       QA/debug JSON companion to bottom-sensors-parquet.
       is_display_only=true — display and debug surface only.
+
+  # --- NW quant-synthesis B: research-queue EV-ranker ---
+  research-queue:
+    path: data/neuralweb/research_queue.json
+    format: json
+    producer: engine/neuralweb/research_queue.py
+    known_extra_writers:
+      - "scripts/build_research_queue.py — thin CLI wrapper; calls write_queue() defined in the producer; no independent write logic"
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 168
+    schema: research_queue.v1
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Read-only EV-ranker for the cortex research pipeline (nw-quant-synthesis item B).
+      Ranks candidates from hypothesis_inbox.jsonl, machine_registry.jsonl (absent-file-safe),
+      the species registry, and the trial ledger. Output categories: high_ev_build_now /
+      blocked_by_data / too_sparse / duplicate_of_existing / invalid_shape. Authority law:
+      this artifact is advisory only — metabolism.register_hypothesis() remains the sole
+      budget chokepoint; the ranker has zero write or gating authority over the cortex.
+      NOT on the render path; run manually or via future nightly opt-in.
+      is_display_only=true — no board rank, no alerts, no sizing.

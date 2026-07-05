@@ -26,6 +26,28 @@ lanes:
           'python scripts/fetch_finviz_themes.py' (not python -m), so the
           conformance parser cannot extract it via _PYTHON_M_RE. It is intentionally
           omitted from the declared module list to keep parser output consistent.
+      - id: tape_flow_forward
+        module: scripts.build_tape_flow_daily
+        args: [--mode, forward]
+        note: >
+          T2a tape-flow features — forward accrual (options-tape P2.x, #1435).
+          Prior-trading-day trade+NBBO tape for the gex_symbols() universe via
+          ThetaData wildcard-bulk; aggregates inline to signed-flow features.
+          Non-fatal: terminal absent or any error warns and continues.
+          outputs: [data/tape_flow/daily/*.parquet, data/tape_flow/_state.json]
+      - id: tape_flow_episodes
+        module: scripts.build_tape_flow_daily
+        args: [--mode, episodes, --budget-minutes, "30"]
+        note: >
+          T2a episode-window backfill (#1441) — Tier-S episodes 2022→, ETF anchors.
+          Hard-stop at 30 min (budget_deadline); state resumes next night.
+          Runs AFTER the forward step so the daily row always lands first. Non-fatal.
+      - id: tape_flow_etf_history
+        module: scripts.build_tape_flow_daily
+        args: [--mode, etf-history, --budget-minutes, "20"]
+        note: >
+          T2a ETF-history backfill (#1441) — 20 ETF anchors, full history 2017→.
+          Hard-stop at 20 min; runs last of the three tape-flow steps. Non-fatal.
 
   # ── daily.yml / engine ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
@@ -84,8 +106,11 @@ lanes:
             - scripts.build_gex_board
             - scripts.build_vol_regime
             - scripts.build_options_flow
+            - scripts.build_flow_desk
+            - scripts.build_options_screener
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_entry_state
             - scripts.build_darkpool_desk
           cl_baskets:
             - scripts.build_baskets
@@ -202,6 +227,9 @@ lanes:
         module: scripts.oracle_nightly
       - id: build_world_state
         module: scripts.build_world_state
+      - id: build_options_flow_attention
+        module: scripts.build_options_flow_attention
+        note: non-fatal reflex; neural-web W-D — direction-free options-flow attention trigger (nightly EOD fold)
       - id: build_feeds
         module: scripts.build_feeds
         note: non-fatal; per-ticker JSON feeds
@@ -281,6 +309,19 @@ lanes:
                    data/neuralweb/world_state.json]
           outputs: [data/reflexes/cortex_attention/grades.jsonl,
                     data/neuralweb/cortex/probation.json,
+                    data/neuralweb/governance.jsonl]
+      - id: grade_factor_attention
+        module: scripts.grade_factor_attention
+        note: >
+          P1-D — Nightly factor_attention reflex grader + A2 earn-in.
+          Parallel grader to grade_cortex_attention; owns the
+          data/reflexes/factor_attention/ subtree (NOT cortex paths).
+          Runs AFTER grade_cortex_attention, BEFORE evaluate_cortex_hypotheses.
+          Non-fatal (always exits 0).
+          inputs: [data/reflexes/factor_attention/firings.jsonl,
+                   data/yahoo/*.parquet]
+          outputs: [data/reflexes/factor_attention/grades.jsonl,
+                    data/reflexes/factor_attention/probation.json,
                     data/neuralweb/governance.jsonl]
       - id: evaluate_cortex_hypotheses
         module: scripts.evaluate_cortex_hypotheses
@@ -397,6 +438,7 @@ lanes:
             - scripts.build_options_flow
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_entry_state
           cl_baskets:
             - scripts.build_baskets
             - scripts.build_news
@@ -485,6 +527,7 @@ lanes:
             - scripts.build_options_flow
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_entry_state
           cl_baskets:
             - scripts.build_baskets
             - scripts.build_news

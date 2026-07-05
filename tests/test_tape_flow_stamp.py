@@ -418,6 +418,16 @@ def test_writer_graceful_absent_tape_flow_store(tmp_path, monkeypatch):
     import engine.tape_flow_stamp as _tfs
     monkeypatch.setattr(_tfs, "_default_read_tape_flow", lambda r: None)
 
+    # Patch the W-C skew/ivspread snapshot readers (called via the script's namespace) —
+    # the real snapshot parquets are tracked in-repo and would otherwise stamp real values.
+    import scripts.stamp_options_state as _ss
+    monkeypatch.setattr(_ss, "_default_read_skew_snapshots", lambda: None)
+    monkeypatch.setattr(_ss, "_default_read_ivspread_snapshots", lambda: None)
+    # ...and on the engine module: stamp_options_state falls back to its own
+    # module-level default readers when the passed frames are None.
+    monkeypatch.setattr(_os, "_default_read_skew_snapshots", lambda: None)
+    monkeypatch.setattr(_os, "_default_read_ivspread_snapshots", lambda: None)
+
     df = pd.DataFrame({
         "as_of": ["2026-07-04", "2026-07-04"],
         "ticker": ["AAPL", "MSFT"],

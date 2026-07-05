@@ -1,6 +1,7 @@
 """scripts/validate_options_entry.py — pre-registered options-entry-quality gate.
 
-Options Alpha program W1.3 (research/OPTIONS_ALPHA_MASTERPLAN.md §4, rulings A6/A9/A10).
+Options Alpha program W1.3 / W-C (research/OPTIONS_ALPHA_MASTERPLAN.md §4, rulings A6/A9/A10;
+W-C 2026-07-05 adds five new pre-registered bucket tests).
 
 THE KEYSTONE MACHINE, NOT A RESULT. This gate answers — once enough fires accrue — the one
 question the desk cares about:
@@ -9,8 +10,8 @@ question the desk cares about:
      the price thesis already likes?"
 
 It reads the options-state-stamped US board ledger (``data/us_board_ledger/retro_grades.parquet``,
-stamped by scripts/stamp_options_state.py) and runs the four pre-registered bucket tests from
-§4 of the masterplan, speaking ONLY in ledger primitives (ruling A10):
+stamped by scripts/stamp_options_state.py) and runs pre-registered bucket tests from §4 of the
+masterplan, speaking ONLY in ledger primitives (ruling A10):
 
   * ``post_cushion_breach``            — 21d stop-out proxy (True/False/None)
   * ``terminal_state_clean8_21``       — 21d clean-liftoff label (CLEAN_LIFTOFF vs the rest)
@@ -21,17 +22,25 @@ There is NO stop5 / clean15@5d / absolute-MAE primitive; the wall study (S-WALL)
 absolute-price wall touches directly from ``data/massive_stock_day/`` raw closes vs the stamped
 ``opt_wall_down`` level (close-path — UNDERSTATES intraday touches; documented in the evidence).
 
+W-C ADDITIONS (pre-registered 2026-07-05):
+  * S-IVSPREAD-F: fire-conditioned call−put IV spread (opt_ivspread_rel > 0 vs <= 0)
+  * S-SKEW_DECEL: skew top-tercile AND falling (opt_skew_5d_chg < 0 vs rest)
+  * S-TOP_RISK: de-escalation flag (skew rising OR ivspread_rel < 0 → flag bad entries)
+    CAUTION-ONLY: beneficial direction = flagged fires show WORSE outcomes (correctly de-escalates)
+  * S-PIN_RISK: OPEX proximity + long-gamma + near-wall flag (opt_pin_risk True vs False)
+  * S-VOI2: stricter vol>OI burst (see engine/options_stamp.py notes; FUTURE stamp col)
+
 Each test is a conditioned-vs-unconditioned delta with a bootstrap CI. HARD RULE (doctrine
 §2.3): NO verdict — no effect-size claim — until n ≥ ``MIN_PER_BUCKET`` fires in EACH condition
-bucket. Until then the gate emits ``scored:false`` / ``status:"building_history"`` with the
-LIVE per-bucket n counts. With ~13 board dates × 18 days of options history, every bucket is far
-under threshold today; the machine ships so no future fire goes unstamped or ungraded.
+bucket. All five W-C buckets are ``building_history`` on initial dispatch.
 
-Output: ``data/options_entry/gate.json`` (schema ``options_entry.gate.v1``, mirroring the
-``gex.gate.v1`` style of ``data/gex/gate.json``).
+Output: ``data/options_entry/gate.json`` (schema ``options_entry.gate.v2``, extends v1).
 
 Only recomputes counts / verdicts — a verdict flip requires the pre-registered thresholds,
 never a code edit. Idempotent, resilient.
+
+FDR FAMILY (BH α=0.10): 22 tests total (see OPTIONS_ALPHA_MASTERPLAN.md §4 FDR statement).
+No verdict claims significance without clearing BH-FDR at α=0.10 over this full family.
 """
 from __future__ import annotations
 
@@ -261,6 +270,223 @@ def _wall_touch_study(df: pd.DataFrame, horizon: int = 21) -> dict:
     }
 
 
+# ── W-C: new pre-registered bucket tests ─────────────────────────────────────
+
+def _verdict_for_top_risk(t: dict) -> str:
+    """Verdict for S-TOP_RISK (caution-only de-escalation flag).
+
+    Pre-registered primitives (§4): {breach, clean}.
+    Beneficial direction (conjunction, per §4 registration):
+      breach delta > 0 (MORE stop-outs in flagged bucket) AND
+      clean delta < 0 (FEWER clean liftoffs in flagged bucket).
+    Both conditions must hold for a 'signal' verdict — OR would deviate from the
+    written pre-registration.  This signal MAY ONLY LOWER confidence, never short (RO-3)."""
+    if not t["ready"]:
+        return "building_history"
+    b, c = t["breach"], t["clean"]
+    breach_ok = b["excludes_zero"] and b["delta"] is not None and b["delta"] > 0
+    clean_ok = c["excludes_zero"] and c["delta"] is not None and c["delta"] < 0
+    return "signal" if (breach_ok and clean_ok) else "no_effect"
+
+
+def _verdict_for_pin_risk(t: dict) -> str:
+    """Verdict for S-PIN_RISK (caution-only pin-risk flag).
+
+    Pre-registered primitives (§4): {clean, mfe21} — breach is NOT a registered
+    S-PIN_RISK primitive.  Beneficial direction:
+      clean delta < 0 (FEWER clean liftoffs — pin mechanics suppress liftoff) AND/OR
+      mfe21 delta < 0 (LOWER mfe21 — pin mechanics suppress follow-through).
+    §4 registers 'LOWER clean rate + LOWER mfe21' as the signal pattern; we require
+    both conditions for a 'signal' verdict to match the conjunction wording in the
+    pre-registration.  This signal MAY ONLY LOWER confidence, never short (RO-3)."""
+    if not t["ready"]:
+        return "building_history"
+    c = t.get("clean")
+    m = t.get("mfe21")
+    if c is None or m is None:
+        return "building_history"
+    clean_ok = c["excludes_zero"] and c["delta"] is not None and c["delta"] < 0
+    mfe21_ok = m["excludes_zero"] and m["delta"] is not None and m["delta"] < 0
+    return "signal" if (clean_ok and mfe21_ok) else "no_effect"
+
+
+def _ivspread_f_test(df: pd.DataFrame) -> dict:
+    """S-IVSPREAD-F: fire-conditioned call-put IV spread.
+
+    Condition: opt_ivspread_rel > 0 (calls richening vs puts = constructive positioning)
+    vs opt_ivspread_rel <= 0. A10 primitives: breach, clean, mfe21.
+    Pre-registered in §4 W-C (2026-07-05). Era: single live-accrual 2026→."""
+    col = "opt_ivspread_rel"
+    if col not in df.columns or df[col].notna().sum() == 0:
+        return {"bucket": "S-IVSPREAD-F", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": f"{col} not yet stamped — W-C harness extension pending full backfill"}
+    iv = pd.to_numeric(df[col], errors="coerce")
+    sub = df[iv.notna()].copy()
+    submask = pd.to_numeric(sub[col], errors="coerce") > 0
+    return _bucket_test(sub, submask, "S-IVSPREAD-F: ivspread_rel > 0 (calls richening)")
+
+
+def _skew_decel_test(df: pd.DataFrame) -> dict:
+    """S-SKEW_DECEL: skew high-but-falling at fire.
+
+    Condition: opt_skew in top cross-sectional tercile (by as_of date, over stamped fires)
+    AND opt_skew_5d_chg < 0.  vs rest.  A10 primitives: breach, clean, mfe21.
+    Pre-registered in §4 W-C (2026-07-05). Era: single live-accrual 2026→."""
+    skew_col = "opt_skew"
+    chg_col = "opt_skew_5d_chg"
+    if skew_col not in df.columns or df[skew_col].notna().sum() == 0:
+        return {"bucket": "S-SKEW_DECEL", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": f"{skew_col} not yet stamped — W-C harness extension pending"}
+    if chg_col not in df.columns or df[chg_col].notna().sum() == 0:
+        return {"bucket": "S-SKEW_DECEL", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": f"{chg_col} not yet stamped — needs ≥5 prior days of skew snapshots"}
+    # need both columns present
+    both = df[df[skew_col].notna() & df[chg_col].notna()].copy()
+    if both.empty:
+        return {"bucket": "S-SKEW_DECEL", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": "no fires with both opt_skew and opt_skew_5d_chg stamped yet"}
+    # compute top-tercile cutoff cross-sectionally per as_of date
+    tercile_hi = (
+        both.groupby("as_of")[skew_col]
+        .transform(lambda x: x.quantile(2 / 3))
+    )
+    in_top_tercile = pd.to_numeric(both[skew_col], errors="coerce") >= tercile_hi
+    falling = pd.to_numeric(both[chg_col], errors="coerce") < 0
+    submask = in_top_tercile & falling
+    return _bucket_test(
+        both, submask.fillna(False),
+        "S-SKEW_DECEL: skew top-tercile AND skew_5d_chg < 0 (high skew fading)"
+    )
+
+
+def _top_risk_test(df: pd.DataFrame) -> dict:
+    """S-TOP_RISK: de-escalation family flag.
+
+    Condition: opt_skew_5d_chg > 0 (puts richening) OR opt_ivspread_rel < 0 (puts rich).
+    CAUTION-ONLY per RO-3: a PASS means flagged fires have WORSE outcomes (correctly
+    identifies bad entries; used to LOWER confidence, never to short).
+    A10 primitives: breach (primary), clean (secondary).
+    Pre-registered in §4 W-C (2026-07-05). Era: single live-accrual 2026→."""
+    skew_chg_col = "opt_skew_5d_chg"
+    iv_col = "opt_ivspread_rel"
+    skew_ok = skew_chg_col in df.columns and df[skew_chg_col].notna().any()
+    iv_ok = iv_col in df.columns and df[iv_col].notna().any()
+    if not skew_ok and not iv_ok:
+        return {"bucket": "S-TOP_RISK", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": "neither opt_skew_5d_chg nor opt_ivspread_rel stamped yet"}
+    # use rows with at least one of the two cols stamped
+    sub = df[
+        (df[skew_chg_col].notna() if skew_ok else False) |
+        (df[iv_col].notna() if iv_ok else False)
+    ].copy() if (skew_ok or iv_ok) else df.copy()
+    if sub.empty:
+        return {"bucket": "S-TOP_RISK", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": "no rows with relevant stamp cols"}
+    skew_rising = (
+        pd.to_numeric(sub[skew_chg_col], errors="coerce") > 0
+        if skew_chg_col in sub.columns else pd.Series(False, index=sub.index)
+    )
+    puts_rich = (
+        pd.to_numeric(sub[iv_col], errors="coerce") < 0
+        if iv_col in sub.columns else pd.Series(False, index=sub.index)
+    )
+    submask = (skew_rising | puts_rich).fillna(False)
+    result = _bucket_test(
+        sub, submask,
+        "S-TOP_RISK: skew_5d_chg>0 OR ivspread_rel<0 (puts richening/dominant — caution-only)"
+    )
+    result["caution_only"] = True
+    result["note"] = (
+        "CAUTION-ONLY (RO-3): beneficial direction = flagged fires show WORSE outcomes "
+        "(correctly identifies bad entries). NEVER initiates a negative position."
+    )
+    return result
+
+
+def _pin_risk_test(df: pd.DataFrame) -> dict:
+    """S-PIN_RISK: OPEX proximity + long-gamma + near-wall flag.
+
+    Condition: opt_pin_risk == True vs False.  CAUTION-ONLY: beneficial = flagged fires
+    have lower clean liftoff + lower mfe21 (pinning suppresses follow-through).
+    A10 primitives: clean (primary), mfe21 (secondary).
+    Pre-registered in §4 W-C (2026-07-05). Era: single live-accrual 2026→."""
+    col = "opt_pin_risk"
+    if col not in df.columns or df[col].notna().sum() == 0:
+        return {"bucket": "S-PIN_RISK", "n_cond": 0, "n_base": 0, "ready": False,
+                "note": f"{col} not yet stamped — W-C harness extension pending"}
+    pin = df[col].astype("boolean")
+    sub = df[pin.notna()].copy()
+    submask = sub[col].astype("boolean") == True  # noqa: E712
+    result = _bucket_test(
+        sub, submask.fillna(False),
+        "S-PIN_RISK: opex_days<=5 AND gamma=long AND min_wall_dist<=2% (pin-risk window)"
+    )
+    result["caution_only"] = True
+    result["note"] = (
+        "CAUTION-ONLY: beneficial direction = flagged fires show lower clean liftoff / mfe21 "
+        "(pinning suppresses follow-through). de-escalation only, never a short."
+    )
+    return result
+
+
+def _voi2_test(df: pd.DataFrame) -> dict:
+    """S-VOI2: stricter vol>OI burst (pre-registered, harness col not yet stamped).
+
+    S-VOI2 requires a future stamp column opt_voi2_flag (z-threshold + contract-count
+    floor; see §4 registration). Until that column is stamped, this is building_history.
+    This function is a placeholder that will activate once the stamp col exists.
+    Pre-registered in §4 W-C (2026-07-05). Documented as a NEW registration distinct from
+    the degenerate S-VOI (n_base=4 is architecturally degenerate; S-VOI registration stands)."""
+    col = "opt_voi2_flag"
+    if col not in df.columns or df[col].notna().sum() == 0:
+        return {
+            "bucket": "S-VOI2",
+            "n_cond": 0, "n_base": 0, "ready": False,
+            "note": (
+                f"{col} not yet stamped — awaits W-C harness extension that adds the stricter "
+                "z-threshold + contract-count-floor to the stamp (future PR). "
+                "S-VOI original registration stands; this is a distinct, stricter bucket "
+                "registered after S-VOI was documented as degenerate (n_cond=42/n_base=4)."
+            ),
+        }
+    flag = df[col].astype("boolean")
+    sub = df[flag.notna()].copy()
+    submask = sub[col].astype("boolean") == True  # noqa: E712
+    result: dict = {
+        "bucket": "S-VOI2",
+        "n_cond": int(submask.sum()), "n_base": int((~submask).sum()),
+        "ready": bool(int(submask.sum()) >= MIN_PER_BUCKET and int((~submask).sum()) >= MIN_PER_BUCKET),
+        "fwd_ret_5": _bootstrap_delta_ci(_num_arr(sub[submask], "fwd_ret_5"),
+                                          _num_arr(sub[~submask], "fwd_ret_5")),
+        "fwd_mfe_5": _bootstrap_delta_ci(_num_arr(sub[submask], "fwd_mfe_5"),
+                                           _num_arr(sub[~submask], "fwd_mfe_5")),
+        "breach": _bootstrap_delta_ci(_breach_rate_arr(sub[submask]), _breach_rate_arr(sub[~submask])),
+        "clean": _bootstrap_delta_ci(_clean_rate_arr(sub[submask]), _clean_rate_arr(sub[~submask])),
+        "mfe21": _bootstrap_delta_ci(_num_arr(sub[submask], "fwd_mfe_21"),
+                                      _num_arr(sub[~submask], "fwd_mfe_21")),
+    }
+    return result
+
+
+def _compute_wc_coverage(df: pd.DataFrame) -> dict:
+    """Compute coverage percentages for W-C stamp columns.  Returns dict of
+    col -> (n_non_null, pct_float) for each W-C column present."""
+    wc_cols = [
+        "opt_ivspread_rel", "opt_skew", "opt_skew_5d_chg",
+        "opt_opex_days", "opt_pin_risk",
+        "opt_wall_dist_up_pct", "opt_wall_dist_down_pct",
+    ]
+    n_total = max(len(df), 1)
+    out = {}
+    for col in wc_cols:
+        if col in df.columns:
+            n_col = int(df[col].notna().sum())
+            out[col] = (n_col, round(n_col / n_total * 100.0, 1))
+        else:
+            out[col] = (0, 0.0)
+    return out
+
+
 # ── gate assembly ────────────────────────────────────────────────────────────
 def build_gate(df: pd.DataFrame) -> dict:
     """Run all four pre-registered bucket tests and assemble the gate.json payload.
@@ -307,14 +533,48 @@ def build_gate(df: pd.DataFrame) -> dict:
     # S-WALL: raw-close wall-touch study (counts only; A10)
     tests["S-WALL"] = _wall_touch_study(df)
 
-    # per-test verdicts (only bucket-delta tests carry a verdict; S-WALL is counts-only for now)
+    # ── W-C additions: fire-conditioned buckets on new stamp cols ─────────────
+    # S-IVSPREAD-F: positive ivspread_rel at fire (call richening vs puts = bullish tilt)
+    tests["S-IVSPREAD-F"] = _ivspread_f_test(df)
+
+    # S-SKEW_DECEL: skew in top cross-sectional tercile AND falling (de-escalation signal)
+    tests["S-SKEW_DECEL"] = _skew_decel_test(df)
+
+    # S-TOP_RISK: de-escalation family flag (caution-only: beneficial = flagged fires worse)
+    tests["S-TOP_RISK"] = _top_risk_test(df)
+
+    # S-PIN_RISK: OPEX proximity + long-gamma + near-wall flag
+    tests["S-PIN_RISK"] = _pin_risk_test(df)
+
+    # S-VOI2: stricter vol>OI burst — future stamp col, building_history until col exists
+    tests["S-VOI2"] = _voi2_test(df)
+
+    # per-test verdicts (only bucket-delta tests carry a verdict; S-WALL is counts-only)
+    _standard_tests = ("S-DOI", "S-IVR", "S-VOI", "S-IVSPREAD-F", "S-SKEW_DECEL", "S-VOI2")
     verdicts = {}
-    for tid in ("S-DOI", "S-IVR", "S-VOI"):
+    for tid in _standard_tests:
         t = tests[tid]
         verdicts[tid] = _verdict_for_test(t) if "breach" in t else "building_history"
+    # Caution tests use per-bucket verdict functions (different registered primitives):
+    #   S-TOP_RISK: {breach, clean} — _verdict_for_top_risk
+    #   S-PIN_RISK: {clean, mfe21} — _verdict_for_pin_risk (breach is NOT registered for S-PIN_RISK)
+    verdicts["S-TOP_RISK"] = (
+        _verdict_for_top_risk(tests["S-TOP_RISK"])
+        if "breach" in tests["S-TOP_RISK"] else "building_history"
+    )
+    verdicts["S-PIN_RISK"] = (
+        _verdict_for_pin_risk(tests["S-PIN_RISK"])
+        if "clean" in tests["S-PIN_RISK"] else "building_history"
+    )
 
-    any_ready = any(tests[t].get("ready") for t in ("S-DOI", "S-IVR", "S-VOI"))
+    _caution_tests = ("S-TOP_RISK", "S-PIN_RISK")
+    any_ready = any(
+        tests[t].get("ready") for t in (*_standard_tests, *_caution_tests, "S-IVR", "S-VOI")
+    )
     any_signal = any(v == "signal" for v in verdicts.values())
+
+    # W-C coverage percentages (honest reporting)
+    wc_col_coverage = _compute_wc_coverage(df)
 
     # evidence lines — LIVE per-bucket n counts (doctrine §2.3: n before any verdict)
     evidence: list[str] = []
@@ -337,11 +597,27 @@ def build_gate(df: pd.DataFrame) -> dict:
         f"(price_store_available={w['price_store_available']}); wall_touches={w['wall_touches']}, "
         f"fixed−5%_touches={w['fixed_stop_touches']}, wall_before_fixed={w['wall_before_fixed']}. "
         f"LIMITATION: {w['limitation']}")
+    # W-C bucket evidence lines
+    for tid in ("S-IVSPREAD-F", "S-SKEW_DECEL", "S-TOP_RISK", "S-PIN_RISK", "S-VOI2"):
+        t = tests[tid]
+        vdict = verdicts.get(tid, "building_history")
+        if t.get("ready"):
+            evidence.append(
+                f"{tid}: n_cond={t['n_cond']} n_base={t['n_base']} → verdict={vdict}")
+        else:
+            note = t.get("note", "")
+            evidence.append(
+                f"{tid}: building history (n_cond={t.get('n_cond', 0)}, "
+                f"n_base={t.get('n_base', 0)}; need {MIN_PER_BUCKET}/bucket)"
+                f"{(' — ' + note) if note else ''}")
+    # coverage lines
+    for col, (n_col, pct) in wc_col_coverage.items():
+        evidence.append(f"W-C stamp coverage [{col}]: {n_col}/{len(df)} rows ({pct:.1f}%)")
 
     return {
-        "schema": "options_entry.gate.v1",
+        "schema": "options_entry.gate.v2",
         "generated_at": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-        "scored": False,                       # ALWAYS false in W1.3 — machine, not a lever
+        "scored": False,                       # ALWAYS false until a gate passes — machine, not a lever
         "status": "signal" if any_signal else ("scorable" if any_ready else "building_history"),
         "weight": 0.0,
         "horizons": [5, 10, 21],
@@ -349,12 +625,41 @@ def build_gate(df: pd.DataFrame) -> dict:
         "n_ledger_rows": int(len(df)),
         "n_stamped_rows": int(df[STAMP_COLS].notna().any(axis=1).sum())
                           if all(c in df.columns for c in STAMP_COLS) else 0,
+        "fdr_family": {
+            "alpha": 0.10,
+            "method": "Benjamini-Hochberg",
+            "family_size": 22,
+            "description": (
+                "All fire-conditioned bucket tests × A10 primitives × live-accrual era (2026→). "
+                "22 tests total (S-IVR×3, S-DOI×3, S-VOI×3, S-IVSPREAD-F×3, S-SKEW_DECEL×3, "
+                "S-TOP_RISK×2, S-PIN_RISK×2, S-VOI2×3). BH-FDR threshold for k-th ranked "
+                "p-value: p_k <= (k/22) * 0.10. No verdict claims significance without "
+                "clearing BH-FDR at alpha=0.10 over this full family. "
+                "See OPTIONS_ALPHA_MASTERPLAN.md §4 FDR statement for full arithmetic."
+            ),
+        },
+        "per_family_status": {
+            "S-IVR": verdicts.get("S-IVR", "building_history"),
+            "S-DOI": verdicts.get("S-DOI", "building_history"),
+            "S-VOI": verdicts.get("S-VOI", "building_history"),
+            "S-IVSPREAD-F": verdicts.get("S-IVSPREAD-F", "building_history"),
+            "S-SKEW_DECEL": verdicts.get("S-SKEW_DECEL", "building_history"),
+            "S-TOP_RISK": verdicts.get("S-TOP_RISK", "building_history"),
+            "S-PIN_RISK": verdicts.get("S-PIN_RISK", "building_history"),
+            "S-VOI2": verdicts.get("S-VOI2", "building_history"),
+        },
         "tests": tests,
         "verdicts": verdicts,
         "evidence": evidence,
-        "note": ("Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI). Display/ledger-seed "
-                 "only until a bucket clears n≥30 AND a primitive delta's bootstrap CI excludes 0 "
-                 "(doctrine §2.3). Ledger primitives only (ruling A10). Never scored in W1.3."),
+        "note": (
+            "Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI + W-C: "
+            "S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2). Display/ledger-seed "
+            "only until a bucket clears n≥30 AND a primitive delta's bootstrap CI excludes 0 "
+            "(doctrine §2.3). Ledger primitives only (ruling A10). FDR family=22 tests, "
+            "BH α=0.10. Never scored until a gate passes. "
+            "S-TOP_RISK/S-PIN_RISK are caution-only: beneficial direction = flagged fires worse "
+            "(correctly de-escalates entries). Never initiates a negative position (RO-3)."
+        ),
     }
 
 

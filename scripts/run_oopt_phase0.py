@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import sys
 import time
 from datetime import datetime, timezone
@@ -2041,10 +2042,13 @@ def run_oopt_phase0(
         report_path = out_base / "reports" / "oopt-phase0.md"
         gauntlet_dir.mkdir(parents=True, exist_ok=True)
 
-    # Write results JSON
+    # Write results JSON (sanitized copy — the returned dict keeps NaN floats
+    # for in-process consumers; allow_nan=False makes any leak a loud error
+    # instead of an invalid-JSON `NaN` token).
     results_path.parent.mkdir(parents=True, exist_ok=True)
     with open(results_path, "w") as f:
-        json.dump(oopt_results, f, indent=2, default=_json_default)
+        json.dump(_sanitize_nonfinite(oopt_results), f, indent=2,
+                  default=_json_default, allow_nan=False)
     log.info("Results written: %s", results_path)
 
     # Write report
@@ -2070,6 +2074,27 @@ def run_oopt_phase0(
 
     log.info("O-OPT Phase-0 done in %.1f s", time.time() - t0)
     return oopt_results
+
+
+def _sanitize_nonfinite(obj: Any) -> Any:
+    """Recursively replace non-finite floats with None for strict JSON.
+
+    json.dump never routes native Python floats (incl. np.float64, a float
+    subclass) through ``default`` — a bare float('nan') serializes as a
+    literal ``NaN`` token, which strict parsers (JS JSON.parse,
+    allow_nan=False) reject. Mirrors the era_means None-on-NaN convention.
+    """
+    if isinstance(obj, float):
+        return float(obj) if math.isfinite(obj) else None
+    if isinstance(obj, np.floating):
+        return float(obj) if np.isfinite(obj) else None
+    if isinstance(obj, dict):
+        return {k: _sanitize_nonfinite(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_sanitize_nonfinite(v) for v in obj]
+    if isinstance(obj, np.ndarray):
+        return [_sanitize_nonfinite(v) for v in obj.tolist()]
+    return obj
 
 
 def _json_default(obj: Any) -> Any:

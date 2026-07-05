@@ -1,0 +1,230 @@
+{
+  "study_id": "P1_4",
+  "round": "2 \u2014 defect-corrected re-run",
+  "run_date": "2026-07-05",
+  "memo_citation": "P0_MEASUREMENT_MEMO.md v1.0 (2026-07-04) + \u00a76 v1.1 (2026-07-05)",
+  "primary_window": {
+    "start": "2022-06-30",
+    "end": "2026-07-02"
+  },
+  "round1_defect": "verdict lookup built from all rows incl. 127,389 verdict_grade==False (horizon-censored) rows; NEVER-TRIGGERED=0 was an artifact",
+  "round2_fix": "verdict lookup built from verdict_grade==True only; universe from full presence; events with no verdict-grade row = NEVER-TRIGGERED",
+  "n_total_rows": 961656,
+  "n_stamped_rows_in_artifact": 0,
+  "n_verdict_grade_rows": 834267,
+  "n_horizon_censored_rows_excluded": 127389,
+  "censored_share": 0.13246836706680976,
+  "censored_by_type": {
+    "rejection": 117154,
+    "fire": 7701,
+    "near_miss": 2534
+  },
+  "universe_tickers": 1007,
+  "denominator_A": {
+    "n": 8242,
+    "thin_flag": false
+  },
+  "denominator_B": {
+    "n": 25545,
+    "thin_flag": false
+  },
+  "overlap_AB": 943,
+  "T1_recall_A": {
+    "n": 8242,
+    "fired": {
+      "count": 20,
+      "fraction": 0.0024265954865323952,
+      "wilson_lo": 0.0015714367802207533,
+      "wilson_hi": 0.003745376484783028
+    },
+    "near_missed": {
+      "count": 5,
+      "fraction": 0.0006066488716330988,
+      "wilson_lo": 0.00025914727272376647,
+      "wilson_hi": 0.0014194685279969267
+    },
+    "rejected": {
+      "count": 7575,
+      "fraction": 0.9190730405241446,
+      "wilson_lo": 0.9129880231256934,
+      "wilson_hi": 0.9247675796498923
+    },
+    "never_triggered": {
+      "count": 642,
+      "fraction": 0.07789371511768989,
+      "wilson_lo": 0.07230233323839208,
+      "wilson_hi": 0.08387840154555043
+    },
+    "never_censored": 642,
+    "never_absent": 0
+  },
+  "T2_recall_B": {
+    "n": 25545,
+    "fired": {
+      "count": 1308,
+      "fraction": 0.05120375807398708,
+      "wilson_lo": 0.04856763574716026,
+      "wilson_hi": 0.05397484508296865
+    },
+    "near_missed": {
+      "count": 414,
+      "fraction": 0.016206694069289488,
+      "wilson_lo": 0.014729379080731611,
+      "wilson_hi": 0.017829498265785733
+    },
+    "rejected": {
+      "count": 21542,
+      "fraction": 0.8432961440595028,
+      "wilson_lo": 0.8387866336704501,
+      "wilson_hi": 0.8477024163849542
+    },
+    "never_triggered": {
+      "count": 2281,
+      "fraction": 0.08929340379722059,
+      "wilson_lo": 0.08585782485770732,
+      "wilson_hi": 0.09285249287348876
+    },
+    "never_censored": 2281,
+    "never_absent": 0
+  },
+  "T3_near_miss_breakdown": {
+    "A": {
+      "freshness_expired": 2,
+      "not_topped_veto": 3
+    },
+    "B": {
+      "not_topped_veto": 231,
+      "freshness_expired": 183
+    }
+  },
+  "T4_rejected_breakdown": {
+    "A": {
+      "no_signal": 7136,
+      "not_topped_veto": 268,
+      "hygiene_screen": 117,
+      "board_rank_cutoff": 54
+    },
+    "B": {
+      "no_signal": 18682,
+      "not_topped_veto": 2246,
+      "board_rank_cutoff": 424,
+      "hygiene_screen": 190
+    }
+  },
+  "T5_fired_tier": {
+    "A": {
+      "T2": 7,
+      "T1": 13
+    },
+    "B": {
+      "T3": 51,
+      "T2": 636,
+      "T1": 621
+    }
+  },
+  "QRN": {
+    "window_start": "2025-07-15",
+    "window_end": "2026-07-02",
+    "A": {
+      "n": 1713,
+      "fired": 2,
+      "rate": 0.0011675423234092236,
+      "lo": 0.00032023392590702733,
+      "hi": 0.004247222967029396
+    },
+    "B": {
+      "n": 5706,
+      "fired": 149,
+      "rate": 0.02611286365229583,
+      "lo": 0.022282997654953705,
+      "hi": 0.030580395262986438
+    }
+  },
+  "escalation_flags": [
+    "ESC-1: funnel fires+near_miss on only 0.3% of durable-low events (<15%). R7 precision-stacking concern."
+  ],
+  "year_breakdown_A": {
+    "2023": 2446,
+    "2024": 1828,
+    "2025": 2209,
+    "2026": 618,
+    "2022": 1141
+  },
+  "year_breakdown_B": {
+    "2022": 3329,
+    "2023": 6778,
+    "2025": 7371,
+    "2026": 2188,
+    "2024": 5879
+  },
+  "trials_executed": [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5"
+  ],
+  "post_hoc_trials": [],
+  "reconciliation_round1_vs_round2": {
+    "denom_A": {
+      "r1": 8242,
+      "r2": 8242
+    },
+    "denom_B": {
+      "r1": 25545,
+      "r2": 25545
+    },
+    "overlap": {
+      "r1": 943,
+      "r2": 943
+    },
+    "A": {
+      "fired": {
+        "r1": 21,
+        "r2": 20
+      },
+      "near": {
+        "r1": 5,
+        "r2": 5
+      },
+      "rejected": {
+        "r1": 8216,
+        "r2": 7575
+      },
+      "never": {
+        "r1": 0,
+        "r2": 642
+      }
+    },
+    "B": {
+      "fired": {
+        "r1": 1414,
+        "r2": 1308
+      },
+      "near": {
+        "r1": 451,
+        "r2": 414
+      },
+      "rejected": {
+        "r1": 23680,
+        "r2": 21542
+      },
+      "never": {
+        "r1": 0,
+        "r2": 2281
+      }
+    },
+    "QRN_A": {
+      "r1_fired": 3,
+      "r2_fired": 2,
+      "r1_rate": 0.0017513134851138354,
+      "r2_rate": 0.0011675423234092236
+    },
+    "QRN_B": {
+      "r1_fired": 253,
+      "r2_fired": 149,
+      "r1_rate": 0.044339291973361374,
+      "r2_rate": 0.02611286365229583
+    }
+  }
+}

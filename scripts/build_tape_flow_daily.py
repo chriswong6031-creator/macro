@@ -507,6 +507,14 @@ def main(argv: list[str] | None = None) -> None:
         "--no-audit", action="store_true",
         help="Skip store audit tripwire (for smoke-test performance).",
     )
+    parser.add_argument(
+        "--budget-minutes", type=float, default=None, metavar="N",
+        help=(
+            "Hard-stop after N minutes (wall-clock from process start). "
+            "Saves state after every completed root-day so the next run resumes. "
+            "Budget-exceeded exit is clean (exit 0); intended for CI nightly steps."
+        ),
+    )
     args = parser.parse_args(argv)
 
     from collectors.thetadata import reachable
@@ -571,9 +579,20 @@ def main(argv: list[str] | None = None) -> None:
         _register_run_status(args.mode, 0, 0, 0.0, str(date.today()))
         return
 
+    # ── budget deadline ───────────────────────────────────────────────────────
+    # --budget-minutes: hard-stop after N wall-clock minutes so the CI step
+    # never overruns its slot.  State is persisted after every completed
+    # root-day, so the next nightly run resumes where we left off.
+    budget_deadline: float | None = (
+        t_global + args.budget_minutes * 60.0
+        if args.budget_minutes is not None
+        else None
+    )
+
     # ── concurrent execution ──────────────────────────────────────────────────
     n_ok = 0
     n_err = 0
+    budget_exceeded = False
     last_date = str(date.today())
     workers = _max_workers()
 
@@ -616,7 +635,22 @@ def main(argv: list[str] | None = None) -> None:
                             result.get("status", "error"), root, trade_date,
                             result.get("reason", "unknown"))
 
+            # Hard-stop: check budget after every completed future.
+            # In-flight futures are allowed to complete naturally (executor
+            # __exit__ does NOT cancel them); we just stop draining new ones.
+            if budget_deadline is not None and time.perf_counter() >= budget_deadline:
+                log.info(
+                    "tape_flow: budget %.1f min exceeded after n_ok=%d — stopping cleanly; "
+                    "state saved, next run resumes from remaining work",
+                    args.budget_minutes, n_ok,
+                )
+                budget_exceeded = True
+                break
+
     elapsed = time.perf_counter() - t_global
+    if budget_exceeded:
+        log.info("tape_flow: budget-stop — mode=%s n_ok=%d n_err=%d elapsed=%.1fs",
+                 args.mode, n_ok, n_err, elapsed)
     log.info("tape_flow: mode=%s done — n_ok=%d n_err=%d elapsed=%.1fs",
              args.mode, n_ok, n_err, elapsed)
 

@@ -1506,7 +1506,8 @@
       "maturation": "Forward ledger matures at clean15_126 horizon (126 trading days). Promotion to gate_weight requires board-level ledger confirmation per §1.3. CN channel re-grades when second macro regime accrues.",
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template: challenger matches-or-beats incumbent on stop-out AND dead-money AND cushion incidence (Wilson lower bound, episode-clustered n floor) at positional horizons (clean15_126 primary). Returns printed as context, not verdict. Board-level forward ledger must reproduce claimed entry-quality spread (§1.3 gate-weight rung).",
-      "phase_hint": "horizon=positional deployment=graded_bonus"
+      "phase_hint": "horizon=positional deployment=graded_bonus",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S2",
@@ -1523,7 +1524,8 @@
       "maturation": "Ledger matures at clean8_21 (21 trading days). Promote from chip to graded context as ledger accrues. Join cell S1×S2 (cracking-donor × cohort-washout) as combined context.",
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at rotational horizons (clean8_21 primary): challenger matches-or-beats on stop-out AND dead-money AND cushion incidence. Returns context only.",
-      "phase_hint": "horizon=rotational deployment=chip"
+      "phase_hint": "horizon=rotational deployment=chip",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-T1-T4",
@@ -1540,7 +1542,8 @@
       "maturation": "Validated; monthly review checks for regime-conditional degradation. Quarterly walk-forward re-confirms held-out stop-out rates.",
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Incumbent: no flip criteria — this IS the gate. Successor must beat on §1.1 safety-net axes.",
-      "phase_hint": "horizon=positional deployment=gate_weight"
+      "phase_hint": "horizon=positional deployment=gate_weight",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-CN-WASHOUT",
@@ -1557,7 +1560,8 @@
       "maturation": "Validated. Re-grade when a second CN macro regime accrues in the forward ledger.",
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. CN channel re-grades on second regime.",
-      "phase_hint": "horizon=positional deployment=gate_weight"
+      "phase_hint": "horizon=positional deployment=gate_weight",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-CN-REVERSAL",
@@ -1574,7 +1578,8 @@
       "maturation": "Monthly portfolio unit. Re-grade on second CN macro regime.",
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Graded on safety-net axes PLUS sleeve-level excess-vs-CSI300 (CN-2 pattern). assert_no_gate() must remain enforced — any gate-addition triggers review.",
-      "phase_hint": "horizon=rotational deployment=graded_bonus"
+      "phase_hint": "horizon=rotational deployment=graded_bonus",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-DISLOC",
@@ -1591,7 +1596,8 @@
       "maturation": "Episode n=37 vs n=10 is the binding constraint. Promotion gate: ≥20 episodes per arm with ≥5 in each time-half. Data-scarce: real episodes accrue slowly.",
       "status": "proven",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Display context chip only. Promotion to graded_bonus requires episode n ≥ 20 AND both halves sign-stable on the median-drawdown clause. Returns are context.",
-      "phase_hint": "horizon=positional deployment=chip"
+      "phase_hint": "horizon=positional deployment=chip",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S3",
@@ -1604,11 +1610,12 @@
       "storage": "data/species/registry.json",
       "started": "2026-07-03",
       "come_back_on": "2026-10-01",
-      "come_back_note": "W1 retro-derivation: (i) rebuild historical de-escalation/dislocation state series via risk_radar's full-history subscore path; (ii) recompute historical C2 fires from prices; (iii) stamp derivation='retro-recomputed'; (iv) Opus reconstruction check passes on overlap window. If reconstruction check fails, S3 moves to W3+. Come-back: 2026-10-01.",
-      "maturation": "W1 retro-derivation: (i) rebuild historical de-escalation/dislocation state series via risk_radar's full-history subscore path; (ii) recompute historical C2 fires from prices; (iii) stamp derivation='retro-recomputed'; (iv) Opus reconstruction check passes on overlap window. If reconstruction check fails, S3 moves to W3+. Come-back: 2026-10-01.",
+      "come_back_note": "W1 RULING 2026-07-04: moved to W3+ per the pre-registered fallback — the reconstruction check's overlap window DOES NOT EXIST (forward_log: 7 days of states, ZERO logged de-escalation verdicts). Retro-deriving without a verification window is the exact un-checked reconstruction the gate prohibits. ENABLING FIX SHIPPED: deescalation_eligible/reason + dislocation_active now logged in every forward_log row, so the overlap window accrues from 2026-07-04; the W3 retro-derivation runs when ~60+ overlap days exist (≈2026-10-01, unchanged come-back) and the Opus reconstruction check becomes decidable.",
+      "maturation": "W1 RULING 2026-07-04: moved to W3+ per the pre-registered fallback — the reconstruction check's overlap window DOES NOT EXIST (forward_log: 7 days of states, ZERO logged de-escalation verdicts). Retro-deriving without a verification window is the exact un-checked reconstruction the gate prohibits. ENABLING FIX SHIPPED: deescalation_eligible/reason + dislocation_active now logged in every forward_log row, so the overlap window accrues from 2026-07-04; the W3 retro-derivation runs when ~60+ overlap days exist (≈2026-10-01, unchanged come-back) and the Opus reconstruction check becomes decidable.",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at rotational horizons (clean8_21). VIX-percentile-stratified within-bucket spreads are the primary verdict table. Spread must survive stratification AND agree in sign across ATR-scaled vs fixed barrier schemes. Adjacent: entry premium above episode trough and days-from-radar-peak-severity printed (statistics, not gates).",
-      "phase_hint": "horizon=rotational deployment=unshipped"
+      "phase_hint": "horizon=rotational deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S4",
@@ -1625,7 +1632,8 @@
       "maturation": "W2 phase-0. Promotion requires both comparators beaten. If event adds nothing, declare UI/labeling problem and close S4.",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Promotion requires beating BOTH the survival-matched control AND the self-healing-adjusted fire set at the §1.2 bootstrap standard (episode-clustered p-value, BH-FDR across wave family, q≤0.10). Wait-cost (entry premium vs raw-bar baseline) printed per §1.2.",
-      "phase_hint": "horizon=rotational deployment=unshipped"
+      "phase_hint": "horizon=rotational deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S5",
@@ -1642,24 +1650,26 @@
       "maturation": "W2 phase-0. Requires W0.4 peer metrics (peer_washout_pct, peer_reclaim_pct). Per-leg ablations against COILED baseline. Cohort vol-compression leg: ablation first, then inclusion decision.",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at rotational horizons (clean8_21). Forming and confirmed are graded as SEPARATE fire cohorts. Frontrun gate: forming leads confirmed by ≥3d median (episode-clustered, full distribution). Promotion requires forming to lead confirmed by ≥3d median.",
-      "phase_hint": "horizon=rotational deployment=unshipped"
+      "phase_hint": "horizon=rotational deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S6",
       "name": "Setup Species S6 — Failed-Fire Fuel (honest restatement)",
       "kind": "species_phase0",
       "priority": "medium",
-      "cadence": "quarterly",
+      "cadence": "monthly",
       "what": "A name whose own trigger stopped out 2+ times in 180d may be late-stage washout — serial failure as seller-persistence marker. Evidence status, stated EXACTLY: the failed2 inversion is sign-stable but IN-SAMPLE ONLY — wave-1 stocks panel +1.8pp (base3d) / +3.2pp (m2d_s3d), below the +5pp bar; the wave-2 'replication' recomputed the identical 12,797-fire stocks panel and never touched the OOS basket panel; within STAR the increment is a wash (40.66 vs 41.58). Nobody has built OR validated the species. Phase-0 therefore: run on the OOS basket panel (wave-2 machinery already produces its fire parquets). The pre-registered PRIMARY claim is the INTERACTION MARGINAL — (failed2 × COILED) vs COILED alone — since the nearest measured cell is adverse. The standalone inversion is a secondary sanity read. Expectations set low; a clean kill is a fine outcome.",
       "source": "engine/species_registry.py",
       "storage": "data/species/registry.json",
       "started": "2026-07-03",
-      "come_back_on": "2026-10-01",
-      "come_back_note": "W1 phase-0 on OOS basket panel. Interaction marginal primary. Expectations low.",
-      "maturation": "W1 phase-0 on OOS basket panel. Interaction marginal primary. Expectations low.",
+      "come_back_on": "2026-08-01",
+      "come_back_note": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S6_REPORT.md): PASSED both variants — failed2×COILED clean8_21 spread +4.29pp (m2d_s3d, q=0.032) / +3.79pp (base3d, q=0.080), n floors met, both halves positive, per-name majority 52-53%; failed2 side ALSO stops out less within COILED (−4.9pp m2d_s3d). Standalone form buys liftoff with WORSE stop-outs — interaction only, as registered. OOS came in stronger than in-sample. CONSTRAINT: spreads below the ≥5pp §1.2 promotion floor → DISPLAY-CHIP CANDIDACY ONLY; monthly review decides chip wiring; near-miss ledger accrues the forward read.",
+      "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S6_REPORT.md): PASSED both variants — failed2×COILED clean8_21 spread +4.29pp (m2d_s3d, q=0.032) / +3.79pp (base3d, q=0.080), n floors met, both halves positive, per-name majority 52-53%; failed2 side ALSO stops out less within COILED (−4.9pp m2d_s3d). Standalone form buys liftoff with WORSE stop-outs — interaction only, as registered. OOS came in stronger than in-sample. CONSTRAINT: spreads below the ≥5pp §1.2 promotion floor → DISPLAY-CHIP CANDIDACY ONLY; monthly review decides chip wiring; near-miss ledger accrues the forward read.",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Primary: (failed2 × COILED) vs COILED alone on OOS basket panel, episode-clustered p-value, BH-FDR q≤0.10, n≥300 per side, both halves sign-stable. Secondary: standalone inversion. Clean kill is acceptable and closes the graveyard row properly.",
-      "phase_hint": "horizon=rotational deployment=unshipped"
+      "phase_hint": "horizon=rotational deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S7",
@@ -1672,11 +1682,12 @@
       "storage": "data/species/registry.json",
       "started": "2026-07-03",
       "come_back_on": "2026-10-01",
-      "come_back_note": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible.",
-      "maturation": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible.",
+      "come_back_note": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible. || 2026-07-04 phase-0 EXECUTED (research/species/s7_rs_repair_phase0, brought forward from W3 on external-evidence grounds): REPAIR sign supported on dev 2022-24 F1/P1 (stop-out Δ −5.7pp, 90% CI [−8.7,−1.9]; clean8_21 Δ +8.8pp CI [+4.6,+11.8]; rs_low promotion bar MET; within-month permutation placebo p≈0.000) but MIXED on 2025-26 holdout (Δ −2.7pp spans 0 at n=725; signs held on both primaries; rs_low bar flipped) → stays phase0 per frozen rule. Re-read on W0.4 series + come_back_on; in-harness rank approximation used, production series may differ.",
+      "maturation": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible. || 2026-07-04 phase-0 EXECUTED (research/species/s7_rs_repair_phase0, brought forward from W3 on external-evidence grounds): REPAIR sign supported on dev 2022-24 F1/P1 (stop-out Δ −5.7pp, 90% CI [−8.7,−1.9]; clean8_21 Δ +8.8pp CI [+4.6,+11.8]; rs_low promotion bar MET; within-month permutation placebo p≈0.000) but MIXED on 2025-26 holdout (Δ −2.7pp spans 0 at n=725; signs held on both primaries; rs_low bar flipped) → stays phase0 per frozen rule. Re-read on W0.4 series + come_back_on; in-harness rank approximation used, production series may differ.",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Two-sided registration: promotion bar is BEATING the rs_low stratum baseline on the same panels, not beating zero. Episode-clustered p-value, BH-FDR q≤0.10.",
-      "phase_hint": "horizon=positional deployment=unshipped"
+      "phase_hint": "horizon=positional deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S8",
@@ -1693,7 +1704,8 @@
       "maturation": "W5+ phase-0. Gated on revisions PIT archive ≥2 quarters (2026-10-01 estimated). W0.6 adds estimate dispersion + revenue revisions to fatten the archive.",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Gated on archive depth — do not run before come_back_on.",
-      "phase_hint": "horizon=positional deployment=unshipped"
+      "phase_hint": "horizon=positional deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S9",
@@ -1710,7 +1722,8 @@
       "maturation": "W3 phase-0. Earnings events only first. Wider news-tone version gated on W0.6.",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at rotational horizons (clean8_21). Must beat unconditional negative-SUE baseline on stop-out AND cushion incidence. BH-FDR q≤0.10.",
-      "phase_hint": "horizon=rotational deployment=unshipped"
+      "phase_hint": "horizon=rotational deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S10",
@@ -1727,7 +1740,8 @@
       "maturation": "W5+ phase-0. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names). Completion date populates come_back_on definitively. GATE CLEARED: backfill completed 2026-07-03 — 54,853 ticker-quarters, 1,331 tickers, FY2009-2027, 0 failures (data/edgar/statements_quarterly.parquet).",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Financials excluded throughout. Gated on EDGAR re-crawl completion.",
-      "phase_hint": "horizon=positional deployment=unshipped"
+      "phase_hint": "horizon=positional deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S11",
@@ -1744,7 +1758,8 @@
       "maturation": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on. GATE CLEARED: backfill completed 2026-07-03 — same store as S10 (data/edgar/statements_quarterly.parquet).",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Debt-funded buyback detection required. Gated on EDGAR re-crawl.",
-      "phase_hint": "horizon=positional deployment=unshipped"
+      "phase_hint": "horizon=positional deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S12",
@@ -1761,7 +1776,8 @@
       "maturation": "W5+ phase-0. Hard clause: ≥8 distinct rate-relief episodes with ≥1 outside 2020-21. Gated on W0.5 regime_vector (rate_pressure) stamping and W0.7 archetype v2.",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: §1.3 template at positional horizons. Episode floor is a hard promotion gate (≥8 with ≥1 outside 2020-21). Growth-axis separation required.",
-      "phase_hint": "horizon=positional deployment=unshipped"
+      "phase_hint": "horizon=positional deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "species-S13",
@@ -1778,7 +1794,8 @@
       "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S13_REPORT.md): PASSED as the 3M-formation construction (PIT-era +0.49%/mo excess, DSR 0.991 SURVIVES; modern era +0.34%/mo DSR 0.908 marginal); 1M variant CLOSED (modern DSR 0.760 fails). K2 TRIGGERED: mega-cap flip measured (2024–26 −11.8%/yr) → REGIME-SCOPED, hostile cell live — no surface may imply current tradability. K3 clean (top name 3.1%), K4 sign sanity passed (IC −0.011). Survivorship bound: 69.4% member-price coverage — positives are optimistic; re-confirm on the massive-store panel before promotion past display. Monthly review re-reads the regime cell.",
       "status": "registered",
       "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Safety-net axes (stop-out, dead-money, cushion incidence at rotational horizons) PLUS sleeve-level excess-vs-SPY (CN-2 pattern). Pre-registered kill criteria: modern-era decay + mega-cap sign flip. assert_no_gate() must remain enforced.",
-      "phase_hint": "horizon=rotational deployment=unshipped"
+      "phase_hint": "horizon=rotational deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     },
     {
       "id": "h-plc-post-placement-drift",
@@ -2062,6 +2079,64 @@
       "state": "L4 RAN 2026-07-04 (data/options_exit/exit_crowd_l4_interim.json): PRE-FDR INTERIM, verdict ACCRUE. Flow history is ~3 months (2026 only); no sector-ETF holdings; era splits not computable. L1-L3 blocked on thetadata_eod manifest (n_roots=0). Registration effective this commit (prereg RATIFIED 2026-07-04, research/EXIT_CROWDING_PHASE0_PREREG.md).",
       "next_step": "Accrue ETF-holdings + board history; complete the thetadata universe pass to unblock L1-L3; re-run the full 16-trial family then print BH q-values once. Display-only per house law — no hard gate into any engine on pass (China falsification binding).",
       "phase_hint": "options-alpha EXIT-CROWD — L4 PRE-FDR interim done; L1-L3 pending thetadata manifest; family FDR pending"
+    },
+    {
+      "id": "options-entry-gate-maturation",
+      "name": "Options Entry-Quality Gate Maturation (S-IVSPREAD-F / S-SKEW_DECEL / S-TOP_RISK / S-PIN_RISK / S-VOI2)",
+      "kind": "validation",
+      "priority": "high",
+      "cadence": "daily (live-accrual, nightly stamp pass)",
+      "what": "Five W-C pre-registered fire-conditioned bucket tests (S-IVSPREAD-F, S-SKEW_DECEL, S-TOP_RISK, S-PIN_RISK, S-VOI2) accruing toward n>=30 per bucket before any verdict. Each test conditions on a new options-state stamp column (opt_ivspread_rel, opt_skew/opt_skew_5d_chg, opt_pin_risk) and computes bootstrap-CI deltas on A10 primitives (post_cushion_breach, terminal_state_clean8_21, fwd_mfe_21). BH-FDR family = 22 tests at alpha=0.10.",
+      "source": "scripts/validate_options_entry.py + engine/options_stamp.py",
+      "storage": "data/options_entry/gate.json",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-05",
+      "come_back_on": "2026-10-15",
+      "come_back_note": "2026-10-15: check n counts per bucket (need >=30 in each of the 5 W-C buckets for first verdicts). Earlier signal families (S-IVR/S-DOI/S-VOI) share the same come-back window. BH-FDR q-values computed once the first family member clears n>=30.",
+      "maturation": "n>=30 per condition bucket AND bootstrap 95%-CI excludes 0 in beneficial direction AND BH q<=0.10 over the 22-test family. S-TOP_RISK and S-PIN_RISK are caution-only (de-escalation only, never short per RO-3). Status transitions: building_history -> scorable (any bucket ready) -> signal (any bucket passes FDR-corrected CI). Scored gate (scored=true) requires W5 passage.",
+      "status": "accruing",
+      "state": "All 5 W-C buckets building_history (day 0 of accrual, 2026-07-05). stamp cols opt_ivspread_rel/opt_skew/opt_skew_5d_chg/opt_opex_days/opt_pin_risk/opt_wall_dist_up_pct/opt_wall_dist_down_pct added to STAMP_COLS; nightly stamp pass extended. Skew coverage: 13d/~356 tickers; ivspread coverage: 6d/~344 tickers. gate.json schema upgraded to v2 with per_family_status + fdr_family block.",
+      "next_step": "Review gate.json n counts at come-back; if any bucket near n=30, extend window. After first FDR-passing verdict, coordinate with Setup-Species Stage B for W5 score-wiring.",
+      "phase_hint": "options-alpha W-C: new buckets accruing"
+    },
+    {
+      "id": "skew-ivspread-validation-clock",
+      "name": "Skew / IV-Spread Cross-Sectional Validation Clock (S-CWIV / S-XZZ live extension)",
+      "kind": "validation",
+      "priority": "high",
+      "cadence": "daily (live-accrual snapshot)",
+      "what": "options_skew/snapshots.parquet and options_ivspread/snapshots.parquet accruing toward the cross-sectional gate requirements (120 dates x >=15 names for S-CWIV / S-XZZ; HAC t>2 on rank-IC vs fwd returns). The W-C stamp extension (opt_skew, opt_ivspread_rel) also feeds the fire-conditioned bucket tests (S-SKEW_DECEL, S-IVSPREAD-F) in the entry gate. Two separate clocks: (a) cross-sectional IC clock for the existing §4 S-CWIV/S-XZZ rows; (b) fire-conditioned bucket clock for the W-C rows.",
+      "source": "scripts/validate_options_entry.py (bucket tests) + future cross-sectional IC harness (to be built)",
+      "storage": "data/options_skew/snapshots.parquet + data/options_ivspread/snapshots.parquet + data/options_entry/gate.json",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-05",
+      "come_back_on": "2026-12-15",
+      "come_back_note": "2026-12-15: first read of S-CWIV (call-put IV spread cross-sectional IC, CW 2010) and S-XZZ (skew cross-sectional IC, XZZ 2010) — needs 120 dates from first snapshot (2026-06-21) = ~Dec 2026. Fire-conditioned bucket tests (S-SKEW_DECEL, S-IVSPREAD-F) may mature earlier (~Q4-26) if board fires accrue n>=30 per bucket.",
+      "maturation": "Cross-sectional IC gate: 120 dates x >=15 names, HAC t>2 (existing §4 S-CWIV/S-XZZ rows). Fire-conditioned gate: n>=30 per bucket (W-C rows, come-back 2026-10-15). Skew: 13 trading-day snapshots as of 2026-07-05 (~356 tickers/day). IV-spread: 6 trading-day snapshots (~344 tickers/day).",
+      "status": "accruing",
+      "state": "Skew snapshots: 13 dates (2026-06-21..07-05), ~356 tickers/date (4,634 rows). Ivspread snapshots: 6 dates (2026-06-28..07-05), ~344 tickers/date (2,034 rows). Both stores gitignored (R2-backed). W-C stamp cols added to nightly stamp pass. gate.json v2 now includes per_family_status + fdr_family block and W-C coverage percentages.",
+      "next_step": "At come-back: (1) confirm daily accrual healthy (run_status.json); (2) check n counts in W-C bucket tests; (3) if 120+ dates present, build cross-sectional IC harness for S-CWIV/S-XZZ. Cross-sectional IC harness NOT yet built — add to backlog.",
+      "phase_hint": "options-alpha W-C: skew/ivspread dual clock"
+    },
+    {
+      "id": "species-S14",
+      "name": "Setup Species S14 — Failed breakout (trapped-buyer supply)",
+      "kind": "species_phase0",
+      "priority": "medium",
+      "cadence": "quarterly",
+      "what": "A new-high breakout that closes back below the breakout level traps late buyers who chased the print; their supply overhang suppresses subsequent rally attempts. The failed-breakout pattern identifies names whose breakout has reversed intrabar or within 1-3 sessions, leaving the majority of late entrants underwater. This is a top/entry-veto-shaped context for de-escalation or new-position avoidance — NOT a short-selling signal. The supply overhang typically resolves as: (a) time washout (late buyers capitulate) or (b) re-test of the breakout level on improved breadth. Mechanism link: the Wave-5 retest_hold study confirmed that a retest of the prior high WITHOUT breakout failure predicts continuation; the complement (WITH failure) predicts elevated drawdown risk.",
+      "source": "engine/species_registry.py",
+      "storage": "data/species/registry.json",
+      "started": "2026-07-05",
+      "come_back_on": "2026-10-05",
+      "come_back_note": "Phase-0 W1. Requires ≥25 logged failed-breakout fire events for statistical feasibility (MIN_N=25 server clamp). Come-back 2026-10-05 allows one full quarter of accrual. The research queue ranker (nw-quant-synthesis B) lists S14 as its first ranked customer.",
+      "maturation": "Phase-0 W1. Requires ≥25 logged failed-breakout fire events for statistical feasibility (MIN_N=25 server clamp). Come-back 2026-10-05 allows one full quarter of accrual. The research queue ranker (nw-quant-synthesis B) lists S14 as its first ranked customer.",
+      "status": "registered",
+      "next_step": "Monthly review: advance validation_status via species_registry.transition_validation_status(). Flip criteria: Phase-0 gate: (1) ≥25 failed-breakout events logged with measurable forward returns; (2) median 21d forward return in failed-breakout cohort is statistically below the non-failed-breakout control (one-sided t-test, p<0.10); (3) drawdown incidence (max drawdown >15% within 21d) elevated vs control; (4) regime stability: mechanism holds across both risk-off and rotation-active cells. Kill criteria: median forward return NOT below control OR effect driven by single regime.",
+      "phase_hint": "horizon=rotational deployment=unshipped",
+      "regime_context": "rate_pressure=None · quad=Q1 · vol=normalizing · radar=caution · favor_entries=1 · cap_leadership=0 · deescalation=0 (vector asof 2026-07-02)"
     }
   ]
 }
