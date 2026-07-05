@@ -3167,13 +3167,42 @@ def main() -> int:
     # escape unguarded and abort the whole build.  Drop it from the splatted dict
     # and pass the sorted view as the sole macro_news source.
     _news_render_vm = {k: v for k, v in vm.items() if k != "macro_news"}
-    write_page(out_news, env.get_template("news.html.j2").render(
-        **_news_render_vm,
-        macro_news=_sorted_macro_news,
-        macro_releases=_macro_releases_data,
-        news_rejected=_news_rejected_data,
-        news_calibration=_news_calibration_data,
-    ))
+    # W3 guard: the template type-guards degrade schema-violating side-artifacts, but
+    # a render failure here must never abort the build (every page after news.html
+    # would be skipped). First retry without the side-artifacts — the template is
+    # proven safe with all three None — then fall back to a minimal shell page.
+    try:
+        _news_html = env.get_template("news.html.j2").render(
+            **_news_render_vm,
+            macro_news=_sorted_macro_news,
+            macro_releases=_macro_releases_data,
+            news_rejected=_news_rejected_data,
+            news_calibration=_news_calibration_data,
+        )
+    except Exception as _e:  # noqa: BLE001 — degrade, never raise
+        log.error("news.html render failed (%s: %s) — retrying without side-artifacts",
+                  type(_e).__name__, _e)
+        try:
+            _news_html = env.get_template("news.html.j2").render(
+                **_news_render_vm,
+                macro_news=_sorted_macro_news,
+                macro_releases=None,
+                news_rejected=None,
+                news_calibration=None,
+            )
+        except Exception as _e2:  # noqa: BLE001 — degrade, never raise
+            log.error("news.html artifact-free render failed too (%s: %s) — "
+                      "writing minimal fallback page", type(_e2).__name__, _e2)
+            _news_html = (
+                '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                "<title>Macro News</title></head><body>"
+                "<p>News page temporarily unavailable — a build artifact failed to "
+                "render. It will be rebuilt on the next run.</p>"
+                "<p>新闻页面暂不可用 — 构建产物渲染失败，将在下次构建时重建。</p>"
+                "</body></html>"
+            )
+    write_page(out_news, _news_html)
     log.info("wrote %s (%.0f KB)", out_news, out_news.stat().st_size / 1024)
 
     # US Stock Dashboard — same VM, the "looking for stocks" half of the split.

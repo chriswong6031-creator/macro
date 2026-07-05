@@ -526,3 +526,64 @@ def test_naive_duplicate_macro_news_kwarg_raises_typeerror():
             news_rejected=None,
             news_calibration=None,
         )
+
+
+# --------------------------------------------------------------------------- #
+# Tests — schema-violating side-artifacts (type-contract guards)
+#
+# The three W3 side-artifacts (macro_releases / news_rejected / news_calibration)
+# are written by sibling waves.  json.loads failures already degrade to None in
+# build_site.py, but a file that is VALID JSON while violating the pinned schema
+# TYPE used to escape the template unguarded and abort every page after
+# news.html.  Each case below must render (degrade), never raise.
+# --------------------------------------------------------------------------- #
+
+_BAD_ARTIFACT_CASES = [
+    # (case id, vm overrides)
+    ("calibration_is_list", {"news_calibration": [1, 2, 3]}),
+    ("calibration_classes_str", {"news_calibration": {"classes": "x"}}),
+    ("releases_cards_str", {"macro_releases": {"cards": "x"}}),
+    ("card_non_numeric_fields", {"macro_releases": {"cards": [{
+        "release": "CPI", "actual": "N/A", "prior": "N/A", "z3y": "N/A",
+        "deltas": {"vs_prior": "N/A"}, "surprise_size": "big",
+        "direction_tag": "bullish", "period": "May"}]}}),
+    ("releases_is_list", {"macro_releases": [1, 2]}),
+    ("cards_of_strings", {"macro_releases": {"cards": ["a", "b"]}}),
+    ("calib_reject_audit_bad", {"news_calibration": {
+        "classes": [{"event_type": "cpi", "verdict": "candidate", "n": "?",
+                     "n_graded": "N/A", "hit_5d": "N/A", "hit_21d": "N/A"}],
+        "reject_audit": {"n_sampled": "N/A", "n_graded": 1,
+                         "classes": [{"reason": "dup", "avg_rel_21d": "N/A"}]}}}),
+    ("rejected_is_list", {"news_rejected": [1, 2]}),
+    ("rejected_feeds_str", {"news_rejected": {"feeds": "x"}}),
+    ("rejected_items_str", {"news_rejected": {"feeds": {"macro": "xy"}}}),
+]
+
+
+@pytest.mark.parametrize("case_id,overrides",
+                         _BAD_ARTIFACT_CASES,
+                         ids=[c[0] for c in _BAD_ARTIFACT_CASES])
+def test_schema_violating_artifact_degrades_not_raises(case_id, overrides):
+    """A valid-JSON, type-violating artifact must degrade to the empty/placeholder
+    branch of its board — never raise out of the render."""
+    vm = _empty_vm()
+    vm.update(overrides)
+    html = _env().get_template("news.html.j2").render(**vm)
+    assert len(html) > 500
+    assert "nxCalibrationBoard" in html  # page structure intact past all boards
+
+
+def test_non_mapping_calibration_falls_to_placeholder():
+    """A list-typed calibration artifact lands on the 'not yet generated' branch."""
+    vm = _empty_vm()
+    vm["news_calibration"] = [1, 2, 3]
+    html = _env().get_template("news.html.j2").render(**vm)
+    assert "artifact not yet generated" in html
+
+
+def test_string_cards_release_board_shows_empty_state():
+    """cards-as-string degrades the release board to its empty state."""
+    vm = _empty_vm()
+    vm["macro_releases"] = {"cards": "x"}
+    html = _env().get_template("news.html.j2").render(**vm)
+    assert "No releases parsed in the window" in html
