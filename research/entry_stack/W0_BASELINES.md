@@ -191,3 +191,31 @@ Baseline tables reproduce; sub-0.01% deltas are ~3 fires at the 126-bar maturity
 3. Absolute rates are survivor-biased (deep panel = surviving names); per-program law, only within-arm comparisons are valid — carry the survivor stamp on every W1 absolute.
 
 *Filed by W0 opus stats reviewer, 2026-07-05. Baselines independently reproduced; thresholds frozen per RUL-7.*
+
+---
+
+## RUL-14 Note — Vol-Scaled Entry Zone Co-Primaries (B1 PR, 2026-07-05)
+
+**Source:** Amendment 1 §C1, esx/b1 PR.
+
+Two new co-primary outcomes are live in `scripts/research/entry_strata_phase0.py`
+from this PR forward and appear in every subsequent `grade_fires()` call:
+
+| Column | Definition |
+|---|---|
+| `vol_band` | `sigma20 × sqrt(20)` clamped to `[0.05, 0.15]`, computed from trailing 20d close-to-close daily return std at the fill bar (strictly prior bars only). `None` if fewer than 21 trailing bars. |
+| `zone_held_21` | `1` if `min(close[fill+1..fill+21]) > fill_price × (1 − band)`, else `0`. `None` if `vol_band` is `None` OR fewer than 21 matured forward bars. |
+| `stop_vol_21` | `1 − zone_held_21` (kept explicit for table symmetry). `None` when `zone_held_21` is `None`. |
+
+Both `zone_held_21` and `stop_vol_21` participate in the BH panel per RUL-14,
+exactly like `stop5`.  They are reported as co-primary beside `stop5` in every
+subsequent study (W2 onward).
+
+**W1 grandfathering:** W1 studies dispatched before this PR (esx_ev_blackout, esx_ts_adx)
+are grandfathered — `zone_held_21` / `stop_vol_21` will be computed at adjudication
+by re-running `grade_fires()` on their fire sets with the updated harness.
+
+**No existing metric altered.** RUL-7 is not triggered: the addition is purely
+additive (new columns; all pre-existing columns, definitions, and promotion bars
+are unchanged).  The clamp arithmetic `[0.05, 0.15]` and the 20-bar window are
+frozen from this date; any future change requires a new ruling logged here per RUL-7.
