@@ -631,14 +631,20 @@ class TestTrialRegistration:
         assert len(lines) >= len(ph.FAMILY_BUDGETS)
 
     def test_family_budgets_all_present(self):
-        """All 8 families are in FAMILY_BUDGETS with positive budgets."""
-        expected = {
+        """All original 8 families are still in FAMILY_BUDGETS with positive budgets.
+
+        Note: As of A2 RUL-26, 6 additional families were added bringing the total
+        to 14 families. This test checks that the original 8 are present (subset check),
+        not an exact-equals check — see test_entry_strata_a2.py for the A2 additions.
+        """
+        expected_original = {
             "esx_null_competitors", "esx_ev_blackout", "esx_ur_phase0",
             "esx_sq_phase0", "esx_lq_bands", "esx_ql_overlay",
             "esx_ts_adx", "esx_appendix",
         }
-        assert expected == set(ph.FAMILY_BUDGETS.keys()), (
-            f"Missing families: {expected - set(ph.FAMILY_BUDGETS.keys())}"
+        missing = expected_original - set(ph.FAMILY_BUDGETS.keys())
+        assert not missing, (
+            f"Original families missing from FAMILY_BUDGETS: {missing}"
         )
         for fam, info in ph.FAMILY_BUDGETS.items():
             assert info["budget"] > 0, f"Family {fam} has non-positive budget"
