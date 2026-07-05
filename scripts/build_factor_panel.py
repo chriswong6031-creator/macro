@@ -40,6 +40,12 @@ TWIN COMPUTATION (P1-B — masterplan §3.5 + RULING-1 + RULING-2):
     classification files or the index provider's mapping table) and will be supplied
     in the pre-P3 follow-up that also handles per-date mktcap for historical backfill.
 
+    FABLE RULING 2026-07-05: sector-proxy twins are display-tier v1 interim.
+    PREREG H4's clock does NOT start on sector-proxy twins — H4 requires GICS-industry
+    grouping (locked text).  Industry mapping (EDGAR SIC or Polygon reference) joins the
+    pre-P3 follow-up; twins switch to industry grouping from the first freeze month after
+    it lands, and H4 accrual starts there.
+
   NULL-BACKFILL (RULING-2, 2026-07-05):
     Twin columns (twin_rel_20d, twin_bleed_flag, twin_n_peers, twin_fallback) are
     computed ONLY for build dates in the CURRENT freeze month (the calendar month
@@ -52,9 +58,9 @@ TWIN COMPUTATION (P1-B — masterplan §3.5 + RULING-1 + RULING-2):
     True iff BOTH:
       (a) twin basket 20d return < 0
       (b) twin basket drawdown-from-20d-high at evaluation date t >
-          median of the PRIOR 60d distribution of 20d-drawdown-from-20d-high
-          observations (rolling 20d drawdown from 20d high, one per calendar day,
-          computed from twin basket daily returns up to and including t).
+          median of the PRIOR 60 TRADING observations of 20d-drawdown-from-20d-high
+          (the 60 rows of the drawdown series strictly before t; one observation per
+          trading day, computed from twin basket daily returns up to and including t).
     The masterplan §3.5 parenthetical originally said "prior 252d"; corrected below
     to match the locked PREREG H4.
 
@@ -195,7 +201,7 @@ CHINA_SECTORS: frozenset[str] = frozenset({
     "Industrials",
 })
 
-# R4 — FIXED SCHEMA: frozen 44-column v1 set (40 from P1-A + 4 twin from P1-B).
+# R4 — FIXED SCHEMA: frozen 52-column v1 set (48 from P1-A + 4 twin from P1-B).
 # Every partition is reindexed to exactly these columns (missing → None) before
 # writing.  China contrib columns are always present; non-china tickers have None.
 # Twin columns are always present; backfill dates (pre-current-month) have None.
@@ -729,14 +735,14 @@ def _compute_block_b_percentiles(factors_df: pd.DataFrame,
 
 # Correlation window for twin member selection (business days before freeze_date):
 TWIN_CORR_WIN = 252      # window = [freeze_date-253, freeze_date-1]
-TWIN_CORR_MINP = 126     # min_periods for Spearman correlation (same as BETA_WIN halving)
+TWIN_CORR_MINP = 126     # min_periods for Pearson correlation (same as BETA_WIN halving)
 TWIN_TOP_N = 12          # take top-12 peers by 252d residual-return correlation
 TWIN_MIN_PEERS = 8       # minimum peers after sector+size filter → else fallback
 
 # RULING-1 (PREREG H4 governs): twin_bleed_flag uses prior 60d of 20d-drawdown-from-20d-high
 # observations.  (Masterplan §3.5 originally said "prior 252d"; corrected here to match
 # the locked PREREG H4 text; see also §3.5 correction note below.)
-TWIN_BLEED_LOOKBACK = 60  # calendar days of 20d-drawdown observations for the pullback median
+TWIN_BLEED_LOOKBACK = 60  # trading days of 20d-drawdown observations for the pullback median
 
 # Size-tercile filter: ±1 tercile of the name within its sector group.
 # Terciles are computed from factors.json mktcap_bn (current snapshot, RULING-2).
@@ -858,9 +864,10 @@ def _build_twin_membership(
         filtered = same_sector
 
     # ── 2. Correlation ranking: window [freeze_date-253, freeze_date-1] ───────
-    # PIT: use data up to and including freeze_date-1 (not freeze_date itself).
-    # The .shift(1) in resid_ret_1d computation means each value is already causal;
-    # we additionally ensure the window endpoint is freeze_date-1.
+    # PIT: enforced by the correlation window ending at freeze_date-1 (window exclusion:
+    # bday_index[win_start_idx: win_end_idx] is exclusive of freeze_date itself).
+    # Returns are contemporaneous (no shift applied here); betas are shift(1)-causal
+    # but resid_ret_1d is already a return series — no additional shift is applied.
     win_end_idx = bday_index.get_loc(freeze_date) if freeze_date in bday_index else None
     if win_end_idx is None or win_end_idx < 1:
         # Can't compute correlation window — fall back to sector EW
@@ -953,9 +960,9 @@ def _compute_twin_bleed_flag(
     twin_bleed_flag = True iff:
       (a) twin basket 20d return at eval_date < 0
       (b) twin basket drawdown-from-20d-high at eval_date >
-          median of the prior 60d distribution of 20d-drawdown-from-20d-high
-          observations (one observation per calendar day, rolling 20d drawdown
-          from 20d high, computed from twin basket returns up to and including t).
+          median of the prior 60 TRADING observations of 20d-drawdown-from-20d-high
+          (the 60 rows of the drawdown series strictly before eval_date, rolling 20d
+          drawdown from 20d high, computed from twin basket returns up to and including t).
 
     NOTE: Masterplan §3.5 originally said "prior 252d"; this has been corrected
     to match the locked PREREG H4 text: prior 60d of observations.
@@ -995,13 +1002,11 @@ def _compute_twin_bleed_flag(
         return None
     current_drawdown = float(drawdown_series.loc[eval_date])
 
-    # Prior 60d distribution: observations on dates strictly BEFORE eval_date,
-    # up to 60 calendar days back.
-    cutoff_60d = eval_date - pd.Timedelta(days=TWIN_BLEED_LOOKBACK)
-    prior_dd = drawdown_series[
-        (drawdown_series.index >= cutoff_60d) &
-        (drawdown_series.index < eval_date)
-    ].dropna()
+    # Prior 60 TRADING observations: the 60 rows strictly before eval_date
+    # (positional slice — RULING-1 uses trading days, not calendar days).
+    prior_dd = drawdown_series[drawdown_series.index < eval_date].tail(
+        TWIN_BLEED_LOOKBACK
+    ).dropna()
 
     if len(prior_dd) < 1:
         return None  # No prior observations for the distribution
@@ -1261,6 +1266,9 @@ def build_panel(
             # that stream's contribution is treated as 0 rather than poisoning the entire
             # explained_total for every date where ANY beta is NaN.
             # This is correct for twin correlation: use available betas, skip absent ones.
+            # Fable-blessed 2026-07-05: ranking-only leniency (absent late-stream betas
+            # treated as 0 contribution for peer-correlation ranking); the attribution
+            # path's skipna=False is unchanged and canonical.
             explained_total = pd.concat(explained_cols, axis=1, sort=False).sum(axis=1, skipna=True)
             resid = ret_1d_series - explained_total
         else:

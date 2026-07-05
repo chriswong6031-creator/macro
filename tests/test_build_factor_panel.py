@@ -1604,31 +1604,89 @@ class TestTwinBleedFlag:
         )
 
     def test_bleed_flag_prior_window_is_60d_not_252d(self):
-        """RULING-1: prior distribution window is 60d (not 252d from masterplan §3.5).
+        """RULING-1: prior distribution window is 60 TRADING observations (not calendar days).
 
-        We construct a series where the flag should be True with 60d but would
-        be ambiguous with 252d (too many additional zeros in a 252d window would
-        not change direction, but 60d gives a clean test).
+        BEHAVIORAL TEST: construct a fixture where the step-change in the drawdown series
+        is placed such that a trading-60 positional slice and a calendar-60-day cutoff
+        produce DIFFERENT medians and therefore DIFFERENT flag outcomes.
 
-        Design:
-          250 flat days (to fill a 252d window) + 20 decline days.
-          The 60d prior window (days 191–270 of eval at day 270) sees:
-            days 191–250 flat (drawdown=0), days 251–269 declining.
-          The 252d prior window (days 1–269) sees many more zeros.
-          In both cases, current drawdown (after 20-day decline) > median (≈0%).
-          We verify specifically that TWIN_BLEED_LOOKBACK=60 is used.
+        On a business-day index, 60 calendar days covers approximately 42 trading rows.
+        The fixture uses n_total=310 rows (start 2024-01-02):
+          - Rows 0-248:   flat (price=1.0, drawdown=0)
+          - Rows 249-281: heavy decline -1.5%/day (33 rows) → drawdown rises then
+                          stabilises at ~25% within the rolling-20d window
+          - Row 282:      recovery (+65%) → price to new high → dd drops to 0
+          - Rows 283-289: flat at new high
+          - Rows 290-309: mild decline -0.2%/day (20 rows, 20d return ≈ -3.9%)
+
+        eval_date = dates[-1] (row 309).
+        trading-60 prior = rows 249-308 (60 rows):
+          rows 249-281 = 33 rows of heavy dd (≥5%), rows 282-308 = flat then mild dd.
+          33 out of 60 rows are elevated → median is elevated (≈ 5-25%).
+        calendar-60 prior ≈ rows 267-308 (42 rows):
+          rows 267-281 = 15 rows of heavy dd, rows 282-308 = flat then mild (<5%) dd.
+          15 out of 42 rows elevated → median ≈ 0% (< 50%).
+        current_dd ≈ 3.9% < trading-60 median → flag_trading60 = False.
+        current_dd ≈ 3.9% > calendar-60 median → flag_cal60 = True.
+        The outcomes DIFFER. The function (using trading-60) must return False.
+
+        Secondary check: TWIN_BLEED_LOOKBACK constant == 60.
         """
+        # Secondary constant check:
         assert TWIN_BLEED_LOOKBACK == 60, (
             f"RULING-1: TWIN_BLEED_LOOKBACK must be 60, got {TWIN_BLEED_LOOKBACK}"
         )
-        n_flat = 250
-        n_decline = 20
-        dates = _make_twin_dates(n_flat + n_decline)
-        rets = pd.Series([0.0] * n_flat + [-0.01] * n_decline, index=dates)
+
+        # Build the fixture:
+        n_total = 310
+        dates = _make_twin_dates(n_total)
+        rets_list = [0.0] * 249          # rows 0-248: flat
+        rets_list.extend([-0.015] * 33)  # rows 249-281: heavy decline
+        rets_list.append(0.65)           # row 282: recovery
+        rets_list.extend([0.0] * 7)      # rows 283-289: flat
+        rets_list.extend([-0.002] * 20)  # rows 290-309: mild decline (-0.2%/day)
+        assert len(rets_list) == n_total, f"fixture length {len(rets_list)} != {n_total}"
+
+        rets = pd.Series(rets_list, index=dates)
         eval_date = dates[-1]
+
+        # Independently compute expected result with trading-60 logic:
+        hist = rets[rets.index <= eval_date].dropna()
+        price = (1 + hist).cumprod()
+        rolling_high = price.rolling(TWIN_RET_WIN, min_periods=1).max()
+        dd_series = ((price / rolling_high) - 1).abs()
+
+        twin_20d = float(((1 + hist.tail(TWIN_RET_WIN)).prod() - 1))
+        assert twin_20d < 0, f"Fixture error: 20d return should be < 0, got {twin_20d:.4f}"
+
+        current_dd = float(dd_series.loc[eval_date])
+        prior_60 = dd_series[dd_series.index < eval_date].tail(60)
+        median_trading60 = float(prior_60.median())
+        expected_flag = bool(current_dd > median_trading60)  # should be False
+
+        # Verify the fixture is discriminating: calendar-60 gives DIFFERENT outcome:
+        cutoff_cal60 = eval_date - pd.Timedelta(days=60)
+        prior_cal60 = dd_series[
+            (dd_series.index >= cutoff_cal60) & (dd_series.index < eval_date)
+        ].dropna()
+        median_cal60 = float(prior_cal60.median())
+        flag_cal60 = bool(current_dd > median_cal60)
+        assert flag_cal60 != expected_flag, (
+            f"Fixture invariant broken: trading-60 and calendar-60 must give different "
+            f"flag outcomes (trading_flag={expected_flag}, cal_flag={flag_cal60}, "
+            f"current_dd={current_dd:.4f}, median_60={median_trading60:.4f}, "
+            f"median_cal60={median_cal60:.4f}). Fixture needs redesign."
+        )
+
+        # Call the function and assert it uses the TRADING-60 (correct) outcome:
         result = _compute_twin_bleed_flag(rets, eval_date)
-        assert result is True, (
-            f"60d prior window test: expected True, got {result}"
+        assert result == expected_flag, (
+            f"RULING-1 behavioral test: function returned {result}, expected "
+            f"trading-60 outcome {expected_flag} "
+            f"(current_dd={current_dd:.4f}, median_trading60={median_trading60:.4f}, "
+            f"median_cal60={median_cal60:.4f}). "
+            "The prior window must use 60 TRADING observations (positional tail), "
+            "not a calendar-60-day cutoff (~42 trading rows)."
         )
 
     def test_bleed_flag_pit_future_irrelevant(self):
@@ -1898,8 +1956,12 @@ class TestTwinNullBackfill:
             ~((panel["date"].dt.year == cur_year) &
               (panel["date"].dt.month == cur_month))
         ]
-        if len(non_freeze) > 0:
-            for col in ["twin_rel_20d", "twin_bleed_flag", "twin_n_peers", "twin_fallback"]:
+        assert len(non_freeze) > 0, (
+            "fixture produced no backfill rows — vacuous test: "
+            "the build window must span at least two calendar months so "
+            "there are rows in a non-current-freeze month to check."
+        )
+        for col in ["twin_rel_20d", "twin_bleed_flag", "twin_n_peers", "twin_fallback"]:
                 non_null = non_freeze[col].notna()
                 assert not non_null.any(), (
                     f"RULING-2 violation: backfill rows have non-null {col} "
@@ -1954,13 +2016,20 @@ class TestTwinMembershipFreeze:
         """Adding future data after the freeze date must not change membership.
 
         PIT guard (masterplan §3.5 + RULING-1): the correlation window ends at
-        freeze_date - 1.  Any data after the freeze date is excluded from the
-        correlation computation, so membership must be identical whether or not
-        post-freeze data is present in the residual series.
+        freeze_date - 1 (window exclusion: bday_index[win_start:win_end_idx] is
+        exclusive of freeze_date itself).  Any data at or after freeze_date must
+        not affect membership.
 
-        We build base residuals for each ticker and then construct extended
-        residuals by appending EXTRA rows after the freeze_date — using the
-        SAME base values for the corr-window period (PIT-clean).
+        OFF-BY-ONE BLIND SPOT FIX (FIX-3 2026-07-05):
+        freeze_date is set to bday_idx_base[-4] (NOT the last base date) and the
+        extended series DIVERGES from the base at/after freeze_date.  This means:
+          - A window ending at freeze_date-1 (correct PIT) uses the SAME prefix
+            data → membership unchanged.
+          - A window ending at freeze_date (off-by-one bug) would include diverging
+            data at the freeze_date row → membership changes → test FAILS.
+        The prior version used freeze_date = bday_idx_base[-1] (the last base row),
+        so the extended series had NO data at freeze_date to diverge → the test was
+        blind to the off-by-one.
         """
         n_base = 300
         n_extra = 50
@@ -1969,28 +2038,35 @@ class TestTwinMembershipFreeze:
         ns = {t: (t, sector) for t in tickers}
         bday_idx_base = _make_twin_dates(n_base)
         bday_idx_extended = _make_twin_dates(n_base + n_extra)
-        freeze_date = bday_idx_base[-1]  # freeze at the last base date
+        # FIX-3: freeze_date NOT at the end of base — leaves room for diverging data.
+        freeze_date = bday_idx_base[-4]  # 3 rows before the end of base history
 
-        # Pre-generate ALL base values first (shared between base and extended):
+        # Pre-generate ALL base values (shared prefix for both base and extended):
         rng = np.random.default_rng(19)
         base_values: dict[str, np.ndarray] = {
             t: rng.normal(0, 0.01, n_base) for t in tickers
         }
-        # Extended = same base prefix + extra rows (extra rows are post-freeze):
-        rng_extra = np.random.default_rng(99)  # different seed for extra rows
-        extra_values: dict[str, np.ndarray] = {
-            t: rng_extra.normal(0, 0.01, n_extra) for t in tickers
-        }
+        # Extended diverges STARTING AT freeze_date index (position n_base-4):
+        # The correlation window uses data UP TO (but not including) freeze_date.
+        # At/after freeze_date, the extended series has EXTREME diverging values
+        # that would change correlations if they leaked into the window.
+        freeze_pos = n_base - 4  # position of freeze_date in bday_idx_base
+        extended_values: dict[str, np.ndarray] = {}
+        rng_div = np.random.default_rng(777)
+        for t in tickers:
+            extended = base_values[t].copy().tolist()
+            # At/after freeze_date: massive diverging values (would flip correlations):
+            extended[freeze_pos] = float(rng_div.choice([-100.0, 100.0]))  # extreme at freeze
+            for _ in range(n_extra):
+                extended.append(float(rng_div.choice([-100.0, 100.0])))
+            extended_values[t] = np.array(extended[:n_base + n_extra])
 
         resid_base = {
             t: pd.Series(base_values[t], index=bday_idx_base)
             for t in tickers
         }
         resid_extended = {
-            t: pd.Series(
-                np.concatenate([base_values[t], extra_values[t]]),
-                index=bday_idx_extended,
-            )
+            t: pd.Series(extended_values[t], index=bday_idx_extended)
             for t in tickers
         }
 
@@ -2001,7 +2077,7 @@ class TestTwinMembershipFreeze:
             size_tercile_map={t: 1 for t in tickers},
             ns=ns, bday_index=bday_idx_base,
         )
-        # Membership at same freeze_date with extended history (post-freeze data added):
+        # Membership at same freeze_date with extended history (post-freeze diverges):
         members_ext, fallback_ext = _build_twin_membership(
             freeze_date=freeze_date, ticker=tickers[0], sector=sector,
             size_tercile=1, all_resid_1d=resid_extended,
@@ -2009,10 +2085,10 @@ class TestTwinMembershipFreeze:
             ns=ns, bday_index=bday_idx_extended,
         )
         assert sorted(members_base) == sorted(members_ext), (
-            "PIT violation: adding future data after freeze_date changed twin membership. "
+            "PIT violation: diverging data at/after freeze_date changed twin membership. "
             f"Base members: {sorted(members_base)[:5]}... "
             f"Extended members: {sorted(members_ext)[:5]}...\n"
-            "The correlation window must use only data < freeze_date."
+            "The correlation window must use only data strictly before freeze_date."
         )
         assert fallback_base == fallback_ext
 
@@ -2122,8 +2198,8 @@ class TestTwinSchemaStability44:
         overlap = forbidden & set(PANEL_COLUMNS)
         assert not overlap, f"P1-C/P1-D columns in PANEL_COLUMNS: {overlap}"
 
-    def test_44_columns_mixed_sector(self, tmp_path):
-        """(f) Mixed-sector universe (IT + Health Care) → 44 columns == PANEL_COLUMNS."""
+    def test_52_columns_mixed_sector(self, tmp_path):
+        """(f) Mixed-sector universe (IT + Health Care) → 52 columns == PANEL_COLUMNS."""
         cols = self._build_and_read_cols(
             tmp_path / "mixed",
             tickers=["AAPL", "JNJ"],
