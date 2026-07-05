@@ -177,8 +177,60 @@ def _refresh_qledger_promotion(e: dict) -> dict:
     return out
 
 
+def _refresh_cortex_evaluator(e: dict) -> dict:
+    """Live overlay for a cortex_hypothesis experiment.
+
+    Reads data/neuralweb/machine_registry.jsonl for the matching id and
+    surfaces the current status, verdict, and come_back.
+    Falls back gracefully to seed values on any read error.
+    """
+    hyp_id = e.get("id")
+    if not hyp_id:
+        return {}
+    try:
+        from engine.neuralweb.metabolism import load_by_id  # type: ignore[import]
+        row = load_by_id(hyp_id)
+        if not row:
+            return {}
+        status = row.get("status", "registered")
+        # Map metabolism status to experiments_registry vocabulary
+        status_map = {
+            "registered": "accruing",
+            "accruing": "accruing",
+            "passed": "gate_open",
+            "failed": "no_go",
+            "insufficient-n": "accruing",
+            "budget-rejected": "accruing",
+            "retired": "no_go",
+            "invalid": "no_go",
+        }
+        out_status = status_map.get(status, "accruing")
+        come_back = row.get("come_back")
+        gate = row.get("pre_committed_gate") or {}
+        state = (
+            f"status={status} · "
+            f"shape={row.get('claim_shape', '?')} · "
+            f"gate={gate.get('metric','?')} {gate.get('threshold','?')} · "
+            f"horizon={row.get('horizon_d','?')}d"
+        )
+        out: dict = {"status": out_status, "state": state}
+        if status in ("passed", "gate_open"):
+            out["ready"] = True
+            out["state"] = state + " · PASSED — queued for quarterly FDR batch"
+        if come_back:
+            out["come_back_on"] = come_back
+        return out
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).warning(
+            "experiments_registry: cortex_evaluator hook failed for %s: %s", hyp_id, exc
+        )
+        return {}
+
+
 _HOOKS = {"track_record": _refresh_track_record,
-          "qledger_promotion": _refresh_qledger_promotion}
+          "qledger_promotion": _refresh_qledger_promotion,
+          "cortex_evaluator": _refresh_cortex_evaluator}
 
 
 # Newer seed entries (hazard-live-reliability-*, w5a-reversal-rederive, hkca-*, w3*-…)
@@ -205,10 +257,70 @@ def _alt_state(e: dict) -> str | None:
     return (s[:397] + "…") if len(s) > 400 else (s or None)
 
 
+def _load_machine_registry_entries() -> list[dict]:
+    """Load cortex_hypothesis entries from data/neuralweb/machine_registry.jsonl.
+
+    Converts machine-registration schema to the experiments-registry row format
+    so compute() processes them through the standard hook pipeline.
+    Only the LATEST status per id is included (last write wins in append-only log).
+    """
+    try:
+        p = _root() / "data" / "neuralweb" / "machine_registry.jsonl"
+        if not p.exists():
+            return []
+        # Load all rows, keep latest per id
+        seen: dict[str, dict] = {}
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+                if row.get("kind") == "cortex_hypothesis":
+                    seen[row["id"]] = row
+            except Exception:  # noqa: BLE001
+                pass
+        # Convert to experiments-registry format
+        out = []
+        for row in seen.values():
+            gate = row.get("pre_committed_gate") or {}
+            out.append({
+                "id": row["id"],
+                "name": f"Cortex: {row.get('hypothesis', '')[:60]}",
+                "kind": "cortex_hypothesis",
+                "status": row.get("status", "registered"),
+                "priority": "low",
+                "what": row.get("hypothesis", ""),
+                "hypothesis": row.get("hypothesis", ""),
+                "source": f"cortex/{row.get('registered_by', 'cortex')}",
+                "storage": "data/neuralweb/machine_registry.jsonl",
+                "started": (row.get("registered_at") or "")[:10],
+                "registered_on": (row.get("registered_at") or "")[:10],
+                "maturation": f"horizon={row.get('horizon_d', '?')}d",
+                "come_back_on": row.get("come_back"),
+                "come_back_note": f"Evaluate against pre-committed gate: {gate.get('metric','?')} {gate.get('threshold','?')}",
+                "next_step": (
+                    f"Wait for evaluator on come_back date. "
+                    f"Passed → quarterly cortex FDR batch. "
+                    f"fdr_family=cortex (own family; never raises human program bar)."
+                ),
+                "phase_hint": f"neural-web · W7b · cortex · {row.get('claim_shape', '?')}",
+                "state": f"status={row.get('status','registered')} shape={row.get('claim_shape','?')}",
+                "hook": "cortex_evaluator",
+                "claim_family": "cortex",
+            })
+        return out
+    except Exception as exc:  # noqa: BLE001
+        log.warning("experiments_registry: machine_registry load failed: %s", exc)
+        return []
+
+
 def compute() -> dict:
     today = datetime.now(timezone.utc).date()
     seed = _read_json(SEED) or {}
-    rows_in = seed.get("experiments") or []
+    rows_in = list(seed.get("experiments") or [])
+    # Inject cortex_hypothesis entries from machine registry (W7b PR2)
+    rows_in += _load_machine_registry_entries()
     out = []
     for e in rows_in:
         rec = {

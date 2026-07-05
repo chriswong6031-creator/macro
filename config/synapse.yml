@@ -2793,9 +2793,92 @@ artifacts:
     consumers: []
     external_consumers: []
     notes: >
-      W7b PR1 STUB: cortex-proposed hypothesis drafts.  status=inbox-not-registered
-      always in PR1.  The metabolism (machine-registration + evaluation path via
-      generic evaluator + qledger) lands in PR2.  No grading path exists yet —
-      no mining possible.  Schema: {id, status, proposed_at, subject, claim,
-      falsifier, horizon_d, pre_committed_gate, spine_query, metabolism_note,
-      is_context_only}.  Single-writer: cortex job ONLY.
+      W7b PR1 stub updated in PR2: cortex-proposed hypothesis drafts.  Rows
+      transition from status=inbox-not-registered to registered|budget-rejected|invalid
+      via metabolism.register_hypothesis() which is called directly from the
+      stake_hypothesis tool (PR2 — live path).  Single-writer: cortex job ONLY.
+
+  # --- W7b PR2 new artifacts ---
+
+  machine-registry:
+    path: data/neuralweb/machine_registry.jsonl
+    format: jsonl
+    producer: engine/neuralweb/metabolism.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: nightly-cortex
+    storage: git
+    asof_field: registered_at
+    freshness_sla_hours: 9999
+    schema: neuralweb.machine_registry.v1
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/experiments_registry.py
+      - scripts/evaluate_cortex_hypotheses.py
+    external_consumers: []
+    notes: >
+      W7b PR2: Append-only machine-registration ledger for cortex-proposed
+      hypotheses.  Schema: {id, kind=cortex_hypothesis, registered_at (server-side
+      — never model-supplied), registered_by, fdr_family=cortex (hard-wired),
+      claim_shape, hypothesis, spine_query, pre_committed_gate, horizon_d,
+      come_back, status, is_context_only}.  Budget: max 3 registrations per calendar
+      week; beyond that retire-one-to-file-one.  Single-writer: engine/neuralweb/metabolism.py
+      (called by cortex.py stake_hypothesis tool) ONLY.  Read-gate CLEAN: no scored-path
+      surfaces.
+
+  cortex-attention-grades:
+    path: data/reflexes/cortex_attention/grades.jsonl
+    format: jsonl
+    producer: scripts/grade_cortex_attention.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: nightly-cortex
+    storage: git
+    asof_field: graded_at
+    freshness_sla_hours: 30
+    schema: reflex.cortex_attention.grade.v1
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/query.py
+    external_consumers: []
+    notes: >
+      W7b PR2: Sidecar grades for cortex attention firings.  One row per graded
+      claim_id.  SINGLE-WRITER: scripts/grade_cortex_attention.py ONLY.  Joined
+      onto firings by claim_id in engine/neuralweb/query.adapt_cortex_attention()
+      which emits ledger='cortex_attention' rows into the spine index with
+      outcome_graded=True when a grade exists and direction != 0.  Infrastructure
+      claims (direction=0) stay outcome_graded=False by design.  Schema:
+      {claim_id, graded_at, grader_version, falsifier_class, outcome_hit, outcome_detail,
+      horizon_d, asof, symbol, direction, base_rate}.
+
+  cortex-probation:
+    path: data/neuralweb/cortex/probation.json
+    format: json
+    producer: scripts/grade_cortex_attention.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: nightly-cortex
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.cortex_probation.v1
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/cortex.py
+    external_consumers: []
+    notes: >
+      W7b PR2: Single source of truth for A2 earn-in state (replaces the PR1
+      inline evaluation in cortex.py).  Written nightly by grade_cortex_attention.py
+      after running constitution.grant_authority.  The cortex reads this at startup
+      for its memo probation block.  Schema: {schema, as_of, granted, tier, reason,
+      lift_lb, wilson_lb, lapses_at, evidence_asof, attention_track_record,
+      is_context_only}.  Governance events appended ON TRANSITIONS ONLY
+      (refused→granted or granted→refused) to preserve the governance ledger as a
+      sparse record of consequential state changes.  Today: granted=False (empty
+      attention record — n=0 < 25).  SINGLE-WRITER: grade_cortex_attention.py ONLY.

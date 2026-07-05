@@ -332,9 +332,12 @@ class TestWriteTools:
         memo = json.loads(site_path.read_text())
         assert memo["is_context_only"] is True
 
-    def test_stake_hypothesis_status_inbox_not_registered(self, repo):
+    def test_stake_hypothesis_invalid_without_gate(self, repo):
+        """PR2: stake_hypothesis calls live metabolism; missing pre_committed_gate → invalid.
+        The inbox carries the status transition (inbox audit trail)."""
         from engine.neuralweb.cortex import dispatch_tool
         census: dict = {}
+        # Deliberately omit pre_committed_gate to trigger invalid status
         params = {
             "subject": "XLK lead-lag vs HY spreads",
             "claim": "XLK underperforms when HY spread widens > 50bps over 5 days",
@@ -342,15 +345,37 @@ class TestWriteTools:
             "horizon_d": 5,
         }
         result = dispatch_tool("stake_hypothesis", params, repo, _NOW_STR, _PROBATION, census)
-        assert result["status"] == "inbox-not-registered"
-        assert "metabolism_note" not in result  # only returned in PR2
-        # But the inbox file should carry it
+        # PR2: metabolism is live — invalid (missing pre_committed_gate)
+        assert result["status"] == "invalid"
+        # The inbox receives the status transition as audit trail
         inbox_path = repo / "data" / "neuralweb" / "cortex" / "hypothesis_inbox.jsonl"
         assert inbox_path.exists()
         rec = json.loads(inbox_path.read_text().strip())
-        assert rec["status"] == "inbox-not-registered"
+        assert rec["status"] == "invalid"
         assert rec["is_context_only"] is True
-        assert "metabolism_note" in rec
+
+    def test_stake_hypothesis_registered_with_full_params(self, repo):
+        """PR2: stake_hypothesis with all required fields → registered."""
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        params = {
+            "subject": "XLK",
+            "claim": "XLK outperforms SPY when MACD crosses signal on 5d",
+            "claim_shape": "lead_lag",
+            "spine_query": {"subject": "XLK", "lead_series": "MACD"},
+            "falsifier": "XLK excess return > 0 over 21 days in 55%+ of events",
+            "horizon_d": 21,
+            "pre_committed_gate": {
+                "metric": "hit_rate",
+                "threshold": 0.55,
+                "min_n": 5,
+                "horizon_d": 21,
+            },
+        }
+        result = dispatch_tool("stake_hypothesis", params, repo, _NOW_STR, _PROBATION, census)
+        # PR2: live registration with valid params
+        assert result["status"] == "registered"
+        assert result.get("registered_at") is not None
 
     def test_stake_hypothesis_multiple_writes_append(self, repo):
         from engine.neuralweb.cortex import dispatch_tool
