@@ -327,19 +327,42 @@ class TestQ80Breakpoint:
 
 
 # ---------------------------------------------------------------------------
+# Fixture helper: build a panel that guarantees Pair G fires (TICK000 pattern)
+# ---------------------------------------------------------------------------
+
+def _make_guaranteed_fire_panel(n_dates: int = 80) -> "Any":  # type: ignore[name-defined]
+    """Build a panel where TICK000 always fires Pair G.
+
+    Pattern: 9 bulk tickers at alibi=0.2 (pulls pool Q80 low), TICK000 at
+    alibi=0.95 (well above Q80).  Mirrors the working pattern used in
+    TestEndToEndFireBehavior::test_pair_g_fires_when_high_alibi.
+    """
+    import pandas as pd
+    from datetime import date, timedelta
+
+    rows = []
+    base = date(2025, 1, 2)
+    for i in range(n_dates):
+        d = (base + timedelta(days=i)).strftime("%Y-%m-%d")
+        for t in [f"TICK{j:03d}" for j in range(10)]:
+            alibi = 0.95 if t == "TICK000" else 0.2
+            rows.append({"ticker": t, "date": d, "alibi_share_20d": alibi})
+    return pd.DataFrame(rows)
+
+
+# ---------------------------------------------------------------------------
 # Test 4: (date, ticker) dedupe on rerun (RULING-F)
 # ---------------------------------------------------------------------------
 
 class TestDeduplication:
     def test_no_duplicate_on_rerun(self, fc_module, tmp_path):
-        """Running detect_factor_contradictions twice for the same date must not
-        duplicate records in the ledger."""
-        import pandas as pd
-        import numpy as np
+        """Running detect_factor_contradictions twice for the same date must produce
+        exactly 1 ledger line after run 1 AND exactly 1 ledger line after run 2
+        (no duplicate on rerun).  The `if exists()` guard is removed — if Pair G
+        doesn't fire, the test fails loudly rather than passing vacuously."""
+        from unittest.mock import patch
 
-        panel_df = _make_panel_df(n_dates=80, n_tickers=5, alibi_base=0.9)
-        # Ensure TICK000 has very high alibi to trigger Pair G
-        panel_df.loc[panel_df["ticker"] == "TICK000", "alibi_share_20d"] = 0.98
+        panel_df = _make_guaranteed_fire_panel(n_dates=80)
         _write_synthetic_panel(tmp_path, panel_df)
 
         as_of_date = panel_df["date"].max()
@@ -347,48 +370,128 @@ class TestDeduplication:
             {"ticker": "TICK000", "tier_cascade": "T1", "as_of": as_of_date},
         ])
 
-        # First run
-        records1, _ = fc_module.detect_factor_contradictions(
-            root=tmp_path, as_of_date=as_of_date,
-        )
+        def mock_record_firing(name, payload, root=None):
+            return payload
 
-        # Second run — same date
-        records2, _ = fc_module.detect_factor_contradictions(
-            root=tmp_path, as_of_date=as_of_date,
-        )
-
-        # Load the ledger and count rows for this (date, ticker)
-        ledger_p = tmp_path / "data" / "neuralweb" / "factor_contradictions.jsonl"
-        if ledger_p.exists():
-            rows = [json.loads(l) for l in ledger_p.read_text().splitlines() if l.strip()]
-            keys = [(r["date"], r["ticker"]) for r in rows]
-            assert len(keys) == len(set(keys)), (
-                f"Duplicate (date,ticker) keys in ledger after rerun: {keys}"
+        # ── Run 1 ───────────────────────────────────────────────────────────
+        with patch("engine.neuralweb.factor_contradictions.record_firing",
+                   new=mock_record_firing):
+            records1, gaps1 = fc_module.detect_factor_contradictions(
+                root=tmp_path, as_of_date=as_of_date,
             )
+
+        ledger_p = tmp_path / "data" / "neuralweb" / "factor_contradictions.jsonl"
+        assert ledger_p.exists(), (
+            f"Ledger must exist after run 1 — Pair G must have fired. "
+            f"records1={records1}, gaps1={gaps1}"
+        )
+        lines_after_run1 = [
+            l for l in ledger_p.read_text().splitlines() if l.strip()
+        ]
+        assert len(lines_after_run1) == 1, (
+            f"Expected exactly 1 ledger line after run 1, got {len(lines_after_run1)}: "
+            f"{lines_after_run1}"
+        )
+
+        # ── Run 2 — same date ────────────────────────────────────────────────
+        with patch("engine.neuralweb.factor_contradictions.record_firing",
+                   new=mock_record_firing):
+            records2, gaps2 = fc_module.detect_factor_contradictions(
+                root=tmp_path, as_of_date=as_of_date,
+            )
+
+        lines_after_run2 = [
+            l for l in ledger_p.read_text().splitlines() if l.strip()
+        ]
+        assert len(lines_after_run2) == 1, (
+            f"Expected exactly 1 ledger line after run 2 (dedupe must hold), "
+            f"got {len(lines_after_run2)}: {lines_after_run2}"
+        )
 
     def test_ledger_appended_not_overwritten(self, fc_module, tmp_path):
         """Running on two different dates must append two records (not overwrite)."""
-        import pandas as pd
+        from unittest.mock import patch
 
-        panel_df = _make_panel_df(n_dates=80, n_tickers=5, alibi_base=0.9)
-        panel_df.loc[panel_df["ticker"] == "TICK000", "alibi_share_20d"] = 0.98
+        panel_df = _make_guaranteed_fire_panel(n_dates=80)
         _write_synthetic_panel(tmp_path, panel_df)
 
-        dates = sorted(panel_df["date"].unique())[-5:]  # last 5 dates
+        # Use two distinct dates from the panel (near the end so panel has 80 dates
+        # of history to meet the 60-date floor and fill Q80)
+        dates = sorted(panel_df["date"].unique())
+        d1, d2 = dates[-2], dates[-1]
 
-        for d in dates[:2]:
+        def mock_record_firing(name, payload, root=None):
+            return payload
+
+        for d in (d1, d2):
             _write_standouts(tmp_path, [
                 {"ticker": "TICK000", "tier_cascade": "T1", "as_of": d},
             ])
-            fc_module.detect_factor_contradictions(root=tmp_path, as_of_date=d)
+            with patch("engine.neuralweb.factor_contradictions.record_firing",
+                       new=mock_record_firing):
+                fc_module.detect_factor_contradictions(root=tmp_path, as_of_date=d)
 
         ledger_p = tmp_path / "data" / "neuralweb" / "factor_contradictions.jsonl"
-        if ledger_p.exists():
-            rows = [json.loads(l) for l in ledger_p.read_text().splitlines() if l.strip()]
-            # Should have 2 distinct date entries for TICK000 (or possibly none if the
-            # dates are too close and Q80 blocks them; just check no duplicates)
-            keys = [(r["date"], r["ticker"]) for r in rows]
-            assert len(keys) == len(set(keys)), "Duplicates found in ledger"
+        assert ledger_p.exists(), "Ledger must exist after two distinct-date runs"
+        rows = [json.loads(l) for l in ledger_p.read_text().splitlines() if l.strip()]
+        assert len(rows) == 2, (
+            f"Expected exactly 2 ledger rows (one per date), got {len(rows)}: {rows}"
+        )
+        keys = [(r["date"], r["ticker"]) for r in rows]
+        assert len(keys) == len(set(keys)), f"Duplicates found in ledger: {keys}"
+
+    def test_reflex_firing_idempotent_same_day_rerun(self, fc_module, tmp_path):
+        """factor_attention/firings.jsonl must have identical line count after two runs
+        on the same as_of date (FIX-1: shared idempotence gate prevents duplicate
+        reflex firings that inflate the A2 earn-in denominator)."""
+        panel_df = _make_guaranteed_fire_panel(n_dates=80)
+        _write_synthetic_panel(tmp_path, panel_df)
+
+        as_of_date = panel_df["date"].max()
+        _write_standouts(tmp_path, [
+            {"ticker": "TICK000", "tier_cascade": "T1", "as_of": as_of_date},
+        ])
+
+        # Wire a real-file-writing mock so we can count firings lines
+        firings_path = (
+            tmp_path / "data" / "reflexes" / "factor_attention" / "firings.jsonl"
+        )
+        firings_path.parent.mkdir(parents=True, exist_ok=True)
+
+        def writing_record_firing(name, payload, root=None):
+            """Write the firing to the real file so we can count lines."""
+            import json as _json
+            with open(firings_path, "a", encoding="utf-8") as fh:
+                fh.write(_json.dumps({"name": name, **payload}) + "\n")
+            return payload
+
+        from unittest.mock import patch
+
+        # Run 1
+        with patch("engine.neuralweb.factor_contradictions.record_firing",
+                   new=writing_record_firing):
+            fc_module.detect_factor_contradictions(root=tmp_path, as_of_date=as_of_date)
+
+        count_after_run1 = sum(
+            1 for l in firings_path.read_text().splitlines() if l.strip()
+        )
+        assert count_after_run1 >= 1, (
+            f"Expected at least 1 firing after run 1, got {count_after_run1}"
+        )
+
+        # Run 2 — same as_of
+        with patch("engine.neuralweb.factor_contradictions.record_firing",
+                   new=writing_record_firing):
+            fc_module.detect_factor_contradictions(root=tmp_path, as_of_date=as_of_date)
+
+        count_after_run2 = sum(
+            1 for l in firings_path.read_text().splitlines() if l.strip()
+        )
+        assert count_after_run2 == count_after_run1, (
+            f"factor_attention/firings.jsonl line count changed after same-day rerun: "
+            f"run1={count_after_run1}, run2={count_after_run2}. "
+            f"The reflex must be gated on the same idempotence key as the ledger."
+        )
 
 
 # ---------------------------------------------------------------------------

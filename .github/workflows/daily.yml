@@ -1115,11 +1115,9 @@ jobs:
       # P1-D: Pair G borrowed_strength detector. Runs AFTER factor_panel step (needs
       # today's panel partition). Fail-soft: a dormant detector emits no records and
       # logs a gap note; it never kills the nightly. Output is data/neuralweb/
-      # factor_contradictions.jsonl — this file is NOT git-tracked (see gitignore
-      # investigation in P1-D builder notes: data/neuralweb/ has some tracked files
-      # like governance.jsonl, but factor_contradictions.jsonl is R2-candidate and
-      # gitignored implicitly via the default untracked behavior; the sentinel commit
-      # step does not stage it — see LEDGER-TRACKING CHOICE note in commit message).
+      # factor_contradictions.jsonl — explicitly gitignored (R2-candidate; single-copy
+      # runner-local pending R2 sync); NOT gitignored implicitly via default untracked
+      # behavior. The sentinel commit step does not stage it.
       - name: factor contradictions detector (Pair G borrowed_strength — P1-D)
         run: |
           set +e

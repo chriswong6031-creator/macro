@@ -37,7 +37,8 @@ OUTPUT
 ------
 - Contradiction ledger: data/neuralweb/factor_contradictions.jsonl
   Append-only, keyed (date, ticker).  Rerunning the same date dedupes on load before
-  append.  RULING-F.
+  append.  RULING-F.  Explicitly gitignored (R2-candidate; single-copy runner-local
+  pending R2 sync) — NOT gitignored implicitly via default untracked behavior.
 - Factor attention firings: data/reflexes/factor_attention/firings.jsonl via
   engine.neuralweb.reflexes.record_firing (Lane 1, §5.3).
 
@@ -275,6 +276,11 @@ def _compute_q80_breakpoint(panel_df: "Any", as_of_date: str) -> float | None:
 
     PIT: uses only dates in [as_of_date - 252 calendar days, as_of_date].
     Returns None if fewer than 10 non-null rows.
+
+    Convention: POOLED trailing-252-calendar-day window quantile (all (ticker,date)
+    rows in the window flattened into one vector), NOT per-date-cross-section-then-
+    aggregate.  The eventual H2 replay harness (scripts/validate_factor_h2.py) MUST
+    use this identical pooling so the display-tier detector and the locked gate agree.
     """
     try:
         import pandas as pd  # noqa: PLC0415
@@ -645,16 +651,22 @@ def detect_factor_contradictions(
         )
         new_records.append(rec)
 
-        # ── Lane 1: fire factor_attention reflex ────────────────────────────
-        _fire_factor_attention(
-            ticker=ticker,
-            tier_cascade=tier_cascade,
-            alibi_share_20d=alibi,
-            q80=q80,
-            as_of_date=as_of_date,
-            root=repo,
-            gaps=gaps,
-        )
+        # ── Lane 1: fire factor_attention reflex — gated on same idempotence key ──
+        # Only fire when this (as_of, ticker) pair is NEW vs the pre-loop snapshot of
+        # existing_keys.  This keeps the reflex and the ledger dedupe on one shared
+        # gate, preventing same-day reruns from writing duplicate firings with distinct
+        # wall-clock claim_ids and silently inflating the A2 earn-in denominator.
+        _key = (as_of_date, ticker)
+        if _key not in existing_keys:
+            _fire_factor_attention(
+                ticker=ticker,
+                tier_cascade=tier_cascade,
+                alibi_share_20d=alibi,
+                q80=q80,
+                as_of_date=as_of_date,
+                root=repo,
+                gaps=gaps,
+            )
 
     # ── Append to ledger ────────────────────────────────────────────────────
     n_written = _append_to_ledger(ledger_path, new_records, existing_keys)
