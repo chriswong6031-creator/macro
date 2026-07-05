@@ -666,8 +666,8 @@ def compute_oi_movers(
     else:
         merged["mid"] = np.nan
 
-    # sort by |d_oi|, top N
-    merged = merged.nlargest(top_n, "d_oi", keep="all")
+    # sort by |d_oi|, top N (magnitude-ranked so large OI *reductions* are not
+    # dropped by a signed pre-filter — nlargest on signed d_oi would miss them).
     merged = merged.reindex(merged["d_oi"].abs().sort_values(ascending=False).index).head(top_n)
 
     root_val = str(merged["root"].iloc[0]) if "root" in merged.columns and len(merged) > 0 else ""
