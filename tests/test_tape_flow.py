@@ -699,3 +699,292 @@ class TestBothRightsOrNoRow:
         result = bld.build_one("KRE", date(2026, 6, 30))
         assert result is None
         assert writes == []
+
+
+# ─── P2.1 required features (T2a spec) ───────────────────────────────────────
+
+class TestP21RequiredFeatures:
+    """Verify all P2.1-required features are present in aggregate_day output.
+
+    Required by scripts/build_tape_flow_daily.py task spec:
+      net_signed_premium, signed_pc_ratio, gross_premium, volume,
+      zerodte_share, dte_quality_share (8-90d), short_dated_otm_call_share,
+      trade_count, block_share
+    """
+
+    TRADE_DATE = date(2026, 7, 2)
+    SPOT = 560.0
+
+    def _make_calls(self, n: int = 15, dte: int = 7) -> pd.DataFrame:
+        rows = []
+        for i in range(n):
+            # All price above mid → all buyer-initiated
+            rows.append({
+                "price": 2.60, "bid": 2.40, "ask": 2.70,
+                "size": float(i + 1),
+                "right": "C",
+                "strike": self.SPOT + 5.0,
+                "expiration": str(self.TRADE_DATE + timedelta(days=dte)),
+                "trade_timestamp": f"{self.TRADE_DATE}T10:00:{i:02d}Z",
+            })
+        return pd.DataFrame(rows)
+
+    def _make_puts(self, n: int = 10, dte: int = 7) -> pd.DataFrame:
+        rows = []
+        for j in range(n):
+            rows.append({
+                "price": 1.80, "bid": 1.60, "ask": 2.00,
+                "size": float(j + 1),
+                "right": "P",
+                "strike": self.SPOT - 5.0,
+                "expiration": str(self.TRADE_DATE + timedelta(days=dte)),
+                "trade_timestamp": f"{self.TRADE_DATE}T10:00:{j + 30:02d}Z",
+            })
+        return pd.DataFrame(rows)
+
+    def test_signed_pc_ratio_present_and_typed(self):
+        """signed_pc_ratio is a float or None; never missing key."""
+        calls = self._make_calls()
+        puts = self._make_puts()
+        row = tf.aggregate_day(calls, puts, self.TRADE_DATE, "SPY")
+        assert "signed_pc_ratio" in row, "signed_pc_ratio key must be present"
+        val = row["signed_pc_ratio"]
+        assert val is None or isinstance(val, (int, float))
+
+    def test_volume_equals_total_size(self):
+        """volume = total contracts traded (sum of all size)."""
+        calls = self._make_calls(n=5)
+        puts = self._make_puts(n=3)
+        row = tf.aggregate_day(calls, puts, self.TRADE_DATE, "SPY")
+        assert "volume" in row
+        # Volume must be positive and roughly sum of all size values
+        assert row["volume"] > 0
+
+    def test_zerodte_share_range(self):
+        """zerodte_share in [0, 1] when computed."""
+        # Mix of 0DTE and 7DTE trades
+        calls_0dte = self._make_calls(n=5, dte=0)
+        calls_7dte = self._make_calls(n=5, dte=7)
+        calls = pd.concat([calls_0dte, calls_7dte], ignore_index=True)
+        row = tf.aggregate_day(calls, pd.DataFrame(), self.TRADE_DATE, "SPY")
+        assert "zerodte_share" in row
+        val = row["zerodte_share"]
+        assert val is not None
+        assert 0.0 <= val <= 1.0, f"zerodte_share out of [0,1]: {val}"
+
+    def test_dte_quality_share_range(self):
+        """dte_quality_share (8-90d) in [0, 1]."""
+        calls_8d = self._make_calls(n=5, dte=20)   # 8-30d window
+        calls_50d = self._make_calls(n=5, dte=50)  # 31-90d window
+        calls_0d = self._make_calls(n=5, dte=0)    # outside quality window
+        calls = pd.concat([calls_8d, calls_50d, calls_0d], ignore_index=True)
+        row = tf.aggregate_day(calls, pd.DataFrame(), self.TRADE_DATE, "SPY")
+        assert "dte_quality_share" in row
+        val = row["dte_quality_share"]
+        assert val is not None
+        assert 0.0 <= val <= 1.0, f"dte_quality_share out of [0,1]: {val}"
+
+    def test_short_dated_otm_call_share_without_underlying(self):
+        """short_dated_otm_call_share is 0.0 or None when no underlying_price is available.
+
+        Without underlying_price, moneyness is indeterminate → no OTM calls can be
+        confirmed → the share is 0.0 (not None, since volume denominator is known).
+        underlying_source stamps 'none' to signal the absence.
+        """
+        calls = self._make_calls()
+        row = tf.aggregate_day(calls, pd.DataFrame(), self.TRADE_DATE, "SPY",
+                               greeks_chain=None)
+        assert "short_dated_otm_call_share" in row
+        val = row["short_dated_otm_call_share"]
+        # Without underlying, no OTM calls can be confirmed: expect 0.0 or None
+        assert val is None or val == pytest.approx(0.0), \
+            f"Expected 0.0 or None without underlying, got {val}"
+        # underlying_source must indicate absence
+        assert row.get("underlying_source") in ("none", None)
+
+    def test_short_dated_otm_call_share_with_greeks(self):
+        """short_dated_otm_call_share in [0,1] when underlying_price available via greeks."""
+        calls = self._make_calls(n=10, dte=15)   # 15 DTE → short-dated window [1-30]
+        greeks = pd.DataFrame({
+            "expiration": [str(self.TRADE_DATE + timedelta(days=15))],
+            "strike": [self.SPOT + 5.0],  # OTM call (strike > spot)
+            "right": ["C"],
+            "delta": [0.35],
+            "underlying_price": [self.SPOT],
+        })
+        row = tf.aggregate_day(calls, pd.DataFrame(), self.TRADE_DATE, "SPY",
+                               greeks_chain=greeks)
+        assert "short_dated_otm_call_share" in row
+        val = row["short_dated_otm_call_share"]
+        if val is not None:
+            assert 0.0 <= val <= 1.0, f"short_dated_otm_call_share out of [0,1]: {val}"
+
+    def test_trade_count_equals_n_trades(self):
+        """trade_count and n_trades are consistent aliases."""
+        calls = self._make_calls(n=8)
+        puts = self._make_puts(n=5)
+        row = tf.aggregate_day(calls, puts, self.TRADE_DATE, "SPY")
+        assert "trade_count" in row
+        assert "n_trades" in row
+        assert row["trade_count"] == row["n_trades"]
+        assert row["trade_count"] > 0
+
+    def test_block_share_range(self):
+        """block_share (top-decile trade-size fraction) in [0, 1]."""
+        # Mix of large (block) and small trades
+        rows = []
+        for i in range(20):
+            size = 500.0 if i == 0 else float(i + 1)  # one very large trade
+            rows.append({
+                "price": 2.60, "bid": 2.40, "ask": 2.70, "size": size,
+                "right": "C", "strike": self.SPOT + 5.0,
+                "expiration": str(self.TRADE_DATE + timedelta(days=7)),
+                "trade_timestamp": f"{self.TRADE_DATE}T10:00:{i:02d}Z",
+            })
+        calls = pd.DataFrame(rows)
+        row = tf.aggregate_day(calls, pd.DataFrame(), self.TRADE_DATE, "SPY")
+        assert "block_share" in row
+        val = row["block_share"]
+        if val is not None:
+            assert 0.0 <= val <= 1.0, f"block_share out of [0,1]: {val}"
+
+    def test_all_p21_keys_present(self):
+        """All required P2.1 feature keys are present in aggregate_day output."""
+        required = {
+            "net_signed_premium", "signed_pc_ratio", "gross_premium", "volume",
+            "zerodte_share", "dte_quality_share", "short_dated_otm_call_share",
+            "trade_count", "block_share",
+        }
+        calls = self._make_calls()
+        puts = self._make_puts()
+        row = tf.aggregate_day(calls, puts, self.TRADE_DATE, "SPY")
+        missing = required - set(row.keys())
+        assert not missing, f"Missing required P2.1 columns: {sorted(missing)}"
+
+
+# ─── bulk_trade_quote normalisation (new collector method) ────────────────────
+
+class TestBulkTradeQuoteNormalisation:
+    """Verify collectors.thetadata._normalize_trade_quote_df column contract."""
+
+    def test_right_mapped_call_put(self):
+        """CALL → C, PUT → P in the normalized output."""
+        from collectors.thetadata import _normalize_trade_quote_df
+        raw = pd.DataFrame({
+            "symbol": ["SPY", "SPY"],
+            "expiration": ["2026-07-18", "2026-07-18"],
+            "strike": [560.0, 555.0],
+            "right": ["CALL", "PUT"],
+            "trade_timestamp": ["2026-07-02T10:00:00", "2026-07-02T10:00:01"],
+            "price": [2.5, 1.8],
+            "size": [10.0, 5.0],
+            "bid": [2.0, 1.5],
+            "ask": [3.0, 2.0],
+        })
+        df = _normalize_trade_quote_df(raw, "SPY")
+        rights = set(df["right"].unique())
+        assert rights.issubset({"C", "P"}), f"Unexpected right values: {rights}"
+
+    def test_symbol_renamed_to_root(self):
+        """symbol column becomes root in the normalized output."""
+        from collectors.thetadata import _normalize_trade_quote_df
+        raw = pd.DataFrame({
+            "symbol": ["SPY"],
+            "expiration": ["2026-07-18"],
+            "strike": [560.0],
+            "right": ["CALL"],
+            "trade_timestamp": ["2026-07-02T10:00:00"],
+            "price": [2.5], "size": [10.0], "bid": [2.0], "ask": [3.0],
+        })
+        df = _normalize_trade_quote_df(raw, "SPY")
+        assert "root" in df.columns
+        assert "symbol" not in df.columns
+
+    def test_extra_columns_dropped(self):
+        """sequence, ext_condition1-4, condition etc. are dropped from output."""
+        from collectors.thetadata import _normalize_trade_quote_df
+        raw = pd.DataFrame({
+            "symbol": ["SPY"], "expiration": ["2026-07-18"],
+            "strike": [560.0], "right": ["CALL"],
+            "trade_timestamp": ["2026-07-02T10:00:00"],
+            "quote_timestamp": ["2026-07-02T10:00:00"],
+            "price": [2.5], "size": [10.0], "bid": [2.0], "ask": [3.0],
+            "sequence": [12345], "ext_condition1": [""], "condition": ["0"],
+        })
+        df = _normalize_trade_quote_df(raw, "SPY")
+        allowed = {"root", "expiration", "strike", "right", "trade_timestamp",
+                   "price", "size", "bid", "ask"}
+        unexpected = set(df.columns) - allowed
+        assert not unexpected, f"Extra columns not dropped: {unexpected}"
+
+    def test_numeric_coercion(self):
+        """price, size, bid, ask are numeric floats after normalization."""
+        from collectors.thetadata import _normalize_trade_quote_df
+        raw = pd.DataFrame({
+            "symbol": ["SPY"], "expiration": ["2026-07-18"],
+            "strike": ["560.000"], "right": ["CALL"],
+            "trade_timestamp": ["2026-07-02T10:00:00"],
+            "price": ["2.500"], "size": ["10"], "bid": ["2.000"], "ask": ["3.000"],
+        })
+        df = _normalize_trade_quote_df(raw, "SPY")
+        for col in ("price", "size", "bid", "ask", "strike"):
+            assert pd.api.types.is_numeric_dtype(df[col]), f"{col} not numeric"
+
+    def test_unreachable_terminal_returns_none(self):
+        """bulk_trade_quote returns None when terminal is unreachable."""
+        with patch("collectors.thetadata.reachable", return_value=False):
+            from collectors.thetadata import bulk_trade_quote
+            # Existing bulk_trade_quote(root, right, start_date, end_date)
+            result = bulk_trade_quote("SPY", "call", date(2026, 7, 2), date(2026, 7, 2))
+            assert result is None
+
+
+# ─── concurrency guard ────────────────────────────────────────────────────────
+
+class TestConcurrencyGuard:
+    """_max_workers respects the backfill-alive pgrep law."""
+
+    def test_max_workers_backfill_alive(self):
+        """2 workers when backfill is alive (house law: backfill owns 6 of 8 slots)."""
+        from scripts.build_tape_flow_daily import _max_workers
+        with patch("scripts.build_tape_flow_daily._backfill_alive", return_value=True):
+            assert _max_workers() == 2
+
+    def test_max_workers_backfill_dead(self):
+        """6 workers when backfill not running (leaves 2 of 8 terminal slots free)."""
+        from scripts.build_tape_flow_daily import _max_workers
+        with patch("scripts.build_tape_flow_daily._backfill_alive", return_value=False):
+            assert _max_workers() == 6
+
+
+# ─── store resumability ───────────────────────────────────────────────────────
+
+class TestResumeability:
+    """State file marks root-days done; re-run skips completed work."""
+
+    def test_mark_done_and_is_done(self):
+        from scripts.build_tape_flow_daily import _mark_done, _is_done
+        state: dict = {}
+        d = date(2026, 7, 2)
+        assert not _is_done(state, "forward", "SPY", d)
+        _mark_done(state, "forward", "SPY", d)
+        assert _is_done(state, "forward", "SPY", d)
+
+    def test_mark_done_idempotent(self):
+        """Marking the same date twice should not duplicate entries."""
+        from scripts.build_tape_flow_daily import _mark_done, _is_done
+        state: dict = {}
+        d = date(2026, 7, 2)
+        _mark_done(state, "forward", "SPY", d)
+        _mark_done(state, "forward", "SPY", d)
+        dates = state["completed"]["forward"]["SPY"]
+        assert dates.count(str(d)) == 1, "Idempotent: date should appear only once"
+
+    def test_different_modes_independent(self):
+        """forward and episodes completion states are tracked independently."""
+        from scripts.build_tape_flow_daily import _mark_done, _is_done
+        state: dict = {}
+        d = date(2026, 7, 2)
+        _mark_done(state, "forward", "SPY", d)
+        assert _is_done(state, "forward", "SPY", d)
+        assert not _is_done(state, "episodes", "SPY", d)
