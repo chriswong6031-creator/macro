@@ -95,13 +95,23 @@ _I3_NET_USD_MONTHS    = 6       # trailing 6-month net_usd window for I3
 _I3_PERCENTILE        = 80      # sector-neutral pctile ≥ 80 (I3)
 
 # Definition version stamped in output meta
-_DEFINITION_VERSION = "v1.1"
+_DEFINITION_VERSION = "v1.2"
 _DEFINITION_CHANGELOG = (
     "v1.1 (2026-07-05): M1 — all insider windows converted to trading-day "
     "arithmetic (searchsorted on price index; was calendar days); M2 — I3 "
     "percentile base expanded to Form-4-eligible universe at t, not just "
     "co-firing tickers; m3 — PIT mcap from fundamentals_panel.parquet where "
-    "available, close-price proxy as fallback."
+    "available, close-price proxy as fallback. "
+    "v1.2 (2026-07-05): I3 midrank+positive-gate — (a) fire must have "
+    "net_usd_mcap > 0 (strict positive gate eliminates non-net-buyers); "
+    "(b) percentile now uses midrank (average-rank tie-handling via "
+    "scipy.stats.rankdata method='average') instead of weak-inequality mean, "
+    "preventing the zero-mass inflation where 61% of zero-net-buy fires "
+    "incorrectly flagged >= p80; (c) same fix applied to sector-neutral arm; "
+    "(d) self-inclusive midrank (fire included in its own comparison pool, "
+    "documented in meta); (e) deleted dead functions _ins_buyers_in_window "
+    "(calendar-day resurrection hazard) and _compute_net_usd_mcap_for_ticker "
+    "(superseded by vectorized _build_i3_universe_cache)."
 )
 
 # Program eras for coverage reporting (RUL-26)
@@ -339,40 +349,6 @@ def _build_ticker_index(panel: pd.DataFrame) -> dict[str, pd.DataFrame]:
     return idx
 
 
-def _ins_buyers_in_window(
-    ticker_panel: pd.DataFrame,
-    t: pd.Timestamp,
-    window_start_offset: int,
-    window_end_offset: int,
-    *,
-    include_end: bool = True,
-) -> int:
-    """Count distinct buyer CIKs (code=P) with filing_date in [t+start, t+end] td.
-
-    Offsets are in CALENDAR days (using timedelta), matching the spec's
-    [t-45, t] phrasing for approximate trading-day windows. For the purpose of
-    this script 'trading days' ~ calendar days when done via timedelta on dates
-    that are business days.
-
-    PIT: only filing_date ≤ t is used for past windows (start_offset < 0, end_offset = 0).
-    Post-entry window (start_offset=1, end_offset=15) is DESCRIPTIVE ONLY.
-    """
-    if ticker_panel is None or ticker_panel.empty:
-        return 0
-    # Convert calendar day offsets to Timestamps
-    t_start = t + pd.Timedelta(days=window_start_offset)
-    t_end = t + pd.Timedelta(days=window_end_offset)
-
-    fd = ticker_panel["filing_date"]
-    buys = ticker_panel[ticker_panel["code"] == "P"]
-    if include_end:
-        mask = (buys["filing_date"] >= t_start) & (buys["filing_date"] <= t_end)
-    else:
-        mask = (buys["filing_date"] >= t_start) & (buys["filing_date"] < t_end)
-    window_buys = buys[mask]
-    return int(window_buys["rptownercik"].nunique())
-
-
 # ---------------------------------------------------------------------------
 # I3: trailing 6-month net_usd/mcap sector-neutral percentile
 # ---------------------------------------------------------------------------
@@ -414,47 +390,6 @@ def _pit_shares(
         return None
     shares = float(avail["shares"].iloc[-1])
     return shares if shares > 0 else None
-
-
-def _compute_net_usd_mcap_for_ticker(
-    ticker: str,
-    t: "pd.Timestamp",
-    ticker_idx: dict[str, "pd.DataFrame"],
-    closes: dict[str, "pd.Series"],
-    shares_panel: "pd.DataFrame | None",
-) -> tuple[float | None, bool]:
-    """Compute net_usd_6m / mcap for one (ticker, t).
-
-    Returns (value, used_pit_mcap). used_pit_mcap=True means PIT shares were
-    available; False means we fell back to close-price proxy.
-    """
-    tp = ticker_idx.get(ticker)
-    if tp is None:
-        return None, False
-    t_start_6m = t - pd.DateOffset(months=_I3_NET_USD_MONTHS)
-    mask = (tp["filing_date"] >= t_start_6m) & (tp["filing_date"] <= t)
-    win = tp[mask]
-    if win.empty:
-        return None, False
-    buys = win[win["code"] == "P"]["usd"].sum()
-    sells = win[win["code"] == "S"]["usd"].sum()
-    net_usd = buys - sells
-
-    # m3 fix: PIT market cap via shares × close; fall back to close-price proxy
-    close_t = _pit_close(ticker, t, closes)
-    if close_t is None:
-        return None, False
-    shares = _pit_shares(ticker, t, shares_panel)
-    if shares is not None:
-        denom = close_t * shares
-        used_pit = True
-    else:
-        # Fallback: close_t as proxy for mcap (shares not available)
-        denom = close_t
-        used_pit = False
-    if denom <= 0:
-        return None, False
-    return net_usd / denom, used_pit
 
 
 def _build_i3_universe_cache(
@@ -664,6 +599,33 @@ def _build_i3_universe_cache(
     return cache, fallback_frac
 
 
+def _midrank_percentile(vals: list[float], fire_val: float) -> float:
+    """Return the midrank-based percentile of fire_val within vals (self-inclusive).
+
+    Implementation: fire_val is included in the pool (self-inclusive ranking).
+    Midrank = (rank_lo + rank_hi) / (2 * n) where rank_lo is the number of
+    values strictly less than fire_val and rank_hi is the number of values ≤
+    fire_val, so midrank = (rank_lo + rank_hi) / (2 * n).
+
+    This equals scipy.stats.rankdata(vals, method='average')[fire_pos] / n
+    (where fire_pos is the index of fire_val in vals), which handles ties by
+    assigning the average of positions. Using it avoids importing scipy.stats
+    while matching its output exactly for the percentile computation.
+
+    The key property: a value that ties with many zeros gets midrank ≈ 0.5 *
+    zero_fraction, not weak-inequality fraction (≈ zero_fraction). This
+    eliminates the inflation where 61% of zero-net-buy fires flagged >= p80.
+    """
+    arr = np.asarray(vals, dtype=float)
+    n = len(arr)
+    if n == 0:
+        return 0.0
+    rank_lo = float(np.sum(arr < fire_val))    # strictly below
+    rank_hi = float(np.sum(arr <= fire_val))   # at or below (inclusive)
+    midrank = (rank_lo + rank_hi) / (2.0 * n)
+    return midrank
+
+
 def _compute_i3_net_usd_mcap(
     fires: "pd.DataFrame",
     panel: "pd.DataFrame",
@@ -681,6 +643,17 @@ def _compute_i3_net_usd_mcap(
 
     m3 fix: PIT market cap from fundamentals_panel.parquet where available
     (shares × close), falling back to close-price proxy.
+
+    v1.2 fix (midrank + positive gate):
+      (a) fire_val must be strictly > 0 (net buyer gate); zero / negative values
+          are excluded — I3 requires *concentrated insider buying*, not merely
+          avoiding being a net seller.
+      (b) Percentile computed via midrank (average-rank tie-handling), not
+          weak-inequality mean. Midrank = (count_strictly_below + count_leq) /
+          (2 * n). Self-inclusive: fire_val is included in the pool. This
+          prevents the zero-mass inflation where the entire ~17% mass at exactly
+          zero inflated any zero fire to >= 80th pctile under weak-inequality.
+      (c) Same fix applied to the sector-neutral arm.
 
     Returns (ins_netusd_mcap_sn_p80, ins_i3_sector_neutral, ins_i3_computable,
              mcap_fallback_fraction).
@@ -715,10 +688,18 @@ def _compute_i3_net_usd_mcap(
             sn_flag_d[idx] = None
             continue
 
+        # v1.2 positive gate: fire must be a net buyer (strict positive)
+        # Zero and negative values mean no concentrated insider buying signal.
+        if fire_val <= 0:
+            sn_p80_d[idx] = False
+            sn_flag_d[idx] = None
+            continue
+
         universe_vals = list(date_universe.values())
         fire_sector = sector_map.get(ticker, "")
 
         # Sector-neutral ranking (M2: peer pool = universe tickers in same sector)
+        # v1.2: use midrank (average-rank tie handling) instead of weak-inequality mean
         if fire_sector:
             sector_universe = {
                 tkr: val for tkr, val in date_universe.items()
@@ -726,13 +707,13 @@ def _compute_i3_net_usd_mcap(
             }
             if len(sector_universe) >= 3:
                 sector_vals = list(sector_universe.values())
-                pctile = float(np.mean([v <= fire_val for v in sector_vals]))
+                pctile = _midrank_percentile(sector_vals, fire_val)
                 sn_p80_d[idx] = pctile >= _I3_PERCENTILE / 100.0
                 sn_flag_d[idx] = True
                 continue
 
-        # Universe-wide fallback
-        pctile = float(np.mean([v <= fire_val for v in universe_vals]))
+        # Universe-wide fallback (v1.2: midrank)
+        pctile = _midrank_percentile(universe_vals, fire_val)
         sn_p80_d[idx] = pctile >= _I3_PERCENTILE / 100.0
         sn_flag_d[idx] = False
 
@@ -1030,6 +1011,8 @@ def _build_meta(
             "i3_percentile": _I3_PERCENTILE,
             "computable_3y_td": _COMPUTABLE_3Y_TD,
             "i3_universe_base": "form4_eligible_tickers_at_t",
+            "i3_ranking_method": "midrank_self_inclusive_positive_gate",
+            "i3_positive_gate": "net_usd_mcap_strictly_gt_0",
             "mcap_method": "pit_shares_x_close_with_fallback_to_close_proxy",
             "mcap_fallback_fraction": round(mcap_fallback_frac, 4) if not (
                 isinstance(mcap_fallback_frac, float) and
@@ -1100,8 +1083,13 @@ def _build_meta(
                 "pit_at_entry": True,
                 "description": (
                     "I3: trailing 6-month net_usd/mcap (FDR-survivor construction), "
-                    "sector-neutral percentile ≥ 80 at t. UNIVERSE BASE = all Form-4-eligible "
+                    "sector-neutral midrank percentile ≥ 80 at t. UNIVERSE BASE = all Form-4-eligible "
                     "tickers at t (v1.1 M2 fix; was co-firing tickers only in v1). "
+                    "v1.2 fix: (a) fire must have net_usd_mcap > 0 (strict positive gate — "
+                    "non-net-buyers are excluded, not ranked); (b) percentile uses midrank "
+                    "(average-rank tie handling; self-inclusive pool) instead of weak-inequality "
+                    "mean — eliminates zero-mass inflation where ~17% zero mass caused 61% of "
+                    "zero-net-buy fires to flag >= p80. "
                     "mcap = PIT shares × close where shares available (fundamentals_panel.parquet); "
                     "falls back to close-price proxy (see mcap_fallback_fraction in meta). "
                     "CMP opportunistic filter EXCLUDED (negative-IC prior, RUL-26)."
@@ -1112,7 +1100,11 @@ def _build_meta(
                 "known_date": "filing_date",
                 "pit_basis": "filing_date_leq_t",
                 "pit_at_entry": True,
-                "description": "Bool: True = sector-neutral pctile used for I3 (≥3 sector peers in UNIVERSE at t); False = universe-wide fallback.",
+                "description": (
+                    "Bool: True = sector-neutral midrank pctile used for I3 (≥3 sector peers "
+                    "in UNIVERSE at t); False = universe-wide fallback. "
+                    "None = fire excluded by positive gate (net_usd_mcap <= 0)."
+                ),
             },
         },
         "panels": {

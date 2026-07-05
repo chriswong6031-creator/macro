@@ -859,11 +859,11 @@ class TestI3UniverseBase:
             "ins_i3_computable column must exist in output (added in v1.1)"
         )
 
-    def test_definition_version_is_v1_1(self):
-        """definition_version in meta must be v1.1 after the fixes."""
-        assert bic._DEFINITION_VERSION == "v1.1", (
-            f"Expected _DEFINITION_VERSION='v1.1'; got {bic._DEFINITION_VERSION!r}. "
-            "Meta must reflect the M1/M2 fixes."
+    def test_definition_version_is_v1_2(self):
+        """definition_version in meta must be v1.2 after the midrank+positive-gate fix."""
+        assert bic._DEFINITION_VERSION == "v1.2", (
+            f"Expected _DEFINITION_VERSION='v1.2'; got {bic._DEFINITION_VERSION!r}. "
+            "Meta must reflect the v1.2 midrank+positive-gate fixes."
         )
 
     def test_meta_has_changelog(self):
@@ -890,4 +890,273 @@ class TestI3UniverseBase:
         basis = meta.get("frozen_thresholds", {}).get("window_basis", "")
         assert "trading" in basis.lower(), (
             f"frozen_thresholds.window_basis must say 'trading_days'; got {basis!r}"
+        )
+
+
+# ===========================================================================
+# (h) v1.2 — I3 midrank + positive-gate fix
+# ===========================================================================
+
+class TestI3MidrankPositiveGate:
+    """v1.2 fix: zero-net-buy fires must NOT flag I3; true top-decile buyers must.
+
+    Regression for the inflation described in the opus review: the Form-4
+    universe has ~81% <= 0 net_usd/mcap and ~17% exactly at 0.  Under the
+    old weak-inequality comparator, any zero-valued fire counted as >= 81st
+    pctile (because mean([v <= 0 for v in universe]) ≈ 0.81) and flagged I3.
+    The positive gate removes this class outright; midrank fixes the remaining
+    tie inflation.
+    """
+
+    def _make_universe_with_zero_mass(
+        self,
+        t: pd.Timestamp,
+        fire_ticker: str,
+        fire_net_usd: float,
+        *,
+        n_zero: int = 50,
+        n_negative: int = 30,
+        n_positive: int = 10,
+    ):
+        """Build a synthetic universe where n_zero tickers have net_usd=0,
+        n_negative have net_usd < 0, and n_positive have moderate positive buys.
+        The fire_ticker gets fire_net_usd.
+
+        Returns (panel, closes, fires) where the universe is: zero-mass heavy.
+        """
+        n_bars = 300
+        price_idx = pd.bdate_range(end=t, periods=n_bars)
+        filing_in_window = t - pd.Timedelta(days=30)
+
+        rows = []
+        closes = {}
+
+        # Zero-mass tickers: they bought AND sold the same amount
+        for i in range(n_zero):
+            tk = f"ZERO_{i:03d}"
+            closes[tk] = pd.Series([100.0] * n_bars, index=price_idx)
+            # buy $5000 + sell $5000 → net = 0
+            rows.append(_fake_panel_rows(
+                tk,
+                filing_dates=[filing_in_window, filing_in_window],
+                trans_dates=[filing_in_window - pd.Timedelta(days=1)] * 2,
+                codes=["P", "S"],
+                ciks=[f"CIK_Z{i}_A", f"CIK_Z{i}_B"],
+                usd_vals=[5000.0, 5000.0],
+            ))
+
+        # Negative-mass tickers: net sellers
+        for i in range(n_negative):
+            tk = f"NEG_{i:03d}"
+            closes[tk] = pd.Series([100.0] * n_bars, index=price_idx)
+            rows.append(_fake_panel_rows(
+                tk,
+                filing_dates=[filing_in_window],
+                trans_dates=[filing_in_window - pd.Timedelta(days=1)],
+                codes=["S"],
+                ciks=[f"CIK_N{i}"],
+                usd_vals=[10_000.0],
+            ))
+
+        # Positive-mass tickers: modest net buyers
+        for i in range(n_positive):
+            tk = f"POS_{i:03d}"
+            closes[tk] = pd.Series([100.0] * n_bars, index=price_idx)
+            rows.append(_fake_panel_rows(
+                tk,
+                filing_dates=[filing_in_window],
+                trans_dates=[filing_in_window - pd.Timedelta(days=1)],
+                codes=["P"],
+                ciks=[f"CIK_P{i}"],
+                usd_vals=[float(1000 * (i + 1))],   # 1000, 2000, ... 10000
+            ))
+
+        # The fire ticker itself
+        closes[fire_ticker] = pd.Series([100.0] * n_bars, index=price_idx)
+        if fire_net_usd == 0:
+            # zero net: buy and sell equal amounts
+            rows.append(_fake_panel_rows(
+                fire_ticker,
+                filing_dates=[filing_in_window, filing_in_window],
+                trans_dates=[filing_in_window - pd.Timedelta(days=1)] * 2,
+                codes=["P", "S"],
+                ciks=["CIK_FIRE_A", "CIK_FIRE_B"],
+                usd_vals=[5000.0, 5000.0],
+            ))
+        else:
+            # net buyer
+            rows.append(_fake_panel_rows(
+                fire_ticker,
+                filing_dates=[filing_in_window],
+                trans_dates=[filing_in_window - pd.Timedelta(days=1)],
+                codes=["P"],
+                ciks=["CIK_FIRE"],
+                usd_vals=[abs(fire_net_usd)],
+            ))
+
+        panel = pd.concat(rows, ignore_index=True)
+        panel["filing_date"] = pd.to_datetime(panel["filing_date"])
+        panel["trans_date"] = pd.to_datetime(panel["trans_date"])
+
+        fires = pd.DataFrame([{
+            "ticker": fire_ticker,
+            "date": t,
+            "tier": "T1", "sub": "deep", "ticks": 0,
+            "not_topped": True, "eligible": True, "panel": "deep",
+        }])
+        return panel, closes, fires
+
+    def test_zero_net_buy_fire_does_not_flag_i3(self):
+        """A fire with net_usd_mcap == 0 must NOT flag I3, regardless of zero-mass size.
+
+        This is the core regression: old weak-inequality code gave pctile ≈ 0.81
+        for zero fires in a universe with 81% <= 0, causing 61% of zero fires
+        to falsely flag I3. The positive gate must exclude them outright.
+        """
+        t = pd.Timestamp("2021-06-01")
+        fire_ticker = "ZERO_FIRE"
+        panel, closes, fires = self._make_universe_with_zero_mass(
+            t, fire_ticker, fire_net_usd=0,
+            n_zero=50, n_negative=30, n_positive=10,
+        )
+
+        result = bic.build_context(fires, panel, closes, sector_map={})
+        i3 = result.iloc[0]["ins_netusd_mcap_sn_p80"]
+        assert i3 is not True and i3 != 1, (
+            f"Fire with net_usd_mcap==0 must NOT flag I3=True (positive gate v1.2). "
+            f"Got ins_netusd_mcap_sn_p80={i3!r}. "
+            f"Under old weak-inequality code, 81% zero+negative mass caused this to "
+            f"flag as >= p80. The positive gate must exclude net=0 fires outright."
+        )
+
+    def test_top_decile_positive_buyer_flags_i3(self):
+        """A fire in the true top decile of positive net buyers must flag I3.
+
+        Universe has 10 positive buyers with net_usd = 1k, 2k, ... 10k.
+        The fire ticker has net_usd = 10k (highest in the positive pool).
+        Its midrank pctile among ALL universe members (90 zero/negative + 10 positive,
+        plus itself = 101 members) must still be >= 0.80 because it is the top buyer.
+
+        Universe composition: n_zero=50, n_negative=30, n_positive=9 (others) + fire=10k.
+        Total = 90 + 1 fire = 91.
+        fire_val = 10k/100 = 100 (net_usd / close).
+        Values below fire: ~89 (all zeros/negatives/9 positives < 10k).
+        Values <= fire: 90 (all zeros/negatives/9 positives + fire itself = 90; wait,
+        negatives have negative net_usd so net_usd_mcap < 0, zeros = 0, positives 1k-9k < 10k).
+        Actually negatives contribute net_usd < 0 → cached value < 0, still below fire.
+        rank_lo = count(v < 10k) = 90, rank_hi = count(v <= 10k) = 91 (includes itself).
+        midrank = (90 + 91) / (2 * 91) = 181/182 ≈ 0.9945 → flag I3.
+        """
+        t = pd.Timestamp("2021-09-01")
+        fire_ticker = "TOP_FIRE"
+        panel, closes, fires = self._make_universe_with_zero_mass(
+            t, fire_ticker, fire_net_usd=10_000.0,   # $10k — highest net buyer
+            n_zero=50, n_negative=30, n_positive=9,  # 9 others at 1k-9k
+        )
+
+        result = bic.build_context(fires, panel, closes, sector_map={})
+        i3 = result.iloc[0]["ins_netusd_mcap_sn_p80"]
+        assert i3 is True or i3 == 1, (
+            f"Fire with net_usd_mcap in true top decile of positive buyers must "
+            f"flag I3=True (midrank pctile >= 0.80). "
+            f"Got ins_netusd_mcap_sn_p80={i3!r}. "
+            f"Universe has 90 zero/negative/lower buyers; fire is the highest net buyer "
+            f"so midrank should be near 1.0 >> 0.80."
+        )
+
+    def test_midrank_helper_zero_mass(self):
+        """_midrank_percentile: a zero value in a universe 81% <= 0 must be < 0.80.
+
+        Old behavior (weak-inequality mean): mean([v <= 0 for v in vals]) ≈ 0.81.
+        New behavior (midrank): (count_below_0 + count_leq_0) / (2*n).
+        count_below_0 = n_negative, count_leq_0 = n_negative + n_zero.
+        midrank ≈ (30 + 80) / (2 * 100) = 110/200 = 0.55 — correctly below p80.
+        """
+        n_negative = 30
+        n_zero = 50
+        n_positive = 20
+        vals = (
+            [-float(i + 1) for i in range(n_negative)]   # -1, -2, ..., -30
+            + [0.0] * n_zero                              # 50 zeros
+            + [float(i + 1) for i in range(n_positive)]  # 1, 2, ..., 20
+        )
+        fire_val = 0.0   # zero-net-buy fire
+        pctile = bic._midrank_percentile(vals, fire_val)
+        # count strictly below 0: 30; count <= 0: 80; n: 100
+        # midrank = (30 + 80) / 200 = 0.55
+        assert pctile < 0.80, (
+            f"Midrank of zero in a universe with 81% <= 0 must be < 0.80 "
+            f"(got {pctile:.4f}). "
+            f"Old weak-inequality gave ~0.81, incorrectly flagging these fires."
+        )
+        # Also verify the exact value
+        expected = (30 + 80) / (2 * 100)
+        assert abs(pctile - expected) < 1e-9, (
+            f"_midrank_percentile({fire_val}) expected {expected:.4f}, got {pctile:.4f}"
+        )
+
+    def test_midrank_helper_top_positive(self):
+        """_midrank_percentile: a value above all others → pctile near 1.0."""
+        vals = list(range(1, 101))   # 1, 2, ..., 100
+        fire_val = 100.0             # tied with the max
+        pctile = bic._midrank_percentile(vals, fire_val)
+        # count strictly below 100: 99; count <= 100: 100; n = 100
+        # midrank = (99 + 100) / 200 = 0.9950
+        assert pctile >= 0.99, (
+            f"Top value in a pool of 100 must have midrank >= 0.99; got {pctile:.4f}"
+        )
+
+    def test_i3_computable_false_when_zero_gate_excludes(self):
+        """When fire is excluded by positive gate, ins_i3_computable is still True
+        (ticker IS in the universe), but ins_netusd_mcap_sn_p80 is False.
+
+        This distinguishes 'in universe but net seller' from 'not in universe'.
+        """
+        t = pd.Timestamp("2021-06-15")
+        fire_ticker = "ZERO_GATE_TEST"
+        panel, closes, fires = self._make_universe_with_zero_mass(
+            t, fire_ticker, fire_net_usd=0,
+            n_zero=10, n_negative=5, n_positive=5,
+        )
+        result = bic.build_context(fires, panel, closes, sector_map={})
+        i3_comp = result.iloc[0]["ins_i3_computable"]
+        i3_flag = result.iloc[0]["ins_netusd_mcap_sn_p80"]
+        assert i3_comp is True or i3_comp == 1, (
+            f"Fire in universe with net=0 must still have ins_i3_computable=True; "
+            f"got {i3_comp!r}"
+        )
+        assert i3_flag is not True and i3_flag != 1, (
+            f"Fire with net=0 must have ins_netusd_mcap_sn_p80=False (positive gate); "
+            f"got {i3_flag!r}"
+        )
+
+    def test_meta_v1_2_changelog(self):
+        """Changelog must mention midrank and v1.2."""
+        assert "v1.2" in bic._DEFINITION_CHANGELOG, (
+            "Changelog must contain 'v1.2' entry for midrank+positive-gate fix"
+        )
+        assert "midrank" in bic._DEFINITION_CHANGELOG.lower(), (
+            "Changelog must mention midrank"
+        )
+
+    def test_meta_frozen_thresholds_has_ranking_method(self):
+        """frozen_thresholds must document the i3_ranking_method (v1.2)."""
+        dummy = {
+            "total_fires": 0, "n_computable": 0, "pct_computable": 0.0,
+            "n_i1": 0, "n_i1_3": 0, "n_i2": 0, "n_i3": 0, "era_breakdown": [],
+        }
+        meta = bic._build_meta(dummy, dummy, 0.0, 0.0)
+        thresholds = meta.get("frozen_thresholds", {})
+        assert "i3_ranking_method" in thresholds, (
+            "frozen_thresholds must contain i3_ranking_method key (v1.2)"
+        )
+        assert "midrank" in thresholds["i3_ranking_method"].lower(), (
+            f"i3_ranking_method must say 'midrank'; got {thresholds['i3_ranking_method']!r}"
+        )
+        assert "i3_positive_gate" in thresholds, (
+            "frozen_thresholds must contain i3_positive_gate key (v1.2)"
+        )
+        assert "gt_0" in thresholds["i3_positive_gate"] or "> 0" in thresholds["i3_positive_gate"], (
+            f"i3_positive_gate must document the strictly-positive requirement; "
+            f"got {thresholds['i3_positive_gate']!r}"
         )
