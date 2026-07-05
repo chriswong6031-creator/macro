@@ -1,6 +1,6 @@
 # P1.3 Trio Ablation — PRE-REGISTRATION
 
-**STATUS: DRAFT — PENDING FABLE APPROVAL (ruling R8: does not execute before replay golden test + PIT audit are clean)**
+**STATUS: APPROVED — Fable 2026-07-05 (see §APPROVAL at end; original draft-gate text follows) (ruling R8: does not execute before replay golden test + PIT audit are clean)**
 **Revision:** 2026-07-04 — blocking fix applied (P1.3-B1: dead 'omit dead-money' sentence deleted, m=30 unambiguous) + advisory fixes (P1.3-A1: F2 cross-reference added; P1.3-A2: RW bonus pinned to blend_sorted scale) + era law absorbed from P0_MEASUREMENT_MEMO.md v1.0; §5 conformance checklist reference added.
 
 **Study:** P1.3 Trio Ablation. **Program:** Entry Intelligence (EI). **Masterplan:** `research/ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §5/P1.3`. **Registered:** 2026-07-04 (before any run). **Author:** Sonnet subagent under Fable orchestration.
@@ -288,3 +288,18 @@ Required sections (report fails gate if any are absent):
 ---
 
 *Registered 2026-07-04. Immutable after Fable approval commit. Results added to REPORT file only; this document is never edited to accommodate observed outcomes (species README convention).*
+
+---
+
+## §APPROVAL — Fable, 2026-07-05
+
+**STATUS: APPROVED FOR EXECUTION** (supersedes the DRAFT header above; R8 gates cleared: replay golden exact-match on full ledger + PIT re-audit CLEAN).
+
+Binding v1.1 conformance (P0_MEASUREMENT_MEMO §6, in addition to the v1.0 checklist):
+1. Effective verdict window = **2022-06-30 → 2026-07-02** (250-bar Massive warmup; the nominal 2021-07-06 window does not exist in the ledger).
+2. Canonical input = `data/replay/replay_boarded.parquet` ONLY. Never read the `replay_2*.parquet` parts glob.
+3. Frozen substrate reference (post PR #1466 sector backfill): 961,656 rows; 57,640 fires (49,939 verdict-grade); 17,587 near-misses; 886,429 rejections; 25,783 fire episodes; rs_sector_quartile fill 92% on fires (current-GICS snapshot, 928-label constituents map). Baseline terminal states on verdict-grade fires: STOPPED 31,372 / CLEAN_LIFTOFF 16,549 / CUSHIONED 1,975 / DEAD_MONEY 43.
+4. `board_rank_unresolved` rows receive descriptive treatment only — never keep/demote/flip verdicts (memo §6.3).
+5. Any concordance citation uses the on-disk 98.5%/12-name value (memo §6.4).
+
+Execution contract: outputs to `research/entry_intel/p1_runs/<study_id>/` (analysis script + RESULTS.md + results.json). Deviation from the registered grid = new recorded trial per species law; ambiguity = blocker report to Fable, never improvisation.
