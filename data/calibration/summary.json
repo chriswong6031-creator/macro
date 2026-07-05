@@ -1,12 +1,12 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-04",
+  "as_of": "2026-07-05",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
       "scored": 2,
-      "open": 21,
+      "open": 23,
       "hit_rate": 0.5,
       "dir_accuracy": 0.5,
       "conviction_monotone": null,
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 134,
+      "open": 145,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -42,7 +42,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 104,
+      "open": 105,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 0,
-      "open": 79,
+      "open": 83,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -399,10 +399,16 @@
         "itemized": 2,
         "declared": 0,
         "effective_n": 2
+      },
+      {
+        "family": "s6_failed_fire_fuel",
+        "itemized": 2,
+        "declared": 0,
+        "effective_n": 2
       }
     ],
-    "total_families": 53,
-    "total_effective_n": 1122
+    "total_families": 54,
+    "total_effective_n": 1124
   },
   "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
 }

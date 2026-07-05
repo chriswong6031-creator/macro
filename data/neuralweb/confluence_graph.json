@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 1
+        "n_spine_rows": 12
       }
     },
     {
@@ -27,7 +27,7 @@
       "type": "engine",
       "label": "ca_board",
       "meta": {
-        "n_spine_rows": 88
+        "n_spine_rows": 160
       }
     },
     {
@@ -51,7 +51,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 694
+        "n_spine_rows": 750
       }
     },
     {
@@ -59,7 +59,7 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 694
+        "n_spine_rows": 750
       }
     },
     {
@@ -103,11 +103,19 @@
       }
     },
     {
+      "id": "engine:reflex.cortex_attention",
+      "type": "engine",
+      "label": "reflex.cortex_attention",
+      "meta": {
+        "n_spine_rows": 2
+      }
+    },
+    {
       "id": "engine:track_record",
       "type": "engine",
       "label": "track_record",
       "meta": {
-        "n_spine_rows": 277030
+        "n_spine_rows": 277070
       }
     },
     {
@@ -123,7 +131,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 1380
+        "n_spine_rows": 1724
       }
     },
     {
@@ -131,7 +139,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 1380
+        "n_spine_rows": 1724
       }
     },
     {
@@ -1307,6 +1315,15 @@
       }
     },
     {
+      "id": "thesis:2026-07-02-radar-payments_fintech",
+      "type": "thesis",
+      "label": "2026-07-02-radar-payments_fintech",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
       "id": "episode:Cybersecurity:in:2026-07-02",
       "type": "episode",
       "label": "Cybersecurity in",
@@ -2207,6 +2224,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/regime/latest.json consumed by scripts/refresh_regime_if_stale.py"
+    },
+    {
+      "src": "artifact:regime-latest",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/regime/latest.json consumed by engine/neuralweb/cortex.py"
     },
     {
       "src": "module:scripts/seed_us_sector_baskets.py",
@@ -3867,6 +3894,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/risk_radar/forward_log.jsonl consumed by engine/run.py"
+    },
+    {
+      "src": "module:engine/risk_radar_review.py",
+      "dst": "artifact:risk-radar-review-log",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/risk_radar_review.py writes data/risk_radar/review_log.jsonl"
     },
     {
       "src": "module:engine/china_sector_cycles.py",
@@ -6839,6 +6876,16 @@
       "note": "structural: engine/neuralweb/decay.py writes data/neuralweb/kernel_families.json"
     },
     {
+      "src": "artifact:kernel-families",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/kernel_families.json consumed by scripts/build_site.py"
+    },
+    {
       "src": "module:engine/neuralweb/lagging.py",
       "dst": "artifact:lagging-signals",
       "edge_type": "feeds",
@@ -6929,6 +6976,16 @@
       "note": "structural: data/neuralweb/world_state.json consumed by engine/neuralweb/read.py"
     },
     {
+      "src": "artifact:world-state",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/world_state.json consumed by engine/neuralweb/cortex.py"
+    },
+    {
       "src": "module:engine/neuralweb/confluence.py",
       "dst": "artifact:confluence-graph",
       "edge_type": "feeds",
@@ -6937,6 +6994,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: engine/neuralweb/confluence.py writes data/neuralweb/confluence_graph.json"
+    },
+    {
+      "src": "artifact:confluence-graph",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/confluence_graph.json consumed by scripts/build_site.py"
     },
     {
       "src": "module:engine/neuralweb/reflexes.py",
@@ -6957,6 +7024,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/reflexes/<NAME>/firings.jsonl consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "artifact:reflex-firings-pattern",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/reflexes/<NAME>/firings.jsonl consumed by engine/neuralweb/cortex.py"
     },
     {
       "src": "module:scripts/refresh_regime_if_stale.py",
@@ -7019,6 +7096,66 @@
       "note": "structural: data/alert_triage/push_sent.jsonl consumed by engine/alert_triage.py"
     },
     {
+      "src": "module:engine/basket_freeze.py",
+      "dst": "artifact:ops-push-basket-freeze",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/basket_freeze.py writes data/alert_triage/push_sent_basket_freeze.jsonl"
+    },
+    {
+      "src": "artifact:ops-push-basket-freeze",
+      "dst": "module:engine/alert_triage.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/alert_triage/push_sent_basket_freeze.jsonl consumed by engine/alert_triage.py"
+    },
+    {
+      "src": "module:scripts/signal_sanity.py",
+      "dst": "artifact:ops-push-signal-sanity",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/signal_sanity.py writes data/alert_triage/push_sent_signal_sanity.jsonl"
+    },
+    {
+      "src": "artifact:ops-push-signal-sanity",
+      "dst": "module:engine/alert_triage.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/alert_triage/push_sent_signal_sanity.jsonl consumed by engine/alert_triage.py"
+    },
+    {
+      "src": "module:scripts/healthcheck.py",
+      "dst": "artifact:ops-push-healthcheck",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/healthcheck.py writes data/alert_triage/push_sent_healthcheck.jsonl"
+    },
+    {
+      "src": "artifact:ops-push-healthcheck",
+      "dst": "module:engine/alert_triage.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/alert_triage/push_sent_healthcheck.jsonl consumed by engine/alert_triage.py"
+    },
+    {
       "src": "module:scripts/build_feeds.py",
       "dst": "artifact:feeds-plane",
       "edge_type": "feeds",
@@ -7037,6 +7174,136 @@
       "display_only": true,
       "regime": null,
       "note": "structural: site/feeds/ consumed by scripts/publish_r2.py"
+    },
+    {
+      "src": "module:engine/neuralweb/governance.py",
+      "dst": "artifact:governance-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/neuralweb/governance.py writes data/neuralweb/governance.jsonl"
+    },
+    {
+      "src": "artifact:governance-ledger",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/governance.jsonl consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "module:engine/neuralweb/cortex.py",
+      "dst": "artifact:cortex-memo",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/neuralweb/cortex.py writes data/neuralweb/cortex/memo.json"
+    },
+    {
+      "src": "module:engine/neuralweb/cortex.py",
+      "dst": "artifact:cortex-attention-firings",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/neuralweb/cortex.py writes data/reflexes/cortex_attention/firings.jsonl"
+    },
+    {
+      "src": "artifact:cortex-attention-firings",
+      "dst": "module:engine/neuralweb/query.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/reflexes/cortex_attention/firings.jsonl consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "module:engine/neuralweb/cortex.py",
+      "dst": "artifact:hypothesis-inbox",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/neuralweb/cortex.py writes data/neuralweb/cortex/hypothesis_inbox.jsonl"
+    },
+    {
+      "src": "module:engine/neuralweb/metabolism.py",
+      "dst": "artifact:machine-registry",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/neuralweb/metabolism.py writes data/neuralweb/machine_registry.jsonl"
+    },
+    {
+      "src": "artifact:machine-registry",
+      "dst": "module:engine/experiments_registry.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/machine_registry.jsonl consumed by engine/experiments_registry.py"
+    },
+    {
+      "src": "artifact:machine-registry",
+      "dst": "module:scripts/evaluate_cortex_hypotheses.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/machine_registry.jsonl consumed by scripts/evaluate_cortex_hypotheses.py"
+    },
+    {
+      "src": "module:scripts/grade_cortex_attention.py",
+      "dst": "artifact:cortex-attention-grades",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/grade_cortex_attention.py writes data/reflexes/cortex_attention/grades.jsonl"
+    },
+    {
+      "src": "artifact:cortex-attention-grades",
+      "dst": "module:engine/neuralweb/query.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/reflexes/cortex_attention/grades.jsonl consumed by engine/neuralweb/query.py"
+    },
+    {
+      "src": "module:scripts/grade_cortex_attention.py",
+      "dst": "artifact:cortex-probation",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/grade_cortex_attention.py writes data/neuralweb/cortex/probation.json"
+    },
+    {
+      "src": "artifact:cortex-probation",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/cortex/probation.json consumed by engine/neuralweb/cortex.py"
     },
     {
       "src": "data/regime/latest.json",
@@ -7066,17 +7333,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=oracle-vs-sector_central:software kind=directional-opposition severity=tension a=complex=software direction=out tier=undeniable b=sector_central plurality=bullish (1/4 Constructive/Accumulat"
-    },
-    {
-      "src": "site/basketdata/oracle_state.json",
-      "dst": "data/sector_central/calls.parquet",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "pair_id=oracle-vs-sector_central:healthcare_defensive kind=directional-opposition severity=tension a=complex=healthcare_defensive direction=in tier=undeniable b=sector_central plurality=bearish (2/4 Reduce/Cautious calls,"
+      "note": "pair_id=oracle-vs-sector_central:healthcare_defensive kind=directional-opposition severity=tension a=complex=healthcare_defensive direction=in tier=undeniable b=sector_central plurality=bearish (1/4 Reduce/Cautious calls,"
     },
     {
       "src": "data/regime/latest.json:vol_regime",
@@ -7113,11 +7370,11 @@
       "dst": "engine:radar",
       "edge_type": "confirms",
       "n": 19,
-      "lift": -0.0255,
+      "lift": -0.0261,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0255 n=19 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0261 n=19 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -7154,14 +7411,25 @@
     },
     {
       "src": "engine:radar",
-      "dst": "engine:us_board",
+      "dst": "engine:track_record",
       "edge_type": "confirms",
-      "n": 19,
-      "lift": 0.00409,
+      "n": 1,
+      "lift": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0041 n=19 (pre-gauntlet estimate; display-only)"
+      "note": "n=1 < MIN_N=10 — lift=null (insufficient sample; display-only)"
+    },
+    {
+      "src": "engine:radar",
+      "dst": "engine:us_board",
+      "edge_type": "confirms",
+      "n": 19,
+      "lift": 0.00349,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "co-firing lift=0.0035 n=19 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:track_record",
@@ -7176,17 +7444,17 @@
     }
   ],
   "contradiction_summary": {
-    "n": 7,
+    "n": 6,
     "by_severity": {
       "note": 2,
-      "tension": 5
+      "tension": 4
     },
     "top_pair_ids": [
       "regime-vs-market_state",
       "regime_vector-vs-risk_radar",
-      "oracle-vs-sector_central:software",
       "oracle-vs-sector_central:healthcare_defensive",
-      "vol_regime-vs-market_state"
+      "vol_regime-vs-market_state",
+      "briefing-divergences"
     ]
   },
   "contradiction_records": [
@@ -7223,22 +7491,6 @@
       "display_only": true
     },
     {
-      "pair_id": "oracle-vs-sector_central:software",
-      "a": {
-        "artifact": "site/basketdata/oracle_state.json",
-        "reading": "complex=software direction=out tier=undeniable"
-      },
-      "b": {
-        "artifact": "data/sector_central/calls.parquet",
-        "reading": "sector_central plurality=bullish (1/4 Constructive/Accumulate calls, rest Neutral/mixed, n_matched=4)"
-      },
-      "kind": "directional-opposition",
-      "severity": "tension",
-      "as_of": "2026-07-02",
-      "note": "Oracle marks complex 'software' as out while sector_central shows plurality Constructive/Accumulate calls (1/4 matched members, rest Neutral/mixed).  Rotation vs sector-level signal disagree.  Display-only; both are context signals.",
-      "display_only": true
-    },
-    {
       "pair_id": "oracle-vs-sector_central:healthcare_defensive",
       "a": {
         "artifact": "site/basketdata/oracle_state.json",
@@ -7246,12 +7498,12 @@
       },
       "b": {
         "artifact": "data/sector_central/calls.parquet",
-        "reading": "sector_central plurality=bearish (2/4 Reduce/Cautious calls, rest Neutral/mixed, n_matched=4)"
+        "reading": "sector_central plurality=bearish (1/4 Reduce/Cautious calls, rest Neutral/mixed, n_matched=4)"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-07-02",
-      "note": "Oracle marks complex 'healthcare_defensive' as in while sector_central shows plurality Reduce/Cautious calls (2/4 matched members, rest Neutral/mixed).  Rotation vs sector-level signal disagree.  Display-only; both are context signals.",
+      "as_of": "2026-07-05",
+      "note": "Oracle marks complex 'healthcare_defensive' as in while sector_central shows plurality Reduce/Cautious calls (1/4 matched members, rest Neutral/mixed).  Rotation vs sector-level signal disagree.  Display-only; both are context signals.",
       "display_only": true
     },
     {
@@ -7298,7 +7550,7 @@
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-07-01",
+      "as_of": "2026-07-02",
       "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
       "display_only": true
     }
@@ -7310,7 +7562,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-04T23:00:35Z",
-  "inputs_hash": "sha256:54bd3cb7d287f598cfd0297b2d583df989d79eb28a570cf19add27e9348d5cb5",
+  "produced_at": "2026-07-05T08:12:45Z",
+  "inputs_hash": "sha256:42d80cb37ea4dabe6b443bf76f96a9ca577450e90fb09fea099182cd3c620257",
   "tier": "display"
 }

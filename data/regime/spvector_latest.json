@@ -1,6 +1,6 @@
 {
-  "date": "2026-07-01",
-  "score": 8,
+  "date": "2026-07-02",
+  "score": 9,
   "band": "low",
   "band_label": "LOW \u2014 fully invested",
   "equity_w": 100,
@@ -10,6 +10,6 @@
   "sharpe": 0.88,
   "maxdd": -36.5,
   "equity_weight": 100,
-  "risk_score": 8,
-  "asof": "2026-07-01"
+  "risk_score": 9,
+  "asof": "2026-07-02"
 }
