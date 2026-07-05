@@ -65,30 +65,39 @@ _SCREEN_PRIORS = """\
   across EVERY family on tier-s (round-2 B3 -1.2%, A6 -1.3%, C3 -1.3%, C5 -1.7%,
   B4 -1.2%, all n>=290). Buying "healthy participation" is not an edge — that
   participation is already priced. Do not gate on breadth/cohesion state; use
-  them at most as a secondary filter behind a genuine flow/washout trigger."""
+  them at most as a secondary filter behind a genuine flow/washout trigger.
+- cohesion_rebuild as the PRIMARY trigger: weak/dead on tier-s (round-3 A10
+  n=80 & A11 n=77 both era 1; F3 +0.29% era 1; F4 -0.17%). The rebuild flag
+  fires too sparsely and doesn't hold across eras — do NOT use it as the
+  trigger; at most a secondary filter behind washout/flow.
+- Benign-macro conditioners on washout DILUTE the edge: washout x rate-relief
+  (round-3 D5) collapsed to +0.13% at n=3790. The STRESS is the edge — do not
+  filter washout down to calm-macro states."""
 
 # The positive counterpart to the nulls: where screened effect has ACTUALLY
-# appeared. Two brainstorm rounds (20 specs) found nothing in participation
-# state; the only live shapes are washout-triggered and dense flow cascades.
-# CONCENTRATE new proposals here — this is the underexplored, non-dead basin.
+# appeared. Rounds 1-2 (20 specs) found nothing in participation state; round-3
+# (10 washout/rebuild specs) CONFIRMED the washout basin is live and era-
+# consistent. CONCENTRATE here and try to BEAT the current best (A9).
 _LIVE_REGIONS = """\
-Two brainstorm rounds (20 specs) found NO edge in participation-state gating.
-The ONLY registry compounds with positive screened effect are a DIFFERENT shape
-— build new mechanisms on these live primitives, not on breadth/rs state:
-- washout_w-TRIGGERED entries: D1 (washout_w>0 + vol-subsiding) +0.86%/52% n=294;
-  C4 (washout_w>0 + cohesion_chg>0.056) +0.40%/51% n=984. washout_w is the live
-  primitive — CONDITION it with a secondary macro/vol/flow filter; do not
-  replace the trigger with breadth state.
-- dense same-complex flow CASCADES: A2 (out/onset/same, min_count>=3) +1.78%
-  n=18k. Multi-node routing (episode_event min_count>=2/3, complex_scope
-  same|opposite) is the conservation/routing family — barely tapped.
-UNDEREXPLORED, propose HERE (keep the COVERAGE FLOOR — fire >=100x):
-- washout_w onset x an UNMAPPED secondary conditioner (rate/vol regime, or an
-  opposite-complex outflow episode co-occurring);
-- cohesion_rebuild as the TRIGGER, but widen companion conditions so it fires
-  >=100x (round-2 F2 used it at only n=50 — too tight);
-- routing pairs: an outflow episode in one complex_scope AS the entry, filtered
-  by the candidate's washout/cohesion_rebuild — flow displacement, not state."""
+CONFIRMED (round-3): the washout_w basin is LIVE and era-consistent, unlike
+participation state. The edge is capitulation + ACTIVE FLOW STRESS:
+- washout_w>0 x SAME-COMPLEX dense outflow (A9: out/onset/same, min_count>=2)
+  SCREENED +1.06% / 55.0% hit / n=438 / era 3/4 — CLEARS the promotion floor.
+  This is the current best; your job is to BEAT it or find an independent one.
+- washout_w>0 x opposite-complex outflow (A8) +0.82% / 54.5% / era 3 — a hair
+  under the floor. washout_w>0 x turnover stress (E3) +0.96% / era 2.
+- the whole washout family screens directionally positive at large n; benign-
+  macro filters (rate-relief) DILUTE it — the stress is the edge.
+UNDEREXPLORED — try to BEAT A9 (keep COVERAGE FLOOR >=100x; aim era 3-4/4,
+hit>=55% OR |effect63|>=1%):
+- vary the outflow conditioner on washout: tier (onset vs confirmed),
+  min_count (2 vs 3), within_sessions (10/15/20), scope (same/opposite/any);
+- washout x a velocity/positioning stress OTHER than turnover_z (e.g. vel_1w
+  deeply negative, accel_z low) — a different read on "stress being processed";
+- washout x cohesion_chg>0 (rebuilding) at a LOOSER threshold than C4's 0.056
+  to lift n while keeping the rebuild signal.
+AVOID (screened dead): cohesion_rebuild as the primary trigger; benign-macro-
+only filters on washout; anything in the participation-state basin."""
 
 
 def _jsonl(path: Path) -> list[dict]:
