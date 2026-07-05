@@ -67,6 +67,29 @@ _SCREEN_PRIORS = """\
   participation is already priced. Do not gate on breadth/cohesion state; use
   them at most as a secondary filter behind a genuine flow/washout trigger."""
 
+# The positive counterpart to the nulls: where screened effect has ACTUALLY
+# appeared. Two brainstorm rounds (20 specs) found nothing in participation
+# state; the only live shapes are washout-triggered and dense flow cascades.
+# CONCENTRATE new proposals here — this is the underexplored, non-dead basin.
+_LIVE_REGIONS = """\
+Two brainstorm rounds (20 specs) found NO edge in participation-state gating.
+The ONLY registry compounds with positive screened effect are a DIFFERENT shape
+— build new mechanisms on these live primitives, not on breadth/rs state:
+- washout_w-TRIGGERED entries: D1 (washout_w>0 + vol-subsiding) +0.86%/52% n=294;
+  C4 (washout_w>0 + cohesion_chg>0.056) +0.40%/51% n=984. washout_w is the live
+  primitive — CONDITION it with a secondary macro/vol/flow filter; do not
+  replace the trigger with breadth state.
+- dense same-complex flow CASCADES: A2 (out/onset/same, min_count>=3) +1.78%
+  n=18k. Multi-node routing (episode_event min_count>=2/3, complex_scope
+  same|opposite) is the conservation/routing family — barely tapped.
+UNDEREXPLORED, propose HERE (keep the COVERAGE FLOOR — fire >=100x):
+- washout_w onset x an UNMAPPED secondary conditioner (rate/vol regime, or an
+  opposite-complex outflow episode co-occurring);
+- cohesion_rebuild as the TRIGGER, but widen companion conditions so it fires
+  >=100x (round-2 F2 used it at only n=50 — too tight);
+- routing pairs: an outflow episode in one complex_scope AS the entry, filtered
+  by the candidate's washout/cohesion_rebuild — flow displacement, not state."""
+
 
 def _jsonl(path: Path) -> list[dict]:
     rows = []
@@ -142,8 +165,11 @@ Specced/screened compounds ({len(compounds)}):
 Adjudicated dead ends (pre-registered tests; do not re-till):
 {_KNOWN_NULLS}
 
-Tier-1 screen priors (round-1 brainstorm; strong priors, NOT gauntleted):
+Tier-1 screen priors (rounds 1-2 brainstorm; strong priors, NOT gauntleted):
 {_SCREEN_PRIORS}
+
+=== WHERE STRUCTURE HAS ACTUALLY APPEARED — CONCENTRATE PROPOSALS HERE ===
+{_LIVE_REGIONS}
 
 === OUTPUT FORMAT (return ONLY a JSON list of specs) ===
 [{{"id": "<SHORT_UNIQUE_ID>", "family": "<A-F or NEW:<name>>",
