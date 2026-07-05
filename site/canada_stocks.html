@@ -560,6 +560,24 @@
   .rrx .rrx-rec-do { font-size: 11px; color: var(--text); line-height: 1.4; }
   .rrx .rrx-rec-do-k { font-weight: 800; color: var(--rvc); text-transform: uppercase; letter-spacing: .06em;
          font-size: 9.5px; margin-right: 6px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx { gap: 10px; padding: 13px 16px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-odds { gap: 14px; align-items: center; padding: 8px 12px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-big { font-size: 34px; margin: 2px 0 1px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-big .pct { font-size: 19px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-vsn { font-size: 11px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-ramp { gap: 10px; padding-top: 12px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-col { gap: 3px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-v { font-size: 11.5px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-tk { height: 44px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-hl { font-size: 10px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-audit,
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-th.dim,
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-rec-mid,
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-rec-do,
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-cyc-sub,
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-cyc-sec { display: none; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-rec { gap: 5px; padding: 7px 10px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-cyc { padding-top: 5px; line-height: 1.25; }
   @media (max-width: 760px) {
     .rrx .rrx-odds { flex-direction: column; gap: 14px; }
     .rrx .rrx-odds-l { flex: 0 0 auto; }
@@ -585,14 +603,16 @@
     .ms-front > .rrx { grid-template-columns: minmax(0,1fr) minmax(0,1fr);
       column-gap: 22px; row-gap: 0; align-items: stretch; }
     .ms-front > .rrx > .rrx-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-    /* the detail-heavy right column sets the banner height; grow the odds/ramp hero so the
-       sparse left column fills it instead of leaving a void beneath the ramp. */
     .ms-front > .rrx > .rrx-main .rrx-odds { flex: 1 1 auto; }
     .ms-front > .rrx > .rrx-main .rrx-ramp { align-items: stretch; }
     .ms-front > .rrx > .rrx-main .rrx-tk { height: auto; flex: 1 1 auto; min-height: 64px; }
     .ms-front > .rrx > .rrx-side { display: flex; flex-direction: column; justify-content: center;
       gap: 9px; min-width: 0; padding-left: 22px;
       border-left: 1px solid color-mix(in srgb, var(--rc) 22%, var(--line)); }
+    body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx > .rrx-main .rrx-odds { flex: 0 0 auto; }
+    body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx > .rrx-main .rrx-ramp { align-items: flex-end; }
+    body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx > .rrx-main .rrx-tk { height: 44px; flex: 0 0 44px; min-height: 44px; }
+    body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx > .rrx-side { gap: 7px; padding-left: 20px; }
   }
 
   /* header strip */
@@ -708,7 +728,7 @@
   @media (prefers-reduced-motion: reduce) { .cmd-hero .qm { transition: none; } }
 </style>
 </head>
-<body>
+<body class="page-canada">
 
 <nav class="site-nav">
     
@@ -759,6 +779,7 @@
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -991,7 +1012,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-30 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-05 04:09 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-30 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-05 05:01 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
@@ -3003,7 +3024,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-05 04:09 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-05 05:01 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
