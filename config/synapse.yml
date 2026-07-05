@@ -3378,3 +3378,31 @@ artifacts:
     notes: >
       QA/debug JSON companion to bottom-sensors-parquet.
       is_display_only=true — display and debug surface only.
+
+  # --- NW quant-synthesis B: research-queue EV-ranker ---
+  research-queue:
+    path: data/neuralweb/research_queue.json
+    format: json
+    producer: engine/neuralweb/research_queue.py
+    known_extra_writers:
+      - "scripts/build_research_queue.py — thin CLI wrapper; calls write_queue() defined in the producer; no independent write logic"
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 168
+    schema: research_queue.v1
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Read-only EV-ranker for the cortex research pipeline (nw-quant-synthesis item B).
+      Ranks candidates from hypothesis_inbox.jsonl, machine_registry.jsonl (absent-file-safe),
+      the species registry, and the trial ledger. Output categories: high_ev_build_now /
+      blocked_by_data / too_sparse / duplicate_of_existing / invalid_shape. Authority law:
+      this artifact is advisory only — metabolism.register_hypothesis() remains the sole
+      budget chokepoint; the ranker has zero write or gating authority over the cortex.
+      NOT on the render path; run manually or via future nightly opt-in.
+      is_display_only=true — no board rank, no alerts, no sizing.
