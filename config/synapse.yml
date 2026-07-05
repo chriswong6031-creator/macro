@@ -3058,6 +3058,139 @@ artifacts:
       consumed via options_stamp for stock-card overlay and gex_board; no
       scored arithmetic path currently reads this store.
 
+  # --- W-A Options Entry State (options-nw-entry-intelligence, 2026-07-05) ---
+
+  options-entry-state:
+    path: data/options_entry/state.parquet
+    format: parquet
+    producer: scripts/build_options_entry_state.py
+    known_extra_writers: []
+    owner_program: options-nw-entry-intelligence
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: options_entry_state.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      Display-only raw-fields fusion table per RO-1 (masterplan W-A).
+      Mandate: display-only raw-fields fusion; composites forbidden per RO-2 /
+      Signal Commons R3. Columns: iv30, ivspread_rel+5d_chg, skew+5d_chg,
+      net_doi/doi_pc/fresh_contracts/fresh_premium_mn/zerodte_share, gamma_regime
+      (with structurally_constant caveat col per audit #29), dist_to_flip_pct,
+      wall_up/down/max_pain dist pcts, opex_days, pin_risk (bool: opex_days<=5 AND
+      long-gamma AND min-wall<=2%), gex_confirm_verdict, evidence_quality, per-source
+      as_of cols. iv_rank_252/iv_rank_5d_chg structurally null until A9 IV-backfill PR.
+      Missing gitignored stores (polygon_gex, options_flow) → null fields + evidence_quality=thin;
+      never fake-neutral. No composite/score columns — any scored use requires gate passage.
+
+  options-entry-gate:
+    path: data/options_entry/gate.json
+    format: json
+    producer: scripts/validate_options_entry.py
+    known_extra_writers: []
+    owner_program: options-nw-entry-intelligence
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: options_entry.gate.v1
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Pre-registered options-entry quality gate (W1.3 machinery). Currently:
+      scored=false, status=building_history (n << 30 per bucket; all gates building).
+      Buckets: S-VOI, S-WALL, S-TOP_RISK (pre-registered; verdicts at n>=30 ~Q4-26).
+      Gate logic: conditioned-vs-unconditioned delta with bootstrap CI on A10 primitives
+      (post_cushion_breach, terminal_state_clean8_21, fwd_mfe_5/21, fwd_ret_5) from
+      us_board_ledger/retro_grades.parquet. Tier=shadow until validation_gate.validated==true.
+
+  options-skew-snapshots:
+    path: data/options_skew/snapshots.parquet
+    format: parquet
+    producer: scripts/build_options_skew.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_skew.snapshots.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_entry_state.py
+    external_consumers: []
+    notes: >
+      Per-underlying 25Δ IV skew snapshots (accrual store; 1 row/day/underlying).
+      Mandate: display-only until validation_gate.validated==true (gate path:
+      data/options_skew/validation_gate.json). 13 trading days / 386 tickers as of
+      2026-07-05. 5d change computed in engine/options_entry_state.py from this store;
+      minimum LOOKBACK_TRADING_DAYS+1 rows required for non-null 5d change.
+      No scored arithmetic path reads this store until the skew gate passes.
+
+  options-ivspread-snapshots:
+    path: data/options_ivspread/snapshots.parquet
+    format: parquet
+    producer: scripts/build_options_ivspread.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_ivspread.snapshots.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_entry_state.py
+    external_consumers: []
+    notes: >
+      Per-underlying IV spread (call-IV minus put-IV, OI-weighted) snapshots.
+      Mandate: display-only until validation_gate.validated==true (gate path:
+      data/options_ivspread/validation_gate.json). 6 trading days / 355 tickers as of
+      2026-07-05. 5d change computed in engine/options_entry_state.py; minimum
+      LOOKBACK_TRADING_DAYS+1 rows required for non-null 5d change.
+      No scored arithmetic path reads this store until the ivspread gate passes.
+
+  live-options-flow-current:
+    path: live_flow/feed_current.json
+    format: json
+    producer: collectors/live_options_flow_poller.py
+    known_extra_writers: []
+    owner_program: options-nw-entry-intelligence
+    cadence: collect
+    storage: r2
+    asof_field: as_of
+    freshness_sla_hours: 1
+    schema: live_flow.feed_current.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:flow-desk-terminal
+    notes: >
+      Intraday R2 live options flow feed (feat/flow-desk, currently UNDEPLOYED).
+      Stale-guard: consumers MUST check as_of staleness before display; this feed
+      can be absent or hours-old outside market hours.
+      Mandate: intraday feed — never coupled to any nightly forward ledger (nightly
+      is the sole advancer of forward-accountability ledgers per house law).
+      EOD site/flow/ and intraday R2 live_flow/ remain architecturally distinct.
+      Signing_gate root false as of 2026-07-05 — direction fields are soft-signed
+      (tick-rule / minute-agg; no NBBO). Only magnitude fields (net dollar flow,
+      gamma_flow, 0DTE pct) are reliable per signing_gate sub-gate audit.
+
   # --- W3 Event Intelligence priors (Signal Commons, 2026-07-05) ---
   event-priors-clinicaltrials:
     path: data/special_situations/event_priors/clinicaltrials.json
