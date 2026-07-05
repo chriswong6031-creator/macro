@@ -20,20 +20,27 @@
   {% endif %}
 {% endfor %}
 
-{# macro_releases: from vm (loaded by build_site from site/news/macro_releases.json) #}
-{% set releases = (macro_releases.cards if macro_releases and macro_releases.cards else []) %}
+{# macro_releases: from vm (loaded by build_site from site/news/macro_releases.json).
+   Artifacts are sibling-wave JSON, so guard the pinned schema TYPES too: a valid-JSON
+   artifact with cards as a string / non-mapping entries must degrade, not raise. #}
+{% set releases = (macro_releases.get('cards') if macro_releases is mapping else none) %}
+{% set releases = ((releases if releases is iterable and releases is not string else [])|select('mapping')|list) %}
 
 {# rejected: from vm (loaded from site/news/rejected.json) #}
 {% set rejected_all = [] %}
-{% if news_rejected %}
+{% set _rej_feeds = (news_rejected.get('feeds') if news_rejected is mapping else none) %}
+{% if _rej_feeds is mapping %}
   {% for feed_key in ['macro', 'financial', 'rss'] %}
-    {% set feed_list = (news_rejected.feeds or {}).get(feed_key) or [] %}
+    {% set feed_list = _rej_feeds.get(feed_key) %}
+    {% set feed_list = ((feed_list if feed_list is iterable and feed_list is not string else [])|select('mapping')|list) %}
     {% for r in feed_list %}{% set _ = rejected_all.append(r) %}{% endfor %}
   {% endfor %}
 {% endif %}
 
 {# calibration: from vm (loaded from site/news/calibration.json) — may be absent (W4 not yet live) #}
-{% set calib = news_calibration if news_calibration else None %}
+{% set calib = news_calibration if news_calibration is mapping and news_calibration else None %}
+{% set calib_classes = (calib.get('classes') if calib else none) %}
+{% set calib_classes = ((calib_classes if calib_classes is iterable and calib_classes is not string else [])|select('mapping')|list) %}
 
 {# Executive counters #}
 {% set n_events    = ev_heads|length %}
@@ -480,16 +487,16 @@
                 <div class="rcv">{{ card.get('prior') if card.get('prior') is not none else '—' }}</div>
                 <div class="rcsub">{{ card.get('prior_label','vs revised prior') }}</div>
               </div>
-              {% if card.get('deltas') %}
+              {% if card.get('deltas') is mapping %}
                 {% set d = card.deltas %}
-                {% if d.get('vs_prior') is not none %}
+                {% if d.get('vs_prior') is number %}
                 <div class="rel-cell">
                   <div class="rck">{{ t('Δ vs prior','Δ 较前值') }}</div>
                   <div class="rcv">{{ '%+.4g'|format(d.vs_prior) }}</div>
                 </div>
                 {% endif %}
               {% endif %}
-              {% if card.get('z3y') is not none %}
+              {% if card.get('z3y') is number %}
               <div class="rel-cell">
                 <div class="rck">{{ t('z-score (3y)','z分数(3年)') }}</div>
                 <div class="rcv {{ 'rel-dir-bull' if card.z3y > 1.5 else 'rel-dir-bear' if card.z3y < -1.5 else '' }}">{{ '%+.2f'|format(card.z3y) }}</div>
@@ -613,7 +620,7 @@
           <span class="board-count">{{ n_rejected }} {{ t('filtered out', '已筛出') }}</span>
           <span class="bh-arrow">▾</span>
         </summary>
-        {% if news_rejected %}
+        {% if news_rejected is mapping and news_rejected %}
         <div class="board-note">
           <span class="l-en">Headlines dropped across all feeds (macro / financial / RSS), grouped by reject reason. Capped at 50 display rows.</span>
           <span class="l-zh">所有信源（宏观/财经/RSS）中已筛出的头条，按筛出原因分组。最多展示50条。</span>
@@ -671,16 +678,16 @@
         <summary class="board-head">
           <h2>{{ t('Event Class Calibration', '事件类别校准') }}</h2>
           <span class="board-badge">{{ t('ACCRUING', '积累中') }}</span>
-          {% if calib %}<span class="board-count">{{ (calib.classes or [])|length }} {{ t('classes', '类别') }}</span>{% endif %}
+          {% if calib %}<span class="board-count">{{ calib_classes|length }} {{ t('classes', '类别') }}</span>{% endif %}
           <span class="bh-arrow">▾</span>
         </summary>
-        {% if calib and calib.get('classes') %}
+        {% if calib and calib_classes %}
         <div class="board-note">
           <span class="l-en">Forward-return hit-rates by event class. Verdict rules: n_graded &lt; 30 → insufficient; wilson_low_5d &gt; 0.50 → candidate edge; wilson_high_5d &lt; 0.50 → no edge; else context_only. All results are DISPLAY-ONLY — the earned-authority gate (not yet live) is required before any class can feed a signal.</span>
           <span class="l-zh">按事件类别的前向收益命中率。裁决规则：n_graded &lt; 30 → 不足；wilson_low_5d &gt; 0.50 → 候选边际；wilson_high_5d &lt; 0.50 → 无优势；否则 context_only。所有结果均为仅展示 — 需要获得授权通道（尚未上线）方可进入信号。</span>
         </div>
         <div class="calib-grid">
-          {% for cls in (calib.classes or []) %}
+          {% for cls in calib_classes %}
           {% set verdict = cls.get('verdict','insufficient') %}
           <div class="calib-cell">
             <div class="cc-event">{{ cls.get('event_type','?')|replace('_',' ')|title }}</div>
@@ -695,18 +702,19 @@
             {% endif %}
             <div class="cc-n">{{ t('n=','n=') }}{{ cls.get('n','?') }} {{ t('logged','已记录') }} · {{ cls.get('n_graded','?') }} {{ t('graded','已评级') }}</div>
             <div class="cc-row">
-              {% if cls.get('hit_5d') is not none %}<span>5d: <span class="cc-hit">{{ '%.0f%%'|format(cls.hit_5d * 100) }}</span></span>{% endif %}
-              {% if cls.get('hit_21d') is not none %}<span>21d: <span class="cc-hit">{{ '%.0f%%'|format(cls.hit_21d * 100) }}</span></span>{% endif %}
+              {% if cls.get('hit_5d') is number %}<span>5d: <span class="cc-hit">{{ '%.0f%%'|format(cls.hit_5d * 100) }}</span></span>{% endif %}
+              {% if cls.get('hit_21d') is number %}<span>21d: <span class="cc-hit">{{ '%.0f%%'|format(cls.hit_21d * 100) }}</span></span>{% endif %}
               {% if cls.get('direction') %}<span>{{ cls.direction }}</span>{% endif %}
             </div>
           </div>
           {% endfor %}
         </div>
-        {% if calib.get('reject_audit') %}
+        {% if calib.get('reject_audit') is mapping %}
           {% set ra = calib.reject_audit %}
+          {% set ra_classes = (ra.get('classes') if ra.get('classes') is iterable and ra.get('classes') is not string else [])|select('mapping')|list %}
           <div class="board-note" style="border-top:1px solid var(--line)">
             <span class="l-en">Reject audit: {{ ra.get('n_sampled',0) }} sampled · {{ ra.get('n_graded',0) }} graded
-              {% if ra.get('classes') %}— top class: {{ ra.classes[0].get('reason','?') }} (avg 21d: {{ '%.1f%%'|format(ra.classes[0].get('avg_rel_21d',0)) if ra.classes[0].get('avg_rel_21d') is not none else 'n/a' }}){% endif %}
+              {% if ra_classes %}— top class: {{ ra_classes[0].get('reason','?') }} (avg 21d: {{ '%.1f%%'|format(ra_classes[0].get('avg_rel_21d',0)) if ra_classes[0].get('avg_rel_21d') is number else 'n/a' }}){% endif %}
             </span>
             <span class="l-zh">筛出审计：{{ ra.get('n_sampled',0) }} 已抽样 · {{ ra.get('n_graded',0) }} 已评级</span>
           </div>
