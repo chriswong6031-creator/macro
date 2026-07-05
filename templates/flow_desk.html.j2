@@ -207,7 +207,7 @@
         {% if cell.zerodte_share is not none %}<span>0DTE {{ "%.0f"|format(cell.zerodte_share * 100) }}%</span>{% endif %}
       </div>
       {% if cell.tape_breadth is not none %}
-      <div class="breadth-bar" title="{{ t('Tape breadth','资金广度') }} {{ "%.0f"|format(cell.tape_breadth * 100) }}% ({{ cell.tape_n }}{{ t(' names','只') }})">
+      <div class="breadth-bar">
         <div class="breadth-fill {% if cell.tape_breadth > 0.6 %}breadth-pos{% elif cell.tape_breadth < 0.4 %}breadth-neg{% endif %}"
              style="width:{{ "%.0f"|format(cell.tape_breadth * 100) }}%"></div>
       </div>
