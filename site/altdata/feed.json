@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-04T23:29:32.649308+00:00",
-  "as_of": "2026-07-04",
+  "generated_utc": "2026-07-05T00:01:46.154162+00:00",
+  "as_of": "2026-07-05",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5925,11 +5925,11 @@
         },
         {
           "ticker": "DASH",
-          "net": 18,
-          "buys": 19,
+          "net": 16,
+          "buys": 17,
           "sells": 1,
           "members": 2,
-          "est_usd": 152010.0,
+          "est_usd": 136008.0,
           "parties": "D/Democratic"
         },
         {
@@ -5939,15 +5939,6 @@
           "sells": 0,
           "members": 3,
           "est_usd": 169008.0,
-          "parties": "D/Democratic"
-        },
-        {
-          "ticker": "LPLA",
-          "net": 14,
-          "buys": 14,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 112007.0,
           "parties": "D/Democratic"
         },
         {
@@ -5969,6 +5960,15 @@
           "parties": "D/Democratic"
         },
         {
+          "ticker": "LPLA",
+          "net": 12,
+          "buys": 12,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 96006.0,
+          "parties": "D/Democratic"
+        },
+        {
           "ticker": "ENTG",
           "net": 10,
           "buys": 10,
@@ -5976,15 +5976,6 @@
           "members": 2,
           "est_usd": 80005.0,
           "parties": "D/Republican"
-        },
-        {
-          "ticker": "VLTO",
-          "net": 10,
-          "buys": 10,
-          "sells": 0,
-          "members": 2,
-          "est_usd": 80005.0,
-          "parties": "D/Democratic"
         },
         {
           "ticker": "GIL",
@@ -6020,6 +6011,15 @@
           "sells": 0,
           "members": 1,
           "est_usd": 72004.0,
+          "parties": "D/Democratic"
+        },
+        {
+          "ticker": "VLTO",
+          "net": 8,
+          "buys": 8,
+          "sells": 0,
+          "members": 2,
+          "est_usd": 64004.0,
           "parties": "D/Democratic"
         },
         {
@@ -6151,15 +6151,6 @@
           "parties": "D"
         },
         {
-          "ticker": "SSNC",
-          "net": -8,
-          "buys": 0,
-          "sells": 8,
-          "members": 1,
-          "est_usd": 0.0,
-          "parties": "D"
-        },
-        {
           "ticker": "VIK",
           "net": -8,
           "buys": 0,
@@ -6185,6 +6176,15 @@
           "members": 5,
           "est_usd": 73002.0,
           "parties": "D/Democratic/R"
+        },
+        {
+          "ticker": "CDW",
+          "net": -7,
+          "buys": 1,
+          "sells": 8,
+          "members": 2,
+          "est_usd": 8000.0,
+          "parties": "D/Democratic"
         }
       ]
     },
@@ -6471,7 +6471,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 17,
+        "count": 16,
         "items": "8.01"
       },
       {
@@ -6555,21 +6555,6 @@
         "items": "7.01, 8.01"
       },
       {
-        "ticker": "DTE",
-        "count": 3,
-        "items": "7.01, 8.01"
-      },
-      {
-        "ticker": "GOOGL",
-        "count": 3,
-        "items": "1.01, 5.02"
-      },
-      {
-        "ticker": "HON",
-        "count": 3,
-        "items": "1.01, 2.01, 5.02, 7.01, 8.01"
-      },
-      {
         "ticker": "HOOD",
         "count": 3,
         "items": "1.01, 2.03, 5.02, 7.01, 8.01"
@@ -6590,9 +6575,24 @@
         "items": "2.03, 5.02, 8.01"
       },
       {
-        "ticker": "PNW",
+        "ticker": "RDW",
+        "count": 3,
+        "items": "1.01, 2.03, 8.01"
+      },
+      {
+        "ticker": "SMCI",
+        "count": 3,
+        "items": "1.01, 7.01, 8.01"
+      },
+      {
+        "ticker": "TSN",
         "count": 3,
         "items": "5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "VTRS",
+        "count": 3,
+        "items": "1.01, 2.03, 8.01"
       }
     ],
     "special_situations": [
@@ -42746,13 +42746,6 @@
         "top_issue": null
       },
       {
-        "ticker": "SABR",
-        "spend_usd": 120000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Travel/Tourism"
-      },
-      {
         "ticker": "DOC",
         "spend_usd": 60000.0,
         "filings": 1,
@@ -42842,6 +42835,13 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Natural Resources"
+      },
+      {
+        "ticker": "HNI",
+        "spend_usd": 0.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Manufacturing"
       }
     ],
     "offexchange": [
@@ -46192,19 +46192,6 @@
         "why": "clinical_phase3_start: 6 new Phase-3, 2 halt(s) \u00b7 cnbc_pick: Courtney Dominguez \u00b7 fda_label_expansion: KEYTRUDA \u00b7 special_situation: Tender Offers \u00b7 trump: Merck & Co Inc"
       },
       {
-        "ticker": "GOOGL",
-        "score": 5,
-        "weighted_score": 2.1,
-        "channel_list": [
-          "13f_add",
-          "app_demand",
-          "hf_model_momentum",
-          "material_8k",
-          "special_situation"
-        ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,675,625 reviews \u00b7 hf_model_momentum: +1.8% model downloads \u00b7 material_8k: 3 material 8-Ks (items 1.01, 5.02) \u00b7 special_situation: Other Situations"
-      },
-      {
         "ticker": "HOOD",
         "score": 3,
         "weighted_score": 1.95,
@@ -46262,6 +46249,18 @@
           "patent_cluster"
         ],
         "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,695,424 reviews \u00b7 gov_contract: $22,858,532 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
+      },
+      {
+        "ticker": "GOOGL",
+        "score": 4,
+        "weighted_score": 1.55,
+        "channel_list": [
+          "13f_add",
+          "app_demand",
+          "hf_model_momentum",
+          "special_situation"
+        ],
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,675,625 reviews \u00b7 hf_model_momentum: +1.8% model downloads \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "AZN",
@@ -46334,17 +46333,6 @@
           "special_situation"
         ],
         "why": "insider_cluster: 11 insiders, $24,661,920 net \u00b7 special_situation: Divestitures"
-      },
-      {
-        "ticker": "HON",
-        "score": 3,
-        "weighted_score": 1.35,
-        "channel_list": [
-          "material_8k",
-          "patent_cluster",
-          "special_situation"
-        ],
-        "why": "material_8k: 3 material 8-Ks (items 1.01, 2.01, 5.02, 7.01, 8.01) \u00b7 patent_cluster: 37 grants, 24 IPC classes \u00b7 special_situation: Spin-Offs"
       },
       {
         "ticker": "AMZN",
@@ -46429,6 +46417,16 @@
           "fda_label_expansion"
         ],
         "why": "clinical_phase3_start: 3 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: PERJETA"
+      },
+      {
+        "ticker": "WMT",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "app_demand",
+          "unusual_options"
+        ],
+        "why": "app_demand: 4.82\u2605 \u00d7 18,493,781 reviews \u00b7 unusual_options: 3.25\u00d7 vol/OI, balanced"
       }
     ]
   }

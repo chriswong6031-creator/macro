@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
-  "as_of": "2026-07-04",
-  "generated_utc": "2026-07-04T23:29:41.365191+00:00",
+  "as_of": "2026-07-05",
+  "generated_utc": "2026-07-05T00:01:55.170511+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": null,
   "brain_present": false,
@@ -13,7 +13,7 @@
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
   "n_signals": 89,
-  "n_broken": 25,
+  "n_broken": 26,
   "signals": [
     {
       "ticker": "GOOGL",
@@ -22,14 +22,13 @@
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 2.6,
-      "convergence_score": 6,
+      "weighted_score": 2.05,
+      "convergence_score": 5,
       "channels": [
         "13f_add",
         "affiliation",
         "app_demand",
         "hf_model_momentum",
-        "material_8k",
         "special_situation"
       ],
       "trump_linked": false,
@@ -603,36 +602,6 @@
       "clamped": null
     },
     {
-      "ticker": "HON",
-      "signal_score": 40,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.35,
-      "convergence_score": 3,
-      "channels": [
-        "material_8k",
-        "patent_cluster",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -9.9,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -6.8,
-      "ret_20d": 3.0,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "AZN",
       "signal_score": 39,
       "conviction": "medium",
@@ -1008,6 +977,42 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "MU",
+      "signal_score": 32,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.1,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "news_sentiment",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 160.1,
+      "no_price_data": false,
+      "extended": true,
+      "rolling_over": false,
+      "off_high_252": -14.9,
+      "ret_20d": -3.0,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Ro Khanna",
+          "rel": "AFFILIATES_WITH",
+          "kind": "politician"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -1543,6 +1548,35 @@
       "rolling_over": true,
       "off_high_252": -15.0,
       "ret_20d": -6.5,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "SMCI",
+      "signal_score": 26,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.7,
+      "convergence_score": 2,
+      "channels": [
+        "material_8k",
+        "retail_buzz"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 12.2,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -54.5,
+      "ret_20d": -44.9,
       "above_50dma": false,
       "entry_tier": null,
       "affiliations": [],
