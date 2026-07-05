@@ -174,6 +174,95 @@
   </div>
   {% endif %}
 
+  {# ===================== FEAR / GREED COMPOSITE — full leg breakdown (P1.2) ===================== #}
+  {% if fear_greed %}
+  {% set FG = fear_greed %}
+  {% set _fgbandzh = {'Extreme Fear':'极度恐惧','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'} %}
+  <div class="panel span12" id="fear-greed-detail">
+    <h2>📊 {{ t('Fear / Greed composite — full breakdown', '恐惧/贪婪合成 — 完整拆解') }}</h2>
+    <div class="sub" style="margin-bottom:10px">
+      <div><b>{{ t('Composite dial','合成指针') }}</b> <span style="font-size:24px;font-weight:700">{{ FG.dial }}</span><span class="muted sm">/100</span>
+        <span class="badge">{{ t(FG.label_en, _fgbandzh.get(FG.label_en, FG.label_en)) }}</span>
+        <span class="muted sm" style="float:right">{{ FG.n_legs_qualifying }} {{ t('legs qualifying','分量入合成') }}</span></div>
+      <div class="pgauge" style="width:min(480px,100%)"><i style="left:{{ FG.dial }}%"></i></div>
+      <div class="pends" style="width:min(480px,100%)">
+        <span>← {{ t('Extreme Fear','极度恐惧') }}</span><span>{{ t('Extreme Greed','极度贪婪') }} →</span>
+      </div>
+    </div>
+
+    {# Qualifying legs table #}
+    {% if FG.legs_included %}
+    <h3 style="font-size:13px;margin:14px 0 6px">{{ t('Qualifying legs (entered composite)','入合成分量') }}
+      <span class="muted sm">{{ t('z-score is greed-positive; orientation shown per leg','z 分数以贪婪为正；每项方向各标注') }}</span></h3>
+    <table>
+      <thead><tr>
+        <th class="l">{{ t('Leg','分量') }}</th>
+        <th>{{ t('Value','数值') }}</th>
+        <th>{{ t('z-score','z 分数') }}</th>
+        <th>{{ t('Greed %ile','贪婪百分位') }}</th>
+        <th class="l">{{ t('Orientation','方向') }}</th>
+        <th>{{ t('Obs','观测数') }}</th>
+        <th>{{ t('Fresh','新鲜度') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for leg in FG.legs_included %}
+      {% set _zc = 'pos' if (leg.z is not none and leg.z > 0.5) else ('neg' if (leg.z is not none and leg.z < -0.5) else '') %}
+      <tr>
+        <td class="l"><b>{{ t(leg.name_en, leg.name_zh) }}</b></td>
+        <td>{{ '%.2f'|format(leg.value) if leg.value is not none else '—' }} <span class="muted sm">{{ leg.unit }}</span></td>
+        <td class="{{ _zc }}">{{ ('%+.2f'|format(leg.z)) if leg.z is not none else '—' }}</td>
+        <td>{% if leg.pct is not none %}<div class="pgauge" style="width:80px;display:inline-block;vertical-align:middle"><i style="left:{{ leg.pct }}%"></i></div> {{ leg.pct }}{% else %}—{% endif %}</td>
+        <td class="l sm muted">{{ t(leg.orientation, leg.orientation|replace('higher=greed','高=贪婪')|replace('lower=greed','低=贪婪')) }}</td>
+        <td class="sm muted">{{ leg.obs_count }}</td>
+        <td class="{{ 'pos' if leg.freshness == 'fresh' else 'warn' if leg.freshness == 'stale' else 'muted' }} sm">{{ t(leg.freshness, leg.freshness|replace('fresh','新鲜')|replace('stale','陈旧')|replace('missing','缺失')) }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# Excluded legs (young or missing) #}
+    {% if FG.legs_excluded_young %}
+    <h3 style="font-size:13px;margin:14px 0 6px">{{ t('Excluded legs (below min-history gate)','被排除分量（未达最低历史门槛）') }}</h3>
+    <table>
+      <thead><tr>
+        <th class="l">{{ t('Leg','分量') }}</th>
+        <th>{{ t('Obs','观测数') }}</th>
+        <th>{{ t('Gate threshold','门槛') }}</th>
+        <th>{{ t('Status','状态') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for leg in FG.legs_excluded_young %}
+      <tr>
+        <td class="l">{{ t(leg.name_en, leg.name_zh) }}</td>
+        <td class="sm muted">{{ leg.obs_count if leg.obs_count is not none else '—' }}</td>
+        <td class="sm muted">{{ t('≥252 daily','≥252 日') if leg.key not in ['naaim'] else t('≥104 weekly','≥104 周') }}</td>
+        <td class="sm warn">{{ t('excluded — young','已排除 — 过短') }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {# Young context tiles #}
+    {% if FG.young_tiles %}
+    <h3 style="font-size:13px;margin:14px 0 6px">{{ t('Context tiles (series too young to z-score)','背景小块（序列过短，无法计算 z 分数）') }}</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:10px 18px">
+      {% for yt in FG.young_tiles %}
+      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;min-width:180px">
+        <div class="sm muted">{{ t(yt.name_en, yt.name_zh) }}</div>
+        <div style="font-size:18px;font-weight:700">{{ yt.value if yt.value is not none else '—' }}</div>
+        <div class="muted sm">{{ yt.obs_count }} {{ t('obs · raw context only','条 · 仅原始参考') }}</div>
+        {% if yt.as_of %}<div class="muted sm">{{ yt.as_of }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <p class="muted sm" style="margin:14px 0 0">{{ t(FG.disclaimer_en, FG.disclaimer_zh) }}</p>
+  </div>
+  {% endif %}
+
   {# ===================== FEAR <-> EUPHORIA (full) ===================== #}
   {% if fear_euphoria %}
   {% set FE = fear_euphoria %}
