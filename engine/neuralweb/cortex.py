@@ -161,17 +161,6 @@ def _build_providers(cfg: dict) -> list[dict]:
     )
 
 
-def _build_deepseek_provider(cfg: dict) -> list[dict]:
-    """Build DeepSeek provider for zh translation ONLY."""
-    from engine import llm_auth  # noqa: PLC0415
-    ds_model = cfg.get("translate_model", "deepseek-v4-flash")
-    return llm_auth.build_providers(
-        {"provider_order": ["deepseek"],
-         "deepseek_model": ds_model,
-         "deepseek_key_env": cfg.get("deepseek_key_env", "DEEPSEEK_API_KEY")},
-    )
-
-
 # ---------------------------------------------------------------------------
 # Deny-roots path guard  (bot_mcp pattern)
 # ---------------------------------------------------------------------------
@@ -196,7 +185,11 @@ def _check_deny_roots(requested_path: str, root: Path) -> str | None:
             (root / "docs").resolve(),
             (root / "research").resolve(),
         ]
-        if not any(str(resolved).startswith(str(rr)) for rr in read_roots):
+        import os as _os
+        if not any(
+            str(resolved).startswith(str(rr) + _os.sep) or resolved == rr
+            for rr in read_roots
+        ):
             return f"deny-roots: {requested_path!r} is outside allowed read roots"
     except Exception as exc:  # noqa: BLE001
         return f"deny-roots: path resolution error ({exc})"
@@ -841,7 +834,6 @@ def _run_tool_loop(
     probation_status: dict,
 ) -> dict:
     """Run the bounded tool-use loop.  Returns the final memo result dict."""
-    import anthropic as _anthropic  # noqa: PLC0415
     from engine import llm_auth  # noqa: PLC0415
 
     max_tool_calls = int(cfg.get("max_tool_calls", _DEFAULT_MAX_TOOL_CALLS))
