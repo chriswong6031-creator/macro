@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-05",
-  "generated_utc": "2026-07-05T00:01:52.360262+00:00",
+  "generated_utc": "2026-07-05T00:23:47.875015+00:00",
   "n_tickers": 4729,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
@@ -77,7 +77,7 @@
         "congress_buy"
       ],
       "weighted_score": 0.45,
-      "congress_net": 14,
+      "congress_net": 12,
       "congress_members": 1,
       "convergence_score": 1,
       "trump_linked": false,
@@ -85,43 +85,6 @@
     },
     "ENTG": {
       "ticker": "ENTG",
-      "channels": [
-        "congress_cluster"
-      ],
-      "weighted_score": 0.8,
-      "congress_net": 12,
-      "congress_members": 3,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "HUBB": {
-      "ticker": "HUBB",
-      "channels": [
-        "congress_buy",
-        "special_situation"
-      ],
-      "weighted_score": 0.85,
-      "congress_net": 12,
-      "congress_members": 2,
-      "convergence_score": 2,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "ENTG": {
-      "ticker": "ENTG",
-      "channels": [
-        "congress_buy"
-      ],
-      "weighted_score": 0.45,
-      "congress_net": 10,
-      "congress_members": 2,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "VLTO": {
-      "ticker": "VLTO",
       "channels": [
         "congress_buy"
       ],
