@@ -165,30 +165,75 @@ def build_root(root: str, completed: dict[str, list[str]], min_year: int) -> tup
     return df, years_read
 
 
+# Tolerance for same-spot filter (fraction of reconstructed spot).
+# The live polygon_gex store settles on T-1 close data; spot discrepancies larger than
+# this fraction indicate a settlement-timing mismatch rather than model mismatch.
+_SPOT_TOL_FRAC = 0.005  # 0.5 %
+
+
 def audit_overlap(recon: pd.DataFrame, live: pd.DataFrame) -> dict:
     """Blocking P1.1b audit primitive: on the shared dates of the reconstructed and a
-    LIVE reference frame (polygon_gex summary_<ROOT>), report net-GEX correlation and
-    regime sign-agreement. Pure — no tuning, just measurement. A materially divergent
-    overlap is a FINDING for the caller to surface, not something to hide."""
+    LIVE reference frame (polygon_gex summary_<ROOT>), report:
+      - net_gex_corr_raw      : Pearson on all shared dates (diluted by T-1 lag).
+      - net_gex_corr_same_spot: Pearson after filtering to sessions where the
+                                reconstructed underlying spot and live spot agree within
+                                _SPOT_TOL_FRAC (0.5 %).  This separates settlement-timing
+                                mismatch from model mismatch — the PR #1374 claim of
+                                0.94–0.998 is grounded in this filtered measure.
+      - regime_agreement_raw  : sign-agreement rate across all shared dates.
+      - regime_agreement_same_spot: sign-agreement on same-spot subset.
+      - n_same_spot           : number of rows that pass the spot filter.
+    Pure — no tuning, just measurement. A materially divergent overlap is a FINDING for
+    the caller to surface, not something to hide."""
     ri = recon.copy(); li = live.copy()
     ri.index = pd.to_datetime(ri.index).normalize()
     li.index = pd.to_datetime(li.index).normalize()
     j = ri.join(li, how="inner", lsuffix="_r", rsuffix="_l")
     n = int(len(j))
-    out = {"n_overlap": n, "net_gex_corr": None, "regime_agreement": None,
-           "mean_abs_net_gex_diff": None}
+    out: dict = {
+        "n_overlap": n,
+        # raw (all shared dates — includes T-1 settlement lag)
+        "net_gex_corr_raw": None,
+        "regime_agreement_raw": None,
+        "mean_abs_net_gex_diff_raw": None,
+        # same-spot filtered (removes timing mismatch)
+        "spot_tol_frac": _SPOT_TOL_FRAC,
+        "n_same_spot": 0,
+        "net_gex_corr_same_spot": None,
+        "regime_agreement_same_spot": None,
+        "mean_abs_net_gex_diff_same_spot": None,
+    }
     if n == 0:
         return out
     a = pd.to_numeric(j["net_gex_bn_r"], errors="coerce")
     b = pd.to_numeric(j["net_gex_bn_l"], errors="coerce")
     m = a.notna() & b.notna()
+    # --- raw metrics ---
     if m.sum() >= 2 and a[m].std() > 0 and b[m].std() > 0:
-        out["net_gex_corr"] = round(float(a[m].corr(b[m])), 4)
+        out["net_gex_corr_raw"] = round(float(a[m].corr(b[m])), 4)
     if m.sum() >= 1:
-        out["mean_abs_net_gex_diff"] = round(float((a[m] - b[m]).abs().mean()), 4)
+        out["mean_abs_net_gex_diff_raw"] = round(float((a[m] - b[m]).abs().mean()), 4)
     if "gamma_regime_r" in j.columns and "gamma_regime_l" in j.columns:
         agree = (j["gamma_regime_r"].astype(str) == j["gamma_regime_l"].astype(str))
-        out["regime_agreement"] = round(float(agree.mean()), 4)
+        out["regime_agreement_raw"] = round(float(agree.mean()), 4)
+    # --- same-spot filter ---
+    # spot_r = reconstructed spot (same-session T+0 from greeks store).
+    # spot_l = live source spot (typically T-1 close carried into the next trading day).
+    # Filter to rows where both agree within tolerance; those rows have no timing mismatch.
+    if "spot_r" in j.columns and "spot_l" in j.columns:
+        sr = pd.to_numeric(j["spot_r"], errors="coerce")
+        sl = pd.to_numeric(j["spot_l"], errors="coerce")
+        same_spot = (sr - sl).abs() / sr.abs().clip(lower=1e-6) < _SPOT_TOL_FRAC
+        out["n_same_spot"] = int(same_spot.sum())
+        ms = m & same_spot
+        if ms.sum() >= 2 and a[ms].std() > 0 and b[ms].std() > 0:
+            out["net_gex_corr_same_spot"] = round(float(a[ms].corr(b[ms])), 4)
+        if ms.sum() >= 1:
+            out["mean_abs_net_gex_diff_same_spot"] = round(
+                float((a[ms] - b[ms]).abs().mean()), 4)
+        if "gamma_regime_r" in j.columns and "gamma_regime_l" in j.columns:
+            agree_ss = (j["gamma_regime_r"].astype(str) == j["gamma_regime_l"].astype(str))
+            out["regime_agreement_same_spot"] = round(float(agree_ss[same_spot].mean()), 4)
     return out
 
 
@@ -208,12 +253,20 @@ def run_audit(outdir: Path, roots: list[str]) -> dict:
             continue
         live = pd.read_parquet(summ)
         reports[root] = audit_overlap(recon, live)
+    # SPX/SPXW: NOT reconstructed in this run (backfill state does not list them as
+    # completed; see _roots_to_build exclusion logic).  The cboe/gex store holds a
+    # short daily SPX snapshot usable as a spot-check against SPY.
+    # NOTE: the cboe store and the SPY reconstructed series are DIFFERENT UNDERLYINGS
+    # (SPX ≠ SPY/10x).  This comparison is directional only (regime sign).
     try:
         cboe = store.read("cboe", "gex")
         if cboe is not None and (outdir / "SPY.parquet").exists():
             spy = pd.read_parquet(outdir / "SPY.parquet")
-            cb = cboe.rename(columns={"net_gex_bn": "net_gex_bn"})
-            reports["SPY_vs_cboe_SPX"] = audit_overlap(spy, cb)
+            reports["SPY_vs_cboe_SPX"] = audit_overlap(spy, cboe)
+            reports["SPY_vs_cboe_SPX"]["note"] = (
+                "directional only: SPX cboe store vs SPY reconstructed "
+                "(different underlyings; SPX/SPXW excluded from reconstruction — "
+                "backfill_state does not list them complete as of this run)")
     except Exception as e:  # noqa: BLE001 — audit note must never crash the build
         reports["SPY_vs_cboe_SPX"] = {"note": f"cboe compare skipped: {e}"}
     return reports

@@ -2994,8 +2994,81 @@ artifacts:
 
   # ============================================================
   # OPTIONS NERVES — P4.1 registration (2026-07-05)
-  # gex_state and options_events deferred (producers not live yet)
+  # gex_state nerve registered below; options_events deferred (producer not live yet)
   # ============================================================
+
+  # --- gex_state: reconstructed index dealer-gamma history (P1.1b) ---
+  gex-state-history:
+    path: data/index_gex_history/*.parquet
+    format: parquet
+    producer: scripts/build_index_gex_history.py
+    known_extra_writers:
+      - engine/market_gamma.py
+    owner_program: options-alpha
+    cadence: weekly
+    storage: gitignored-local
+    asof_field: null
+    freshness_sla_hours: 200
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/market_gamma.py
+      - scripts/build_gex_board.py
+    external_consumers: []
+    provenance:
+      reconstructed: true
+      method: >
+        greeks ⋈ oi join on (root, expiration, strike, right, date) fed to
+        engine.gex_engine.compute_gex — the identical pure function used by the live
+        polygon_gex and cboe/gex paths.  Dealer sign (long-call/short-put), ±25%
+        strike window, ±25% zero-gamma grid, $/1%-move net-GEX scaling, and
+        long-above-flip/short-below regime all inherited verbatim from gex_engine.
+      audit:
+        overlap_window: "2026-06-15 to 2026-07-02 (n=13 trading days per root)"
+        spot_tol_frac: 0.005
+        note: >
+          Raw correlation is diluted by a T-1 settlement-timing lag in the live
+          polygon_gex store (live spot = T-1 close carried forward).  Same-spot
+          filter isolates sessions where both sources report the same underlying
+          price (within 0.5%) — those rows have no timing mismatch and measure
+          pure model agreement.
+        SPY:
+          n_overlap: 13
+          net_gex_corr_raw: 0.8605
+          n_same_spot: 9
+          net_gex_corr_same_spot: 0.9727
+          regime_agreement_same_spot: 0.8889
+        QQQ:
+          n_overlap: 13
+          net_gex_corr_raw: 0.7385
+          n_same_spot: 5
+          net_gex_corr_same_spot: 0.9707
+          regime_agreement_same_spot: 1.0
+        IWM:
+          n_overlap: 13
+          net_gex_corr_raw: 0.3341
+          n_same_spot: 6
+          net_gex_corr_same_spot: 0.9262
+          regime_agreement_same_spot: 1.0
+        DIA:
+          n_overlap: 13
+          net_gex_corr_raw: 0.8669
+          n_same_spot: 10
+          net_gex_corr_same_spot: 0.9105
+          regime_agreement_same_spot: 0.8
+        SPX_SPXW: excluded — backfill_state does not list them complete; see
+          roots_excluded_native_index in data/index_gex_history/_manifest.json
+    notes: >
+      Multi-year (2017->) daily dealer-gamma regime and levels series for SPY, QQQ,
+      IWM, DIA.  One row per trading day per root: net_gex_bn, gamma_flip,
+      gamma_regime, dist_to_flip_pct, net_vex, net_cex, charm_anchor, iv30,
+      put_call_oi_ratio, max_pain — plus reconstructed=True flag.
+      SPX/SPXW excluded until backfill_state lists them complete (house mid-write law).
+      Display-only: net-GEX percentile-vs-own-history context surface for the
+      market_gamma engine; MUST NOT feed any scored or arithmetic weight path.
+      Companion live store: data/polygon_gex/summary_*.parquet (short window ~2026-06-15+).
 
   # --- 1 consumer ---
   options-flow-index:
