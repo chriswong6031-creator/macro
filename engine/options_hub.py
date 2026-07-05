@@ -128,6 +128,11 @@ def compute_vol(
 
     Returns a dict matching the options_hub.vol/v1 schema.
     """
+    # ── guard: empty frame (no greeks data for this root) ────────────────────
+    if greeks_df is None or greeks_df.empty or "date" not in greeks_df.columns:
+        log.warning("options_hub.compute_vol: no greeks frame for %s %s", root, asof)
+        return _empty_vol(root, asof)
+
     # ── normalise dates ──────────────────────────────────────────────────────
     df = greeks_df.copy()
     df["date"] = pd.to_datetime(df["date"]).dt.date.astype(str)
@@ -385,7 +390,7 @@ def compute_gex(
 
     _MIN_IV = 0.005
 
-    if greeks_df is None or greeks_df.empty:
+    if greeks_df is None or greeks_df.empty or "date" not in greeks_df.columns:
         return _empty_gex(root, asof)
 
     g = greeks_df.copy()
