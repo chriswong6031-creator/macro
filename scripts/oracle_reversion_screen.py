@@ -519,6 +519,137 @@ _GAUNTLET_TIER_SPLITS: dict[str, str] = {
 _DEFAULT_TIER_SPLIT: str = "2019-12-31"
 
 
+def _is_risk_off_date(panel_row: pd.Series) -> bool:
+    """Return True if the panel row represents a risk_off date.
+
+    Mirrors the same definition used in _regime_at:
+      risk_off if spy_above_200d == 0 OR vix_pctile >= 0.70
+    """
+    spy_above = panel_row.get("spy_above_200d", np.nan)
+    vix_pct = panel_row.get("vix_pctile", np.nan)
+    if not np.isnan(float(spy_above)) and float(spy_above) == 0:
+        return True
+    if not np.isnan(float(vix_pct)) and float(vix_pct) >= 0.70:
+        return True
+    return False
+
+
+def _gauntlet_placebo_regime_matched(
+    entries_df: pd.DataFrame,
+    panel: pd.DataFrame,
+    window: int,
+    exit_sessions: int,
+    exit_mode: ExitMode,
+    operating_regime: str,
+    n_draws: int = 500,
+    rng_seed: int = 42,
+) -> tuple[float, float]:
+    """Leg 6’ (single-regime path): regime-matched timing placebo.
+
+    Like _gauntlet_placebo but restricts each node's placebo pool to dates
+    where that node was in the OPERATING regime.  This removes regime-beta
+    from the placebo — the signal must beat random WITHIN-regime timing.
+
+    operating_regime : 'risk_off' or 'risk_on'
+    Returns (real_mean, pctile95).
+    """
+    rng = np.random.default_rng(rng_seed)
+    real_mean = float(entries_df["ret_exit"].mean())
+
+    node_pool: dict[str, np.ndarray] = {}
+    node_entry_counts: dict[str, int] = {}
+
+    for node, grp in entries_df.groupby("node"):
+        node_entry_counts[node] = len(grp)
+
+        try:
+            npn = panel.xs(node, level="node")
+        except KeyError:
+            continue
+
+        if "ret" not in npn.columns:
+            continue
+
+        ret_series = npn["ret"].sort_index()
+        lvl = (1 + ret_series.fillna(0)).cumprod()
+        all_dates = ret_series.index
+        n = len(all_dates)
+
+        # Pre-compute stochrsi exit map if needed
+        stochrsi_exit_map: dict[int, int] = {}
+        if exit_mode == "stochrsi2d":
+            stochrsi_exit_map = _build_stochrsi_2d_exit_index(lvl, all_dates)
+
+        # Build a boolean mask: True where this date is in the operating regime.
+        # npn is sorted by date index; we check each date using _is_risk_off_date.
+        op_arr = np.zeros(n, dtype=bool)
+        for i, dt in enumerate(all_dates):
+            if dt in npn.index:
+                row = npn.loc[dt]
+                is_off = _is_risk_off_date(row)
+                op_arr[i] = (is_off if operating_regime == "risk_off" else not is_off)
+
+        outcomes: list[float] = []
+        for exec_pos in range(n):
+            # Only include positions that are in the operating regime
+            if not op_arr[exec_pos]:
+                continue
+
+            # Check MFE/MAE window maturity
+            if exec_pos + window >= n:
+                continue
+
+            exec_price = lvl.iat[exec_pos]
+            if exec_price == 0 or np.isnan(exec_price):
+                continue
+
+            if exit_mode == "time":
+                exit_pos = exec_pos + exit_sessions
+                if exit_pos >= n:
+                    continue
+                exit_price = lvl.iat[exit_pos]
+                if exit_price == 0 or np.isnan(exit_price):
+                    continue
+                outcomes.append(float(exit_price / exec_price - 1))
+            elif exit_mode == "stochrsi2d":
+                if exec_pos not in stochrsi_exit_map:
+                    continue
+                exit_pos = stochrsi_exit_map[exec_pos]
+                if exit_pos >= n or exit_pos <= exec_pos:
+                    continue
+                exit_price = lvl.iat[exit_pos]
+                if exit_price == 0 or np.isnan(exit_price):
+                    continue
+                outcomes.append(float(exit_price / exec_price - 1))
+
+        if outcomes:
+            node_pool[node] = np.array(outcomes, dtype=float)
+
+    if not node_pool:
+        return real_mean, np.nan
+
+    # Run n_draws placebo simulations
+    draw_means: list[float] = []
+    for _ in range(n_draws):
+        total_sum = 0.0
+        total_n = 0
+        for node, pool in node_pool.items():
+            k = node_entry_counts.get(node, 0)
+            if k == 0 or len(pool) == 0:
+                continue
+            sampled = rng.choice(pool, size=k, replace=True)
+            total_sum += float(sampled.sum())
+            total_n += k
+        if total_n > 0:
+            draw_means.append(total_sum / total_n)
+
+    if not draw_means:
+        return real_mean, np.nan
+
+    pctile95 = float(np.percentile(draw_means, 95))
+    return real_mean, pctile95
+
+
 def _gauntlet_placebo(
     entries_df: pd.DataFrame,
     panel: pd.DataFrame,
@@ -528,7 +659,7 @@ def _gauntlet_placebo(
     n_draws: int = 500,
     rng_seed: int = 42,
 ) -> tuple[float, float]:
-    """Leg 6: timing placebo.
+    """Leg 6: timing placebo (standard / dual-regime path).
 
     Per node, build the pool of ALL realizable ret_exit outcomes for that node
     (every calendar date in the node's panel that can support a full exit window)
@@ -633,6 +764,11 @@ def run_gauntlet(
 ) -> bool:
     """Run the full 6-leg PASS gate on a compound.
 
+    Amendment 1 (frozen 2026-07-05): if the minority regime has < 30 entries,
+    takes the SINGLE-REGIME PATH — Leg 4' and Leg 6' (regime-matched placebo)
+    replace Leg 4 and Leg 6 for that compound.  Dual-regime compounds (both
+    regimes >= 30 entries) take the STANDARD PATH unchanged.
+
     Prints per-leg PASS/FAIL + numbers; returns True if ALL legs pass.
     """
     compound_id = compound.get("id", "?")
@@ -654,36 +790,81 @@ def run_gauntlet(
     risk_on_stats = _agg_stats(entries_df[entries_df["regime"] == "risk_on"])
     risk_off_stats = _agg_stats(entries_df[entries_df["regime"] == "risk_off"])
 
-    # --- Leg 1: n >= 100 ---
+    # --- Single-regime detection (Amendment 1) ---
+    n_on = risk_on_stats["n"]
+    n_off = risk_off_stats["n"]
+    _SINGLE_REGIME_THRESHOLD = 30
+    if n_on < _SINGLE_REGIME_THRESHOLD or n_off < _SINGLE_REGIME_THRESHOLD:
+        # Single-regime path: minority < 30
+        if n_on <= n_off:
+            operating_regime = "risk_off"
+            operating_stats = risk_off_stats
+            n_operating = n_off
+        else:
+            operating_regime = "risk_on"
+            operating_stats = risk_on_stats
+            n_operating = n_on
+        minority_n = min(n_on, n_off)
+        single_regime_path = True
+        print(
+            f"  PATH: SINGLE-REGIME (minority_n={minority_n} < {_SINGLE_REGIME_THRESHOLD})"
+            f" — operating_regime={operating_regime}, n_operating={n_operating}"
+        )
+    else:
+        single_regime_path = False
+        operating_regime = None
+        operating_stats = None
+        n_operating = None
+        print(f"  PATH: STANDARD dual-regime (n_on={n_on}, n_off={n_off})")
+
+    # --- Leg 1: n >= 100 (unchanged in both paths) ---
     n = all_stats["n"]
     leg1 = n >= 100
     print(f"  Leg 1  n={n} >= 100:                {'PASS' if leg1 else 'FAIL'}")
 
-    # --- Leg 2: WR >= 0.62 ---
+    # --- Leg 2: WR >= 0.62 (unchanged in both paths) ---
     wr = all_stats["WR"]
     leg2 = not np.isnan(wr) and wr >= 0.62
     print(f"  Leg 2  WR={wr:.3f} >= 0.62:           {'PASS' if leg2 else 'FAIL'}")
 
-    # --- Leg 3: asym >= 1.5 ---
+    # --- Leg 3: asym >= 1.5 (unchanged in both paths) ---
     asym = all_stats["asym"]
     leg3 = not np.isnan(asym) and asym >= 1.5
     print(f"  Leg 3  asym={asym:.3f} >= 1.5:         {'PASS' if leg3 else 'FAIL'}")
 
-    # --- Leg 4: ret_exit >= 1% AND > 0 in BOTH regimes ---
+    # --- Leg 4 / Leg 4' ---
     ret_exit_all = all_stats["mean_ret_exit"]
     ret_on = risk_on_stats["mean_ret_exit"]
     ret_off = risk_off_stats["mean_ret_exit"]
-    leg4_main = not np.isnan(ret_exit_all) and ret_exit_all >= 0.01
-    leg4_on = not np.isnan(ret_on) and ret_on > 0
-    leg4_off = not np.isnan(ret_off) and ret_off > 0
-    leg4 = leg4_main and leg4_on and leg4_off
-    print(
-        f"  Leg 4  ret_exit={_pct(ret_exit_all)} >= +1.0% "
-        f"AND on={_pct(ret_on)}>0 AND off={_pct(ret_off)}>0:  "
-        f"{'PASS' if leg4 else 'FAIL'}"
-    )
 
-    # --- Leg 5: OOS holdout ---
+    if single_regime_path:
+        # Leg 4': ret_exit >= 1% overall AND ret_exit > 0 in OPERATING regime
+        #          AND n_operating >= 100. Empty/minority regime is EXEMPT.
+        assert operating_stats is not None and n_operating is not None
+        ret_operating = operating_stats["mean_ret_exit"]
+        leg4_main = not np.isnan(ret_exit_all) and ret_exit_all >= 0.01
+        leg4_op = not np.isnan(ret_operating) and ret_operating > 0
+        leg4_n_op = n_operating >= 100
+        leg4 = leg4_main and leg4_op and leg4_n_op
+        print(
+            f"  Leg 4' ret_exit={_pct(ret_exit_all)} >= +1.0%"
+            f" AND {operating_regime}_ret={_pct(ret_operating)}>0"
+            f" AND n_{operating_regime}={n_operating}>=100"
+            f"  => {'PASS' if leg4 else 'FAIL'}"
+        )
+    else:
+        # Standard Leg 4: ret_exit >= 1% AND > 0 in BOTH regimes
+        leg4_main = not np.isnan(ret_exit_all) and ret_exit_all >= 0.01
+        leg4_on = not np.isnan(ret_on) and ret_on > 0
+        leg4_off = not np.isnan(ret_off) and ret_off > 0
+        leg4 = leg4_main and leg4_on and leg4_off
+        print(
+            f"  Leg 4  ret_exit={_pct(ret_exit_all)} >= +1.0% "
+            f"AND on={_pct(ret_on)}>0 AND off={_pct(ret_off)}>0:  "
+            f"{'PASS' if leg4 else 'FAIL'}"
+        )
+
+    # --- Leg 5: OOS holdout (unchanged in both paths) ---
     split_str = _GAUNTLET_TIER_SPLITS.get(tier, _DEFAULT_TIER_SPLIT)
     split_date = pd.Timestamp(split_str)
 
@@ -714,22 +895,34 @@ def run_gauntlet(
         f"  => {'PASS' if leg5 else 'FAIL'}"
     )
 
-    # --- Leg 6: timing placebo (p < 0.05) ---
-    log.info("Running Leg 6 timing placebo (500 draws) — this may take ~30s...")
-    real_mean, pctile95 = _gauntlet_placebo(
-        entries_df, panel, window, exit_sessions, exit_mode
-    )
+    # --- Leg 6 / Leg 6': timing placebo (p < 0.05) ---
+    if single_regime_path:
+        assert operating_regime is not None
+        log.info(
+            "Running Leg 6' regime-matched placebo (500 draws, regime=%s) — this may take ~30s...",
+            operating_regime,
+        )
+        real_mean, pctile95 = _gauntlet_placebo_regime_matched(
+            entries_df, panel, window, exit_sessions, exit_mode,
+            operating_regime=operating_regime,
+        )
+        placebo_label = f"Leg 6' Regime-matched placebo ({operating_regime} only, 500 draws)"
+    else:
+        log.info("Running Leg 6 timing placebo (500 draws) — this may take ~30s...")
+        real_mean, pctile95 = _gauntlet_placebo(
+            entries_df, panel, window, exit_sessions, exit_mode
+        )
+        placebo_label = "Leg 6  Timing placebo (500 draws)"
 
     if np.isnan(pctile95):
         leg6 = False
         p_note = "n/a (could not build placebo pool)"
     else:
         leg6 = real_mean > pctile95
-        # Approximate p-value: fraction of draws >= real_mean
         p_note = f"real={_pct(real_mean)} > p95={_pct(pctile95)}"
 
     print(
-        f"  Leg 6  Timing placebo (500 draws): {p_note}"
+        f"  {placebo_label}: {p_note}"
         f"  => {'PASS' if leg6 else 'FAIL'}"
     )
 
