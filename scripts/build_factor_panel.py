@@ -1257,7 +1257,11 @@ def build_panel(
             contrib = beta_series.shift(0) * stream_s  # both already aligned to all_dates
             explained_cols.append(contrib)
         if explained_cols:
-            explained_total = pd.concat(explained_cols, axis=1).sum(axis=1, skipna=False)
+            # skipna=True: if a stream's beta is NaN (e.g. ai_theme insufficient history),
+            # that stream's contribution is treated as 0 rather than poisoning the entire
+            # explained_total for every date where ANY beta is NaN.
+            # This is correct for twin correlation: use available betas, skip absent ones.
+            explained_total = pd.concat(explained_cols, axis=1, sort=False).sum(axis=1, skipna=True)
             resid = ret_1d_series - explained_total
         else:
             resid = ret_1d_series.copy()
@@ -1527,7 +1531,6 @@ def build_panel(
 
     # ── 10b. Twin coverage report ─────────────────────────────────────────────
     if twin_freeze_month is not None:
-        twin_cols = ["twin_rel_20d", "twin_bleed_flag", "twin_n_peers", "twin_fallback"]
         twin_panel = pd.DataFrame(rows) if rows else pd.DataFrame()
         if not twin_panel.empty and "twin_n_peers" in twin_panel.columns:
             cur_month_mask = (
@@ -1536,33 +1539,47 @@ def build_panel(
                 pd.to_datetime(twin_panel["date"]).dt.month == twin_freeze_month[1]
             )
             twin_rows = twin_panel[cur_month_mask]
-            n_total = len(twin_rows["ticker"].unique()) if len(twin_rows) > 0 else 0
-            has_twin = twin_rows["twin_n_peers"].notna()
-            n_with_twin = int(has_twin.sum())
-            if n_with_twin > 0:
-                n_fallback_rows = int(twin_rows.loc[has_twin, "twin_fallback"].sum())
-                n_valid_twin = n_with_twin - n_fallback_rows
-                bleed_col = twin_rows.loc[has_twin, "twin_bleed_flag"]
-                bleed_rate = float(bleed_col.mean()) if bleed_col.notna().any() else float("nan")
-                rel20_col = twin_rows.loc[has_twin & twin_rows["twin_rel_20d"].notna(),
-                                          "twin_rel_20d"]
+            if len(twin_rows) > 0:
+                # Unique-ticker counts (not row counts) to avoid double-counting
+                # across multiple eval dates in the freeze month:
+                per_ticker = twin_rows.groupby("ticker").first().reset_index()
+                n_total_tickers = len(per_ticker)
+                has_twin_mask = per_ticker["twin_n_peers"].notna()
+                n_with_twin_tickers = int(has_twin_mask.sum())
+                n_fallback_tickers = int(
+                    per_ticker.loc[has_twin_mask, "twin_fallback"].sum()
+                ) if n_with_twin_tickers > 0 else 0
+                n_valid_twin = n_with_twin_tickers - n_fallback_tickers
+                n_excluded = n_total_tickers - n_with_twin_tickers
+
+                # For rate/distribution: use all rows in freeze month (multi-day):
+                has_twin_rows = twin_rows["twin_n_peers"].notna()
+                bleed_col = twin_rows.loc[has_twin_rows, "twin_bleed_flag"]
+                bleed_rate = (float(bleed_col.mean())
+                              if has_twin_rows.any() and bleed_col.notna().any()
+                              else float("nan"))
+                rel20_col = twin_rows.loc[
+                    has_twin_rows & twin_rows["twin_rel_20d"].notna(), "twin_rel_20d"
+                ]
+
                 log.info(
                     "=== twin coverage (freeze month %04d-%02d) ===",
                     twin_freeze_month[0], twin_freeze_month[1]
                 )
                 log.info(
-                    "  names with valid twin (≥8 peers): %d  fallback-to-sector: %d  "
-                    "excluded (0 peers): %d",
-                    n_valid_twin, n_fallback_rows,
-                    n_total - (n_valid_twin + n_fallback_rows)
+                    "  names with valid twin (≥8 peers): %d  "
+                    "fallback-to-sector (SECTOR-PROXY): %d  "
+                    "excluded (no peers/data): %d  (total unique tickers: %d)",
+                    n_valid_twin, n_fallback_tickers, n_excluded, n_total_tickers
                 )
                 log.info(
-                    "  twin_bleed_flag fire rate: %.1f%%  (prereg power table: ~10-20%% of fires)",
+                    "  twin_bleed_flag fire rate: %.1f%%  "
+                    "(prereg power table: ~10-20%% of fires)",
                     bleed_rate * 100 if not np.isnan(bleed_rate) else float("nan")
                 )
                 if len(rel20_col) > 0:
                     log.info(
-                        "  twin_rel_20d distribution (n=%d): "
+                        "  twin_rel_20d distribution (n=%d rows): "
                         "p5=%.3f  p25=%.3f  p50=%.3f  p75=%.3f  p95=%.3f",
                         len(rel20_col),
                         float(rel20_col.quantile(0.05)),
