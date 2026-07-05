@@ -70,8 +70,14 @@ class TestPITAnchors:
             "Phase-3 start incorrectly using last_update instead of first_post"
         )
 
-    def test_clinicaltrials_halt_anchor_is_last_update(self, tmp_path):
-        """Halt events must use last_update (the update date at halt)."""
+    def test_clinicaltrials_halt_events_excluded_m5(self, tmp_path):
+        """M5 fix: halt events must NOT be emitted by load_clinicaltrials().
+
+        last_update is the latest administrative record touch on ClinicalTrials.gov,
+        NOT the halt-disclosure date. Emitting halt events with this anchor produces
+        mis-aligned CAR windows. load_clinicaltrials() must return no halt-subtype
+        events until a real halt-disclosure date is available.
+        """
         ct = pd.DataFrame([{
             "ticker": "AGEN",
             "nct": "NCT88888",
@@ -89,8 +95,9 @@ class TestPITAnchors:
             ct.to_parquet(tmp_path / "clinicaltrials" / "trials.parquet")
             events = bep.load_clinicaltrials()
         halt_events = [(t, d, s) for t, d, s in events if s == "halt"]
-        assert any(e[0] == "AGEN" and e[1] == "2024-06-30" for e in halt_events), (
-            f"Halt anchor should be last_update='2024-06-30', got: {halt_events}"
+        assert len(halt_events) == 0, (
+            f"M5: halt events must not be emitted (last_update != disclosure date); "
+            f"got: {halt_events}"
         )
 
     def test_openfda_anchor_is_status_date_yyyymmdd(self, tmp_path):
@@ -389,8 +396,16 @@ class TestDSRLedger:
     """N_TRIALS must be >= number of (event_type x anchor x horizon) cells actually tested."""
 
     def test_declared_n_exceeds_max_possible_trials(self):
-        """5 event-types × 3 horizons = 15 active trials; N_TRIALS must be >= 15."""
-        active_types = 5  # clinicaltrials, openfda, sp_index_changes, ipo_lockup, earnings
+        """Active event-types × 3 horizons must be covered by N_TRIALS budget.
+
+        Active types (3): clinicaltrials (phase3_start only), openfda, ipo_lockup.
+        Gated types (null-print, 0 DSR trials): sp_index_changes (K<floor),
+          earnings (M4: asof_date=period_end+60d placeholder), gov_contract (M1).
+        Halt subtype excluded from clinicaltrials (M5: last_update not disclosure date).
+        N_TRIALS=20 is a declared budget that must be >= the active trial count.
+        """
+        # 3 active types × 3 horizons = 9 minimum; N_TRIALS=20 is padded for future
+        active_types = 3  # clinicaltrials(phase3_start), openfda, ipo_lockup
         n_horizons = len(bep.HORIZONS)
         min_trials = active_types * n_horizons
         assert bep.N_TRIALS >= min_trials, (
@@ -405,4 +420,88 @@ class TestDSRLedger:
         """EVENT_FLOOR must match hincl's K>=8 minimum for NW t-stat."""
         assert bep.EVENT_FLOOR == 8, (
             f"EVENT_FLOOR should be 8 (matches hincl NW K>=8), got {bep.EVENT_FLOOR}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 10. M4 / M5 gate tests
+# ---------------------------------------------------------------------------
+
+class TestM4M5Gates:
+    """Earnings (M4) and halt (M5) must null-print until real PIT dates are wired."""
+
+    def test_load_earnings_events_returns_empty(self, tmp_path, monkeypatch):
+        """M4 fix: load_earnings_events() must return [] regardless of file contents.
+
+        asof_date is period_end+60d (synthetic placeholder), not a real announcement
+        date. Computing priors against it is methodologically unsound.
+        """
+        import pandas as pd
+        eps = pd.DataFrame([{
+            "ticker": "AAPL",
+            "asof_date": "2024-03-31",
+            "eps": 1.5,
+            "period": "2024Q1",
+        }])
+        with patch.object(bep.config, "data_dir", return_value=tmp_path):
+            (tmp_path / "edgar").mkdir(exist_ok=True)
+            eps.to_parquet(tmp_path / "edgar" / "eps_quarterly.parquet")
+            events = bep.load_earnings_events()
+        assert events == [], (
+            f"M4: load_earnings_events() must return [] (asof_date is placeholder); "
+            f"got {len(events)} events"
+        )
+
+    def test_compute_prior_earnings_null_reason_insufficient(self):
+        """M4 fix: earnings prior must carry insufficient=True when no events."""
+        import pandas as pd
+        result = bep.compute_prior_for_type(
+            "earnings", [], pd.DataFrame(), None,
+            null_reason="asof_date is period_end+60d placeholder, not real PIT.",
+        )
+        assert result.get("insufficient") is True
+        assert result.get("is_context_only") is True
+        assert result.get("null_reason") is not None
+
+    def test_load_clinicaltrials_no_halt_subtype(self, tmp_path):
+        """M5 fix: even with is_halt=True rows, no halt-subtype events are emitted."""
+        import pandas as pd
+        ct = pd.DataFrame([
+            {
+                "ticker": "AGEN",
+                "nct": "NCT11111",
+                "title": "Phase 3 Halted",
+                "status": "TERMINATED",
+                "phases": "PHASE3",
+                "first_post": "2023-01-01",
+                "last_update": "2024-05-01",
+                "why_stopped": "Safety concern",
+                "is_halt": True,
+                "_first_seen": "2024-05-01",
+            },
+            {
+                "ticker": "MRNA",
+                "nct": "NCT22222",
+                "title": "Phase 3 Active",
+                "status": "RECRUITING",
+                "phases": "PHASE3",
+                "first_post": "2023-06-15",
+                "last_update": "2024-01-01",
+                "why_stopped": None,
+                "is_halt": False,
+                "_first_seen": "2023-06-15",
+            },
+        ])
+        with patch.object(bep.config, "data_dir", return_value=tmp_path):
+            (tmp_path / "clinicaltrials").mkdir(exist_ok=True)
+            ct.to_parquet(tmp_path / "clinicaltrials" / "trials.parquet")
+            events = bep.load_clinicaltrials()
+        halt_events = [e for e in events if e[2] == "halt"]
+        phase3_events = [e for e in events if e[2] == "phase3_start"]
+        assert len(halt_events) == 0, (
+            f"M5: halt subtype must not be emitted; got: {halt_events}"
+        )
+        # Phase-3 start for non-halted MRNA should still be emitted
+        assert any(e[0] == "MRNA" for e in phase3_events), (
+            f"Phase-3 start for non-halted trial should still emit; got: {phase3_events}"
         )

@@ -11,8 +11,18 @@ so the existing workflow ``git add data/special_situations`` stages them (B3 fix
 Open-question conservative defaults applied:
 - M2: sp_index_changes ships as null-print (insufficient-history) until K>=floor.
 - M1: gov-contract awards ships as null-only stub (no awardee-ticker source).
-- M4: earnings uses asof_date as-is (already overlaid with real SEC date in
-  eps_quarterly collector where available); documents limitation in prereg note.
+- M4 (CORRECTED): earnings is null-printed. eps_quarterly.parquet asof_date is
+  period_end + exactly 60 calendar days for every row — a mechanical placeholder,
+  NOT a real SEC filed date or earnings-announcement date. Computing priors against
+  this synthetic date is methodologically unsound (the event window does not align
+  with the actual announcement reaction). Earnings will be re-enabled once a real
+  announcement/filing date source is wired (e.g. EDGAR 8-K filing timestamps).
+- M5 (NEW): clinical halts are null-printed. last_update (ClinicalTrials.gov)
+  is the latest administrative record touch — any later edit, results posting, or
+  contact change — NOT the date the halt became public. The halt CAR window anchored
+  on last_update is systematically mis-aligned (starts AFTER the reaction, not at it).
+  Halts will be re-enabled once anchored on the first date why_stopped/is_halt became
+  true in the ClinicalTrials.gov history.
 - n-floor: EVENT_FLOOR=8 pooled (matches hincl NW K>=8).
 - IPO lockup: uses actual per-deal lockup_days where available, falls back to
   standard 90d/180d windows tagged separately.
@@ -399,7 +409,24 @@ def _block_mean_ci(x: np.ndarray, block: int = 4, B: int = 5000, seed: int = 7) 
 # ---------------------------------------------------------------------------
 
 def load_clinicaltrials() -> list[tuple[str, str, str]]:
-    """Phase-3 starts (first_post) and clinical halts (last_update where is_halt)."""
+    """Phase-3 starts (first_post) only.
+
+    HALT EVENTS ARE EXCLUDED (M5): last_update is the latest administrative
+    record touch on ClinicalTrials.gov (any later edit: results posting, contact
+    change, etc.), NOT the date the halt became public. Anchoring the CAR window
+    on last_update can start the measurement window well after the actual halt
+    reaction, systematically mis-aligning the study. Halts will be re-enabled once
+    anchored on the halt-disclosure date (first update where why_stopped/is_halt
+    became true in the ClinicalTrials.gov change history).
+
+    Note on operator precedence (fixed): the previous filter
+      df[df["is_halt"] == True & df["last_update"].notna()]
+    was a latent bug: `&` binds tighter than `==`, so it evaluated as
+      df["is_halt"] == (True & df["last_update"].notna())
+    which happened to work only because last_update was a str column with no NaN.
+    Corrected form would be (df["is_halt"] == True) & df["last_update"].notna().
+    Moot now that halt events are gated out entirely.
+    """
     p = config.data_dir() / "clinicaltrials" / "trials.parquet"
     if not p.exists():
         return []
@@ -410,10 +437,8 @@ def load_clinicaltrials() -> list[tuple[str, str, str]]:
     phase3 = df[df["phases"].isin(["PHASE3", "PHASE2,PHASE3"]) & df["first_post"].notna()]
     for _, r in phase3.iterrows():
         events.append((str(r["ticker"]).upper().strip(), str(r["first_post"]), "phase3_start"))
-    # Clinical halt: last_update on is_halt rows (latest known update at halt)
-    halts = df[df["is_halt"] == True & df["last_update"].notna()]  # noqa: E712
-    for _, r in halts.iterrows():
-        events.append((str(r["ticker"]).upper().strip(), str(r["last_update"]), "halt"))
+    # Halt events excluded — see docstring (M5). Correct filter if re-enabling:
+    # halts = df[(df["is_halt"] == True) & df["last_update"].notna()]  # noqa: E712
     return events
 
 
@@ -501,39 +526,20 @@ def load_ipo_lockup() -> list[tuple[str, str, str]]:
 
 
 def load_earnings_events() -> list[tuple[str, str, str]]:
-    """Earnings: asof_date from eps_quarterly. Rows use real SEC filed date where
-    the collector overlaid it (overlaid in place; we use asof_date as-is, which
-    is the best-PIT estimate available — see M4 note in prereg).
-    SUE bucket is assigned at the event date via engine.sue.sue_cross_section.
-    Falls back to a generic 'earnings' subtype if sue is unavailable."""
-    p = config.data_dir() / "edgar" / "eps_quarterly.parquet"
-    if not p.exists():
-        return []
-    eps = pd.read_parquet(p)
-    eps = eps[eps["ticker"].notna() & eps["asof_date"].notna()]
-    events: list[tuple[str, str, str]] = []
+    """Earnings event loader — GATED (null-print) until a real PIT date is available.
 
-    # Try to bucket by SUE quintile
-    sue_available = False
-    sue_map: dict[tuple[str, str], str] = {}
-    try:
-        from engine import sue as sue_mod
-        sue_df = sue_mod.sue_cross_section(eps)
-        if sue_df is not None and not sue_df.empty and "sue_q" in sue_df.columns:
-            for _, r in sue_df.iterrows():
-                key = (str(r["ticker"]), str(pd.Timestamp(r["asof_date"]).date()))
-                sue_map[key] = f"sue_q{int(r['sue_q'])}"
-            sue_available = True
-    except Exception:  # noqa: BLE001
-        sue_available = False
+    eps_quarterly.parquet asof_date is period_end + exactly 60 calendar days for
+    every row: a synthetic mechanical placeholder. Inspection of the 65208-row store
+    shows min=median=max=60 days offset, confirming the date is never the actual
+    SEC filed date or earnings-announcement date. Running an event study against this
+    placeholder produces a window that starts 60d after period end — a systematic
+    mis-alignment with no relationship to actual announcement reactions.
 
-    for _, r in eps.iterrows():
-        tkr = str(r["ticker"]).upper().strip()
-        date_str = str(pd.Timestamp(r["asof_date"]).date())
-        key = (tkr, date_str)
-        subtype = sue_map.get(key, "earnings") if sue_available else "earnings"
-        events.append((tkr, date_str, subtype))
-    return events
+    Returns [] unconditionally. compute_prior_for_type will emit insufficient=True
+    null-print. Re-enable once EDGAR 8-K filing timestamps or a vendor announcement-
+    date feed is wired into eps_quarterly (replace asof_date with that field).
+    """
+    return []
 
 
 def _gov_contract_stub() -> dict:
@@ -708,11 +714,17 @@ def main() -> int:
     p = persist_prior(ipo_prior)
     print(f"  wrote {p}")
 
-    # --- earnings ---
-    print("[event_priors] loading earnings…")
-    earn_events = load_earnings_events()
-    print(f"  {len(earn_events)} events loaded")
-    earn_prior = compute_prior_for_type("earnings", earn_events, closes, spy)
+    # --- earnings (M4: null-print — asof_date is period_end+60d placeholder, not real PIT) ---
+    print("[event_priors] earnings: null-print (asof_date=period_end+60d placeholder, not real announcement date)")
+    earn_prior = compute_prior_for_type(
+        "earnings", [], closes, spy,
+        null_reason=(
+            "asof_date in eps_quarterly.parquet is period_end + exactly 60 calendar days "
+            "(verified: min=median=max=60d offset across all rows). This is a synthetic "
+            "placeholder, not a real SEC filing date or earnings-announcement date. "
+            "Re-enable once EDGAR 8-K timestamps or a vendor announcement-date feed is wired."
+        ),
+    )
     results["earnings"] = earn_prior
     p = persist_prior(earn_prior)
     print(f"  wrote {p}")
