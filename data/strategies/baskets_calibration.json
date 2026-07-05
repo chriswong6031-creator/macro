@@ -551,7 +551,7 @@
         "k_folds": 5
       },
       "entry": null,
-      "note": "Fire the alert only above the OUT-OF-SAMPLE min_confidence (a None gate means the lift CI did not clear 1.0 \u2014 keep firing but DON'T claim added precision). Display the Platt-recalibrated probability as the confidence number; show sub-threshold firings with a low-confidence badge (audit trail preserved)."
+      "note": "Only high-confidence alerts claim added precision. Lower-confidence alerts stay visible for the audit trail."
     },
     "GO": true
   },

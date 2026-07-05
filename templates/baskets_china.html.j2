@@ -135,15 +135,15 @@
     <p class="story" id="story"></p>
     {% if lite %}
     <p class="tagline">{{ t(
-      "A-share thematic baskets that mirror 同花顺 (Tonghuashun) concept boards — we adopt THS's themes and their member lists verbatim, filtered to the free china_search price cache. Equal-weighted, point-in-time dated membership, buy-and-hold between changes. Benchmarked to the CSI 300 (沪深300). A monitoring/structure frame, not a buy list.",
-      '镜像同花顺概念板块的 A 股主题篮子 — 直接采用同花顺的主题及其成分股，并按免费 china_search 价格缓存过滤。等权重、按时点日期管理成分、调整间买入持有。以沪深 300 为基准。仅作监测/结构参考，并非买入清单。') }}
+      'Tonghuashun concept baskets filtered to the china_search price cache. Equal-weighted and measured against CSI 300. Use them for theme monitoring, not as a buy list.',
+      '同花顺概念篮子，按 china_search 价格缓存过滤。等权重，对标沪深 300。用于主题监测，不是买入清单。') }}
       <a href="baskets_china.html" style="white-space:nowrap">→ {{ t('curated baskets', '精选篮子') }}</a></p>
     {# cross-market AI-semis confirmer (rendered client-side; empty when unavailable) #}
     <div id="semis-chip"></div>
     {% else %}
     <p class="tagline">{{ t(
-      'Curated A-share thematic baskets — every membership decision dated and documented; equal-weighted, monthly-rebalanced, buy-and-hold between rebalances. Benchmarked to the CSI 300 (沪深300). Where a listed sector ETF approximates the theme the basket is cross-checked against it daily. A monitoring/structure frame, not a buy list.',
-      '精选 A 股主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。以沪深 300 为基准。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}
+      'Equal-weight A-share theme baskets measured against CSI 300. Use them to see which China themes are leading or fading.',
+      '等权重 A 股主题篮子，对标沪深 300。用于观察哪些中国主题在走强或走弱。') }}
       <a href="baskets_china_ths.html" style="white-space:nowrap">→ {{ t('同花顺 themes', '同花顺主题') }}</a></p>
     {% endif %}
   </header>
@@ -163,8 +163,8 @@
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "All baskets, watchlist-style. Click a column to sort; toggle the value between raw return, vs CSI 300, and σ (the move z-scored vs the basket's own trailing year — computed horizons only). Click a name to jump to its members.",
-        '全部篮子，自选股式表格。点击列标题排序；可在原始回报、相对沪深 300、σ（相对该篮子自身过去一年的 z 分数 — 仅限定窗）之间切换。点击名称跳转至成分。') }}</p>
+        "Sortable snapshot of every basket. Toggle between raw return, return versus CSI 300, and each basket's own z-score. Click a basket to see members.",
+        '所有篮子的可排序快照。可切换原始回报、相对沪深 300 回报和篮子自身 z 分数。点击篮子查看成分。') }}</p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
     </section>
@@ -172,8 +172,8 @@
     <section id="chart-section">
       <h2><span class="idx">02</span>{{ t('Performance', '走势对比') }}</h2>
       <p class="sub">{{ t(
-        'Rebased to 0% at the start of the selected window. Click legend entries to toggle baskets. The full "All" range is ~5 years (our free-cache ceiling); series before a basket\'s creation date are a backtest of the membership at creation. Powered by TradingView Lightweight Charts.',
-        '在所选窗口起点重设为 0%。点击图例可切换篮子。"全部"区间约 5 年（免费缓存上限）；篮子创建日之前为按创建时成分的回测。由 TradingView Lightweight Charts 提供。') }}</p>
+        'Lines are rebased to 0% at the start of the window. Toggle baskets from the legend; "All" covers the available cache history.',
+        '曲线在窗口起点重设为 0%。可在图例中开关篮子；"全部"覆盖可用缓存历史。') }}</p>
       <div class="chartbar">
         <span class="tabs" id="chart-modes" role="group"></span>
         <span class="tabs" id="chart-ranges" role="group"></span>
@@ -195,8 +195,8 @@
   <div class="sleeve-strategy-card" id="reversal-sleeve-card">
     <div class="sc-head"><span class="sc-tag">{{ t('VALIDATED EDGE','已验证优势') }}</span>{{ t('Reversal Sleeve','反转组合') }}</div>
     <p class="sc-sub">{{ t(
-      'Monthly-rebalanced contrarian basket — a portfolio, NOT stock tips; high variance, size small. The validated A-share within-sector 3M reversal edge shipped at its own product unit (deepest quintile, no gate, equal-weight). Forward ledger is accruing; grades publish when rebalances mature.',
-      '按月再平衡的逆向篮子——这是一个组合，不是个股建议；高波动，宜小仓位。已验证的A股板块内3月反转优势以其自身产品单元交付（最深五分位、无门槛、等权重）。前瞻台账正在累积，再平衡成熟后发布成绩。') }}</p>
+      'Monthly contrarian basket. Portfolio-level signal, not stock tips; high variance, small size. Forward results accrue as rebalances mature.',
+      '按月逆向篮子。组合层面的信号，不是个股建议；波动高、仓位宜小。前瞻结果会随再平衡成熟后累积。') }}</p>
     <div class="sc-stats">
       {# rd_n_members is passed by the builder when available; falls back gracefully #}
       {% if sleeve_stats %}
@@ -209,14 +209,22 @@
     </div>
     <a class="sc-link" href="cn_reversal_sleeve.html">{{ t('→ Open Reversal Sleeve page','→ 打开反转组合页面') }}</a>
     <p class="sc-note">{{ t(
-      'Upper bound on the available plane — both substrates are pure-survivor on the delisting axis; true out-of-sample number is at or below the re-derived stats. Gross of cost; high-turnover family. The forward ledger is the real record.',
-      '可用面板上的上界——两个底层数据库均在退市轴上为纯幸存者；真实样本外数值等于或低于再推导数据。成本前；高换手率品种。前瞻台账是真实记录。') }}</p>
+      'Historical numbers are an upper-bound estimate; the forward ledger is the real record.',
+      '历史数字是上界估计；前瞻台账才是真实记录。') }}</p>
   </div>
   {% endif %}
 
   <footer>
-    {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span><br>
-    <span class="made">© 2026 MastermindX Inc</span>
+    {% if lite %}
+    {{ t(
+      'Informational only, not investment advice. Tonghuashun themes are filtered to the china_search price cache and benchmarked to CSI 300. Results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.',
+      '仅供参考，非投资建议。同花顺主题按 china_search 价格缓存过滤，并以沪深 300 为基准。结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。') }}
+    {% else %}
+    {{ t(
+      'Informational only, not investment advice. Baskets are equal-weighted and benchmarked to CSI 300. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.',
+      '仅供参考，非投资建议。篮子等权重，并以沪深 300 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。') }}
+    {% endif %}
+    {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>
