@@ -4,5 +4,11 @@
 # needs them.
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30
+pydantic>=2.0,<3.0
 # Auth is secretless (verifies tokens via Supabase /auth/v1/user using stdlib
 # urllib) — no JWT library needed.
+# W8b PR2: ask-the-brain — LLM client for the request-scoped cortex loop.
+# Key-optional: the anthropic client is only instantiated when ANTHROPIC_API_KEY
+# is present in /etc/macro-api.env.  The endpoints fall back to memo-quote mode
+# when the key is absent.
+anthropic>=0.28,<1.0
