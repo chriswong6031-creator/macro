@@ -1251,19 +1251,12 @@
     <div class="topline">
       <h1>🇺🇸 {{ t('US Stock Dashboard', '美国个股看板') }}</h1>
       <span style="display:inline-flex;align-items:center">
-        <span class="badge quad-{{ latest.quad }}">{{ t('Regime', '周期') }}: {{ td(latest.quad_name) }}</span>{{ help("The macro / economic regime (growth × inflation quadrant) the whole page is filtered by — it describes the ECONOMY, not today's tape, so it shifts slowly. Use it for which sectors & factors are favoured, not for market timing. For whether the market itself is turning over, watch the Risk Radar alert — it appears right below only when it actually fires.", "整页据以过滤的宏观／经济周期（增长×通胀象限）— 它描述的是经济，而非今日盘面，因此变化缓慢。用于判断哪些板块与因子占优，而非择时。市场本身是否转向，请看下方的风险雷达提示 — 它仅在真正触发时才显示。") }}
+        <span class="badge quad-{{ latest.quad }}">{{ t('Regime', '周期') }}: {{ td(latest.quad_name) }}</span>{{ help("The macro / economic regime (growth × inflation quadrant) the whole page is filtered by — it describes the ECONOMY, not today's tape, so it shifts slowly. Use it for which sectors & factors are favoured, not for market timing. For whether the market itself is turning over, use the Macro dashboard's Risk Radar.", "整页据以过滤的宏观／经济周期（增长×通胀象限）— 它描述的是经济，而非今日盘面，因此变化缓慢。用于判断哪些板块与因子占优，而非择时。市场本身是否转向，请看宏观看板中的风险雷达。") }}
       </span>
       {% if pb and pb.dial %}<span style="display:inline-flex;align-items:center">
         <span class="badge" style="background:var(--panel2);color:var(--text)">{{ t('Posture', '姿态') }}: {{ td(pb.dial.posture) }}</span>{{ help("How to TRADE the current regime — a defensive → aggressive stance dial (Defensive · Careful · Neutral · Constructive · Aggressive) set by the playbook. “Careful” means lean cautious: favour quality and good entries, keep gross moderate. It sizes risk; it is not a buy/sell or stock-selection call. The full dial with its reasoning lives on the Macro dashboard.", "如何“交易”当前周期 — 一个防御→进取的姿态刻度（防御·谨慎·中性·建设性·进取），由策略手册设定。“谨慎”意为偏审慎：偏好质量与好的入场点，总仓位保持适中。它用于调整风险敞口，并非买卖或选股建议。完整刻度及其推理见宏观看板。") }}
       </span>{% endif %}
     </div>
-    {# Risk Radar alert — ported from macro.html's Market State board. Shown ONLY when the
-       radar is loud (caution/elevated/risk-off → is_loud), i.e. when it actually fires, so it
-       reads as a genuine 'market is turning over' signal rather than permanent chrome. Uses
-       market_state directly (the MS alias is set later, inside the macro-only region). #}
-    {% if market_state and market_state.radar and (market_state.radar.is_loud or (market_state.radar.recovery and market_state.radar.recovery.present)) %}
-    {{ rrc.risk_radar_card(market_state.radar, latest.risk_radar.scares if latest.risk_radar else none) }}
-    {% endif %}
     <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}
       <a href="macro.html" style="color:var(--link);font-weight:600">← {{ t('Macro regime dashboard', '宏观周期看板') }}</a></p>
   </div>
