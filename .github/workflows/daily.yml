@@ -462,6 +462,7 @@ jobs:
             brun flow_desk    "group flow heatmap & market tide (build_flow_desk)" scripts.build_flow_desk
             brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
             brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
+            brun options_screener "US options screener page (build_options_screener)" scripts.build_options_screener
           }
           cl_baskets() {
             brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets

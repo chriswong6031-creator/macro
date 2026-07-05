@@ -5450,6 +5450,16 @@ darkpool:
   enabled: true                   # kill-switch: false → no page, no nav entry
 
 # --------------------------------------------------------------------------- #
+# options_screener — US Options Screener v1 (P1.4, display-only).
+# Reads polygon_gex summaries + options_flow summaries (EOD, accruing since 2026-06-15).
+# Columns: IV30, IV-rank (young-labelled while <252d), P/C OI, volume, gross premium,
+#   implied-move proxy, max-pain, GEX tier, net-prem tone (labeled heuristic, soft direction).
+# enabled: false → builder skips page + writes noindex stub (darkpool precedent).
+# --------------------------------------------------------------------------- #
+options_screener:
+  enabled: true                   # kill-switch: false → no page, no nav entry
+
+# --------------------------------------------------------------------------- #
 # Oracle — Rotation Intelligence Web (engine/oracle/, P5).
 # ADD NEW KEYS AT THE END OF THIS BLOCK ONLY — never reorder.
 # --------------------------------------------------------------------------- #
