@@ -1104,8 +1104,14 @@ jobs:
           path: data/breadth/_closes_cache.parquet
           key: breadth-closes-fseries-${{ github.run_id }}
           restore-keys: breadth-closes-
-      - name: factor panel (incremental — today's date only)
-        run: python -m scripts.build_factor_panel || echo "factor panel skipped (additive)"
+      # FIX-8 (RULING-C nightly bounds): pin to 10 trading days back so a cold
+      # runner never silently rebuilds a year. The one-shot deep backfill
+      # (--start 2020-01-01, ~25 min) MUST be run once manually before the panel
+      # has usable history depth. See build_factor_panel.py module docstring.
+      - name: factor panel (incremental — bounded 10-day window)
+        run: |
+          START=$(python -c "import pandas as pd; print((pd.Timestamp.today() - pd.tseries.offsets.BDay(10)).date())")
+          python -m scripts.build_factor_panel --start "$START" || echo "factor panel skipped (additive)"
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site

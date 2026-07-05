@@ -69,6 +69,18 @@ STYLE-REGIME CLASSIFIER (P1-C, masterplan §3.4):
   past confirmed states.  Any truncation at T and rebuild from scratch produces
   identical results for all dates ≤ T.
 
+NIGHTLY BOUNDS (RULING-C + FIX-8, 2026-07-05):
+  The nightly CI step (daily.yml factor_panel) passes --start equal to 10 trading
+  days back so a cold runner can never silently rebuild a full year of history.
+  This bounds the CI step to ~10 rows per ticker (seconds, not minutes) and makes
+  the incremental check cheaper to verify.
+
+  ONE-SHOT DEEP BACKFILL (required once, NOT in the nightly loop):
+  Before the panel has usable history depth, run the backfill manually:
+      python -m scripts.build_factor_panel --start 2020-01-01 --backfill
+  Expected runtime ~25 minutes (5 years × ~1500 tickers). The --backfill flag
+  bypasses the incremental skip logic. See also the full example above.
+
 NIGHTLY INCREMENTAL WIRING (RULING-C, 2026-07-05):
   The panel build runs as an INCREMENTAL step: only dates missing from existing
   monthly partitions are built.  The incremental check loads existing partition
