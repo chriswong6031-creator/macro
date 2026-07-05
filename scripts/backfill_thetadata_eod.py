@@ -1,8 +1,16 @@
 """scripts/backfill_thetadata_eod.py — resumable T1 backfill driver for ThetaData EOD chains.
 
-Pulls EOD option chains, open interest, and first-order Greeks (incl. implied volatility)
-for the full options universe from the local Theta Terminal v3 REST API, storing results in
-date-chunked parquets under data/thetadata_eod/.
+Pulls EOD option chains, open interest, and ALL-order Greeks (incl. implied volatility,
+vanna, charm, and all 3rd-order Greeks) for the full options universe from the local Theta
+Terminal v3 REST API, storing results in date-chunked parquets under data/thetadata_eod/.
+
+Greeks columns persisted (all orders in one /greeks/eod response — no extra request cost):
+  1st order: delta, theta, vega, rho, epsilon, lambda, implied_vol, iv_error, underlying_price
+  2nd order: gamma, vanna, charm, vomma, veta, vera
+  3rd order: speed, zomma, color, ultima
+  Also: d1, d2, dual_delta, dual_gamma (model internals)
+T1 downstream consumers (GEX activation layer) need vanna and charm; storing all orders
+now avoids a costly re-backfill later.
 
 STORAGE LAYOUT
 --------------
@@ -248,8 +256,12 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
 
     t2 = time.perf_counter()
 
-    # Greeks + IV (first order)
-    greeks = td.bulk_greeks(root, 0, start, end, order=1)
+    # Greeks + IV — ALL orders (1st + 2nd + 3rd) in a single /greeks/eod request.
+    # The API returns all orders for the same cost as order=1; persisting all columns
+    # avoids a re-backfill when T1 GEX/vanna/charm consumers come online.
+    # Columns: delta/theta/vega/rho/epsilon/lambda (1st), gamma/vanna/charm/vomma/veta/vera (2nd),
+    #          speed/zomma/color/ultima (3rd), implied_vol, iv_error, underlying_price.
+    greeks = td.bulk_greeks(root, 0, start, end, order=3)
     if greeks is None:
         log.warning("pull_root_year: %s %d — bulk_greeks returned None", root, year)
         return False

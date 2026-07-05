@@ -39,10 +39,13 @@ Param renames (v2 → v3, verified live):
 
 Response format: CSV by default (format=csv).  Streaming chunked response; no pagination.
 
-Wildcard-expiration rule (enforced by API):
-  When expiration="*", the API requires start_date == end_date (one day at a time).
-  Multi-day wildcard requests are rejected with an error.  This module enforces that rule
-  by iterating day-by-day when exp="*" is requested.
+Wildcard-expiration rule (endpoint-specific, measured live 2026-07-04):
+  /history/eod ACCEPTS multi-day wildcard (expiration="*") — one range request returns
+  all expirations across the date range.  HTTP 200 confirmed for multi-day ranges.
+  /history/greeks/eod REJECTS multi-day wildcard (HTTP 400: "When expiration=*, you must
+  request data a day-at-a-time").  bulk_greeks keeps the day-by-day loop.
+  bulk_eod now uses a single range request when expiration="*" (big backfill speedup:
+  ~250 separate day requests → 1 request per year-chunk).
 
 Endpoints implemented (measured live 2026-07-04):
   GET /v3/option/list/symbols              → reachable() probe
@@ -95,7 +98,8 @@ AMBIGUITIES RESOLVED (as of 2026-07-04 probe):
   A4 (3rd-order Greeks): Same; speed/zomma/color/ultima all in greeks/eod response.
   A5 (Greeks layout): Measured — see CSV header above (all greek orders + OHLCV).
   A6 (IV endpoint): greeks/eod includes implied_vol column — no separate IV endpoint needed.
-  A7 (exp=* day-by-day): Confirmed — one day at a time for wildcard requests.
+  A7 (exp=* endpoint-specific): /history/eod ACCEPTS multi-day range with exp=* (HTTP 200);
+     /history/greeks/eod REJECTS multi-day wildcard (HTTP 400) — keeps day-by-day loop.
   A8 (History depth): Measured — starts 2012-06-01 (NOT 2013-01-02 as initially guessed).
   A9 (Password in argv): v3 uses --api-key flag (not positional user/pass) — IMPROVED.
 """
@@ -335,6 +339,12 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
     Strike format: v3 returns DOLLAR FLOATS (e.g., 725.000 = $725.00). No divisor applied.
     right: response returns "CALL"/"PUT"; normalized to "C"/"P" in output.
 
+    Wildcard range-fetch (measured live 2026-07-04):
+      When expiration="*", /history/eod ACCEPTS a multi-day range in a single request
+      (HTTP 200).  This replaces the old day-by-day loop and gives a large backfill speedup
+      (~250 individual day requests → 1 request per year-chunk).
+      Contrast: /history/greeks/eod REJECTS multi-day wildcard — bulk_greeks keeps day-by-day.
+
     Returns a DataFrame with columns:
       symbol, expiration (datetime64), strike (float, $), right ("C"/"P"),
       date (datetime64), open, high, low, close, volume, count, bid, ask
@@ -349,31 +359,26 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
     end_int = _date_int(end_date)
 
     session = _session()
-    frames: list[pd.DataFrame] = []
 
     try:
         if exp_param == "*":
-            # Wildcard: one day at a time (API enforces this).
-            # An empty DataFrame for a day (472 / holiday / weekend) is FINE — skip it.
-            # A None return means a real failure (non-200 error, connection error).
-            for d in _iter_days(start_date, end_date):
-                day_int = _date_int(d)
-                params = {
-                    "symbol": root.upper(),
-                    "expiration": "*",
-                    "start_date": day_int,
-                    "end_date": day_int,
-                }
-                df = _get_csv(session, "/v3/option/history/eod", params)
-                if df is None:
-                    log.warning(
-                        "thetadata: bulk_eod(%s, *, %s) day %s failed — "
-                        "returning None to avoid partial data", root, d, d)
-                    return None
-                if not df.empty:
-                    df["_date"] = pd.Timestamp(d)
-                    frames.append(df)
-                # Empty df for this day = weekend / holiday / no data: skip silently
+            # /history/eod ACCEPTS multi-day wildcard in a single range request (measured
+            # live 2026-07-04: HTTP 200 for start_date != end_date with expiration=*).
+            # One request per root-year replaces ~250 individual day requests.
+            # No partial-data risk: a truncated range → None from _get_csv/_StreamTruncated.
+            params = {
+                "symbol": root.upper(),
+                "expiration": "*",
+                "start_date": start_int,
+                "end_date": end_int,
+            }
+            df = _get_csv(session, "/v3/option/history/eod", params)
+            if df is None:
+                log.warning("thetadata: bulk_eod(%s, *, %s→%s) failed — returning None",
+                            root, start_date, end_date)
+                return None
+            if df.empty:
+                return pd.DataFrame()
         else:
             params = {
                 "symbol": root.upper(),
@@ -385,8 +390,8 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
             if df is None:
                 log.warning("thetadata: bulk_eod(%s, %s) failed — returning None", root, exp_param)
                 return None
-            if not df.empty:
-                frames.append(df)
+            if df.empty:
+                return pd.DataFrame()
 
     except _StreamTruncated as e:
         log.warning("thetadata: bulk_eod(%s, start=%s, end=%s) truncated at mid-stream "
@@ -394,11 +399,7 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
                     root, start_date, end_date, e)
         return None
 
-    if not frames:
-        return pd.DataFrame()
-
-    out = pd.concat(frames, ignore_index=True)
-    return _normalize_eod_df(out, root)
+    return _normalize_eod_df(df, root)
 
 
 def _normalize_eod_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
@@ -411,12 +412,18 @@ def _normalize_eod_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip('"').str.strip()
 
-    # Use _date column (set during day iteration) or derive from created/last_trade
+    # Derive the trading date from last_trade (the timestamp of the last fill on that day),
+    # falling back to created (ingest timestamp) only if last_trade is absent.
+    # Do NOT use created: it records when ThetaData ingested the record (often T+1 or later),
+    # not the trading date.  last_trade is point-in-time-safe (set at market close that day).
     if "_date" in df.columns:
         df["date"] = pd.to_datetime(df["_date"])
         df = df.drop(columns=["_date"])
+    elif "last_trade" in df.columns:
+        df["date"] = pd.to_datetime(df["last_trade"], errors="coerce").dt.normalize()
     elif "created" in df.columns:
-        # Derive date from the 'created' timestamp (e.g., "2026-07-02T17:21:28.532")
+        # Fallback: created is the ingest timestamp (T+1 or later); use only when
+        # last_trade is absent (older API responses or future schema changes).
         df["date"] = pd.to_datetime(df["created"], errors="coerce").dt.normalize()
     else:
         df["date"] = pd.NaT

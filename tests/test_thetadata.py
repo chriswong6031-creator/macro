@@ -130,22 +130,36 @@ class TestBulkEodParsing:
         assert df is not None
         assert pd.api.types.is_datetime64_any_dtype(df["expiration"])
 
-    def test_wildcard_iterates_per_day(self, monkeypatch):
-        """With exp=0 (wildcard), bulk_eod calls _get_csv once per day."""
+    def test_wildcard_single_range_request(self, monkeypatch):
+        """/history/eod ACCEPTS multi-day wildcard in ONE range request (measured live 2026-07-04).
+
+        With exp=0 (wildcard), bulk_eod issues a SINGLE range request regardless of how many
+        days the range spans.  This replaces the old day-by-day loop (~250 requests → 1).
+        Contrast: bulk_greeks keeps day-by-day (greeks/eod rejects multi-day wildcard HTTP 400).
+        """
         csv_data = _csv_bytes("bulk_eod_response.csv")
         monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
         from collectors import thetadata as td
 
         call_count = [0]
+        seen_params: list[dict] = []
 
         def _mock_get_csv(session, path, params):
             call_count[0] += 1
+            seen_params.append(dict(params))
             return pd.read_csv(io.BytesIO(csv_data), low_memory=False)
 
         monkeypatch.setattr(td, "_get_csv", _mock_get_csv)
-        # 3-day range with wildcard → 3 calls (one per day)
+        # 3-day range with wildcard → 1 call (range request), NOT 3
         td.bulk_eod("SPY", 0, date(2026, 1, 1), date(2026, 1, 3))
-        assert call_count[0] == 3, f"expected 3 calls, got {call_count[0]}"
+        assert call_count[0] == 1, (
+            f"bulk_eod wildcard should issue 1 range request, got {call_count[0]}. "
+            "Note: /history/eod accepts multi-day wildcard; only /greeks/eod requires day-by-day."
+        )
+        # Verify it passed the full range (start=20260101, end=20260103)
+        assert seen_params[0].get("start_date") == 20260101
+        assert seen_params[0].get("end_date") == 20260103
+        assert seen_params[0].get("expiration") == "*"
 
 
 class TestOpenInterestParsing:
@@ -349,23 +363,21 @@ class TestStreamTruncation:
     """_StreamTruncated on mid-stream failure → None, never a partial DataFrame."""
 
     def test_stream_error_during_bulk_eod_returns_none(self, monkeypatch):
-        """If _get_csv raises _StreamTruncated, bulk_eod returns None (not partial)."""
+        """If _get_csv raises _StreamTruncated, bulk_eod returns None (not partial).
+
+        bulk_eod now issues a SINGLE range request even for wildcard (one-request model),
+        so we raise _StreamTruncated on the first (and only) call.
+        """
         monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
         from collectors import thetadata as td
 
-        call_count = [0]
-
         def _mock_get_csv(session, path, params):
-            call_count[0] += 1
-            if call_count[0] == 1:
-                return pd.DataFrame({"symbol": ["SPY"], "expiration": ["2026-01-17"],
-                                     "strike": [580.0], "right": ["CALL"]})
-            raise td._StreamTruncated("simulated mid-stream failure")
+            raise td._StreamTruncated("simulated mid-stream failure on range request")
 
         monkeypatch.setattr(td, "_get_csv", _mock_get_csv)
-        # 2-day wildcard: first day succeeds, second day raises _StreamTruncated
+        # Wildcard range request raises _StreamTruncated → must return None (no partial)
         result = td.bulk_eod("SPY", 0, date(2026, 1, 1), date(2026, 1, 2))
-        assert result is None   # must be None, not the 1-row partial frame
+        assert result is None   # must be None, not an empty or partial DataFrame
 
     def test_stream_error_during_greeks_returns_none(self, monkeypatch):
         """If _get_csv raises _StreamTruncated, bulk_greeks returns None."""
@@ -411,6 +423,53 @@ class TestStreamTruncation:
         monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
         result = td.trade_quote("SPY", 20260117, "C", 580.0, date(2026, 1, 1), date(2026, 1, 1))
         assert result is None
+
+
+    def test_chunked_encoding_error_returns_none(self, monkeypatch):
+        """iter_content yields one valid chunk then raises ChunkedEncodingError → None.
+
+        Proves mid-stream truncation discards already-parsed rows (INERT contract).
+        The public method (bulk_eod) must return None even if some bytes arrived before
+        the error — _get_csv raises _StreamTruncated which bulk_eod catches and converts
+        to None.
+        """
+        import requests as _req
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        valid_chunk = (
+            b"symbol,expiration,strike,right,created,last_trade,"
+            b"open,high,low,close,volume,count,bid_size,bid_exchange,"
+            b"bid,bid_condition,ask_size,ask_exchange,ask,ask_condition\n"
+            b'"SPY","2026-01-17",580.000,"CALL",'
+            b"2026-01-17T17:00:00,2026-01-17T14:30:00,"
+            b"5.00,5.50,4.90,5.20,100,10,100,C,5.10,50,100,C,5.30,50\n"
+        )
+
+        def _iter_content_raise(chunk_size):
+            yield valid_chunk
+            raise _req.exceptions.ChunkedEncodingError("connection reset mid-stream")
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.iter_content = _iter_content_raise
+
+        # Patch requests.Session.get so bulk_eod gets the mock response
+        mock_session_cls = MagicMock()
+        mock_session_cls.return_value.__enter__ = lambda s: s
+        mock_session_cls.return_value.__exit__ = MagicMock(return_value=False)
+        mock_session_cls.return_value.headers = {}
+        mock_session_cls.return_value.get = MagicMock(return_value=mock_resp)
+
+        # Patch _session() to return the mock session
+        monkeypatch.setattr(td, "_session", lambda: mock_session_cls.return_value)
+
+        # bulk_eod (non-wildcard path) calls _get_csv which raises _StreamTruncated;
+        # bulk_eod must catch that and return None (not a partial DataFrame).
+        result = td.bulk_eod("SPY", 20260117, date(2026, 1, 17), date(2026, 1, 17))
+        assert result is None, (
+            f"Expected None when ChunkedEncodingError occurs mid-stream, got: {result}"
+        )
 
 
 # ── 3. Offline / unreachable path ─────────────────────────────────────────────

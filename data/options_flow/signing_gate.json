@@ -32,20 +32,112 @@
   },
   "thetadata_tape": {
     "status": "measured",
+    "insufficient_n": false,
     "asof": "2026-07-04",
-    "generated": "2026-07-04T23:42:51.077185+00:00",
+    "generated": "2026-07-04T23:59:09.121517+00:00",
     "signing_source": "tape",
-    "n_trades": 3,
-    "calibration_contract": {
-      "root": "SPY",
-      "right": "C",
-      "strike": 580.0,
-      "exp": 20260618,
-      "date": "2026-06-18"
+    "n_trades": 16366,
+    "n_contracts": 15,
+    "min_n_trades": 5000,
+    "window": {
+      "start": "2026-06-18T14:30",
+      "end": "2026-06-18T14:50"
     },
-    "per_trade_agreement": 1.0,
-    "per_trade_size_weighted": 1.0,
-    "net_sign_recovery": 1.0,
+    "calibration_contracts": [
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 747.0,
+        "exp": 20260618
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 748.0,
+        "exp": 20260618
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 746.0,
+        "exp": 20260618
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 750.0,
+        "exp": 20260618
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 749.0,
+        "exp": 20260618
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 750.0,
+        "exp": 20260622
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 748.0,
+        "exp": 20260622
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 747.0,
+        "exp": 20260622
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 746.0,
+        "exp": 20260622
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 745.0,
+        "exp": 20260622
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 750.0,
+        "exp": 20260623
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 751.0,
+        "exp": 20260623
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 747.0,
+        "exp": 20260623
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 756.0,
+        "exp": 20260623
+      },
+      {
+        "root": "SPY",
+        "right": "C",
+        "strike": 745.0,
+        "exp": 20260623
+      }
+    ],
+    "per_trade_agreement": 0.8848,
+    "per_trade_size_weighted": 0.9026,
+    "net_sign_recovery": 0.8,
     "acceptance_criteria": {
       "agreement_bar": 0.75,
       "recovery_bar": 0.75,
@@ -53,6 +145,6 @@
       "recovery_ok": true
     },
     "direction_reliable_tape": true,
-    "note": "ThetaData tape-sourced calibration (trade+NBBO at execution). Per \u00a77.1 of LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE.md, direction_reliable in the root gate is flipped only by Fable adjudication after both acceptance bars are met. Agreement: 1.0 (bar 0.75), recovery: 1.0 (bar 0.75)."
+    "note": "ThetaData tape-sourced calibration (trade+NBBO at execution). Per \u00a77.1 of LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE.md, direction_reliable in the root gate is flipped only by Fable adjudication after both acceptance bars are met. n_trades=16,366, n_contracts=15. Agreement: 0.8848 (bar 0.75), recovery: 0.8 (bar 0.75)."
   }
 }

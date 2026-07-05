@@ -136,8 +136,28 @@ A pass requires BOTH:
 - Per-trade quote-rule agreement ≥ **0.75**
 - Minute/daily net-sign recovery ≥ **0.75**
 
-### 4.2 Calibration run command and verbatim output
+### 4.2 First attempt — INVALID (superseded)
 
+**INVALID (n=3, single deep-ITM contract — superseded by §4.3 below)**
+
+The initial calibration attempt (2026-07-04) used a hardcoded strike of 580.0 for
+SPY on 2026-06-18.  SPY spot on that date was ~747 (confirmed from EOD chain volume
+peak), making the 580 call approximately $167 ITM (delta≈1, trivially signable).
+The result (n=3 trades, agreement=1.0, recovery=1.0) is statistically invalid: with
+only 3 trades, perfect agreement is trivial and carries no information.
+
+The 580-as-ATM framing was incorrect: SPY spot was ~747 on 2026-06-18, not ~580.
+These results are superseded by the first valid calibration in §4.3.
+
+### 4.3 First valid calibration (2026-07-04)
+
+Fixes applied (PR review B1/M1/M2):
+- ATM resolved dynamically from EOD chain (spot≈746; band ±10% = [671, 821])
+- 15 contracts sampled across 3 nearest expirations (20260618, 20260622, 20260623)
+- Pooled trades (460,309 pre-filter) filtered to the ACTUAL 14:30–14:50 ET window
+- MIN_N_TRADES=5,000 gate added; n=16,366 >> 5,000 → status=measured
+
+Run command:
 ```
 python -m scripts.calibrate_flow_signing --source thetadata --start 2026-06-18T14:30 --end 2026-06-18T14:50
 ```
@@ -145,24 +165,45 @@ python -m scripts.calibrate_flow_signing --source thetadata --start 2026-06-18T1
 Verbatim output (2026-07-04):
 
 ```
-INFO thetadata_tape: pulling trade_quote for SPY 2026-06-18 strike=580
-INFO thetadata_tape: written to signing_gate.json — agreement=1.0, recovery=1.0
+INFO thetadata_tape: spot≈746 (from max-volume strike), strike band [671, 821]
+INFO thetadata_tape: using 3 expirations: ['2026-06-18', '2026-06-22', '2026-06-23']
+INFO thetadata_tape: selected 15 contracts for trade_quote sampling
+INFO thetadata_tape: trade_quote SPY exp=20260618 C strike=747.0
+INFO thetadata_tape: trade_quote SPY exp=20260618 C strike=748.0
+INFO thetadata_tape: trade_quote SPY exp=20260618 C strike=746.0
+INFO thetadata_tape: trade_quote SPY exp=20260618 C strike=750.0
+INFO thetadata_tape: trade_quote SPY exp=20260618 C strike=749.0
+INFO thetadata_tape: trade_quote SPY exp=20260622 C strike=750.0
+INFO thetadata_tape: trade_quote SPY exp=20260622 C strike=748.0
+INFO thetadata_tape: trade_quote SPY exp=20260622 C strike=747.0
+INFO thetadata_tape: trade_quote SPY exp=20260622 C strike=746.0
+INFO thetadata_tape: trade_quote SPY exp=20260622 C strike=745.0
+INFO thetadata_tape: trade_quote SPY exp=20260623 C strike=750.0
+INFO thetadata_tape: trade_quote SPY exp=20260623 C strike=751.0
+INFO thetadata_tape: trade_quote SPY exp=20260623 C strike=747.0
+INFO thetadata_tape: trade_quote SPY exp=20260623 C strike=756.0
+INFO thetadata_tape: trade_quote SPY exp=20260623 C strike=745.0
+INFO thetadata_tape: pooled 460309 trades from 15/15 contracts (pre-window-filter)
+INFO thetadata_tape: after window filter: n_trades=16366, n_contracts=15
+INFO thetadata_tape: written to signing_gate.json — agreement=0.8848, recovery=0.8, n_trades=16366, n_contracts=15
+
+thetadata_tape: n_trades=16,366  n_contracts=15  window=2026-06-18T14:30–2026-06-18T14:50  day=2026-06-18
 {
   "status": "measured",
+  "insufficient_n": false,
   "asof": "2026-07-04",
-  "generated": "2026-07-04T23:42:51.077185+00:00",
+  "generated": "2026-07-04T23:59:09.121517+00:00",
   "signing_source": "tape",
-  "n_trades": 3,
-  "calibration_contract": {
-    "root": "SPY",
-    "right": "C",
-    "strike": 580.0,
-    "exp": 20260618,
-    "date": "2026-06-18"
+  "n_trades": 16366,
+  "n_contracts": 15,
+  "min_n_trades": 5000,
+  "window": {
+    "start": "2026-06-18T14:30",
+    "end": "2026-06-18T14:50"
   },
-  "per_trade_agreement": 1.0,
-  "per_trade_size_weighted": 1.0,
-  "net_sign_recovery": 1.0,
+  "per_trade_agreement": 0.8848,
+  "per_trade_size_weighted": 0.9026,
+  "net_sign_recovery": 0.8,
   "acceptance_criteria": {
     "agreement_bar": 0.75,
     "recovery_bar": 0.75,
@@ -170,38 +211,32 @@ INFO thetadata_tape: written to signing_gate.json — agreement=1.0, recovery=1.
     "recovery_ok": true
   },
   "direction_reliable_tape": true,
-  "note": "ThetaData tape-sourced calibration (trade+NBBO at execution). Per §7.1 of LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE.md, direction_reliable in the root gate is flipped only by Fable adjudication after both acceptance bars are met. Agreement: 1.0 (bar 0.75), recovery: 1.0 (bar 0.75)."
+  "note": "ThetaData tape-sourced calibration (trade+NBBO at execution). Per §7.1 of LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE.md, direction_reliable in the root gate is flipped only by Fable adjudication after both acceptance bars are met. n_trades=16,366, n_contracts=15. Agreement: 0.8848 (bar 0.75), recovery: 0.8 (bar 0.75)."
 }
 ```
 
-### 4.3 Results
+### 4.4 Results
 
 | Metric | Databento truth | ThetaData tape | Bar | Status |
 |---|---|---|---|---|
-| Per-trade agreement | 0.777 | 1.0 | ≥0.75 | PASS |
-| Per-trade size-wtd | 0.808 | 1.0 | — | — |
-| Minute net-sign recovery | 0.41 | 1.0 | ≥0.75 | PASS |
-| n_trades | 101,934 | 3 | — | LOW (see note) |
-| Gate PASS/FAIL | — | PASS | BOTH ≥ bar | PASS |
-
-**IMPORTANT CAVEAT**: n_trades=3 is statistically insufficient. The agreement=1.0
-results from having only 3 trades in the 20-minute SPY 580-call window on 2026-06-18.
-A statistically valid calibration requires 100+ trades in the window.  The mechanics
-are confirmed working; a full calibration should use a more liquid, at-the-money
-contract (e.g., Friday-expiry SPY near current price) with a wider time window.
+| Per-trade agreement | 0.777 | **0.8848** | ≥0.75 | **PASS** |
+| Per-trade size-wtd | 0.808 | **0.9026** | — | — |
+| Minute net-sign recovery | 0.41 | **0.80** | ≥0.75 | **PASS** |
+| n_trades | 101,934 | **16,366** | ≥5,000 | **PASS** |
+| n_contracts | — | 15 | — | — |
+| Gate PASS/FAIL | — | **PASS** | BOTH ≥ bar | **PASS** |
 
 **Gate file status**: all pre-existing keys in `data/options_flow/signing_gate.json`
 (`scored`, `direction_reliable`, `magnitude_reliable`, `net_sign_recovery`,
 `per_trade_agreement`, `per_trade_size_weighted`, `bar`, `note`, `asof`, `generated`,
 `n_trades`, `universe`, `enabled`, `delta_adjusted`) are byte-identical.  Only the
-`thetadata_tape` key was added.
+`thetadata_tape` key was updated.
 
-### 4.4 Adjudication trigger
+### 4.5 Adjudication trigger
 
-BOTH acceptance bars technically passed (n=3 caveat above).  Fable adjudication
-required before flipping `direction_reliable: true` in the root gate.  Recommend
-re-running calibration with a liquid, near-ATM contract (SPY Friday expiry, wide window)
-before adjudication to get n ≥ 100 trades.
+BOTH acceptance bars passed with n=16,366 (3.3× MIN_N_TRADES).  Fable adjudication
+required before flipping `direction_reliable: true` in the root gate (per §7.1).
+`direction_reliable_tape: true` in the sub-key records the measurement.
 
 ---
 
@@ -236,4 +271,6 @@ contract per trading day (OHLCV + all greek orders + IV).
 | 2026-07-04 | Probe doc skeleton created. Phase-A PR opened. Subscription not yet active. |
 | 2026-07-04 | v3 adapter written (`feat/thetadata-v3-adapter`). First probe run: all PENDING sections filled. |
 | 2026-07-04 | greeks/eod endpoint discovered; bulk_greeks() switched from /greeks/all to /greeks/eod. |
-| 2026-07-04 | Calibration run: mechanics confirmed working; n_trades=3 (insufficient for adjudication). |
+| 2026-07-04 | Initial calibration: n=3 (INVALID — single deep-ITM 580 strike, spot was ~747). |
+| 2026-07-04 | Review fixes B1/M1/M2/m1-m4 applied: ATM dynamic resolution, window filter, MIN_N_TRADES gate, range-fetch, all-order greeks. |
+| 2026-07-04 | First valid calibration: n=16,366 trades, 15 contracts, agreement=0.8848, recovery=0.80 — BOTH bars PASS. |
