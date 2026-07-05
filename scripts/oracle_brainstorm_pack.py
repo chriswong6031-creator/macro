@@ -166,19 +166,35 @@ def build_pack(n_requested: int = 10, mode: str = "focus",
     compounds = _jsonl(REG)
     trials = _jsonl(LEDGER)
     eff_by_id: dict[str, str] = {}
+    eff_num: dict[str, float] = {}
     for t in trials:
         cid = t.get("compound_id")
         e63, h63 = t.get("effect_63d"), t.get("hit_63d")
         if cid and e63 is not None:
             eff_by_id[cid] = (f"screened: effect63={e63*100:+.2f}% "
                               f"hit63={(h63 or 0)*100:.1f}% n={t.get('n')}")
+            eff_num[cid] = e63
 
-    tested_lines = []
+    # Compaction: as the registry grows past ~40, listing every dead compound
+    # bloats the prompt.  The ingest (oracle_ingest_brainstorm) hard-dedups exact
+    # repeats regardless, so the prompt only needs the NOTABLE results verbatim
+    # (|effect63| >= 0.7% either sign, or not-yet-screened) plus a count of the
+    # rest.  Dead SHAPES are already fenced in the screen priors below.
+    _NOTABLE = 0.007
+    tested_lines, noise_n = [], 0
     for c in compounds:
         cid = c.get("id", "?")
+        e = eff_num.get(cid)
+        if e is None or abs(e) >= _NOTABLE:
+            tested_lines.append(
+                f"- [{cid}] {c.get('name','')}: rule={json.dumps(c.get('entry_rule'))} "
+                f"({eff_by_id.get(cid, 'not yet screened')})")
+        else:
+            noise_n += 1
+    if noise_n:
         tested_lines.append(
-            f"- [{cid}] {c.get('name','')}: rule={json.dumps(c.get('entry_rule'))} "
-            f"({eff_by_id.get(cid, 'not yet screened')})")
+            f"- (+ {noise_n} more screened as NOISE, |effect63|<0.7% — already "
+            "tested, do not re-propose; the ingest hard-dedups exact repeats.)")
 
     episode_fields = ("direction(in|out), tier(onset|confirmed|undeniable), "
                       "complex_scope(same|opposite|any), within_sessions, min_count "
