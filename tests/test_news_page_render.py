@@ -451,3 +451,78 @@ def test_delta_board_sort_none_novelty_z_goes_last():
     ]
     sorted_heads = _apply_ev_heads_sort(heads)
     assert sorted_heads[0]["title"] == "has novelty"
+
+
+# --------------------------------------------------------------------------- #
+# Tests — build_site.py render call SHAPE (W3 fix: duplicate-keyword collision)
+#
+# The real build_site.py render is:
+#     env.get_template("news.html.j2").render(
+#         **vm,                       # vm ALREADY contains a 'macro_news' key
+#         macro_news=_sorted_macro_news,
+#         macro_releases=..., news_rejected=..., news_calibration=...,
+#     )
+# Splatting **vm (which carries macro_news) AND passing macro_news= explicitly
+# raises "got multiple values for keyword argument 'macro_news'" at argument
+# binding — BEFORE the template runs — and, being unguarded, aborts the whole
+# build.  The prior smoke tests built a single flat dict and called render(**vm)
+# ONCE, so they never exercised the collision.  These tests reproduce the actual
+# call shape.
+# --------------------------------------------------------------------------- #
+
+# The real build_site.py vm carries ONLY macro_news among the W3 keys; the other
+# three side-artifacts (macro_releases / news_rejected / news_calibration) are
+# loaded into separate locals and passed as explicit keywords, so they are NOT vm
+# members.  Reproduce that exact shape rather than the fixture's all-in-one bundle.
+_BUILD_SITE_VM_ONLY_MACRO_NEWS = ("macro_releases", "news_rejected", "news_calibration")
+
+
+def _build_site_splatted_vm() -> dict:
+    """A vm shaped like scripts/build_site.py's real vm: contains 'macro_news' but
+    NOT the three side-artifact keys (those are supplied explicitly at render)."""
+    vm = _full_vm()
+    return {k: v for k, v in vm.items() if k not in _BUILD_SITE_VM_ONLY_MACRO_NEWS}
+
+
+def test_build_site_render_call_shape_no_duplicate_kwarg():
+    """Faithfully reproduce scripts/build_site.py:3163-3175 with the W3 fix applied.
+
+    The real vm carries a 'macro_news' key (build_site.py:3037).  The fix builds
+    the render kwargs from `{k:v for k,v in vm.items() if k != 'macro_news'}` and
+    then passes macro_news= explicitly alongside the three side-artifacts.  This
+    render(**vm_minus_macro_news, macro_news=..., macro_releases=..., ...) shape
+    is exactly what the prior suite never exercised (it always did a single flat
+    render(**vm)).  It must NOT raise a duplicate-keyword TypeError."""
+    vm = _build_site_splatted_vm()
+    assert "macro_news" in vm, "vm must carry macro_news (build_site.py:3037)"
+    for k in _BUILD_SITE_VM_ONLY_MACRO_NEWS:
+        assert k not in vm, f"{k} is NOT a vm key in build_site.py — supplied explicitly"
+    render_vm = {k: v for k, v in vm.items() if k != "macro_news"}  # the W3 fix
+    sorted_macro_news = dict(vm["macro_news"])  # stand-in for _sorted_macro_news
+    html = _env().get_template("news.html.j2").render(
+        **render_vm,
+        macro_news=sorted_macro_news,
+        macro_releases=None,
+        news_rejected=None,
+        news_calibration=None,
+    )
+    assert len(html) > 500
+    assert "nxDeltaBoard" in html
+
+
+def test_naive_duplicate_macro_news_kwarg_raises_typeerror():
+    """Regression guard: the BUGGY build_site.py shape — splat a vm that still
+    contains 'macro_news' AND pass macro_news= explicitly — raises the exact
+    TypeError (`got multiple values for keyword argument 'macro_news'`) that used
+    to abort the whole build.  If build_site.py ever regresses to `**vm` without
+    dropping macro_news, this documents/pins the failure mode."""
+    vm = _build_site_splatted_vm()  # carries 'macro_news', shaped like the real vm
+    tmpl = _env().get_template("news.html.j2")
+    with pytest.raises(TypeError, match="multiple values for keyword argument 'macro_news'"):
+        tmpl.render(
+            **vm,                                # <-- still contains macro_news
+            macro_news=dict(vm["macro_news"]),   # <-- explicit duplicate => collision
+            macro_releases=None,
+            news_rejected=None,
+            news_calibration=None,
+        )

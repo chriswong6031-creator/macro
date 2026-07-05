@@ -3161,8 +3161,14 @@ def main() -> int:
     else:
         _sorted_macro_news = _news_vm_macro_news
     out_news = site / "news.html"
+    # vm already carries a 'macro_news' key (assigned above), so we must NOT splat
+    # **vm AND pass macro_news= explicitly — that collides at argument binding and
+    # raises "got multiple values for keyword argument 'macro_news'", which would
+    # escape unguarded and abort the whole build.  Drop it from the splatted dict
+    # and pass the sorted view as the sole macro_news source.
+    _news_render_vm = {k: v for k, v in vm.items() if k != "macro_news"}
     write_page(out_news, env.get_template("news.html.j2").render(
-        **vm,
+        **_news_render_vm,
         macro_news=_sorted_macro_news,
         macro_releases=_macro_releases_data,
         news_rejected=_news_rejected_data,
