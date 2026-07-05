@@ -122,6 +122,34 @@ def _last_compound(selector: str) -> str:
     return parts[-1] if parts else ""
 
 
+def _split_selector_list(selectors: str) -> list[str]:
+    """Split a selector list on top-level commas only.
+
+    Functional pseudo-classes such as :is(.a, .b) contain commas that are part
+    of one selector. Treating those as selector-list separators can make a
+    descendant rule look like it directly targets body.
+    """
+    out: list[str] = []
+    buf: list[str] = []
+    depth = 0
+    for ch in selectors:
+        if ch == "(":
+            depth += 1
+        elif ch == ")" and depth:
+            depth -= 1
+        if ch == "," and depth == 0:
+            s = "".join(buf).strip()
+            if s:
+                out.append(s)
+            buf = []
+            continue
+        buf.append(ch)
+    s = "".join(buf).strip()
+    if s:
+        out.append(s)
+    return out
+
+
 def _decls_top(decls: str):
     """(padding_top, margin_top) declared by a rule body. Each is a px float,
     _UNMEASURABLE, or None when the property is not set in this rule. A `padding`
@@ -159,7 +187,7 @@ def _accumulate(css: str, kind: str, body: dict, navbar: dict) -> None:
         if "." + kind not in sels and "body" not in sels:
             continue
         tgts: set[str] = set()
-        for sel in sels.split(","):
+        for sel in _split_selector_list(sels):
             tgts |= _targets(_last_compound(sel), kind)
         if not tgts:
             continue
