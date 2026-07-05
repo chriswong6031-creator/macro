@@ -44,18 +44,8 @@ ENVELOPE
 The output is stamped with engine.neuralweb.envelope.stamp() — the first
 producer adoption of the envelope on the Neural Web bus.
 
-CALIBRATION NOTE (RULING-B, 2026-07-05):
-Calibration degeneracies (DNA mixed 52%, style mixed 89%) are PRINTED, not
-patched. §3.3/§3.4 thresholds remain frozen v1. A v2 recalibration is deferred
-to the pre-H3 clean window: after real fire-population distributions exist and
-before any H3 outcome data is analyzed. mixed is the honest default, not a
-failure (§3.3).
-
-NIGHTLY BOUNDS (RULING-C + FIX-8):
-The nightly CI step pins to --start 10 trading days back so a cold runner can
-never silently rebuild a year. The one-shot deep backfill (--start 2020-01-01,
-~25 min) MUST be run once, manually, before the panel has usable history depth.
-See daily.yml factor_panel step and build_factor_panel.py module docstring.
+factor_weather lobe (§5.4): composed by _compose_factor_weather() below; panel
+calibration notes and nightly-bounds law live in scripts/build_factor_panel.py.
 """
 from __future__ import annotations
 

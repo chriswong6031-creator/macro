@@ -2930,7 +2930,7 @@ class TestStyleRegimeBehavioralHysteresis:
       - conditions failing after: immediate confirmed='mixed'
       - future-append: history unchanged (idempotence / PIT)
 
-    Mutation demonstration (included in test docstrings): changing SR_HYSTERESIS_DAYS
+    Mutation demonstration (included in test docstrings): changing the structural 2-day rule
     from 2 to 1 causes test_two_day_confirm_flips_confirmed to fail.
     """
 
@@ -3060,10 +3060,10 @@ class TestStyleRegimeBehavioralHysteresis:
         confirmed='mixed'.
 
         This test requires a fixture that actually drives a non-mixed raw state.
-        The fixture gives exactly 1 signal day at the end.  With SR_HYSTERESIS_DAYS=2,
+        The fixture gives exactly 1 signal day at the end.  With the structural 2-consecutive-day rule (§3.4),
         the confirmed state must stay 'mixed' and pending must be 'growth_momentum'.
 
-        MUTATION DEMONSTRATION: changing SR_HYSTERESIS_DAYS from 2 to 1 would make
+        MUTATION DEMONSTRATION: changing the structural 2-day rule from 2 to 1 would make
         day-1 confirm immediately → confirmed becomes 'growth_momentum' → this test
         FAILS (confirmed != 'mixed').
         """
@@ -3084,9 +3084,9 @@ class TestStyleRegimeBehavioralHysteresis:
 
         assert last_confirmed == "mixed", (
             f"FIX-6 behavioral: day-1 match must keep confirmed='mixed' "
-            f"(SR_HYSTERESIS_DAYS=2 requires 2 consecutive). "
+            f"(§3.4 requires 2 consecutive). "
             f"Got confirmed='{last_confirmed}'. "
-            "MUTATION CHECK: if this fails with SR_HYSTERESIS_DAYS=1, "
+            "MUTATION CHECK: if this fails under an immediate-flip mutation, "
             "the hysteresis is correctly non-trivial."
         )
         assert last_pending == "growth_momentum", (
@@ -3097,9 +3097,9 @@ class TestStyleRegimeBehavioralHysteresis:
     def test_two_consecutive_days_flip_confirmed(self, tmp_path):
         """FIX-6 behavioral: 2 consecutive growth_momentum days → confirmed='growth_momentum'.
 
-        MUTATION DEMONSTRATION: with SR_HYSTERESIS_DAYS=1, day-1 already confirms
+        MUTATION DEMONSTRATION: under an immediate-flip mutation, day-1 already confirms
         → this test still PASSES (weaker). But test_day1_match_goes_to_pending_not_confirmed
-        FAILS (that test only gives 1 signal day, so with SR_HYSTERESIS_DAYS=1 the
+        FAILS (that test only gives 1 signal day, so under immediate-flip the
         confirmed would be 'growth_momentum' not 'mixed').
 
         More robustly: if we delete the 'pending' column concept entirely (never set
@@ -3162,7 +3162,7 @@ class TestStyleRegimeBehavioralHysteresis:
 
         assert day1_confirmed == "mixed", (
             f"FIX-6 day-1: confirmed must stay 'mixed'. Got '{day1_confirmed}'. "
-            "MUTATION: SR_HYSTERESIS_DAYS=1 makes this fail."
+            "MUTATION: an immediate-flip (no pending step) makes this fail — executed proof in P1-C adjudication."
         )
         assert day1_pending == "growth_momentum", (
             f"FIX-6 day-1: pending must be 'growth_momentum'. Got '{day1_pending}'. "

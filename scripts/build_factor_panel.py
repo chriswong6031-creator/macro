@@ -69,6 +69,13 @@ STYLE-REGIME CLASSIFIER (P1-C, masterplan §3.4):
   past confirmed states.  Any truncation at T and rebuild from scratch produces
   identical results for all dates ≤ T.
 
+CALIBRATION NOTE (Fable ruling 2026-07-05):
+  Calibration degeneracies (DNA mixed 52%, style mixed 89%) are PRINTED, not
+  patched.  §3.3/§3.4 thresholds remain frozen v1.  A v2 recalibration is
+  deferred to the pre-H3 clean window: after real fire-population distributions
+  exist and before any H3 outcome data is analyzed.  mixed is the honest
+  default, not a failure (§3.3).
+
 NIGHTLY BOUNDS (RULING-C + FIX-8, 2026-07-05):
   The nightly CI step (daily.yml factor_panel) passes --start equal to 10 trading
   days back so a cold runner can never silently rebuild a full year of history.
@@ -411,7 +418,6 @@ SR_QQQ_SPY_JUNK_MAX = 0.01      # QQQ/SPY 20d ratio < +0.01 → junk_rally condi
 NEGATIVE_IC_FACTORS: frozenset[str] = frozenset({"low_vol", "investment", "low_beta"})
 
 # Hysteresis: 2 consecutive days for a flip to confirm; 1 day for reversion to mixed.
-SR_HYSTERESIS_DAYS = 2
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
