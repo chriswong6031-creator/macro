@@ -110,7 +110,6 @@ lanes:
             - scripts.build_options_screener
             - scripts.build_options_skew
             - scripts.build_options_ivspread
-            - scripts.build_options_entry_state
             - scripts.build_darkpool_desk
           cl_baskets:
             - scripts.build_baskets
@@ -227,6 +226,9 @@ lanes:
         module: scripts.oracle_nightly
       - id: build_world_state
         module: scripts.build_world_state
+      - id: build_options_flow_attention
+        module: scripts.build_options_flow_attention
+        note: non-fatal reflex; neural-web W-D — direction-free options-flow attention trigger (nightly EOD fold)
       - id: build_feeds
         module: scripts.build_feeds
         note: non-fatal; per-ticker JSON feeds
@@ -435,7 +437,6 @@ lanes:
             - scripts.build_options_flow
             - scripts.build_options_skew
             - scripts.build_options_ivspread
-            - scripts.build_options_entry_state
           cl_baskets:
             - scripts.build_baskets
             - scripts.build_news
@@ -524,7 +525,6 @@ lanes:
             - scripts.build_options_flow
             - scripts.build_options_skew
             - scripts.build_options_ivspread
-            - scripts.build_options_entry_state
           cl_baskets:
             - scripts.build_baskets
             - scripts.build_news
