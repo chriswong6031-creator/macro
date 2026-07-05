@@ -3362,6 +3362,8 @@ artifacts:
       from engine/stock_fundamentals._leverage_ratios() via data/edgar/statements.parquet:
         interest_coverage, net_debt_to_op_income, net_debt_to_ebitda.
       All three are None-safe; Financial-sector names and sparse filers produce None.
+      net_debt_to_op_income is an EBITDA proxy (uses operating income as D&A substitute);
+      any future UI surface MUST carry a proxy label for this ratio.
       net_debt_to_ebitda requires D&A (DepreciationDepletionAndAmortization) which
       accrues via the collectors/edgar_facts.py weekly drip — mostly None until drip runs.
 

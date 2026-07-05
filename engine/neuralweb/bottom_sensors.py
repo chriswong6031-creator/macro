@@ -670,8 +670,8 @@ def assemble(
 
     # ── Survival-quality leverage ratios (FR-9/FR-10; display-only) ──────────
     # Load statements once; degrade gracefully when parquet is absent (CI runners,
-    # first run before the drip has fired).  PIT filtering (fy <= today's FY) is
-    # handled inside _leverage_ratios via the rows list already ordered ascending.
+    # first run before the drip has fired).  Uses the latest filed fiscal year
+    # (PIT-safe for a current snapshot; rows[-1] = most recently filed FY).
     statements_by_ticker = _load_statements()
 
     # ── Sponsorship connector (Amendment §C3) — load once, pass through ──────

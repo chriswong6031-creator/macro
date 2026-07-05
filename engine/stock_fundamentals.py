@@ -490,10 +490,11 @@ def _altman(latest: dict, mktcap: float | None) -> dict | None:
 
 
 def _leverage_ratios(rows: list[dict]) -> dict:
-    """Bottom-survival-quality leverage ratios from statement rows (PIT-filtered by caller).
+    """Bottom-survival-quality leverage ratios from statement rows.
 
-    Follows the _altman()/_piotroski() pattern: takes the list of per-fiscal-year
-    statement rows already filtered to fy <= panel-row fy, uses only the LATEST row.
+    Follows the _altman()/_piotroski() pattern: takes the full list of per-fiscal-year
+    statement rows (unfiltered, consistent with sibling helpers) and uses rows[-1]
+    (latest filed FY), which is PIT-safe for a current-snapshot builder.
     Returns a dict with up to four keys; any ratio that cannot be computed (missing or
     zero denominator, all-None inputs) is absent from the dict (not set to 0/None) so
     the caller can detect unavailability via .get() returning None.
