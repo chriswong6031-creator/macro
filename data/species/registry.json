@@ -1824,6 +1824,107 @@
         "cadence": "quarterly",
         "maturation": "Phase-0 W1. Requires ≥25 logged failed-breakout fire events for statistical feasibility (MIN_N=25 server clamp). Come-back 2026-10-05 allows one full quarter of accrual. The research queue ranker (nw-quant-synthesis B) lists S14 as its first ranked customer."
       }
+    },
+    {
+      "species_id": "F3_ANTICHASE",
+      "version": "1.0",
+      "name": "Anti-Chase Hard Gate (F3 ext_z)",
+      "validation_status": "phase0_passed",
+      "deployment_status": "chip",
+      "mechanism": "Names with ext_z > 2.0 are in the PARABOLIC tail: priced more than 2 own-history σ above their 200-day average. P1.3 established this cohort has higher stop-out (+0.43pp at 21d, +5.0pp at 63d) and dead-money (+3.6pp at 21d) incidence vs the unblocked population on production-trigger fires. The mechanism is forced-buyer exhaustion: a parabolic extension means every short-term buyer has already bought; when momentum stalls, there is no marginal buyer to absorb the first seller. The gate does not predict when the reversal happens — only that it stops the board from confirming a chase entry.",
+      "horizon_class": "positional",
+      "trial_count": 3,
+      "p1_3_trials": [
+        "T21",
+        "T22",
+        "T24"
+      ],
+      "context_trials": [
+        "T25_context_only"
+      ],
+      "evidence_stack": [
+        {
+          "condition": "ext_z > 2.0 at signal time",
+          "tag": "gate"
+        },
+        {
+          "condition": "ext_z computed from engine/extension.py PARABOLIC_Z = 2.0",
+          "tag": "arming"
+        },
+        {
+          "condition": "production-trigger fires only (P1.3 population)",
+          "tag": "context"
+        }
+      ],
+      "rejection_rules": [
+        {
+          "rule": "ext_z <= 2.0: not blocked",
+          "prevents": "non-extended names pass through uninhibited"
+        },
+        {
+          "rule": "RW mode did not ship (sign-unstable T27-T30): no rank-weight variant authorized",
+          "prevents": "sign flip across halves in RW prevented rank-weight path"
+        }
+      ],
+      "archetype_scope": {
+        "applies": "all archetypes — the parabolic tail is archetype-agnostic (extension is own-history relative, not absolute)",
+        "hostile": "none identified; the 4.6% impact means virtually no archetype is disproportionately affected"
+      },
+      "regime_scope": {
+        "hypothesized_supportive": "risk-off / breadth-narrow (extended names most exposed to liquidity withdrawal)",
+        "hypothesized_hostile": "strong-breadth melt-up (extension persists without mean-reversion)",
+        "learnable_projection": "two axes max: regime_one RISK_STATE x breadth_z quintile; pre-registered at P3.1"
+      },
+      "market_scope": [
+        "US"
+      ],
+      "adjacent_falsified": [
+        {
+          "id": "extension_as_return_alpha",
+          "source": "SETUP_SPECIES_MASTERPLAN §1.6",
+          "mechanical_difference": "This gate acts on the safety-net axes (stop-out / dead-money), not return-alpha. The graveyard entry falsified extension as a return predictor; P1.3 tests it as a stop-out reducer — a different claim on a different axis."
+        },
+        {
+          "id": "cn_reversal_gate",
+          "source": "china-subsector-gate-falsified memory",
+          "mechanical_difference": "CN reversal gate hurt because it gated a mean-reversion edge. This gate targets the ~5% parabolic tail on momentum-confirmed fires, not the reversal sleeve. CN is explicitly out of scope."
+        }
+      ],
+      "fixtures": [
+        {
+          "name": "JNJ_chase_exclusion",
+          "expectation": "any parabolic fire on JNJ at peak valuation must appear in would-block"
+        },
+        {
+          "name": "NVDA_persistent_leader",
+          "expectation": "NVDA in normal strong-trend periods reads ext_z < 2 (own-history z-scoring is the key distinction)",
+          "status": "UNVERIFIED — convert to a computable assertion before PR merge"
+        }
+      ],
+      "ledger_binding": {
+        "ledger": "data/signal_archive/antichase_shadow_ledger.parquet",
+        "since": "2026-07-05",
+        "flip_criteria": {
+          "C1_n_floor": ">= 100 independent episode clusters of would-have-blocked events AND >= 2 calendar quarters of accrual since first ledger row (P1.5 PREREG K1 floor)",
+          "C2_wilson": "Wilson 95% lower bound of stop-out improvement (blocked > unblocked) > 0, episode-clustered bootstrap N=1000",
+          "C3_sign_stability": "stop-out improvement sign holds in both temporal halves of the shadow ledger"
+        },
+        "rollback_triggers": {
+          "RB1_wilson_reversal": "Wilson 95% upper bound on D < 0 after >= 200 post-flip episode clusters at 21d OR 63d",
+          "RB2_fire_rate_breach": "gate blocking > 15% of weekly fires over any consecutive 4-week window",
+          "RB3_recall_failure": "PENDING P1.4 column confirmation — not yet operational"
+        },
+        "flip_floor_clusters": 100,
+        "flip_floor_quarters": 2
+      },
+      "gating": {
+        "come_back_on": "monthly species review",
+        "cadence": "monthly",
+        "maturation": "shadow ledger accrual to C1 n-floor (>= 100 episode clusters AND >= 2 calendar quarters); at ~5% board coverage the episode-cluster count is the binding constraint"
+      },
+      "deployment_status_path": "chip -> ledger_fields -> gate_weight (shadow) -> gate_weight (enforcing)",
+      "prereg_doc": "research/entry_intel/P2_1A_ANTICHASE_GATE_PREREG.md",
+      "registered": "2026-07-05"
     }
   ]
 }

@@ -2148,10 +2148,131 @@ def main() -> int:
                            if (profiles.get(t) or {}).get("composite_z", 0) > 0]
         watch = _overflow_watch + watch
 
-        def _tag(t, tier, lane="trend"):
+        # ── P2.4 Board Contract v2: lane taxonomy + weekly_phase capture ─────
+        # Spec: research/entry_intel/P2_4_BOARD_CONTRACT_V2_DESIGN.md
+        # Step A: populate weekly_phase on every cand row from
+        #         profiles[t]["alignment"]["weekly"] BEFORE _tag() is called.
+        # Step B: _lane_for() derives the lane from align_tier + weekly_phase,
+        #         handling both live vocab (aligned/near) and replay vocab
+        #         (PRIME/ARMED/APPROACHING) with an UNKNOWN guard.
+        # Vocabulary sets — verified 2026-07-05 against live us_standouts.json.
+        # Live board: align_tier in {"aligned", "near", None}.
+        # Replay/conviction layer: alignment.tier in {"PRIME", "ARMED", ...}.
+        # Both vocabularies are handled explicitly; unknown values log a warning.
+        _PRIME_EQUIV   = {"PRIME", "aligned"}         # bottoming-type tiers
+        _ARMED_EQUIV   = {"ARMED"}                    # continuation-type (requires rising weekly)
+        _NEAR_EQUIV    = {"APPROACHING", "near", "bear_recovering", "turning"}  # near-aligned
+
+        def _lane_for(align_tier_val, weekly_phase_val):
+            """Derive the v2 lane label from align_tier + weekly_phase.
+
+            Handles both the live production vocabulary (aligned/near/None) and
+            the replay/conviction vocabulary (PRIME/ARMED/APPROACHING).
+            Logs a warning on any unknown tier and defaults to 'bottoming'.
+            """
+            tier = None if align_tier_val in (None, "None", "") else align_tier_val
+            if tier in _PRIME_EQUIV:
+                return "bottoming"
+            if tier in _ARMED_EQUIV and weekly_phase_val == "rising":
+                return "continuation"
+            if tier in _NEAR_EQUIV and weekly_phase_val == "rising":
+                return "continuation"  # near/APPROACHING with rising phase → continuation
+            if tier in _ARMED_EQUIV or tier in _NEAR_EQUIV:
+                return "bottoming"     # non-rising ARMED or near → bottoming group
+            if tier is None:
+                return "bottoming"     # null align_tier → structural default
+            # UNKNOWN vocabulary: log loudly, default gracefully
+            log.warning(
+                "P2.4 _lane_for: UNKNOWN align_tier value %r (weekly_phase=%r) — "
+                "defaulting to 'bottoming'. Update _PRIME_EQUIV/_ARMED_EQUIV/_NEAR_EQUIV "
+                "if the builder vocabulary has changed.", align_tier_val, weekly_phase_val
+            )
+            return "bottoming"
+
+        # Step A: capture weekly_phase + above_trend from profiles onto cand rows.
+        # weekly_phase comes from profiles[t]["alignment"]["weekly"] (the _tf_phase()
+        # value: "rising"/"rolling"/"falling"/"turning"/"unknown"). This is the primary
+        # discriminator for ARMED-continuation vs PRIME-bottoming lane detection.
+        # above_trend: sourced from sig_verdict[t].get("above200") — the signal_gate
+        # already computes this boolean (price > 200d SMA) in gate() and emits it as a
+        # top-level verdict key.  Board rows in row_by_t do NOT carry a "tech" sub-dict
+        # at Step A time (tech snapshot is absent from the buy-loop dict), so the
+        # previous primary path (r_dict.get("tech").get("above200")) always returned
+        # None — hence 0% fill in the P2.4 real-build (VERIFY_P2_4_REALBUILD.md F1).
+        # Fix (AC-5): use sig_verdict[ticker].get("above200") as the primary source.
+        # sig_verdict is built at L1344 (same closure scope) from signal_gate.gate()
+        # which populates above200 for every analysed name.
+        def _get_above_trend(ticker_str):
+            """Extract above_trend bool; primary = sig_verdict[t].above200."""
+            # Primary: signal_gate verdict (above200 populated for all analysed names)
+            _sv_ab = (sig_verdict.get(ticker_str) or {}).get("above200")
+            if _sv_ab is not None:
+                return bool(_sv_ab)
+            # Fallback: already set on the row (e.g. from a prior propagation pass)
+            _r_fb = row_by_t.get(ticker_str)
+            if _r_fb is not None:
+                _existing = _r_fb.get("above_trend")
+                if _existing is not None:
+                    return bool(_existing)
+            return None
+
+        # buyable = (t, p, tier) triples; _recovery_cands = (t, p) pairs — iterate separately
+        for _t_a, _p_a, _tier_a in buyable:
+            _r_a = row_by_t.get(_t_a)
+            if _r_a is None:
+                continue
+            _align_a = (_p_a.get("alignment") or {})
+            _wph_a = _align_a.get("weekly")
+            if _wph_a is not None:
+                _r_a["weekly_phase"] = _wph_a
+            _atrd_a = _get_above_trend(_t_a)
+            if _atrd_a is not None:
+                _r_a["above_trend"] = _atrd_a
+        for _t_a, _p_a in _recovery_cands:
+            _r_a = row_by_t.get(_t_a)
+            if _r_a is None:
+                continue
+            _prof_a = profiles.get(_t_a) or {}
+            _align_a = (_prof_a.get("alignment") or {})
+            _wph_a = _align_a.get("weekly")
+            if _wph_a is not None:
+                _r_a["weekly_phase"] = _wph_a
+            _atrd_a = _get_above_trend(_t_a)
+            if _atrd_a is not None:
+                _r_a["above_trend"] = _atrd_a
+        # Also propagate weekly_phase + above_trend for watch rows.
+        # watch is a mixed list [(t, p_or_row)]; ignore the second element and always
+        # look up from profiles for alignment (consistent source for both list variants).
+        for _t_a, _ in watch:
+            _r_a = row_by_t.get(_t_a)
+            if _r_a is None:
+                continue
+            _prof_a = profiles.get(_t_a) or {}
+            _align_a = (_prof_a.get("alignment") or {})
+            _wph_a = _align_a.get("weekly")
+            if _wph_a is not None:
+                _r_a["weekly_phase"] = _wph_a
+            _atrd_a = _get_above_trend(_t_a)
+            if _atrd_a is not None:
+                _r_a["above_trend"] = _atrd_a
+
+        def _tag(t, tier, lane=None):
+            """Tag a board row with align_tier and derive the v2 lane label.
+
+            tier: the alignment tier string (from conviction.alignment.tier:
+                  PRIME/ARMED/APPROACHING, or from _atier(): aligned/near).
+                  Stored as r["align_tier"] for display/downstream consumers.
+            lane: if explicitly supplied (e.g. "recovery") the lane is set
+                  directly; otherwise derived by _lane_for(tier, weekly_phase).
+            """
             r = row_by_t[t]
-            r["align_tier"] = tier
-            r["lane"] = lane
+            # Use the richer conviction.alignment.tier (PRIME/ARMED) when available,
+            # falling back to the _atier() board-level tier (aligned/near).
+            _conv_tier = (profiles.get(t) or {}).get("alignment", {}).get("tier")
+            _eff_tier = _conv_tier if _conv_tier else tier
+            r["align_tier"] = _eff_tier
+            weekly_ph = r.get("weekly_phase")
+            r["lane"] = lane if lane is not None else _lane_for(_eff_tier, weekly_ph)
             return r
 
         # ── W8 alpha-within-lane ordering ─────────────────────────────────────
@@ -2170,14 +2291,26 @@ def main() -> int:
             for t, p in _recovery_cands
         ]
 
-        # Trend rows (tag them last so _tag mutation runs after recovery tagging)
-        _trend_rows_ordered = [_tag(t, tier, lane="trend") for t, _, tier in buyable_trend[:120]]
+        # Trend rows: P2.4 v2 — lane is derived by _lane_for(tier, weekly_phase)
+        # (no explicit lane= override so the continuation branch fires).
+        _trend_rows_ordered = [_tag(t, tier) for t, _, tier in buyable_trend[:120]]
 
         _all_buy_rows = _trend_rows_ordered + _recovery_rows_ordered
 
+        # P2.4 spec §3.1: watch rows must carry lane="watch" so lane_counts has a
+        # "watch" key (not None).  Previously _tag() was only called for buy rows;
+        # watch rows were assembled raw from row_by_t with lane=None — producing the
+        # "null:24" key in lane_counts (VERIFY_P2_4_REALBUILD.md AC-2 gap / F2).
+        def _tag_watch(t):
+            r = row_by_t[t]
+            r.setdefault("lane", "watch")   # don't overwrite if already set
+            if r.get("lane") != "watch":
+                r["lane"] = "watch"
+            return r
+
         wide = {"as_of": alpha_asof, "rank_by": "bottoming-alignment", "gate_go": gate_go,
                 "buy": _all_buy_rows,
-                "watch": [row_by_t[t] for t, _ in watch[:24]],
+                "watch": [_tag_watch(t) for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
                 "concentration": _concentration_stat,
                 # G6a donor-sector: page-level context chip (not per-row; None when insufficient data)
@@ -2186,6 +2319,42 @@ def main() -> int:
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
+            # P2.4 Step D: ext_z top-level field — extension z-score for the anti-chase
+            # context chip (display-only per R10; F3 gate promotion is P3's jurisdiction).
+            # Source: ext_map[t]["ext_z"] — the pre-computed per-name extension z-score
+            # built at L1238 via extension_signals(_ext_closes).  The previous path read
+            # profiles[t]["axes"]["extension"]["z"] which is NOT populated at profiles
+            # level — hence 0% fill in the P2.4 real-build (VERIFY_P2_4_REALBUILD.md F3).
+            # Fix: source directly from ext_map which is available in the same scope.
+            _extz_v = (ext_map.get(t) or {}).get("ext_z")
+            if _extz_v is not None:
+                try:
+                    r["ext_z"] = round(float(_extz_v), 2)
+                except (TypeError, ValueError):
+                    pass
+            # P2.1a Step G: antichase_shadow_blocked — F3 anti-chase shadow gate field.
+            # Reads ext_z from the same ext_map source used in Step D above.
+            # Threshold = PARABOLIC_Z = 2.0 (engine/extension.py L36; pre-registered in
+            # P2_1A_ANTICHASE_GATE_PREREG.md §1.3). SHADOW period: label only, ZERO
+            # enforcement — name stays on board at same rank. The blocked field drives:
+            #   (1) Anti-Chase Watch chip in the template (display only),
+            #   (2) the shadow ledger writer below (forward-grading accrual),
+            #   (3) species registry chip rung (F3_ANTICHASE, deployment_status=chip).
+            # It is intentionally present on ALL rows (buy + watch + laggards) so the
+            # shadow ledger can grade non-blocked rows as the control group.
+            _ANTICHASE_Z_THRESH = 2.0   # mirrors PARABOLIC_Z — do not tune here
+            _extz_float = r.get("ext_z")
+            if _extz_float is not None:
+                r["antichase_shadow_blocked"] = bool(_extz_float > _ANTICHASE_Z_THRESH)
+            else:
+                r["antichase_shadow_blocked"] = False
+            # P2.4 Step C: above_trend propagation — final catch-all for rows that
+            # weren't captured in Step A (e.g. laggard rows not in buy/watch lists).
+            # Source: sig_verdict[t].above200 (consistent with Step A fix above).
+            if r.get("above_trend") is None:
+                _atrd_e = (sig_verdict.get(t) or {}).get("above200")
+                if _atrd_e is not None:
+                    r["above_trend"] = bool(_atrd_e)
             r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
             if entry_sig.get(t):
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
@@ -2367,6 +2536,87 @@ def main() -> int:
         wide["universe"] = len(cand)
         if disp_regime:                            # selection-regime gross dial (board + bot)
             wide["dispersion_regime"] = disp_regime
+
+        # P2.4 Step E: lane_counts top-level field — nightly monitoring primitive.
+        # Counts rows per lane (bottoming/continuation/watch/recovery) across buy+watch.
+        # Logged so the build log carries the distribution for AC-2 verification.
+        from collections import Counter as _Counter
+        _lane_ct = _Counter(r.get("lane") for r in wide["buy"] + wide["watch"])
+        wide["lane_counts"] = dict(_lane_ct)
+        log.info("P2.4 lane_counts: %s", wide["lane_counts"])
+
+        # P2.1a Step H: anti-chase shadow ledger writer.
+        # Appends per-ticker rows to data/signal_archive/antichase_shadow_ledger.parquet.
+        # The ledger records EVERY board row (blocked and unblocked) so the control group
+        # (antichase_shadow_blocked=False) is tracked for the Wilson-bound comparison in
+        # the flip criterion C2 (P2_1A_ANTICHASE_GATE_PREREG.md §2.2).
+        # Pattern: append-only parquet; keep-FIRST per (asof, ticker); never fatal.
+        # Rollback fields per R-P2.1: flip_eligible=False + flip_criteria_met={'C1':False,
+        #   'C2':False,'C3':False} mark this as a shadow row (no flip authority yet).
+        # These fields are set to False throughout the shadow period; only a Fable ruling
+        # + criteria check can set them to True (that logic is in the monthly review, not here).
+        try:
+            import pandas as _pd
+            _shadow_path = config.data_dir() / "signal_archive" / "antichase_shadow_ledger.parquet"
+            _shadow_path.parent.mkdir(parents=True, exist_ok=True)
+            _asof_s = wide.get("as_of")
+            if _asof_s:
+                _asof_str = str(_pd.Timestamp(_asof_s).date())
+                # Load existing to deduplicate by (asof, ticker)
+                _old_shadow = _pd.read_parquet(_shadow_path) if _shadow_path.exists() else None
+                _seen_shadow = set()
+                if _old_shadow is not None and "asof" in _old_shadow.columns and "ticker" in _old_shadow.columns:
+                    _seen_shadow = set(zip(_old_shadow["asof"].astype(str), _old_shadow["ticker"].astype(str)))
+                _new_rows = []
+                for _sr_h in wide["buy"] + wide["watch"]:
+                    _t_h = _sr_h.get("ticker")
+                    if _t_h is None or (_asof_str, _t_h) in _seen_shadow:
+                        continue
+                    _new_rows.append({
+                        "asof": _asof_str,
+                        "ticker": _t_h,
+                        "lane": _sr_h.get("lane"),
+                        "ext_z": _sr_h.get("ext_z"),
+                        "antichase_shadow_blocked": bool(_sr_h.get("antichase_shadow_blocked")),
+                        # Rollback/flip fields (R-P2.1): always False during shadow period.
+                        # Set to True only after Fable ruling + C1+C2+C3 criteria confirmed.
+                        "flip_eligible": False,
+                        "flip_criteria_met": False,   # simplified bool; C1+C2+C3 detail in monthly review
+                        "gate_state": "shadow",        # shadow | enforcing | rolledback
+                        "logged_at": str(_pd.Timestamp.now(tz="UTC").isoformat()),
+                    })
+                if _new_rows:
+                    _new_df = _pd.DataFrame(_new_rows)
+                    _merged_shadow = _pd.concat([_old_shadow, _new_df], ignore_index=True) \
+                        if _old_shadow is not None else _new_df
+                    _merged_shadow.to_parquet(_shadow_path, index=False)
+                    _n_blocked = sum(r["antichase_shadow_blocked"] for r in _new_rows)
+                    log.info("P2.1a antichase shadow ledger: %d rows appended (%d blocked, %d unblocked) for %s",
+                             len(_new_rows), _n_blocked, len(_new_rows) - _n_blocked, _asof_str)
+                else:
+                    log.debug("P2.1a antichase shadow ledger: no new rows for %s (all already logged)", _asof_str)
+        except Exception as _ac_e:  # noqa: BLE001 — shadow ledger is never fatal
+            log.debug("P2.1a antichase shadow ledger write skipped: %s", _ac_e)
+
+        # P2.4 Step F: setups.json lane backfill — same taxonomy, shared lane labels.
+        # The setups object is still in memory (written initially at L1948). Update it
+        # with lane values from the standout board and re-write to ensure shared taxonomy.
+        # rank_by backfill: AC-6 requires non-null "alpha" value.
+        _standout_lane_map = {r["ticker"]: r.get("lane") for r in wide.get("buy", [])}
+        _setups_updated = False
+        for _sr in setups.get("buy", []):
+            _st = _sr.get("ticker")
+            _sl = _standout_lane_map.get(_st, "bottoming")  # default: bottoming if not on board
+            _sr["lane"] = _sl
+            _setups_updated = True
+        if "rank_by" not in setups or setups.get("rank_by") is None:
+            setups["rank_by"] = "alpha"
+            _setups_updated = True
+        if _setups_updated:
+            (site / "factordata" / "setups.json").write_text(
+                json.dumps(setups, separators=(",", ":"), default=str))
+            log.info("P2.4 setups.json lane backfill: %d buy rows updated, rank_by=%s",
+                     len(setups.get("buy", [])), setups.get("rank_by"))
 
         # --- W6-US fix 7: urgency must respect the gated entry status ---
         # Row-level urgency="now" is derived from the cycle-state dict, but the
