@@ -71,7 +71,7 @@ def compute_flow_z(
         return pd.DataFrame(columns=["snapshot_date", "event_key",
                                      "vol24_delta", "vol24_z", "n_snapshots"])
 
-    ev = ev.sort_values(["event_key", "snapshot_date"])
+    ev = ev.sort_values(["event_key", "snapshot_date"]).reset_index(drop=True)
     ev["vol24_delta"] = ev.groupby("event_key")["volume24hr"].diff()
 
     rows = []
