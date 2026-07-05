@@ -49,9 +49,12 @@ def test_real_news_survives(title):
         f"false-positive drop ({nc.low_value_reason(title)}): {title!r}")
 
 
-def test_macro_release_stub_is_a_known_gap():
-    """Bare official-release titles ('Manufacturing and Trade Inventories and
-    Sales') still leak the title-only gate — suppressing them needs release-registry
-    context (Fable phase 2: macro-surprise parser), NOT a generic title regex.
-    Documented here so the boundary is explicit and does not silently regress."""
-    assert nc.low_value_reason("Manufacturing and Trade Inventories and Sales") is None
+def test_macro_release_stub_now_suppressed():
+    """W1: bare official-release titles ('Manufacturing and Trade Inventories and
+    Sales') are now suppressed via the W1 macro_surprise release registry.
+    Reason must be 'macro_release_stub' so the reject log is traceable."""
+    reason = nc.low_value_reason("Manufacturing and Trade Inventories and Sales")
+    assert reason == "macro_release_stub", (
+        f"expected 'macro_release_stub', got {reason!r} — "
+        "title_aliases in RELEASE_REGISTRY may be missing this stub"
+    )

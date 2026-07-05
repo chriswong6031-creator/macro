@@ -295,7 +295,8 @@ def low_value_reason(title: str, domain: str = "", author: str = "") -> str | No
     so filter leaks are logged/regression-testable instead of silent. PURE.
 
     Reasons: pickmill_byline · stock_pick_roundup · calendar_preview ·
-    routine_fund_distribution · lifestyle_content · personal_finance_advice."""
+    routine_fund_distribution · lifestyle_content · personal_finance_advice ·
+    macro_release_stub."""
     t = (title or "").strip()
     if not t:
         return "empty_title"
@@ -314,6 +315,16 @@ def low_value_reason(title: str, domain: str = "", author: str = "") -> str | No
         return "personal_finance_advice"
     if "?" in t and _PF_TOKEN_RE.search(t) and _FIRST_PERSON_RE.search(t):
         return "personal_finance_advice"
+    # Bare official-release title stubs ("Manufacturing and Trade Inventories and
+    # Sales") carry no values — suppress with dedicated reason so the reject log
+    # is traceable.  The check is delegated to the release registry so the alias
+    # list lives in exactly one place (engine.macro_surprise).
+    try:
+        from engine.macro_surprise import is_release_stub as _is_stub
+        if _is_stub(t):
+            return "macro_release_stub"
+    except Exception:  # noqa: BLE001 — degrade-never-raise: if the module is absent, skip
+        pass
     return None
 
 

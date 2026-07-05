@@ -216,6 +216,26 @@ def build(write: bool = True) -> dict:
     if narrative:
         _write("narrative.json", narrative)
 
+    # ---- macro surprise cards -----------------------------------------------
+    macro_releases = None
+    try:
+        from engine import macro_surprise as ms
+        macro_releases = ms.build_release_cards()
+        if macro_releases:
+            n_cards = macro_releases.get("n_cards", 0)
+            n_fetched = macro_releases.get("n_fetched", 0)
+            log.info("macro_releases: %d cards from %d/%d series",
+                     n_cards, n_fetched, macro_releases.get("n_registry", 0))
+    except Exception as e:  # noqa: BLE001 — degrade to empty, never block
+        log.warning("macro_surprise failed (%s)", e)
+        macro_releases = {"schema": "macro_releases.v1", "is_context_only": True,
+                          "cards": [], "n_cards": 0, "degraded_reason": str(e)}
+
+    _write("macro_releases.json", macro_releases or {
+        "schema": "macro_releases.v1", "is_context_only": True, "cards": []
+    })
+    vm["macro_releases"] = macro_releases
+
     # ---- reject log (aggregate all feed buckets) ----------------------------
     try:
         macro_rejected = (macro or {}).get("rejected") or []
