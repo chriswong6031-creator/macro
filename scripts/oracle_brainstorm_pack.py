@@ -66,6 +66,9 @@ _SCREEN_PRIORS = """\
   B4 -1.2%, all n>=290). Buying "healthy participation" is not an edge — that
   participation is already priced. Do not gate on breadth/cohesion state; use
   them at most as a secondary filter behind a genuine flow/washout trigger.
+  (Caveat: these used 2021+-only columns, so the sample is 2021-2026, not
+  all-history — negative on available data, but that is NOT cross-era death;
+  and being 2021+-only they are un-promotable regardless. See HISTORY COVERAGE.)
 - cohesion_rebuild as the PRIMARY trigger: weak/dead on tier-s (round-3 A10
   n=80 & A11 n=77 both era 1; F3 +0.29% era 1; F4 -0.17%). The rebuild flag
   fires too sparsely and doesn't hold across eras — do NOT use it as the
@@ -236,6 +239,24 @@ THE GRAMMAR (your entire vocabulary — specs outside it are rejected):
 
 AVAILABLE PANEL COLUMNS (per node per day, all causal):
 {", ".join(COLUMN_SCHEMA)}
+
+COLUMN SCALES (wrong scale = a rule that never fires — respect these):
+- 0-100: stochrsi_w_k, stochrsi_w_d (median ~56; use 20/50/80, NOT 0.2/0.8).
+- 0-1: vix_pctile, breadth_50, persistence (~0.23-0.75), cohesion (~0.09-0.78).
+- 0/1 flags: washout_w, spy_above_200d, cohesion_rebuild (use ">value":0 or ge 1).
+- small decimals (daily/rolling returns): ret, vel_1w, vel_1m, vel_3m, accel,
+  tlt_ret_10d.  z-scores (~ -3..+3, tails to +-8): accel_z, turnover_z.
+- Do NOT value_col-compare columns of DIFFERENT scales (e.g. stochrsi vs rs,
+  vix_pctile vs turnover_z) — the comparison is degenerate/always-true.
+
+HISTORY COVERAGE (HARD promotability constraint):
+- FULL history 1998->: ret, rs, vel_*, accel, accel_z, persistence, vix_pctile,
+  tlt_ret_10d, spy_above_200d, washout_w, stochrsi_w_k/d.
+- 2021+ ONLY (~5yr, ~13.5k rows): breadth_50, cohesion, cohesion_chg,
+  turnover_z, cohesion_rebuild.  A rule CONDITIONED on any of these fires only
+  post-2021, so it CANNOT clear the era-consistency gate (3 of 4 eras) and is
+  NOT promotable.  Use them at most as an optional probe leg, NEVER as the edge.
+  Prefer full-history columns for anything you want promotable.
 
 MECHANISM FAMILIES ALREADY MAPPED (extend them or propose NEW families —
 say which): A conservation/routing (money must go somewhere), B sector
