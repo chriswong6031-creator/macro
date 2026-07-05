@@ -417,6 +417,64 @@ def aggregate_day(
     # (= EOD t-2, published morning of t-1), i.e. oi[t-1].
     result["vol_gt_oi_share"] = _vol_gt_oi(trades, oi_prev)
 
+    # ── 12. T2a required features (P2.1 spec) ────────────────────────────────
+    # volume: total contracts traded
+    result["volume"] = float(trades["size"].sum())
+
+    # signed_pc_ratio: signed put $ / signed call $ (gate-gated; negative = call-leaning)
+    # Computed from the already-computed ask/bid premium sides above.
+    _net_call_sp = result["ask_side_call_premium"] - result["bid_side_call_premium"]
+    _net_put_sp  = result["ask_side_put_premium"]  - result["bid_side_put_premium"]
+    result["signed_pc_ratio"] = (
+        round(_net_put_sp / _net_call_sp, 4) if _net_call_sp != 0.0 else None
+    )
+
+    # zerodte_share: volume fraction for DTE=0
+    result["zerodte_share"] = result.get("dte_0d_vol_share")
+
+    # dte_quality_share: 8–90d volume fraction (institutional positioning window)
+    # = sum of dte_8_30d_vol_share + dte_31_90d_vol_share
+    _dte_8_30  = result.get("dte_8_30d_vol_share") or 0.0
+    _dte_31_90 = result.get("dte_31_90d_vol_share") or 0.0
+    result["dte_quality_share"] = round(float(_dte_8_30 + _dte_31_90), 4)
+
+    # short_dated_otm_call_share: OTM calls (DTE 1–30d) volume fraction
+    # Uses existing dte_1_7d and dte_8_30d buckets filtered to near/far OTM calls.
+    _otm_call_mask = (
+        (trades["right"].str.upper().str[:1] == "C") &
+        (trades["_money_bucket"].isin(["near_otm", "far_otm"])) &
+        (trades["_dte"] >= 1) & (trades["_dte"] <= 30)
+    )
+    _otm_call_vol = float(trades.loc[_otm_call_mask, "size"].sum())
+    result["short_dated_otm_call_share"] = (
+        round(_otm_call_vol / total_vol, 4) if total_vol > 0 else None
+    )
+    # Stamp underlying source for this feature
+    result["underlying_source"] = (
+        "greeks_store" if (
+            greeks_chain is not None and not greeks_chain.empty
+            and "underlying_price" in greeks_chain.columns
+        ) else "none"
+    )
+    result["underlying_price"] = (
+        float(greeks_chain["underlying_price"].dropna().iloc[0])
+        if (greeks_chain is not None and not greeks_chain.empty
+            and "underlying_price" in greeks_chain.columns
+            and greeks_chain["underlying_price"].dropna().shape[0] > 0)
+        else None
+    )
+
+    # block_share: top-decile trade-size share of volume
+    if len(trades) > 10:
+        _p90 = float(trades["size"].quantile(0.90))
+        _block_vol = float(trades.loc[trades["size"] >= _p90, "size"].sum())
+        result["block_share"] = round(_block_vol / float(total_vol), 4) if total_vol > 0 else 0.0
+    else:
+        result["block_share"] = None
+
+    # trade_count alias (n_trades already set; add canonical name)
+    result["trade_count"] = result["n_trades"]
+
     # Drop helper columns (T2a: aggregate-then-discard)
     # (trades DataFrame goes out of scope here — only result dict persists)
 
@@ -461,16 +519,28 @@ def _vol_gt_oi(trades: pd.DataFrame, oi_prev: pd.DataFrame | None) -> float | No
 
 
 def _fill_nulls(result: dict) -> None:
-    """Fill all feature keys with None when no trades are available."""
+    """Fill all feature keys with None when no trades are available.
+
+    Covers both the legacy scalar/bucket keys and the P2.1 extension keys so
+    that every path through aggregate_day() returns a dict with the full column
+    set regardless of whether any trades were present.
+    """
     scalar_keys = [
         "ask_side_call_premium", "bid_side_call_premium",
         "ask_side_put_premium",  "bid_side_put_premium",
         "net_signed_premium", "signed_contract_volume",
         "signed_delta_notional",
         "n_trades", "n_contracts", "gross_premium", "vol_gt_oi_share",
+        # P2.1 extension keys
+        "volume", "signed_pc_ratio", "zerodte_share", "dte_quality_share",
+        "short_dated_otm_call_share", "trade_count", "block_share",
+        "underlying_price",
     ]
     for k in scalar_keys:
         result[k] = None
+
+    # underlying_source defaults to "none" (string sentinel) on empty days
+    result["underlying_source"] = "none"
 
     for bucket_prefix in ("dte_0d", "dte_1_7d", "dte_8_30d", "dte_31_90d", "dte_90p"):
         result[f"{bucket_prefix}_net_premium"] = None

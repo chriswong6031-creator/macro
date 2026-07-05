@@ -138,6 +138,51 @@ FAMILY_BUDGETS: dict[str, dict[str, Any]] = {
         "budget": 24,
         "reason": "capped; unlocked only after F-tier verdicts filed",
     },
+    # --- Amendment 2 RUL-26 additions: program ceiling 115 → 165 ---
+    "esx_sponsorship": {
+        "budget": 8,
+        "reason": (
+            "RUL-16 (Amendment 1 §C3): 1 frozen def (vel sign × accel sign) "
+            "× 2 contrasts × {sector arm 2 panels + subsector arm 2 panels}"
+        ),
+    },
+    "esx_insider_sponsor": {
+        "budget": 12,
+        "reason": (
+            "A2 RUL-26: 3 frozen forms (I1 cluster_after_washout, "
+            "I2 cluster_near_fire, I3 net_usd_mcap_sn≥p80) × 2 panels × 2 contrasts"
+        ),
+    },
+    "esx_fund_repair": {
+        "budget": 12,
+        "reason": (
+            "A2 RUL-26: 3 forms (SUE z≥+1 ≤63td pre-fire; SUE decile→median repair; "
+            "revision_turn [Tier-C blocked on vintage accrual]) × 2 panels × 2 contrasts"
+        ),
+    },
+    "esx_macro_release": {
+        "budget": 8,
+        "reason": (
+            "A2 RUL-26: 2 turn-defs (FSI pctile≥80 & 15d mom down; "
+            "HY-OAS 21d ROC turn from ≥p80) × 2 panels × 2 contrasts; "
+            "R1-M estimator (RUL-24)"
+        ),
+    },
+    "esx_pos_reset": {
+        "budget": 8,
+        "reason": (
+            "A2 RUL-26: 2 ingredients (NAAIM / COT ES+NDX, ≤p20-then-rising, "
+            "3y pctile lookback, 2-week rising lag, publish-lagged) × 2 panels × 2 contrasts; "
+            "R1-M"
+        ),
+    },
+    "esx_support_dose": {
+        "budget": 2,
+        "reason": (
+            "A2 RUL-25: ordinal n_support_legs monotonicity × 2 panels; "
+            "unlocked after ≥2 leg verdicts"
+        ),
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -276,7 +321,10 @@ def grade_fires(
         mae63, mfe63 (max adverse / favorable excursion at 63d),
         days_to_10 (first bar where fwd_ret ≥ 10%, or NaN),
         cushion_rot, cushion_pos (bool: cushion hit in rotational/positional window),
-        gradable   (bool: fill bar exists and matured for both horizons).
+        gradable   (bool: fill bar exists and matured for both horizons),
+        vol_band   (float: sigma20*sqrt(20) clamped to [0.05, 0.15]; NaN if <21 trailing bars),
+        zone_held_21  (co-primary RUL-14: 1 if min fwd close over fill+1..fill+21 > fill*(1-band)),
+        stop_vol_21   (co-primary RUL-14: 1 - zone_held_21; NaN when zone_held_21 is NaN).
     """
     from engine.grading import forward_metrics, terminal_state
 
@@ -298,7 +346,10 @@ def grade_fires(
             "fill_date": None, "entry_price": None,
             "state_rot": None, "state_pos": None,
             "stop5": None, "mae63": None, "mfe63": None,
+            "mae21": None,
             "days_to_10": None, "cushion_rot": None, "cushion_pos": None,
+            # RUL-14 co-primaries
+            "vol_band": None, "zone_held_21": None, "stop_vol_21": None,
         })
 
         if close is None or close.empty:
@@ -325,6 +376,9 @@ def grade_fires(
         # mae63 / mfe63
         rec["mae63"] = fm["fwd_mdd_63"]
         rec["mfe63"] = fm["fwd_mfe_63"]
+
+        # mae21: RUL-13 co-primary (max adverse excursion at 21d)
+        rec["mae21"] = fm["fwd_mdd_21"]
 
         # days_to_10: first bar where cumulative fwd_ret >= 10%
         entry = fm["entry_price"]
@@ -355,6 +409,38 @@ def grade_fires(
 
         # gradable iff both horizons matured
         rec["gradable"] = (ts_rot["state"] is not None and ts_pos["state"] is not None)
+
+        # --- RUL-14 co-primary: vol-scaled entry zone ---
+        # vol_band = sigma20 * sqrt(20), clamped to [0.05, 0.15]
+        # sigma20  = trailing 20d close-to-close daily return std at the FILL bar
+        #            (strictly prior bars only — no look-ahead)
+        # zone_held_21 = 1 iff min(close[fill+1..fill+21]) > fill_price * (1 - band)
+        # stop_vol_21  = 1 - zone_held_21
+        # NaN when fewer than 21 trailing bars for sigma OR fewer than 21 matured
+        # forward bars (not-yet-matured semantics identical to existing outcomes).
+        from engine.grading import fill_index
+        fi_vol = fill_index(close, sig_date)
+        if fi_vol is not None and fi_vol >= 21:
+            # trailing 20d daily returns — strictly prior to fill bar
+            trailing = close.iloc[fi_vol - 20: fi_vol]  # 20 bars, indices [fi-20, fi)
+            daily_rets = trailing.pct_change().dropna()
+            # 20 price bars → 19 valid returns after pct_change().dropna()
+            if len(daily_rets) >= 19:
+                sigma20 = float(daily_rets.std(ddof=1))
+                raw_band = sigma20 * np.sqrt(20.0)
+                band = float(np.clip(raw_band, 0.05, 0.15))
+                rec["vol_band"] = round(band, 6)
+
+                # forward 21 closes: fill+1..fill+21 (strictly forward, same as stop5)
+                fwd_21 = close.iloc[fi_vol + 1: fi_vol + 22]  # up to 21 bars
+                if len(fwd_21) >= 21:
+                    entry_p = float(close.iloc[fi_vol])
+                    if entry_p > 0:
+                        zone_floor = entry_p * (1.0 - band)
+                        zone_held = int(float(fwd_21.min()) > zone_floor)
+                        rec["zone_held_21"] = zone_held
+                        rec["stop_vol_21"]  = 1 - zone_held
+
         results.append(rec)
 
     out = pd.DataFrame(results)
@@ -486,6 +572,7 @@ def r1_estimate(
     n_bootstrap: int = N_BOOTSTRAP,
     rng_seed: int = RNG_SEED,
     entry_quality_bands: bool = False,
+    computable_mask: "pd.Series | None" = None,
 ) -> dict[str, Any]:
     """R1 estimator: date-FE stratified difference with block-bootstrap CIs.
 
@@ -516,6 +603,15 @@ def r1_estimate(
         Number of block-bootstrap resamples for 95% CI.
     rng_seed:
         Random seed for reproducibility.
+    computable_mask:
+        Optional boolean Series aligned on the graded-fires index (A2 §C2).
+        Rows where mask is False or NaN are DROPPED from both arms before FE
+        demeaning. Semantics: treatment = sensor fired within mask; control =
+        computable-but-silent; out-of-mask fires dropped, not zero-coded.
+        This is the S7 same-computable-subset discipline made mechanical: without
+        it, every sparse family's FE contrast conflates "absent" with "not
+        applicable". Mask definition per family in feature_meta.json.
+        When None, no rows are dropped (identical to prior behaviour).
 
     Returns
     -------
@@ -532,6 +628,8 @@ def r1_estimate(
         p_value      — bootstrap p-value (fraction of bootstrap coefs ≤ 0, two-sided)
         outcome      — outcome_col
         stratum      — stratum_col
+        mask_n_dropped — int: rows dropped by computable_mask (0 when mask is None)
+        mask_coverage  — float: fraction of rows retained (1.0 when mask is None)
     """
     required = {"date", outcome_col, stratum_col}
     if entry_quality_bands:
@@ -546,6 +644,21 @@ def r1_estimate(
             "NC-2 marginality is DEFERRED in W0 — see W0_BASELINES.md DEFERRALS."
         )
 
+    # --- computable_mask: A2 §C2 — drop out-of-mask rows from both arms ------
+    mask_n_dropped = 0
+    mask_coverage = 1.0
+    if computable_mask is not None:
+        # Align mask on graded index; treat missing as False (not computable)
+        aligned_mask = computable_mask.reindex(graded.index).fillna(False).astype(bool)
+        n_before = len(graded)
+        graded = graded[aligned_mask].copy()
+        mask_n_dropped = n_before - len(graded)
+        mask_coverage = len(graded) / max(n_before, 1)
+        log.debug(
+            "r1_estimate: computable_mask dropped %d rows (%.1f%% retained)",
+            mask_n_dropped, mask_coverage * 100,
+        )
+
     # --- subset to gradable rows with valid outcome + stratum -----------------
     df = graded.copy()
     df["date"] = pd.to_datetime(df["date"])
@@ -555,8 +668,11 @@ def r1_estimate(
     df = df.reset_index(drop=True)
 
     if len(df) < 10:
-        return _empty_r1_result(outcome_col, stratum_col, fe_granularity,
-                                 "insufficient rows after filtering")
+        return _empty_r1_result(
+            outcome_col, stratum_col, fe_granularity,
+            "insufficient rows after filtering",
+            mask_n_dropped=mask_n_dropped, mask_coverage=mask_coverage,
+        )
 
     # --- era column -----------------------------------------------------------
     if era_col and era_col in df.columns:
@@ -601,8 +717,11 @@ def r1_estimate(
     multi_cells = cell_counts[cell_counts > 1].index
     df_fe = df[df["_fe"].isin(multi_cells)].copy()
     if len(df_fe) < 10:
-        return _empty_r1_result(outcome_col, stratum_col, fe_granularity,
-                                 f"too few rows after dropping singleton FE cells ({len(df_fe)})")
+        return _empty_r1_result(
+            outcome_col, stratum_col, fe_granularity,
+            f"too few rows after dropping singleton FE cells ({len(df_fe)})",
+            mask_n_dropped=mask_n_dropped, mask_coverage=mask_coverage,
+        )
 
     # --- within-FE demeaning --------------------------------------------------
     y_dm, x_dm = _within_date_demean(df_fe, outcome_col, stratum_col, "_fe")
@@ -677,10 +796,20 @@ def r1_estimate(
         "p_value":          round(p_value, 6),
         "outcome":          outcome_col,
         "stratum":          stratum_col,
+        "mask_n_dropped":   mask_n_dropped,
+        "mask_coverage":    round(mask_coverage, 6),
     }
 
 
-def _empty_r1_result(outcome: str, stratum: str, fe_gran: str, reason: str) -> dict[str, Any]:
+def _empty_r1_result(
+    outcome: str,
+    stratum: str,
+    fe_gran: str,
+    reason: str,
+    *,
+    mask_n_dropped: int = 0,
+    mask_coverage: float = 1.0,
+) -> dict[str, Any]:
     return {
         "coef": None, "ci_lo": None, "ci_hi": None,
         "n_total": 0, "n_treatment": 0, "n_control": 0,
@@ -688,7 +817,201 @@ def _empty_r1_result(outcome: str, stratum: str, fe_gran: str, reason: str) -> d
         "sector_fallback": False,
         "naive_diff": None, "p_value": None,
         "outcome": outcome, "stratum": stratum,
+        "mask_n_dropped": mask_n_dropped, "mask_coverage": round(mask_coverage, 6),
         "note": reason,
+    }
+
+
+# ---------------------------------------------------------------------------
+# R1-M estimator — market-level variant (A2 RUL-24)
+# ---------------------------------------------------------------------------
+
+def r1m_estimate(
+    graded: pd.DataFrame,
+    outcome_col: str,
+    stratum_col: str,
+    controls: list[str],
+    *,
+    n_bootstrap: int = N_BOOTSTRAP,
+    rng_seed: int = RNG_SEED,
+    computable_mask: "pd.Series | None" = None,
+) -> dict[str, Any]:
+    """R1-M estimator: market-level variant with no date fixed effects (A2 RUL-24).
+
+    A2 RUL-24 rationale (verbatim):
+        "A market-level regressor is constant within a date, so the R1 date-FE
+        estimator absorbs it completely — Tier-B families cannot legally use R1
+        as-is. R1-M is pre-registered here: unit = fire; no date FE; mandatory
+        controls in the regression = VIX level, SPY 126d drawdown,
+        market_state/risk_regime state; SEs episode-clustered (fire-date ±10
+        bars); block-bootstrap CIs; era table mandatory."
+
+    FE-granularity law (RUL-12): R1-M is fixed at registration for a family;
+    it is NEVER switched to R1 post-hoc. R1-M families ceiling at
+    regime-conditioning context — never a ticker-level chip (RUL-24).
+
+    Shared-source control exclusion (RUL-24 ⟦RV⟧): when a mandatory control
+    shares its underlying source series with the family's treatment definition,
+    that control must be DROPPED for that family and the drop pre-registered.
+    The caller is responsible for passing only the appropriate controls; this
+    function enforces non-empty controls with a clear error.
+
+    Parameters
+    ----------
+    graded:
+        Graded fire DataFrame. Must contain outcome_col, stratum_col,
+        'date', and every column listed in controls.
+    outcome_col:
+        Outcome variable name (e.g. 'stop5', 'mae21').
+    stratum_col:
+        Binary treatment indicator (1 = treatment, 0 = control).
+    controls:
+        REQUIRED non-empty list of column names to include as OLS controls
+        (RUL-24: shared-source exclusion pre-registered per family). Raises
+        ValueError if empty — conditioning ceiling requires at least the
+        shared-source-reduced set of controls (see RUL-24).
+    n_bootstrap:
+        Number of block-bootstrap resamples for 95% CI.
+    rng_seed:
+        Random seed for reproducibility.
+    computable_mask:
+        Optional boolean Series (A2 §C2); same semantics as r1_estimate.
+
+    Returns
+    -------
+    dict with keys:
+        coef         — OLS coefficient on stratum_col after partialling controls
+        ci_lo, ci_hi — block-bootstrap 95% CI
+        n_total      — total rows after filtering
+        n_treatment  — treatment arm count
+        n_control    — control arm count
+        n_blocks     — number of episode blocks
+        p_value      — bootstrap p-value (two-sided)
+        outcome      — outcome_col
+        stratum      — stratum_col
+        controls_used — list of control columns actually used
+        mask_n_dropped — int: rows dropped by computable_mask (0 when None)
+        mask_coverage  — float: fraction retained (1.0 when None)
+    """
+    # --- RUL-24: enforce non-empty controls -----------------------------------
+    if not controls:
+        raise ValueError(
+            "r1m_estimate: controls must be non-empty (RUL-24). "
+            "R1-M is a market-level estimator; at minimum the shared-source-reduced "
+            "mandatory controls (VIX level, SPY drawdown, market_state/risk_regime) "
+            "must be passed. Pre-register any shared-source exclusion per RUL-24 ⟦RV⟧."
+        )
+
+    required = {"date", outcome_col, stratum_col} | set(controls)
+    missing = required - set(graded.columns)
+    if missing:
+        raise ValueError(f"r1m_estimate: missing columns {missing}")
+
+    # --- computable_mask: A2 §C2 -------------------------------------------
+    mask_n_dropped = 0
+    mask_coverage = 1.0
+    if computable_mask is not None:
+        aligned_mask = computable_mask.reindex(graded.index).fillna(False).astype(bool)
+        n_before = len(graded)
+        graded = graded[aligned_mask].copy()
+        mask_n_dropped = n_before - len(graded)
+        mask_coverage = len(graded) / max(n_before, 1)
+        log.debug(
+            "r1m_estimate: computable_mask dropped %d rows (%.1f%% retained)",
+            mask_n_dropped, mask_coverage * 100,
+        )
+
+    # --- subset to valid rows -------------------------------------------------
+    df = graded.copy()
+    df["date"] = pd.to_datetime(df["date"])
+
+    keep_cols = [outcome_col, stratum_col, "date"] + controls
+    df = df[keep_cols].copy()
+    df[outcome_col] = pd.to_numeric(df[outcome_col], errors="coerce")
+    df[stratum_col] = pd.to_numeric(df[stratum_col], errors="coerce")
+    for c in controls:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    df = df.dropna().reset_index(drop=True)
+
+    if len(df) < 10:
+        return {
+            "coef": None, "ci_lo": None, "ci_hi": None,
+            "n_total": len(df), "n_treatment": 0, "n_control": 0,
+            "n_blocks": 0, "p_value": None,
+            "outcome": outcome_col, "stratum": stratum_col,
+            "controls_used": controls,
+            "mask_n_dropped": mask_n_dropped, "mask_coverage": round(mask_coverage, 6),
+            "note": "insufficient rows after filtering",
+        }
+
+    # --- OLS: partial out controls using Frisch-Waugh -------------------------
+    # Partial out controls from both y and x (stratum), then regress residuals.
+    # This is equivalent to OLS of y on [stratum, controls] but avoids building
+    # the full design matrix.
+    def _partial_out(y: np.ndarray, Z: np.ndarray) -> np.ndarray:
+        """Regress y on Z (with intercept) and return residuals."""
+        Z_aug = np.column_stack([np.ones(len(Z)), Z])
+        try:
+            coefs, _, _, _ = np.linalg.lstsq(Z_aug, y, rcond=None)
+            return y - Z_aug @ coefs
+        except np.linalg.LinAlgError:
+            return y - y.mean()
+
+    y_arr = df[outcome_col].to_numpy(dtype=float)
+    x_arr = df[stratum_col].to_numpy(dtype=float)
+    Z_arr = df[controls].to_numpy(dtype=float)
+
+    y_res = _partial_out(y_arr, Z_arr)
+    x_res = _partial_out(x_arr, Z_arr)
+
+    coef = _ols_coef(y_res, x_res)
+
+    # --- episode blocks (date-only; no sector FE in R1-M) -------------------
+    blocks = _make_blocks(df, "__none__", "date")
+    if len(blocks) == 0:
+        blocks = [df.index.to_numpy()]
+
+    # --- block-bootstrap 95% CI ---------------------------------------------
+    rng = np.random.default_rng(rng_seed)
+    boot_coefs: list[float] = []
+    n_blocks = len(blocks)
+
+    for _ in range(n_bootstrap):
+        chosen = rng.integers(0, n_blocks, size=n_blocks)
+        boot_idx = np.concatenate([blocks[i] for i in chosen])
+        by = y_arr[boot_idx]
+        bx = x_arr[boot_idx]
+        bZ = Z_arr[boot_idx]
+        by_res = _partial_out(by, bZ)
+        bx_res = _partial_out(bx, bZ)
+        boot_coefs.append(_ols_coef(by_res, bx_res))
+
+    boot_arr = np.array(boot_coefs)
+    ci_lo = float(np.percentile(boot_arr, 2.5))
+    ci_hi = float(np.percentile(boot_arr, 97.5))
+    p_value = float(min(1.0, 2.0 * min(
+        (boot_arr <= 0).mean(),
+        (boot_arr >= 0).mean(),
+    )))
+
+    n_treatment = int((df[stratum_col] == 1).sum())
+    n_control   = int((df[stratum_col] == 0).sum())
+
+    return {
+        "coef":           round(coef, 6),
+        "ci_lo":          round(ci_lo, 6),
+        "ci_hi":          round(ci_hi, 6),
+        "n_total":        len(df),
+        "n_treatment":    n_treatment,
+        "n_control":      n_control,
+        "n_blocks":       n_blocks,
+        "p_value":        round(p_value, 6),
+        "outcome":        outcome_col,
+        "stratum":        stratum_col,
+        "controls_used":  controls,
+        "mask_n_dropped": mask_n_dropped,
+        "mask_coverage":  round(mask_coverage, 6),
     }
 
 
@@ -747,14 +1070,18 @@ def bh_correction(
 # ---------------------------------------------------------------------------
 
 EFFECT_OUTCOMES = [
-    ("stop5",       "stop5 rate",          "treatment stopped within 5d (bool)"),
-    ("state_rot",   "rotational liftoff",  "state_rot == CLEAN_LIFTOFF (clean8_21)"),
-    ("state_pos",   "positional liftoff",  "state_pos == CLEAN_LIFTOFF (clean15_126)"),
-    ("dead_money",  "dead_money rate",     "state_pos == DEAD_MONEY (positional)"),
-    ("cushion_rot", "cushion rate (rot)",  "cushion hit in 21d window"),
-    ("mae63",       "MAE 63d",             "max adverse excursion at 63d"),
-    ("mfe63",       "MFE 63d",             "max favorable excursion at 63d"),
-    ("days_to_10",  "days to 10% gain",    "first bar at ≥10% from entry"),
+    ("stop5",         "stop5 rate",             "treatment stopped within 5d (bool)"),
+    ("mae21",         "MAE 21d",                "max adverse excursion at 21d (RUL-13 co-primary)"),
+    ("state_rot",     "rotational liftoff",      "state_rot == CLEAN_LIFTOFF (clean8_21)"),
+    ("state_pos",     "positional liftoff",      "state_pos == CLEAN_LIFTOFF (clean15_126)"),
+    ("dead_money",    "dead_money rate",         "state_pos == DEAD_MONEY (positional)"),
+    ("cushion_rot",   "cushion rate (rot)",      "cushion hit in 21d window"),
+    ("mae63",         "MAE 63d",                 "max adverse excursion at 63d"),
+    ("mfe63",         "MFE 63d",                 "max favorable excursion at 63d"),
+    ("days_to_10",    "days to 10% gain",        "first bar at ≥10% from entry"),
+    # RUL-14 co-primaries: vol-scaled entry zone (Amendment 1 §C1)
+    ("zone_held_21",  "vol-zone held 21d",       "min fwd close over fill+1..+21 > fill*(1-vol_band)"),
+    ("stop_vol_21",   "vol-stop 21d",            "1 - zone_held_21 (stopped out of vol-scaled band)"),
 ]
 
 
@@ -803,14 +1130,21 @@ def effect_table(
     # days_to_10 coefficient.  It is computed descriptively in the era_table
     # (days_to_10_median) where the conditioning is clearly labelled.
     # See W0_BASELINES.md § days_to_10 note.
+    #
+    # RUL-14 co-primaries zone_held_21 / stop_vol_21 ARE included in the BH panel
+    # exactly like stop5 (Amendment 1 §C1, entry_strata_phase0.py B1 PR).
     outcomes_to_run = [
         ("stop5",             "stop5"),
+        ("mae21",             "mae21"),
         ("rotational_liftoff","rotational_liftoff"),
         ("positional_liftoff","positional_liftoff"),
         ("dead_money",        "dead_money"),
         ("cushion_rot",       "cushion_rot"),
         ("mae63",             "mae63"),
         ("mfe63",             "mfe63"),
+        # RUL-14 co-primaries
+        ("zone_held_21",      "zone_held_21"),
+        ("stop_vol_21",       "stop_vol_21"),
     ]
 
     effects = []
@@ -900,9 +1234,19 @@ def era_table(
         rec["pos_liftoff_rate"] = round(g["positional_liftoff"].mean(), 4) if "positional_liftoff" in g else None
         rec["dead_money_rate"]  = round(g["dead_money"].mean(), 4) if "dead_money" in g else None
         rec["mae63_mean"]       = round(g["mae63"].mean(), 4) if "mae63" in g and g["mae63"].notna().any() else None
+        rec["mae21_mean"]       = round(g["mae21"].mean(), 4) if "mae21" in g and g["mae21"].notna().any() else None
         rec["mfe63_mean"]       = round(g["mfe63"].mean(), 4) if "mfe63" in g and g["mfe63"].notna().any() else None
         days = g["days_to_10"].dropna()
         rec["days_to_10_median"] = round(float(days.median()), 1) if len(days) > 0 else None
+        # RUL-14 co-primaries: vol-scaled entry zone (Amendment 1 §C1)
+        if "zone_held_21" in g.columns and g["zone_held_21"].notna().any():
+            rec["zone_held_21_rate"] = round(float(g["zone_held_21"].mean()), 4)
+            rec["stop_vol_21_rate"]  = round(float(g["stop_vol_21"].mean()), 4) if "stop_vol_21" in g.columns and g["stop_vol_21"].notna().any() else None
+            rec["vol_band_mean"]     = round(float(g["vol_band"].mean()), 4) if "vol_band" in g.columns and g["vol_band"].notna().any() else None
+        else:
+            rec["zone_held_21_rate"] = None
+            rec["stop_vol_21_rate"]  = None
+            rec["vol_band_mean"]     = None
         rows.append(rec)
 
     result = pd.DataFrame(rows)
@@ -1034,6 +1378,7 @@ def run_baselines(
                 "pos_liftoff_rate": round(float(g["positional_liftoff"].mean()), 4),
                 "dead_money_rate":  round(float(g["dead_money"].mean()), 4),
                 "mae63_mean":       round(float(g["mae63"].mean()), 4) if g["mae63"].notna().any() else None,
+                "mae21_mean":       round(float(g["mae21"].mean()), 4) if "mae21" in g.columns and g["mae21"].notna().any() else None,
                 "mfe63_mean":       round(float(g["mfe63"].mean()), 4) if g["mfe63"].notna().any() else None,
             }
 

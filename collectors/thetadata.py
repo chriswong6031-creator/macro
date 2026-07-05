@@ -63,7 +63,9 @@ Endpoints implemented (measured live 2026-07-04):
   GET /v3/option/history/eod              → bulk_eod()
   GET /v3/option/history/open_interest    → bulk_open_interest()
   GET /v3/option/history/greeks/eod       → bulk_greeks() (see GREEKS NOTE below)
-  GET /v3/option/history/trade_quote      → trade_quote()
+  GET /v3/option/history/trade_quote      → bulk_trade_quote() (1 right, any date range)
+                                          → bulk_trade_quote_day() (both legs, 1 day)
+                                          → trade_quote() (single-contract, any range)
 
 GREEKS NOTE (v3 doc-vs-live finding, measured 2026-07-04):
   The correct endpoint for EOD greeks is /v3/option/history/greeks/eod (NOT /greeks/all).
@@ -883,6 +885,88 @@ def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
     id_cols = ["root", "expiration", "strike", "right", "date", "bid", "ask",
                "underlying_price"]
     keep = id_cols + [c for c in greek_cols if c not in id_cols and c in df.columns]
+    available = [c for c in keep if c in df.columns]
+    return df[available].reset_index(drop=True)
+
+
+def bulk_trade_quote_day(root: str, target_date: date | str | int) -> pd.DataFrame | None:
+    """Convenience wrapper: pull BOTH call + put legs for one root, one trading day.
+
+    Calls bulk_trade_quote() twice (right=call, right=put), concatenates into one DataFrame.
+    No-partial contract: if either leg fails (None), returns None.
+    Both empty → empty DataFrame (valid: holiday or no options traded for this root).
+
+    Ratified shape (T2A_THROUGHPUT_PROBE.md §7):
+      • wildcard expiration + strike (exp=*, strike=*)
+      • single-day only (multi-day wildcard → HTTP 400)
+      • 2 API requests per root-day total
+
+    Returns a DataFrame with columns:
+      root, expiration, strike (float, $), right ("C"/"P"), trade_timestamp,
+      date, sequence, price, size, bid, ask, exchange
+    or None if the terminal is unreachable or either leg errors.
+    """
+    if not reachable():
+        log.warning("thetadata: terminal not reachable — bulk_trade_quote_day returning None")
+        return None
+
+    frames: list[pd.DataFrame] = []
+    for right_str in ("call", "put"):
+        df = bulk_trade_quote(root, right_str, target_date, target_date)
+        if df is None:
+            log.warning(
+                "thetadata: bulk_trade_quote_day(%s, %s) %s leg failed — returning None",
+                root, target_date, right_str)
+            return None
+        if not df.empty:
+            frames.append(df)
+
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
+
+
+def _normalize_trade_quote_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
+    """Normalize a raw v3 trade_quote CSV DataFrame into the canonical bulk-tape schema.
+
+    v3 CSV columns:
+      symbol, expiration, strike, right, trade_timestamp, quote_timestamp,
+      sequence, ext_condition1..4, condition, size, exchange,
+      price, bid_size, bid_exchange, bid, bid_condition,
+      ask_size, ask_exchange, ask, ask_condition
+
+    Output columns (typed):
+      root (str), expiration (datetime64), strike (float, $), right ("C"/"P"),
+      trade_timestamp (str, ISO-like), price (float), size (float), bid (float), ask (float)
+    """
+    if df.empty:
+        return df
+
+    for col in ("symbol", "expiration", "right"):
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip('"').str.strip()
+
+    # Rename symbol → root
+    if "symbol" in df.columns:
+        df = df.rename(columns={"symbol": "root"})
+    else:
+        df["root"] = root.upper()
+
+    # Parse expiration
+    if "expiration" in df.columns:
+        df["expiration"] = pd.to_datetime(df["expiration"], errors="coerce")
+
+    # Normalize right: "CALL" → "C", "PUT" → "P"
+    if "right" in df.columns:
+        df["right"] = df["right"].map({"CALL": "C", "PUT": "P"}).fillna(df["right"])
+
+    # Numeric columns
+    for col in ("strike", "price", "size", "bid", "ask"):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    keep = ["root", "expiration", "strike", "right",
+            "trade_timestamp", "price", "size", "bid", "ask"]
     available = [c for c in keep if c in df.columns]
     return df[available].reset_index(drop=True)
 

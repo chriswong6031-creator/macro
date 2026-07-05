@@ -44,10 +44,15 @@ Project: `https://fsldfzlxyavsuwqbceod.supabase.co` (dashboard → that project)
      Client Secret → enable → Save.
 
 3. **Allow the site's origins** (Authentication → **URL Configuration**):
-   - **Site URL:** `https://chriswong6031-creator.github.io/macro/`
+   - **Site URL:** `https://mastermind-x.com` — the apex, **not** `www.`
+     (www has broken TLS at the Tencent EdgeOne edge as of 2026-07-05; a www
+     Site URL would strand every fallback redirect on a host that can't
+     complete a handshake).
    - **Redirect URLs (add each):**
-     - `https://chriswong6031-creator.github.io/macro/**`
-     - any custom domain you later attach, e.g. `https://your-domain.com/**`
+     - `https://mastermind-x.com/**`
+     - `https://app.mastermind-x.com/**` (Terminal — shared SSO session)
+     - `https://chriswong6031-creator.github.io/macro/**` (Pages mirror)
+     - any other subdomain where sign-in is *initiated*
      - for local testing: `http://localhost:*/**`
    - OAuth + the implicit flow return to the page the user started on, so the page's
      exact origin must be allow-listed here.
