@@ -1,0 +1,835 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Committee View — every signal traced to a graded source</title>
+<meta name="description" content="Per-ticker provenance: every signal line traced back to its engine family, qual-ladder state, kernel estimate, and staleness.">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<script>
+  window.SUPABASE_CFG = {{ supabase_cfg_json | safe }};
+  window.COMMITTEE_GENERATED = "{{ generated_utc }}";
+</script>
+<style>
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+@media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+a { text-decoration:none; color:var(--link); }
+h1 { font-size:20px; margin:0; }
+h2 { font-size:13px; margin:0 0 9px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+h3 { font-size:15px; margin:0 0 8px; }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+.panel-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+
+/* ── Auth gate ── */
+#cm_gate { text-align:center; padding:48px 24px; }
+#cm_gate h2 { font-size:18px; text-transform:none; letter-spacing:0; color:var(--text); margin-bottom:10px; }
+#cm_gate p { color:var(--muted); max-width:480px; margin:0 auto 18px; }
+.btn-primary { background:var(--link); color:#fff; border:none; border-radius:9px; padding:10px 22px; font-size:15px; font-weight:700; cursor:pointer; }
+.btn-primary:hover { opacity:.88; }
+#cm_content { display:none; }
+
+/* ── Search ── */
+.cm-search-wrap { position:relative; flex:1; min-width:260px; max-width:520px; }
+#cm_q { width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:15px; outline:none; }
+#cm_q:focus { border-color:var(--link); }
+#cm_sugg { position:absolute; top:104%; left:0; right:0; background:var(--panel); border:1px solid var(--line); border-radius:10px; z-index:50; max-height:320px; overflow:auto; display:none; box-shadow:var(--popover-shadow,0 8px 32px rgba(0,0,0,.22)); }
+#cm_sugg div { padding:8px 13px; cursor:pointer; display:flex; gap:10px; align-items:center; }
+#cm_sugg div:hover, #cm_sugg div.sel { background:var(--panel2); }
+#cm_sugg b { min-width:62px; flex:none; }
+#cm_sugg small { color:var(--muted); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ── Committee (provenance) view ── */
+.cm-ticker-header { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.cm-ticker-sym { font-size:22px; font-weight:800; }
+.cm-ticker-name { font-size:15px; color:var(--muted); }
+.cm-ticker-decision { font-size:13px; color:var(--muted); }
+
+.prov-table { width:100%; border-collapse:collapse; font-size:13px; }
+.prov-table th { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; }
+.prov-table td { padding:8px; border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent); vertical-align:top; }
+.prov-table tr:last-child td { border-bottom:none; }
+.prov-table tr:hover td { background:color-mix(in srgb,var(--link) 5%,transparent); }
+
+.tier-badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; letter-spacing:.04em; }
+.tier-DISPLAY  { background:color-mix(in srgb,var(--link) 18%,var(--panel2)); color:var(--link); }
+.tier-SHADOW   { background:color-mix(in srgb,var(--warn) 18%,var(--panel2)); color:var(--warn); }
+.tier-UNKNOWN  { background:var(--panel2); color:var(--muted); }
+
+.kernel-ic { font-variant-numeric:tabular-nums; }
+.kernel-null { color:var(--muted); font-style:italic; }
+.armed-yes { color:var(--up); font-weight:700; }
+.armed-no  { color:var(--muted); }
+
+.stale-ok   { color:var(--up); }
+.stale-warn { color:var(--warn); }
+.stale-old  { color:var(--down); }
+
+.source-expand { cursor:pointer; color:var(--link); font-size:11px; user-select:none; }
+.source-detail { display:none; background:var(--panel2); border-radius:7px; padding:8px 10px; font-size:11.5px; color:var(--muted); margin-top:4px; }
+.source-detail.open { display:block; }
+
+.dir-pos { color:var(--up); font-weight:700; }
+.dir-neg { color:var(--down); font-weight:700; }
+.dir-neu { color:var(--muted); }
+
+/* ── Compliance disclaimer (fixed at bottom) ── */
+.disclaimer-bar { position:fixed; bottom:0; left:0; right:0; background:color-mix(in srgb,var(--panel) 97%,transparent); border-top:1px solid var(--line); padding:7px 18px; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:10px; z-index:100; backdrop-filter:blur(8px); }
+.disclaimer-bar button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; padding:0 4px; line-height:1; }
+#disc_bar { display:none; }
+body { padding-bottom:56px; }
+
+/* ── Living confluence graph canvas ── */
+#graph_canvas { width:100%; height:480px; border-radius:10px; background:var(--panel2); cursor:grab; touch-action:none; display:block; }
+#graph_canvas:active { cursor:grabbing; }
+.graph-legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; font-size:12px; align-items:center; }
+.gl-dot { width:12px; height:12px; border-radius:50%; flex:none; }
+
+/* ── Cortex memo panel ── */
+.probation-banner { background:color-mix(in srgb,var(--warn) 14%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent); border-radius:9px; padding:10px 14px; margin-bottom:12px; font-size:13px; }
+.probation-banner strong { color:var(--warn); }
+.is-context-badge { display:inline-block; background:color-mix(in srgb,var(--info,#5b9dff) 14%,var(--panel2)); color:var(--info,#5b9dff); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; letter-spacing:.05em; vertical-align:middle; margin-left:8px; }
+.memo-summary { line-height:1.65; font-size:14px; }
+.fired-list { margin:8px 0; padding-left:18px; }
+.fired-list li { margin:3px 0; font-size:13px; color:var(--muted); }
+
+/* ── Kernel family cards ── */
+.kf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+.kf-card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+.kf-name { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; color:var(--text); display:flex; justify-content:space-between; align-items:center; }
+.kf-ic { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
+.kf-ic.kf-pos { color:var(--up); }
+.kf-ic.kf-neg { color:var(--down); }
+.kf-ic.kf-null { color:var(--muted); font-size:14px; font-style:italic; }
+.kf-sub { font-size:11px; color:var(--muted); margin-top:3px; }
+.kf-armed-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:5px; }
+.kf-armed-yes { background:color-mix(in srgb,var(--up) 16%,var(--panel2)); color:var(--up); }
+.kf-armed-no  { background:var(--panel); color:var(--muted); }
+.kf-stale { font-size:10.5px; color:var(--muted); margin-top:5px; }
+
+/* ── Plain-English explainer box ── */
+.plain-eng { background:color-mix(in srgb,var(--link) 8%,var(--panel2)); border-left:3px solid var(--link); border-radius:0 9px 9px 0; padding:12px 16px; margin:14px 0; font-size:13.5px; line-height:1.65; }
+.plain-eng strong { color:var(--link); }
+
+/* ── Lazy sections ── */
+.section-lazy { opacity:0; transform:translateY(14px); transition:opacity .35s ease,transform .35s ease; }
+.section-lazy.visible { opacity:1; transform:none; }
+
+/* ── Empty / loading states ── */
+.cm-empty { color:var(--muted); font-style:italic; padding:20px 0; text-align:center; }
+.cm-loading { display:none; color:var(--muted); font-size:13px; padding:10px 0; }
+</style>
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+
+<!-- Fixed compliance disclaimer -->
+<div class="disclaimer-bar" id="disc_bar" role="status" aria-live="polite">
+  <span>{{ t('Research &amp; education only — not investment advice. No signal here is a recommendation to buy or sell any security. Past graded accuracy is not a guarantee of future performance.',
+    '仅供研究与教育用途，非投资建议。此处任何信号均不构成买卖任何证券的建议。历史评分准确率不代表未来表现。') }}</span>
+  <button onclick="document.getElementById('disc_bar').style.display='none'" aria-label="Dismiss">×</button>
+</div>
+
+<!-- Auth gate (shown until session confirmed) -->
+<div id="cm_gate" class="panel">
+  <h2>{{ t('Committee View — Sign In Required', '委员会视图 — 需要登录') }}</h2>
+  <p>{{ t('Every signal line traced to its graded source, kernel estimate, and staleness. A premium research surface — sign in to access.',
+     '每条信号线都追溯至其评分来源、核心估计和时效性。高级研究功能，登录后访问。') }}</p>
+  <button class="btn-primary" id="cm_signin_btn">{{ t('Sign in / Create account', '登录 / 创建账户') }}</button>
+</div>
+
+<!-- Main content (hidden until auth) -->
+<div id="cm_content">
+
+  <!-- 1. COMMITTEE VIEW: per-ticker provenance panel -->
+  <div class="panel section-lazy" id="cm_ticker_section">
+    <div class="panel-head">
+      <h1>{{ t('Committee View', '委员会视图') }}</h1>
+      <div class="cm-search-wrap">
+        <input id="cm_q" type="text" autocomplete="off" placeholder="{{ t('Search ticker — US stocks', '搜索代码 — 美股') | striptags }}">
+        <div id="cm_sugg"></div>
+      </div>
+    </div>
+    <div class="plain-eng">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      {{ t('Each row below is one signal that influenced the view for this ticker. The <em>ladder state</em> tells you how mature the signal is (DISPLAY = shown but not yet graded at scale; SHADOW = actively accumulating a track record). The <em>kernel IC</em> is the estimated information coefficient — how often the signal predicts direction correctly — but it is a display-only estimate until the quarterly batch runs (Oct 2026). Staleness shows how many days since the last observation.',
+      '下方每行代表一个影响该代码判断的信号。<em>阶梯状态</em>表示信号的成熟度（DISPLAY=展示但尚未大规模评分；SHADOW=正在积累评分记录）。<em>核心IC</em>是估计信息系数——信号预测方向的准确率——但仅供展示，待季度批次运行后（2026年10月）才生效。时效性显示上次观测以来的天数。') }}
+    </div>
+    <div id="cm_ticker_view">
+      <p class="cm-empty">{{ t('Search for a ticker above to see its committee.', '在上方搜索代码以查看其委员会记录。') }}</p>
+    </div>
+  </div>
+
+  <!-- 2. LIVING CONFLUENCE GRAPH -->
+  <div class="panel section-lazy" id="cm_graph_section">
+    <div class="panel-head">
+      <h1>{{ t('Living Confluence Graph', '实时汇聚图') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="plain-eng">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      {{ t('Each node is an engine, sector, regime, thesis, or episode. Blue edges confirm (signals firing together); red edges contradict (signals pointing opposite directions). Edges pulse when the graph was refreshed in the last 24 hours.',
+      '每个节点代表引擎、板块、周期、论点或事件。蓝色边确认（信号共同触发）；红色边矛盾（信号方向相反）。当图表在过去24小时内刷新时，边会闪烁。') }}
+    </div>
+    <div class="cm-loading" id="graph_loading">{{ t('Loading graph…', '加载图中…') }}</div>
+    <canvas id="graph_canvas" aria-label="{{ t('Confluence graph', '汇聚图') | striptags }}"></canvas>
+    <div id="graph_subset_note" class="graph-subset-note" style="font-size:0.82em;color:var(--muted);margin:0.35em 0 0.1em"></div>
+    <div class="graph-legend">
+      <span class="gl-dot" style="background:var(--link)"></span> {{ t('Engine / Sector node', '引擎/板块节点') }} &nbsp;
+      <span class="gl-dot" style="background:color-mix(in srgb,var(--link) 60%,transparent);border:1px solid var(--link)"></span> {{ t('Regime / Thesis', '周期/论点') }} &nbsp;
+      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--up) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Confirms edge', '确认边') }} &nbsp;
+      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--down) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Contradicts edge', '矛盾边') }}
+    </div>
+  </div>
+
+  <!-- 3. COMMITTEE MEMO PANEL -->
+  <div class="panel section-lazy" id="cm_memo_section">
+    <div class="panel-head">
+      <h1>{{ t('Cortex Committee Memo', '皮层委员会备忘录') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="cm-loading" id="memo_loading">{{ t('Loading memo…', '加载备忘录中…') }}</div>
+    <div id="cm_memo_content">
+      <p class="cm-empty">{{ t('Memo loading…', '备忘录加载中…') }}</p>
+    </div>
+  </div>
+
+  <!-- 4. KERNEL FAMILY CARDS -->
+  <div class="panel section-lazy" id="cm_kernel_section">
+    <div class="panel-head">
+      <h1>{{ t('Kernel Family Estimates', '核心族估计') }}</h1>
+    </div>
+    <div class="plain-eng">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      {{ t('Each card shows one signal family\'s estimated information coefficient (IC) across horizons, with the Wilson confidence interval lower bound. All values are display-only estimates — the first FDR decision batch runs October 2026.',
+      '每张卡片显示一个信号族在不同周期内的估计信息系数（IC），以及Wilson置信区间下界。所有数值仅供展示——首次FDR决策批次于2026年10月运行。') }}
+    </div>
+    <div class="cm-loading" id="kf_loading">{{ t('Loading kernel data…', '加载核心数据中…') }}</div>
+    <div class="kf-grid" id="cm_kf_grid">
+      <p class="cm-empty">{{ t('Kernel data loading…', '核心数据加载中…') }}</p>
+    </div>
+  </div>
+
+</div><!-- #cm_content -->
+
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // ── Auth gate ──────────────────────────────────────────────────────────────
+  var authBooted = false;
+
+  function showContent() {
+    document.getElementById('cm_gate').style.display = 'none';
+    document.getElementById('cm_content').style.display = '';
+    document.getElementById('disc_bar').style.display = 'flex';
+    if (!authBooted) {
+      authBooted = true;
+      initPage();
+    }
+  }
+
+  function showGate() {
+    document.getElementById('cm_gate').style.display = '';
+    document.getElementById('cm_content').style.display = 'none';
+  }
+
+  document.getElementById('cm_signin_btn').onclick = function () {
+    if (window.MDXAuth && window.MDXAuth.openAuthModal) {
+      window.MDXAuth.openAuthModal();
+    }
+  };
+
+  // Boot: check Supabase session via MDXAuth (theme.js wires this).
+  // Use a polling approach — theme.js loads asynchronously.
+  function waitForAuth(attempts) {
+    attempts = attempts || 0;
+    if (window.MDXAuth) {
+      window.MDXAuth.onAuthStateChange(function (session) {
+        if (session) { showContent(); } else { showGate(); }
+      });
+      // Also check immediately
+      window.MDXAuth.getSession(function (session) {
+        if (session) { showContent(); }
+      });
+    } else if (attempts < 40) {
+      setTimeout(function () { waitForAuth(attempts + 1); }, 150);
+    }
+  }
+  waitForAuth();
+
+  // ── Page init (runs once after auth confirmed) ─────────────────────────────
+  function initPage() {
+    setupSearch();
+    setupLazyReveal();
+    loadGraph();
+    loadMemo();
+    loadKernelFamilies();
+  }
+
+  // ── IntersectionObserver for lazy section reveal ───────────────────────────
+  function setupLazyReveal() {
+    var sections = document.querySelectorAll('.section-lazy');
+    if (!window.IntersectionObserver) {
+      sections.forEach(function (s) { s.classList.add('visible'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); }
+      });
+    }, { threshold: 0.04 });
+    sections.forEach(function (s) { io.observe(s); });
+  }
+
+  // ── Ticker search ──────────────────────────────────────────────────────────
+  var _idx = null;
+  var _searchTimer = null;
+
+  function setupSearch() {
+    var q = document.getElementById('cm_q');
+    var sugg = document.getElementById('cm_sugg');
+    if (!q) return;
+
+    // Load stock index lazily
+    function ensureIndex(cb) {
+      if (_idx) { cb(_idx); return; }
+      fetch('stockdata/index.json')
+        .then(function (r) { return r.json(); })
+        .then(function (d) { _idx = d; cb(d); })
+        .catch(function () { cb([]); });
+    }
+
+    q.addEventListener('input', function () {
+      clearTimeout(_searchTimer);
+      var val = q.value.trim().toUpperCase();
+      if (!val) { sugg.style.display = 'none'; return; }
+      _searchTimer = setTimeout(function () {
+        ensureIndex(function (idx) {
+          var hits = idx.filter(function (r) {
+            return r.t.indexOf(val) === 0 ||
+              (r.n && r.n.toUpperCase().indexOf(val) >= 0);
+          }).slice(0, 12);
+          renderSugg(hits, val);
+        });
+      }, 120);
+    });
+
+    q.addEventListener('keydown', function (e) {
+      var items = sugg.querySelectorAll('div');
+      var sel = sugg.querySelector('div.sel');
+      var idx = sel ? Array.prototype.indexOf.call(items, sel) : -1;
+      if (e.key === 'ArrowDown') { e.preventDefault(); var ni = Math.min(idx + 1, items.length - 1); items.forEach(function (x) { x.classList.remove('sel'); }); if (items[ni]) items[ni].classList.add('sel'); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); var pi = Math.max(idx - 1, 0); items.forEach(function (x) { x.classList.remove('sel'); }); if (items[pi]) items[pi].classList.add('sel'); }
+      else if (e.key === 'Enter') { if (sel) { loadTicker(sel.dataset.t); sugg.style.display = 'none'; q.value = sel.dataset.t; } }
+      else if (e.key === 'Escape') { sugg.style.display = 'none'; }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!q.contains(e.target) && !sugg.contains(e.target)) sugg.style.display = 'none';
+    });
+
+    function renderSugg(hits, val) {
+      if (!hits.length) { sugg.style.display = 'none'; return; }
+      sugg.innerHTML = '';
+      hits.forEach(function (r) {
+        var d = document.createElement('div');
+        d.dataset.t = r.t;
+        d.innerHTML = '<b>' + esc(r.t) + '</b><small>' + esc(r.n || '') + '</small>';
+        d.onclick = function () { loadTicker(r.t); sugg.style.display = 'none'; q.value = r.t; };
+        sugg.appendChild(d);
+      });
+      sugg.style.display = '';
+    }
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Load + render ticker committee ────────────────────────────────────────
+  function loadTicker(ticker) {
+    var safe = ticker.replace(/=/g, '_').replace(/\^/g, '_');
+    var view = document.getElementById('cm_ticker_view');
+    view.innerHTML = '<div class="cm-loading" style="display:block">Loading ' + esc(ticker) + '…</div>';
+    fetch('stockdata/' + safe + '.json')
+      .then(function (r) { if (!r.ok) throw new Error('not found'); return r.json(); })
+      .then(function (rec) { renderCommittee(rec, ticker); })
+      .catch(function () {
+        view.innerHTML = '<p class="cm-empty">No data for <strong>' + esc(ticker) + '</strong>.</p>';
+      });
+  }
+
+  function renderCommittee(rec, ticker) {
+    var view = document.getElementById('cm_ticker_view');
+    var vw = rec.view || {};
+    var decision = (vw.decision || {});
+    var provRows = (vw.provenance || []);
+
+    var html = '<div class="cm-ticker-header">'
+      + '<span class="cm-ticker-sym">' + esc(ticker) + '</span>'
+      + '<span class="cm-ticker-name">' + esc(rec.name || '') + '</span>'
+      + '</div>';
+
+    if (decision.headline) {
+      html += '<div class="cm-ticker-decision"><span class="l-en">' + esc(decision.headline) + '</span>'
+            + (decision.headline_zh ? '<span class="l-zh">' + esc(decision.headline_zh) + '</span>' : '') + '</div>';
+    }
+
+    if (!provRows.length) {
+      html += '<p class="cm-empty">No provenance rows available for this ticker.</p>';
+    } else {
+      html += '<div style="overflow-x:auto"><table class="prov-table">'
+        + '<thead><tr>'
+        + '<th>Source</th><th>Family</th><th>Ladder</th><th data-tip-en="Shrunken information coefficient — correlation scale, typically &lt;1%" data-tip-zh="压缩信息系数——相关系数尺度，通常&lt;1%">Kernel IC</th><th data-tip-en="Wilson hit-rate CI lower bound — probability scale, not the same unit as Kernel IC" data-tip-zh="Wilson命中率置信区间下界——概率尺度，与IC单位不同">Wilson LB<br><small style=\'font-weight:normal;font-size:10px\'>(hit-rate)</small></th><th>Armed</th><th>Staleness</th><th>Direction</th><th>Graded</th><th>Details</th>'
+        + '</tr></thead><tbody>';
+      provRows.forEach(function (row, i) {
+        html += renderProvRow(row, i);
+      });
+      html += '</tbody></table></div>';
+    }
+
+    // Display-only notice
+    html += '<p style="font-size:11px;color:var(--muted);margin-top:10px">'
+      + '<em>All kernel IC values are display-only estimates. First FDR decision batch: October 2026. '
+      + 'US tickers only (v1). is_display_only = true on all rows.</em></p>';
+
+    view.innerHTML = html;
+    view.querySelectorAll('.source-expand').forEach(function (el) {
+      el.onclick = function () {
+        var det = el.nextElementSibling;
+        if (det) det.classList.toggle('open');
+        el.textContent = det && det.classList.contains('open') ? '▲ hide' : '▼ source';
+      };
+    });
+  }
+
+  function renderProvRow(row, idx) {
+    var ql = row.qual_ladder || {};
+    var kern = row.kernel || {};
+    var ladderState = ql.ladder_state || 'UNKNOWN';
+    var ladderClass = 'tier-' + ladderState;
+
+    var icVal = kern.shrunken_ic;
+    var icStr = (icVal != null) ? ('<span class="kernel-ic">' + (icVal * 100).toFixed(3) + '%</span>') : '<span class="kernel-null">—</span>';
+
+    var wlbVal = kern.wilson_ci_low;
+    var wlbStr = (wlbVal != null) ? ('<span class="kernel-ic">' + (wlbVal * 100).toFixed(1) + '%</span>') : '<span class="kernel-null">—</span>';
+
+    var armedVal = kern.armed;
+    var armedStr = (armedVal === true) ? '<span class="armed-yes">Yes</span>' : (armedVal === false ? '<span class="armed-no">No</span>' : '<span class="kernel-null">—</span>');
+
+    var stale = row.staleness_days;
+    var staleStr;
+    if (stale == null) { staleStr = '<span class="kernel-null">—</span>'; }
+    else if (stale <= 2) { staleStr = '<span class="stale-ok">' + stale + 'd</span>'; }
+    else if (stale <= 7) { staleStr = '<span class="stale-warn">' + stale + 'd</span>'; }
+    else { staleStr = '<span class="stale-old">' + stale + 'd</span>'; }
+
+    var dir = row.direction;
+    var dirStr = (dir === 1 || dir === '+1') ? '<span class="dir-pos">+1</span>'
+               : (dir === -1 || dir === '-1') ? '<span class="dir-neg">−1</span>'
+               : (dir === 0) ? '<span class="dir-neu">0</span>'
+               : '<span class="kernel-null">—</span>';
+
+    var gradedStr = row.outcome_graded ? '<span class="stale-warn">Yes</span>' : '<span class="kernel-null">No</span>';
+
+    // Detail block
+    var detailPairs = [];
+    if (row.as_of) detailPairs.push(['as_of', row.as_of]);
+    if (row.spine_ref) detailPairs.push(['signal_id', row.spine_ref]);
+    if (row.graded_at) detailPairs.push(['graded_at', row.graded_at]);
+    if (row.graded_5d_excess != null) detailPairs.push(['5d excess', (row.graded_5d_excess * 100).toFixed(2) + '%']);
+    if (row.convergence_score != null) detailPairs.push(['convergence', String(row.convergence_score)]);
+    if (row.channels) detailPairs.push(['channels', (row.channels || []).join(', ')]);
+    if (row.edge_score != null) detailPairs.push(['edge_score', String(row.edge_score)]);
+    if (row.state) detailPairs.push(['state', row.state]);
+    if (row.board_score != null) detailPairs.push(['board_score', String(row.board_score)]);
+    if (row.basket_label) detailPairs.push(['basket', row.basket_id + ' · ' + row.basket_label + ' (' + (row.basket_score || '—') + ')']);
+    if (row.confluence != null) detailPairs.push(['confluence', String(row.confluence)]);
+    if (row.episode_direction) detailPairs.push(['oracle_episode', row.basket_id + ' ' + row.episode_direction + ' onset=' + (row.onset || '—')]);
+    if (ql.note) detailPairs.push(['note', ql.note]);
+    detailPairs.push(['is_display_only', 'true']);
+
+    var detailHtml = detailPairs.map(function (p) {
+      return '<span style="margin-right:12px"><strong>' + esc(p[0]) + ':</strong> ' + esc(p[1]) + '</span>';
+    }).join('');
+
+    return '<tr>'
+      + '<td><strong>' + esc(row.claim_source || '') + '</strong></td>'
+      + '<td>' + esc(row.family || '') + '</td>'
+      + '<td><span class="tier-badge ' + ladderClass + '">' + ladderState + '</span>'
+        + (ql.grandfathered ? ' <span style="font-size:10px;color:var(--muted)">(legacy)</span>' : '')
+        + '</td>'
+      + '<td>' + icStr + '</td>'
+      + '<td>' + wlbStr + '</td>'
+      + '<td>' + armedStr + '</td>'
+      + '<td>' + staleStr + '</td>'
+      + '<td>' + dirStr + '</td>'
+      + '<td>' + gradedStr + '</td>'
+      + '<td><span class="source-expand">▼ source</span>'
+        + '<div class="source-detail">' + detailHtml + '</div></td>'
+      + '</tr>';
+  }
+
+  // ── Living confluence graph ────────────────────────────────────────────────
+  var _graphData = null;
+
+  function loadGraph() {
+    document.getElementById('graph_loading').style.display = 'block';
+    fetch('neuralwebdata/confluence_graph.json')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        _graphData = d;
+        document.getElementById('graph_loading').style.display = 'none';
+        renderGraph(d);
+      })
+      .catch(function (e) {
+        document.getElementById('graph_loading').textContent = 'Graph unavailable.';
+      });
+  }
+
+  function renderGraph(data) {
+    var canvas = document.getElementById('graph_canvas');
+    var ctx = canvas.getContext('2d');
+    var nodes = data.nodes || [];
+    var edges = data.edges || [];
+    var asof = data.asof || '';
+
+    // Filter to meaningful nodes (engines, sectors, regimes; skip most thesis/episode)
+    var TYPE_PRIORITY = { engine: 0, regime: 1, sector: 2, thesis: 3, episode: 4 };
+    var SHOW_TYPES = { engine: true, regime: true, sector: true };
+    var displayNodes = nodes.filter(function (n) { return SHOW_TYPES[n.type]; });
+    // Also include thesis/episode nodes that appear in confirms/contradicts edges
+    var edgeNodes = new Set();
+    edges.forEach(function (e) {
+      if (e.edge_type === 'confirms' || e.edge_type === 'contradicts') {
+        edgeNodes.add(e.src); edgeNodes.add(e.dst);
+      }
+    });
+    var nodeMap = {};
+    nodes.forEach(function (n) { nodeMap[n.id] = n; });
+    edgeNodes.forEach(function (id) {
+      if (!nodeMap[id]) return;
+      var n = nodeMap[id];
+      if (!SHOW_TYPES[n.type]) displayNodes.push(n);
+    });
+    // Deduplicate
+    var seen = new Set();
+    displayNodes = displayNodes.filter(function (n) {
+      if (seen.has(n.id)) return false;
+      seen.add(n.id); return true;
+    });
+
+    // Subset note: N displayed of M total (engines, sectors, regimes, and theses/episodes
+    // participating in confirms/contradicts edges; structural feeds edges hidden)
+    var subsetEl = document.getElementById('graph_subset_note');
+    if (subsetEl) {
+      var N_shown = displayNodes.length;
+      var M_total = nodes.length;
+      var isZh = document.documentElement.lang === 'zh' || (navigator.language || '').startsWith('zh');
+      if (isZh) {
+        subsetEl.textContent = '显示 ' + N_shown + '（共 ' + M_total + ' 个）节点（引擎、板块、周期，以及参与确认/矛盾边的论点/事件）；结构性馈入边已隐藏。';
+      } else {
+        subsetEl.textContent = 'Showing ' + N_shown + ' of ' + M_total + ' nodes (engines, sectors, regimes, and the theses/episodes participating in confirms/contradicts edges); structural feeds edges hidden.';
+      }
+    }
+
+    // Set canvas dimensions
+    var W = canvas.offsetWidth || 700;
+    var H = canvas.offsetHeight || 480;
+    canvas.width = W;
+    canvas.height = H;
+
+    // Simple radial layout by type
+    var N = displayNodes.length;
+    var cx = W / 2, cy = H / 2;
+    var positions = {};
+    var engineNodes = displayNodes.filter(function (n) { return n.type === 'engine'; });
+    var otherNodes  = displayNodes.filter(function (n) { return n.type !== 'engine'; });
+
+    // Engines in inner ring
+    engineNodes.forEach(function (n, i) {
+      var angle = (2 * Math.PI * i / Math.max(engineNodes.length, 1)) - Math.PI / 2;
+      var r = Math.min(W, H) * 0.18;
+      positions[n.id] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), node: n };
+    });
+    // Others in outer ring
+    otherNodes.forEach(function (n, i) {
+      var angle = (2 * Math.PI * i / Math.max(otherNodes.length, 1)) - Math.PI / 2;
+      var r = Math.min(W, H) * 0.36;
+      positions[n.id] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), node: n };
+    });
+
+    // Simple force-like relaxation (3 iterations, lightweight)
+    var nodeIds = Object.keys(positions);
+    for (var iter = 0; iter < 3; iter++) {
+      nodeIds.forEach(function (a) {
+        nodeIds.forEach(function (b) {
+          if (a === b) return;
+          var pa = positions[a], pb = positions[b];
+          var dx = pa.x - pb.x, dy = pa.y - pb.y;
+          var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          if (dist < 55) {
+            var push = (55 - dist) / dist * 0.25;
+            pa.x += dx * push; pa.y += dy * push;
+            pb.x -= dx * push; pb.y -= dy * push;
+          }
+        });
+        // Keep in bounds
+        var p = positions[a];
+        p.x = Math.max(36, Math.min(W - 36, p.x));
+        p.y = Math.max(26, Math.min(H - 26, p.y));
+      });
+    }
+
+    // Parse CSS variables for colors
+    var style = getComputedStyle(document.documentElement);
+    var COL_UP     = style.getPropertyValue('--up').trim()   || '#22c55e';
+    var COL_DOWN   = style.getPropertyValue('--down').trim() || '#ef4444';
+    var COL_LINK   = style.getPropertyValue('--link').trim() || '#5b9dff';
+    var COL_MUTED  = style.getPropertyValue('--muted').trim()|| '#8b93a1';
+    var COL_TEXT   = style.getPropertyValue('--text').trim() || '#e7ecf6';
+    var COL_BG     = style.getPropertyValue('--panel2').trim()|| '#1a1e27';
+
+    function alphaColor(hex, alpha) {
+      // minimal hex→rgba
+      var r = parseInt(hex.slice(1,3)||'88',16)||136;
+      var g = parseInt(hex.slice(3,5)||'88',16)||136;
+      var b = parseInt(hex.slice(5,7)||'88',16)||136;
+      return 'rgba('+r+','+g+','+b+','+alpha+')';
+    }
+
+    var now = Date.now();
+    var asofTs = asof ? new Date(asof).getTime() : now;
+    var PULSE_WINDOW_MS = 24 * 3600 * 1000;
+
+    function drawFrame(phase) {
+      ctx.clearRect(0, 0, W, H);
+
+      // Draw edges
+      edges.forEach(function (e) {
+        var pa = positions[e.src], pb = positions[e.dst];
+        if (!pa || !pb) return;
+        var isPulse = (now - asofTs) < PULSE_WINDOW_MS;
+        var isCon = e.edge_type === 'confirms';
+        var isContra = e.edge_type === 'contradicts';
+        var isFeeds = e.edge_type === 'feeds';
+        if (isFeeds) return; // skip feeds edges to reduce clutter
+
+        var baseAlpha = isCon ? 0.7 : isContra ? 0.8 : 0.25;
+        var col = isCon ? COL_UP : isContra ? COL_DOWN : COL_MUTED;
+        if (isPulse && (isCon || isContra)) {
+          var pulse = 0.5 + 0.5 * Math.sin(phase + (isCon ? 0 : Math.PI));
+          ctx.globalAlpha = baseAlpha * (0.6 + 0.4 * pulse);
+          ctx.lineWidth = isCon ? 2.5 : 2;
+        } else {
+          ctx.globalAlpha = isContra ? 0.5 : 0.4;
+          ctx.lineWidth = 1.5;
+        }
+        ctx.strokeStyle = col;
+        ctx.setLineDash(isContra ? [5, 4] : []);
+        ctx.beginPath();
+        ctx.moveTo(pa.x, pa.y);
+        ctx.lineTo(pb.x, pb.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+
+      ctx.globalAlpha = 1;
+
+      // Draw nodes
+      nodeIds.forEach(function (id) {
+        var p = positions[id];
+        var n = p.node;
+        var r = n.type === 'engine' ? 12 : n.type === 'regime' ? 9 : 7;
+        var fillCol = n.type === 'engine' ? COL_LINK : n.type === 'regime' ? alphaColor(COL_LINK, 0.55) : alphaColor(COL_MUTED, 0.45);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, 2 * Math.PI);
+        ctx.fillStyle = fillCol;
+        ctx.fill();
+        ctx.strokeStyle = COL_BG;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Label
+        var label = (n.label || n.id || '').split(':').pop().replace(/_/g, ' ');
+        if (label.length > 16) label = label.slice(0, 14) + '…';
+        ctx.font = (n.type === 'engine' ? '700 ' : '') + '10px -apple-system,sans-serif';
+        ctx.fillStyle = COL_TEXT;
+        ctx.textAlign = 'center';
+        ctx.globalAlpha = 0.88;
+        ctx.fillText(label, p.x, p.y + r + 11);
+        ctx.globalAlpha = 1;
+      });
+    }
+
+    // Animate
+    var phase = 0;
+    var raf = null;
+    function animate() {
+      phase += 0.04;
+      drawFrame(phase);
+      raf = requestAnimationFrame(animate);
+    }
+
+    // Only animate while visible
+    var io = window.IntersectionObserver ? new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { if (!raf) animate(); }
+        else { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+      });
+    }) : null;
+    if (io) { io.observe(canvas); } else { animate(); }
+
+    // Pan + zoom (simple)
+    var dragging = false, lastMX = 0, lastMY = 0;
+    var offsetX = 0, offsetY = 0;
+    canvas.addEventListener('mousedown', function (e) { dragging = true; lastMX = e.clientX; lastMY = e.clientY; });
+    canvas.addEventListener('mouseup',   function () { dragging = false; });
+    canvas.addEventListener('mouseleave',function () { dragging = false; });
+    canvas.addEventListener('mousemove', function (e) {
+      if (!dragging) return;
+      var dx = e.clientX - lastMX, dy = e.clientY - lastMY;
+      lastMX = e.clientX; lastMY = e.clientY;
+      nodeIds.forEach(function (id) { positions[id].x += dx; positions[id].y += dy; });
+    });
+  }
+
+  // ── Cortex memo ───────────────────────────────────────────────────────────
+  function loadMemo() {
+    document.getElementById('memo_loading').style.display = 'block';
+    fetch('neuralweb/cortex_memo.json')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        document.getElementById('memo_loading').style.display = 'none';
+        renderMemo(d);
+      })
+      .catch(function () {
+        document.getElementById('cm_memo_content').innerHTML =
+          '<p class="cm-empty">Memo unavailable.</p>';
+      });
+  }
+
+  function renderMemo(memo) {
+    var el = document.getElementById('cm_memo_content');
+    var prob = memo.probation || {};
+    var html = '';
+
+    // Probation banner
+    html += '<div class="probation-banner">'
+      + '<strong>Probation tier: ' + esc(prob.tier || 'unknown') + '</strong> &nbsp;'
+      + (prob.granted ? '' : ' — not yet granted. ')
+      + esc(prob.reason || '') + ' '
+      + (prob.lift_lb ? 'Lift lower bound: ' + prob.lift_lb : '')
+      + '</div>';
+
+    // is_context_only
+    if (memo.is_context_only) {
+      html += '<span class="is-context-badge">IS_CONTEXT_ONLY</span> ';
+    }
+
+    // Summary
+    html += '<div class="memo-summary">'
+      + '<strong>Summary:</strong> ' + esc(memo.summary || '') + '</div>';
+
+    // As-of
+    if (memo.as_of) {
+      html += '<p style="font-size:12px;color:var(--muted);margin:6px 0">as_of: ' + esc(memo.as_of) + '</p>';
+    }
+
+    // What fired
+    var fired = memo.what_fired || [];
+    if (fired.length) {
+      html += '<h3 style="margin-top:14px">What fired</h3><ul class="fired-list">';
+      fired.forEach(function (f) { html += '<li>' + esc(f) + '</li>'; });
+      html += '</ul>';
+    }
+
+    // Contradictions
+    if (memo.contradictions_review) {
+      html += '<h3 style="margin-top:12px">Contradictions review</h3>'
+        + '<p style="font-size:13px;color:var(--muted)">' + esc(memo.contradictions_review) + '</p>';
+    }
+
+    // Tool census
+    var tc = memo.tool_call_census || {};
+    if (Object.keys(tc).length) {
+      html += '<h3 style="margin-top:12px">Tool call census</h3>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px">';
+      Object.keys(tc).forEach(function (k) {
+        html += '<span style="background:var(--panel2);padding:2px 8px;border-radius:6px">'
+          + esc(k) + ': ' + esc(tc[k]) + '</span>';
+      });
+      html += '</div>';
+    }
+
+    el.innerHTML = html;
+  }
+
+  // ── Kernel families ───────────────────────────────────────────────────────
+  function loadKernelFamilies() {
+    document.getElementById('kf_loading').style.display = 'block';
+    fetch('neuralwebdata/kernel_families.json')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        document.getElementById('kf_loading').style.display = 'none';
+        renderKernelFamilies(d.families || d);
+      })
+      .catch(function () {
+        document.getElementById('kf_loading').textContent = 'Kernel data unavailable.';
+      });
+  }
+
+  function renderKernelFamilies(families) {
+    var grid = document.getElementById('cm_kf_grid');
+    var FAMILY_LABELS = {
+      'altdata': 'Altdata', 'radar': 'Divergence Radar', 'us_board': 'US Board',
+      'track_record': 'Track Record', 'policy': 'Policy', 'desk:ai_desk': 'AI Desk'
+    };
+    var html = '';
+    Object.keys(families).forEach(function (key) {
+      var f = families[key];
+      var hc = f.horizon_curve || {};
+      var horizons = Object.keys(hc).sort(function (a, b) { return +a - +b; });
+      var firstH = horizons[0];
+      var ic = firstH != null ? hc[firstH] : null;
+      var recency = (f.recency_trend || {})['all'] || {};
+      var wlb = recency.wilson_ci_low;
+      var nEff = recency.n_eff;
+      var stale = (f.staleness || {});
+      var armed = f.armed;
+      var label = FAMILY_LABELS[key] || key;
+
+      var icStr, icClass;
+      if (ic == null) { icStr = '—'; icClass = 'kf-null'; }
+      else if (ic > 0) { icStr = '+' + (ic * 100).toFixed(3) + '%'; icClass = 'kf-pos'; }
+      else { icStr = (ic * 100).toFixed(3) + '%'; icClass = 'kf-neg'; }
+
+      html += '<div class="kf-card">'
+        + '<div class="kf-name"><span>' + esc(label) + '</span>'
+        + '<span class="kf-armed-badge ' + (armed ? 'kf-armed-yes' : 'kf-armed-no') + '">'
+        + (armed ? 'ARMED' : 'DISPLAY') + '</span></div>'
+        + '<div class="kf-ic ' + icClass + '">' + icStr + '</div>'
+        + '<div class="kf-sub">'
+        + (wlb != null ? 'Wilson LB (hit-rate): ' + (wlb * 100).toFixed(1) + '%' : '') + ' '
+        + (nEff != null ? '· n=' + nEff : '') + '</div>'
+        + '<div class="kf-sub">Horizons: ' + horizons.join(', ') + 'd</div>'
+        + (stale.days_since_last_fire != null
+            ? '<div class="kf-stale">Last fired: ' + esc(stale.date_last || '') + ' (' + stale.days_since_last_fire + 'd ago)</div>'
+            : '')
+        + '</div>';
+    });
+    grid.innerHTML = html || '<p class="cm-empty">No kernel data.</p>';
+  }
+
+})();
+</script>
+</body>
+</html>

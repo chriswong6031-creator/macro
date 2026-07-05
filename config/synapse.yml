@@ -2421,7 +2421,8 @@ artifacts:
     tier: infrastructure
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_site.py  # copies kernel_families.json to site/neuralwebdata/ for committee pages (display-only)
     external_consumers: []
     notes: >
       DISPLAY-FIRST LAW: zero behavior-changing consumers. Per-engine-family decay
@@ -2520,7 +2521,8 @@ artifacts:
     tier: display
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_site.py  # copies graph JSON to site/neuralwebdata/ for committee/graph pages (display-only)
     external_consumers: []
     notes: >
       DISPLAY-ONLY HARD LAW: confluence never gates, never ranks, never raises a priority.

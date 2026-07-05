@@ -3499,6 +3499,38 @@ def main() -> int:
                 log.info("wrote %d AI stock-brief target(s) for the parallel stock_briefs job", len(brief_set))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("stock brief target write failed: %s", e)
+
+    # W8b: Neural Web Committee View — flagship premium page (auth-required v1).
+    # Copies data/neuralweb/confluence_graph.json + kernel_families.json to
+    # site/neuralwebdata/ for client-side consumption, then renders committee.html.
+    try:
+        import json as _nw_json
+        nwd = site / "neuralwebdata"
+        nwd.mkdir(parents=True, exist_ok=True)
+        # Copy confluence graph (nodes / edges / contradiction_summary)
+        _cg_src = config.data_dir() / "neuralweb" / "confluence_graph.json"
+        if _cg_src.exists():
+            (nwd / "confluence_graph.json").write_bytes(_cg_src.read_bytes())
+            log.info("neuralwebdata: copied confluence_graph.json")
+        # Copy kernel families (horizon curves + recency trends)
+        _kf_src = config.data_dir() / "neuralweb" / "kernel_families.json"
+        if _kf_src.exists():
+            (nwd / "kernel_families.json").write_bytes(_kf_src.read_bytes())
+            log.info("neuralwebdata: copied kernel_families.json")
+        # Supabase config (same as watchlist / theme.js)
+        _nw_wl = config.load().get("watchlist", {})
+        _nw_sup = (_nw_wl.get("supabase") or {})
+        _nw_auth_cfg = ({"url": _nw_sup["url"], "anonKey": _nw_sup["anon_key"]}
+                        if _nw_sup.get("url") and _nw_sup.get("anon_key") else None)
+        committee_html = env.get_template("committee.html.j2").render(
+            generated_utc=generated,
+            supabase_cfg_json=_nw_json.dumps(_nw_auth_cfg),
+        )
+        write_page(site / "committee.html", committee_html)
+        log.info("wrote %s", site / "committee.html")
+    except Exception as _nwe:  # noqa: BLE001 — additive; never break main build
+        log.warning("committee.html render failed (%s); page skipped", _nwe)
+
     return 0
 
 
