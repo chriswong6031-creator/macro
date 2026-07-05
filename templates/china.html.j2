@@ -1817,42 +1817,7 @@
   </div>
   {% endif %}
 
-  <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
-  {% if alpha and alpha.top %}
-  <div class="panel span12" id="alpha-leaders">
-    <h2>{{ t('📊 Sector relative strength — read the mean-reversion flag', '📊 板块相对强度 — 关注均值回归标记') }}
-      <span class="note" style="text-transform:none">· {{ t('sector-neutral residual · vs CSI 300', '板块中性残差 · 相对沪深300') }}{% if alpha.n %} · {{ alpha.n }} {{ t('names', '只') }}{% endif %}</span>
-      {{ help("Sector-neutral relative strength is context. Read the entry flag; high alpha is not a buy signal in A-shares.", "板块中性相对强度仅作背景。请看入场标记；A股高alpha不是买入信号。") }}
-    </h2>
-    <table class="sortable">
-      <thead><tr>
-        <th class="l">{{ t('Stock', '个股') }}</th>
-        <th class="l">{{ t('Sector', '板块') }}</th>
-        <th>{{ t('alpha z', '阿尔法 z') }}</th>
-        <th>{{ t('sector rank', '板块排名') }}</th>
-        <th>{{ t('idio ann', '年化残差') }}</th>
-        <th>{{ t('1-mo', '近一月') }}</th>
-        <th class="l">{{ t('entry', '入场') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for a in alpha.top[:16] %}
-      <tr>
-        <td class="l"><a href="china_lookup.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="note">{{ nm(a.name) }}</span></td>
-        <td class="l note">{{ t(a.sector, SECZH.get(a.sector, a.sector)) }}</td>
-        <td><b class="{{ 'pos' if (a.alpha or 0)>=0 else 'neg' }}">{{ '%+.2f'|format(a.alpha) if a.alpha is not none else '—' }}</b></td>
-        <td class="note">{{ a.sector_rank }}/{{ a.sector_n }}</td>
-        <td class="{{ 'pos' if (a.resid_ann or 0)>=0 else 'neg' }}">{{ '%+.0f'|format(a.resid_ann) ~ '%' if a.resid_ann is not none else '—' }}</td>
-        <td class="{{ 'pos' if (a.rev_1m or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(a.rev_1m) ~ '%' if a.rev_1m is not none else '—' }}</td>
-        <td class="l">{% if a.entry %}{% set _aez = {'pullback':'回调买点','extended':'急涨偏热','intact':'趋势完好','laggard':'落后','neutral':'中性'} %}<span class="alpha-entry ae-{{ a.entry }}">{{ t(a.entry, _aez.get(a.entry, a.entry)) }}</span>{% endif %}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    <p class="note" style="margin:6px 0 0;font-size:11px">{{ t('Relative-strength context only. Use the entry flag, not alpha rank, as the cleaner read.', '相对强度仅作背景。更干净的读法是入场标记，而非alpha排名。') }}</p>
-  </div>
-  {% endif %}
-
-  {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch, alpha leaders) #}
+  {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch) #}
 
   {% set I = internals or {} %}
 
