@@ -1100,3 +1100,333 @@ class TestSchemaStability:
             f"Extra: {set(cols) - set(PANEL_COLUMNS)}\n"
             f"Missing: {set(PANEL_COLUMNS) - set(cols)}"
         )
+
+
+# ---------------------------------------------------------------------------
+# F1 fix tests — betas must be written to the panel (not all-NULL)
+# ---------------------------------------------------------------------------
+class TestF1BetasWritten:
+    """F1: build_panel must stamp Vasicek-shrunk beta values into every row.
+
+    Before the fix, all 8 beta_* columns were 100% NULL in the written parquet
+    because betas_t was used for attribution but never written into the row dict.
+    """
+
+    def _write_fixture(self, root: Path, tickers: list[str],
+                       sectors: list[str], n_dates: int = 350) -> pd.DatetimeIndex:
+        rng = np.random.default_rng(99)
+        dates = pd.bdate_range("2025-01-02", periods=n_dates)
+        as_of = dates[-1]
+
+        bdir = root / "data" / "breadth"
+        bdir.mkdir(parents=True, exist_ok=True)
+        closes = pd.DataFrame(
+            {t: 100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod()
+             for t in tickers},
+            index=dates,
+        )
+        closes.to_parquet(bdir / "_closes_cache.parquet")
+        meta = pd.DataFrame({"name": tickers, "sector": sectors}, index=tickers)
+        meta.to_parquet(bdir / "constituents.parquet")
+
+        ydir = root / "data" / "yahoo"
+        ydir.mkdir(exist_ok=True)
+        for sym in ["SPY", "IWM", "QQQ", "TLT", "DX-Y.NYB", "FXI", "XLK"]:
+            df = pd.DataFrame(
+                {"close": 100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod()},
+                index=dates,
+            )
+            df.to_parquet(ydir / f"{sym}.parquet")
+
+        sdir = root / "site" / "basketdata"
+        sdir.mkdir(parents=True, exist_ok=True)
+        ai_levels = list(100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod())
+        (sdir / "baskets.json").write_text(json.dumps({
+            "chart": {
+                "dates": [str(d.date()) for d in dates],
+                "bench": [1.0] * n_dates,
+                "baskets": {"ai_infra": ai_levels},
+            }
+        }))
+
+        fddir = root / "site" / "factordata"
+        fddir.mkdir(parents=True, exist_ok=True)
+        per_ticker = {t: {"alpha": float(rng.normal(0, 1))} for t in tickers}
+        (fddir / "alpha.json").write_text(json.dumps({
+            "as_of": str(as_of.date()), "per_ticker": per_ticker,
+        }))
+        factors_table = [
+            {"ticker": t, **{leg: float(rng.normal(0, 1)) for leg in BLOCK_B_LEGS},
+             "mktcap_bn": 10.0}
+            for t in tickers
+        ]
+        (fddir / "factors.json").write_text(json.dumps({
+            "as_of": str(as_of.date()), "table": factors_table,
+        }))
+        return dates
+
+    def test_beta_mkt_non_null_for_post_warmup_rows(self, tmp_path):
+        """F1: beta_mkt must be non-null for post-warmup rows (not all-NULL).
+
+        The warmup period is MIN_PERIODS + 1 (shift) = 127 business days.
+        With n_dates=350, building the last 10 dates must yield non-null beta_mkt.
+        """
+        tickers = ["AAPL", "MSFT"]
+        sectors = ["Information Technology", "Information Technology"]
+        dates = self._write_fixture(tmp_path, tickers, sectors, n_dates=350)
+
+        panel = build_panel(
+            data_root=tmp_path, out_root=tmp_path,
+            start_date=dates[-10], end_date=dates[-1],
+            tickers=tickers,
+        )
+        assert not panel.empty, "Panel is empty"
+        assert "beta_mkt" in panel.columns, "beta_mkt column missing from panel"
+
+        # Post-warmup rows (all of them here — last 10 of 350) must have non-null beta_mkt.
+        non_null_count = panel["beta_mkt"].notna().sum()
+        assert non_null_count > 0, (
+            f"F1 regression: beta_mkt is 100% NULL in panel ({len(panel)} rows). "
+            "betas_t must be stamped into the row dict."
+        )
+        # More specifically: for a well-warmed series (350 dates >> 127 warmup),
+        # essentially all rows in the last-10-date window must have non-null betas.
+        assert non_null_count == len(panel), (
+            f"F1: expected all {len(panel)} post-warmup rows to have non-null beta_mkt, "
+            f"got {non_null_count} non-null."
+        )
+
+    def test_beta_china_non_null_for_china_sector(self, tmp_path):
+        """F1 + china stream: beta_china non-null for IT sector (china-exposed) ticker.
+
+        We check the written parquet (which goes through PANEL_COLUMNS reindex).
+        beta_china requires enough history to warm up through 7 sequential causal-orth
+        steps (each adds ~127 NaN rows): minimum ~7 × 127 = 889 bdays.  We use 950.
+        """
+        root = tmp_path / "china_sector"
+        tickers = ["AAPL", "MSFT"]
+        sectors = ["Information Technology", "Information Technology"]
+        # Need 1200 dates to warm up china stream after 6 prior orth steps:
+        # Each orth step adds ~127 NaN rows; beta computation needs another 127.
+        # Total: 8 × 127 = ~1016 bdays required; we use 1200 for headroom.
+        dates = self._write_fixture(root, tickers, sectors, n_dates=1200)
+
+        build_panel(
+            data_root=root, out_root=root,
+            start_date=dates[-10], end_date=dates[-1],
+            tickers=tickers,
+        )
+
+        # Read back the written parquet (which has PANEL_COLUMNS schema):
+        parquet_files = sorted((root / "data" / "factordata" / "panel").rglob("panel.parquet"))
+        assert parquet_files, "No parquet written"
+        pq = pd.concat([pd.read_parquet(p) for p in parquet_files])
+        assert "beta_china" in pq.columns, (
+            "beta_china column missing from parquet schema"
+        )
+
+        aapl_rows = pq[pq["ticker"] == "AAPL"]
+        assert len(aapl_rows) > 0, "No AAPL rows in parquet"
+        non_null = aapl_rows["beta_china"].notna().sum()
+        assert non_null > 0, (
+            "F1: beta_china is NULL for china-exposed (IT sector) ticker AAPL — "
+            "betas_t must be stamped into the row dict so the FXI beta is written. "
+            "(Requires 950 bdays of history to warm up through 7 orth steps.)"
+        )
+
+    def test_beta_china_null_for_non_china_sector(self, tmp_path):
+        """F1: beta_china must be None for non-china-sector tickers (Health Care).
+
+        Check against the written parquet schema.
+        """
+        root = tmp_path / "non_china"
+        tickers = ["JNJ", "PFE"]
+        sectors = ["Health Care", "Health Care"]
+        # Need XLV for Health Care sector:
+        dates = self._write_fixture(root, tickers, sectors, n_dates=350)
+        # Write XLV (Health Care ETF):
+        rng = np.random.default_rng(77)
+        n_dates = 350
+        dates2 = pd.bdate_range("2025-01-02", periods=n_dates)
+        df = pd.DataFrame(
+            {"close": 100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod()},
+            index=dates2,
+        )
+        df.to_parquet(root / "data" / "yahoo" / "XLV.parquet")
+
+        build_panel(
+            data_root=root, out_root=root,
+            start_date=dates[-10], end_date=dates[-1],
+            tickers=tickers,
+        )
+
+        parquet_files = sorted((root / "data" / "factordata" / "panel").rglob("panel.parquet"))
+        assert parquet_files, "No parquet written"
+        pq = pd.concat([pd.read_parquet(p) for p in parquet_files])
+        assert "beta_china" in pq.columns, "beta_china column missing from parquet schema"
+        # Health Care is not in CHINA_SECTORS — beta_china must be all-None.
+        jnj_rows = pq[pq["ticker"] == "JNJ"]
+        assert len(jnj_rows) > 0, "No JNJ rows in parquet"
+        all_null = jnj_rows["beta_china"].isna().all()
+        assert all_null, (
+            f"F1: beta_china must be None for non-china sector (Health Care) ticker JNJ, "
+            f"but got non-null values: {jnj_rows['beta_china'].dropna().values}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# F2 fix tests — SPY-fallback degeneracy must not poison the panel
+# ---------------------------------------------------------------------------
+class TestF2SpyFallbackDegeneracy:
+    """F2: multi-ticker fixture including one ticker with sector='—' (unmapped).
+
+    Mandated regression assertions (from F2 spec):
+      (i)  alibi_share_20d has nunique() > 1 across rows
+      (ii) abs(resid_ret_20d).max() < 1.0
+      (iii) unmapped-sector ticker has beta_sector/contrib_sector_* all None
+             while its beta_mkt is non-null
+    """
+
+    def _write_fixture_with_unmapped(
+        self,
+        root: Path,
+        mapped_tickers: list[str],
+        unmapped_tickers: list[str],
+        n_dates: int = 350,
+    ) -> pd.DatetimeIndex:
+        """Write fixture with both mapped-sector and unmapped-sector ('—') tickers."""
+        rng = np.random.default_rng(31415)
+        dates = pd.bdate_range("2025-01-02", periods=n_dates)
+        as_of = dates[-1]
+        all_tickers = mapped_tickers + unmapped_tickers
+        sectors = (["Information Technology"] * len(mapped_tickers)
+                   + ["—"] * len(unmapped_tickers))
+
+        bdir = root / "data" / "breadth"
+        bdir.mkdir(parents=True, exist_ok=True)
+        closes = pd.DataFrame(
+            {t: 100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod()
+             for t in all_tickers},
+            index=dates,
+        )
+        closes.to_parquet(bdir / "_closes_cache.parquet")
+        meta = pd.DataFrame({"name": all_tickers, "sector": sectors}, index=all_tickers)
+        meta.to_parquet(bdir / "constituents.parquet")
+
+        ydir = root / "data" / "yahoo"
+        ydir.mkdir(exist_ok=True)
+        for sym in ["SPY", "IWM", "QQQ", "TLT", "DX-Y.NYB", "FXI", "XLK"]:
+            df = pd.DataFrame(
+                {"close": 100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod()},
+                index=dates,
+            )
+            df.to_parquet(ydir / f"{sym}.parquet")
+
+        sdir = root / "site" / "basketdata"
+        sdir.mkdir(parents=True, exist_ok=True)
+        ai_levels = list(100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod())
+        (sdir / "baskets.json").write_text(json.dumps({
+            "chart": {
+                "dates": [str(d.date()) for d in dates],
+                "bench": [1.0] * n_dates,
+                "baskets": {"ai_infra": ai_levels},
+            }
+        }))
+
+        fddir = root / "site" / "factordata"
+        fddir.mkdir(parents=True, exist_ok=True)
+        per_ticker = {t: {"alpha": float(rng.normal(0, 1))} for t in all_tickers}
+        (fddir / "alpha.json").write_text(json.dumps({
+            "as_of": str(as_of.date()), "per_ticker": per_ticker,
+        }))
+        factors_table = [
+            {"ticker": t, **{leg: float(rng.normal(0, 1)) for leg in BLOCK_B_LEGS},
+             "mktcap_bn": 10.0}
+            for t in all_tickers
+        ]
+        (fddir / "factors.json").write_text(json.dumps({
+            "as_of": str(as_of.date()), "table": factors_table,
+        }))
+        return dates
+
+    def test_f2_spy_fallback_regression(self, tmp_path):
+        """F2 mandated regression: mixed mapped + unmapped-sector fixture.
+
+        Assertions:
+          (i)  alibi_share_20d nunique() > 1  (not spiked at 0.500)
+          (ii) abs(resid_ret_20d).max() < 1.0  (not ~1e11-1e13)
+          (iii) unmapped ticker has beta_sector/contrib_sector_* all None,
+                beta_mkt non-null
+        """
+        mapped = ["AAPL", "MSFT", "GOOGL"]
+        unmapped = ["UNMAPPED1"]
+        dates = self._write_fixture_with_unmapped(
+            tmp_path, mapped, unmapped, n_dates=350
+        )
+
+        panel = build_panel(
+            data_root=tmp_path, out_root=tmp_path,
+            start_date=dates[-20], end_date=dates[-1],
+            tickers=mapped + unmapped,
+        )
+        assert not panel.empty, "Panel is empty"
+
+        # (i) alibi_share_20d must NOT be a degenerate spike at 0.500:
+        alibi_col = "alibi_share_20d"
+        assert alibi_col in panel.columns, f"{alibi_col} not in panel"
+        alibi_vals = panel[alibi_col].dropna()
+        assert len(alibi_vals) > 0, f"No non-null {alibi_col} values"
+        n_unique = alibi_vals.nunique()
+        assert n_unique > 1, (
+            f"F2 regression (i): {alibi_col} has only {n_unique} unique value(s) — "
+            f"degenerate spike detected (all values = {alibi_vals.unique()[:5]}). "
+            "SPY-fallback sector must be skipped."
+        )
+        # Also check that values are NOT all 0.5 (the degenerate case):
+        spike_at_half = (alibi_vals - 0.5).abs() < 1e-6
+        assert not spike_at_half.all(), (
+            f"F2 regression (i): all {alibi_col} values are 0.500 — degenerate. "
+            "SPY-fallback sector must be skipped."
+        )
+
+        # (ii) max |resid_ret_20d| must be < 1.0:
+        resid_col = "resid_ret_20d"
+        assert resid_col in panel.columns, f"{resid_col} not in panel"
+        resid_vals = panel[resid_col].dropna()
+        assert len(resid_vals) > 0, f"No non-null {resid_col} values"
+        max_abs_resid = resid_vals.abs().max()
+        assert max_abs_resid < 1.0, (
+            f"F2 regression (ii): max |{resid_col}| = {max_abs_resid:.4f} >= 1.0 — "
+            "degenerate resid detected (expected < 1.0 for sensible returns). "
+            "SPY-fallback sector must be skipped."
+        )
+
+        # (iii) unmapped ticker: beta_sector and contrib_sector_* all None; beta_mkt non-null:
+        for tkr in unmapped:
+            tkr_rows = panel[panel["ticker"] == tkr]
+            if len(tkr_rows) == 0:
+                continue  # ticker had no betas at all — not a blocker
+
+            # beta_sector must be all-None for unmapped ticker:
+            assert "beta_sector" in panel.columns, "beta_sector column missing"
+            bs = tkr_rows["beta_sector"]
+            assert bs.isna().all(), (
+                f"F2 regression (iii): unmapped ticker {tkr} has non-null beta_sector "
+                f"({bs.dropna().values}) — sector stream must be skipped."
+            )
+
+            # contrib_sector_* must be all-None:
+            contrib_sector_cols = [c for c in panel.columns if c.startswith("contrib_sector_")]
+            for col in contrib_sector_cols:
+                assert tkr_rows[col].isna().all(), (
+                    f"F2 regression (iii): unmapped ticker {tkr} has non-null {col} "
+                    f"({tkr_rows[col].dropna().values}) — sector stream must be skipped."
+                )
+
+            # beta_mkt must be non-null (other streams are unaffected):
+            assert "beta_mkt" in panel.columns, "beta_mkt column missing"
+            bm = tkr_rows["beta_mkt"]
+            assert bm.notna().any(), (
+                f"F2 regression (iii): unmapped ticker {tkr} has all-null beta_mkt — "
+                "beta_mkt should be non-null (only sector stream is skipped)."
+            )

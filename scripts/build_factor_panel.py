@@ -25,6 +25,18 @@ OUT OF SCOPE FOR THIS PR (added by later PRs):
   - Style-regime classifier (P1-C): dna_class, style_regime, style_regime_pending
   - Pair G detector / factor_attention reflex (P1-D)
 
+NOTE (F3 ruling 2026-07-05): trailing-252d study breakpoints (alibi Q80, alpha_z
+quintiles) are STUDY-TIME derivations from accumulated panel history — Block-A
+history is price-only and PIT-backfillable via --start; no dedicated breakpoint
+columns are emitted by design.
+
+STREAM WARMUP COVERAGE (F-A disclosure 2026-07-05): the sequential causal orth
+chain consumes ~127 leading rows PER STREAM, so late-priority streams have low
+fill on short histories.  Measured on a 790-bday cache: beta_dollar 53.6%,
+beta_ai_theme 0.2%, beta_china 0.0% non-null.  The production nightly and any
+study-facing backfill must run with deep history (--start 2020-01-01 or earlier)
+so all Block-A streams reach full coverage before P3 studies consume them.
+
 PIT SEMANTICS (R3 ruling 2026-07-04):
   Block-B *_pct columns (value_pct, profitability_pct, quality_pct, payout_pct,
   low_vol_pct) and alpha_z_house are SINGLE-DAY SNAPSHOT values sourced from
@@ -357,7 +369,10 @@ def _causal_rolling_beta(y: pd.Series, x: pd.Series,
     """
     cov = y.rolling(win, min_periods=minp).cov(x)
     var = x.rolling(win, min_periods=minp).var()
-    beta = (cov / var.replace(0, float("nan"))).shift(1)
+    # F2(b): min-variance floor — near-zero var (< 1e-12) collapses to NaN,
+    # not a degenerate huge coefficient.  .replace(0, nan) is insufficient
+    # for near-zero values (e.g. sector == mkt stream degeneracy → var ~5e-35).
+    beta = (cov / var.where(var >= 1e-12)).shift(1)
     return beta
 
 
@@ -366,11 +381,19 @@ def _vasicek_shrink(beta_raw: pd.DataFrame, w: float) -> pd.DataFrame:
 
     Applied row-wise (same-day cross-section), matching engine/residual_alpha._shrink.
     w >= 1 → no-op.
+
+    F2(c) — frozen v1 guard: raw betas are clipped to [-10, +10] before computing
+    the cross-sectional mean.  This prevents degenerate near-infinite betas (arising
+    from near-zero variance streams, e.g. SPY-fallback sector == mkt stream) from
+    poisoning the cross-sectional mean and corrupting every ticker on that date.
+    The clip band [-10, +10] is a frozen v1 parameter — any change requires a v2 stamp.
     """
     if w is None or w >= 1.0:
         return beta_raw
-    cs_mean = beta_raw.mean(axis=1)
-    return beta_raw.mul(w).add(cs_mean.mul(1.0 - w), axis=0)
+    # F2(c): clip betas to frozen band before cross-sectional mean (frozen v1 guard).
+    beta_clipped = beta_raw.clip(lower=-10.0, upper=10.0)
+    cs_mean = beta_clipped.mean(axis=1)
+    return beta_clipped.mul(w).add(cs_mean.mul(1.0 - w), axis=0)
 
 
 def _orthogonalize_series(v: pd.Series, prior_orth_streams: list[pd.Series]) -> pd.Series:
@@ -396,7 +419,9 @@ def _orthogonalize_series(v: pd.Series, prior_orth_streams: list[pd.Series]) -> 
         # Rolling causal coefficient: cov(result, p) / var(p), lagged 1 day.
         cov_rp = result.rolling(BETA_WIN, min_periods=MIN_PERIODS).cov(p)
         var_p = p.rolling(BETA_WIN, min_periods=MIN_PERIODS).var()
-        coef = (cov_rp / var_p.replace(0, float("nan"))).shift(1)
+        # F2(b): min-variance floor — near-zero var (< 1e-12) → NaN coefficient,
+        # preventing degenerate near-infinite coefficients when streams are collinear.
+        coef = (cov_rp / var_p.where(var_p >= 1e-12)).shift(1)
         result = result - coef * p
     return result
 
@@ -434,13 +459,19 @@ def _build_stream_returns(data_root: Path, tkr_sector: dict[str, tuple[str, str]
 
 
 def _get_sector_etf_return(data_root: Path, sector: str,
-                           etf_cache: dict[str, pd.Series | None]) -> pd.Series | None:
-    """Fetch (and cache) the SPDR sector ETF return series for a GICS sector."""
-    etf = GICS_ETF.get(sector, "SPY")  # SPY fallback per masterplan §3.1
+                           etf_cache: dict[str, pd.Series | None]) -> tuple[pd.Series | None, bool]:
+    """Fetch (and cache) the SPDR sector ETF return series for a GICS sector.
+
+    Returns (series_or_None, is_spy_fallback).  is_spy_fallback is True when
+    the sector is unmapped (not in GICS_ETF) and SPY was the fallback — the caller
+    must skip the sector stream in that case (F2(a): SPY == mkt stream → collinear).
+    """
+    is_spy_fallback = sector not in GICS_ETF
+    etf = GICS_ETF.get(sector, "SPY")
     if etf not in etf_cache:
         s = _read_yahoo(data_root, etf)
         etf_cache[etf] = s
-    return etf_cache[etf]
+    return etf_cache[etf], is_spy_fallback
 
 
 def _compute_block_a_for_ticker(
@@ -477,10 +508,17 @@ def _compute_block_a_for_ticker(
     # Build sector return series for this ticker:
     sector_ret = None
     if "sector" in streams_to_use:
-        sector_ret = _get_sector_etf_return(data_root, sector, etf_cache)
+        sector_ret, is_spy_fallback = _get_sector_etf_return(data_root, sector, etf_cache)
         if sector_ret is None:
-            # Fallback: SPY already in mkt; skip sector stream
+            # ETF data unavailable — skip sector stream
             streams_to_use = [k for k in streams_to_use if k != "sector"]
+        elif is_spy_fallback:
+            # F2(a): sector is unmapped ('—' or missing) → resolved to SPY fallback.
+            # SPY == mkt stream → sector stream is collinear with mkt → near-zero orth
+            # variance → degenerate beta_sector (~1e14) → Vasicek mean poisoned for all
+            # tickers that date.  Skip sector stream entirely for this ticker.
+            streams_to_use = [k for k in streams_to_use if k != "sector"]
+            sector_ret = None
 
     # Assemble aligned raw return matrix for the streams we have:
     raw: dict[str, pd.Series] = {}
@@ -720,12 +758,17 @@ def build_panel(
     # ── 6. Compute Block-A betas per ticker ───────────────────────────────────
     log.info("computing Block-A betas for %d tickers...", len(closes.columns))
     all_betas: dict[str, pd.DataFrame] = {}
+    # F2(a): collect tickers whose sector is unmapped → SPY fallback → sector stream skipped.
+    skipped_sector_tickers: list[str] = []
     for i, ticker in enumerate(closes.columns):
         if (i + 1) % 100 == 0:
             log.info("  betas: %d / %d tickers done", i + 1, len(closes.columns))
         ticker_ret = closes[ticker].astype(float).pct_change(fill_method=None)
         sector = ns.get(ticker, (ticker, "—"))[1]
         is_china = sector in CHINA_SECTORS
+        # F2(a): detect SPY-fallback tickers before calling the block-A function.
+        if sector not in GICS_ETF:
+            skipped_sector_tickers.append(ticker)
         try:
             bdf = _compute_block_a_for_ticker(
                 ticker=ticker,
@@ -741,6 +784,13 @@ def build_panel(
         except Exception as e:
             log.warning("beta computation failed for %s: %s", ticker, e)
 
+    # F2(a): log all skipped-sector tickers once per build.
+    if skipped_sector_tickers:
+        log.info(
+            "F2(a) SPY-fallback sector skip: %d ticker(s) with unmapped sector "
+            "(beta_sector/contrib_sector_* → None): %s",
+            len(skipped_sector_tickers), skipped_sector_tickers,
+        )
     log.info("betas computed for %d tickers", len(all_betas))
 
     # ── 7. Vasicek shrinkage (cross-sectional, per beta column) ───────────────
@@ -840,6 +890,11 @@ def build_panel(
                 "date": date_str,
                 "factor_model": FACTOR_MODEL,
             }
+
+            # F1: stamp Vasicek-shrunk betas into row (betas_t keys are already
+            # "beta_{stream}" matching PANEL_COLUMNS — e.g. "beta_mkt", "beta_sector").
+            for col, val in betas_t.items():
+                row[col] = val
 
             # Attribution per window:
             for W in ATT_WINDOWS:
