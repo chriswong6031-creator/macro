@@ -3022,3 +3022,143 @@ artifacts:
       (deferred; iv_surface upgrade wave not yet started). Display-only: iv30
       consumed via options_stamp for stock-card overlay and gex_board; no
       scored arithmetic path currently reads this store.
+
+  # --- W3 Event Intelligence priors (Signal Commons, 2026-07-05) ---
+  event-priors-clinicaltrials:
+    path: data/special_situations/event_priors/clinicaltrials.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for Phase-3 clinical trial starts and clinical halts.
+      HAC/BH-FDR/DSR/split-half harness; survivorship floor included (n_imputed_zero).
+      is_context_only=true — display-only context, no scored arithmetic.
+      Regenerated weekly in special-sits-backfill.yml.
+
+  event-priors-openfda:
+    path: data/special_situations/event_priors/openfda.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for FDA approvals and label expansions.
+      HAC/BH-FDR/DSR/split-half harness; survivorship floor included.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-sp-index-changes:
+    path: data/special_situations/event_priors/sp_index_changes.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for S&P index additions and removals (announce_date PIT anchor).
+      Currently emits null-print (insufficient history — 28 events as of 2026-07-05, below
+      K>=8 floor). Machinery in place; prior populates once collector accumulates months.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-ipo-lockup:
+    path: data/special_situations/event_priors/ipo_lockup.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for IPO lockup expirations (priced_date + per-deal lockup_days).
+      HAC/BH-FDR/DSR/split-half harness; survivorship floor included.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-earnings:
+    path: data/special_situations/event_priors/earnings.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for earnings (asof_date from eps_quarterly; overlaid with
+      real SEC filed date where available per edgar_eps collector). SUE-bucketed into
+      quintiles (sue_q1..q5) where engine.sue available.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-gov-contract:
+    path: data/special_situations/event_priors/gov_contract.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      W3 gov-contract stub: null-only (insufficient=true). No awardee-ticker mapping
+      available in sam_gov data (theme-level only). Deferred to W6 data-gap pass.
+      Written so the event type is visible as known-but-unbuildable rather than absent.
