@@ -53,6 +53,7 @@ from engine import demand_chain as dchain  # noqa: E402
 from engine import coiled  # noqa: E402  — wave-2-validated COILED ranking bonus (display/ranking only)
 from engine import donor  # noqa: E402  — G6a donor-sector context chip (display-only)
 from engine import hold as hold_engine  # noqa: E402  — W6-C HOLD tracker (basing state / invalidation)
+from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-blackout hygiene veto
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -2137,6 +2138,87 @@ def main() -> int:
                  "top-2 share %.0f%%, %d overflow to watch",
                  len(buyable), _n_sectors6, 100 * _top2_share6, len(_buyable_overflow))
 
+        # ── W1.5 Earnings-blackout hygiene veto (adjudicated 2026-07-05) ──────
+        # HYGIENE GATE — fresh-entry suppression only (RUL-4-legal).
+        # HOLD/LAUNCHED names are never touched; only fresh-fire buy candidates.
+        # Fail-open law: missing store / stale store => never suppresses.
+        try:
+            _eb_store_info = _eb.store_staleness()
+            _eb_store_stale = _eb_store_info.get("stale", True)
+            _eb_suppressed: list[tuple] = []   # (t, p, tier) suppressed from buy
+            _eb_suppressed_r: list[tuple] = [] # (t, p) suppressed from Lane R
+            _eb_blackout_map: dict[str, dict] = {}  # t -> assess() result
+            if _eb_store_stale:
+                log.warning(
+                    "W1.5 earnings_blackout: store stale (as_of_age_td=%s) — "
+                    "suppressing NOTHING (fail-open)",
+                    _eb_store_info.get("as_of_age_td"))
+            else:
+                # Assess trend-lane buyable candidates
+                _buyable_after_eb: list[tuple] = []
+                for _item_eb in buyable:
+                    _t_eb, _p_eb, _tier_eb = _item_eb
+                    # Skip HOLD_LAUNCHED names — they are NEVER fresh-entry candidates
+                    _hd_eb = (_p_eb.get("hold") or {}) if hasattr(_p_eb, "get") else {}
+                    if (_hd_eb.get("state") == "launched"):
+                        _buyable_after_eb.append(_item_eb)
+                        continue
+                    _ev = _eb.assess(_t_eb)
+                    _eb_blackout_map[_t_eb] = _ev
+                    if _ev.get("in_blackout"):
+                        _eb_suppressed.append(_item_eb)
+                        # Attach rejection tag to the row (REJECTION_TAXONOMY slot)
+                        row_by_t[_t_eb]["primary_rejection_reason"] = "event_blackout"
+                    else:
+                        _buyable_after_eb.append(_item_eb)
+                buyable = _buyable_after_eb
+
+                # Assess Lane-R recovery candidates
+                _recovery_after_eb: list[tuple] = []
+                for _t_eb, _p_eb in _recovery_cands:
+                    _hd_eb = (_p_eb.get("hold") or {}) if hasattr(_p_eb, "get") else {}
+                    if _hd_eb.get("state") == "launched":
+                        _recovery_after_eb.append((_t_eb, _p_eb))
+                        continue
+                    _ev = _eb_blackout_map.get(_t_eb) or _eb.assess(_t_eb)
+                    _eb_blackout_map[_t_eb] = _ev
+                    if _ev.get("in_blackout"):
+                        _eb_suppressed_r.append((_t_eb, _p_eb))
+                        row_by_t[_t_eb]["primary_rejection_reason"] = "event_blackout"
+                    else:
+                        _recovery_after_eb.append((_t_eb, _p_eb))
+                _recovery_cands = _recovery_after_eb
+                _recovery_tickers = {t for t, _ in _recovery_cands}
+
+                _n_eb_suppressed = len(_eb_suppressed) + len(_eb_suppressed_r)
+                if _n_eb_suppressed:
+                    log.info(
+                        "W1.5 earnings_blackout: suppressed %d fresh-buy candidate(s) "
+                        "— %s (event_blackout; HOLD/LAUNCHED untouched)",
+                        _n_eb_suppressed,
+                        ", ".join(t for t, _, _ti in _eb_suppressed)
+                        + (", " + ", ".join(t for t, _ in _eb_suppressed_r)
+                           if _eb_suppressed_r else ""),
+                    )
+                else:
+                    log.info("W1.5 earnings_blackout: no fresh-buy candidates in blackout today")
+
+            # Build suppressed-today summary for the board surface
+            _eb_suppressed_count = len(_eb_suppressed) + len(_eb_suppressed_r)
+            _eb_suppressed_note: dict | None = (
+                {"count": _eb_suppressed_count,
+                 "tickers": [t for t, _, _ti in _eb_suppressed]
+                             + [t for t, _ in _eb_suppressed_r],
+                 "store_stale": _eb_store_stale}
+                if _eb_suppressed_count or _eb_store_stale else None
+            )
+        except Exception as _eb_exc:  # noqa: BLE001 — hygiene gate must never crash a build
+            log.warning("W1.5 earnings_blackout: gate error (%s) — fail-open", _eb_exc)
+            _eb_suppressed_count = 0
+            _eb_suppressed_note = None
+            _eb_blackout_map = {}
+            _eb_store_stale = True
+
         buy_ids = {t for t, _, _ in buyable} | _recovery_tickers
         # overflow names join watch (only if positive conviction, no duplication)
         _overflow_tickers = {t for t, _, _ in _buyable_overflow}
@@ -2314,7 +2396,10 @@ def main() -> int:
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
                 "concentration": _concentration_stat,
                 # G6a donor-sector: page-level context chip (not per-row; None when insufficient data)
-                "donor": _donor_ctx}
+                "donor": _donor_ctx,
+                # W1.5 earnings-blackout: compact suppressed-today note (None when nothing suppressed
+                # and store is fresh). Rendered as a board-level notice by the template.
+                "earnings_blackout_note": _eb_suppressed_note}
         eligible = len(aligned)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
@@ -2377,6 +2462,29 @@ def main() -> int:
             _hd = _hold_state.get(t)
             if _hd is not None:
                 r["hold"] = _hd
+            # W1.5 earnings-blackout chip — display-only context on ALL board rows.
+            # For rows that are still on the board (HOLD/LAUNCHED or outside blackout),
+            # attach the upcoming earnings date chip when days_to_earnings <= 7 (context).
+            # For suppressed names: they are not on the board, so no chip needed here.
+            # The chip shows "Earnings <=3d" when in_blackout (should not appear on board
+            # because suppressed) and upcoming-earnings context when 4-7d away.
+            _eb_row = _eb_blackout_map.get(t)
+            if _eb_row is None and not _eb_store_stale:
+                # Name was not assessed yet (e.g. watch/laggard rows not in the buy pipeline)
+                try:
+                    _eb_row = _eb.assess(t)
+                    _eb_blackout_map[t] = _eb_row
+                except Exception:  # noqa: BLE001
+                    _eb_row = None
+            if _eb_row and not _eb_row.get("stale") and _eb_row.get("days_to_earnings") is not None:
+                _eb_days = _eb_row["days_to_earnings"]
+                if _eb_days is not None and _eb_days <= 7:
+                    r["earnings_soon"] = {
+                        "days_to": _eb_days,
+                        "next_date": _eb_row.get("next_date"),
+                        "next_time": _eb_row.get("next_time"),
+                        "in_blackout": bool(_eb_row.get("in_blackout")),
+                    }
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
             # it is a first-class field available for the US-2 ledger study (depth vs
             # forward returns for FRESH-BUY rows). NOT a gate — we do NOT filter on it

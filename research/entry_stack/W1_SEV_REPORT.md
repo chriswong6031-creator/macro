@@ -515,3 +515,35 @@ No promotion, no wiring decision. Reports only (RUL-4).
 *'validated' word deliberately absent (CI-enforced).*
 *No promotion language. Study report only.*
 *Family: esx_ev_blackout | Budget declared: 9 | Runs: k∈{1,2,3} × 3 panels*
+
+---
+
+## W1.5 ADJUDICATION BLOCK (Fable ruling 2026-07-05)
+
+**Ruling:** Ship authorized.
+
+**Clauses met (hygiene bar, RUL-7 operative):**
+
+| Clause | Result |
+|---|---|
+| CI-excluding-0 on stop5 (k=3 POOLED) | MET — coef=+0.087, CI=[+0.079, +0.099] |
+| Veto volume ≤10% (k=3 POOLED) | MET — 6.0% of covered fires |
+| Era sign-stability (4/4 eras, stop5 direction) | MET — blackout arm higher stop5 in all 4 eras (2012-15, 2016-19, 2020-22, 2023-26) |
+| mae63 co-primary (RUL-13 grandfathered: mae63 is secondary) | NULL — coef=+0.0006, CI=[-0.002, +0.003]; mae21 to be computed at next review |
+
+**Fable adjudication (verbatim):** "The S-EV hygiene bar is MET on all clauses: stop5 pooled k=3 CI-excl-0 +8.7pp; veto volume 6.0% is under the 10% cap; 4/4 eras sign-stable in stop5 direction; mae63 is NULL (co-primary grandfathered per Amendment 1 RUL-13; mae21 deferred to next full review). Ship as hygiene gate per masterplan section 3 F1 + section 4 row S-EV. Live semantics: key on next_date (+ next_time/acceptance-time where present); NEVER on 8-K filing calendar dates — same-day 8-Ks are mostly filed after-hours; the veto must not block an already-announced name. Ship authorized 2026-07-05."
+
+**Product shipped:** `engine/earnings_blackout.py` (W1.5, PR esx/w15).
+
+**Live implementation details:**
+- Store: `data/earnings/earnings.parquet` (Nasdaq-drip; as_of 2026-06-19; 10 td stale at adjudication date — fail-open)
+- Suppression target: fresh T1-T3 buy candidates on the US standout board (`us_standouts.json` buy strip)
+- HOLD/LAUNCHED names: never touched
+- Fail-open law: missing store / stale row (as_of > 10 td) / missing ticker => in_blackout=False
+- Board chip: `earnings_soon` dict attached to rows with days_to_earnings ≤7 (context, not suppression for 4-7d)
+- Suppressed-today note: `earnings_blackout_note` field in `us_standouts.json`; rendered as a compact board banner
+- Store-level staleness warning: rendered when store as_of > 10 td old; suppress NOTHING in that case
+
+**Suppressed count on current board (build date 2026-07-05):** 0 (gate is ACTIVE — store not stale; 7 tickers in the k=3 blackout window today: PENG/1d, PSMT/2d, AZZ/2d, PEP/3d, DAL/3d, WDFC/3d, SMPL/3d; none appeared as fresh-buy candidates on the bottoming-alignment board at this build).
+
+**Render delta:** engine/earnings_blackout.py adds one parquet read (cached) + per-ticker assess() calls (O(1) dict lookups after first load). Measured delta on a cold build: < 2s (within the ≤trivial budget — the parquet has 1,364 rows and the assess() is pure Python dict/Timestamp arithmetic with no I/O per call after the cache warms).
