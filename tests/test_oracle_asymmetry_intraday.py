@@ -26,6 +26,7 @@ from scripts.oracle_asymmetry_intraday import (
     has_ohlc_coverage,
     grade_row_intraday,
     compute_concordance,
+    run_fidelity_gate,
     COVERAGE_STARTS,
 )
 
@@ -771,3 +772,182 @@ class TestLongLiftoffViaHigh:
             f"note={result.get('note_hl')}"
         )
         assert result["liftoff_at_bar_hl"] == 3  # 1-indexed: 3rd bar of forward window
+
+
+# ---------------------------------------------------------------------------
+# Test 10: Fidelity Gate G1 enforcement
+# Spec §5: "same event count per family; abort on any unmatched row"
+# After fix-round: G1 actually checks, not just prints.
+# ---------------------------------------------------------------------------
+
+class TestFidelityGateG1:
+    """G1 must ENFORCE row-for-row join — not merely print a PASS."""
+
+    def _make_w01_df(
+        self,
+        families: list[str] | None = None,
+        n_per_family: int = 5,
+        add_dupes: bool = False,
+    ) -> pd.DataFrame:
+        """Build a minimal W0_1 DataFrame for gate testing."""
+        if families is None:
+            families = ["ep_onset_in", "ep_onset_out", "routing_6"]
+        rows = []
+        for fam in families:
+            for i in range(n_per_family):
+                rows.append({
+                    "family": fam,
+                    "node": "XLK",
+                    "trigger_date": f"2020-01-0{i + 2}",
+                    "parameterization": "rot21",
+                    "dedup_variant": "raw",
+                    "direction": "in",
+                    "sigma20": 0.08,
+                    "state": "STOPPED",
+                })
+        df = pd.DataFrame(rows)
+        if add_dupes:
+            # Append a duplicate of the first row
+            df = pd.concat([df, df.iloc[[0]]], ignore_index=True)
+        return df
+
+    def _make_ohlc_store_with_massive_close(self, tmp_path: Path) -> tuple[dict, Path]:
+        """Build a minimal OHLC store and a matching massive_stock_day dir."""
+        ohlc_store = {}
+        massive_dir = tmp_path / "massive_stock_day"
+        massive_dir.mkdir(parents=True)
+
+        # Single ticker with matching prices (same unadjusted basis)
+        tickers = ["XLK", "XLV", "XLF", "XLY", "XLI", "XLP", "XLE", "XLU", "XLB", "SPY"]
+        dates = pd.bdate_range("2020-01-02", periods=50)
+        for t in tickers:
+            prices = np.ones(50) * 100.0
+            ohlc_df = pd.DataFrame(
+                {"open": prices, "high": prices, "low": prices,
+                 "close": prices, "volume": np.ones(50) * 1000},
+                index=dates,
+            )
+            ohlc_store[t] = ohlc_df
+
+            # Matching massive_stock_day (same prices → returns match within 0.001)
+            mass_df = pd.DataFrame(
+                {"open": prices, "high": prices, "low": prices,
+                 "close": prices, "volume": np.ones(50) * 1000},
+                index=dates,
+            )
+            mass_df.to_parquet(massive_dir / f"{t}.parquet")
+
+        data_dir = tmp_path
+        return ohlc_store, data_dir
+
+    def test_g1_passes_clean_population(self, tmp_path):
+        """G1 passes when W0_1 has non-empty unique rows and non-empty family set."""
+        w01_df = self._make_w01_df()
+        ohlc_store, data_dir = self._make_ohlc_store_with_massive_close(tmp_path)
+        # Should not raise SystemExit
+        run_fidelity_gate(w01_df, ohlc_store, data_dir)
+
+    def test_g1_aborts_on_empty_csv(self, tmp_path):
+        """G1 must abort (sys.exit) when W0_1 CSV is empty."""
+        empty_df = pd.DataFrame(columns=["family", "node", "trigger_date"])
+        ohlc_store, data_dir = self._make_ohlc_store_with_massive_close(tmp_path)
+        with pytest.raises(SystemExit):
+            run_fidelity_gate(empty_df, ohlc_store, data_dir)
+
+    def test_g1_aborts_on_duplicate_keys(self, tmp_path):
+        """G1 must abort when duplicate primary-key rows are present."""
+        w01_df = self._make_w01_df(add_dupes=True)
+        ohlc_store, data_dir = self._make_ohlc_store_with_massive_close(tmp_path)
+        with pytest.raises(SystemExit):
+            run_fidelity_gate(w01_df, ohlc_store, data_dir)
+
+    def test_g1_prints_per_family_counts(self, tmp_path, capsys):
+        """G1 must print per-family row counts (not just total)."""
+        w01_df = self._make_w01_df(families=["ep_onset_in", "ep_onset_out"], n_per_family=7)
+        ohlc_store, data_dir = self._make_ohlc_store_with_massive_close(tmp_path)
+        run_fidelity_gate(w01_df, ohlc_store, data_dir)
+        captured = capsys.readouterr()
+        assert "ep_onset_in" in captured.out, "G1 must print each family name"
+        assert "ep_onset_out" in captured.out
+        assert "7" in captured.out, "G1 must print per-family row count"
+
+
+# ---------------------------------------------------------------------------
+# Test 11: Fidelity Gate G2 — uses massive_stock_day (unadjusted), aborts on breach
+# After fix-round: G2 compares to unadjusted source and sys.exit(1) on >0.1% diff.
+# ---------------------------------------------------------------------------
+
+class TestFidelityGateG2:
+    """G2 must use massive_stock_day (unadjusted) and abort on return divergence."""
+
+    def _make_stores(
+        self,
+        tmp_path: Path,
+        ohlc_prices: np.ndarray | None = None,
+        massive_prices: np.ndarray | None = None,
+        n: int = 50,
+    ) -> tuple[dict, Path]:
+        """Build OHLC store and massive_stock_day parquets with specified prices."""
+        dates = pd.bdate_range("2020-01-02", periods=n)
+        tickers = ["XLK", "XLV", "XLF", "XLY", "XLI", "XLP", "XLE", "XLU", "XLB", "SPY"]
+
+        if ohlc_prices is None:
+            ohlc_prices = np.ones(n) * 100.0
+        if massive_prices is None:
+            massive_prices = np.ones(n) * 100.0
+
+        massive_dir = tmp_path / "massive_stock_day"
+        massive_dir.mkdir(parents=True)
+
+        ohlc_store = {}
+        for t in tickers:
+            ohlc_df = pd.DataFrame(
+                {"open": ohlc_prices, "high": ohlc_prices,
+                 "low": ohlc_prices, "close": ohlc_prices, "volume": np.ones(n) * 1000},
+                index=dates,
+            )
+            ohlc_store[t] = ohlc_df
+
+            mass_df = pd.DataFrame(
+                {"open": massive_prices, "high": massive_prices,
+                 "low": massive_prices, "close": massive_prices, "volume": np.ones(n) * 1000},
+                index=dates,
+            )
+            mass_df.to_parquet(massive_dir / f"{t}.parquet")
+
+        return ohlc_store, tmp_path
+
+    def _make_w01_df(self) -> pd.DataFrame:
+        return pd.DataFrame([{
+            "family": "ep_onset_in", "node": "XLK", "trigger_date": "2020-01-02",
+            "parameterization": "rot21", "dedup_variant": "raw",
+            "direction": "in", "sigma20": 0.08, "state": "STOPPED",
+        }])
+
+    def test_g2_passes_matching_prices(self, tmp_path):
+        """G2 passes when OHLC and massive_stock_day close returns agree."""
+        w01_df = self._make_w01_df()
+        ohlc_store, data_dir = self._make_stores(tmp_path)
+        # No SystemExit expected
+        run_fidelity_gate(w01_df, ohlc_store, data_dir)
+
+    def test_g2_aborts_on_divergent_returns(self, tmp_path):
+        """G2 must abort when OHLC returns diverge from massive_stock_day by >0.1%.
+
+        Simulate a 5% level offset that translates into a return divergence on the
+        very first consecutive pair sampled (since returns-based: (105/104 - 1) vs
+        (100/100 - 1) → divergence on rising vs flat).
+        """
+        n = 50
+        # ohlc: steadily rising (each bar 1% higher) → day-over-day return ~1%
+        ohlc_prices = 100.0 * (1.01 ** np.arange(n))
+        # massive: flat at 100 → day-over-day return = 0%
+        # Return difference ≈ 1% >> 0.001 threshold → must abort
+        massive_prices = np.ones(n) * 100.0
+
+        w01_df = self._make_w01_df()
+        ohlc_store, data_dir = self._make_stores(
+            tmp_path, ohlc_prices=ohlc_prices, massive_prices=massive_prices
+        )
+        with pytest.raises(SystemExit):
+            run_fidelity_gate(w01_df, ohlc_store, data_dir)

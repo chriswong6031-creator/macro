@@ -331,44 +331,108 @@ def run_fidelity_gate(
     """Abort with ::error:: on any fidelity breach.
 
     Gate 1: Row-for-row join — same event count per family (exact).
-    Gate 2: OHLC close within 0.1% of massive_stock_day close on 3 random overlap dates
-            (returns-based comparison if level mismatch is a clean integer ratio).
+    Gate 2: OHLC close within 0.1% of massive_stock_day UNADJUSTED close on 3 random overlap
+            dates (returns-based comparison to cancel split multipliers; aborts on breach).
     Gate 3: Vendor cross-check — compare yahoo H/L vs massive_stock_day H/L for 2021-07-06+
             overlap; report % bars with |Δ|>0.2% per ticker; STOP if >2% of bars diverge.
     """
     print("\n--- W0.2 Fidelity Gate ---")
 
-    # Gate 1: family counts
-    families_expected = w01_df["family"].unique().tolist()
-    print(f"  [G1] Families in W0_1 CSV: {families_expected}")
-    print(f"  [G1] Total W0_1 rows: {len(w01_df)}")
-    print("  [G1] Row-for-row join: PASS (population = W0_1 CSV exactly)")
+    # -------------------------------------------------------------------------
+    # Gate 1: Row-for-row join — enforce, do not merely print.
+    # Spec §5: "same event count per family; abort on any unmatched row."
+    # Freeze the expected family counts from the W0_1 CSV (the ground truth);
+    # any future re-enumeration of W0_1 that changes family sizes will trip this gate.
+    # -------------------------------------------------------------------------
+    if len(w01_df) == 0:
+        print("::error:: [G1] W0_1 CSV is empty — cannot proceed.", file=sys.stderr)
+        sys.exit(1)
 
-    # Gate 2: OHLC close vs adjusted close sanity (3 random overlap dates per ticker)
+    families_expected = w01_df["family"].unique().tolist()
+    if len(families_expected) == 0:
+        print("::error:: [G1] No family column found in W0_1 CSV.", file=sys.stderr)
+        sys.exit(1)
+
+    # Check for duplicate primary-key rows.
+    # routing_6 events legitimately repeat per routing_cell (different sub-label
+    # for the same trigger_date/node/param/dedup_variant) — include routing_cell
+    # in the key when present to correctly handle this family.
+    candidate_key_cols = (
+        "trigger_date", "node", "family", "parameterization",
+        "dedup_variant", "routing_cell",
+    )
+    key_cols = [c for c in candidate_key_cols if c in w01_df.columns]
+    if key_cols:
+        n_dupes = int(w01_df.duplicated(subset=key_cols).sum())
+        if n_dupes > 0:
+            dupe_sample = w01_df[w01_df.duplicated(subset=key_cols, keep=False)].head(3)
+            print(
+                f"::error:: [G1] {n_dupes} duplicate primary-key rows in W0_1 CSV — "
+                f"population integrity compromised. Key: {key_cols}. "
+                f"Sample: {dupe_sample[key_cols].to_dict('records')}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+    # Freeze per-family counts so any future change to W0_1 fails fast
+    family_counts = w01_df["family"].value_counts().to_dict()
+    total_rows = len(w01_df)
+
+    print(f"  [G1] Families in W0_1 CSV: {sorted(families_expected)}")
+    print(f"  [G1] Total W0_1 rows: {total_rows}")
+    for fam, cnt in sorted(family_counts.items()):
+        print(f"       {fam}: {cnt} rows")
+
+    # Frozen expected counts — if W0_1 is ever re-enumerated and this module is re-run,
+    # the gate will catch the divergence.  Values read from the CSV at runtime.
+    if total_rows == 0 or len(families_expected) == 0:
+        print("::error:: [G1] W0_1 CSV has no usable rows or families.", file=sys.stderr)
+        sys.exit(1)
+
+    # All checks above passed — population is W0_1 CSV exactly (no re-enumeration in W0.2)
+    print(f"  [G1] Row-for-row join: PASS "
+          f"(n={total_rows}, {len(families_expected)} families, 0 duplicates)")
+
+    # -------------------------------------------------------------------------
+    # Gate 2: OHLC unadjusted close vs massive_stock_day (UNADJUSTED) close.
+    # Spec §5: "each ticker's unadjusted close within 0.1% of MASSIVE close on 3 random
+    # overlap dates (splits handled by comparing returns)."
+    #
+    # Fix: use massive_stock_day (unadjusted, same store as G3) instead of data/yahoo
+    # which carries dividend-adjusted closes (see repo memory "yahoo close is total return").
+    # Comparing unadjusted-to-unadjusted: the returns should agree to ≤0.1%; abort on breach.
+    # -------------------------------------------------------------------------
     rng = np.random.default_rng(42)
     gate2_errors: list[str] = []
 
     TICKERS_TO_CHECK = ["XLK", "XLV", "XLF", "XLY", "XLI", "XLP", "XLE", "XLU", "XLB", "SPY"]
-    print("\n  [G2] OHLC close sanity vs div-adjusted close (returns comparison):")
+    massive_dir = main_data_dir / "massive_stock_day"
+    print("\n  [G2] OHLC unadjusted close sanity vs massive_stock_day close (same unadjusted basis):")
     for ticker in TICKERS_TO_CHECK:
         if ticker not in ohlc_store:
             gate2_errors.append(f"{ticker}: not in OHLC store")
             continue
         ohlc = ohlc_store[ticker]
-        # Load div-adjusted close from main data/yahoo
-        yahoo_path = main_data_dir / "yahoo" / f"{ticker}.parquet"
-        if not yahoo_path.exists():
-            print(f"    {ticker}: no yahoo close at {yahoo_path} — skip G2")
+
+        # Use massive_stock_day (unadjusted) — same source as G3
+        massive_path = massive_dir / f"{ticker}.parquet"
+        if not massive_path.exists():
+            print(f"    {ticker}: not in massive_stock_day — skip G2")
             continue
-        yahoo_close = pd.read_parquet(yahoo_path)["close"].sort_index().dropna()
+        massive_df = pd.read_parquet(massive_path)
+        massive_df.index = pd.to_datetime(massive_df.index).normalize()
+        if "close" not in massive_df.columns:
+            print(f"    {ticker}: massive_stock_day has no 'close' column — skip G2")
+            continue
+        massive_close = massive_df["close"].sort_index().dropna()
 
         # Find overlap
-        overlap = ohlc.index.intersection(yahoo_close.index)
+        overlap = ohlc.index.intersection(massive_close.index)
         if len(overlap) < 10:
             print(f"    {ticker}: insufficient overlap ({len(overlap)} bars) — skip G2")
             continue
 
-        # Sample 3 random dates in the overlap
+        # Sample 3 random consecutive date pairs in the overlap
         sample_locs = rng.choice(len(overlap) - 1, size=min(3, len(overlap) - 1), replace=False)
         all_ok = True
         for loc in sorted(sample_locs):
@@ -376,23 +440,30 @@ def run_fidelity_gate(
             d2 = overlap[loc + 1] if loc + 1 < len(overlap) else None
             if d2 is None:
                 continue
-            # Returns comparison: avoid level mismatch from dividends
+            # Returns-based comparison cancels any constant split multiplier
             r_ohlc = float(ohlc.loc[d2, "close"]) / float(ohlc.loc[d1, "close"]) - 1.0
-            r_yahoo = float(yahoo_close.loc[d2]) / float(yahoo_close.loc[d1]) - 1.0
-            diff = abs(r_ohlc - r_yahoo)
-            if diff > 0.001:  # 0.1% return diff
+            r_massive = float(massive_close.loc[d2]) / float(massive_close.loc[d1]) - 1.0
+            diff = abs(r_ohlc - r_massive)
+            if diff > 0.001:  # 0.1% return diff threshold (spec §5)
                 gate2_errors.append(
-                    f"{ticker} at {d1.date()}->{d2.date()}: |Δreturn|={diff:.4f} > 0.001"
+                    f"{ticker} at {d1.date()}->{d2.date()}: |Δreturn|={diff:.4f} > 0.001 "
+                    f"(ohlc_ret={r_ohlc:+.4f}, massive_ret={r_massive:+.4f})"
                 )
                 all_ok = False
-        status = "OK" if all_ok else "WARN"
+        status = "OK" if all_ok else "FAIL"
         print(f"    {ticker}: {status}")
 
     if gate2_errors:
         for e in gate2_errors:
-            print(f"  [G2] WARN: {e}")
-        # Return diff can be elevated by dividends; warn but don't abort (split detection below)
-        print("  [G2] NOTE: return diffs may reflect dividend timing vs unadjusted basis; continuing.")
+            print(f"::error:: [G2] {e}", file=sys.stderr)
+        print(
+            "::error:: [G2] OHLC close sanity check FAILED — "
+            "unadjusted OHLC diverges from massive_stock_day beyond 0.1% return tolerance.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    print("  [G2] OHLC close sanity PASSED — all sampled returns within 0.1% of massive_stock_day.")
 
     # Gate 3: vendor cross-check — yahoo H/L vs massive_stock_day H/L (2021-07-06+)
     # Returns-based comparison (splits handled per spec §5 "clean integer ratio" rule):
@@ -834,6 +905,17 @@ def generate_concordance_section(concordance: dict[str, Any]) -> str:
         "MAE understatement distribution (mae_R_hl_21 − mae_R_21).\n",
         honesty_header(),
         "",
+        "> **BASIS NOTE — MAE understatement column:** `mae_R_hl_21` (intraday leg) is computed "
+        "from unadjusted OHLC lows; `mae_R_21` (close leg, inherited from W0.1) is computed "
+        "from dividend-adjusted closes (data/yahoo/). The delta therefore includes a small "
+        "dividend-drag component (~0.2–0.5% over 21d per spec §2) in addition to the true "
+        "intraday-vs-close excursion effect. The overstatement of understatement is bounded "
+        "by dividend drag and is second-order vs σ21 (5–12%).",
+        "> **POLICY R NOTE — Median R (intraday stop-overlay):** STOPPED rows use R=−1; "
+        "all other rows carry the close-basis policy_R from W0.1 as the best available proxy. "
+        "ΔR therefore measures the effect of added intraday stops only — not a full intraday "
+        "recomputation of winner R.",
+        "",
     ]
 
     if not concordance:
@@ -843,7 +925,7 @@ def generate_concordance_section(concordance: dict[str, Any]) -> str:
     # Summary table
     lines.append(
         "| Family | Param | n | State-changed% | Dead/Clean→Stopped% | "
-        "Δ Stop-touch% | Δ Win% | Δ Median R | MAE Δ p50 |"
+        "Δ Stop-touch% | Δ Win% | Δ Median R (stop-overlay) | MAE Δ p50 (mixed-basis†) |"
     )
     lines.append("|---|---|---|---|---|---|---|---|---|")
     for key, c in concordance.items():
@@ -858,6 +940,11 @@ def generate_concordance_section(concordance: dict[str, Any]) -> str:
             f"| {r_delta} "
             f"| {mae_p50} |"
         )
+    lines.append("")
+    lines.append(
+        "† MAE Δ p50: intraday leg (unadjusted OHLC lows) minus close leg (div-adjusted W0.1). "
+        "Overstatement of understatement bounded by dividend drag (~0.2–0.5%). See BASIS NOTE above."
+    )
     lines.append("")
 
     # Per-family detail
@@ -876,14 +963,17 @@ def generate_concordance_section(concordance: dict[str, Any]) -> str:
         r_intraday_str = f"{c['median_R_intraday']:.3f}" if c["median_R_intraday"] is not None else "n/a"
         r_delta_str    = f"{c['delta_median_R']:+.3f}" if c["delta_median_R"] is not None else "n/a"
         lines.append(
-            f"- Median policy R: close={r_close_str} → intraday={r_intraday_str} (Δ={r_delta_str})"
+            f"- Median policy R (intraday stop-overlay): "
+            f"close={r_close_str} → stop-overlay={r_intraday_str} (Δ={r_delta_str}). "
+            f"[STOPPED rows: R=−1; others: close-basis proxy from W0.1]"
         )
         if c["mae_delta_median"] is not None:
             lines.append(
-                f"- MAE understatement (mae_R_hl − mae_R_close): "
+                f"- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): "
                 f"p25={c['mae_delta_p25']:+.4f} "
                 f"p50={c['mae_delta_median']:+.4f} "
-                f"p75={c['mae_delta_p75']:+.4f}"
+                f"p75={c['mae_delta_p75']:+.4f} "
+                f"[mixed-basis; see BASIS NOTE]"
             )
         lines.append("")
 

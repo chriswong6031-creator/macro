@@ -21,7 +21,10 @@
 > Every table: n + excluded count. The word 'validated' does not appear per Oracle Constitution §II.
 > W0.2 calibrates W0.1; concordance delta is the headline deliverable, not a new event study.
 
-| Family | Param | n | State-changed% | Dead/Clean→Stopped% | Δ Stop-touch% | Δ Win% | Δ Median R | MAE Δ p50 |
+> **BASIS NOTE — MAE understatement column:** `mae_R_hl_21` (intraday leg) is computed from unadjusted OHLC lows; `mae_R_21` (close leg, inherited from W0.1) is computed from dividend-adjusted closes (data/yahoo/). The delta therefore includes a small dividend-drag component (~0.2–0.5% over 21d per spec §2) in addition to the true intraday-vs-close excursion effect. The overstatement of understatement is bounded by dividend drag and is second-order vs σ21 (5–12%).
+> **POLICY R NOTE — Median R (intraday stop-overlay):** STOPPED rows use R=−1; all other rows carry the close-basis policy_R from W0.1 as the best available proxy. ΔR therefore measures the effect of added intraday stops only — not a full intraday recomputation of winner R.
+
+| Family | Param | n | State-changed% | Dead/Clean→Stopped% | Δ Stop-touch% | Δ Win% | Δ Median R (stop-overlay) | MAE Δ p50 (mixed-basis†) |
 |---|---|---|---|---|---|---|---|---|
 | ep_onset_in | rot21 | 355 | 6.8% | 3.1% | +3.1% | +2.8% | -0.003 | -0.0889 |
 | ep_onset_in | pos63 | 350 | 8.3% | 4.6% | +4.3% | -1.1% | -0.114 | -0.0886 |
@@ -38,91 +41,93 @@
 | routing_6 | rot21 | 554 | 11.4% | 6.1% | +6.1% | +4.9% | -0.058 | -0.1291 |
 | routing_6 | pos63 | 553 | 9.9% | 7.4% | +6.9% | -4.3% | -0.561 | -0.1292 |
 
+† MAE Δ p50: intraday leg (unadjusted OHLC lows) minus close leg (div-adjusted W0.1). Overstatement of understatement bounded by dividend drag (~0.2–0.5%). See BASIS NOTE above.
+
 ### Per-Family Detail
 
 **ep_onset_in | rot21** (n=355)
 - Stop-touch rate: close=10.4% → intraday=13.5% (Δ=+3.1%)
 - Win rate: close=24.5% → intraday=27.3% (Δ=+2.8%)
-- Median policy R: close=0.312 → intraday=0.309 (Δ=-0.003)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1710 p50=-0.0889 p75=-0.0392
+- Median policy R (intraday stop-overlay): close=0.312 → stop-overlay=0.309 (Δ=-0.003). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1710 p50=-0.0889 p75=-0.0392 [mixed-basis; see BASIS NOTE]
 
 **ep_onset_in | pos63** (n=350)
 - Stop-touch rate: close=32.0% → intraday=36.3% (Δ=+4.3%)
 - Win rate: close=48.6% → intraday=47.4% (Δ=-1.1%)
-- Median policy R: close=0.371 → intraday=0.257 (Δ=-0.114)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1719 p50=-0.0886 p75=-0.0394
+- Median policy R (intraday stop-overlay): close=0.371 → stop-overlay=0.257 (Δ=-0.114). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1719 p50=-0.0886 p75=-0.0394 [mixed-basis; see BASIS NOTE]
 
 **ep_onset_out | rot21** (n=388)
 - Stop-touch rate: close=24.7% → intraday=25.8% (Δ=+1.0%)
 - Win rate: close=37.1% → intraday=48.5% (Δ=+11.3%)
-- Median policy R: close=-0.190 → intraday=-0.237 (Δ=-0.047)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1846 p50=-0.1226 p75=-0.0651
+- Median policy R (intraday stop-overlay): close=-0.190 → stop-overlay=-0.237 (Δ=-0.047). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1846 p50=-0.1226 p75=-0.0651 [mixed-basis; see BASIS NOTE]
 
 **ep_onset_out | pos63** (n=384)
 - Stop-touch rate: close=56.0% → intraday=57.3% (Δ=+1.3%)
 - Win rate: close=37.8% → intraday=39.1% (Δ=+1.3%)
-- Median policy R: close=-1.000 → intraday=-1.000 (Δ=+0.000)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1840 p50=-0.1226 p75=-0.0651
+- Median policy R (intraday stop-overlay): close=-1.000 → stop-overlay=-1.000 (Δ=+0.000). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1840 p50=-0.1226 p75=-0.0651 [mixed-basis; see BASIS NOTE]
 
 **washout_p8 | rot21** (n=1215)
 - Stop-touch rate: close=15.8% → intraday=20.1% (Δ=+4.3%)
 - Win rate: close=23.6% → intraday=26.5% (Δ=+2.9%)
-- Median policy R: close=0.255 → intraday=0.240 (Δ=-0.015)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1764 p50=-0.0987 p75=-0.0486
+- Median policy R (intraday stop-overlay): close=0.255 → stop-overlay=0.240 (Δ=-0.015). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1764 p50=-0.0987 p75=-0.0486 [mixed-basis; see BASIS NOTE]
 
 **washout_p8 | pos63** (n=1195)
 - Stop-touch rate: close=33.3% → intraday=39.6% (Δ=+6.3%)
 - Win rate: close=47.8% → intraday=44.0% (Δ=-3.8%)
-- Median policy R: close=0.298 → intraday=0.164 (Δ=-0.135)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1772 p50=-0.0977 p75=-0.0484
+- Median policy R (intraday stop-overlay): close=0.298 → stop-overlay=0.164 (Δ=-0.135). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1772 p50=-0.0977 p75=-0.0484 [mixed-basis; see BASIS NOTE]
 
 **a15 | rot21** (n=2553)
 - Stop-touch rate: close=10.9% → intraday=14.3% (Δ=+3.4%)
 - Win rate: close=31.8% → intraday=34.9% (Δ=+3.1%)
-- Median policy R: close=0.426 → intraday=0.413 (Δ=-0.013)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1702 p50=-0.0927 p75=-0.0375
+- Median policy R (intraday stop-overlay): close=0.426 → stop-overlay=0.413 (Δ=-0.013). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1702 p50=-0.0927 p75=-0.0375 [mixed-basis; see BASIS NOTE]
 
 **a15 | pos63** (n=2547)
 - Stop-touch rate: close=25.5% → intraday=31.9% (Δ=+6.4%)
 - Win rate: close=52.9% → intraday=50.4% (Δ=-2.5%)
-- Median policy R: close=0.575 → intraday=0.470 (Δ=-0.105)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1705 p50=-0.0925 p75=-0.0374
+- Median policy R (intraday stop-overlay): close=0.575 → stop-overlay=0.470 (Δ=-0.105). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1705 p50=-0.0925 p75=-0.0374 [mixed-basis; see BASIS NOTE]
 
 **a9 | rot21** (n=482)
 - Stop-touch rate: close=16.4% → intraday=18.9% (Δ=+2.5%)
 - Win rate: close=26.3% → intraday=29.3% (Δ=+2.9%)
-- Median policy R: close=0.318 → intraday=0.317 (Δ=-0.001)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1678 p50=-0.1012 p75=-0.0425
+- Median policy R (intraday stop-overlay): close=0.318 → stop-overlay=0.317 (Δ=-0.001). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1678 p50=-0.1012 p75=-0.0425 [mixed-basis; see BASIS NOTE]
 
 **a9 | pos63** (n=482)
 - Stop-touch rate: close=29.3% → intraday=36.3% (Δ=+7.0%)
 - Win rate: close=47.1% → intraday=45.2% (Δ=-1.9%)
-- Median policy R: close=0.202 → intraday=0.159 (Δ=-0.042)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1678 p50=-0.1012 p75=-0.0425
+- Median policy R (intraday stop-overlay): close=0.202 → stop-overlay=0.159 (Δ=-0.042). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1678 p50=-0.1012 p75=-0.0425 [mixed-basis; see BASIS NOTE]
 
 **a17 | rot21** (n=304)
 - Stop-touch rate: close=18.8% → intraday=22.0% (Δ=+3.3%)
 - Win rate: close=30.3% → intraday=33.6% (Δ=+3.3%)
-- Median policy R: close=0.427 → intraday=0.407 (Δ=-0.020)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1770 p50=-0.1073 p75=-0.0403
+- Median policy R (intraday stop-overlay): close=0.427 → stop-overlay=0.407 (Δ=-0.020). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1770 p50=-0.1073 p75=-0.0403 [mixed-basis; see BASIS NOTE]
 
 **a17 | pos63** (n=304)
 - Stop-touch rate: close=28.0% → intraday=33.9% (Δ=+5.9%)
 - Win rate: close=48.4% → intraday=47.0% (Δ=-1.3%)
-- Median policy R: close=0.322 → intraday=0.286 (Δ=-0.035)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.1770 p50=-0.1073 p75=-0.0403
+- Median policy R (intraday stop-overlay): close=0.322 → stop-overlay=0.286 (Δ=-0.035). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.1770 p50=-0.1073 p75=-0.0403 [mixed-basis; see BASIS NOTE]
 
 **routing_6 | rot21** (n=554)
 - Stop-touch rate: close=24.9% → intraday=31.0% (Δ=+6.1%)
 - Win rate: close=33.0% → intraday=37.9% (Δ=+4.9%)
-- Median policy R: close=0.216 → intraday=0.158 (Δ=-0.058)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.2519 p50=-0.1291 p75=-0.0592
+- Median policy R (intraday stop-overlay): close=0.216 → stop-overlay=0.158 (Δ=-0.058). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.2519 p50=-0.1291 p75=-0.0592 [mixed-basis; see BASIS NOTE]
 
 **routing_6 | pos63** (n=553)
 - Stop-touch rate: close=41.4% → intraday=48.3% (Δ=+6.9%)
 - Win rate: close=49.0% → intraday=44.7% (Δ=-4.3%)
-- Median policy R: close=0.247 → intraday=-0.314 (Δ=-0.561)
-- MAE understatement (mae_R_hl − mae_R_close): p25=-0.2521 p50=-0.1292 p75=-0.0590
+- Median policy R (intraday stop-overlay): close=0.247 → stop-overlay=-0.314 (Δ=-0.561). [STOPPED rows: R=−1; others: close-basis proxy from W0.1]
+- MAE understatement (mae_R_hl [unadj] − mae_R_close [div-adj]): p25=-0.2521 p50=-0.1292 p75=-0.0590 [mixed-basis; see BASIS NOTE]
 
 
 ---
