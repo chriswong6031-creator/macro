@@ -1,0 +1,152 @@
+{
+  "study_id": "P1_4",
+  "run_date": "2026-07-05",
+  "memo_citation": "P0_MEASUREMENT_MEMO.md v1.0 (2026-07-04)",
+  "primary_window": {
+    "start": "2022-06-30",
+    "end": "2026-07-02"
+  },
+  "n_stamped_rows_in_artifact": 0,
+  "universe_tickers": 1007,
+  "denominator_A": {
+    "n": 8242,
+    "thin_flag": false
+  },
+  "denominator_B": {
+    "n": 25545,
+    "thin_flag": false
+  },
+  "overlap_AB": 943,
+  "T1_recall_A": {
+    "n": 8242,
+    "fired": {
+      "count": 21,
+      "fraction": 0.002547925260859015,
+      "wilson_lo": 0.0016671505170701454,
+      "wilson_hi": 0.003892209245552508
+    },
+    "near_missed": {
+      "count": 5,
+      "fraction": 0.0006066488716330988,
+      "wilson_lo": 0.00025914727272376647,
+      "wilson_hi": 0.0014194685279969267
+    },
+    "rejected": {
+      "count": 8216,
+      "fraction": 0.9968454258675079,
+      "wilson_lo": 0.9953816363149356,
+      "wilson_hi": 0.9978462714343476
+    },
+    "never_triggered": {
+      "count": 0,
+      "fraction": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 0.00046588331262633037
+    }
+  },
+  "T2_recall_B": {
+    "n": 25545,
+    "fired": {
+      "count": 1414,
+      "fraction": 0.055353298101389704,
+      "wilson_lo": 0.05261536655258964,
+      "wilson_hi": 0.058224946457922755
+    },
+    "near_missed": {
+      "count": 451,
+      "fraction": 0.017655118418477198,
+      "wilson_lo": 0.016111146621333918,
+      "wilson_hi": 0.019344143844751246
+    },
+    "rejected": {
+      "count": 23680,
+      "fraction": 0.9269915834801331,
+      "wilson_lo": 0.9237367033034465,
+      "wilson_hi": 0.9301180562015794
+    },
+    "never_triggered": {
+      "count": 0,
+      "fraction": 0.0,
+      "wilson_lo": 1.3552527156068805e-20,
+      "wilson_hi": 0.00015036298162340167
+    }
+  },
+  "T3_near_miss_breakdown": {
+    "A": {
+      "freshness_expired": 2,
+      "not_topped_veto": 3
+    },
+    "B": {
+      "not_topped_veto": 243,
+      "freshness_expired": 208
+    }
+  },
+  "T4_rejected_breakdown": {
+    "A": {
+      "no_signal": 7738,
+      "not_topped_veto": 299,
+      "hygiene_screen": 118,
+      "board_rank_cutoff": 61
+    },
+    "B": {
+      "no_signal": 20595,
+      "not_topped_veto": 2427,
+      "board_rank_cutoff": 464,
+      "hygiene_screen": 194
+    }
+  },
+  "T5_fired_tier": {
+    "A": {
+      "T2": 7,
+      "T1": 14
+    },
+    "B": {
+      "T3": 57,
+      "T2": 685,
+      "T1": 672
+    }
+  },
+  "QRN": {
+    "window_start": "2025-07-15",
+    "window_end": "2026-07-02",
+    "A": {
+      "n": 1713,
+      "fired": 3,
+      "rate": 0.0017513134851138354,
+      "lo": 0.0005957686442460606,
+      "hi": 0.005136618082636605
+    },
+    "B": {
+      "n": 5706,
+      "fired": 253,
+      "rate": 0.044339291973361374,
+      "lo": 0.03929769480575751,
+      "hi": 0.0499940291538003
+    }
+  },
+  "escalation_flags": [
+    "ESC-1: funnel fires+near_miss on only 0.3% of durable-low events (<15%). R7 precision-stacking concern."
+  ],
+  "year_breakdown_A": {
+    "2023": 2446,
+    "2024": 1828,
+    "2025": 2209,
+    "2026": 618,
+    "2022": 1141
+  },
+  "year_breakdown_B": {
+    "2022": 3329,
+    "2023": 6778,
+    "2025": 7371,
+    "2026": 2188,
+    "2024": 5879
+  },
+  "trials_executed": [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5"
+  ],
+  "post_hoc_trials": []
+}
