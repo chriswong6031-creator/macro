@@ -14,13 +14,21 @@ POST /api/ask/stream   — SSE streaming variant of the same; tool-calling turns
 
 Live Options Flow Feed — /api/flow/*
 --------------------------------------
-GET /api/flow/feed     — unauthenticated; live-flow feed (events + unusual_names)
-GET /api/flow/heat     — unauthenticated; per-sector/group heat map
-GET /api/flow/meta     — unauthenticated; poller meta / cadence info
+GET /api/flow/feed          — unauthenticated; live-flow feed (events + unusual_names)
+GET /api/flow/heat          — unauthenticated; per-sector/group heat map
+GET /api/flow/meta          — unauthenticated; poller meta / cadence info
+GET /api/flow/tide          — unauthenticated; market tide (NCP/NPP/gross/vol minute series)
+GET /api/flow/dte           — unauthenticated; DTE-bucket tide (5 buckets)
+GET /api/flow/ticker/{root} — unauthenticated; per-root drill (root sanitized [A-Z.]{1,8})
 
-All three are server-side read-throughs of the R2 live_flow/ objects with a
-30-second in-memory TTL cache.  On fetch failure the last-cached copy is returned
-with {"stale":true} merged.  503 only if the object was never successfully fetched.
+All are server-side read-throughs of the R2 live_flow/ objects with a 30-second
+in-memory TTL cache.  On fetch failure the last-cached copy is returned with
+{"stale":true} merged.  503 only if the object was never successfully fetched.
+
+Options Hub analytics — /api/hub/* (routed from app/hub.py, lane B)
+--------------------------------------
+GET /api/hub/vol/{root}, /api/hub/gex/{root}, /api/hub/oi, /api/hub/hot
+(loaded via try-import at module bottom; no-op if app/hub.py is absent)
 
 KEY-OPTIONAL: when ANTHROPIC_API_KEY is absent from /etc/macro-api.env the
 endpoints return mode='memo-quote' (degraded=True) — a relevant excerpt from
@@ -345,3 +353,54 @@ def flow_heat() -> dict[str, Any]:
 def flow_meta() -> dict[str, Any]:
     """Live options-flow poller metadata (cadence, universe size, notes). Unauthenticated."""
     return _flow_fetch("meta")
+
+
+@app.get("/api/flow/tide")
+def flow_tide() -> dict[str, Any]:
+    """Market tide: cumulative NCP/NPP/gross/vol per minute + sector breakdown.
+
+    Display-tier context only. Direction labeled ~-soft (signing_source=tape).
+    Schema: live_flow.tide/v1 published by the live-flow poller each cycle.
+    Unauthenticated.
+    """
+    return _flow_fetch("tide_current")
+
+
+@app.get("/api/flow/dte")
+def flow_dte() -> dict[str, Any]:
+    """DTE-bucket tide: cumulative NCP/NPP per minute across 5 DTE buckets
+    (0d, 1_7d, 8_30d, 31_90d, 90p). Display-tier context only.
+    Schema: live_flow.dte_tide/v1. Unauthenticated.
+    """
+    return _flow_fetch("dte_tide_current")
+
+
+# Root symbol validation: [A-Z.] 1–8 chars (e.g. SPY, BRK.B, QQQ)
+import re as _re
+_ROOT_RE = _re.compile(r'^[A-Z.]{1,8}$')
+
+
+@app.get("/api/flow/ticker/{root}")
+def flow_ticker(root: str) -> dict[str, Any]:
+    """Per-root options-flow drill (minute net-prem series, strike/expiry rollups,
+    top contracts, day stats). Display-tier context only.
+    Schema: live_flow.ticker/v1 published by the poller for the top ~40 roots.
+    Unauthenticated.
+
+    root is sanitized to [A-Z.]{1,8} — other characters return 422.
+    """
+    root_upper = root.upper()
+    if not _ROOT_RE.match(root_upper):
+        raise HTTPException(422, f"root must match [A-Z.]{{1,8}}, got: {root!r}")
+    return _flow_fetch(f"tickers/{root_upper}")
+
+
+# ---------------------------------------------------------------------------
+# Options Hub analytics router (lane B — app/hub.py)
+# Wrapped in try/except so this file stays green if hub.py lands later.
+# ---------------------------------------------------------------------------
+try:
+    from app.hub import router as hub_router  # noqa: E402  (lane B ships app/hub.py)
+    app.include_router(hub_router)
+except ImportError:
+    pass  # app/hub.py not yet present — hub routes unavailable until lane B merges

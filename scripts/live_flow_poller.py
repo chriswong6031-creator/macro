@@ -16,14 +16,22 @@ Usage:
   # Single cycle (smoke / testing)
   python -m scripts.live_flow_poller --once --date 2026-07-02 --roots SPY QQQ KRE
 
-  # Continuous loop
-  python -m scripts.live_flow_poller
+  # Single cycle with short retention (state-wipe smoke)
+  python -m scripts.live_flow_poller --once --date 2026-07-02 --roots SPY QQQ --retention-hours 96
+
+  # Continuous loop (RTH only — exits outside 09:25–16:05 ET on weekdays)
+  python -m scripts.live_flow_poller --rth-only
 
   # Override session date (market closed)
   python -m scripts.live_flow_poller --date 2026-07-02 --once
 
 INERT semantics: root failures → skip + log, never abort the cycle.
 NEVER raise max_concurrent above 2 without explicit Fable adjudication.
+
+New R2 objects emitted each cycle (live_flow/ prefix):
+  tide_current.json       — market tide (NCP/NPP/gross/vol cumulative minutes + sectors)
+  dte_tide_current.json   — DTE-bucket tide (5 buckets)
+  tickers/{ROOT}.json     — per-root drill (top ~40 by day gross premium)
 """
 from __future__ import annotations
 
@@ -55,6 +63,16 @@ R2_PREFIX = "live_flow/"
 # Out/state dirs (gitignored)
 OUT_DIR   = "live_flow_out"
 STATE_DIR = "live_flow_state"
+
+# Top tickers to publish per cycle (by day gross premium)
+TOP_TICKERS_N = 40
+
+# Day-state size guard: warn if exceeds this byte threshold
+DAY_STATE_SIZE_WARN_BYTES = 50 * 1024 * 1024  # 50 MB
+
+# RTH window (America/New_York) — poller active within this range
+RTH_START_H, RTH_START_M = 9, 25     # 09:25 ET
+RTH_END_H,   RTH_END_M   = 16, 5     # 16:05 ET
 
 
 # ── config access ─────────────────────────────────────────────────────────────
@@ -269,6 +287,12 @@ def _load_day_state(session_date: str) -> dict:
         raw["seen_sequences"] = {
             _restore_key(k): v for k, v in raw.get("seen_sequences", {}).items()
         }
+        # Tide accumulators — all string-keyed, load as-is
+        for tide_key in ("market_tide_minutes", "sector_tide", "dte_tide",
+                         "root_minutes", "root_strikes", "root_expiries",
+                         "root_top_contracts", "sweep_clusters"):
+            if tide_key not in raw:
+                raw[tide_key] = {}
         return raw
     except Exception as e:  # noqa: BLE001
         log.warning("poller: could not load day state: %s", e)
@@ -296,8 +320,26 @@ def _save_day_state(session_date: str, state: dict) -> None:
                                      for k, v in state.get("notability_history", {}).items()}
         raw["seen_sequences"]     = {_state_key(k): v
                                      for k, v in state.get("seen_sequences", {}).items()}
+        # Tide accumulators — all string-keyed, serialise directly
+        for tide_key in ("market_tide_minutes", "sector_tide", "dte_tide",
+                         "root_minutes", "root_strikes", "root_expiries",
+                         "root_top_contracts", "sweep_clusters"):
+            raw[tide_key] = state.get(tide_key, {})
+
+        serialised = json.dumps(raw, default=str)
+
+        # Size guard: warn if day-state exceeds threshold
+        byte_count = len(serialised.encode())
+        if byte_count > DAY_STATE_SIZE_WARN_BYTES:
+            log.warning(
+                "poller: day_state size %d MB exceeds %d MB threshold — "
+                "consider reducing top_names or retention_hours",
+                byte_count // (1024 * 1024),
+                DAY_STATE_SIZE_WARN_BYTES // (1024 * 1024),
+            )
+
         tmp = p.with_suffix(".tmp.json")
-        tmp.write_text(json.dumps(raw, default=str))
+        tmp.write_text(serialised)
         tmp.rename(p)
     except Exception as e:  # noqa: BLE001
         log.warning("poller: could not save day state: %s", e)
@@ -436,8 +478,8 @@ def run_cycle(
     baselines: dict,
     cfg: dict,
     cycle_watermarks: dict,   # FIX 2: {root: {"ts": str, "seq": float}} — mutated in place
-) -> tuple[dict, dict, dict, list[str]]:
-    """Run one poll cycle.  Returns (feed_data, heat_data, updated_day_state, meta_notes).
+) -> tuple[dict, dict, dict, dict, dict]:
+    """Run one poll cycle.  Returns (feed_data, heat_data, meta_data, updated_day_state, tide_day_state).
 
     Fetches all roots in parallel (max_concurrent=2), runs the engine, aggregates.
 
@@ -494,6 +536,16 @@ def run_cycle(
     contract_vol: dict      = dict(day_state.get("contract_vol", {}))
     notab_hist: dict        = dict(day_state.get("notability_history", {}))
     seen_sequences: dict    = dict(day_state.get("seen_sequences", {}))
+
+    # Tide accumulator state — carry forward across cycles
+    market_tide_minutes: dict = dict(day_state.get("market_tide_minutes", {}))
+    sector_tide: dict         = {k: dict(v) for k, v in day_state.get("sector_tide", {}).items()}
+    dte_tide: dict            = {k: dict(v) for k, v in day_state.get("dte_tide", {}).items()}
+    root_minutes_acc: dict    = {k: dict(v) for k, v in day_state.get("root_minutes", {}).items()}
+    root_strikes_acc: dict    = {k: dict(v) for k, v in day_state.get("root_strikes", {}).items()}
+    root_expiries_acc: dict   = {k: dict(v) for k, v in day_state.get("root_expiries", {}).items()}
+    root_top_contr: dict      = {k: list(v) for k, v in day_state.get("root_top_contracts", {}).items()}
+    sweep_clusters_acc: dict  = dict(day_state.get("sweep_clusters", {}))
 
     heat_rows: list[dict]   = []
     unusual_by_root: dict   = {}
@@ -583,6 +635,16 @@ def run_cycle(
         notab_hist      = state_out.get("notability_history", notab_hist)
         root_gross      = state_out.get("root_gross_today", root_gross)
         seen_sequences  = state_out.get("seen_sequences", seen_sequences)
+
+        # Merge tide accumulators (engine returns updated dicts mutated in-place)
+        market_tide_minutes = state_out.get("market_tide_minutes", market_tide_minutes)
+        sector_tide         = state_out.get("sector_tide", sector_tide)
+        dte_tide            = state_out.get("dte_tide", dte_tide)
+        root_minutes_acc    = state_out.get("root_minutes", root_minutes_acc)
+        root_strikes_acc    = state_out.get("root_strikes", root_strikes_acc)
+        root_expiries_acc   = state_out.get("root_expiries", root_expiries_acc)
+        root_top_contr      = state_out.get("root_top_contracts", root_top_contr)
+        sweep_clusters_acc  = state_out.get("sweep_clusters", sweep_clusters_acc)
 
         # Accumulate new events
         for ev in result.get("events", []):
@@ -682,6 +744,18 @@ def run_cycle(
         "notes":                 notes,
     }
 
+    # Build compound day_state for tide JSON builders
+    tide_day_state = {
+        "market_tide_minutes": market_tide_minutes,
+        "sector_tide":         sector_tide,
+        "dte_tide":            dte_tide,
+        "root_minutes":        root_minutes_acc,
+        "root_strikes":        root_strikes_acc,
+        "root_expiries":       root_expiries_acc,
+        "root_top_contracts":  root_top_contr,
+        "root_gross_today":    root_gross,
+    }
+
     updated_state = {
         "all_events":         all_events,
         "emitted_ids":        emitted_ids,
@@ -689,9 +763,18 @@ def run_cycle(
         "notability_history": notab_hist,
         "root_gross_today":   root_gross,
         "seen_sequences":     seen_sequences,
+        # Tide accumulators
+        "market_tide_minutes": market_tide_minutes,
+        "sector_tide":         sector_tide,
+        "dte_tide":            dte_tide,
+        "root_minutes":        root_minutes_acc,
+        "root_strikes":        root_strikes_acc,
+        "root_expiries":       root_expiries_acc,
+        "root_top_contracts":  root_top_contr,
+        "sweep_clusters":      sweep_clusters_acc,
     }
 
-    return feed_payload, heat_payload, meta_payload, updated_state
+    return feed_payload, heat_payload, meta_payload, updated_state, tide_day_state
 
 
 def _session_pct() -> float:
@@ -709,6 +792,22 @@ def _session_pct() -> float:
 
 # ── main loop ─────────────────────────────────────────────────────────────────
 
+def _within_rth() -> bool:
+    """True if the current America/New_York time is within RTH window (09:25–16:05)
+    on a weekday.  Never raises — returns False on any error.
+    """
+    try:
+        now = datetime.now(ET)
+        if now.weekday() >= 5:          # Saturday=5, Sunday=6
+            return False
+        t = now.hour * 60 + now.minute  # minutes since midnight ET
+        start = RTH_START_H * 60 + RTH_START_M   # 565
+        end   = RTH_END_H   * 60 + RTH_END_M     # 965
+        return start <= t <= end
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
     parser = argparse.ArgumentParser(description="Live options-flow poller")
     parser.add_argument("--once",  action="store_true", help="Single cycle then exit")
@@ -716,6 +815,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                         help="Session date override (market-closed smokes)")
     parser.add_argument("--roots", nargs="+", metavar="ROOT",
                         help="Subset of roots (default: full universe)")
+    parser.add_argument("--retention-hours", type=int, default=None,
+                        metavar="N",
+                        help="Override retention_hours from config (smoke aid, e.g. 96)")
+    parser.add_argument("--rth-only", action="store_true",
+                        help="Exit cleanly outside 09:25-16:05 ET on weekdays "
+                             "(use with launchd StartCalendarInterval)")
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args(argv)
 
@@ -724,6 +829,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
+    # --rth-only: exit immediately if outside RTH (launchd fires at 09:25, daemon must
+    # self-exit at 16:05; StartCalendarInterval fires again next day at 09:25).
+    if args.rth_only and not _within_rth():
+        log.info("poller: --rth-only outside RTH window — exiting cleanly")
+        return 0
+
     # Check terminal reachable
     from collectors import thetadata as td
     if not td.reachable():
@@ -731,6 +842,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         return 1
 
     cfg = _cfg()
+
+    # --retention-hours CLI override
+    if args.retention_hours is not None:
+        cfg["retention_hours"] = args.retention_hours
+        log.info("poller: retention_hours overridden to %d (CLI)", args.retention_hours)
+
     session_date = _session_date(args.date)
     log.info("poller: session_date=%s once=%s", session_date, args.once)
 
@@ -778,7 +895,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                  cycle_n, session_date, delta_mode)
 
         try:
-            feed, heat, meta, updated_state = run_cycle(
+            feed, heat, meta, updated_state, tide_day_state = run_cycle(
                 roots=roots,
                 session_date=session_date,
                 delta_mode=delta_mode,
@@ -800,16 +917,68 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             for k, v in day_state.items()
         })
 
-        # Write local JSON
+        # Write legacy JSON
         feed_path = _write_json("feed_current.json", feed)
         heat_path = _write_json("heat_current.json", heat)
         meta_path = _write_json("meta.json", meta)
 
-        log.info("poller: cycle #%d events=%d unusual=%d heat_groups=%d cycle_sec=%.1fs",
+        # ── Build and write tide JSON objects ─────────────────────────────────
+        from engine import live_flow as lf_mod
+        from engine.live_flow import _load_names_sectors
+
+        tide_payload = lf_mod.build_tide_current(
+            session_date=session_date,
+            asof=meta.get("asof", feed.get("asof", "")),
+            day_state=tide_day_state,
+            spy_minute_prices=[],   # spy series: omit (no clean intraday spot source)
+        )
+        dte_tide_payload = lf_mod.build_dte_tide_current(
+            session_date=session_date,
+            asof=meta.get("asof", feed.get("asof", "")),
+            day_state=tide_day_state,
+        )
+        tide_path     = _write_json("tide_current.json", tide_payload)
+        dte_tide_path = _write_json("dte_tide_current.json", dte_tide_payload)
+
+        # Build ticker JSONs for top ~40 roots by gross premium
+        ns_map  = _load_names_sectors()
+        rg_dict = tide_day_state.get("root_gross_today", {})
+        top_roots_by_gross = sorted(rg_dict.items(), key=lambda kv: kv[1], reverse=True)
+        ticker_count = 0
+        ticker_paths: list[tuple[Path, str]] = []  # (local_path, r2_key)
+        _tickers_out_dir = _out_dir() / "tickers"
+        _tickers_out_dir.mkdir(parents=True, exist_ok=True)
+
+        for tick_root, _ in top_roots_by_gross[:TOP_TICKERS_N]:
+            try:
+                tk_payload = lf_mod.build_ticker_json(
+                    root=tick_root,
+                    session_date=session_date,
+                    asof=meta.get("asof", feed.get("asof", "")),
+                    day_state=tide_day_state,
+                    root_gross_today=rg_dict,
+                    baselines=baselines,
+                    names_sectors=ns_map,
+                )
+                tk_file = tick_root.upper().replace(".", "_") + ".json"
+                tk_local = _tickers_out_dir / tk_file
+                tmp_tk = tk_local.with_suffix(".tmp.json")
+                tmp_tk.write_text(json.dumps(tk_payload, default=str))
+                tmp_tk.rename(tk_local)
+                ticker_paths.append((tk_local, R2_PREFIX + f"tickers/{tick_root.upper()}.json"))
+                ticker_count += 1
+            except Exception as tk_err:  # noqa: BLE001
+                log.warning("poller: ticker JSON failed for %s: %s", tick_root, tk_err)
+
+        log.info("poller: cycle #%d events=%d unusual=%d heat_groups=%d "
+                 "minutes=%d sectors=%d tickers=%d cycle_sec=%.1fs",
                  cycle_n,
                  len(feed.get("events", [])),
                  len(feed.get("unusual_names", [])),
                  len(heat.get("groups", [])),
+                 len(tide_payload.get("minutes", [])),
+                 len(tide_payload.get("sectors", [])),
+                 ticker_count,
                  meta.get("cycle_sec", 0))
 
         # Upload to R2
@@ -817,6 +986,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             _upload_r2(s3, bucket, feed_path, R2_PREFIX + "feed_current.json")
             _upload_r2(s3, bucket, heat_path, R2_PREFIX + "heat_current.json")
             _upload_r2(s3, bucket, meta_path, R2_PREFIX + "meta.json")
+            _upload_r2(s3, bucket, tide_path,     R2_PREFIX + "tide_current.json")
+            _upload_r2(s3, bucket, dte_tide_path, R2_PREFIX + "dte_tide_current.json")
+            for tk_local, tk_r2_key in ticker_paths:
+                _upload_r2(s3, bucket, tk_local, tk_r2_key)
 
             # Hourly archive
             now_ts  = time.time()
@@ -830,6 +1003,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
 
         if args.once:
             log.info("poller: --once flag set — exiting after one cycle")
+            return 0
+
+        # --rth-only: exit at end of each cycle once outside RTH
+        if args.rth_only and not _within_rth():
+            log.info("poller: --rth-only outside RTH window — exiting cleanly")
             return 0
 
         # Sleep for remainder of cadence
