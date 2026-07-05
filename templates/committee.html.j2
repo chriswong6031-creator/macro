@@ -182,8 +182,7 @@ body { padding-bottom:56px; }
       <span class="gl-dot" style="background:var(--link)"></span> {{ t('Engine / Sector node', '引擎/板块节点') }} &nbsp;
       <span class="gl-dot" style="background:color-mix(in srgb,var(--link) 60%,transparent);border:1px solid var(--link)"></span> {{ t('Regime / Thesis', '周期/论点') }} &nbsp;
       <span style="width:28px;height:3px;background:color-mix(in srgb,var(--up) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Confirms edge', '确认边') }} &nbsp;
-      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--down) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Contradicts edge', '矛盾边') }} &nbsp;
-      <span style="width:28px;height:3px;background:var(--muted);display:inline-block;vertical-align:middle;opacity:.35"></span> {{ t('Feeds edge (structural)', '馈送边（结构性）') }}
+      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--down) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Contradicts edge', '矛盾边') }}
     </div>
   </div>
 
@@ -388,7 +387,7 @@ body { padding-bottom:56px; }
     } else {
       html += '<div style="overflow-x:auto"><table class="prov-table">'
         + '<thead><tr>'
-        + '<th>Source</th><th>Family</th><th>Ladder</th><th>Kernel IC</th><th>Wilson LB</th><th>Armed</th><th>Staleness</th><th>Direction</th><th>Graded</th><th>Details</th>'
+        + '<th>Source</th><th>Family</th><th>Ladder</th><th data-tip-en="Shrunken information coefficient — correlation scale, typically &lt;1%" data-tip-zh="压缩信息系数——相关系数尺度，通常&lt;1%">Kernel IC</th><th data-tip-en="Wilson hit-rate CI lower bound — probability scale, not the same unit as Kernel IC" data-tip-zh="Wilson命中率置信区间下界——概率尺度，与IC单位不同">Wilson LB<br><small style=\'font-weight:normal;font-size:10px\'>(hit-rate)</small></th><th>Armed</th><th>Staleness</th><th>Direction</th><th>Graded</th><th>Details</th>'
         + '</tr></thead><tbody>';
       provRows.forEach(function (row, i) {
         html += renderProvRow(row, i);
@@ -399,7 +398,7 @@ body { padding-bottom:56px; }
     // Display-only notice
     html += '<p style="font-size:11px;color:var(--muted);margin-top:10px">'
       + '<em>All kernel IC values are display-only estimates. First FDR decision batch: October 2026. '
-      + 'US tickers only (v1). is_context_only = true on all rows.</em></p>';
+      + 'US tickers only (v1). is_display_only = true on all rows.</em></p>';
 
     view.innerHTML = html;
     view.querySelectorAll('.source-expand').forEach(function (el) {
@@ -819,7 +818,7 @@ body { padding-bottom:56px; }
         + (armed ? 'ARMED' : 'DISPLAY') + '</span></div>'
         + '<div class="kf-ic ' + icClass + '">' + icStr + '</div>'
         + '<div class="kf-sub">'
-        + (wlb != null ? 'Wilson LB: ' + (wlb * 100).toFixed(1) + '%' : '') + ' '
+        + (wlb != null ? 'Wilson LB (hit-rate): ' + (wlb * 100).toFixed(1) + '%' : '') + ' '
         + (nEff != null ? '· n=' + nEff : '') + '</div>'
         + '<div class="kf-sub">Horizons: ' + horizons.join(', ') + 'd</div>'
         + (stale.days_since_last_fire != null

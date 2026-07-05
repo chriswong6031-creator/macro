@@ -346,6 +346,7 @@ def _row_altdata(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
     kernel = _kernel_cell(ctx, "altdata", horizon=5)
     qual = _qual_state("altdata")
     as_of = (spine or {}).get("as_of") or ad.get("as_of")
+    _dir_altdata = _safe((spine or {}).get("direction"))
     return [{
         "claim_source": "altdata",
         "family": "altdata",
@@ -361,7 +362,7 @@ def _row_altdata(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
         "graded_at": (spine or {}).get("graded_at"),
         "staleness_days": _staleness_days(as_of),
         "as_of": as_of,
-        "direction": _safe((spine or {}).get("direction")) or 1,
+        "direction": _dir_altdata if _dir_altdata is not None else 1,
         "is_display_only": True,
         # source-specific
         "convergence_score": _safe(conv_score),
@@ -386,6 +387,7 @@ def _row_radar(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
     if radar_ctx:
         radar_score = radar_ctx.get("edge_score")
         radar_state = radar_ctx.get("state")
+    _dir_radar = _safe(spine.get("direction"))
     return [{
         "claim_source": "radar",
         "family": "radar",
@@ -401,7 +403,7 @@ def _row_radar(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
         "graded_at": spine.get("graded_at"),
         "staleness_days": _staleness_days(spine.get("as_of")),
         "as_of": spine.get("as_of"),
-        "direction": _safe(spine.get("direction")) or 1,
+        "direction": _dir_radar if _dir_radar is not None else 1,
         "is_display_only": True,
         # source-specific
         "edge_score": _safe(radar_score),
@@ -418,6 +420,7 @@ def _row_us_board(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
         return []
     kernel = _kernel_cell(ctx, "us_board", horizon=5)
     qual = _qual_state("us_board")
+    _dir_us_board = _safe(spine.get("direction"))
     return [{
         "claim_source": "us_board",
         "family": spine.get("family", "us_board:buy"),
@@ -433,7 +436,7 @@ def _row_us_board(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
         "graded_at": spine.get("graded_at"),
         "staleness_days": _staleness_days(spine.get("as_of")),
         "as_of": spine.get("as_of"),
-        "direction": _safe(spine.get("direction")) or 1,
+        "direction": _dir_us_board if _dir_us_board is not None else 1,
         "is_display_only": True,
         # source-specific
         "board_score": _safe(spine.get("score")),
@@ -459,12 +462,24 @@ def _row_sector_central(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[
         return []
     asof = sc["date"].max()
     latest = sc[sc["date"] == asof]
-    rows = []
-    for bid in member_baskets[:4]:  # cap at 4 baskets per ticker
+    # Filter to baskets that have a live call row at asof, then rank by score
+    # descending, then cap at 4 — prevents arbitrary dict-order silencing a
+    # basket with a valid call (e.g. NVDA's us_sector_tech as 5th member).
+    live_rows: list[tuple[str, float, object]] = []
+    for bid in member_baskets:
         row = latest[latest["basket_id"] == bid]
         if row.empty:
             continue
         r = row.iloc[0]
+        score = r.get("score") if r.get("score") is not None else 0
+        try:
+            score = float(score)
+        except (TypeError, ValueError):
+            score = 0.0
+        live_rows.append((bid, score, r))
+    live_rows.sort(key=lambda x: x[1], reverse=True)
+    rows = []
+    for bid, _score, r in live_rows[:4]:  # cap at 4 after filter+rank
         rows.append({
             "claim_source": f"sector_central:{bid}",
             "family": "sector_central",
