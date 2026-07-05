@@ -222,6 +222,11 @@ def test_builder_smoke(tmp_path, monkeypatch):
     so the real config.yml and templates are used (ROOT unchanged).
     """
     from lib import pages as lib_pages
+    from lib import config as lib_config
+
+    # Force options_screener enabled regardless of config.yml kill-switch setting
+    _real_load = lib_config.load
+    monkeypatch.setattr(lib_config, "load", lambda: {**_real_load(), "options_screener": {"enabled": True}})
 
     # Set up fixture dirs
     gex_dir  = tmp_path / "data" / "polygon_gex"
@@ -282,8 +287,14 @@ def test_builder_smoke(tmp_path, monkeypatch):
 # 7. Nav checks — rendered page passes check_nav_gap + check_nav_mega
 # ---------------------------------------------------------------------------
 
-def test_nav_checks_pass_on_rendered_page(tmp_path):
+def test_nav_checks_pass_on_rendered_page(tmp_path, monkeypatch):
     """Rendered options_screener.html must carry nav-mega and a shared site-nav."""
+    from lib import config as lib_config
+
+    # Force options_screener enabled regardless of config.yml kill-switch setting
+    _real_load = lib_config.load
+    monkeypatch.setattr(lib_config, "load", lambda: {**_real_load(), "options_screener": {"enabled": True}})
+
     gex_dir  = tmp_path / "data" / "polygon_gex"
     flow_dir = tmp_path / "data" / "options_flow"
     tape_dir = tmp_path / "data" / "tape_flow" / "daily"
