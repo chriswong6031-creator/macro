@@ -381,7 +381,10 @@ def main() -> int:
         loader=FileSystemLoader(str(config.ROOT / "templates")),
         autoescape=True,
     )
-    env.globals.update(td=td, tr=tr, zip=zip, len=len)
+    env.globals.update(
+        td=td, tr=tr, zip=zip, len=len,
+        options_screener_enabled=os_cfg.get("enabled", True),
+    )
 
     rows_json = json.dumps(rows, ensure_ascii=False, default=str).replace("</", r"<\/")
 
