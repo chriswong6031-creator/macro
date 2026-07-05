@@ -224,8 +224,8 @@ def audit_overlap(recon: pd.DataFrame, live: pd.DataFrame) -> dict:
         sr = pd.to_numeric(j["spot_r"], errors="coerce")
         sl = pd.to_numeric(j["spot_l"], errors="coerce")
         same_spot = (sr - sl).abs() / sr.abs().clip(lower=1e-6) < _SPOT_TOL_FRAC
-        out["n_same_spot"] = int(same_spot.sum())
         ms = m & same_spot
+        out["n_same_spot"] = int(ms.sum())  # match the actual correlation sample (m & same_spot)
         if ms.sum() >= 2 and a[ms].std() > 0 and b[ms].std() > 0:
             out["net_gex_corr_same_spot"] = round(float(a[ms].corr(b[ms])), 4)
         if ms.sum() >= 1:

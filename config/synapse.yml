@@ -3006,7 +3006,7 @@ artifacts:
       - engine/market_gamma.py
     owner_program: options-alpha
     cadence: weekly
-    storage: gitignored-local
+    storage: git
     asof_field: null
     freshness_sla_hours: 200
     schema: implicit
@@ -3052,6 +3052,16 @@ artifacts:
           n_same_spot: 6
           net_gex_corr_same_spot: 0.9262
           regime_agreement_same_spot: 1.0
+          fragility_note: >
+            FRAGILE — same-spot corr 0.9262 is tolerance-sensitive:
+            0.2%->0.9977 (n=4), 0.5%->0.9262 (n=6), 1.0%->0.3341 (n=13).
+            Unlike SPY/QQQ/DIA which degrade monotonically (consistent with
+            a timing-lag confound), IWM collapses as rows in the 0.5-1.0%
+            drift band are added, suggesting genuine model divergence at those
+            sessions. regime_agreement_same_spot=1.0 is uninformative: the
+            all-short near-zero cluster (-0.4 to -2.0 bn) means every row
+            trivially agrees. Registration provisional; re-audit once
+            polygon_gex accumulates more IWM overlap days.
         DIA:
           n_overlap: 13
           net_gex_corr_raw: 0.8669
