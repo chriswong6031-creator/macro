@@ -1,18 +1,29 @@
 """engine/etf_flows.py — Sector SPDR ETF creation/redemption proxy store.
 
-Reads the raw SO snapshots accumulated by collectors.sponsors.SectorFlowAdapter
-(data/flows/<TICKER>.parquet, columns: nav, aum_mn, so_mn) and derives a daily
-**creation/redemption proxy** column:
+**Design note — relationship to collectors.sponsors**
 
-    flow_mn = delta(so_mn) x nav(t)   [$millions, signed]
+``collectors.sponsors`` already contains ``flows_table()`` and
+``sector_flow_periods()`` which compute the identical delta(SO)×NAV
+creation/redemption proxy and are consumed by ``scripts/build_sector_central.py``
+to render the live "Where sector-ETF money is flowing" board.  This module
+does NOT reimplement that math; ``flows_wide()`` delegates directly to
+``collectors.sponsors.flows_table()`` as the single source of truth.
 
-Positive = net creation (inflows); negative = net redemption (outflows).
+What this module adds on top is a **persisted wide parquet store**
+(``data/flows/etf_flow_proxy.parquet``) so that downstream P3.1 tile builders
+can load one file instead of joining 11 per-ticker parquets, and a
+``proxy_json()`` API shaped for that tile (1D/5D/21D windows, net_flow_1d).
+The ``sector_flow_periods()`` API (1D/3D/1W/2W/1M multi-window) remains
+canonical for the sector-central board; the two paths read the same underlying
+data and will not drift.
 
-The derived wide frame is persisted to data/flows/etf_flow_proxy.parquet so
-downstream tile builders can load a single file rather than joining 11 parquets.
+**Note on spec deviation**: the P1.7 roadmap referenced day-aggregate SO from
+the massive store as the source; that source is infeasible (massive is
+OHLCV-only, no shares-outstanding column).  The SSGA fundfinder SO used here
+(AUM/NAV, same as-of date) is exact and was substituted accordingly.
 
 Schema of etf_flow_proxy.parquet:
-  index: date (datetime64[ns], UTC midnight)
+  index: date (datetime64[ns])
   columns: one per fund, named "<TICKER>_flow_mn"   (float64, NaN on day-0 row)
 
 This module is DISPLAY-DATA only — it never feeds a score or allocation path.
@@ -22,7 +33,6 @@ Call from scripts/build_site.py or a dedicated cron after the collect lane lands
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -35,26 +45,80 @@ _PROXY_PATH = _FLOWS_DIR / "etf_flow_proxy.parquet"
 SECTOR_TICKERS = ("XLB", "XLC", "XLE", "XLF", "XLI", "XLK", "XLP", "XLRE", "XLU", "XLV", "XLY")
 
 
-def _load_so(ticker: str) -> pd.Series | None:
-    """Load so_mn series for one ticker. Returns None if file absent."""
-    p = _FLOWS_DIR / f"{ticker}.parquet"
+def _load_so(ticker: str, flows_dir: Path | None = None) -> pd.DataFrame | None:
+    """Load raw SO snapshot for one ticker from data/flows/<TICKER>.parquet.
+
+    Used by tests and by _derive_flow; production callers should prefer
+    flows_wide() which delegates to collectors.sponsors.flows_table().
+    Returns None if file absent or missing required columns.
+    """
+    p = (flows_dir or _FLOWS_DIR) / f"{ticker}.parquet"
     if not p.exists():
         return None
     df = pd.read_parquet(p)
     if "so_mn" not in df.columns or "nav" not in df.columns:
         log.warning("etf_flows: %s missing required columns, skipping", ticker)
         return None
-    df = df.sort_index()
-    return df
+    return df.sort_index()
 
 
 def _derive_flow(df: pd.DataFrame) -> pd.Series:
-    """delta(so_mn) x nav(t) — creation/redemption proxy in $mn."""
+    """delta(so_mn) x nav(t) — creation/redemption proxy in $mn.
+
+    This is the same formula used by collectors.sponsors.flows_table().
+    Kept here so unit tests can exercise the math directly against synthetic
+    DataFrames without requiring the full collectors stack.
+    """
     return (df["so_mn"].diff() * df["nav"]).rename("flow_mn")
 
 
-def flows_wide(tickers: tuple[str, ...] = SECTOR_TICKERS) -> pd.DataFrame | None:
-    """Return wide frame: index=date, columns=<TICKER>_flow_mn. None if no data."""
+def flows_wide(tickers: tuple[str, ...] = SECTOR_TICKERS,
+               _flows_dir: Path | None = None) -> pd.DataFrame | None:
+    """Return wide frame: index=date, columns=<TICKER>_flow_mn. None if no data.
+
+    **Delegates to collectors.sponsors.flows_table()** as the canonical
+    delta(SO)×NAV computation so the two live consumers (sector-central board
+    and P3.1 tile) share a single derive path and cannot drift.
+
+    The ``_flows_dir`` parameter is accepted only to support unit tests that
+    inject synthetic per-ticker parquets; it bypasses the sponsors path so that
+    tests do not require the full collect stack.
+    """
+    if _flows_dir is not None:
+        # Test-injection path: read synthetic files directly (no sponsors import)
+        cols = {}
+        for t in tickers:
+            df = _load_so(t, flows_dir=_flows_dir)
+            if df is None or len(df) < 2:
+                continue
+            s = _derive_flow(df)
+            cols[f"{t}_flow_mn"] = s
+        if not cols:
+            return None
+        wide = pd.DataFrame(cols)
+        wide.index.name = "date"
+        return wide.sort_index()
+
+    # Production path: delegate to the canonical sponsors engine
+    try:
+        from collectors.sponsors import flows_table
+    except ImportError:
+        log.warning("etf_flows: collectors.sponsors unavailable; falling back to direct read")
+        return _flows_wide_direct(tickers)
+
+    ft = flows_table()
+    if ft is None:
+        return None
+    # flows_table() already returns "<TICKER>_flow_mn" columns; filter to wanted set
+    if tickers:
+        wanted_cols = [f"{t}_flow_mn" for t in tickers]
+        ft = ft[[c for c in wanted_cols if c in ft.columns]]
+    ft.index.name = "date"
+    return ft.sort_index() if not ft.empty else None
+
+
+def _flows_wide_direct(tickers: tuple[str, ...]) -> pd.DataFrame | None:
+    """Fallback: read raw parquets directly when sponsors is unavailable."""
     cols = {}
     for t in tickers:
         df = _load_so(t)
@@ -74,6 +138,11 @@ def rebuild(tickers: tuple[str, ...] = SECTOR_TICKERS,
             proxy_path: Path | None = None) -> Path | None:
     """Rebuild etf_flow_proxy.parquet from the per-ticker SO snapshots.
 
+    In production, flows_wide() delegates to collectors.sponsors.flows_table()
+    (the canonical derive path shared with build_sector_central.py).  When
+    flows_dir is supplied (test injection), flows_wide() reads synthetic files
+    directly instead.
+
     Upserts: existing rows for dates not in the new frame are preserved; new
     dates overwrite (date dedup: latest write wins). Returns the output path on
     success, None if no data is available yet.
@@ -81,7 +150,7 @@ def rebuild(tickers: tuple[str, ...] = SECTOR_TICKERS,
     _fdir = flows_dir or _FLOWS_DIR
     _ppath = proxy_path or _PROXY_PATH
 
-    wide = flows_wide(tickers)
+    wide = flows_wide(tickers, _flows_dir=flows_dir)
     if wide is None:
         log.warning("etf_flows: no SO data found — skipping proxy build")
         return None

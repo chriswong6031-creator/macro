@@ -1,11 +1,9 @@
 """tests/test_etf_flows.py — unit tests for engine/etf_flows.py."""
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from engine.etf_flows import (
     _derive_flow,
@@ -66,10 +64,8 @@ def test_derive_flow_negative_redemption():
 # ── flows_wide ────────────────────────────────────────────────────────────────
 
 def test_flows_wide_returns_none_when_no_files(tmp_path):
-    # Pass a custom tickers list pointing at non-existent files
-    # We monkeypatch _FLOWS_DIR by relying on flows_wide accepting custom dir
-    # instead we test with empty tuple
-    result = flows_wide(tickers=())
+    # Empty tickers → no files → None regardless of path
+    result = flows_wide(tickers=(), _flows_dir=tmp_path)
     assert result is None
 
 
@@ -77,14 +73,8 @@ def test_flows_wide_correct_columns(tmp_path):
     for t in ("XLK", "XLF"):
         _make_so_file(tmp_path, t, _minimal_rows(3))
 
-    # Patch the module-level _FLOWS_DIR temporarily
-    import engine.etf_flows as mod
-    orig = mod._FLOWS_DIR
-    mod._FLOWS_DIR = tmp_path
-    try:
-        result = flows_wide(tickers=("XLK", "XLF"))
-    finally:
-        mod._FLOWS_DIR = orig
+    # _flows_dir injection bypasses the sponsors path and reads synthetic files
+    result = flows_wide(tickers=("XLK", "XLF"), _flows_dir=tmp_path)
 
     assert result is not None
     assert "XLK_flow_mn" in result.columns
@@ -101,13 +91,8 @@ def test_rebuild_creates_parquet(tmp_path):
         _make_so_file(tmp_path, t, _minimal_rows(4))
     proxy_path = tmp_path / "etf_flow_proxy.parquet"
 
-    import engine.etf_flows as mod
-    orig = mod._FLOWS_DIR
-    mod._FLOWS_DIR = tmp_path
-    try:
-        out = rebuild(tickers=("XLK", "XLF"), flows_dir=tmp_path, proxy_path=proxy_path)
-    finally:
-        mod._FLOWS_DIR = orig
+    # flows_dir=tmp_path triggers test-injection path in flows_wide()
+    out = rebuild(tickers=("XLK", "XLF"), flows_dir=tmp_path, proxy_path=proxy_path)
 
     assert out is not None
     assert proxy_path.exists()
@@ -121,15 +106,9 @@ def test_rebuild_idempotent(tmp_path):
         _make_so_file(tmp_path, t, _minimal_rows(3))
     proxy_path = tmp_path / "etf_flow_proxy.parquet"
 
-    import engine.etf_flows as mod
-    orig = mod._FLOWS_DIR
-    mod._FLOWS_DIR = tmp_path
-    try:
-        rebuild(tickers=("XLK",), flows_dir=tmp_path, proxy_path=proxy_path)
-        # second run
-        out = rebuild(tickers=("XLK",), flows_dir=tmp_path, proxy_path=proxy_path)
-    finally:
-        mod._FLOWS_DIR = orig
+    rebuild(tickers=("XLK",), flows_dir=tmp_path, proxy_path=proxy_path)
+    # second run
+    rebuild(tickers=("XLK",), flows_dir=tmp_path, proxy_path=proxy_path)
 
     df = pd.read_parquet(proxy_path)
     assert len(df) == 3, "idempotent rebuild must not duplicate rows"
@@ -146,16 +125,9 @@ def test_rebuild_returns_none_when_no_data(tmp_path):
 def _write_proxy(tmp_path: Path, n: int = 5) -> Path:
     proxy_path = tmp_path / "etf_flow_proxy.parquet"
     rows = _minimal_rows(n)
-    # Build a minimal wide frame manually
-    import engine.etf_flows as mod
-    orig = mod._FLOWS_DIR
-    mod._FLOWS_DIR = tmp_path
     for t in ("XLK", "XLF"):
         _make_so_file(tmp_path, t, rows)
-    try:
-        rebuild(tickers=("XLK", "XLF"), flows_dir=tmp_path, proxy_path=proxy_path)
-    finally:
-        mod._FLOWS_DIR = orig
+    rebuild(tickers=("XLK", "XLF"), flows_dir=tmp_path, proxy_path=proxy_path)
     return proxy_path
 
 
@@ -189,14 +161,8 @@ def test_proxy_json_flow_signs(tmp_path):
                      "nav": nav, "aum_mn": so * nav, "so_mn": so})
     proxy_path = tmp_path / "etf_flow_proxy.parquet"
 
-    import engine.etf_flows as mod
-    orig = mod._FLOWS_DIR
-    mod._FLOWS_DIR = tmp_path
     _make_so_file(tmp_path, "XLK", rows)
-    try:
-        rebuild(tickers=("XLK",), flows_dir=tmp_path, proxy_path=proxy_path)
-    finally:
-        mod._FLOWS_DIR = orig
+    rebuild(tickers=("XLK",), flows_dir=tmp_path, proxy_path=proxy_path)
 
     result = proxy_json(proxy_path=proxy_path)
     assert result is not None
