@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-07-02",
-    "built": "2026-07-05T07:29:32.990262+00:00",
+    "built": "2026-07-05T08:43:21.102224+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -393,8 +393,8 @@
     },
     "curve_trade": {
       "lean": "steepener",
-      "rationale_en": "A reflation impulse with a positive curve — a bear-steepener bias as the long end reprices term premium / supply higher.",
-      "rationale_zh": "再通胀动能叠加正向曲线 — 长端重新定价期限溢价/供给走高，偏熊市陡峭。",
+      "rationale_en": "Reflation plus a positive curve points to long-end pressure.",
+      "rationale_zh": "再通胀叠加正向曲线，指向长端压力。",
       "slope_10y3m": 0.67,
       "ntfs": 0.69
     },
