@@ -30,9 +30,10 @@
     {%- set chip_tone = 'tone-neg' if rv == 'duplicate' else 'tone-warn' -%}
     {%- set chip_label_en = '⚠ same bet' if rv == 'duplicate' else '~ partial overlap' -%}
     {%- set chip_label_zh = '⚠ 重复押注' if rv == 'duplicate' else '~ 部分重叠' -%}
+    {%- set rx_fc = rx.get('factor_caveat', '') if rx else '' -%}
     <span class="chip rx-chip {{ chip_tone }}"
-          data-tip-en="{{ rx_rec.get('why_en', '') }}"
-          data-tip-zh="{{ rx_rec.get('why_zh', '') }}"><span class="l-en">{{ chip_label_en }}</span><span class="l-zh">{{ chip_label_zh }}</span></span>
+          data-tip-en="{{ rx_rec.get('why_en', '') }}{% if rx_fc %} | {{ rx_fc }}{% endif %}"
+          data-tip-zh="{{ rx_rec.get('why_zh', '') }}{% if rx_fc %} | {{ rx_fc }}{% endif %}"><span class="l-en">{{ chip_label_en }}</span><span class="l-zh">{{ chip_label_zh }}</span></span>
     {%- endif -%}
   </div>
   <div class="v2-name">{{ r.name }}{% if r.sector %} · <span class="v2-sec">{{ r.sector }}</span>{% endif %}</div>
@@ -168,41 +169,41 @@
 <h1>{{ t('Buy Board 2.0','买入榜 2.0') }}<span class="shadow-tag">SHADOW · not live</span></h1>
 <p class="lead-p">{{ t(
   'Names that are BOTH good to buy (trajectory up, not Lagging) AND a good entry, not chasing — hard-gated by the validated MACD-2D × StochRSI-3D confluence (the same gate that guards setups.json). Rotation context from sector / subsector / theme engines sets PRIORITY, never a gate. Two glyphs, never one fused score: EDGE grade (colored by verdict) and ENTRY state (tier + freshness).',
-  '同时满足“值得买入”（趋势向上、非落后）与“入场点好、不追高”——由已验证的 MACD-2D × StochRSI-3D 共振硬门槛把关（与 setups.json 同一门槛）。板块/子行业/主题轮动仅决定优先级，绝不作为门槛。两个字形，绝不融合为单一分数：优势评级（按判定着色）与入场状态（层级+新鲜度）。') }}</p>
+  '同时满足"值得买入"（趋势向上、非落后）与"入场点好、不追高"——由已验证的 MACD-2D × StochRSI-3D 共振硬门槛把关（与 setups.json 同一门槛）。板块/子行业/主题轮动仅决定优先级，绝不作为门槛。两个字形，绝不融合为单一分数：优势评级（按判定着色）与入场状态（层级+新鲜度）。') }}</p>
 
-<div class=”strip”>
-  <span class=”stat”>{{ t('as of','截至') }} <b>{{ d.as_of }}</b></span>
-  <span class=”stat”>{{ t('candidates','候选') }} <b>{{ d.counts.candidates }}</b></span>
-  <span class=”stat”>{{ t('entry open','入场开放') }} <b>{{ d.counts.entry_open }}</b></span>
-  <span class=”stat”>{{ t('setting up','酝酿中') }} <b>{{ d.counts.setting_up }}</b></span>
-  <span class=”stat”>{{ t('knobs','参数') }} <b>{{ d.knobs_basis }}</b></span>
+<div class="strip">
+  <span class="stat">{{ t('as of','截至') }} <b>{{ d.as_of }}</b></span>
+  <span class="stat">{{ t('candidates','候选') }} <b>{{ d.counts.candidates }}</b></span>
+  <span class="stat">{{ t('entry open','入场开放') }} <b>{{ d.counts.entry_open }}</b></span>
+  <span class="stat">{{ t('setting up','酝酿中') }} <b>{{ d.counts.setting_up }}</b></span>
+  <span class="stat">{{ t('knobs','参数') }} <b>{{ d.knobs_basis }}</b></span>
 </div>
 {{ rx_board_banner() }}
 
 {# ---- ENTRY OPEN lane ---- #}
-<div class=”sec”><h2>{{ t('Entry open','入场开放') }}</h2><span class=”cnt”>{{ d.counts.entry_open }} {{ t('names','只') }}</span></div>
-<p class=”sub”>{{ t('Both gates pass — a fresh confluence cross is live now. Ordered by group leadership → edge percentile → entry freshness. Zero fill pressure: however many qualify (an empty lane is honest).','双门槛通过——共振金叉刚刚触发。按行业领先→优势分位→入场新鲜度排序。零填充压力：合格多少就显示多少（空榜也是诚实的）。') }}</p>
+<div class="sec"><h2>{{ t('Entry open','入场开放') }}</h2><span class="cnt">{{ d.counts.entry_open }} {{ t('names','只') }}</span></div>
+<p class="sub">{{ t('Both gates pass — a fresh confluence cross is live now. Ordered by group leadership → edge percentile → entry freshness. Zero fill pressure: however many qualify (an empty lane is honest).','双门槛通过——共振金叉刚刚触发。按行业领先→优势分位→入场新鲜度排序。零填充压力：合格多少就显示多少（空榜也是诚实的）。') }}</p>
 {{ conc_banner(d.concentration.entry_open, 'entry_open') }}
 {% if d.lanes.entry_open %}
-<div class=”grid”>
+<div class="grid">
   {% for r in d.lanes.entry_open %}{{ row_card(r, 'entry_open') }}{% endfor %}
 </div>
 {% else %}
-<div class=”empty”>{{ t('No names clear both gates today. An empty actionable lane is honest — see Setting up for the pipeline.','今日无名单同时通过双门槛。空的可执行榜是诚实的——请看”酝酿中”了解在途标的。') }}</div>
+<div class="empty">{{ t('No names clear both gates today. An empty actionable lane is honest — see Setting up for the pipeline.','今日无名单同时通过双门槛。空的可执行榜是诚实的——请看"酝酿中"了解在途标的。') }}</div>
 {% endif %}
-<p class=”pass”>{{ t('Passport','护照') }}: basis <code>dual-gate</code> · frame <code>cross-sectional</code> · rotation sources
+<p class="pass">{{ t('Passport','护照') }}: basis <code>dual-gate</code> · frame <code>cross-sectional</code> · rotation sources
   {% for k,v in d.rotation_coverage.items() %}{{ k }}=<code>{{ 'ok' if not v.degraded else 'degraded' }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</p>
 
 {# ---- SETTING UP lane ---- #}
-<div class=”sec”><h2>{{ t('Setting up','酝酿中') }}</h2><span class=”cnt”>{{ d.counts.setting_up }} {{ t('names','只') }}</span></div>
-<p class=”sub”>{{ t('Trajectory passes and a cross is IMMINENT (projected tier / small bars-to-cross / early advance-warning). Every row is provisional — the “about to cross” detector is unvalidated until the W6 replay (audit #22).','趋势通过且金叉即将出现（预测层级/距离交叉很近/提前预警）。每行均为暂定——“即将交叉”检测在 W6 回放验证前尚未确认（审计 #22）。') }}</p>
+<div class="sec"><h2>{{ t('Setting up','酝酿中') }}</h2><span class="cnt">{{ d.counts.setting_up }} {{ t('names','只') }}</span></div>
+<p class="sub">{{ t('Trajectory passes and a cross is IMMINENT (projected tier / small bars-to-cross / early advance-warning). Every row is provisional — the "about to cross" detector is unvalidated until the W6 replay (audit #22).','趋势通过且金叉即将出现（预测层级/距离交叉很近/提前预警）。每行均为暂定——"即将交叉"检测在 W6 回放验证前尚未确认（审计 #22）。') }}</p>
 {{ conc_banner(d.concentration.setting_up, 'setting_up') }}
 {% if d.lanes.setting_up %}
-<div class=”grid”>
+<div class="grid">
   {% for r in d.lanes.setting_up %}{{ row_card(r, 'setting_up') }}{% endfor %}
 </div>
 {% else %}
-<div class=”empty”>{{ t('No imminent-cross names today.','今日无即将交叉标的。') }}</div>
+<div class="empty">{{ t('No imminent-cross names today.','今日无即将交叉标的。') }}</div>
 {% endif %}
 
 <div class="foot">
