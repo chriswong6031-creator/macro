@@ -9,7 +9,6 @@
 > 'validated' is banned from this file. Every table carries n + base rate.
 > Gate verdicts are pre-bound: results are printed as-is.
 > Pre-stated expectation: LOW — W1's AUCs were sub-coin-flip on primary and secondary labels; W1b exists because the label postdated the wave, not because a different result is expected.
-> **SMOKE RUN**: permutation null skipped (0 perms). AUCs are valid; null p-value is not computed.
 
 ## 1. Population & Labels
 
@@ -62,15 +61,15 @@
 
 ## 4. Shuffled-Label Null Distribution
 
-- n_permutations: 0
-- null distribution mean AUC: nan
+- n_permutations: 200
+- null distribution mean AUC: 0.5043
 - observed M1 mean AUC: 0.4836
-- p-value (fraction null >= observed): **nan**
+- p-value (fraction null >= observed): **0.7150**
 
 ## 5. Pre-Registered Gate Verdicts
 
 ### G-A: FAIL
-- FAIL — mean AUC=0.4836, null p=nan — NO ONSET-QUALITY SIGNAL AT n=350 — printed null
+- FAIL — mean AUC=0.4836, null p=0.7150 — NO ONSET-QUALITY SIGNAL AT n=350 — printed null
 
 ### G-B: FAIL
 - FAIL — M1=0.4836 < M0=0.4709+0.03 (delta=0.0127) — deliverable IS M0
