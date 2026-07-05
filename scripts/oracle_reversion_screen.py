@@ -13,6 +13,13 @@ From exec date (= next close after trigger t):
   MAE   = min(lvl[s] / lvl[exec] - 1)  over next W sessions   (worst dd)
   ret_exit = lvl[exec+E] / lvl[exec] - 1  (absolute time-exit return)
 
+Exit modes
+----------
+  time        (default) Fixed E-session exit as above.
+  stochrsi2d  Exit on first daily bar (after MIN_HOLD=3 sessions from exec)
+              where 2-bar StochRSI %K crosses BELOW %D, capped at 40 sessions.
+              ret_exit = price return exec → exit date.
+
 Regime tag (from node's panel row at trigger date t):
   risk_off if spy_above_200d == 0 OR vix_pctile >= 0.70
   else risk_on
@@ -44,6 +51,14 @@ USAGE
       --inline-id bare_washout \\
       --data-dir /path/to/data
 
+  # Gauntlet mode: run all 6 PASS/FAIL legs on a compound
+  python -m scripts.oracle_reversion_screen --gauntlet --compound A15 \\
+      --data-dir /path/to/data
+
+  # 2D-StochRSI momentum-top exit
+  python -m scripts.oracle_reversion_screen --compound A15 \\
+      --exit-mode stochrsi2d --data-dir /path/to/data
+
 INLINE FALLBACK COMPOUNDS (A15, bare_washout)
 ---------------------------------------------
 If the requested compound id is not in the registry, the tool defines it
@@ -61,7 +76,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -75,6 +90,16 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 log = logging.getLogger("oracle_reversion_screen")
+
+# ---------------------------------------------------------------------------
+# Exit-mode type alias
+# ---------------------------------------------------------------------------
+
+ExitMode = Literal["time", "stochrsi2d"]
+
+# Constants for StochRSI 2D exit
+_STOCHRSI2D_MIN_HOLD: int = 3   # sessions before exit is allowed
+_STOCHRSI2D_MAX_HOLD: int = 40  # sessions cap
 
 # ---------------------------------------------------------------------------
 # Inline fallback compounds (used when id absent from registry)
@@ -149,22 +174,136 @@ def _regime_at(row: pd.Series) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Core metric computation (per entry)
+# 2D-StochRSI exit helper
 # ---------------------------------------------------------------------------
 
-def _compute_entry_metrics(
+def _build_stochrsi_2d_exit_index(
+    lvl: pd.Series,
+    all_dates: pd.DatetimeIndex,
+) -> dict[int, int]:
+    """Pre-compute the 2D-StochRSI exit position for every possible exec_pos.
+
+    For each exec_pos, the exit is the first daily position >= exec_pos +
+    _STOCHRSI2D_MIN_HOLD where the 2D-bar StochRSI %K crosses below %D, capped
+    at exec_pos + _STOCHRSI2D_MAX_HOLD.  Returns a dict mapping exec_pos -> exit_pos.
+
+    The 2D bars are non-overlapping 2-session bars computed on the node's
+    cumulative price level.  StochRSI K/D is computed on those bars, then
+    forward-filled to daily.
+    """
+    from research.signal_engine.confluence import stoch_rsi_kd
+
+    n = len(all_dates)
+    if n < 10:
+        return {}
+
+    # Resample daily close to non-overlapping 2-session bars.
+    # Use position-based grouping so that bar i covers sessions [2i, 2i+1].
+    # We use the pandas integer-position trick: groupby(pos // 2).last()
+    # This is deterministic and anchored at session 0, not at a calendar date.
+    close_vals = lvl.values  # numpy array
+    bar_count = n // 2  # number of complete 2-session bars
+    if bar_count < 20:
+        # Not enough bars to warm up StochRSI
+        return {}
+
+    bar_closes = np.array(
+        [close_vals[2 * i + 1] for i in range(bar_count)]
+    )
+    # Use integer index for the bar series (bar number = i)
+    bar_idx = np.arange(bar_count)
+    bar_series = pd.Series(bar_closes, index=bar_idx, dtype=float)
+
+    try:
+        k_bar, d_bar = stoch_rsi_kd(bar_series)
+    except Exception:  # noqa: BLE001
+        return {}
+
+    # Forward-fill K and D onto daily positions.
+    # Bar i covers daily positions [2i, 2i+1]; its label date is position 2i+1.
+    # Each daily position j sees the LAST COMPLETED bar whose end-position <= j.
+    # Last completed bar for daily position j: bar_i = (j - 1) // 2 when j >= 1
+    # (bar 0 completes at pos 1, bar 1 at pos 3, etc.)
+    k_daily_arr = np.full(n, np.nan)
+    d_daily_arr = np.full(n, np.nan)
+
+    k_bar_arr = k_bar.values
+    d_bar_arr = d_bar.values
+
+    for j in range(1, n):
+        bar_i = (j - 1) // 2  # last completed bar index
+        if bar_i < len(k_bar_arr):
+            k_daily_arr[j] = k_bar_arr[bar_i]
+            d_daily_arr[j] = d_bar_arr[bar_i]
+
+    # Detect K-crosses-below-D: K < D AND prev_K >= prev_D
+    # crossunder[j] = True if k[j] < d[j] and k[j-1] >= d[j-1]
+    crossunder = np.zeros(n, dtype=bool)
+    for j in range(1, n):
+        kj = k_daily_arr[j]
+        dj = d_daily_arr[j]
+        kp = k_daily_arr[j - 1]
+        dp = d_daily_arr[j - 1]
+        if np.isnan(kj) or np.isnan(dj) or np.isnan(kp) or np.isnan(dp):
+            continue
+        if kj < dj and kp >= dp:
+            crossunder[j] = True
+
+    # Build exit_pos lookup for each exec_pos
+    exit_map: dict[int, int] = {}
+    for exec_pos in range(n):
+        min_exit = exec_pos + _STOCHRSI2D_MIN_HOLD
+        max_exit = exec_pos + _STOCHRSI2D_MAX_HOLD
+        if max_exit >= n:
+            max_exit = n - 1
+        if min_exit >= n:
+            # Cannot exit within data range
+            continue
+
+        # Find first crossunder in [min_exit, max_exit]
+        found = -1
+        for j in range(min_exit, max_exit + 1):
+            if j < n and crossunder[j]:
+                found = j
+                break
+        if found == -1:
+            # No cross: exit at cap
+            found = min(max_exit, n - 1)
+
+        exit_map[exec_pos] = found
+
+    return exit_map
+
+
+# ---------------------------------------------------------------------------
+# Core metric computation (per entry) — REUSABLE HELPER
+# ---------------------------------------------------------------------------
+
+def _per_entry_rows(
     entry_dates: dict[str, pd.DatetimeIndex],
     panel: pd.DataFrame,
     window: int,
     exit_sessions: int,
-) -> pd.DataFrame:
-    """Compute MFE / MAE / ret_exit / regime for each entry across all nodes.
+    exit_mode: ExitMode = "time",
+) -> list[dict]:
+    """Compute per-entry MFE/MAE/ret_exit/regime rows for all nodes.
 
-    Returns a DataFrame with columns:
-      node, trigger_date, exec_date, MFE, MAE, ret_exit, regime
+    This is the SINGLE SOURCE for per-entry metric computation; both the
+    screen path and --gauntlet call this helper.
 
-    Entries whose outcome window (exec_date + window) is beyond the data end
-    are dropped (not mature).
+    Parameters
+    ----------
+    entry_dates : dict mapping node -> DatetimeIndex of trigger dates
+    panel       : multi-indexed (node, date) panel DataFrame with 'ret' column
+    window      : MFE/MAE window in sessions (always 25 sessions regardless of exit_mode)
+    exit_sessions : sessions for time-exit (used only when exit_mode == 'time')
+    exit_mode   : 'time' (fixed sessions) or 'stochrsi2d' (momentum-top exit)
+
+    Returns
+    -------
+    list of dicts with keys:
+      node, trigger_date, exec_date, MFE, MAE, ret_exit, regime,
+      hold_sessions (only meaningful for stochrsi2d; = exit_sessions for time)
     """
     rows: list[dict] = []
 
@@ -181,6 +320,11 @@ def _compute_entry_metrics(
         lvl = (1 + ret_series.fillna(0)).cumprod()
         all_dates = ret_series.index  # sorted DatetimeIndex
 
+        # Pre-compute 2D StochRSI exit map if needed (once per node)
+        stochrsi_exit_map: dict[int, int] = {}
+        if exit_mode == "stochrsi2d":
+            stochrsi_exit_map = _build_stochrsi_2d_exit_index(lvl, all_dates)
+
         for trigger_t in dates:
             # Execution: next close after trigger
             future = all_dates[all_dates > trigger_t]
@@ -189,7 +333,7 @@ def _compute_entry_metrics(
             exec_date = future[0]
             exec_pos = all_dates.searchsorted(exec_date, side="left")
 
-            # Outcome window: exec_pos + 1 .. exec_pos + window (inclusive)
+            # Outcome window (MFE/MAE): always window sessions regardless of exit_mode
             end_pos = exec_pos + window
             if end_pos >= len(all_dates):
                 continue  # not mature
@@ -204,14 +348,29 @@ def _compute_entry_metrics(
             mfe = float(window_rets.max())
             mae = float(window_rets.min())
 
-            # Time-exit: exec_pos + exit_sessions
-            exit_pos = exec_pos + exit_sessions
-            if exit_pos >= len(all_dates):
-                continue  # exit not yet reached
-            exit_price = lvl.iat[exit_pos]
-            if exit_price == 0 or np.isnan(exit_price):
-                continue
-            ret_exit = float(exit_price / exec_price - 1)
+            # Exit price depends on exit_mode
+            if exit_mode == "time":
+                exit_pos = exec_pos + exit_sessions
+                if exit_pos >= len(all_dates):
+                    continue  # exit not yet reached
+                exit_price = lvl.iat[exit_pos]
+                if exit_price == 0 or np.isnan(exit_price):
+                    continue
+                ret_exit = float(exit_price / exec_price - 1)
+                hold = exit_sessions
+            elif exit_mode == "stochrsi2d":
+                if exec_pos not in stochrsi_exit_map:
+                    continue  # insufficient data for this exec
+                exit_pos = stochrsi_exit_map[exec_pos]
+                if exit_pos >= len(all_dates) or exit_pos <= exec_pos:
+                    continue
+                exit_price = lvl.iat[exit_pos]
+                if exit_price == 0 or np.isnan(exit_price):
+                    continue
+                ret_exit = float(exit_price / exec_price - 1)
+                hold = exit_pos - exec_pos
+            else:
+                raise ValueError(f"Unknown exit_mode: {exit_mode!r}")
 
             # Regime: read from trigger row (t, not exec)
             if trigger_t in npn.index:
@@ -233,13 +392,34 @@ def _compute_entry_metrics(
                     "MAE": mae,
                     "ret_exit": ret_exit,
                     "regime": regime,
+                    "hold_sessions": hold,
                 }
             )
+
+    return rows
+
+
+def _compute_entry_metrics(
+    entry_dates: dict[str, pd.DatetimeIndex],
+    panel: pd.DataFrame,
+    window: int,
+    exit_sessions: int,
+    exit_mode: ExitMode = "time",
+) -> pd.DataFrame:
+    """Compute MFE / MAE / ret_exit / regime for each entry across all nodes.
+
+    Returns a DataFrame with columns:
+      node, trigger_date, exec_date, MFE, MAE, ret_exit, regime, hold_sessions
+
+    Entries whose outcome window (exec_date + window) is beyond the data end
+    are dropped (not mature).
+    """
+    rows = _per_entry_rows(entry_dates, panel, window, exit_sessions, exit_mode)
 
     if not rows:
         return pd.DataFrame(
             columns=["node", "trigger_date", "exec_date",
-                     "MFE", "MAE", "ret_exit", "regime"]
+                     "MFE", "MAE", "ret_exit", "regime", "hold_sessions"]
         )
     return pd.DataFrame(rows)
 
@@ -296,12 +476,19 @@ def _print_compound_report(
     risk_off_stats: dict,
     window: int,
     exit_sessions: int,
+    exit_mode: ExitMode = "time",
+    mean_hold: float | None = None,
 ) -> None:
-    w = 58
+    w = 70
     print()
     print("=" * w)
     print(f"  {compound_id}  {name}")
-    print(f"  window={window} sessions, exit={exit_sessions} sessions (absolute returns)")
+    mode_label = f"exit_mode={exit_mode}"
+    if exit_mode == "time":
+        print(f"  window={window} sessions, exit={exit_sessions} sessions (absolute returns)")
+    else:
+        hold_str = f", mean_hold={mean_hold:.1f}s" if mean_hold is not None else ""
+        print(f"  window={window} sessions, {mode_label}{hold_str} (absolute returns)")
     print("=" * w)
 
     def _row(label: str, s: dict) -> None:
@@ -322,6 +509,243 @@ def _print_compound_report(
 
 
 # ---------------------------------------------------------------------------
+# GAUNTLET: 6-leg PASS gate
+# ---------------------------------------------------------------------------
+
+_GAUNTLET_TIER_SPLITS: dict[str, str] = {
+    "s": "2019-12-31",
+    "m": "2023-12-31",
+}
+_DEFAULT_TIER_SPLIT: str = "2019-12-31"
+
+
+def _gauntlet_placebo(
+    entries_df: pd.DataFrame,
+    panel: pd.DataFrame,
+    window: int,
+    exit_sessions: int,
+    exit_mode: ExitMode,
+    n_draws: int = 500,
+    rng_seed: int = 42,
+) -> tuple[float, float]:
+    """Leg 6: timing placebo.
+
+    Per node, build the pool of ALL realizable ret_exit outcomes for that node
+    (every calendar date in the node's panel that can support a full exit window)
+    and sample count-matched draws.  Returns (real_mean, pctile95) where
+    pctile95 is the 95th percentile of draw-means across n_draws draws.
+
+    The placebo tests whether the TIMING of entries (not their mere existence)
+    contributes to the mean return.
+    """
+    rng = np.random.default_rng(rng_seed)
+    real_mean = float(entries_df["ret_exit"].mean())
+
+    # Build per-node pools of realizable outcomes
+    node_pool: dict[str, np.ndarray] = {}
+    node_entry_counts: dict[str, int] = {}
+
+    for node, grp in entries_df.groupby("node"):
+        node_entry_counts[node] = len(grp)
+
+        try:
+            npn = panel.xs(node, level="node")
+        except KeyError:
+            continue
+
+        if "ret" not in npn.columns:
+            continue
+
+        ret_series = npn["ret"].sort_index()
+        lvl = (1 + ret_series.fillna(0)).cumprod()
+        all_dates = ret_series.index
+        n = len(all_dates)
+
+        # Pre-compute stochrsi exit map if needed
+        stochrsi_exit_map: dict[int, int] = {}
+        if exit_mode == "stochrsi2d":
+            stochrsi_exit_map = _build_stochrsi_2d_exit_index(lvl, all_dates)
+
+        outcomes: list[float] = []
+        for exec_pos in range(n):
+            # Check MFE/MAE window maturity
+            if exec_pos + window >= n:
+                continue
+
+            exec_price = lvl.iat[exec_pos]
+            if exec_price == 0 or np.isnan(exec_price):
+                continue
+
+            if exit_mode == "time":
+                exit_pos = exec_pos + exit_sessions
+                if exit_pos >= n:
+                    continue
+                exit_price = lvl.iat[exit_pos]
+                if exit_price == 0 or np.isnan(exit_price):
+                    continue
+                outcomes.append(float(exit_price / exec_price - 1))
+            elif exit_mode == "stochrsi2d":
+                if exec_pos not in stochrsi_exit_map:
+                    continue
+                exit_pos = stochrsi_exit_map[exec_pos]
+                if exit_pos >= n or exit_pos <= exec_pos:
+                    continue
+                exit_price = lvl.iat[exit_pos]
+                if exit_price == 0 or np.isnan(exit_price):
+                    continue
+                outcomes.append(float(exit_price / exec_price - 1))
+
+        if outcomes:
+            node_pool[node] = np.array(outcomes, dtype=float)
+
+    if not node_pool:
+        return real_mean, np.nan
+
+    # Run n_draws placebo simulations
+    draw_means: list[float] = []
+    for _ in range(n_draws):
+        total_sum = 0.0
+        total_n = 0
+        for node, pool in node_pool.items():
+            k = node_entry_counts.get(node, 0)
+            if k == 0 or len(pool) == 0:
+                continue
+            sampled = rng.choice(pool, size=k, replace=True)
+            total_sum += float(sampled.sum())
+            total_n += k
+        if total_n > 0:
+            draw_means.append(total_sum / total_n)
+
+    if not draw_means:
+        return real_mean, np.nan
+
+    pctile95 = float(np.percentile(draw_means, 95))
+    return real_mean, pctile95
+
+
+def run_gauntlet(
+    compound: dict,
+    entries_df: pd.DataFrame,
+    panel: pd.DataFrame,
+    window: int,
+    exit_sessions: int,
+    exit_mode: ExitMode,
+) -> bool:
+    """Run the full 6-leg PASS gate on a compound.
+
+    Prints per-leg PASS/FAIL + numbers; returns True if ALL legs pass.
+    """
+    compound_id = compound.get("id", "?")
+    tier = compound.get("universe", {}).get("tier", "s")
+
+    print()
+    print("=" * 70)
+    print(f"  GAUNTLET REPORT — {compound_id}  (exit_mode={exit_mode})")
+    print("=" * 70)
+
+    if entries_df.empty:
+        print("  [ALL LEGS] FAIL — no entries")
+        print()
+        print("  *** REVERSION GAUNTLET FAIL ***")
+        print()
+        return False
+
+    all_stats = _agg_stats(entries_df)
+    risk_on_stats = _agg_stats(entries_df[entries_df["regime"] == "risk_on"])
+    risk_off_stats = _agg_stats(entries_df[entries_df["regime"] == "risk_off"])
+
+    # --- Leg 1: n >= 100 ---
+    n = all_stats["n"]
+    leg1 = n >= 100
+    print(f"  Leg 1  n={n} >= 100:                {'PASS' if leg1 else 'FAIL'}")
+
+    # --- Leg 2: WR >= 0.62 ---
+    wr = all_stats["WR"]
+    leg2 = not np.isnan(wr) and wr >= 0.62
+    print(f"  Leg 2  WR={wr:.3f} >= 0.62:           {'PASS' if leg2 else 'FAIL'}")
+
+    # --- Leg 3: asym >= 1.5 ---
+    asym = all_stats["asym"]
+    leg3 = not np.isnan(asym) and asym >= 1.5
+    print(f"  Leg 3  asym={asym:.3f} >= 1.5:         {'PASS' if leg3 else 'FAIL'}")
+
+    # --- Leg 4: ret_exit >= 1% AND > 0 in BOTH regimes ---
+    ret_exit_all = all_stats["mean_ret_exit"]
+    ret_on = risk_on_stats["mean_ret_exit"]
+    ret_off = risk_off_stats["mean_ret_exit"]
+    leg4_main = not np.isnan(ret_exit_all) and ret_exit_all >= 0.01
+    leg4_on = not np.isnan(ret_on) and ret_on > 0
+    leg4_off = not np.isnan(ret_off) and ret_off > 0
+    leg4 = leg4_main and leg4_on and leg4_off
+    print(
+        f"  Leg 4  ret_exit={_pct(ret_exit_all)} >= +1.0% "
+        f"AND on={_pct(ret_on)}>0 AND off={_pct(ret_off)}>0:  "
+        f"{'PASS' if leg4 else 'FAIL'}"
+    )
+
+    # --- Leg 5: OOS holdout ---
+    split_str = _GAUNTLET_TIER_SPLITS.get(tier, _DEFAULT_TIER_SPLIT)
+    split_date = pd.Timestamp(split_str)
+
+    dev_df = entries_df[entries_df["entry_date"] <= split_date] if "entry_date" in entries_df.columns else entries_df[entries_df["trigger_date"] <= split_date]
+    hold_df = entries_df[entries_df["trigger_date"] > split_date]
+
+    dev_stats = _agg_stats(dev_df)
+    hold_stats = _agg_stats(hold_df)
+
+    hold_n = hold_stats["n"]
+    hold_wr = hold_stats["WR"]
+    hold_ret = hold_stats["mean_ret_exit"]
+    dev_ret = dev_stats["mean_ret_exit"]
+
+    # Leg 5 conditions
+    leg5_n = hold_n >= 100
+    leg5_wr = not np.isnan(hold_wr) and hold_wr >= 0.58
+    leg5_sign = (
+        not np.isnan(hold_ret) and not np.isnan(dev_ret)
+        and np.sign(hold_ret) == np.sign(dev_ret)
+    )
+    leg5 = leg5_n and leg5_wr and leg5_sign
+    print(
+        f"  Leg 5  OOS holdout (split={split_str}):"
+        f" holdout_n={hold_n} >= 100: {'Y' if leg5_n else 'N'},"
+        f" WR={hold_wr:.3f} >= 0.58: {'Y' if leg5_wr else 'N'},"
+        f" sign match (dev_ret={_pct(dev_ret)}, hold_ret={_pct(hold_ret)}): {'Y' if leg5_sign else 'N'}"
+        f"  => {'PASS' if leg5 else 'FAIL'}"
+    )
+
+    # --- Leg 6: timing placebo (p < 0.05) ---
+    log.info("Running Leg 6 timing placebo (500 draws) — this may take ~30s...")
+    real_mean, pctile95 = _gauntlet_placebo(
+        entries_df, panel, window, exit_sessions, exit_mode
+    )
+
+    if np.isnan(pctile95):
+        leg6 = False
+        p_note = "n/a (could not build placebo pool)"
+    else:
+        leg6 = real_mean > pctile95
+        # Approximate p-value: fraction of draws >= real_mean
+        p_note = f"real={_pct(real_mean)} > p95={_pct(pctile95)}"
+
+    print(
+        f"  Leg 6  Timing placebo (500 draws): {p_note}"
+        f"  => {'PASS' if leg6 else 'FAIL'}"
+    )
+
+    all_pass = leg1 and leg2 and leg3 and leg4 and leg5 and leg6
+    print()
+    if all_pass:
+        print("  *** REVERSION GAUNTLET PASS ***")
+    else:
+        print("  *** REVERSION GAUNTLET FAIL ***")
+    print("=" * 70)
+    print()
+
+    return all_pass
+
+
+# ---------------------------------------------------------------------------
 # Main screen function
 # ---------------------------------------------------------------------------
 
@@ -330,6 +754,8 @@ def screen_compound(
     data_dir: Path,
     window: int = 25,
     exit_sessions: int = 21,
+    exit_mode: ExitMode = "time",
+    gauntlet: bool = False,
 ) -> dict | None:
     """Screen a single compound.  Returns dict of stats or None on error."""
     from engine.oracle.compounds import (
@@ -342,7 +768,10 @@ def screen_compound(
     universe = compound.get("universe", {})
     tier = universe.get("tier", "s")
 
-    log.info("Screening %s (tier=%s, W=%d, E=%d)", compound_id, tier, window, exit_sessions)
+    log.info(
+        "Screening %s (tier=%s, W=%d, E=%d, exit_mode=%s, gauntlet=%s)",
+        compound_id, tier, window, exit_sessions, exit_mode, gauntlet,
+    )
 
     try:
         panel = _load_panel(data_dir, tier)
@@ -367,7 +796,7 @@ def screen_compound(
     total = sum(len(v) for v in entry_dates.values())
     log.info("%s: %d total triggers across %d nodes", compound_id, total, len(entry_dates))
 
-    entries_df = _compute_entry_metrics(entry_dates, panel, window, exit_sessions)
+    entries_df = _compute_entry_metrics(entry_dates, panel, window, exit_sessions, exit_mode)
 
     if entries_df.empty:
         log.warning("%s: no mature entries (all outside data range)", compound_id)
@@ -379,10 +808,17 @@ def screen_compound(
         risk_on_stats = _agg_stats(entries_df[entries_df["regime"] == "risk_on"])
         risk_off_stats = _agg_stats(entries_df[entries_df["regime"] == "risk_off"])
 
+    mean_hold: float | None = None
+    if exit_mode == "stochrsi2d" and not entries_df.empty and "hold_sessions" in entries_df.columns:
+        mean_hold = float(entries_df["hold_sessions"].mean())
+
     _print_compound_report(
         compound_id, name, all_stats, risk_on_stats, risk_off_stats,
-        window, exit_sessions,
+        window, exit_sessions, exit_mode=exit_mode, mean_hold=mean_hold,
     )
+
+    if gauntlet:
+        run_gauntlet(compound, entries_df, panel, window, exit_sessions, exit_mode)
 
     return {
         "compound_id": compound_id,
@@ -390,9 +826,11 @@ def screen_compound(
         "tier": tier,
         "window": window,
         "exit_sessions": exit_sessions,
+        "exit_mode": exit_mode,
         "all": all_stats,
         "risk_on": risk_on_stats,
         "risk_off": risk_off_stats,
+        "mean_hold": mean_hold,
     }
 
 
@@ -454,7 +892,26 @@ def main() -> int:
     ap.add_argument("--window", type=int, default=25,
                     help="MFE/MAE window in sessions (default: 25)")
     ap.add_argument("--exit", dest="exit_sessions", type=int, default=21,
-                    help="Time-exit sessions (default: 21)")
+                    help="Time-exit sessions (default: 21; only used with --exit-mode time)")
+    ap.add_argument(
+        "--exit-mode",
+        dest="exit_mode",
+        choices=["time", "stochrsi2d"],
+        default="time",
+        help=(
+            "Exit strategy: 'time' (fixed exit_sessions, default) or "
+            "'stochrsi2d' (first 2D-StochRSI K-cross-below-D after min-hold=3, "
+            "capped at 40 sessions)"
+        ),
+    )
+    ap.add_argument(
+        "--gauntlet",
+        action="store_true",
+        help=(
+            "Run the full 6-leg reversion PASS gate (legs 1-4 aggregate, "
+            "leg 5 OOS holdout, leg 6 timing placebo)"
+        ),
+    )
     ap.add_argument("--dry-run", action="store_true",
                     help="No-op flag for interface parity with oracle_screen; this tool is read-only by default")
     args = ap.parse_args()
@@ -513,6 +970,8 @@ def main() -> int:
                 data_dir,
                 window=args.window,
                 exit_sessions=args.exit_sessions,
+                exit_mode=args.exit_mode,
+                gauntlet=args.gauntlet,
             )
             if result is None:
                 failures.append(compound.get("id", "?"))
