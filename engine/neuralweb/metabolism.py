@@ -10,6 +10,20 @@ ANTI-MINING LAW (masterplan §5 W7b + §7)
 * All cortex hypotheses share one FDR family so their volume never raises
   the discovery bar for human programs.
 
+TAMPER-SURFACE HONESTY
+-----------------------
+The governance log (data/neuralweb/governance.jsonl) records a6_llm_proposed
+events at registration time, including the full pre_committed_gate and
+spine_query.  A post-hoc edit to machine_registry.jsonl that changes the gate
+or query is detectable by comparing the registry row against the governance
+event for the same hypothesis id.
+
+Ledger-evidence tamper detection rests on git history: machine_registry.jsonl
+and governance.jsonl are both git-tracked files.  Event ids (claim_id) are
+content-derived hashes (sha256 of date:hypothesis), not a cryptographic hash
+chain.  Any replay protection beyond git-history auditing requires additional
+infrastructure outside this module.
+
 REGISTRATION SCHEMA (neuralweb.machine_registry.v1)
 -----------------------------------------------------
 Required:
@@ -224,9 +238,35 @@ def _make_id(hypothesis: str, now: datetime) -> str:
 
 _REQUIRED_GATE_KEYS = {"metric", "threshold", "min_n", "horizon_d"}
 
+# Server-side floor for pre_committed_gate.min_n.
+# The cortex cannot submit a min_n below this value.  Any submitted value is
+# silently clamped upward to this floor before writing to the registry.  The
+# clamped_from field is added to pre_committed_gate when clamping occurs so
+# the audit trail is honest.
+_HOUSE_MIN_N: int = 25
+
+# Self-referencing spine_query values — defense in depth (see Article 1).
+# Registration is rejected if spine_query.family, .engine, or .ledger
+# references cortex_attention.  The evaluator enforces the same rule at
+# grading time for any pre-existing rows that bypassed this check.
+_SELF_REF_FORBIDDEN: frozenset[str] = frozenset({
+    "cortex_attention",
+    "reflex.cortex_attention",
+})
+
 
 def _validate_hypothesis(h: dict) -> list[str]:
-    """Return list of validation errors (empty = valid)."""
+    """Return list of validation errors (empty = valid).
+
+    Defense-in-depth checks enforced here:
+    * Article 1 — spine_query must not reference cortex_attention in any
+      field (family, engine, ledger).  The cortex may never be its own
+      evidence.  The evaluator enforces the same rule at grading time for
+      pre-existing registry rows that bypassed this check.
+    * min_n floor — checked for type only; the _HOUSE_MIN_N clamp is applied
+      in register_hypothesis AFTER validation so the registry always stores
+      the clamped value.
+    """
     errors: list[str] = []
 
     if not h.get("hypothesis"):
@@ -255,6 +295,20 @@ def _validate_hypothesis(h: dict) -> list[str]:
     sq = h.get("spine_query")
     if not sq or not isinstance(sq, dict):
         errors.append("spine_query: missing or not a dict")
+    else:
+        # Article 1 — self-reference guard.  spine_query must not reference
+        # cortex_attention in any field so the cortex cannot grade itself.
+        _sq_values = {
+            str(sq.get("family", "")),
+            str(sq.get("engine", "")),
+            str(sq.get("ledger", "")),
+        }
+        _self_family = str(sq.get("family", "")).startswith("reflex.cortex_attention")
+        if _sq_values & _SELF_REF_FORBIDDEN or _self_family:
+            errors.append(
+                "spine_query: references cortex_attention — Article 1 forbids "
+                "self-grading (the cortex may never be its own evidence)"
+            )
 
     hd = h.get("horizon_d")
     try:
@@ -408,6 +462,23 @@ def register_hypothesis(
     horizon_d = int(h["horizon_d"])
     come_back_dt = now.date() + timedelta(days=horizon_d + 7)
 
+    # Server-side min_n clamp — the cortex cannot set min_n below _HOUSE_MIN_N=25.
+    # Any submitted value is clamped upward; the clamped_from field records the
+    # original submission for auditability.  Other gate knobs:
+    #   - threshold: direction-agnostic numeric; no clamp (either direction is valid).
+    #   - horizon_d: validated as positive int; no additional clamp needed.
+    #   - direction_expected: ±1 or absent; not clampable (semantic, not leniency).
+    #   - metric: fixed-enum enforced by the evaluator; not clampable here.
+    gate = dict(h["pre_committed_gate"])  # copy so we don't mutate caller's dict
+    submitted_min_n = int(gate.get("min_n", 0))
+    if submitted_min_n < _HOUSE_MIN_N:
+        gate["min_n"] = _HOUSE_MIN_N
+        gate["clamped_from"] = submitted_min_n
+        log.info(
+            "metabolism: min_n clamped from %d → %d (house floor) for %s",
+            submitted_min_n, _HOUSE_MIN_N, row_id,
+        )
+
     reg_row: dict[str, Any] = {
         "schema": _SCHEMA,
         "id": row_id,
@@ -419,7 +490,7 @@ def register_hypothesis(
         "claim_shape": h["claim_shape"],
         "hypothesis": h["hypothesis"],
         "spine_query": h["spine_query"],
-        "pre_committed_gate": h["pre_committed_gate"],
+        "pre_committed_gate": gate,
         "horizon_d": horizon_d,
         "come_back": come_back_dt.isoformat(),
         "is_context_only": True,
@@ -449,7 +520,7 @@ def register_hypothesis(
         f"cortex hypothesis registered: {h['hypothesis'][:120]}",
         root,
         evidence={
-            "pre_committed_gate": h["pre_committed_gate"],
+            "pre_committed_gate": gate,   # clamped gate (honest audit trail)
             "spine_query": h["spine_query"],
             "claim_shape": h["claim_shape"],
             "horizon_d": horizon_d,

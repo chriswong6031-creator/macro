@@ -56,6 +56,25 @@ log = logging.getLogger(__name__)
 
 _EVALUATOR_VERSION = "W7b-PR2"
 
+# ---------------------------------------------------------------------------
+# Article 1 — self-grading exclusions
+# ---------------------------------------------------------------------------
+# The cortex MAY NOT be its own evidence (Article 1: "Never originate").
+# adapt_cortex_attention produces synthetic ±0.01 outcome_excess values as
+# sign placeholders (see query.py adapt_cortex_attention).  Including those
+# rows in a hypothesis evaluation would let the cortex grade itself on its
+# own firings — a closed evidence loop that violates the earned-authority
+# constitution.
+#
+# _SELF_LEDGER_EXCLUSIONS is applied at the query layer BEFORE gate scoring.
+# A separate defense-in-depth check at REGISTRATION time (_validate_hypothesis
+# in metabolism.py) rejects any hypothesis whose spine_query references these
+# ledgers/families/engines.
+_SELF_LEDGER_EXCLUSIONS: frozenset[str] = frozenset({
+    "cortex_attention",              # ledger enum value
+    "reflex.cortex_attention",       # engine column value
+})
+
 
 # ---------------------------------------------------------------------------
 # Path helpers
@@ -201,6 +220,26 @@ def _evaluate_path_a(
         filter_kw["graded_only"] = True
 
         filtered = query(df, **filter_kw)
+
+        # Article 1 — self-grading exclusion.
+        # Remove any rows from the cortex_attention ledger or reflex.cortex_attention
+        # engine BEFORE scoring.  These rows carry synthetic ±0.01 outcome_excess
+        # sign placeholders and must never feed hypothesis verdicts.
+        if not filtered.empty:
+            self_mask = (
+                filtered["ledger"].astype(str).isin(_SELF_LEDGER_EXCLUSIONS) |
+                filtered["engine"].astype(str).isin(_SELF_LEDGER_EXCLUSIONS) |
+                filtered["family"].astype(str).str.startswith("reflex.cortex_attention")
+            )
+            n_self_excluded = int(self_mask.sum())
+            if n_self_excluded:
+                log.info(
+                    "evaluator: Article 1 — excluded %d self-referencing rows "
+                    "(cortex_attention) from hypothesis %s",
+                    n_self_excluded, hyp.get("id"),
+                )
+                filtered = filtered[~self_mask].reset_index(drop=True)
+                result_detail["self_excluded_rows"] = n_self_excluded
 
         # Strict post-registration filter
         rows_dicts = filtered.to_dict(orient="records") if not filtered.empty else []
@@ -486,6 +525,43 @@ def evaluate_due(
 
         if not registered_at:
             log.warning("evaluator: %s has no registered_at — skipping", hyp_id)
+            continue
+
+        # Article 1 — defense in depth: reject any pre-existing registry row
+        # whose spine_query references cortex_attention even if it bypassed
+        # _validate_hypothesis at registration time (e.g. hand-written rows,
+        # old rows before the guard was added).
+        sq_check = hyp.get("spine_query") or {}
+        _self_ref_values = {
+            sq_check.get("family", ""),
+            sq_check.get("engine", ""),
+            sq_check.get("ledger", ""),
+        }
+        _self_forbidden = {"cortex_attention", "reflex.cortex_attention"}
+        _self_family_prefix = str(sq_check.get("family", "")).startswith("reflex.cortex_attention")
+        if _self_ref_values & _self_forbidden or _self_family_prefix:
+            log.warning(
+                "evaluator: Article 1 — hypothesis %s references cortex_attention "
+                "in spine_query; verdict=invalid-self-reference (never graded)",
+                hyp_id,
+            )
+            if not dry_run:
+                _update_row_status(hyp_id, "invalid-self-reference", str(root))
+                _emit_evaluation_governance(
+                    hyp_id, "invalid-self-reference", 0, gate,
+                    {"reason": "Article 1: spine_query references cortex_attention — self-grading forbidden"},
+                    root, dry_run,
+                )
+            summary["results"].append({
+                "id": hyp_id,
+                "claim_shape": claim_shape,
+                "verdict": "invalid-self-reference",
+                "n": 0,
+                "metric_value": None,
+                "detail": {"reason": "Article 1: spine_query references cortex_attention — self-grading forbidden"},
+                "gate": gate,
+                "note": None,
+            })
             continue
 
         # Route to evaluator path

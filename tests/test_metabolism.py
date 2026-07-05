@@ -705,6 +705,296 @@ class TestTransitionOnlyGovernance:
 
 
 # ============================================================
+# I. BLOCKER 1 — SELF-GRADING PREVENTION
+# ============================================================
+
+class TestSelfGradingPrevention:
+    """Reproduction of the reviewer's Article 1 attack — both layers tested."""
+
+    # --- Layer 1: registration-time rejection ---
+
+    def test_registration_rejects_cortex_attention_family(self):
+        """ATTACK: cortex registers a hypothesis with spine_query.family='reflex.cortex_attention:event'.
+        EXPECTED: registration returns status='invalid' (Article 1 guard).
+        """
+        from engine.neuralweb.metabolism import register_hypothesis
+        root = _tmp_root()
+        now = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
+        h = _valid_hyp(
+            spine_query={
+                "family": "reflex.cortex_attention:event",
+                "subject": "SPX",
+            }
+        )
+        result = register_hypothesis(h, root=str(root), now=now)
+        # Registration must REJECT — cortex_attention self-reference forbidden
+        assert result["status"] == "invalid", (
+            f"ATTACK SUCCEEDED — self-referencing hypothesis was accepted: {result}"
+        )
+        assert "Article 1" in result["reason"] or "cortex_attention" in result["reason"], (
+            f"rejection reason does not cite Article 1: {result['reason']}"
+        )
+
+    def test_registration_rejects_cortex_attention_engine(self):
+        """ATTACK: spine_query.engine='reflex.cortex_attention' → must reject."""
+        from engine.neuralweb.metabolism import register_hypothesis
+        root = _tmp_root()
+        now = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
+        h = _valid_hyp(
+            spine_query={
+                "engine": "reflex.cortex_attention",
+                "subject": "SPX",
+            }
+        )
+        result = register_hypothesis(h, root=str(root), now=now)
+        assert result["status"] == "invalid", (
+            f"ATTACK SUCCEEDED — engine self-reference accepted: {result}"
+        )
+
+    def test_registration_rejects_cortex_attention_ledger(self):
+        """ATTACK: spine_query.ledger='cortex_attention' → must reject."""
+        from engine.neuralweb.metabolism import register_hypothesis
+        root = _tmp_root()
+        now = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
+        h = _valid_hyp(
+            spine_query={
+                "ledger": "cortex_attention",
+                "subject": "SPX",
+            }
+        )
+        result = register_hypothesis(h, root=str(root), now=now)
+        assert result["status"] == "invalid", (
+            f"ATTACK SUCCEEDED — ledger self-reference accepted: {result}"
+        )
+
+    def test_valid_hypothesis_not_rejected_by_self_guard(self):
+        """Non-self-referencing hypothesis still registers normally."""
+        from engine.neuralweb.metabolism import register_hypothesis
+        root = _tmp_root()
+        now = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
+        result = register_hypothesis(_valid_hyp(), root=str(root), now=now)
+        assert result["status"] == "registered"
+
+    # --- Layer 2: evaluator-time rejection (pre-existing rows that bypassed validation) ---
+
+    def test_evaluator_rejects_preexisting_self_reference_row(self):
+        """ATTACK: hand-craft a registry row with spine_query.family='reflex.cortex_attention:event'
+        (bypassing _validate_hypothesis).  The evaluator must return verdict='invalid-self-reference',
+        never 'passed'.
+        """
+        from scripts.evaluate_cortex_hypotheses import evaluate_due
+        from datetime import date as _date
+
+        root = _tmp_root()
+
+        # Hand-write the attack row directly to the registry (bypassing validation)
+        attack_row = {
+            "schema": "neuralweb.machine_registry.v1",
+            "id": "cortex-2026-07-04-self-ref-attack-aa1234",
+            "kind": "cortex_hypothesis",
+            "status": "registered",
+            "registered_at": "2026-06-01T00:00:00+00:00",
+            "registered_by": "cortex",
+            "fdr_family": "cortex",
+            "claim_shape": "lead_lag",
+            "hypothesis": "Adversarial self-reference hypothesis",
+            "spine_query": {
+                "family": "reflex.cortex_attention:event",
+                "subject": "SPX",
+            },
+            "pre_committed_gate": {
+                "metric": "hit_rate",
+                "threshold": 0.5,
+                "min_n": 1,
+                "horizon_d": 5,
+            },
+            "horizon_d": 5,
+            # come_back in the past so it's "due"
+            "come_back": "2026-06-20",
+            "is_context_only": True,
+        }
+        reg_path = root / "data" / "neuralweb" / "machine_registry.jsonl"
+        with reg_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(attack_row) + "\n")
+
+        # Evaluate with today past the come_back date
+        today = _date(2026, 7, 4)
+        summary = evaluate_due(root=str(root), dry_run=True, today=today)
+
+        results = summary["results"]
+        assert len(results) == 1, f"Expected 1 result, got {len(results)}: {results}"
+        verdict = results[0]["verdict"]
+        assert verdict == "invalid-self-reference", (
+            f"ATTACK PASSED — evaluator returned {verdict!r} for self-referencing row; "
+            f"full result: {results[0]}"
+        )
+
+    def test_evaluator_self_ref_row_never_passed(self):
+        """Specifically verify that a self-referencing row can NEVER get verdict='passed'."""
+        from scripts.evaluate_cortex_hypotheses import evaluate_due
+        from datetime import date as _date
+
+        root = _tmp_root()
+        attack_row = {
+            "schema": "neuralweb.machine_registry.v1",
+            "id": "cortex-2026-07-04-self-ref-pass-bb5678",
+            "kind": "cortex_hypothesis",
+            "status": "registered",
+            "registered_at": "2026-05-01T00:00:00+00:00",
+            "registered_by": "cortex",
+            "fdr_family": "cortex",
+            "claim_shape": "lead_lag",
+            "hypothesis": "Self-referencing pass attempt",
+            "spine_query": {
+                "engine": "reflex.cortex_attention",
+                "subject": "SPX",
+            },
+            "pre_committed_gate": {
+                "metric": "hit_rate",
+                "threshold": 0.1,   # absurdly low to make "passing" trivial on any data
+                "min_n": 1,
+                "horizon_d": 5,
+            },
+            "horizon_d": 5,
+            "come_back": "2026-05-20",
+            "is_context_only": True,
+        }
+        reg_path = root / "data" / "neuralweb" / "machine_registry.jsonl"
+        with reg_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(attack_row) + "\n")
+
+        today = _date(2026, 7, 4)
+        summary = evaluate_due(root=str(root), dry_run=True, today=today)
+        results = summary["results"]
+        assert len(results) == 1
+        assert results[0]["verdict"] != "passed", (
+            "ATTACK SUCCEEDED — self-referencing hypothesis reached verdict='passed'"
+        )
+        assert results[0]["verdict"] == "invalid-self-reference"
+
+
+# ============================================================
+# J. BLOCKER 2 — min_n FLOOR ENFORCEMENT
+# ============================================================
+
+class TestMinNFloor:
+    """Reproduction of the reviewer's min_n=1 attack — server-side clamp tested."""
+
+    def test_min_n_1_clamped_to_25(self):
+        """ATTACK: submit min_n=1 (tiny floor allowing single-row pass).
+        EXPECTED: registry row stores min_n=25 with clamped_from=1.
+        """
+        from engine.neuralweb.metabolism import register_hypothesis
+        root = _tmp_root()
+        now = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
+        h = _valid_hyp(
+            pre_committed_gate={
+                "metric": "hit_rate",
+                "threshold": 0.5,
+                "min_n": 1,          # attack: tiny min_n
+                "horizon_d": 21,
+            }
+        )
+        result = register_hypothesis(h, root=str(root), now=now)
+        assert result["status"] == "registered", f"Registration should succeed: {result}"
+
+        # Check the stored gate in the registry
+        rows = _load_registry(root)
+        registered = [r for r in rows if r.get("status") == "registered"]
+        assert len(registered) == 1
+        stored_gate = registered[0]["pre_committed_gate"]
+        assert stored_gate["min_n"] == 25, (
+            f"CLAMP FAILED — stored min_n={stored_gate['min_n']}, expected 25"
+        )
+        assert stored_gate.get("clamped_from") == 1, (
+            f"clamped_from not recorded: {stored_gate}"
+        )
+
+    def test_min_n_0_clamped_to_25(self):
+        """min_n=0 is also below the floor."""
+        from engine.neuralweb.metabolism import register_hypothesis
+        root = _tmp_root()
+        now = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
+        h = _valid_hyp(
+            pre_committed_gate={
+                "metric": "hit_rate",
+                "threshold": 0.5,
+                "min_n": 0,
+                "horizon_d": 21,
+            }
+        )
+        result = register_hypothesis(h, root=str(root), now=now)
+        assert result["status"] == "registered"
+        rows = _load_registry(root)
+        registered = [r for r in rows if r.get("status") == "registered"]
+        stored_gate = registered[0]["pre_committed_gate"]
+        assert stored_gate["min_n"] == 25
+
+    def test_min_n_above_floor_not_clamped(self):
+        """min_n=30 is above the floor; no clamping, no clamped_from field."""
+        from engine.neuralweb.metabolism import register_hypothesis
+        root = _tmp_root()
+        now = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
+        h = _valid_hyp(
+            pre_committed_gate={
+                "metric": "hit_rate",
+                "threshold": 0.5,
+                "min_n": 30,
+                "horizon_d": 21,
+            }
+        )
+        result = register_hypothesis(h, root=str(root), now=now)
+        assert result["status"] == "registered"
+        rows = _load_registry(root)
+        registered = [r for r in rows if r.get("status") == "registered"]
+        stored_gate = registered[0]["pre_committed_gate"]
+        assert stored_gate["min_n"] == 30
+        assert "clamped_from" not in stored_gate
+
+    def test_min_n_equal_floor_not_clamped(self):
+        """min_n=25 exactly equals the floor; no clamped_from recorded."""
+        from engine.neuralweb.metabolism import register_hypothesis
+        root = _tmp_root()
+        now = datetime(2026, 7, 4, 12, 0, 0, tzinfo=timezone.utc)
+        h = _valid_hyp(
+            pre_committed_gate={
+                "metric": "hit_rate",
+                "threshold": 0.5,
+                "min_n": 25,
+                "horizon_d": 21,
+            }
+        )
+        result = register_hypothesis(h, root=str(root), now=now)
+        assert result["status"] == "registered"
+        rows = _load_registry(root)
+        registered = [r for r in rows if r.get("status") == "registered"]
+        stored_gate = registered[0]["pre_committed_gate"]
+        assert stored_gate["min_n"] == 25
+        assert "clamped_from" not in stored_gate
+
+    def test_single_row_evaluator_returns_insufficient_n_after_clamp(self):
+        """ATTACK: after clamp, a registry row with clamped min_n=25 and only 1
+        post-registration row must return insufficient-n, not 'passed'.
+        """
+        from scripts.evaluate_cortex_hypotheses import _evaluate_gate
+
+        # The attack would have had min_n=1 in the gate; the clamp writes min_n=25.
+        # Simulate the evaluator reading the clamped gate (min_n=25).
+        clamped_gate = {
+            "metric": "hit_rate",
+            "threshold": 0.5,
+            "min_n": 25,
+            "horizon_d": 21,
+            "clamped_from": 1,
+        }
+        # Only 1 post-registration row (the attack's best case)
+        verdict = _evaluate_gate(metric_value=1.0, n=1, gate=clamped_gate)
+        assert verdict == "insufficient-n", (
+            f"ATTACK SUCCEEDED — single row passed gate: verdict={verdict!r}"
+        )
+
+
+# ============================================================
 # H. EXPERIMENTS REGISTRY INTEGRATION
 # ============================================================
 

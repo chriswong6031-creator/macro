@@ -1422,8 +1422,12 @@ def adapt_cortex_attention(
             # Infrastructure (direction=0): ungradeable by design
             if direction != 0:
                 outcome_graded = True
-                # Map hit/direction to a directional excess proxy
-                # outcome_excess > 0 means directionally correct
+                # ±0.01 is a SIGN PLACEHOLDER, not a real excess return.
+                # The sign encodes directional correctness (hit + direction>0
+                # → positive; miss + direction>0 → negative).  The magnitude
+                # 0.01 is arbitrary and must NOT be used for any return or
+                # volatility calculation.  Consumers needing real magnitudes
+                # must read the full grade record from grades.jsonl.
                 outcome_excess = 0.01 if hit else -0.01
                 graded_at_val = grade.get("graded_at")
             # direction=0: stays outcome_graded=False
