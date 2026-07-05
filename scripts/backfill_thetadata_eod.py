@@ -222,6 +222,11 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
     Each of the three stores is written independently so a partial failure does not
     corrupt already-written tables.  A root-year is marked completed only when ALL
     three succeed (or the API returns 472 NO_DATA — legitimately empty).
+
+    Per-endpoint chunk summaries are logged by the thetadata collector (one INFO line
+    per completed window: root endpoint window rows elapsed).  This function adds one
+    chunk-summary line per root-year per endpoint (rows, elapsed) for backfill log
+    readability.
     """
     from collectors import thetadata as td
 
@@ -232,31 +237,32 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
 
     t0 = time.perf_counter()
 
-    # EOD chains
-    eod = td.bulk_eod(root, 0, start, end)   # exp=0: all expiries, day-by-day
+    # EOD chains — exp=0 maps to wildcard, pulled in ≤7-day windows concurrently.
+    eod = td.bulk_eod(root, 0, start, end)
     if eod is None:
         log.warning("pull_root_year: %s %d — bulk_eod returned None (terminal/permission)", root, year)
         return False
+    t1 = time.perf_counter()
     if not eod.empty:
         eod.to_parquet(_parquet_path("eod", root, year), index=False)
-        log.info("  eod: %d rows written", len(eod))
+        log.info("chunk_summary: %s %d eod rows=%d elapsed=%.1fs", root, year, len(eod), t1 - t0)
     else:
-        log.info("  eod: no data (472 or empty range)")
+        log.info("chunk_summary: %s %d eod rows=0 elapsed=%.1fs (empty — holiday/pre-history)", root, year, t1 - t0)
 
-    t1 = time.perf_counter()
-
-    # Open interest
+    # Open interest — wildcard, pulled in ≤7-day windows concurrently.
     oi = td.bulk_open_interest(root, 0, start, end)
     if oi is None:
         log.warning("pull_root_year: %s %d — bulk_open_interest returned None", root, year)
         return False
+    t2 = time.perf_counter()
     if not oi.empty:
         oi.to_parquet(_parquet_path("oi", root, year), index=False)
-        log.info("  oi: %d rows written", len(oi))
+        log.info("chunk_summary: %s %d oi rows=%d elapsed=%.1fs", root, year, len(oi), t2 - t1)
+    else:
+        log.info("chunk_summary: %s %d oi rows=0 elapsed=%.1fs (empty)", root, year, t2 - t1)
 
-    t2 = time.perf_counter()
-
-    # Greeks + IV — ALL orders (1st + 2nd + 3rd) in a single /greeks/eod request.
+    # Greeks + IV — ALL orders (1st + 2nd + 3rd) in a single /greeks/eod request per day.
+    # Pulled day-by-day concurrently (greeks/eod rejects multi-day wildcard; HTTP 400).
     # The API returns all orders for the same cost as order=1; persisting all columns
     # avoids a re-backfill when T1 GEX/vanna/charm consumers come online.
     # Columns: delta/theta/vega/rho/epsilon/lambda (1st), gamma/vanna/charm/vomma/veta/vera (2nd),
@@ -265,13 +271,14 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
     if greeks is None:
         log.warning("pull_root_year: %s %d — bulk_greeks returned None", root, year)
         return False
+    t3 = time.perf_counter()
     if not greeks.empty:
         greeks.to_parquet(_parquet_path("greeks", root, year), index=False)
-        log.info("  greeks: %d rows written", len(greeks))
+        log.info("chunk_summary: %s %d greeks rows=%d elapsed=%.1fs", root, year, len(greeks), t3 - t2)
+    else:
+        log.info("chunk_summary: %s %d greeks rows=0 elapsed=%.1fs (empty)", root, year, t3 - t2)
 
-    t3 = time.perf_counter()
-    log.info("  timing: eod %.1fs | oi %.1fs | greeks %.1fs | total %.1fs",
-             t1 - t0, t2 - t1, t3 - t2, t3 - t0)
+    log.info("chunk_summary: %s %d TOTAL elapsed=%.1fs", root, year, t3 - t0)
     return True
 
 

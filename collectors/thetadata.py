@@ -9,8 +9,22 @@ CONTRACT (same spirit as collectors/databento_tbbo.py and collectors/massive_fla
 INERT when the terminal is unreachable:
   • Terminal unreachable / non-200 / malformed response → log one WARNING, return None or an
     empty DataFrame.  NEVER raise into a build.
-  • Short connect timeout (CONNECT_TIMEOUT = 2s) for the reachability check.
-  • Generous read timeout (READ_TIMEOUT = 120s) for bulk pulls that may stream many rows.
+  • Short connect timeout (CONNECT_TIMEOUT = 3s) for the reachability check.
+  • Generous read timeout (READ_TIMEOUT_BETWEEN_BYTES = 90s) between bytes on streaming reads.
+    This is the per-read-call timeout, not the total response time.  A stalled stream (zero
+    bytes flowing for >90s) raises ReadTimeout → caught as _StreamTruncated → returns None.
+
+STALL FIX (2026-07-05):
+  Live diagnosis showed that bulk "range" requests spanning months hang indefinitely: the
+  terminal assembles old data server-side and starves the stream (32,768 bytes then silence).
+  Short windows (≤7 calendar days) with wildcard expiration work reliably (HTTP 200, data
+  flowing).  The fix: iterate ≤7-day windows with ThreadPoolExecutor(max_workers=6) so
+  backfill concurrency saturates the terminal's 8-concurrent ceiling with headroom.
+
+  Per-window retry: on stall/truncation, retry up to 2 more times with 5s/15s backoff.
+  If a window still fails after retries → WHOLE call returns None (no partial DataFrame).
+  Deterministic ordering: windows are submitted in chronological order; results sorted by
+  window key after gather.
 
 API topology (measured live 2026-07-04 against ThetaTerminal v3 20260702:79baa88):
   Base URL: http://127.0.0.1:25503  (override via THETA_TERMINAL_URL env)
@@ -19,9 +33,8 @@ API topology (measured live 2026-07-04 against ThetaTerminal v3 20260702:79baa88
   Runs on:  the same Mac as the nightly collectors; started by scripts/run_theta_terminal.sh
 
 Concurrency ceiling:
-  The terminal enforces a hard ceiling of 8 concurrent requests.  The backfill driver runs
-  sequentially today; this ceiling is NOT enforced in this module.  Document and respect: do
-  not fan out more than 8 concurrent calls in any future parallelization.
+  The terminal enforces a hard ceiling of 8 concurrent requests.  WINDOW_WORKERS = 6 leaves
+  2 slots of headroom for other concurrent operations.
 
 Strike format (v3, measured live):
   v3 uses DOLLAR FLOATS directly (e.g., 170.000 = $170.00).  The v2 1/10th-cent integer
@@ -40,12 +53,10 @@ Param renames (v2 → v3, verified live):
 Response format: CSV by default (format=csv).  Streaming chunked response; no pagination.
 
 Wildcard-expiration rule (endpoint-specific, measured live 2026-07-04):
-  /history/eod ACCEPTS multi-day wildcard (expiration="*") — one range request returns
-  all expirations across the date range.  HTTP 200 confirmed for multi-day ranges.
+  /history/eod ACCEPTS multi-day wildcard (expiration="*") — but ONLY for SHORT windows
+  (≤7 calendar days; measured reliable).  Long ranges stall the stream server-side.
   /history/greeks/eod REJECTS multi-day wildcard (HTTP 400: "When expiration=*, you must
-  request data a day-at-a-time").  bulk_greeks keeps the day-by-day loop.
-  bulk_eod now uses a single range request when expiration="*" (big backfill speedup:
-  ~250 separate day requests → 1 request per year-chunk).
+  request data a day-at-a-time").  bulk_greeks keeps the day-by-day loop with concurrency.
 
 Endpoints implemented (measured live 2026-07-04):
   GET /v3/option/list/symbols              → reachable() probe
@@ -98,8 +109,9 @@ AMBIGUITIES RESOLVED (as of 2026-07-04 probe):
   A4 (3rd-order Greeks): Same; speed/zomma/color/ultima all in greeks/eod response.
   A5 (Greeks layout): Measured — see CSV header above (all greek orders + OHLCV).
   A6 (IV endpoint): greeks/eod includes implied_vol column — no separate IV endpoint needed.
-  A7 (exp=* endpoint-specific): /history/eod ACCEPTS multi-day range with exp=* (HTTP 200);
-     /history/greeks/eod REJECTS multi-day wildcard (HTTP 400) — keeps day-by-day loop.
+  A7 (exp=* endpoint-specific): /history/eod ACCEPTS short wildcard windows (≤7d measured);
+     long ranges stall (stall fix: windowed pulls). /history/greeks/eod REJECTS multi-day
+     wildcard (HTTP 400) — keeps day-by-day loop.
   A8 (History depth): Measured — starts 2012-06-01 (NOT 2013-01-02 as initially guessed).
   A9 (Password in argv): v3 uses --api-key flag (not positional user/pass) — IMPROVED.
 """
@@ -108,7 +120,9 @@ from __future__ import annotations
 import io
 import logging
 import os
-from datetime import date, datetime, timedelta
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date, timedelta
 from typing import Iterator
 
 import pandas as pd
@@ -130,13 +144,28 @@ log = logging.getLogger(__name__)
 # Config / connectivity
 # --------------------------------------------------------------------------- #
 
-CONNECT_TIMEOUT = 2       # seconds — fast reachability check
-READ_TIMEOUT = 120        # seconds — streaming reads can be slow for bulk pulls
+CONNECT_TIMEOUT = 3       # seconds — fast reachability check (was 2s; bumped for safety)
+READ_TIMEOUT_BETWEEN_BYTES = 90   # seconds — max wait between bytes on a streaming read
+# tuple form (connect, read) passed to requests:
+_TIMEOUTS = (CONNECT_TIMEOUT, READ_TIMEOUT_BETWEEN_BYTES)
 
 # v3 strike format: DOLLAR FLOATS (e.g., 170.000 = $170.00).
 # STRIKE_DIVISOR = 1.0 (identity) — v2's 1/10th-cent integer format is dead.
 # Kept as a named constant for documentation; never divide by this in v3 code.
 STRIKE_DIVISOR = 1.0
+
+# Stall-fix: wildcard EOD and OI iterate in windows of at most this many calendar days.
+# Measured reliable: 3-day wildcard EOD → 2.4 MB in 6s.
+# Measured stall: 7-month specific-expiration range → hangs after 32 KiB.
+# Short windows avoid server-side assembly latency.
+WINDOW_DAYS = 7
+
+# Bounded concurrency: terminal allows 8 concurrent requests; leave 2 slots headroom.
+WINDOW_WORKERS = 6
+
+# Per-window retry: attempts 1 + 2 retries on stall/truncation.
+WINDOW_MAX_RETRIES = 2
+WINDOW_RETRY_BACKOFF = (5, 15)   # seconds before retry 1, retry 2
 
 # Greek column name mapping for the order= compatibility shim.
 # v3 returns all greek orders in a single /greeks/all response.
@@ -180,16 +209,21 @@ def _get_csv(session: requests.Session, path: str, params: dict) -> pd.DataFrame
 
     v3 returns chunked streaming CSV.  No pagination — one continuous response.
     Errors (non-200) are logged as warnings; None is returned (INERT contract).
+
+    Timeout: (CONNECT_TIMEOUT, READ_TIMEOUT_BETWEEN_BYTES).  A stalled stream that
+    produces no bytes for READ_TIMEOUT_BETWEEN_BYTES seconds raises ReadTimeout,
+    which is caught and re-raised as _StreamTruncated so callers return None.
     """
     url = f"{_base_url()}{path}"
     params = dict(params)
     params.setdefault("format", "csv")
     try:
-        r = session.get(url, params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
-                        stream=True)
+        r = session.get(url, params=params, timeout=_TIMEOUTS, stream=True)
     except requests.exceptions.ConnectionError:
         log.warning("thetadata: terminal unreachable at %s — skip", _base_url())
         return None
+    except requests.exceptions.ReadTimeout as e:
+        raise _StreamTruncated(f"read timeout (no bytes for {READ_TIMEOUT_BETWEEN_BYTES}s): {e}") from e
     except Exception as e:  # noqa: BLE001
         log.warning("thetadata: request error %s %s — %s", path, params, e)
         return None
@@ -212,6 +246,8 @@ def _get_csv(session: requests.Session, path: str, params: dict) -> pd.DataFrame
             if chunk:
                 chunks.append(chunk)
         raw = b"".join(chunks)
+    except requests.exceptions.ReadTimeout as e:
+        raise _StreamTruncated(f"read timeout mid-stream (no bytes for {READ_TIMEOUT_BETWEEN_BYTES}s): {e}") from e
     except (requests.exceptions.ChunkedEncodingError,
             requests.exceptions.ConnectionError) as e:
         raise _StreamTruncated(f"stream read error: {e}") from e
@@ -240,11 +276,12 @@ def _stream_lines(session: requests.Session, path: str,
     params = dict(params)
     params.setdefault("format", "csv")
     try:
-        r = session.get(url, params=params,
-                        timeout=(CONNECT_TIMEOUT, READ_TIMEOUT), stream=True)
+        r = session.get(url, params=params, timeout=_TIMEOUTS, stream=True)
     except requests.exceptions.ConnectionError as e:
         log.warning("thetadata: terminal unreachable at %s — skip", _base_url())
         raise _StreamTruncated(f"connection error: {e}") from e
+    except requests.exceptions.ReadTimeout as e:
+        raise _StreamTruncated(f"read timeout on connect: {e}") from e
     except Exception as e:  # noqa: BLE001
         raise _StreamTruncated(f"request error: {e}") from e
 
@@ -262,6 +299,8 @@ def _stream_lines(session: requests.Session, path: str,
     try:
         for line in r.iter_lines():
             yield line
+    except requests.exceptions.ReadTimeout as e:
+        raise _StreamTruncated(f"read timeout mid-stream: {e}") from e
     except (requests.exceptions.ChunkedEncodingError,
             requests.exceptions.ConnectionError) as e:
         raise _StreamTruncated(f"mid-stream read error: {e}") from e
@@ -278,22 +317,43 @@ def _date_int(d: date | str | int) -> int:
     return int(d.strftime("%Y%m%d"))
 
 
+def _parse_date_int(d: date | str | int) -> date:
+    """Parse YYYYMMDD int, ISO string, or date object to date."""
+    if isinstance(d, date):
+        return d
+    if isinstance(d, int):
+        s = str(d)
+        return date(int(s[:4]), int(s[4:6]), int(s[6:8]))
+    return date.fromisoformat(d[:10])
+
+
 def _iter_days(start: date | str | int, end: date | str | int) -> Iterator[date]:
     """Yield each calendar date from start to end (inclusive)."""
-    if isinstance(start, int):
-        s = str(start)
-        start = date(int(s[:4]), int(s[4:6]), int(s[6:8]))
-    elif isinstance(start, str):
-        start = date.fromisoformat(start[:10])
-    if isinstance(end, int):
-        s = str(end)
-        end = date(int(s[:4]), int(s[4:6]), int(s[6:8]))
-    elif isinstance(end, str):
-        end = date.fromisoformat(end[:10])
+    start = _parse_date_int(start)
+    end = _parse_date_int(end)
     d = start
     while d <= end:
         yield d
         d += timedelta(days=1)
+
+
+def _iter_windows(start: date | str | int, end: date | str | int,
+                  window_days: int = WINDOW_DAYS) -> Iterator[tuple[date, date]]:
+    """Yield (window_start, window_end) tuples of at most window_days calendar days.
+
+    Windows tile [start, end] exactly: no gaps, no overlaps.
+    The last window may be shorter than window_days.
+
+    Example: _iter_windows(2012-06-01, 2012-06-15, 7) →
+      (2012-06-01, 2012-06-07), (2012-06-08, 2012-06-14), (2012-06-15, 2012-06-15)
+    """
+    s = _parse_date_int(start)
+    e = _parse_date_int(end)
+    cur = s
+    while cur <= e:
+        win_end = min(cur + timedelta(days=window_days - 1), e)
+        yield cur, win_end
+        cur = win_end + timedelta(days=1)
 
 
 def _normalize_right_request(right: str) -> str:
@@ -319,6 +379,132 @@ def _normalize_expiration_param(exp: int | str | date) -> str:
     return str(_date_int(exp))
 
 
+def _fetch_window_with_retry(
+    session: requests.Session,
+    path: str,
+    base_params: dict,
+    win_start: date,
+    win_end: date,
+    *,
+    window_idx: int,
+    root: str,
+) -> pd.DataFrame | None:
+    """Fetch one window with up to WINDOW_MAX_RETRIES retries on stall/truncation.
+
+    Returns DataFrame (possibly empty) on success, None on final failure.
+    Logs one INFO line per completed window (root endpoint window rows elapsed).
+    """
+    params = dict(base_params)
+    params["start_date"] = _date_int(win_start)
+    params["end_date"] = _date_int(win_end)
+
+    for attempt in range(WINDOW_MAX_RETRIES + 1):
+        t0 = time.perf_counter()
+        try:
+            df = _get_csv(session, path, params)
+            elapsed = time.perf_counter() - t0
+            rows = len(df) if df is not None and not df.empty else 0
+            if df is None:
+                if attempt < WINDOW_MAX_RETRIES:
+                    backoff = WINDOW_RETRY_BACKOFF[attempt]
+                    log.warning(
+                        "thetadata: window %s %s→%s attempt %d failed, retry in %ds",
+                        root, win_start, win_end, attempt + 1, backoff)
+                    time.sleep(backoff)
+                    continue
+                log.warning(
+                    "thetadata: window %s %s %s→%s failed after %d attempts — aborting",
+                    root, path.split("/")[-1], win_start, win_end, WINDOW_MAX_RETRIES + 1)
+                return None
+            log.info("thetadata: %s %s %s→%s rows=%d elapsed=%.1fs",
+                     root, path.split("/")[-1], win_start, win_end, rows, elapsed)
+            return df
+        except _StreamTruncated as e:
+            elapsed = time.perf_counter() - t0
+            if attempt < WINDOW_MAX_RETRIES:
+                backoff = WINDOW_RETRY_BACKOFF[attempt]
+                log.warning(
+                    "thetadata: window %s %s→%s attempt %d stalled (%.1fs) — retry in %ds: %s",
+                    root, win_start, win_end, attempt + 1, elapsed, backoff, e)
+                time.sleep(backoff)
+            else:
+                log.warning(
+                    "thetadata: window %s %s→%s stalled after %d attempts — aborting: %s",
+                    root, win_start, win_end, WINDOW_MAX_RETRIES + 1, e)
+                return None
+    return None  # unreachable, satisfies type checker
+
+
+def _concurrent_windows(
+    path: str,
+    base_params: dict,
+    start_date: date | str | int,
+    end_date: date | str | int,
+    *,
+    root: str,
+    window_days: int = WINDOW_DAYS,
+) -> pd.DataFrame | None:
+    """Pull [start_date, end_date] in ≤window_days windows using WINDOW_WORKERS threads.
+
+    Windows are submitted in chronological order.  Results are sorted by window start
+    date after gather to ensure deterministic ordering in the concatenated DataFrame.
+    On any window's final failure: cancel/drain remaining futures, return None.
+
+    window_days=WINDOW_DAYS (7) for eod/oi wildcard (short ranges measured reliable).
+    window_days=1 for greeks/eod wildcard (API rejects multi-day: HTTP 400).
+
+    This is the stall fix: short windows avoid server-side assembly latency that causes
+    the terminal to stream a few KB then hang indefinitely on long date ranges.
+    """
+    windows = list(_iter_windows(start_date, end_date, window_days=window_days))
+    if not windows:
+        return pd.DataFrame()
+
+    results: dict[int, pd.DataFrame] = {}  # window_idx → df
+    failed = False
+
+    with ThreadPoolExecutor(max_workers=WINDOW_WORKERS) as executor:
+        # Each thread gets its own session (requests.Session is not thread-safe)
+        future_to_idx = {
+            executor.submit(
+                _fetch_window_with_retry,
+                _session(),  # fresh session per thread
+                path,
+                base_params,
+                win_start,
+                win_end,
+                window_idx=i,
+                root=root,
+            ): i
+            for i, (win_start, win_end) in enumerate(windows)
+        }
+
+        for future in as_completed(future_to_idx):
+            idx = future_to_idx[future]
+            try:
+                df = future.result()
+            except Exception as e:  # noqa: BLE001
+                log.warning("thetadata: window %d raised unexpected error — aborting: %s", idx, e)
+                df = None
+
+            if df is None:
+                failed = True
+                # Cancel remaining futures (best-effort; running ones will still complete)
+                for f in future_to_idx:
+                    f.cancel()
+                break
+            results[idx] = df
+
+    if failed:
+        return None
+
+    # Concatenate in chronological order (by window index = submission order)
+    frames = [results[i] for i in sorted(results) if not results[i].empty]
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
+
+
 # --------------------------------------------------------------------------- #
 # Public API
 # --------------------------------------------------------------------------- #
@@ -329,8 +515,14 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
 
     Endpoint: GET /v3/option/history/eod
     v3 params: symbol=ROOT, expiration=YYYYMMDD|"*", start_date=YYYYMMDD, end_date=YYYYMMDD
-    Wildcard rule: when expiration="*" (or exp=0 for backward compat), iterates ONE DAY
-    AT A TIME as required by the v3 API.
+
+    STALL FIX: when expiration="*" (or exp=0), pulls in ≤7-day windows via
+    ThreadPoolExecutor(max_workers=6).  Per-window retry: up to 2 retries with 5s/15s
+    backoff.  Any window's final failure → returns None (no partial DataFrame).
+    Deterministic ordering: windows sorted by date after concurrent gather.
+
+    Contrast with /history/greeks/eod: that endpoint rejects multi-day wildcard (HTTP 400)
+    so bulk_greeks uses day-by-day (also concurrent).
 
     v3 CSV columns: symbol,expiration,strike,right,created,last_trade,open,high,low,close,
                     volume,count,bid_size,bid_exchange,bid,bid_condition,
@@ -338,12 +530,6 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
 
     Strike format: v3 returns DOLLAR FLOATS (e.g., 725.000 = $725.00). No divisor applied.
     right: response returns "CALL"/"PUT"; normalized to "C"/"P" in output.
-
-    Wildcard range-fetch (measured live 2026-07-04):
-      When expiration="*", /history/eod ACCEPTS a multi-day range in a single request
-      (HTTP 200).  This replaces the old day-by-day loop and gives a large backfill speedup
-      (~250 individual day requests → 1 request per year-chunk).
-      Contrast: /history/greeks/eod REJECTS multi-day wildcard — bulk_greeks keeps day-by-day.
 
     Returns a DataFrame with columns:
       symbol, expiration (datetime64), strike (float, $), right ("C"/"P"),
@@ -355,49 +541,42 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
         return None
 
     exp_param = _normalize_expiration_param(exp)
-    start_int = _date_int(start_date)
-    end_int = _date_int(end_date)
 
-    session = _session()
-
-    try:
-        if exp_param == "*":
-            # /history/eod ACCEPTS multi-day wildcard in a single range request (measured
-            # live 2026-07-04: HTTP 200 for start_date != end_date with expiration=*).
-            # One request per root-year replaces ~250 individual day requests.
-            # No partial-data risk: a truncated range → None from _get_csv/_StreamTruncated.
-            params = {
-                "symbol": root.upper(),
-                "expiration": "*",
-                "start_date": start_int,
-                "end_date": end_int,
-            }
+    if exp_param == "*":
+        # STALL FIX: iterate in ≤WINDOW_DAYS windows concurrently.
+        # Each window issues one wildcard request (short ranges measured reliable 2026-07-05).
+        base_params = {
+            "symbol": root.upper(),
+            "expiration": "*",
+        }
+        df = _concurrent_windows(
+            "/v3/option/history/eod", base_params, start_date, end_date, root=root)
+        if df is None:
+            log.warning("thetadata: bulk_eod(%s, *, %s→%s) failed — returning None",
+                        root, start_date, end_date)
+            return None
+        if df.empty:
+            return pd.DataFrame()
+    else:
+        # Specific expiration: single-request range (no stall risk for specific-exp).
+        params = {
+            "symbol": root.upper(),
+            "expiration": exp_param,
+            "start_date": _date_int(start_date),
+            "end_date": _date_int(end_date),
+        }
+        session = _session()
+        try:
             df = _get_csv(session, "/v3/option/history/eod", params)
-            if df is None:
-                log.warning("thetadata: bulk_eod(%s, *, %s→%s) failed — returning None",
-                            root, start_date, end_date)
-                return None
-            if df.empty:
-                return pd.DataFrame()
-        else:
-            params = {
-                "symbol": root.upper(),
-                "expiration": exp_param,
-                "start_date": start_int,
-                "end_date": end_int,
-            }
-            df = _get_csv(session, "/v3/option/history/eod", params)
-            if df is None:
-                log.warning("thetadata: bulk_eod(%s, %s) failed — returning None", root, exp_param)
-                return None
-            if df.empty:
-                return pd.DataFrame()
-
-    except _StreamTruncated as e:
-        log.warning("thetadata: bulk_eod(%s, start=%s, end=%s) truncated at mid-stream "
-                    "— returning None to avoid persisting partial data: %s",
-                    root, start_date, end_date, e)
-        return None
+        except _StreamTruncated as e:
+            log.warning("thetadata: bulk_eod(%s, %s, start=%s, end=%s) truncated — "
+                        "returning None: %s", root, exp_param, start_date, end_date, e)
+            return None
+        if df is None:
+            log.warning("thetadata: bulk_eod(%s, %s) failed — returning None", root, exp_param)
+            return None
+        if df.empty:
+            return pd.DataFrame()
 
     return _normalize_eod_df(df, root)
 
@@ -455,7 +634,9 @@ def bulk_open_interest(root: str, exp: int | str | date, start_date: date | str 
     """Open interest for all contracts of a given root+expiry over a date range.
 
     Endpoint: GET /v3/option/history/open_interest  (bulk; wildcard supported)
-    Wildcard rule: when exp="*" (or exp=0), iterates one day at a time.
+
+    STALL FIX: when exp="*" (or exp=0), pulls in ≤7-day windows via
+    ThreadPoolExecutor(max_workers=6).  Per-window retry + no-partial law same as bulk_eod.
 
     v3 CSV columns: symbol,expiration,strike,right,timestamp,open_interest
     OI timing: OPRA reports OI once per day at ~06:30 ET; the value represents
@@ -469,54 +650,44 @@ def bulk_open_interest(root: str, exp: int | str | date, start_date: date | str 
         return None
 
     exp_param = _normalize_expiration_param(exp)
-    session = _session()
-    frames: list[pd.DataFrame] = []
 
-    try:
-        if exp_param == "*":
-            # Same day-by-day contract as bulk_eod; empty = weekend/holiday, None = error.
-            for d in _iter_days(start_date, end_date):
-                day_int = _date_int(d)
-                params = {
-                    "symbol": root.upper(),
-                    "expiration": "*",
-                    "start_date": day_int,
-                    "end_date": day_int,
-                }
-                df = _get_csv(session, "/v3/option/history/open_interest", params)
-                if df is None:
-                    log.warning(
-                        "thetadata: bulk_open_interest(%s, *, %s) day %s failed — "
-                        "returning None to avoid partial data", root, d, d)
-                    return None
-                if not df.empty:
-                    frames.append(df)
-                # Empty df for this day = weekend / holiday / no data: skip silently
-        else:
-            params = {
-                "symbol": root.upper(),
-                "expiration": exp_param,
-                "start_date": _date_int(start_date),
-                "end_date": _date_int(end_date),
-            }
+    if exp_param == "*":
+        # STALL FIX: iterate in ≤WINDOW_DAYS windows concurrently.
+        base_params = {
+            "symbol": root.upper(),
+            "expiration": "*",
+        }
+        df = _concurrent_windows(
+            "/v3/option/history/open_interest", base_params, start_date, end_date, root=root)
+        if df is None:
+            log.warning(
+                "thetadata: bulk_open_interest(%s, *, %s→%s) failed — returning None",
+                root, start_date, end_date)
+            return None
+        if df.empty:
+            return pd.DataFrame()
+    else:
+        params = {
+            "symbol": root.upper(),
+            "expiration": exp_param,
+            "start_date": _date_int(start_date),
+            "end_date": _date_int(end_date),
+        }
+        session = _session()
+        try:
             df = _get_csv(session, "/v3/option/history/open_interest", params)
-            if df is None:
-                log.warning("thetadata: bulk_open_interest(%s, %s) failed — returning None",
-                            root, exp_param)
-                return None
-            if not df.empty:
-                frames.append(df)
+        except _StreamTruncated as e:
+            log.warning("thetadata: bulk_open_interest(%s, %s, start=%s, end=%s) truncated — "
+                        "returning None: %s", root, exp_param, start_date, end_date, e)
+            return None
+        if df is None:
+            log.warning("thetadata: bulk_open_interest(%s, %s) failed — returning None",
+                        root, exp_param)
+            return None
+        if df.empty:
+            return pd.DataFrame()
 
-    except _StreamTruncated as e:
-        log.warning("thetadata: bulk_open_interest(%s, start=%s, end=%s) truncated at "
-                    "mid-stream — returning None: %s", root, start_date, end_date, e)
-        return None
-
-    if not frames:
-        return pd.DataFrame()
-
-    out = pd.concat(frames, ignore_index=True)
-    return _normalize_oi_df(out)
+    return _normalize_oi_df(df)
 
 
 def _normalize_oi_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -564,8 +735,11 @@ def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
     This is the correct EOD endpoint; /greeks/all streams 1-second snapshots and has
     no usable interval parameter for multi-day bulk pulls.
 
-    WILDCARD EXPIRATION: exp=0 / exp="*" iterates day-by-day (same rule as bulk_eod).
-    Multi-day wildcard is supported by collecting each calendar day independently.
+    WILDCARD EXPIRATION + CONCURRENCY: exp=0 / exp="*" iterates day-by-day (API enforces
+    start_date == end_date for greeks/eod wildcard: HTTP 400 on multi-day).
+    Days are pulled concurrently via ThreadPoolExecutor(max_workers=WINDOW_WORKERS).
+    Per-day retry: up to WINDOW_MAX_RETRIES retries with WINDOW_RETRY_BACKOFF backoff.
+    Any day's final failure → whole call returns None (no partial).
 
     The order= parameter selects a column subset from the all-orders response:
       order=1 → first-order: delta, theta, vega, rho, epsilon, lambda,
@@ -586,34 +760,25 @@ def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
                     order)
         return None
 
-    session = _session()
-
     if exp_param == "*":
-        # Wildcard: must iterate day-by-day (API enforces start_date == end_date for exp=*)
-        frames: list[pd.DataFrame] = []
-        for day in _iter_days(start_date, end_date):
-            params = {
-                "symbol": root.upper(),
-                "expiration": "*",
-                "start_date": int(day.strftime("%Y%m%d")),
-                "end_date": int(day.strftime("%Y%m%d")),
-            }
-            try:
-                df_day = _get_csv(session, "/v3/option/history/greeks/eod", params)
-            except _StreamTruncated as e:
-                log.warning(
-                    "thetadata: bulk_greeks(%s, exp=*, date=%s) truncated — returning None: %s",
-                    root, day, e)
-                return None
-            if df_day is None:
-                log.warning(
-                    "thetadata: bulk_greeks(%s, exp=*, date=%s) request failed — aborting",
-                    root, day)
-                return None
-            if not df_day.empty:
-                frames.append(df_day)
-            # Empty (weekend/holiday 472) → skip silently
-        df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+        # greeks/eod rejects multi-day wildcard (HTTP 400: "When expiration=*, you must
+        # request data a day-at-a-time").  Use 1-day windows so each request has
+        # start_date == end_date, satisfying the API constraint.
+        # Concurrency + retry are handled by _concurrent_windows with window_days=1.
+        base_params = {
+            "symbol": root.upper(),
+            "expiration": "*",
+        }
+        df = _concurrent_windows(
+            "/v3/option/history/greeks/eod", base_params, start_date, end_date,
+            root=root, window_days=1)
+        if df is None:
+            log.warning(
+                "thetadata: bulk_greeks(%s, exp=*, %s→%s, order=%d) failed — returning None",
+                root, start_date, end_date, order)
+            return None
+        if df.empty:
+            return pd.DataFrame()
     else:
         params = {
             "symbol": root.upper(),
@@ -621,6 +786,7 @@ def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
             "start_date": _date_int(start_date),
             "end_date": _date_int(end_date),
         }
+        session = _session()
         try:
             df = _get_csv(session, "/v3/option/history/greeks/eod", params)
         except _StreamTruncated as e:
