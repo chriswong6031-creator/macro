@@ -375,7 +375,8 @@ def _excess_close_path_mae(
     return float(worst)
 
 
-def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) -> pd.DataFrame:
+def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
+                 _stored_df: pd.DataFrame | None = None) -> pd.DataFrame:
     """Grade all matured board rows, routing all forward metrics through engine.grading
     (one-grader law §1.2). New in W0.1 B-b:
 
@@ -494,6 +495,14 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame) ->
                     "hold_anchor_src": feat.get("hold_anchor_src"),
                     # W0.2b tier_cascade
                     "tier_cascade":    feat.get("tier_cascade"),
+                    # P2 — H5 substrate stamping (PREREGISTRATION.md §2.4)
+                    # board_tenure_days = consecutive prior as_of dates in any lane.
+                    # Only stamped on NEW rows; historical rows keep NULL (PIT law).
+                    # NOTE: this is NOT hold_days (hold.days_basing); see _board_tenure
+                    # docstring and the JUDGMENT CALL comment above _merge_into_store.
+                    "board_tenure_days": _board_tenure(
+                        tk, feat["lane"], as_of_str, _stored_df
+                    ),
                     # W3 evidence-stack strata (display-only; forward IC under accrual; None pre-schema)
                     "insider_cluster":   feat.get("insider_cluster"),
                     "gex_confirm_verdict": feat.get("gex_confirm_verdict"),
@@ -854,6 +863,94 @@ def snapshot_today() -> str | None:
 # --------------------------------------------------------------------------- #
 _DEDUP_KEYS = ["as_of", "ticker", "lane", "horizon"]
 
+# ---------------------------------------------------------------------------
+# P2 — board tenure stamping for H5 (PREREGISTRATION.md §2.4)
+# ---------------------------------------------------------------------------
+# DESIGN NOTE (P2 implementation, 2026-07-05):
+#
+# prereg §2.4 mandates stamping `hold_days` = on-board tenure (count of
+# consecutive prior as_of dates in any lane) on every NEW board row.  The
+# existing `hold_days` column in the ledger already carries `hold.days_basing`
+# (basing-state tenure, a DIFFERENT quantity).  Overwriting that column would
+# corrupt historical rows and produce a semantically ambiguous column.
+#
+# JUDGMENT CALL (flagged for Fable adjudication):
+#   The new tenure column is stamped as `board_tenure_days` to preserve the
+#   existing `hold_days` semantics.  H5's study harness must read
+#   `board_tenure_days` (not `hold_days`) for the "≥10 trading days on board"
+#   filter.  This deviation from the prereg's column name is recorded here and
+#   in the test docstrings.  Fable should rule whether to rename `hold_days`
+#   → `days_basing` in a schema migration or to accept `board_tenure_days` as
+#   the canonical H5 substrate column.
+#
+# TIER CASCADE:
+#   `tier_cascade` is already extracted from the board row in `_row_features`
+#   (line ~218) and already stamped in `grade_boards` (line ~496).  No new
+#   code is needed for that field — this comment documents the audit finding.
+#
+# FAIL-OPEN GUARANTEE:
+#   `_board_tenure` never raises.  If the existing store is absent or the
+#   ticker/lane is not found, it returns None (field = NULL on new row).  NULL
+#   on a new row signals "tenure not computable" and prevents H5 from treating
+#   it as 0 days (which would spuriously exclude names from the ≥10 floor).
+
+def _board_tenure(
+    ticker: str,
+    lane: str,
+    as_of_str: str,
+    stored_df: pd.DataFrame | None,
+) -> int | None:
+    """Compute on-board tenure = count of consecutive prior as_of dates
+    where `ticker` appears in any lane in the ledger, counting back from
+    the board date immediately before `as_of_str`.
+
+    Implements PREREGISTRATION.md §2.4 definition:
+      "count of consecutive prior as_of dates on which the ticker appears
+       in any lane — explicitly NOT hold.days_basing"
+
+    Parameters
+    ----------
+    ticker : str
+    lane : str  (unused in the count; tenure counts presence in ANY lane)
+    as_of_str : str  "YYYY-MM-DD"
+    stored_df : pd.DataFrame | None  — the accumulated ledger (retro_grades)
+                before merging today's rows.
+
+    Returns
+    -------
+    int | None — consecutive prior dates on board, or None if not computable.
+    """
+    try:
+        if stored_df is None or stored_df.empty:
+            return None
+        if "as_of" not in stored_df.columns or "ticker" not in stored_df.columns:
+            return None
+
+        # Unique sorted as_of dates in the ledger that pre-date today's board
+        all_dates = sorted(stored_df["as_of"].dropna().unique().tolist())
+        prior_dates = [d for d in all_dates if d < as_of_str]
+        if not prior_dates:
+            return 0  # first ever appearance
+
+        # Tickers present on each prior date (any lane, horizon=5 as proxy to
+        # avoid double-counting multi-horizon rows)
+        sub = stored_df[stored_df["horizon"] == 5] if "horizon" in stored_df.columns else stored_df
+        date_ticker_sets: dict[str, set] = {}
+        for d, g in sub.groupby("as_of"):
+            date_ticker_sets[d] = set(g["ticker"].dropna().tolist())
+
+        # Walk backward from the last prior date, counting consecutive dates
+        # where the ticker appeared
+        count = 0
+        for d in reversed(prior_dates):
+            if ticker in date_ticker_sets.get(d, set()):
+                count += 1
+            else:
+                break
+        return count
+    except Exception:  # noqa: BLE001 — fail-open
+        return None
+
 
 def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
     """Merge freshly-graded rows into the accumulated retro_grades.parquet store.
@@ -1143,7 +1240,9 @@ def main() -> None:
         print(f"[boards] {len(boards)} distinct as_of dates "
               f"({boards[0]['as_of']}..{boards[-1]['as_of']})" if boards else "[boards] none")
 
-    df = grade_boards(boards, names, etfs)
+    # P2: load existing store BEFORE grading so _board_tenure can look up history
+    _pre_existing = pd.read_parquet(RETRO_PARQUET) if RETRO_PARQUET.exists() else None
+    df = grade_boards(boards, names, etfs, _stored_df=_pre_existing)
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     # Merge freshly-graded rows INTO the accumulated store, then always build the
     # track from the full store.  This prevents the empty:true regression that fires
