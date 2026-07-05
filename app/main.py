@@ -3,18 +3,42 @@
 Minimal by design: health + overlay now; Supabase-JWT-gated routes activate the
 moment ``SUPABASE_JWT_SECRET`` is set in the service environment. This wraps the
 existing build artifacts under /opt/macro — it does NOT recompute the engine.
+
+W8b PR2 — /api/ask and /api/ask/stream
+---------------------------------------
+POST /api/ask          — authed (require_user); interrogate the Neural Web brain
+                         with a plain-language question.  Read tools only; write
+                         tools structurally absent from the schema (Article 1).
+POST /api/ask/stream   — SSE streaming variant of the same; tool-calling turns
+                         run synchronously, final synthesis turn is streamed.
+
+KEY-OPTIONAL: when ANTHROPIC_API_KEY is absent from /etc/macro-api.env the
+endpoints return mode='memo-quote' (degraded=True) — a relevant excerpt from
+data/neuralweb/cortex/memo.json.  The operator arms live mode by adding
+ANTHROPIC_API_KEY to /etc/macro-api.env and restarting macro-api.service.
+
+DEPLOY NOTE: the per-user/global quota ledger is written to MACRO_API_STATE_DIR
+(default /var/lib/macro-api/).  The VPS setup must create this dir once:
+    mkdir -p /var/lib/macro-api && chown root:root /var/lib/macro-api && chmod 700 /var/lib/macro-api
 """
 from __future__ import annotations
 
 import json
 import os
 import subprocess
+import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel, Field
+
+# Add repo root to sys.path so engine.neuralweb can be imported from /opt/macro
+_REPO_ROOT_FOR_IMPORT = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
+if str(_REPO_ROOT_FOR_IMPORT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT_FOR_IMPORT))
 
 REPO = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 SITE = REPO / "site"
@@ -150,3 +174,79 @@ def require_user(authorization: str | None = Header(default=None)) -> dict:
 def me(user: dict = Depends(require_user)) -> dict:
     """Whoami — first authenticated route; proves the Supabase login works."""
     return {"id": user.get("id"), "email": user.get("email"), "role": user.get("role")}
+
+
+# ---------------------------------------------------------------------------
+# /api/ask — interrogable, cited, never-advising brain (W8b PR2)
+# ---------------------------------------------------------------------------
+
+class AskRequest(BaseModel):
+    question: str = Field(..., max_length=500, description="Plain-language question (max 500 chars)")
+    context_ticker: str | None = Field(None, description="Optional ticker to focus the query (e.g. 'NVDA')")
+
+
+@app.post("/api/ask")
+def ask_brain(body: AskRequest, user: dict = Depends(require_user)) -> dict:
+    """Ask the Neural Web brain a question.
+
+    Read-only cortex tools; write tools are absent from the schema (Article 1).
+    Returns a cited, non-advising answer with is_context_only=True.
+
+    Key-optional: when ANTHROPIC_API_KEY is absent, returns mode='memo-quote'
+    (degraded=True) — a relevant excerpt from the committed cortex memo.
+
+    Per-user hourly quota: ASK_BRAIN_HOURLY_QUOTA (default 10).
+    Per-day global quota:  ASK_BRAIN_DAILY_QUOTA  (default 200).
+    Both fail-open to memo-quote on I/O errors.
+    """
+    try:
+        from engine.neuralweb.ask_brain import ask  # noqa: PLC0415
+    except ImportError as exc:
+        raise HTTPException(503, f"ask_brain module unavailable: {exc}") from exc
+
+    user_id = user.get("id") or user.get("email") or "unknown"
+    result = ask(
+        question=body.question,
+        user_id=user_id,
+        context_ticker=body.context_ticker,
+        root=REPO,
+    )
+    return result
+
+
+@app.post("/api/ask/stream")
+def ask_brain_stream(body: AskRequest, user: dict = Depends(require_user)):
+    """SSE streaming variant of /api/ask.
+
+    Tool-calling turns run synchronously; the final synthesis turn is streamed
+    as text/event-stream.  Each event is a JSON object:
+
+        data: {"delta": "..text chunk.."}
+        data: {"done": true, "tool_call_census": {...}, "is_context_only": true}
+
+    On quota/key failure a single event with degraded=True is yielded.
+    On advice-pattern detection, a filtered=True event replaces the delta stream.
+    """
+    try:
+        from engine.neuralweb.ask_brain import ask_stream  # noqa: PLC0415
+    except ImportError as exc:
+        raise HTTPException(503, f"ask_brain module unavailable: {exc}") from exc
+
+    user_id = user.get("id") or user.get("email") or "unknown"
+
+    def _generator():
+        yield from ask_stream(
+            question=body.question,
+            user_id=user_id,
+            context_ticker=body.context_ticker,
+            root=REPO,
+        )
+
+    return StreamingResponse(
+        _generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # disable Nginx/Caddy buffering
+        },
+    )
