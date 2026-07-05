@@ -101,9 +101,13 @@ class TestSchema:
             lvl=lvl, bench=bench,
             member_closes=mc, member_volume=mv, node_volume=None
         )
-        # regime cols are added by the caller; check non-regime schema cols
-        non_regime = [c for c in COLUMN_SCHEMA if c not in
-                      ("vix_pctile", "tlt_ret_10d", "spy_above_200d")]
+        # regime cols are added by the caller (_build_regime); check non-regime schema cols
+        _REGIME_COLS = {
+            "vix_pctile", "tlt_ret_10d", "spy_above_200d",
+            # FRED cross-asset regime columns added 2026-07-05
+            "hy_oas_chg_10d", "yc_slope", "oil_ret_10d", "dollar_chg_10d", "fin_conditions",
+        }
+        non_regime = [c for c in COLUMN_SCHEMA if c not in _REGIME_COLS]
         missing = [c for c in non_regime if c not in feats.columns]
         assert not missing, f"Missing columns: {missing}"
 

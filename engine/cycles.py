@@ -666,13 +666,8 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
     if state == "COUNTERTREND BOUNCE":
         inval = cyc.get("cand_price") or cyc.get("dcl_price")
         return {"tag": "UNCONFIRMED — HIGH RISK", "tag_zh": "未确认 — 高风险", "urgency": "caution",
-                "text": "An unconfirmed turn: a daily low is forming while the bigger picture is "
-                        f"still bearish. Nimble traders only — small size, defined stop below {inval}. "
-                        "Not an investment buy until the weekly confirms; most of these fail, a "
-                        "minority start a new cycle.",
-                "text_zh": "未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、"
-                           f"止损设于 {inval} 下方。在周线确认前并非投资性买入；多数最终失败，"
-                           "少数则开启新周期。"}
+                "text": f"Daily low forming, but the bigger trend is still bearish. Small size only; stop below {inval}.",
+                "text_zh": f"日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 {inval} 下方。"}
     if state == "FRESH BUY":
         if cyc.get("dc_phase") == "stretched":
             # the count is stretched well past the band — an UNCONFIRMED new cycle, not a

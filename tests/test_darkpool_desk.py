@@ -311,10 +311,12 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
         # nav-mega check: the rendered page must carry the Research mega-menu
         assert "nav-mega" in html, "darkpool.html missing nav-mega (stale nav)"
 
-        # nav-gap check: body must have top padding (check inline style or class)
-        # The template uses body { padding: 18px } — this shows up in the <style> block
-        assert "padding:18px" in html.replace(" ", "") or "padding: 18px" in html, \
-            "darkpool.html body may be missing top padding (nav-gap risk)"
+        # nav-gap/layout check: the page should use the shared nav once and keep
+        # content inside its own responsive shell.
+        assert html.count('<nav class="site-nav">') == 1, "darkpool.html should render one shared nav"
+        assert 'class="dp-shell"' in html, "darkpool.html missing responsive content shell"
+        assert "<title>Dark Pool Desk - off-exchange and short volume</title>" in html
+        assert '<meta name="description" content="<span' not in html
 
     finally:
         lib_config.load = orig_load

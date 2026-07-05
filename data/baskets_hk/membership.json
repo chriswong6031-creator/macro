@@ -5,9 +5,9 @@
   "benchmark": "_HSI",
   "benchmark_label": "HSI",
   "benchmark_label_zh": "恒生指数",
-  "construction": "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day. Benchmark = Hang Seng Index (HSI).",
-  "history_note": "Series before a basket's creation date are a backtest of the membership as of creation; live tracking starts at creation. Universe = the HK search deep cache (HSI/HSCEI names), trimmed to a ~5y window.",
-  "note": "Curated HK thematic baskets — hindsight-curated and descriptive, not an out-of-sample backtest and not a buy list.",
+  "construction": "Equal-weight baskets, rebalanced monthly, measured against the Hang Seng Index.",
+  "history_note": "Available history comes from the hk_search cache. Pre-launch series use the basket's starting membership.",
+  "note": "Curated HK theme baskets for monitoring rotation. Descriptive only, not a buy list.",
   "baskets": {
     "hk_china_tech": {
       "name": "China Tech & Internet",
@@ -18,8 +18,8 @@
       "etf_proxy_note": "HS TECH ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The mega-cap China internet & hardware complex that dominates the Hang Seng — platforms, e-commerce, devices and the domestic foundry. The single biggest driver of HK index returns and the core southbound-flow target; levered to China consumption, AI capex and regulatory sentiment.",
-      "thesis_zh": "主导恒指的中资互联网与硬件巨头 — 平台、电商、终端与本土代工。香港指数回报的最大驱动力，也是南向资金的核心标的；受中国消费、AI 资本开支与监管情绪牵动。",
+      "thesis": "HK-listed China internet, platform and hardware leaders. Core read on index growth and southbound tech flows.",
+      "thesis_zh": "香港上市的中国互联网、平台和硬件龙头。观察指数成长股和南向科技资金。",
       "members": [
         {
           "ticker": "0700.HK",
@@ -177,8 +177,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "HK-listed China consumer champions — sportswear, catering, jewellery, beer, dairy and packaged food. A direct read on mainland discretionary demand and premiumisation, and a favourite southbound consumption basket.",
-      "thesis_zh": "港股中资消费龙头 — 运动服饰、餐饮、珠宝、啤酒、乳业与包装食品。直接反映内地可选消费需求与升级趋势，也是南向资金偏好的消费篮子。",
+      "thesis": "Sportswear, catering, jewellery, beer, dairy and packaged food names. Tracks mainland consumer demand.",
+      "thesis_zh": "运动服饰、餐饮、珠宝、啤酒、乳制品和食品公司。跟踪内地消费需求。",
       "members": [
         {
           "ticker": "2020.HK",
@@ -322,8 +322,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The HK healthcare complex — innovative-drug developers, the CRO/CDMO outsourcing chain and the big distributors. The R&D-and-out-licensing growth engine, levered to biotech funding cycles, overseas BD deals and the 18A pipeline.",
-      "thesis_zh": "港股医药板块 — 创新药企、CRO/CDMO 外包链与大型流通商。研发与对外授权的成长引擎，受生物科技融资周期、海外 BD 交易与 18A 管线驱动。",
+      "thesis": "Innovative drug, CRO/CDMO and healthcare distributors. Tracks biotech funding and licensing momentum.",
+      "thesis_zh": "创新药、CRO/CDMO 和医药分销商。跟踪生物科技融资和授权交易。",
       "members": [
         {
           "ticker": "1093.HK",
@@ -453,8 +453,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The HK-listed China auto transition — the NEV scale leader, the smart-EV start-ups and the legacy OEMs reinventing for electrification and export. A high-beta play on EV penetration, price competition and the overseas push.",
-      "thesis_zh": "港股中资汽车电动化 — 新能源车规模龙头、智能电动车新势力与转型出海的传统车企。受电动化渗透、价格战与出海驱动的高弹性主题。",
+      "thesis": "China NEV makers, smart-EV startups and auto suppliers listed in Hong Kong.",
+      "thesis_zh": "在港上市的中国新能源车、智能电动车和汽车供应链公司。",
       "members": [
         {
           "ticker": "1211.HK",
@@ -535,8 +535,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The banking complex listed in HK — the big mainland state lenders (H-shares) alongside HSBC and BOC Hong Kong. The core of the southbound high-dividend trade and a direct read on China credit, net-interest-margin and HK rates.",
-      "thesis_zh": "在港上市的银行 — 内地国有大行（H 股）加汇丰与中银香港。南向高股息交易的核心，也是中国信用、净息差与香港利率的直接读数。",
+      "thesis": "Mainland state banks plus HSBC and BOCHK. Core southbound dividend and credit sleeve.",
+      "thesis_zh": "内地国有银行加汇丰和中银香港。南向高股息和信贷核心板块。",
       "members": [
         {
           "ticker": "1398.HK",
@@ -652,8 +652,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The big HK-listed insurers — AIA's pan-Asian life franchise plus the mainland life & P&C majors. Earnings and embedded value swing on equity markets, long-bond yields and new-business value; a leveraged play on an Asia risk-on turn.",
-      "thesis_zh": "港股大型险企 — 友邦的泛亚寿险特许经营加内地寿险与财险龙头。利润与内含价值随权益市场、长债收益率与新业务价值波动；对亚洲风险偏好回升的杠杆化表达。",
+      "thesis": "AIA and mainland life/P&C insurers. Sensitive to markets, yields and new-business value.",
+      "thesis_zh": "友邦和内地寿险/财险公司。受市场、利率和新业务价值影响。",
       "members": [
         {
           "ticker": "2318.HK",
@@ -734,8 +734,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The old-economy HK hongs and the exchange operator — sprawling ports/retail/aviation conglomerates plus HKEX, whose earnings track market turnover, listings and southbound activity. A barometer of HK as a financial hub.",
-      "thesis_zh": "香港老牌综合企业与交易所 — 横跨港口/零售/航空的多元集团，加上盈利挂钩成交、上市与南向活动的港交所。香港金融中心地位的晴雨表。",
+      "thesis": "HK conglomerates and HKEX. Barometer for local financial-hub activity and market turnover.",
+      "thesis_zh": "香港综合企业和港交所。观察本地金融中心活跃度和市场成交。",
       "members": [
         {
           "ticker": "0001.HK",
@@ -795,8 +795,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "HK & China property — the big HK developers, the mainland SOE landlords and Link REIT. Levered to HK rates and physical-market sentiment plus the China property cycle; a high-beta, rate-sensitive value sleeve.",
-      "thesis_zh": "香港与内地地产 — 香港大型发展商、内地国有地产商与领展。受香港利率与楼市情绪及内地地产周期驱动；高弹性、对利率敏感的价值板块。",
+      "thesis": "HK developers, mainland landlords and Link REIT. Rate-sensitive property cycle exposure.",
+      "thesis_zh": "香港地产商、内地物业公司和领展。利率敏感的地产周期敞口。",
       "members": [
         {
           "ticker": "0016.HK",
@@ -926,8 +926,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The Macau casino concessionaires — pure-play exposure to gross gaming revenue, mass-market recovery and Chinese outbound travel. A high-beta consumption-reopening basket distinct from the rest of HK.",
-      "thesis_zh": "澳门博彩特许经营商 — 纯粹押注博彩毛收入、中场复苏与中国出境游。区别于其余港股的高弹性消费复苏篮子。",
+      "thesis": "Macau casino concessionaires. High-beta read on gaming revenue and outbound travel.",
+      "thesis_zh": "澳门博彩牌照公司。高贝塔反映博彩收入和出境旅游。",
       "members": [
         {
           "ticker": "0027.HK",
@@ -987,8 +987,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The H-share energy majors — the three oil & gas giants plus the top thermal-coal producer. Heavy free-cash-flow, high payout SOEs at the centre of the southbound dividend trade; levered to oil, gas and power demand.",
-      "thesis_zh": "H 股能源龙头 — 三桶油加动力煤龙头。现金流充沛、高分红的央企，处于南向红利交易核心；受油、气与电力需求驱动。",
+      "thesis": "H-share oil, gas and coal majors. Dividend-heavy SOE exposure to energy prices and demand.",
+      "thesis_zh": "H 股石油、天然气和煤炭龙头。高股息央企，受能源价格和需求影响。",
       "members": [
         {
           "ticker": "0883.HK",
@@ -1083,8 +1083,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The H-share base & industrial-metals producers — aluminium, copper and molybdenum. A China-listed read on the global growth cycle, green-capex demand and supply discipline; a cyclical commodity beta sleeve.",
-      "thesis_zh": "H 股基本金属与工业金属生产商 — 铝、铜与钼。表达全球增长周期、绿色资本开支需求与供给约束的中资读数；周期性大宗 Beta 板块。",
+      "thesis": "H-share aluminium, copper and molybdenum producers. Cyclical commodity beta.",
+      "thesis_zh": "H 股铝、铜和钼生产商。周期性商品贝塔。",
       "members": [
         {
           "ticker": "2600.HK",
@@ -1186,8 +1186,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The defensive carriers and HK utilities/infrastructure — the three mainland telecoms plus power, gas, infra and the mass-transit operator. Stable cash flows and high payouts; a low-beta, rate-sensitive defensive anchor.",
-      "thesis_zh": "防御性运营商与香港公用/基建 — 三大内地电信加电力、燃气、基建与地铁运营商。现金流稳定、分红高；低 Beta、对利率敏感的防御锚。",
+      "thesis": "Mainland telecoms plus HK utilities and infrastructure. Defensive, high-payout cash flows.",
+      "thesis_zh": "内地电信加香港公用事业和基建。防御性、高派息现金流。",
       "members": [
         {
           "ticker": "0941.HK",
@@ -1296,8 +1296,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "A southbound-income blend — the highest-yielding HK mega-caps across banks, telecom, energy and utilities. Built to express the dividend/value factor that has led HK leadership; income with cyclical tail risk, overlaps the sector baskets by design.",
-      "thesis_zh": "南向收息组合 — 横跨银行、电信、能源与公用事业的高股息超大盘。用于表达引领港股的红利/价值因子；高股息但有周期尾部风险，与行业篮子刻意重叠。",
+      "thesis": "High-yield HK mega-caps across banks, telecom, energy and utilities.",
+      "thesis_zh": "银行、电信、能源和公用事业中的高息港股大盘股。",
       "members": [
         {
           "ticker": "0005.HK",
@@ -1373,8 +1373,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The HK-listed industrial & infrastructure complex — power tools, rail-equipment and rolling stock, heavy machinery, the construction SOEs, ports and express logistics. A capex- and China-growth-cyclical sleeve geared to infrastructure spend, the export machine and global tool demand.",
-      "thesis_zh": "港股工业与基建集群 — 电动工具、轨交装备与机车、重型机械、建筑央企、港口与快递物流。受基建投资、出口机器与全球工具需求驱动、对中国增长敏感的周期性板块。",
+      "thesis": "Industrial, infrastructure, rail, machinery and logistics names tied to capex and China growth.",
+      "thesis_zh": "工业、基建、铁路、机械和物流公司，受资本开支和中国增长影响。",
       "members": [
         {
           "ticker": "0669.HK",
