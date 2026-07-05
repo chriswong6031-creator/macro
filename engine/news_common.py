@@ -217,7 +217,53 @@ _PREVIEW_RE = re.compile(
     # enumeration intro scoped to a list-noun ("Here are the [adj] earnings/movers…")
     r"|^\s*here(?:'s| is| are)\s+(?:the\s+|a\s+|some\s+|several\s+|\d+\s+)?(?:[\w'’-]+\s+){0,2}"
     r"(?:earnings|stocks?|names|companies|movers|winners|losers|gainers|sectors?)\b"
+    # generic pre-earnings 'what you need to know ahead of …' / 'ahead of … earnings'
+    # advertorials (body may add estimates/implied-move → keep-condition is a Fable
+    # phase-2 body check; the title-only gate rejects the generic frame).
+    r"|\bwhat\s+you\s+need\s+to\s+know\s+ahead\s+of\b"
+    r"|\bahead\s+of\b[^.]{0,30}\bearnings\b"
     r")", re.I)
+
+# --------------------------------------------------------------------------- #
+# Phase-0 reject families (news-intelligence upgrade). Three verified leaks the
+# theme/entity gates let through on the live macro feed — each drops a whole class
+# of non-intelligence while high-precision-guarding the real story it resembles.
+# --------------------------------------------------------------------------- #
+
+# Routine fund / closed-end-fund distribution notices ("Nuveen … Fund declares
+# $0.1335 dividend"). "dividend" is a positive capital_return keyword, so these ride
+# in; but a fund paying its scheduled distribution is not intelligence. Require BOTH
+# a declare/announce frame AND a fund vehicle token so a real corporate action
+# ("Apple raises dividend", "Company declares $0.50 quarterly dividend") is untouched.
+_FUND_DIST_RE = re.compile(
+    r"\b(?:declares?|announces?|approves?|sets?)\b.{0,40}?"
+    r"\b(?:dividend|distribution|payout)\b", re.I)
+_FUND_VEHICLE_RE = re.compile(
+    r"\b(?:[Cc]losed[-\s]?[Ee]nd\s+[Ff]und|[Ii]ncome\s+[Ff]und|[Mm]unicipal\s+[Ff]und|"
+    r"[A-Z][\w.&'’-]*\s+(?:Fund|Trust|Portfolio))\b|\bNuveen\b|\bCEF\b")
+
+# Lifestyle / streaming guides where the ticker is incidental ("What's worth
+# streaming on Netflix, Hulu, HBO Max"). High-precision: never fires on a business
+# story that merely contains "streaming" ("Netflix raises streaming prices").
+_LIFESTYLE_RE = re.compile(
+    r"(?:"
+    r"\bwhat(?:'s| is| to)\s+(?:worth\s+)?stream(?:ing)?\b"
+    r"|\bbest\s+(?:movies|shows|series|tv\s+shows|films)\b"
+    r"|\bwhere\s+to\s+watch\b"
+    r"|\bstreaming\s+(?:guide|in\s+\w+\s+20\d\d|this\s+(?:month|week|weekend))\b"
+    r"|\bto\s+(?:watch|stream)\s+(?:this\s+\w+\s+)?on\s+(?:netflix|hulu|hbo|disney|max|prime)\b"
+    r")", re.I)
+
+# Personal-finance advice Q&A that clears the ANCHORED opener above because the
+# first-person marker sits mid-title ("At 76, I'm working at Walmart. Why do I still
+# owe payroll taxes?"). Fires only on a personal-finance TOKEN + a question + a
+# first-person marker, so real policy news ("Social Security trust fund depletes by
+# 2033") is untouched.
+_PF_TOKEN_RE = re.compile(
+    r"\b(?:social\s+security|payroll\s+tax(?:es)?|medicare|medicaid|401\(?k\)?|"
+    r"roth\s+ira|pension|nest\s+egg|survivor\s+benefit)\b", re.I)
+_FIRST_PERSON_RE = re.compile(
+    r"\b(?:i|i'?m|i'?ve|i'?d|my|we'?re|we'?ve|our)\b", re.I)
 
 # Bylines of stock-pick content mills — drop regardless of host (e.g. CNBC / Yahoo
 # re-publishing a TipRanks / Zacks column). Matched against the article author.
@@ -236,18 +282,39 @@ def is_low_value(title: str, domain: str = "", author: str = "") -> bool:
 
     Note: this is the ONLY reliable handle on syndicated junk that a trusted outlet
     re-publishes (e.g. CNBC's TipRanks column has domain cnbc.com and NO byline in
-    its RSS), so the title pattern — not the source tier — has to catch it."""
+    its RSS), so the title pattern — not the source tier — has to catch it.
+
+    Boolean view of low_value_reason(); callers wanting the reject-reason token (for
+    the reject log / regression tests) should call that instead."""
+    return low_value_reason(title, domain, author) is not None
+
+
+def low_value_reason(title: str, domain: str = "", author: str = "") -> str | None:
+    """Return a short reject-reason token if the headline should be DROPPED, else
+    None. This is the observable core behind is_low_value(): every drop names WHY,
+    so filter leaks are logged/regression-testable instead of silent. PURE.
+
+    Reasons: pickmill_byline · stock_pick_roundup · calendar_preview ·
+    routine_fund_distribution · lifestyle_content · personal_finance_advice."""
     t = (title or "").strip()
     if not t:
-        return True
+        return "empty_title"
     a = (author or "").lower()
     if a and any(s in a for s in _PICKMILL_BYLINES):
-        return True
-    if _ROUNDUP_RE.search(t) or _PREVIEW_RE.search(t):
-        return True
+        return "pickmill_byline"
+    if _ROUNDUP_RE.search(t):
+        return "stock_pick_roundup"
+    if _PREVIEW_RE.search(t):
+        return "calendar_preview"
+    if _FUND_DIST_RE.search(t) and _FUND_VEHICLE_RE.search(t):
+        return "routine_fund_distribution"
+    if _LIFESTYLE_RE.search(t):
+        return "lifestyle_content"
     if "?" in t and _ADVICE_OPENER_RE.match(t):
-        return True
-    return False
+        return "personal_finance_advice"
+    if "?" in t and _PF_TOKEN_RE.search(t) and _FIRST_PERSON_RE.search(t):
+        return "personal_finance_advice"
+    return None
 
 
 # --------------------------------------------------------------------------- #

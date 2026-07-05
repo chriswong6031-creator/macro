@@ -116,9 +116,16 @@ def build(write: bool = True) -> dict:
 
     # ---- financial / sector / Mag-7 / basket --------------------------------
     fin = None
+    rss_rejected: list[dict] = []
     try:
         from engine import financial_news as fnews
-        fin = fnews.feed()
+        from engine import news_rss as _nrss
+        _rss_col, _rss_tok = _nrss.start_reject_log()
+        try:
+            fin = fnews.feed()
+        finally:
+            _nrss.stop_reject_log(_rss_tok)
+            rss_rejected = list(_rss_col)
     except Exception as e:  # noqa: BLE001
         log.error("financial_news failed: %s", e)
     vm["fin"] = fin
@@ -208,6 +215,27 @@ def build(write: bool = True) -> dict:
         _write("china.json", china)
     if narrative:
         _write("narrative.json", narrative)
+
+    # ---- reject log (aggregate all feed buckets) ----------------------------
+    try:
+        macro_rejected = (macro or {}).get("rejected") or []
+        fin_rejected = (fin or {}).get("rejected") or []
+        n_total = len(macro_rejected) + len(fin_rejected) + len(rss_rejected)
+        _write("rejected.json", {
+            "schema": "news_reject_log.v1",
+            "is_context_only": True,
+            "built": vm["built"],
+            "n_total": n_total,
+            "feeds": {
+                "macro": macro_rejected,
+                "financial": fin_rejected,
+                "rss": rss_rejected,
+            },
+        })
+        log.info("news reject log: %d total (%d macro / %d fin / %d rss)",
+                 n_total, len(macro_rejected), len(fin_rejected), len(rss_rejected))
+    except Exception as e:  # noqa: BLE001
+        log.warning("rejected.json artifact failed (%s)", e)
 
     log.info("built site/news/*.json (llm=%s)", vm["llm_provider"] or "off")
     return vm
