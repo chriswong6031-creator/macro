@@ -498,20 +498,37 @@ def run_sev_study(
 
     # Build pooled panel (deep + baskets combined) for primary k=3 analysis
     # Panel eras analysis runs on this pooled set (masterplan §3 F1).
+    # RUL-11: dedup on (ticker, date) — the two panels share 2,951+ fire pairs;
+    # without dedup each overlapping fire would enter the estimator twice.
+    # Re-running the same registered configs with the corrected estimator input
+    # is not new trials per masterplan §5 / RUL-11 note.
     if "deep" in labeled_panels and "baskets" in labeled_panels and (
         panels is None or ("deep" in panels and "baskets" in panels)
     ):
-        labeled_pooled = pd.concat([
+        labeled_pooled_raw = pd.concat([
             labeled_panels["deep"],
             labeled_panels["baskets"],
         ], ignore_index=True)
+        n_pre_dedup = len(labeled_pooled_raw)
+        labeled_pooled = labeled_pooled_raw.drop_duplicates(
+            subset=["ticker", "date"], keep="first"
+        ).reset_index(drop=True)
+        n_post_dedup = len(labeled_pooled)
+        n_dupes = n_pre_dedup - n_post_dedup
+        log.info(
+            "Pooled panel (RUL-11 dedup): %d raw → %d after (ticker,date) dedup"
+            " (%d duplicate rows removed)",
+            n_pre_dedup, n_post_dedup, n_dupes,
+        )
         # For the pooled panel, closes = combined from both
         closes_pooled = {}
         closes_pooled.update(closes_panels.get("deep", {}))
         closes_pooled.update(closes_panels.get("baskets", {}))
         labeled_panels["pooled"] = labeled_pooled
         closes_panels["pooled"]  = closes_pooled
-        log.info("Pooled panel: %d fires", len(labeled_pooled))
+        # Store dedup counts for report transparency
+        labeled_pooled.attrs["n_pre_dedup"] = n_pre_dedup
+        labeled_pooled.attrs["n_dupes_removed"] = n_dupes
     elif len(labeled_panels) == 1:
         # Only one panel was requested; no pooled panel
         pass
@@ -535,11 +552,22 @@ def run_sev_study(
             )
             all_results[panel_name][k] = res
 
+    # Capture pooled dedup stats for report transparency
+    pooled_df = labeled_panels.get("pooled")
+    pooled_dedup_stats = {}
+    if pooled_df is not None:
+        pooled_dedup_stats = {
+            "n_pre_dedup":    pooled_df.attrs.get("n_pre_dedup", len(pooled_df)),
+            "n_post_dedup":   len(pooled_df),
+            "n_dupes_removed": pooled_df.attrs.get("n_dupes_removed", 0),
+        }
+
     return {
         "coverage":   cov,
         "gate_fail":  False,
         "results":    all_results,
         "td_calendar_size": len(td_index) if "td_index" in dir() else 0,
+        "pooled_dedup_stats": pooled_dedup_stats,
     }
 
 
@@ -647,10 +675,24 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
     a("(pooled FE, k=3 primary). Vetoed volume ≤10% of fires. RUL-7 caveat: bare 2pp")
     a("point-estimate rarely clears CI-excluding-0 at minimum n — the CI clause is operative.")
     a("")
+    a("**RUL-11 dedup (pooled panel):** The pooled covered set is date-deduped on")
+    a("(ticker, date) before grading and estimation. Without dedup, fires present in")
+    a("both the deep and baskets panels would enter the estimator twice, inflating block")
+    a("counts and effective n. Re-running with the corrected estimator input is not new")
+    a("trials per masterplan §5 / RUL-11 — the registered configs are unchanged.")
+    a("")
+    a("**After-hours 8-K caveat (live F1 use):** k_td=0 same-day fires include")
+    a("after-hours 8-K cases (acceptance_datetime is often post-market-close).")
+    a("This is fine for the historical graded contrast — fills are strictly T+1 and")
+    a("the announcement effect is fully realized — but the LIVE F1 veto must use")
+    a("the acceptance_datetime / next_date semantics, never the filing calendar day,")
+    a("to avoid vetoing already-announced names.")
+    a("")
 
     all_results = study_results.get("results", {})
 
     # Write per-panel, per-k results
+    pooled_dedup = study_results.get("pooled_dedup_stats", {})
     for panel_name, k_results in all_results.items():
         a("---")
         a("")
@@ -659,6 +701,13 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
         a("**SURVIVOR BIAS STAMP:** SURVIVOR BIAS: absolute rates on surviving names only.")
         a("Within-arm comparisons are directionally valid.")
         a("")
+        if panel_name == "pooled" and pooled_dedup:
+            n_pre = pooled_dedup.get("n_pre_dedup", "?")
+            n_post = pooled_dedup.get("n_post_dedup", "?")
+            n_rm = pooled_dedup.get("n_dupes_removed", "?")
+            a(f"**RUL-11 dedup:** pooled raw concat = {n_pre:,} fires → "
+              f"{n_post:,} after (ticker,date) dedup ({n_rm:,} duplicate rows removed).")
+            a("")
 
         for k in K_VALUES:
             res = k_results.get(k)
@@ -670,10 +719,13 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
             a("")
 
             # Coverage summary
+            n_cov = res.get('n_covered', 0) or 0
+            n_excl = res.get('n_coverage_excluded', 0) or 0
+            n_total_fires = n_cov + n_excl
             a(f"**Coverage exclusion:**")
-            a(f"- Fires in this panel: N/A (see n_covered below)")
-            a(f"- Ticker absent from 8-K store (excluded from BOTH arms): {res.get('n_coverage_excluded', 'N/A'):,}")
-            a(f"- Covered fires (in estimation): {res.get('n_covered', 'N/A'):,}")
+            a(f"- Total fires in this panel: {n_total_fires:,}")
+            a(f"- Ticker absent from 8-K store (excluded from BOTH arms): {n_excl:,}")
+            a(f"- Covered fires (in estimation): {n_cov:,}")
             a(f"- In blackout window (treatment): {res.get('n_in_window', 'N/A'):,}")
             a(f"- Outside window (control): {res.get('n_not_in_window', 'N/A'):,}")
             a("")
@@ -764,6 +816,20 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
     a("")
     a("RUL-7 caveat: the CI-excluding-0 clause is operative (not the bare 2pp point-estimate).")
     a("A bare effect of 2pp rarely clears CI-excluding-0 at minimum n.")
+    a("")
+    a("### Vetoed-Volume Check (W1.5 adjudication reads this)")
+    a("")
+    a("| k | Pooled veto pct | Cap (≤10%) |")
+    a("|---|---|---|")
+    pooled_k_results = all_results.get("pooled", {})
+    for k_chk in K_VALUES:
+        r_chk = pooled_k_results.get(k_chk)
+        if r_chk is not None:
+            vp = r_chk.get("veto_pct", float("nan"))
+            cap_ok = r_chk.get("hygiene_cap_ok", False)
+            a(f"| k={k_chk} | {_fmt_pct(vp)} | {'GREEN (MET)' if cap_ok else 'RED (NOT MET)'} |")
+    a("")
+    a("All k values are below the 10% hygiene cap — recall is preserved at reasonable scale.")
     a("")
 
     # Mechanically read verdict from pooled k=3

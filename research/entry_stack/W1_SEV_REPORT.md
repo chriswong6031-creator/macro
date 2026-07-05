@@ -104,6 +104,19 @@ here — never silently treated as non-blackout.
 (pooled FE, k=3 primary). Vetoed volume ≤10% of fires. RUL-7 caveat: bare 2pp
 point-estimate rarely clears CI-excluding-0 at minimum n — the CI clause is operative.
 
+**RUL-11 dedup (pooled panel):** The pooled covered set is date-deduped on
+(ticker, date) before grading and estimation. Without dedup, fires present in
+both the deep and baskets panels would enter the estimator twice, inflating block
+counts and effective n. Re-running with the corrected estimator input is not new
+trials per masterplan §5 / RUL-11 — the registered configs are unchanged.
+
+**After-hours 8-K caveat (live F1 use):** k_td=0 same-day fires include
+after-hours 8-K cases (acceptance_datetime is often post-market-close).
+This is fine for the historical graded contrast — fills are strictly T+1 and
+the announcement effect is fully realized — but the LIVE F1 veto must use
+the acceptance_datetime / next_date semantics, never the filing calendar day,
+to avoid vetoing already-announced names.
+
 ---
 
 ## Panel: DEEP
@@ -114,7 +127,7 @@ Within-arm comparisons are directionally valid.
 ### k=1
 
 **Coverage exclusion:**
-- Fires in this panel: N/A (see n_covered below)
+- Total fires in this panel: 38,250
 - Ticker absent from 8-K store (excluded from BOTH arms): 6,114
 - Covered fires (in estimation): 32,136
 - In blackout window (treatment): 608
@@ -145,7 +158,7 @@ FE: `date` | Sector fallback: False
 ### k=2
 
 **Coverage exclusion:**
-- Fires in this panel: N/A (see n_covered below)
+- Total fires in this panel: 38,250
 - Ticker absent from 8-K store (excluded from BOTH arms): 6,114
 - Covered fires (in estimation): 32,136
 - In blackout window (treatment): 921
@@ -176,7 +189,7 @@ FE: `date` | Sector fallback: False
 ### k=3
 
 **Coverage exclusion:**
-- Fires in this panel: N/A (see n_covered below)
+- Total fires in this panel: 38,250
 - Ticker absent from 8-K store (excluded from BOTH arms): 6,114
 - Covered fires (in estimation): 32,136
 - In blackout window (treatment): 1,225
@@ -214,7 +227,7 @@ Within-arm comparisons are directionally valid.
 ### k=1
 
 **Coverage exclusion:**
-- Fires in this panel: N/A (see n_covered below)
+- Total fires in this panel: 113,542
 - Ticker absent from 8-K store (excluded from BOTH arms): 60,793
 - Covered fires (in estimation): 52,749
 - In blackout window (treatment): 2,011
@@ -245,7 +258,7 @@ FE: `date` | Sector fallback: True
 ### k=2
 
 **Coverage exclusion:**
-- Fires in this panel: N/A (see n_covered below)
+- Total fires in this panel: 113,542
 - Ticker absent from 8-K store (excluded from BOTH arms): 60,793
 - Covered fires (in estimation): 52,749
 - In blackout window (treatment): 2,963
@@ -276,7 +289,7 @@ FE: `date` | Sector fallback: True
 ### k=3
 
 **Coverage exclusion:**
-- Fires in this panel: N/A (see n_covered below)
+- Total fires in this panel: 113,542
 - Ticker absent from 8-K store (excluded from BOTH arms): 60,793
 - Covered fires (in estimation): 52,749
 - In blackout window (treatment): 3,901
@@ -311,137 +324,139 @@ FE: `date` | Sector fallback: True
 **SURVIVOR BIAS STAMP:** SURVIVOR BIAS: absolute rates on surviving names only.
 Within-arm comparisons are directionally valid.
 
+**RUL-11 dedup:** pooled raw concat = 151,792 fires → 148,841 after (ticker,date) dedup (2,951 duplicate rows removed).
+
 ### k=1
 
 **Coverage exclusion:**
-- Fires in this panel: N/A (see n_covered below)
-- Ticker absent from 8-K store (excluded from BOTH arms): 66,907
-- Covered fires (in estimation): 84,885
-- In blackout window (treatment): 2,619
-- Outside window (control): 82,266
+- Total fires in this panel: 148,841
+- Ticker absent from 8-K store (excluded from BOTH arms): 66,532
+- Covered fires (in estimation): 82,309
+- In blackout window (treatment): 2,526
+- Outside window (control): 79,783
 
 **Hygiene: vetoed-volume cap (≤10%):** MET (vetoed 3.1% of covered fires; cap is 10%)
 
-- Gradable fires: 60,027
+- Gradable fires: 57,595
 
-**Recall:** 3.9% of gradable covered fires are in the treatment arm (2,315 of 60,027). Recall note: fires outside the window (57,712) are the control arm.
+**Recall:** 3.9% of gradable covered fires are in the treatment arm (2,228 of 57,595). Recall note: fires outside the window (55,367) are the control arm.
 
 #### Effect Table — k=1 POOLED (R1 FE, block bootstrap)
 
-N total (pre-drop): 60,027 | N estimation-sample (post-drop): 59,793 | N blocks: 2753
-N treatment: 2,315 | N control: 57,712
+N total (pre-drop): 57,595 | N estimation-sample (post-drop): 57,358 | N blocks: 2753
+N treatment: 2,228 | N control: 55,367
 FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0361 | [+0.023, +0.048] * | 0.0509 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | -0.0147 | [-0.030, +0.001] | 0.0118 | 0.0620 | 0.1447 | no |
-| positional_liftoff | -0.0035 | [-0.018, +0.014] | 0.0223 | 0.8380 | 0.8380 | no |
-| dead_money | -0.0003 | [-0.001, +0.000] | -0.0006 | 0.1780 | 0.3115 | no |
-| cushion_rot | -0.0089 | [-0.023, +0.010] | 0.0192 | 0.4380 | 0.5180 | no |
-| mae63 | 0.0008 | [-0.002, +0.004] | 0.0051 | 0.4440 | 0.5180 | no |
-| mfe63 | -0.0057 | [-0.011, +0.000] | -0.0012 | 0.0560 | 0.1447 | no |
+| stop5 | 0.0371 | [+0.024, +0.048] * | 0.0516 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | -0.0129 | [-0.029, +0.002] | 0.0138 | 0.0800 | 0.1867 | no |
+| positional_liftoff | -0.0020 | [-0.016, +0.016] | 0.0239 | 0.9840 | 0.9840 | no |
+| dead_money | -0.0003 | [-0.001, +0.000] | -0.0006 | 0.1580 | 0.2765 | no |
+| cushion_rot | -0.0073 | [-0.022, +0.010] | 0.0208 | 0.4960 | 0.5787 | no |
+| mae63 | 0.0011 | [-0.002, +0.004] | 0.0051 | 0.3840 | 0.5376 | no |
+| mfe63 | -0.0052 | [-0.010, +0.000] | -0.0010 | 0.0620 | 0.1867 | no |
 
 #### Era Analysis (POOLED, program eras, k=1)
 
 | era | ev_blackout_k1 | n_fires | stop5_rate | mae63_mean |
 |---|---|---|---|---|
-| 2012-2015 | 0.0 | 7119 | 11.5% | -0.0954 |
-| 2012-2015 | 1.0 | 227 | 14.1% | -0.0882 |
-| 2016-2019 | 0.0 | 19160 | 9.5% | -0.0845 |
-| 2016-2019 | 1.0 | 753 | 14.7% | -0.0753 |
-| 2020-2022 | 0.0 | 15480 | 19.5% | -0.1156 |
-| 2020-2022 | 1.0 | 673 | 23.6% | -0.1120 |
-| 2023-2026 | 0.0 | 15936 | 13.7% | -0.0962 |
-| 2023-2026 | 1.0 | 662 | 19.5% | -0.0939 |
+| 2012-2015 | 0.0 | 6920 | 11.4% | -0.0953 |
+| 2012-2015 | 1.0 | 226 | 14.2% | -0.0874 |
+| 2016-2019 | 0.0 | 18390 | 9.5% | -0.0850 |
+| 2016-2019 | 1.0 | 724 | 15.2% | -0.0760 |
+| 2020-2022 | 0.0 | 14803 | 19.7% | -0.1160 |
+| 2020-2022 | 1.0 | 643 | 23.5% | -0.1126 |
+| 2023-2026 | 0.0 | 15237 | 13.9% | -0.0969 |
+| 2023-2026 | 1.0 | 635 | 19.7% | -0.0944 |
 
 ### k=2
 
 **Coverage exclusion:**
-- Fires in this panel: N/A (see n_covered below)
-- Ticker absent from 8-K store (excluded from BOTH arms): 66,907
-- Covered fires (in estimation): 84,885
-- In blackout window (treatment): 3,884
-- Outside window (control): 81,001
+- Total fires in this panel: 148,841
+- Ticker absent from 8-K store (excluded from BOTH arms): 66,532
+- Covered fires (in estimation): 82,309
+- In blackout window (treatment): 3,747
+- Outside window (control): 78,562
 
 **Hygiene: vetoed-volume cap (≤10%):** MET (vetoed 4.6% of covered fires; cap is 10%)
 
-- Gradable fires: 60,027
+- Gradable fires: 57,595
 
-**Recall:** 5.7% of gradable covered fires are in the treatment arm (3,420 of 60,027). Recall note: fires outside the window (56,607) are the control arm.
+**Recall:** 5.7% of gradable covered fires are in the treatment arm (3,291 of 57,595). Recall note: fires outside the window (54,304) are the control arm.
 
 #### Effect Table — k=2 POOLED (R1 FE, block bootstrap)
 
-N total (pre-drop): 60,027 | N estimation-sample (post-drop): 59,793 | N blocks: 2753
-N treatment: 3,420 | N control: 56,607
+N total (pre-drop): 57,595 | N estimation-sample (post-drop): 57,358 | N blocks: 2753
+N treatment: 3,291 | N control: 54,304
 FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0728 | [+0.064, +0.084] * | 0.0814 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | 0.0068 | [-0.008, +0.017] | 0.0381 | 0.5040 | 0.7817 | no |
-| positional_liftoff | -0.0056 | [-0.018, +0.009] | 0.0217 | 0.5640 | 0.7817 | no |
-| dead_money | -0.0003 | [-0.001, +0.000] | -0.0005 | 0.4440 | 0.7817 | no |
-| cushion_rot | -0.0042 | [-0.018, +0.008] | 0.0309 | 0.5320 | 0.7817 | no |
-| mae63 | 0.0002 | [-0.002, +0.003] | 0.0044 | 0.6700 | 0.7817 | no |
-| mfe63 | 0.0001 | [-0.005, +0.005] | 0.0038 | 0.9520 | 0.9520 | no |
+| stop5 | 0.0732 | [+0.064, +0.084] * | 0.0818 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | 0.0078 | [-0.007, +0.018] | 0.0389 | 0.4140 | 0.8660 | no |
+| positional_liftoff | -0.0031 | [-0.015, +0.011] | 0.0234 | 0.8660 | 0.8660 | no |
+| dead_money | -0.0003 | [-0.001, +0.000] | -0.0005 | 0.4340 | 0.8660 | no |
+| cushion_rot | -0.0029 | [-0.016, +0.010] | 0.0317 | 0.6500 | 0.8660 | no |
+| mae63 | 0.0004 | [-0.002, +0.003] | 0.0044 | 0.6200 | 0.8660 | no |
+| mfe63 | 0.0003 | [-0.005, +0.005] | 0.0039 | 0.8580 | 0.8660 | no |
 
 #### Era Analysis (POOLED, program eras, k=2)
 
 | era | ev_blackout_k2 | n_fires | stop5_rate | mae63_mean |
 |---|---|---|---|---|
-| 2012-2015 | 0.0 | 7007 | 11.4% | -0.0954 |
-| 2012-2015 | 1.0 | 339 | 15.3% | -0.0896 |
-| 2016-2019 | 0.0 | 18821 | 9.2% | -0.0847 |
-| 2016-2019 | 1.0 | 1092 | 18.0% | -0.0744 |
-| 2020-2022 | 0.0 | 15124 | 19.3% | -0.1157 |
-| 2020-2022 | 1.0 | 1029 | 25.3% | -0.1117 |
-| 2023-2026 | 0.0 | 15638 | 13.4% | -0.0961 |
-| 2023-2026 | 1.0 | 960 | 23.3% | -0.0964 |
+| 2012-2015 | 0.0 | 6810 | 11.3% | -0.0953 |
+| 2012-2015 | 1.0 | 336 | 15.5% | -0.0887 |
+| 2016-2019 | 0.0 | 18065 | 9.3% | -0.0852 |
+| 2016-2019 | 1.0 | 1049 | 18.3% | -0.0754 |
+| 2020-2022 | 0.0 | 14460 | 19.5% | -0.1161 |
+| 2020-2022 | 1.0 | 986 | 25.1% | -0.1116 |
+| 2023-2026 | 0.0 | 14952 | 13.5% | -0.0968 |
+| 2023-2026 | 1.0 | 920 | 23.6% | -0.0973 |
 
 ### k=3 **(PRIMARY — k=3 POOLED)**
 
 **Coverage exclusion:**
-- Fires in this panel: N/A (see n_covered below)
-- Ticker absent from 8-K store (excluded from BOTH arms): 66,907
-- Covered fires (in estimation): 84,885
-- In blackout window (treatment): 5,126
-- Outside window (control): 79,759
+- Total fires in this panel: 148,841
+- Ticker absent from 8-K store (excluded from BOTH arms): 66,532
+- Covered fires (in estimation): 82,309
+- In blackout window (treatment): 4,942
+- Outside window (control): 77,367
 
 **Hygiene: vetoed-volume cap (≤10%):** MET (vetoed 6.0% of covered fires; cap is 10%)
 
-- Gradable fires: 60,027
+- Gradable fires: 57,595
 
-**Recall:** 7.5% of gradable covered fires are in the treatment arm (4,504 of 60,027). Recall note: fires outside the window (55,523) are the control arm.
+**Recall:** 7.5% of gradable covered fires are in the treatment arm (4,332 of 57,595). Recall note: fires outside the window (53,263) are the control arm.
 
 #### Effect Table — k=3 POOLED (R1 FE, block bootstrap)
 
-N total (pre-drop): 60,027 | N estimation-sample (post-drop): 59,793 | N blocks: 2753
-N treatment: 4,504 | N control: 55,523
+N total (pre-drop): 57,595 | N estimation-sample (post-drop): 57,358 | N blocks: 2753
+N treatment: 4,332 | N control: 53,263
 FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0863 | [+0.078, +0.098] * | 0.0919 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | 0.0157 | [+0.003, +0.027] * | 0.0480 | 0.0140 | 0.0490 | YES |
-| positional_liftoff | -0.0031 | [-0.016, +0.008] | 0.0241 | 0.5580 | 0.7580 | no |
-| dead_money | 0.0001 | [-0.000, +0.001] | -0.0002 | 0.6600 | 0.7580 | no |
-| cushion_rot | 0.0015 | [-0.011, +0.015] | 0.0387 | 0.7580 | 0.7580 | no |
-| mae63 | 0.0006 | [-0.002, +0.003] | 0.0046 | 0.6060 | 0.7580 | no |
-| mfe63 | -0.0006 | [-0.005, +0.003] | 0.0030 | 0.6520 | 0.7580 | no |
+| stop5 | 0.0870 | [+0.079, +0.099] * | 0.0921 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | 0.0148 | [+0.002, +0.026] * | 0.0477 | 0.0180 | 0.0630 | YES |
+| positional_liftoff | -0.0022 | [-0.015, +0.009] | 0.0251 | 0.6820 | 0.7957 | no |
+| dead_money | 0.0001 | [-0.000, +0.001] | -0.0001 | 0.6800 | 0.7957 | no |
+| cushion_rot | 0.0005 | [-0.012, +0.013] | 0.0383 | 0.8820 | 0.8820 | no |
+| mae63 | 0.0006 | [-0.002, +0.003] | 0.0047 | 0.6480 | 0.7957 | no |
+| mfe63 | -0.0010 | [-0.005, +0.003] | 0.0027 | 0.5960 | 0.7957 | no |
 
 #### Era Analysis (POOLED, program eras, k=3)
 
 | era | ev_blackout_k3 | n_fires | stop5_rate | mae63_mean |
 |---|---|---|---|---|
-| 2012-2015 | 0.0 | 6890 | 11.3% | -0.0959 |
-| 2012-2015 | 1.0 | 456 | 14.5% | -0.0847 |
-| 2016-2019 | 0.0 | 18486 | 9.0% | -0.0848 |
-| 2016-2019 | 1.0 | 1427 | 18.8% | -0.0751 |
-| 2020-2022 | 0.0 | 14778 | 19.1% | -0.1158 |
-| 2020-2022 | 1.0 | 1375 | 25.9% | -0.1108 |
-| 2023-2026 | 0.0 | 15352 | 13.0% | -0.0960 |
-| 2023-2026 | 1.0 | 1246 | 25.1% | -0.0976 |
+| 2012-2015 | 0.0 | 6696 | 11.2% | -0.0957 |
+| 2012-2015 | 1.0 | 450 | 14.7% | -0.0844 |
+| 2016-2019 | 0.0 | 17743 | 9.0% | -0.0854 |
+| 2016-2019 | 1.0 | 1371 | 19.0% | -0.0760 |
+| 2020-2022 | 0.0 | 14128 | 19.3% | -0.1163 |
+| 2020-2022 | 1.0 | 1318 | 25.9% | -0.1105 |
+| 2023-2026 | 0.0 | 14679 | 13.2% | -0.0967 |
+| 2023-2026 | 1.0 | 1193 | 25.2% | -0.0982 |
 
 ---
 
@@ -455,9 +470,9 @@ FE: `date` | Sector fallback: False
 | baskets | 1 | 2,011 | 52,749 | 3.8% | MET |
 | baskets | 2 | 2,963 | 52,749 | 5.6% | MET |
 | baskets | 3 | 3,901 | 52,749 | 7.4% | MET |
-| pooled | 1 | 2,619 | 84,885 | 3.1% | MET |
-| pooled | 2 | 3,884 | 84,885 | 4.6% | MET |
-| pooled | 3 | 5,126 | 84,885 | 6.0% | MET |
+| pooled | 1 | 2,526 | 82,309 | 3.1% | MET |
+| pooled | 2 | 3,747 | 82,309 | 4.6% | MET |
+| pooled | 3 | 4,942 | 82,309 | 6.0% | MET |
 
 ---
 
@@ -470,11 +485,21 @@ Masterplan §5 HYGIENE bar:
 RUL-7 caveat: the CI-excluding-0 clause is operative (not the bare 2pp point-estimate).
 A bare effect of 2pp rarely clears CI-excluding-0 at minimum n.
 
+### Vetoed-Volume Check (W1.5 adjudication reads this)
+
+| k | Pooled veto pct | Cap (≤10%) |
+|---|---|---|
+| k=1 | 3.1% | GREEN (MET) |
+| k=2 | 4.6% | GREEN (MET) |
+| k=3 | 6.0% | GREEN (MET) |
+
+All k values are below the 10% hygiene cap — recall is preserved at reasonable scale.
+
 ### Primary Endpoint (k=3, POOLED panel)
 
 | Clause | Result | Detail |
 |---|---|---|
-| stop5 CI-excluding-0 degradation | MET | coef=0.0863, CI=[+0.078, +0.098] * |
+| stop5 CI-excluding-0 degradation | MET | coef=0.0870, CI=[+0.079, +0.099] * |
 | mae63 CI-excluding-0 degradation | NOT MET | coef=0.0006, CI=[-0.002, +0.003] |
 | Either stop5 OR mae63 CI-excl-0 | MET | primary hygiene condition |
 | Vetoed-volume cap ≤10% (k=3) | MET | vetoed 6.0% of covered fires |
