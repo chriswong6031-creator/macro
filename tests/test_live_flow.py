@@ -2335,6 +2335,41 @@ class TestDayStateVersionDiscard:
         assert "abc123" in result.get("emitted_ids", set()), (
             "emitted_ids should be loaded from current-version state")
 
+    def test_seen_sequences_4tuple_roundtrips_on_restart(self, tmp_path, monkeypatch):
+        """Item 2 regression: seen_sequences 4-tuple keys must survive a save→load
+        round-trip as TUPLES (poller mid-session restart), or dedup silently breaks.
+
+        Before the fix, _load_day_state's key restorer only handled 3-tuples, so a
+        v2 seen_sequences key was rehydrated as a raw JSON STRING.  process_batch then
+        builds fresh 4-tuples and every lookup missed → dedup disabled → double-count.
+        """
+        from scripts.live_flow_poller import _save_day_state, _load_day_state
+        from engine.live_flow import DAY_STATE_VERSION
+
+        assert DAY_STATE_VERSION >= 2
+        state_dir = tmp_path / "live_flow_state"
+        state_dir.mkdir()
+        monkeypatch.setattr(
+            "scripts.live_flow_poller._state_dir", lambda: state_dir)
+
+        seq_key = ("SPY", "2026-07-05", 550.0, "C")
+        cv_key  = ("2026-07-05", 550.0, "C")   # contract_vol stays a 3-tuple
+        _save_day_state(SESSION_DATE, {
+            "emitted_ids": set(),
+            "seen_sequences": {seq_key: 500.0},
+            "contract_vol":  {cv_key: 12.0},
+            "notability_history": {},
+        })
+
+        loaded = _load_day_state(SESSION_DATE)
+        ss = loaded["seen_sequences"]
+        assert seq_key in ss, (
+            f"4-tuple seen_sequences key must restore as a tuple after reload; "
+            f"got keys {list(ss.keys())!r} (string key => dedup broken on restart)")
+        assert ss[seq_key] == pytest.approx(500.0)
+        # 3-tuple contract_vol keys must still restore correctly
+        assert cv_key in loaded["contract_vol"]
+
     def test_missing_version_treated_as_v1(self, tmp_path, monkeypatch, caplog):
         """A day_state with no schema_version key is treated as version 1 → discarded."""
         import logging

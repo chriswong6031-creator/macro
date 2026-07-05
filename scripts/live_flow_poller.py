@@ -320,10 +320,23 @@ def _load_day_state(session_date: str) -> dict:
         # contract_vol and notability_history stored with string keys (JSON constraint);
         # restore to tuple keys for engine compatibility
         def _restore_key(k: str):
+            # 3-tuple contract keys: (exp:str, strike:float, right:str)
             try:
                 parts = json.loads(k)
                 if isinstance(parts, list) and len(parts) == 3:
                     return (str(parts[0]), float(parts[1]), str(parts[2]))
+            except Exception:  # noqa: BLE001
+                pass
+            return k
+
+        def _restore_seq_key(k: str):
+            # seen_sequences keys are now 4-tuples: (root:str, exp:str, strike:float, right:str)
+            # (schema_version>=2).  A 3-tuple key would be pre-v2 residue and is discarded
+            # by the version gate above, so only the 4-tuple form is expected here.
+            try:
+                parts = json.loads(k)
+                if isinstance(parts, list) and len(parts) == 4:
+                    return (str(parts[0]), str(parts[1]), float(parts[2]), str(parts[3]))
             except Exception:  # noqa: BLE001
                 pass
             return k
@@ -334,7 +347,7 @@ def _load_day_state(session_date: str) -> dict:
             _restore_key(k): v for k, v in raw.get("notability_history", {}).items()
         }
         raw["seen_sequences"] = {
-            _restore_key(k): v for k, v in raw.get("seen_sequences", {}).items()
+            _restore_seq_key(k): v for k, v in raw.get("seen_sequences", {}).items()
         }
         # Tide accumulators — all string-keyed, load as-is
         for tide_key in ("market_tide_minutes", "sector_tide", "dte_tide",
