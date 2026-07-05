@@ -323,6 +323,10 @@
   /* keep tooltips on-screen near the right/left viewport edges */
   .help.edge-right .tip { left: auto; right: 0; transform: none; }
   .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  .help .tip.tip-wide { width: min(430px, calc(100vw - 32px)); max-height: none; overflow: visible; }
+  @media (max-width: 640px) {
+    .help .tip.tip-wide { width: calc(100vw - 28px); font-size: 11.5px; line-height: 1.45; }
+  }
   .tip-map { width: 360px !important; }
   .tip-seas { width: 350px !important; box-sizing: border-box; padding: 11px 14px; }
   .tip.tip-seas table { table-layout: fixed; width: 100%; margin: 0; }
@@ -1774,17 +1778,10 @@
     <div class="notable">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <span style="font-weight:700;font-size:13px"><span class="l-en">Standout individual stocks</span><span class="l-zh">表现突出的个股</span></span>
-        <span class="muted" style="font-size:11.5px">24 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 25 <span class="l-en">fully aligned across weekly · 3-day · daily (bottoming, not a falling knife) · TWO gauges per card: an OWN-IT conviction score (leadership · quality · valuation) and a separate ENTRY gauge — buy now, or wait for the pullback to $X. A high score is NOT a buy-now; the green dot means the entry is open today.</span><span class="l-zh">在周线·3日·日线上完全共振（筑底，而非接飞刀）· 每张卡片两个量表：持有信念分（领先·质量·估值）+ 独立的入场量表 — 立即买入，或等待回撤至某价位。高分并不等于立即买入；绿点代表今日入场窗口已开。</span>
-          <span class="help">?<span class="tip"><span class="l-en">Each name carries TWO independent gauges so a great company is never confused with a great entry. (1) TIMING / READINESS (the 0-100 score shown on the card): a buy-readiness blend — how washed-out the name is (room to recover), whether it is turning up NOW vs still basing, survivability, and a bounded edge multiplier from the validated selection axis (insider / earnings / revisions). It is a buy-readiness display number, NOT a rank-by-alpha sort — see the α chip for the selection-edge rank. A separate 'edge percentile' (rank_pctile) capturing the cross-sectional edge rank is available on the stock's own page. (2) ENTRY TIMING (the coloured strip): the price-cycle read across daily/3-day/weekly — buy now (green dot), wait for the pullback to the shown buy-zone price, or extended/topping (don't chase). Board order: bottoming-alignment score (weekly/3-day/daily cycle alignment) then conviction composite, with entry-open names leading. Entry-open names lead the strip; a near-aligned name is tagged 🟡. Validated confirmer chips (vol-squeeze / Options) sharpen the ENTRY only; unvalidated gates are shown with an explicit 'accruing history' label. Click any card for the full breakdown.</span><span class="l-zh">每个标的带有两个相互独立的量表，使”好公司”绝不等同于”好入场点”。(1) 择时/就绪度（卡片上显示的 0-100 分）：综合买入就绪度——标的的回调深度（上涨空间）、当前是否正在反转、可持续性，以及来自经验证选股维度的有界优势乘数（内幕/业绩/评级修正）。这是买入就绪度展示数值，并非按 α 排序——选股优势排名请见 α 标记。反映横截面优势排名的”优势百分位”（rank_pctile）可在个股页面查看。(2) 入场择时（彩色条）：跨日线/3日/周线的价格周期读数——立即买入（绿点）、等待回撤至所示买入区价位，或过度拉伸/做顶（勿追高）。榜单排序：筑底共振评分（周线/3日/日线周期共振）优先，其次为信念综合分，入场开放标的排在最前。入场开放标的在最前；近似共振标的标注 🟡。已验证的确认指标（波动压缩/期权）仅优化”入场”；未验证门控会附上明确的”历史积累中”标签。点击任意卡片查看完整拆解。</span></span></span></span>
+        <span class="muted" style="font-size:11.5px">24 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 25 <span class="l-en">aligned bottoming setups · conviction and entry are separate; green dot = entry open now, yellow = wait for pullback.</span><span class="l-zh">个筑底共振标的 · 信念与入场分开看；绿点＝现在可入场，黄点＝等回调。</span>
+          <span class="help">?<span class="tip tip-wide"><span class="l-en">Cards answer two questions. Conviction asks: is this a name worth owning? Entry asks: is today a good price? A high conviction score can still mean wait. Use the green dot for open entries, the pullback price for patience, and the α chip for selection-edge rank. Click a card for the full breakdown.</span><span class="l-zh">卡片回答两个问题：信念＝这是不是值得持有的标的；入场＝今天价格是否合适。高信念不等于立刻买。绿点表示入场窗口已开；黄点看回调价；α 标记是选股优势排名。点击卡片看完整拆解。</span></span></span></span>
         
       </div>
-      
-      <div class="nb-legend">
-        <span class="lg-k"><span class="l-en">Reading the cards</span><span class="l-zh">如何看卡片</span></span>
-        <span><b><span class="l-en">Score</span><span class="l-zh">评分</span></b> = <span class="l-en">timing / readiness (buy-readiness blend: washout room + turning-up-now trigger + edge multiplier) — NOT a conviction rank or α sort. The verdict is the absolute edge read; the α chip is the cross-sectional selection rank.</span><span class="l-zh">择时/就绪度（买入就绪度综合：回调空间 + 当前反转触发 + 优势乘数）——并非信念排名或 α 排序。结论是绝对优势读数；α 标记是横截面选股排名。</span></span>
-        <span class="lg-sep">·</span><span><b><span class="l-en">Edge basis</span><span class="l-zh">优势来源</span></b>: <span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></span>
-      </div>
-      
       
       <div class="gamma-note gn-short">
         <span class="gn-ic">🌀</span>
@@ -6225,6 +6222,19 @@
     if (!h) return;
     var r = h.getBoundingClientRect();
     var tip = h.querySelector('.tip');
+    if (tip && tip.classList.contains('tip-wide')) {
+      tip.style.position = 'fixed';
+      tip.style.transform = 'none';
+      var wtw = tip.offsetWidth || Math.min(430, window.innerWidth - 28);
+      var wth = tip.offsetHeight || 120;
+      var wm = 14;
+      tip.style.left = Math.min(Math.max(wm, r.left + r.width / 2 - wtw / 2),
+                                window.innerWidth - wtw - wm) + 'px';
+      tip.style.right = 'auto';
+      tip.style.top = (r.top - wth - wm > 0 ? r.top - wth - wm : r.bottom + wm) + 'px';
+      tip.style.bottom = 'auto';
+      return;
+    }
     // Tooltips inside a horizontally-scrolling table wrapper (.tbl-scroll, applied
     // by theme.js to wide tables) are clipped by its overflow:auto — most visibly
     // the tall seasonality popups on the top sector rows. Lift those to fixed
