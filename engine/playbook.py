@@ -316,19 +316,17 @@ def exposure_dial(latest: dict, evidence: dict) -> dict:
     # — a trader's real-time info set, not look-ahead.
     if liq == "expanding":
         score += 1
-        odds_en = ((f" (S&P positive next month ~{exp_hit}% of the time"
+        odds_en = ((f" (next-month S&P positive ~{exp_hit}%"
                     + (f" vs ~{con_hit}% when contracting" if con_hit is not None else "")
-                    + " — odds, not a point forecast: one macro series ≈ a few "
-                      "hundred episodes, not asset-days; regime read lagged 3bd)")
+                    + "; odds, not a forecast)")
                    if exp_hit is not None else "")
         odds_zh = ((f"（S&P 次月为正的概率约 {exp_hit}%"
                     + (f"，收缩时约 {con_hit}%" if con_hit is not None else "")
                     + " — 这是胜率而非点预测：单一宏观序列 ≈ 数百个事件而非资产日；"
                       "周期读数滞后 3 个交易日）")
                    if exp_hit is not None else "")
-        reasons.append(("+", "Fed liquidity is expanding — historically the most "
-                        "reliable directional tailwind" + odds_en,
-                        "美联储流动性正在扩张 — 历来是最可靠的方向性顺风" + odds_zh))
+        reasons.append(("+", "Fed liquidity is expanding — reliable tailwind" + odds_en,
+                        "美联储流动性正在扩张 — 可靠顺风" + odds_zh))
     elif liq == "contracting":
         score -= 1
         odds_en = ((f" (S&P positive next month only ~{con_hit}% of the time"
@@ -422,12 +420,10 @@ def exposure_dial(latest: dict, evidence: dict) -> dict:
                             f" — 缩小仓位、放宽止损"))
     if state in ("TRANSITIONING", "NEW_REGIME"):
         score -= 1
-        reasons.append(("-", f"Transition radar reads {state} — the regime is shifting; "
-                        "reduce conviction bets until it settles (this early-warning "
-                        "worked best pre-2017; the 2017-2021 dip-buying era blunted it)",
+        reasons.append(("-", f"Transition radar: {state} — regime is shifting; "
+                        "keep conviction lower until it settles.",
                         f"转换雷达显示 {STATE_ZH.get(state, state)} — 周期正在转变；"
-                        "在其稳定前减少高信心押注（此预警在 2017 年前效果最佳；"
-                        "2017-2021 的逢低买入时代削弱了它）"))
+                        "在其稳定前降低确信度。"))
     elif state == "WEAKENING":
         reasons.append(("i", "Transition radar reads WEAKENING (2+ warning flags) — "
                         "no action required yet, but stop adding regime-dependent risk",

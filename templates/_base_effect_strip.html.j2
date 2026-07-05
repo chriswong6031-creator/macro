@@ -9,7 +9,7 @@
 {% set _QN = {'Q1':['GOLDILOCKS','理想增长'],'Q2':['REFLATION','再通胀'],'Q3':['STAGFLATION','滞胀'],'Q4':['GROWTH SCARE','增长恐慌']} %}
 {% macro _iq(g, i) %}{% if g >= 0 and i < 0 %}Q1{% elif g >= 0 and i >= 0 %}Q2{% elif g < 0 and i >= 0 %}Q3{% else %}Q4{% endif %}{% endmacro %}
 {% macro _accel(s) %}{% if s > 0 %}▲ {{ t('accelerating','加速') }}{% elif s < 0 %}▼ {{ t('decelerating','减速') }}{% else %}– {{ t('flat','走平') }}{% endif %}{% endmacro %}
-{% macro _axnote(a) %}{% set c = a.q1 %}{{ t('easy comps' if c > 0 else ('tough comps' if c < 0 else 'neutral comps'), '低基数' if c > 0 else ('高基数' if c < 0 else '中性基数')) }}{% if a.current_yoy is not none and a.yoy_path and a.yoy_path[-1] is not none %} · {{ t('YoY','同比') }} {{ '%.1f'|format(a.current_yoy) }}%→{{ '%.1f'|format(a.yoy_path[-1]) }}% {{ t('3q','3季') }}{% endif %}{% endmacro %}
+{% macro _axnote(a) %}{% set c = a.q1 %}{{ t('low base' if c > 0 else ('high base' if c < 0 else 'neutral base'), '低基数' if c > 0 else ('高基数' if c < 0 else '中性基数')) }}{% if a.current_yoy is not none and a.yoy_path and a.yoy_path[-1] is not none %} · {{ t('YoY','同比') }} {{ '%.1f'|format(a.current_yoy) }}%→{{ '%.1f'|format(a.yoy_path[-1]) }}% {{ t('3q','3季') }}{% endif %}{% endmacro %}
 {% set _q1q = _iq(_bg.q1, _bi.q1)|trim %}
 {# _embedded (set by _regime_read_panel) drops the standalone panel chrome so this can sit
    inside the combined "Regime — now & next" card; china.html.j2 includes it unembedded. #}
@@ -17,10 +17,9 @@
   <div class="bfwd-head">
     <h3>{{ t('Where the regime is headed','周期将去往何处') }} · {{ t('base-effect forward path','基数效应前瞻路径') }}</h3>
     <span class="mbadge modeled">{{ t('MODELED','模型推算') }}</span>
-    {{ help("The Hedgeye kernel, built honestly. A year-over-year rate has a denominator — the 'base' — already known 12 months ahead. Holding month-to-month momentum at its normal pace, the KNOWN base bends the forward path of the rate: a HIGH base a year ago (tough comps) forces the rate DOWN (deceleration); a LOW base (easy comps) forces it UP (acceleration). This reads the ECONOMY's forward direction for growth and inflation — distinct from, and more forward-looking than, the current-tape quad above. MODELED: a projection under a normal-momentum assumption, not measured data. The base arithmetic is settled, but the accelerate/decelerate call is unvalidated and display-only while it accrues a forward-grading record versus the disclosed base-effect inversion statistic.",
-             "以诚实方式构建的 Hedgeye 内核。同比增速有一个分母 —— “基数” —— 在 12 个月前就已知。将环比动能保持在正常速度时，已知的基数会弯折增速的前瞻路径：一年前的高基数（高对比基准）迫使增速下行（减速）；低基数（低对比基准）迫使其上行（加速）。这里读取的是经济的前瞻方向 —— 增长与通胀 —— 有别于上方的当前盘面象限，且更具前瞻性。模型推算：基于正常动能假设的投影，而非实测数据。基数算术已确定，但加速／减速的判断尚未验证、仅作展示，同时针对已披露的基数效应反转统计积累前瞻评分记录。") }}
+    {{ help("Forward growth/inflation path implied by known base effects.",
+             "由已知基数效应推算的增长/通胀前瞻路径。") }}
   </div>
-  <p class="bfwd-sub">{{ t('The growth × inflation quad the KNOWN base is forcing over the next three quarters — a forward ECONOMIC read, not today’s tape. The current-tape quad is above; this is where the settled base path is pushing growth and inflation next.','已知基数在未来三个季度所迫使的增长×通胀象限 —— 前瞻的经济读数，而非今日盘面。上方为当前盘面象限；此处为已确定的基数路径接下来对增长与通胀的推动方向。') }}</p>
   <div class="bfwd-main">
     <div class="bfwd-now q-{{ _q1q }}" style="background:var(--q{{ _q1q[1] }})">
       <span class="k">{{ t('NEXT QUARTER','下一季度') }}</span>
@@ -44,7 +43,5 @@
       <span class="bfq q-{{ _qq }}" style="background:var(--q{{ _qq[1] }})">+{{ loop.index }}Q <small>{{ t(_QN[_qq][0], _QN[_qq][1]) }}</small></span>
     {% endfor %}
   </div>
-  <p class="bfwd-note">{{ t('MODELED — a projection under a normal-momentum assumption. The base (denominator) path is settled arithmetic (MEASURED); the accelerate/decelerate call is unvalidated and display-only, accruing a forward-grading log against the disclosed base-effect inversion statistic.',
-       '模型推算 —— 基于正常动能假设的投影。基数（分母）路径为已确定的算术（实测）；加速／减速判断尚未验证、仅作展示，正针对已披露的基数效应反转统计积累前瞻评分记录。') }}{% if be_note_en is defined and be_note_en %} {{ t(be_note_en, be_note_zh) }}{% endif %}</p>
 </div>
 {% endif %}

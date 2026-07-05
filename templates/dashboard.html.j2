@@ -1386,9 +1386,7 @@
   /* Risk-Radar banner now renders through the shared .rrx card (macro risk_radar_card);
      its old .ms-radar / .msr-* styling was retired with the cramped text-run markup. */
 
-  /* Heads-up strip — compact live flags (next catalyst / Fed stance / fragility),
-     replacing the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
-     Global vars only (renders on both the macro and stocks pages). */
+  /* Heads-up chips — compact live flags integrated into the Market State board. */
   .heads-up{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .heads-up .hu-label{font-family:ui-monospace,"SF Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.18em;
     text-transform:uppercase;color:var(--muted);flex:none}
@@ -1545,6 +1543,8 @@
       <span class="olk">{{ t('Right now','当下') }}</span> <b style="color:var(--ms-c)">{{ t(MS.label_en, MS.label_zh) }} {{ _va }}</b>
     </div>
     {% endif %}
+    {% set _hu_show = (event_risk and event_risk.show) or (latest.turning_point and latest.turning_point.present) or (latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown') %}
+
     {# ===== ONE side-by-side command board: Market State (left) + Macro Backdrop (right).
        Radar banner + eyebrow span the full width across the top; the multi-timeframe tape
        spans the full width across the bottom. The whole region is macro-only (gated by
@@ -1561,6 +1561,26 @@
         <span class="ms-eyebrow"><span class="ms-live" id="ms-live-pill"></span>{{ t('MARKET STATE','市场状态') }}</span>
         <span class="ms-date" id="ms-date">· {{ MS.asof }}</span>
         {{ help("How risk-on or risk-off the market is right now — one 0–100 read blending the tape, cross-asset risk, volatility, breadth, liquidity and downturn guards. ≥60 risk-on · 42–59 mixed · <42 risk-off. It confirms what has already turned; it doesn't forecast.", "市场当前的风险偏好程度 — 0–100 单一读数，融合趋势、跨资产风险、波动率、广度、流动性与下行护栏。≥60 偏好 · 42–59 混合 · <42 避险。它确认已经转向的信号，而非预测。") }}
+        {% if _hu_show %}
+        <div class="heads-up ms-heads-up">
+          <span class="hu-label">{{ t('Heads-up','提醒') }}</span>
+          {% if event_risk and event_risk.show %}
+          {% set ER = event_risk %}
+          {% set erc = 'var(--down)' if ER.fragility.fragile else ('var(--orange)' if ER.vol_tier=='high' else 'var(--warn)') %}
+          <span class="hu-chip" id="event-risk" style="--hc:{{ erc }}">{{ t(ER.headline_en, ER.headline_zh) }}{{ help('Scheduled event risk is near. Context only.', '重大日程事件临近。仅供参考。') }}</span>
+          {% endif %}
+          {% if latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown' %}
+          {% set FS = latest.fed_stance %}
+          {% set fsc = 'var(--down)' if FS.color=='down' else ('var(--up)' if FS.color=='up' else 'var(--muted)') %}
+          <a class="hu-chip" id="fed-stance" href="policy_watch.html" style="--hc:{{ fsc }}">{{ t('Fed','美联储') }}: <b style="color:{{ fsc }}">{{ t(FS.label_en, FS.label_zh) }}</b>{{ help('Likely Fed stance from rates pricing and FOMC guidance. Context only.', '基于利率定价与FOMC指引的美联储倾向。仅供参考。') }}</a>
+          {% endif %}
+          {% if latest.turning_point and latest.turning_point.present %}
+          {% set TP = latest.turning_point %}
+          {% set tpc = 'var(--down)' if TP.state=='fragile-structural' else ('var(--muted)' if TP.state=='cooling' else 'var(--orange)') %}
+          <span class="hu-chip" id="turning-point" style="--hc:{{ tpc }}">{{ t(TP.headline_en, TP.headline_zh) }}{{ help('Positioning guardrail, not a signal.', '仓位护栏，并非信号。') }}</span>
+          {% endif %}
+        </div>
+        {% endif %}
         {# Fired-alerts pill + hover popup. Hover reveals the popover (no click);
            on touch the label tap-toggles #ms-alerts-toggle. Content moved here
            from the retired right slide-out drawer. #}
@@ -1906,31 +1926,6 @@
   {% set be_note_en = 'Growth is point-in-time back to 1997; inflation uses latest-revision data until the core-CPI/PCE vintages backfill.' %}
   {% set be_note_zh = '增长为 1997 年以来的时点数据；通胀在核心 CPI／PCE 修订版历史回填前使用最新修订数据。' %}
   {% include "_regime_read_panel.html.j2" %}
-
-  <!-- Heads-up strip — compact live flags (next catalyst / Fed stance / fragility).
-       Replaces the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
-       The Vol-shock panel is retired — the Risk Radar override already carries stress. -->
-  {% set _hu_show = (event_risk and event_risk.show) or (latest.turning_point and latest.turning_point.present) or (latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown') %}
-  {% if _hu_show %}
-  <div class="panel span12 heads-up">
-    <span class="hu-label">{{ t('Heads-up','提醒') }}</span>
-    {% if event_risk and event_risk.show %}
-    {% set ER = event_risk %}
-    {% set erc = 'var(--down)' if ER.fragility.fragile else ('var(--orange)' if ER.vol_tier=='high' else 'var(--warn)') %}
-    <span class="hu-chip" id="event-risk" style="--hc:{{ erc }}">{{ t(ER.headline_en, ER.headline_zh) }}{{ help('A heads-up that a big scheduled event is near — not a buy/sell signal and not a direction call. These days swing both ways, so size positions and set stops for the noise.', '提醒重大日程事件临近 — 既非买卖信号也非方向判断。这类日子常两面波动，请据噪声调整仓位与止损。') }}</span>
-    {% endif %}
-    {% if latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown' %}
-    {% set FS = latest.fed_stance %}
-    {% set fsc = 'var(--down)' if FS.color=='down' else ('var(--up)' if FS.color=='up' else 'var(--muted)') %}
-    <a class="hu-chip" id="fed-stance" href="policy_watch.html" style="--hc:{{ fsc }}">{{ t('Fed','美联储') }}: <b style="color:{{ fsc }}">{{ t(FS.label_en, FS.label_zh) }}</b>{{ help('The Fed’s likely next move, read from rate-market pricing plus the latest FOMC guidance. Context only — a market price reacts, it doesn’t forecast. Tap to open Fed &amp; Policy Watch.', '美联储下一步的可能动向，依据利率市场定价与最新 FOMC 指引读出。仅供参考——市场价格是反应而非预测。点击打开美联储与政策观察。') }}</a>
-    {% endif %}
-    {% if latest.turning_point and latest.turning_point.present %}
-    {% set TP = latest.turning_point %}
-    {% set tpc = 'var(--down)' if TP.state=='fragile-structural' else ('var(--muted)' if TP.state=='cooling' else 'var(--orange)') %}
-    <span class="hu-chip" id="turning-point" style="--hc:{{ tpc }}">{{ t(TP.headline_en, TP.headline_zh) }}{{ help('A conviction guardrail, not a signal. It flags when the whole market is leaning on one bet and positioning is stretched — the setup that whipsaws on a surprise. It lowers conviction; it never tells you to bet against the move.', '确信度护栏，并非信号。当整个市场押注单一主题且仓位被拉伸时触发——这是意外消息下易剧烈反复的格局。它降低确信度，绝不提示反向押注。') }}</span>
-    {% endif %}
-  </div>
-  {% endif %}
 
 
   {# Week ahead — surfaces the full macro_catalysts calendar (only catalysts[0] was shown

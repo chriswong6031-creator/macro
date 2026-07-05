@@ -1,17 +1,9 @@
-{# Combined regime read (US macro dashboard): the current-regime probability (HMM, "how solid
-   is the read") and the base-effect forward path ("where it's headed") merged into ONE
-   scorecard — they were two near-identical stacked .bfwd panels. Each shared sub-panel is
-   rendered inline with its standalone panel chrome suppressed (_embedded), separated by a
-   hairline. china.html.j2 still includes each sub-panel on its own (unembedded → full panel),
-   so this changes only the macro dashboard. Guarded: nothing renders unless at least one
-   sub-read is present. Requires be_note_en / be_note_zh to be set by the parent first. #}
-{% set _has_hmm = latest.regime_hmm and latest.regime_hmm.regime_probs %}
+{# Macro dashboard: the HMM probability read was retired because the base-effect
+   path answers the more useful forward question directly. #}
 {% set _has_be = latest.base_effect and latest.base_effect.growth and latest.base_effect.inflation %}
-{% if _has_hmm or _has_be %}
+{% if _has_be %}
 <div class="panel span12 bfwd rr-combined" id="regime-read">
   {% set _embedded = true %}
-  {% include "_regime_prob_panel.html.j2" %}
-  {% if _has_hmm and _has_be %}<div class="rr-div" style="border-top:1px solid var(--line);margin:16px 0"></div>{% endif %}
   {% include "_base_effect_strip.html.j2" %}
 </div>
 {% endif %}
