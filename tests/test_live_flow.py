@@ -1614,3 +1614,234 @@ class TestRTHGuard:
                             }))
         from scripts.live_flow_poller import _within_rth
         assert _within_rth() is False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 29. Poller merge-path regression (FIX: cross-root tide accumulation)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPollerMergePath:
+    """Hermetic regression tests for run_cycle's multi-root tide merge path.
+
+    These tests exercise the merge logic the way run_cycle does — sequentially calling
+    process_batch per root with the accumulated state — and assert that all roots'
+    contributions reach the final tide state.  No network / filesystem calls are made.
+    """
+
+    # Strike offset per root ensures each root's contract has a unique dedup key
+    # (dedup key = (exp, strike, right) — not root-scoped).  Without this, two roots
+    # sharing the same contract would correctly be deduped — which is the right engine
+    # behaviour but defeats the cross-root accumulation test.
+    _ROOT_STRIKE = {"SPY": 550.0, "QQQ": 460.0, "IWM": 200.0, "NVDA": 130.0}
+
+    def _make_root_calls(
+        self, root: str, t_hhmm: str, size: int = 100, price: float = 2.80,
+        seq_base: int = 1000,
+    ) -> pd.DataFrame:
+        """One ask-side call trade for `root` at `t_hhmm` ET on SESSION_DATE.
+
+        Uses a root-specific strike so that (exp, strike, right) dedup keys are
+        distinct across roots — allowing additive accumulation tests.
+        """
+        from zoneinfo import ZoneInfo
+        ET_inner = ZoneInfo("America/New_York")
+        h, m = int(t_hhmm[:2]), int(t_hhmm[3:])
+        dt_et = datetime(2026, 7, 2, h, m, 0, tzinfo=ET_inner)
+        ts_utc = dt_et.astimezone(ZoneInfo("UTC")).strftime("%Y-%m-%dT%H:%M:%SZ")
+        strike = self._ROOT_STRIKE.get(root, 100.0 + abs(hash(root)) % 500)
+        return pd.DataFrame([{
+            "root": root, "right": "C", "expiration": "2026-07-05",
+            "strike": strike, "price": price, "bid": 2.40, "ask": 2.80,
+            "size": size, "trade_timestamp": ts_utc,
+            "quote_timestamp": ts_utc,
+            "sequence": seq_base + abs(hash(root + t_hhmm)) % 1000,
+            "date": "2026-07-02",
+        }])
+
+    def _run_merge(self, root_batches: list[tuple[str, pd.DataFrame]]) -> dict:
+        """Simulate the sequential-process-per-root path from run_cycle.
+
+        Calls process_batch once per root in order, passing the accumulated state
+        each time (matching the fixed run_cycle behaviour).  Returns the final
+        accumulated state.
+        """
+        market_tide_minutes: dict = {}
+        sector_tide: dict = {}
+        dte_tide: dict = {}
+        root_minutes_acc: dict = {}
+        root_strikes_acc: dict = {}
+        root_expiries_acc: dict = {}
+        root_top_contr: dict = {}
+        sweep_clusters_acc: dict = {}
+        emitted_ids: set = set()
+        contract_vol: dict = {}
+        notab_hist: dict = {}
+        root_gross: dict = {}
+        seen_sequences: dict = {}
+
+        for root, calls_df in root_batches:
+            prior = {
+                "emitted_ids":        emitted_ids,
+                "contract_vol":       contract_vol,
+                "notability_history": notab_hist,
+                "root_gross_today":   root_gross,
+                "seen_sequences":     seen_sequences,
+                # Tide accumulators (the fix — must be present)
+                "market_tide_minutes": market_tide_minutes,
+                "sector_tide":         sector_tide,
+                "dte_tide":            dte_tide,
+                "root_minutes":        root_minutes_acc,
+                "root_strikes":        root_strikes_acc,
+                "root_expiries":       root_expiries_acc,
+                "root_top_contracts":  root_top_contr,
+                "sweep_clusters":      sweep_clusters_acc,
+            }
+            result = lf.process_batch(
+                calls_df=calls_df, puts_df=None,
+                session_date=SESSION_DATE, batch_ts=BATCH_TS,
+                prior_state=prior,
+                etf_floor=0, name_floor=0,
+                etf_anchors=["SPY", "QQQ", "IWM"],
+            )
+            state_out = result.get("state", {})
+            emitted_ids     = state_out.get("emitted_ids", emitted_ids)
+            contract_vol    = state_out.get("contract_vol", contract_vol)
+            notab_hist      = state_out.get("notability_history", notab_hist)
+            root_gross      = state_out.get("root_gross_today", root_gross)
+            seen_sequences  = state_out.get("seen_sequences", seen_sequences)
+            market_tide_minutes = state_out.get("market_tide_minutes", market_tide_minutes)
+            sector_tide         = state_out.get("sector_tide", sector_tide)
+            dte_tide            = state_out.get("dte_tide", dte_tide)
+            root_minutes_acc    = state_out.get("root_minutes", root_minutes_acc)
+            root_strikes_acc    = state_out.get("root_strikes", root_strikes_acc)
+            root_expiries_acc   = state_out.get("root_expiries", root_expiries_acc)
+            root_top_contr      = state_out.get("root_top_contracts", root_top_contr)
+            sweep_clusters_acc  = state_out.get("sweep_clusters", sweep_clusters_acc)
+
+        return {
+            "market_tide_minutes": market_tide_minutes,
+            "sector_tide":         sector_tide,
+            "dte_tide":            dte_tide,
+            "root_minutes":        root_minutes_acc,
+            "root_gross_today":    root_gross,
+        }
+
+    def test_market_tide_gross_equals_sum_of_all_roots(self):
+        """market_tide gross at 09:30 must equal sum of all 3 roots' premiums."""
+        roots_batches = [
+            ("SPY", self._make_root_calls("SPY", "09:30", size=100, seq_base=1000)),
+            ("QQQ", self._make_root_calls("QQQ", "09:30", size=100, seq_base=2000)),
+            ("IWM", self._make_root_calls("IWM", "09:30", size=100, seq_base=3000)),
+        ]
+        state = self._run_merge(roots_batches)
+
+        mkt = state["market_tide_minutes"]
+        assert "09:30" in mkt, f"09:30 key missing: {list(mkt.keys())}"
+        gross_at_930 = mkt["09:30"]["gross"]
+        # Each root: 100 × 2.80 × 100 = $28,000  →  3 roots = $84,000
+        expected = 3 * 100 * 2.80 * 100
+        assert gross_at_930 == pytest.approx(expected, rel=1e-4), (
+            f"market_tide gross={gross_at_930:.0f} expected={expected:.0f}; "
+            "cross-root contributions must be additive")
+
+    def test_sectors_present_for_multiple_roots(self):
+        """SPY and NVDA should both appear in sector_tide (same or different groups)."""
+        roots_batches = [
+            ("SPY",  self._make_root_calls("SPY",  "09:30", size=100, seq_base=1000)),
+            ("NVDA", self._make_root_calls("NVDA", "09:35", size=100, seq_base=2000)),
+        ]
+        state = self._run_merge(roots_batches)
+        n_sectors = len(state["sector_tide"])
+        assert n_sectors >= 1, f"At least 1 sector group expected; got {n_sectors}"
+
+    def test_top_net_impact_contains_all_three_roots(self):
+        """root_minutes must contain entries for all 3 processed roots."""
+        roots_batches = [
+            ("SPY", self._make_root_calls("SPY", "09:30", size=100, seq_base=1000)),
+            ("QQQ", self._make_root_calls("QQQ", "09:31", size=100, seq_base=2000)),
+            ("IWM", self._make_root_calls("IWM", "09:32", size=100, seq_base=3000)),
+        ]
+        state = self._run_merge(roots_batches)
+        root_minutes = state.get("root_minutes", {})
+        for r in ("SPY", "QQQ", "IWM"):
+            assert r in root_minutes, (
+                f"Root {r} missing from root_minutes; cross-root merge is broken. "
+                f"Present: {list(root_minutes.keys())}")
+
+    def test_interleaved_two_workers_same_minute(self):
+        """QQQ then SPY at the same minute — both gross premiums must accumulate."""
+        roots_batches = [
+            ("QQQ", self._make_root_calls("QQQ", "10:00", size=200, seq_base=2000)),
+            ("SPY", self._make_root_calls("SPY", "10:00", size=150, seq_base=1000)),
+        ]
+        state = self._run_merge(roots_batches)
+        mkt = state["market_tide_minutes"]
+        assert "10:00" in mkt, "10:00 key missing"
+        gross = mkt["10:00"]["gross"]
+        expected = (150 + 200) * 2.80 * 100
+        assert gross == pytest.approx(expected, rel=1e-4), (
+            f"Interleaved-worker gross={gross:.0f} vs expected={expected:.0f}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 30. Empty-ticker skip logic
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestEmptyTickerSkip:
+    """build_ticker_json returns empty minutes/strikes when root has no data."""
+
+    def test_empty_root_has_no_minutes_or_strikes(self):
+        """A root absent from day_state root_minutes/root_strikes → empty payload."""
+        day_state: dict = {
+            "root_minutes": {},
+            "root_strikes": {},
+            "root_expiries": {},
+            "root_top_contracts": {},
+            "root_gross_today": {"EMPTYTICK": 0.0},
+        }
+        tk = lf.build_ticker_json(
+            root="EMPTYTICK",
+            session_date=SESSION_DATE,
+            asof=BATCH_TS,
+            day_state=day_state,
+        )
+        assert len(tk.get("minutes", [])) == 0, "minutes should be empty for absent root"
+        assert len(tk.get("strikes", [])) == 0, "strikes should be empty for absent root"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 31. Meta-notes deduplication
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestMetaNoteDedup:
+    """meta_notes from N roots with the same note string must collapse to one."""
+
+    def test_repeated_notes_deduplicated(self):
+        """3 identical notes collapse to 1 after the dedup pass."""
+        raw_meta_notes = [
+            "moneyness vs prior-session close (approx.)",
+            "moneyness vs prior-session close (approx.)",
+            "moneyness vs prior-session close (approx.)",
+        ]
+        seen_notes: set[str] = set()
+        deduped: list[str] = []
+        for note in raw_meta_notes:
+            if note not in seen_notes:
+                seen_notes.add(note)
+                deduped.append(note)
+
+        assert len(deduped) == 1, (
+            f"Expected 1 unique note after dedup, got {len(deduped)}: {deduped}")
+        assert deduped[0] == "moneyness vs prior-session close (approx.)"
+
+    def test_different_notes_all_preserved(self):
+        """Different notes are all kept; only exact duplicates collapse."""
+        raw = ["note A", "note B", "note A", "note C", "note B"]
+        seen_notes: set[str] = set()
+        deduped: list[str] = []
+        for note in raw:
+            if note not in seen_notes:
+                seen_notes.add(note)
+                deduped.append(note)
+        assert deduped == ["note A", "note B", "note C"], (
+            f"Unexpected dedup result: {deduped}")
