@@ -791,6 +791,17 @@ def main() -> int:
     outdir = site / "stockdata"
     outdir.mkdir(parents=True, exist_ok=True)
 
+    # W8b: load provenance sidecar context once (shared across all tickers).
+    # Fail-open: missing neuralweb artifacts → empty context → no provenance rows.
+    try:
+        from engine.provenance_sidecar import load_context as _load_prov_ctx
+        _prov_ctx = _load_prov_ctx(config.ROOT)
+        log.info("provenance sidecar context loaded (kernel_engines=%d spine_tickers=%d)",
+                 len(_prov_ctx.kernel), len(_prov_ctx.spine_latest))
+    except Exception as _pe:  # noqa: BLE001 — additive, never fatal
+        _prov_ctx = None
+        log.warning("provenance sidecar context load failed (%s); provenance rows skipped", _pe)
+
     liq = current_liquidity()
     drag = current_macro()
     vctx = current_vix_context()
@@ -1832,6 +1843,15 @@ def main() -> int:
         # the view's score/band match the final within-market percentile. Additive: the
         # shared stockview.js renders rec["view"]; legacy panels still read rec.* directly.
         rec["view"] = stock_view.build_view(rec, "US")
+        # W8b: attach provenance sidecar to view (Committee View flagship data contract).
+        # Fail-open: any per-ticker error → provenance key absent, page degrades gracefully.
+        if _prov_ctx is not None:
+            try:
+                from engine.provenance_sidecar import build_provenance as _build_prov
+                _ticker = rec.get("ticker", safe.replace("_", "="))
+                rec["view"]["provenance"] = _build_prov(_ticker, rec, _prov_ctx)
+            except Exception as _prov_e:  # noqa: BLE001 — additive, never fatal
+                log.debug("provenance sidecar failed for %s: %s", safe, _prov_e)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
     # flush the accruing ladder-transition log in one idempotent, atomic write
     try:
