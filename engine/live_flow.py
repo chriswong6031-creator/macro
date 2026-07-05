@@ -416,35 +416,30 @@ def process_batch(
     if "sequence" in combined.columns:
         contract_cols_dedup = [c for c in ("expiration", "strike", "right") if c in combined.columns]
         if contract_cols_dedup:
-            seq_series = pd.to_numeric(combined["sequence"], errors="coerce")
-            keep_mask = pd.Series(True, index=combined.index)
-            for idx_r in combined.index:
-                row_d = combined.loc[idx_r]
-                exp_d   = str(row_d.get("expiration", ""))
-                stk_d   = float(row_d.get("strike", 0)) if pd.notna(row_d.get("strike")) else 0.0
-                right_d = str(row_d.get("right", "C")).upper()[:1]
-                seq_d   = seq_series.loc[idx_r]
-                if pd.isna(seq_d):
-                    continue
-                key_d   = (exp_d, stk_d, right_d)
-                max_seen = seen_sequences.get(key_d)
-                if max_seen is not None and seq_d <= max_seen:
-                    keep_mask.loc[idx_r] = False
-            combined = combined[keep_mask].copy()
-        # Advance seen_sequences with the max sequence from surviving rows
-        if not combined.empty:
-            seq_series2 = pd.to_numeric(combined["sequence"], errors="coerce")
-            for idx_r in combined.index:
-                row_d = combined.loc[idx_r]
-                exp_d   = str(row_d.get("expiration", ""))
-                stk_d   = float(row_d.get("strike", 0)) if pd.notna(row_d.get("strike")) else 0.0
-                right_d = str(row_d.get("right", "C")).upper()[:1]
-                seq_d   = seq_series2.loc[idx_r]
-                if pd.isna(seq_d):
-                    continue
-                key_d = (exp_d, stk_d, right_d)
-                if key_d not in seen_sequences or seq_d > seen_sequences[key_d]:
-                    seen_sequences[key_d] = float(seq_d)
+            # Vectorised key columns (avoid per-row .loc — SPY-scale frames are ~1M rows).
+            seq_arr   = pd.to_numeric(combined["sequence"], errors="coerce")
+            exp_key   = combined.get("expiration", pd.Series("", index=combined.index)).astype(str)
+            stk_num   = pd.to_numeric(combined.get("strike", pd.Series(0.0, index=combined.index)),
+                                      errors="coerce").fillna(0.0).astype(float)
+            right_key = (combined.get("right", pd.Series("C", index=combined.index))
+                         .astype(str).str.upper().str[:1])
+            keys      = list(zip(exp_key, stk_num, right_key))
+            # Drop rows whose sequence is <= the max already seen for that contract.
+            if seen_sequences:
+                max_seen_arr = pd.Series(
+                    [seen_sequences.get(k) for k in keys], index=combined.index, dtype="float64")
+                drop_mask = seq_arr.notna() & max_seen_arr.notna() & (seq_arr <= max_seen_arr)
+                if drop_mask.any():
+                    combined = combined[~drop_mask].copy()
+                    keys     = [k for k, drop in zip(keys, drop_mask.to_numpy()) if not drop]
+                    seq_arr  = seq_arr[~drop_mask]
+        # Advance seen_sequences with the max surviving sequence per contract.
+        if not combined.empty and "sequence" in combined.columns:
+            surv = pd.DataFrame({"_k": keys, "_s": seq_arr.to_numpy()}).dropna(subset=["_s"])
+            if not surv.empty:
+                for k, s in surv.groupby("_k")["_s"].max().items():
+                    if k not in seen_sequences or s > seen_sequences[k]:
+                        seen_sequences[k] = float(s)
 
     combined = _sign_batch(combined)
     if combined.empty:
