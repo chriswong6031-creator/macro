@@ -285,7 +285,13 @@ def _log_to_trial_ledger(row_id: str, root: Path | str | None) -> None:
 # Governance event wiring
 # ---------------------------------------------------------------------------
 
-def _emit_governance(event_type: str, row_id: str, note: str, root: Path | str | None) -> None:
+def _emit_governance(
+    event_type: str,
+    row_id: str,
+    note: str,
+    root: Path | str | None,
+    evidence: dict | None = None,
+) -> None:
     """Append a governance event.  Fail-open."""
     try:
         from engine.neuralweb.governance import append_event  # type: ignore[import]
@@ -295,6 +301,7 @@ def _emit_governance(event_type: str, row_id: str, note: str, root: Path | str |
             article=6,
             authored_by="metabolism",
             note=note,
+            evidence=evidence,
             root=root,
         )
     except Exception as exc:  # noqa: BLE001
@@ -430,12 +437,23 @@ def register_hypothesis(
     # Step 5: declare in trial ledger
     _log_to_trial_ledger(row_id, root)
 
-    # Step 6: governance event (A6 lane-ii — LLM-proposed)
+    # Step 6: governance event (A6 lane-ii — LLM-proposed).
+    # Record the pre-committed gate, spine_query, claim_shape, and horizon_d
+    # as evidence so that any post-hoc edit to machine_registry.jsonl is
+    # detectable against this ledger entry.  Exploitation still requires
+    # filesystem write access to machine_registry.jsonl (which is git-tracked),
+    # but this closes the "visible in the ledger" gap named in the spec.
     _emit_governance(
         "a6_llm_proposed",
         row_id,
         f"cortex hypothesis registered: {h['hypothesis'][:120]}",
         root,
+        evidence={
+            "pre_committed_gate": h["pre_committed_gate"],
+            "spine_query": h["spine_query"],
+            "claim_shape": h["claim_shape"],
+            "horizon_d": horizon_d,
+        },
     )
 
     log.info(

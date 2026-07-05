@@ -17,7 +17,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| neural-web | 18 |
+| neural-web | 21 |
 | options-alpha | 2 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
@@ -30,15 +30,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 44 |
-| infrastructure | 24 |
+| infrastructure | 26 |
 | scored | 4 |
-| shadow | 32 |
+| shadow | 33 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 101 |
+| git | 104 |
 | gitignored-local | 2 |
 | r2 | 1 |
 
@@ -125,8 +125,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
 | spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
+| machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 2 | 0 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
+| cortex-attention-grades | `data/reflexes/cortex_attention/grades.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
+| cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 1 | 0 |
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
 | kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
 | reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
