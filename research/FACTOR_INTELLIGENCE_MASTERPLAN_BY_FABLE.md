@@ -244,7 +244,7 @@ Threshold values are set here and frozen for v1. The drafter (Sonnet) must imple
 
 **Outputs per (ticker, date):**
 - `twin_rel_20d` — the name's 20d realized return minus the twin basket's 20d realized return (signed; positive = outperformed twin)
-- `twin_bleed_flag` — boolean: True if the twin 20d return is negative AND the twin is below its own 20d high by more than its trailing median pullback (median of all 20d max-drawdown observations in the prior 252d). The drafter must implement the trailing-median-pullback computation deterministically and include a unit test.
+- `twin_bleed_flag` — boolean: True if the twin 20d return is negative AND the twin is below its own 20d high by more than its trailing median pullback (computed from the prior 60d of twin basket daily returns, using the rolling 20d drawdown from 20d high distribution). The drafter must implement the trailing-median-pullback computation deterministically and include a unit test. *(corrected 2026-07-05 to match locked PREREG H4; drift caught in P1-B — original text said "prior 252d")*
 
 **Purpose:** `twin_bleed_flag` is H4's feature (de-escalation validity when the twin basket is bleeding at entry). `twin_rel_20d` is a display/context output and an input to H5's decay context.
 
