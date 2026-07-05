@@ -41,6 +41,7 @@ from scripts.register_factor_hypotheses import (  # noqa: E402
     _BATCH_H123,
     _BATCH_H45,
     _already_registered,
+    _count_week_registrations,
     _parse_keys,
     register_batch,
     H1_PAYLOAD,
@@ -83,15 +84,22 @@ class TestPayloadFidelity:
                 if not k.startswith("_")}
 
     def test_h1_gate_threshold(self):
-        """H1: threshold=+0.05 (prereg §3 H1: '+5pp absolute effect floor').
-        Direction: +1 (annotated fires expected to have better outcomes).
+        """H1: threshold=+0.05 (prereg §3 H1: '+5pp absolute stop-out gap').
+        FIX-3: metric=stop_out_rate (PATH B native); direction=-1 (annotated
+        arm LOWERS stop-out rate — lower is better for factor_annotated=True).
         """
         g = self._gate(H1_PAYLOAD)
         assert g["threshold"] == pytest.approx(0.05), (
             "H1 threshold must be +0.05 per locked prereg §3 H1 gate "
-            "('+5pp absolute')"
+            "('+5pp absolute stop-out gap')"
         )
-        assert g["direction_expected"] == 1
+        assert g["direction_expected"] == -1, (
+            "H1 direction_expected must be -1: factor_annotated=True LOWERS "
+            "stop-out rate (PATH B, walk_forward harness; FIX-3)"
+        )
+        assert g["metric"] == "stop_out_rate", (
+            "H1 metric must be 'stop_out_rate' (PATH B evaluator native metric; FIX-3)"
+        )
 
     def test_h1_gate_horizon_and_minn(self):
         """H1: horizon_d=21, min_n≥25 (prereg §3 H1, metabolism _HOUSE_MIN_N)."""
@@ -127,14 +135,16 @@ class TestPayloadFidelity:
         assert H2_PAYLOAD["claim_shape"] == "conditional_regime"
 
     def test_h3_gate_threshold_passthrough(self):
-        """H3: threshold=0.0 (metabolism pass-through for χ² permutation test).
-        The locked prereg §3 H3 uses a permutation p-value, not a scalar gate.
-        threshold=0.0 is the documented mapping; the real gate is in validate_factor_h3.py.
+        """H3: threshold=1.01 (unreachable — deliberately non-passing context-only row).
+        FIX-4: the metabolism scalar cannot express a heterogeneity test.
+        threshold=1.01 is unreachable (hit_rate ∈ [0,1]) so the metabolism gate
+        never auto-passes.  The real gate is the permutation test in validate_factor_h3.py.
         """
         g = self._gate(H3_PAYLOAD)
-        assert g["threshold"] == pytest.approx(0.0), (
-            "H3 threshold must be 0.0 (metabolism pass-through for χ² permutation). "
-            "Real gate in validate_factor_h3.py — see module docstring."
+        assert g["threshold"] == pytest.approx(1.01), (
+            "H3 threshold must be 1.01 (unreachable — deliberately non-passing). "
+            "The metabolism scalar cannot express a heterogeneity test; this row "
+            "is context-only.  Real gate in validate_factor_h3.py (FIX-4)."
         )
 
     def test_h3_gate_horizon_and_minn(self):
@@ -148,12 +158,21 @@ class TestPayloadFidelity:
         assert H3_PAYLOAD["claim_shape"] == "conditional_regime"
 
     def test_h4_gate_threshold(self):
-        """H4: threshold=+0.05 (prereg §3 H4: '+5pp', positive = more stop-outs)."""
+        """H4: threshold=+0.05 (prereg §3 H4: '+5pp stop-out gap').
+        FIX-3: metric=stop_out_rate (PATH B native); direction=+1 (twin_bleed
+        RAISES stop-out rate — higher is the harm signal for the flagged arm).
+        """
         g = self._gate(H4_PAYLOAD)
         assert g["threshold"] == pytest.approx(0.05), (
             "H4 threshold must be +0.05 per locked prereg §3 H4 gate"
         )
-        assert g["direction_expected"] == 1
+        assert g["direction_expected"] == 1, (
+            "H4 direction_expected must be +1: twin_bleed_flag=True RAISES "
+            "stop-out rate (PATH B, walk_forward harness; FIX-3)"
+        )
+        assert g["metric"] == "stop_out_rate", (
+            "H4 metric must be 'stop_out_rate' (PATH B evaluator native metric; FIX-3)"
+        )
 
     def test_h4_gate_horizon_and_minn(self):
         """H4: horizon_d=21, min_n≥25."""
@@ -461,3 +480,109 @@ class TestPrivateKeyStripping:
         required = {"metric", "threshold", "min_n", "horizon_d"}
         missing = required - set(gate.keys())
         assert not missing, f"Required gate keys missing after strip: {missing}"
+
+
+# ---------------------------------------------------------------------------
+# 6. Budget pre-flight (FIX-7)
+# ---------------------------------------------------------------------------
+
+class TestBudgetPreflight:
+    """FIX-7: register_batch aborts cleanly when weekly budget is exhausted.
+
+    BUDGET_PER_WEEK=3.  If 1 hypothesis is already registered this week,
+    the remaining budget=2.  A batch of 3 (h1,h2,h3) must abort before ANY write.
+    """
+
+    def test_abort_when_budget_insufficient_for_batch(self, empty_registry):
+        """register_h123 with 1 pre-existing same-week registration aborts cleanly.
+
+        FIX-7: remaining_budget=2 < batch_size=3 → RuntimeError with clear message,
+        NO calls to register_hypothesis, NO writes to machine_registry.jsonl.
+        """
+        from datetime import datetime, timezone
+        fixed_now = datetime(2026, 7, 5, 12, 0, 0, tzinfo=timezone.utc)
+
+        call_count = {"n": 0}
+
+        def mock_reg(payload, root=None, now=None):
+            call_count["n"] += 1
+            return {"id": "test", "status": "registered"}
+
+        # Simulate 1 pre-existing registration this week: remaining budget = 3-1 = 2
+        with mock.patch("engine.neuralweb.metabolism.register_hypothesis",
+                        side_effect=mock_reg):
+            with mock.patch("scripts.register_factor_hypotheses._already_registered",
+                            return_value=False):
+                with mock.patch(
+                    "scripts.register_factor_hypotheses._count_week_registrations",
+                    return_value=1,  # 1 already filed this week
+                ):
+                    with pytest.raises(RuntimeError, match="BUDGET PRE-FLIGHT ABORT"):
+                        register_batch(
+                            ["h1", "h2", "h3"],  # 3 hypotheses; budget only allows 2
+                            dry_run=False,
+                            root=empty_registry,
+                            now=fixed_now,
+                        )
+
+        assert call_count["n"] == 0, (
+            "FIX-7: register_hypothesis must NOT be called when budget pre-flight aborts. "
+            f"Got {call_count['n']} calls (expected 0)."
+        )
+
+    def test_dry_run_skips_budget_preflight(self, empty_registry):
+        """FIX-7: budget pre-flight is skipped in dry-run mode (no writes anyway)."""
+        from datetime import datetime, timezone
+        fixed_now = datetime(2026, 7, 5, 12, 0, 0, tzinfo=timezone.utc)
+
+        # Even with 0 budget remaining, dry-run must not raise
+        with mock.patch(
+            "scripts.register_factor_hypotheses._count_week_registrations",
+            return_value=3,  # all budget consumed — would abort a real run
+        ):
+            try:
+                results = register_batch(
+                    ["h1", "h2", "h3"],
+                    dry_run=True,
+                    root=empty_registry,
+                    now=fixed_now,
+                )
+            except RuntimeError:
+                pytest.fail(
+                    "FIX-7: dry-run must NOT raise RuntimeError on budget exhaustion "
+                    "(budget pre-flight only applies to real runs)"
+                )
+        assert len(results) == 3
+        assert all(r["status"] == "dry-run" for r in results)
+
+    def test_budget_passes_when_sufficient(self, empty_registry):
+        """FIX-7: batch proceeds normally when remaining budget >= batch_size."""
+        from datetime import datetime, timezone
+        fixed_now = datetime(2026, 7, 5, 12, 0, 0, tzinfo=timezone.utc)
+
+        call_count = {"n": 0}
+
+        def mock_reg(payload, root=None, now=None):
+            call_count["n"] += 1
+            return {"id": f"test-{call_count['n']}", "status": "registered"}
+
+        # 0 already filed this week → budget=3 >= batch_size=2
+        with mock.patch("engine.neuralweb.metabolism.register_hypothesis",
+                        side_effect=mock_reg):
+            with mock.patch("scripts.register_factor_hypotheses._already_registered",
+                            return_value=False):
+                with mock.patch(
+                    "scripts.register_factor_hypotheses._count_week_registrations",
+                    return_value=0,
+                ):
+                    results = register_batch(
+                        ["h4", "h5"],
+                        dry_run=False,
+                        root=empty_registry,
+                        now=fixed_now,
+                    )
+
+        assert call_count["n"] == 2, (
+            "FIX-7: both h4 and h5 must be registered when budget is sufficient"
+        )
+        assert len(results) == 2

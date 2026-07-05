@@ -5,33 +5,36 @@ name: factor-ops
 #   backfill      — deep panel backfill (2020-01-01 forward, ~25 min, runner-local)
 #   register_h123 — register H1/H2/H3 in metabolism (W27 budget batch)
 #   register_h45  — register H4/H5 in metabolism (W28+ budget batch)
-#   replay        — run replay_standout_pipeline.py over available history (P3-ready)
 #
 # OPERATIONAL FACTS (per masterplan §7-P2 context brief):
 #   - Self-hosted runner FS is virtualized/isolated.  Panel data
 #     (data/factordata/panel/) and metabolism registry
 #     (data/neuralweb/machine_registry.jsonl) live on the RUNNER workspace.
 #   - Panel is not committed (R2-rule; first build measures partitions to decide).
-#   - machine_registry.jsonl and governance.jsonl ARE git-tracked (see REGISTRY
-#     TRACKING FINDING note below).
-#   - BUDGET_PER_WEEK=3: register_h123 and register_h45 must run in separate
-#     ISO weeks.
+#   - machine_registry.jsonl and governance.jsonl are NOT yet tracked on the
+#     runner workspace at dispatch time; they BECOME tracked when first written
+#     and swept by daily.yml:1278's explicit git add on the next nightly ENGINE
+#     job.  Do NOT add .gitignore for machine_registry.jsonl.
 #
-# REGISTRY TRACKING FINDING (P2 investigation):
-#   daily.yml lines 1278-1279 explicitly git-add machine_registry.jsonl and
-#   governance.jsonl after every cortex run:
+# NIGHTLY-SOLE-ADVANCER LAW (FIX-1):
+#   A dispatchable workflow MUST NOT push to main.  Registrations written by
+#   this workflow ride the next ENGINE job's explicit git add (daily.yml:1278):
 #     git add data/neuralweb/machine_registry.jsonl
 #     git add data/neuralweb/governance.jsonl
 #   The broad "git add data/ site/ reports/" at line 920 also sweeps
-#   data/neuralweb/ on the ENGINE job.  Both files ARE tracked by design.
-#   RECOMMENDATION: do NOT add .gitignore for machine_registry.jsonl.
-#   Evidence: the module docstring (metabolism.py line 20-24) states
-#   "machine_registry.jsonl and governance.jsonl are both git-tracked files"
-#   and "Ledger-evidence tamper detection rests on git history."  Tracking is
-#   intentional: git history is the tamper-detection substrate.
-#   Factor Intelligence registrations filed by this workflow will be swept into
-#   the next ENGINE job's git add data/ and committed automatically.  This is
-#   DESIRABLE — it preserves the governance audit trail.
+#   data/neuralweb/ on the ENGINE job.  Both files are tracked by design;
+#   git history is the tamper-detection substrate (metabolism.py line 20-24).
+#   Factor Intelligence registrations committed via the nightly ENGINE job
+#   preserve the governance audit trail without violating the sole-advancer law.
+#
+# REPLAY ACTION REMOVED (FIX-2):
+#   The yahoo-sourced preliminary replay was removed because writing to the
+#   canonical data/replay/ path with a non-massive (non-ERA-LAW-compliant)
+#   source could be mistaken for the study substrate.  P3 owns replay
+#   generation using the massive store on a runner with the full price history.
+#
+# BUDGET_PER_WEEK=3: register_h123 and register_h45 must run in separate
+#   ISO weeks.
 
 on:
   workflow_dispatch:
@@ -44,10 +47,9 @@ on:
           - backfill
           - register_h123
           - register_h45
-          - replay
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: factor-ops-${{ github.event.inputs.action }}
@@ -116,25 +118,7 @@ jobs:
           for r in factor_rows:
               print(json.dumps({'id': r.get('id'), 'status': r.get('status'), 'claim_shape': r.get('claim_shape'), 'hypothesis': r.get('hypothesis','')[:80]}, indent=2))
           " 2>&1 || echo "Could not print registry state" >&2
-
-      - name: commit registry updates (H1/H2/H3)
-        if: github.event.inputs.action == 'register_h123'
-        run: |
-          git config user.name "dashboard-bot"
-          git config user.email "bot@mastermind-x.com"
-          git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
-          git add data/neuralweb/governance.jsonl 2>/dev/null || true
-          git diff --cached --quiet && {
-            echo "No registry changes to commit (idempotent run or files not tracked yet)"
-            exit 0
-          }
-          git commit -m "factor-intel: register H1/H2/H3 in metabolism (P2, W27 budget batch)"
-          # rebase-retry push (matches daily.yml pattern)
-          for attempt in 1 2 3; do
-            git push && break
-            echo "push attempt $attempt failed, rebasing..."
-            git fetch origin && git rebase origin/main && sleep 5
-          done
+          echo "=== Registrations are runner-local; nightly ENGINE job (daily.yml:1278) will git-add and commit them. ===" >&2
 
       # ── ACTION: register_h45 ──────────────────────────────────────────────
       - name: register H4/H5 — dry run first
@@ -157,57 +141,4 @@ jobs:
           for r in factor_rows:
               print(json.dumps({'id': r.get('id'), 'status': r.get('status'), 'claim_shape': r.get('claim_shape'), 'hypothesis': r.get('hypothesis','')[:80]}, indent=2))
           " 2>&1 || echo "Could not print registry state" >&2
-
-      - name: commit registry updates (H4/H5)
-        if: github.event.inputs.action == 'register_h45'
-        run: |
-          git config user.name "dashboard-bot"
-          git config user.email "bot@mastermind-x.com"
-          git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
-          git add data/neuralweb/governance.jsonl 2>/dev/null || true
-          git diff --cached --quiet && {
-            echo "No registry changes to commit (idempotent run or files not tracked yet)"
-            exit 0
-          }
-          git commit -m "factor-intel: register H4/H5 in metabolism (P2, W28+ budget batch)"
-          for attempt in 1 2 3; do
-            git push && break
-            echo "push attempt $attempt failed, rebasing..."
-            git fetch origin && git rebase origin/main && sleep 5
-          done
-
-      # ── ACTION: replay ────────────────────────────────────────────────────
-      # OPTIONAL: replay generation via scripts/replay_standout_pipeline.py.
-      # The replay pipeline's CLI is non-trivial (--start-year, --end-year,
-      # --source, --max-universe, --skip-recall flags with inter-dependencies).
-      # Specifically:
-      #   - --source=massive requires the massive stock day store (Mac-local;
-      #     may not be present on the runner after a fresh checkout).
-      #   - --skip-recall requires a prior recall-passing run to be asserted;
-      #     omitting it runs the exhaustive recall check (can take hours).
-      #   - The default --start-year 2012 + full universe is multi-hour.
-      # JUDGMENT CALL (P2, flagged for P3):
-      #   Invoking the replay pipeline without knowing the runner's price store
-      #   state could silently produce a partial or empty replay.  The invocation
-      #   below uses --source yahoo (always available from git-cached parquets),
-      #   --start-year 2020 (manageable horizon), and --skip-recall (post-warning).
-      #   P3 should: (a) verify runner has massive store, (b) run with --source
-      #   massive for the ERA-LAW-compliant replay, (c) not use --skip-recall on
-      #   first run.  This action produces a PRELIMINARY yahoo-sourced replay only.
-      - name: replay generation (preliminary — yahoo source, 2020+)
-        if: github.event.inputs.action == 'replay'
-        timeout-minutes: 90
-        run: |
-          echo "=== Replay Generation (P2 preliminary) ===" >&2
-          echo "WARNING: using --source yahoo (not massive). ERA LAW requires massive." >&2
-          echo "P3 should re-run with --source massive on a runner with the price store." >&2
-          python -m scripts.replay_standout_pipeline \
-            --start-year 2020 \
-            --source yahoo \
-            --skip-recall \
-            2>&1 | tee /tmp/replay.log; rc=${PIPESTATUS[0]}
-          echo "=== Replay exit code: $rc ===" >&2
-          if [ "$rc" -ne 0 ]; then
-            echo "::warning::replay exited $rc — see /tmp/replay.log"
-          fi
-          exit 0  # fail-soft: replay is P3-gated; partial output is informational
+          echo "=== Registrations are runner-local; nightly ENGINE job (daily.yml:1278) will git-add and commit them. ===" >&2

@@ -388,13 +388,39 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
        terminal_state_clean8_21, post_cushion_breach (at horizon=21); all nullable.
     5. REGIME STAMP: PIT regime_vector fields stamped per as_of row.
     6. SPECIES/ARCHETYPE: species_id=null (ambiguous ledger); archetype from row payload.
+    7. IN-BATCH TENURE (FIX-5): boards processed in ascending as_of order; a running
+       in-memory presence map (union of stored + freshly-graded (as_of, ticker) pairs)
+       is maintained and passed to _board_tenure so consecutive dates graded in the
+       same call can see each other correctly.
+
+    RETRO-STAMP HONESTY (FIX-6):
+      Historical rows ARE retro-stamped with PIT-honest board_tenure_days whenever
+      re-graded.  The tenure count uses only dates strictly < as_of — verified correct.
+      This is intentional and blessed: it back-fills H5's substrate honestly for rows
+      that predated the board_tenure_days column.
     """
+    # FIX-5: sort boards ascending by as_of so the in-batch presence map
+    # accumulates in chronological order (earlier boards feed later ones).
+    boards = sorted(boards, key=lambda b: b["as_of"])
+
     spy = etfs[BENCH].dropna() if BENCH in etfs.columns else None
     last_price_date = names.index.max()
 
     # W0.1 B-b: load dead-name price store once per run for resolve_series
     dead_prices = load_dead_prices()
     _dead_price_count = len(dead_prices)  # for coverage reporting
+
+    # FIX-5: running in-memory presence map — as_of_str → set of tickers graded
+    # so far in this batch.  Seeded from stored_df at the H=5 slice (same proxy
+    # used by _board_tenure when scanning stored_df directly).  In-batch boards
+    # add their tickers here after grading so the NEXT board can see them.
+    _batch_presence: dict[str, set] = {}
+    if _stored_df is not None and not _stored_df.empty:
+        sub = (_stored_df[_stored_df["horizon"] == 5]
+               if "horizon" in _stored_df.columns else _stored_df)
+        if "as_of" in sub.columns and "ticker" in sub.columns:
+            for d, g in sub.groupby("as_of"):
+                _batch_presence[d] = set(g["ticker"].dropna().tolist())
 
     recs = []
     skipped_no_price = 0
@@ -406,8 +432,13 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
         # W0.1 B-b scope 4: PIT regime stamp — looked up once per board date
         regime_stamp = get_vector_for_date(as_of)
 
+        # FIX-5: collect tickers seen on this board date (any lane) for the
+        # in-batch presence map — used by _board_tenure for subsequent dates.
+        _board_tickers_this_date: set[str] = set()
+
         for feat in b["rows"]:
             tk = feat["ticker"]
+            _board_tickers_this_date.add(tk)
             # W0.1 B-b scope 3: resolve_series extends live closes with dead-name terminals
             live_col = names[tk].dropna() if tk in names.columns else None
             nser = resolve_series(tk, live_col, dead_prices=dead_prices)
@@ -496,12 +527,20 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
                     # W0.2b tier_cascade
                     "tier_cascade":    feat.get("tier_cascade"),
                     # P2 — H5 substrate stamping (PREREGISTRATION.md §2.4)
-                    # board_tenure_days = consecutive prior as_of dates in any lane.
-                    # Only stamped on NEW rows; historical rows keep NULL (PIT law).
-                    # NOTE: this is NOT hold_days (hold.days_basing); see _board_tenure
-                    # docstring and the JUDGMENT CALL comment above _merge_into_store.
+                    # board_tenure_days = consecutive prior as_of RECORDS where the
+                    # ticker appears in any lane; calendar gaps do not reset; a
+                    # record-date absence does.  This is NOT hold_days (hold.days_basing).
+                    # Column name ruling (Fable 2026-07-05): board_tenure_days is
+                    # canonical — the prereg §2.4 quantity under a non-colliding name
+                    # (ledger hold_days already carries days_basing); validate_factor_h5.py
+                    # must read board_tenure_days.
+                    # FIX-5: _presence_map=_batch_presence feeds in-batch dates so
+                    # consecutive boards graded in one call see each other correctly.
+                    # FIX-6: historical rows ARE retro-stamped (PIT-honest: only
+                    # dates strictly < as_of_str are counted); this is intentional.
                     "board_tenure_days": _board_tenure(
-                        tk, feat["lane"], as_of_str, _stored_df
+                        tk, feat["lane"], as_of_str, _stored_df,
+                        _presence_map=_batch_presence,
                     ),
                     # W3 evidence-stack strata (display-only; forward IC under accrual; None pre-schema)
                     "insider_cluster":   feat.get("insider_cluster"),
@@ -552,6 +591,17 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
                     rec["sector_etf"] = etf_t
                     rec["etf_ret"] = rec["excess_sector"] = rec["mae_close_excess_sector"] = None
                 recs.append(rec)
+
+        # FIX-5: after processing all rows for this board date, update the
+        # running presence map with all tickers seen (any lane) on as_of_str.
+        # This allows the NEXT board date in the same grade_boards call to see
+        # these tickers when computing board_tenure_days.
+        if _board_tickers_this_date:
+            if as_of_str in _batch_presence:
+                _batch_presence[as_of_str] = _batch_presence[as_of_str] | _board_tickers_this_date
+            else:
+                _batch_presence[as_of_str] = _board_tickers_this_date
+
     df = pd.DataFrame(recs)
     df.attrs["skipped_no_price"] = skipped_no_price
     df.attrs["dead_price_store_tickers"] = _dead_price_count
@@ -874,14 +924,17 @@ _DEDUP_KEYS = ["as_of", "ticker", "lane", "horizon"]
 # (basing-state tenure, a DIFFERENT quantity).  Overwriting that column would
 # corrupt historical rows and produce a semantically ambiguous column.
 #
-# JUDGMENT CALL (flagged for Fable adjudication):
-#   The new tenure column is stamped as `board_tenure_days` to preserve the
-#   existing `hold_days` semantics.  H5's study harness must read
-#   `board_tenure_days` (not `hold_days`) for the "≥10 trading days on board"
-#   filter.  This deviation from the prereg's column name is recorded here and
-#   in the test docstrings.  Fable should rule whether to rename `hold_days`
-#   → `days_basing` in a schema migration or to accept `board_tenure_days` as
-#   the canonical H5 substrate column.
+# COLUMN NAME RULING (Fable 2026-07-05):
+#   board_tenure_days is the canonical column name for the prereg §2.4 quantity.
+#   It does not collide with hold_days (which carries days_basing).
+#   validate_factor_h5.py must read board_tenure_days (not hold_days).
+#
+# RETRO-STAMP HONESTY (FIX-6):
+#   Historical rows ARE retro-stamped with PIT-honest board_tenure_days whenever
+#   re-graded.  The count uses only dates strictly < as_of_str (verified correct).
+#   This is intentional and blessed: it back-fills H5's substrate honestly for
+#   rows that predated the board_tenure_days column.  The value is point-in-time
+#   correct because it only consults dates strictly prior to the row's own as_of.
 #
 # TIER CASCADE:
 #   `tier_cascade` is already extracted from the board row in `_row_features`
@@ -899,6 +952,7 @@ def _board_tenure(
     lane: str,
     as_of_str: str,
     stored_df: pd.DataFrame | None,
+    _presence_map: dict[str, set] | None = None,
 ) -> int | None:
     """Compute on-board tenure = count of consecutive prior as_of dates
     where `ticker` appears in any lane in the ledger, counting back from
@@ -914,33 +968,60 @@ def _board_tenure(
     lane : str  (unused in the count; tenure counts presence in ANY lane)
     as_of_str : str  "YYYY-MM-DD"
     stored_df : pd.DataFrame | None  — the accumulated ledger (retro_grades)
-                before merging today's rows.
+                before merging today's rows (used for date enumeration).
+    _presence_map : dict[str, set] | None  — optional running in-memory map
+                keyed by as_of_str → set of tickers.  When provided, this is
+                consulted IN ADDITION to stored_df so that consecutive as_of
+                dates processed in the same grade_boards call can see each
+                other (FIX-5: in-batch tenure blindness fix).  Caller must
+                populate and maintain this map as each board date is graded.
 
     Returns
     -------
     int | None — consecutive prior dates on board, or None if not computable.
+
+    RETRO-STAMP HONESTY (FIX-6):
+      Historical rows ARE retro-stamped with PIT-honest tenure when re-graded.
+      The count uses only dates strictly < as_of_str, so it is point-in-time
+      correct.  This is intentional and blessed: it back-fills H5's substrate
+      honestly for rows that were first graded before the board_tenure_days
+      column existed.
     """
     try:
-        if stored_df is None or stored_df.empty:
-            return None
-        if "as_of" not in stored_df.columns or "ticker" not in stored_df.columns:
-            return None
+        # Build the combined date→tickers mapping from stored_df + presence_map
+        date_ticker_sets: dict[str, set] = {}
 
-        # Unique sorted as_of dates in the ledger that pre-date today's board
-        all_dates = sorted(stored_df["as_of"].dropna().unique().tolist())
+        if stored_df is not None and not stored_df.empty:
+            if "as_of" not in stored_df.columns or "ticker" not in stored_df.columns:
+                # stored_df schema mismatch — fall through to presence_map only
+                pass
+            else:
+                sub = (stored_df[stored_df["horizon"] == 5]
+                       if "horizon" in stored_df.columns else stored_df)
+                for d, g in sub.groupby("as_of"):
+                    date_ticker_sets[d] = set(g["ticker"].dropna().tolist())
+
+        # Overlay in-memory presence map (in-batch dates not yet persisted)
+        if _presence_map:
+            for d, tickers in _presence_map.items():
+                if d in date_ticker_sets:
+                    date_ticker_sets[d] = date_ticker_sets[d] | tickers
+                else:
+                    date_ticker_sets[d] = set(tickers)
+
+        if not date_ticker_sets:
+            return None  # no history at all
+
+        # Unique sorted as_of dates that pre-date today's board
+        all_dates = sorted(date_ticker_sets.keys())
         prior_dates = [d for d in all_dates if d < as_of_str]
         if not prior_dates:
             return 0  # first ever appearance
 
-        # Tickers present on each prior date (any lane, horizon=5 as proxy to
-        # avoid double-counting multi-horizon rows)
-        sub = stored_df[stored_df["horizon"] == 5] if "horizon" in stored_df.columns else stored_df
-        date_ticker_sets: dict[str, set] = {}
-        for d, g in sub.groupby("as_of"):
-            date_ticker_sets[d] = set(g["ticker"].dropna().tolist())
-
         # Walk backward from the last prior date, counting consecutive dates
-        # where the ticker appeared
+        # where the ticker appeared.  A record-date absence stops the streak;
+        # calendar gaps between record dates do not (the ledger only holds
+        # trading-day as_of records, not every calendar day).
         count = 0
         for d in reversed(prior_dates):
             if ticker in date_ticker_sets.get(d, set()):

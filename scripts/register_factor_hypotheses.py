@@ -8,6 +8,14 @@ BUDGET BATCHING (PREREGISTRATION.md §1 + masterplan §4.2):
   - Batch 2 (W28+, --only h4,h5):   H4, H5 — files from 2026-07-06+.
   Do NOT run both batches in the same calendar week.
 
+BUDGET PRE-FLIGHT (FIX-7):
+  Before any writes, register_batch reads the remaining weekly budget via
+  _count_week_registrations() from metabolism.  If the remaining budget
+  (BUDGET_PER_WEEK − already_filed_this_week) < len(keys), the entire batch
+  is aborted with a clear message.  Partial filing (e.g. H1+H2 filed, H3
+  silently dropped by metabolism's own budget enforcement) is worse than a
+  delayed batch because a silently-dropped H3 looks registered to the operator.
+
 METRIC ENUM FINDING (P2 audit, 2026-07-05):
   The evaluator (scripts/evaluate_cortex_hypotheses.py) accepts ONLY:
     PATH A (conditional_regime, lead_lag, sector_conditional):
@@ -24,11 +32,10 @@ METRIC ENUM FINDING (P2 audit, 2026-07-05):
   ┌─────┬─────────────────────┬────────────────────────────────────────────────┐
   │  H  │ Prereg metric       │ Registered metric + mapping note               │
   ├─────┼─────────────────────┼────────────────────────────────────────────────┤
-  │ H1  │ Δ P(CUSHIONED∪      │ "hit_rate" via PATH B (entry_quality shape).    │
-  │     │ CLEAN_LIFTOFF, 21d) │ walk_forward computes stop_out_rate; we use     │
-  │     │ on factor_annotated │ "hit_rate" mapped as 1 − stop_out_rate concept. │
-  │     │ =True vs False      │ Gate threshold +0.05 = annotated fires have ≥5pp│
-  │     │                     │ higher hit_rate.  DIRECTION: +1.                │
+  │ H1  │ Δ P(CUSHIONED∪      │ "stop_out_rate" via PATH B (entry_quality).    │
+  │     │ CLEAN_LIFTOFF, 21d) │ walk_forward computes stop_out_rate directly.  │
+  │     │ on factor_annotated │ factor_annotated=True LOWERS stop-out rate.    │
+  │     │ =True vs False      │ Gate threshold +0.05.  DIRECTION: −1.          │
   ├─────┼─────────────────────┼────────────────────────────────────────────────┤
   │ H2  │ Δ P(CUSHIONED∪      │ "hit_rate" via PATH A (conditional_regime).     │
   │     │ CLEAN_LIFTOFF, 21d) │ spine rows for high_alibi_flag=True should have │
@@ -38,14 +45,14 @@ METRIC ENUM FINDING (P2 audit, 2026-07-05):
   │ H3  │ P(STOPPED, 21d)     │ "hit_rate" via PATH A (conditional_regime).     │
   │     │ between-cell χ²     │ Heterogeneity test is not directly expressible  │
   │     │ permutation p       │ as a scalar gate; registered as hit_rate with   │
-  │     │                     │ threshold 0.0 (any post-registration data        │
-  │     │                     │ satisfies the metabolism gate; real test lives  │
-  │     │                     │ in validate_factor_h3.py permutation harness).  │
+  │     │                     │ threshold 1.01 (unreachable — deliberately non-  │
+  │     │                     │ passing context-only row; real gate lives in    │
+  │     │                     │ validate_factor_h3.py permutation harness).     │
   ├─────┼─────────────────────┼────────────────────────────────────────────────┤
-  │ H4  │ Δ P(STOPPED, 21d)   │ "hit_rate" via PATH A (entry_quality shape     │
-  │     │ on twin_bleed_flag  │ mapped to conditional_regime for PATH A access).│
-  │     │ =True vs False      │ Gate threshold +0.05 (flagged fires have ≥5pp  │
-  │     │                     │ higher stop-out).  DIRECTION: +1.               │
+  │ H4  │ Δ P(STOPPED, 21d)   │ "stop_out_rate" via PATH B (entry_quality).    │
+  │     │ on twin_bleed_flag  │ walk_forward computes stop_out_rate directly.  │
+  │     │ =True vs False      │ twin_bleed_flag=True RAISES stop-out rate.     │
+  │     │                     │ Gate threshold +0.05.  DIRECTION: +1.           │
   ├─────┼─────────────────────┼────────────────────────────────────────────────┤
   │ H5  │ Δ P(−5% within 21d) │ "hit_rate" via PATH A (lead_lag shape).         │
   │     │ on decay_flag=True  │ decay_flag=True rows should hit −5% more.       │
@@ -58,6 +65,13 @@ METRIC ENUM FINDING (P2 audit, 2026-07-05):
   and in the validate_factor_h{1-5}.py harnesses.  Gate numbers in this script
   reflect the metabolism floor only; the locked prereg thresholds (−5pp, +5pp, etc.)
   do NOT move regardless of what the evaluator's metric enum accepts.
+
+REGISTRY TRACKING (FIX-8):
+  machine_registry.jsonl is NOT yet tracked anywhere when this workflow dispatches.
+  It BECOMES tracked when first written on the runner and committed via the nightly
+  ENGINE job's explicit git add (daily.yml:1278).  Do NOT add .gitignore for
+  machine_registry.jsonl — git history is the tamper-detection substrate per
+  metabolism.py lines 20-24.
 
 IDEMPOTENCE:
   metabolism.register_hypothesis deduplicates by ID (content hash of date+hypothesis
@@ -126,21 +140,23 @@ H1_PAYLOAD: dict = {
     },
     "horizon_d": 21,
     "pre_committed_gate": {
-        # METRIC MAPPING: "delta_P_cushioned_liftoff" not in evaluator enum.
-        # Nearest accepted metric for entry_quality PATH B → "stop_out_rate".
-        # We register hit_rate as PATH A proxy; real gate lives in validate_factor_h1.py.
-        # PREREG THRESHOLD: +5pp (factor_annotated=True has better outcomes).
-        # metabolism threshold: +0.05 on hit_rate (positive direction).
-        "metric": "hit_rate",
-        "threshold": 0.05,   # prereg locked: +5pp absolute (§3 H1 gate)
+        # PATH B (entry_quality): walk_forward harness computes stop_out_rate directly.
+        # factor_annotated=True LOWERS stop-out rate (better entries).
+        # direction_expected=-1: lower stop_out_rate is the positive outcome.
+        # Prereg threshold: stop_out_rate difference ≥ 5pp (annotated arm lower).
+        # metabolism threshold +0.05 applied to the magnitude of the rate gap.
+        "metric": "stop_out_rate",
+        "threshold": 0.05,   # prereg locked: +5pp absolute stop-out gap (§3 H1 gate)
         "min_n": 25,          # clamped to _HOUSE_MIN_N=25; real floors: ≥150 fires/arm
         "horizon_d": 21,
-        "direction_expected": 1,  # positive: annotated fires beat non-annotated
-        # MAPPING NOTE: delta_P_cushioned_liftoff → hit_rate (nearest PATH-A metric).
+        "direction_expected": -1,  # negative: factor_annotated=True LOWERS stop-out rate
+        # MAPPING NOTE: PATH B evaluator computes stop_out_rate natively via
+        # walk_forward harness.  No fictional '1 - stop_out_rate' transform.
         # validate_factor_h1.py uses month-block bootstrap on the locked prereg gate.
         "_metric_mapping_note": (
-            "delta_P_cushioned_liftoff not in evaluator enum; "
-            "registered as hit_rate (nearest PATH-A metric). "
+            "PATH B (entry_quality): stop_out_rate is the evaluator's native metric. "
+            "factor_annotated=True arm expected to have LOWER stop-out rate. "
+            "direction_expected=-1 (lower is better for the annotated arm). "
             "Locked prereg gate and BH-FDR live in validate_factor_h1.py."
         ),
     },
@@ -151,7 +167,8 @@ H1_PAYLOAD: dict = {
         "on factor_annotated=True vs False, excludes 0 on positive side, "
         "effect ≥ max(5pp, 10% pooled base rate). Min n: ≥10 months AND ≥150 fires/arm. "
         "BH family: factor_intelligence_v1, q=0.10. "
-        "METRIC MAPPING: delta_P_cushioned_liftoff → hit_rate (evaluator enum constraint)."
+        "METRIC: stop_out_rate (PATH B, walk_forward harness native). "
+        "factor_annotated=True LOWERS stop-out rate (direction_expected=-1)."
     ),
 }
 
@@ -230,34 +247,38 @@ H3_PAYLOAD: dict = {
     },
     "horizon_d": 21,
     "pre_committed_gate": {
-        # METRIC MAPPING: H3's primary test is a χ² permutation p-value — not
-        # expressible as a scalar hit_rate gate.  The metabolism registration uses
-        # "hit_rate" with threshold 0.0 as a pass-through (any post-registration data
-        # satisfies the metabolism gate).  The REAL gate lives in validate_factor_h3.py
+        # H3's primary test is a χ² permutation p-value — not expressible as a
+        # scalar metabolism gate.  This row is DELIBERATELY NON-PASSING (context-only):
+        # threshold=1.01 is unreachable (hit_rate ∈ [0,1] always), so the metabolism
+        # gate never auto-passes.  The REAL gate lives in validate_factor_h3.py
         # (permutation p < q_BH from the factor_intelligence_v1 family, ≥8 qualifying
         # cells, ≥12 contributing months).
         "metric": "hit_rate",
-        "threshold": 0.0,   # pass-through — real gate is χ² permutation in validate_factor_h3.py
+        "threshold": 1.01,  # unreachable — deliberately non-passing context-only row
         "min_n": 25,         # _HOUSE_MIN_N clamp; real: ≥30 fires/cell AND ≥8 cells AND ≥12 months
         "horizon_d": 21,
         "direction_expected": 1,
         "_metric_mapping_note": (
             "H3 primary test is χ² permutation heterogeneity — not a scalar metric. "
-            "Registered as hit_rate threshold=0.0 (metabolism pass-through). "
-            "REAL gate: permutation p < q_BH(factor_intelligence_v1, q=0.10), "
-            "≥8 qualifying cells with ≥30 fires each, ≥12 contributing months. "
+            "Registered as hit_rate threshold=1.01 (unreachable; deliberately non-passing). "
+            "This row is context-only; the metabolism scalar gate CANNOT express a "
+            "heterogeneity test.  REAL gate: permutation p < q_BH(factor_intelligence_v1, "
+            "q=0.10), ≥8 qualifying cells with ≥30 fires each, ≥12 contributing months. "
             "Lives in validate_factor_h3.py."
         ),
     },
     "registered_by": "factor_intelligence_p2_builder",
     "notes": (
-        "H3 — PREREGISTRATION.md §3. Metabolism gate is context-only (pass-through). "
+        "H3 — PREREGISTRATION.md §3. Metabolism gate is context-only (deliberately "
+        "non-passing: threshold=1.01 is unreachable by hit_rate ∈ [0,1]). "
+        "The metabolism scalar cannot express a heterogeneity test; this row is "
+        "context-only and does not participate in the BH family evaluation. "
         "Real gate: permutation p < q_BH on Pearson χ² of P(STOPPED) heterogeneity "
         "across DNA×style_regime cells (qualifying: ≥30 deduped fires). "
         "Min n: ≥12 contributing months AND ≥8 qualifying cells. SLOW-ACCRUAL. "
         "BH family: factor_intelligence_v1. "
-        "METRIC MAPPING: χ² permutation p not in evaluator enum; registered as "
-        "hit_rate threshold=0.0 (pass-through)."
+        "METRIC: hit_rate threshold=1.01 (non-passing sentinel); real gate in "
+        "validate_factor_h3.py permutation harness."
     ),
 }
 
@@ -282,22 +303,22 @@ H4_PAYLOAD: dict = {
     },
     "horizon_d": 21,
     "pre_committed_gate": {
-        # METRIC MAPPING: "delta_P_stopped" not in evaluator enum.
-        # Nearest accepted for entry_quality (PATH B walk_forward) → "stop_out_rate".
-        # However, the stop_out_rate is computed per-arm by walk_forward, not as a
-        # difference.  Register as "hit_rate" via PATH A conditional_regime approach
-        # for the rate-difference test.
-        # PREREG THRESHOLD: +5pp (flagged fires have higher stop-out rate).
-        "metric": "hit_rate",
-        "threshold": 0.05,   # prereg locked: +5pp Δ P(STOPPED) on twin_bleed_flag=True
+        # PATH B (entry_quality): walk_forward harness computes stop_out_rate directly.
+        # twin_bleed_flag=True RAISES stop-out rate (worse entries in twin-bled names).
+        # direction_expected=+1: higher stop_out_rate on the flagged arm is the signal.
+        # Prereg threshold: stop_out_rate difference ≥ 5pp (flagged arm higher).
+        "metric": "stop_out_rate",
+        "threshold": 0.05,   # prereg locked: +5pp Δ stop_out_rate on twin_bleed_flag=True
         "min_n": 25,          # _HOUSE_MIN_N; real: ≥10 months AND ≥60 flagged fires
         "horizon_d": 21,
-        "direction_expected": 1,  # positive: flagged fires have higher stop-out rate
+        "direction_expected": 1,  # positive: twin_bleed_flag=True RAISES stop-out rate
+        # MAPPING NOTE: PATH B evaluator computes stop_out_rate natively via
+        # walk_forward harness.  No fictional delta computed at registration time.
+        # validate_factor_h4.py runs month-block bootstrap on the locked prereg gate.
         "_metric_mapping_note": (
-            "delta_P_stopped not in evaluator enum; "
-            "registered as hit_rate (nearest PATH-A scalar metric). "
-            "Prereg threshold +5pp applies to Δ P(STOPPED,21d) on twin_bleed_flag=True "
-            "vs False (month-block bootstrap). "
+            "PATH B (entry_quality): stop_out_rate is the evaluator's native metric. "
+            "twin_bleed_flag=True arm expected to have HIGHER stop-out rate. "
+            "direction_expected=+1 (higher is the harm signal for the flagged arm). "
             "SLOW-ACCRUAL: ≥60 flagged fires (~12–18 months post replay merge). "
             "Real gate lives in validate_factor_h4.py."
         ),
@@ -309,7 +330,8 @@ H4_PAYLOAD: dict = {
         "twin_bleed_flag=True vs False, excludes 0 on positive side, "
         "effect ≥ max(5pp, 10% pooled base rate). "
         "Min n: ≥10 months AND ≥60 flagged fires. Est. 12–18 months post replay merge. "
-        "METRIC MAPPING: delta_P_stopped → hit_rate (evaluator enum constraint)."
+        "METRIC: stop_out_rate (PATH B, walk_forward harness native). "
+        "twin_bleed_flag=True RAISES stop-out rate (direction_expected=+1)."
     ),
 }
 
@@ -414,6 +436,41 @@ def _already_registered(hypothesis_text: str, root: Path | str | None = None) ->
 # Registration runner
 # ---------------------------------------------------------------------------
 
+def _count_week_registrations(root: Path | str | None = None, now: datetime | None = None) -> int:
+    """Return the number of hypotheses already registered in the current ISO week.
+
+    Reads machine_registry.jsonl directly (fail-open: returns 0 on any error
+    so a registry-absent first run is not blocked).  The current ISO week is
+    determined from `now` if provided, else UTC now.
+
+    Used by the budget pre-flight in register_batch to decide whether the
+    remaining weekly budget (BUDGET_PER_WEEK − already_filed) can absorb the
+    incoming batch.
+    """
+    BUDGET_PER_WEEK = 3  # mirrors metabolism.py line 83
+    try:
+        from engine.neuralweb.metabolism import _load_registry  # type: ignore[import]
+        rows = _load_registry(root)
+    except Exception:  # noqa: BLE001 — fail-open
+        return 0
+
+    ref = now if now is not None else datetime.now(timezone.utc)
+    current_iso_week = ref.isocalendar()[:2]  # (year, week)
+
+    count = 0
+    for row in rows:
+        reg_at = row.get("registered_at")
+        if not reg_at:
+            continue
+        try:
+            reg_dt = datetime.fromisoformat(str(reg_at))
+        except (ValueError, TypeError):
+            continue
+        if reg_dt.isocalendar()[:2] == current_iso_week:
+            count += 1
+    return count
+
+
 def register_batch(
     keys: list[str],
     dry_run: bool = False,
@@ -432,7 +489,31 @@ def register_batch(
     Returns
     -------
     list of registration result dicts (one per hypothesis in keys).
+
+    Raises
+    ------
+    RuntimeError if the weekly budget is insufficient for the whole batch.
+    A partial filing (some H registered, some not) is worse than a delayed
+    batch because a silently-dropped hypothesis looks registered to the operator.
+    The batch ABORTS entirely if budget < batch_size; no partial writes occur.
     """
+    BUDGET_PER_WEEK = 3  # mirrors metabolism.py line 83
+
+    # Budget pre-flight (FIX-7): abort the entire batch rather than silently dropping
+    # hypotheses.  Skip in dry-run (no writes happen).
+    if not dry_run:
+        already_filed = _count_week_registrations(root=root, now=now)
+        remaining = BUDGET_PER_WEEK - already_filed
+        if remaining < len(keys):
+            msg = (
+                f"BUDGET PRE-FLIGHT ABORT: {already_filed} hypothesis(es) already registered "
+                f"this ISO week; remaining budget={remaining} < batch_size={len(keys)}. "
+                f"Run in a later ISO week or split the batch. "
+                f"No hypotheses were written (partial filing is worse than delayed batch)."
+            )
+            log.error("register_factor_hypotheses: %s", msg)
+            raise RuntimeError(msg)
+
     results = []
     for key in keys:
         payload = _ALL_PAYLOADS[key]

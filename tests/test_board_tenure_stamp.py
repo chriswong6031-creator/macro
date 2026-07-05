@@ -94,27 +94,29 @@ class TestBoardTenure:
         # No more prior dates → stop.
         assert result == 3
 
-    def test_consecutive_stops_at_gap(self):
-        """Gap in consecutive dates stops the count."""
+    def test_calendar_gap_does_not_reset_streak(self):
+        """Calendar gaps between record dates do NOT reset the streak.
+
+        Tenure = consecutive prior as_of RECORDS where the ticker appears in
+        any lane.  Calendar gaps (missing trading days between record dates)
+        do not reset the count; a record-date ABSENCE (ticker missing on a date
+        that IS in the ledger) does reset it.
+
+        Ledger has records on 2026-06-30, 2026-07-02, 2026-07-03 (2026-07-01
+        and 2026-07-04 are not record dates — e.g. holiday/weekend/not graded).
+        AAPL is present on all three record dates.  The walk reverses the sorted
+        record dates: [2026-07-03, 2026-07-02, 2026-06-30].
+          2026-07-03: AAPL present → count=1
+          2026-07-02: AAPL present → count=2
+          2026-06-30: AAPL present → count=3 (consecutive records, gap is calendar-only)
+        Result: 3.
+        """
         stored = _make_ledger_df([
-            _ledger_row("2026-06-30", "AAPL"),  # skip (gap)
+            _ledger_row("2026-06-30", "AAPL"),  # calendar gap before next record
             _ledger_row("2026-07-02", "AAPL"),
             _ledger_row("2026-07-03", "AAPL"),
         ])
         result = _board_tenure("AAPL", "buy", "2026-07-05", stored_df=stored)
-        # Walk back: 2026-07-03 → present (1), 2026-07-02 → present (2),
-        # 2026-06-30: not present at 2026-07-01 (gap) → stop at count=2.
-        # Actually: 2026-07-03 present, 2026-07-02 present, 2026-06-30 present
-        # but there's a gap between 2026-07-02 and 2026-06-30 (no 2026-07-01).
-        # Walk reverses sorted prior dates: [2026-06-30, 2026-07-02, 2026-07-03]
-        # Reversed: [2026-07-03, 2026-07-02, 2026-06-30]
-        # 2026-07-03: AAPL present → count=1
-        # 2026-07-02: AAPL present → count=2
-        # 2026-06-30: AAPL present → count=3  (consecutive dates in ledger)
-        # No more → count=3
-        # Note: "consecutive prior as_of dates IN THE LEDGER" — the ledger may not
-        # have all calendar days, only trading days.  The tenure counts consecutive
-        # as_of records in the PARQUET, not calendar days.
         assert result == 3
 
     def test_consecutive_stops_when_ticker_absent(self):
@@ -390,4 +392,98 @@ class TestGradeBoardsStamping:
         result = _board_tenure("AAPL", "buy", "2026-07-05", stored_df=bad_df)
         assert result is None, (
             "fail-open: missing 'as_of' column in stored_df → None, not crash"
+        )
+
+    def test_in_batch_presence_map_feeds_next_date(self):
+        """FIX-5: _presence_map allows consecutive dates graded in one batch to
+        see each other.
+
+        Two consecutive as_of dates graded together (no pre-existing stored_df):
+          - Date 1 (2026-07-01): AAPL graded → presence_map["2026-07-01"] = {"AAPL"}
+          - Date 2 (2026-07-02): _board_tenure sees 2026-07-01 via presence_map → tenure=1
+        Without FIX-5, both dates would yield None (no stored_df, no history).
+        """
+        presence_map: dict[str, set] = {}
+
+        # Date 1: no history → tenure=None (stored_df=None, presence_map empty)
+        result_d1 = _board_tenure("AAPL", "buy", "2026-07-01",
+                                  stored_df=None, _presence_map=presence_map)
+        # After date 1 is graded, its tickers are added to presence_map
+        presence_map["2026-07-01"] = {"AAPL"}
+
+        # Date 2: presence_map has 2026-07-01 with AAPL → tenure=1
+        result_d2 = _board_tenure("AAPL", "buy", "2026-07-02",
+                                  stored_df=None, _presence_map=presence_map)
+        # After date 2, add to presence_map
+        presence_map["2026-07-02"] = {"AAPL"}
+
+        # Date 3: presence_map has 2026-07-01 + 2026-07-02 with AAPL → tenure=2
+        result_d3 = _board_tenure("AAPL", "buy", "2026-07-03",
+                                  stored_df=None, _presence_map=presence_map)
+
+        assert result_d1 is None, (
+            "Date 1 with no stored_df and empty presence_map → None "
+            "(no prior record dates exist)"
+        )
+        assert result_d2 == 1, (
+            "Date 2 should see Date 1 via presence_map → tenure=1 (FIX-5)"
+        )
+        assert result_d3 == 2, (
+            "Date 3 should see Date 1 and Date 2 via presence_map → tenure=2 (FIX-5)"
+        )
+
+    def test_presence_map_with_stored_df_union(self):
+        """FIX-5: presence_map and stored_df are unioned correctly.
+
+        stored_df has 2026-06-30 with AAPL.  presence_map has 2026-07-01 with AAPL.
+        For 2026-07-02, both dates are prior → tenure=2.
+        """
+        stored = _make_ledger_df([_ledger_row("2026-06-30", "AAPL")])
+        presence_map: dict[str, set] = {"2026-07-01": {"AAPL"}}
+
+        result = _board_tenure("AAPL", "buy", "2026-07-02",
+                               stored_df=stored, _presence_map=presence_map)
+        assert result == 2, (
+            "Union of stored_df (2026-06-30) and presence_map (2026-07-01) → tenure=2"
+        )
+
+
+class TestRetroStampHonesty:
+    """FIX-6: verify historical rows ARE retro-stamped with PIT-honest tenure.
+
+    When a historical board is re-graded with a non-null stored_df, the
+    board_tenure_days column must be non-null and PIT-correct (using only
+    dates strictly < as_of).  This is intentional and blessed behavior.
+    """
+
+    def test_historical_board_gets_non_null_tenure_when_store_has_prior_dates(self):
+        """A historical row re-graded with prior dates in stored_df gets non-null tenure.
+
+        Scenario: stored_df has 2026-06-29 with AAPL; we grade 2026-06-30 board.
+        Expected: board_tenure_days=1 (AAPL was on board the prior date).
+        """
+        stored = _make_ledger_df([_ledger_row("2026-06-29", "AAPL")])
+        result = _board_tenure("AAPL", "buy", "2026-06-30", stored_df=stored)
+        assert result is not None, (
+            "FIX-6: historical row re-graded with prior stored_df must yield "
+            "non-null board_tenure_days (retro-stamp is intentional + blessed)"
+        )
+        assert result == 1, (
+            "FIX-6: one prior date with AAPL → board_tenure_days=1 (PIT-correct)"
+        )
+
+    def test_retro_stamp_only_uses_dates_before_as_of(self):
+        """PIT law: tenure count only uses dates strictly < as_of_str.
+
+        stored_df has 2026-07-05 (same date) and 2026-07-04 (prior).
+        For as_of=2026-07-05, only 2026-07-04 is prior → tenure=1, not 2.
+        """
+        stored = _make_ledger_df([
+            _ledger_row("2026-07-04", "AAPL"),
+            _ledger_row("2026-07-05", "AAPL"),  # same date — must be excluded
+        ])
+        result = _board_tenure("AAPL", "buy", "2026-07-05", stored_df=stored)
+        assert result == 1, (
+            "PIT law: same-date row in stored_df must not count toward tenure "
+            "('strictly < as_of_str'); only 2026-07-04 is prior → tenure=1"
         )
