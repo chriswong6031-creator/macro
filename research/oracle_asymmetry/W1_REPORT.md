@@ -39,62 +39,62 @@
 | flow_opp_out_20s | 350 | 1.0371 | 1.3984 |
 | flow_same_out_20s | 350 | 0.0686 | 0.2531 |
 | active_in_episodes | 350 | 2.2429 | 1.9627 |
-| prev_same_node_outcome | 350 | 0.9629 | 0.1894 |
+| prev_same_node_outcome | 350 | 0.5171 | 0.5004 |
 | sigma20 | 350 | 0.0771 | 0.0520 |
 
 ## 3. LOEO Per-Era AUC Table
 
 | Era | n_test | M0 AUC | M1 AUC | M2 AUC | Chosen |
 |-----|--------|--------|--------|--------|--------|
-| 1999-2014 | 180 | 0.5446 | 0.5233 | 0.5285 | 0.5285 |
-| 2015-2019 | 60 | 0.3665 | 0.3857 | 0.4921 | 0.4921 |
-| 2020-2022 | 63 | 0.3060 | 0.4756 | 0.4224 | 0.4224 |
-| 2023-2026 | 47 | 0.5583 | 0.4173 | 0.4492 | 0.4492 |
+| 1999-2014 | 180 | 0.5446 | 0.5077 | 0.5357 | 0.5357 |
+| 2015-2019 | 60 | 0.3665 | 0.3925 | 0.5045 | 0.5045 |
+| 2020-2022 | 63 | 0.3060 | 0.5067 | 0.4579 | 0.4579 |
+| 2023-2026 | 47 | 0.5583 | 0.4417 | 0.4568 | 0.4568 |
 
 **M0 mean AUC: 0.4439**
-**M1 mean AUC: 0.4505**
-**M2 mean AUC: 0.4731**
-**Chosen model: M2 (mean AUC = 0.4731)**
+**M1 mean AUC: 0.4622**
+**M2 mean AUC: 0.4887**
+**Chosen model: M2 (mean AUC = 0.4887)**
 
 ## 4. Shuffled-Label Null Distribution
 
 - n_permutations: 200
-- null distribution mean AUC: 0.5048
-- observed M2 mean AUC: 0.4731
-- p-value (fraction null >= observed): **0.8350**
+- null distribution mean AUC: 0.5037
+- observed M2 mean AUC: 0.4887
+- p-value (fraction null >= observed): **0.6800**
 
 ## 5. Pre-Registered Gate Verdicts
 
 ### G-A: FAIL
-- FAIL — mean AUC=0.4731, null p=0.8350 — NO ONSET-QUALITY SIGNAL AT n=350 — printed null
+- FAIL — mean AUC=0.4887, null p=0.6800 — NO ONSET-QUALITY SIGNAL AT n=350 — printed null
 
-### G-B: FAIL
-- FAIL — M2=0.4731 < M0=0.4439+0.03 (delta=0.0292) — deliverable IS M0
+### G-B: PASS
+- PASS — M2=0.4887 >= M0=0.4439+0.03
 
 ### G-C: REPORTED
 - REPORTED (not gating) — see G-C table below
 
 ### 5.1 G-C Lift Tables (reported, not gating)
 
-**Keep-top-40% threshold = 0.5586**
-Pooled: n_kept=140/350, good_rate=0.4571, base_rate=0.4857, lift=-0.0286, Wilson 95% LB=0.3769
+**Keep-top-40% threshold = 0.5371**
+Pooled: n_kept=141/350, good_rate=0.5106, base_rate=0.4857, lift=0.0249, Wilson 95% LB=0.4289
 
 | Era | n_era | n_kept | good_rate | base_rate | lift | Wilson LB |
 |-----|-------|--------|-----------|-----------|------|-----------|
-| 1999-2014 | 180 | 77 | 0.5195 | 0.5278 | -0.0083 | 0.4096 |
-| 2015-2019 | 60 | 26 | 0.5385 | 0.5667 | -0.0282 | 0.3546 |
-| 2020-2022 | 63 | 22 | 0.2273 | 0.3492 | -0.1219 | 0.1012 |
-| 2023-2026 | 47 | 15 | 0.3333 | 0.4043 | -0.0709 | 0.1518 |
+| 1999-2014 | 180 | 81 | 0.5556 | 0.5278 | 0.0278 | 0.4473 |
+| 2015-2019 | 60 | 31 | 0.5484 | 0.5667 | -0.0183 | 0.3777 |
+| 2020-2022 | 63 | 13 | 0.3077 | 0.3492 | -0.0415 | 0.1268 |
+| 2023-2026 | 47 | 16 | 0.375 | 0.4043 | -0.0293 | 0.1848 |
 
-**Keep-top-60% threshold = 0.4713**
-Pooled: n_kept=210/350, good_rate=0.5095, base_rate=0.4857, lift=0.0238, Wilson 95% LB=0.4423
+**Keep-top-60% threshold = 0.4292**
+Pooled: n_kept=224/350, good_rate=0.4955, base_rate=0.4857, lift=0.0098, Wilson 95% LB=0.4307
 
 | Era | n_era | n_kept | good_rate | base_rate | lift | Wilson LB |
 |-----|-------|--------|-----------|-----------|------|-----------|
-| 1999-2014 | 180 | 113 | 0.5664 | 0.5278 | 0.0386 | 0.4743 |
-| 2015-2019 | 60 | 36 | 0.5833 | 0.5667 | 0.0167 | 0.422 |
-| 2020-2022 | 63 | 36 | 0.3333 | 0.3492 | -0.0159 | 0.2021 |
-| 2023-2026 | 47 | 25 | 0.4 | 0.4043 | -0.0043 | 0.234 |
+| 1999-2014 | 180 | 121 | 0.5455 | 0.5278 | 0.0177 | 0.4567 |
+| 2015-2019 | 60 | 44 | 0.5682 | 0.5667 | 0.0015 | 0.4222 |
+| 2020-2022 | 63 | 33 | 0.303 | 0.3492 | -0.0462 | 0.1738 |
+| 2023-2026 | 47 | 26 | 0.3846 | 0.4043 | -0.0196 | 0.2243 |
 
 ## 6. Calibration (Reliability Table, 5 bins)
 
@@ -110,11 +110,11 @@ Pooled: n_kept=210/350, good_rate=0.5095, base_rate=0.4857, lift=0.0238, Wilson 
 **M2**
 | Bin | n | mean_pred | actual_rate |
 |-----|---|-----------|-------------|
-| [0.00, 0.20) | 13 | 0.1665 | 0.4615 |
-| [0.20, 0.40) | 83 | 0.3069 | 0.5181 |
-| [0.40, 0.60) | 150 | 0.5091 | 0.4733 |
-| [0.60, 0.80) | 103 | 0.6731 | 0.4854 |
-| [0.80, 1.00) | 1 | 0.8007 | 0.0 |
+| [0.00, 0.20) | 12 | 0.1637 | 0.4167 |
+| [0.20, 0.40) | 95 | 0.3107 | 0.4842 |
+| [0.40, 0.60) | 146 | 0.5028 | 0.4589 |
+| [0.60, 0.80) | 92 | 0.6793 | 0.5543 |
+| [0.80, 1.00) | 5 | 0.8173 | 0.2 |
 
 ## 7. Coefficients / Feature Importances (full-data fit)
 
@@ -126,6 +126,26 @@ Pooled: n_kept=210/350, good_rate=0.5095, base_rate=0.4857, lift=0.0238, Wilson 
 |---------|------|----------------|---------|
 | accel_z_5d | -0.3008 | + | sustained acceleration favors conversion (REVERSED) |
 | vix_pctile | -0.1950 | - | high VIX → macro headwind → fewer clean lifts (expected neg) (ok) |
+
+**M2 feature importances (HGBC):**
+| Feature | Importance | Mechanism sign | Comment |
+|---------|-----------|----------------|---------|
+| sigma20 | 0.1862 | - | higher vol at onset = noisier signal |
+| stochrsi_kd_diff | 0.0839 | + | K crossing D = early signal |
+| vix_pctile | 0.0647 | - | high VIX = macro headwind |
+| tlt_ret_10d | 0.0503 | + | TLT rising bonds supporting risk |
+| accel | 0.0457 | + | vel_1w - vel_3m momentum |
+| flow_opp_out_20s | 0.0309 | + | opposite-complex outflows = forced rotation IN |
+| spy_above_200d | 0.0262 | + | bull tape supports rotation |
+| rs_pctile_252d | 0.0160 | + | relative strength vs peers |
+| prev_same_node_outcome | 0.0102 | + | node momentum in rotation quality |
+| persistence | 0.0069 | + | trend persistence |
+| accel_z_5d | 0.0055 | + | sustained 5-day acceleration |
+| active_in_episodes | 0.0002 | - | crowded = diminishing marginal returns |
+| accel_z | 0.0000 | + | onset acceleration signal |
+| washout_w | 0.0000 | + | washout = fuel for recovery |
+| stochrsi_w_k | 0.0000 | - | lower stoch = more room to run |
+| flow_same_out_20s | 0.0000 | - | same-complex outflows = sector-wide pressure |
 
 ## Appendix A: Secondary Labels (reported, never gate-bearing)
 
