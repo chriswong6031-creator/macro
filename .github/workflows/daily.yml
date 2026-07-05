@@ -1070,6 +1070,43 @@ jobs:
           done
           echo "::warning::could not push factor series after 5 attempts (non-fatal — daily reads the last committed json)"
 
+  # Factor Intelligence panel — incremental nightly append (RULING-C).
+  #
+  # Runs AFTER factor_series (needs factor_series.json for style_regime L/S leader
+  # input from chart_data.spread). Writes data/factordata/panel/ which is GITIGNORED
+  # — no commit step, no sentinel git-add changes required. Fail-soft (additive):
+  # a missing/bad panel NEVER blocks the dashboard going live.
+  #
+  # Incremental mode: only dates missing from the existing panel are built.
+  # One-shot deep backfill (--start 2020-01-01, ~25 min) runs SEPARATELY via
+  # `python -m scripts.build_factor_panel --backfill` — NOT in this nightly loop.
+  # See §RULING-C in research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md.
+  factor_panel:
+    needs: [factor_series]
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: restore breadth (S&P 500) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-fseries-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      - name: factor panel (incremental — today's date only)
+        run: python -m scripts.build_factor_panel || echo "factor panel skipped (additive)"
+
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
   # now only writes the target ticker list (data/catalyst/brief_targets.json); the

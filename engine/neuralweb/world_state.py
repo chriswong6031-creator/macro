@@ -309,6 +309,79 @@ def _compose_live_overlay(reg: dict) -> dict | None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Factor weather lobe (§5.4 + RULING-B)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _compose_factor_weather(
+    panel_latest: dict | None,
+    factor_series: dict | None,
+) -> dict:
+    """Compose the factor_weather sub-block for world_state (§5.4).
+
+    RULING-B: this function and one wiring line are the ONLY changes to this
+    file.  Fail-open on all reads — missing panel → null slots, never raises.
+
+    Parameters
+    ----------
+    panel_latest:
+        The latest-date row of the factor panel, as a dict.  None if the panel
+        is not yet built or unreadable.
+    factor_series:
+        Parsed site/factordata/factor_series.json.  None if unreadable.
+
+    Returns
+    -------
+    dict
+        Keys: style_regime, style_regime_pending, style_regime_hold_days,
+        factor_leader, factor_leader_ic, etf_pulse_summary, display_only.
+        display_only is ALWAYS True — §5.4 mandates it.
+    """
+    style_regime: str | None = None
+    style_regime_pending: str | None = None
+    style_regime_hold_days: int | None = None
+    factor_leader: str | None = None
+    factor_leader_ic: float | None = None
+    etf_pulse_summary: str | None = None
+
+    # ── Read style_regime from panel_latest ──────────────────────────────────
+    if isinstance(panel_latest, dict):
+        try:
+            style_regime = panel_latest.get("style_regime") or None
+            style_regime_pending = panel_latest.get("style_regime_pending") or None
+            style_regime_hold_days = panel_latest.get("style_regime_hold_days")
+        except Exception as exc:  # noqa: BLE001
+            log.warning("factor_weather: panel_latest read error — %s", exc)
+
+    # ── Read factor leader from factor_series.json rotation block ────────────
+    if isinstance(factor_series, dict):
+        try:
+            rotation = factor_series.get("rotation") or {}
+            if isinstance(rotation, dict):
+                factor_leader = rotation.get("leader") or rotation.get("confirmed_leader")
+                factor_leader_ic = rotation.get("leader_ic") or rotation.get("ic")
+
+            # Build etf_pulse_summary from style_regime context
+            if style_regime and style_regime != "mixed":
+                etf_pulse_summary = f"style_regime={style_regime}"
+                if style_regime_pending and style_regime_pending != style_regime:
+                    etf_pulse_summary += f"; pending={style_regime_pending}"
+            else:
+                etf_pulse_summary = "no dominant style"
+        except Exception as exc:  # noqa: BLE001
+            log.warning("factor_weather: factor_series parse error — %s", exc)
+
+    return {
+        "style_regime": style_regime,
+        "style_regime_pending": style_regime_pending,
+        "style_regime_hold_days": style_regime_hold_days,
+        "factor_leader": factor_leader,
+        "factor_leader_ic": factor_leader_ic,
+        "etf_pulse_summary": etf_pulse_summary,
+        "display_only": True,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -418,6 +491,39 @@ def build_world_state(
         alerts_block = _compose_alerts(at)
     sources[str(at_path.relative_to(repo))] = (at or {}).get("asof")
 
+    # ── 6b. factor_weather lobe (§5.4 + RULING-B) ────────────────────────────
+    factor_weather_block: dict = _compose_factor_weather(panel_latest=None,
+                                                         factor_series=None)
+    try:
+        import pandas as _pd  # lazy import — world_state has no hard pandas dep
+
+        # Read latest panel row (data/factordata/panel/) — gitignored, may not exist
+        panel_dir = data_dir / "factordata" / "panel"
+        _panel_latest_row: dict | None = None
+        if panel_dir.exists():
+            _parquet_files = sorted(panel_dir.rglob("panel.parquet"))
+            if _parquet_files:
+                _latest_file = _parquet_files[-1]
+                try:
+                    _pdf = _pd.read_parquet(_latest_file)
+                    if not _pdf.empty:
+                        _panel_latest_row = _pdf.iloc[-1].to_dict()
+                except Exception as _exc:
+                    log.warning("factor_weather: panel parquet unreadable %s — %s",
+                                _latest_file, _exc)
+
+        # Read factor_series.json (site/factordata/factor_series.json)
+        _fs_path = site_dir / "factordata" / "factor_series.json"
+        _factor_series_json = _read_json(_fs_path)
+
+        factor_weather_block = _compose_factor_weather(
+            panel_latest=_panel_latest_row,
+            factor_series=_factor_series_json,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: factor_weather lobe failed — %s", exc)
+        gaps.append(f"factor_weather: {exc}")
+
     # ── 7. Contradictions summary (W4) ───────────────────────────────────────
     contradictions_block: dict | None = None
     try:
@@ -460,6 +566,7 @@ def build_world_state(
         "liquidity": liquidity_block,
         "data_health": data_health_block,
         "alerts": alerts_block,
+        "factor_weather": factor_weather_block,  # §5.4 wiring line (RULING-B)
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "
