@@ -463,3 +463,11 @@ Appends a record per fire to `data/signal_archive/shadow_P2_1B_ledger.parquet` w
 *Registered 2026-07-05. Immutable after Fable approval. Shadow ledger evidence appended to the ledger artifact; this document is never edited to accommodate observed shadow outcomes.*
 
 *2026-07-05 — red-team blocking fixes applied (P2_REDTEAM.md) incl. Fable rulings R-P2.1 (flip floor 100 clusters + 2 quarters) and R-P2.2 (single concordance authority).*
+
+---
+
+## §VERDICT — Fable, 2026-07-05 (Phase-2 close)
+
+**F1 (cohort-washout) rank-weight promotion: DEAD.** Concordance gate fired (66.4% vs 90% floor; production COILED finds washout on 33.4% of pairs the proxy missed). The pre-registered reprobe (P2_1B_F1_REPROBE, 10 trials, calibrated permutation machinery, review CLEAN) showed the ship-qualifying effect **reverses sign on production values**: T09 63d stop-out −4.55pp (proxy, favorable) → **+3.34pp (production, unfavorable)**; T04 collapses ~6× and loses sign-stability. P1.3's F1 verdict is re-scoped **proxy-definition only**. Note for future clades: T02 dead-money REPRODUCED AND STRENGTHENED on production values (−13.19 → −15.11pp, BH-survive, sign-stable) — real dead-money information exists in production washout, but both authorized vehicles are closed (RW harms stop-outs; HG costs 54% of fires). A differently-designed species (washout as dead-money-avoidance context, not rank input) may be registered as NEW phase-0 science; nothing ships from this PREREG.
+
+**F2 (RS-inflection) rank-weight: PARKED**, not dead. Evidence is not proxy-contaminated but marginal (cushioned +0.15pp@21d / +0.68pp@63d); solo shadow machinery is not justified. Re-opens on new evidence or a future joint promotion.
