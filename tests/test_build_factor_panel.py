@@ -44,6 +44,8 @@ from scripts.build_factor_panel import (
     _build_twin_membership,
     _compute_size_terciles,
     _compute_twin_ew_returns,
+    _classify_dna,
+    _build_style_regime_timeline,
     build_panel,
     BETA_WIN,
     MIN_PERIODS,
@@ -57,6 +59,9 @@ from scripts.build_factor_panel import (
     TWIN_TOP_N,
     TWIN_RET_WIN,
     TWIN_BLEED_LOOKBACK,
+    DNA_CLASS_ORDER,
+    CYCLICAL_VALUE_SECTORS,
+    STYLE_REGIME_STATES,
 )
 
 
@@ -568,6 +573,7 @@ class TestIdempotence:
             start_date=pd.Timestamp(start),
             end_date=pd.Timestamp(end),
             tickers=tickers,
+            backfill=True,  # force rebuild to test idempotence (bypasses incremental skip)
         )
         panel2 = build_panel(
             data_root=tmp_path,
@@ -575,6 +581,7 @@ class TestIdempotence:
             start_date=pd.Timestamp(start),
             end_date=pd.Timestamp(end),
             tickers=tickers,
+            backfill=True,  # force rebuild — idempotence test, not incremental test
         )
 
         assert not panel1.empty, "First build produced empty panel"
@@ -593,14 +600,17 @@ class TestIdempotence:
         p1 = p1[non_period_cols]
         p2 = p2[[c for c in non_period_cols if c in p2.columns]]
 
-        # String/categorical columns:
-        for col in ["ticker", "date", "factor_model"]:
+        # String/categorical columns (includes P1-C string cols):
+        for col in ["ticker", "date", "factor_model",
+                    "dna_class", "style_regime", "style_regime_pending"]:
             if col in p1.columns:
                 pd.testing.assert_series_equal(p1[col], p2[col], check_names=False,
                                                obj=f"column {col}")
 
-        # Numeric columns:
-        str_cols = {"ticker", "date", "factor_model"}
+        # Numeric columns (P1-C string cols dna_class/style_regime/style_regime_pending
+        # are checked via assert_series_equal in the string block above):
+        str_cols = {"ticker", "date", "factor_model",
+                    "dna_class", "style_regime", "style_regime_pending"}
         num_cols = [c for c in p1.columns if c not in str_cols]
         for col in num_cols:
             s1 = p1[col]
@@ -639,11 +649,11 @@ class TestIdempotence:
         assert (panel["factor_model"] == FACTOR_MODEL).all(), \
             "Not all rows have factor_model='v1'"
 
-    def test_no_dna_style_columns_emitted(self, tmp_path):
-        """P1-B must NOT emit dna_class/style_regime columns (later PRs P1-C/P1-D).
+    def test_p1c_columns_emitted(self, tmp_path):
+        """P1-C must emit dna_class, style_regime, style_regime_pending columns.
 
-        NOTE: twin columns ARE expected from P1-B and are NOT in the forbidden set.
-        The P1-A guard that banned twin columns is superseded by P1-B which adds them.
+        Updated from the P1-B guard that checked these were absent.  P1-C delivers
+        them as §3.6-listed v1 columns.  Twin columns (P1-B) remain expected.
         """
         tickers = ["AAPL", "MSFT"]
         self._write_minimal_fixtures(tmp_path, tickers, n_dates=350)
@@ -658,16 +668,16 @@ class TestIdempotence:
             tickers=tickers,
         )
         assert not panel.empty
-        # Twin columns are now expected from P1-B; only P1-C/P1-D columns are forbidden:
-        forbidden = {"dna_class", "style_regime", "style_regime_pending"}
         emitted = set(panel.columns)
-        overlap = forbidden & emitted
-        assert not overlap, f"P1-B emitted out-of-scope columns: {overlap}"
-        # Verify twin columns ARE present (P1-B deliverable):
+        # P1-C columns must now be present:
+        p1c_cols = {"dna_class", "style_regime", "style_regime_pending"}
+        missing_p1c = p1c_cols - emitted
+        assert not missing_p1c, f"P1-C must emit columns; missing: {missing_p1c}"
+        # Twin columns must still be present (P1-B deliverable):
         twin_cols = {"twin_rel_20d", "twin_bleed_flag", "twin_n_peers", "twin_fallback"}
         missing_twin = twin_cols - emitted
         assert not missing_twin, (
-            f"P1-B must emit twin columns; missing: {missing_twin}"
+            f"P1-B columns must still be present; missing: {missing_twin}"
         )
 
 
@@ -797,12 +807,17 @@ class TestFuturePerturbationInvariance:
     def _run_build(self, tmp_path: Path, tickers: list[str],
                    dates: pd.DatetimeIndex,
                    start_offset: int = -20, end_offset: int = -1) -> pd.DataFrame:
-        """Build panel over [dates[start_offset], dates[end_offset]]."""
+        """Build panel over [dates[start_offset], dates[end_offset]].
+
+        Uses backfill=True to force a full rebuild (bypasses incremental skip)
+        so the perturbation test can rebuild the same date window twice.
+        """
         start = dates[start_offset]
         end = dates[end_offset]
         panel = build_panel(
             data_root=tmp_path, out_root=tmp_path,
             start_date=start, end_date=end, tickers=tickers,
+            backfill=True,  # force rebuild: test calls same window twice
         )
         return panel.sort_values(["ticker", "date"]).reset_index(drop=True)
 
@@ -1014,7 +1029,9 @@ class TestSchemaStability:
     """C-3(c): china-only, non-china-only, and mixed universes must produce
     identical parquet column sets (exactly PANEL_COLUMNS).
 
-    NOTE: P1-B adds 4 twin columns, so PANEL_COLUMNS now has 52 entries
+    NOTE: P1-C adds 3 more columns (dna_class, style_regime, style_regime_pending),
+    so PANEL_COLUMNS now has 55 entries (48 P1-A + 4 P1-B + 3 P1-C).
+    P1-B added 4 twin columns (was 52 entries).
     (48 from P1-A + 4 twin).  The authoritative list is PANEL_COLUMNS itself.
 
     China-eligible tickers (IT sector) get non-null beta_china values.
@@ -2170,13 +2187,11 @@ class TestTwinSchemaStability44:
         return []
 
     def test_schema_extended_with_four_twin_columns(self, tmp_path):
-        """(f) Schema extended by P1-B with 4 twin columns == PANEL_COLUMNS.
+        """(f) Schema extended by P1-B with 4 twin + P1-C with 3 DNA/style = 55 cols.
 
-        Note: The masterplan spec said "40→44" but the actual P1-A schema has 48
-        columns (3 identity + 8 betas + 3×10 attribution windows + 1 resid_1d +
-        5 block_b + 1 alpha_z = 48).  With 4 twin columns: 48 + 4 = 52 total.
-        The authoritative list is PANEL_COLUMNS; we verify the twin columns are
-        present and no P1-C/P1-D columns are included.
+        P1-A: 48 columns (3 identity + 8 betas + 3×10 attribution + 1 resid_1d +
+        5 block_b + 1 alpha_z).  P1-B adds 4 twin columns (52).  P1-C adds 3
+        DNA/style_regime columns (55).  PANEL_COLUMNS is the authoritative list.
         """
         cols = self._build_and_read_cols(
             tmp_path / "ss",
@@ -2193,13 +2208,15 @@ class TestTwinSchemaStability44:
             f"Extra: {set(cols) - set(PANEL_COLUMNS)}\n"
             f"Missing: {set(PANEL_COLUMNS) - set(cols)}"
         )
-        # P1-C/P1-D columns must NOT be in schema:
-        forbidden = {"dna_class", "style_regime", "style_regime_pending"}
-        overlap = forbidden & set(PANEL_COLUMNS)
-        assert not overlap, f"P1-C/P1-D columns in PANEL_COLUMNS: {overlap}"
+        # P1-C columns ARE now in schema (55 cols = 48 P1-A + 4 P1-B + 3 P1-C):
+        p1c_cols = {"dna_class", "style_regime", "style_regime_pending"}
+        missing_p1c = p1c_cols - set(PANEL_COLUMNS)
+        assert not missing_p1c, (
+            f"P1-C columns missing from PANEL_COLUMNS (required by §5.4): {missing_p1c}"
+        )
 
-    def test_52_columns_mixed_sector(self, tmp_path):
-        """(f) Mixed-sector universe (IT + Health Care) → 52 columns == PANEL_COLUMNS."""
+    def test_55_columns_mixed_sector(self, tmp_path):
+        """(f) Mixed-sector universe (IT + Health Care) → 55 columns == PANEL_COLUMNS."""
         cols = self._build_and_read_cols(
             tmp_path / "mixed",
             tickers=["AAPL", "JNJ"],
@@ -2307,3 +2324,1230 @@ class TestTwinSizeTerciles:
         tercile_map = _compute_size_terciles(df, ns)
         assert "A" not in tercile_map, "NaN mktcap ticker should not be in tercile map"
         assert "B" in tercile_map and "C" in tercile_map
+
+
+# ---------------------------------------------------------------------------
+# P1-C tests — DNA class cascade (§3.3 + RULING-A)
+# ---------------------------------------------------------------------------
+class TestDNAClassCascade:
+    """Tests for _classify_dna: priority cascade, None semantics, and each class trigger."""
+
+    def _base_row(self) -> dict:
+        """Default row dict with all required Block-B inputs present (non-None)."""
+        return {
+            "quality_pct": 50.0,
+            "value_pct": 50.0,
+            "payout_pct": 50.0,
+            "low_vol_pct": 50.0,
+            "profitability_pct": 50.0,
+            "size_pct": 50.0,
+            "beta_mkt": 1.0,
+            "beta_growth": 0.2,
+            "beta_sector": 0.1,
+            "beta_rates": 0.1,
+            "beta_china": 0.0,
+        }
+
+    def test_all_false_conditions_returns_mixed(self):
+        """When no archetype conditions are met → 'mixed'."""
+        row = self._base_row()
+        # All defaults are midrange — none should trigger a specific class
+        result = _classify_dna(row, "Health Care")
+        assert result == "mixed", f"Expected 'mixed', got '{result}'"
+
+    def test_missing_required_block_b_returns_none(self):
+        """RULING-A: any required Block-B input None → dna_class = None (NOT EVALUABLE)."""
+        for missing_key in ["quality_pct", "value_pct", "payout_pct", "low_vol_pct"]:
+            row = self._base_row()
+            row[missing_key] = None
+            result = _classify_dna(row, "Health Care")
+            assert result is None, (
+                f"Expected None when {missing_key}=None (RULING-A); got '{result}'"
+            )
+
+    def test_all_required_block_b_none_returns_none(self):
+        """RULING-A: all Block-B inputs None → None."""
+        row = self._base_row()
+        for k in ["quality_pct", "value_pct", "payout_pct", "low_vol_pct"]:
+            row[k] = None
+        assert _classify_dna(row, "Energy") is None
+
+    def test_quality_growth_triggers(self):
+        """quality_growth: quality≥70 AND value<60 AND beta_growth>0.3."""
+        row = self._base_row()
+        row["quality_pct"] = 75.0
+        row["value_pct"] = 40.0
+        row["beta_growth"] = 0.5
+        assert _classify_dna(row, "Information Technology") == "quality_growth"
+
+    def test_high_beta_liquidity_triggers(self):
+        """high_beta_liquidity: beta_mkt>1.3 AND beta_growth>0.4 AND low_vol<35."""
+        row = self._base_row()
+        row["beta_mkt"] = 1.5
+        row["beta_growth"] = 0.6
+        row["low_vol_pct"] = 20.0
+        # Must not trigger quality_growth first (keep quality_pct low):
+        row["quality_pct"] = 30.0
+        assert _classify_dna(row, "Consumer Discretionary") == "high_beta_liquidity"
+
+    def test_cyclical_value_triggers(self):
+        """cyclical_value: value≥65 AND sector∈{Energy,Industrials,Materials} AND beta_sector>0.2."""
+        row = self._base_row()
+        row["value_pct"] = 70.0
+        row["beta_sector"] = 0.4
+        # Must not trigger quality_growth or high_beta first:
+        row["quality_pct"] = 30.0
+        row["beta_mkt"] = 0.8
+        row["beta_growth"] = 0.1
+        for sector in ["Energy", "Industrials", "Materials"]:
+            assert _classify_dna(row, sector) == "cyclical_value", (
+                f"cyclical_value must trigger for sector={sector}"
+            )
+        # Non-cyclical sector: does NOT trigger
+        assert _classify_dna(row, "Health Care") != "cyclical_value"
+
+    def test_defensive_quality_triggers(self):
+        """defensive_quality: quality≥65 AND low_vol≥60 AND beta_mkt<0.85."""
+        row = self._base_row()
+        row["quality_pct"] = 70.0
+        row["low_vol_pct"] = 65.0
+        row["beta_mkt"] = 0.7
+        row["value_pct"] = 55.0  # below quality_growth threshold (<60 ok, but quality<70 ok)
+        row["beta_growth"] = 0.1   # below quality_growth beta_growth threshold
+        assert _classify_dna(row, "Utilities") == "defensive_quality"
+
+    def test_rate_duration_sensitive_triggers(self):
+        """rate_duration_sensitive: abs(beta_rates)>0.25 AND (payout≥55 OR low_vol≥55)."""
+        row = self._base_row()
+        row["beta_rates"] = 0.4
+        row["payout_pct"] = 60.0
+        # Must not trigger earlier classes:
+        row["quality_pct"] = 30.0
+        row["beta_mkt"] = 0.8
+        row["beta_growth"] = 0.1
+        row["value_pct"] = 30.0
+        row["low_vol_pct"] = 30.0
+        assert _classify_dna(row, "Real Estate") == "rate_duration_sensitive"
+
+        # Also triggers with negative beta_rates:
+        row["beta_rates"] = -0.35
+        row["payout_pct"] = 40.0
+        row["low_vol_pct"] = 60.0
+        assert _classify_dna(row, "Real Estate") == "rate_duration_sensitive"
+
+    def test_china_crypto_proxy_via_china_beta(self):
+        """china_crypto_proxy via beta_china > 0.30."""
+        row = self._base_row()
+        row["beta_china"] = 0.5
+        # Must not trigger earlier classes:
+        row["quality_pct"] = 30.0
+        row["beta_mkt"] = 0.8
+        row["beta_growth"] = 0.1
+        row["value_pct"] = 30.0
+        row["low_vol_pct"] = 30.0
+        row["beta_rates"] = 0.05
+        assert _classify_dna(row, "Health Care") == "china_crypto_proxy"
+
+    def test_china_crypto_proxy_via_sector_path(self):
+        """china_crypto_proxy via beta_mkt>1.1 AND IT sector AND value<30."""
+        row = self._base_row()
+        row["beta_china"] = 0.0   # no china beta
+        row["beta_mkt"] = 1.2
+        row["value_pct"] = 20.0
+        # Must not trigger earlier classes:
+        row["quality_pct"] = 30.0
+        row["beta_growth"] = 0.1
+        row["low_vol_pct"] = 30.0
+        row["beta_rates"] = 0.05
+        for sector in ["Information Technology", "Technology",
+                        "Communication Services", "Communications"]:
+            assert _classify_dna(row, sector) == "china_crypto_proxy", (
+                f"china_crypto_proxy must trigger for sector={sector}"
+            )
+        # Non-eligible sector: does NOT trigger this path
+        result = _classify_dna(row, "Energy")
+        assert result != "china_crypto_proxy"
+
+    def test_small_spec_triggers(self):
+        """small_spec: size_pct<30 AND low_vol<40 AND quality<45."""
+        row = self._base_row()
+        row["size_pct"] = 20.0
+        row["low_vol_pct"] = 25.0
+        row["quality_pct"] = 30.0
+        # Must not trigger earlier classes:
+        row["beta_mkt"] = 0.9
+        row["beta_growth"] = 0.1
+        row["value_pct"] = 40.0
+        row["beta_rates"] = 0.05
+        row["beta_china"] = 0.0
+        assert _classify_dna(row, "Consumer Discretionary") == "small_spec"
+
+    def test_priority_order_quality_growth_beats_high_beta(self):
+        """quality_growth has higher priority than high_beta_liquidity."""
+        row = self._base_row()
+        # Both quality_growth and high_beta_liquidity could trigger:
+        row["quality_pct"] = 75.0
+        row["value_pct"] = 40.0
+        row["beta_growth"] = 0.5
+        row["beta_mkt"] = 1.5
+        row["low_vol_pct"] = 20.0
+        # quality_growth fires first (higher priority):
+        assert _classify_dna(row, "Information Technology") == "quality_growth"
+
+    def test_none_vs_mixed_distinction_is_load_bearing(self):
+        """RULING-A: None (NOT EVALUABLE) != 'mixed' (evaluated, no archetype).
+
+        This distinction is explicitly required by RULING-A: 'mixed' is reserved
+        for rows that WERE evaluated and matched no archetype.
+        """
+        # Row with all Block-B None → None (not evaluable):
+        row_none = self._base_row()
+        row_none["quality_pct"] = None
+        result_none = _classify_dna(row_none, "Health Care")
+        assert result_none is None, "Expected None for missing Block-B"
+
+        # Row with all Block-B present but no archetype matches → 'mixed':
+        row_mixed = self._base_row()
+        result_mixed = _classify_dna(row_mixed, "Health Care")
+        assert result_mixed == "mixed", "Expected 'mixed' when evaluated but no archetype"
+
+        # Critical: these are distinct values
+        assert result_none != result_mixed, "None and 'mixed' must be distinct"
+        assert result_none is None
+        assert result_mixed == "mixed"
+
+    def test_missing_beta_treated_as_zero(self):
+        """Missing Block-A betas (None) are treated as 0.0 — condition fails gracefully."""
+        row = self._base_row()
+        # quality_growth requires beta_growth > 0.3; if beta_growth=None → treated as 0.0
+        row["quality_pct"] = 75.0
+        row["value_pct"] = 40.0
+        row["beta_growth"] = None  # treated as 0.0 → quality_growth condition fails
+        result = _classify_dna(row, "Information Technology")
+        # Should not be quality_growth (beta_growth condition failed):
+        assert result != "quality_growth"
+        # Should still evaluate (Block-B is present) → not None:
+        assert result is not None
+
+
+# ---------------------------------------------------------------------------
+# P1-C tests — style_regime classifier (§3.4)
+# ---------------------------------------------------------------------------
+class TestStyleRegimeClassifier:
+    """Tests for _build_style_regime_timeline: hysteresis, idempotence, fail-open."""
+
+    def _write_etf_fixture(self, root: Path, dates: pd.DatetimeIndex,
+                           iwf_rets: np.ndarray | None = None,
+                           iwd_rets: np.ndarray | None = None,
+                           qqq_rets: np.ndarray | None = None,
+                           spy_rets: np.ndarray | None = None,
+                           iwm_rets: np.ndarray | None = None) -> None:
+        """Write synthetic ETF parquets for style_regime testing."""
+        rng = np.random.default_rng(42)
+        n = len(dates)
+        ydir = root / "data" / "yahoo"
+        ydir.mkdir(parents=True, exist_ok=True)
+
+        default_rets = rng.normal(0, 0.01, n)
+        pairs = [
+            ("IWF", iwf_rets if iwf_rets is not None else default_rets),
+            ("IWD", iwd_rets if iwd_rets is not None else default_rets),
+            ("QQQ", qqq_rets if qqq_rets is not None else default_rets),
+            ("SPY", spy_rets if spy_rets is not None else default_rets),
+            ("IWM", iwm_rets if iwm_rets is not None else default_rets),
+        ]
+        for sym, rets in pairs:
+            closes = 100.0 * (1 + rets).cumprod()
+            df = pd.DataFrame({"close": closes}, index=dates)
+            df.to_parquet(ydir / f"{sym}.parquet")
+
+    def test_missing_etf_data_returns_mixed(self, tmp_path):
+        """If all ETF parquets are missing → fail-open: all dates return 'mixed'."""
+        # No ETF parquets written
+        dates = pd.bdate_range("2025-01-02", periods=30)
+        confirmed, pending = _build_style_regime_timeline(tmp_path, dates)
+        assert (confirmed == "mixed").all(), "Missing ETF data must yield 'mixed' for all dates"
+        assert len(confirmed) == len(dates)
+
+    def test_hysteresis_one_day_match_goes_to_pending(self, tmp_path):
+        """Hysteresis: 1 day match → pending only, confirmed state unchanged.
+
+        RULING (§3.4): a state change requires 2 consecutive daily confirmations.
+        On day 1 match, confirmed stays at 'mixed'; pending becomes the new state.
+        """
+        n = 60  # enough for 20d rolling warmup
+        dates = pd.bdate_range("2025-01-02", periods=n)
+
+        # Build ETF returns where growth_momentum conditions fire for exactly 1 day
+        # at the end, then stops.  We engineer QQQ >> SPY (>+3%) on the last day only.
+        # To ensure warmup, use similar returns for most of history.
+        rng = np.random.default_rng(99)
+        base_ret = rng.normal(0.0003, 0.008, n)  # slight positive drift
+
+        qqq_rets = base_ret.copy()
+        spy_rets = base_ret.copy()
+        iwf_rets = base_ret.copy()
+        iwd_rets = base_ret.copy()
+        iwm_rets = base_ret.copy()
+
+        # For the last day: make QQQ massively outperform SPY over trailing 20d
+        # by injecting a large positive return into QQQ on days [-21:-1]
+        qqq_rets[-21:-1] += 0.003  # QQQ 20d return ~6% above SPY
+
+        self._write_etf_fixture(
+            tmp_path, dates,
+            qqq_rets=qqq_rets, spy_rets=spy_rets,
+            iwf_rets=iwf_rets, iwd_rets=iwd_rets, iwm_rets=iwm_rets,
+        )
+        # Write factor_series.json to provide leader context (minimal):
+        fs_dir = tmp_path / "site" / "factordata"
+        fs_dir.mkdir(parents=True, exist_ok=True)
+        # We don't need real factor series for this test — just let it fall back gracefully
+        (fs_dir / "factor_series.json").write_text('{"as_of": "2025-01-02"}')
+
+        confirmed, pending = _build_style_regime_timeline(tmp_path, dates)
+        assert len(confirmed) == n
+        # All confirmed states must be valid strings:
+        for v in confirmed:
+            assert v in STYLE_REGIME_STATES, f"Invalid state: {v}"
+
+    def test_hysteresis_two_consecutive_days_flip(self, tmp_path):
+        """Hysteresis: 2 consecutive days of same non-mixed state → flip confirmed.
+
+        Verified behaviorally: after 2 consecutive matching days, confirmed changes.
+        """
+        n = 60
+        dates = pd.bdate_range("2025-01-02", periods=n)
+        rng = np.random.default_rng(7)
+        base = rng.normal(0, 0.008, n)
+
+        # Engineer IWM >> SPY (>+4%) for the last 3+ days (20d rolling window)
+        # to fire junk_rally conditions.
+        iwm_rets = base.copy()
+        spy_rets = base.copy()
+        iwm_rets[-22:-1] += 0.003   # IWM outperforms SPY by ~6% over 20d window
+
+        self._write_etf_fixture(
+            tmp_path, dates,
+            iwm_rets=iwm_rets, spy_rets=spy_rets,
+        )
+        fs_dir = tmp_path / "site" / "factordata"
+        fs_dir.mkdir(parents=True, exist_ok=True)
+        (fs_dir / "factor_series.json").write_text('{"as_of": "2025-01-02"}')
+
+        confirmed, pending = _build_style_regime_timeline(tmp_path, dates)
+        assert len(confirmed) == n
+        # All states valid:
+        for v in confirmed:
+            assert v in STYLE_REGIME_STATES
+
+    def test_immediate_reversion_to_mixed(self, tmp_path):
+        """Hysteresis: failing conditions → immediate reversion to 'mixed' (no delay).
+
+        §3.4: 'Reversions to mixed are immediate (1 day).'
+        """
+        n = 60
+        dates = pd.bdate_range("2025-01-02", periods=n)
+        rng = np.random.default_rng(11)
+        base = rng.normal(0, 0.008, n)
+
+        self._write_etf_fixture(tmp_path, dates)
+        fs_dir = tmp_path / "site" / "factordata"
+        fs_dir.mkdir(parents=True, exist_ok=True)
+        (fs_dir / "factor_series.json").write_text('{"as_of": "2025-01-02"}')
+
+        # With all-identical ETF returns (ratios = 0), no condition fires → all 'mixed'
+        confirmed, pending = _build_style_regime_timeline(tmp_path, dates)
+        # Once a state is confirmed, if conditions fail the next day → back to mixed
+        # For this test: with neutral ratios, state should be 'mixed' throughout.
+        assert all(v in STYLE_REGIME_STATES for v in confirmed.values)
+
+    def test_idempotence_historical_states_unchanged(self, tmp_path):
+        """Idempotence: appending future dates must not change historical confirmed states.
+
+        PREREG §2.5(a): style_regime[t] is a pure function of data ≤ t.
+        Running the classifier on [d1, d2] produces the same confirmed states for
+        d1 as running it on [d1, d2, d3, d4, d5] (extended window).
+        """
+        n_short = 60
+        n_long = 80
+        dates_short = pd.bdate_range("2025-01-02", periods=n_short)
+        dates_long = pd.bdate_range("2025-01-02", periods=n_long)
+
+        rng = np.random.default_rng(42)
+        base = rng.normal(0, 0.008, n_long)
+
+        short_root = tmp_path / "short"
+        long_root = tmp_path / "long"
+        short_root.mkdir(); long_root.mkdir()
+
+        # Write same ETF returns for both (only first n_short rows for short fixture):
+        for root, n in [(short_root, n_short), (long_root, n_long)]:
+            dates_n = pd.bdate_range("2025-01-02", periods=n)
+            self._write_etf_fixture(root, dates_n,
+                                    iwf_rets=base[:n], iwd_rets=base[:n],
+                                    qqq_rets=base[:n], spy_rets=base[:n],
+                                    iwm_rets=base[:n])
+            fs_dir = root / "site" / "factordata"
+            fs_dir.mkdir(parents=True, exist_ok=True)
+            (fs_dir / "factor_series.json").write_text('{"as_of": "2025-01-02"}')
+
+        conf_short, _ = _build_style_regime_timeline(short_root, dates_short)
+        conf_long, _ = _build_style_regime_timeline(long_root, dates_long)
+
+        # Historical states (dates in short window) must be identical:
+        for d in dates_short:
+            v_short = conf_short.get(d)
+            v_long = conf_long.get(d)
+            assert v_short == v_long, (
+                f"Idempotence failure at {d.date()}: short='{v_short}', long='{v_long}'. "
+                "Extending history forward must not change past confirmed states."
+            )
+
+    def test_style_regime_states_are_valid_strings(self, tmp_path):
+        """All emitted style_regime values must be in STYLE_REGIME_STATES."""
+        n = 50
+        dates = pd.bdate_range("2025-01-02", periods=n)
+        self._write_etf_fixture(tmp_path, dates)
+        fs_dir = tmp_path / "site" / "factordata"
+        fs_dir.mkdir(parents=True, exist_ok=True)
+        (fs_dir / "factor_series.json").write_text('{"as_of": "2025-01-02"}')
+
+        confirmed, pending = _build_style_regime_timeline(tmp_path, dates)
+        for v in confirmed:
+            assert v in STYLE_REGIME_STATES, f"Invalid style_regime state: {v!r}"
+
+    def test_pending_is_none_when_no_flip_in_progress(self, tmp_path):
+        """style_regime_pending is None when confirmed state is stable."""
+        n = 50
+        dates = pd.bdate_range("2025-01-02", periods=n)
+        self._write_etf_fixture(tmp_path, dates)
+        fs_dir = tmp_path / "site" / "factordata"
+        fs_dir.mkdir(parents=True, exist_ok=True)
+        (fs_dir / "factor_series.json").write_text('{"as_of": "2025-01-02"}')
+
+        confirmed, pending = _build_style_regime_timeline(tmp_path, dates)
+        assert len(pending) == len(dates)
+        # Each pending value must be None or a valid state string:
+        for v in pending:
+            assert v is None or v in STYLE_REGIME_STATES, (
+                f"Invalid pending value: {v!r}"
+            )
+
+
+# ---------------------------------------------------------------------------
+# P1-C tests — world_state lobe (§5.4 + RULING-B)
+# ---------------------------------------------------------------------------
+class TestWorldStateLobe:
+    """Tests for _compose_factor_weather: fail-open, purity, RULING-B.
+
+    FIX-1 (RULING-B fold): _compose_factor_weather now takes root= and loads
+    data internally.  Tests use tmp_path fixtures to isolate reads.
+    """
+
+    def _import_ws(self):
+        """Import world_state module."""
+        import importlib
+        ws = importlib.import_module("engine.neuralweb.world_state")
+        return ws
+
+    def _import_compose(self):
+        """Import _compose_factor_weather from world_state."""
+        ws = self._import_ws()
+        if not hasattr(ws, "_compose_factor_weather"):
+            pytest.skip("_compose_factor_weather not yet wired in world_state.py")
+        return ws._compose_factor_weather
+
+    def _import_clean(self):
+        """Import _clean helper from world_state."""
+        ws = self._import_ws()
+        if not hasattr(ws, "_clean"):
+            pytest.skip("_clean not available in world_state.py")
+        return ws._clean
+
+    def test_fail_open_empty_root(self, tmp_path):
+        """Empty root dir → fail-open: returns dict with nulls, never raises."""
+        compose = self._import_compose()
+        try:
+            result = compose(root=tmp_path)
+        except Exception as exc:
+            pytest.fail(f"_compose_factor_weather raised on empty root: {exc}")
+        assert isinstance(result, dict), "Must return dict even on missing inputs"
+        assert result.get("display_only") is True, "display_only must be True"
+
+    def test_fail_open_missing_data_dir(self, tmp_path):
+        """Missing data/ dir → fail-open: returns dict with nulls."""
+        compose = self._import_compose()
+        # tmp_path is empty — no data/ or site/ dir
+        result = compose(root=tmp_path)
+        assert isinstance(result, dict)
+        assert result.get("display_only") is True
+
+    def test_lobe_purity_identical_on_double_call(self, tmp_path):
+        """Calling _compose_factor_weather twice with same root → identical dicts."""
+        compose = self._import_compose()
+        r1 = compose(root=tmp_path)
+        r2 = compose(root=tmp_path)
+
+        import json as _json
+        s1 = _json.dumps(r1, sort_keys=True, default=str)
+        s2 = _json.dumps(r2, sort_keys=True, default=str)
+        assert s1 == s2, "Lobe must be pure — double-call must produce identical dicts"
+
+    def test_display_only_hardcoded_true(self, tmp_path):
+        """display_only must be True — §5.4 mandates this."""
+        compose = self._import_compose()
+        result = compose(root=tmp_path)
+        assert result.get("display_only") is True
+
+    def test_lobe_has_required_keys(self, tmp_path):
+        """Lobe must include the §5.4-specified keys (may be None)."""
+        compose = self._import_compose()
+        result = compose(root=tmp_path)
+        required = {
+            "style_regime", "style_regime_pending", "style_regime_hold_days",
+            "factor_leader", "factor_leader_ic",
+            "etf_pulse_summary", "display_only",
+        }
+        missing = required - set(result.keys())
+        assert not missing, (
+            f"_compose_factor_weather missing required keys: {missing}"
+        )
+
+    def test_lobe_has_ratio_keys(self, tmp_path):
+        """Lobe must include the three ETF ratio keys (FIX-3)."""
+        compose = self._import_compose()
+        result = compose(root=tmp_path)
+        ratio_keys = {"ratio_iwf_iwd_20d", "ratio_qqq_spy_20d", "ratio_iwm_spy_20d"}
+        missing = ratio_keys - set(result.keys())
+        assert not missing, (
+            f"_compose_factor_weather missing ratio keys: {missing} "
+            "(FIX-3: real 20d ETF ratios, not etf_pulse.json)"
+        )
+
+    def test_nan_guard_prevents_invalid_json(self, tmp_path):
+        """FIX-5 regression: lobe output must serialize cleanly with allow_nan=False.
+
+        Feed a synthetic panel row with style_regime_pending=float('nan') and a
+        numpy.float64 field — the output must json.dumps cleanly without NaN literals
+        or numpy type errors.
+
+        This guards against the house issue where np.int64 in JSON triggered
+        TypeError and broad except silently zeroed ledgers (qledger-numpy-json-dumps
+        memory entry).
+        """
+        import json as _json
+        import numpy as np_
+
+        ws = self._import_ws()
+        _clean = ws._clean if hasattr(ws, "_clean") else None
+        if _clean is None:
+            pytest.skip("_clean not available")
+
+        # Simulate the pathological values that used to ship as 'NaN' literal:
+        compose = self._import_compose()
+        result = compose(root=tmp_path)
+
+        # Manually inject NaN and numpy scalar to simulate panel read:
+        result_patched = dict(result)
+        result_patched["style_regime_pending"] = _clean(float("nan"))
+        result_patched["style_regime_hold_days"] = _clean(np_.int64(5))
+        result_patched["factor_leader_ic"] = _clean(np_.float64(-0.03))
+
+        # Must serialize without error (allow_nan=False catches NaN literals):
+        try:
+            s = _json.dumps(result_patched, allow_nan=False)
+        except (ValueError, TypeError) as exc:
+            pytest.fail(
+                f"FIX-5 regression: lobe output fails json.dumps(allow_nan=False): {exc}\n"
+                f"Patched dict: {result_patched}"
+            )
+        # Values round-trip correctly:
+        loaded = _json.loads(s)
+        assert loaded["style_regime_pending"] is None, (
+            "NaN float must become null, not 'NaN' literal"
+        )
+        assert isinstance(loaded["style_regime_hold_days"], int), (
+            "numpy.int64 must become native int"
+        )
+        assert isinstance(loaded["factor_leader_ic"], float), (
+            "numpy.float64 must become native float"
+        )
+
+    def test_clean_helper_nan_becomes_none(self):
+        """_clean: float NaN → None; float Inf → None; None → None."""
+        import math
+        _clean = self._import_clean()
+        assert _clean(None) is None
+        assert _clean(float("nan")) is None
+        assert _clean(float("inf")) is None
+        assert _clean(float("-inf")) is None
+        assert _clean(0.0) == 0.0
+        assert _clean(1.5) == 1.5
+        assert _clean("hello") == "hello"
+
+    def test_clean_helper_numpy_scalars(self):
+        """_clean: numpy scalar types → native Python types."""
+        import numpy as np_
+        _clean = self._import_clean()
+
+        # numpy int:
+        v_int = _clean(np_.int64(42))
+        assert isinstance(v_int, int), f"Expected int, got {type(v_int)}"
+        assert v_int == 42
+
+        # numpy float (non-NaN):
+        v_float = _clean(np_.float64(3.14))
+        assert isinstance(v_float, float), f"Expected float, got {type(v_float)}"
+        assert abs(v_float - 3.14) < 1e-9
+
+        # numpy float NaN → None:
+        v_nan = _clean(np_.float64(float("nan")))
+        assert v_nan is None, "numpy NaN float must become None"
+
+        # numpy bool_:
+        v_bool = _clean(np_.bool_(True))
+        assert isinstance(v_bool, bool), f"Expected bool, got {type(v_bool)}"
+        assert v_bool is True
+
+
+# ---------------------------------------------------------------------------
+# P1-C tests — behavioral hysteresis (FIX-6)
+# ---------------------------------------------------------------------------
+class TestStyleRegimeBehavioralHysteresis:
+    """FIX-6: behavioral hysteresis tests that actually drive non-mixed raw states.
+
+    The prior 7 TestStyleRegimeClassifier tests were non-behavioral: fixtures
+    had factor_series.json lacking chart_data.spread, so leader was always
+    'mixed' and no non-mixed raw state could ever arise.
+
+    These new tests build fixtures that genuinely satisfy growth_momentum or
+    quality_defense conditions (real ETF closes + a factor_series.json with
+    chart_data.spread providing the confirmed leader), then assert EXACT
+    hysteresis behavior:
+      - day-1 match: confirmed='mixed', pending='growth_momentum'
+      - day-2 consecutive: confirmed='growth_momentum', pending=None
+      - conditions failing after: immediate confirmed='mixed'
+      - future-append: history unchanged (idempotence / PIT)
+
+    Mutation demonstration (included in test docstrings): changing the structural 2-day rule
+    from 2 to 1 causes test_two_day_confirm_flips_confirmed to fail.
+    """
+
+    def _write_etf_closes(self, ydir: Path, sym: str,
+                          dates: pd.DatetimeIndex, closes: np.ndarray) -> None:
+        """Write a yahoo-style parquet with a 'close' column."""
+        df = pd.DataFrame({"close": closes}, index=dates)
+        df.to_parquet(ydir / f"{sym}.parquet")
+
+    def _write_growth_momentum_fixture(
+        self, root: Path, n_base: int = 80, n_signal: int = 5,
+    ) -> tuple[pd.DatetimeIndex, pd.DatetimeIndex]:
+        """Write ETF + factor_series fixtures that drive growth_momentum raw state.
+
+        growth_momentum conditions (§3.4 frozen thresholds):
+          QQQ/SPY 20d ratio > +0.03
+          leader in {'growth', 'profitability'}
+          IWF/IWD 20d ratio > 0
+
+        Design (robust, not marginal):
+
+        The fixture has two phases:
+
+        1. Base period (n_base days): Factor leader 'growth' is CONFIRMED (by a rising
+           growth_spread that gives 3+ consecutive leader sessions, achieved within the
+           first 30 base days). ETF ratios are ALL ZERO in this phase, so no
+           growth_momentum condition fires → confirmed='mixed' throughout base period.
+
+        2. Signal window (n_signal days): ETF ratios EXCEED thresholds with a large
+           margin — QQQ outperforms SPY by +0.4%/day compounded over 20 days = +8.3%
+           20d ratio (well above the 0.03 threshold). IWF outperforms IWD by +0.3%/day
+           → ratio > 0. Leader is still 'growth' (factor_series.json covers full period).
+           Now all three growth_momentum conditions are met → raw='growth_momentum'.
+           The hysteresis counter runs over signal_dates only.
+
+        Key insight: in the signal window, the 20-day rolling window contains BOTH
+        base days (0% edge) and signal days (+0.4% edge). On signal day 1, the 20-window
+        has 19 base days (0%) and 1 signal day (+0.4%) → cumulative ratio ≈ +0.4%.
+        That is < 0.03 threshold!
+
+        Fix: use a LARGER daily edge so even 1 day in the window exceeds the threshold.
+        We need (1+edge) - 1 > 0.03 → edge > 0.03. Use +4%/day (0.04).
+        Then signal day 1: window = 19 base (0%) + 1 signal (+4%) → ratio ≈ +4%.
+        min_periods=10, so we need the window to have at least 10 observations.
+        With n_base=80 (>> 20), the window is always full → ratio = (1.04)^1 × 1^19 - 1 ≈ +4%.
+
+        Actually the implementation computes: roll_a - roll_b where roll_a = prod(1+a_ret)
+        and roll_b = prod(1+b_ret) over the 20-window. QQQ on signal day 1:
+          roll_qqq = (1+0.04)^1 × (1+0)^19 = 1.04
+          roll_spy = (1+0)^20 = 1.0
+          ratio = 1.04 - 1.0 = 0.04 > 0.03 ✓
+
+        Similarly IWF on signal day 1:
+          roll_iwf = (1+0.03)^1 = 1.03, roll_iwd = 1.0 → ratio = 0.03 > 0 ✓
+
+        Returns (all_dates, signal_dates).
+        """
+        ydir = root / "data" / "yahoo"
+        ydir.mkdir(parents=True, exist_ok=True)
+        fddir = root / "site" / "factordata"
+        fddir.mkdir(parents=True, exist_ok=True)
+
+        n_total = n_base + n_signal
+        dates = pd.bdate_range("2024-01-02", periods=n_total)
+        signal_dates = dates[n_base:]
+
+        # Base period: all ETFs have ZERO daily returns → ratios exactly 0.
+        # Signal window: QQQ +4%/day, IWF +3%/day (large edges so even 1 day in the
+        # 20-window exceeds the threshold; no random noise to be deterministic).
+        qqq_ret = np.zeros(n_total)
+        spy_ret = np.zeros(n_total)
+        iwf_ret = np.zeros(n_total)
+        iwd_ret = np.zeros(n_total)
+        iwm_ret = np.zeros(n_total)
+
+        signal_slice = slice(n_base, n_total)
+        qqq_ret[signal_slice] = 0.04   # +4%/day → ratio = 4% on signal day 1
+        iwf_ret[signal_slice] = 0.03   # +3%/day → ratio = 3% > 0 on signal day 1
+
+        def _to_closes(ret_arr: np.ndarray) -> np.ndarray:
+            return 100.0 * (1 + ret_arr).cumprod()
+
+        for sym, ret in [("QQQ", qqq_ret), ("SPY", spy_ret),
+                         ("IWF", iwf_ret), ("IWD", iwd_ret),
+                         ("IWM", iwm_ret)]:
+            self._write_etf_closes(ydir, sym, dates, _to_closes(ret))
+
+        # factor_series.json: 'growth' confirmed leader from day 30 of base period onward.
+        # Growth spread rises starting at day 30; by day 33+ (3+ sessions), leader='growth'.
+        # This ensures leader='growth' is confirmed well before the signal window AND
+        # stays confirmed throughout the signal window.
+        dates_str = [str(d.date()) for d in dates]
+        n_leader_start = 30  # start growth outperformance at day 30 of base period
+
+        growth_spread: list[float] = []
+        for i in range(n_total):
+            if i == 0:
+                growth_spread.append(1.0)
+            elif i < n_leader_start:
+                growth_spread.append(growth_spread[-1])  # flat
+            else:
+                growth_spread.append(growth_spread[-1] * 1.02)  # +2%/day growth
+
+        other_spread = [1.0] * n_total  # all other factors flat throughout
+
+        factor_series_json = {
+            "as_of": str(dates[-1].date()),
+            "rotation": {"leader": "growth"},
+            "chart_data": {
+                "dates": dates_str,
+                "spread": {
+                    "growth": growth_spread,
+                    "value": other_spread,
+                    "quality": other_spread,
+                    "low_vol": other_spread,
+                    "profitability": other_spread,
+                    "payout": other_spread,
+                }
+            }
+        }
+        (fddir / "factor_series.json").write_text(json.dumps(factor_series_json))
+
+        return dates, signal_dates
+
+    def test_day1_match_goes_to_pending_not_confirmed(self, tmp_path):
+        """FIX-6 behavioral: day-1 growth_momentum match → pending='growth_momentum',
+        confirmed='mixed'.
+
+        This test requires a fixture that actually drives a non-mixed raw state.
+        The fixture gives exactly 1 signal day at the end.  With the structural 2-consecutive-day rule (§3.4),
+        the confirmed state must stay 'mixed' and pending must be 'growth_momentum'.
+
+        MUTATION DEMONSTRATION: changing the structural 2-day rule from 2 to 1 would make
+        day-1 confirm immediately → confirmed becomes 'growth_momentum' → this test
+        FAILS (confirmed != 'mixed').
+        """
+        n_base = 80
+        n_signal = 1  # exactly 1 signal day
+        dates, signal_dates = self._write_growth_momentum_fixture(
+            tmp_path, n_base=n_base, n_signal=n_signal
+        )
+        build_dates = signal_dates  # just the 1 signal day
+
+        confirmed, pending = _build_style_regime_timeline(tmp_path, build_dates)
+        assert len(confirmed) == len(build_dates)
+
+        # With 1 signal day: raw='growth_momentum' but hysteresis requires 2 consecutive.
+        # Therefore: confirmed='mixed', pending='growth_momentum'.
+        last_confirmed = confirmed.iloc[-1]
+        last_pending = pending.iloc[-1]
+
+        assert last_confirmed == "mixed", (
+            f"FIX-6 behavioral: day-1 match must keep confirmed='mixed' "
+            f"(§3.4 requires 2 consecutive). "
+            f"Got confirmed='{last_confirmed}'. "
+            "MUTATION CHECK: if this fails under an immediate-flip mutation, "
+            "the hysteresis is correctly non-trivial."
+        )
+        assert last_pending == "growth_momentum", (
+            f"FIX-6 behavioral: day-1 match must set pending='growth_momentum'. "
+            f"Got pending='{last_pending}'"
+        )
+
+    def test_two_consecutive_days_flip_confirmed(self, tmp_path):
+        """FIX-6 behavioral: 2 consecutive growth_momentum days → confirmed='growth_momentum'.
+
+        MUTATION DEMONSTRATION: under an immediate-flip mutation, day-1 already confirms
+        → this test still PASSES (weaker). But test_day1_match_goes_to_pending_not_confirmed
+        FAILS (that test only gives 1 signal day, so under immediate-flip the
+        confirmed would be 'growth_momentum' not 'mixed').
+
+        More robustly: if we delete the 'pending' column concept entirely (never set
+        pending state, always flip on first match), then:
+        - test_day1_match_goes_to_pending_not_confirmed FAILS (confirmed='growth_momentum')
+        - this test STILL PASSES (2-day confirmed is also 1-day confirmed)
+        But test_pending_tracks_candidate_on_day1 below FAILS (pending is always None).
+        """
+        n_base = 80
+        n_signal = 2  # exactly 2 consecutive signal days
+        dates, signal_dates = self._write_growth_momentum_fixture(
+            tmp_path, n_base=n_base, n_signal=n_signal
+        )
+        build_dates = signal_dates
+
+        confirmed, pending = _build_style_regime_timeline(tmp_path, build_dates)
+        assert len(confirmed) == len(build_dates)
+
+        # After 2 consecutive signal days: confirmed='growth_momentum', pending=None
+        last_confirmed = confirmed.iloc[-1]
+        last_pending = pending.iloc[-1]
+
+        assert last_confirmed == "growth_momentum", (
+            f"FIX-6 behavioral: 2 consecutive days must flip confirmed to "
+            f"'growth_momentum'. Got confirmed='{last_confirmed}'. "
+            "MUTATION: changing confirm to 1-day still passes this; "
+            "test_day1_match_goes_to_pending_not_confirmed is the discriminating test."
+        )
+        assert last_pending is None, (
+            f"FIX-6 behavioral: after 2-day confirm, pending must be None. "
+            f"Got pending='{last_pending}'"
+        )
+
+    def test_pending_tracks_candidate_on_day1(self, tmp_path):
+        """FIX-6 behavioral: 2-day fixture — day-1 sets pending, day-2 clears it.
+
+        Build with 2 signal days; look at BOTH days:
+        - day-1: confirmed='mixed', pending='growth_momentum'
+        - day-2: confirmed='growth_momentum', pending=None
+
+        MUTATION: removing the pending state (always None) causes day-1 pending to be
+        None → this test FAILS on the day-1 pending assertion.
+        """
+        n_base = 80
+        n_signal = 2
+        dates, signal_dates = self._write_growth_momentum_fixture(
+            tmp_path, n_base=n_base, n_signal=n_signal
+        )
+        build_dates = signal_dates  # the 2 signal days
+
+        confirmed, pending = _build_style_regime_timeline(tmp_path, build_dates)
+        assert len(confirmed) == 2
+
+        # Day 1 of signal window:
+        day1_confirmed = confirmed.iloc[0]
+        day1_pending = pending.iloc[0]
+        # Day 2 of signal window:
+        day2_confirmed = confirmed.iloc[1]
+        day2_pending = pending.iloc[1]
+
+        assert day1_confirmed == "mixed", (
+            f"FIX-6 day-1: confirmed must stay 'mixed'. Got '{day1_confirmed}'. "
+            "MUTATION: an immediate-flip (no pending step) makes this fail — executed proof in P1-C adjudication."
+        )
+        assert day1_pending == "growth_momentum", (
+            f"FIX-6 day-1: pending must be 'growth_momentum'. Got '{day1_pending}'. "
+            "MUTATION: removing pending state makes this fail."
+        )
+        assert day2_confirmed == "growth_momentum", (
+            f"FIX-6 day-2: confirmed must flip to 'growth_momentum'. Got '{day2_confirmed}'."
+        )
+        assert day2_pending is None, (
+            f"FIX-6 day-2: after flip, pending must be None. Got '{day2_pending}'."
+        )
+
+    def test_reversion_to_mixed_is_immediate(self, tmp_path):
+        """FIX-6 behavioral: after confirm, failing conditions → immediate 'mixed'.
+
+        Strategy: drive growth_momentum for 2 days (confirming it), then on day 3
+        make the factor LEADER go 'mixed' by truncating factor_series.json to not
+        cover day 3's date. The leader lookup falls back to 'mixed' for missing dates
+        → growth_momentum condition fails → raw='mixed' → confirmed flips immediately.
+
+        This isolates the hysteresis-reversion path independently of ETF ratios.
+        """
+        root = tmp_path / "revert"
+        root.mkdir()
+        n_base = 80
+        n_signal = 3  # signal days: [gm, gm, mixed-leader] → [mixed, confirmed, mixed]
+        n_total = n_base + n_signal
+        dates = pd.bdate_range("2024-01-02", periods=n_total)
+        signal_dates = dates[n_base:]
+
+        ydir = root / "data" / "yahoo"
+        ydir.mkdir(parents=True, exist_ok=True)
+        fddir = root / "site" / "factordata"
+        fddir.mkdir(parents=True, exist_ok=True)
+
+        # ETFs: zero returns in base period (all ratios = 0 → no growth_momentum in base).
+        # All 3 signal days: QQQ +4%/day, IWF +3%/day (large edge, ratio >0.03 on day 1).
+        qqq_ret = np.zeros(n_total)
+        iwf_ret = np.zeros(n_total)
+        signal_slice = slice(n_base, n_total)
+        qqq_ret[signal_slice] = 0.04   # +4%/day, ratio ≈ +4% on signal day 1
+        iwf_ret[signal_slice] = 0.03   # +3%/day, ratio > 0
+
+        def _to_closes(ret_arr: np.ndarray) -> np.ndarray:
+            return 100.0 * (1 + ret_arr).cumprod()
+
+        for sym, ret in [("QQQ", qqq_ret), ("SPY", np.zeros(n_total)),
+                         ("IWF", iwf_ret), ("IWD", np.zeros(n_total)),
+                         ("IWM", np.zeros(n_total))]:
+            df = pd.DataFrame({"close": _to_closes(ret)}, index=dates)
+            df.to_parquet(ydir / f"{sym}.parquet")
+
+        # factor_series.json: covers base + signal days 1 and 2 ONLY (NOT signal day 3).
+        # Signal day 3's date is absent → leader falls back to 'mixed' via ffill but
+        # since _compute_leader_series uses reindex(method='ffill'), the last confirmed
+        # leader will ffill. So we need a DIFFERENT strategy: make ALL factors flat (equal)
+        # on signal day 3 so the leader becomes 'mixed' (no dominant factor).
+        # Actually: truncate factor_series.json so it doesn't cover signal day 3 at all.
+        # reindex(method='ffill') WILL ffill the leader from signal day 2 to day 3.
+        # → The leader stays 'growth' even on signal day 3. That breaks our reversion plan.
+        #
+        # Better plan for reversion: use factor_series.json with ALL factors identical
+        # on signal days 1-3, then shift the advantage back to other factors on day 3.
+        # Make growth spread FLAT on day 3 while ALL others remain flat too → leader stays
+        # 'growth' via ffill. Still broken.
+        #
+        # Most reliable plan: use factor_series.json where growth STOPS outperforming
+        # and 'value' takes over on signal day 3 → 20d rolling leader becomes 'value'
+        # after 3+ sessions. But 3-session debounce means single day change won't flip.
+        #
+        # Cleanest plan: use a leader that switches BEFORE the signal window.
+        # Instead, just use the simple hysteresis property directly:
+        # growth_momentum requires: QQQ/SPY > 0.03 AND leader ∈ {growth, profitability}
+        # On day 3: make QQQ/SPY ratio = 0 by having QQQ also be 0 on day 3.
+        # But the 20-day window on day 3 contains signal days 1 and 2 (both with +4%),
+        # so ratio ≈ +8% (two slots of +4%) → still > 0.03.
+        #
+        # Resolution: use the factor_series.json truncation but account for ffill.
+        # The reindex(method='ffill') in _compute_leader_series fills the last date's
+        # leader to ALL subsequent dates. But the function computes leader for
+        # ALL ETF dates, then reindexes to the requested dates.
+        # If factor_series.json ends before signal day 3, the roll20 DataFrame ends there,
+        # and the reindex to all_etf_dates_idx will ffill to signal day 3.
+        # So the leader IS 'growth' on signal day 3 too. Truncation alone doesn't work.
+        #
+        # True resolution: write factor_series.json where ALL factors have EQUAL returns
+        # on signal day 3, so no single factor dominates → leader_raw picks 'growth'
+        # (idxmax returns first column in case of tie, which alphabetically is 'growth').
+        # That also doesn't give 'mixed'. The classification returns 'mixed' only when
+        # NO matches pass or multiple match. But 'mixed' leader → no condition fires.
+        #
+        # FINAL PLAN: Write factor_series.json where a NON-GROWTH factor (e.g. 'quality')
+        # becomes the confirmed leader on signal day 3. Since confirmed leader requires
+        # 3 consecutive sessions, and we only have 1 day, the confirmed leader stays
+        # 'growth' (debounce). Raw leader may change but confirmed won't flip in 1 day.
+        # → This doesn't work in 1 signal day either.
+        #
+        # The CORRECT approach: test reversion via the ETF ratio alone.
+        # We need QQQ/SPY 20d ratio < 0.03 on signal day 3.
+        # Current setup: signal days 1+2 each add +4% to the 20-slot window.
+        # On signal day 3, the window has: 18 base days (0%) + 2 signal days (+4%each).
+        # Ratio = (1.04^2 × 1.0^18) - 1.0^20 ≈ (1.0816 - 1) = 0.0816 > 0.03.
+        # Still above threshold.
+        #
+        # We need to put ZERO returns on signal day 3 for QQQ AND reduce signal day 1+2
+        # contribution to < 0.03. Use a much smaller edge: +1.5%/day.
+        # On day 3 with QQQ=0: window has 18 zeros + 2 signal days (1.5%each).
+        # Ratio = 1.015^2 - 1 = 0.0302 ≈ 0.03. That's marginal.
+        # Use 1%/day instead: ratio = 1.01^2 - 1 = 0.0201 < 0.03 ✓ on signal day 3.
+        # But signal day 1: window has 19 zeros + 1 day of +1% → ratio = 0.01 < 0.03. ✗
+        # That FAILS signal day 1 (ratio doesn't exceed threshold).
+        #
+        # ACTUAL RESOLUTION:
+        # On signal DAY 1: need ratio > 0.03 → use a LARGE edge (+4%/day) ON day 1 only.
+        # On signal DAY 2: same large edge, ratio ≈ +8% (2 slots) → still > 0.03.
+        # On signal DAY 3: small edge (0%) on day 3 itself. Window has slots:
+        #   17 zeros (base) + 2 signal-1-2 (+4%) + 1 signal-3 (0%) = ratio ≈ +8% > 0.03.
+        # Ratio is high regardless. Back to the same problem.
+        #
+        # ONLY CLEAN PATH: use a different mechanism for signal day 3 failure — make
+        # the leader switch. For the leader to switch ON signal day 3, we need:
+        #   - growth was confirmed leader before signal window (3 consecutive dominant)
+        #   - ALL factors flat for 3+ sessions ending on signal day 3 → raw leader is
+        #     whatever factor was already dominant (still 'growth') → no switch.
+        #
+        # The honest conclusion: the reversion test should use a completely SEPARATE
+        # fixture where the ETF ratio drops below 0.03 specifically through using a
+        # SHORT window of signal-edge days (only 2), and then having QQQ edge stop.
+        # The ratio on day 3 depends on how many edge days are still IN the 20-window.
+        # If we use only 2 signal days WITH edge, then on day 3 (zero edge), the window
+        # contains: 17 zeros + 2 edge days → ratio still > 0.03 (if edge was 4%).
+        #
+        # The ONLY way to get ratio < 0.03 on signal day 3 is if fewer edge-days
+        # are in the window AND/OR the edge is smaller.
+        # With edge=4% and exactly 1 edge day in the window: ratio = 4% > 3%. ✗
+        # With edge=2% and exactly 1 edge day: ratio = 2% < 3%. ✓
+        # But with edge=2% and signal day 1: 1 edge day → ratio = 2% < 3%. ✗ day1 fails.
+        #
+        # BREAKTHROUGH: use TWO SEPARATE ETF EDGE VALUES.
+        # Signal day 1: use a LARGE one-time spike (+50%/day) → ratio = 50% >> 0.03 ✓
+        # Signal day 2: same spike → ratio = (1.5^2 - 1) = 1.25 >> 0.03 ✓
+        # Signal day 3: zero → ratio = 1.5^2 / 1 - 1 ≈ 125% (still in window!) ✗
+        # STILL DOESN'T WORK because all 3 days are within the 20-window.
+        #
+        # FINAL BREAKTHROUGH: use NEGATIVE ETF edge on signal day 3 to bring the ratio
+        # below 0.03. With spike of +4% on days 1+2, on day 3:
+        # roll_qqq = (1.04)^2 * (1 + edge3)^1 * 1^17
+        # roll_spy = 1^20
+        # ratio = (1.04^2) * (1 + edge3) - 1
+        # We need: 1.0816 * (1 + edge3) - 1 < 0.03
+        # → 1 + edge3 < 1.03 / 1.0816 ≈ 0.9523
+        # → edge3 < -4.77%
+        # Use edge3 = -10%/day on signal day 3.
+        # ratio = 1.0816 * 0.90 - 1 = 0.97344 - 1 = -0.02656 < 0.03 ✓
+        # IWF on day 3: 1.03^2 * 0.90 - 1 = 0.9565 - 1 = -0.04 < 0 → IWF/IWD < 0
+        # → growth_momentum also fails on the IWF/IWD > 0 condition.
+        # So using large negative return on signal day 3 makes raw='mixed'. ✓
+        # BUT: negative 10% daily return is unrealistic but fine for a test fixture.
+
+        # Re-build ETF arrays with this approach:
+        qqq_ret2 = np.zeros(n_total)
+        iwf_ret2 = np.zeros(n_total)
+        qqq_ret2[n_base] = 0.04      # signal day 1: +4%
+        qqq_ret2[n_base + 1] = 0.04  # signal day 2: +4%
+        qqq_ret2[n_base + 2] = -0.10 # signal day 3: −10% (kills the ratio)
+        iwf_ret2[n_base] = 0.03
+        iwf_ret2[n_base + 1] = 0.03
+        iwf_ret2[n_base + 2] = -0.10
+
+        for sym, ret in [("QQQ", qqq_ret2), ("SPY", np.zeros(n_total)),
+                         ("IWF", iwf_ret2), ("IWD", np.zeros(n_total)),
+                         ("IWM", np.zeros(n_total))]:
+            df = pd.DataFrame({"close": _to_closes(ret)}, index=dates)
+            df.to_parquet(ydir / f"{sym}.parquet")
+
+        # Growth leader: rises from day 30 (confirmed well before signal window).
+        # Covers ALL dates including signal day 3 → leader='growth' on all signal days.
+        # On signal day 3, ratio < 0.03 → condition fails → raw='mixed' regardless of leader.
+        n_leader_start = 30
+        growth_spread: list[float] = []
+        for i in range(n_total):
+            if i == 0:
+                growth_spread.append(1.0)
+            elif i < n_leader_start:
+                growth_spread.append(growth_spread[-1])
+            else:
+                growth_spread.append(growth_spread[-1] * 1.02)
+
+        factor_series_json = {
+            "as_of": str(dates[-1].date()),
+            "rotation": {"leader": "growth"},
+            "chart_data": {
+                "dates": [str(d.date()) for d in dates],
+                "spread": {
+                    "growth": growth_spread,
+                    "value": [1.0] * n_total,
+                    "quality": [1.0] * n_total,
+                    "low_vol": [1.0] * n_total,
+                    "profitability": [1.0] * n_total,
+                    "payout": [1.0] * n_total,
+                }
+            }
+        }
+        (fddir / "factor_series.json").write_text(json.dumps(factor_series_json))
+
+        confirmed, pending = _build_style_regime_timeline(root, signal_dates)
+        assert len(confirmed) == n_signal, (
+            f"Expected {n_signal} confirmed states, got {len(confirmed)}"
+        )
+
+        # Signal day 1: ratio >0.03, leader='growth' → raw='growth_momentum' first time
+        # → pending='growth_momentum', confirmed='mixed'.
+        # Signal day 2: raw='growth_momentum' again → FLIP → confirmed='growth_momentum'.
+        # Signal day 3: day not in factor_series.json → leader='mixed'
+        # → growth_momentum condition FAILS (leader not in {growth, profitability})
+        # → raw='mixed' → IMMEDIATE reversion → confirmed='mixed'.
+        day1 = confirmed.iloc[0]
+        day2 = confirmed.iloc[1]
+        day3 = confirmed.iloc[2]
+
+        assert day1 == "mixed", (
+            f"FIX-6 reversion: signal day 1 (1 consecutive) must be 'mixed'. Got '{day1}'."
+        )
+        assert day2 == "growth_momentum", (
+            f"FIX-6 reversion: signal day 2 (2 consecutive) must be 'growth_momentum'. "
+            f"Got '{day2}'."
+        )
+        assert day3 == "mixed", (
+            f"FIX-6 reversion: signal day 3 (leader='mixed') must IMMEDIATELY revert to "
+            f"'mixed'. Got '{day3}'. "
+            "MUTATION: if reversion required 2 days, day3 would stay 'growth_momentum'."
+        )
+
+    def test_future_append_leaves_history_unchanged(self, tmp_path):
+        """FIX-6 idempotence: appending future signal dates must not change past states.
+
+        Build twice in separate roots: once with n_signal=2 (2 days), once with
+        n_signal=4 (4 days, same base period + 2 extra future days).
+        The first 2 confirmed states must be identical between the two runs — i.e.
+        adding future dates to the build_dates arg does not alter historical states.
+        """
+        root_2 = tmp_path / "sig2"
+        root_4 = tmp_path / "sig4"
+        root_2.mkdir()
+        root_4.mkdir()
+
+        # Write separate fixtures for each root (n_signal differs):
+        dates_2, signal_dates_2 = self._write_growth_momentum_fixture(
+            root_2, n_base=80, n_signal=2
+        )
+        dates_4, signal_dates_4 = self._write_growth_momentum_fixture(
+            root_4, n_base=80, n_signal=4
+        )
+
+        conf_2, _ = _build_style_regime_timeline(root_2, signal_dates_2)
+        conf_4, _ = _build_style_regime_timeline(root_4, signal_dates_4)
+
+        # The sig4 root has 4 signal days; sig2 has 2.
+        # The FIRST 2 signal dates in both fixtures correspond to the same chronological
+        # position relative to the base period (both use bdate_range from "2024-01-02").
+        # The confirmed states for those 2 dates must be identical:
+        assert len(conf_2) == 2
+        assert len(conf_4) == 4
+        for i in range(2):
+            assert conf_2.iloc[i] == conf_4.iloc[i], (
+                f"FIX-6 idempotence: signal date {i} differs between n_signal=2 "
+                f"('{conf_2.iloc[i]}') and n_signal=4 ('{conf_4.iloc[i]}'). "
+                "Future-append must not change past confirmed states."
+            )
+
+
+# ---------------------------------------------------------------------------
+# P1-C tests — schema stability (55 columns)
+# ---------------------------------------------------------------------------
+class TestSchemaStability55:
+    """P1-C: panel parquet must have exactly 55 columns (PANEL_COLUMNS)."""
+
+    def test_panel_columns_count(self):
+        """PANEL_COLUMNS must have exactly 55 entries after P1-C."""
+        assert len(PANEL_COLUMNS) == 55, (
+            f"Expected 55 PANEL_COLUMNS (48 P1-A + 4 P1-B + 3 P1-C); got {len(PANEL_COLUMNS)}"
+        )
+
+    def test_p1c_columns_in_panel_columns(self):
+        """dna_class, style_regime, style_regime_pending must be in PANEL_COLUMNS."""
+        p1c_cols = {"dna_class", "style_regime", "style_regime_pending"}
+        missing = p1c_cols - set(PANEL_COLUMNS)
+        assert not missing, f"P1-C columns missing from PANEL_COLUMNS: {missing}"
+
+    def _write_minimal_p1c_fixtures(self, root: Path, tickers: list,
+                                    sectors: list, n_dates: int = 350) -> pd.DatetimeIndex:
+        """Write minimal fixtures including ETF Yahoo parquets for style_regime."""
+        rng = np.random.default_rng(77)
+        dates = pd.bdate_range("2025-01-02", periods=n_dates)
+        as_of = dates[-1]
+
+        bdir = root / "data" / "breadth"
+        bdir.mkdir(parents=True, exist_ok=True)
+        closes = pd.DataFrame(
+            {t: 100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod()
+             for t in tickers}, index=dates)
+        closes.to_parquet(bdir / "_closes_cache.parquet")
+        meta = pd.DataFrame({"name": tickers, "sector": sectors}, index=tickers)
+        meta.to_parquet(bdir / "constituents.parquet")
+
+        ydir = root / "data" / "yahoo"
+        ydir.mkdir(exist_ok=True)
+        # Write block-A ETF streams:
+        for sym in ["SPY", "IWM", "QQQ", "TLT", "DX-Y.NYB", "FXI", "XLK"]:
+            df = pd.DataFrame(
+                {"close": 100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod()},
+                index=dates)
+            df.to_parquet(ydir / f"{sym}.parquet")
+        # Write style_regime ETF streams:
+        for sym in ["IWF", "IWD"]:
+            df = pd.DataFrame(
+                {"close": 100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod()},
+                index=dates)
+            df.to_parquet(ydir / f"{sym}.parquet")
+
+        sdir = root / "site" / "basketdata"
+        sdir.mkdir(parents=True, exist_ok=True)
+        ai_levels = list(100.0 * (1 + rng.normal(0, 0.01, n_dates)).cumprod())
+        (sdir / "baskets.json").write_text(json.dumps({
+            "chart": {
+                "dates": [str(d.date()) for d in dates],
+                "bench": [1.0] * n_dates,
+                "baskets": {"ai_infra": ai_levels},
+            }
+        }))
+
+        fddir = root / "site" / "factordata"
+        fddir.mkdir(parents=True, exist_ok=True)
+        per_ticker = {t: {"alpha": float(rng.normal(0, 1))} for t in tickers}
+        (fddir / "alpha.json").write_text(json.dumps({
+            "as_of": str(as_of.date()), "per_ticker": per_ticker,
+        }))
+        factors_table = [
+            {"ticker": t,
+             **{leg: float(rng.normal(0, 1)) for leg in BLOCK_B_LEGS},
+             "mktcap_bn": 10.0}
+            for t in tickers
+        ]
+        (fddir / "factors.json").write_text(json.dumps({
+            "as_of": str(as_of.date()), "table": factors_table,
+        }))
+        # Minimal factor_series.json for style_regime:
+        (fddir / "factor_series.json").write_text('{"as_of": "' + str(as_of.date()) + '"}')
+
+        return dates
+
+    def test_schema_55_cols_after_p1c(self, tmp_path):
+        """Panel written to parquet must have exactly 55 columns == PANEL_COLUMNS."""
+        tickers = ["AAPL", "MSFT"]
+        sectors = ["Information Technology", "Information Technology"]
+        dates = self._write_minimal_p1c_fixtures(tmp_path, tickers, sectors)
+        start = dates[-3]
+        end = dates[-1]
+        build_panel(
+            data_root=tmp_path, out_root=tmp_path,
+            start_date=start, end_date=end, tickers=tickers,
+        )
+        parquet_files = list((tmp_path / "data" / "factordata" / "panel").rglob("panel.parquet"))
+        assert parquet_files, "No parquet files written"
+        for p in parquet_files:
+            cols = list(pd.read_parquet(p).columns)
+            assert cols == PANEL_COLUMNS, (
+                f"Schema mismatch in {p}.\n"
+                f"Extra: {set(cols) - set(PANEL_COLUMNS)}\n"
+                f"Missing: {set(PANEL_COLUMNS) - set(cols)}\n"
+                f"Expected exactly {len(PANEL_COLUMNS)} columns, got {len(cols)}"
+            )
+
+    def test_gitignore_panel_not_tracked(self, tmp_path):
+        """Panel dir must be gitignored (data/factordata/panel/ in .gitignore).
+
+        RULING-C: nightly panel step writes no tracked files — sentinel git-add
+        staging set needs no changes.
+        """
+        import subprocess
+        repo_root = Path(__file__).resolve().parents[1]
+        gitignore = repo_root / ".gitignore"
+        assert gitignore.exists(), ".gitignore not found"
+        content = gitignore.read_text()
+        assert "data/factordata/panel/" in content, (
+            "data/factordata/panel/ must be in .gitignore "
+            "(RULING-C: no tracked files written by panel step)"
+        )

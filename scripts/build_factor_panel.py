@@ -1,4 +1,4 @@
-"""Factor Intelligence panel builder — Block-A attribution + Block-B percentiles + Twin.
+"""Factor Intelligence panel builder — Block-A + Block-B + Twin + DNA + style_regime.
 
 OFF-RENDER-PATH PLACEMENT: this script is a standalone nightly step that runs
 BEFORE build_site.py in CI.  It writes data/factordata/panel/YYYY-MM/panel.parquet
@@ -10,21 +10,104 @@ JOIN CONTRACT: studies join this panel against the replay artifact
 No other program may write to data/factordata/panel/.  No panel column may be added
 without a v2 version stamp.
 
-V1 FREEZE: all Block-A, Block-B, and Twin parameters are frozen as of the
-adjudication rulings 2026-07-04 (P1-A) and 2026-07-05 (P1-B).
+V1 FREEZE: all Block-A, Block-B, Twin, DNA, and style_regime parameters are frozen
+as of adjudication rulings 2026-07-04 (P1-A), 2026-07-05 (P1-B), 2026-07-05 (P1-C).
 See research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §3 for the authoritative
 spec.  Any parameter change requires a v2 stamp.
 
-SCOPE (P1-A + P1-B — see masterplan §7):
+SCOPE (P1-A + P1-B + P1-C — see masterplan §7):
   - Block-A: per-(ticker,date) rolling attribution vs ordered orthogonal streams
   - Block-B: trailing cross-sectional percentiles of equity_factors legs
   - alpha_z_house read-through from site/factordata/alpha.json (nightly residual_alpha)
   - Panel schema + partitioning + version stamp
   - Twin computation (P1-B): twin_rel_20d, twin_bleed_flag, twin_n_peers, twin_fallback
+  - DNA class cascade (P1-C, §3.3): deterministic priority-ordered first-match cascade
+  - Style-regime classifier (P1-C, §3.4): 5-state market-level classifier with hysteresis
 
 OUT OF SCOPE FOR THIS PR (added by later PRs):
-  - Style-regime classifier (P1-C): dna_class, style_regime, style_regime_pending
   - Pair G detector / factor_attention reflex (P1-D)
+
+DNA CLASS CASCADE (P1-C, masterplan §3.3):
+  Deterministic priority-ordered first-match cascade over Block-B percentiles and
+  Block-A betas.  Computed once per (ticker, date).  'mixed' is the honest default
+  when no archetype triggers.  Per RULING-A: rows with None Block-B inputs (backfill
+  dates per R3 NULL-backfill law) emit dna_class=None (NOT EVALUABLE).  'mixed' is
+  reserved for rows that WERE evaluated and matched no archetype.
+
+STYLE-REGIME CLASSIFIER (P1-C, masterplan §3.4):
+  Market-level (one state per date); the same state is stamped on every ticker row
+  for that date.  5 states: growth_momentum, quality_defense, value_cyclical,
+  junk_rally, mixed.
+
+  RULING-D (input path, 2026-07-05): site/themedata/etf_pulse.json does NOT exist
+  in this repo (no such file).  site/factordata/factor_series.json 'series' is not a
+  per-date time series usable for rolling 20d/60d factor returns.  chart_data/spread
+  covers only ~2 years (2023-05-30 to present), below the 3y calibration target.
+  THEREFORE: ratio inputs (IWF/IWD, QQQ/SPY, IWM/SPY 20d) are computed DIRECTLY
+  from data/yahoo/{IWF,IWD,QQQ,SPY,IWM}.parquet close caches — these go back to
+  2000 and provide deterministic PIT reconstruction.  For the factor L/S leader,
+  factor_series.json chart_data/spread cumulative series (775 dates, 2023-05-30+)
+  is used where available; the confirmed leader is the factor with the highest
+  trailing-20d L/S compounded return, debounced with 3-session persistence (matching
+  the _rotation() logic in engine/factor_series.py).  The current confirmed leader
+  snapshot is also read from factor_series.json['rotation']['leader'] for the
+  nightly emit.  Historical reconstruction for the 3y calibration sanity check uses
+  the chart_data/spread series.
+
+  HYSTERESIS (§3.4 frozen rule):
+    - New state requires 2 consecutive daily confirmations.
+    - On day 1 match: pending_{new_state} recorded; confirmed state unchanged.
+    - On day 2 consecutive match: confirmed state flips.
+    - Reversion to 'mixed': immediate (1 day) — no hysteresis on reversion.
+    - panel column 'style_regime': confirmed state.
+    - panel column 'style_regime_pending': tentative next state during hysteresis;
+      null when no flip is pending or state is already confirmed.
+
+  IDEMPOTENCE (PREREG §2.5(a)): style_regime[t] is a pure function of data ≤ t.
+  The classifier processes dates in order from oldest to newest, carrying forward
+  only the confirmed state and a 1-day candidate buffer — no future data can affect
+  past confirmed states.  Any truncation at T and rebuild from scratch produces
+  identical results for all dates ≤ T.
+
+CALIBRATION NOTE (Fable ruling 2026-07-05):
+  Calibration degeneracies (DNA mixed 52%, style mixed 89%) are PRINTED, not
+  patched.  §3.3/§3.4 thresholds remain frozen v1.  A v2 recalibration is
+  deferred to the pre-H3 clean window: after real fire-population distributions
+  exist and before any H3 outcome data is analyzed.  mixed is the honest
+  default, not a failure (§3.3).
+
+NIGHTLY BOUNDS (RULING-C + FIX-8, 2026-07-05):
+  The nightly CI step (daily.yml factor_panel) passes --start equal to 10 trading
+  days back so a cold runner can never silently rebuild a full year of history.
+  This bounds the CI step to ~10 rows per ticker (seconds, not minutes) and makes
+  the incremental check cheaper to verify.
+
+  ONE-SHOT DEEP BACKFILL (required once, NOT in the nightly loop):
+  Before the panel has usable history depth, run the backfill manually:
+      python -m scripts.build_factor_panel --start 2020-01-01 --backfill
+  Expected runtime ~25 minutes (5 years × ~1500 tickers). The --backfill flag
+  bypasses the incremental skip logic. See also the full example above.
+
+NIGHTLY INCREMENTAL WIRING (RULING-C, 2026-07-05):
+  The panel build runs as an INCREMENTAL step: only dates missing from existing
+  monthly partitions are built.  The incremental check loads existing partition
+  'date' columns and skips dates already present.  This keeps the nightly run to
+  ~1-5 minutes (one day's worth of rows), well within the render window.
+
+  ONE-SHOT DEEP BACKFILL (do NOT put in the nightly loop):
+  To build the full historical panel from 2020-01-01 (required before P3 studies):
+      python -m scripts.build_factor_panel \\
+          --data-root /Users/chriswong/Documents/Cluade/Macro\\ Dashboard \\
+          --out-root <worktree-root> \\
+          --start 2020-01-01 \\
+          --backfill
+  Expected runtime: ~25 minutes for 5 years × ~1500 tickers.
+  The --backfill flag is required to bypass the incremental skip logic.
+  This command is documented here and is NOT in the nightly CI loop.
+
+GITIGNORE STATUS: data/factordata/panel/ is gitignored (confirmed in .gitignore).
+  The nightly panel step writes no tracked files — the sentinel git-add staging set
+  requires no changes.  This is verified explicitly in the P1-C test suite.
 
 TWIN COMPUTATION (P1-B — masterplan §3.5 + RULING-1 + RULING-2):
 
@@ -201,14 +284,14 @@ CHINA_SECTORS: frozenset[str] = frozenset({
     "Industrials",
 })
 
-# R4 — FIXED SCHEMA: frozen 52-column v1 set (48 from P1-A + 4 twin from P1-B).
+# R4 — FIXED SCHEMA: frozen 55-column v1 set (48 from P1-A + 4 twin from P1-B + 3 from P1-C).
 # Every partition is reindexed to exactly these columns (missing → None) before
 # writing.  China contrib columns are always present; non-china tickers have None.
 # Twin columns are always present; backfill dates (pre-current-month) have None.
-# P1-B NOTE: the four twin columns are §3.6-listed v1 columns delivered by their
-# scheduled PR (P1-B).  The "no new columns without v2" clause is satisfied because
-# twin columns were listed in the v1 schema in §3.6 from the original spec;
-# P1-A shipped without them only because they were scoped to the next PR.
+# DNA/style_regime columns: dna_class=None on backfill (Block-B None), otherwise class string.
+# P1-C NOTE: dna_class, style_regime, style_regime_pending are §3.6-listed v1 columns
+# delivered by P1-C.  The "no new columns without v2" clause is satisfied because
+# these columns were listed in the v1 schema in §3.6 from the original spec.
 # Adding any FURTHER column requires a v2 version stamp and a new migration PR.
 PANEL_COLUMNS: list[str] = [
     # ── identity ──────────────────────────────────────────────────────────────
@@ -274,7 +357,67 @@ PANEL_COLUMNS: list[str] = [
     "twin_bleed_flag",   # bool: twin deteriorating at entry (RULING-1 / PREREG H4)
     "twin_n_peers",      # int: number of peers in the twin basket
     "twin_fallback",     # bool: True if fell back to sector EW (< 8 valid peers)
+    # ── DNA class + style-regime (P1-C, §3.3/§3.4) ───────────────────────────
+    # dna_class: None when Block-B inputs are None (backfill); class string otherwise.
+    # RULING-A: None = NOT EVALUABLE (required inputs missing); 'mixed' = evaluated
+    # but no archetype matched.  These are load-bearing distinct states.
+    "dna_class",              # str|None: quality_growth | high_beta_liquidity |
+                              #   cyclical_value | defensive_quality |
+                              #   rate_duration_sensitive | china_crypto_proxy |
+                              #   small_spec | mixed | None
+    "style_regime",           # str: confirmed market-level state (one per date, all tickers)
+                              #   growth_momentum | quality_defense | value_cyclical |
+                              #   junk_rally | mixed
+    "style_regime_pending",   # str|None: tentative next state during hysteresis;
+                              #   null when no flip is pending; display-diagnostic only
 ]
+
+
+# ── DNA class (P1-C) — frozen v1 constants ───────────────────────────────────
+# DNA classes in priority order (first match wins, masterplan §3.3):
+DNA_CLASS_ORDER: list[str] = [
+    "quality_growth",
+    "high_beta_liquidity",
+    "cyclical_value",
+    "defensive_quality",
+    "rate_duration_sensitive",
+    "china_crypto_proxy",
+    "small_spec",
+]
+
+# Sectors eligible for cyclical_value class (masterplan §3.3):
+CYCLICAL_VALUE_SECTORS: frozenset[str] = frozenset({
+    "Energy", "Industrials", "Materials",
+})
+
+# Sectors eligible for china_crypto_proxy class (non-beta path):
+CHINA_PROXY_SECTORS: frozenset[str] = frozenset({
+    "Information Technology", "Technology",
+    "Communication Services", "Communications",
+})
+
+
+# ── Style-regime (P1-C) — frozen v1 constants ────────────────────────────────
+# All 5 states (closed set, masterplan §3.4):
+STYLE_REGIME_STATES: frozenset[str] = frozenset({
+    "growth_momentum", "quality_defense", "value_cyclical", "junk_rally", "mixed",
+})
+
+# Classification thresholds (frozen v1 — any change requires a v2 stamp):
+SR_QQQ_SPY_GROWTH = 0.03        # QQQ/SPY 20d ratio > +0.03 → growth_momentum condition
+SR_IWF_IWD_QUALITY = -0.02      # IWF/IWD 20d ratio < −0.02 → quality_defense / value_cyclical
+SR_IWF_IWD_GROWTH_POS = 0.0     # IWF/IWD 20d ratio > 0 → growth_momentum condition (positive)
+SR_QQQ_SPY_QUALITY_NEG = 0.0    # QQQ/SPY 20d ratio < 0 → quality_defense condition
+SR_IWM_SPY_VALUE = 0.0          # IWM/SPY 20d ratio > 0 → value_cyclical condition
+SR_IWM_SPY_JUNK = 0.04          # IWM/SPY 20d ratio > +0.04 → junk_rally condition
+SR_QQQ_SPY_JUNK_MAX = 0.01      # QQQ/SPY 20d ratio < +0.01 → junk_rally condition
+
+# Factors with negative mean_IC in the scorecard (for junk_rally condition):
+# "confirmed leader has negative IC in scorecard (low_vol or investment)"
+# Source: data/edgar/ic_scorecard.json
+NEGATIVE_IC_FACTORS: frozenset[str] = frozenset({"low_vol", "investment", "low_beta"})
+
+# Hysteresis: 2 consecutive days for a flip to confirm; 1 day for reversion to mixed.
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -1016,21 +1159,541 @@ def _compute_twin_bleed_flag(
     return bool(current_drawdown > median_pullback)
 
 
+# ── DNA class (P1-C, §3.3) ──────────────────────────────────────────────────
+def _classify_dna(
+    row: dict,
+    sector: str,
+) -> str | None:
+    """Classify a ticker into a DNA archetype using the priority-ordered cascade.
+
+    RULING-A (None vs mixed):
+      - Returns None if any REQUIRED Block-B input is None (backfill rows per R3
+        NULL-backfill law): value_pct, quality_pct, payout_pct, low_vol_pct must all
+        be non-None for the cascade to run.  If any required Block-B input is None,
+        dna_class = None (NOT EVALUABLE).
+      - Returns 'mixed' if all required inputs are present but no archetype matched.
+
+    Block-A betas (beta_mkt, beta_growth, beta_sector, beta_rates, beta_china) may be
+    None individually and are treated as 0.0 for their respective conditions (fail-open
+    beta: if the beta is unavailable, the beta condition fails → class doesn't trigger).
+
+    Priority order: quality_growth → high_beta_liquidity → cyclical_value →
+      defensive_quality → rate_duration_sensitive → china_crypto_proxy → small_spec
+      → mixed (default).
+
+    Parameters
+    ----------
+    row : dict
+        Panel row dict with Block-B *_pct keys + Block-A beta_* keys + size_pct.
+    sector : str
+        GICS sector string for this ticker (from constituents).
+
+    Returns
+    -------
+    str | None
+        DNA class string or None (NOT EVALUABLE).
+    """
+    # Required Block-B inputs for evaluation (RULING-A):
+    # All must be non-None for any class to be evaluated.
+    quality_pct = row.get("quality_pct")
+    value_pct = row.get("value_pct")
+    payout_pct = row.get("payout_pct")
+    low_vol_pct = row.get("low_vol_pct")
+    profitability_pct = row.get("profitability_pct")
+    size_pct = row.get("size_pct")
+
+    # Block-A betas (may be None — treated as 0.0 for condition evaluation):
+    beta_mkt = row.get("beta_mkt") or 0.0
+    beta_growth = row.get("beta_growth") or 0.0
+    beta_sector = row.get("beta_sector") or 0.0
+    beta_rates = row.get("beta_rates") or 0.0
+    beta_china = row.get("beta_china") or 0.0
+
+    # RULING-A: if any required Block-B input is None → NOT EVALUABLE.
+    # Required: quality_pct, value_pct, payout_pct, low_vol_pct
+    # (profitability_pct and size_pct used in specific classes; treated as 0/low if None)
+    if any(v is None for v in [quality_pct, value_pct, payout_pct, low_vol_pct]):
+        return None
+
+    # safe float casts (confirmed non-None above):
+    quality_pct = float(quality_pct)
+    value_pct = float(value_pct)
+    payout_pct = float(payout_pct)
+    low_vol_pct = float(low_vol_pct)
+    profitability_pct = float(profitability_pct) if profitability_pct is not None else 0.0
+    size_pct = float(size_pct) if size_pct is not None else 50.0  # default to mid if missing
+
+    # Priority-ordered first-match cascade (masterplan §3.3, frozen thresholds):
+
+    # 1. quality_growth: quality pct ≥ 70 AND value pct < 60 AND beta_growth > 0.3
+    if quality_pct >= 70.0 and value_pct < 60.0 and beta_growth > 0.3:
+        return "quality_growth"
+
+    # 2. high_beta_liquidity: beta_mkt > 1.3 AND beta_growth > 0.4 AND low_vol pct < 35
+    if beta_mkt > 1.3 and beta_growth > 0.4 and low_vol_pct < 35.0:
+        return "high_beta_liquidity"
+
+    # 3. cyclical_value: value pct ≥ 65 AND GICS sector ∈ {Energy, Industrials, Materials}
+    #    AND beta_sector > 0.2
+    if value_pct >= 65.0 and sector in CYCLICAL_VALUE_SECTORS and beta_sector > 0.2:
+        return "cyclical_value"
+
+    # 4. defensive_quality: quality pct ≥ 65 AND low_vol pct ≥ 60 AND beta_mkt < 0.85
+    if quality_pct >= 65.0 and low_vol_pct >= 60.0 and beta_mkt < 0.85:
+        return "defensive_quality"
+
+    # 5. rate_duration_sensitive: abs(beta_rates) > 0.25 AND (payout pct ≥ 55 OR low_vol pct ≥ 55)
+    if abs(beta_rates) > 0.25 and (payout_pct >= 55.0 or low_vol_pct >= 55.0):
+        return "rate_duration_sensitive"
+
+    # 6. china_crypto_proxy:
+    #    beta_china > 0.30 (requires china stream) OR
+    #    (beta_mkt > 1.1 AND sector ∈ {IT, Communication Services} AND value pct < 30)
+    if beta_china > 0.30:
+        return "china_crypto_proxy"
+    if beta_mkt > 1.1 and sector in CHINA_PROXY_SECTORS and value_pct < 30.0:
+        return "china_crypto_proxy"
+
+    # 7. small_spec: size_pct < 30 AND low_vol pct < 40 AND quality pct < 45
+    if size_pct < 30.0 and low_vol_pct < 40.0 and quality_pct < 45.0:
+        return "small_spec"
+
+    # Default: mixed (no archetype triggered, or two classes tied at equal priority —
+    # since we use first-match cascade with strict priority, ties cannot occur here;
+    # 'mixed' is the honest classification for names that don't fit a clean archetype).
+    return "mixed"
+
+
+# ── Style-regime classifier (P1-C, §3.4) ────────────────────────────────────
+def _build_style_regime_timeline(
+    data_root: Path,
+    build_dates: pd.DatetimeIndex,
+) -> tuple[pd.Series, pd.Series]:
+    """Build the market-level style_regime confirmed + pending series for build_dates.
+
+    RULING-D input path: ETF close caches (IWF, IWD, QQQ, SPY, IWM from
+    data/yahoo/) are the canonical PIT-deterministic source for ratio inputs.
+    Factor leader uses factor_series.json chart_data/spread cumulative series where
+    available, falling back to 'mixed' for dates outside that coverage.
+
+    Hysteresis (§3.4 frozen rule):
+      - 2 consecutive days for a new-state flip to confirm.
+      - Reversion to 'mixed': immediate (1 day).
+      - 'mixed' itself is the initial/fallback state.
+      - Hysteresis processes dates in chronological order using context from the
+        full ETF history (not just build_dates) to correctly reconstruct state at
+        the first build_date.
+
+    Returns
+    -------
+    confirmed : pd.Series
+        Index = build_dates, values = confirmed style_regime state string.
+    pending : pd.Series
+        Index = build_dates, values = tentative next-state string or None.
+    """
+    # ── 1. Load ETF closes for ratio inputs (RULING-D) ─────────────────────
+    etf_closes: dict[str, pd.Series] = {}
+    for sym in ["IWF", "IWD", "QQQ", "SPY", "IWM"]:
+        p = data_root / "data" / "yahoo" / f"{sym}.parquet"
+        if p.exists():
+            df = pd.read_parquet(p)
+            if "close" in df.columns:
+                s = df["close"].astype(float)
+                s.index = pd.to_datetime(s.index)
+                etf_closes[sym] = s.sort_index()
+            else:
+                log.warning("style_regime: no 'close' column in %s", p)
+        else:
+            log.warning("style_regime: missing ETF parquet %s", p)
+
+    if not etf_closes:
+        log.error("style_regime: no ETF data — returning 'mixed' for all dates")
+        return (pd.Series("mixed", index=build_dates),
+                pd.Series(None, index=build_dates, dtype=object))
+
+    # ── 2. Compute 20d ratio series (return differential, PIT) ─────────────
+    # ratio = 20d compounded return of A minus 20d compounded return of B
+    def _ratio_20d(sym_a: str, sym_b: str) -> pd.Series:
+        if sym_a not in etf_closes or sym_b not in etf_closes:
+            return pd.Series(dtype=float)
+        a = etf_closes[sym_a].pct_change(fill_method=None)
+        b = etf_closes[sym_b].pct_change(fill_method=None)
+        roll_a = a.rolling(20, min_periods=10).apply(lambda x: (1 + x).prod() - 1, raw=True)
+        roll_b = b.rolling(20, min_periods=10).apply(lambda x: (1 + x).prod() - 1, raw=True)
+        return (roll_a - roll_b)
+
+    ratio_iwf_iwd = _ratio_20d("IWF", "IWD")
+    ratio_qqq_spy = _ratio_20d("QQQ", "SPY")
+    ratio_iwm_spy = _ratio_20d("IWM", "SPY")
+
+    # ── 3. Load factor L/S daily returns for leader detection (RULING-D) ────
+    # Source: factor_series.json chart_data/spread (cumulative index → pct_change)
+    # Falls back to empty if unavailable.
+    factor_daily_ls: pd.DataFrame | None = None
+    fs_path = data_root / "site" / "factordata" / "factor_series.json"
+    if fs_path.exists():
+        try:
+            fs_json = json.loads(fs_path.read_text())
+            cd = fs_json.get("chart_data", {})
+            dates_str = cd.get("dates", [])
+            spread = cd.get("spread", {})
+            if dates_str and spread:
+                idx = pd.to_datetime(dates_str)
+                dfs: dict[str, pd.Series] = {}
+                for f, vals in spread.items():
+                    s = pd.Series(
+                        [float(v) if v is not None else float("nan") for v in vals],
+                        index=idx, name=f,
+                    )
+                    dfs[f] = s
+                cum_df = pd.DataFrame(dfs).sort_index()
+                factor_daily_ls = cum_df.pct_change(fill_method=None)
+                log.info(
+                    "style_regime RULING-D: factor L/S daily returns from "
+                    "factor_series.json chart_data/spread (%d dates, %s to %s)",
+                    len(factor_daily_ls), factor_daily_ls.index[0].date(),
+                    factor_daily_ls.index[-1].date()
+                )
+        except Exception as exc:
+            log.warning("style_regime: factor_series.json parse error: %s", exc)
+    else:
+        log.warning("style_regime: factor_series.json absent — leader will use 'mixed'")
+
+    # ── 4. Build confirmed factor leader series (20d rolling, 3-session debounce) ──
+    def _compute_leader_series(dates_idx: pd.DatetimeIndex) -> pd.Series:
+        """Compute confirmed factor leader for each date using factor_daily_ls."""
+        if factor_daily_ls is None or factor_daily_ls.empty:
+            return pd.Series("mixed", index=dates_idx)
+
+        # 20d rolling compounded return per factor (matching _rotation logic):
+        roll20 = (1.0 + factor_daily_ls.fillna(0.0)).rolling(20, min_periods=10).apply(
+            np.prod, raw=True
+        ) - 1.0
+        roll20 = roll20.dropna(how="all")
+        if roll20.empty:
+            return pd.Series("mixed", index=dates_idx)
+
+        # Raw leader per date (factor with highest 20d compounded return):
+        leader_raw = roll20.idxmax(axis=1)
+
+        # 3-session persistent debounce (matching engine/factor_series._rotation):
+        confirmed_leaders: list = []
+        cur_cand: str | None = None
+        run: int = 0
+        last_confirmed: str | None = None
+        for d, lead in leader_raw.items():
+            if lead == last_confirmed:
+                run = 0  # resets streak for new candidate
+            if lead == cur_cand:
+                run += 1
+            else:
+                cur_cand, run = lead, 1
+            if run >= 3 and last_confirmed != lead:
+                last_confirmed = lead
+            confirmed_leaders.append((d, last_confirmed if last_confirmed else lead))
+
+        confirmed_ser = pd.Series(
+            {d: ldr for d, ldr in confirmed_leaders},
+            name="leader",
+        )
+        confirmed_ser.index = pd.to_datetime(confirmed_ser.index)
+        return confirmed_ser.reindex(dates_idx, method="ffill").fillna("mixed")
+
+    # ── 5. Build classification for each date ────────────────────────────────
+    # We process ALL historical dates (from all ETF history) to correctly
+    # reconstruct hysteresis state at the first build_date.
+    # Then subset to build_dates.
+    all_etf_dates = sorted(set(
+        ratio_iwf_iwd.dropna().index.tolist()
+        + ratio_qqq_spy.dropna().index.tolist()
+        + ratio_iwm_spy.dropna().index.tolist()
+    ))
+    all_etf_dates_idx = pd.DatetimeIndex(all_etf_dates)
+
+    # Compute leader for all dates
+    leader_ser = _compute_leader_series(all_etf_dates_idx)
+
+    def _raw_state(date: pd.Timestamp) -> str:
+        """Compute the raw (pre-hysteresis) state for one date."""
+        try:
+            r_iwf_iwd = float(ratio_iwf_iwd.get(date, float("nan")))
+            r_qqq_spy = float(ratio_qqq_spy.get(date, float("nan")))
+            r_iwm_spy = float(ratio_iwm_spy.get(date, float("nan")))
+        except (TypeError, ValueError):
+            return "mixed"
+        if any(np.isnan(v) for v in [r_iwf_iwd, r_qqq_spy, r_iwm_spy]):
+            return "mixed"
+
+        leader = str(leader_ser.get(date, "mixed"))
+
+        # Test conditions in spec order (§3.4 frozen thresholds):
+        matches: list[str] = []
+
+        # growth_momentum: QQQ/SPY > +0.03 AND leader ∈ {growth, profitability}
+        #                  AND IWF/IWD > 0
+        if (r_qqq_spy > SR_QQQ_SPY_GROWTH
+                and leader in {"growth", "profitability"}
+                and r_iwf_iwd > SR_IWF_IWD_GROWTH_POS):
+            matches.append("growth_momentum")
+
+        # quality_defense: IWF/IWD < −0.02 AND leader ∈ {quality, low_vol}
+        #                  AND QQQ/SPY < 0
+        if (r_iwf_iwd < SR_IWF_IWD_QUALITY
+                and leader in {"quality", "low_vol"}
+                and r_qqq_spy < SR_QQQ_SPY_QUALITY_NEG):
+            matches.append("quality_defense")
+
+        # value_cyclical: IWF/IWD < −0.02 AND leader ∈ {value, payout}
+        #                 AND IWM/SPY > 0
+        if (r_iwf_iwd < SR_IWF_IWD_QUALITY
+                and leader in {"value", "payout"}
+                and r_iwm_spy > SR_IWM_SPY_VALUE):
+            matches.append("value_cyclical")
+
+        # junk_rally: IWM/SPY > +0.04 AND leader ∈ NEGATIVE_IC_FACTORS
+        #             AND QQQ/SPY < +0.01
+        if (r_iwm_spy > SR_IWM_SPY_JUNK
+                and leader in NEGATIVE_IC_FACTORS
+                and r_qqq_spy < SR_QQQ_SPY_JUNK_MAX):
+            matches.append("junk_rally")
+
+        if len(matches) == 1:
+            return matches[0]
+        # No match or tie → mixed
+        return "mixed"
+
+    # ── 6. Apply hysteresis to get confirmed + pending series ─────────────────
+    # Process ALL ETF dates chronologically (for correct hysteresis reconstruction).
+    confirmed_state: str = "mixed"
+    pending_state: str | None = None   # the candidate for the next confirmation
+
+    # Store results for ALL dates in all_etf_dates; subset to build_dates after.
+    all_confirmed: dict[pd.Timestamp, str] = {}
+    all_pending: dict[pd.Timestamp, str | None] = {}
+
+    for date in all_etf_dates_idx:
+        raw = _raw_state(date)
+
+        if raw == "mixed":
+            # Immediate reversion to mixed (§3.4): clear pending, set confirmed.
+            confirmed_state = "mixed"
+            pending_state = None
+        elif raw == confirmed_state:
+            # Already in this state; no pending needed.
+            pending_state = None
+        elif pending_state == raw:
+            # Second consecutive day of same candidate → FLIP confirmed.
+            confirmed_state = raw
+            pending_state = None
+        else:
+            # First day of a new candidate → enter pending.
+            pending_state = raw
+
+        all_confirmed[date] = confirmed_state
+        all_pending[date] = pending_state
+
+    # Subset to build_dates (some build_dates may not be in ETF dates if non-trading):
+    confirmed_out = pd.Series(
+        {d: all_confirmed.get(d, "mixed") for d in build_dates},
+        name="style_regime",
+    )
+    pending_out = pd.Series(
+        {d: all_pending.get(d) for d in build_dates},
+        name="style_regime_pending",
+        dtype=object,
+    )
+
+    return confirmed_out, pending_out
+
+
+def _read_ic_scorecard(data_root: Path) -> dict[str, float]:
+    """Read ic_scorecard.json and return {factor_name: mean_ic} for factors in scorecard.
+
+    Returns empty dict on failure (fail-open).
+    Used by the world_state lobe and the calibration sanity check.
+    """
+    p = data_root / "data" / "edgar" / "ic_scorecard.json"
+    if not p.exists():
+        return {}
+    try:
+        d = json.loads(p.read_text())
+        factors = d.get("factors", {})
+        return {
+            f: float(info["mean_ic"])
+            for f, info in factors.items()
+            if isinstance(info, dict) and info.get("mean_ic") is not None
+        }
+    except Exception as exc:
+        log.warning("ic_scorecard read failed: %s", exc)
+        return {}
+
+
+def _calibration_sanity_dna(panel: pd.DataFrame, snapshot_date: pd.Timestamp | None) -> None:
+    """Print DNA class distribution sanity check (§7 P1-C build sanity, NOT a gate).
+
+    Targets (masterplan §7 P1-C):
+      - No class > 50% of the snapshot-date cross-section.
+      - mixed < 40%.
+
+    If targets are violated, prints a DEGENERACY warning for Fable — does NOT raise.
+    Thresholds are frozen; silent tuning is forbidden (§8 kill list #6).
+    """
+    if panel.empty or "dna_class" not in panel.columns or snapshot_date is None:
+        log.info("calibration_sanity_dna: no panel or snapshot_date — skipping")
+        return
+
+    # Snapshot-date cross-section (one row per ticker):
+    snap = panel[panel["date"] == str(snapshot_date.date())]
+    if snap.empty:
+        log.info("calibration_sanity_dna: no rows for snapshot_date %s", snapshot_date.date())
+        return
+
+    n_total = len(snap)
+    n_evaluable = snap["dna_class"].notna().sum()
+
+    if n_evaluable == 0:
+        log.warning("calibration_sanity_dna: all dna_class=None on snapshot date — "
+                    "Block-B inputs unavailable (expected on backfill; check PIT gate)")
+        return
+
+    dist = snap["dna_class"].value_counts(dropna=False)
+    log.info("=== calibration sanity — DNA class distribution (snapshot %s, n_total=%d, "
+             "n_evaluable=%d) ===",
+             snapshot_date.date(), n_total, n_evaluable)
+    for cls, cnt in dist.items():
+        pct = 100.0 * cnt / n_evaluable
+        log.info("  %-30s: %4d  (%5.1f%% of evaluable)", cls, cnt, pct)
+
+    # Sanity targets (build-sanity, NOT gates):
+    for cls, cnt in dist.items():
+        if pd.isna(cls):
+            continue
+        pct = 100.0 * cnt / n_evaluable
+        if pct > 50.0:
+            log.warning(
+                "CALIBRATION DEGENERACY — dna_class '%s' is %.1f%% of evaluable "
+                "(target: no class >50%%). Thresholds are FROZEN (§8 kill list); "
+                "this degeneracy is reported verbatim for Fable.", cls, pct
+            )
+    mixed_cnt = dist.get("mixed", 0)
+    mixed_pct = 100.0 * mixed_cnt / n_evaluable
+    if mixed_pct >= 40.0:
+        log.warning(
+            "CALIBRATION DEGENERACY — 'mixed' is %.1f%% of evaluable "
+            "(target: mixed <40%%). Thresholds are FROZEN (§8 kill list); "
+            "this degeneracy is reported verbatim for Fable.", mixed_pct
+        )
+
+
+def _calibration_sanity_style_regime(
+    confirmed_ser: pd.Series,
+    build_dates: pd.DatetimeIndex,
+) -> None:
+    """Print style_regime timeline sanity check over trailing 3y (§7 P1-C).
+
+    Targets:
+      - Every state fires ≥ 1 time.
+      - No state > 70% of days.
+
+    Prints state → day counts + flip count.
+    Does NOT raise. Degeneracies are reported verbatim for Fable.
+    """
+    if confirmed_ser.empty:
+        log.info("calibration_sanity_style_regime: empty series — skipping")
+        return
+
+    # Use all available confirmed dates in the series:
+    n_days = len(confirmed_ser)
+    log.info("=== calibration sanity — style_regime timeline (n_days=%d, "
+             "%s to %s) ===", n_days,
+             confirmed_ser.index[0].date(), confirmed_ser.index[-1].date())
+
+    counts = confirmed_ser.value_counts()
+    for state, cnt in counts.items():
+        pct = 100.0 * cnt / n_days
+        log.info("  %-20s: %4d days (%5.1f%%)", state, cnt, pct)
+
+    # States that never fired:
+    expected_states = {"growth_momentum", "quality_defense", "value_cyclical", "junk_rally", "mixed"}
+    fired_states = set(counts.index.tolist())
+    never_fired = expected_states - fired_states
+    if never_fired:
+        log.warning(
+            "CALIBRATION DEGENERACY — style_regime states never fired: %s. "
+            "Thresholds are FROZEN (§8 kill list); "
+            "reported verbatim for Fable.", sorted(never_fired)
+        )
+
+    # States > 70%:
+    for state, cnt in counts.items():
+        pct = 100.0 * cnt / n_days
+        if pct > 70.0:
+            log.warning(
+                "CALIBRATION DEGENERACY — style_regime '%s' is %.1f%% of days "
+                "(target: no state >70%%). Thresholds are FROZEN (§8 kill list); "
+                "reported verbatim for Fable.", state, pct
+            )
+
+    # Flip count:
+    vals = confirmed_ser.values.tolist()
+    flips = sum(1 for i in range(1, len(vals)) if vals[i] != vals[i - 1])
+    log.info("  total state flips: %d", flips)
+
+
 # ── main build function ──────────────────────────────────────────────────────
+def _load_existing_panel_dates(panel_dir: Path) -> set[str]:
+    """Load all date strings already present in existing monthly partitions.
+
+    Used for incremental build: skip dates already in the panel.
+    Returns a set of 'YYYY-MM-DD' strings.
+    """
+    existing: set[str] = set()
+    if not panel_dir.exists():
+        return existing
+    for parquet_path in sorted(panel_dir.rglob("panel.parquet")):
+        try:
+            df = pd.read_parquet(parquet_path, columns=["date"])
+            if "date" not in df.columns:
+                continue
+            dates_col = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
+            existing.update(dates_col.tolist())
+        except Exception as exc:
+            log.warning("incremental: failed to read dates from %s: %s", parquet_path, exc)
+    return existing
+
+
 def build_panel(
     data_root: Path,
     out_root: Path,
     start_date: pd.Timestamp | None = None,
     end_date: pd.Timestamp | None = None,
     tickers: list[str] | None = None,
+    backfill: bool = False,
 ) -> pd.DataFrame:
     """Build the factor panel for [start_date, end_date] and the given tickers.
 
     Writes monthly partitions to out_root/data/factordata/panel/YYYY-MM/panel.parquet.
-    Returns the full panel DataFrame.
+    Returns the full panel DataFrame (only newly built dates).
+
+    Parameters
+    ----------
+    data_root : Path
+        Repo root whose data/ caches to read.
+    out_root : Path
+        Root under which data/factordata/panel/ is written.
+    start_date : pd.Timestamp | None
+        First date to build (inclusive).  Default: 1 year back from end.
+    end_date : pd.Timestamp | None
+        Last date to build (inclusive).  Default: latest available date.
+    tickers : list[str] | None
+        Ticker subset.  Default: all breadth names.
+    backfill : bool
+        If True, bypass incremental skip logic and rebuild all dates in range.
+        Required for the one-shot deep backfill (--start 2020-01-01).
+        Default: False (incremental — skip dates already in existing partitions).
     """
     t0 = time.time()
-    log.info("=== build_factor_panel v1 start ===")
+    log.info("=== build_factor_panel v1 start (backfill=%s) ===", backfill)
     log.info("data_root=%s  out_root=%s", data_root, out_root)
     # R9: log china-eligible sectors (frozen v1 proxy; manual ADR flag deferred to P1-B):
     log.info("CHINA_SECTORS (v1 proxy, frozen): %s", sorted(CHINA_SECTORS))
@@ -1071,7 +1734,30 @@ def build_panel(
     if len(build_dates) == 0:
         log.error("no dates in [%s, %s]", start_date, end_date)
         return pd.DataFrame()
-    log.info("build dates: %d  (%s to %s)", len(build_dates),
+    log.info("build dates (pre-incremental): %d  (%s to %s)", len(build_dates),
+             build_dates[0].date(), build_dates[-1].date())
+
+    # ── INCREMENTAL SKIP (RULING-C): skip dates already in existing partitions ──
+    panel_dir = out_root / "data" / "factordata" / "panel"
+    if not backfill:
+        existing_dates = _load_existing_panel_dates(panel_dir)
+        if existing_dates:
+            build_dates = build_dates[
+                ~build_dates.strftime("%Y-%m-%d").isin(existing_dates)
+            ]
+            log.info(
+                "incremental: %d dates already in panel — skipping; "
+                "%d new dates to build",
+                len(existing_dates), len(build_dates),
+            )
+        if len(build_dates) == 0:
+            log.info("incremental: all dates already built — nothing to do")
+            return pd.DataFrame()
+    else:
+        log.info("backfill mode: bypassing incremental skip; building all %d dates",
+                 len(build_dates))
+
+    log.info("build dates (final): %d  (%s to %s)", len(build_dates),
              build_dates[0].date(), build_dates[-1].date())
 
     # ── 3. Load stream returns (global, pre-orth) ─────────────────────────────
@@ -1338,6 +2024,40 @@ def build_panel(
             twin_ew_series[ticker] = twin_ew
         log.info("twin EW return series built for %d tickers", len(twin_ew_series))
 
+    # ── 8c. Style-regime classifier (P1-C, §3.4 + RULING-D) ─────────────────
+    # Market-level: one confirmed state per date, stamped on every ticker row.
+    # Computed over the full build_dates window using ETF close caches (RULING-D).
+    log.info("computing style_regime timeline (RULING-D: ETF close caches)...")
+    try:
+        style_confirmed, style_pending = _build_style_regime_timeline(data_root, build_dates)
+        log.info("style_regime timeline built for %d dates", len(style_confirmed))
+    except Exception as exc:
+        log.error("style_regime computation failed: %s — defaulting to 'mixed' for all dates",
+                  exc)
+        style_confirmed = pd.Series("mixed", index=build_dates)
+        style_pending = pd.Series(None, index=build_dates, dtype=object)
+
+    # ── 8d. Compute size_pct for DNA cascade (from factors.json mktcap cross-section) ──
+    # size_pct is the cross-sectional percentile of mktcap (§3.2 coordinate derivation).
+    # PIT-gated same as Block-B: only emitted on the snapshot as_of date.
+    # Historical backfill of size_pct requires equity_factors backtest mode (same as Block-B).
+    size_pct_map: dict[str, float | None] = {}
+    if factors_df is not None and "mktcap_bn" in factors_df.columns:
+        mktcap_col = factors_df["mktcap_bn"].dropna()
+        n_mktcap = len(mktcap_col)
+        if n_mktcap >= 5:
+            for t in factors_df.index:
+                val = factors_df.at[t, "mktcap_bn"]
+                if pd.isna(val):
+                    size_pct_map[t] = None
+                    continue
+                rank = float((mktcap_col < val).sum() + 0.5 * (mktcap_col == val).sum()) / n_mktcap
+                size_pct_map[t] = float(np.clip(rank * 98.0 + 1.0, 1.0, 99.0))
+        log.info("size_pct computed for %d tickers (from factors.json mktcap_bn)",
+                 len(size_pct_map))
+    else:
+        log.warning("size_pct: no mktcap_bn in factors.json — dna_class may default to None")
+
     # ── 9. Assemble panel rows ────────────────────────────────────────────────
     log.info("assembling panel rows for %d build dates...", len(build_dates))
     rows: list[dict] = []
@@ -1512,6 +2232,23 @@ def build_panel(
                 row["twin_n_peers"] = None
                 row["twin_fallback"] = None
 
+            # ── DNA class (P1-C, §3.3 + RULING-A) ───────────────────────────
+            # Build a row-like dict with Block-B pct columns + Block-A betas + size_pct.
+            # size_pct: PIT-gated same as Block-B — only on factors_as_of date.
+            size_pct_for_row = None
+            if factors_pit_ok:
+                size_pct_for_row = size_pct_map.get(ticker)
+
+            dna_input = dict(row)
+            dna_input["size_pct"] = size_pct_for_row
+
+            row["dna_class"] = _classify_dna(dna_input, sector)
+
+            # ── Style-regime (P1-C, §3.4) — market-level, stamped per row ────
+            # One confirmed state per date, shared across all tickers on that date.
+            row["style_regime"] = str(style_confirmed.get(date, "mixed"))
+            row["style_regime_pending"] = style_pending.get(date)  # None or string
+
             rows.append(row)
 
     if not rows:
@@ -1522,6 +2259,12 @@ def build_panel(
     elapsed = time.time() - t0
     log.info("=== panel build done: %d rows, %d cols, %.1fs ===",
              len(panel), len(panel.columns), elapsed)
+
+    # ── 9b. Calibration sanity checks (§7 P1-C — build sanity, NOT gates) ──
+    # DNA class distribution on snapshot-date cross-section:
+    _calibration_sanity_dna(panel, factors_as_of)
+    # Style-regime timeline over the build window:
+    _calibration_sanity_style_regime(style_confirmed, build_dates)
 
     # ── 10. Log alibi_share distributions ─────────────────────────────────────
     for W in ATT_WINDOWS:
@@ -1656,6 +2399,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                     help="Last date to build (inclusive)")
     ap.add_argument("--tickers", type=str, default=None,
                     help="Comma-separated ticker subset (default: all breadth names)")
+    ap.add_argument("--backfill", action="store_true", default=False,
+                    help=(
+                        "Bypass incremental skip and rebuild all dates in range. "
+                        "Required for the one-shot deep backfill (--start 2020-01-01). "
+                        "RULING-C: do NOT use in nightly CI — this is a one-shot manual step."
+                    ))
     return ap.parse_args(argv)
 
 
@@ -1675,6 +2424,7 @@ def main(argv: list[str] | None = None) -> int:
         start_date=start,
         end_date=end,
         tickers=tickers,
+        backfill=args.backfill,
     )
 
     if panel.empty:
