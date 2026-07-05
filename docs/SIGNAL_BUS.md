@@ -23,6 +23,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | qualitative-intelligence | 23 |
 | sector-pulse | 3 |
 | setup-species | 6 |
+| signal-commons | 1 |
 | us-stocks-prebreakout | 2 |
 
 ### Artifacts by tier
@@ -30,7 +31,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 46 |
-| infrastructure | 29 |
+| infrastructure | 30 |
 | scored | 4 |
 | shadow | 33 |
 
@@ -38,7 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 108 |
+| git | 109 |
 | gitignored-local | 3 |
 | r2 | 1 |
 
@@ -218,6 +219,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | signal-archive-track-record | `data/signal_archive/track_record.parquet` | parquet | daily-engine | shadow | 4 | 0 |
 | species-registry | `data/species/registry.json` | json | on-demand | infrastructure | 4 | 0 |
 | experiments-registry-seed | `data/experiments/registry_seed.json` | json | daily-engine | infrastructure | 3 | 0 |
+
+### signal-commons
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| kernel-half-lives | `data/neuralweb/half_life.json` | json | daily-engine | infrastructure | 1 | 0 |
 
 ### us-stocks-prebreakout
 
@@ -514,6 +521,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/decay.py`
 - **extra writers:**
   - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_families() defined in the producer; no independent write logic
+
+### kernel-half-lives
+
+- **path:** `data/neuralweb/half_life.json`
+- **declared producer:** `engine/neuralweb/half_life.py`
+- **extra writers:**
+  - scripts/build_kernel_half_lives.py — thin CLI wrapper; calls write_half_lives() defined in the producer; no independent write logic
 
 ### lagging-signals
 

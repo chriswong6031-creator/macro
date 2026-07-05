@@ -681,6 +681,22 @@ jobs:
           cat /tmp/kernel_diagnostics.log
           [ "$rc" -ne 0 ] && echo "::warning title=build_kernel_diagnostics::rc=$rc (non-fatal)"
           exit 0
+      - name: build kernel half-lives (Signal Commons W2 — display-only)
+        # W2: per-family holding-horizon half-life estimates.  Staleness half-life
+        # declared UNMEASURED (fill_offset uniformly=1 in all replay parquets).
+        # Reads kernel_estimates.parquet + spine_index.parquet; writes
+        # data/neuralweb/half_life.json.  OFF RENDER PATH (build_site.py reads
+        # the resulting JSON for committee chip display only).
+        # SENTINEL LAW: always writes half_life.json (status=fit_ran or fit_failed)
+        # so a crashed job is distinguishable from a successful all-null result.
+        # Expected honest outcome: all families null (track_record IC rises;
+        # radar/us_board have <3 graded horizons).  Resilient wrapper (exit 0).
+        run: |
+          set +e
+          python -m scripts.build_kernel_half_lives > /tmp/kernel_half_lives.log 2>&1; rc=$?
+          cat /tmp/kernel_half_lives.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_kernel_half_lives::rc=$rc (non-fatal)"
+          exit 0
       - name: Confluence Graph (Neural Web W4 — display-only typed graph)
         # Builds data/neuralweb/confluence_graph.json — typed nodes (engine/sector/regime/
         # thesis/episode) and five edge families (feeds/stable/leads/contradicts/confirms).

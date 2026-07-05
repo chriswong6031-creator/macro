@@ -3517,6 +3517,12 @@ def main() -> int:
         if _kf_src.exists():
             (nwd / "kernel_families.json").write_bytes(_kf_src.read_bytes())
             log.info("neuralwebdata: copied kernel_families.json")
+        # Signal Commons W2: copy half-life artifact for committee chip display
+        # (display-only; zero behavior-changing consumers)
+        _hl_src = config.data_dir() / "neuralweb" / "half_life.json"
+        if _hl_src.exists():
+            (nwd / "half_life.json").write_bytes(_hl_src.read_bytes())
+            log.info("neuralwebdata: copied half_life.json")
         # Supabase config (same as watchlist / theme.js)
         _nw_wl = config.load().get("watchlist", {})
         _nw_sup = (_nw_wl.get("supabase") or {})
