@@ -3111,8 +3111,69 @@ def main() -> int:
 
     # Dedicated macro news feed. Uses the same context-only news/catalyst/sentiment
     # view model as the dashboard tab, but gives it a first-class reading surface.
+    # W3: load the news side-artifacts written by build_news.py (macro_releases,
+    # rejected log, calibration).  All are additive/optional — never fatal.
+    _news_dir = site / "news"
+    _macro_releases_data = None
+    _news_rejected_data = None
+    _news_calibration_data = None
+    try:
+        _mr_path = _news_dir / "macro_releases.json"
+        if _mr_path.exists():
+            _macro_releases_data = json.loads(_mr_path.read_text())
+    except Exception as _e:  # noqa: BLE001 — additive, never fatal
+        log.warning("news macro_releases.json load failed: %s", _e)
+    try:
+        _rj_path = _news_dir / "rejected.json"
+        if _rj_path.exists():
+            _news_rejected_data = json.loads(_rj_path.read_text())
+    except Exception as _e:  # noqa: BLE001 — additive, never fatal
+        log.warning("news rejected.json load failed: %s", _e)
+    try:
+        _cal_path = _news_dir / "calibration.json"
+        if _cal_path.exists():
+            _news_calibration_data = json.loads(_cal_path.read_text())
+    except Exception as _e:  # noqa: BLE001 — additive, never fatal
+        log.warning("news calibration.json load failed: %s", _e)
+    # W3 fix: sort event-typed headlines by |novelty_z| desc then seendate desc so
+    # the Delta Board renders in spec order without relying on Jinja abs().  Context
+    # (non-event) headlines are left in their original intelligence_score order and
+    # appended after event headlines.  A shallow copy avoids mutating the shared vm.
+    _news_vm_macro_news = vm.get("macro_news")
+    if _news_vm_macro_news and _news_vm_macro_news.get("headlines"):
+        try:
+            _raw_heads = _news_vm_macro_news["headlines"]
+            _ev   = [h for h in _raw_heads if h.get("event")]
+            _ctx  = [h for h in _raw_heads if not h.get("event")]
+            # Two-pass stable sort: secondary (seendate desc) first, then primary
+            # (abs novelty_z desc).  Python's Timsort is stable so equal-primary items
+            # preserve their secondary order.
+            _ev.sort(key=lambda h: h.get("seendate") or "", reverse=True)
+            _ev.sort(
+                key=lambda h: abs(float(h["novelty_z"])) if h.get("novelty_z") is not None else 0.0,
+                reverse=True,
+            )
+            _sorted_macro_news = dict(_news_vm_macro_news)
+            _sorted_macro_news["headlines"] = _ev + _ctx
+        except Exception as _e:  # noqa: BLE001 — sort is best-effort; degrade to raw order
+            log.warning("news ev_heads sort failed: %s", _e)
+            _sorted_macro_news = _news_vm_macro_news
+    else:
+        _sorted_macro_news = _news_vm_macro_news
     out_news = site / "news.html"
-    write_page(out_news, env.get_template("news.html.j2").render(**vm))
+    # vm already carries a 'macro_news' key (assigned above), so we must NOT splat
+    # **vm AND pass macro_news= explicitly — that collides at argument binding and
+    # raises "got multiple values for keyword argument 'macro_news'", which would
+    # escape unguarded and abort the whole build.  Drop it from the splatted dict
+    # and pass the sorted view as the sole macro_news source.
+    _news_render_vm = {k: v for k, v in vm.items() if k != "macro_news"}
+    write_page(out_news, env.get_template("news.html.j2").render(
+        **_news_render_vm,
+        macro_news=_sorted_macro_news,
+        macro_releases=_macro_releases_data,
+        news_rejected=_news_rejected_data,
+        news_calibration=_news_calibration_data,
+    ))
     log.info("wrote %s (%.0f KB)", out_news, out_news.stat().st_size / 1024)
 
     # US Stock Dashboard — same VM, the "looking for stocks" half of the split.
