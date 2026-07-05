@@ -261,6 +261,7 @@ REGULATORY_NOISE_TERMS = [
 # this, the title-only theme gate drops most real macro stories (reputable
 # headlines rarely put "CPI"/"Fed" in the title).
 from engine import news_common as _nc
+from engine import news_events as _ne   # W2: event-identity layer (display-only)
 
 _NEWS_SOURCES = list(_nc.TIER1_SOURCES) + list(_nc.TIER2_SOURCES)
 
@@ -517,6 +518,17 @@ def enrich_headline(h: dict) -> dict:
         "source_tier": source_tier,
         "source_lang": h.get("source_lang", "en"),
     })
+    # W2: attach event identity + centrality (pure, display-only; never gates keep/drop).
+    try:
+        ev = _ne.classify_event(title, h.get("summary", "") or "")
+        kw = theme.replace("_", " ")
+        centrality = _ne.theme_centrality(title, theme, kw)
+        out["event"] = ev
+        out["centrality"] = centrality
+    except Exception:  # noqa: BLE001
+        out.setdefault("event", None)
+        out.setdefault("centrality", "incidental")
+    # novelty_z and echo are attached in macro_headlines() after one qbus load.
     return out
 
 
@@ -996,6 +1008,43 @@ def macro_headlines(today: date | None = None) -> dict | None:
     _rejected: list[dict] = []
     kept = _attach_translations(filter_headlines(official + news_rss + raw, cfg,
                                                  _rejected=_rejected), cfg)
+
+    # W2: qbus read-back — ONE load per build, then backfill novelty_z + echo on
+    # every KEPT headline (display-only; never changes keep/drop). Strictly fail-open.
+    try:
+        from engine import qbus as _qbus
+        _qbus_df = _qbus.read_items()
+        if _qbus_df is not None and len(_qbus_df) > 0 and kept:
+            _asof_date = (today or date.today())
+            for _h in kept:
+                try:
+                    _tickers = _h.get("tickers") or []
+                    _theme = _h.get("theme") or ""
+                    _subject = _tickers[0] if _tickers else _theme
+                    if _subject:
+                        _h["novelty_z"] = _qbus.novelty_z(_subject, _asof_date,
+                                                           df=_qbus_df)
+                    else:
+                        _h.setdefault("novelty_z", None)
+                    # echo: look up event_key via item_id
+                    _hid = _h.get("_id", "")
+                    if _hid and "item_id" in _qbus_df.columns:
+                        _sub = _qbus_df[_qbus_df["item_id"] == _hid]
+                        if len(_sub) > 0:
+                            _ek = str(_sub.iloc[0].get("event_key") or "")
+                            if _ek:
+                                _raw_echo = _qbus.echo_stats(_ek, df=_qbus_df,
+                                                              asof=_asof_date)
+                                if _raw_echo:
+                                    _h["echo"] = {
+                                        "n_sources": _raw_echo.get("n_sources"),
+                                        "n_desks": _raw_echo.get("n_desks"),
+                                    }
+                except Exception:  # noqa: BLE001
+                    pass
+    except Exception:  # noqa: BLE001 — always display-only, never raises
+        pass
+
     synth = _synthesis(kept)
     return {"schema": "macro_news.v1", "is_context_only": True,
             "fetched_at": datetime.now(timezone.utc).isoformat(), "source": "official_rss+news_rss+gdelt_doc_2.0",
