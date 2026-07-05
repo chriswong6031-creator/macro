@@ -130,6 +130,26 @@ jobs:
         run: |
           python -m scripts.build_tape_flow_daily --mode forward \
             || echo "::warning::T2a tape-flow forward accrual failed (non-fatal)"
+      - name: T2a tape-flow features — episode-window backfill (non-fatal, budgeted)
+        # Tier-S episode windows 2022→, ±15d, ETF anchors only (≈11 nodes post-2022).
+        # Runs AFTER the forward step so the daily row always lands first.
+        # Hard-stop at 90 min (budget_deadline): state is persisted after every
+        # completed root-day; the next nightly run resumes from remaining work.
+        # Outputs (data/tape_flow/daily/*.parquet + data/tape_flow/_state.json)
+        # are covered by the "commit data" step's `git add data/` below.
+        # Non-fatal: terminal absent or any error logs a warning and continues.
+        run: |
+          python -m scripts.build_tape_flow_daily --mode episodes --budget-minutes 90 \
+            || echo "::warning::T2a tape-flow episodes backfill failed (non-fatal)"
+      - name: T2a tape-flow features — ETF history backfill (non-fatal, budgeted)
+        # 20 ETF anchors, full history 2017→. R6 priority 3 — runs last, after forward
+        # and episodes, so earlier steps are never delayed by the large backlog.
+        # Hard-stop at 60 min (budget_deadline): state resumes each night until done.
+        # Outputs covered by `git add data/` in the commit step below (same as above).
+        # Non-fatal: terminal absent or any error logs a warning and continues.
+        run: |
+          python -m scripts.build_tape_flow_daily --mode etf-history --budget-minutes 60 \
+            || echo "::warning::T2a tape-flow ETF-history backfill failed (non-fatal)"
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
         # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
