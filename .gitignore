@@ -233,5 +233,10 @@ data/oracle/memory_active_analogues.json
 !data/oracle/hypothesis_inbox.jsonl
 !data/oracle/hypothesis_state.json
 
+# Live options-flow poller runtime artifacts (regenerated each session)
+# live_flow_baselines/baselines.json is git-TRACKED (small, ~50 roots × 4 fields)
+data/live_flow_state/
+data/live_flow_out/
+
 # W0.2 OHLC store (reproducible from collector + manifest; not committed)
 data/yahoo_ohlc/

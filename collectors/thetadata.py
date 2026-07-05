@@ -974,9 +974,51 @@ def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
     return df.reset_index(drop=True)
 
 
+def _time_to_str(t: str | int | None) -> str | None:
+    """Convert a time-of-day value to "HH:MM:SS.000" string (v3 API convention).
+
+    Accepts:
+      - None           → None (param omitted)
+      - int            → treated as ms-of-day; converted to HH:MM:SS.mmm
+      - "HH:MM:SS"     → normalised to "HH:MM:SS.000"
+      - "HH:MM"        → normalised to "HH:MM:00.000"
+      - "HH:MM:SS.mmm" → passed through as-is
+
+    The v3 trade_quote endpoint expects start_time / end_time as "HH:MM:SS.mmm" ET.
+    """
+    if t is None:
+        return None
+    if isinstance(t, int):
+        # ms-of-day → HH:MM:SS.mmm
+        total_ms = int(t)
+        h  =  total_ms // 3_600_000
+        m  = (total_ms % 3_600_000) // 60_000
+        s  = (total_ms % 60_000) // 1_000
+        ms =  total_ms % 1_000
+        return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
+    parts = str(t).split(":")
+    h = int(parts[0])
+    m = int(parts[1]) if len(parts) > 1 else 0
+    sec_parts = parts[2].split(".") if len(parts) > 2 else ["0", "000"]
+    s   = int(sec_parts[0])
+    ms  = int(sec_parts[1]) if len(sec_parts) > 1 else 0
+    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
+
+
+# Keep an alias for the old name used in tests
+def _time_to_ms(t: str | int | None) -> str | int | None:
+    """Alias for _time_to_str (kept for test compatibility).
+
+    Returns the v3 time string; also accepts int ms-of-day for backwards compat.
+    """
+    return _time_to_str(t)
+
+
 def bulk_trade_quote(root: str, right: str,
                      start_date: date | str | int,
-                     end_date: date | str | int) -> pd.DataFrame | None:
+                     end_date: date | str | int,
+                     start_time: str | int | None = None,
+                     end_time: str | int | None = None) -> pd.DataFrame | None:
     """Full-chain trade+NBBO for ONE right (call or put) on a date range.
 
     Endpoint: GET /v3/option/history/trade_quote with expiration=* and strike=*.
@@ -991,6 +1033,14 @@ def bulk_trade_quote(root: str, right: str,
     Returns a DataFrame with the same schema as trade_quote() EXCEPT that
     strike is not fixed (it varies per contract in the response). The 'strike'
     column is parsed from the response CSV (each row has its own strike).
+    The 'sequence' column is included in the output for dedup / watermark use.
+
+    Optional time-of-day filtering (v3 format "HH:MM:SS.mmm" ET):
+      start_time : "HH:MM:SS", "HH:MM:SS.mmm", "HH:MM", or ms-of-day int.
+                   If provided, only trades at or after this time are returned.
+      end_time   : same formats.  If provided, only trades at or before this
+                   time are returned.
+    Behavior is identical to the no-params call when both are None (additive).
 
     Returns None on terminal error; empty DataFrame if no trades exist.
     """
@@ -999,7 +1049,7 @@ def bulk_trade_quote(root: str, right: str,
         return None
 
     right_norm = _normalize_right_request(right)   # "call" or "put"
-    params = {
+    params: dict = {
         "symbol": root.upper(),
         "expiration": "*",
         "strike": "*",
@@ -1007,6 +1057,13 @@ def bulk_trade_quote(root: str, right: str,
         "start_date": _date_int(start_date),
         "end_date": _date_int(end_date),
     }
+    st_str = _time_to_str(start_time)
+    et_str = _time_to_str(end_time)
+    if st_str is not None:
+        params["start_time"] = st_str
+    if et_str is not None:
+        params["end_time"] = et_str
+
     session = _session()
     rows_all: list[dict] = []
 
@@ -1034,6 +1091,7 @@ def bulk_trade_quote(root: str, right: str,
                 "date":            parts[4][:10] if parts[4] else None,
                 "trade_timestamp": parts[4],
                 "quote_timestamp": parts[5],
+                "sequence":        parts[6],
                 "expiration":      parts[1],
                 "strike":          parts[2],
                 "right":           parts[3],
@@ -1053,12 +1111,13 @@ def bulk_trade_quote(root: str, right: str,
         return pd.DataFrame()
 
     df = pd.DataFrame(rows_all)
-    df["date"]   = pd.to_datetime(df["date"], errors="coerce")
-    df["price"]  = pd.to_numeric(df["price"],  errors="coerce")
-    df["size"]   = pd.to_numeric(df["size"],   errors="coerce")
-    df["bid"]    = pd.to_numeric(df["bid"],    errors="coerce")
-    df["ask"]    = pd.to_numeric(df["ask"],    errors="coerce")
-    df["strike"] = pd.to_numeric(df["strike"], errors="coerce")
-    df["right"]  = df["right"].str.upper().str[:1]   # "CALL"→"C", "PUT"→"P"
-    df["root"]   = root.upper()
+    df["date"]     = pd.to_datetime(df["date"], errors="coerce")
+    df["price"]    = pd.to_numeric(df["price"],    errors="coerce")
+    df["size"]     = pd.to_numeric(df["size"],     errors="coerce")
+    df["bid"]      = pd.to_numeric(df["bid"],      errors="coerce")
+    df["ask"]      = pd.to_numeric(df["ask"],      errors="coerce")
+    df["strike"]   = pd.to_numeric(df["strike"],   errors="coerce")
+    df["sequence"] = pd.to_numeric(df["sequence"], errors="coerce")
+    df["right"]    = df["right"].str.upper().str[:1]   # "CALL"→"C", "PUT"→"P"
+    df["root"]     = root.upper()
     return df.reset_index(drop=True)

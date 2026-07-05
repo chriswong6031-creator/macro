@@ -12,6 +12,16 @@ POST /api/ask          — authed (require_user); interrogate the Neural Web bra
 POST /api/ask/stream   — SSE streaming variant of the same; tool-calling turns
                          run synchronously, final synthesis turn is streamed.
 
+Live Options Flow Feed — /api/flow/*
+--------------------------------------
+GET /api/flow/feed     — unauthenticated; live-flow feed (events + unusual_names)
+GET /api/flow/heat     — unauthenticated; per-sector/group heat map
+GET /api/flow/meta     — unauthenticated; poller meta / cadence info
+
+All three are server-side read-throughs of the R2 live_flow/ objects with a
+30-second in-memory TTL cache.  On fetch failure the last-cached copy is returned
+with {"stale":true} merged.  503 only if the object was never successfully fetched.
+
 KEY-OPTIONAL: when ANTHROPIC_API_KEY is absent from /etc/macro-api.env the
 endpoints return mode='memo-quote' (degraded=True) — a relevant excerpt from
 data/neuralweb/cortex/memo.json.  The operator arms live mode by adding
@@ -27,9 +37,11 @@ import json
 import os
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -250,3 +262,86 @@ def ask_brain_stream(body: AskRequest, user: dict = Depends(require_user)):
             "X-Accel-Buffering": "no",  # disable Nginx/Caddy buffering
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# /api/flow/* — live options-flow feed (unauthenticated read-through of R2)
+# ---------------------------------------------------------------------------
+
+# In-memory TTL cache: key → (payload_dict, fetched_at_monotonic)
+_FLOW_CACHE: dict[str, tuple[dict, float]] = {}
+_FLOW_CACHE_TTL = 30.0          # seconds
+_FLOW_UA = "mastermind-feed/1.0"
+
+# R2 public base URL (config-driven; falls back to env)
+def _flow_r2_base() -> str:
+    base = os.environ.get("R2_PUBLIC_BASE", "")
+    if base:
+        return base.rstrip("/")
+    try:
+        import yaml  # noqa: PLC0415
+        _cfg_path = REPO / "config.yml"
+        if _cfg_path.exists():
+            with open(_cfg_path) as _f:
+                _c = yaml.safe_load(_f)
+            return (_c.get("r2_data_plane", {}).get("public_base") or "").rstrip("/")
+    except Exception:  # noqa: BLE001
+        pass
+    return ""
+
+
+def _flow_fetch(name: str) -> dict:
+    """Fetch live_flow/<name>.json from R2 with TTL caching and stale fallback.
+
+    Returns the parsed JSON dict.  On failure, returns last-cached dict with
+    {"stale": true} merged.  Raises HTTPException(503) only if never fetched.
+    """
+    cached = _FLOW_CACHE.get(name)
+    now = time.monotonic()
+
+    # Fresh cache hit
+    if cached is not None and (now - cached[1]) < _FLOW_CACHE_TTL:
+        return cached[0]
+
+    base = _flow_r2_base()
+    if not base:
+        if cached:
+            return {**cached[0], "stale": True}
+        raise HTTPException(503, f"flow/{name}: R2 base URL not configured")
+
+    url = f"{base}/live_flow/{name}.json"
+    req = urllib.request.Request(url, headers={"User-Agent": _FLOW_UA})
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data: dict = json.loads(resp.read())
+        _FLOW_CACHE[name] = (data, now)
+        return data
+    except Exception:  # noqa: BLE001
+        if cached:
+            return {**cached[0], "stale": True}
+        raise HTTPException(503, f"flow/{name} unavailable and no cached copy") from None
+
+
+@app.get("/api/flow/feed")
+def flow_feed() -> dict[str, Any]:
+    """Live options-flow feed (events + unusual names). Unauthenticated.
+
+    Display-tier read-through. Events are labeled heuristics — not
+    directional recommendations.
+    """
+    return _flow_fetch("feed_current")
+
+
+@app.get("/api/flow/heat")
+def flow_heat() -> dict[str, Any]:
+    """Options-flow sector/group heat map. Unauthenticated.
+
+    Aggregates gross premium by sector. Display-tier context only.
+    """
+    return _flow_fetch("heat_current")
+
+
+@app.get("/api/flow/meta")
+def flow_meta() -> dict[str, Any]:
+    """Live options-flow poller metadata (cadence, universe size, notes). Unauthenticated."""
+    return _flow_fetch("meta")
