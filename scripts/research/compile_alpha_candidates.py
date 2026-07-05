@@ -399,17 +399,23 @@ def run(dry_run: bool = False, deep_only: bool = True) -> None:
     # 2. LEDGER FIRST — log full grid BEFORE any grading (CI-enforced)
     # -----------------------------------------------------------------------
     led = TrialLedger(family=FAMILY)
-    candidate_configs = [c.to_dict() for c in candidates]
 
-    # Log full grid count (not just capped 200) for honest DSR multiple-testing burden
-    # The grid is capped at 200 for grading but the full search space is logged
+    # Log the full enumerated grid (365 entries) exactly once.  The 200 graded
+    # candidates are a subset — logging them separately would inflate the DSR
+    # haircut by ~78% and is incorrect (the full grid already covers the entire
+    # multiple-testing burden).
+    #
+    # HISTORICAL NOTE: an earlier run (pre-2026-07-05 fix) logged both the
+    # 365 grid entries AND the 200 candidate configs separately, producing 565
+    # entries in data/trial_ledger.jsonl.  Content-hash dedup means re-runs
+    # log 0 new entries from that history.  The 565-entry over-count is
+    # conservative-direction only (inflates the DSR haircut — never deflates it).
     grid_configs = [{"alpha_id": f"grid_{i}", "family": FAMILY}
                     for i in range(grid_total)]
     n_logged_grid = led.log_grid(grid_configs, family=FAMILY)
-    n_logged_candidates = led.log_grid(candidate_configs, family=FAMILY)
     log.info(
-        "Ledger: logged full grid %d entries, %d candidate entries (effective_n=%d)",
-        n_logged_grid, n_logged_candidates, led.effective_n(FAMILY),
+        "Ledger: logged full grid %d entries (effective_n=%d)",
+        n_logged_grid, led.effective_n(FAMILY),
     )
 
     if dry_run:

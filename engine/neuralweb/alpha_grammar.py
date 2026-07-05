@@ -12,7 +12,6 @@ Adding a primitive requires a masterplan amendment.
 
   ts_rank(x, w)            — rolling rank of x at bar t within the last w bars [0,1]
   ts_delta(x, w)           — x[t] - x[t-w]  (lagged difference)
-  roll_corr(x, y, w)       — rolling Pearson correlation(x, y) over w bars
   decay_linear(x, w)       — linearly-weighted (newest=w, oldest=1) rolling mean
   zscore_winsor(x, w, clip=3) — rolling z-score, winsorised at ±clip
   vol_norm_move(x, w)      — (x[t] - x[t-1]) / rolling_std(x, w)  (one-bar move / sigma)
@@ -21,6 +20,10 @@ Adding a primitive requires a masterplan amendment.
   cs_rank(x)               — cross-sectional percentile rank over the FIRE COHORT on the
                              same date.  Requires ≥MIN_COHORT_SIZE same-date fires;
                              emits NaN for the entire date-cohort when below the floor.
+
+  roll_corr                — RESERVED FOR v2 (requires two input series; never enumerated
+                             in v1 candidates; removing from v1 declaration is the
+                             minimal doc-honesty fix per masterplan FR closure rule).
 
 BASE SERIES (v1)
 ----------------

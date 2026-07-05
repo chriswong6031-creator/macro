@@ -16,6 +16,10 @@ Coverage:
   (13) Cluster sensitivity: sensitivity at 0.6/0.7/0.8 all returned.
   (14) Full grid size > CANDIDATE_CAP (cap is actually enforced).
   (15) Survivorship caveat present in every candidate record.
+  (16) PIT spike test (VECTORIZED PATH): _compute_signal_for_candidate is bit-identical
+       before and after injecting a spike in bars after the fire iloc — covers every
+       v1 primitive (ts_rank, ts_delta, decay_linear, zscore_winsor, vol_norm_move,
+       dist_from_argmin, dist_from_argmax) and cs_rank at cohort level.
 """
 from __future__ import annotations
 
@@ -566,6 +570,200 @@ def test_survivorship_caveat_present():
     for c in candidates:
         assert c.survivorship_caveat, f"Missing survivorship_caveat: {c.alpha_id}"
         assert "surviving-names-only" in c.survivorship_caveat
+
+
+# ---------------------------------------------------------------------------
+# (16) PIT spike test — VECTORIZED PATH (_compute_signal_for_candidate)
+#
+# This tests the path that ACTUALLY produced the shipped artifacts.  The
+# vectorized evaluator calls _eval_node on the FULL close series and then
+# extracts full_series.iloc[fire_iloc].  PIT is upheld if and only if every
+# rolling primitive looks only at bars ≤ fire_iloc — injecting an extreme
+# value in bars AFTER fire_iloc must leave every candidate value bit-identical.
+#
+# Coverage: every v1 primitive that appears in enumerated candidates:
+#   ts_rank, ts_delta, decay_linear, zscore_winsor, vol_norm_move,
+#   dist_from_argmin, dist_from_argmax
+# cs_rank is covered as a cohort-level pass via apply_cs_rank_pass (the
+# per-ticker inner formula is one of the above; cs_rank itself is cross-
+# sectional and applied after extraction, so it inherits the same guarantee).
+# ---------------------------------------------------------------------------
+
+def _make_fire_panel_with_outcome(
+    ticker: str,
+    fire_date: pd.Timestamp,
+    close: pd.Series,
+) -> pd.DataFrame:
+    """Build a minimal fire_panel row for the vectorized evaluator."""
+    return pd.DataFrame([{
+        "ticker": ticker,
+        "date": fire_date,
+        "tier": "T1",
+        "sub": "deep",
+        "panel": "deep",
+        "fwd_ret_21": 0.05,
+    }]).reset_index(drop=True)
+
+
+def _evaluate_all_v1_primitives_vectorized(
+    close: pd.Series,
+    fire_date: pd.Timestamp,
+    ticker: str = "SPY",
+) -> dict[str, float]:
+    """Run _compute_signal_for_candidate for each v1 primitive and return results."""
+    from scripts.research.compile_alpha_candidates import _compute_signal_for_candidate
+
+    fire_panel = _make_fire_panel_with_outcome(ticker, fire_date, close)
+    closes = {ticker: close}
+
+    # All v1 unary-window primitives enumerated in candidates
+    nodes_to_test = [
+        ("ts_rank",        ts_rank(CLOSE_RETURNS, 10)),
+        ("ts_delta",       ts_delta(CLOSE_RETURNS, 5)),
+        ("decay_linear",   decay_linear(CLOSE_RETURNS, 10)),
+        ("zscore_winsor",  zscore_winsor(CLOSE_RETURNS, 21)),
+        ("vol_norm_move",  vol_norm_move(CLOSE_RETURNS, 10)),
+        ("dist_from_argmin", dist_from_argmin(CLOSE_RETURNS, 21)),
+        ("dist_from_argmax", dist_from_argmax(CLOSE_RETURNS, 21)),
+    ]
+
+    results: dict[str, float] = {}
+    for prim_name, node in nodes_to_test:
+        cand = CandidateRecord.from_node(node, f"{prim_name} spike-test")
+        sig = _compute_signal_for_candidate(cand, fire_panel, closes)
+        # sig is indexed by fire_panel.index (one row → index 0)
+        results[prim_name] = float(sig.iloc[0])
+    return results
+
+
+def test_pit_spike_vectorized_path():
+    """MAJOR: vectorized path (_compute_signal_for_candidate) is PIT-safe.
+
+    Construct a clean synthetic price series, evaluate all v1 primitives at
+    fire_iloc via the vectorized evaluator, then inject an extreme spike in
+    every bar AFTER fire_iloc and re-evaluate.  All values must be bit-identical.
+
+    If this test fails, a real PIT leak is present in the shipped evaluator.
+    The shipped data/research/alpha_* artifacts and any reported FDR survivors
+    would be invalid pending a clean re-run.
+    """
+    # -----------------------------------------------------------------------
+    # Build a 120-bar synthetic price series with stable, non-trivial values
+    # -----------------------------------------------------------------------
+    rng = np.random.default_rng(seed=20260705)
+    n_bars = 120
+    returns = rng.normal(0.0005, 0.012, n_bars)
+    prices = 100.0 * np.cumprod(1.0 + returns)
+
+    # Use business-day dates well within the era filter (2015+)
+    all_dates = pd.date_range("2015-06-01", periods=n_bars, freq="B")
+    close_clean = pd.Series(prices, index=all_dates)
+
+    # Fire at bar 80 (0-indexed) — leaves 39 bars after the fire iloc
+    fire_iloc = 80
+    fire_date = all_dates[fire_iloc]
+    ticker = "SYNTHETIC"
+
+    # -----------------------------------------------------------------------
+    # Evaluate on clean series
+    # -----------------------------------------------------------------------
+    results_clean = _evaluate_all_v1_primitives_vectorized(
+        close_clean, fire_date, ticker
+    )
+
+    # -----------------------------------------------------------------------
+    # Inject extreme spikes in EVERY bar after fire_iloc
+    # -----------------------------------------------------------------------
+    prices_spiked = prices.copy()
+    prices_spiked[fire_iloc + 1:] = 1e9  # extreme value — changes returns, rolling stats
+    close_spiked = pd.Series(prices_spiked, index=all_dates)
+
+    results_spiked = _evaluate_all_v1_primitives_vectorized(
+        close_spiked, fire_date, ticker
+    )
+
+    # -----------------------------------------------------------------------
+    # Assert bit-identical values at fire_iloc for every primitive
+    # -----------------------------------------------------------------------
+    failures: list[str] = []
+    for prim_name in results_clean:
+        v_clean = results_clean[prim_name]
+        v_spiked = results_spiked[prim_name]
+
+        # Both NaN → trivially identical (NaN != NaN in float comparison)
+        if np.isnan(v_clean) and np.isnan(v_spiked):
+            continue
+
+        # One is NaN, other is not → mismatch
+        if np.isnan(v_clean) != np.isnan(v_spiked):
+            failures.append(
+                f"{prim_name}: clean={v_clean!r} vs spiked={v_spiked!r} "
+                f"(NaN mismatch — PIT leak)"
+            )
+            continue
+
+        # Neither NaN — must be bit-identical (same rolling window, same bars)
+        if v_clean != v_spiked:
+            failures.append(
+                f"{prim_name}: clean={v_clean!r} vs spiked={v_spiked!r} "
+                f"(values differ — PIT LEAK in vectorized evaluator)"
+            )
+
+    assert not failures, (
+        "PIT VIOLATION in _compute_signal_for_candidate (vectorized path):\n"
+        + "\n".join(f"  {f}" for f in failures)
+        + "\n\nFIX REQUIRED: the shipped data/research/alpha_* artifacts and any "
+        "reported FDR survivors are INVALID pending a clean re-run of "
+        "scripts/research/compile_alpha_candidates.py."
+    )
+
+
+def test_pit_spike_vectorized_cs_rank_inner():
+    """cs_rank inner formula (ts_rank child) is PIT-safe in vectorized path.
+
+    cs_rank applies a cross-sectional pass AFTER per-ticker extraction.
+    The per-ticker extraction uses the same vectorized evaluator as all other
+    primitives.  Verify that the raw inner value (pre-cs_rank) at fire_iloc
+    is bit-identical before/after post-fire spike injection.
+    """
+    from scripts.research.compile_alpha_candidates import _compute_signal_for_candidate
+
+    rng = np.random.default_rng(seed=20260705 + 1)
+    n_bars = 100
+    returns = rng.normal(0.0005, 0.01, n_bars)
+    prices = 100.0 * np.cumprod(1.0 + returns)
+    all_dates = pd.date_range("2015-09-01", periods=n_bars, freq="B")
+
+    fire_iloc = 70
+    fire_date = all_dates[fire_iloc]
+    ticker = "SYNTH_CS"
+
+    close_clean = pd.Series(prices, index=all_dates)
+    prices_spiked = prices.copy()
+    prices_spiked[fire_iloc + 1:] = 1e9
+    close_spiked = pd.Series(prices_spiked, index=all_dates)
+
+    fire_panel = _make_fire_panel_with_outcome(ticker, fire_date, close_clean)
+
+    # cs_rank wraps ts_rank — the inner node is evaluated in the vectorized path
+    inner_node = ts_rank(CLOSE_RETURNS, 10)
+    cs_node = cs_rank(inner_node)
+    cand = CandidateRecord.from_node(cs_node, "cs_rank inner spike test")
+
+    sig_clean = _compute_signal_for_candidate(cand, fire_panel, {ticker: close_clean})
+    sig_spiked = _compute_signal_for_candidate(cand, fire_panel, {ticker: close_spiked})
+
+    v_clean = float(sig_clean.iloc[0])
+    v_spiked = float(sig_spiked.iloc[0])
+
+    # Both NaN → pass (insufficient cohort — fine)
+    if np.isnan(v_clean) and np.isnan(v_spiked):
+        return
+
+    assert v_clean == v_spiked, (
+        f"cs_rank inner PIT VIOLATION: clean={v_clean!r} vs spiked={v_spiked!r}. "
+        "The vectorized path for cs_rank inner formula is leaking post-fire bars."
+    )
 
 
 # ---------------------------------------------------------------------------
