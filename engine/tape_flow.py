@@ -519,16 +519,28 @@ def _vol_gt_oi(trades: pd.DataFrame, oi_prev: pd.DataFrame | None) -> float | No
 
 
 def _fill_nulls(result: dict) -> None:
-    """Fill all feature keys with None when no trades are available."""
+    """Fill all feature keys with None when no trades are available.
+
+    Covers both the legacy scalar/bucket keys and the P2.1 extension keys so
+    that every path through aggregate_day() returns a dict with the full column
+    set regardless of whether any trades were present.
+    """
     scalar_keys = [
         "ask_side_call_premium", "bid_side_call_premium",
         "ask_side_put_premium",  "bid_side_put_premium",
         "net_signed_premium", "signed_contract_volume",
         "signed_delta_notional",
         "n_trades", "n_contracts", "gross_premium", "vol_gt_oi_share",
+        # P2.1 extension keys
+        "volume", "signed_pc_ratio", "zerodte_share", "dte_quality_share",
+        "short_dated_otm_call_share", "trade_count", "block_share",
+        "underlying_price",
     ]
     for k in scalar_keys:
         result[k] = None
+
+    # underlying_source defaults to "none" (string sentinel) on empty days
+    result["underlying_source"] = "none"
 
     for bucket_prefix in ("dte_0d", "dte_1_7d", "dte_8_30d", "dte_31_90d", "dte_90p"):
         result[f"{bucket_prefix}_net_premium"] = None

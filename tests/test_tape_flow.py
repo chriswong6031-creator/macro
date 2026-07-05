@@ -861,6 +861,39 @@ class TestP21RequiredFeatures:
         missing = required - set(row.keys())
         assert not missing, f"Missing required P2.1 columns: {sorted(missing)}"
 
+    def test_all_p21_keys_present_empty_both_legs(self):
+        """P2.1 keys must be present even when both calls and puts are empty."""
+        required = {
+            "net_signed_premium", "signed_pc_ratio", "gross_premium", "volume",
+            "zerodte_share", "dte_quality_share", "short_dated_otm_call_share",
+            "trade_count", "block_share", "underlying_source",
+        }
+        row = tf.aggregate_day(
+            calls=pd.DataFrame(), puts=pd.DataFrame(),
+            trade_date=self.TRADE_DATE, root="SPY",
+        )
+        missing = required - set(row.keys())
+        assert not missing, f"Empty-day row missing P2.1 columns: {sorted(missing)}"
+
+    def test_all_p21_keys_present_nbbo_filtered_empty(self):
+        """P2.1 keys must be present when all rows are filtered by NBBO validation."""
+        required = {
+            "net_signed_premium", "signed_pc_ratio", "gross_premium", "volume",
+            "zerodte_share", "dte_quality_share", "short_dated_otm_call_share",
+            "trade_count", "block_share", "underlying_source",
+        }
+        # bid=0 → all rows fail the NBBO filter → empty result path
+        bad_calls = self._make_calls().copy()
+        bad_calls["bid"] = 0.0
+        bad_puts = self._make_puts().copy()
+        bad_puts["bid"] = 0.0
+        row = tf.aggregate_day(
+            calls=bad_calls, puts=bad_puts,
+            trade_date=self.TRADE_DATE, root="SPY",
+        )
+        missing = required - set(row.keys())
+        assert not missing, f"NBBO-filtered row missing P2.1 columns: {sorted(missing)}"
+
 
 # ─── bulk_trade_quote normalisation (new collector method) ────────────────────
 
