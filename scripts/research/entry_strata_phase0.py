@@ -276,7 +276,10 @@ def grade_fires(
         mae63, mfe63 (max adverse / favorable excursion at 63d),
         days_to_10 (first bar where fwd_ret ≥ 10%, or NaN),
         cushion_rot, cushion_pos (bool: cushion hit in rotational/positional window),
-        gradable   (bool: fill bar exists and matured for both horizons).
+        gradable   (bool: fill bar exists and matured for both horizons),
+        vol_band   (float: sigma20*sqrt(20) clamped to [0.05, 0.15]; NaN if <21 trailing bars),
+        zone_held_21  (co-primary RUL-14: 1 if min fwd close over fill+1..fill+21 > fill*(1-band)),
+        stop_vol_21   (co-primary RUL-14: 1 - zone_held_21; NaN when zone_held_21 is NaN).
     """
     from engine.grading import forward_metrics, terminal_state
 
@@ -299,6 +302,8 @@ def grade_fires(
             "state_rot": None, "state_pos": None,
             "stop5": None, "mae63": None, "mfe63": None,
             "days_to_10": None, "cushion_rot": None, "cushion_pos": None,
+            # RUL-14 co-primaries
+            "vol_band": None, "zone_held_21": None, "stop_vol_21": None,
         })
 
         if close is None or close.empty:
@@ -355,6 +360,38 @@ def grade_fires(
 
         # gradable iff both horizons matured
         rec["gradable"] = (ts_rot["state"] is not None and ts_pos["state"] is not None)
+
+        # --- RUL-14 co-primary: vol-scaled entry zone ---
+        # vol_band = sigma20 * sqrt(20), clamped to [0.05, 0.15]
+        # sigma20  = trailing 20d close-to-close daily return std at the FILL bar
+        #            (strictly prior bars only — no look-ahead)
+        # zone_held_21 = 1 iff min(close[fill+1..fill+21]) > fill_price * (1 - band)
+        # stop_vol_21  = 1 - zone_held_21
+        # NaN when fewer than 21 trailing bars for sigma OR fewer than 21 matured
+        # forward bars (not-yet-matured semantics identical to existing outcomes).
+        from engine.grading import fill_index
+        fi_vol = fill_index(close, sig_date)
+        if fi_vol is not None and fi_vol >= 21:
+            # trailing 20d daily returns — strictly prior to fill bar
+            trailing = close.iloc[fi_vol - 20: fi_vol]  # 20 bars, indices [fi-20, fi)
+            daily_rets = trailing.pct_change().dropna()
+            # 20 price bars → 19 valid returns after pct_change().dropna()
+            if len(daily_rets) >= 19:
+                sigma20 = float(daily_rets.std(ddof=1))
+                raw_band = sigma20 * np.sqrt(20.0)
+                band = float(np.clip(raw_band, 0.05, 0.15))
+                rec["vol_band"] = round(band, 6)
+
+                # forward 21 closes: fill+1..fill+21 (strictly forward, same as stop5)
+                fwd_21 = close.iloc[fi_vol + 1: fi_vol + 22]  # up to 21 bars
+                if len(fwd_21) >= 21:
+                    entry_p = float(close.iloc[fi_vol])
+                    if entry_p > 0:
+                        zone_floor = entry_p * (1.0 - band)
+                        zone_held = int(float(fwd_21.min()) > zone_floor)
+                        rec["zone_held_21"] = zone_held
+                        rec["stop_vol_21"]  = 1 - zone_held
+
         results.append(rec)
 
     out = pd.DataFrame(results)
@@ -747,14 +784,17 @@ def bh_correction(
 # ---------------------------------------------------------------------------
 
 EFFECT_OUTCOMES = [
-    ("stop5",       "stop5 rate",          "treatment stopped within 5d (bool)"),
-    ("state_rot",   "rotational liftoff",  "state_rot == CLEAN_LIFTOFF (clean8_21)"),
-    ("state_pos",   "positional liftoff",  "state_pos == CLEAN_LIFTOFF (clean15_126)"),
-    ("dead_money",  "dead_money rate",     "state_pos == DEAD_MONEY (positional)"),
-    ("cushion_rot", "cushion rate (rot)",  "cushion hit in 21d window"),
-    ("mae63",       "MAE 63d",             "max adverse excursion at 63d"),
-    ("mfe63",       "MFE 63d",             "max favorable excursion at 63d"),
-    ("days_to_10",  "days to 10% gain",    "first bar at ≥10% from entry"),
+    ("stop5",         "stop5 rate",             "treatment stopped within 5d (bool)"),
+    ("state_rot",     "rotational liftoff",      "state_rot == CLEAN_LIFTOFF (clean8_21)"),
+    ("state_pos",     "positional liftoff",      "state_pos == CLEAN_LIFTOFF (clean15_126)"),
+    ("dead_money",    "dead_money rate",         "state_pos == DEAD_MONEY (positional)"),
+    ("cushion_rot",   "cushion rate (rot)",      "cushion hit in 21d window"),
+    ("mae63",         "MAE 63d",                 "max adverse excursion at 63d"),
+    ("mfe63",         "MFE 63d",                 "max favorable excursion at 63d"),
+    ("days_to_10",    "days to 10% gain",        "first bar at ≥10% from entry"),
+    # RUL-14 co-primaries: vol-scaled entry zone (Amendment 1 §C1)
+    ("zone_held_21",  "vol-zone held 21d",       "min fwd close over fill+1..+21 > fill*(1-vol_band)"),
+    ("stop_vol_21",   "vol-stop 21d",            "1 - zone_held_21 (stopped out of vol-scaled band)"),
 ]
 
 
@@ -803,6 +843,9 @@ def effect_table(
     # days_to_10 coefficient.  It is computed descriptively in the era_table
     # (days_to_10_median) where the conditioning is clearly labelled.
     # See W0_BASELINES.md § days_to_10 note.
+    #
+    # RUL-14 co-primaries zone_held_21 / stop_vol_21 ARE included in the BH panel
+    # exactly like stop5 (Amendment 1 §C1, entry_strata_phase0.py B1 PR).
     outcomes_to_run = [
         ("stop5",             "stop5"),
         ("rotational_liftoff","rotational_liftoff"),
@@ -811,6 +854,9 @@ def effect_table(
         ("cushion_rot",       "cushion_rot"),
         ("mae63",             "mae63"),
         ("mfe63",             "mfe63"),
+        # RUL-14 co-primaries
+        ("zone_held_21",      "zone_held_21"),
+        ("stop_vol_21",       "stop_vol_21"),
     ]
 
     effects = []
@@ -903,6 +949,15 @@ def era_table(
         rec["mfe63_mean"]       = round(g["mfe63"].mean(), 4) if "mfe63" in g and g["mfe63"].notna().any() else None
         days = g["days_to_10"].dropna()
         rec["days_to_10_median"] = round(float(days.median()), 1) if len(days) > 0 else None
+        # RUL-14 co-primaries: vol-scaled entry zone (Amendment 1 §C1)
+        if "zone_held_21" in g.columns and g["zone_held_21"].notna().any():
+            rec["zone_held_21_rate"] = round(float(g["zone_held_21"].mean()), 4)
+            rec["stop_vol_21_rate"]  = round(float(g["stop_vol_21"].mean()), 4) if "stop_vol_21" in g.columns and g["stop_vol_21"].notna().any() else None
+            rec["vol_band_mean"]     = round(float(g["vol_band"].mean()), 4) if "vol_band" in g.columns and g["vol_band"].notna().any() else None
+        else:
+            rec["zone_held_21_rate"] = None
+            rec["stop_vol_21_rate"]  = None
+            rec["vol_band_mean"]     = None
         rows.append(rec)
 
     result = pd.DataFrame(rows)
