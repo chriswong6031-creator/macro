@@ -47,14 +47,21 @@ def _build_fixture(
     post_break: int = 80,
     expansion: int = 60,
     seed: int = 7,
+    direction: str = "up",
 ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
     """Build a 4-segment fixture containing a full compression-then-release episode.
 
     Segments:
         pre         : normal trending noise (pre-compression)
         squeeze     : tight range triggering COILED state
-        post_break  : large up-break + trailing bars (FIRED_UP then EXPANSION)
+        post_break  : large break + trailing bars (FIRED_UP/DOWN then EXPANSION)
         expansion   : high-vol continuation
+
+    Parameters
+    ----------
+    direction : "up" or "down"
+        Direction of the squeeze break.  "down" produces a large downward move
+        on the first post-break bar so FIRED_DOWN rows appear in the series.
 
     Returns (close, high, low, volume) as pd.Series, all on the same index.
     """
@@ -65,12 +72,13 @@ def _build_fixture(
 
     tight = _tight(anchor, squeeze, jitter=0.015, seed=seed + 1)
 
-    # Break out upward by ~10% on the first post-break bar
-    break_bar = anchor + 10.0
-    # Following bars: mild uptrend with moderate volatility
+    # Break out by ~10% on the first post-break bar (direction-aware)
+    sign = +1.0 if direction == "up" else -1.0
+    break_bar = anchor + sign * 10.0
+    # Following bars: mild drift with moderate volatility (same direction)
     post_arr = np.concatenate([
         [break_bar],
-        break_bar + np.cumsum(rng.standard_normal(post_break - 1) * 0.8),
+        break_bar + np.cumsum(rng.standard_normal(post_break - 1) * 0.8 * sign),
     ])
 
     # Expansion: high realized vol
@@ -93,6 +101,17 @@ def _build_fixture(
     volume = pd.Series(vol_arr, index=idx)
 
     return close, high, low, volume
+
+
+def _build_down_fixture(
+    pre: int = 240,
+    squeeze: int = 30,
+    post_break: int = 80,
+    expansion: int = 60,
+    seed: int = 17,
+) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
+    """Build a fixture that breaks downward so FIRED_DOWN rows are produced."""
+    return _build_fixture(pre, squeeze, post_break, expansion, seed=seed, direction="down")
 
 
 # ---------------------------------------------------------------------------
@@ -234,10 +253,70 @@ class TestAssessSeriesFidelityPin:
             assert (fired_up["fired_dir"] == "up").all()
 
     def test_fired_down_has_correct_dir(self, full_series):
-        """FIRED_DOWN rows must have fired_dir == 'down'."""
+        """FIRED_DOWN rows in the upward-break fixture must have fired_dir == 'down'.
+
+        The upward-break fixture produces no FIRED_DOWN rows, so this guard
+        is vacuous here.  The real FIRED_DOWN coverage is in
+        TestFiredDownDirection below, which uses a dedicated downward-break
+        fixture that is confirmed to contain FIRED_DOWN rows.
+        """
         fired_down = full_series[full_series["state"] == "FIRED_DOWN"]
         if not fired_down.empty:
             assert (fired_down["fired_dir"] == "down").all()
+
+
+class TestFiredDownDirection:
+    """Known-answer test for the FIRED_DOWN path using a downward-break fixture.
+
+    This class uses a fixture whose break goes -10 so that FIRED_DOWN rows
+    are actually present — the assertion is not guarded by an `if not empty`
+    check, giving genuine coverage of the direction column for the down path.
+    """
+
+    @pytest.fixture(scope="class")
+    def down_series(self):
+        close, high, low, volume = _build_down_fixture()
+        return vs.assess_series(close, high, low, volume)
+
+    def test_fired_down_rows_exist(self, down_series):
+        """The downward fixture must produce at least one FIRED_DOWN bar."""
+        fired_down = down_series[down_series["state"] == "FIRED_DOWN"]
+        assert not fired_down.empty, (
+            "Downward-break fixture produced no FIRED_DOWN rows — "
+            "the fixture or state logic may be broken"
+        )
+
+    def test_fired_down_dir_is_down(self, down_series):
+        """Every FIRED_DOWN row must carry fired_dir == 'down'."""
+        fired_down = down_series[down_series["state"] == "FIRED_DOWN"]
+        assert not fired_down.empty  # guaranteed by test above, but be explicit
+        bad = fired_down[fired_down["fired_dir"] != "down"]
+        assert bad.empty, (
+            f"{len(bad)} FIRED_DOWN rows have wrong fired_dir:\n{bad[['state','fired_dir']]}"
+        )
+
+    def test_fidelity_pin_down_fixture(self):
+        """Fidelity pin on the downward fixture: assess_series matches scalar assess()."""
+        close, high, low, volume = _build_down_fixture()
+        full_series = vs.assess_series(close, high, low, volume)
+        n = len(close)
+        # Sample 20 bars spread across the series (post min_bars)
+        truncations = list(range(165, n, max(1, (n - 165) // 20)))[:20]
+        mismatches = []
+        for t in truncations:
+            series_state = full_series["state"].iloc[t]
+            result = vs.assess(
+                close.iloc[: t + 1],
+                high.iloc[: t + 1],
+                low.iloc[: t + 1],
+                volume.iloc[: t + 1],
+            )
+            scalar_state = result["state"] if result is not None else "NONE"
+            if series_state != scalar_state:
+                mismatches.append(f"t={t}: series={series_state!r} vs scalar={scalar_state!r}")
+        assert not mismatches, (
+            f"Down-fixture fidelity failures:\n" + "\n".join(mismatches)
+        )
 
 
 # ---------------------------------------------------------------------------

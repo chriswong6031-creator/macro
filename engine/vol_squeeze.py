@@ -213,9 +213,12 @@ def assess_series(
     ``assess(close.iloc[:t+1], ...)`` on the same data truncated at ``t``.
 
     The equality is implemented by construction: each bar is produced by a
-    bar-by-bar loop that calls the same internal logic as ``assess()``.  Speed is
-    secondary to correctness; for a 5 000-bar series typical wall-clock is under
-    5 s on a single core (see PR body for measured timing).
+    bar-by-bar loop that calls ``assess()`` directly at each truncation length,
+    so the state can never drift from the snapshot API.  Speed is secondary to
+    correctness; complexity is O(n²) — each bar re-runs the full percentile
+    ranks over the truncation.  Measured wall-clock: ~20–45 s for a 5 000-bar
+    series on a single core (Mac Studio measured ~22 s; see PR body).
+    Offline-only.
 
     Parameters
     ----------
