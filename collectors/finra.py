@@ -140,4 +140,25 @@ def fetch_short_interest(force: bool = False, max_age_days: int = 4) -> pd.DataF
         snap = snap[snap.index.isin(universe)]
     snap.to_parquet(cache)
     log.info("finra short interest: %d universe names, settlement %s", len(snap), settlement)
+
+    # PIT history accrual — append-only, keyed on (settlement_date, ticker).
+    # settlement_date is already in the snapshot (set above in _snapshot()).
+    # capture_date records the UTC calendar day this snapshot was fetched.
+    # Dedup key is (settlement_date, ticker); keep="last" so a same-day re-run
+    # overwrites without duplicating (idempotent within a calendar day).
+    hist_p = cache.parent / "short_interest_history.parquet"
+    hist_snap = snap.copy()
+    capture_date = pd.Timestamp.now("UTC").normalize().tz_localize(None)
+    hist_snap["capture_date"] = capture_date
+    hist_snap = hist_snap.reset_index()   # ticker becomes a column
+    if hist_p.exists():
+        hist_snap = pd.concat([pd.read_parquet(hist_p), hist_snap], ignore_index=True)
+        hist_snap = hist_snap.drop_duplicates(
+            subset=["settlement_date", "ticker"], keep="last"
+        )
+    hist_snap.to_parquet(hist_p)
+    log.info(
+        "finra short interest history: %d rows (capture %s)", len(hist_snap), capture_date.date()
+    )
+
     return snap
