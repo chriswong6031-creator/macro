@@ -715,9 +715,21 @@
   .cmd-hero .ms-cell2.bad,  .cmd-hero .ms-conf.bad  { color: var(--down); }
   .cmd-hero .ms-cell2.flat, .cmd-hero .ms-conf.warn, .cmd-hero .ms-conf.flat { color: var(--warn); }
   .cmd-hero .ms-conf { font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .cmd-hero .ms-confstrip { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cmd-hero .ms-confchip { display: inline-flex; align-items: baseline; gap: 9px; min-width: 0; padding: 7px 10px;
+    border: var(--rule) solid var(--hair); border-radius: 8px; background: var(--tile); }
+  .cmd-hero .ms-confchip.good { border-color: color-mix(in srgb, var(--up) 32%, var(--hair)); }
+  .cmd-hero .ms-confchip.bad { border-color: color-mix(in srgb, var(--down) 32%, var(--hair)); }
+  .cmd-hero .ms-confchip.warn { border-color: color-mix(in srgb, var(--warn) 32%, var(--hair)); }
+  .cmd-hero .ms-tech { margin-top: 12px; padding-top: 12px; border-top: var(--rule) solid var(--hair); }
+  .cmd-hero .ms-tech-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 9px; font-weight: 700; }
+  .cmd-hero .ms-tech-head .note { font-weight: 400; text-transform: none; }
+  .cmd-hero .ms-tech-stat { font-family: var(--num); font-size: 17px; font-weight: 800; color: var(--ink-1); }
+  .cmd-hero .ms-tech .mtf-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   @media (max-width: 560px) {
     .cmd-hero table.ms-tapetbl th, .cmd-hero table.ms-tapetbl td { padding-left: 3px; padding-right: 3px; }
     .cmd-hero .ms-cell2 .rsi { display: none; }
+    .cmd-hero .ms-confchip { width: 100%; justify-content: space-between; }
   }
   .cmd-hero .ms-caveat { margin: 9px 0 0; font-size: 10.5px; line-height: 1.45; color: var(--ink-3); }
 
@@ -1015,7 +1027,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-03 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-05 08:00 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-03 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-05 09:55 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
@@ -2504,7 +2516,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-05 08:00 UTC</p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-05 09:55 UTC</p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
@@ -2565,6 +2577,5 @@
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
