@@ -32,6 +32,9 @@ import pytest
 # ---------------------------------------------------------------------------
 
 # Canonical columns as declared in engine.neuralweb.query.COLUMNS
+# IMPORTANT: This list MUST be kept in sync with Q.COLUMNS.
+# The drift-guard test test_spine_query.test_columns_pin_drift_guard() enforces this.
+# W1 Spine v2: added is_sizing, is_veto, is_alpha, is_timing, is_context, falsifier, half_life
 _SPINE_COLS = [
     "signal_id", "engine", "family", "ledger", "as_of", "symbol",
     "scope_type", "universe", "horizon", "direction", "size_binding",
@@ -42,6 +45,9 @@ _SPINE_COLS = [
     "rate_pressure", "quad_hard_label", "fused_risk_label",
     "vol_regime", "risk_radar_state", "vector_asof",
     "species_id", "archetype",
+    # W1 Spine v2 role flags + metadata
+    "is_sizing", "is_veto", "is_alpha", "is_timing", "is_context",
+    "falsifier", "half_life",
 ]
 
 
@@ -88,6 +94,14 @@ def _row(
         "vector_asof": None,
         "species_id": None,
         "archetype": None,
+        # W1 Spine v2 role flags (conservative defaults)
+        "is_sizing": True,   # buy row fixture
+        "is_veto":   False,
+        "is_alpha":  True,   # buy row + direction=1
+        "is_timing": False,
+        "is_context": False,
+        "falsifier": None,
+        "half_life": None,
     }
 
 
