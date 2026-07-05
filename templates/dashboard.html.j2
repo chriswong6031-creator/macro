@@ -1324,13 +1324,11 @@
     body.page-macro .ms-front>.rrx{grid-area:radar;margin-bottom:12px;
       grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:22px;row-gap:0;align-items:stretch}
     body.page-macro .ms-front>.rrx>.rrx-main{display:flex;flex-direction:column;gap:12px;min-width:0}
-    /* the odds/ramp hero grows to fill whatever height the (taller) right column sets, so the
-       left column never leaves a void — the escalating ramp simply reads taller and clearer. */
-    body.page-macro .ms-front>.rrx>.rrx-main .rrx-odds{flex:1 1 auto}
-    body.page-macro .ms-front>.rrx>.rrx-main .rrx-ramp{align-items:stretch}
-    body.page-macro .ms-front>.rrx>.rrx-main .rrx-tk{height:auto;flex:1 1 auto;min-height:64px}
-    body.page-macro .ms-front>.rrx>.rrx-side{display:flex;flex-direction:column;justify-content:center;gap:9px;min-width:0;
-      padding-left:22px;border-left:1px solid color-mix(in srgb,var(--rc) 22%,var(--line))}
+    body.page-macro .ms-front>.rrx>.rrx-main .rrx-odds{flex:0 0 auto}
+    body.page-macro .ms-front>.rrx>.rrx-main .rrx-ramp{align-items:flex-end}
+    body.page-macro .ms-front>.rrx>.rrx-main .rrx-tk{height:44px;flex:0 0 44px;min-height:44px}
+    body.page-macro .ms-front>.rrx>.rrx-side{display:flex;flex-direction:column;justify-content:center;gap:7px;min-width:0;
+      padding-left:20px;border-left:1px solid color-mix(in srgb,var(--rc) 22%,var(--line))}
     body.page-macro .ms-front>.ms-head{grid-area:head}
     body.page-macro .ms-front>.ms-top{grid-area:state;margin-top:14px}
     body.page-macro .ms-front>.ms-tape{grid-area:tape}
