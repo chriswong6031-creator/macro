@@ -25,11 +25,35 @@ B3 — outcome_excess unit incommensurability: track_record outcome_excess is
 B4 — Insufficient horizon points: radar has only h=5 graded rows; us_board
      only h=5,10.  Both are CLASS-B (< 3 admissible horizons → NaN always).
 
-STALENESS HALF-LIFE
--------------------
-Declared UNMEASURED for all families.  Every replay parquet has
-fill_offset uniformly = 1, so outcome-vs-days-late cannot be fit.
-staleness half-life will display "unmeasured" and is NOT delivered here.
+STALENESS HALF-LIFE (decay_kind='staleness')
+--------------------------------------------
+Measured per family when data/replay/replay_delay.parquet is present
+(Mac-local; never in git per EI R9). Coverage stamp (which years/families)
+is included in the artifact.
+
+Per-family fitter (staleness path):
+  - Input: replay_delay.parquet rows for this family
+    (family_key matched against replay_boarded.parquet tier_cascade / via
+    a direct lookup where episode_id/signal_date groups map to families).
+    Currently the replay fires do not carry a kernel family tag — the fitter
+    operates on the FULL fire population (no family split) and is labelled
+    "__fires__" family key to be explicit.
+  - Measurement: mean fwd_ret_21 (and MAE = mean fwd_mdd_21) by delay_n,
+    restricted to horizon_censored=False, survivor_bias=False rows (era law).
+  - Monotone-decrease check on mean fwd_ret_21 vs delay_n (same HAC-t–gated
+    negative-slope gate as the CLASS-A horizon fitter — numpy only, no scipy).
+  - Exponential fit: mirroring the CLASS-A functional form (y = A·exp(-d/τ));
+    numpy-only least-squares via log-linear regression (no scipy, matching
+    the "reuse validation.py primitives — numpy only" spec requirement).
+  - Gate: negative slope significant at HAC/Newey-West t > 1.96.
+    HAC-t is computed from OLS residuals on the log-linear form with NW
+    standard errors (numpy only, 1-lag Bartlett kernel per spec).
+  - Passing families report staleness_half_life in days-late (τ·ln2).
+  - Failing families print an HONEST NULL (the W2 pattern).
+
+Coverage stamp: when the artifact is absent (CI runners, no replay_delay.parquet)
+the module degrades gracefully to the current "UNMEASURED" declaration — no crash.
+The honesty header is updated to reflect which state applies.
 
 ESTIMATOR CLASSES
 -----------------
@@ -129,9 +153,30 @@ __all__ = [
     "BOOTSTRAP_N_RESAMPLES",
     "BOOTSTRAP_CI_PCT",
     "CI_COHERENCE_EPSILON",
+    "STALENESS_MIN_N",
+    "STALENESS_HAC_LAGS",
+    "STALENESS_T_THRESHOLD",
     "build_half_lives",
     "write_half_lives",
+    "build_staleness_half_lives",
 ]
+
+# ---------------------------------------------------------------------------
+# Staleness-fitter constants (pre-registered, staleness_delay_v1)
+# ---------------------------------------------------------------------------
+
+#: Minimum number of uncensored non-survivor-bias fire rows for staleness fit.
+STALENESS_MIN_N: int = 30
+
+#: HAC Newey-West lag count (1 for delay grid of size 5 — Bartlett kernel).
+STALENESS_HAC_LAGS: int = 1
+
+#: HAC-t threshold for "significant negative slope" gate (two-tailed 5%).
+STALENESS_T_THRESHOLD: float = 1.96
+
+# Canonical data path for replay_delay.parquet (Mac-local; never git, EI R9).
+_CANONICAL_ROOT = Path("/Users/chriswong/Documents/Cluade/Macro Dashboard")
+_REPLAY_DELAY_PATH = _CANONICAL_ROOT / "data" / "replay" / "replay_delay.parquet"
 
 # ---------------------------------------------------------------------------
 # Pre-registered constants
@@ -651,17 +696,42 @@ def build_half_lives(root: Path | str | None = None) -> dict:
 
         families_out[engine] = _estimate_family(engine, marginal_cells, eng_graded)
 
+    # Staleness half-life (decay_kind='staleness'): measured where replay_delay.parquet
+    # is present (Mac-local; absent on CI runners — degrades gracefully).
+    staleness_out = build_staleness_half_lives()
+    staleness_coverage = staleness_out.pop("_coverage_stamp", {})
+
+    staleness_measured = staleness_coverage.get("artifact_present", False)
+    if staleness_measured:
+        staleness_note = (
+            f"MEASURED from replay_delay.parquet "
+            f"(years={staleness_coverage.get('years')}, "
+            f"n_rows={staleness_coverage.get('n_rows')}, "
+            f"n_eligible={staleness_coverage.get('n_rows_eligible')}). "
+            "Gate: HAC-t on log-linear slope of mean fwd_ret_21 vs delay_n; "
+            "monotone-decrease pre-gate. Null = honest null (W2 pattern)."
+        )
+    else:
+        staleness_note = (
+            "UNMEASURED (replay_delay.parquet absent — CI runner or pre-sweep). "
+            "Staleness half-life unblocked by nwqs-d Item D; "
+            "re-run write_half_lives() after replay_delay.parquet accrues."
+        )
+
     return {
         "families": families_out,
+        "staleness": staleness_out,
+        "staleness_measured": staleness_measured,
+        "staleness_note": staleness_note,
         "status": "fit_ran",
         "produced_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "notes": (
             "W2 re-scoped to holding-horizon decay (B1: no age-at-fire column in spine). "
-            "Staleness half-life: UNMEASURED (fill_offset uniformly=1 across all replay parquets; "
-            "needs delayed-fill accrual in replay harness). "
+            "Staleness half-life: measured when replay_delay.parquet is present (nwqs-d); "
+            "unmeasured on CI runners (Mac-local artifact, EI R9). "
             "Conservative defaults: family_floor=200, curve_floor=3, cell_floor=12, "
             "bootstrap=90pct event-block 200 resamples. "
-            "Expected outcome: all families null (track_record IC rises; radar/us_board < 3 horizons). "
+            "Expected outcome: horizon families mostly null (track_record IC rises; radar/us_board < 3 horizons). "
             "family_half_life naming recommendation: the 'half_life' column is a family-level "
             "constant broadcast to rows; future consumers should not read it as a per-signal value."
         ),
@@ -748,3 +818,379 @@ def _sanitize_for_json(obj: Any) -> Any:
     if isinstance(obj, np.bool_):
         return bool(obj)
     return obj
+
+
+# ---------------------------------------------------------------------------
+# Staleness half-life fitter (decay_kind='staleness')
+# ---------------------------------------------------------------------------
+
+def _nw_hac_t(x: np.ndarray, y: np.ndarray, lags: int) -> float:
+    """HAC/Newey-West t-statistic for the slope in a simple OLS regression.
+
+    Regresses y on [1, x] (intercept + slope), returns the NW-adjusted
+    t-statistic for the slope coefficient.  Uses a 1-lag Bartlett kernel.
+
+    Pure numpy: no scipy, no statsmodels.  Matches the spec requirement
+    "reuse validation.py primitives — numpy only, no scipy".
+
+    Returns float('nan') on degenerate inputs (< 2 points, zero variance).
+    """
+    n = len(x)
+    if n < 2:  # noqa: PLR2004
+        return float("nan")
+
+    X = np.column_stack([np.ones(n), x.astype(float)])
+    y_arr = y.astype(float)
+
+    # OLS: β = (X'X)^{-1} X'y
+    try:
+        XtX = X.T @ X
+        XtX_inv = np.linalg.inv(XtX)
+    except np.linalg.LinAlgError:
+        return float("nan")
+
+    beta = XtX_inv @ (X.T @ y_arr)
+    resid = y_arr - X @ beta
+
+    # Newey-West HAC variance for slope (coefficient index 1)
+    # S = (1/n) * Σ_{t} e_t^2 * x_t x_t'
+    #   + (2/n) * Σ_{l=1}^{lags} w_l * Σ_{t=l+1}^n e_t x_t (e_{t-l} x_{t-l})'
+    # where w_l = 1 - l/(lags+1) (Bartlett kernel)
+    S = np.zeros((2, 2))
+    for t in range(n):
+        xt = X[t:t + 1, :].T  # column vector
+        S += (resid[t] ** 2) * (xt @ xt.T)
+    S /= n
+
+    for lag in range(1, lags + 1):
+        w = 1.0 - lag / (lags + 1)
+        gamma = np.zeros((2, 2))
+        for t in range(lag, n):
+            xt = X[t:t + 1, :].T
+            xt_l = X[t - lag:t - lag + 1, :].T
+            gamma += resid[t] * resid[t - lag] * (xt @ xt_l.T)
+        gamma /= n
+        S += w * (gamma + gamma.T)
+
+    # HAC variance of slope estimator
+    var_beta = XtX_inv @ S @ XtX_inv
+    var_slope = float(var_beta[1, 1])
+    if var_slope <= 0 or not math.isfinite(var_slope):
+        return float("nan")
+
+    se_slope = math.sqrt(var_slope)
+    if se_slope == 0:
+        return float("nan")
+
+    return float(beta[1]) / se_slope
+
+
+def _fit_staleness_exp_numpy(
+    delay_ns: np.ndarray,
+    mean_rets: np.ndarray,
+) -> tuple[float | None, float | None]:
+    """Fit y = A * exp(-d / tau) via log-linear OLS (numpy only).
+
+    log(y) = log(A) - d/tau  →  log(y) = c0 + c1 * d
+    where c1 = -1/tau.
+
+    Returns (tau, slope) or (None, None) on failure.
+
+    Only uses positive y values (non-positive mean_ret → skip).
+    """
+    mask = mean_rets > 0
+    if mask.sum() < 2:  # noqa: PLR2004
+        return None, None
+
+    d_arr = delay_ns[mask].astype(float)
+    log_y = np.log(mean_rets[mask].astype(float))
+
+    n = len(d_arr)
+    if n < 2:  # noqa: PLR2004
+        return None, None
+
+    # OLS: log_y = c0 + c1 * d
+    X = np.column_stack([np.ones(n), d_arr])
+    try:
+        XtX_inv = np.linalg.inv(X.T @ X)
+    except np.linalg.LinAlgError:
+        return None, None
+    beta = XtX_inv @ (X.T @ log_y)
+    c1 = float(beta[1])  # slope = -1/tau
+
+    if c1 >= 0 or not math.isfinite(c1):
+        return None, None  # not decaying
+
+    tau = -1.0 / c1
+    if tau <= 0 or not math.isfinite(tau):
+        return None, None
+
+    return float(tau), float(c1)
+
+
+def build_staleness_half_lives(
+    replay_delay_path: Path | None = None,
+) -> dict[str, Any]:
+    """Fit the decay_kind='staleness' half-life per family from replay_delay.parquet.
+
+    Degrades gracefully when the artifact is absent (CI runners):
+    returns an unmeasured declaration with a coverage stamp explaining why.
+
+    Spec requirements (nwqs_spec_d.md §2):
+    - Per family: mean fwd_ret_21 (and MAE = -mean(fwd_mdd_21)) by delay_n
+    - Monotone-decrease check on mean fwd_ret_21 vs delay_n
+    - Exponential fit mirroring CLASS-A form; gate = negative slope
+      significant at HAC/Newey-West t; numpy only, no scipy
+    - Passing families: staleness_half_life in days-late (tau * ln2)
+    - Failing families: HONEST NULL (W2 pattern)
+    - Coverage stamp: which years/families are covered
+
+    Returns a dict keyed by family_key (currently "__fires__" for the full
+    population; future waves can split by tier_cascade or engine family).
+    """
+    p = replay_delay_path or _REPLAY_DELAY_PATH
+
+    # Degrade gracefully when replay_delay.parquet is absent
+    if not Path(p).exists():
+        return {
+            "__fires__": {
+                "decay_kind": None,
+                "staleness_half_life": None,
+                "staleness_half_life_mae": None,
+                "t_stat": None,
+                "mean_by_delay": None,
+                "mae_by_delay": None,
+                "n_by_delay": None,
+                "reason_null": "unmeasured (replay_delay.parquet absent — CI runner or pre-sweep)",
+                "coverage_years": [],
+                "coverage_families": [],
+            },
+            "_coverage_stamp": {
+                "artifact_present": False,
+                "path_checked": str(p),
+                "years": [],
+                "n_rows": 0,
+            },
+        }
+
+    # Load the delay artifact
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("half_life.build_staleness: read failed: %s", e)
+        return {
+            "__fires__": {
+                "decay_kind": None,
+                "staleness_half_life": None,
+                "staleness_half_life_mae": None,
+                "t_stat": None,
+                "mean_by_delay": None,
+                "mae_by_delay": None,
+                "n_by_delay": None,
+                "reason_null": f"unmeasured (read error: {e})",
+                "coverage_years": [],
+                "coverage_families": [],
+            },
+            "_coverage_stamp": {
+                "artifact_present": False,
+                "path_checked": str(p),
+                "years": [],
+                "n_rows": 0,
+                "error": str(e),
+            },
+        }
+
+    n_rows_total = len(df)
+    years_covered: list[int] = []
+    if "year" in df.columns:
+        years_covered = sorted(int(y) for y in df["year"].dropna().unique())
+
+    # Era-law filter: uncensored rows only, survivor_bias=False
+    mask_ok = ~df["horizon_censored"]
+    if "survivor_bias" in df.columns:
+        mask_ok = mask_ok & (~df["survivor_bias"])
+    df_ok = df[mask_ok].copy()
+
+    log.info(
+        "staleness fitter: %d total delay rows, %d after era-law filter (years=%s)",
+        n_rows_total, len(df_ok), years_covered,
+    )
+
+    # Coverage stamp
+    coverage_stamp = {
+        "artifact_present": True,
+        "path_checked": str(p),
+        "years": years_covered,
+        "n_rows": n_rows_total,
+        "n_rows_eligible": int(len(df_ok)),
+    }
+
+    # Single family "__fires__" (all fire rows, all tiers)
+    # Future wave: split by tier_cascade, episode family, etc.
+    result = _fit_staleness_family(
+        family_key="__fires__",
+        df=df_ok,
+        years_covered=years_covered,
+    )
+
+    return {
+        "__fires__": result,
+        "_coverage_stamp": coverage_stamp,
+    }
+
+
+def _fit_staleness_family(
+    family_key: str,
+    df: pd.DataFrame,
+    years_covered: list[int],
+) -> dict[str, Any]:
+    """Fit the staleness half-life for a single family of fire rows.
+
+    Honest NULL printed per the W2 pattern when the gate fails.
+    """
+    null_base = {
+        "decay_kind": None,
+        "staleness_half_life": None,
+        "staleness_half_life_mae": None,
+        "t_stat": None,
+        "mean_by_delay": None,
+        "mae_by_delay": None,
+        "n_by_delay": None,
+        "reason_null": None,
+        "coverage_years": years_covered,
+        "coverage_families": [family_key],
+    }
+
+    if df.empty or "delay_n" not in df.columns or "fwd_ret_21" not in df.columns:
+        return {**null_base, "reason_null": "no eligible rows or missing columns"}
+
+    # Compute mean fwd_ret_21 and MAE (= -mean fwd_mdd_21) by delay_n
+    grp = df.groupby("delay_n")
+    mean_ret = grp["fwd_ret_21"].mean().dropna()
+    n_per_delay = grp["fwd_ret_21"].count()
+
+    mae_by_delay: dict[int, float | None] = {}
+    if "fwd_mdd_21" in df.columns:
+        mae_ser = grp["fwd_mdd_21"].mean()  # mdd is negative, so -mean = MAE
+        for d in mean_ret.index:
+            v = mae_ser.get(d)
+            mae_by_delay[int(d)] = float(-v) if v is not None and math.isfinite(float(v)) else None
+    else:
+        mae_by_delay = {int(d): None for d in mean_ret.index}
+
+    mean_by_delay = {int(d): float(v) for d, v in mean_ret.items()}
+    n_by_delay = {int(d): int(v) for d, v in n_per_delay.items()}
+
+    # Minimum N gate
+    total_n = sum(n_by_delay.values())
+    if total_n < STALENESS_MIN_N:
+        return {
+            **null_base,
+            "mean_by_delay": mean_by_delay,
+            "mae_by_delay": mae_by_delay,
+            "n_by_delay": n_by_delay,
+            "reason_null": f"insufficient n (total={total_n} < {STALENESS_MIN_N})",
+        }
+
+    if len(mean_by_delay) < 2:  # noqa: PLR2004
+        return {
+            **null_base,
+            "mean_by_delay": mean_by_delay,
+            "mae_by_delay": mae_by_delay,
+            "n_by_delay": n_by_delay,
+            "reason_null": "fewer than 2 delay_n points available",
+        }
+
+    d_arr = np.array(sorted(mean_by_delay.keys()), dtype=float)
+    y_arr = np.array([mean_by_delay[int(d)] for d in d_arr], dtype=float)
+
+    # Monotone-decrease check on raw means (per spec: same gate as CLASS-A)
+    steps_nonincreasing = all(y_arr[i + 1] <= y_arr[i] for i in range(len(y_arr) - 1))
+    if not steps_nonincreasing:
+        return {
+            **null_base,
+            "mean_by_delay": mean_by_delay,
+            "mae_by_delay": mae_by_delay,
+            "n_by_delay": n_by_delay,
+            "reason_null": "staleness_non_decaying (fwd_ret_21 not monotone-decreasing by delay_n)",
+        }
+
+    # HAC/Newey-West t-stat on the log-linear slope (numpy only)
+    # log-linearize: only positive mean_rets are usable
+    pos_mask = y_arr > 0
+    if pos_mask.sum() < 2:  # noqa: PLR2004
+        return {
+            **null_base,
+            "mean_by_delay": mean_by_delay,
+            "mae_by_delay": mae_by_delay,
+            "n_by_delay": n_by_delay,
+            "reason_null": "staleness_non_decaying (non-positive mean fwd_ret_21 — cannot log-linearize)",
+        }
+
+    d_pos = d_arr[pos_mask]
+    log_y_pos = np.log(y_arr[pos_mask])
+    t_stat = _nw_hac_t(d_pos, log_y_pos, lags=STALENESS_HAC_LAGS)
+
+    t_stat_val = float(t_stat) if math.isfinite(t_stat) else None
+
+    # Gate: slope significant at HAC-t (slope should be < 0 → t_stat < -threshold)
+    gate_passes = (
+        t_stat_val is not None and t_stat_val < -STALENESS_T_THRESHOLD
+    )
+
+    if not gate_passes:
+        return {
+            **null_base,
+            "mean_by_delay": mean_by_delay,
+            "mae_by_delay": mae_by_delay,
+            "n_by_delay": n_by_delay,
+            "t_stat": t_stat_val,
+            "reason_null": (
+                f"staleness_insignificant (HAC-t={t_stat_val:.3f} not < -{STALENESS_T_THRESHOLD})"
+                if t_stat_val is not None
+                else "staleness_insignificant (HAC-t could not be computed)"
+            ),
+        }
+
+    # Fit exponential decay (numpy log-linear OLS)
+    tau, slope = _fit_staleness_exp_numpy(d_arr, y_arr)
+
+    if tau is None:
+        return {
+            **null_base,
+            "mean_by_delay": mean_by_delay,
+            "mae_by_delay": mae_by_delay,
+            "n_by_delay": n_by_delay,
+            "t_stat": t_stat_val,
+            "reason_null": "fit_failed (exponential fit did not converge)",
+        }
+
+    half_life_days = tau * math.log(2)
+
+    # MAE half-life: same procedure on -mean(fwd_mdd_21) if available
+    mae_hl: float | None = None
+    mae_vals = np.array([
+        mae_by_delay.get(int(d)) for d in d_arr
+    ], dtype=object)
+    mae_finite = np.array([v for v in mae_vals if v is not None and math.isfinite(float(v))], dtype=float)
+    mae_ds = np.array([
+        int(d_arr[i]) for i, v in enumerate(mae_vals)
+        if v is not None and math.isfinite(float(v))
+    ], dtype=float)
+    if len(mae_finite) >= 2 and np.all(mae_finite > 0):  # noqa: PLR2004
+        tau_mae, _ = _fit_staleness_exp_numpy(mae_ds, mae_finite)
+        if tau_mae is not None:
+            mae_hl = round(tau_mae * math.log(2), 2)
+
+    return {
+        "decay_kind": "staleness",
+        "staleness_half_life": round(half_life_days, 2),
+        "staleness_half_life_mae": mae_hl,
+        "t_stat": round(t_stat_val, 3),
+        "mean_by_delay": mean_by_delay,
+        "mae_by_delay": mae_by_delay,
+        "n_by_delay": n_by_delay,
+        "reason_null": None,
+        "coverage_years": years_covered,
+        "coverage_families": [family_key],
+    }
