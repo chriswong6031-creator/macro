@@ -500,8 +500,9 @@ def run_sev_study(
     # Panel eras analysis runs on this pooled set (masterplan §3 F1).
     # RUL-11: dedup on (ticker, date) — the two panels share 2,951+ fire pairs;
     # without dedup each overlapping fire would enter the estimator twice.
-    # Re-running the same registered configs with the corrected estimator input
-    # is not new trials per masterplan §5 / RUL-11 note.
+    # These are first-run per-config trial rows for the pre-registered
+    # esx_ev_blackout budget (n=9); the dedup fix changed estimator input only
+    # and registered no additional configs.
     if "deep" in labeled_panels and "baskets" in labeled_panels and (
         panels is None or ("deep" in panels and "baskets" in panels)
     ):
@@ -510,6 +511,34 @@ def run_sev_study(
             labeled_panels["baskets"],
         ], ignore_index=True)
         n_pre_dedup = len(labeled_pooled_raw)
+        # Verify overlapping (ticker, date) rows agree on ev_blackout_k label before
+        # dropping duplicates. Labels are deterministic from the same 8-K store so they
+        # should always agree; a divergence would indicate a label-source split that
+        # keep="first" would silently mask.
+        if "ev_blackout_k" in labeled_pooled_raw.columns:
+            _overlap = labeled_pooled_raw[labeled_pooled_raw.duplicated(
+                subset=["ticker", "date"], keep=False
+            )]
+            if not _overlap.empty:
+                _conflict_count = (
+                    _overlap.groupby(["ticker", "date"])["ev_blackout_k"]
+                    .nunique()
+                    .gt(1)
+                    .sum()
+                )
+                if _conflict_count:
+                    log.warning(
+                        "RUL-11 dedup: %d (ticker,date) pairs have divergent "
+                        "ev_blackout_k labels across deep/baskets panels — "
+                        "keep='first' will retain the deep-panel label silently.",
+                        _conflict_count,
+                    )
+                else:
+                    log.debug(
+                        "RUL-11 dedup: all %d overlapping (ticker,date) pairs "
+                        "carry identical ev_blackout_k labels — dedup is safe.",
+                        len(_overlap) // 2,
+                    )
         labeled_pooled = labeled_pooled_raw.drop_duplicates(
             subset=["ticker", "date"], keep="first"
         ).reset_index(drop=True)
@@ -678,8 +707,10 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
     a("**RUL-11 dedup (pooled panel):** The pooled covered set is date-deduped on")
     a("(ticker, date) before grading and estimation. Without dedup, fires present in")
     a("both the deep and baskets panels would enter the estimator twice, inflating block")
-    a("counts and effective n. Re-running with the corrected estimator input is not new")
-    a("trials per masterplan §5 / RUL-11 — the registered configs are unchanged.")
+    a("counts and effective n. The 9 grid rows added for esx_ev_blackout are the")
+    a("first-run trial log for this family (pre-registered budget n=9, sibling pattern")
+    a("matching esx_ts_adx: 1 declared_budget + N grid rows per §1417); esx_ts_adx is")
+    a("untouched. The dedup fix changed estimator input only; no new configs were registered.")
     a("")
     a("**After-hours 8-K caveat (live F1 use):** k_td=0 same-day fires include")
     a("after-hours 8-K cases (acceptance_datetime is often post-market-close).")
