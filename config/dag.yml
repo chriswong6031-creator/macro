@@ -132,6 +132,12 @@ lanes:
       - id: grade_us_board
         module: scripts.grade_us_board
         args: [--nightly]
+      - id: stamp_options_state
+        module: scripts.stamp_options_state
+        note: "Options Alpha W1.3 — context-only nullable options-state stamp on board ledger"
+      - id: validate_options_entry
+        module: scripts.validate_options_entry
+        note: "Options Alpha W1.3 — pre-registered options entry-quality gate"
       - id: build_calibration
         module: scripts.build_calibration
       - id: build_spine_index
