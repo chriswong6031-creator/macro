@@ -1036,7 +1036,72 @@ def build_index(
         na_position="last",
     ).reset_index(drop=True)
 
+    # W2 — stamp family_half_life from half_life.json (family-level constant broadcast).
+    # This is a cheap map-merge: reads the artifact once and joins on engine.
+    # CRITICAL: the stamped value is a FAMILY-level constant broadcast to rows,
+    # NOT a per-row measurement (flagged as open question in W2 pre-reg).
+    # Behavioral consumers (allocation, alert_triage, board ordering) must NOT
+    # branch on this column — it is display-only (R7/R8 compliance).
+    # If the artifact is absent or unreadable, half_life stays NaN (fail-open).
+    # NOTE: daily.yml writes half_life.json AFTER build_spine_index, so the stamped
+    # column carries the PRIOR night's artifact (fail-open NaN on first run).
+    # This is display-only family metadata, not PIT-sensitive.
+    combined = _stamp_family_half_life(combined, root)
+
     return combined, gaps
+
+
+def _stamp_family_half_life(df: pd.DataFrame, root: Path | str | None) -> pd.DataFrame:
+    """Stamp the family-level half_life from half_life.json onto each row.
+
+    Reads data/neuralweb/half_life.json (produced by W2 scripts/build_kernel_half_lives.py).
+    Maps (engine → half_life float | None) and broadcasts to all rows with that engine.
+    Rows for engines not in the artifact, or engines with null half_life, get NaN.
+
+    Fail-open: if the artifact is absent, unreadable, or invalid, returns df unchanged.
+    This makes W2 entirely additive with no risk of breaking the index build.
+    """
+    if df.empty or "half_life" not in df.columns:
+        return df
+    try:
+        import json  # noqa: PLC0415
+        hl_path = _data_dir(root) / "neuralweb" / "half_life.json"
+        if not hl_path.exists():
+            return df  # artifact absent — no-op, half_life stays NaN
+        hl_data = json.loads(hl_path.read_text(encoding="utf-8"))
+        families = hl_data.get("families", {})
+        if not families:
+            return df
+
+        # Build engine → half_life float|None map
+        hl_map: dict[str, float | None] = {}
+        for engine_key, entry in families.items():
+            if not isinstance(entry, dict):
+                continue
+            hl_val = entry.get("half_life")
+            if hl_val is None or not isinstance(hl_val, (int, float)):
+                hl_map[engine_key] = None
+            else:
+                try:
+                    fv = float(hl_val)
+                    hl_map[engine_key] = fv if not (fv != fv) else None  # NaN guard
+                except (TypeError, ValueError):
+                    hl_map[engine_key] = None
+
+        # Broadcast: only overwrite rows where half_life is currently NaN/None
+        # (adapters may have already set half_life from source data; respect those)
+        engine_col = df["engine"].astype(str)
+        for eng, hl_val in hl_map.items():
+            if hl_val is None:
+                continue  # null half_life → leave as NaN (already the default)
+            mask_engine = engine_col == eng
+            mask_null_hl = df["half_life"].isna()
+            df.loc[mask_engine & mask_null_hl, "half_life"] = hl_val
+
+    except Exception as e:  # noqa: BLE001
+        log.warning("_stamp_family_half_life: failed (half_life stays NaN): %s", e)
+
+    return df
 
 
 # ---------------------------------------------------------------------------

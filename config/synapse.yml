@@ -2435,6 +2435,41 @@ artifacts:
       (primary) + spine_index.parquet (recency_trend). Envelope sibling-stamped per
       wrapper-prohibition law.
 
+  # --- Signal Commons W2: measured holding-horizon half-lives ---
+  kernel-half-lives:
+    path: data/neuralweb/half_life.json
+    format: json
+    producer: engine/neuralweb/half_life.py
+    known_extra_writers:
+      - "scripts/build_kernel_half_lives.py — thin CLI wrapper; calls write_half_lives() defined in the producer; no independent write logic"
+    owner_program: signal-commons
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py  # copies half_life.json to site/neuralwebdata/ for committee chips (display-only)
+    external_consumers: []
+    notes: >
+      DISPLAY-FIRST LAW: zero behavior-changing consumers. W2 "Measured Half-Lives":
+      holding-horizon decay curves fitted per engine family from kernel_estimates.parquet
+      (shrunken_ic per horizon) + spine_index.parquet (n_eff counts for bootstrap).
+      HONESTY: staleness half-life is UNMEASURED (fill_offset uniformly=1 across all
+      replay parquets; needs delayed-fill accrual in replay harness — W0-blocked item).
+      decay_kind="horizon" only; staleness never emits a number. outcome_unit mandatory
+      per family (magnitude vs signed_excess) to prevent B3 cross-family conflation.
+      Conservative defaults: family_floor=200, curve_floor=3, cell_floor=WILSON_MIN_N=12,
+      bootstrap=90pct event-block 200 resamples. Monotone-decrease gate is pre-registered
+      hard gate: rising curves emit half_life=null reason="edge_non_decaying". Expected
+      honest outcome: all families null (track_record IC rises; radar/us_board<3 horizons).
+      Sentinel key "status":"fit_ran" distinguishes successful all-null run from crashed job.
+      Envelope sibling-stamped per wrapper-prohibition law. Inputs: kernel_estimates.parquet
+      + spine_index.parquet. Script: scripts/build_kernel_half_lives.py (off render path).
+
   # --- Neural Web W3 PR3: lagging-signal detector ---
   lagging-signals:
     path: data/neuralweb/lagging_signals.json
