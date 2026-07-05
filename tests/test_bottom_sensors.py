@@ -355,6 +355,42 @@ class TestAdversarialCases:
             "ticks=3 must flip to CHASE_RISK even with minimal dist_21d_low"
         )
 
+    def test_adversarial_d_missing_dist_fresh_t1_not_chase_risk(self):
+        """(d) Amendment §C2 binding law: dist_21d_low=None + fresh T1 must NOT be CHASE_RISK.
+
+        When the price parquet is absent, dist_21d_low_pct is None.  The prior bug
+        treated None as "far from the low" and fabricated CHASE_RISK.  The fix:
+        dist_far requires dist to be KNOWN and > 12%, so a missing dist degrades
+        gracefully to WATCH, not CHASE_RISK.
+        """
+        # Fresh T1, ticks=0 (not stale) — the only issue is missing dist data
+        state = _cls(
+            trigger_tier="T1", ticks=0,
+            coiled=True,
+            dist_21d_low=None,     # unavailable (no price parquet)
+            dist_126d_high=None,   # unavailable
+        )
+        assert state != "CHASE_RISK", (
+            "dist_21d_low=None must NOT produce CHASE_RISK (Amendment §C2: "
+            "unavailable input must degrade gracefully, not invent a risk verdict)"
+        )
+        # With no dist data and no hold/knife/drawdown data, should land on WATCH
+        assert state == "WATCH", f"Expected WATCH with all dist=None, got {state!r}"
+
+    def test_adversarial_e_missing_dist_stale_ticks_is_chase_risk(self):
+        """(e) Stale ticks (>2) produce CHASE_RISK even when dist is None.
+
+        The ticks_stale branch (not the dist_far branch) drives CHASE_RISK here.
+        The fix must not suppress CHASE_RISK when ticks are genuinely stale.
+        """
+        state = _cls(
+            trigger_tier="T1", ticks=5,   # stale
+            dist_21d_low=None,             # unavailable — but ticks drive it
+        )
+        assert state == "CHASE_RISK", (
+            "Stale ticks (>2) must still produce CHASE_RISK even with dist=None"
+        )
+
     def test_adversarial_c_washout_21d_low_reclaimed_yesterday(self):
         """(c) Washout with 21d-low reclaimed yesterday.
 
@@ -382,8 +418,10 @@ class TestAdversarialCases:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 EXPECTED_SCHEMA_COLS = {
+    # ── Schema v1 (Amendment §C2) ──────────────────────────────────────────
     "symbol",           # index or column
-    "as_of",
+    "as_of",            # source data vintage (signal_gate anchor), NOT computed_at
+    "computed_at",      # wall-clock date this row was assembled
     "region",
     "trigger_tier",
     "trigger_age_ticks",
@@ -405,6 +443,13 @@ EXPECTED_SCHEMA_COLS = {
     "labels_version",
     "source_artifacts",
     "is_display_only",
+    # ── Auxiliary bind-provenance columns (not in Amendment schema line) ───
+    # These are included in the public artifact for traceability and are pinned
+    # here so schema drift is caught in CI.
+    "hold_days_basing",
+    "hold_maxup_pct",
+    "knife_score",
+    "bars_to_cross",
 }
 
 
@@ -538,17 +583,19 @@ class TestSchemaConsistency:
         for col in EXPECTED_SCHEMA_COLS:
             assert col in actual_cols, f"Missing column: {col!r}"
 
-        # AAPL should be FRESH_FIRE_DURABLE_CAND (coiled=True, fresh T1, dist=None → fallback to within_12 being False?)
-        # Actually dist_21d_low is None (no price file) → within_12_of_low = False.
-        # No price → dist_21d_low = None → within_12_of_low = False.
-        # So FRESH_FIRE_DURABLE_CAND requires within_12_of_low=True, which needs dist_21d_low<=12.
-        # None is NOT <=12, so it goes to FRESH_FIRE_TACTICAL (no COILED gate since dist is None → TACTICAL also fails).
-        # Actually both DURABLE and TACTICAL require within_12_of_low=True. With dist=None that's False.
-        # So with no dist data, ticks=0, T1, coiled=True: T1-T3 present, ticks<=2 but within_12_of_low=False.
-        # Falls through to CHASE_RISK check: has_any_tier=True, ticks not stale, dist_far=True → CHASE_RISK
+        # AAPL: fresh T1, coiled=True, but dist_21d_low=None (no price file).
+        # Amendment §C2 binding law: unavailable dist must NOT fabricate CHASE_RISK.
+        # within_12_of_low = False (dist is None), so FRESH_FIRE_DURABLE_CAND/TACTICAL
+        # both fail.  dist_far = (None is not None and ...) = False, so CHASE_RISK
+        # does NOT fire on the dist branch; ticks=0 (not stale) → ticks_stale=False.
+        # Neither branch fires → falls through to DEAD_MONEY_RISK (no hold),
+        # EARLY_WATCH (no drawdown data), KNIFE_RISK (knife=0.1 < 0.7) → WATCH.
         aapl_state = df.loc["AAPL", "bottom_state"]
-        # With dist unavailable, CHASE_RISK applies (dist_21d_low=None means "far")
-        assert aapl_state == "CHASE_RISK"
+        # With dist unavailable, WATCH is the correct degraded state (not CHASE_RISK)
+        assert aapl_state == "WATCH", (
+            f"dist_21d_low=None must NOT produce CHASE_RISK (got {aapl_state!r}); "
+            "Amendment §C2 binding law requires graceful degradation to WATCH"
+        )
 
         # labels_version and is_display_only stamped on every row
         assert (df["labels_version"] == "labels_v1").all()

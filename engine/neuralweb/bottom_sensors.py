@@ -183,6 +183,26 @@ def _dist_126d_high_pct(close: pd.Series) -> float | None:
 
 # ── Earnings freshness ─────────────────────────────────────────────────────────
 
+def _trading_days_to(today: datetime.date, target: datetime.date) -> int:
+    """Count trading days (Mon-Fri, no holiday calendar) from today to target.
+
+    Uses numpy.busday_count which counts business days in the half-open interval
+    [today, target).  We use (today, target] semantics: a target tomorrow = 1.
+    numpy.busday_count(today, target) gives the Mon-Fri days in [today, target),
+    which equals 0 for same day and 1 for next business day.  We treat the target
+    date itself as included (<=), so we add 1 when target is a business day.
+
+    NOTE: No holiday calendar is applied (amendment §C2 says "trading days"
+    without specifying exchange holidays; conservative approximation is stated
+    in schema docs).  Direction is conservative for a hygiene veto.
+    """
+    bd = int(np.busday_count(today, target))
+    # If target itself is a weekday, include it; if weekend it doesn't add a bd.
+    if np.is_busday(target):
+        bd += 1
+    return max(bd, 0)
+
+
 def _earnings_info(
     ticker: str,
     earnings_df: pd.DataFrame,
@@ -192,7 +212,10 @@ def _earnings_info(
 
     Per-row fresh rule (Amendment §C2, masterplan §3 F1):
       - Drop passed dates (next_date <= today).
-      - Blackout if days_to <= _BLACKOUT_DAYS.
+      - Blackout if trading_days_to <= _BLACKOUT_DAYS.
+
+    `earnings_days_to` in the output reflects calendar days (for display);
+    the blackout decision uses trading days per the spec.
 
     Returns (None, None, False) when data absent.
     """
@@ -206,9 +229,11 @@ def _earnings_info(
         next_dt = pd.to_datetime(nd).date()
         if next_dt <= today:
             return None, None, False
-        days = (next_dt - today).days
-        blackout = days <= _BLACKOUT_DAYS
-        return str(next_dt), int(days), blackout
+        # Calendar days for display; trading days for blackout gate
+        cal_days = (next_dt - today).days
+        trading_days = _trading_days_to(today, next_dt)
+        blackout = trading_days <= _BLACKOUT_DAYS
+        return str(next_dt), int(cal_days), blackout
     except Exception:  # noqa: BLE001
         return None, None, False
 
@@ -266,10 +291,15 @@ def _classify_labels_v1(
 
     # ── 4. CHASE_RISK ─────────────────────────────────────────────────────────
     # T1-T3 present AND (ticks > 2 OR dist_21d_low > 12%) AND not HOLD_LAUNCHED
+    # Binding law §C2: when dist_21d_low_pct is unavailable (None) we do NOT
+    # treat the name as "far from the low" — that would fabricate a risk verdict.
+    # Instead we only fire CHASE_RISK when dist is actually known to be > 12%.
+    # A fresh-tier name with unavailable dist falls through to WATCH (degrade
+    # gracefully), NOT CHASE_RISK.
     has_any_tier = trigger_tier in ("T1", "T2", "T3")
     if has_any_tier:
         ticks_stale = ticks is None or ticks > 2
-        dist_far = dist_21d_low is None or dist_21d_low > 12.0
+        dist_far = dist_21d_low is not None and dist_21d_low > 12.0
         if ticks_stale or dist_far:
             return "CHASE_RISK"
 
@@ -323,16 +353,30 @@ def _build_row(
     earnings_df: pd.DataFrame,
     today: datetime.date,
     root: Path,
+    sg_asof: str = "",
 ) -> dict[str, Any]:
     """Assemble one bottom-sensor row for a ticker.
 
     sg_verdict  : from signal_gate.json['verdicts'][ticker]
     standout_row: the buy/watch/laggard row from us_standouts.json (may be None)
     standout_donor: the top-level donor dict from us_standouts.json (board-level)
+    sg_asof     : as_of from signal_gate.json; used as the row-level data vintage.
+
+    Two-clock design: `as_of` reflects the source data vintage (sg_asof) so the
+    synapse freshness guard (asof_field: as_of) tracks real data staleness.
+    `computed_at` records when this row was assembled (today).  Earnings
+    days_to is computed relative to today (wall-clock) because that is what
+    the user cares about, but as_of tracks the data anchor.
     """
+    # as_of tracks the source data vintage (signal_gate anchor), NOT today.
+    # This prevents the synapse freshness guard from being fooled by always-fresh
+    # computed_at timestamps while the underlying data may be stale.
+    source_as_of = sg_asof if sg_asof else today.isoformat()
+
     row: dict[str, Any] = {
         "symbol": ticker,
-        "as_of": today.isoformat(),
+        "as_of": source_as_of,
+        "computed_at": today.isoformat(),
         "region": REGION,
         "labels_version": LABELS_VERSION,
         "is_display_only": IS_DISPLAY_ONLY,
@@ -415,8 +459,18 @@ def _build_row(
 
     # ── State label (labels_v1 frozen decision table) ─────────────────────────
     # hold_ret_since_take: approximate from maxup_pct when intact/basing.
-    # The spec says "abs(ret since take) < 4%" — bind maxup_pct as the closest
-    # available proxy (it's max-favorable, so using it is conservative).
+    # The spec says "abs(ret since take) < 4%".  maxup_pct (max FAVORABLE
+    # excursion since anchor, always >= 0) is used as a proxy because hold.py
+    # does not currently emit a signed ret_since_anchor field.
+    #
+    # Deviation note (deviation #4): this proxy is conservative ONLY for names
+    # that rallied (maxup > 0 → |ret| proxy is the upside max).  For names that
+    # are DOWN since anchor (intact but underwater), maxup ≈ 0 while true
+    # |ret_since_take| may be large, causing the proxy to under-detect real
+    # drawdown and potentially label a falling name DEAD_MONEY_RISK when it
+    # should not be.  Impact is bounded: only names already in hold["intact"]
+    # with days_basing 15-40 are eligible; the label is display-only.
+    # TODO: when hold.py emits ret_since_anchor (signed), bind it here instead.
     hold_ret_proxy = row.get("hold_maxup_pct")
 
     row["bottom_state"] = _classify_labels_v1(
@@ -501,6 +555,7 @@ def assemble(
                 earnings_df=earnings_df,
                 today=today,
                 root=root,
+                sg_asof=sg_asof,
             )
             rows.append(row)
             n_ok += 1
