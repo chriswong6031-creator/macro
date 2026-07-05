@@ -55,6 +55,16 @@
   .tk { font-weight:680; } .tk:hover { color:var(--link); }
   .cv { font-weight:700; border-radius:6px; padding:1px 7px; font-size:12px; }
   .why { color:var(--muted); font-size:11.5px; white-space:normal; max-width:42ch; }
+  #hold { table-layout:fixed; }
+  #hold th,#hold td { vertical-align:top; }
+  #hold .hold-stock { width:30%; }
+  #hold .hold-potential { width:76px; }
+  #hold .hold-verdict { width:34%; white-space:normal; }
+  #hold .hold-entry { width:24%; white-space:normal; }
+  #hold .hold-20d { width:72px; }
+  .hold-company { color:var(--muted); font-size:11.5px; }
+  .v-short { display:none; font-weight:700; }
+  .act-table .act-entry { white-space:normal; max-width:24ch; }
   .timeline .ev { display:flex; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px; }
   .timeline .ev:first-child { border-top:0; }
   .timeline .dt { color:var(--muted); width:84px; flex:0 0 84px; font-variant-numeric:tabular-nums; }
@@ -79,6 +89,36 @@
   .cyc-rk b { color:var(--text); font-variant-numeric:tabular-nums; }
   .cyc-rk.pos { color:var(--up); border-color:color-mix(in srgb, var(--up) 38%, var(--line)); }
   .cyc-rk.neg { color:var(--down); border-color:color-mix(in srgb, var(--down) 38%, var(--line)); }
+  @media (max-width:720px){
+    html, body { overflow-x:hidden; }
+    body { padding:12px; font-size:13px; }
+    h1 { font-size:19px; }
+    h2 { align-items:flex-start; flex-wrap:wrap; line-height:1.25; }
+    .panel { border-radius:9px; padding:11px; }
+    .hero .lhs { min-width:0; }
+    .scoreboxes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
+    .sbx { min-width:0; padding:9px 8px; }
+    .sbx .k { overflow-wrap:anywhere; }
+    .ts { overflow-x:visible; }
+    #hold { font-size:12px; }
+    #hold th,#hold td { padding:6px 5px; white-space:normal; overflow-wrap:anywhere; }
+    #hold .hold-stock { width:42%; }
+    #hold .hold-potential { width:58px; text-align:center; }
+    #hold .hold-verdict { width:auto; }
+    #hold .hold-entry,
+    #hold .hold-20d { display:none; }
+    .act-table { table-layout:fixed; font-size:12px; }
+    .act-table th,.act-table td { padding:6px 5px; white-space:normal; overflow-wrap:anywhere; }
+    .act-table .act-name { width:42%; }
+    .act-table .act-conv { width:58px; text-align:center; }
+    .act-table .act-entry,
+    .act-table .act-20d { display:none; }
+    .hold-company { display:none; }
+    .v-full { display:none; }
+    .v-short { display:inline; }
+    .cv { padding:1px 6px; }
+    .disc, footer { max-width:100%; }
+  }
 </style>
 </head>
 <body>
@@ -131,6 +171,7 @@
         <a href="../news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="../alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="../gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="../darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -350,16 +391,23 @@
 <div id="app"></div>
 
 <footer>
-  <span class="l-en">Read-only analytics — not investment advice. Theme scores and textures are a transparent focus/structure lens, NOT a validated forward-edge buy list: cross-sectional theme momentum has ~0 rank-IC and the baskets are hindsight-curated. Per-member conviction is the same per-stock Conviction Profile used on the stock dashboard, shown with its honest trust tier; it is an event-edge screen, never an order.</span><span class="l-zh">只读分析 — 非投资建议。主题评分与纹理是透明的聚焦/结构透镜，并非经验证的前瞻买入清单：横截面主题动量 rank-IC≈0，且篮子为事后筛选。成分股信念采用股票看板同一套信念档案，附带诚实的信任层级；它是事件型筛选，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-05 04:08 UTC</span>.
+  <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-05 08:34 UTC</span>.
 </footer>
 
 <script>
-const DETAIL = {"basket":{"id":"intl_software","name":"Software & IT Services","name_zh":"\u8f6f\u4ef6\u4e0eIT\u670d\u52a1","category":"Technology","category_zh":"\u79d1\u6280","thesis":"The global enterprise-software and IT-services leaders outside the US \u2014 Europe's SAP and Capgemini, India's outsourcing giants (Infosys, TCS, HCL, Wipro), and the UK / Australia SaaS names. Levered to the digitisation and AI-services cycle.","thesis_zh":"\u975e\u7f8e\u7684\u4f01\u4e1a\u8f6f\u4ef6\u4e0e IT \u670d\u52a1\u9f99\u5934 \u2014 \u6b27\u6d32 SAP \u4e0e\u51ef\u6377\u3001\u5370\u5ea6\u5916\u5305\u5de8\u5934\uff08Infosys\u3001TCS\u3001HCL\u3001Wipro\uff09\uff0c\u4ee5\u53ca\u82f1\u6fb3 SaaS \u516c\u53f8\u3002\u53d7\u76ca\u4e8e\u6570\u5b57\u5316\u4e0e AI \u670d\u52a1\u5468\u671f\u3002","weighting":"equal","created":"2021-06-15","n_members":14,"members":[{"symbol":"SCT.L","name":"Softcat Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 Softcat Plc","last":1914.0,"ret_20d":0.0368,"ret_ytd":0.3508},{"symbol":"SGE.L","name":"The Sage Group Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 The Sage Group Plc","last":846.6,"ret_20d":-0.0076,"ret_ytd":-0.2181},{"symbol":"CCC.L","name":"Computacenter Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 Computacenter Plc","last":4414.0,"ret_20d":-0.0225,"ret_ytd":0.5067},{"symbol":"TECHM.NS","name":"Tech Mahindra Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Tech Mahindra Ltd","last":1400.7,"ret_20d":-0.0327,"ret_ytd":-0.1196},{"symbol":"MPHASIS.NS","name":"Mphasis Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Mphasis Ltd","last":2231.6,"ret_20d":-0.0364,"ret_ytd":-0.2005},{"symbol":"CAP.PA","name":"Capgemini","added":"2021-06-15","rationale":"\ud83c\uddea\ud83c\uddfa EZ \u00b7 Capgemini","last":90.72,"ret_20d":-0.0718,"ret_ytd":-0.3417},{"symbol":"HCLTECH.NS","name":"Hcl Technologies Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Hcl Technologies Ltd","last":1078.9,"ret_20d":-0.0765,"ret_ytd":-0.3177},{"symbol":"TCS.NS","name":"Tata Consultancy Services Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Tata Consultancy Services Ltd","last":2050.3,"ret_20d":-0.0851,"ret_ytd":-0.3401},{"symbol":"SAP.DE","name":"Sap","added":"2021-06-15","rationale":"\ud83c\uddea\ud83c\uddfa EZ \u00b7 Sap","last":140.88,"ret_20d":-0.0966,"ret_ytd":-0.2906},{"symbol":"PERSISTENT.NS","name":"Persistent Systems Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Persistent Systems Ltd","last":4523.5,"ret_20d":-0.1168,"ret_ytd":-0.2762},{"symbol":"INFY.NS","name":"Infosys Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Infosys Ltd","last":1038.0,"ret_20d":-0.1172,"ret_ytd":-0.3435},{"symbol":"WIPRO.NS","name":"Wipro Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Wipro Ltd","last":174.1,"ret_20d":-0.1479,"ret_ytd":-0.3217},{"symbol":"XRO.AX","name":"Xero Ltd","added":"2021-06-15","rationale":"\ud83c\udde6\ud83c\uddfa AU \u00b7 Xero Ltd","last":71.39,"ret_20d":-0.1493,"ret_ytd":-0.3739},{"symbol":"WTC.AX","name":"Wisetech Global Ltd","added":"2021-06-15","rationale":"\ud83c\udde6\ud83c\uddfa AU \u00b7 Wisetech Global Ltd","last":32.22,"ret_20d":-0.2208,"ret_ytd":-0.5284}],"changelog":[{"date":"2021-06-15","action":"create","note":"Seeded Software & IT Services \u2014 equal-weight cross-country members."}],"reference":null,"missing":[],"partial":[],"perf":{"1d":{"ret":0.033462264082982696,"rel":0.04490303019336106},"5d":{"ret":0.028469341652106905,"rel":0.046185661526404465},"20d":{"ret":-0.07279105434799371,"rel":-0.08047615632299499},"60d":{"ret":-0.013174664405379177,"rel":-0.16652069451451235},"mtd":{"ret":0.036857998743021314,"rel":0.0472587438895955},"ytd":{"ret":-0.1928904422911658,"rel":-0.7586349446890205},"full":{"ret":0.45811758440835293,"rel":-3.524021174652568}}},"members":[{"symbol":"SCT.L","name":"Softcat Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 Softcat Plc","last":1914.0,"ret_20d":0.0368,"ret_ytd":0.3508,"conviction":{"score":6,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":23,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"SGE.L","name":"The Sage Group Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 The Sage Group Plc","last":846.6,"ret_20d":-0.0076,"ret_ytd":-0.2181,"conviction":{"score":68,"band":"constructive","band_zh":"\u6b63\u5728\u7b51\u5e95","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":false,"entry_pct":53,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"CCC.L","name":"Computacenter Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 Computacenter Plc","last":4414.0,"ret_20d":-0.0225,"ret_ytd":0.5067,"conviction":{"score":40,"band":"neutral","band_zh":"\u89c2\u5bdf","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":31,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"TECHM.NS","name":"Tech Mahindra Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Tech Mahindra Ltd","last":1400.7,"ret_20d":-0.0327,"ret_ytd":-0.1196,"conviction":{"score":11,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":44,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"MPHASIS.NS","name":"Mphasis Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Mphasis Ltd","last":2231.6,"ret_20d":-0.0364,"ret_ytd":-0.2005,"conviction":{"score":13,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":44,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"CAP.PA","name":"Capgemini","added":"2021-06-15","rationale":"\ud83c\uddea\ud83c\uddfa EZ \u00b7 Capgemini","last":90.72,"ret_20d":-0.0718,"ret_ytd":-0.3417,"conviction":{"score":26,"band":"neutral","band_zh":"\u89c2\u5bdf","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":false,"entry_pct":41,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"HCLTECH.NS","name":"Hcl Technologies Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Hcl Technologies Ltd","last":1078.9,"ret_20d":-0.0765,"ret_ytd":-0.3177,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Avoid \u2014 downtrend","verdict_zh":"\u56de\u907f \u2014 \u4e0b\u884c\u8d8b\u52bf","cycle_blocked":true,"entry_pct":34,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"TCS.NS","name":"Tata Consultancy Services Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Tata Consultancy Services Ltd","last":2050.3,"ret_20d":-0.0851,"ret_ytd":-0.3401,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Avoid \u2014 downtrend","verdict_zh":"\u56de\u907f \u2014 \u4e0b\u884c\u8d8b\u52bf","cycle_blocked":true,"entry_pct":34,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"SAP.DE","name":"Sap","added":"2021-06-15","rationale":"\ud83c\uddea\ud83c\uddfa EZ \u00b7 Sap","last":140.88,"ret_20d":-0.0966,"ret_ytd":-0.2906,"conviction":{"score":13,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":41,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"PERSISTENT.NS","name":"Persistent Systems Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Persistent Systems Ltd","last":4523.5,"ret_20d":-0.1168,"ret_ytd":-0.2762,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Hold off \u2014 timing against you","verdict_zh":"\u6682\u7f13 \u2014 \u65f6\u673a\u4e0d\u5229","cycle_blocked":true,"entry_pct":34,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"INFY.NS","name":"Infosys Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Infosys Ltd","last":1038.0,"ret_20d":-0.1172,"ret_ytd":-0.3435,"conviction":{"score":15,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Extended \u2014 don't chase; wait for a pullback","verdict_zh":"\u8fc7\u5ea6\u62c9\u5347 \u2014 \u52ff\u8ffd\u9ad8\uff1b\u7b49\u5f85\u56de\u64a4","cycle_blocked":true,"entry_pct":41,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"WIPRO.NS","name":"Wipro Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Wipro Ltd","last":174.1,"ret_20d":-0.1479,"ret_ytd":-0.3217,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Hold off \u2014 timing against you","verdict_zh":"\u6682\u7f13 \u2014 \u65f6\u673a\u4e0d\u5229","cycle_blocked":true,"entry_pct":34,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"XRO.AX","name":"Xero Ltd","added":"2021-06-15","rationale":"\ud83c\udde6\ud83c\uddfa AU \u00b7 Xero Ltd","last":71.39,"ret_20d":-0.1493,"ret_ytd":-0.3739,"conviction":{"score":28,"band":"neutral","band_zh":"\u89c2\u5bdf","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":false,"entry_pct":41,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false},{"symbol":"WTC.AX","name":"Wisetech Global Ltd","added":"2021-06-15","rationale":"\ud83c\udde6\ud83c\uddfa AU \u00b7 Wisetech Global Ltd","last":32.22,"ret_20d":-0.2208,"ret_ytd":-0.5284,"conviction":{"score":0,"band":"low","band_zh":"\u6682\u65e0\u4e70\u70b9","verdict":"Strong name \u00b7 wrong tape \u2014 wait for a base","verdict_zh":"\u5f3a\u52bf\u4e2a\u80a1 \u00b7 \u8d8b\u52bf\u4e0d\u5229 \u2014 \u7b49\u5f85\u7b51\u5e95","cycle_blocked":true,"entry_pct":40,"valuation_band":null,"validation_status":"neutral_ic","entry":null,"trust":"context","spotlight":null},"on_board":false}],"theme":{"id":"intl_software","name":"Software & IT Services","name_zh":"\u8f6f\u4ef6\u4e0eIT\u670d\u52a1","category":"Technology","score":37,"components":{"trend":-0.291,"breadth":-0.793,"impulse":0.87,"crowding":0.0},"mtf":null,"tape":null,"label":"deteriorating","label_en":"DETERIORATING","label_zh":"\u8d70\u5f31","reco":"avoid","reco_en":"AVOID","reco_zh":"\u56de\u907f","reco_why_en":"Momentum and breadth breaking down \u2014 stand aside.","reco_why_zh":"\u52a8\u91cf\u4e0e\u5e7f\u5ea6\u540c\u6b65\u8d70\u5f31 \u2014 \u6682\u907f\u3002","regime_demoted":false,"chase_demoted":false,"reasons":["20d -8.0% vs Intl ex-US","decelerating"],"signal_strength":{"grade":"backtested","kind":"risk","measured":true,"metric":"fwd 21d drawdown","mean_pct":-3.61,"t_hac":-15.472,"n":3959,"en":"Backtested risk read \u2014 on 27y of clean sector history this label precedes deeper forward drawdowns (it is a risk timer, not a return forecast).","zh":"\u5df2\u56de\u6d4b\u7684\u98ce\u9669\u4fe1\u53f7 \u2014 \u572827\u5e74\u5e72\u51c0\u884c\u4e1a\u5386\u53f2\u4e0a\uff0c\u8be5\u6807\u7b7e\u9886\u5148\u4e8e\u66f4\u6df1\u7684\u524d\u5411\u56de\u64a4\uff08\u98ce\u9669\u8ba1\u65f6\u5668\uff0c\u975e\u6536\u76ca\u9884\u6d4b\uff09\u3002"},"flip_distance":{"route_a_bps":null,"route_b_pp":-8.05,"route_a_sessions_est":null,"nearest_route":null,"note_en":"Rollover guard not armed \u2014 the other guard legs (net new highs / score / 20d momentum / breadth / long trend) do not currently line up. Descriptive \u2014 a shape read, not a forecast.","note_zh":"\u56de\u843d\u62a4\u680f\u672a\u5c31\u4f4d \u2014 \u5176\u4f59\u62a4\u680f\u6761\u4ef6\uff08\u51c0\u65b0\u9ad8/\u8bc4\u5206/20\u65e5\u52a8\u91cf/\u5e7f\u5ea6/\u957f\u671f\u8d8b\u52bf\uff09\u5f53\u524d\u672a\u540c\u65f6\u6ee1\u8db3\u3002\u63cf\u8ff0\u6027 \u2014 \u5f62\u6001\u8bfb\u6570\uff0c\u975e\u9884\u6d4b\u3002"},"rs_pctile":0.044,"accel_z":-0.624,"ext_abs":0.09,"long_sign":-1,"perf":{"5d":{"rel":0.0462,"ret":0.0285},"20d":{"rel":-0.0805,"ret":-0.0728},"60d":{"rel":-0.1665,"ret":-0.0132},"ytd":{"rel":-0.7586,"ret":-0.1929}},"breadth":{"pct50":0.0,"pct200":0.0,"nh":0,"nl":0,"n":9},"impulse":{"up3":6,"down3":0,"net":6,"n":9},"leadership":{"breadth":"broad","top":[{"ticker":"TECHM.NS","name":"TECHM.NS","ret_20d":-0.033,"share":0.05,"alpha":null},{"ticker":"MPHASIS.NS","name":"MPHASIS.NS","ret_20d":-0.036,"share":0.06,"alpha":null},{"ticker":"HCLTECH.NS","name":"HCLTECH.NS","ret_20d":-0.077,"share":0.12,"alpha":null}]},"n_members":9,"textures":{"bull_age":{"in_bull":false,"days":0,"approx_months":0.0,"drawdown_from_peak":-0.2751,"from_52w_high":-0.2449,"stage":"downtrend","stage_zh":"\u4e0b\u884c","directional":false},"overbought":{"rsi":48.7,"rs_pctile":0.044,"pct_extended":null,"value":0.0,"band":"neutral","band_zh":"\u4e2d\u6027","directional":false},"clean_entry":{"flag":false,"quality":0.45,"reasons":["not extended","RSI room","shallow pullback"],"directional":false},"rollover_risk":{"risk":0.942,"band":"high","band_zh":"\u9ad8","reasons":["momentum rolling over","breadth weakening","below 50d"],"directional":false},"breadth_divergence":{"risk":0.0,"band":"low","band_zh":"\u4f4e","reasons":[],"directional":false,"basket_off_high":-0.2449,"member_dd_med":-0.3636,"pct_above_50":0.0,"share_below_50":1.0,"pinned":false,"grade":"descriptive","grade_note":"Descriptive texture \u2014 no separately measured forward-drawdown edge on the proxy; a narrowing lens, never a forecast."}},"adv":8,"dec":1,"net_ad":7,"parent":"Technology","tags":[],"rank":14,"rank_5d":-1,"delta_5d":0.0462,"pulse_heat":"broken","pulse_heat_grade":"backtested","pulse_rank_delta_1d":null,"pulse_rank_delta_5d":null,"pulse_rank_delta_20d":null,"pulse_score_delta_5d":null,"weights":{"trend":0.26,"breadth":0.18,"impulse":0.07,"macro":0.18,"mtf":0.16,"volhole":0.05,"crowding":0.1}},"act_now":{"status":"theme_out_of_favour","buys":[],"note_en":"Theme is out of favour (deteriorating) \u2014 no stock buys recommended here right now.","note_zh":"\u4e3b\u9898\u6682\u4e0d\u88ab\u9752\u7750\uff08\u8d70\u5f31\uff09\u2014 \u5f53\u524d\u4e0d\u5efa\u8bae\u4e70\u5165\u8be5\u4e3b\u9898\u4e2a\u80a1\u3002"},"history":[{"date":"2026-07-02","value":37}],"timeline":[],"as_of":"2026-07-02","market_concentration":{"adv":323,"dec":191,"ad_ratio":1.69,"pct_above_50":54.6,"pct_above_200":59.3,"nh":21,"nl":2,"directional":false,"ad_3d":1.31,"ad_w":1.11,"ad_m":1.05,"verdict":"mixed","verdict_zh":"\u4e2d\u6027"},"stock_base":"../intl_stock.html#","back":"../baskets_intl.html","region":"intl","bench_label":"Intl ex-US","bench_label_zh":"\u56fd\u9645(\u9664\u7f8e)"};
+const DETAIL = {"basket":{"id":"intl_software","name":"Software & IT Services","name_zh":"\u8f6f\u4ef6\u4e0eIT\u670d\u52a1","category":"Technology","category_zh":"\u79d1\u6280","thesis":"Non-US enterprise software, IT services and SaaS names tied to digitization and AI services demand.","thesis_zh":"\u975e\u7f8e\u4f01\u4e1a\u8f6f\u4ef6\u3001IT \u670d\u52a1\u4e0e SaaS \u516c\u53f8\uff0c\u53d7\u6570\u5b57\u5316\u548c AI \u670d\u52a1\u9700\u6c42\u9a71\u52a8\u3002","weighting":"equal","created":"2021-06-15","n_members":14,"members":[{"symbol":"SCT.L","name":"Softcat Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 Softcat Plc","last":1914.0,"ret_20d":0.0368,"ret_ytd":0.3508},{"symbol":"SGE.L","name":"The Sage Group Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 The Sage Group Plc","last":846.6,"ret_20d":-0.0076,"ret_ytd":-0.2181},{"symbol":"CCC.L","name":"Computacenter Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 Computacenter Plc","last":4414.0,"ret_20d":-0.0225,"ret_ytd":0.5067},{"symbol":"TECHM.NS","name":"Tech Mahindra Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Tech Mahindra Ltd","last":1400.7,"ret_20d":-0.0327,"ret_ytd":-0.1196},{"symbol":"MPHASIS.NS","name":"Mphasis Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Mphasis Ltd","last":2231.6,"ret_20d":-0.0364,"ret_ytd":-0.2005},{"symbol":"CAP.PA","name":"Capgemini","added":"2021-06-15","rationale":"\ud83c\uddea\ud83c\uddfa EZ \u00b7 Capgemini","last":90.72,"ret_20d":-0.0718,"ret_ytd":-0.3417},{"symbol":"HCLTECH.NS","name":"Hcl Technologies Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Hcl Technologies Ltd","last":1078.9,"ret_20d":-0.0765,"ret_ytd":-0.3177},{"symbol":"TCS.NS","name":"Tata Consultancy Services Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Tata Consultancy Services Ltd","last":2050.3,"ret_20d":-0.0851,"ret_ytd":-0.3401},{"symbol":"SAP.DE","name":"Sap","added":"2021-06-15","rationale":"\ud83c\uddea\ud83c\uddfa EZ \u00b7 Sap","last":140.88,"ret_20d":-0.0966,"ret_ytd":-0.2906},{"symbol":"PERSISTENT.NS","name":"Persistent Systems Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Persistent Systems Ltd","last":4523.5,"ret_20d":-0.1168,"ret_ytd":-0.2762},{"symbol":"INFY.NS","name":"Infosys Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Infosys Ltd","last":1038.0,"ret_20d":-0.1172,"ret_ytd":-0.3435},{"symbol":"WIPRO.NS","name":"Wipro Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Wipro Ltd","last":174.1,"ret_20d":-0.1479,"ret_ytd":-0.3217},{"symbol":"XRO.AX","name":"Xero Ltd","added":"2021-06-15","rationale":"\ud83c\udde6\ud83c\uddfa AU \u00b7 Xero Ltd","last":71.39,"ret_20d":-0.1493,"ret_ytd":-0.3739},{"symbol":"WTC.AX","name":"Wisetech Global Ltd","added":"2021-06-15","rationale":"\ud83c\udde6\ud83c\uddfa AU \u00b7 Wisetech Global Ltd","last":32.22,"ret_20d":-0.2208,"ret_ytd":-0.5284}],"changelog":[{"date":"2021-06-15","action":"create","note":"Seeded Software & IT Services \u2014 equal-weight cross-country members."}],"reference":null,"missing":[],"partial":[],"perf":{"1d":{"ret":0.033462264082982696,"rel":0.04490303019336106},"5d":{"ret":0.028469341652106905,"rel":0.046185661526404465},"20d":{"ret":-0.07279105434799371,"rel":-0.08047615632299499},"60d":{"ret":-0.013174664405379177,"rel":-0.16652069451451235},"mtd":{"ret":0.036857998743021314,"rel":0.0472587438895955},"ytd":{"ret":-0.1928904422911658,"rel":-0.7586349446890205},"full":{"ret":0.45811758440835293,"rel":-3.524021174652568}}},"members":[{"symbol":"SCT.L","name":"Softcat Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 Softcat Plc","last":1914.0,"ret_20d":0.0368,"ret_ytd":0.3508,"conviction":null,"on_board":false},{"symbol":"SGE.L","name":"The Sage Group Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 The Sage Group Plc","last":846.6,"ret_20d":-0.0076,"ret_ytd":-0.2181,"conviction":null,"on_board":false},{"symbol":"CCC.L","name":"Computacenter Plc","added":"2021-06-15","rationale":"\ud83c\uddec\ud83c\udde7 GB \u00b7 Computacenter Plc","last":4414.0,"ret_20d":-0.0225,"ret_ytd":0.5067,"conviction":null,"on_board":false},{"symbol":"TECHM.NS","name":"Tech Mahindra Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Tech Mahindra Ltd","last":1400.7,"ret_20d":-0.0327,"ret_ytd":-0.1196,"conviction":null,"on_board":false},{"symbol":"MPHASIS.NS","name":"Mphasis Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Mphasis Ltd","last":2231.6,"ret_20d":-0.0364,"ret_ytd":-0.2005,"conviction":null,"on_board":false},{"symbol":"CAP.PA","name":"Capgemini","added":"2021-06-15","rationale":"\ud83c\uddea\ud83c\uddfa EZ \u00b7 Capgemini","last":90.72,"ret_20d":-0.0718,"ret_ytd":-0.3417,"conviction":null,"on_board":false},{"symbol":"HCLTECH.NS","name":"Hcl Technologies Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Hcl Technologies Ltd","last":1078.9,"ret_20d":-0.0765,"ret_ytd":-0.3177,"conviction":null,"on_board":false},{"symbol":"TCS.NS","name":"Tata Consultancy Services Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Tata Consultancy Services Ltd","last":2050.3,"ret_20d":-0.0851,"ret_ytd":-0.3401,"conviction":null,"on_board":false},{"symbol":"SAP.DE","name":"Sap","added":"2021-06-15","rationale":"\ud83c\uddea\ud83c\uddfa EZ \u00b7 Sap","last":140.88,"ret_20d":-0.0966,"ret_ytd":-0.2906,"conviction":null,"on_board":false},{"symbol":"PERSISTENT.NS","name":"Persistent Systems Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Persistent Systems Ltd","last":4523.5,"ret_20d":-0.1168,"ret_ytd":-0.2762,"conviction":null,"on_board":false},{"symbol":"INFY.NS","name":"Infosys Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Infosys Ltd","last":1038.0,"ret_20d":-0.1172,"ret_ytd":-0.3435,"conviction":null,"on_board":false},{"symbol":"WIPRO.NS","name":"Wipro Ltd","added":"2021-06-15","rationale":"\ud83c\uddee\ud83c\uddf3 IN \u00b7 Wipro Ltd","last":174.1,"ret_20d":-0.1479,"ret_ytd":-0.3217,"conviction":null,"on_board":false},{"symbol":"XRO.AX","name":"Xero Ltd","added":"2021-06-15","rationale":"\ud83c\udde6\ud83c\uddfa AU \u00b7 Xero Ltd","last":71.39,"ret_20d":-0.1493,"ret_ytd":-0.3739,"conviction":null,"on_board":false},{"symbol":"WTC.AX","name":"Wisetech Global Ltd","added":"2021-06-15","rationale":"\ud83c\udde6\ud83c\uddfa AU \u00b7 Wisetech Global Ltd","last":32.22,"ret_20d":-0.2208,"ret_ytd":-0.5284,"conviction":null,"on_board":false}],"theme":{"id":"intl_software","name":"Software & IT Services","name_zh":"\u8f6f\u4ef6\u4e0eIT\u670d\u52a1","category":"Technology","score":37,"components":{"trend":-0.291,"breadth":-0.793,"impulse":0.87,"crowding":0.0},"mtf":null,"tape":null,"label":"deteriorating","label_en":"DETERIORATING","label_zh":"\u8d70\u5f31","reco":"avoid","reco_en":"AVOID","reco_zh":"\u56de\u907f","reco_why_en":"Momentum and breadth breaking down \u2014 stand aside.","reco_why_zh":"\u52a8\u91cf\u4e0e\u5e7f\u5ea6\u540c\u6b65\u8d70\u5f31 \u2014 \u6682\u907f\u3002","regime_demoted":false,"chase_demoted":false,"reasons":["20d -8.0% vs Intl ex-US","decelerating"],"signal_strength":{"grade":"backtested","kind":"risk","measured":true,"metric":"fwd 21d drawdown","mean_pct":-3.61,"t_hac":-15.472,"n":3959,"en":"Backtested risk read \u2014 on 27y of clean sector history this label precedes deeper forward drawdowns (it is a risk timer, not a return forecast).","zh":"\u5df2\u56de\u6d4b\u7684\u98ce\u9669\u4fe1\u53f7 \u2014 \u572827\u5e74\u5e72\u51c0\u884c\u4e1a\u5386\u53f2\u4e0a\uff0c\u8be5\u6807\u7b7e\u9886\u5148\u4e8e\u66f4\u6df1\u7684\u524d\u5411\u56de\u64a4\uff08\u98ce\u9669\u8ba1\u65f6\u5668\uff0c\u975e\u6536\u76ca\u9884\u6d4b\uff09\u3002"},"flip_distance":{"route_a_bps":null,"route_b_pp":-8.05,"route_a_sessions_est":null,"nearest_route":null,"note_en":"Rollover guard not armed \u2014 the other guard legs (net new highs / score / 20d momentum / breadth / long trend) do not currently line up. Descriptive \u2014 a shape read, not a forecast.","note_zh":"\u56de\u843d\u62a4\u680f\u672a\u5c31\u4f4d \u2014 \u5176\u4f59\u62a4\u680f\u6761\u4ef6\uff08\u51c0\u65b0\u9ad8/\u8bc4\u5206/20\u65e5\u52a8\u91cf/\u5e7f\u5ea6/\u957f\u671f\u8d8b\u52bf\uff09\u5f53\u524d\u672a\u540c\u65f6\u6ee1\u8db3\u3002\u63cf\u8ff0\u6027 \u2014 \u5f62\u6001\u8bfb\u6570\uff0c\u975e\u9884\u6d4b\u3002"},"rs_pctile":0.044,"accel_z":-0.624,"ext_abs":0.09,"long_sign":-1,"perf":{"5d":{"rel":0.0462,"ret":0.0285},"20d":{"rel":-0.0805,"ret":-0.0728},"60d":{"rel":-0.1665,"ret":-0.0132},"ytd":{"rel":-0.7586,"ret":-0.1929}},"breadth":{"pct50":0.0,"pct200":0.0,"nh":0,"nl":0,"n":9},"impulse":{"up3":6,"down3":0,"net":6,"n":9},"leadership":{"breadth":"broad","top":[{"ticker":"TECHM.NS","name":"TECHM.NS","ret_20d":-0.033,"share":0.05,"alpha":null},{"ticker":"MPHASIS.NS","name":"MPHASIS.NS","ret_20d":-0.036,"share":0.06,"alpha":null},{"ticker":"HCLTECH.NS","name":"HCLTECH.NS","ret_20d":-0.077,"share":0.12,"alpha":null}]},"n_members":9,"textures":{"bull_age":{"in_bull":false,"days":0,"approx_months":0.0,"drawdown_from_peak":-0.2751,"from_52w_high":-0.2449,"stage":"downtrend","stage_zh":"\u4e0b\u884c","directional":false},"overbought":{"rsi":48.7,"rs_pctile":0.044,"pct_extended":null,"value":0.0,"band":"neutral","band_zh":"\u4e2d\u6027","directional":false},"clean_entry":{"flag":false,"quality":0.45,"reasons":["not extended","RSI room","shallow pullback"],"directional":false},"rollover_risk":{"risk":0.942,"band":"high","band_zh":"\u9ad8","reasons":["momentum rolling over","breadth weakening","below 50d"],"directional":false},"breadth_divergence":{"risk":0.0,"band":"low","band_zh":"\u4f4e","reasons":[],"directional":false,"basket_off_high":-0.2449,"member_dd_med":-0.3636,"pct_above_50":0.0,"share_below_50":1.0,"pinned":false,"grade":"descriptive","grade_note":"Descriptive texture \u2014 no separately measured forward-drawdown edge on the proxy; a narrowing lens, never a forecast."}},"adv":8,"dec":1,"net_ad":7,"parent":"Technology","tags":[],"rank":14,"rank_5d":-1,"delta_5d":0.0462,"pulse_heat":"broken","pulse_heat_grade":"backtested","pulse_rank_delta_1d":null,"pulse_rank_delta_5d":null,"pulse_rank_delta_20d":null,"pulse_score_delta_5d":null,"weights":{"trend":0.26,"breadth":0.18,"impulse":0.07,"macro":0.18,"mtf":0.16,"volhole":0.05,"crowding":0.1}},"act_now":{"status":"theme_out_of_favour","buys":[],"note_en":"Theme is out of favour (deteriorating) \u2014 no stock buys recommended here right now.","note_zh":"\u4e3b\u9898\u6682\u4e0d\u88ab\u9752\u7750\uff08\u8d70\u5f31\uff09\u2014 \u5f53\u524d\u4e0d\u5efa\u8bae\u4e70\u5165\u8be5\u4e3b\u9898\u4e2a\u80a1\u3002"},"history":[{"date":"2026-07-02","value":37}],"timeline":[],"as_of":"2026-07-02","market_concentration":{"adv":323,"dec":191,"ad_ratio":1.69,"pct_above_50":54.6,"pct_above_200":59.3,"nh":21,"nl":2,"directional":false,"ad_3d":1.31,"ad_w":1.11,"ad_m":1.05,"verdict":"mixed","verdict_zh":"\u4e2d\u6027"},"stock_base":"../intl_stock.html#","back":"../baskets_intl.html","region":"intl","bench_label":"Intl ex-US","bench_label_zh":"\u56fd\u9645(\u9664\u7f8e)"};
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 const BENCH = DETAIL.bench_label || 'S&P 500';          // regional benchmark label (CSI 300 / Hang Seng / S&P-TSX)
 const BENCHZ = DETAIL.bench_label_zh || BENCH;
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const briefText = (s,max=260) => {
+  s = String(s || '').replace(/\s+/g,' ').trim();
+  if(s.length <= max) return s;
+  const cut = s.slice(0,max);
+  const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('; '));
+  return (stop > 90 ? cut.slice(0,stop+1) : cut.replace(/\s+\S*$/,'')).trim() + '...';
+};
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const fmtPct = x => x==null ? '—' : (x>=0?'+':'')+(x*100).toFixed(1)+'%';
 const cls = x => x==null?'muted':(x>=0?'pos':'neg');
@@ -434,7 +482,7 @@ function cycleSectionHtml(cyc,bid){
     </div>`;
   return `<h2><span class="idx">◷</span>${L('Sector cycle','板块周期')} <span class="chip">${L('rebased price · auto-detected turns','再基准化价格 · 自动识别拐点')}</span></h2>
     <div class="panel">
-      <div class="muted sm" style="margin-bottom:8px">${L("This theme's equal-weight index on the cycle clock — real (rebased) price with auto-detected peaks ▼ / troughs ▲, where it sits now ●, and a projected next turn (dashed band). A timing rhythm, not a backtested forecast.","该主题等权指数的周期时钟 — 真实（再基准化）价格、自动识别的波峰▼/波谷▲、当前位置 ● 与推演的下一拐点（虚线带）。属时间节奏，并非回测预测。")}</div>
+      <div class="muted sm" style="margin-bottom:8px">${L("Equal-weight price on the cycle clock: past turns, current position, and projected next turn. Rhythm only.","等权价格的周期时钟：历史拐点、当前位置与下一拐点投影。仅看节奏。")}</div>
       ${svg}
       ${chips}
       <div class="muted sm" style="margin-top:9px">${L('Projected next turn','推演下一拐点')}: ${projTxt}. <a href="../sector_cycles_china.html#b-${esc(bid||'')}" style="color:var(--link)">${L('Open the full cycle dashboard →','打开完整周期看板 →')}</a></div>
@@ -460,7 +508,7 @@ function mtfTapeHtml(th){
       <div class="d">${sparkN(s.spark_rsi,col)}</div></div>`;};
   const tfs=['D','3D','W','M'].map(tfcard).join('')||`<span class="muted sm">${L('history accruing','历史累积中')}</span>`;
   let h=`<h2><span class="idx">◆</span>${L('Consolidated index — multi-timeframe &amp; flow','合成指数 — 多周期与资金流')} <span class="chip">${L('equal-weight candle','等权合成K线')}</span></h2>
-  <div class="panel"><div class="muted sm" style="margin-bottom:9px">${L('Built from the equal-weight OHLCV candle of the basket members — daily/3-day/weekly/monthly technicals, the volatility black hole, whale accumulation and net money-flow.','基于篮子成分股等权OHLCV合成K线 — 日/3日/周/月技术指标、波动黑洞、巨鲸吸筹与净资金流。')}</div>`;
+  <div class="panel"><div class="muted sm" style="margin-bottom:9px">${L('Equal-weight basket candle: timeframe trend, volatility, and flow context.','等权篮子K线：多周期趋势、波动与资金流背景。')}</div>`;
   if(m){
     h+=`<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:9px">
       ${conf.grade?`<span class="treco" style="background:${gcol}22;border:1px solid ${gcol};color:${gcol};padding:2px 9px;border-radius:7px;font-weight:680">${esc(conf.grade)}</span>`:''}
@@ -489,7 +537,7 @@ function mtfTapeHtml(th){
     </div>`;
     if(cov.coverage_pct!=null) h+=`<div class="muted sm" style="margin-top:7px">${L('Flow coverage','资金流覆盖')}: ${cov.n_with_volume||0}/${cov.n_live||0} ${L('members with volume','成分股有成交量')} (${Math.round(cov.coverage_pct*100)}%)</div>`;
   }
-  h+=`<div class="disc">${L('Daily / 3-day / weekly / monthly technicals + vol-hole and money-flow run on the equal-weight OHLCV candle of the basket members. The multi-timeframe confluence GATES the recommendation against the long-term trend (drawdown control); whale / net-flow are display-only context — Phase-0 found ~0 forward-return edge in theme momentum. Descriptive, not a forecast.','日/3日/周/月技术指标 + 波动洞与资金流基于篮子成分股等权OHLCV合成K线计算。多周期共振以长期趋势对建议进行回撤控制式约束；巨鲸/净流向仅作展示性背景 — Phase-0 实测主题动量对未来收益几乎无预测力。描述性，而非预测。')}</div></div>`;
+  h+=`<div class="disc">${L('MTF gates against the long-term trend; whale and flow are context only.','多周期用于约束长期趋势；巨鲸与资金流仅作背景。')}</div></div>`;
   return h;
 }
 
@@ -532,9 +580,9 @@ function flipDistanceHtml(th){
   else { bTxt=`the 20-day relative return is already ≤ 0 (${pp.toFixed(2)} pp) — the momentum leg no longer supports a constructive label. Descriptive, not a forecast.`;
          bTxtZh=`20日相对收益已 ≤ 0（${pp.toFixed(2)} 个百分点）— 动量项已不支撑积极标签。描述性，非预测。`; }
   const rowB=`<div class="ev"><span class="dt">${L('Route B · 20d','路径B · 20日')}</span><span>${L(esc(bTxt),esc(bTxtZh))}${fd.nearest_route==='b'?` <span class="chip">${L('nearest route','最近路径')}</span>`:''}</span></div>`;
-  return `<h2><span class="idx">⇄</span>${L('Distance to label change','距标签翻转')} <span class="chip">${L('descriptive — a shape/fragility read, not a forecast','描述性 — 形态/脆弱性读数，非预测')}</span></h2>
+  return `<h2><span class="idx">⇄</span>${L('Distance to label change','距标签翻转')} <span class="chip">${L('context','背景')}</span></h2>
   <div class="panel">
-    <div class="muted sm" style="margin-bottom:6px">${L('How far the current label sits from its own flip conditions — computed from the SAME inputs the label logic reads, so this meter can never disagree with the label. It measures the fragility of the read, not direction.','当前标签距其自身翻转条件有多远 — 由标签逻辑读取的同一组输入计算，故该刻度绝不会与标签相矛盾。它度量的是读数的脆弱性，而非方向。')}</div>
+	    <div class="muted sm" style="margin-bottom:6px">${L('How close the current label is to flipping. Measures fragility, not direction.','当前标签距离翻转有多近。衡量脆弱性，不衡量方向。')}</div>
     <div class="timeline">${rowA}${rowB}</div>
   </div>`;
 }
@@ -586,7 +634,7 @@ function render(){
     <div class="lhs">
       <h1>${L(esc(b.name),esc(b.name_zh))}</h1>
       <div style="margin:6px 0">${b.parent?`<span class="chip">${esc(b.parent)}</span>`:''}${b.category?`<span class="chip">${esc(b.category)}</span>`:''}${tags}</div>
-      <div class="thesis">${L(esc(b.thesis),esc(b.thesis))}</div>
+      <div class="thesis">${L(esc(briefText(b.thesis)),esc(briefText(b.thesis)))}</div>
     </div>
     <div>
       <div class="scoreboxes">
@@ -612,13 +660,12 @@ function render(){
   h+=`<h2><span class="idx">★</span>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
   if(an.status==='ok' && (an.buys||[]).length){
     h+=`<div class="muted sm" style="margin-bottom:8px">${L('Member stocks with a clean entry right now — buy/add verdict, cycle not blocking, decent entry price. Ranked by entry quality.','当前具备干净入场点的成分股 — 买入/加仓结论、周期未阻断、入场价尚可。按入场质量排序。')}</div>
-    <div class="ts"><table><thead><tr><th>${L('Stock','个股')}</th><th class="num">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num">${L('Entry','入场')}</th><th class="num">20d</th><th class="num">YTD</th></tr></thead><tbody>`+
-      an.buys.map(x=>`<tr><td>${stk(x.symbol)} <span class="muted sm">${esc(x.name||'')}</span></td>
-        <td class="num">${convCell({score:x.score})}</td>
+    <div class="ts"><table class="act-table"><thead><tr><th class="act-name">${L('Stock','个股')}</th><th class="num act-conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num act-entry">${L('Entry','入场')}</th><th class="num act-20d">20d</th></tr></thead><tbody>`+
+      an.buys.map(x=>`<tr><td class="act-name">${stk(x.symbol)} <span class="muted sm hold-company">${esc(x.name||'')}</span></td>
+        <td class="num act-conv">${convCell({score:x.score})}</td>
         <td>${x.verdict?L(esc(x.verdict),esc(x.verdict_zh||x.verdict)):'—'}</td>
-        <td class="num">${x.entry_status?('<b style="color:'+(x.act_level>=3?cssv('--up'):cssv('--g-cold'))+'">'+esc((x.entry_status||'').replace('_',' '))+'</b>'+(x.zone_low!=null?' <span class="muted sm">$'+x.zone_low.toFixed(2)+(x.zone_high&&x.zone_high!=x.zone_low?'–$'+x.zone_high.toFixed(2):'')+'</span>':'')):(x.entry_pct!=null?Math.round(x.entry_pct*100)+'%':'—')}</td>
-        <td class="num ${cls(x.ret_20d)}">${fmtPct(x.ret_20d)}</td>
-        <td class="num ${cls(x.ret_ytd)}">${fmtPct(x.ret_ytd)}</td></tr>`).join('')+
+        <td class="num act-entry">${x.entry_status?('<b style="color:'+(x.act_level>=3?cssv('--up'):cssv('--g-cold'))+'">'+esc((x.entry_status||'').replace('_',' '))+'</b>'+(x.zone_low!=null?' <span class="muted sm">$'+x.zone_low.toFixed(2)+(x.zone_high&&x.zone_high!=x.zone_low?'–$'+x.zone_high.toFixed(2):'')+'</span>':'')):(x.entry_pct!=null?Math.round(x.entry_pct*100)+'%':'—')}</td>
+        <td class="num act-20d ${cls(x.ret_20d)}">${fmtPct(x.ret_20d)}</td></tr>`).join('')+
       `</tbody></table></div>`;
   } else {
     const dn = an.status==='theme_out_of_favour';
@@ -676,28 +723,61 @@ function render(){
 
   // ---- holdings scoreboard ----
   const mem=(d.members||[]).slice();
+  const verdictScore=(c)=>{const v=String((c&&c.verdict)||'').toLowerCase();
+    if(!v) return -1;
+    let s=1;
+    if(v.includes('reversal buy')||v.includes('buy zone')) s=6;
+    else if((v.includes('high-conviction')||v.includes('high-confluence')) && !v.includes('wait')) s=5;
+    else if(v.includes('leader') && !(v.includes('poor entry')||v.includes('extended')||v.includes('wait'))) s=4;
+    else if(v.includes('constructive')||v.includes('basing')||v.includes('setting up')||v.includes('uptrend')||v.includes('candidate')) s=3;
+    else if(v.includes('neutral')||v.includes('watch')||v.includes('screen')||v.includes('context')||v.includes('exposure')) s=2;
+    if(v.includes('poor entry')||v.includes('extended')||v.includes('ran hot')||v.includes('topping')||v.includes('hold off')) s=Math.min(s,1);
+    if(v.includes('lagging')||v.includes('downtrend')||v.includes('avoid')) s=0;
+    if(v.includes('earnings')||v.includes('stressed')||v.includes('accounting')) s=Math.min(s,3);
+    if(c&&c.cycle_blocked) s-=2.5;
+    return s;
+  };
+  const recommendScore=(m)=>{const c=m.conviction||{}, entry=c.entry||{};
+    return verdictScore(c)*100 + ((c.score==null?-25:+c.score)||0) + ((entry.act_level||0)*8) + (m.on_board?12:0);
+  };
+  const sortMembers=(items)=>{
+    const key=m=>_sort.col==='recommend'?recommendScore(m):_sort.col==='conv'?((m.conviction||{}).score):_sort.col==='r20'?m.ret_20d:m.ret_ytd;
+    return items.slice().sort((a,b)=>{const x=key(a),y=key(b); if(x==null)return 1; if(y==null)return -1; return (x-y)*_sort.dir;});
+  };
+  const shortVerdict=(c)=>{const v=String((c&&c.verdict)||'').toLowerCase();
+    if(!v) return L('—','—');
+    if(c&&c.cycle_blocked) return L('Blocked','阻断');
+    if(v.includes('reversal buy')||v.includes('buy zone')) return L('Buy zone','买入区');
+    if(v.includes('high-conviction')||v.includes('high-confluence')) return L('Leader','领先');
+    if(v.includes('leader')&&v.includes('poor entry')) return L('Wait','等待');
+    if(v.includes('leader')) return L('Leader','领先');
+    if(v.includes('constructive')||v.includes('basing')||v.includes('setting up')||v.includes('candidate')) return L('Setting up','酝酿');
+    if(v.includes('extended')||v.includes('ran hot')||v.includes('topping')||v.includes('hold off')) return L('Wait','等待');
+    if(v.includes('lagging')||v.includes('downtrend')||v.includes('avoid')) return L('Avoid','回避');
+    if(v.includes('earnings')||v.includes('stressed')||v.includes('accounting')) return L('Confirm','确认');
+    return L('Watch','观察');
+  };
   // entry-timing chip (the SECOND gauge) per member: buy now / wait for the pullback to $X
   const entryCell=(c)=>{const e=c&&c.entry; if(!e||!e.status) return '<span class="muted sm">—</span>';
     const col = e.act_level>=3?cssv('--up'):e.act_level>=2?cssv('--g-cold'):e.act_level>=1?cssv('--warn'):cssv('--down');
     const zone = e.zone_low!=null?(' $'+e.zone_low.toFixed(2)+(e.zone_high&&e.zone_high!=e.zone_low?'–$'+e.zone_high.toFixed(2):'')):'';
     return `<span style="font-weight:700;color:${col}">${L(esc(e.headline||e.status),esc(e.headline_zh||e.status))}</span><span class="muted sm">${zone}</span>`;};
-  const rows=mem.map(m=>{const c=m.conviction;
+  const rows=sortMembers(mem).map(m=>{const c=m.conviction;
     const star=m.on_board?` <a class="sb-star" href="${SB?'../us_stocks.html':'#'}" title="On the US standout buy board right now">★</a>`:'';
     return `<tr>
-      <td>${stk(m.symbol)}${star} <span class="muted sm">${esc(m.name||'')}</span></td>
-      <td class="num">${convCell(c)}</td>
-      <td>${c&&c.verdict?L(esc(c.verdict),esc(c.verdict_zh||c.verdict)):'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
-      <td>${entryCell(c)}</td>
-      <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
-      <td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td>
-      <td class="why">${esc(m.rationale||'')}</td>
+      <td class="hold-stock">${stk(m.symbol)}${star} <span class="hold-company">${esc(m.name||'')}</span></td>
+      <td class="num hold-potential">${convCell(c)}</td>
+      <td class="hold-verdict">${c&&c.verdict?`<span class="v-full">${L(esc(c.verdict),esc(c.verdict_zh||c.verdict))}</span><span class="v-short">${shortVerdict(c)}</span>`:'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
+      <td class="hold-entry">${entryCell(c)}</td>
+      <td class="num hold-20d ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
     </tr>`;}).join('');
   const nBoard=mem.filter(m=>m.on_board).length;
   h+=`<h2><span class="idx">04</span>${L('Holdings — own-it conviction + entry timing','成分股 — 持有信念 + 入场择时')} <span class="chip">${mem.length} ${L('names','只')}</span>${nBoard?` <span class="chip sb-chip" title="Members currently on the US standout buy board">★ ${nBoard} ${L('on standout board','在精选榜')}</span>`:''}</h2>
   <div class="panel"><div class="ts"><table id="hold">
-    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${L('Potential','潜力')}</th><th>${L('Verdict','结论')}</th><th>${L('Entry now','入场时机')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
+    <colgroup><col class="hold-stock"><col class="hold-potential"><col class="hold-verdict"><col class="hold-entry"><col class="hold-20d"></colgroup>
+    <thead><tr><th>${L('Stock','个股')}</th><th class="num hold-potential" data-s="recommend" title="Default sort blends verdict quality, Potential, entry timing, and cycle blocks.">${L('Potential','潜力')}</th><th>${L('Verdict','结论')}</th><th class="hold-entry">${L('Entry now','入场时机')}</th><th class="num hold-20d" data-s="r20">20d</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <div class="disc">${L('Potential is a per-stock BUY-READINESS score: washed out (room to run) AND turning up now (cycle trigger) AND survivable, nudged by theme tailwind and — where the market has one — its validated selection edge (US: insider / earnings / revisions). Primed → setting up → watch → no setup. A timing screen that grades itself forward, never an order or an alpha claim. ⚠ = cycle blocks a buy.','潜力为个股买入就绪度评分：超跌（具备空间）且当前周期上行（触发）且可存续，并按主题顺风与（若该市场存在）已验证选股优势（美股：内幕/业绩/评级修正）微调——蓄势待发→正在筑底→观察→暂无买点。前向自评的择时筛选，非下单指令、非超额收益承诺。⚠ = 周期禁止买入。')}</div>
+    <div class="disc">${L('Potential ranks buy readiness: room to run, turning up now, and enough quality to survive. The default order blends Potential with the Verdict and entry timing, while pushing cycle-blocked names down. ⚠ means the cycle blocks a buy.','潜力衡量买入就绪度：仍有空间、当前转强、且质量足以支撑。默认排序会把潜力、结论与入场时机结合，并把周期阻断的个股下调。⚠ 表示周期阻止买入。')}</div>
   </div>`;
 
   // ---- changelog + flags ----
@@ -711,14 +791,11 @@ function render(){
   // sortable holdings
   document.querySelectorAll('#hold th[data-s]').forEach(th2=>th2.onclick=()=>sortHold(th2.dataset.s));
 }
-let _sort={col:null,dir:-1};
+let _sort={col:'recommend',dir:-1};
 function sortHold(col){
-  const tb=document.querySelector('#hold tbody'); if(!tb) return;
+  if(!document.querySelector('#hold tbody')) return;
   _sort = _sort.col===col?{col,dir:-_sort.dir}:{col,dir:-1};
-  const mem=(DETAIL.members||[]).slice();
-  const key=m=>col==='conv'?((m.conviction||{}).score):col==='r20'?m.ret_20d:m.ret_ytd;
-  mem.sort((a,b)=>{const x=key(a),y=key(b); if(x==null)return 1; if(y==null)return -1; return (x-y)*_sort.dir;});
-  DETAIL.members=mem; render();
+  render();
 }
 function boot(){
   render();

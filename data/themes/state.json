@@ -65,7 +65,7 @@
     "label": "deteriorating",
     "name": "AI Infrastructure",
     "name_zh": "AI \u57fa\u7840\u8bbe\u65bd",
-    "rank": 29,
+    "rank": 28,
     "reco": "avoid",
     "score": 47
   },
@@ -121,9 +121,9 @@
     "label": "emerging",
     "name": "Crypto & Digital Rails",
     "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8f68\u9053",
-    "rank": 26,
+    "rank": 29,
     "reco": "hold",
-    "score": 49
+    "score": 47
   },
   "cybersecurity": {
     "label": "dominant",
@@ -209,7 +209,7 @@
     "label": "deteriorating",
     "name": "Memory, HBM & Storage",
     "name_zh": "\u5185\u5b58\u3001HBM \u4e0e\u5b58\u50a8",
-    "rank": 28,
+    "rank": 27,
     "reco": "avoid",
     "score": 48
   },
@@ -217,7 +217,7 @@
     "label": "deteriorating",
     "name": "Non-AI Software",
     "name_zh": "\u975eAI\u8f6f\u4ef6",
-    "rank": 27,
+    "rank": 26,
     "reco": "avoid",
     "score": 49
   },

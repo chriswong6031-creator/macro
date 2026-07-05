@@ -6,7 +6,7 @@
    DROP-IN: `{% include "_forming_narratives.html.j2" %}` in a baskets template, then copy
    site/forming_narratives.js into site/ in the builder (like lightweight-charts.js). Reads
    <base>/narrative_emergence.json (base defaults to "basketdata/"). DISPLAY-ONLY: a noisy
-   watchlist / avoid-the-peak lens, never a buy list. */
+   watchlist lens, never a buy list. */
 (function () {
   const L = (en, zh) => `<span class="l-en">${en}</span><span class="l-zh">${zh == null ? en : zh}</span>`;
   const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -130,7 +130,7 @@
       </div>
       ${legBar(nv.legs || {})}
       <div class="ne-why">${L(esc(nv.why_en), esc(nv.why_zh))}</div>
-      <div class="ne-rec-h">${L('Where to look — clean entry first', '该看哪里 — 干净入场优先')}</div>
+      <div class="ne-rec-h">${L('Where to look', '该看哪里')}</div>
       <div class="ne-recs">${recs || '<small style="color:var(--muted)">' + L('no clean read', '无清晰读数') + '</small>'}</div>
       ${caution ? `<div class="ne-caution">${caution}</div>` : ''}
       ${cav}
@@ -169,8 +169,8 @@
           ${attnBar(d)}
           <div class="ne-grid">${d.narratives.map(card).join('')}</div>
           <p class="ne-note">${L(
-            'Scanned ' + (d.n_universe || '—') + ' names as of ' + esc(d.as_of) + '. The 0–100 score ranks how clearly a narrative is FORMING (tightening co-movement), not how much it will pay — early-entry return edge is ~0 and negatively skewed. Promote a confirmed candidate to a curated basket with scripts/promote_candidate.py.',
-            '截至 ' + esc(d.as_of) + ' 扫描了 ' + (d.n_universe || '—') + ' 只个股。0–100 分衡量叙事成形的清晰度（共动收紧），而非回报 — 早期入场优势≈0 且负偏。可用 scripts/promote_candidate.py 将确认的候选提升为人工策选篮子。')}</p>`;
+            'Scanned ' + (d.n_universe || '—') + ' names as of ' + esc(d.as_of) + '. Scores rank narrative formation, not expected return.',
+            '截至 ' + esc(d.as_of) + ' 扫描了 ' + (d.n_universe || '—') + ' 只个股。分数衡量叙事成形程度，并非预期回报。')}</p>`;
         // hover/focus reveals the code popover via CSS; a tap pins it (touch, where hover is
         // unreliable). Close on outside tap or Escape; only one pinned at a time.
         sec.querySelectorAll('.ne-tk').forEach(chip => {
