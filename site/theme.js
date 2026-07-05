@@ -255,17 +255,25 @@
     // merge every market's nightly library into one universe; tag each row with the
     // analyzer it routes to and a market flag (Intl rows carry their own per-country
     // flag + market name, so prefer those when present)
-    var lib = [], rows = [], sel = -1;
-    STOCK_MARKETS.forEach(function (m) {
-      fetch(pfx + m.lib).then(function (r) { return r.json(); }).then(function (d) {
-        (d || []).forEach(function (x) {
-          x._tgt = m.target;
-          x._fl = x.fl || m.flag;
-          x._mk = x.mk || m.mkt;
-        });
-        lib = lib.concat(d || []);
-      }).catch(function () {});
-    });
+    var lib = [], rows = [], sel = -1, libsLoaded = false;
+    // Lazy-load the (heavy) per-market search indexes only once the user engages
+    // the search box, not on every page load — 'focus' fires before the first
+    // keystroke, so the universe is usually ready by the time they finish typing.
+    function loadLibs() {
+      if (libsLoaded) return; libsLoaded = true;
+      STOCK_MARKETS.forEach(function (m) {
+        fetch(pfx + m.lib).then(function (r) { return r.json(); }).then(function (d) {
+          (d || []).forEach(function (x) {
+            x._tgt = m.target;
+            x._fl = x.fl || m.flag;
+            x._mk = x.mk || m.mkt;
+          });
+          lib = lib.concat(d || []);
+          if (input.value.trim()) search();   // repaint if they've already typed
+        }).catch(function () {});
+      });
+    }
+    input.addEventListener('focus', loadLibs);
     function go(x) {
       if (!x) return;
       // US, China, HK, Canada picks open the Terminal; Intl keeps its in-page analyzer
