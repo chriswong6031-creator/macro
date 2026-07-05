@@ -146,7 +146,10 @@ log = logging.getLogger(__name__)
 # Config / connectivity
 # --------------------------------------------------------------------------- #
 
-CONNECT_TIMEOUT = 3       # seconds — fast reachability check (was 2s; bumped for safety)
+CONNECT_TIMEOUT = int(os.environ.get("THETA_CONNECT_TIMEOUT", "3"))
+# THETA_CONNECT_TIMEOUT env override (item 1a): allows the live_flow_poller to
+# widen the connect timeout on per-root retries without affecting backfill callers.
+# Default 3s retained — backfill and all other callers are unaffected.
 READ_TIMEOUT_BETWEEN_BYTES = 90   # seconds — max wait between bytes on a streaming read
 # tuple form (connect, read) passed to requests:
 _TIMEOUTS = (CONNECT_TIMEOUT, READ_TIMEOUT_BETWEEN_BYTES)
@@ -188,15 +191,20 @@ def _session() -> requests.Session:
     return s
 
 
-def reachable() -> bool:
-    """Quick check: can we GET /v3/option/list/symbols within CONNECT_TIMEOUT seconds?
+def reachable(connect_timeout: int | None = None) -> bool:
+    """Quick check: can we GET /v3/option/list/symbols within connect_timeout seconds?
 
     v3 health check endpoint (verified live 2026-07-04).  HTTP 200 = terminal up.
     v2 /v2/list/roots/option is dead (returns 410 Gone) — do NOT use.
+
+    connect_timeout: override in seconds; defaults to CONNECT_TIMEOUT (env-configurable).
+    Used by the live_flow_poller for direct terminal-offline probes with a wider timeout
+    (15s) to distinguish true offline from transient contention.
     """
+    timeout = connect_timeout if connect_timeout is not None else CONNECT_TIMEOUT
     try:
         r = requests.get(f"{_base_url()}/v3/option/list/symbols",
-                         timeout=CONNECT_TIMEOUT)
+                         timeout=timeout)
         return r.status_code == 200
     except Exception:  # noqa: BLE001
         return False

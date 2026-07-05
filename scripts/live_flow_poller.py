@@ -36,9 +36,11 @@ New R2 objects emitted each cycle (live_flow/ prefix):
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import logging
 import os
+import resource
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -73,6 +75,14 @@ DAY_STATE_SIZE_WARN_BYTES = 50 * 1024 * 1024  # 50 MB
 # RTH window (America/New_York) — poller active within this range
 RTH_START_H, RTH_START_M = 9, 25     # 09:25 ET
 RTH_END_H,   RTH_END_M   = 16, 5     # 16:05 ET
+
+# Item 1b: per-root retry on None return — widen connect timeout and pause before skip.
+# "terminal offline" may only be claimed after a direct probe with PROBE_CONNECT_TIMEOUT.
+RETRY_CONNECT_TIMEOUT = 15   # seconds — wider connect for per-root retry
+RETRY_PAUSE_SEC       = 5    # seconds — pause before retry
+
+# Item 8: RSS logging threshold
+RSS_WARN_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB
 
 
 # ── config access ─────────────────────────────────────────────────────────────
@@ -185,11 +195,17 @@ def _fetch_root(root: str, session_date: str,
     """Fetch call + put for one root.  Returns (root, calls_df, puts_df).
 
     Either may be None (terminal failure) or empty DataFrame (no trades).
-    Errors are logged and (root, None, None) is returned — caller skips root.
+
+    Item 1b — retry logic:
+      If the first fetch returns None (terminal contention under ~360-root backfill
+      saturates the 8-request ceiling), pause RETRY_PAUSE_SEC seconds then retry ONCE
+      with RETRY_CONNECT_TIMEOUT (15s).  "terminal offline/unreachable" log may only be
+      emitted after a direct probe with the wider timeout confirms the terminal is down.
+      Otherwise log "terminal contended — root skipped after retry".
+
     INERT: never raises.
     """
     from collectors import thetadata as td
-    import pandas as pd
 
     try:
         kw: dict = {}
@@ -200,6 +216,26 @@ def _fetch_root(root: str, session_date: str,
 
         calls = td.bulk_trade_quote(root, "call", session_date, session_date, **kw)
         puts  = td.bulk_trade_quote(root, "put",  session_date, session_date, **kw)
+
+        # Item 1b: if BOTH legs are None (not just empty) retry once with wider timeout
+        if calls is None and puts is None:
+            log.debug("poller: fetch returned None for %s — pausing %ds before retry",
+                      root, RETRY_PAUSE_SEC)
+            time.sleep(RETRY_PAUSE_SEC)
+            calls = td.bulk_trade_quote(root, "call", session_date, session_date, **kw)
+            puts  = td.bulk_trade_quote(root, "put",  session_date, session_date, **kw)
+
+            if calls is None and puts is None:
+                # Determine whether the terminal is genuinely offline
+                terminal_up = td.reachable(connect_timeout=RETRY_CONNECT_TIMEOUT)
+                if terminal_up:
+                    log.warning("poller: terminal contended — root %s skipped after retry", root)
+                else:
+                    log.warning("poller: terminal offline/unreachable (probe with %ds timeout failed)"
+                                " — root %s skipped after retry",
+                                RETRY_CONNECT_TIMEOUT, root)
+                return root, None, None
+
         return root, calls, puts
     except Exception as e:  # noqa: BLE001
         log.warning("poller: fetch failed for %s: %s", root, e)
@@ -266,6 +302,19 @@ def _load_day_state(session_date: str) -> dict:
         return {}
     try:
         raw = json.loads(p.read_text())
+        # Item 2: version check — discard day_state written by an older schema version.
+        # full_day mode re-accumulates from zero so nothing is lost.
+        # time_window mode also resets here; one full-day cycle follows before windowed
+        # increments resume (watermarks start empty and full-day pull is safe).
+        from engine.live_flow import DAY_STATE_VERSION  # noqa: PLC0415
+        stored_ver = raw.get("schema_version", 1)
+        if stored_ver < DAY_STATE_VERSION:
+            log.info(
+                "poller: day_state schema_version=%d < current=%d — discarding stale state "
+                "(full_day mode will re-accumulate from zero this cycle)",
+                stored_ver, DAY_STATE_VERSION,
+            )
+            return {}
         # emitted_ids is serialised as a list
         raw["emitted_ids"] = set(raw.get("emitted_ids", []))
         # contract_vol and notability_history stored with string keys (JSON constraint);
@@ -309,7 +358,9 @@ def _state_key(k) -> str:
 def _save_day_state(session_date: str, state: dict) -> None:
     p = _state_dir() / f"day_state_{session_date}.json"
     try:
+        from engine.live_flow import DAY_STATE_VERSION as _DSV  # noqa: PLC0415
         raw: dict = {}
+        raw["schema_version"] = _DSV   # Item 2: stamp version for forward-compat checks
         raw["emitted_ids"] = list(state.get("emitted_ids", set()))
         raw["all_events"]  = state.get("all_events", [])
         raw["root_gross_today"] = state.get("root_gross_today", {})
@@ -676,6 +727,13 @@ def run_cycle(
 
         meta_notes.extend(result.get("meta_notes", []))
 
+        # Item 8 — free per-root frames after processing to cap intraday memory growth.
+        del calls_df, puts_df, result
+        fetch_results[root] = (None, None)  # release DataFrame references
+
+    # Periodic GC after processing all roots (Item 8)
+    gc.collect()
+
     # 24h retention trim
     retention_h = int(cfg.get("retention_hours", 24))
     cutoff_ts = (datetime.now(timezone.utc) - timedelta(hours=retention_h)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1003,6 +1061,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             except Exception as tk_err:  # noqa: BLE001
                 log.warning("poller: ticker JSON failed for %s: %s", tick_root, tk_err)
 
+        roots_ok_n    = meta.get("roots_polled", 0)
+        roots_total_n = meta.get("universe_n", len(roots))
+        roots_skip_n  = roots_total_n - roots_ok_n
+
         log.info("poller: cycle #%d events=%d unusual=%d heat_groups=%d "
                  "minutes=%d sectors=%d tickers=%d cycle_sec=%.1fs",
                  cycle_n,
@@ -1013,6 +1075,43 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                  len(tide_payload.get("sectors", [])),
                  ticker_count,
                  meta.get("cycle_sec", 0))
+
+        # Item 6 — register live_flow_poller in the run_status/circuit-breaker pattern.
+        # Mirrors the established pattern in scripts/collect.py + lib/store.write_status.
+        # Writes a 'live_flow_poller' entry under sources with ok/roots_ok/roots_skipped/asof.
+        try:
+            from lib import store as _store   # noqa: PLC0415
+            _rs = _store.read_status()
+            _rs.setdefault("sources", {})["live_flow_poller"] = {
+                "status":        "ok",
+                "roots_ok":      roots_ok_n,
+                "roots_skipped": roots_skip_n,
+                "asof":          meta.get("asof", ""),
+                "cycle_n":       cycle_n,
+                "checked_at":    datetime.now(timezone.utc).isoformat(),
+            }
+            _store.write_status(_rs)
+        except Exception as _rs_err:  # noqa: BLE001
+            log.debug("poller: run_status write failed (non-fatal): %s", _rs_err)
+
+        # Item 8 — peak-RSS logging (>2 GB triggers a meta note).
+        try:
+            rss_bytes = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            # macOS: ru_maxrss is in bytes; Linux: kilobytes.
+            import platform as _plat  # noqa: PLC0415
+            if _plat.system() == "Linux":
+                rss_bytes *= 1024
+            if rss_bytes > RSS_WARN_BYTES:
+                log.warning(
+                    "poller: cycle #%d peak RSS %.1f GB exceeds 2 GB threshold",
+                    cycle_n, rss_bytes / (1024 ** 3),
+                )
+                meta.setdefault("notes", []).append(
+                    f"peak RSS {rss_bytes / (1024**3):.1f} GB > 2 GB threshold — "
+                    "consider reducing universe or retention_hours"
+                )
+        except Exception as _rss_err:  # noqa: BLE001
+            log.debug("poller: RSS check failed (non-fatal): %s", _rss_err)
 
         # Upload to R2
         if s3:

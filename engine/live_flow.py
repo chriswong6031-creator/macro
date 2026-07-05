@@ -52,6 +52,14 @@ from engine.group_flow import _SECTOR_ZH
 
 log = logging.getLogger(__name__)
 
+# ── day-state schema version ─────────────────────────────────────────────────
+# Bump when the structure of day_state keys changes incompatibly.
+# The poller loads an old-version day_state → discards it and starts fresh.
+# Caveat for full_day mode: the full day is re-accumulated from zero so nothing
+# is lost.  For time_window mode, watermarks are also reset (one cycle of
+# full-day pull follows before windowed increments resume).
+DAY_STATE_VERSION = 2  # bumped: seen_sequences key now includes root
+
 # ── notability gate defaults ──────────────────────────────────────────────────
 DEFAULT_ETF_FLOOR    = 1_000_000   # $ gross premium floor for ETF anchors
 DEFAULT_NAME_FLOOR   = 250_000     # $ gross premium floor for single names
@@ -320,6 +328,13 @@ def _is_notable(premium: float, root: str, baselines: dict | None,
       2. OR premium_z >= 3 where root's data/tape_flow baseline is present
     baseline_source: "z252" | "floor"
     premium_z: float or None
+
+    Item 3 NOTE: The returned prem_z is computed against the ROOT-LEVEL day-gross EOD-252
+    baseline.  Callers that build per-contract events MUST null out prem_z when
+    baseline_source == 'floor' (scale mismatch: per-contract premium vs day-gross baseline).
+    Only unusual_names (which accumulates day-gross) may carry the day-gross z.
+    When per-contract z252 baselines exist (tape_flow z252-ready path), callers should
+    re-compute prem_z from those per-contract baselines and set baseline_source='z252'.
     """
     floor = etf_floor if root.upper() in etf_set else name_floor
     prem_z: float | None = None
@@ -453,22 +468,26 @@ def process_batch(
 
     combined = pd.concat(frames, ignore_index=True)
 
-    # FIX 2 — row-level sequence dedup before any accumulation.
+    # Item 2 — root-scoped sequence dedup.
+    # Key is now (root, exp, strike, right) to avoid cross-root key collisions.
     # For overlapping windows (time_window mode) and full-day re-pulls (full_day mode)
     # rows already processed in a previous cycle are identified by their sequence number
-    # being <= the max sequence already seen for that contract.
+    # being <= the max sequence already seen for that (root, contract).
     # This makes both overlap and idempotent re-pull safe.
     if "sequence" in combined.columns:
         contract_cols_dedup = [c for c in ("expiration", "strike", "right") if c in combined.columns]
         if contract_cols_dedup:
             # Vectorised key columns (avoid per-row .loc — SPY-scale frames are ~1M rows).
             seq_arr   = pd.to_numeric(combined["sequence"], errors="coerce")
+            root_key  = (combined.get("root", pd.Series("UNKNOWN", index=combined.index))
+                         .astype(str).str.upper())
             exp_key   = combined.get("expiration", pd.Series("", index=combined.index)).astype(str)
             stk_num   = pd.to_numeric(combined.get("strike", pd.Series(0.0, index=combined.index)),
                                       errors="coerce").fillna(0.0).astype(float)
             right_key = (combined.get("right", pd.Series("C", index=combined.index))
                          .astype(str).str.upper().str[:1])
-            keys      = list(zip(exp_key, stk_num, right_key))
+            # (root, exp, strike, right) — root-scoped to prevent cross-root collisions
+            keys      = list(zip(root_key, exp_key, stk_num, right_key))
             # Drop rows whose sequence is <= the max already seen for that contract.
             if seen_sequences:
                 max_seen_arr = pd.Series(
@@ -608,6 +627,14 @@ def process_batch(
         )
         if not notable:
             continue
+
+        # Item 3 — event premium_z honesty:
+        # The EOD-252 baselines are ROOT-LEVEL day-gross denominators; comparing a
+        # per-contract print against them is a scale mismatch.  Null out prem_z on
+        # events unless the notable path is z252 (per-contract baseline not yet built).
+        # The day-gross z252 stays in unusual_names where scales match.
+        if baseline_src != "z252":
+            prem_z = None
 
         exp_str  = str(row.get("expiration", ""))
         strike   = float(row.get("strike", 0))
