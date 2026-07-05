@@ -2801,13 +2801,13 @@ def main() -> int:
     # function-local for the WHOLE of main(); referencing it before that import
     # raises UnboundLocalError and aborts the build. `json` is module-global.
     _auth_repl = json.dumps(_auth_cfg)
-    # GitHub Pages custom domain: serve the dashboard at www.mastermind-x.com.
-    # Written on every build (and committed as site/CNAME for the fast pages.yml
-    # path) so a render never drops it — without it Pages reverts to the
-    # *.github.io URL and the Google/X OAuth redirect (Supabase Site URL =
-    # https://www.mastermind-x.com) lands on a dead host. apex mastermind-x.com
-    # stays on the VPS; only www is the Pages custom domain.
-    (site / "CNAME").write_text("www.mastermind-x.com\n")
+    # NOTE: site/CNAME is deliberately NOT written. Pages has no custom domain
+    # (repo pages cname=null) and all Pages deploys are workflow-type
+    # (actions/deploy-pages), where a CNAME file in the artifact is inert.
+    # The live site is apex mastermind-x.com (VPS behind Tencent EdgeOne);
+    # *.github.io is a mirror. OAuth returns to the page the user started on
+    # (theme.js signInWithOAuth redirectTo), not a fixed host — the allowed
+    # origins live in the Supabase dashboard (see ACCOUNTS_SETUP.md).
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "account.js",

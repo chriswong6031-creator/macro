@@ -8,6 +8,10 @@ __pycache__/
 # living OUTSIDE the git work-tree so `git reset --hard` can't expose a partial
 # file (app/deploy/update.sh + Caddyfile). Box-only; never committed.
 site.served/
+# retired 2026-07-05: Pages has no custom domain and workflow-type Pages deploys
+# ignore CNAME files anyway — listed here so an in-flight render on pre-removal
+# code can't re-commit it (git add skips ignored files).
+site/CNAME
 site/_tmp/
 site/stockdata/
 site/ohlc/
