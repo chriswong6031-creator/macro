@@ -30,6 +30,10 @@ Steps (in order):
   12. Promotion scan (W-B1) — flags compounds meeting the economic floor into
                      data/oracle/promotion_queue.json (loud-error pattern;
                      never auto-promotes).
+  13. Sentinels (W-B4) — health + decay checks; loud-error; first run seeds silently.
+  14. Hypothesis inbox (P9) — four collectors: analogue_surprise, detection_miss,
+                     screen_live_divergence, sentinel_mirror; append-only to
+                     data/oracle/hypothesis_inbox.jsonl; first run seeds silently.
 
 Usage
 -----
@@ -844,6 +848,28 @@ def _step_sentinels(data_dir: Path, dry_run: bool) -> bool:
         return False
 
 
+def _step_hypothesis_inbox(data_dir: Path, dry_run: bool) -> dict[str, int]:
+    """P9: Hypothesis inbox collection — nightly step 14.
+
+    Loud-error pattern: ::error:: annotation on any failure; non-blocking (later
+    steps not present, but the nightly pipeline continues if this throws).
+    First run seeds hypothesis_state.json silently — no rows written.
+    Four collectors: analogue_surprise, detection_miss, screen_live_divergence,
+    sentinel_mirror.
+
+    Returns counts dict; an empty dict signals failure.
+    """
+    log.info("=== Step 14: Hypothesis inbox (P9) ===")
+    try:
+        from engine.oracle.hypothesis_inbox import run_hypothesis_inbox
+        counts = run_hypothesis_inbox(data_dir, dry_run=dry_run)
+        # (breakdown already logged inside run_hypothesis_inbox — no dup)
+        return counts
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: hypothesis_inbox FAILED: {e}")
+        return {}
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -937,6 +963,12 @@ def main() -> int:
     if not _step_sentinels(data_dir, args.dry_run):
         failures.append("sentinels")
 
+    # --- Step 14: Hypothesis inbox (P9) — append-only at END per additive-only law ---
+    inbox_counts = _step_hypothesis_inbox(data_dir, args.dry_run)
+    if not inbox_counts:  # empty dict = failure sentinel (review major: old guard was dead logic)
+        # An empty dict means failure was caught inside _step_hypothesis_inbox
+        failures.append("hypothesis_inbox")
+
     elapsed = time.time() - t_total
     log.info(
         "oracle_nightly: DONE in %.1fs — %d new alerts, %d ledger entries, failures=%s",
@@ -951,6 +983,11 @@ def main() -> int:
     print(f"  n_complexes:   {(oracle_state.get('regime') or {}).get('n_active_complexes', 0)}")
     print(f"  new_alerts:    {n_alerts}  (first run = 0, silent seed)")
     print(f"  ledger_new:    {n_ledger}")
+    print(f"  inbox_rows:    {(inbox_counts or {}).get('total', 0)}  "
+          f"(as={inbox_counts.get('analogue_surprise',0) if inbox_counts else 0}, "
+          f"dm={inbox_counts.get('detection_miss',0) if inbox_counts else 0}, "
+          f"sld={inbox_counts.get('screen_live_divergence',0) if inbox_counts else 0}, "
+          f"sent={inbox_counts.get('sentinel',0) if inbox_counts else 0})")
     print(f"  elapsed_s:     {elapsed:.1f}")
     if failures:
         print(f"  FAILURES:      {failures}")
