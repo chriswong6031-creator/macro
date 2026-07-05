@@ -47,7 +47,7 @@ _KNOWN_NULLS = """\
 - Defensive-rotation -> vol-shock prediction: falsified (DEFENSIVE_ROTATION.md).
 - 28 of 34 high-VIX routing cells: small-n bootstrap artifacts (P3b placebo)."""
 
-# Tier-1 screen priors from external-brainstorm round 1 (2026-07-04). NOT
+# Tier-1 screen priors from external-brainstorm rounds 1-2 (2026-07-04). NOT
 # gauntleted — treat as strong priors, not proofs. The individual compounds and
 # their numbers appear live in the "Specced/screened" section above; these are
 # the GENERALISED shape-lessons so the model does not re-propose a trivially
@@ -58,7 +58,14 @@ _SCREEN_PRIORS = """\
   C1 -0.5%). "Quiet leadership" / "group-confirmed RS turn" variants are the
   dead unconditioned-momentum null wearing conditioners. Do not re-propose.
 - A high hit-rate at tiny n is NOISE, not edge (round-1 A4: +5.5% / 86% hit at
-  n=21 — a sampling mirage). See the COVERAGE FLOOR in the rules below."""
+  n=21; round-2 F2: +3.3% / 71% at n=50, era 2/4; E2: +2.8% but 43% hit at
+  n=68 — all sampling/skew mirages that fail the floor). See COVERAGE FLOOR.
+- Participation-STATE gating (breadth_50>=~0.5 / rs>=0 / cohesion>=x as the
+  PRIMARY entry condition, no flow-event or washout trigger): flat-to-negative
+  across EVERY family on tier-s (round-2 B3 -1.2%, A6 -1.3%, C3 -1.3%, C5 -1.7%,
+  B4 -1.2%, all n>=290). Buying "healthy participation" is not an edge — that
+  participation is already priced. Do not gate on breadth/cohesion state; use
+  them at most as a secondary filter behind a genuine flow/washout trigger."""
 
 
 def _jsonl(path: Path) -> list[dict]:
