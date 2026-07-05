@@ -13,17 +13,28 @@ PIT discipline (RUL-23): all insider windows are keyed on FILING_DATE ≤ t.
 The legal Form-4 filing lag is ≤2 business days after the trade, so
 filing_date is the earliest public-knowledge anchor — never trans_date.
 
+Window arithmetic (v1.1 — Amendment 2 RUL-26):
+  ALL insider windows (45td buyer, 20td buyer, 756td computable, +15td post)
+  use TRADING-DAY counting via searchsorted on the ticker's own price-date
+  index (same approach as _build_washout_cache). Where a ticker's price index
+  is unavailable, we derive trading days from the union price calendar across
+  all loaded tickers (NYSE-approximate — documented in meta). This ensures
+  both legs of I1 (washout 45td + buyer 45td) span the same window.
+
 Forms computed per fire (ticker, date t):
   ins_computable        bool: ticker in panel with ≥1 filing in trailing 3y at t
-  washout_flag          bool: min close/126d_high − 1 ≤ −0.20 over [t-45, t]
-  ins_buyers_45d        int:  distinct open-market buyers (code=P) in [t-45, t]
+  ins_i3_computable     bool: I3-specific: ticker has ≥1 filing in trailing 3y-td
+                               in the FORM-4-ELIGIBLE UNIVERSE (used for I3 base)
+  washout_flag          bool: min close/126d_high − 1 ≤ −0.20 over [t-45td, t]
+  ins_buyers_45d        int:  distinct open-market buyers (code=P) in [t-45td, t]
   ins_cluster_washout   bool: I1 — washout_flag AND ins_buyers_45d ≥ 2 (filing_date ≤ t)
   ins_cluster_washout_3 bool: I1 sensitivity — same with ≥3 buyers (RUL-26)
-  ins_cluster_pre20     bool: I2 — distinct buyers in [t-20, t] ≥ 2 (PIT)
-  ins_cluster_post15    int:  DESCRIPTIVE ONLY — buyers in (t, t+15] (study-time,
+  ins_cluster_pre20     bool: I2 — distinct buyers in [t-20td, t] ≥ 2 (PIT)
+  ins_cluster_post15    int:  DESCRIPTIVE ONLY — buyers in (t, t+15td] (study-time,
                                NOT a PIT stratum; pit_at_entry=false in meta)
   ins_netusd_mcap_sn_p80 bool: I3 — trailing 6-month net_usd/mcap sector-neutral
-                                pctile ≥ 80; negative-IC opportunistic filter EXCLUDED
+                                pctile ≥ 80 vs FORM-4-ELIGIBLE UNIVERSE at t;
+                                negative-IC opportunistic filter EXCLUDED
   ins_i3_sector_neutral  bool: True = sector-neutral pctile used, False = universe-wide
 
 Usage:
@@ -84,7 +95,14 @@ _I3_NET_USD_MONTHS    = 6       # trailing 6-month net_usd window for I3
 _I3_PERCENTILE        = 80      # sector-neutral pctile ≥ 80 (I3)
 
 # Definition version stamped in output meta
-_DEFINITION_VERSION = "v1"
+_DEFINITION_VERSION = "v1.1"
+_DEFINITION_CHANGELOG = (
+    "v1.1 (2026-07-05): M1 — all insider windows converted to trading-day "
+    "arithmetic (searchsorted on price index; was calendar days); M2 — I3 "
+    "percentile base expanded to Form-4-eligible universe at t, not just "
+    "co-firing tickers; m3 — PIT mcap from fundamentals_panel.parquet where "
+    "available, close-price proxy as fallback."
+)
 
 # Program eras for coverage reporting (RUL-26)
 _PROGRAM_ERAS = {
@@ -93,6 +111,59 @@ _PROGRAM_ERAS = {
     "2020-2022": (pd.Timestamp("2020-01-01"), pd.Timestamp("2022-12-31")),
     "2023-2026": (pd.Timestamp("2023-01-01"), pd.Timestamp("2026-12-31")),
 }
+
+
+# ---------------------------------------------------------------------------
+# Trading-day calendar helpers (M1 fix)
+# ---------------------------------------------------------------------------
+
+def _build_union_calendar(closes: dict[str, "pd.Series"]) -> "pd.DatetimeIndex":
+    """Return the union of all trading-day indices across loaded tickers.
+
+    This is used as a fallback NYSE-approximate calendar when a specific
+    ticker's price index is unavailable (e.g. basket panel vs deep panel).
+    The union of real price dates is a better approximation of NYSE trading
+    days than pd.bdate_range (which includes some NYSE holidays) and requires
+    no external library.
+    """
+    if not closes:
+        return pd.DatetimeIndex([])
+    all_dates: set = set()
+    for s in closes.values():
+        all_dates.update(s.dropna().index.tolist())
+    return pd.DatetimeIndex(sorted(all_dates))
+
+
+def _td_offset(
+    t: "pd.Timestamp",
+    n_td: int,
+    price_index: "pd.DatetimeIndex | None",
+    fallback_calendar: "pd.DatetimeIndex",
+    *,
+    direction: int = -1,
+) -> "pd.Timestamp":
+    """Return the date that is `n_td` trading days before (direction=-1) or
+    after (direction=+1) `t`, measured on `price_index` (preferred) or
+    `fallback_calendar`.
+
+    If neither calendar contains `t`, we snap t to the nearest prior date
+    in the calendar before counting. The returned date is a calendar date
+    (the actual nth trading day); callers then use it as a filing_date
+    threshold (>=/<= on calendar dates as usual).
+    """
+    cal = price_index if (price_index is not None and len(price_index) > 0) else fallback_calendar
+    if len(cal) == 0:
+        # Ultimate fallback: approximate with calendar days (1 td ≈ 1.4 cd)
+        return t + pd.Timedelta(days=int(n_td * 1.4 * direction))
+
+    # Find position of t in the calendar (snap to prior if t not present)
+    pos = cal.searchsorted(t, side="right") - 1
+    if pos < 0:
+        pos = 0
+
+    target_pos = pos + direction * n_td
+    target_pos = max(0, min(target_pos, len(cal) - 1))
+    return cal[target_pos]
 
 
 # ---------------------------------------------------------------------------
@@ -306,130 +377,369 @@ def _ins_buyers_in_window(
 # I3: trailing 6-month net_usd/mcap sector-neutral percentile
 # ---------------------------------------------------------------------------
 
+def _pit_close(
+    ticker: str,
+    t: "pd.Timestamp",
+    closes: dict[str, "pd.Series"],
+) -> float | None:
+    """Return the PIT close price for ticker at t (most recent bar ≤ t)."""
+    close = closes.get(ticker)
+    if close is None or close.empty:
+        return None
+    c = close.dropna().sort_index()
+    loc = c.index.searchsorted(t, side="right") - 1
+    if loc < 0:
+        return None
+    v = float(c.iloc[loc])
+    return v if v > 0 else None
+
+
+def _pit_shares(
+    ticker: str,
+    t: "pd.Timestamp",
+    shares_panel: "pd.DataFrame | None",
+) -> float | None:
+    """Return PIT shares outstanding for ticker at t from fundamentals_panel.
+
+    Uses asof_date ≤ t (causal, mirrors insider_phase0 / insider_factor.market_cap).
+    Returns None when shares_panel is None or ticker/date not covered.
+    """
+    if shares_panel is None or shares_panel.empty:
+        return None
+    avail = shares_panel[
+        (shares_panel["ticker"] == ticker) &
+        (shares_panel["asof_date"] <= t)
+    ]
+    if avail.empty:
+        return None
+    shares = float(avail["shares"].iloc[-1])
+    return shares if shares > 0 else None
+
+
+def _compute_net_usd_mcap_for_ticker(
+    ticker: str,
+    t: "pd.Timestamp",
+    ticker_idx: dict[str, "pd.DataFrame"],
+    closes: dict[str, "pd.Series"],
+    shares_panel: "pd.DataFrame | None",
+) -> tuple[float | None, bool]:
+    """Compute net_usd_6m / mcap for one (ticker, t).
+
+    Returns (value, used_pit_mcap). used_pit_mcap=True means PIT shares were
+    available; False means we fell back to close-price proxy.
+    """
+    tp = ticker_idx.get(ticker)
+    if tp is None:
+        return None, False
+    t_start_6m = t - pd.DateOffset(months=_I3_NET_USD_MONTHS)
+    mask = (tp["filing_date"] >= t_start_6m) & (tp["filing_date"] <= t)
+    win = tp[mask]
+    if win.empty:
+        return None, False
+    buys = win[win["code"] == "P"]["usd"].sum()
+    sells = win[win["code"] == "S"]["usd"].sum()
+    net_usd = buys - sells
+
+    # m3 fix: PIT market cap via shares × close; fall back to close-price proxy
+    close_t = _pit_close(ticker, t, closes)
+    if close_t is None:
+        return None, False
+    shares = _pit_shares(ticker, t, shares_panel)
+    if shares is not None:
+        denom = close_t * shares
+        used_pit = True
+    else:
+        # Fallback: close_t as proxy for mcap (shares not available)
+        denom = close_t
+        used_pit = False
+    if denom <= 0:
+        return None, False
+    return net_usd / denom, used_pit
+
+
+def _build_i3_universe_cache(
+    panel: "pd.DataFrame",
+    closes: dict[str, "pd.Series"],
+    shares_panel: "pd.DataFrame | None",
+    fire_dates: "pd.DatetimeIndex",
+    union_cal: "pd.DatetimeIndex",
+) -> tuple[dict["pd.Timestamp", dict[str, float]], float]:
+    """For each unique fire date t, compute net_usd_6m/mcap for every ticker
+    in the Form-4-eligible universe at t (≥1 filing in trailing 3y-td).
+
+    This is the M2 fix: the I3 percentile base is the UNIVERSE at t, not just
+    co-firing tickers.
+
+    Vectorized implementation:
+    1. Aggregate the panel to (ticker, filing_date) → net_usd at the filing_date level.
+    2. For each unique fire date t, window the aggregated panel to [t-6m, t] to get
+       trailing net_usd per ticker, then divide by PIT mcap.
+    3. For computable check (≥1 filing in trailing 3y-td), pre-compute the last
+       filing date per ticker and check against t - 3y-td.
+
+    Returns ({t: {ticker: net_usd_mcap_val}}, fallback_fraction).
+    """
+    # --- Step 1: Pre-aggregate to (ticker, filing_date) → net_usd_signed ---
+    # Vectorized: assign signed_usd (P=+, S=-), groupby ticker+filing_date, sum.
+    sub = panel[panel["code"].isin(["P", "S"])][["ticker", "filing_date", "code", "usd"]].copy()
+    sub["signed_usd"] = sub["usd"] * sub["code"].map({"P": 1.0, "S": -1.0})
+    net_by_tfd = (
+        sub.groupby(["ticker", "filing_date"])["signed_usd"]
+        .sum()
+    )  # MultiIndex (ticker, filing_date) → net_usd
+
+    # Build per-ticker sorted arrays of (filing_date_us, net_usd).
+    # Use microseconds as the common unit throughout: pandas datetime64[us] → int64
+    # gives microseconds. We normalize all timestamps to microseconds to avoid the
+    # datetime64[us] vs nanosecond mismatch (pd.Timestamp.value is ns).
+    _US_PER_DAY = 24 * 3600 * 1_000_000  # microseconds per day
+
+    def _to_us(arr_or_ts) -> np.ndarray:
+        """Convert datetime array or pd.Timestamp to int64 microseconds."""
+        if isinstance(arr_or_ts, pd.Timestamp):
+            # pd.Timestamp.value is nanoseconds; divide by 1000
+            return np.array([arr_or_ts.value // 1000], dtype=np.int64)
+        a = np.asarray(arr_or_ts)
+        if np.issubdtype(a.dtype, np.datetime64):
+            return a.astype("datetime64[us]").astype("int64")
+        return a.astype("int64")
+
+    sorted_events: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for ticker, grp in net_by_tfd.groupby(level=0):
+        dates_us = _to_us(grp.index.get_level_values("filing_date").values)
+        nets = grp.values.astype("float64")
+        order = np.argsort(dates_us, stable=True)
+        sorted_events[str(ticker)] = (dates_us[order], nets[order])
+
+    # --- Step 2: PIT shares lookup (m3 fix) ---
+    # Build a per-ticker list of (asof_date_us, shares) sorted by asof_date
+    pit_shares_map: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    n_pit = 0
+    n_fallback = 0
+    if shares_panel is not None and not shares_panel.empty:
+        for ticker, grp in shares_panel.groupby("ticker"):
+            grp = grp.sort_values("asof_date")
+            pit_shares_map[str(ticker)] = (
+                _to_us(grp["asof_date"].values),
+                grp["shares"].values.astype("float64"),
+            )
+
+    def _get_pit_shares_fast(ticker: str, t_us: int) -> float | None:
+        if ticker not in pit_shares_map:
+            return None
+        asof_arr, shares_arr = pit_shares_map[ticker]
+        pos = np.searchsorted(asof_arr, t_us, side="right") - 1
+        if pos < 0:
+            return None
+        v = float(shares_arr[pos])
+        return v if v > 0 else None
+
+    # --- Step 3: PIT close lookup (vectorized, per-ticker cache) ---
+    # Pre-cache (date_us_arr, close_arr) per ticker for O(log n) lookup
+    close_cache: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for ticker, s in closes.items():
+        c = s.dropna().sort_index()
+        if len(c) > 0:
+            close_cache[ticker] = (
+                _to_us(c.index.values),
+                c.values.astype("float64"),
+            )
+
+    def _get_pit_close_fast(ticker: str, t_us: int) -> float | None:
+        if ticker not in close_cache:
+            return None
+        d_arr, c_arr = close_cache[ticker]
+        pos = np.searchsorted(d_arr, t_us, side="right") - 1
+        if pos < 0:
+            return None
+        v = float(c_arr[pos])
+        return v if v > 0 else None
+
+    # --- Step 4: Build cache — vectorized per-ticker, across all fire dates ---
+    # Instead of looping (date → tickers), we loop (ticker → all fire dates) which
+    # is much more vectorizable: for each ticker we do a searchsorted sweep over
+    # all fire_dates at once.
+    unique_dates = sorted(set(fire_dates.tolist()))
+    fire_dates_us = np.array([int(_to_us(d)[0]) for d in unique_dates], dtype=np.int64)
+    n_dates = len(fire_dates_us)
+
+    log.info("  I3 universe cache: %d unique fire dates × %d panel tickers (vectorized per-ticker)",
+             n_dates, len(sorted_events))
+
+    # Pre-compute union_cal in microseconds for 3y-td offset
+    union_cal_us = _to_us(union_cal.values) if len(union_cal) > 0 else np.array([], dtype=np.int64)
+    _6M_US = int(183 * _US_PER_DAY)  # approximate 6-month lookback in microseconds
+
+    # Pre-compute t_3y_us and t_6m_us for all unique dates at once
+    if len(union_cal_us) > 0:
+        pos_t_arr = np.searchsorted(union_cal_us, fire_dates_us, side="right") - 1
+        pos_3y_arr = np.maximum(0, pos_t_arr - _COMPUTABLE_3Y_TD)
+        t_3y_us_arr = union_cal_us[pos_3y_arr]
+    else:
+        t_3y_us_arr = fire_dates_us - int(_COMPUTABLE_3Y_TD * 1.4 * _US_PER_DAY)
+    t_6m_us_arr = fire_dates_us - _6M_US
+
+    # cache[date_index] = {ticker: net_usd_mcap_val}
+    # Use list of dicts indexed by date position
+    cache_list: list[dict[str, float]] = [{} for _ in range(n_dates)]
+
+    for ticker, (date_arr, net_arr) in sorted_events.items():
+        if len(date_arr) == 0:
+            continue
+
+        # For each fire date: find [t_3y, t] window → computable check
+        # Using searchsorted vectorized over all fire dates
+        hi_arr = np.searchsorted(date_arr, fire_dates_us, side="right")
+        lo_arr = np.searchsorted(date_arr, t_3y_us_arr, side="left")
+        lo6_arr = np.searchsorted(date_arr, t_6m_us_arr, side="left")
+
+        # Find dates where ticker is computable (hi > lo → has filing in 3y window)
+        computable_mask = hi_arr > lo_arr
+        if not np.any(computable_mask):
+            continue
+
+        # For computable dates: compute net_usd_6m
+        # We need cumulative sum for fast range sum
+        cum_net = np.concatenate(([0.0], np.cumsum(net_arr)))
+        # net in [lo6, hi) = cum_net[hi] - cum_net[lo6]
+        net_usd_arr = cum_net[hi_arr] - cum_net[lo6_arr]
+
+        # PIT close for this ticker — get the values for all fire dates at once
+        if ticker not in close_cache:
+            continue
+        d_arr_c, c_arr_c = close_cache[ticker]
+        close_pos = np.searchsorted(d_arr_c, fire_dates_us, side="right") - 1
+        # Clamp to valid range and get close values
+        valid_close_mask = close_pos >= 0
+        combined_mask = computable_mask & valid_close_mask
+        if not np.any(combined_mask):
+            continue
+
+        close_pos_valid = np.where(combined_mask, np.maximum(close_pos, 0), 0)
+        close_vals = c_arr_c[close_pos_valid]
+        close_vals = np.where(combined_mask, close_vals, 0.0)
+        positive_close = close_vals > 0
+        combined_mask = combined_mask & positive_close
+        if not np.any(combined_mask):
+            continue
+
+        # PIT shares for this ticker (if available) — also vectorized
+        if ticker in pit_shares_map:
+            asof_arr_s, shares_arr_s = pit_shares_map[ticker]
+            shares_pos = np.searchsorted(asof_arr_s, fire_dates_us, side="right") - 1
+            valid_shares = shares_pos >= 0
+            shares_pos_clamped = np.where(valid_shares, np.maximum(shares_pos, 0), 0)
+            shares_vals = shares_arr_s[shares_pos_clamped]
+            shares_vals = np.where(valid_shares & (shares_arr_s[shares_pos_clamped] > 0), shares_vals, np.nan)
+            # denom = close × shares where shares available, else close alone
+            has_shares = valid_shares & (shares_vals > 0) & combined_mask
+            denom_arr = np.where(has_shares, close_vals * shares_vals, close_vals)
+            n_pit += int(np.sum(has_shares & combined_mask))
+            n_fallback += int(np.sum(~has_shares & combined_mask))
+        else:
+            denom_arr = close_vals
+            n_fallback += int(np.sum(combined_mask))
+
+        denom_arr = np.where(combined_mask, denom_arr, 0.0)
+        valid_denom = combined_mask & (denom_arr > 0)
+        if not np.any(valid_denom):
+            continue
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            net_usd_mcap = np.where(valid_denom, net_usd_arr / np.where(denom_arr != 0, denom_arr, np.nan), np.nan)
+
+        # Write results to cache_list
+        for di in np.where(valid_denom)[0]:
+            cache_list[di][ticker] = float(net_usd_mcap[di])
+
+    # Convert cache_list → dict keyed by Timestamp
+    cache: dict[pd.Timestamp, dict[str, float]] = {
+        unique_dates[i]: cache_list[i] for i in range(n_dates)
+    }
+
+    total = n_pit + n_fallback
+    fallback_frac = n_fallback / max(total, 1)
+    log.info("  I3 universe mcap: %d PIT, %d fallback (%.1f%% fallback)",
+             n_pit, n_fallback, 100.0 * fallback_frac)
+    return cache, fallback_frac
+
+
 def _compute_i3_net_usd_mcap(
-    fires: pd.DataFrame,
-    panel: pd.DataFrame,
-    closes: dict[str, pd.Series],
+    fires: "pd.DataFrame",
+    panel: "pd.DataFrame",
+    closes: dict[str, "pd.Series"],
     sector_map: dict[str, str],
-) -> tuple[pd.Series, pd.Series]:
+    union_cal: "pd.DatetimeIndex",
+    shares_panel: "pd.DataFrame | None" = None,
+) -> tuple["pd.Series", "pd.Series", "pd.Series", float]:
     """Compute I3: trailing 6-month net_usd/mcap sector-neutral pctile ≥ 80.
 
-    Construction (FDR-survivor from insider_phase0 — reuses insider_factor logic):
-      net_usd_6m = buy_usd (code=P) − sell_usd (code=S) over [t-6m, t] by filing_date ≤ t
-      mcap = trailing month-end close × shares_outstanding
-           → We approximate mcap as close at t (full shares unavailable off-path;
-             this is documented in meta)
-      net_usd_mcap = net_usd_6m / close_at_t
-      Sector-neutral pctile: rank within the sector of all fires at the same date;
-        fall back to universe-wide pctile if sector unmapped for ≥50% of fires at date.
+    M2 fix: percentile is taken against the FORM-4-ELIGIBLE UNIVERSE at t
+    (all tickers in the panel computable at t), NOT just co-firing tickers.
+    This eliminates the singleton-date artifact where a single fire auto-gets
+    pctile=1.0.
 
-    Returns (ins_netusd_mcap_sn_p80, ins_i3_sector_neutral).
+    m3 fix: PIT market cap from fundamentals_panel.parquet where available
+    (shares × close), falling back to close-price proxy.
 
-    Note: We do NOT apply the negative-IC opportunistic filter (CMP) — excluded per RUL-26.
+    Returns (ins_netusd_mcap_sn_p80, ins_i3_sector_neutral, ins_i3_computable,
+             mcap_fallback_fraction).
     """
     ticker_idx = _build_ticker_index(panel)
+    fire_dates = pd.DatetimeIndex(pd.to_datetime(fires["date"]))
 
-    # Per fire: compute raw net_usd_mcap_6m
-    net_vals: list[float | None] = []
-    for _, row in fires.iterrows():
-        ticker = str(row["ticker"])
-        t = pd.Timestamp(row["date"])
-        tp = ticker_idx.get(ticker)
-        if tp is None:
-            net_vals.append(None)
-            continue
-        # Window: [t - 6 months, t] by filing_date
-        t_start_6m = t - pd.DateOffset(months=_I3_NET_USD_MONTHS)
-        mask = (tp["filing_date"] >= t_start_6m) & (tp["filing_date"] <= t)
-        win = tp[mask]
-        if win.empty:
-            net_vals.append(None)
-            continue
-        buys = win[win["code"] == "P"]["usd"].sum()
-        sells = win[win["code"] == "S"]["usd"].sum()
-        net_usd = buys - sells
-        # Market-cap proxy: close at t
-        close = closes.get(ticker)
-        if close is None or close.empty:
-            net_vals.append(None)
-            continue
-        c = close.dropna().sort_index()
-        loc = c.index.searchsorted(t, side="right") - 1
-        if loc < 0:
-            net_vals.append(None)
-            continue
-        close_t = float(c.iloc[loc])
-        if close_t <= 0:
-            net_vals.append(None)
-            continue
-        net_vals.append(net_usd / close_t)
+    # Build universe cache (M2 + m3 fix)
+    universe_cache, fallback_frac = _build_i3_universe_cache(
+        panel, closes, shares_panel, fire_dates, union_cal
+    )
 
-    net_series = pd.Series(net_vals, index=fires.index, name="net_usd_mcap_6m")
-
-    # Sector-neutral percentile at each fire date
-    fires_with_net = fires.copy()
-    fires_with_net["_net"] = net_series
-    fires_with_net["_sector"] = fires_with_net["ticker"].map(sector_map).fillna("")
-
-    sn_p80: list[bool | None] = []
-    sn_flag: list[bool | None] = []
-
-    for date, grp in fires_with_net.groupby("date"):
-        grp_valid = grp[grp["_net"].notna()]
-        if len(grp_valid) == 0:
-            for _ in range(len(grp)):
-                sn_p80.append(None)
-                sn_flag.append(None)
-            continue
-
-        # Determine if sector-neutral is usable (>50% of fires have a sector)
-        n_sectored = int((grp_valid["_sector"] != "").sum())
-        use_sn = n_sectored / max(len(grp_valid), 1) >= 0.5
-
-        for idx, row in grp.iterrows():
-            net_val = row["_net"]
-            if net_val is None or (isinstance(net_val, float) and np.isnan(net_val)):
-                sn_p80.append(None)
-                sn_flag.append(None)
-                continue
-
-            if use_sn and row["_sector"]:
-                # Rank within sector on this date
-                sector_peers = grp_valid[grp_valid["_sector"] == row["_sector"]]["_net"]
-                if len(sector_peers) < 3:
-                    # Too few sector peers: fall back to universe-wide
-                    pctile = float(np.mean(grp_valid["_net"] <= net_val))
-                    sn_p80.append(pctile >= _I3_PERCENTILE / 100.0)
-                    sn_flag.append(False)
-                else:
-                    pctile = float(np.mean(sector_peers <= net_val))
-                    sn_p80.append(pctile >= _I3_PERCENTILE / 100.0)
-                    sn_flag.append(True)
-            else:
-                # Universe-wide percentile
-                pctile = float(np.mean(grp_valid["_net"] <= net_val))
-                sn_p80.append(pctile >= _I3_PERCENTILE / 100.0)
-                sn_flag.append(False)
-
-    # Rebuild series aligned to fires.index (groupby changes order)
-    # Re-iterate in fires order
-    sn_p80_series = pd.Series(dtype=object)
-    sn_flag_series = pd.Series(dtype=object)
-
-    # Use the iteration order of groupby to rebuild: recompute in fires index order
     sn_p80_d: dict[Any, bool | None] = {}
     sn_flag_d: dict[Any, bool | None] = {}
-    ptr = 0
-    for date in fires_with_net.groupby("date").groups:
-        grp = fires_with_net[fires_with_net["date"] == date]
-        for idx in grp.index:
-            sn_p80_d[idx] = sn_p80[ptr]
-            sn_flag_d[idx] = sn_flag[ptr]
-            ptr += 1
+    i3_computable_d: dict[Any, bool] = {}
+
+    for idx, row in fires.iterrows():
+        ticker = str(row["ticker"])
+        t = pd.Timestamp(row["date"])
+
+        # Universe at t (M2 base)
+        date_universe = universe_cache.get(t, {})
+
+        # Is this ticker I3-computable (in the universe at t)?
+        i3_computable_d[idx] = ticker in date_universe
+
+        # Fire's own value
+        fire_val = date_universe.get(ticker)
+
+        if fire_val is None or len(date_universe) == 0:
+            sn_p80_d[idx] = None
+            sn_flag_d[idx] = None
+            continue
+
+        universe_vals = list(date_universe.values())
+        fire_sector = sector_map.get(ticker, "")
+
+        # Sector-neutral ranking (M2: peer pool = universe tickers in same sector)
+        if fire_sector:
+            sector_universe = {
+                tkr: val for tkr, val in date_universe.items()
+                if sector_map.get(tkr, "") == fire_sector
+            }
+            if len(sector_universe) >= 3:
+                sector_vals = list(sector_universe.values())
+                pctile = float(np.mean([v <= fire_val for v in sector_vals]))
+                sn_p80_d[idx] = pctile >= _I3_PERCENTILE / 100.0
+                sn_flag_d[idx] = True
+                continue
+
+        # Universe-wide fallback
+        pctile = float(np.mean([v <= fire_val for v in universe_vals]))
+        sn_p80_d[idx] = pctile >= _I3_PERCENTILE / 100.0
+        sn_flag_d[idx] = False
 
     out_sn_p80 = pd.Series(sn_p80_d, name="ins_netusd_mcap_sn_p80").reindex(fires.index)
     out_sn_flag = pd.Series(sn_flag_d, name="ins_i3_sector_neutral").reindex(fires.index)
-    return out_sn_p80, out_sn_flag
+    out_i3_comp = pd.Series(i3_computable_d, name="ins_i3_computable").reindex(fires.index)
+    return out_sn_p80, out_sn_flag, out_i3_comp, fallback_frac
 
 
 # ---------------------------------------------------------------------------
@@ -444,14 +754,24 @@ def build_context(
 ) -> pd.DataFrame:
     """Compute all per-fire insider context columns.
 
-    All windows are filing_date-keyed (RUL-23). Post-entry column is
+    All windows are filing_date-keyed (RUL-23). All insider windows use
+    TRADING-DAY arithmetic (M1 fix): searchsorted on the ticker's price index
+    when available, union calendar fallback otherwise. Post-entry column is
     descriptive only (pit_at_entry=false in meta).
     """
     fires = fires.copy()
     log.info("Building context for %d fires...", len(fires))
 
+    # Build union calendar once (fallback when ticker's own price index absent)
+    union_cal = _build_union_calendar(closes)
+    log.info("  Union calendar: %d trading days (%s → %s)",
+             len(union_cal),
+             union_cal[0].date() if len(union_cal) else "n/a",
+             union_cal[-1].date() if len(union_cal) else "n/a")
+
     # ------------------------------------------------------------------
-    # Step 1: ins_computable — ticker in panel with ≥1 filing in 3y at t
+    # Step 1: ins_computable — ticker in panel with ≥1 filing in 3y-td at t
+    # (M1 fix: 3y-td via trading-day offset on ticker's price index)
     # ------------------------------------------------------------------
     log.info("  Computing ins_computable...")
     ticker_idx = _build_ticker_index(panel)
@@ -463,7 +783,9 @@ def build_context(
         if tp is None:
             computable.append(False)
             continue
-        t_3y = t - pd.Timedelta(days=_COMPUTABLE_3Y_TD)
+        # Use ticker's price index for trading-day offset; fall back to union cal
+        price_idx = closes[ticker].index if ticker in closes else None
+        t_3y = _td_offset(t, _COMPUTABLE_3Y_TD, price_idx, union_cal, direction=-1)
         has_filing = bool(
             ((tp["filing_date"] >= t_3y) & (tp["filing_date"] <= t)).any()
         )
@@ -481,7 +803,8 @@ def build_context(
     log.info("  washout_flag: %d fires (%.1f%%)", n_washout, 100.0 * n_washout / max(len(fires), 1))
 
     # ------------------------------------------------------------------
-    # Step 3: ins_buyers_45d — distinct buyers in [t-45, t] by filing_date
+    # Step 3: ins_buyers_45d — distinct buyers in [t-45td, t] by filing_date
+    # (M1 fix: all windows use trading-day arithmetic via _td_offset)
     # ------------------------------------------------------------------
     log.info("  Computing ins_buyers_45d and cluster columns...")
     buyers_45d: list[int | None] = []
@@ -498,19 +821,22 @@ def build_context(
             buyers_post15.append(None)
             continue
 
-        # [t-45, t] in calendar days — filing_date ≤ t (PIT)
-        t_45 = t - pd.Timedelta(days=_CLUSTER_WINDOW_45)
+        # Use ticker's own price index for trading-day offsets (M1 fix)
+        price_idx = closes[ticker].index if ticker in closes else None
         buys = tp[tp["code"] == "P"]
+
+        # [t-45td, t] — filing_date ≤ t (PIT)
+        t_45 = _td_offset(t, _CLUSTER_WINDOW_45, price_idx, union_cal, direction=-1)
         mask_45 = (buys["filing_date"] >= t_45) & (buys["filing_date"] <= t)
         buyers_45d.append(int(buys[mask_45]["rptownercik"].nunique()))
 
-        # [t-20, t] — PIT
-        t_20 = t - pd.Timedelta(days=_CLUSTER_WINDOW_20)
+        # [t-20td, t] — PIT
+        t_20 = _td_offset(t, _CLUSTER_WINDOW_20, price_idx, union_cal, direction=-1)
         mask_20 = (buys["filing_date"] >= t_20) & (buys["filing_date"] <= t)
         buyers_20d.append(int(buys[mask_20]["rptownercik"].nunique()))
 
-        # (t, t+15] — DESCRIPTIVE ONLY, NOT PIT
-        t_p15 = t + pd.Timedelta(days=_CLUSTER_POST15)
+        # (t, t+15td] — DESCRIPTIVE ONLY, NOT PIT
+        t_p15 = _td_offset(t, _CLUSTER_POST15, price_idx, union_cal, direction=+1)
         mask_post = (buys["filing_date"] > t) & (buys["filing_date"] <= t_p15)
         buyers_post15.append(int(buys[mask_post]["rptownercik"].nunique()))
 
@@ -546,17 +872,42 @@ def build_context(
 
     # ------------------------------------------------------------------
     # Step 7: I3 — ins_netusd_mcap_sn_p80
+    # (M2 fix: universe base; m3 fix: PIT mcap)
     # ------------------------------------------------------------------
-    log.info("  Computing I3 (net_usd_mcap sector-neutral pctile)...")
-    sn_p80, sn_flag = _compute_i3_net_usd_mcap(fires, panel, closes, sector_map)
+    log.info("  Computing I3 (net_usd_mcap sector-neutral pctile, universe base)...")
+    # Load PIT shares panel if available (m3)
+    shares_panel: pd.DataFrame | None = None
+    _fundamentals_path = _DATA / "edgar" / "fundamentals_panel.parquet"
+    if _fundamentals_path.exists():
+        try:
+            shares_panel = pd.read_parquet(
+                _fundamentals_path, columns=["ticker", "shares", "asof_date"]
+            )
+            shares_panel["asof_date"] = pd.to_datetime(shares_panel["asof_date"])
+            shares_panel = shares_panel.dropna(subset=["shares", "asof_date"]).sort_values("asof_date")
+            log.info("  PIT shares panel loaded: %d rows", len(shares_panel))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("  Could not load fundamentals_panel (will use close proxy): %s", exc)
+            shares_panel = None
+    else:
+        log.info("  fundamentals_panel.parquet absent — using close-price mcap proxy")
+
+    sn_p80, sn_flag, i3_comp, mcap_fallback_frac = _compute_i3_net_usd_mcap(
+        fires, panel, closes, sector_map, union_cal, shares_panel
+    )
     fires["ins_netusd_mcap_sn_p80"] = sn_p80
     fires["ins_i3_sector_neutral"] = sn_flag
+    fires["ins_i3_computable"] = i3_comp
+    log.info("  I3 mcap fallback fraction: %.1f%%", 100.0 * mcap_fallback_frac)
 
     # ------------------------------------------------------------------
     # Drop helper columns, keep spec columns only
     # ------------------------------------------------------------------
     drop_cols = [c for c in ["_buyers_20d", "_buyers_post15"] if c in fires.columns]
     fires = fires.drop(columns=drop_cols)
+
+    # Store mcap_fallback_frac in attrs for the caller to retrieve
+    fires.attrs["_mcap_fallback_frac"] = mcap_fallback_frac
 
     return fires
 
@@ -565,7 +916,11 @@ def build_context(
 # Coverage / count report
 # ---------------------------------------------------------------------------
 
-def print_coverage_report(panel_name: str, result: pd.DataFrame) -> dict[str, Any]:
+def print_coverage_report(
+    panel_name: str,
+    result: pd.DataFrame,
+    mcap_fallback_frac: float = float("nan"),
+) -> dict[str, Any]:
     """Print and return coverage statistics."""
     total = len(result)
     n_computable = int(result["ins_computable"].sum())
@@ -578,30 +933,33 @@ def print_coverage_report(panel_name: str, result: pd.DataFrame) -> dict[str, An
         s = comp[col] if col in comp.columns else pd.Series(dtype=bool)
         return int(s.fillna(False).sum())
 
-    n_i1    = count("ins_cluster_washout")
-    n_i1_3  = count("ins_cluster_washout_3")
-    n_i2    = count("ins_cluster_pre20")
-    n_i3    = count("ins_netusd_mcap_sn_p80")
-    n_post15 = count("ins_cluster_post15") if "ins_cluster_post15" in comp.columns else (
-        int((comp["ins_cluster_post15"] > 0).sum()) if "ins_cluster_post15" in comp.columns else 0
-    )
+    n_i1     = count("ins_cluster_washout")
+    n_i1_3   = count("ins_cluster_washout_3")
+    n_i2     = count("ins_cluster_pre20")
+    n_i3     = count("ins_netusd_mcap_sn_p80")
+    n_i3comp = int(result["ins_i3_computable"].fillna(False).sum()) if "ins_i3_computable" in result.columns else 0
+    n_sn     = int(comp["ins_i3_sector_neutral"].fillna(False).sum()) if "ins_i3_sector_neutral" in comp.columns else 0
 
-    print(f"\n{'='*60}")
-    print(f"Panel: {panel_name.upper()}")
-    print(f"{'='*60}")
-    print(f"Total fires:          {total:>8,}")
-    print(f"ins_computable:       {n_computable:>8,}  ({pct_computable:.1f}%)")
-    print(f"I1 (≥2 buyers, wash): {n_i1:>8,}  ({100.0*n_i1/max(total,1):.1f}%)")
-    print(f"I1_3 (≥3 buyers):     {n_i1_3:>8,}  ({100.0*n_i1_3/max(total,1):.1f}%)")
-    print(f"I2 (≥2 buyers pre20): {n_i2:>8,}  ({100.0*n_i2/max(total,1):.1f}%)")
-    print(f"I3 (SN net≥p80):      {n_i3:>8,}  ({100.0*n_i3/max(total,1):.1f}%)")
-    print(f"post15 (descr.):      — (descriptive only, not PIT stratum)")
+    print(f"\n{'='*70}")
+    print(f"Panel: {panel_name.upper()}  [definition_version={_DEFINITION_VERSION}]")
+    print(f"{'='*70}")
+    print(f"Total fires:           {total:>8,}")
+    print(f"ins_computable:        {n_computable:>8,}  ({pct_computable:.1f}%)")
+    print(f"ins_i3_computable:     {n_i3comp:>8,}  ({100.0*n_i3comp/max(total,1):.1f}%)")
+    print(f"I1 (≥2 buyers, wash):  {n_i1:>8,}  ({100.0*n_i1/max(total,1):.1f}%)")
+    print(f"I1_3 (≥3 buyers):      {n_i1_3:>8,}  ({100.0*n_i1_3/max(total,1):.1f}%)")
+    print(f"I2 (≥2 buyers pre20):  {n_i2:>8,}  ({100.0*n_i2/max(total,1):.1f}%)")
+    print(f"I3 (SN net≥p80):       {n_i3:>8,}  ({100.0*n_i3/max(total,1):.1f}%)")
+    print(f"I3 sector-neutral:     {n_sn:>8,}  ({100.0*n_sn/max(n_i3comp,1):.1f}% of i3-computable)")
+    if not (isinstance(mcap_fallback_frac, float) and mcap_fallback_frac != mcap_fallback_frac):
+        print(f"I3 mcap-fallback frac: {mcap_fallback_frac:>8.3f}  ({100.0*mcap_fallback_frac:.1f}% used close proxy)")
+    print(f"post15 (descr.):       — (descriptive only, not PIT stratum)")
     print()
 
     # Per-era breakdown
     era_rows: list[dict[str, Any]] = []
     print(f"{'Era':<12} {'N':>7} {'Comp%':>7} {'I1':>7} {'I1_3':>7} {'I2':>7} {'I3':>7}")
-    print("-" * 60)
+    print("-" * 70)
     dates = pd.to_datetime(result["date"])
     for era_name, (era_start, era_end) in _PROGRAM_ERAS.items():
         era_mask = (dates >= era_start) & (dates <= era_end)
@@ -626,7 +984,7 @@ def print_coverage_report(panel_name: str, result: pd.DataFrame) -> dict[str, An
             "n_i3": e_i3,
         })
 
-    print("=" * 60)
+    print("=" * 70)
 
     return {
         "panel": panel_name,
@@ -637,6 +995,8 @@ def print_coverage_report(panel_name: str, result: pd.DataFrame) -> dict[str, An
         "n_i1_3": n_i1_3,
         "n_i2": n_i2,
         "n_i3": n_i3,
+        "n_i3_computable": n_i3comp,
+        "i3_sector_neutral_frac": round(n_sn / max(n_i3comp, 1), 4),
         "era_breakdown": era_rows,
     }
 
@@ -645,22 +1005,36 @@ def print_coverage_report(panel_name: str, result: pd.DataFrame) -> dict[str, An
 # Feature meta JSON (RUL-23 triples)
 # ---------------------------------------------------------------------------
 
-def _build_meta(deep_stats: dict, baskets_stats: dict, runtime_deep: float, runtime_baskets: float) -> dict:
+def _build_meta(
+    deep_stats: dict,
+    baskets_stats: dict,
+    runtime_deep: float,
+    runtime_baskets: float,
+    mcap_fallback_frac: float = float("nan"),
+) -> dict:
     return {
         "definition_version": _DEFINITION_VERSION,
+        "definition_changelog": _DEFINITION_CHANGELOG,
         "built_date": pd.Timestamp.now().isoformat(),
         "frozen_thresholds": {
+            "window_basis": "trading_days",
             "washout_lookback_td": _WASHOUT_LOOKBACK_TD,
             "washout_high_window_td": _WASHOUT_HIGH_WINDOW,
             "washout_threshold": _WASHOUT_THRESHOLD,
-            "cluster_window_45d": _CLUSTER_WINDOW_45,
-            "cluster_window_20d": _CLUSTER_WINDOW_20,
-            "cluster_post15d": _CLUSTER_POST15,
+            "cluster_window_45_td": _CLUSTER_WINDOW_45,
+            "cluster_window_20_td": _CLUSTER_WINDOW_20,
+            "cluster_post15_td": _CLUSTER_POST15,
             "cluster_min_buyers_i1_i2": _CLUSTER_MIN_BUYERS,
             "cluster_min_buyers_i1_3": _CLUSTER_MIN_BUYERS_3,
             "i3_net_usd_months": _I3_NET_USD_MONTHS,
             "i3_percentile": _I3_PERCENTILE,
             "computable_3y_td": _COMPUTABLE_3Y_TD,
+            "i3_universe_base": "form4_eligible_tickers_at_t",
+            "mcap_method": "pit_shares_x_close_with_fallback_to_close_proxy",
+            "mcap_fallback_fraction": round(mcap_fallback_frac, 4) if not (
+                isinstance(mcap_fallback_frac, float) and
+                mcap_fallback_frac != mcap_fallback_frac
+            ) else None,
         },
         "columns": {
             "ins_computable": {
@@ -668,63 +1042,77 @@ def _build_meta(deep_stats: dict, baskets_stats: dict, runtime_deep: float, runt
                 "known_date": "filing_date",
                 "pit_basis": "filing_date_leq_t",
                 "pit_at_entry": True,
-                "description": "Ticker present in Form-4 panel with ≥1 filing of any kind in trailing 3y at t. Computable_mask basis (Amendment 2 §C2).",
+                "description": "Ticker present in Form-4 panel with ≥1 filing of any kind in trailing 3y-td at t. All windows are TRADING-DAY counts (v1.1). Computable_mask basis (Amendment 2 §C2).",
+            },
+            "ins_i3_computable": {
+                "source_event_date": "filing_date",
+                "known_date": "filing_date",
+                "pit_basis": "filing_date_leq_t",
+                "pit_at_entry": True,
+                "description": "I3-specific computable flag: ticker is in the Form-4-eligible universe at t used for I3 percentile ranking (≥1 filing in trailing 3y-td AND has net_usd_6m and mcap data). Added in v1.1 (M2 fix).",
             },
             "washout_flag": {
                 "source_event_date": "price_date",
                 "known_date": "price_date",
                 "pit_basis": "close_history_leq_t",
                 "pit_at_entry": True,
-                "description": "Min (close/rolling126d_high − 1) over [t-45td, t] ≤ −0.20. Uses strictly prior bars for the 126d high (no current-bar lookahead).",
+                "description": "Min (close/rolling126d_high − 1) over [t-45td, t] ≤ −0.20. Uses strictly prior bars for the 126d high (no current-bar lookahead). 45td = trading days.",
             },
             "ins_buyers_45d": {
                 "source_event_date": "trans_date",
                 "known_date": "filing_date",
                 "pit_basis": "filing_date_leq_t",
                 "pit_at_entry": True,
-                "description": "Distinct buyer CIKs (code=P) with filing_date in [t-45, t].",
+                "description": "Distinct buyer CIKs (code=P) with filing_date in [t-45td, t]. 45td = trading days (v1.1 M1 fix; was calendar days in v1).",
             },
             "ins_cluster_washout": {
                 "source_event_date": "filing_date",
                 "known_date": "filing_date",
                 "pit_basis": "filing_date_leq_t",
                 "pit_at_entry": True,
-                "description": "I1: washout_flag AND ins_buyers_45d ≥ 2. Threshold frozen at registration (RUL-26).",
+                "description": "I1: washout_flag AND ins_buyers_45d ≥ 2. Both legs span 45 TRADING DAYS (v1.1 M1 fix). Threshold frozen at registration (RUL-26).",
             },
             "ins_cluster_washout_3": {
                 "source_event_date": "filing_date",
                 "known_date": "filing_date",
                 "pit_basis": "filing_date_leq_t",
                 "pit_at_entry": True,
-                "description": "I1 sensitivity: washout_flag AND ins_buyers_45d ≥ 3 (RUL-26 pre-registered sensitivity).",
+                "description": "I1 sensitivity: washout_flag AND ins_buyers_45d ≥ 3 (RUL-26 pre-registered sensitivity). Both legs span 45 TRADING DAYS (v1.1).",
             },
             "ins_cluster_pre20": {
                 "source_event_date": "filing_date",
                 "known_date": "filing_date",
                 "pit_basis": "filing_date_leq_t",
                 "pit_at_entry": True,
-                "description": "I2 PIT stratum: distinct buyers in [t-20, t] ≥ 2 (filing_date window).",
+                "description": "I2 PIT stratum: distinct buyers in [t-20td, t] ≥ 2 (filing_date window). 20td = trading days (v1.1 M1 fix).",
             },
             "ins_cluster_post15": {
                 "source_event_date": "filing_date",
                 "known_date": "filing_date",
                 "pit_basis": "NOT_PIT_study_time_only",
                 "pit_at_entry": False,
-                "description": "DESCRIPTIVE ONLY — distinct buyers in (t, t+15] by filing_date. This is a STUDY-TIME DESCRIPTIVE, NOT a PIT stratum. The Codex −20/+15 window is not knowable at entry. NEVER use as a stratum in r1_estimate/grade_fires.",
+                "description": "DESCRIPTIVE ONLY — distinct buyers in (t, t+15td] by filing_date. 15td = trading days (v1.1). This is a STUDY-TIME DESCRIPTIVE, NOT a PIT stratum. NEVER use as a stratum in r1_estimate/grade_fires.",
             },
             "ins_netusd_mcap_sn_p80": {
                 "source_event_date": "filing_date",
                 "known_date": "filing_date",
                 "pit_basis": "filing_date_leq_t",
                 "pit_at_entry": True,
-                "description": "I3: trailing 6-month net_usd/mcap (FDR-survivor construction), sector-neutral percentile ≥ 80 at t. CMP opportunistic filter EXCLUDED (negative-IC prior, RUL-26). mcap proxy = close_at_t (shares unavailable off-path; documented).",
+                "description": (
+                    "I3: trailing 6-month net_usd/mcap (FDR-survivor construction), "
+                    "sector-neutral percentile ≥ 80 at t. UNIVERSE BASE = all Form-4-eligible "
+                    "tickers at t (v1.1 M2 fix; was co-firing tickers only in v1). "
+                    "mcap = PIT shares × close where shares available (fundamentals_panel.parquet); "
+                    "falls back to close-price proxy (see mcap_fallback_fraction in meta). "
+                    "CMP opportunistic filter EXCLUDED (negative-IC prior, RUL-26)."
+                ),
             },
             "ins_i3_sector_neutral": {
                 "source_event_date": "filing_date",
                 "known_date": "filing_date",
                 "pit_basis": "filing_date_leq_t",
                 "pit_at_entry": True,
-                "description": "Bool: True = sector-neutral pctile used for I3; False = universe-wide fallback (sector unmapped or fewer than 3 sector peers at date).",
+                "description": "Bool: True = sector-neutral pctile used for I3 (≥3 sector peers in UNIVERSE at t); False = universe-wide fallback.",
             },
         },
         "panels": {
@@ -770,11 +1158,18 @@ def run_panel(
     result = build_context(fires, panel, closes, sector_map)
     elapsed = time.time() - t0
 
+    mcap_fallback_frac: float = result.attrs.get("_mcap_fallback_frac", float("nan"))
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     result.to_parquet(out_path, index=False)
     log.info("Wrote %s (%d rows) in %.1fs", out_path, len(result), elapsed)
 
-    stats = print_coverage_report(panel_name, result)
+    stats = print_coverage_report(panel_name, result, mcap_fallback_frac)
+    stats["mcap_fallback_frac"] = (
+        round(mcap_fallback_frac, 4)
+        if not (isinstance(mcap_fallback_frac, float) and mcap_fallback_frac != mcap_fallback_frac)
+        else None
+    )
     print(f"  Runtime: {elapsed:.1f}s")
 
     if elapsed > 1200 and not smoke:
@@ -841,6 +1236,8 @@ def main(argv=None) -> int:
     baskets_stats: dict[str, Any] = {}
     runtime_deep = 0.0
     runtime_baskets = 0.0
+    # mcap_fallback_frac from whichever panel ran last (deep preferred if both run)
+    _mcap_fallback_frac: float = float("nan")
 
     for panel_name, fires_path, closes, out_path in panel_configs:
         stats, rt = run_panel(
@@ -849,11 +1246,21 @@ def main(argv=None) -> int:
         )
         if panel_name == "deep":
             deep_stats, runtime_deep = stats, rt
+            if stats.get("mcap_fallback_frac") is not None:
+                _mcap_fallback_frac = float(stats["mcap_fallback_frac"])
         else:
             baskets_stats, runtime_baskets = stats, rt
+            if (
+                isinstance(_mcap_fallback_frac, float)
+                and _mcap_fallback_frac != _mcap_fallback_frac  # still NaN
+                and stats.get("mcap_fallback_frac") is not None
+            ):
+                _mcap_fallback_frac = float(stats["mcap_fallback_frac"])
 
     # Write meta JSON
-    meta = _build_meta(deep_stats, baskets_stats, runtime_deep, runtime_baskets)
+    meta = _build_meta(
+        deep_stats, baskets_stats, runtime_deep, runtime_baskets, _mcap_fallback_frac
+    )
     _OUT_META.write_text(json.dumps(meta, indent=2, default=str))
     log.info("Wrote meta: %s", _OUT_META)
 

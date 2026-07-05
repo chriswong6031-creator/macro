@@ -158,8 +158,8 @@ def _insider_block_panel(ns: dict, mktcap: pd.Series, panel_p) -> dict | None:
         for qp in sorted(panel_p.glob("*.parquet")):
             try:
                 parts.append(pd.read_parquet(qp, columns=_cols))
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as exc:  # noqa: BLE001
+                log.warning("_insider_block_panel: skipping %s — %s", qp.name, exc)
         df = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=_cols)
     else:
         df = pd.read_parquet(panel_p, columns=_cols)
@@ -267,8 +267,8 @@ def insider_signals(mktcap: pd.Series | None, *, months: int | None = None) -> d
         for qp in sorted(panel_dir.glob("*.parquet")):
             try:
                 parts.append(pd.read_parquet(qp, columns=_cols))
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as exc:  # noqa: BLE001
+                log.warning("insider_signals: skipping %s — %s", qp.name, exc)
         df = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=_cols)
     else:
         return {}

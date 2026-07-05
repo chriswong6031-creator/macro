@@ -695,3 +695,199 @@ class TestInsComputable:
         }])
         result = bic.build_context(fires, panel, {}, {})
         assert bool(result.iloc[0]["ins_computable"]) is False
+
+
+# ===========================================================================
+# (g) n1 — Spec-pin tests for v1.1 fixes (M1 trading-day boundary + M2 I3 universe)
+# ===========================================================================
+
+class TestTradingDayWindowBoundary:
+    """n1(a) — A filing between 45 calendar days and 45 trading days before t
+    must COUNT under the fixed code (M1 trading-day windows).
+
+    Design: On a typical month, 45 trading days ≈ 63 calendar days. A filing
+    placed 50 calendar days before t is OUTSIDE the old 45-cd window but
+    INSIDE the new 45-td window. The test constructs a price series that covers
+    t so _td_offset uses the ticker's own price index, and places a buyer
+    filing at t - 50 calendar days. Under calendar-day arithmetic (v1 bug),
+    n_buyers = 0. Under trading-day arithmetic (v1.1 fix), n_buyers ≥ 1.
+    """
+
+    def test_filing_between_45cd_and_45td_counts(self):
+        """Filing 50cd before t is outside 45cd but inside 45td — must count."""
+        t = pd.Timestamp("2020-07-01")
+        ticker = "TD_BOUNDARY"
+
+        # Build a price series that covers t (so the price index is used for offset)
+        n_bars = 400
+        price_idx = pd.bdate_range(end=t, periods=n_bars)
+        close = pd.Series([100.0] * n_bars, index=price_idx)
+
+        # Verify the key structural property: 50 calendar days before t is
+        # before the 45-calendar-day boundary but after the 45-trading-day boundary.
+        t_45cd = t - pd.Timedelta(days=45)
+        union_cal = bic._build_union_calendar({ticker: close})
+        t_45td = bic._td_offset(t, bic._CLUSTER_WINDOW_45, price_idx, union_cal, direction=-1)
+        filing_date = t - pd.Timedelta(days=50)
+
+        # Structural assertions about the test design
+        assert filing_date < t_45cd, (
+            f"Test design: filing {filing_date.date()} should be before "
+            f"45-calendar-day boundary {t_45cd.date()}"
+        )
+        assert filing_date >= t_45td, (
+            f"Test design: filing {filing_date.date()} should be within "
+            f"45-trading-day boundary {t_45td.date()}"
+        )
+
+        # Build a panel with one buyer at t-50cd
+        panel = _fake_panel_rows(
+            ticker,
+            filing_dates=[filing_date],
+            trans_dates=[filing_date - pd.Timedelta(days=2)],
+            codes=["P"],
+            ciks=["CIK_TD1"],
+        )
+        panel["filing_date"] = pd.to_datetime(panel["filing_date"])
+
+        fires = pd.DataFrame([{
+            "ticker": ticker, "date": t,
+            "tier": "T1", "sub": "deep", "ticks": 0,
+            "not_topped": True, "eligible": True, "panel": "deep",
+        }])
+
+        result = bic.build_context(fires, panel, {ticker: close}, {})
+        b45 = result.iloc[0]["ins_buyers_45d"]
+        assert b45 is not None and int(b45) >= 1, (
+            f"Filing 50cd (within 45td) before t must COUNT under trading-day windows; "
+            f"got ins_buyers_45d={b45!r}. This tests M1 fix (v1.1). "
+            f"45td boundary = {t_45td.date()}, filing = {filing_date.date()}"
+        )
+
+
+class TestI3UniverseBase:
+    """n1(b) — I3 percentile is against the universe, not just co-firing tickers.
+
+    When multiple tickers are in the Form-4 universe at t but only ONE ticker
+    fires, the fire's I3 percentile must be relative to the full universe
+    (not auto-flagged as pctile=1.0 because it is the sole data point in a
+    singleton date).
+    """
+
+    def test_single_fire_not_auto_flagged_vs_universe(self):
+        """One fire date, multiple universe tickers — fire must NOT auto-flag I3.
+
+        Universe: tickers A (fires) + B (in panel, no fire on this date).
+        A has net buying = $1. B has net buying = $999,999.
+        Under the old code (universe = co-fires only), A gets pctile = 1.0 → I3 True.
+        Under the new code (universe = all Form-4-eligible at t), A is 50th pctile → False.
+        """
+        t = pd.Timestamp("2019-03-15")
+        n_bars = 300
+        price_idx = pd.bdate_range(end=t, periods=n_bars)
+
+        closes = {
+            "I3_A": pd.Series([100.0] * n_bars, index=price_idx),
+            "I3_B": pd.Series([100.0] * n_bars, index=price_idx),
+        }
+
+        # Both tickers have filings in the trailing 6m window (so they're in the universe)
+        filing_in_6m = t - pd.Timedelta(days=10)
+
+        # Ticker A: small net buy = $1 (so net_usd/close = 0.01)
+        # Ticker B: large net buy = $1,000,000 (net_usd/close = 10,000)
+        rows_A = _fake_panel_rows(
+            "I3_A",
+            filing_dates=[filing_in_6m],
+            trans_dates=[filing_in_6m - pd.Timedelta(days=1)],
+            codes=["P"],
+            ciks=["CIK_I3A"],
+            usd_vals=[1.0],      # tiny buy
+        )
+        rows_B = _fake_panel_rows(
+            "I3_B",
+            filing_dates=[filing_in_6m],
+            trans_dates=[filing_in_6m - pd.Timedelta(days=1)],
+            codes=["P"],
+            ciks=["CIK_I3B"],
+            usd_vals=[1_000_000.0],   # large buy → high net_usd/mcap
+        )
+        panel = pd.concat([rows_A, rows_B], ignore_index=True)
+        panel["filing_date"] = pd.to_datetime(panel["filing_date"])
+
+        # Only ticker A fires — B is in the Form-4 universe but has no fire row
+        fires = pd.DataFrame([{
+            "ticker": "I3_A", "date": t,
+            "tier": "T1", "sub": "deep", "ticks": 0,
+            "not_topped": True, "eligible": True, "panel": "deep",
+        }])
+
+        result = bic.build_context(fires, panel, closes, {})
+        i3 = result.iloc[0]["ins_netusd_mcap_sn_p80"]
+        # A has net_usd/close = 0.01; B has 10,000. A is at the bottom of the universe.
+        # pctile(A) = fraction of universe where val <= A_val
+        # Universe = {A: 0.01, B: 10000}; pctile = mean([0.01 <= 0.01, 10000 <= 0.01]) = 0.5
+        # 0.5 < 0.80 threshold → I3 must be False
+        assert i3 is not True and i3 != 1, (
+            f"Single fire with small net buying must NOT auto-flag I3=True when "
+            f"a larger buyer (I3_B) exists in the Form-4 universe at t. "
+            f"Got ins_netusd_mcap_sn_p80={i3!r}. "
+            f"This tests M2 fix (v1.1) — universe base replaces co-fire ranking."
+        )
+
+    def test_i3_computable_column_present(self):
+        """ins_i3_computable column must exist in output (v1.1 new column)."""
+        t = pd.Timestamp("2019-03-15")
+        n_bars = 300
+        price_idx = pd.bdate_range(end=t, periods=n_bars)
+        close = pd.Series([100.0] * n_bars, index=price_idx)
+        panel = _fake_panel_rows(
+            "I3C_TEST",
+            filing_dates=[t - pd.Timedelta(days=10)],
+            trans_dates=[t - pd.Timedelta(days=11)],
+            codes=["P"],
+            ciks=["CIK_I3C"],
+        )
+        panel["filing_date"] = pd.to_datetime(panel["filing_date"])
+        fires = pd.DataFrame([{
+            "ticker": "I3C_TEST", "date": t,
+            "tier": "T1", "sub": "deep", "ticks": 0,
+            "not_topped": True, "eligible": True, "panel": "deep",
+        }])
+        result = bic.build_context(fires, panel, {"I3C_TEST": close}, {})
+        assert "ins_i3_computable" in result.columns, (
+            "ins_i3_computable column must exist in output (added in v1.1)"
+        )
+
+    def test_definition_version_is_v1_1(self):
+        """definition_version in meta must be v1.1 after the fixes."""
+        assert bic._DEFINITION_VERSION == "v1.1", (
+            f"Expected _DEFINITION_VERSION='v1.1'; got {bic._DEFINITION_VERSION!r}. "
+            "Meta must reflect the M1/M2 fixes."
+        )
+
+    def test_meta_has_changelog(self):
+        """Meta must contain definition_changelog key (v1.1)."""
+        dummy = {
+            "total_fires": 0, "n_computable": 0, "pct_computable": 0.0,
+            "n_i1": 0, "n_i1_3": 0, "n_i2": 0, "n_i3": 0, "era_breakdown": [],
+        }
+        meta = bic._build_meta(dummy, dummy, 0.0, 0.0)
+        assert "definition_changelog" in meta, (
+            "Meta must include definition_changelog key (v1.1)"
+        )
+        assert "M1" in meta["definition_changelog"] or "trading-day" in meta["definition_changelog"].lower(), (
+            "Changelog must mention M1 / trading-day fix"
+        )
+
+    def test_meta_thresholds_say_trading_day(self):
+        """frozen_thresholds.window_basis must be 'trading_days' (v1.1)."""
+        dummy = {
+            "total_fires": 0, "n_computable": 0, "pct_computable": 0.0,
+            "n_i1": 0, "n_i1_3": 0, "n_i2": 0, "n_i3": 0, "era_breakdown": [],
+        }
+        meta = bic._build_meta(dummy, dummy, 0.0, 0.0)
+        basis = meta.get("frozen_thresholds", {}).get("window_basis", "")
+        assert "trading" in basis.lower(), (
+            f"frozen_thresholds.window_basis must say 'trading_days'; got {basis!r}"
+        )
