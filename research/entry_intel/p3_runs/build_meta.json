@@ -1,0 +1,90 @@
+{
+  "study_id": "P3_KERNEL_RANK_SHADOW",
+  "prereg": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wf_4533f036-aaa-3/research/entry_intel/P3_KERNEL_RANK_PREREG.md",
+  "build_timestamp": "2026-07-05T18:00:56Z",
+  "replay_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/replay/replay_boarded.parquet",
+  "replay_md5": "906175f9eb8caa351ed6d7d5c56265d3",
+  "replay_md5_expected": "906175f9eb8caa351ed6d7d5c56265d3",
+  "md5_match": true,
+  "era_min": "2022-06-30",
+  "era_max": "2025-12-29",
+  "n_verdict_grade_fires": 49939,
+  "n_episode_clusters": 22295,
+  "concordance_go": false,
+  "concordance_note": "concordance_check.json ABSENT at /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wf_4533f036-aaa-3/research/entry_intel/p1_runs/P1_3/concordance_check.json",
+  "active_features": [
+    "dist_52wh",
+    "ext_z",
+    "ext_atr"
+  ],
+  "proxy_sourced_dims": [],
+  "weights_sum": 0.86,
+  "K_SHRINK": 10,
+  "WILSON_Z": 1.645,
+  "THIN_N_EFF": 25,
+  "n_cells_total": 94,
+  "n_cells_thin": 0,
+  "n_cells_parent_fallback": 0,
+  "horizons": [
+    21,
+    63
+  ],
+  "breakpoints": {
+    "dist_52wh": {
+      "q25": -0.2779,
+      "q50": -0.1644,
+      "q75": -0.07014999999999999
+    },
+    "ext_z": {
+      "q25": -1.05,
+      "q50": -0.26,
+      "q75": 0.72
+    },
+    "ext_atr": {
+      "q25": -4.693,
+      "q50": -0.764,
+      "q75": 4.292
+    },
+    "washout_proximity": {
+      "buckets": [
+        "NEAR",
+        "NOT_NEAR"
+      ]
+    },
+    "weekly_phase": {
+      "buckets": [
+        "basing",
+        "bear_recovering",
+        "turning",
+        "rising",
+        "rolling",
+        "falling",
+        "UNKNOWN"
+      ]
+    }
+  },
+  "base_rates": {
+    "21d": 0.43939606319710045,
+    "63d": 0.3709325376959891
+  },
+  "outcome_state_map": {
+    "21": "state_8_21",
+    "63": "state_15_126"
+  },
+  "kernel_rank_shadow_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/replay/kernel_rank_shadow.parquet",
+  "kernel_rank_cells_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/signal_archive/kernel_rank_cells.parquet",
+  "kernel_rank_ledger_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/signal_archive/kernel_rank_ledger.parquet",
+  "article2_flip_criterion": {
+    "n_floor_episode_clusters": 300,
+    "primary_test": "Spearman rho difference (kernel vs incumbent) on good_21d",
+    "permutation_n": 5000,
+    "perm_p_threshold": 0.1,
+    "wilson_lower_bound_threshold": 0.0,
+    "evaluation_cadence": "quarterly (~63 trading days)",
+    "kill_criterion_months": 24
+  },
+  "shadow_status": "ACTIVE",
+  "go_no_go": "SHADOW_ACTIVE",
+  "board_wiring": false,
+  "user_visible": false
+}
