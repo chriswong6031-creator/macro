@@ -152,8 +152,24 @@ def fast_r1_estimate(
 
     Parameters match r1_estimate; FE column must already be in df.
     Returns same dict schema as r1_estimate.
+
+    BUG FIX (index misalignment): sector and _date_ts are carried as columns
+    INSIDE work from the start to avoid df.loc[work.index, ...] label-indexing
+    errors when work has been reset_index(drop=True) and rows are dropped.
     """
-    work = df[[outcome_col, stratum_col, fe_col]].copy()
+    # --- select outcome, stratum, FE, and block-building helpers together ---
+    # Carrying sector_col and _date_ts as columns inside work avoids parent-frame
+    # label-indexing errors after reset_index(drop=True). Bug (2) fix.
+    cols_to_select = [outcome_col, stratum_col, fe_col]
+    if sector_col and sector_col in df.columns:
+        cols_to_select.append(sector_col)
+    if "_date_ts" in df.columns:
+        cols_to_select.append("_date_ts")
+    # deduplicate preserving order
+    seen: set[str] = set()
+    cols_to_select = [c for c in cols_to_select if not (c in seen or seen.add(c))]  # type: ignore[func-returns-value]
+
+    work = df[cols_to_select].copy()
     work = work[work[outcome_col].notna() & work[stratum_col].notna()].copy()
     work[outcome_col] = work[outcome_col].astype(float)
     work[stratum_col] = work[stratum_col].astype(float)
@@ -162,6 +178,9 @@ def fast_r1_estimate(
     n = len(work)
     if n < 10:
         return _empty_r1(outcome_col, stratum_col)
+
+    # Report pre-drop N for disclosure (finding 6: N inconsistency)
+    n_pre_drop = n
 
     # --- drop singleton FE cells ---
     cell_counts = work[fe_col].value_counts()
@@ -193,14 +212,16 @@ def fast_r1_estimate(
     ctrl  = y[x == 0]
     naive_diff = float(treat.mean() - ctrl.mean()) if (len(treat) > 0 and len(ctrl) > 0) else np.nan
 
-    # --- build blocks (fast vectorized) ---
-    if sector_col and sector_col in df.columns:
-        sec_work = df.loc[work.index, sector_col] if sector_col in df.columns else pd.Series(["__all__"] * len(work))
+    # --- build blocks: use columns INSIDE work (not df.loc[work.index, ...]) ---
+    # Bug (2) fix: sector and _date_ts were selected into work at the start;
+    # we read them directly from work here, never from the parent df.
+    if sector_col and sector_col in work.columns:
+        sec_work = work[sector_col]
     else:
         sec_work = pd.Series(["__all__"] * len(work), index=work.index)
 
-    if "_date_ts" in df.columns:
-        dates_work = df.loc[work.index, "_date_ts"].to_numpy()
+    if "_date_ts" in work.columns:
+        dates_work = work["_date_ts"].to_numpy()
     else:
         dates_work = np.zeros(len(work), dtype=np.int64)
 
@@ -247,11 +268,15 @@ def fast_r1_estimate(
         (boot_coefs >= 0).mean(),
     )))
 
+    # Finding (6): n_total reports the ESTIMATION-SAMPLE N (post-singleton-drop).
+    # n_pre_drop is reported separately so callers can disclose the discrepancy.
+    n_estimation = len(work)  # post singleton-drop
     return {
         "coef":           round(coef, 6),
         "ci_lo":          round(ci_lo, 6),
         "ci_hi":          round(ci_hi, 6),
-        "n_total":        n,
+        "n_total":        n_estimation,
+        "n_pre_drop":     n_pre_drop,
         "n_treatment":    int((x == 1).sum()),
         "n_control":      int((x == 0).sum()),
         "n_blocks":       n_blocks,
@@ -352,8 +377,14 @@ def fast_effect_table(
     else:
         raise ValueError(f"Unsupported fe_granularity: {fe_granularity!r}")
 
-    # Precompute date timestamps (int64) for fast block construction
-    df_ok["_date_ts"] = df_ok["date"].values.astype(np.int64)
+    # Precompute date timestamps (int64 nanoseconds) for fast block construction.
+    # BUG FIX (1): pandas datetime64 may be stored as datetime64[us] (microseconds)
+    # in newer pandas versions. _fast_make_blocks computes radius_ns assuming
+    # nanosecond integers, so we must force conversion to datetime64[ns] first.
+    # Without this fix, datetime64[us] values are 1000x smaller than expected,
+    # making the 14-day radius cover the ENTIRE data span and collapsing all
+    # fires into a single block per sector, yielding degenerate CIs.
+    df_ok["_date_ts"] = df_ok["date"].values.astype("datetime64[ns]").astype(np.int64)
 
     # Check sector coverage
     sector_fallback = False
@@ -482,6 +513,16 @@ def compute_nc2_proximity_proxy(
     """Proximity component of entry_quality for each fire row.
 
     NC-2 PARTIAL IMPLEMENTATION — proximity component only (EQ_W_PROX=0.52).
+
+    FINDING (4) — PROXY-INPUT LIMITATION:
+    The engine (engine/cycles.py:1705-1706) uses cand_price/dcl_price as the
+    reference pivot for the proximity sub-component. This implementation uses
+    a naive 63-bar close-minimum as a PROXY for that pivot. No offline cache
+    of cand_price/dcl_price exists in data/research/. This is a proxy-INPUT
+    (the pivot itself is approximated), not merely a proxy-composite. The full
+    NC-2 test with the engine's real cand/dcl pivot is explicitly DEFERRED.
+    Until then, NC-2 is descriptive-only and must not be used as a promotion
+    bar for any candidate.
 
     DEFERRED: freshness (EQ_W_FRESH=0.30) and momentum (EQ_W_MOM=0.18)
     sub-components require the full cycles.py call chain (multi_cycle, mtf_state,
@@ -674,7 +715,13 @@ def run_nc_study(
         "band_table": [],
         "top_vs_rest_effect": None,
         "deferral_stamp": (
-            "NC-2 PARTIAL: proximity component only. "
+            "NC-2 PARTIAL: proximity component only (EQ_W_PROX=0.52 of total). "
+            "PROXY-INPUT LIMITATION (finding 4): the engine (cycles.py:1705-1706) "
+            "uses cand_price/dcl_price as the proximity pivot; this implementation "
+            "uses a naive 63-bar close-minimum PROXY. No offline cache of "
+            "cand_price/dcl_price exists. This is a proxy-INPUT, not merely a "
+            "proxy-composite — NC-2 is DESCRIPTIVE-ONLY until the full deferred "
+            "test with the real cycle pivot runs. "
             "DEFERRED components: freshness (EQ_W_FRESH=0.30) and momentum "
             "(EQ_W_MOM=0.18) require the full cycles.py call chain "
             "(multi_cycle, mtf_state, early_state, regime_state) per fire — "
@@ -819,8 +866,21 @@ def _excl_zero(res: dict[str, Any]) -> str:
 def _write_effect_md(lines: list[str], eff: dict[str, Any], title: str) -> None:
     lines.append(f"#### {title}")
     lines.append("")
-    lines.append(f"N total: {eff.get('n_total', 0):,} | "
-                 f"N treatment: {eff.get('n_treatment', 0):,} | "
+    # Finding (6): N total shown here is the pre-singleton-drop gradable count.
+    # Estimation-sample N (post-drop) is per-outcome in n_total within each R1 result;
+    # see n_blocks for number of episode blocks used in the bootstrap.
+    first_eff = eff.get("effects", [{}])[0] if eff.get("effects") else {}
+    n_blocks = first_eff.get("n_blocks", "—")
+    n_pre = eff.get("n_total", 0)  # pre-singleton-drop (gradable rows passed in)
+    n_est = first_eff.get("n_total", n_pre)  # post-drop estimation sample (stop5 outcome)
+    n_pre_drop_val = first_eff.get("n_pre_drop", n_pre)
+    lines.append(f"N total (pre-drop): {n_pre:,} | "
+                 f"N estimation-sample (post-drop): {n_est:,} | "
+                 f"N blocks: {n_blocks}")
+    if n_pre != n_est and n_pre_drop_val != n_pre:
+        lines.append(f"_(N footnote: effect tables use estimation-sample N {n_est:,}; "
+                     f"pre-drop gradable N was {n_pre:,}. Discrepancy = singleton-FE-cell exclusions.)_")
+    lines.append(f"N treatment: {eff.get('n_treatment', 0):,} | "
                  f"N control: {eff.get('n_control', 0):,}")
     lines.append(f"FE: `{eff.get('fe_granularity', '?')}` | "
                  f"Sector fallback: {eff.get('sector_fallback', False)}")
@@ -889,6 +949,23 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
         a(f"- Gradable fires: {res.get('n_gradable', 0):,}")
         a(f"- FE granularity: `{res.get('fe_granularity', 'date')}` (frozen per RUL-12)")
         a("")
+
+        # Dynamic block-count caveat for low-sector-coverage panels (finding 3).
+        # After fix (1)+(2), block counts are real. If sector fallback is active
+        # (coverage <50%), block construction uses date-only clustering. Report
+        # the actual n_blocks so readers know the effective resampling unit.
+        # Pull n_blocks from the first stop5 effect of NC-1A if available.
+        _nc1a_eff = res.get("nc1a", {}).get("effect_table", {})
+        _nc1a_effects = {e["label"]: e for e in _nc1a_eff.get("effects", [])}
+        _nb = _nc1a_effects.get("stop5", {}).get("n_blocks")
+        _sf = _nc1a_eff.get("sector_fallback", False)
+        if _nb is not None and _sf:
+            a(f"**BOOTSTRAP CI NOTE (this panel):** Sector coverage < 50%, so block "
+              f"construction uses date-only clustering. This panel produced **{_nb:,} episode "
+              f"blocks** for the bootstrap. If n_blocks is small (< ~100), CI width "
+              f"understates true sampling uncertainty. Point-estimate coefficients "
+              f"(date-FE OLS) remain valid regardless of block count.")
+            a("")
 
         # NC-1A
         nc1a = res.get("nc1a", {})
@@ -1024,9 +1101,12 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
     a("point-estimate rarely clears CI-excluding-0 at minimum n. The CI-excluding-0")
     a("clause is the operative promotion bar — not the 2pp level alone.")
     a("")
-    a("| Panel | NC | Stop5 coef | 95% CI | CI excl 0? | N treat | N ctrl | Recall (treat arm) |")
-    a("|---|---|---|---|---|---|---|---|")
+    # Finding (3): after fixes (1)+(2) the n_blocks column shows REAL block counts.
+    # A degenerate-block caveat is dynamically appended below if n_blocks is small.
+    a("| Panel | NC | Stop5 coef | 95% CI | CI excl 0? | N blocks | N treat | N ctrl | Recall (treat arm) |")
+    a("|---|---|---|---|---|---|---|---|---|")
 
+    yardstick_caveats: list[str] = []
     for panel_name, res in all_results.items():
         if "error" in res:
             continue
@@ -1036,9 +1116,17 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
             effects = {e["label"]: e for e in eff.get("effects", [])}
             stop5 = effects.get("stop5", {})
             rc = nc.get("recall", {})
+            n_blk = stop5.get("n_blocks", "—")
+            ci_label = _ci_str(stop5)
+            if isinstance(n_blk, int) and n_blk < 100:
+                ci_label = f"{ci_label} [low-block caveat: {n_blk} blocks]"
+                yardstick_caveats.append(
+                    f"  - {panel_name} {nc_label}: only {n_blk} episode blocks — "
+                    f"CI width understates true sampling uncertainty."
+                )
             a(f"| {panel_name} | {nc_label} | "
-              f"{_fmt_f(stop5.get('coef'), 4)} | {_ci_str(stop5)} | {_excl_zero(stop5)} | "
-              f"{eff.get('n_treatment', 0):,} | {eff.get('n_control', 0):,} | "
+              f"{_fmt_f(stop5.get('coef'), 4)} | {ci_label} | {_excl_zero(stop5)} | "
+              f"{n_blk} | {eff.get('n_treatment', 0):,} | {eff.get('n_control', 0):,} | "
               f"{_fmt_pct(rc.get('recall'))} |")
 
         nc2 = res.get("nc2", {})
@@ -1047,12 +1135,26 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
             effects = {e["label"]: e for e in nc2_eff.get("effects", [])}
             stop5 = effects.get("stop5", {})
             rc = nc2.get("top_vs_rest_recall", {})
+            n_blk = stop5.get("n_blocks", "—")
+            ci_label = _ci_str(stop5)
+            if isinstance(n_blk, int) and n_blk < 100:
+                ci_label = f"{ci_label} [low-block caveat: {n_blk} blocks]"
+                yardstick_caveats.append(
+                    f"  - {panel_name} NC-2: only {n_blk} episode blocks — "
+                    f"CI width understates true sampling uncertainty."
+                )
             a(f"| {panel_name} | NC-2 (prox top-tercile) | "
-              f"{_fmt_f(stop5.get('coef'), 4)} | {_ci_str(stop5)} | {_excl_zero(stop5)} | "
-              f"{nc2_eff.get('n_treatment', 0):,} | {nc2_eff.get('n_control', 0):,} | "
+              f"{_fmt_f(stop5.get('coef'), 4)} | {ci_label} | {_excl_zero(stop5)} | "
+              f"{n_blk} | {nc2_eff.get('n_treatment', 0):,} | {nc2_eff.get('n_control', 0):,} | "
               f"{_fmt_pct(rc.get('recall'))} |")
 
     a("")
+    if yardstick_caveats:
+        a("**Low-block caveats (finding 3):** The following rows have fewer than 100 "
+          "episode blocks — CI width understates true sampling uncertainty:")
+        for cav in yardstick_caveats:
+            a(cav)
+        a("")
     a("**Reading the yardstick:**")
     a("- CI excl 0 = YES: the block-bootstrap 95% CI excludes zero — stratum effect")
     a("  distinguishable from no-effect at this sample size.")
@@ -1060,6 +1162,8 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
     a("  already buy distinguishable asymmetry improvement. A null NC is informative:")
     a("  it means new signals have room to add genuine value beyond tier/freshness.")
     a("- Later reports must show their candidate's stop5 coef + CI alongside this table.")
+    a("- N blocks column shows real block counts after bug fixes (1)+(2). Low block "
+      "counts are flagged with [low-block caveat] inline.")
     a("")
     a("### Null result declaration (mandatory per masterplan §5):")
     a("Any NC with CI-including-0 is a NULL — printed here, not hidden.")

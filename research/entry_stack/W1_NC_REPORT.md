@@ -40,18 +40,19 @@ Family: `esx_null_competitors` (budget=6, pre-registered at W0).
 
 #### NC-1A Effect Table (R1 FE, fast block bootstrap)
 
-N total: 37,722 | N treatment: 33,604 | N control: 4,118
+N total (pre-drop): 37,722 | N estimation-sample (post-drop): 34,660 | N blocks: 8597
+N treatment: 33,604 | N control: 4,118
 FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | -0.0019 | [-0.018, +0.006] | -0.0088 | 0.3220 | 0.7028 | no |
-| rotational_liftoff | -0.0086 | [-0.026, +0.003] | -0.0170 | 0.1280 | 0.4480 | no |
-| positional_liftoff | 0.0091 | [-0.009, +0.025] | 0.0148 | 0.4460 | 0.7028 | no |
-| dead_money | 0.0001 | [-0.001, +0.002] | 0.0002 | 0.9200 | 0.9200 | no |
-| cushion_rot | -0.0018 | [-0.020, +0.011] | -0.0042 | 0.5020 | 0.7028 | no |
-| mae63 | -0.0000 | [-0.004, +0.003] | 0.0042 | 0.7740 | 0.9030 | no |
-| mfe63 | -0.0046 | [-0.011, -0.001] * | -0.0098 | 0.0240 | 0.1680 | no |
+| stop5 | -0.0019 | [-0.016, +0.008] | -0.0088 | 0.4940 | 0.8645 | no |
+| rotational_liftoff | -0.0086 | [-0.025, +0.007] | -0.0170 | 0.3140 | 0.8633 | no |
+| positional_liftoff | 0.0091 | [-0.011, +0.026] | 0.0148 | 0.3700 | 0.8633 | no |
+| dead_money | 0.0001 | [-0.002, +0.002] | 0.0002 | 0.9740 | 0.9740 | no |
+| cushion_rot | -0.0018 | [-0.022, +0.016] | -0.0042 | 0.6920 | 0.9688 | no |
+| mae63 | -0.0000 | [-0.003, +0.003] | 0.0042 | 0.8580 | 0.9740 | no |
+| mfe63 | -0.0046 | [-0.011, +0.001] | -0.0098 | 0.0920 | 0.6440 | no |
 
 #### NC-1A Era summary (program eras, stop5 rate by stratum)
 
@@ -73,18 +74,19 @@ FE: `date` | Sector fallback: False
 
 #### NC-1B Effect Table (R1 FE, fast block bootstrap)
 
-N total: 37,722 | N treatment: 34,250 | N control: 3,472
+N total (pre-drop): 37,722 | N estimation-sample (post-drop): 34,660 | N blocks: 8597
+N treatment: 34,250 | N control: 3,472
 FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0001 | [-0.014, +0.010] | -0.0029 | 0.7440 | 0.7440 | no |
-| rotational_liftoff | 0.0044 | [-0.010, +0.017] | 0.0004 | 0.6400 | 0.7440 | no |
-| positional_liftoff | 0.0170 | [+0.001, +0.037] * | 0.0165 | 0.0400 | 0.2800 | no |
-| dead_money | -0.0031 | [-0.005, +0.001] | -0.0020 | 0.1040 | 0.3640 | no |
-| cushion_rot | 0.0063 | [-0.007, +0.026] | 0.0041 | 0.2460 | 0.5740 | no |
-| mae63 | -0.0015 | [-0.003, +0.001] | 0.0004 | 0.4240 | 0.7420 | no |
-| mfe63 | 0.0001 | [-0.003, +0.005] | 0.0006 | 0.5840 | 0.7440 | no |
+| stop5 | 0.0001 | [-0.015, +0.007] | -0.0029 | 0.4060 | 0.7105 | no |
+| rotational_liftoff | 0.0044 | [-0.015, +0.016] | 0.0004 | 0.9940 | 0.9940 | no |
+| positional_liftoff | 0.0170 | [-0.005, +0.028] | 0.0165 | 0.2160 | 0.7105 | no |
+| dead_money | -0.0031 | [-0.006, -0.001] * | -0.0020 | 0.0060 | 0.0420 | YES |
+| cushion_rot | 0.0063 | [-0.013, +0.022] | 0.0041 | 0.6400 | 0.8960 | no |
+| mae63 | -0.0015 | [-0.004, +0.001] | 0.0004 | 0.3140 | 0.7105 | no |
+| mfe63 | 0.0001 | [-0.005, +0.004] | 0.0006 | 0.8020 | 0.9357 | no |
 
 #### NC-1B Era summary (program eras, stop5 rate by stratum)
 
@@ -101,7 +103,7 @@ FE: `date` | Sector fallback: False
 
 ### NC-2: Entry-Quality Proximity Proxy (Partial)
 
-> **DEFERRAL STAMP:** NC-2 PARTIAL: proximity component only. DEFERRED components: freshness (EQ_W_FRESH=0.30) and momentum (EQ_W_MOM=0.18) require the full cycles.py call chain (multi_cycle, mtf_state, early_state, regime_state) per fire — computationally infeasible offline at this scale. The full NC-2 marginality test (coefficient survives eq-band FE in the R1 model) is deferred to the S-UR phase0 PR. Known limitation: proximity correlates with NC-1B (ticks=0 fires are typically closer to the rolling low pivot).
+> **DEFERRAL STAMP:** NC-2 PARTIAL: proximity component only (EQ_W_PROX=0.52 of total). PROXY-INPUT LIMITATION (finding 4): the engine (cycles.py:1705-1706) uses cand_price/dcl_price as the proximity pivot; this implementation uses a naive 63-bar close-minimum PROXY. No offline cache of cand_price/dcl_price exists. This is a proxy-INPUT, not merely a proxy-composite — NC-2 is DESCRIPTIVE-ONLY until the full deferred test with the real cycle pivot runs. DEFERRED components: freshness (EQ_W_FRESH=0.30) and momentum (EQ_W_MOM=0.18) require the full cycles.py call chain (multi_cycle, mtf_state, early_state, regime_state) per fire — computationally infeasible offline at this scale. The full NC-2 marginality test (coefficient survives eq-band FE in the R1 model) is deferred to the S-UR phase0 PR. Known limitation: proximity correlates with NC-1B (ticks=0 fires are typically closer to the rolling low pivot).
 
 Proxy: proximity-only (EQ_W_PROX=0.52 of total) | Rolling window: 63 bars | Gradable with proxy: 38,250
 
@@ -119,18 +121,19 @@ Top-tercile recall: 33.4% (12,585 of 37,722)
 
 #### NC-2 Top-tercile vs rest (R1 FE, proximity proxy)
 
-N total: 37,722 | N treatment: 12,585 | N control: 25,137
+N total (pre-drop): 37,722 | N estimation-sample (post-drop): 34,660 | N blocks: 8597
+N treatment: 12,585 | N control: 25,137
 FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | -0.0427 | [-0.050, -0.035] * | -0.0672 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | -0.0339 | [-0.040, -0.023] * | -0.0585 | 0.0000 | 0.0000 | YES |
-| positional_liftoff | 0.0129 | [-0.000, +0.025] | 0.0093 | 0.0520 | 0.0520 | YES |
-| dead_money | 0.0029 | [+0.001, +0.004] * | 0.0031 | 0.0000 | 0.0000 | YES |
-| cushion_rot | -0.0170 | [-0.026, -0.006] * | -0.0375 | 0.0040 | 0.0047 | YES |
-| mae63 | 0.0191 | [+0.018, +0.021] * | 0.0248 | 0.0000 | 0.0000 | YES |
-| mfe63 | -0.0226 | [-0.024, -0.018] * | -0.0346 | 0.0000 | 0.0000 | YES |
+| stop5 | -0.0427 | [-0.044, -0.031] * | -0.0672 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | -0.0339 | [-0.043, -0.022] * | -0.0585 | 0.0000 | 0.0000 | YES |
+| positional_liftoff | 0.0129 | [-0.001, +0.022] | 0.0093 | 0.0800 | 0.0800 | YES |
+| dead_money | 0.0029 | [+0.002, +0.005] * | 0.0031 | 0.0000 | 0.0000 | YES |
+| cushion_rot | -0.0170 | [-0.028, -0.004] * | -0.0375 | 0.0140 | 0.0163 | YES |
+| mae63 | 0.0191 | [+0.016, +0.020] * | 0.0248 | 0.0000 | 0.0000 | YES |
+| mfe63 | -0.0226 | [-0.025, -0.020] * | -0.0346 | 0.0000 | 0.0000 | YES |
 
 ---
 
@@ -138,11 +141,11 @@ FE: `date` | Sector fallback: False
 
 **SURVIVOR BIAS STAMP:** SURVIVOR BIAS: absolute rates on surviving names only; comparisons between strata are valid within this constraint.
 
-**BOOTSTRAP CI CAVEAT (baskets panel):** Sector coverage = 24% (below 50% threshold), triggering date-only block construction. This collapses all 107k fires into ~267 blocks of ~775 fires each. With only 267 effective blocks, bootstrap resampling produces nearly identical coefficient estimates across all iterations — yielding unrealistically tight CIs (e.g., [−0.004, −0.004]). These CIs should be read as degenerate/nearly-deterministic under the current block scheme, not as high precision. The point-estimate coefficients are valid (date-FE OLS), but the CI width substantially understates true sampling uncertainty. The baskets row in the YARDSTICK table carries this limitation.
-
 - Total fires: 113,542
 - Gradable fires: 107,127
 - FE granularity: `date` (frozen per RUL-12)
+
+**BOOTSTRAP CI NOTE (this panel):** Sector coverage < 50%, so block construction uses date-only clustering. This panel produced **266 episode blocks** for the bootstrap. If n_blocks is small (< ~100), CI width understates true sampling uncertainty. Point-estimate coefficients (date-FE OLS) remain valid regardless of block count.
 
 ### NC-1A: T1-only vs T1+T2+T3
 
@@ -151,18 +154,19 @@ FE: `date` | Sector fallback: False
 
 #### NC-1A Effect Table (R1 FE, fast block bootstrap)
 
-N total: 107,127 | N treatment: 92,021 | N control: 15,106
+N total (pre-drop): 107,127 | N estimation-sample (post-drop): 106,984 | N blocks: 266
+N treatment: 92,021 | N control: 15,106
 FE: `date` | Sector fallback: True
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | -0.0036 | [-0.004, -0.004] * | 0.0036 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | -0.0014 | [-0.001, -0.001] * | -0.0104 | 0.0000 | 0.0000 | YES |
-| positional_liftoff | -0.0020 | [-0.002, -0.002] * | -0.0069 | 0.0000 | 0.0000 | YES |
-| dead_money | -0.0018 | [-0.002, -0.002] * | -0.0019 | 0.0000 | 0.0000 | YES |
-| cushion_rot | -0.0033 | [-0.003, -0.003] * | -0.0156 | 0.0000 | 0.0000 | YES |
-| mae63 | 0.0024 | [+0.002, +0.002] * | 0.0055 | 0.0000 | 0.0000 | YES |
-| mfe63 | -0.0075 | [-0.007, -0.007] * | -0.0031 | 0.0000 | 0.0000 | YES |
+| stop5 | -0.0036 | [-0.011, +0.006] | 0.0036 | 0.5240 | 0.7303 | no |
+| rotational_liftoff | -0.0014 | [-0.009, +0.006] | -0.0104 | 0.7880 | 0.7880 | no |
+| positional_liftoff | -0.0020 | [-0.010, +0.006] | -0.0069 | 0.6260 | 0.7303 | no |
+| dead_money | -0.0018 | [-0.003, -0.000] * | -0.0019 | 0.0060 | 0.0420 | YES |
+| cushion_rot | -0.0033 | [-0.011, +0.007] | -0.0156 | 0.5920 | 0.7303 | no |
+| mae63 | 0.0024 | [-0.000, +0.005] | 0.0055 | 0.0860 | 0.2007 | no |
+| mfe63 | -0.0075 | [-0.016, +0.000] | -0.0031 | 0.0640 | 0.2007 | no |
 
 #### NC-1A Era summary (program eras, stop5 rate by stratum)
 
@@ -184,18 +188,19 @@ FE: `date` | Sector fallback: True
 
 #### NC-1B Effect Table (R1 FE, fast block bootstrap)
 
-N total: 107,127 | N treatment: 97,353 | N control: 9,774
+N total (pre-drop): 107,127 | N estimation-sample (post-drop): 106,984 | N blocks: 266
+N treatment: 97,353 | N control: 9,774
 FE: `date` | Sector fallback: True
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0099 | [+0.010, +0.010] * | 0.0165 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | 0.0044 | [+0.004, +0.004] * | 0.0057 | 0.0000 | 0.0000 | YES |
-| positional_liftoff | -0.0018 | [-0.002, -0.002] * | 0.0012 | 0.0000 | 0.0000 | YES |
-| dead_money | 0.0011 | [+0.001, +0.001] * | 0.0011 | 0.0000 | 0.0000 | YES |
-| cushion_rot | 0.0079 | [+0.008, +0.008] * | 0.0032 | 0.0000 | 0.0000 | YES |
-| mae63 | -0.0021 | [-0.002, -0.002] * | -0.0006 | 0.0000 | 0.0000 | YES |
-| mfe63 | 0.0069 | [+0.007, +0.007] * | 0.0088 | 0.0000 | 0.0000 | YES |
+| stop5 | 0.0099 | [+0.002, +0.015] * | 0.0165 | 0.0120 | 0.0373 | YES |
+| rotational_liftoff | 0.0044 | [-0.002, +0.014] | 0.0057 | 0.1140 | 0.1596 | no |
+| positional_liftoff | -0.0018 | [-0.008, +0.008] | 0.0012 | 0.9840 | 0.9840 | no |
+| dead_money | 0.0011 | [+0.000, +0.002] * | 0.0011 | 0.0080 | 0.0373 | YES |
+| cushion_rot | 0.0079 | [+0.002, +0.019] * | 0.0032 | 0.0160 | 0.0373 | YES |
+| mae63 | -0.0021 | [-0.004, +0.001] | -0.0006 | 0.1840 | 0.2147 | no |
+| mfe63 | 0.0069 | [+0.001, +0.012] * | 0.0088 | 0.0240 | 0.0420 | YES |
 
 #### NC-1B Era summary (program eras, stop5 rate by stratum)
 
@@ -212,7 +217,7 @@ FE: `date` | Sector fallback: True
 
 ### NC-2: Entry-Quality Proximity Proxy (Partial)
 
-> **DEFERRAL STAMP:** NC-2 PARTIAL: proximity component only. DEFERRED components: freshness (EQ_W_FRESH=0.30) and momentum (EQ_W_MOM=0.18) require the full cycles.py call chain (multi_cycle, mtf_state, early_state, regime_state) per fire — computationally infeasible offline at this scale. The full NC-2 marginality test (coefficient survives eq-band FE in the R1 model) is deferred to the S-UR phase0 PR. Known limitation: proximity correlates with NC-1B (ticks=0 fires are typically closer to the rolling low pivot).
+> **DEFERRAL STAMP:** NC-2 PARTIAL: proximity component only (EQ_W_PROX=0.52 of total). PROXY-INPUT LIMITATION (finding 4): the engine (cycles.py:1705-1706) uses cand_price/dcl_price as the proximity pivot; this implementation uses a naive 63-bar close-minimum PROXY. No offline cache of cand_price/dcl_price exists. This is a proxy-INPUT, not merely a proxy-composite — NC-2 is DESCRIPTIVE-ONLY until the full deferred test with the real cycle pivot runs. DEFERRED components: freshness (EQ_W_FRESH=0.30) and momentum (EQ_W_MOM=0.18) require the full cycles.py call chain (multi_cycle, mtf_state, early_state, regime_state) per fire — computationally infeasible offline at this scale. The full NC-2 marginality test (coefficient survives eq-band FE in the R1 model) is deferred to the S-UR phase0 PR. Known limitation: proximity correlates with NC-1B (ticks=0 fires are typically closer to the rolling low pivot).
 
 Proxy: proximity-only (EQ_W_PROX=0.52 of total) | Rolling window: 63 bars | Gradable with proxy: 113,542
 
@@ -230,18 +235,19 @@ Top-tercile recall: 34.0% (36,391 of 107,127)
 
 #### NC-2 Top-tercile vs rest (R1 FE, proximity proxy)
 
-N total: 107,127 | N treatment: 36,391 | N control: 70,736
+N total (pre-drop): 107,127 | N estimation-sample (post-drop): 106,984 | N blocks: 266
+N treatment: 36,391 | N control: 70,736
 FE: `date` | Sector fallback: True
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | -0.1012 | [-0.101, -0.101] * | -0.1198 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | -0.0533 | [-0.053, -0.053] * | -0.0634 | 0.0000 | 0.0000 | YES |
-| positional_liftoff | 0.0066 | [+0.007, +0.007] * | 0.0019 | 0.0000 | 0.0000 | YES |
-| dead_money | 0.0063 | [+0.006, +0.006] * | 0.0062 | 0.0000 | 0.0000 | YES |
-| cushion_rot | -0.0287 | [-0.029, -0.029] * | -0.0325 | 0.0000 | 0.0000 | YES |
-| mae63 | 0.0409 | [+0.041, +0.041] * | 0.0411 | 0.0000 | 0.0000 | YES |
-| mfe63 | -0.0628 | [-0.063, -0.063] * | -0.0863 | 0.0000 | 0.0000 | YES |
+| stop5 | -0.1012 | [-0.108, -0.096] * | -0.1198 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | -0.0533 | [-0.061, -0.045] * | -0.0634 | 0.0000 | 0.0000 | YES |
+| positional_liftoff | 0.0066 | [-0.001, +0.015] | 0.0019 | 0.0700 | 0.0700 | YES |
+| dead_money | 0.0063 | [+0.005, +0.007] * | 0.0062 | 0.0000 | 0.0000 | YES |
+| cushion_rot | -0.0287 | [-0.037, -0.020] * | -0.0325 | 0.0000 | 0.0000 | YES |
+| mae63 | 0.0409 | [+0.038, +0.043] * | 0.0411 | 0.0000 | 0.0000 | YES |
+| mfe63 | -0.0628 | [-0.068, -0.057] * | -0.0863 | 0.0000 | 0.0000 | YES |
 
 ---
 
@@ -258,14 +264,14 @@ At n≥400/arm with baseline stop5 ~12%, difference-SE ≈ 2.3pp. A bare 2pp
 point-estimate rarely clears CI-excluding-0 at minimum n. The CI-excluding-0
 clause is the operative promotion bar — not the 2pp level alone.
 
-| Panel | NC | Stop5 coef | 95% CI | CI excl 0? | N treat | N ctrl | Recall (treat arm) |
-|---|---|---|---|---|---|---|---|
-| deep | NC-1A (T1-only) | -0.0019 | [-0.018, +0.006] | no | 33,604 | 4,118 | 89.1% |
-| deep | NC-1B (ticks=0) | 0.0001 | [-0.014, +0.010] | no | 34,250 | 3,472 | 90.8% |
-| deep | NC-2 (prox top-tercile) | -0.0427 | [-0.050, -0.035] * | YES * | 12,585 | 25,137 | 33.4% |
-| baskets | NC-1A (T1-only) | -0.0036 | DEGENERATE CI (267 blocks) | — | 92,021 | 15,106 | 85.9% |
-| baskets | NC-1B (ticks=0) | +0.0099 | DEGENERATE CI (267 blocks) | — | 97,353 | 9,774 | 90.9% |
-| baskets | NC-2 (prox top-tercile) | -0.1012 | DEGENERATE CI (267 blocks) | — | 36,391 | 70,736 | 34.0% |
+| Panel | NC | Stop5 coef | 95% CI | CI excl 0? | N blocks | N treat | N ctrl | Recall (treat arm) |
+|---|---|---|---|---|---|---|---|---|
+| deep | NC-1A (T1-only) | -0.0019 | [-0.016, +0.008] | no | 8597 | 33,604 | 4,118 | 89.1% |
+| deep | NC-1B (ticks=0) | 0.0001 | [-0.015, +0.007] | no | 8597 | 34,250 | 3,472 | 90.8% |
+| deep | NC-2 (prox top-tercile) | -0.0427 | [-0.044, -0.031] * | YES * | 8597 | 12,585 | 25,137 | 33.4% |
+| baskets | NC-1A (T1-only) | -0.0036 | [-0.011, +0.006] | no | 266 | 92,021 | 15,106 | 85.9% |
+| baskets | NC-1B (ticks=0) | 0.0099 | [+0.002, +0.015] * | YES * | 266 | 97,353 | 9,774 | 90.9% |
+| baskets | NC-2 (prox top-tercile) | -0.1012 | [-0.108, -0.096] * | YES * | 266 | 36,391 | 70,736 | 34.0% |
 
 **Reading the yardstick:**
 - CI excl 0 = YES: the block-bootstrap 95% CI excludes zero — stratum effect
@@ -274,6 +280,7 @@ clause is the operative promotion bar — not the 2pp level alone.
   already buy distinguishable asymmetry improvement. A null NC is informative:
   it means new signals have room to add genuine value beyond tier/freshness.
 - Later reports must show their candidate's stop5 coef + CI alongside this table.
+- N blocks column shows real block counts after bug fixes (1)+(2). Low block counts are flagged with [low-block caveat] inline.
 
 ### Null result declaration (mandatory per masterplan §5):
 Any NC with CI-including-0 is a NULL — printed here, not hidden.
