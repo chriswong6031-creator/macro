@@ -77,7 +77,11 @@ _ADVICE_PATTERNS = [
 
 # Prompt-injection reject patterns
 _INJECTION_PATTERNS = [
-    re.compile(r"ignore\s+(previous|all)\s+instructions", re.I),
+    # Canonical phrase variants: "ignore [all] [the/your/previous/prior] instructions",
+    # "disregard ... instructions", "forget your instructions", etc.
+    re.compile(r"ignore\s+(all\s+)?(the\s+|your\s+|previous\s+|prior\s+)*instructions", re.I),
+    re.compile(r"\bdisregard\b.{0,30}\binstructions\b", re.I),
+    re.compile(r"\bforget\b.{0,20}\b(your\s+)?(instructions|rules|guidelines)\b", re.I),
     re.compile(r"system\s+prompt", re.I),
     re.compile(r"override\s+(the|your|all)\s+(instructions|rules|guidelines)", re.I),
     re.compile(r"tool\s*call\s*:", re.I),
@@ -221,7 +225,7 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     if re.search(r"\b(contradict\w*|disagree\w*|conflict\w*|tension\w*|opposing\w*)\b", q):
         return _BUDGET_CONTRADICTS, ["read_contradictions", "read_graph"]
     # "macro regime / market state / risk / outlook"
-    if re.search(r"\b(regime|macro|risk.off|risk.on|market\s+state|outlook|quad)\b", q):
+    if re.search(r"\b(regime|macro|risk[.\s-]off|risk[.\s-]on|market\s+state|outlook|quad)\b", q):
         return _BUDGET_REGIME, ["read_world_state"]
     # default
     return _BUDGET_GENERAL, ["read_world_state"]
@@ -317,9 +321,27 @@ def _memo_quote_response(
     # World state summary
     try:
         ws = json.loads(world_state_path.read_text(encoding="utf-8"))
-        verdict = ws.get("verdict") or ws.get("market_state") or "unknown"
-        regime = ws.get("regime") or ws.get("quad") or "unknown"
-        score = ws.get("score") or ws.get("risk_score")
+        # verdict and regime are nested dicts in production world_state.json.
+        # Extract scalar labels; fall back to str() only as a last resort so we
+        # never render raw Python dict repr into the customer-facing answer.
+        verdict_raw = ws.get("verdict") or ws.get("market_state")
+        if isinstance(verdict_raw, dict):
+            verdict = verdict_raw.get("label_en") or verdict_raw.get("verdict") or "unknown"
+        else:
+            verdict = str(verdict_raw) if verdict_raw is not None else "unknown"
+
+        regime_raw = ws.get("regime") or ws.get("quad")
+        if isinstance(regime_raw, dict):
+            regime = regime_raw.get("quad_name") or regime_raw.get("quad") or "unknown"
+        else:
+            regime = str(regime_raw) if regime_raw is not None else "unknown"
+
+        # score may live at the top level or inside verdict dict
+        score_raw = ws.get("score") or ws.get("risk_score")
+        if score_raw is None and isinstance(verdict_raw, dict):
+            score_raw = verdict_raw.get("score")
+        score = score_raw
+
         answer_parts.append(
             f"**Current market state:** {verdict} (regime: {regime}"
             + (f", score: {score}" if score is not None else "")
@@ -630,36 +652,48 @@ def _run_ask_loop_stream(
                 tools=tool_schemas,
                 messages=messages,
             )
+            # Buffer the full answer before emitting — post-filter must run on the
+            # complete text BEFORE any bytes are sent to the client.  Streaming
+            # delta-by-delta and appending a later "filtered" event cannot un-send
+            # advice that already reached the wire.
             full_answer = ""
             with stream_resp as s:
                 for text_chunk in s.text_stream:
                     full_answer += text_chunk
-                    yield f"data: {json.dumps({'delta': text_chunk})}\n\n"
-            # Post-filter on the full answer
             citations = _extract_citations(messages)
             filtered, was_filtered = _post_filter_advice(full_answer, citations)
             if was_filtered:
-                # Re-yield the filtered answer
-                yield f"data: {json.dumps({'delta': '', 'filtered': True, 'answer': filtered})}\n\n"
+                yield f"data: {json.dumps({'delta': filtered, 'filtered': True})}\n\n"
+            else:
+                yield f"data: {json.dumps({'delta': full_answer})}\n\n"
             yield f"data: {json.dumps({'done': True, 'tool_call_census': tool_call_census, 'is_context_only': True})}\n\n"
         except Exception as exc:  # noqa: BLE001
             log.warning("ask_brain: stream synthesis turn failed: %s", exc)
             # Fall back to the last text block from the tool-calling turns
+            fallback = ""
             for block in last_resp_content:
                 if getattr(block, "type", "") == "text":
-                    yield f"data: {json.dumps({'delta': block.text})}\n\n"
+                    fallback += block.text
+            citations = _extract_citations(messages)
+            filtered, was_filtered = _post_filter_advice(fallback, citations)
+            if was_filtered:
+                yield f"data: {json.dumps({'delta': filtered, 'filtered': True})}\n\n"
+            else:
+                yield f"data: {json.dumps({'delta': fallback})}\n\n"
             yield f"data: {json.dumps({'done': True, 'degraded': True, 'tool_call_census': tool_call_census})}\n\n"
     else:
-        # Last turn was end_turn — stream its text content
+        # Last turn was end_turn — buffer text, run filter, then emit.
+        # (Same reason as the streaming branch above: filter must precede wire.)
         full_answer = ""
         for block in last_resp_content:
             if getattr(block, "type", "") == "text":
-                full_answer = block.text
-                yield f"data: {json.dumps({'delta': block.text})}\n\n"
+                full_answer += block.text
         citations = _extract_citations(messages)
         filtered, was_filtered = _post_filter_advice(full_answer, citations)
         if was_filtered:
-            yield f"data: {json.dumps({'delta': '', 'filtered': True, 'answer': filtered})}\n\n"
+            yield f"data: {json.dumps({'delta': filtered, 'filtered': True})}\n\n"
+        else:
+            yield f"data: {json.dumps({'delta': full_answer})}\n\n"
         yield f"data: {json.dumps({'done': True, 'tool_call_census': tool_call_census, 'is_context_only': True})}\n\n"
 
 
