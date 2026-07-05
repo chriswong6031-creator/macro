@@ -220,18 +220,16 @@ def _curve_trade(f: pd.DataFrame, raw: dict) -> dict:
     cuts_priced = ntfs is not None and ntfs < -0.10
     if cuts_priced and slope is not None and slope < 0.5:
         lean, en, zh = ("steepener",
-                        "Cuts priced (near-term forward spread inverted) with a flat/inverted curve — a "
-                        "bull-steepener bias as the front end leads lower.",
-                        "市场已定价降息（近端远期利差倒挂）且曲线平坦/倒挂 — 短端领先下行，偏牛市陡峭。")
+                        "Cuts are priced while the curve is flat or inverted; the front end can lead yields lower.",
+                        "市场已定价降息且曲线平坦/倒挂；短端可能率先下行。")
     elif reflation is not None and reflation < -0.25 and (slope is None or slope > 0):
         lean, en, zh = ("steepener",
-                        "A reflation impulse with a positive curve — a bear-steepener bias as the long end "
-                        "reprices term premium / supply higher.",
-                        "再通胀动能叠加正向曲线 — 长端重新定价期限溢价/供给走高，偏熊市陡峭。")
+                        "Reflation plus a positive curve points to long-end pressure.",
+                        "再通胀叠加正向曲线，指向长端压力。")
     else:
         lean, en, zh = ("neutral",
-                        "No strong steepener/flattener bias from the policy-path and reflation reads.",
-                        "从政策路径与再通胀读数看，无明显陡峭/平坦倾向。")
+                        "No clear steepener or flattener bias.",
+                        "无明显陡峭或平坦倾向。")
     return {"lean": lean, "rationale_en": en, "rationale_zh": zh,
             "slope_10y3m": _r(slope), "ntfs": _r(ntfs)}
 
