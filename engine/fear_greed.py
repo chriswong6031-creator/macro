@@ -456,9 +456,23 @@ def _leg_naaim() -> dict:
                 "freshness": "missing", "obs_count": None}
 
 
+_INSIDER_TXN_CAP_USD = 1e8   # $100 M: realistic ceiling for a single Form-4 transaction
+
 def _build_insider_time_series() -> pd.Series:
     """Aggregate quarterly insider net buy$ from panel store as a time-series
-    indexed by quarter end date. Returns empty Series on any shortfall."""
+    indexed by quarter end date. Returns empty Series on any shortfall.
+
+    Data quality notes:
+    - Dedup on (ticker, trans_date, code, shares, price) to drop duplicate rows
+      that appear when a single Form-4 amendment is stored more than once.
+    - Cap individual transaction usd at _INSIDER_TXN_CAP_USD: the raw panel
+      occasionally carries price values that are orders-of-magnitude wrong
+      (e.g. price in cents instead of dollars, or EDGAR data-entry errors),
+      producing individual rows in the multi-trillion-dollar range.  Any
+      single insider trade above $100 M is already exceptional; capping there
+      keeps the quarterly aggregate realistic (~single-digit to ~$50 B) while
+      not distorting the signal direction.
+    """
     panel_dir = config.data_dir() / "sec_insider" / "panel"
     if not panel_dir.exists():
         return pd.Series(dtype=float)
@@ -472,6 +486,13 @@ def _build_insider_time_series() -> pd.Series:
             q = df["quarter"].iloc[0] if "quarter" in df.columns else None
             if not q:
                 continue
+            # Dedup: a Form-4 amendment can land in the same quarter file twice
+            dedup_cols = [c for c in ("ticker", "trans_date", "code", "shares", "price")
+                          if c in df.columns]
+            if dedup_cols:
+                df = df.drop_duplicates(subset=dedup_cols)
+            # Cap per-transaction usd to filter out corrupt price rows
+            df = df[df["usd"] <= _INSIDER_TXN_CAP_USD]
             buys = df[df["code"] == "P"]["usd"].sum()
             sells = df[df["code"] == "S"]["usd"].sum()
             records.append({"quarter": q, "net_usd": buys - sells})
@@ -510,6 +531,15 @@ def _leg_insider() -> dict:
                     "freshness": "missing", "obs_count": 0}
         # normalise to billions
         ts_b = ts / 1e9
+        # Sanity gate: if any quarterly net value exceeds ±200 B something is wrong
+        if ts_b.abs().max() > 200:
+            log.error(
+                "insider: implausible net_usd values (max abs=%.1f B); "
+                "skipping leg to avoid displaying broken data",
+                ts_b.abs().max(),
+            )
+            return {**meta, "value": None, "z": None, "pct": None,
+                    "freshness": "missing", "obs_count": obs}
         # z-score with expanding window, min_periods=QUARTERLY_MIN
         mu = ts_b.expanding(min_periods=QUARTERLY_MIN).mean()
         sd = ts_b.expanding(min_periods=QUARTERLY_MIN).std()
@@ -517,7 +547,9 @@ def _leg_insider() -> dict:
         z_val = _last(z_s)
         raw = _last(ts_b)
         pct = _pct_in_history(ts_b, raw) if raw is not None else None
-        fresh = _freshness(ts.index.max())
+        # Use a quarterly-cadence staleness window (95 days ≈ one quarter + buffer)
+        # so that quarterly data is not incorrectly reported as 'stale'
+        fresh = _freshness(ts.index.max(), stale_days=48)   # 48*2=96 days
         return {**meta, "value": _r(raw, 1), "z": _r(z_val),
                 "pct": pct, "freshness": fresh, "obs_count": obs}
     except Exception as e:  # noqa: BLE001

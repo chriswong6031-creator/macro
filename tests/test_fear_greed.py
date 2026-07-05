@@ -214,6 +214,97 @@ class TestMinHistoryGate:
         leg = {"key": "insider", "obs_count": 30}
         assert not fgmod._gate_passes(leg)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Insider data-quality: dedup + cap + plausible range sanity
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestInsiderDataQuality:
+    """Guards against the quadrillion-dollar insider-value bug (PR #1324 review finding).
+
+    Root cause: the sec_insider panel 'usd' column occasionally contains rows
+    with corrupt price data (e.g. price in cents → usd = shares × huge_price),
+    and duplicate rows from Form-4 amendments, collectively inflating the raw
+    quarterly aggregate by many orders of magnitude.
+
+    The fix: dedup on (ticker, trans_date, code, shares, price) and cap each
+    individual transaction at _INSIDER_TXN_CAP_USD before summing.
+    """
+
+    def _make_panel(self, rows):
+        """Build a minimal panel DataFrame matching the sec_insider schema."""
+        return pd.DataFrame(rows)
+
+    def test_dedup_removes_duplicate_amendment_rows(self, monkeypatch, tmp_path):
+        """Duplicate Form-4 rows (same ticker/trans_date/code/shares/price) are
+        counted only once in the quarterly aggregate."""
+        # Two identical rows for a single $50K purchase
+        panel = self._make_panel([
+            {"ticker": "AAPL", "trans_date": "2024-03-15", "code": "P",
+             "shares": 1000.0, "price": 50.0, "usd": 50_000.0, "quarter": "2024q1"},
+            {"ticker": "AAPL", "trans_date": "2024-03-15", "code": "P",
+             "shares": 1000.0, "price": 50.0, "usd": 50_000.0, "quarter": "2024q1"},
+        ])
+
+        def _fake_read_parquet(fp, **kw):
+            return panel
+
+        monkeypatch.setattr(fgmod.pd, "read_parquet", _fake_read_parquet)
+
+        import glob as _glob
+        monkeypatch.setattr(fgmod, "glob", type("G", (), {
+            "glob": staticmethod(lambda pat: ["/fake/2024q1.parquet"])
+        })())
+
+        ts = fgmod._build_insider_time_series()
+        assert len(ts) == 1
+        # After dedup, net should be $50K, not $100K
+        assert abs(ts.iloc[0] - 50_000.0) < 1.0, (
+            f"Expected ~50000 after dedup, got {ts.iloc[0]}")
+
+    def test_corrupt_price_rows_are_capped(self, monkeypatch):
+        """A row with a corrupt usd value > _INSIDER_TXN_CAP_USD is excluded."""
+        import glob as _glob
+        panel = self._make_panel([
+            # Legitimate trade: $80K purchase
+            {"ticker": "AAPL", "trans_date": "2024-03-10", "code": "P",
+             "shares": 1000.0, "price": 80.0, "usd": 80_000.0, "quarter": "2024q1"},
+            # Corrupt trade: usd = $2.4 quadrillion (price in cents error)
+            {"ticker": "CCCG", "trans_date": "2024-03-12", "code": "S",
+             "shares": 1e8, "price": 2.4e7, "usd": 2.4e15, "quarter": "2024q1"},
+        ])
+
+        def _fake_read_parquet(fp, **kw):
+            return panel
+
+        monkeypatch.setattr(fgmod.pd, "read_parquet", _fake_read_parquet)
+        monkeypatch.setattr(fgmod, "glob", type("G", (), {
+            "glob": staticmethod(lambda pat: ["/fake/2024q1.parquet"])
+        })())
+
+        ts = fgmod._build_insider_time_series()
+        assert len(ts) == 1
+        # The corrupt sell is dropped; only the $80K buy counts → net = +$80K
+        assert abs(ts.iloc[0] - 80_000.0) < 1.0, (
+            f"Expected ~80000 after capping corrupt row, got {ts.iloc[0]}")
+
+    def test_real_insider_leg_value_within_plausible_range(self):
+        """With real panel data, the displayed insider net value is within ±$200 B.
+
+        If this fails, _build_insider_time_series() is returning implausibly large
+        values (the quadrillion-dollar bug has regressed).
+        """
+        ts = fgmod._build_insider_time_series()
+        if ts.empty:
+            import pytest as _pytest
+            _pytest.skip("no sec_insider panel data available")
+        ts_b = ts / 1e9   # billions
+        max_abs = float(ts_b.abs().max())
+        assert max_abs < 200, (
+            f"Insider net USD (max abs) = {max_abs:.1f} B — implausibly large. "
+            "Expected < $200 B; likely a corrupt price or unit error in the panel."
+        )
+
     def test_compute_excludes_young_legs_from_z_mean(self, monkeypatch):
         """When a leg has obs_count < gate threshold, it must not appear in legs_included."""
         # Mock all store reads to return a tiny DataFrame (10 rows — too young for all legs)
