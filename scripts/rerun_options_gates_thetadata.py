@@ -53,7 +53,9 @@ log = logging.getLogger("rerun_options_gates")
 # S-DOI: cross-sectional rank-IC gate (OPTIONS_ALPHA_MASTERPLAN §4)
 _DOI_HORIZONS = [5, 10]          # forward return windows (trading days)
 _DOI_MIN_DATES = 60              # §4: "HAC t>2 @60 dates"
-_DOI_MIN_NAMES = 5               # §4 cross-sectional breadth floor per date
+_DOI_MIN_NAMES = 5               # HARNESS CHOICE (not a §4 threshold): §4 registers only
+                                 # the 60-date floor; this floor is set by the harness to
+                                 # exclude single-name dates during thin-backfill runs.
 _DOI_T_BAR = 2.0                 # §4: HAC t > 2
 
 # S-CWIV / S-XZZ: same gate shape as existing validators
@@ -252,6 +254,7 @@ def run_s_doi(roots: list[str], tr_closes: pd.DataFrame,
             "source": "OPTIONS_ALPHA_MASTERPLAN §4 — unchanged",
             "min_dates": _DOI_MIN_DATES,
             "min_names_per_date": _DOI_MIN_NAMES,
+            "min_names_note": "harness choice; §4 registers only the 60-date floor",
             "hac_t_bar": _DOI_T_BAR,
             "horizons": _DOI_HORIZONS,
         },
@@ -262,7 +265,7 @@ def run_s_doi(roots: list[str], tr_closes: pd.DataFrame,
             "S-DOI ΔOI persistence: scored:false — machine only. "
             "Verdicts after backfill completes. "
             "OI timing law applied: doi_series() uses oi[t-1] (shift(1)) per "
-            "LIVE_ORDER_FLOW_BRAINSTORM §8.1. "
+            "LIVE_ORDER_FLOW_BRAINSTORM §8 ¶1. "
             "Forward returns: TR closes from equity_factors._closes('broad') "
             "— dividend-adjusted, cross-sectional rank-IC use only, "
             "MUST NOT be compared to strike levels. "
@@ -392,16 +395,13 @@ def _iv_fwd_ic(panel: pd.DataFrame, signal_col: str, lo: str, hi: str,
                 break
             d1 = dates[i + h]
             fwd = spot.loc[d1] / spot.loc[d0] - 1.0
-            if spy is not None and spy.loc[d1] and spy.loc[d0]:
+            if spy is not None and float(spy.loc[d1]) > 0 and float(spy.loc[d0]) > 0:
                 fwd = fwd - (float(spy.loc[d1]) / float(spy.loc[d0]) - 1.0)
             sg = sig.loc[d0]
             names = [c for c in sg.index if c != "SPY"
                      and np.isfinite(sg.get(c, float("nan")))
                      and np.isfinite(fwd.get(c, float("nan")))]
             if len(names) < min_names:
-                excluded += 1
-                continue
-            if len(names) < 10:
                 excluded += 1
                 continue
             ic = V.rank_ic(sg[names].values, fwd[names].values)

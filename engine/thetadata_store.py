@@ -11,7 +11,7 @@ OI columns   : root, expiration, strike, right, date, open_interest
 Greeks cols  : root, expiration, strike, right, date, bid, ask, underlying_price,
                delta, theta, vega, rho, epsilon, lambda, implied_vol, iv_error
 
-OI TIMING LAW (LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE §8.1):
+OI TIMING LAW (LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE §8 ¶1):
   OPRA reports OI once per day at ~06:30 ET representing end-of-PREVIOUS-day positions.
   oi[t] = positions as of EOD t-1.  For any day-t signal, the correct OI input is
   oi[t-1] (i.e. shift(1) on the OI series).  Using same-day OI is a lookahead bug.
@@ -32,6 +32,34 @@ import numpy as np
 import pandas as pd
 
 log = logging.getLogger(__name__)
+
+# --------------------------------------------------------------------------- #
+# parquet load cache                                                            #
+# --------------------------------------------------------------------------- #
+# _PARQUET_CACHE: (tier, root, year_file_path_str) -> pd.DataFrame
+#
+# A full-universe run calls chain() for every (date, root) combination.
+# Without caching, _load_parquets re-reads the year file on EVERY date within
+# the same year, turning the run into O(dates × full reads). With this cache,
+# each year file is read exactly once — O(roots × years × reads).
+#
+# Memory tradeoff: each cached DataFrame is the full year of one (tier, root)
+# pair (typically a few MB for SPY eod; smaller for oi/greeks). At 3 tiers ×
+# N roots × Y years the peak footprint is 3NY DataFrames in memory.  For a
+# broad universe (hundreds of roots, 12 years) this can reach several GB; for
+# typical backtests (tens of roots) it is comfortably under 1 GB.  Call
+# clear_parquet_cache() to release all frames after a batch run.
+_PARQUET_CACHE: dict[str, pd.DataFrame] = {}
+
+
+def clear_parquet_cache() -> None:
+    """Release all cached year-parquet DataFrames.
+
+    Call after a full-universe batch run to reclaim memory.  Not needed for
+    single-date queries or for tests (the fixture store is tiny).
+    """
+    _PARQUET_CACHE.clear()
+
 
 # --------------------------------------------------------------------------- #
 # store root resolution                                                         #
@@ -63,7 +91,13 @@ def store_root(override: str | Path | None = None) -> Path:
 def _load_parquets(tier: str, root: str, years: list[int] | None,
                    store: str | Path | None = None) -> pd.DataFrame:
     """Load all parquets for (tier, root), optionally filtered to `years`.
-    Missing files are silently skipped (partial store is normal during backfill)."""
+    Missing files are silently skipped (partial store is normal during backfill).
+
+    Results are memoized in _PARQUET_CACHE keyed by the resolved file path string.
+    This means consecutive chain() calls for different dates in the same year pay
+    one disk read, not N reads.  Call clear_parquet_cache() after a batch run to
+    release memory.
+    """
     base = store_root(store) / tier / root
     if not base.exists():
         return pd.DataFrame()
@@ -75,8 +109,14 @@ def _load_parquets(tier: str, root: str, years: list[int] | None,
         return pd.DataFrame()
     frames = []
     for f in files:
+        key = str(f.resolve())
+        if key in _PARQUET_CACHE:
+            frames.append(_PARQUET_CACHE[key])
+            continue
         try:
-            frames.append(pd.read_parquet(f))
+            df = pd.read_parquet(f)
+            _PARQUET_CACHE[key] = df
+            frames.append(df)
         except Exception as e:  # noqa: BLE001
             log.debug("skip %s: %s", f, e)
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
@@ -186,10 +226,10 @@ def doi_series(root: str, put_call: str = "both",
                store: str | Path | None = None) -> pd.DataFrame:
     """Per-date ΔOI (5-session default) for one root, aggregated over all strikes/expiries.
 
-    OI TIMING LAW (cite: LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE §8.1):
+    OI TIMING LAW (cite: LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE §8 ¶1):
       OPRA reports OI at ~06:30 ET representing end-of-PREVIOUS-day positions.
       We shift(1) so that day-t's signal uses oi[t-1], not oi[t].
-      Same-day OI in a day-t signal is a lookahead bug — see §8.1.
+      Same-day OI in a day-t signal is a lookahead bug — see §8 ¶1.
 
     Args:
         root      : option root symbol (e.g. "SPY")
@@ -218,7 +258,7 @@ def doi_series(root: str, put_call: str = "both",
     # EOD t-1 positions. Using oi[t] for day-t signals would be a lookahead.
     # We shift BEFORE computing the delta so that doi_raw[t] =
     #   oi_as_reported_on_t (=EOD t-1 position) - oi_as_reported_on_{t-window}
-    # which is fully known by the start of session t. — LIVE_ORDER_FLOW §8.1
+    # which is fully known by the start of session t. — LIVE_ORDER_FLOW §8 ¶1
     oi_shifted = daily.shift(1)  # oi[t-1] law
 
     doi_raw = oi_shifted - oi_shifted.shift(window)

@@ -495,3 +495,50 @@ def test_skew_validator_with_provider():
         assert isinstance(panel, pd.DataFrame)
     finally:
         del os.environ["THETADATA_STORE"]
+
+
+# --------------------------------------------------------------------------- #
+# Parquet memoization: second chain() call in same year must NOT re-read disk  #
+# --------------------------------------------------------------------------- #
+
+def test_load_parquets_cache_hit_no_reread(monkeypatch):
+    """Prove that calling chain() for two different dates in the same year
+    reads each year-parquet file exactly once from disk.
+
+    We monkeypatch pd.read_parquet and count calls.  After the first chain()
+    call the year file is in _PARQUET_CACHE; the second call (different date,
+    same year) must NOT trigger another pd.read_parquet call for that file.
+    """
+    import engine.thetadata_store as ts
+
+    # Clear cache so the test is hermetic
+    ts.clear_parquet_cache()
+
+    call_count: dict[str, int] = {"n": 0}
+    real_read_parquet = pd.read_parquet
+
+    def counting_read_parquet(path, **kwargs):
+        call_count["n"] += 1
+        return real_read_parquet(path, **kwargs)
+
+    monkeypatch.setattr(pd, "read_parquet", counting_read_parquet)
+
+    # First call: reads from disk
+    df1 = ts.chain("2019-01-02", "SPY", store=_store())
+    assert not df1.empty
+    reads_after_first = call_count["n"]
+    assert reads_after_first > 0, "Expected at least one pd.read_parquet call on first chain()"
+
+    # Second call: different date, same year 2019 → cache hit, no new reads
+    df2 = ts.chain("2019-01-03", "SPY", store=_store())
+    assert not df2.empty
+    reads_after_second = call_count["n"]
+
+    assert reads_after_second == reads_after_first, (
+        f"Second chain() call for a different date in the same year triggered "
+        f"{reads_after_second - reads_after_first} additional pd.read_parquet call(s). "
+        "Expected 0 — the year-parquet should have been served from _PARQUET_CACHE."
+    )
+
+    # Clean up
+    ts.clear_parquet_cache()

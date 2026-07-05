@@ -145,8 +145,10 @@ def _fwd_ic(panel: pd.DataFrame, h: int) -> dict:
     if not ics:
         return {"n_dates": 0}
     summ = V.ic_summary(np.array(ics), periods_per_year=max(1, 252 // h))
+    # ic_summary() returns "t_hac" (Newey-West HAC t-stat) — NOT "t" or "hac_t".
+    # Using the wrong key silently produces NaN t-stats and a dead gate verdict.
     return {"n_dates": len(ics), "mean_ic": round(float(summ.get("mean_ic", float("nan"))), 4),
-            "hac_t": round(float(summ.get("t", summ.get("hac_t", float("nan")))), 2)}
+            "hac_t": round(float(summ.get("t_hac", float("nan"))), 2)}
 
 
 def main() -> None:
