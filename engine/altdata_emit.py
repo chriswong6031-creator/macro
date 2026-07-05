@@ -233,6 +233,11 @@ def build_mastermind(by_ticker: dict | None, brain: dict | None, influence: dict
         # brain_usable = present AND not degraded; downstream (template + bot) should de-rate
         # the conviction board when False — scores are deterministic only, not graded vs SPY.
         "brain_usable": bool(brain and brain.get("theses") and not brain.get("degraded_reason")),
+        # Additive Article-3 / context-only flags propagated from the brain brief.
+        # Two-organisms law: the bot opts in on its own schedule — these are read-only signals.
+        # Refuse-by-default when brain is absent: article3=None, is_context_only=True.
+        "article3": (brain or {}).get("article3"),       # None when brain absent
+        "is_context_only": (brain or {}).get("is_context_only", True),  # True = refuse-by-default
         "calibration": {
             "n_scored": cal.get("scored_total"), "hit_rate": (cal.get("overall") or {}).get("hit_rate"),
             "open": cal.get("open"), "note": cal.get("calibration_note"),

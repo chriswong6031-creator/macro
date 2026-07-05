@@ -16,7 +16,22 @@ TWO HARD GUARDS so a self-tuning risk engine can't tune itself off a cliff:
 
 Accepted changes are written to data/risk_radar/calibration.json (the overlay risk_radar reads)
 and EVERY proposal+verdict is logged to data/risk_radar/review_log.jsonl (full audit trail).
-Gated, default-off, OAuth-first, never raises. Reuses the risk_brain/narrative_brain pattern.
+
+A6 LANE-(ii) GOVERNANCE (W7a PR2):
+  Every Opus PROPOSAL appends an a6_llm_proposed governance event (event_type 'a6_llm_proposed')
+  to the Neural Web governance ledger BEFORE any apply decision.  The event carries:
+    - the proposal payload (analysis + proposed deltas)
+    - the pre-committed gate it must pass (the do-no-harm F1 predicate)
+  Every APPLY appends a6_auto_apply + the backtest evidence (before/after calibration state).
+  Every REJECT appends the verdict with honest nulls.
+  Governance logging NEVER blocks the loop (fail-open; any logging exception is swallowed).
+
+ARMING NOTE (W7a PR2): config.yml now carries risk_radar_review.enabled: true (the correct
+arm path — config.load() overlay overrides _DEFAULTS on every run).  Even armed, the loop
+no-ops until >=30 graded radar calls exist (min_graded self-gate) and every apply passes the
+do-no-harm F1 backtest + hard clamps.
+
+OAuth-first, never raises. Reuses the risk_brain/narrative_brain pattern.
 """
 from __future__ import annotations
 
@@ -26,12 +41,27 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from engine.catalyst_tone import _extract_json
+from engine.neuralweb.governance import append_event
 from lib import config
 
 log = logging.getLogger(__name__)
 
 OAUTH_BETA = "oauth-2025-04-20"
 
+# Pre-committed A6 lane-(ii) gate description — recorded in every governance event so the
+# ledger carries the gate that was in force at the time of the proposal/apply/reject.
+_A6_GATE_SPEC = (
+    "do-no-harm F1 predicate: proposed calibration must improve historical alert F1 "
+    "(full+2020+) without breaking the evidence gate (n_graded >= min_graded=30 first); "
+    "hard clamps: bands +/-12 from default and strictly ordered; "
+    "leg thr_pct in [0.80,0.97]; prob_cal in [0,0.6] monotonic; alert_from in {caution,elevated,risk-off}"
+)
+
+# NOTE: _DEFAULTS["enabled"] is False here.  The real arm is config.yml
+# (risk_radar_review.enabled: true — W7a PR2 arming-predicate, 2026-07-04).
+# config.load() overlay in _cfg() takes precedence over _DEFAULTS on every
+# run, so touching this constant is NOT the correct arm mechanism.  See
+# engine/neuralweb/constitution.py A6 lane definitions.
 _DEFAULTS = {
     "enabled": False,
     "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
@@ -193,6 +223,80 @@ def _append_review_log(rec: dict, root=None) -> None:
         log.warning("risk_radar_review log append failed: %s", e)
 
 
+def _gov_proposal(proposal: dict, proposed_deltas: dict, root=None) -> None:
+    """A6 lane-(ii): append a6_llm_proposed governance event for an Opus proposal.
+    Includes the pre-committed gate so the ledger shows what test the proposal must pass.
+    Fail-open: any exception is swallowed."""
+    try:
+        append_event(
+            "a6_llm_proposed",
+            "data/risk_radar/calibration.json",
+            article=6,
+            authored_by="risk_radar_review",
+            evidence={
+                "lane": "ii",
+                "pre_committed_gate": _A6_GATE_SPEC,
+                "proposal_analysis": str(proposal.get("analysis") or "")[:500],
+                "proposed_deltas_summary": {
+                    "n_band_changes": len((proposal.get("deltas") or {}).get("bands") or {}),
+                    "n_leg_changes": len((proposal.get("deltas") or {}).get("legs") or {}),
+                    "alert_from": (proposal.get("deltas") or {}).get("alert_from"),
+                },
+            },
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("risk_radar_review: governance proposal event failed: %s", exc)
+
+
+def _gov_apply(out: dict, base_calib: dict, proposed: dict, root=None) -> None:
+    """A6 lane-(ii): append a6_auto_apply governance event when calibration is applied.
+    Carries before/after calibration state + backtest evidence. Fail-open."""
+    try:
+        bt = out.get("backtest") or {}
+        append_event(
+            "a6_auto_apply",
+            "data/risk_radar/calibration.json",
+            article=6,
+            authored_by="risk_radar_review",
+            before={"bands": base_calib.get("bands"), "alert_from": base_calib.get("alert_from")},
+            after={"bands": proposed.get("bands"), "alert_from": proposed.get("alert_from")},
+            evidence={
+                "lane": "ii",
+                "gate": _A6_GATE_SPEC,
+                "backtest": bt,
+                "applied": True,
+            },
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("risk_radar_review: governance apply event failed: %s", exc)
+
+
+def _gov_reject(out: dict, base_calib: dict, proposed: dict, root=None) -> None:
+    """A6 lane-(ii): append reject governance event when do-no-harm gate blocks apply.
+    Honest nulls. Fail-open."""
+    try:
+        bt = out.get("backtest") or {}
+        append_event(
+            "a6_llm_proposed",
+            "data/risk_radar/calibration.json",
+            article=6,
+            authored_by="risk_radar_review",
+            evidence={
+                "lane": "ii",
+                "gate": _A6_GATE_SPEC,
+                "backtest": bt,
+                "applied": False,
+                "reject_reason": out.get("degraded_reason"),
+            },
+            note="proposal rejected by do-no-harm gate",
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("risk_radar_review: governance reject event failed: %s", exc)
+
+
 def _write_calibration(calib: dict, root=None) -> None:
     base = config.data_dir() if root is None else (Path(root) / "data")
     p = base / "risk_radar" / "calibration.json"
@@ -234,6 +338,10 @@ def run(persist: bool = True, root=None, force: bool = False, call=None,
             out["degraded_reason"] = "no_usable_proposal"
             return out
         proposed = _clamp(proposal.get("deltas") or {}, base_calib, cfg)
+
+        # A6 lane-(ii): record the proposal + pre-committed gate BEFORE apply decision
+        _gov_proposal(proposal, proposed, root=root)
+
         # do-no-harm backtest gate
         cmp = compare or (lambda p: __import__("engine.risk_radar_backtest",
                                                fromlist=["compare_calib"]).compare_calib(p, base_calib))
@@ -246,8 +354,12 @@ def run(persist: bool = True, root=None, force: bool = False, call=None,
             if persist:
                 _write_calibration(proposed, root=root)
             out["applied"] = True
+            # A6 lane-(ii): record the apply with before/after calibration + backtest evidence
+            _gov_apply(out, base_calib, proposed, root=root)
         else:
             out["degraded_reason"] = "rejected_by_do_no_harm"
+            # A6 lane-(ii): record the reject with honest nulls
+            _gov_reject(out, base_calib, proposed, root=root)
         if persist:
             _append_review_log({**out, "rationale": proposal.get("rationale"),
                                 "logged_at": datetime.now(timezone.utc).isoformat(timespec="seconds")},
