@@ -282,14 +282,17 @@ def _primary_window_universe() -> set[str]:
                     uni.add(t)
     except Exception:
         pass
-    # S&P 500 membership (breadth constituents panel — ticker on the index).
-    # NOTE: this is the CURRENT constituent snapshot, not a PIT-historical
-    # membership table (the shop has no per-date membership store). Delisted
-    # names that left the index appear via the BOARD donor/eligible lists above
-    # and via Massive prices; a fully-PIT membership backfill is a P0.2 data task
-    # (memo §3 parks pre-2021 delisted backfill). For the 2021+ primary window,
-    # board ∪ current-SP500 ∪ Massive delisted-price visibility is the operative
-    # universe — good enough for the recall census; stamped as snapshot-membership.
+    # S&P 500 membership — current snapshot panels PLUS the PIT-historical
+    # membership table. (v2 correction: an earlier note here claimed the shop
+    # has no per-date membership store — FALSE; data/breadth/
+    # sp500_pit_membership.parquet carries (ticker, start_date, end_date)
+    # intervals since 1996, per the P0.2 census.) For the 2021+ primary window
+    # we union every name whose membership interval OVERLAPS the era-law window
+    # start (memo §1.1): these include delisted ex-members (ATVI, SGEN, FRC, …)
+    # whose prices Massive supplies — exactly the survivorship-critical names
+    # the era law exists to bring back. Membership-interval union is PIT-safe
+    # here: it only widens the set of tickers REPLAYED (a compute superset);
+    # per-date membership filtering is a study-side concern (P1.4).
     for cpath in (CANONICAL_DATA / "breadth" / "constituents.parquet",
                   CANONICAL_DATA / "midcap_breadth" / "constituents.parquet"):
         try:
@@ -297,6 +300,14 @@ def _primary_window_universe() -> set[str]:
             uni.update(str(x) for x in cdf.index)
         except Exception:
             continue
+    try:
+        pit = pd.read_parquet(CANONICAL_DATA / "breadth" / "sp500_pit_membership.parquet")
+        end = pd.to_datetime(pit["end_date"])
+        overlap = end.isna() | (end >= pd.Timestamp("2021-07-06"))
+        uni.update(str(t) for t in pit.loc[overlap, "ticker"])
+    except Exception as e:
+        log.warning("PIT membership union skipped (%s) — universe falls back "
+                    "to snapshot membership only", e)
     return {t for t in uni if t and "." not in t and not t.startswith("_")}
 
 
