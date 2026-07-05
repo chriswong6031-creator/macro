@@ -596,7 +596,21 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
 
 
 def _normalize_eod_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
-    """Normalize a raw v3 EOD CSV DataFrame into the canonical output schema."""
+    """Normalize a raw v3 EOD CSV DataFrame into the canonical output schema.
+
+    API DEDUP (2026-07-05): The ThetaData v3 API, for wildcard-expiration EOD
+    requests, returns each non-expiration-day contract record TWICE within the
+    same response.  Contracts on their expiration day appear once (correct);
+    all other trading-day rows are duplicated byte-for-byte.  Observed: SPY 2018
+    eod returned 2,699,538 rows — 1,191,752 byte-identical full-row duplicates
+    (44%); unique (root, expiration, strike, right, date) keys = 1,507,786.
+    Root cause is in the API response, not the writer (SPY 2018 was written
+    exactly once; the log confirms a single pull_root_year call).
+
+    Fix: full-row drop_duplicates applied here, before the DataFrame is returned
+    to the caller.  Any dup count > 0 is logged at INFO so it appears in the
+    backfill log for observability without being noisy on clean responses.
+    """
     if df.empty:
         return df
 
@@ -640,7 +654,22 @@ def _normalize_eod_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
     keep = ["root", "expiration", "strike", "right", "date",
             "open", "high", "low", "close", "volume", "count", "bid", "ask"]
     available = [c for c in keep if c in df.columns]
-    return df[available].reset_index(drop=True)
+    df = df[available].reset_index(drop=True)
+
+    # API dedup: drop full-row duplicates introduced by the ThetaData v3 API
+    # (see docstring).  Applied after column selection so the comparison covers
+    # exactly the columns that will be written to parquet.
+    n_before = len(df)
+    df = df.drop_duplicates()
+    n_dropped = n_before - len(df)
+    if n_dropped > 0:
+        log.info(
+            "thetadata: _normalize_eod_df(%s) dropped %d full-row API duplicates "
+            "(%d → %d rows)",
+            root, n_dropped, n_before, len(df),
+        )
+
+    return df.reset_index(drop=True)
 
 
 def bulk_open_interest(root: str, exp: int | str | date, start_date: date | str | int,
