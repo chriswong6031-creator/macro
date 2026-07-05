@@ -83,13 +83,14 @@
   })();
 
   /* ---- Mastermind Terminal jump -------------------------------------------
-     Single-stock analysis now opens in the Terminal web app. US stock links
-     (stock.html#TICKER) and US search picks route to
-     app.mastermind-x.com/terminal?sym=TICKER for a seamless hand-off; the
-     origin is pre-warmed (DNS + TLS) so the first navigation is instant.
-     China/HK/Canada/Intl keep their in-page analyzers for now (their ticker
-     formats differ from the Terminal universe). Flip window.MM_TERMINAL = false
-     anywhere to restore the in-page US analyzer. */
+     Single-stock analysis now opens in the Terminal web app. US (stock.html),
+     China (china_lookup.html), HK (hk_lookup.html), Canada (canada_stock.html),
+     and International (intl_stock.html) stock links all route to
+     app.mastermind-x.com/terminal?sym=TICKER — their ticker formats (e.g.
+     600519.SS, 0002.HK, AAV.TO, 8035.T) already match the Terminal manifest
+     exactly so no transformation is needed. The origin is pre-warmed (DNS + TLS)
+     so the first navigation is instant.
+     Flip window.MM_TERMINAL = false anywhere to restore in-page analyzers. */
   var MM_TERMINAL_BASE = 'https://app.mastermind-x.com/terminal';
   function mmTerminalOn() { return window.MM_TERMINAL !== false; }
   // from=macro lets the Terminal show its prominent "back to Dashboard" button reliably even when the
@@ -104,9 +105,11 @@
       document.head.appendChild(l);
     });
   })();
-  // Re-route US single-stock links anywhere on the site → Terminal (capture phase
-  // so it runs before the browser follows the <a>). Leaves new-tab / modified
-  // clicks and non-US analyzers alone.
+  // Re-route Terminal-covered analyzer links anywhere on the site → Terminal
+  // (capture phase so it runs before the browser follows the <a>). Leaves
+  // new-tab / modified clicks alone.
+  // null-prototype map so an href-derived key can't hit Object.prototype ('constructor', etc.)
+  var TERMINAL_PAGES = Object.assign(Object.create(null), { 'stock.html': 1, 'china_lookup.html': 1, 'hk_lookup.html': 1, 'canada_stock.html': 1, 'intl_stock.html': 1 });
   document.addEventListener('click', function (e) {
     if (!mmTerminalOn() || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
@@ -114,7 +117,7 @@
     var href = a.getAttribute('href') || '', h = href.indexOf('#');
     if (h < 0) return;
     var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
-    if (page !== 'stock.html') return;            // US analyzer only
+    if (!TERMINAL_PAGES[page]) return;            // only Terminal-covered analyzers
     var t = href.slice(h + 1);
     if (!t) return;
     e.preventDefault();
@@ -251,21 +254,29 @@
     // merge every market's nightly library into one universe; tag each row with the
     // analyzer it routes to and a market flag (Intl rows carry their own per-country
     // flag + market name, so prefer those when present)
-    var lib = [], rows = [], sel = -1;
-    STOCK_MARKETS.forEach(function (m) {
-      fetch(pfx + m.lib).then(function (r) { return r.json(); }).then(function (d) {
-        (d || []).forEach(function (x) {
-          x._tgt = m.target;
-          x._fl = x.fl || m.flag;
-          x._mk = x.mk || m.mkt;
-        });
-        lib = lib.concat(d || []);
-      }).catch(function () {});
-    });
+    var lib = [], rows = [], sel = -1, libsLoaded = false;
+    // Lazy-load the (heavy) per-market search indexes only once the user engages
+    // the search box, not on every page load — 'focus' fires before the first
+    // keystroke, so the universe is usually ready by the time they finish typing.
+    function loadLibs() {
+      if (libsLoaded) return; libsLoaded = true;
+      STOCK_MARKETS.forEach(function (m) {
+        fetch(pfx + m.lib).then(function (r) { return r.json(); }).then(function (d) {
+          (d || []).forEach(function (x) {
+            x._tgt = m.target;
+            x._fl = x.fl || m.flag;
+            x._mk = x.mk || m.mkt;
+          });
+          lib = lib.concat(d || []);
+          if (input.value.trim()) search();   // repaint if they've already typed
+        }).catch(function () {});
+      });
+    }
+    input.addEventListener('focus', loadLibs);
     function go(x) {
       if (!x) return;
-      // US picks open the Terminal; other markets keep their in-page analyzer
-      if (mmTerminalOn() && (x._tgt === 'stock.html' || x._mk === 'US')) { location.href = terminalUrl(x.t); return; }
+      // US, China, HK, Canada, and Intl picks all open the Terminal
+      if (mmTerminalOn() && TERMINAL_PAGES[x._tgt]) { location.href = terminalUrl(x.t); return; }
       location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t);
     }
     function close() { sugg.classList.remove('show'); sugg.innerHTML = ''; rows = []; sel = -1; }

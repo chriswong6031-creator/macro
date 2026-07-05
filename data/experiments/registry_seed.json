@@ -2042,6 +2042,26 @@
       "state": "TODAY'S VERDICT (printed either way): INSUFFICIENT PIT HISTORY — accrual armed, honest verdict due ~2027-05. 4 forward-log entries pre-patch, components never logged. Logger patched 2026-07-04 (W3 PR2) to accrue per-component scores nightly.",
       "next_step": "Return 2027-05-01: load forward_log.jsonl rows with 'components' key + graded, compute Brier skill hand vs equal-weight, print verdict either way, update this registry note with the outcome.",
       "phase_hint": "Neural Web W3 PR2 — pre-registration only, measurement pending 250d accrual"
+    },
+    {
+      "id": "exit_crowding_phase0",
+      "name": "EXIT-CROWD Phase-0 — options/flow exhaustion overlay (L4 interim)",
+      "kind": "phase0_battery",
+      "priority": "medium",
+      "cadence": "daily snapshot accrual + on-manifest run",
+      "what": "Four unsigned exhaustion legs (L1 call-share crowding, L2 IV-blowout×weak-px, L3 P/C-OI collapse-into-strength, L4 ETF-flow rolloff) conditioned on held sector-group-days, tested vs the sector_signals SELL base rate (exc63 -1.24%, hit 40%, n=169) via the P3 B2 cross-granularity comparison + placebo (200 draws, exclusion_zone=10) + BH-FDR over a fixed 16-trial family. PRIMARY lane = 11-sector-ETF complex group-days (F1); board buy[] roster = watermarked SECONDARY tag (never gates). L4 RAN this PR (PRE-FDR INTERIM, F3): tiny-n ACCRUE — the ETF-holdings store has NO sector-ETF snapshots and only ~3 months of 2026 history, so no era split is computable; the 2018-> primary window and 2018-19/2020-22 eras have zero data. L1-L3 are stubs that hard-fail until data/thetadata_eod/_manifest.json marks the universe pass complete (R8).",
+      "source": "scripts/run_exit_crowding_phase0.py",
+      "storage": "data/options_exit/exit_crowd_l4_interim.json",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-04",
+      "come_back_on": "2026-10-04",
+      "come_back_note": "L4: re-run when matured 21d fires >= 60 AND the L1-L3 sub-family completes the 16-trial FDR family (then BH q-values print once for the whole family). ETF-holdings history is the binding accrual; sector-ETF holdings coverage would remove the theme->sector lossy-mapping open item. L1-L3: run only after the thetadata_eod manifest marks n_roots at target + updated_at non-null (R8).",
+      "maturation": "L4 gate needs n >= 60 matured 21d fires on the sector-ETF PRIMARY lane; each leg additionally splits 2018-19/2020-22/2023-> (>=20/era to report an era mean). BH q<=0.10 within the 16-trial EXIT-CROWD sub-family, printed ONLY when L1-L4 all complete. Below floor => ACCRUE, never KILL (§4).",
+      "status": "accruing",
+      "state": "L4 RAN 2026-07-04 (data/options_exit/exit_crowd_l4_interim.json): PRE-FDR INTERIM, verdict ACCRUE. Flow history is ~3 months (2026 only); no sector-ETF holdings; era splits not computable. L1-L3 blocked on thetadata_eod manifest (n_roots=0). Registration effective this commit (prereg RATIFIED 2026-07-04, research/EXIT_CROWDING_PHASE0_PREREG.md).",
+      "next_step": "Accrue ETF-holdings + board history; complete the thetadata universe pass to unblock L1-L3; re-run the full 16-trial family then print BH q-values once. Display-only per house law — no hard gate into any engine on pass (China falsification binding).",
+      "phase_hint": "options-alpha EXIT-CROWD — L4 PRE-FDR interim done; L1-L3 pending thetadata manifest; family FDR pending"
     }
   ]
 }

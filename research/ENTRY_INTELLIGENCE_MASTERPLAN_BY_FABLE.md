@@ -121,3 +121,4 @@ Replay infidelity (→ golden test hard-gates); PIT lookahead (→ dedicated Opu
 ## §9 Status log (append-only)
 
 - 2026-07-04 — Program adjudicated; masterplan merged; Phase 0 + PREREG drafting dispatched (Sonnet×8, Opus×4). — Fable
+- 2026-07-05 — P0 COMPLETE. Harness v1 BOUNCED by PIT audit (F1 prefilter recall / F2 vacuous golden); Opus repair → re-audit CLEAN → merged #1312 + universe PIT-union patch #1381 (927→1,033 tickers, delisted ex-members restored). Liquidity hygiene merged #1304 (finding: zero liquidity screens existed). Measurement memo v1.1 = LAW: effective verdict window ≈2022-06-30+, canonical input replay_boarded.parquet, board_rank_unresolved residual labeled. Five P1 PREREGs drafted, red-teamed (5 blocking fixed), era law absorbed — DRAFT pending Fable approval at P1 dispatch. Full-universe replay (6 year-shards) launched. — Fable

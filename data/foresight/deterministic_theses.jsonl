@@ -14,3 +14,11 @@
 {"kind":"update","theme":"rare_earth_critical_min","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-04","ts":"2026-07-04T07:00:22.155790+00:00"}
 {"kind":"update","theme":"copper_steel_electrify","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-04","ts":"2026-07-04T07:00:22.155833+00:00"}
 {"kind":"update","theme":"defense_aerospace","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-04","ts":"2026-07-04T07:00:22.155876+00:00"}
+{"kind":"update","theme":"ag_fertilizer","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-05","ts":"2026-07-05T07:28:38.897449+00:00"}
+{"kind":"update","theme":"data_center_power","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-05","ts":"2026-07-05T07:28:38.897602+00:00"}
+{"kind":"update","theme":"grid_electrification","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-05","ts":"2026-07-05T07:28:38.897669+00:00"}
+{"kind":"update","theme":"nuclear_power","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-05","ts":"2026-07-05T07:28:38.897729+00:00"}
+{"kind":"update","theme":"space_satellite","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-05","ts":"2026-07-05T07:28:38.897785+00:00"}
+{"kind":"update","theme":"rare_earth_critical_min","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-05","ts":"2026-07-05T07:28:38.897838+00:00"}
+{"kind":"update","theme":"copper_steel_electrify","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-05","ts":"2026-07-05T07:28:38.897890+00:00"}
+{"kind":"update","theme":"defense_aerospace","criterion_kind":"text_accel_negative","condition_met":false,"status":"INTACT","asof":"2026-07-05","ts":"2026-07-05T07:28:38.897941+00:00"}

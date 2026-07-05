@@ -139,6 +139,18 @@ def _manifest_path() -> Path:
     return _store_dir() / "_manifest.json"
 
 
+def _write_parquet_atomic(df: pd.DataFrame, dest: Path) -> None:
+    """Write df to dest atomically via a .tmp sibling, then os.replace().
+
+    Atomic write (tmp → rename) prevents a half-written parquet from being read
+    by concurrent consumers even if the process is interrupted mid-write.
+    Idempotent: any previous file at dest is fully overwritten (never appended).
+    """
+    tmp = dest.with_suffix(".tmp")
+    df.to_parquet(tmp, index=False)
+    os.replace(tmp, dest)
+
+
 # ── state management ─────────────────────────────────────────────────────────
 def _load_state() -> dict:
     p = _state_path()
@@ -244,7 +256,19 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
         return False
     t1 = time.perf_counter()
     if not eod.empty:
-        eod.to_parquet(_parquet_path("eod", root, year), index=False)
+        # Defensive dedup: _normalize_eod_df already drops API dups at parse time, but
+        # apply a final full-row dedup here as belt-and-suspenders before the write.
+        # This guarantees idempotency even if the collector path changes in the future.
+        n_before_eod = len(eod)
+        eod = eod.drop_duplicates()
+        n_dropped_eod = n_before_eod - len(eod)
+        if n_dropped_eod:
+            log.warning(
+                "pull_root_year: %s %d eod — defensive dedup dropped %d residual dups "
+                "(%d → %d rows); collector dedup may be incomplete",
+                root, year, n_dropped_eod, n_before_eod, len(eod),
+            )
+        _write_parquet_atomic(eod, _parquet_path("eod", root, year))
         log.info("chunk_summary: %s %d eod rows=%d elapsed=%.1fs", root, year, len(eod), t1 - t0)
     else:
         log.info("chunk_summary: %s %d eod rows=0 elapsed=%.1fs (empty — holiday/pre-history)", root, year, t1 - t0)
@@ -256,7 +280,7 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
         return False
     t2 = time.perf_counter()
     if not oi.empty:
-        oi.to_parquet(_parquet_path("oi", root, year), index=False)
+        _write_parquet_atomic(oi, _parquet_path("oi", root, year))
         log.info("chunk_summary: %s %d oi rows=%d elapsed=%.1fs", root, year, len(oi), t2 - t1)
     else:
         log.info("chunk_summary: %s %d oi rows=0 elapsed=%.1fs (empty)", root, year, t2 - t1)
@@ -273,7 +297,7 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
         return False
     t3 = time.perf_counter()
     if not greeks.empty:
-        greeks.to_parquet(_parquet_path("greeks", root, year), index=False)
+        _write_parquet_atomic(greeks, _parquet_path("greeks", root, year))
         log.info("chunk_summary: %s %d greeks rows=%d elapsed=%.1fs", root, year, len(greeks), t3 - t2)
     else:
         log.info("chunk_summary: %s %d greeks rows=0 elapsed=%.1fs (empty)", root, year, t3 - t2)

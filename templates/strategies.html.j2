@@ -141,7 +141,7 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
   </div>
 
   <div class="h1">🎛️ {{ t('Strategy Scorecards','策略记分卡') }}</div>
-  <div class="intro">{{ t('Macro-factor-driven tactical strategies. Each shifts its allocation on signals and macro factors to lift risk-adjusted yield and sidestep the drawdowns that normally destroy it. Click a card for the full backtest, the live recommendation, and the rule-book.','由宏观因子驱动的战术策略。每个策略都按信号与宏观因子切换配置，以提升风险调整后收益并规避通常会吞噬收益的回撤。点击卡片查看完整回测、实时建议与规则手册。') }}</div>
+  <div class="intro">{{ t('Tactical strategies with live stance, backtest and rule-book on each card.','战术策略卡片：实时立场、回测与规则手册。') }}</div>
   {% if masterminds %}
   <div class="mm-hero">
     <div class="mm-hero-head">
@@ -170,7 +170,7 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
   </div>
   {% endif %}
 
-  <div class="note">{{ t('Honest framing: the durable edge in a "yield" strategy is not timing the yield — it is timing the LEFT TAIL that destroys it (de-risk before the recession / credit / rate shock). These give up some buy-&-hold CAGR but cut the max drawdown and lift the Sharpe. Backtests are net of cost and total-return; CAGR / MaxDD are vs buy-and-hold the same risk asset.','诚实说明：「收益」策略的持久优势并非择时收益本身，而是择时吞噬收益的左尾（在衰退/信用/利率冲击前降险）。这些策略会让出部分买入持有的年化，但能压低最大回撤并提升夏普。回测均扣除成本且基于总回报；CAGR / 最大回撤对比买入持有同一风险资产。') }}</div>
+  <div class="note">{{ t('Honest framing: most edge comes from cutting left-tail drawdowns. Backtests are net of cost and total-return.','诚实说明：多数优势来自减少左尾回撤。回测扣除成本并采用总回报。') }}</div>
 
   <div class="sgrid">
     {% for c in cards %}
@@ -180,7 +180,7 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
         <h2>{{ t(c.name_en, c.name_zh) }}</h2>
         {% if c.experimental %}<span class="exp">⚗ {{ t('Experimental','实验性') }}</span>{% endif %}
       </div>
-      <p>{{ t(c.thesis_en, c.thesis_zh) }}</p>
+      <p>{{ t(c.thesis_en|truncate(125, true, '...'), c.thesis_zh|truncate(70, true, '...')) }}</p>
       <div class="metrics">
         <div><span class="m-k">CAGR</span><span class="m-v {{ 'win' if c.cagr >= c.hodl_cagr else 'lose' }}">{{ c.cagr }}%</span><span class="m-sub">{{ t('B&H','买持') }} {{ c.hodl_cagr }}%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v {{ 'win' if c.sharpe >= c.hodl_sharpe else 'lose' }}">{{ c.sharpe }}</span><span class="m-sub">{{ t('B&H','买持') }} {{ c.hodl_sharpe }}</span></div>
@@ -196,7 +196,8 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
   </div>
 
   <div class="foot">
-    {{ t('Mechanical, backtested on free public data, net of 3 bps one-way transaction cost, positions acting next-bar (no look-ahead). Total-return benchmarks (dividend/coupon-adjusted). Not investment advice — these are drawdown / risk-adjusted-return engines, not yield-maximizers or CAGR-beaters. Experimental strategies are pending full Phase-0 validation (leave-one-crisis-out, deflated-Sharpe gate). Built','机械化 · 基于免费公开数据回测，扣除 3 个基点单边交易成本，仓位次日生效（无前视）。总回报基准（经分红/票息调整）。非投资建议 —— 这些是回撤 / 风险调整收益引擎，并非收益最大化或跑赢年化的工具。实验性策略尚待完整 Phase-0 验证（留一危机、贬值夏普门槛）。生成于') }} {{ built }}.
+    {{ t('Built', '生成于') }} {{ built }}<br>
+    <span class="made">© 2026 MastermindX Inc</span>
   </div>
 </div>
 <script src="theme.js"></script>

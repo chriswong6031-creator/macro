@@ -6,7 +6,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Demand Desk — forward demand vs the price</title>
+<title>Demand Desk — demand vs expectations</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -71,8 +71,8 @@
 </nav>
 
 <h1>🧭 {{ t('Demand Desk', '需求台') }}</h1>
-<p class="lead">{{ t('Where independent, forward-looking demand is running AHEAD of (or behind) the priced consensus. The market embeds the sell-side forward view in the price; edge lives only where a management-independent signal — customer capex, contracted bookings — diverges from it. Display-only; nothing here is a buy signal.',
-  '独立的前瞻需求在何处领先（或落后）于已被定价的共识。市场已将卖方的前瞻预期计入价格；优势只存在于不依赖管理层口径的独立信号——客户资本开支、已签约订单——与共识背离之处。仅作展示，均非买入信号。') }}
+<p class="lead">{{ t('Shows where real demand signals look stronger or weaker than market expectations. Context only; not a buy or sell signal.',
+  '显示真实需求信号相对市场预期更强或更弱的位置。仅供参考，非买入或卖出信号。') }}
   <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
 
 <div class="panel">
@@ -101,7 +101,7 @@
    Fingerprint-class (annual XBRL lag); display-only; score_cap=60. #}
 <div class="panel">
   <div class="sec">{{ t('Payer-side capex burden (spender cohorts)', '支付方资本开支负担（需求链发起方）') }}
-    <span class="help">?<span class="tip"><span class="l-en">Annual XBRL data (fingerprint-class, lag ~90 days). Capex/OCF &gt; 80% with negative FCF = FCF-trap flag. Net-debt delta uses balance-sheet YoY (may include acquisitions). Display-only; score cap 60. Not a sell signal — intentional investment cycles can look like traps.</span><span class="l-zh">年度XBRL数据（指纹级，滞后约90天）。资本开支/OCF &gt; 80% 且FCF为负 = FCF陷阱标记。净债务变化基于资产负债表同比（可能包含收购）。仅展示；评分上限60。非卖出信号——战略性投资周期也可能触发此标记。</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Annual company data, usually delayed. High capex plus negative free cash flow can flag funding stress. Context only.</span><span class="l-zh">年度公司数据，通常有滞后。高资本开支叠加负自由现金流，可能提示资金压力。仅供参考。</span></span></span>
   </div>
   {% for chain_key, burden_map in spender_burden.items() %}
   {% if burden_map %}
@@ -198,7 +198,7 @@
 
 <script src="theme.js"></script>
 <footer class="site-footer" style="margin-top:18px;color:var(--muted);font-size:12px">
-  © 2026 MastermindX Inc · <span class="faint">{{ t('display-only research context, not investment advice', '仅研究背景展示，非投资建议') }}</span>
+  © 2026 MastermindX Inc
 </footer>
 </body>
 </html>

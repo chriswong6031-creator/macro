@@ -2421,7 +2421,8 @@ artifacts:
     tier: infrastructure
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_site.py  # copies kernel_families.json to site/neuralwebdata/ for committee pages (display-only)
     external_consumers: []
     notes: >
       DISPLAY-FIRST LAW: zero behavior-changing consumers. Per-engine-family decay
@@ -2520,7 +2521,8 @@ artifacts:
     tier: display
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_site.py  # copies graph JSON to site/neuralwebdata/ for committee/graph pages (display-only)
     external_consumers: []
     notes: >
       DISPLAY-ONLY HARD LAW: confluence never gates, never ranks, never raises a priority.
@@ -2954,3 +2956,69 @@ artifacts:
       (refused→granted or granted→refused) to preserve the governance ledger as a
       sparse record of consequential state changes.  Today: granted=False (empty
       attention record — n=0 < 25).  SINGLE-WRITER: grade_cortex_attention.py ONLY.
+
+  # ============================================================
+  # OPTIONS NERVES — P4.1 registration (2026-07-05)
+  # gex_state and options_events deferred (producers not live yet)
+  # ============================================================
+
+  # --- 1 consumer ---
+  options-flow-index:
+    path: site/flow/index.json
+    format: json
+    producer: scripts/build_options_flow.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_flow.context.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:flow-board
+    notes: >
+      353-name manifest board written by scripts/build_options_flow.py (line ~176).
+      Companion per-name payloads at site/flow/<KEY>.json and compact bot context
+      at site/flow/mastermind.json (same producer, same cadence).
+      Provenance caveat: DIRECTION is soft — signing_gate root false as of 2026-07-05
+      (tape-scoped ratification not yet passed); MAGNITUDE (net dollar flow,
+      gamma_flow, 0DTE pct) is reliable. Accrual store: data/options_flow/summary_<SYM>.parquet
+      (one row/day per underlying, written via store.upsert). Display-only: this
+      artifact MUST NOT feed any scored surface or arithmetic weight path until
+      signing_gate root is true.
+
+  # --- 4 consumers ---
+  polygon-gex-summaries:
+    path: data/polygon_gex/summary_*.parquet
+    format: parquet
+    producer: scripts/build_polygon_gex.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: gitignored-local
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_stamp.py
+      - engine/altdata.py
+      - scripts/validate_gex.py
+      - scripts/audit_options_accrual.py
+    external_consumers: []
+    notes: >
+      Per-underlying IV surface summary: iv30, opt_wall_up, opt_wall_down,
+      put_call_oi_ratio, max_pain, gex — one row per date per name.
+      Companion chain store at data/polygon_gex/chains/<date>.parquet
+      (per-contract OI/volume/iv/delta rows; same producer, same cadence).
+      Coverage: Polygon Standard snapshot since 2026-06-15 (~384 names).
+      Deep vendor IV history (2017+) arrives with the ThetaData universe pass
+      (deferred; iv_surface upgrade wave not yet started). Display-only: iv30
+      consumed via options_stamp for stock-card overlay and gex_board; no
+      scored arithmetic path currently reads this store.

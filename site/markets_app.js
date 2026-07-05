@@ -705,10 +705,10 @@
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + t("How to read", "如何解读") + '</div>' +
         '<ul class="cyc-how">' +
-          '<li>' + t(“The y-axis is <b>cycle oscillator position (0–100)</b> — 100 = at/near the highs (extended), 0 = deep below the highs (washed-out). For engine-backed markets (UK/Japan/HK/Canada/China/India/Taiwan) this is the country_cycles engine pos_v2; for US and Europe it is an analyst estimate.”, “纵轴是<b>周期振荡器位置（0–100）</b> — 100=接近高点（拉伸），0=深跌（超卖）。有引擎数据的市场（英国/日本/香港/加拿大/中国/印度/台湾）使用 country_cycles 引擎 pos_v2；美国与欧洲使用分析师估算。”) + '</li>' +
-          '<li>' + t(“<b>Solid</b> = observed history; <b>dashed + cone</b> = projected path & uncertainty. Each <b>● dot</b> on the TODAY line is where that market sits now.”, “<b>实线</b>=已发生的历史；<b>虚线+锥形</b>=预测路径与不确定性。”今天”线上的每个<b>●圆点</b>是该市场当前所处的位置。”) + '</li>' +
-          '<li>' + t(“<b>Tap a market</b> (chip, card, snapshot row, scatter dot, or its line) to focus it. Position ≠ valuation — see the valuation map.”, “<b>点击任意市场</b>（标签、卡片、排名行、散点或曲线）以聚焦。周期位置 ≠ 估值 — 请看估值地图。”) + '</li>' +
-          '<li>' + t(“<b>% off ATH</b> is shown as a labeled stat only — it is no longer the plotted position. Curated valuations show their as-of date; verify before trading.”, “<b>距高点 %</b> 仅作为统计项展示 — 不再是图中位置。精选估值显示其截止日期，操作前请核实。”) + '</li>' +
+          '<li>' + t("The y-axis is <b>cycle oscillator position (0–100)</b> — 100 = at/near the highs (extended), 0 = deep below the highs (washed-out). For engine-backed markets (UK/Japan/HK/Canada/China/India/Taiwan) this is the country_cycles engine pos_v2; for US and Europe it is an analyst estimate.", "纵轴是<b>周期振荡器位置（0–100）</b> — 100=接近高点（拉伸），0=深跌（超卖）。有引擎数据的市场（英国/日本/香港/加拿大/中国/印度/台湾）使用 country_cycles 引擎 pos_v2；美国与欧洲使用分析师估算。") + '</li>' +
+          '<li>' + t("<b>Solid</b> = observed history; <b>dashed + cone</b> = projected path & uncertainty. Each <b>● dot</b> on the TODAY line is where that market sits now.", "<b>实线</b>=已发生的历史；<b>虚线+锥形</b>=预测路径与不确定性。“今天”线上的每个<b>●圆点</b>是该市场当前所处的位置。") + '</li>' +
+          '<li>' + t("<b>Tap a market</b> (chip, card, snapshot row, scatter dot, or its line) to focus it. Position ≠ valuation — see the valuation map.", "<b>点击任意市场</b>（标签、卡片、排名行、散点或曲线）以聚焦。周期位置 ≠ 估值 — 请看估值地图。") + '</li>' +
+          '<li>' + t("<b>% off ATH</b> is shown as a labeled stat only — it is no longer the plotted position. Curated valuations show their as-of date; verify before trading.", "<b>距高点 %</b> 仅作为统计项展示 — 不再是图中位置。精选估值显示其截止日期，操作前请核实。") + '</li>' +
         '</ul>' +
       '</div>';
     def.querySelectorAll(".mini-chip").forEach(function (b) { b.addEventListener("click", function () { setFocus(b.getAttribute("data-id")); }); });

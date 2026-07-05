@@ -596,7 +596,21 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
 
 
 def _normalize_eod_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
-    """Normalize a raw v3 EOD CSV DataFrame into the canonical output schema."""
+    """Normalize a raw v3 EOD CSV DataFrame into the canonical output schema.
+
+    API DEDUP (2026-07-05): The ThetaData v3 API, for wildcard-expiration EOD
+    requests, returns each non-expiration-day contract record TWICE within the
+    same response.  Contracts on their expiration day appear once (correct);
+    all other trading-day rows are duplicated byte-for-byte.  Observed: SPY 2018
+    eod returned 2,699,538 rows — 1,191,752 byte-identical full-row duplicates
+    (44%); unique (root, expiration, strike, right, date) keys = 1,507,786.
+    Root cause is in the API response, not the writer (SPY 2018 was written
+    exactly once; the log confirms a single pull_root_year call).
+
+    Fix: full-row drop_duplicates applied here, before the DataFrame is returned
+    to the caller.  Any dup count > 0 is logged at INFO so it appears in the
+    backfill log for observability without being noisy on clean responses.
+    """
     if df.empty:
         return df
 
@@ -640,7 +654,22 @@ def _normalize_eod_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
     keep = ["root", "expiration", "strike", "right", "date",
             "open", "high", "low", "close", "volume", "count", "bid", "ask"]
     available = [c for c in keep if c in df.columns]
-    return df[available].reset_index(drop=True)
+    df = df[available].reset_index(drop=True)
+
+    # API dedup: drop full-row duplicates introduced by the ThetaData v3 API
+    # (see docstring).  Applied after column selection so the comparison covers
+    # exactly the columns that will be written to parquet.
+    n_before = len(df)
+    df = df.drop_duplicates()
+    n_dropped = n_before - len(df)
+    if n_dropped > 0:
+        log.info(
+            "thetadata: _normalize_eod_df(%s) dropped %d full-row API duplicates "
+            "(%d → %d rows)",
+            root, n_dropped, n_before, len(df),
+        )
+
+    return df.reset_index(drop=True)
 
 
 def bulk_open_interest(root: str, exp: int | str | date, start_date: date | str | int,
@@ -942,4 +971,94 @@ def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
     df["strike"] = float(strike)
     df["right"] = right.upper()
     df["root"] = root.upper()
+    return df.reset_index(drop=True)
+
+
+def bulk_trade_quote(root: str, right: str,
+                     start_date: date | str | int,
+                     end_date: date | str | int) -> pd.DataFrame | None:
+    """Full-chain trade+NBBO for ONE right (call or put) on a date range.
+
+    Endpoint: GET /v3/option/history/trade_quote with expiration=* and strike=*.
+
+    Live probe (2026-07-04): wildcard expiration AND strike are accepted when
+    right is explicitly "call" or "put". Wildcard right= returns HTTP 400.
+    Two calls per root-day (one per right) cover the entire chain.
+
+    This is the T2a aggregate-then-discard path. Raw rows should be discarded
+    by the caller after aggregation.
+
+    Returns a DataFrame with the same schema as trade_quote() EXCEPT that
+    strike is not fixed (it varies per contract in the response). The 'strike'
+    column is parsed from the response CSV (each row has its own strike).
+
+    Returns None on terminal error; empty DataFrame if no trades exist.
+    """
+    if not reachable():
+        log.warning("thetadata: terminal not reachable — bulk_trade_quote returning None")
+        return None
+
+    right_norm = _normalize_right_request(right)   # "call" or "put"
+    params = {
+        "symbol": root.upper(),
+        "expiration": "*",
+        "strike": "*",
+        "right": right_norm,
+        "start_date": _date_int(start_date),
+        "end_date": _date_int(end_date),
+    }
+    session = _session()
+    rows_all: list[dict] = []
+
+    # CSV header: symbol,expiration,strike,right,trade_timestamp,quote_timestamp,
+    #             sequence,ext_condition1-4,condition,size,exchange,price,
+    #             bid_size,bid_exchange,bid,bid_condition,ask_size,ask_exchange,ask,ask_condition
+    # Indices:    0       1           2      3     4                5
+    #             6       7-10        11     12    13       14
+    #             15      16          17     18    19       20      21    22
+    try:
+        for raw_line in _stream_lines(session, "/v3/option/history/trade_quote", params):
+            if isinstance(raw_line, bytes):
+                line = raw_line.decode("utf-8", errors="replace")
+            else:
+                line = raw_line
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("symbol,"):
+                continue
+            parts = [v.strip().strip('"') for v in line.split(",")]
+            if len(parts) < 23:
+                continue
+            rows_all.append({
+                "date":            parts[4][:10] if parts[4] else None,
+                "trade_timestamp": parts[4],
+                "quote_timestamp": parts[5],
+                "expiration":      parts[1],
+                "strike":          parts[2],
+                "right":           parts[3],
+                "price":           parts[14],
+                "size":            parts[12],
+                "exchange":        parts[13],
+                "bid":             parts[17],
+                "ask":             parts[21],
+            })
+    except _StreamTruncated as e:
+        log.warning(
+            "thetadata: bulk_trade_quote(%s, %s, %s→%s) truncated — returning None: %s",
+            root, right, start_date, end_date, e)
+        return None
+
+    if not rows_all:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(rows_all)
+    df["date"]   = pd.to_datetime(df["date"], errors="coerce")
+    df["price"]  = pd.to_numeric(df["price"],  errors="coerce")
+    df["size"]   = pd.to_numeric(df["size"],   errors="coerce")
+    df["bid"]    = pd.to_numeric(df["bid"],    errors="coerce")
+    df["ask"]    = pd.to_numeric(df["ask"],    errors="coerce")
+    df["strike"] = pd.to_numeric(df["strike"], errors="coerce")
+    df["right"]  = df["right"].str.upper().str[:1]   # "CALL"→"C", "PUT"→"P"
+    df["root"]   = root.upper()
     return df.reset_index(drop=True)

@@ -66,6 +66,9 @@ _SCREEN_PRIORS = """\
   B4 -1.2%, all n>=290). Buying "healthy participation" is not an edge — that
   participation is already priced. Do not gate on breadth/cohesion state; use
   them at most as a secondary filter behind a genuine flow/washout trigger.
+  (Caveat: these used 2021+-only columns, so the sample is 2021-2026, not
+  all-history — negative on available data, but that is NOT cross-era death;
+  and being 2021+-only they are un-promotable regardless. See HISTORY COVERAGE.)
 - cohesion_rebuild as the PRIMARY trigger: weak/dead on tier-s (round-3 A10
   n=80 & A11 n=77 both era 1; F3 +0.29% era 1; F4 -0.17%). The rebuild flag
   fires too sparsely and doesn't hold across eras — do NOT use it as the
@@ -99,6 +102,50 @@ hit>=55% OR |effect63|>=1%):
 AVOID (screened dead): cohesion_rebuild as the primary trigger; benign-macro-
 only filters on washout; anything in the participation-state basin."""
 
+# --explore mode: maximise mechanism DIVERSITY instead of drilling one basin.
+# The goal is a wide, cheap net (200-500 specs accumulated over several runs)
+# that the screen then sorts. This is the OPPOSITE pressure from the focus pack.
+_FOCUS_SLICES = [
+    ("velocity/acceleration microstructure", "vel_1w/vel_1m/vel_3m/accel/accel_z "
+     "crossings, curve relationships (value_col comparisons), turning points"),
+    ("breadth & cohesion structure", "breadth_50/cohesion/cohesion_chg/"
+     "cohesion_rebuild DYNAMICS (changes/crossings), not static-level gates"),
+    ("relative-strength regime & turns", "rs crossings, rs vs velocity, rs "
+     "acceleration/deceleration turning points"),
+    ("turnover & positioning", "turnover_z spikes/cooling/crossings, persistence "
+     "regimes, positioning-stress reads"),
+    ("macro-regime conditioning", "vix_pctile bands, tlt_ret_10d sign/turns, "
+     "spy_above_200d — as GATES on a non-participation trigger, not the trigger"),
+    ("episode-flow routing", "episode_event in/out x onset/confirmed/undeniable x "
+     "same/opposite/any x min_count 1-3 x within 5-20 — the conservation family"),
+    ("oscillator / mean-reversion", "stochrsi_w_k/stochrsi_w_d turns & crossings, "
+     "washout_w used SPARINGLY (basin mapped), oscillator exhaustion"),
+    ("cross-column & multi-leg composites", "column-vs-column value_col rules; "
+     "3-leg rules pairing one novel trigger + a macro gate + a micro filter"),
+]
+
+_DIVERSITY_MANDATE = """\
+MISSION: cast a WIDE net. Across several runs of this prompt the operator wants
+200-500 DIVERSE specs; the mechanical screen then sorts them. Your job this run
+is BREADTH, not depth on any one idea. Do NOT converge on the washout basin
+(already mapped) — spend <=10% of proposals there.
+
+MECHANISM COVERAGE GRID — sample widely across all of it:
+- TRIGGER (the event that fires the entry): use MANY different primitives —
+  every panel column should appear as a trigger somewhere in the batch, via
+  crossings (crossed_above/below a level OR another column) or regime turns;
+  AND episode_event triggers (in/out x tiers x scopes x min_count).
+- CONDITIONER (0-2 secondary filters): macro regime (vix/tlt/spy), microstructure
+  (turnover_z/persistence/accel_z), or a cross-column comparison.
+- Use ALL SIX ops. Use BOTH episode-event and panel-condition triggers. Use BOTH
+  in and out episode directions. Propose genuinely NEW families (NEW:<name>).
+
+DIVERSITY RULES (enforced by review — near-duplicates are wasted volume):
+- <=3 specs may share the same TRIGGER primitive; vary the conditioner/threshold.
+- Each spec must tell a DISTINCT money-flow story (mechanism_en must differ).
+- Mix leg-counts: some 1-leg triggers, many 2-3 leg conditioned rules.
+- Span the grid; do not cluster on the two or three most obvious ideas."""
+
 
 def _jsonl(path: Path) -> list[dict]:
     rows = []
@@ -114,38 +161,86 @@ def _jsonl(path: Path) -> list[dict]:
     return rows
 
 
-def build_pack(n_requested: int = 10) -> str:
+def build_pack(n_requested: int = 10, mode: str = "focus",
+               focus: int | None = None) -> str:
     compounds = _jsonl(REG)
     trials = _jsonl(LEDGER)
     eff_by_id: dict[str, str] = {}
+    eff_num: dict[str, float] = {}
     for t in trials:
         cid = t.get("compound_id")
         e63, h63 = t.get("effect_63d"), t.get("hit_63d")
         if cid and e63 is not None:
             eff_by_id[cid] = (f"screened: effect63={e63*100:+.2f}% "
                               f"hit63={(h63 or 0)*100:.1f}% n={t.get('n')}")
+            eff_num[cid] = e63
 
-    tested_lines = []
+    # Compaction: as the registry grows past ~40, listing every dead compound
+    # bloats the prompt.  The ingest (oracle_ingest_brainstorm) hard-dedups exact
+    # repeats regardless, so the prompt only needs the NOTABLE results verbatim
+    # (|effect63| >= 0.7% either sign, or not-yet-screened) plus a count of the
+    # rest.  Dead SHAPES are already fenced in the screen priors below.
+    _NOTABLE = 0.007
+    tested_lines, noise_n = [], 0
     for c in compounds:
         cid = c.get("id", "?")
+        e = eff_num.get(cid)
+        if e is None or abs(e) >= _NOTABLE:
+            tested_lines.append(
+                f"- [{cid}] {c.get('name','')}: rule={json.dumps(c.get('entry_rule'))} "
+                f"({eff_by_id.get(cid, 'not yet screened')})")
+        else:
+            noise_n += 1
+    if noise_n:
         tested_lines.append(
-            f"- [{cid}] {c.get('name','')}: rule={json.dumps(c.get('entry_rule'))} "
-            f"({eff_by_id.get(cid, 'not yet screened')})")
+            f"- (+ {noise_n} more screened as NOISE, |effect63|<0.7% — already "
+            "tested, do not re-propose; the ingest hard-dedups exact repeats.)")
 
     episode_fields = ("direction(in|out), tier(onset|confirmed|undeniable), "
                       "complex_scope(same|opposite|any), within_sessions, min_count "
                       "(min_count = DISTINCT nodes)")
 
+    # Mode-dependent sections -------------------------------------------------
+    if mode == "explore":
+        role_ask = (
+            f"MAXIMISE mechanism DIVERSITY — propose {n_requested} DISTINCT "
+            "compounds spanning as much of the mechanism space as you can.")
+        if focus is not None and 1 <= focus <= len(_FOCUS_SLICES):
+            name, detail = _FOCUS_SLICES[focus - 1]
+            focus_line = (f"\nFOCUS THIS RUN — slice {focus}/{len(_FOCUS_SLICES)}: "
+                          f"{name}.\n  {detail}\n  Spend the majority of this "
+                          "batch here; the operator re-runs other slices separately.")
+        else:
+            slices = "\n".join(f"  {i+1}. {n} — {d}"
+                               for i, (n, d) in enumerate(_FOCUS_SLICES))
+            focus_line = ("\nSLICES (the operator re-runs this prompt with "
+                          "--focus K to cover each; with none set, span them all):\n"
+                          + slices)
+        steer_title = "=== DIVERSITY MANDATE — SPAN THE WHOLE MECHANISM SPACE ==="
+        steer_body = _DIVERSITY_MANDATE + focus_line
+        extra_rules = (
+            "\n\nEXPLORE MODE: breadth beats depth this run. Return as MANY unique "
+            "specs as you can (do not stop at a token few); each must be a "
+            "different mechanism. The screen sorts them — false starts are cheap, "
+            "missed diversity is not.")
+    else:  # focus mode (default): drill the current live basin
+        role_ask = (
+            "Volume and mechanism diversity are what you are good for — propose "
+            f"{n_requested} NEW compounds.")
+        steer_title = ("=== WHERE STRUCTURE HAS ACTUALLY APPEARED — "
+                       "CONCENTRATE PROPOSALS HERE ===")
+        steer_body = _LIVE_REGIONS
+        extra_rules = ""
+
     return f"""\
-=== ORACLE COMPOUND BRAINSTORM PACK (grammar v{GRAMMAR_VERSION}; generated live) ===
+=== ORACLE COMPOUND BRAINSTORM PACK (grammar v{GRAMMAR_VERSION}; mode={mode}; generated live) ===
 
 ROLE: You are a quantitative idea generator for a sector-rotation research
 factory. You produce COMPOUND SPECS (JSON) — declarative entry rules over a
 daily panel of US sector/subsector rotation features. You NEVER write code,
 never claim validation, and never re-propose tested ground (listed below).
 Your specs are screened mechanically by a causality-safe evaluator; effects
-are measured, counted, and only survivors are promoted. Volume and mechanism
-diversity are what you are good for — propose {n_requested} NEW compounds.
+are measured, counted, and only survivors are promoted. {role_ask}
 
 THE GRAMMAR (your entire vocabulary — specs outside it are rejected):
 - Conditions: {{"col": <column>, "op": <one of {sorted(VALID_OPS)}>, "value": <number>}}
@@ -160,6 +255,24 @@ THE GRAMMAR (your entire vocabulary — specs outside it are rejected):
 
 AVAILABLE PANEL COLUMNS (per node per day, all causal):
 {", ".join(COLUMN_SCHEMA)}
+
+COLUMN SCALES (wrong scale = a rule that never fires — respect these):
+- 0-100: stochrsi_w_k, stochrsi_w_d (median ~56; use 20/50/80, NOT 0.2/0.8).
+- 0-1: vix_pctile, breadth_50, persistence (~0.23-0.75), cohesion (~0.09-0.78).
+- 0/1 flags: washout_w, spy_above_200d, cohesion_rebuild (use ">value":0 or ge 1).
+- small decimals (daily/rolling returns): ret, vel_1w, vel_1m, vel_3m, accel,
+  tlt_ret_10d.  z-scores (~ -3..+3, tails to +-8): accel_z, turnover_z.
+- Do NOT value_col-compare columns of DIFFERENT scales (e.g. stochrsi vs rs,
+  vix_pctile vs turnover_z) — the comparison is degenerate/always-true.
+
+HISTORY COVERAGE (HARD promotability constraint):
+- FULL history 1998->: ret, rs, vel_*, accel, accel_z, persistence, vix_pctile,
+  tlt_ret_10d, spy_above_200d, washout_w, stochrsi_w_k/d.
+- 2021+ ONLY (~5yr, ~13.5k rows): breadth_50, cohesion, cohesion_chg,
+  turnover_z, cohesion_rebuild.  A rule CONDITIONED on any of these fires only
+  post-2021, so it CANNOT clear the era-consistency gate (3 of 4 eras) and is
+  NOT promotable.  Use them at most as an optional probe leg, NEVER as the edge.
+  Prefer full-history columns for anything you want promotable.
 
 MECHANISM FAMILIES ALREADY MAPPED (extend them or propose NEW families —
 say which): A conservation/routing (money must go somewhere), B sector
@@ -177,8 +290,8 @@ Adjudicated dead ends (pre-registered tests; do not re-till):
 Tier-1 screen priors (rounds 1-2 brainstorm; strong priors, NOT gauntleted):
 {_SCREEN_PRIORS}
 
-=== WHERE STRUCTURE HAS ACTUALLY APPEARED — CONCENTRATE PROPOSALS HERE ===
-{_LIVE_REGIONS}
+{steer_title}
+{steer_body}
 
 === OUTPUT FORMAT (return ONLY a JSON list of specs) ===
 [{{"id": "<SHORT_UNIQUE_ID>", "family": "<A-F or NEW:<name>>",
@@ -193,7 +306,7 @@ RULES: mechanism_en must match the rule (truth-in-labeling is enforced by
 review); prefer tier "s" for anything you'd want promotable; conditioning
 compounds (X only-when Y) beat raw signals here — the measured nulls above
 show unconditioned signals are dead; diversity across families beats ten
-variants of one idea.
+variants of one idea.{extra_rules}
 
 COVERAGE FLOOR (hard): only propose rules you expect to TRIGGER >=100 times
 across 11 ETFs over 1998-> (roughly 4+ entries/yr). Rules gated on rare
@@ -208,8 +321,16 @@ fire often enough to measure: broad regime/flow states over rare coincidences.
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--n", type=int, default=10, help="compounds to request")
+    ap.add_argument("--explore", action="store_true",
+                    help="diversity mode: cast a wide net across the whole "
+                         "mechanism space (default is focus mode: drill the live basin)")
+    ap.add_argument("--focus", type=int, default=None,
+                    help=f"explore mode: pin this run to slice 1-{len(_FOCUS_SLICES)} "
+                         "for systematic coverage across re-runs")
     args = ap.parse_args()
-    print(build_pack(args.n))
+    mode = "explore" if args.explore else "focus"
+    n_default = 60 if (args.explore and args.n == 10) else args.n
+    print(build_pack(n_default, mode=mode, focus=args.focus))
     return 0
 
 

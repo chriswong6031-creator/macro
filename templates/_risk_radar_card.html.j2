@@ -62,7 +62,7 @@
     <div class="rrx-id">
       <div class="rrx-ttl">{{ t('Risk Radar','风险雷达') }}
         <span class="rrx-badge">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} · {{ rd.top_score }}/100{% endif %}</span>
-        {{ help('A leading drawdown-risk gauge, built only from signals that passed a strict backtest. It watches the kinds of stress that actually lead this market\'s drawdowns and stays quiet until the broad market is actually breaking. It measures the ODDS of a pullback, not the direction — use it to size down, never to pick stocks. Every call is graded afterwards and the gauge is re-tuned from its own misses.', '领先的回撤风险指标，仅由通过严格回测的信号构成。它监测真正领先本市场回撤的压力类型，在大盘真正破位前保持沉默。它衡量回撤的“概率”而非方向——用于降低仓位，绝非选股。每次判断事后都会被评判，并据其失误自我再校准。') }}
+        {{ help('Pullback-risk gauge. Use high readings to trim risk, not to pick stocks.', '回撤风险仪表。高读数用于降风险，不用于选股。') }}
       </div>
       {% if rd.label_en %}<div class="rrx-dom">{{ t(rd.label_en, rd.label_zh) }}</div>{% endif %}
       {% if rd.amp and rd.amp > 0 %}<div class="rrx-amp">▲ {{ t('Amplified','放大') }} — <span class="l-en">{{ rd.amp_flags_en|join(' · ') }}</span><span class="l-zh">{{ rd.amp_flags_zh|join(' · ') }}</span></div>{% endif %}
