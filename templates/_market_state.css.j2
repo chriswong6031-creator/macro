@@ -138,9 +138,21 @@
   .cmd-hero .ms-cell2.bad,  .cmd-hero .ms-conf.bad  { color: var(--down); }
   .cmd-hero .ms-cell2.flat, .cmd-hero .ms-conf.warn, .cmd-hero .ms-conf.flat { color: var(--warn); }
   .cmd-hero .ms-conf { font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .cmd-hero .ms-confstrip { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cmd-hero .ms-confchip { display: inline-flex; align-items: baseline; gap: 9px; min-width: 0; padding: 7px 10px;
+    border: var(--rule) solid var(--hair); border-radius: 8px; background: var(--tile); }
+  .cmd-hero .ms-confchip.good { border-color: color-mix(in srgb, var(--up) 32%, var(--hair)); }
+  .cmd-hero .ms-confchip.bad { border-color: color-mix(in srgb, var(--down) 32%, var(--hair)); }
+  .cmd-hero .ms-confchip.warn { border-color: color-mix(in srgb, var(--warn) 32%, var(--hair)); }
+  .cmd-hero .ms-tech { margin-top: 12px; padding-top: 12px; border-top: var(--rule) solid var(--hair); }
+  .cmd-hero .ms-tech-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 9px; font-weight: 700; }
+  .cmd-hero .ms-tech-head .note { font-weight: 400; text-transform: none; }
+  .cmd-hero .ms-tech-stat { font-family: var(--num); font-size: 17px; font-weight: 800; color: var(--ink-1); }
+  .cmd-hero .ms-tech .mtf-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   @media (max-width: 560px) {
     .cmd-hero table.ms-tapetbl th, .cmd-hero table.ms-tapetbl td { padding-left: 3px; padding-right: 3px; }
     .cmd-hero .ms-cell2 .rsi { display: none; }
+    .cmd-hero .ms-confchip { width: 100%; justify-content: space-between; }
   }
   .cmd-hero .ms-caveat { margin: 9px 0 0; font-size: 10.5px; line-height: 1.45; color: var(--ink-3); }
 
