@@ -1414,27 +1414,36 @@ def main() -> int:
                 rec["vol_squeeze"] = sq
         except Exception as e:  # noqa: BLE001 — additive; the thin snapshot is already on rec
             log.warning("tech/squeeze enrich for %s failed (%s)", ticker, e)
-        # ---- P0.3 liquidity/capacity hygiene (DISPLAY-ONLY, R10 — zero rank/gate power) ---
-        # adv_dollar_21d: 21-session average dollar volume (close × volume) from data/stocks/.
-        # days_to_exit_at_10pct_adv: how many days a $100k position takes to exit at 10% of
-        # ADV ($100k assumption is a display heuristic — not a position-size recommendation).
-        # Available only when _ohlcv has a volume column (data/stocks names); breadth-cache-only
-        # names (close-only) silently skip — field absent is the honest answer.
+        # ---- W5b liquidity chip (DISPLAY-ONLY, zero rank/gate power) ---------------
+        # engine.liquidity_chip: 20-session MEDIAN dollar volume (close x volume),
+        # liquidity tier (deep/ok/thin/illiquid), and days-to-build at $100k and $1M
+        # clips assuming the investor consumes at most 10 % of ADV per day.
+        # Also retains the legacy adv_dollar_21d MEAN + days_to_exit for backward compat
+        # (stock.html and the detail page may still read these fields).
+        # Available only when _ohlcv has a volume column (data/stocks names); breadth-
+        # cache-only names (close-only) silently skip — field absent is the honest answer.
         try:
             if _ohlcv is not None and "volume" in _ohlcv.columns:
-                _vol21 = _ohlcv["volume"].tail(21).dropna()
-                _close21 = _ohlcv["close"].tail(21).dropna()
-                _n = min(len(_vol21), len(_close21))
-                if _n >= 5:
-                    _adv_dv = float((_vol21.iloc[-_n:].values * _close21.iloc[-_n:].values).mean())
-                    _adv_10pct = _adv_dv * 0.10
-                    _dte = (100_000 / _adv_10pct) if _adv_10pct > 0 else None
-                    _liq_map[ticker] = {
-                        "adv_dollar_21d": round(_adv_dv, 0),
-                        "days_to_exit_at_10pct_adv": round(_dte, 1) if _dte is not None else None,
-                    }
+                from engine import liquidity_chip as _lc
+                _lchip = _lc.compute(_ohlcv["close"], _ohlcv["volume"])
+                if _lchip is not None:
+                    # W5b primary fields
+                    _liq_map[ticker] = _lchip
+                    # Legacy mean-based fields (backward compat — kept alongside the new median)
+                    _vol21 = _ohlcv["volume"].tail(21).dropna()
+                    _close21 = _ohlcv["close"].tail(21).dropna()
+                    _n21 = min(len(_vol21), len(_close21))
+                    if _n21 >= 5:
+                        _adv_dv21 = float(
+                            (_vol21.iloc[-_n21:].values * _close21.iloc[-_n21:].values).mean()
+                        )
+                        _adv_10pct21 = _adv_dv21 * 0.10
+                        _dte21 = (100_000 / _adv_10pct21) if _adv_10pct21 > 0 else None
+                        _liq_map[ticker]["adv_dollar_21d"] = round(_adv_dv21, 0)
+                        if _dte21 is not None:
+                            _liq_map[ticker]["days_to_exit_at_10pct_adv"] = round(_dte21, 1)
         except Exception as _liqe:  # noqa: BLE001 — hygiene fields; never fatal
-            log.debug("liquidity hygiene for %s skipped (%s)", ticker, _liqe)
+            log.debug("liquidity chip for %s skipped (%s)", ticker, _liqe)
         # ---- dealer-gamma join (RICH board payload) + the GEX verifier/confirmer -------
         # Prefer the pre-built site/gex payload (call/put walls + vol_hole + correct units);
         # fall back to the live compute_gex summary. _flat_gex_from_board keeps stock.html's
@@ -2207,13 +2216,26 @@ def main() -> int:
             _cdp8 = _lad8.get("cand_depth_pct")
             if _cdp8 is not None:
                 r["cand_depth_pct"] = _cdp8
-            # P0.3 liquidity/capacity hygiene fields — DISPLAY-ONLY, R10 (zero rank/gate power).
-            # adv_dollar_21d: 21-session avg dollar volume; absent when volume data unavailable.
-            # days_to_exit_at_10pct_adv: $100k-position exit days at 10% ADV (display heuristic).
+            # W5b liquidity chip fields — DISPLAY-ONLY (zero rank/gate power).
+            # adv_dollar_20d_median: 20-session median dollar volume (W5b primary).
+            # tier: deep/ok/thin/illiquid.
+            # days_to_build_100k / days_to_build_1m: buildability at 10 % ADV.
+            # Also the legacy adv_dollar_21d/days_to_exit_at_10pct_adv (backward compat).
             _lhyg = _liq_map.get(t)
             if _lhyg:
-                r["adv_dollar_21d"] = _lhyg["adv_dollar_21d"]
-                if _lhyg["days_to_exit_at_10pct_adv"] is not None:
+                # W5b new fields
+                if _lhyg.get("adv_dollar_20d_median") is not None:
+                    r["adv_dollar_20d_median"] = _lhyg["adv_dollar_20d_median"]
+                if _lhyg.get("tier") is not None:
+                    r["liquidity_tier"] = _lhyg["tier"]
+                if _lhyg.get("days_to_build_100k") is not None:
+                    r["days_to_build_100k"] = _lhyg["days_to_build_100k"]
+                if _lhyg.get("days_to_build_1m") is not None:
+                    r["days_to_build_1m"] = _lhyg["days_to_build_1m"]
+                # Legacy fields (backward compat)
+                if _lhyg.get("adv_dollar_21d") is not None:
+                    r["adv_dollar_21d"] = _lhyg["adv_dollar_21d"]
+                if _lhyg.get("days_to_exit_at_10pct_adv") is not None:
                     r["days_to_exit_at_10pct_adv"] = _lhyg["days_to_exit_at_10pct_adv"]
             # W8-B postcross lifecycle chip (BASED/ARMED/SHAKEN) — DISPLAY-ONLY.
             # W8-A verdict: NO rank power; ships as eligibility+display only; safety:
