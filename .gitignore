@@ -218,3 +218,7 @@ data/oracle/personality.json
 !data/oracle/compounds/live_ledger.jsonl
 !data/oracle/promotion_queue.json
 data/oracle/memory_active_analogues.json
+# P9 Hypothesis Inbox — append-only governance data, committed per constitution.
+# hypothesis_state.json is also governance data (tracks graded ids + sentinel line count).
+!data/oracle/hypothesis_inbox.jsonl
+!data/oracle/hypothesis_state.json
