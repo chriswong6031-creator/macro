@@ -222,9 +222,10 @@
   </div>
 </div>
 
+<script type="application/json" id="os-rows">{{ rows_json | safe }}</script>
 <script>
 (function(){
-  var ROWS = {{ rows_json }};
+  var ROWS = JSON.parse(document.getElementById('os-rows').textContent);
   var sortCol = 'gross_premium_mn', sortDir = 'desc';
 
   // ---- sector dropdown ----

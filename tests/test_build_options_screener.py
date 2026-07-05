@@ -268,6 +268,15 @@ def test_builder_smoke(tmp_path, monkeypatch):
     assert "AAPL" in html
     assert "NVDA" in html
 
+    # Verify embedded ROWS payload is valid JSON (regression: autoescape used to HTML-encode it)
+    import re as _re
+    m = _re.search(r'<script[^>]+id="os-rows"[^>]*>(.*?)</script>', html, _re.DOTALL)
+    assert m, "os-rows script tag not found in page"
+    rows_parsed = json.loads(m.group(1))
+    tickers = {r["ticker"] for r in rows_parsed}
+    assert "AAPL" in tickers
+    assert "NVDA" in tickers
+
 
 # ---------------------------------------------------------------------------
 # 7. Nav checks — rendered page passes check_nav_gap + check_nav_mega

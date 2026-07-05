@@ -383,7 +383,7 @@ def main() -> int:
     )
     env.globals.update(td=td, tr=tr, zip=zip, len=len)
 
-    rows_json = json.dumps(rows, ensure_ascii=False, default=str)
+    rows_json = json.dumps(rows, ensure_ascii=False, default=str).replace("</", r"<\/")
 
     html = env.get_template("options_screener.html.j2").render(
         coverage=coverage,
