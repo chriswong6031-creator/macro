@@ -84,13 +84,12 @@
 
   /* ---- Mastermind Terminal jump -------------------------------------------
      Single-stock analysis now opens in the Terminal web app. US (stock.html),
-     China (china_lookup.html), HK (hk_lookup.html), and Canada (canada_stock.html)
-     stock links all route to app.mastermind-x.com/terminal?sym=TICKER — their
-     ticker formats (e.g. 600519.SS, 0002.HK, AAV.TO) already match the Terminal
-     manifest exactly so no transformation is needed. The origin is pre-warmed
-     (DNS + TLS) so the first navigation is instant.
-     International (intl_stock.html) keeps its in-page analyzer for now — those
-     symbols are not yet in the Terminal universe (pending backfill).
+     China (china_lookup.html), HK (hk_lookup.html), Canada (canada_stock.html),
+     and International (intl_stock.html) stock links all route to
+     app.mastermind-x.com/terminal?sym=TICKER — their ticker formats (e.g.
+     600519.SS, 0002.HK, AAV.TO, 8035.T) already match the Terminal manifest
+     exactly so no transformation is needed. The origin is pre-warmed (DNS + TLS)
+     so the first navigation is instant.
      Flip window.MM_TERMINAL = false anywhere to restore in-page analyzers. */
   var MM_TERMINAL_BASE = 'https://app.mastermind-x.com/terminal';
   function mmTerminalOn() { return window.MM_TERMINAL !== false; }
@@ -108,10 +107,9 @@
   })();
   // Re-route Terminal-covered analyzer links anywhere on the site → Terminal
   // (capture phase so it runs before the browser follows the <a>). Leaves
-  // new-tab / modified clicks and intl_stock.html (not in Terminal yet) alone.
-  // TODO: add 'intl_stock.html' here once the Terminal backfill lands.
+  // new-tab / modified clicks alone.
   // null-prototype map so an href-derived key can't hit Object.prototype ('constructor', etc.)
-  var TERMINAL_PAGES = Object.assign(Object.create(null), { 'stock.html': 1, 'china_lookup.html': 1, 'hk_lookup.html': 1, 'canada_stock.html': 1 });
+  var TERMINAL_PAGES = Object.assign(Object.create(null), { 'stock.html': 1, 'china_lookup.html': 1, 'hk_lookup.html': 1, 'canada_stock.html': 1, 'intl_stock.html': 1 });
   document.addEventListener('click', function (e) {
     if (!mmTerminalOn() || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
@@ -277,8 +275,7 @@
     input.addEventListener('focus', loadLibs);
     function go(x) {
       if (!x) return;
-      // US, China, HK, Canada picks open the Terminal; Intl keeps its in-page analyzer
-      // (intl_stock.html symbols not yet in the Terminal universe — pending backfill)
+      // US, China, HK, Canada, and Intl picks all open the Terminal
       if (mmTerminalOn() && TERMINAL_PAGES[x._tgt]) { location.href = terminalUrl(x.t); return; }
       location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t);
     }
