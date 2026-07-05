@@ -579,6 +579,10 @@ body { padding-bottom:56px; }
   'use strict';
 
   // ── Auth gate ──────────────────────────────────────────────────────────────
+  // Operator ruling 2026-07-05: the page is OPEN for now (no login wall).
+  // Flip REQUIRE_AUTH to true to restore the gate — the ask box keeps its own
+  // server-side auth (/api/ask returns 401 without a Supabase session) either way.
+  var REQUIRE_AUTH = false;
   var authBooted = false;
 
   function showContent() {
@@ -608,7 +612,7 @@ body { padding-bottom:56px; }
     attempts = attempts || 0;
     if (window.MDXAuth) {
       window.MDXAuth.onAuthStateChange(function (session) {
-        if (session) { showContent(); } else { showGate(); }
+        if (session) { showContent(); } else if (REQUIRE_AUTH) { showGate(); }
       });
       // Also check immediately
       window.MDXAuth.getSession(function (session) {
@@ -618,7 +622,12 @@ body { padding-bottom:56px; }
       setTimeout(function () { waitForAuth(attempts + 1); }, 150);
     }
   }
-  waitForAuth();
+  if (REQUIRE_AUTH) {
+    waitForAuth();
+  } else {
+    showContent();          // open access — no gate
+    waitForAuth();          // still wire the session for the ask box
+  }
 
   // ── Page init (runs once after auth confirmed) ─────────────────────────────
   function initPage() {
@@ -1216,11 +1225,19 @@ body { padding-bottom:56px; }
       if (q.length > 500) { return; }
 
       // Fetch the Supabase Bearer token
+      function needSignIn() {
+        if (errEl) {
+          errEl.innerHTML = '<span class="l-en">Sign in (top right) to ask the brain \u2014 the rest of the page is open without an account.</span>' +
+                            '<span class="l-zh">\u767b\u5f55\uff08\u53f3\u4e0a\u89d2\uff09\u540e\u5373\u53ef\u63d0\u95ee \u2014 \u9875\u9762\u5176\u4ed6\u5185\u5bb9\u65e0\u9700\u8d26\u6237\u5373\u53ef\u6d4f\u89c8\u3002</span>';
+          errEl.style.display = '';
+        }
+        if (window.MDXAuth && window.MDXAuth.openAuthModal) { window.MDXAuth.openAuthModal(); }
+      }
       if (!window.MDXAuth || !window.MDXAuth.getSession) {
-        showError(); return;
+        needSignIn(); return;
       }
       window.MDXAuth.getSession(function (session) {
-        if (!session || !session.access_token) { showError(); return; }
+        if (!session || !session.access_token) { needSignIn(); return; }
         setLoading(true);
 
         var body = { question: q };
