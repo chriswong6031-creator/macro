@@ -27,10 +27,13 @@ from engine.neuralweb.bottom_sensors import (  # noqa: E402
     _dist_21d_low_pct,
     _dist_126d_high_pct,
     _earnings_info,
+    _sponsorship_state,
+    _SPONSORSHIP_STALE_TRADING_DAYS,
     LABELS_VERSION,
     IS_DISPLAY_ONLY,
     _ALIGN_KNIFE_BLOCK,
 )
+from engine.neuralweb.sector_map import SectorMapping
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -727,3 +730,181 @@ class TestT4TierHandling:
             bars_to_cross=1.0,
         )
         assert state == "WATCH"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 6. Sponsorship state — Amendment §C3 connector (PR-3)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _make_panel(node: str, date: str, vel_1m: float, accel: float) -> pd.DataFrame:
+    """Build a minimal oracle-panel-shaped DataFrame for one node/date row."""
+    idx = pd.MultiIndex.from_tuples(
+        [(node, pd.Timestamp(date))], names=["node", "date"]
+    )
+    return pd.DataFrame(
+        {"vel_1m": [vel_1m], "accel": [accel]},
+        index=idx,
+    )
+
+
+def _make_panel_stale(node: str, days_ago: int) -> pd.DataFrame:
+    """Panel with a single row that is `days_ago` calendar days in the past."""
+    stale_date = (pd.Timestamp(TODAY) - pd.Timedelta(days=days_ago)).strftime("%Y-%m-%d")
+    return _make_panel(node, stale_date, 1.0, 1.0)  # positive signs but stale
+
+
+class TestSponsorshipState:
+    """Tests for _sponsorship_state() — the §C3 frozen definition connector.
+
+    Display-only: these tests confirm the connector is correctly wired and
+    degrades gracefully.  They do NOT test any threshold tuning (there is none).
+    """
+
+    # ── Tailwind / headwind / neutral ─────────────────────────────────────────
+
+    def test_tailwind_both_positive(self):
+        """vel > 0 AND accel > 0 → tailwind."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+        panel = _make_panel("XLK", "2026-07-02", vel_1m=0.5, accel=0.1)
+        state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
+        assert state == "tailwind"
+
+    def test_headwind_both_negative(self):
+        """vel < 0 AND accel < 0 → headwind."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+        panel = _make_panel("XLK", "2026-07-02", vel_1m=-0.3, accel=-0.1)
+        state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
+        assert state == "headwind"
+
+    def test_neutral_mixed_vel_pos_accel_neg(self):
+        """vel > 0 AND accel < 0 → neutral."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+        panel = _make_panel("XLK", "2026-07-02", vel_1m=0.5, accel=-0.1)
+        state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
+        assert state == "neutral"
+
+    def test_neutral_mixed_vel_neg_accel_pos(self):
+        """vel < 0 AND accel > 0 → neutral."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+        panel = _make_panel("XLK", "2026-07-02", vel_1m=-0.3, accel=0.2)
+        state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
+        assert state == "neutral"
+
+    # ── Stale / unavailable ───────────────────────────────────────────────────
+
+    def test_unavailable_no_mapping(self):
+        """mapping=None → unavailable."""
+        panel = _make_panel("XLK", "2026-07-02", 0.5, 0.1)
+        state = _sponsorship_state("UNKNOWN", None, panel, None, TODAY)
+        assert state == "unavailable"
+
+    def test_unavailable_both_nodes_none(self):
+        """sector_node=None AND subsector_node=None → unavailable."""
+        mapping = SectorMapping(sector_node=None, subsector_node=None)
+        panel = _make_panel("XLK", "2026-07-02", 0.5, 0.1)
+        state = _sponsorship_state("UNKNOWN", mapping, panel, None, TODAY)
+        assert state == "unavailable"
+
+    def test_unavailable_panel_none(self):
+        """Mapped ticker but both panels are None → unavailable."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+        state = _sponsorship_state("AAPL", mapping, None, None, TODAY)
+        assert state == "unavailable"
+
+    def test_unavailable_node_not_in_panel(self):
+        """Node mapping exists but node not present in panel index → unavailable."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+        panel = _make_panel("XLB", "2026-07-02", 0.5, 0.1)  # XLB, not XLK
+        state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
+        assert state == "unavailable"
+
+    def test_stale_panel_over_threshold(self):
+        """Panel row older than 5 trading days → stale.
+        We use 10 calendar days which guarantees >= 7 trading days.
+        """
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+        panel = _make_panel_stale("XLK", days_ago=10)
+        state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
+        assert state == "stale"
+
+    def test_stale_null_vel(self):
+        """vel_1m is NaN → stale."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+        panel = _make_panel("XLK", "2026-07-02", vel_1m=float("nan"), accel=0.1)
+        state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
+        assert state == "stale"
+
+    def test_stale_null_accel(self):
+        """accel is NaN → stale."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+        panel = _make_panel("XLK", "2026-07-02", vel_1m=0.5, accel=float("nan"))
+        state = _sponsorship_state("AAPL", mapping, panel, None, TODAY)
+        assert state == "stale"
+
+    # ── Sector arm → subsector arm fallback ──────────────────────────────────
+
+    def test_falls_back_to_subsector_when_sector_missing(self):
+        """sector_node set but not in panel → fall through to subsector."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node="ai_infra")
+        sector_panel = _make_panel("XLB", "2026-07-02", 0.5, 0.1)  # XLB only, no XLK
+        subsector_panel = _make_panel("ai_infra", "2026-07-02", -0.2, -0.1)  # headwind
+        state = _sponsorship_state("NVDA", mapping, sector_panel, subsector_panel, TODAY)
+        assert state == "headwind"  # subsector arm used
+
+    def test_sector_arm_wins_over_subsector(self):
+        """Sector arm found → subsector arm is not consulted."""
+        mapping = SectorMapping(sector_node="XLK", subsector_node="ai_infra")
+        sector_panel = _make_panel("XLK", "2026-07-02", 0.8, 0.3)   # tailwind
+        subsector_panel = _make_panel("ai_infra", "2026-07-02", -0.5, -0.2)  # headwind
+        state = _sponsorship_state("NVDA", mapping, sector_panel, subsector_panel, TODAY)
+        assert state == "tailwind"  # sector arm wins
+
+    def test_subsector_only_mapping(self):
+        """Only subsector_node mapped (sector_node=None) → subsector arm used."""
+        mapping = SectorMapping(sector_node=None, subsector_node="ai_infra")
+        panel_m = _make_panel("ai_infra", "2026-07-02", 0.6, 0.2)
+        state = _sponsorship_state("NVDA", mapping, None, panel_m, TODAY)
+        assert state == "tailwind"
+
+    # ── Stale threshold constant ───────────────────────────────────────────────
+
+    def test_stale_threshold_constant(self):
+        """_SPONSORSHIP_STALE_TRADING_DAYS == 5 (Amendment §C3 frozen)."""
+        assert _SPONSORSHIP_STALE_TRADING_DAYS == 5
+
+    # ── Integration: sponsorship in assemble() schema ─────────────────────────
+
+    def test_sponsorship_state_in_assemble_schema(self, tmp_path):
+        """assemble() includes sponsorship_state column (may be unavailable when
+        oracle panels absent — graceful degradation is correct behaviour here).
+        """
+        import json as _json
+        import datetime as _dt
+
+        sg = {
+            "as_of": "2026-07-02",
+            "verdicts": {
+                "AAPL": {"tier_cascade": "T1", "ticks": 0, "bars_to_cross": None,
+                         "eligible": True, "tier_sub": None, "provisional": False},
+            },
+        }
+        us = {
+            "as_of": "2026-07-02",
+            "donor": {},
+            "buy": [], "watch": [], "laggards": [],
+        }
+        fd = tmp_path / "site" / "factordata"
+        fd.mkdir(parents=True)
+        (fd / "signal_gate.json").write_text(_json.dumps(sg))
+        (fd / "us_standouts.json").write_text(_json.dumps(us))
+        de = tmp_path / "data" / "earnings"
+        de.mkdir(parents=True)
+        pd.DataFrame({"next_date": [], "as_of": []},
+                     index=pd.Index([], name="ticker")).to_parquet(de / "earnings.parquet")
+
+        from engine.neuralweb.bottom_sensors import assemble
+        df = assemble(root=tmp_path, today=_dt.date(2026, 7, 5))
+
+        assert "sponsorship_state" in df.columns
+        # With no sector mapping files in tmp_path, all states are "unavailable"
+        assert df["sponsorship_state"].iloc[0] == "unavailable"
