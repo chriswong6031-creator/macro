@@ -63,6 +63,7 @@ OUTPUT ARTIFACT: data/neuralweb/half_life.json
       "half_life": float|null,
       "ci_low": float|null,
       "ci_high": float|null,
+      "ci_basis": "raw_mean_proxy"|null,  # proxy nature explicit; null when CI not computed
       "n_eff": int,
       "n_horizons": int,
       "reason_null": str|null,
@@ -127,6 +128,7 @@ __all__ = [
     "CURVE_FLOOR_HORIZONS",
     "BOOTSTRAP_N_RESAMPLES",
     "BOOTSTRAP_CI_PCT",
+    "CI_COHERENCE_EPSILON",
     "build_half_lives",
     "write_half_lives",
 ]
@@ -146,6 +148,10 @@ BOOTSTRAP_N_RESAMPLES: int = 200
 
 #: Bootstrap percentile CI (90th = [5%, 95%] symmetric around median).
 BOOTSTRAP_CI_PCT: float = 90.0
+
+#: Minimum CI width (trading days) below which the CI is considered degenerate.
+#: Triggered when all events share one as_of so the block bootstrap has ~1 unique block.
+CI_COHERENCE_EPSILON: float = 0.5
 
 # Per-cell n_eff floor reuses WILSON_MIN_N from kernel.py (= 12).
 _CELL_FLOOR_N: int = WILSON_MIN_N
@@ -217,6 +223,7 @@ def _null_entry(
         "half_life": None,
         "ci_low": None,
         "ci_high": None,
+        "ci_basis": None,
         "n_eff": int(n_eff),
         "n_horizons": int(n_horizons),
         "reason_null": str(reason),
@@ -518,7 +525,12 @@ def _estimate_family(
 
     half_life_val = tau * math.log(2)
 
-    # Bootstrap CI (event-block)
+    # Bootstrap CI (event-block, raw-mean proxy per horizon).
+    # The CI refits the same curve construction used for the point estimate, but on
+    # per-resample raw mean(outcome_excess) per horizon rather than shrunken_ic
+    # (shrunken_ic requires the full hierarchical kernel per resample, which is not
+    # recomputable here).  ci_basis="raw_mean_proxy" is recorded in the artifact to
+    # make this explicit.
     ci_lo, ci_hi = _bootstrap_ci(
         graded_df=graded_df,
         horizon_col=h_sorted,
@@ -526,16 +538,37 @@ def _estimate_family(
         ci_pct=BOOTSTRAP_CI_PCT,
     )
 
-    # If CI is unstable or spans sign change → emit NaN
+    # COHERENCE GUARD (pre-registered): unstable_ci conditions → emit half_life=None.
+    # Triggered when:
+    #   (a) bootstrap returned None (sign-change, unbounded, or too few valid resamples), OR
+    #   (b) point estimate lies outside the bootstrap CI (ci_low > point OR ci_high < point), OR
+    #   (c) CI width < CI_COHERENCE_EPSILON trading days (degenerate — e.g. all events share
+    #       one as_of, so the block bootstrap has ~1 unique block).
+    # Per prereg rule: "unstable fit = unmeasured".
     if ci_lo is None or ci_hi is None:
+        unstable = True
+        unstable_reason = "unstable_ci"
+    elif (ci_hi - ci_lo) < CI_COHERENCE_EPSILON:
+        unstable = True
+        unstable_reason = "unstable_ci"
+    elif half_life_val < ci_lo or half_life_val > ci_hi:
+        unstable = True
+        unstable_reason = "unstable_ci"
+    else:
+        unstable = False
+        unstable_reason = None
+
+    if unstable:
         half_life_val_final = None
         ci_low_final = None
         ci_high_final = None
-        reason = "unstable_ci"
+        ci_basis_final = None
+        reason = unstable_reason
     else:
         half_life_val_final = round(half_life_val, 2)
         ci_low_final = round(ci_lo, 2)
         ci_high_final = round(ci_hi, 2)
+        ci_basis_final = "raw_mean_proxy"
         reason = None
 
     return {
@@ -544,6 +577,7 @@ def _estimate_family(
         "half_life": half_life_val_final,
         "ci_low": ci_low_final,
         "ci_high": ci_high_final,
+        "ci_basis": ci_basis_final,
         "n_eff": int(total_n_eff),
         "n_horizons": int(n_horizons),
         "reason_null": reason,

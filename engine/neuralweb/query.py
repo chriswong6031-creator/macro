@@ -1043,6 +1043,9 @@ def build_index(
     # Behavioral consumers (allocation, alert_triage, board ordering) must NOT
     # branch on this column — it is display-only (R7/R8 compliance).
     # If the artifact is absent or unreadable, half_life stays NaN (fail-open).
+    # NOTE: daily.yml writes half_life.json AFTER build_spine_index, so the stamped
+    # column carries the PRIOR night's artifact (fail-open NaN on first run).
+    # This is display-only family metadata, not PIT-sensitive.
     combined = _stamp_family_half_life(combined, root)
 
     return combined, gaps

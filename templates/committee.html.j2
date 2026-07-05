@@ -1105,6 +1105,10 @@ body { padding-bottom:56px; }
         labelEn = 'unmeasured'; labelZh = '未测量';
         tipEn = 'Insufficient event count (n=' + nEff + ' < floor=200). ' + magCaveat;
         tipZh = '事件数量不足（n=' + nEff + ' < 门槛=200）。' + magCaveatZh;
+      } else if (reason === 'unstable_ci') {
+        labelEn = 'unmeasured'; labelZh = '未测量';
+        tipEn = 'Bootstrap CI is unstable (point estimate outside CI, degenerate width, or too few unique event blocks — e.g. all events share one as-of date). CI fitted on raw-mean proxy. Per prereg: unstable fit = unmeasured.' + magCaveat;
+        tipZh = '自举置信区间不稳定（点估计超出CI范围、宽度退化，或唯一事件块过少——例如所有事件共享同一日期）。CI基于原始均值代理拟合。按预注册规则：不稳定拟合=未测量。' + magCaveatZh;
       } else {
         labelEn = 'unmeasured'; labelZh = '未测量';
         tipEn = 'Not measured: ' + esc(reason || 'unknown') + '.' + magCaveat;
@@ -1121,8 +1125,14 @@ body { padding-bottom:56px; }
     var ciStr = (ciLo != null && ciHi != null) ? ' [' + Math.round(ciLo) + '–' + Math.round(ciHi) + 'd]' : '';
     var labelEn = '≈' + Math.round(hl) + 'd' + ciStr + kindSuffix;
     var labelZh = '≈' + Math.round(hl) + '天' + ciStr + kindSuffix;
-    var tipEn = 'Holding-horizon half-life: ~' + Math.round(hl) + 'd for shrunken IC to halve.' + (ciStr ? ' 90% CI' + ciStr + '.' : '') + magCaveat;
-    var tipZh = '持有期半衰期：压缩IC减半约需' + Math.round(hl) + '天。' + (ciStr ? '90%置信区间' + ciStr + '。' : '') + magCaveatZh;
+    var ciBasisNote = (hlEntry.ci_basis === 'raw_mean_proxy' && ciStr)
+      ? ' CI fitted on raw-mean proxy (shrunken-IC not recomputable per resample).'
+      : '';
+    var ciBasisNoteZh = (hlEntry.ci_basis === 'raw_mean_proxy' && ciStr)
+      ? ' 置信区间基于原始均值代理拟合（每次重采样无法重算压缩IC）。'
+      : '';
+    var tipEn = 'Holding-horizon half-life: ~' + Math.round(hl) + 'd for shrunken IC to halve.' + (ciStr ? ' 90% CI' + ciStr + '.' : '') + ciBasisNote + magCaveat;
+    var tipZh = '持有期半衰期：压缩IC减半约需' + Math.round(hl) + '天。' + (ciStr ? '90%置信区间' + ciStr + '。' : '') + ciBasisNoteZh + magCaveatZh;
     return {
       en: '<span class="kf-hl-val" data-tip-en="' + tipEn.replace(/"/g, '&quot;') + '" data-tip-zh="' + tipZh.replace(/"/g, '&quot;') + '">H½ ' + labelEn + '</span>',
       zh: '<span class="kf-hl-val">H½ ' + labelZh + '</span>'
