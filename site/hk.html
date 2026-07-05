@@ -204,15 +204,6 @@
   .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
   .gauge i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); transform: translate(-50%,-50%); }
   .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
-  /* major-index health strip (macro page) */
-  .idx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  @media (max-width: 760px) { .idx-grid { grid-template-columns: 1fr; } }
-  .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
-  .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
-  .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
-  .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
-  .idx-trend { margin-top: 3px; color: var(--muted); }
-  .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
   /* nav split-dropdown (macro / stocks / lookup) */
   .nav-dd { position: relative; }
   .nav-dd .caret { font-size: 9px; opacity: .6; }
@@ -1293,59 +1284,6 @@
 
 <div class="grid">
 
-  <!-- ===================== HIGH-IMPACT EVENT-RISK BANNER (macro) ===================== -->
-  
-  <div class="panel span12" style="padding:0;border:none;background:none">
-    <div class="evbanner">
-      <span class="ev-h">⏳ <span class="l-en">Event risk · next 14d</span><span class="l-zh">事件风险 · 未来14天</span></span>
-      <span class="ev-list">
-        
-        <span class="ev-chip" title="2026-07-03 · activity">
-          <span class="l-en">US payrolls (NFP)</span><span class="l-zh">美国非农就业</span>
-          <span class="ev-rg">US</span>
-          <span class="ev-d"><span class="l-en">today</span><span class="l-zh">今日</span></span>
-        </span>
-        
-        <span class="ev-chip" title="2026-07-07 · trade">
-          <span class="l-en">Customs trade (exports/imports)</span><span class="l-zh">海关进出口数据</span>
-          <span class="ev-rg">CN</span>
-          <span class="ev-d">+4<span class="l-en">d</span><span class="l-zh">天</span></span>
-        </span>
-        
-        <span class="ev-chip" title="2026-07-09 · inflation">
-          <span class="l-en">CPI (consumer prices)</span><span class="l-zh">CPI（居民消费价格）</span>
-          <span class="ev-rg">CN</span>
-          <span class="ev-d">+6<span class="l-en">d</span><span class="l-zh">天</span></span>
-        </span>
-        
-        <span class="ev-chip" title="2026-07-09 · inflation">
-          <span class="l-en">PPI (producer prices)</span><span class="l-zh">PPI（工业生产者价格）</span>
-          <span class="ev-rg">CN</span>
-          <span class="ev-d">+6<span class="l-en">d</span><span class="l-zh">天</span></span>
-        </span>
-        
-        <span class="ev-chip" title="2026-07-10 · credit">
-          <span class="l-en">Money supply, RMB loans & TSF</span><span class="l-zh">货币供应、人民币贷款与社融</span>
-          <span class="ev-rg">CN</span>
-          <span class="ev-d">+7<span class="l-en">d</span><span class="l-zh">天</span></span>
-        </span>
-        
-        <span class="ev-chip" title="2026-07-14 · inflation">
-          <span class="l-en">US CPI</span><span class="l-zh">美国 CPI</span>
-          <span class="ev-rg">US</span>
-          <span class="ev-d">+11<span class="l-en">d</span><span class="l-zh">天</span></span>
-        </span>
-        
-        <span class="ev-chip" title="2026-07-15 · activity">
-          <span class="l-en">IP, FAI & retail sales</span><span class="l-zh">工业增加值、固投与社零</span>
-          <span class="ev-rg">CN</span>
-          <span class="ev-d">+12<span class="l-en">d</span><span class="l-zh">天</span></span>
-        </span>
-        
-      </span>
-    </div>
-  </div>
-  
 
   
 
@@ -1557,63 +1495,89 @@
 
 <section class="ms-tape">
   <div class="tape-head">
-    <p class="tape-title"><span class="l-en">Multi-timeframe tape · the broad HK market</span><span class="l-zh">多周期趋势 · 港股大盘</span><span class="help">?<span class="tip"><span class="l-en">How the broad HK market is trending across four timeframes — 1D, 3D, 7D and 30D — for the Hang Seng, HSCEI and HS TECH. ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes — confirmation comes when the longer horizons align.</span><span class="l-zh">港股大盘在四个周期（1D、3D、7D、30D）上的趋势 — 恒生指数、国企指数、恒生科技。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论 — 待较长周期对齐方为确认。</span></span></span></p>
-    <span class="tape-sub"><span class="l-en">arrow · RSI</span><span class="l-zh">箭头 · RSI</span></span>
+    <p class="tape-title"><span class="l-en">Multi-timeframe tape · the broad HK market</span><span class="l-zh">多周期趋势 · 港股大盘</span><span class="help">?<span class="tip"><span class="l-en">One non-duplicated tape read: confluence shows whether the major HK indices agree across timeframes, while the Hang Seng technical chart keeps the detailed daily / 3-day / weekly RSI, Stochastics and MACD view.</span><span class="l-zh">一个不重复的大盘读数：合流标签显示香港主要指数在多周期上是否一致；恒生技术图保留日线、3日、周线 RSI、随机指标与 MACD 细节。</span></span></span></p>
+    <span class="tape-sub"><span class="l-en">confluence</span><span class="l-zh">合流</span></span><span class="l-zh">箭头 · RSI</span></span>
   </div>
-  <table class="ms-tapetbl">
-    <thead><tr>
-      <th class="l"><span class="l-en">Index</span><span class="l-zh">指数</span></th>
-      <th>1D</th><th>3D</th><th>7D</th><th>30D</th>
-      <th class="r"><span class="l-en">Confluence</span><span class="l-zh">合流</span></th>
-    </tr></thead>
-    <tbody>
-    
-      <tr>
-        <td class="l t-inst"><span class="l-en">Hang Seng</span><span class="l-zh">恒生指数</span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">39</span></span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">32</span></span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">35</span></span></td>
-        
-        <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">50</span></span></td>
-        
-        <td class="r"><span class="ms-conf bad"><span class="l-en">Downtrend</span><span class="l-zh">下降趋势</span></span></td>
-      </tr>
-    
-      <tr>
-        <td class="l t-inst"><span class="l-en">HSCEI</span><span class="l-zh">国企指数</span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">36</span></span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">30</span></span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">32</span></span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">46</span></span></td>
-        
-        <td class="r"><span class="ms-conf bad"><span class="l-en">Downtrend</span><span class="l-zh">下降趋势</span></span></td>
-      </tr>
-    
-      <tr>
-        <td class="l t-inst"><span class="l-en">HS TECH</span><span class="l-zh">恒生科技</span></td>
-        
-        <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">44</span></span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">35</span></span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">38</span></span></td>
-        
-        <td><span class="ms-cell2 bad"><span class="ar">▼</span><span class="rsi">44</span></span></td>
-        
-        <td class="r"><span class="ms-conf bad"><span class="l-en">Downtrend</span><span class="l-zh">下降趋势</span></span></td>
-      </tr>
-    
-    </tbody>
-  </table>
+  <div class="ms-confstrip">
+    <span class="ms-confchip bad">
+      <span class="t-inst"><span class="l-en">Hang Seng</span><span class="l-zh">恒生指数</span></span>
+      <span class="ms-conf bad"><span class="l-en">Downtrend</span><span class="l-zh">下降趋势</span></span>
+    </span>
+    <span class="ms-confchip bad">
+      <span class="t-inst"><span class="l-en">HSCEI</span><span class="l-zh">国企指数</span></span>
+      <span class="ms-conf bad"><span class="l-en">Downtrend</span><span class="l-zh">下降趋势</span></span>
+    </span>
+    <span class="ms-confchip bad">
+      <span class="t-inst"><span class="l-en">HS TECH</span><span class="l-zh">恒生科技</span></span>
+      <span class="ms-conf bad"><span class="l-en">Downtrend</span><span class="l-zh">下降趋势</span></span>
+    </span>
+  </div>
+  <div class="ms-tech">
+    <div class="ms-tech-head">
+      <span><span class="l-en">Hang Seng Index</span><span class="l-zh">恒生指数</span>  <span class="note"><span class="l-en">technical chart</span><span class="l-zh">技术图</span></span></span>
+      <span class="ms-tech-stat">23350.03</span>
+      <span class="pos">+1.28%</span>
+      <span class="lad flat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
+    </div>
+    <div class="mtf" data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 1.3, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 39.0, "rsi5": 52.0, "stoch": 51.0, "spark_rsi": [43.3, 40.0, 36.8, 35.8, 34.2, 32.6, 41.3, 43.4, 39.2, 37.2, 33.2, 31.8, 28.1, 29.6, 26.9, 24.0, 31.0, 29.8, 33.1, 38.5], "spark_stoch": [65.9, 41.8, 22.3, 8.9, 1.5, 0.0, 13.3, 29.8, 39.8, 33.5, 18.0, 7.9, 0.9, 3.4, 3.4, 3.4, 12.0, 22.0, 37.7, 50.6], "spark_hist": [-28.46, -52.533, -83.143, -102.418, -117.605, -129.213, -97.63, -62.377, -56.735, -59.165, -79.51, -95.092, -124.265, -127.715, -140.81, -163.398, -141.884, -125.474, -92.435, -42.774], "macd_days_to_cross": 1}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 33.0, "rsi5": 30.0, "stoch": 8.0, "spark_rsi": [50.2, 53.9, 49.7, 47.5, 48.5, 52.8, 54.6, 54.4, 47.9, 46.0, 43.3, 44.2, 42.7, 36.5, 38.6, 35.2, 31.2, 27.1, 26.0, 32.8], "spark_stoch": [45.6, 72.3, 77.5, 77.4, 65.9, 72.6, 86.1, 97.2, 86.0, 68.6, 46.1, 31.6, 15.7, 5.3, 3.9, 3.9, 3.9, 0.0, 0.0, 7.9], "spark_hist": [-67.403, -1.534, 12.553, 6.85, 10.223, 40.815, 71.186, 86.209, 54.035, 19.33, -20.674, -39.663, -58.097, -109.72, -125.601, -153.58, -196.113, -254.535, -287.637, -260.045]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 35.0, "rsi5": 29.0, "stoch": 9.0, "spark_rsi": [54.5, 56.2, 48.4, 46.1, 44.6, 42.1, 43.8, 51.2, 53.4, 51.7, 49.7, 55.3, 51.1, 47.8, 44.2, 42.4, 40.4, 34.8, 28.1, 35.3], "spark_stoch": [35.1, 32.1, 19.1, 9.9, 0.0, 0.0, 2.7, 16.8, 34.5, 46.7, 44.4, 58.1, 64.3, 65.9, 39.5, 18.9, 5.5, 0.6, 0.0, 8.9], "spark_hist": [-62.564, -66.288, -125.713, -179.534, -220.013, -258.26, -261.237, -202.277, -139.687, -106.441, -94.319, -43.608, -38.161, -56.542, -93.038, -125.795, -155.699, -216.955, -323.492, -328.848]}, "M": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 50.0, "rsi5": 35.0, "stoch": 4.0, "spark_rsi": [53.4, 53.9, 62.4, 62.9, 58.4, 61.9, 64.0, 65.9, 66.7, 71.0, 66.1, 65.8, 64.6, 69.4, 65.3, 56.5, 59.7, 57.0, 48.1, 49.8], "spark_stoch": [79.0, 78.1, 87.9, 94.4, 93.6, 91.8, 91.8, 98.2, 100.0, 100.0, 91.8, 83.1, 72.4, 77.6, 75.0, 52.4, 29.4, 8.3, 8.3, 3.6], "spark_hist": [556.782, 546.255, 690.58, 760.857, 704.1, 707.609, 722.342, 736.495, 722.541, 784.102, 713.957, 620.822, 505.219, 507.115, 421.019, 214.03, 122.285, 6.311, -227.737, -346.204]}}'></div>
+  </div>
   <p class="ms-caveat"><span class="l-en">Display-only and lighter than the US read: HK has no leading Risk Radar, no VIX term structure (VHSI stands in), and the downturn gauges are uncalibrated. HK is heavily globally driven — US/EM beta and the HKD peg. Context, not a forecast.</span><span class="l-zh">仅供展示，较美股版更轻量：港股没有领先的风险雷达、没有 VIX 期限结构（以 VHSI 替代），下行指标未经校准。港股高度受全球驱动 — 美股／新兴市场贝塔与港元联汇。是背景，而非预测。</span></p>
 </section>
+
+  <!-- ===================== HIGH-IMPACT EVENT-RISK BANNER (macro) ===================== -->
+
+  <div class="panel span12" style="padding:0;border:none;background:none">
+    <div class="evbanner">
+      <span class="ev-h">⏳ <span class="l-en">Event risk · next 14d</span><span class="l-zh">事件风险 · 未来14天</span></span>
+      <span class="ev-list">
+
+        <span class="ev-chip" title="2026-07-03 · activity">
+          <span class="l-en">US payrolls (NFP)</span><span class="l-zh">美国非农就业</span>
+          <span class="ev-rg">US</span>
+          <span class="ev-d"><span class="l-en">today</span><span class="l-zh">今日</span></span>
+        </span>
+
+        <span class="ev-chip" title="2026-07-07 · trade">
+          <span class="l-en">Customs trade (exports/imports)</span><span class="l-zh">海关进出口数据</span>
+          <span class="ev-rg">CN</span>
+          <span class="ev-d">+4<span class="l-en">d</span><span class="l-zh">天</span></span>
+        </span>
+
+        <span class="ev-chip" title="2026-07-09 · inflation">
+          <span class="l-en">CPI (consumer prices)</span><span class="l-zh">CPI（居民消费价格）</span>
+          <span class="ev-rg">CN</span>
+          <span class="ev-d">+6<span class="l-en">d</span><span class="l-zh">天</span></span>
+        </span>
+
+        <span class="ev-chip" title="2026-07-09 · inflation">
+          <span class="l-en">PPI (producer prices)</span><span class="l-zh">PPI（工业生产者价格）</span>
+          <span class="ev-rg">CN</span>
+          <span class="ev-d">+6<span class="l-en">d</span><span class="l-zh">天</span></span>
+        </span>
+
+        <span class="ev-chip" title="2026-07-10 · credit">
+          <span class="l-en">Money supply, RMB loans & TSF</span><span class="l-zh">货币供应、人民币贷款与社融</span>
+          <span class="ev-rg">CN</span>
+          <span class="ev-d">+7<span class="l-en">d</span><span class="l-zh">天</span></span>
+        </span>
+
+        <span class="ev-chip" title="2026-07-14 · inflation">
+          <span class="l-en">US CPI</span><span class="l-zh">美国 CPI</span>
+          <span class="ev-rg">US</span>
+          <span class="ev-d">+11<span class="l-en">d</span><span class="l-zh">天</span></span>
+        </span>
+
+        <span class="ev-chip" title="2026-07-15 · activity">
+          <span class="l-en">IP, FAI & retail sales</span><span class="l-zh">工业增加值、固投与社零</span>
+          <span class="ev-rg">CN</span>
+          <span class="ev-d">+12<span class="l-en">d</span><span class="l-zh">天</span></span>
+        </span>
+
+      </span>
+    </div>
+  </div>
+
+
 
 
 <div class="ms-divider"><span class="l-en">Macro backdrop — the growth × inflation regime</span><span class="l-zh">宏观背景 — 增长 × 通胀周期</span></div>
@@ -1692,70 +1656,7 @@
 
   <!-- ===================== MAJOR HK INDICES — HEALTH & MOMENTUM (merged) ===================== -->
   
-  <div class="panel span12" id="index-health">
-    <h2><span class="l-en">Major HK indices — health & momentum</span><span class="l-zh">香港主要指数 — 健康度与动量</span>
-      <span class="help">?<span class="tip"><span class="l-en">How the market itself is doing, before the macro engine. For each major HK index: price, % below the 52-week high (drawdown), RSI(14), and trend vs the 50/200-day averages (RSI &gt; 70 stretched, &lt; 30 washed out; Hang Seng TECH is the 3033.HK ETF, the cleanest stored HSTECH exposure). Below, the Hang Seng's multi-timeframe momentum (daily / weekly / monthly RSI · Stochastics · MACD) — the index scoreboard and the per-index health, in one place.</span><span class="l-zh">在看宏观引擎之前，先看市场本身。各主要香港指数：价格、距52周高点的回撤、RSI(14)，以及相对50/200日均线的趋势（RSI &gt; 70 偏热，&lt; 30 超卖；恒生科技采用 3033.HK ETF，为库内最干净的恒生科技敞口）。下方为恒生指数的多周期动量（日/周/月的 RSI · 随机指标 · MACD）—— 指数计分板与各指数健康度合于一处。</span></span></span>
-    </h2>
-    
-    <div class="idx-grid">
-      
-      <div class="idx-tile">
-        <div class="idx-top"><b><span class="l-en">Hang Seng Index</span><span class="l-zh">恒生指数</span></b> <span class="idx-px">23350.03</span></div>
-        <div class="idx-row">
-          <span class="neg">-16.5% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-          <span>RSI 39</span>
-        </div>
-        <div class="idx-trend">
-          <span class="neg">✕ 200d</span>
-          <span class="neg">✕ 50d</span>
-        </div>
-      </div>
-      
-      <div class="idx-tile">
-        <div class="idx-top"><b><span class="l-en">HSCEI (H-shares)</span><span class="l-zh">国企指数</span></b> <span class="idx-px">7699.76</span></div>
-        <div class="idx-row">
-          <span class="neg">-20.8% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-          <span>RSI 35</span>
-        </div>
-        <div class="idx-trend">
-          <span class="neg">✕ 200d</span>
-          <span class="neg">✕ 50d</span>
-        </div>
-      </div>
-      
-      <div class="idx-tile">
-        <div class="idx-top"><b><span class="l-en">Hang Seng TECH ETF</span><span class="l-zh">恒生科技 ETF</span></b> <span class="idx-px">4.42</span></div>
-        <div class="idx-row">
-          <span class="neg">-32.7% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
-          <span>RSI 43</span>
-        </div>
-        <div class="idx-trend">
-          <span class="neg">✕ 200d</span>
-          <span class="neg">✕ 50d</span>
-        </div>
-      </div>
-      
-    </div>
-    
-    
-    <div style="margin-top:15px;padding-top:13px;border-top:1px solid var(--line)">
-      <h3 style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 8px">
-        <span><span class="l-en">Hang Seng Index</span><span class="l-zh">恒生指数</span> <span class="note" style="text-transform:none;font-weight:400">· <span class="l-en">multi-timeframe momentum</span><span class="l-zh">多周期动量</span></span></span>
-        <span style="font-size:17px;font-weight:800">23350.03</span>
-        <span class="pos" style="font-weight:700">+1.28%</span>
-        <span class="lad flat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
-      </h3>
-      <div class="mtf" data-mtf='{"D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": true, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": 1.3, "stoch_cross_up": true, "stoch_cross_dn": false, "rsi14": 39.0, "rsi5": 52.0, "stoch": 51.0, "spark_rsi": [43.3, 40.0, 36.8, 35.8, 34.2, 32.6, 41.3, 43.4, 39.2, 37.2, 33.2, 31.8, 28.1, 29.6, 26.9, 24.0, 31.0, 29.8, 33.1, 38.5], "spark_stoch": [65.9, 41.8, 22.3, 8.9, 1.5, 0.0, 13.3, 29.8, 39.8, 33.5, 18.0, 7.9, 0.9, 3.4, 3.4, 3.4, 12.0, 22.0, 37.7, 50.6], "spark_hist": [-28.46, -52.533, -83.143, -102.418, -117.605, -129.213, -97.63, -62.377, -56.735, -59.165, -79.51, -95.092, -124.265, -127.715, -140.81, -163.398, -141.884, -125.474, -92.435, -42.774], "macd_days_to_cross": 1}, "3D": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": true, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 33.0, "rsi5": 30.0, "stoch": 8.0, "spark_rsi": [50.2, 53.9, 49.7, 47.5, 48.5, 52.8, 54.6, 54.4, 47.9, 46.0, 43.3, 44.2, 42.7, 36.5, 38.6, 35.2, 31.2, 27.1, 26.0, 32.8], "spark_stoch": [45.6, 72.3, 77.5, 77.4, 65.9, 72.6, 86.1, 97.2, 86.0, 68.6, 46.1, 31.6, 15.7, 5.3, 3.9, 3.9, 3.9, 0.0, 0.0, 7.9], "spark_hist": [-67.403, -1.534, 12.553, 6.85, 10.223, 40.815, 71.186, 86.209, 54.035, 19.33, -20.674, -39.663, -58.097, -109.72, -125.601, -153.58, -196.113, -254.535, -287.637, -260.045]}, "W": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": false, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 35.0, "rsi5": 29.0, "stoch": 9.0, "spark_rsi": [54.5, 56.2, 48.4, 46.1, 44.6, 42.1, 43.8, 51.2, 53.4, 51.7, 49.7, 55.3, 51.1, 47.8, 44.2, 42.4, 40.4, 34.8, 28.1, 35.3], "spark_stoch": [35.1, 32.1, 19.1, 9.9, 0.0, 0.0, 2.7, 16.8, 34.5, 46.7, 44.4, 58.1, 64.3, 65.9, 39.5, 18.9, 5.5, 0.6, 0.0, 8.9], "spark_hist": [-62.564, -66.288, -125.713, -179.534, -220.013, -258.26, -261.237, -202.277, -139.687, -106.441, -94.319, -43.608, -38.161, -56.542, -93.038, -125.795, -155.699, -216.955, -323.492, -328.848]}, "M": {"macd_pos": false, "macd_cross_up": false, "macd_cross_dn": true, "macd_approaching_up": false, "macd_approaching_dn": false, "macd_curl_up": false, "macd_curl_dn": false, "macd_bars_to_cross": null, "stoch_cross_up": false, "stoch_cross_dn": false, "rsi14": 50.0, "rsi5": 35.0, "stoch": 4.0, "spark_rsi": [53.4, 53.9, 62.4, 62.9, 58.4, 61.9, 64.0, 65.9, 66.7, 71.0, 66.1, 65.8, 64.6, 69.4, 65.3, 56.5, 59.7, 57.0, 48.1, 49.8], "spark_stoch": [79.0, 78.1, 87.9, 94.4, 93.6, 91.8, 91.8, 98.2, 100.0, 100.0, 91.8, 83.1, 72.4, 77.6, 75.0, 52.4, 29.4, 8.3, 8.3, 3.6], "spark_hist": [556.782, 546.255, 690.58, 760.857, 704.1, 707.609, 722.342, 736.495, 722.541, 784.102, 713.957, 620.822, 505.219, 507.115, 421.019, 214.03, 122.285, 6.311, -227.737, -346.204]}}'></div>
-    </div>
-    
-    <p class="note" style="margin:10px 0 0;text-transform:none"><span class="l-en">Looking at individual HK names?</span><span class="l-zh">想看个股？</span>
-      <a href="hk_stocks.html" style="color:var(--link);font-weight:600">→ <span class="l-en">HK Stock Desk</span><span class="l-zh">港股研判台</span></a>
-      <span style="margin:0 6px;color:var(--muted)">·</span>
-      <a href="hk_heatmap.html" style="color:var(--link);font-weight:600">🔥 <span class="l-en">Market heatmap</span><span class="l-zh">市场热力图</span></a></p>
-  </div>
-  
-
-  <!-- GLOBAL RISK OVERLAY — HK's primary high-frequency driver -->
+    <!-- GLOBAL RISK OVERLAY — HK's primary high-frequency driver -->
   
   <div class="panel span12" id="global-risk">
     <h2><span class="l-en">Global Risk Overlay</span><span class="l-zh">全球风险开关</span> · <span class="l-en">HK's primary driver</span><span class="l-zh">香港主驱动</span></h2>

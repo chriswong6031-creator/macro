@@ -193,15 +193,6 @@
   .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
   .gauge i { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--text); border: 2px solid var(--panel); transform: translate(-50%,-50%); }
   .foot { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; line-height: 1.7; }
-  /* major-index health strip (macro page) */
-  .idx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  @media (max-width: 760px) { .idx-grid { grid-template-columns: 1fr; } }
-  .idx-tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
-  .idx-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
-  .idx-px { font-variant-numeric: tabular-nums; color: var(--muted); }
-  .idx-row, .idx-trend { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
-  .idx-trend { margin-top: 3px; color: var(--muted); }
-  .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
   /* nav split-dropdown (macro / stocks / lookup) */
   .nav-dd { position: relative; }
   .nav-dd .caret { font-size: 9px; opacity: .6; }
@@ -597,24 +588,6 @@
 
 <div class="grid">
 
-  <!-- ===================== HIGH-IMPACT EVENT-RISK BANNER (macro) ===================== -->
-  {% if mode != 'stocks' and event_strip %}
-  <div class="panel span12" style="padding:0;border:none;background:none">
-    <div class="evbanner">
-      <span class="ev-h">⏳ {{ t('Event risk · next 14d', '事件风险 · 未来14天') }}</span>
-      <span class="ev-list">
-        {% for ev in event_strip[:7] %}
-        <span class="ev-chip" title="{{ ev.date }} · {{ ev.category }}">
-          <span class="l-en">{{ ev.name_en }}</span><span class="l-zh">{{ ev.name_zh }}</span>
-          <span class="ev-rg">{{ ev.region }}</span>
-          <span class="ev-d">{% if ev.days_until <= 0 %}{{ t('today', '今日') }}{% else %}+{{ ev.days_until }}{{ t('d', '天') }}{% endif %}</span>
-        </span>
-        {% endfor %}
-      </span>
-    </div>
-  </div>
-  {% endif %}
-
   {% if mode == 'stocks' %}
   <!-- ===================== HK STOCK DESK — command-center hero ===================== -->
   {% set RS = (hk_scoreboard.risk_state if hk_scoreboard else (gv.state if gv else 'unknown')) %}
@@ -1008,9 +981,11 @@
       'eyebrow_help_en': "What kind of HK market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite (the 12-leg RORO composite, heavily global), the volatility regime (VHSI + HIBOR funding), market breadth, HKMA/peg liquidity, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction — every leg reads what has ALREADY turned, not a forecast. DISPLAY-ONLY: a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.",
       'eyebrow_help_zh': "当前是什么样的港股市场 — 一个把多周期大盘趋势、跨资产风险偏好（12 腿 RORO 综合，高度全球化）、波动率环境（VHSI＋HIBOR 资金）、市场广度、金管局／联汇流动性，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测 — 每条腿读取的是已经转向的东西，而非预测。仅供展示：它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。",
       'tape_title_en': "Multi-timeframe tape · the broad HK market", 'tape_title_zh': "多周期趋势 · 港股大盘",
-      'tape_help_en': "How the broad HK market is trending across four timeframes — 1D, 3D, 7D and 30D — for the Hang Seng, HSCEI and HS TECH. ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes — confirmation comes when the longer horizons align.",
-      'tape_help_zh': "港股大盘在四个周期（1D、3D、7D、30D）上的趋势 — 恒生指数、国企指数、恒生科技。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论 — 待较长周期对齐方为确认。",
-      'divider_en': "Macro backdrop — the growth × inflation regime", 'divider_zh': "宏观背景 — 增长 × 通胀周期"
+      'tape_help_en': "One non-duplicated tape read: confluence shows whether the major HK indices agree across timeframes, while the Hang Seng technical chart keeps the detailed daily / 3-day / weekly RSI, Stochastics and MACD view.",
+      'tape_help_zh': "一个不重复的大盘读数：合流标签显示香港主要指数在多周期上是否一致；恒生技术图保留日线、3日、周线 RSI、随机指标与 MACD 细节。",
+      'divider_en': "Macro backdrop — the growth × inflation regime", 'divider_zh': "宏观背景 — 增长 × 通胀周期",
+      'show_benchmark_mtf': True,
+      'compact_tape': True
     } %}
     {% endif %}
     {# ===== ONE side-by-side board: Market State (left) + the HK regime backdrop (right) ===== #}
@@ -1096,6 +1071,24 @@
     {% if latest.confirming %}<p class="note" style="margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair);text-transform:none">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
 
+  <!-- ===================== HIGH-IMPACT EVENT-RISK BANNER (macro) ===================== -->
+  {% if event_strip %}
+  <div class="panel span12" style="padding:0;border:none;background:none">
+    <div class="evbanner">
+      <span class="ev-h">⏳ {{ t('Event risk · next 14d', '事件风险 · 未来14天') }}</span>
+      <span class="ev-list">
+        {% for ev in event_strip[:7] %}
+        <span class="ev-chip" title="{{ ev.date }} · {{ ev.category }}">
+          <span class="l-en">{{ ev.name_en }}</span><span class="l-zh">{{ ev.name_zh }}</span>
+          <span class="ev-rg">{{ ev.region }}</span>
+          <span class="ev-d">{% if ev.days_until <= 0 %}{{ t('today', '今日') }}{% else %}+{{ ev.days_until }}{{ t('d', '天') }}{% endif %}</span>
+        </span>
+        {% endfor %}
+      </span>
+    </div>
+  </div>
+  {% endif %}
+
   {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
      (aibrief.html). Replaces the old inline AI Master Brief panel. #}
   <a class="panel span12 aibrief-card" href="aibrief.html">
@@ -1106,47 +1099,6 @@
     </span>
     <span class="abc-go">→</span>
   </a>
-
-  <!-- ===================== MAJOR HK INDICES — HEALTH & MOMENTUM (merged) ===================== -->
-  {% if index_health or benchmark %}
-  <div class="panel span12" id="index-health">
-    <h2>{{ t('Major HK indices — health & momentum', '香港主要指数 — 健康度与动量') }}
-      {{ help("How the market itself is doing, before the macro engine. For each major HK index: price, % below the 52-week high (drawdown), RSI(14), and trend vs the 50/200-day averages (RSI &gt; 70 stretched, &lt; 30 washed out; Hang Seng TECH is the 3033.HK ETF, the cleanest stored HSTECH exposure). Below, the Hang Seng's multi-timeframe momentum (daily / weekly / monthly RSI · Stochastics · MACD) — the index scoreboard and the per-index health, in one place.", "在看宏观引擎之前，先看市场本身。各主要香港指数：价格、距52周高点的回撤、RSI(14)，以及相对50/200日均线的趋势（RSI &gt; 70 偏热，&lt; 30 超卖；恒生科技采用 3033.HK ETF，为库内最干净的恒生科技敞口）。下方为恒生指数的多周期动量（日/周/月的 RSI · 随机指标 · MACD）—— 指数计分板与各指数健康度合于一处。") }}
-    </h2>
-    {% if index_health %}
-    <div class="idx-grid">
-      {% for ix in index_health %}
-      <div class="idx-tile">
-        <div class="idx-top"><b>{{ t(ix.label, ix.label_zh) }}</b> <span class="idx-px">{{ '%.2f'|format(ix.price) }}</span></div>
-        <div class="idx-row">
-          <span class="{{ 'pos' if ix.dd >= -1 else ('warn' if ix.dd >= -10 else 'neg') }}">{{ '%+.1f'|format(ix.dd) }}% {{ t('off high', '距高点') }}</span>
-          <span>RSI {{ ix.rsi if ix.rsi is not none else '—' }}</span>
-        </div>
-        <div class="idx-trend">
-          <span class="{{ 'pos' if ix.above200 else ('' if ix.above200 is none else 'neg') }}">{{ '✓' if ix.above200 else ('—' if ix.above200 is none else '✕') }} 200d</span>
-          <span class="{{ 'pos' if ix.above50 else 'neg' }}">{{ '✓' if ix.above50 else '✕' }} 50d</span>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-    {% if benchmark %}
-    <div style="margin-top:15px;padding-top:13px;border-top:1px solid var(--line)">
-      <h3 style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 8px">
-        <span>{{ td(benchmark.name) }} <span class="note" style="text-transform:none;font-weight:400">· {{ t('multi-timeframe momentum', '多周期动量') }}</span></span>
-        <span style="font-size:17px;font-weight:800">{{ '%.2f'|format(benchmark.price) }}</span>
-        <span class="{{ 'pos' if benchmark.chg>=0 else 'neg' }}" style="font-weight:700">{{ '%+.2f'|format(benchmark.chg) }}%</span>
-        <span class="lad {{ 'up' if benchmark.dir=='up' else ('down' if benchmark.dir=='down' else 'flat') }}">{{ td(benchmark.label or benchmark.state) }}</span>
-      </h3>
-      <div class="mtf" data-mtf='{{ benchmark.mtf_json }}'></div>
-    </div>
-    {% endif %}
-    <p class="note" style="margin:10px 0 0;text-transform:none">{{ t('Looking at individual HK names?', '想看个股？') }}
-      <a href="hk_stocks.html" style="color:var(--link);font-weight:600">→ {{ t('HK Stock Desk', '港股研判台') }}</a>
-      <span style="margin:0 6px;color:var(--muted)">·</span>
-      <a href="hk_heatmap.html" style="color:var(--link);font-weight:600">🔥 {{ t('Market heatmap', '市场热力图') }}</a></p>
-  </div>
-  {% endif %}
 
   <!-- GLOBAL RISK OVERLAY — HK's primary high-frequency driver -->
   {% if gv %}
