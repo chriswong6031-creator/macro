@@ -1,0 +1,10099 @@
+{
+  "AAP": {
+    "bars": 3143,
+    "fires": 43
+  },
+  "AAPL": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "AARD": {
+    "bars": 347,
+    "fires": 3
+  },
+  "AAT": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ABG": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "ABM": {
+    "bars": 3143,
+    "fires": 70
+  },
+  "ABNB": {
+    "bars": 1395,
+    "fires": 23
+  },
+  "ABR": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "ABAT": {
+    "bars": 2604,
+    "fires": 45
+  },
+  "ABBV": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "ABCB": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "ABEO": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "A": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "AAL": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "AAMI": {
+    "bars": 2949,
+    "fires": 53
+  },
+  "AAOI": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "ABSI": {
+    "bars": 1242,
+    "fires": 25
+  },
+  "ABT": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "ABUS": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "ABX": {
+    "bars": 1457,
+    "fires": 23
+  },
+  "ACA": {
+    "bars": 1923,
+    "fires": 39
+  },
+  "ACAD": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "ACCO": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "ACDC": {
+    "bars": 1037,
+    "fires": 22
+  },
+  "ACEL": {
+    "bars": 2225,
+    "fires": 33
+  },
+  "ACGL": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "ACH": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ACHR": {
+    "bars": 1389,
+    "fires": 26
+  },
+  "ACIC": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "ACIW": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "ACLS": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "ACMR": {
+    "bars": 2176,
+    "fires": 33
+  },
+  "ACTU": {
+    "bars": 473,
+    "fires": 5
+  },
+  "ACU": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "ACVA": {
+    "bars": 1325,
+    "fires": 13
+  },
+  "ADAM": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "ACRE": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "ACRS": {
+    "bars": 2700,
+    "fires": 40
+  },
+  "ACT": {
+    "bars": 1203,
+    "fires": 23
+  },
+  "ACTG": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ACN": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "ACNB": {
+    "bars": 3143,
+    "fires": 75
+  },
+  "ACNT": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "ACR": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "ADBE": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "ADCT": {
+    "bars": 1539,
+    "fires": 23
+  },
+  "ADEA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ADI": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "ADPT": {
+    "bars": 1763,
+    "fires": 33
+  },
+  "ADSK": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "ADTN": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "ADUS": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "ADM": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "ADMA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ADNT": {
+    "bars": 2440,
+    "fires": 53
+  },
+  "ADP": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "ADV": {
+    "bars": 1633,
+    "fires": 23
+  },
+  "AEE": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "AEHR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "AEIS": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "AEO": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "AEP": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "AES": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "AESI": {
+    "bars": 832,
+    "fires": 10
+  },
+  "AFRI": {
+    "bars": 1357,
+    "fires": 27
+  },
+  "AFRM": {
+    "bars": 1370,
+    "fires": 19
+  },
+  "AGIO": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "AGL": {
+    "bars": 1310,
+    "fires": 21
+  },
+  "AEVA": {
+    "bars": 1595,
+    "fires": 23
+  },
+  "AEYE": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "AFCG": {
+    "bars": 1328,
+    "fires": 23
+  },
+  "AFL": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "AHCO": {
+    "bars": 2033,
+    "fires": 43
+  },
+  "AHR": {
+    "bars": 602,
+    "fires": 8
+  },
+  "AHRT": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "AI": {
+    "bars": 1396,
+    "fires": 23
+  },
+  "AGM": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "AGNT": {
+    "bars": 2111,
+    "fires": 41
+  },
+  "AGX": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "AGYS": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "AIP": {
+    "bars": 1174,
+    "fires": 19
+  },
+  "AIR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "AIRJ": {
+    "bars": 1108,
+    "fires": 13
+  },
+  "AIRO": {
+    "bars": 264,
+    "fires": 1
+  },
+  "AIG": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "AII": {
+    "bars": 289,
+    "fires": 5
+  },
+  "AIN": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "AIOT": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "AIRS": {
+    "bars": 1172,
+    "fires": 11
+  },
+  "AISP": {
+    "bars": 1293,
+    "fires": 21
+  },
+  "AIT": {
+    "bars": 3140,
+    "fires": 65
+  },
+  "AIV": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "AKR": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "AKTS": {
+    "bars": 120,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "ALAB": {
+    "bars": 573,
+    "fires": 6
+  },
+  "ALB": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "AIZ": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "AJG": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "AKAM": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "AKBA": {
+    "bars": 3090,
+    "fires": 50
+  },
+  "ALGN": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "ALGT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "ALH": {
+    "bars": 183,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "ALHC": {
+    "bars": 1323,
+    "fires": 22
+  },
+  "ALCO": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "ALDX": {
+    "bars": 3060,
+    "fires": 51
+  },
+  "ALEC": {
+    "bars": 1860,
+    "fires": 31
+  },
+  "ALG": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "ALIT": {
+    "bars": 1497,
+    "fires": 31
+  },
+  "ALK": {
+    "bars": 3140,
+    "fires": 45
+  },
+  "ALKS": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ALKT": {
+    "bars": 1311,
+    "fires": 21
+  },
+  "ALMS": {
+    "bars": 504,
+    "fires": 6
+  },
+  "ALMU": {
+    "bars": 839,
+    "fires": 14
+  },
+  "ALNT": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "ALNY": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "ALL": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "ALLE": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "ALLO": {
+    "bars": 1940,
+    "fires": 38
+  },
+  "ALM": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "ALRM": {
+    "bars": 2770,
+    "fires": 49
+  },
+  "ALRS": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "ALT": {
+    "bars": 2287,
+    "fires": 35
+  },
+  "ALTG": {
+    "bars": 1807,
+    "fires": 27
+  },
+  "ALTI": {
+    "bars": 1302,
+    "fires": 31
+  },
+  "ALX": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "AMAL": {
+    "bars": 1984,
+    "fires": 29
+  },
+  "AMAT": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "AMBA": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "AMBP": {
+    "bars": 1232,
+    "fires": 16
+  },
+  "AMBQ": {
+    "bars": 233,
+    "fires": 1
+  },
+  "AMC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "AMCR": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "AMCX": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "AMD": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "AME": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "AMPH": {
+    "bars": 3023,
+    "fires": 54
+  },
+  "AMPL": {
+    "bars": 1195,
+    "fires": 24
+  },
+  "AMPX": {
+    "bars": 952,
+    "fires": 13
+  },
+  "AMR": {
+    "bars": 1356,
+    "fires": 21
+  },
+  "AMGN": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "AMLX": {
+    "bars": 1124,
+    "fires": 20
+  },
+  "AMN": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "AMP": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "AMRC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "AMRX": {
+    "bars": 2050,
+    "fires": 35
+  },
+  "AMSC": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "AMSF": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "AMT": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "AMTB": {
+    "bars": 1935,
+    "fires": 36
+  },
+  "AMZN": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "ANAB": {
+    "bars": 2371,
+    "fires": 38
+  },
+  "ANGO": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "ANIK": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "ANIP": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "ANNX": {
+    "bars": 1492,
+    "fires": 21
+  },
+  "ANDE": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ANET": {
+    "bars": 3033,
+    "fires": 44
+  },
+  "ANF": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ANGI": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "AOMR": {
+    "bars": 1266,
+    "fires": 20
+  },
+  "AON": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "AORT": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "AOS": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "AOSL": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "AOUT": {
+    "bars": 1472,
+    "fires": 26
+  },
+  "APA": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "APAM": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "APLD": {
+    "bars": 1058,
+    "fires": 15
+  },
+  "APLE": {
+    "bars": 2798,
+    "fires": 52
+  },
+  "APO": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "APOG": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "APD": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "APEI": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "APGE": {
+    "bars": 745,
+    "fires": 11
+  },
+  "APH": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "APP": {
+    "bars": 1310,
+    "fires": 16
+  },
+  "APPN": {
+    "bars": 2288,
+    "fires": 42
+  },
+  "APPS": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "APTV": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "AQST": {
+    "bars": 1995,
+    "fires": 29
+  },
+  "ARAI": {
+    "bars": 284,
+    "fires": 5
+  },
+  "ARAY": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "ARCB": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "ARCT": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "ARDT": {
+    "bars": 491,
+    "fires": 7
+  },
+  "ARDX": {
+    "bars": 3027,
+    "fires": 59
+  },
+  "ARE": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "AREN": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ARES": {
+    "bars": 3057,
+    "fires": 53
+  },
+  "ARHS": {
+    "bars": 1168,
+    "fires": 20
+  },
+  "ARI": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "ARKO": {
+    "bars": 1746,
+    "fires": 28
+  },
+  "ARL": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ARLO": {
+    "bars": 1988,
+    "fires": 30
+  },
+  "ARM": {
+    "bars": 702,
+    "fires": 9
+  },
+  "AROC": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "AROW": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "ARQ": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "ARQT": {
+    "bars": 1613,
+    "fires": 27
+  },
+  "ASAN": {
+    "bars": 1445,
+    "fires": 21
+  },
+  "ASB": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ASC": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "ASIC": {
+    "bars": 266,
+    "fires": 4
+  },
+  "ASIX": {
+    "bars": 2462,
+    "fires": 45
+  },
+  "ASLE": {
+    "bars": 1846,
+    "fires": 31
+  },
+  "ASML": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "ASO": {
+    "bars": 1443,
+    "fires": 22
+  },
+  "ARR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "ARRY": {
+    "bars": 1434,
+    "fires": 26
+  },
+  "ARVN": {
+    "bars": 1950,
+    "fires": 35
+  },
+  "ARWR": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "ASPI": {
+    "bars": 912,
+    "fires": 13
+  },
+  "ASPN": {
+    "bars": 3031,
+    "fires": 49
+  },
+  "ASTE": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "ASTH": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "ATEX": {
+    "bars": 2870,
+    "fires": 50
+  },
+  "ATKR": {
+    "bars": 2529,
+    "fires": 39
+  },
+  "ATLC": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "ATLN": {
+    "bars": 1216,
+    "fires": 19
+  },
+  "ATLO": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "ATMU": {
+    "bars": 777,
+    "fires": 10
+  },
+  "ATNI": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "ATO": {
+    "bars": 3140,
+    "fires": 63
+  },
+  "ASTS": {
+    "bars": 1671,
+    "fires": 25
+  },
+  "ASUR": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "ATEC": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ATEN": {
+    "bars": 3089,
+    "fires": 57
+  },
+  "AVBP": {
+    "bars": 610,
+    "fires": 11
+  },
+  "AVD": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "AVGO": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "AVIR": {
+    "bars": 1423,
+    "fires": 24
+  },
+  "ATOM": {
+    "bars": 2489,
+    "fires": 41
+  },
+  "ATRC": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ATRO": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "ATYR": {
+    "bars": 2805,
+    "fires": 45
+  },
+  "AUB": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "AUPH": {
+    "bars": 2975,
+    "fires": 59
+  },
+  "AURA": {
+    "bars": 1172,
+    "fires": 19
+  },
+  "AVA": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "AVAH": {
+    "bars": 1301,
+    "fires": 20
+  },
+  "AVAV": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "AVB": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "AVBH": {
+    "bars": 3143,
+    "fires": 37
+  },
+  "AVPT": {
+    "bars": 1672,
+    "fires": 30
+  },
+  "AVR": {
+    "bars": 387,
+    "fires": 5
+  },
+  "AVXL": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "AVY": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "AVNS": {
+    "bars": 2941,
+    "fires": 54
+  },
+  "AVNT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "AVNW": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "AVO": {
+    "bars": 1443,
+    "fires": 24
+  },
+  "AWK": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "AWR": {
+    "bars": 3143,
+    "fires": 72
+  },
+  "AX": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "AXGN": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "AXON": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "AXP": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "AXSM": {
+    "bars": 2668,
+    "fires": 46
+  },
+  "AZN": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "BAC": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "BALL": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "BALY": {
+    "bars": 392,
+    "fires": 1
+  },
+  "BANC": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "BAND": {
+    "bars": 2171,
+    "fires": 35
+  },
+  "BANF": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "BANR": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "BARK": {
+    "bars": 1389,
+    "fires": 24
+  },
+  "AZO": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "AZTA": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "AZZ": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "BA": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "BATRA": {
+    "bars": 2567,
+    "fires": 43
+  },
+  "BATRK": {
+    "bars": 2567,
+    "fires": 50
+  },
+  "BAX": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "BBAI": {
+    "bars": 1318,
+    "fires": 18
+  },
+  "BBBY": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "BBCP": {
+    "bars": 2228,
+    "fires": 42
+  },
+  "BBIO": {
+    "bars": 1763,
+    "fires": 31
+  },
+  "BBNX": {
+    "bars": 357,
+    "fires": 1
+  },
+  "BBSI": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "BBT": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "BBUC": {
+    "bars": 1085,
+    "fires": 26
+  },
+  "BBW": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "BBY": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "BCAL": {
+    "bars": 3143,
+    "fires": 40
+  },
+  "BCAX": {
+    "bars": 451,
+    "fires": 5
+  },
+  "BCBP": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "BCC": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "BCML": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "BCO": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "BCPC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "BE": {
+    "bars": 1995,
+    "fires": 25
+  },
+  "BEAM": {
+    "bars": 1609,
+    "fires": 29
+  },
+  "BEEP": {
+    "bars": 714,
+    "fires": 11
+  },
+  "BELFA": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "BELFB": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "BEN": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "BETA": {
+    "bars": 165,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "BETR": {
+    "bars": 1299,
+    "fires": 23
+  },
+  "BCRX": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "BDC": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "BDN": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "BDX": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "BF-B": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "BFC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "BFH": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "BFLY": {
+    "bars": 1501,
+    "fires": 27
+  },
+  "BFS": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "BFST": {
+    "bars": 2060,
+    "fires": 36
+  },
+  "BG": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "BGC": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "BHR": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "BHRB": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "BHVN": {
+    "bars": 946,
+    "fires": 12
+  },
+  "BIIB": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "BGS": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "BH": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "BHB": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "BHE": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "BIOA": {
+    "bars": 442,
+    "fires": 3
+  },
+  "BIPC": {
+    "bars": 1572,
+    "fires": 27
+  },
+  "BJ": {
+    "bars": 2010,
+    "fires": 43
+  },
+  "BJRI": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "BKD": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "BKE": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "BKH": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "BKKT": {
+    "bars": 1409,
+    "fires": 18
+  },
+  "BKU": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "BKV": {
+    "bars": 442,
+    "fires": 6
+  },
+  "BL": {
+    "bars": 2431,
+    "fires": 45
+  },
+  "BLBD": {
+    "bars": 3090,
+    "fires": 51
+  },
+  "BKNG": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "BKR": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "BKSY": {
+    "bars": 1640,
+    "fires": 23
+  },
+  "BKTI": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "BLD": {
+    "bars": 2774,
+    "fires": 52
+  },
+  "BLDR": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "BLFS": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "BLK": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "BLKB": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "BLMN": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "BLND": {
+    "bars": 1246,
+    "fires": 23
+  },
+  "BLX": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "BLZE": {
+    "bars": 1163,
+    "fires": 17
+  },
+  "BMBL": {
+    "bars": 1353,
+    "fires": 21
+  },
+  "BMI": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "BMRC": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "BMY": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "BNED": {
+    "bars": 2752,
+    "fires": 46
+  },
+  "BNL": {
+    "bars": 1454,
+    "fires": 23
+  },
+  "BNTC": {
+    "bars": 3024,
+    "fires": 54
+  },
+  "BNY": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "BOC": {
+    "bars": 2276,
+    "fires": 49
+  },
+  "BOH": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "BOOM": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "BOOT": {
+    "bars": 2934,
+    "fires": 45
+  },
+  "BORR": {
+    "bars": 1741,
+    "fires": 25
+  },
+  "BOW": {
+    "bars": 528,
+    "fires": 8
+  },
+  "BOX": {
+    "bars": 2877,
+    "fires": 59
+  },
+  "BRCB": {
+    "bars": 202,
+    "fires": 3
+  },
+  "BRCC": {
+    "bars": 1101,
+    "fires": 17
+  },
+  "BRK-B": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "BRO": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "BPOP": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "BPRN": {
+    "bars": 2285,
+    "fires": 37
+  },
+  "BR": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "BRBS": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "BRSL": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "BRSP": {
+    "bars": 2115,
+    "fires": 42
+  },
+  "BRT": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "BRZE": {
+    "bars": 1159,
+    "fires": 19
+  },
+  "BTBT": {
+    "bars": 2083,
+    "fires": 33
+  },
+  "BTDR": {
+    "bars": 1238,
+    "fires": 17
+  },
+  "BTMD": {
+    "bars": 1301,
+    "fires": 21
+  },
+  "BTSG": {
+    "bars": 610,
+    "fires": 5
+  },
+  "BSET": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "BSRR": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "BSVN": {
+    "bars": 1955,
+    "fires": 31
+  },
+  "BSX": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "BTU": {
+    "bars": 2325,
+    "fires": 40
+  },
+  "BULL": {
+    "bars": 969,
+    "fires": 14
+  },
+  "BUR": {
+    "bars": 1432,
+    "fires": 29
+  },
+  "BURL": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "BUSE": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "BV": {
+    "bars": 2013,
+    "fires": 35
+  },
+  "BVFL": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "BVS": {
+    "bars": 1353,
+    "fires": 32
+  },
+  "BWB": {
+    "bars": 2087,
+    "fires": 43
+  },
+  "BWFG": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "BWIN": {
+    "bars": 1680,
+    "fires": 27
+  },
+  "BWMN": {
+    "bars": 1294,
+    "fires": 24
+  },
+  "BXP": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "BY": {
+    "bars": 2263,
+    "fires": 43
+  },
+  "BYD": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "BYND": {
+    "bars": 1802,
+    "fires": 25
+  },
+  "BWXT": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "BX": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "BXC": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "BXMT": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "BYRN": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "BZAI": {
+    "bars": 1109,
+    "fires": 18
+  },
+  "BZH": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "C": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "CABO": {
+    "bars": 2781,
+    "fires": 54
+  },
+  "CAC": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "CADL": {
+    "bars": 1239,
+    "fires": 20
+  },
+  "CAG": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "CARE": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "CARG": {
+    "bars": 2191,
+    "fires": 34
+  },
+  "CARL": {
+    "bars": 238,
+    "fires": 4
+  },
+  "CARR": {
+    "bars": 1577,
+    "fires": 26
+  },
+  "CAH": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "CAKE": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "CAL": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "CALM": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "CALX": {
+    "bars": 3143,
+    "fires": 70
+  },
+  "CALY": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "CAMT": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "CAPR": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "CBLL": {
+    "bars": 431,
+    "fires": 3
+  },
+  "CBNA": {
+    "bars": 436,
+    "fires": 6
+  },
+  "CBNK": {
+    "bars": 1951,
+    "fires": 27
+  },
+  "CBOE": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "CARS": {
+    "bars": 2284,
+    "fires": 39
+  },
+  "CASH": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "CASS": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "CASY": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "CBAN": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CBFV": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "CBK": {
+    "bars": 188,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "CBL": {
+    "bars": 1170,
+    "fires": 16
+  },
+  "CAT": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "CATX": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "CATY": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "CB": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "CBRE": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "CBRL": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "CBRS": {
+    "bars": 31,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "CBT": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "CBU": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "CBZ": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CC": {
+    "bars": 2775,
+    "fires": 46
+  },
+  "CCB": {
+    "bars": 1999,
+    "fires": 30
+  },
+  "CCBG": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "CCEP": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "CCI": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "CCJ": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "CCL": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "CCNE": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "CCOI": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "CCRN": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CCS": {
+    "bars": 3028,
+    "fires": 56
+  },
+  "CCSI": {
+    "bars": 1193,
+    "fires": 21
+  },
+  "CD": {
+    "bars": 2826,
+    "fires": 54
+  },
+  "CDE": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CDNA": {
+    "bars": 3008,
+    "fires": 47
+  },
+  "CDNL": {
+    "bars": 140,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "CDNS": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "CDP": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "CDRE": {
+    "bars": 1168,
+    "fires": 18
+  },
+  "CDW": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "CDXS": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "CDZI": {
+    "bars": 3143,
+    "fires": 45
+  },
+  "CECO": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "CEG": {
+    "bars": 1117,
+    "fires": 19
+  },
+  "CELC": {
+    "bars": 2207,
+    "fires": 36
+  },
+  "CENT": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "CENTA": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "CENX": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CERS": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "CEVA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "CF": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "CFBK": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CFFI": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "CFFN": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "CFG": {
+    "bars": 2957,
+    "fires": 62
+  },
+  "CFR": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "CGEM": {
+    "bars": 1376,
+    "fires": 31
+  },
+  "CGNX": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "CGON": {
+    "bars": 611,
+    "fires": 10
+  },
+  "CHCO": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "CHCT": {
+    "bars": 2796,
+    "fires": 53
+  },
+  "CHD": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "CHEF": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "CHMG": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "CHRS": {
+    "bars": 2929,
+    "fires": 54
+  },
+  "CHRW": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "CIFR": {
+    "bars": 1431,
+    "fires": 26
+  },
+  "CIM": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "CINF": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "CIVB": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "CHTR": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "CI": {
+    "bars": 3140,
+    "fires": 69
+  },
+  "CIA": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "CIEN": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "CIX": {
+    "bars": 3143,
+    "fires": 75
+  },
+  "CL": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "CLAR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "CLB": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "CLBK": {
+    "bars": 2060,
+    "fires": 44
+  },
+  "CLDT": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "CLDX": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "CLFD": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "CLMB": {
+    "bars": 3143,
+    "fires": 44
+  },
+  "CLMT": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "CLNE": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "CLOV": {
+    "bars": 1521,
+    "fires": 26
+  },
+  "CLPR": {
+    "bars": 2360,
+    "fires": 39
+  },
+  "CLPT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "CLSK": {
+    "bars": 2418,
+    "fires": 37
+  },
+  "CLW": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "CLX": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "CMC": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "CMCL": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "CMCO": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CMCSA": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "CMDB": {
+    "bars": 294,
+    "fires": 3
+  },
+  "CME": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "CMG": {
+    "bars": 3140,
+    "fires": 46
+  },
+  "CMI": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "CMP": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "CMPR": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "CMPX": {
+    "bars": 1318,
+    "fires": 18
+  },
+  "CMRC": {
+    "bars": 1484,
+    "fires": 27
+  },
+  "CMRE": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "CMS": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "CMT": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "CMTG": {
+    "bars": 1169,
+    "fires": 18
+  },
+  "CNC": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "CNDT": {
+    "bars": 2400,
+    "fires": 46
+  },
+  "CNK": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "CNMD": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CNNE": {
+    "bars": 2164,
+    "fires": 36
+  },
+  "CNO": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "CNOB": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CNP": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "CNR": {
+    "bars": 2168,
+    "fires": 29
+  },
+  "CNS": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "CNX": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "CNXN": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "COCO": {
+    "bars": 1178,
+    "fires": 19
+  },
+  "CODI": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "COF": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "COFS": {
+    "bars": 3143,
+    "fires": 79
+  },
+  "COGT": {
+    "bars": 2076,
+    "fires": 34
+  },
+  "COHR": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "COHU": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "COIN": {
+    "bars": 1308,
+    "fires": 20
+  },
+  "COLB": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "COLL": {
+    "bars": 2805,
+    "fires": 46
+  },
+  "COMP": {
+    "bars": 1319,
+    "fires": 22
+  },
+  "CON": {
+    "bars": 486,
+    "fires": 5
+  },
+  "COO": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "COOK": {
+    "bars": 1237,
+    "fires": 20
+  },
+  "COP": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "COR": {
+    "bars": 3140,
+    "fires": 44
+  },
+  "CORZ": {
+    "bars": 612,
+    "fires": 4
+  },
+  "COSO": {
+    "bars": 289,
+    "fires": 2
+  },
+  "COST": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "COUR": {
+    "bars": 1320,
+    "fires": 18
+  },
+  "CPAY": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "CPF": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "CPK": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "CRCL": {
+    "bars": 267,
+    "fires": 2
+  },
+  "CRCT": {
+    "bars": 1323,
+    "fires": 26
+  },
+  "CRD-A": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "CRDF": {
+    "bars": 3143,
+    "fires": 45
+  },
+  "CPRI": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "CPRT": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "CPRX": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "CPS": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "CPSS": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "CPT": {
+    "bars": 3140,
+    "fires": 69
+  },
+  "CRAI": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "CRC": {
+    "bars": 1425,
+    "fires": 24
+  },
+  "CRDO": {
+    "bars": 1111,
+    "fires": 14
+  },
+  "CRGY": {
+    "bars": 1145,
+    "fires": 21
+  },
+  "CRH": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "CRI": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "CRML": {
+    "bars": 1104,
+    "fires": 21
+  },
+  "CRMT": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "CRNC": {
+    "bars": 1708,
+    "fires": 27
+  },
+  "CRNX": {
+    "bars": 2000,
+    "fires": 40
+  },
+  "CRSP": {
+    "bars": 2438,
+    "fires": 41
+  },
+  "CRSR": {
+    "bars": 1450,
+    "fires": 22
+  },
+  "CRTO": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "CRVL": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "CRVS": {
+    "bars": 2584,
+    "fires": 46
+  },
+  "CRWD": {
+    "bars": 1774,
+    "fires": 24
+  },
+  "CRWV": {
+    "bars": 317,
+    "fires": 2
+  },
+  "CSCO": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "CRK": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "CRL": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "CRM": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "CRMD": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "CSGP": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "CSPI": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "CSR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "CSTL": {
+    "bars": 1744,
+    "fires": 28
+  },
+  "CTKB": {
+    "bars": 1241,
+    "fires": 19
+  },
+  "CTO": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "CTOS": {
+    "bars": 2194,
+    "fires": 36
+  },
+  "CTRE": {
+    "bars": 3042,
+    "fires": 53
+  },
+  "CTAS": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "CTBI": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "CTEV": {
+    "bars": 1569,
+    "fires": 22
+  },
+  "CTGO": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "CSTM": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "CSV": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "CSW": {
+    "bars": 2704,
+    "fires": 45
+  },
+  "CSX": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "CTVA": {
+    "bars": 1783,
+    "fires": 35
+  },
+  "CUBI": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "CURB": {
+    "bars": 442,
+    "fires": 5
+  },
+  "CURI": {
+    "bars": 1629,
+    "fires": 27
+  },
+  "CTRI": {
+    "bars": 552,
+    "fires": 5
+  },
+  "CTRN": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "CTS": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "CTSH": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "CURV": {
+    "bars": 1256,
+    "fires": 18
+  },
+  "CV": {
+    "bars": 252,
+    "fires": 2
+  },
+  "CVBF": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "CVCO": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "CVI": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "CVLG": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "CVLT": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "CVNA": {
+    "bars": 2304,
+    "fires": 36
+  },
+  "CVRX": {
+    "bars": 1257,
+    "fires": 20
+  },
+  "CVS": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "CVSA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "CVX": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "CWK": {
+    "bars": 1989,
+    "fires": 38
+  },
+  "CWST": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "CWT": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "CXDO": {
+    "bars": 2078,
+    "fires": 40
+  },
+  "CW": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "CWBC": {
+    "bars": 3143,
+    "fires": 72
+  },
+  "CWCO": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "CWH": {
+    "bars": 2446,
+    "fires": 38
+  },
+  "CXM": {
+    "bars": 1262,
+    "fires": 22
+  },
+  "CXW": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "CYH": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "CYRX": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "DAN": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "DASH": {
+    "bars": 1396,
+    "fires": 18
+  },
+  "DAVE": {
+    "bars": 1303,
+    "fires": 23
+  },
+  "DBD": {
+    "bars": 724,
+    "fires": 12
+  },
+  "CYTK": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "CZFS": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "CZNC": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "CZR": {
+    "bars": 2959,
+    "fires": 47
+  },
+  "DBI": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "DBRG": {
+    "bars": 3021,
+    "fires": 49
+  },
+  "DC": {
+    "bars": 1064,
+    "fires": 20
+  },
+  "DCGO": {
+    "bars": 1390,
+    "fires": 24
+  },
+  "CZWI": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "D": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "DAKT": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "DAL": {
+    "bars": 3140,
+    "fires": 46
+  },
+  "DCH": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "DCO": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "DCOM": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "DCTH": {
+    "bars": 2052,
+    "fires": 29
+  },
+  "DELL": {
+    "bars": 2479,
+    "fires": 44
+  },
+  "DERM": {
+    "bars": 1162,
+    "fires": 19
+  },
+  "DFH": {
+    "bars": 1368,
+    "fires": 27
+  },
+  "DFIN": {
+    "bars": 2455,
+    "fires": 51
+  },
+  "DD": {
+    "bars": 3140,
+    "fires": 63
+  },
+  "DDD": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "DDOG": {
+    "bars": 1705,
+    "fires": 26
+  },
+  "DE": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "DEA": {
+    "bars": 2867,
+    "fires": 52
+  },
+  "DEC": {
+    "bars": 648,
+    "fires": 8
+  },
+  "DECK": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "DEI": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "DGX": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "DH": {
+    "bars": 1204,
+    "fires": 16
+  },
+  "DHC": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "DHI": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "DFTX": {
+    "bars": 2419,
+    "fires": 44
+  },
+  "DG": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "DGICA": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "DGII": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "DHR": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "DHT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "DIN": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "DINO": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "DIOD": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "DIS": {
+    "bars": 3140,
+    "fires": 45
+  },
+  "DJCO": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "DK": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "DNTH": {
+    "bars": 2018,
+    "fires": 35
+  },
+  "DNUT": {
+    "bars": 1256,
+    "fires": 24
+  },
+  "DOC": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "DOCN": {
+    "bars": 1325,
+    "fires": 22
+  },
+  "DKNG": {
+    "bars": 1741,
+    "fires": 33
+  },
+  "DKS": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "DLR": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "DLTR": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "DNA": {
+    "bars": 1308,
+    "fires": 23
+  },
+  "DNLI": {
+    "bars": 2151,
+    "fires": 42
+  },
+  "DNN": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "DNOW": {
+    "bars": 3048,
+    "fires": 57
+  },
+  "DLX": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "DMAC": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "DMC": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "DMRC": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "DOCU": {
+    "bars": 2053,
+    "fires": 33
+  },
+  "DOLE": {
+    "bars": 1236,
+    "fires": 19
+  },
+  "DOMO": {
+    "bars": 2012,
+    "fires": 34
+  },
+  "DORM": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "DRVN": {
+    "bars": 1370,
+    "fires": 20
+  },
+  "DSGN": {
+    "bars": 1322,
+    "fires": 25
+  },
+  "DSGR": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "DSP": {
+    "bars": 1354,
+    "fires": 28
+  },
+  "DOUG": {
+    "bars": 1130,
+    "fires": 17
+  },
+  "DOV": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "DOW": {
+    "bars": 1829,
+    "fires": 31
+  },
+  "DPZ": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "DRH": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "DRI": {
+    "bars": 3140,
+    "fires": 66
+  },
+  "DRS": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "DRUG": {
+    "bars": 1327,
+    "fires": 18
+  },
+  "DTE": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "DUK": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "DUOL": {
+    "bars": 1235,
+    "fires": 14
+  },
+  "DV": {
+    "bars": 1303,
+    "fires": 21
+  },
+  "DXPE": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "DY": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "DYN": {
+    "bars": 1454,
+    "fires": 22
+  },
+  "EA": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "DVA": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "DVN": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "DX": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "DXCM": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "EAT": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "EBAY": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "EBC": {
+    "bars": 1434,
+    "fires": 24
+  },
+  "EBF": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "EBMT": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "EBS": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "ECBK": {
+    "bars": 986,
+    "fires": 15
+  },
+  "ECHO": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "EDIT": {
+    "bars": 2618,
+    "fires": 47
+  },
+  "EE": {
+    "bars": 1058,
+    "fires": 21
+  },
+  "EEX": {
+    "bars": 2307,
+    "fires": 38
+  },
+  "EFC": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "ECL": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "ECPG": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "ECVT": {
+    "bars": 2200,
+    "fires": 34
+  },
+  "ED": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "EFOR": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "EFSC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "EFSI": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "EFX": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "EG": {
+    "bars": 3140,
+    "fires": 69
+  },
+  "EGAN": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "EGBN": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "EGHT": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "EGY": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "EHTH": {
+    "bars": 3143,
+    "fires": 44
+  },
+  "EIG": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "EIX": {
+    "bars": 3140,
+    "fires": 46
+  },
+  "ELME": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "ELV": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "ELVN": {
+    "bars": 1585,
+    "fires": 32
+  },
+  "EMBC": {
+    "bars": 1074,
+    "fires": 15
+  },
+  "EL": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "ELA": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "ELDN": {
+    "bars": 2965,
+    "fires": 52
+  },
+  "ELMD": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "EME": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "EML": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "EMR": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "ENOV": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "EOLS": {
+    "bars": 2110,
+    "fires": 29
+  },
+  "EOSE": {
+    "bars": 1422,
+    "fires": 26
+  },
+  "EP": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "EPAC": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "ENTG": {
+    "bars": 3140,
+    "fires": 66
+  },
+  "ENVA": {
+    "bars": 2924,
+    "fires": 56
+  },
+  "ENVX": {
+    "bars": 1379,
+    "fires": 19
+  },
+  "EOG": {
+    "bars": 3140,
+    "fires": 65
+  },
+  "ENR": {
+    "bars": 2780,
+    "fires": 49
+  },
+  "ENS": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "ENSG": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ENTA": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "EPC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "EPM": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "EPRT": {
+    "bars": 2018,
+    "fires": 36
+  },
+  "EPSN": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "ERAS": {
+    "bars": 1246,
+    "fires": 25
+  },
+  "ERIE": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "ERII": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "ES": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "EQBK": {
+    "bars": 2674,
+    "fires": 54
+  },
+  "EQIX": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "EQR": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "EQT": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "ESCA": {
+    "bars": 3143,
+    "fires": 73
+  },
+  "ESE": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "ESNT": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "ESOA": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "ETD": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ETHA": {
+    "bars": 485,
+    "fires": 5
+  },
+  "ETN": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "ETON": {
+    "bars": 1917,
+    "fires": 35
+  },
+  "EVER": {
+    "bars": 2013,
+    "fires": 27
+  },
+  "EVEX": {
+    "bars": 1040,
+    "fires": 16
+  },
+  "EVGO": {
+    "bars": 1408,
+    "fires": 18
+  },
+  "EVH": {
+    "bars": 2785,
+    "fires": 43
+  },
+  "ESPR": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "ESQ": {
+    "bars": 2266,
+    "fires": 48
+  },
+  "ESRT": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "ESS": {
+    "bars": 3140,
+    "fires": 65
+  },
+  "ETR": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "EU": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "EVC": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "EVCM": {
+    "bars": 1256,
+    "fires": 16
+  },
+  "EVI": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "EVLV": {
+    "bars": 1451,
+    "fires": 25
+  },
+  "EVMN": {
+    "bars": 163,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "EVRG": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "EXC": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "EXE": {
+    "bars": 1351,
+    "fires": 21
+  },
+  "EXFY": {
+    "bars": 1164,
+    "fires": 17
+  },
+  "EXPD": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "EVTC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "EW": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "EWBC": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "EWTX": {
+    "bars": 1323,
+    "fires": 22
+  },
+  "EXPE": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "EXPO": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "EXR": {
+    "bars": 3140,
+    "fires": 65
+  },
+  "EXTR": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "EYE": {
+    "bars": 2180,
+    "fires": 35
+  },
+  "EYPT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "F": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "FA": {
+    "bars": 1262,
+    "fires": 18
+  },
+  "FBIZ": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "FBK": {
+    "bars": 2461,
+    "fires": 49
+  },
+  "FBLA": {
+    "bars": 423,
+    "fires": 4
+  },
+  "FBNC": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "FANG": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "FAST": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "FATE": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "FBIN": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "FBP": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "FBRT": {
+    "bars": 1180,
+    "fires": 19
+  },
+  "FBYD": {
+    "bars": 686,
+    "fires": 9
+  },
+  "FC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "FCAP": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "FCBC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "FCCO": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "FCF": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "FCFS": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "FCNCA": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "FCPT": {
+    "bars": 2675,
+    "fires": 57
+  },
+  "FCX": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "FDXF": {
+    "bars": 23,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "FE": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "FEIM": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "FELE": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "FDBC": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "FDMT": {
+    "bars": 1394,
+    "fires": 21
+  },
+  "FDS": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "FDX": {
+    "bars": 3140,
+    "fires": 43
+  },
+  "FFIV": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "FG": {
+    "bars": 904,
+    "fires": 15
+  },
+  "FHN": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "FHTX": {
+    "bars": 1428,
+    "fires": 25
+  },
+  "FENC": {
+    "bars": 2210,
+    "fires": 43
+  },
+  "FER": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "FERG": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "FET": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "FF": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "FFAI": {
+    "bars": 1464,
+    "fires": 18
+  },
+  "FFBC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "FFIN": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "FI": {
+    "bars": 3139,
+    "fires": 59
+  },
+  "FIBK": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "FICO": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "FIGS": {
+    "bars": 1280,
+    "fires": 17
+  },
+  "FINW": {
+    "bars": 1157,
+    "fires": 12
+  },
+  "FIP": {
+    "bars": 992,
+    "fires": 21
+  },
+  "FIS": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "FISI": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "FLGT": {
+    "bars": 2452,
+    "fires": 51
+  },
+  "FLNC": {
+    "bars": 1173,
+    "fires": 14
+  },
+  "FLNG": {
+    "bars": 1771,
+    "fires": 34
+  },
+  "FLOC": {
+    "bars": 366,
+    "fires": 4
+  },
+  "FIZZ": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "FLD": {
+    "bars": 1102,
+    "fires": 14
+  },
+  "FLEX": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "FLG": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "FITB": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "FIVE": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "FIVN": {
+    "bars": 3079,
+    "fires": 54
+  },
+  "FIX": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "FLYW": {
+    "bars": 1281,
+    "fires": 18
+  },
+  "FLYX": {
+    "bars": 628,
+    "fires": 6
+  },
+  "FMAO": {
+    "bars": 3143,
+    "fires": 75
+  },
+  "FMBH": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "FLR": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "FLWS": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "FLXS": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "FLY": {
+    "bars": 227,
+    "fires": 0
+  },
+  "FNWD": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "FOA": {
+    "bars": 1811,
+    "fires": 30
+  },
+  "FOR": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "FORM": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "FMNB": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "FN": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "FNKO": {
+    "bars": 2176,
+    "fires": 35
+  },
+  "FNLC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "FORR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "FOUR": {
+    "bars": 1523,
+    "fires": 28
+  },
+  "FOX": {
+    "bars": 1834,
+    "fires": 27
+  },
+  "FOXA": {
+    "bars": 1835,
+    "fires": 35
+  },
+  "FOXF": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "FPI": {
+    "bars": 3074,
+    "fires": 56
+  },
+  "FRAF": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "FRBA": {
+    "bars": 3143,
+    "fires": 75
+  },
+  "FRD": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "FRME": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "FRPH": {
+    "bars": 3143,
+    "fires": 73
+  },
+  "FRSH": {
+    "bars": 1199,
+    "fires": 19
+  },
+  "FRST": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "FRT": {
+    "bars": 3140,
+    "fires": 67
+  },
+  "FSBC": {
+    "bars": 1297,
+    "fires": 24
+  },
+  "FSBW": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "FSLR": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "FSLY": {
+    "bars": 1791,
+    "fires": 33
+  },
+  "FSP": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "FSS": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "FSTR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "FSUN": {
+    "bars": 982,
+    "fires": 13
+  },
+  "FTDR": {
+    "bars": 1960,
+    "fires": 32
+  },
+  "FTK": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "FTLF": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "FTNT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "FTRE": {
+    "bars": 763,
+    "fires": 10
+  },
+  "FTV": {
+    "bars": 2510,
+    "fires": 40
+  },
+  "FUBO": {
+    "bars": 1827,
+    "fires": 34
+  },
+  "FUL": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "FULC": {
+    "bars": 1749,
+    "fires": 25
+  },
+  "FULT": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "FVR": {
+    "bars": 438,
+    "fires": 2
+  },
+  "FWRD": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "FWRG": {
+    "bars": 1192,
+    "fires": 19
+  },
+  "FXNC": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "FUN": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "FUNC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "FUTU": {
+    "bars": 1837,
+    "fires": 28
+  },
+  "FVCB": {
+    "bars": 2806,
+    "fires": 50
+  },
+  "GBCI": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "GBFH": {
+    "bars": 498,
+    "fires": 7
+  },
+  "GBTG": {
+    "bars": 971,
+    "fires": 14
+  },
+  "GBX": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "GABC": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "GAIA": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "GAMB": {
+    "bars": 1241,
+    "fires": 23
+  },
+  "GATX": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "GCBC": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "GCMG": {
+    "bars": 1861,
+    "fires": 34
+  },
+  "GCO": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "GCT": {
+    "bars": 971,
+    "fires": 13
+  },
+  "GD": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "GDDY": {
+    "bars": 2828,
+    "fires": 51
+  },
+  "GDOT": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "GDYN": {
+    "bars": 1927,
+    "fires": 35
+  },
+  "GE": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "GEF": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "GEHC": {
+    "bars": 888,
+    "fires": 14
+  },
+  "GEN": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "GENC": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "GENI": {
+    "bars": 1442,
+    "fires": 22
+  },
+  "GEO": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "GERN": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "GETY": {
+    "bars": 1452,
+    "fires": 33
+  },
+  "GEV": {
+    "bars": 565,
+    "fires": 4
+  },
+  "GEVO": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "GFF": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "GGG": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "GH": {
+    "bars": 1945,
+    "fires": 34
+  },
+  "GHC": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "GHM": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "GLSI": {
+    "bars": 1448,
+    "fires": 27
+  },
+  "GLUE": {
+    "bars": 1261,
+    "fires": 20
+  },
+  "GLW": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "GLXY": {
+    "bars": 280,
+    "fires": 4
+  },
+  "GIC": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "GIII": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "GILD": {
+    "bars": 3143,
+    "fires": 70
+  },
+  "GIS": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "GKOS": {
+    "bars": 2771,
+    "fires": 54
+  },
+  "GL": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "GLNG": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "GLRE": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "GM": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "GNE": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "GNK": {
+    "bars": 3010,
+    "fires": 51
+  },
+  "GNL": {
+    "bars": 2788,
+    "fires": 49
+  },
+  "GNRC": {
+    "bars": 3140,
+    "fires": 43
+  },
+  "GNW": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "GO": {
+    "bars": 1768,
+    "fires": 30
+  },
+  "GOGO": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "GOLD": {
+    "bars": 3093,
+    "fires": 49
+  },
+  "GOLF": {
+    "bars": 2431,
+    "fires": 41
+  },
+  "GOOD": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "GOOG": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "GOOGL": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "GOSS": {
+    "bars": 1859,
+    "fires": 29
+  },
+  "GPC": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "GPCR": {
+    "bars": 852,
+    "fires": 16
+  },
+  "GPGI": {
+    "bars": 1409,
+    "fires": 23
+  },
+  "GPI": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "GPN": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "GPOR": {
+    "bars": 1287,
+    "fires": 18
+  },
+  "GRDN": {
+    "bars": 442,
+    "fires": 7
+  },
+  "GRMN": {
+    "bars": 3140,
+    "fires": 66
+  },
+  "GRND": {
+    "bars": 1372,
+    "fires": 18
+  },
+  "GRNT": {
+    "bars": 1418,
+    "fires": 17
+  },
+  "GPRE": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "GRAL": {
+    "bars": 515,
+    "fires": 5
+  },
+  "GRBK": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "GRC": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "GRPN": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "GS": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "GSAT": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "GSBC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "GSHD": {
+    "bars": 2056,
+    "fires": 39
+  },
+  "GSM": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "GT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "GTLB": {
+    "bars": 1180,
+    "fires": 21
+  },
+  "GTLS": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "GTN": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "GTX": {
+    "bars": 1958,
+    "fires": 38
+  },
+  "GTY": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "GVA": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "GWRS": {
+    "bars": 2559,
+    "fires": 51
+  },
+  "GWW": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "GYRE": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "H": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "HAE": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "HAFC": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "HAIN": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "HAL": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "HAPN": {
+    "bars": 2905,
+    "fires": 56
+  },
+  "HAS": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "HASI": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "HBT": {
+    "bars": 1689,
+    "fires": 24
+  },
+  "HCA": {
+    "bars": 3140,
+    "fires": 45
+  },
+  "HCAT": {
+    "bars": 1744,
+    "fires": 33
+  },
+  "HCC": {
+    "bars": 2317,
+    "fires": 47
+  },
+  "HBAN": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "HBB": {
+    "bars": 2203,
+    "fires": 37
+  },
+  "HBCP": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "HBNC": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "HFFG": {
+    "bars": 2216,
+    "fires": 33
+  },
+  "HFWA": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "HG": {
+    "bars": 661,
+    "fires": 14
+  },
+  "HGV": {
+    "bars": 2386,
+    "fires": 48
+  },
+  "HCI": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "HCKT": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "HCSG": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "HD": {
+    "bars": 3140,
+    "fires": 46
+  },
+  "HDSN": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "HE": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "HEI": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "HELE": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "HIFS": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "HIG": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "HII": {
+    "bars": 3140,
+    "fires": 46
+  },
+  "HIMS": {
+    "bars": 1709,
+    "fires": 27
+  },
+  "HLIT": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "HLLY": {
+    "bars": 1404,
+    "fires": 28
+  },
+  "HLMN": {
+    "bars": 1400,
+    "fires": 26
+  },
+  "HLT": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "HIPO": {
+    "bars": 1375,
+    "fires": 20
+  },
+  "HL": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "HLF": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "HLIO": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "HNST": {
+    "bars": 1297,
+    "fires": 19
+  },
+  "HNVR": {
+    "bars": 1039,
+    "fires": 23
+  },
+  "HOMB": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "HON": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "HLX": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "HMN": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "HNI": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "HNRG": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "HOOD": {
+    "bars": 1234,
+    "fires": 16
+  },
+  "HOPE": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "HOV": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "HP": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "HPE": {
+    "bars": 2688,
+    "fires": 43
+  },
+  "HPK": {
+    "bars": 2035,
+    "fires": 44
+  },
+  "HPP": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "HPQ": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "HRMY": {
+    "bars": 1474,
+    "fires": 25
+  },
+  "HROW": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "HRTG": {
+    "bars": 3045,
+    "fires": 51
+  },
+  "HRTX": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "HQI": {
+    "bars": 3143,
+    "fires": 75
+  },
+  "HQY": {
+    "bars": 2998,
+    "fires": 50
+  },
+  "HRI": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "HRL": {
+    "bars": 3140,
+    "fires": 71
+  },
+  "HSHP": {
+    "bars": 816,
+    "fires": 12
+  },
+  "HSIC": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "HST": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "HSTM": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "HSY": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "HTB": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "HTFL": {
+    "bars": 225,
+    "fires": 1
+  },
+  "HTH": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "HTLD": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "HTO": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "HTZ": {
+    "bars": 1256,
+    "fires": 21
+  },
+  "HUBB": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "HUBG": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "HUBS": {
+    "bars": 2946,
+    "fires": 58
+  },
+  "HUM": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "HUMA": {
+    "bars": 1402,
+    "fires": 24
+  },
+  "HURA": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "HURN": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "HUT": {
+    "bars": 2091,
+    "fires": 27
+  },
+  "HVT": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "HWBK": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "HWC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "HWKN": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "HWM": {
+    "bars": 2426,
+    "fires": 40
+  },
+  "IBCP": {
+    "bars": 3143,
+    "fires": 69
+  },
+  "IBEX": {
+    "bars": 1482,
+    "fires": 31
+  },
+  "IBIT": {
+    "bars": 620,
+    "fires": 7
+  },
+  "IBKR": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "HY": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "HYLN": {
+    "bars": 1633,
+    "fires": 26
+  },
+  "HZO": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "IART": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "IBTA": {
+    "bars": 552,
+    "fires": 7
+  },
+  "ICE": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "ICFI": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ICHR": {
+    "bars": 2402,
+    "fires": 39
+  },
+  "IBM": {
+    "bars": 3140,
+    "fires": 43
+  },
+  "IBOC": {
+    "bars": 3143,
+    "fires": 70
+  },
+  "IBP": {
+    "bars": 3114,
+    "fires": 48
+  },
+  "IBRX": {
+    "bars": 2749,
+    "fires": 48
+  },
+  "IDXX": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "IDYA": {
+    "bars": 1787,
+    "fires": 25
+  },
+  "IE": {
+    "bars": 1007,
+    "fires": 13
+  },
+  "IESC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ICUI": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "IDCC": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "IDR": {
+    "bars": 3143,
+    "fires": 70
+  },
+  "IDT": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "IIIN": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "IIIV": {
+    "bars": 2018,
+    "fires": 33
+  },
+  "IIPR": {
+    "bars": 2408,
+    "fires": 37
+  },
+  "IKT": {
+    "bars": 1386,
+    "fires": 25
+  },
+  "IEX": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "IFF": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "IHRT": {
+    "bars": 1761,
+    "fires": 33
+  },
+  "III": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "IMNM": {
+    "bars": 1443,
+    "fires": 24
+  },
+  "IMVT": {
+    "bars": 1767,
+    "fires": 33
+  },
+  "IMXI": {
+    "bars": 2330,
+    "fires": 36
+  },
+  "INBK": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "ILPT": {
+    "bars": 2128,
+    "fires": 37
+  },
+  "IMAX": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "IMKTA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "IMMR": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "INBX": {
+    "bars": 525,
+    "fires": 7
+  },
+  "INCY": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "INDB": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "INDI": {
+    "bars": 1694,
+    "fires": 25
+  },
+  "INDV": {
+    "bars": 2894,
+    "fires": 46
+  },
+  "INFQ": {
+    "bars": 92,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "INGN": {
+    "bars": 3113,
+    "fires": 59
+  },
+  "INMB": {
+    "bars": 1863,
+    "fires": 33
+  },
+  "INN": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "INNV": {
+    "bars": 1339,
+    "fires": 25
+  },
+  "INOD": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "INR": {
+    "bars": 356,
+    "fires": 2
+  },
+  "INSE": {
+    "bars": 2902,
+    "fires": 51
+  },
+  "INSG": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "INSM": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "INSW": {
+    "bars": 2418,
+    "fires": 48
+  },
+  "INTA": {
+    "bars": 1257,
+    "fires": 21
+  },
+  "INTC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "INTU": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "INV": {
+    "bars": 1152,
+    "fires": 16
+  },
+  "INVA": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "INVH": {
+    "bars": 2364,
+    "fires": 40
+  },
+  "INVX": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "IONQ": {
+    "bars": 1380,
+    "fires": 27
+  },
+  "IOSP": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "IOVA": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "IP": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "IPAR": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "IREN": {
+    "bars": 1156,
+    "fires": 13
+  },
+  "IRM": {
+    "bars": 3140,
+    "fires": 45
+  },
+  "IRMD": {
+    "bars": 3009,
+    "fires": 49
+  },
+  "IRON": {
+    "bars": 1479,
+    "fires": 21
+  },
+  "IPI": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "IQV": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "IR": {
+    "bars": 2294,
+    "fires": 40
+  },
+  "IRDM": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "IRT": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "IRTC": {
+    "bars": 2437,
+    "fires": 37
+  },
+  "IRWD": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "ISPR": {
+    "bars": 814,
+    "fires": 14
+  },
+  "ISRG": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "ISTR": {
+    "bars": 3019,
+    "fires": 52
+  },
+  "IT": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "ITGR": {
+    "bars": 3143,
+    "fires": 75
+  },
+  "ITIC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ITRI": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "ITW": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "IVR": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "IVT": {
+    "bars": 3105,
+    "fires": 40
+  },
+  "IVZ": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "J": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "JACK": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "JAKK": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "JANX": {
+    "bars": 1270,
+    "fires": 28
+  },
+  "JBGS": {
+    "bars": 2260,
+    "fires": 47
+  },
+  "JBHT": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "JBI": {
+    "bars": 1640,
+    "fires": 24
+  },
+  "JBIO": {
+    "bars": 1257,
+    "fires": 14
+  },
+  "JBL": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "JBLU": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "JBSS": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "JBTM": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "JCAP": {
+    "bars": 256,
+    "fires": 4
+  },
+  "JCI": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "JELD": {
+    "bars": 2370,
+    "fires": 46
+  },
+  "JILL": {
+    "bars": 2342,
+    "fires": 36
+  },
+  "JJSF": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "JKHY": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "JMSB": {
+    "bars": 2347,
+    "fires": 42
+  },
+  "JNJ": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "JOBY": {
+    "bars": 1417,
+    "fires": 25
+  },
+  "JOE": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "JOUT": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "JPM": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "JRVR": {
+    "bars": 2904,
+    "fires": 59
+  },
+  "JXN": {
+    "bars": 1213,
+    "fires": 17
+  },
+  "JYNT": {
+    "bars": 2926,
+    "fires": 56
+  },
+  "KAI": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "KALU": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "KBH": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "KDP": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "KE": {
+    "bars": 2932,
+    "fires": 51
+  },
+  "KELYA": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "KEY": {
+    "bars": 3140,
+    "fires": 65
+  },
+  "KEYS": {
+    "bars": 2939,
+    "fires": 54
+  },
+  "KFRC": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "KFY": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "KG": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "KGEI": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "KGS": {
+    "bars": 755,
+    "fires": 11
+  },
+  "KHC": {
+    "bars": 2765,
+    "fires": 45
+  },
+  "KIDS": {
+    "bars": 2190,
+    "fires": 45
+  },
+  "KLC": {
+    "bars": 433,
+    "fires": 9
+  },
+  "KLIC": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "KLTR": {
+    "bars": 1243,
+    "fires": 19
+  },
+  "KMB": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "KMI": {
+    "bars": 3140,
+    "fires": 63
+  },
+  "KMT": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "KMTS": {
+    "bars": 333,
+    "fires": 4
+  },
+  "KN": {
+    "bars": 3113,
+    "fires": 54
+  },
+  "KIM": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "KINS": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "KKR": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "KLAC": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "KNF": {
+    "bars": 771,
+    "fires": 12
+  },
+  "KNSL": {
+    "bars": 2493,
+    "fires": 41
+  },
+  "KNTK": {
+    "bars": 1917,
+    "fires": 39
+  },
+  "KO": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "KOD": {
+    "bars": 1945,
+    "fires": 23
+  },
+  "KODK": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "KOP": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "KOPN": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "KRMD": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "KRMN": {
+    "bars": 344,
+    "fires": 2
+  },
+  "KRNY": {
+    "bars": 3143,
+    "fires": 72
+  },
+  "KRO": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "KROS": {
+    "bars": 1566,
+    "fires": 25
+  },
+  "KRRO": {
+    "bars": 1695,
+    "fires": 24
+  },
+  "KRT": {
+    "bars": 1310,
+    "fires": 22
+  },
+  "KRUS": {
+    "bars": 1739,
+    "fires": 23
+  },
+  "KOS": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "KR": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "KREF": {
+    "bars": 2302,
+    "fires": 40
+  },
+  "KRG": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "KULR": {
+    "bars": 1999,
+    "fires": 34
+  },
+  "KURA": {
+    "bars": 2714,
+    "fires": 48
+  },
+  "KVUE": {
+    "bars": 790,
+    "fires": 9
+  },
+  "KVYO": {
+    "bars": 695,
+    "fires": 16
+  },
+  "KRYS": {
+    "bars": 2207,
+    "fires": 42
+  },
+  "KSS": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "KTB": {
+    "bars": 1785,
+    "fires": 33
+  },
+  "KTOS": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "KWR": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "KWY": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "KYMR": {
+    "bars": 1472,
+    "fires": 26
+  },
+  "L": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "LAB": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "LAC": {
+    "bars": 687,
+    "fires": 10
+  },
+  "LADR": {
+    "bars": 3119,
+    "fires": 57
+  },
+  "LAKE": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "LAW": {
+    "bars": 1243,
+    "fires": 19
+  },
+  "LBRT": {
+    "bars": 2129,
+    "fires": 42
+  },
+  "LBRX": {
+    "bars": 203,
+    "fires": 2
+  },
+  "LCID": {
+    "bars": 1450,
+    "fires": 25
+  },
+  "LAND": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "LARK": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "LASR": {
+    "bars": 2057,
+    "fires": 32
+  },
+  "LAUR": {
+    "bars": 2367,
+    "fires": 43
+  },
+  "LCII": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "LCNB": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "LDI": {
+    "bars": 1353,
+    "fires": 29
+  },
+  "LDOS": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "LE": {
+    "bars": 3090,
+    "fires": 50
+  },
+  "LEG": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "LEGH": {
+    "bars": 1896,
+    "fires": 33
+  },
+  "LEN": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "LENZ": {
+    "bars": 1260,
+    "fires": 22
+  },
+  "LEU": {
+    "bars": 3143,
+    "fires": 43
+  },
+  "LFCR": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "LFMD": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "LFST": {
+    "bars": 1271,
+    "fires": 16
+  },
+  "LFT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "LFVN": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "LGIH": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "LI": {
+    "bars": 1485,
+    "fires": 25
+  },
+  "LIF": {
+    "bars": 519,
+    "fires": 6
+  },
+  "LII": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "LILA": {
+    "bars": 2766,
+    "fires": 45
+  },
+  "LGN": {
+    "bars": 202,
+    "fires": 0
+  },
+  "LGND": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "LH": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "LHX": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "LILAK": {
+    "bars": 2773,
+    "fires": 50
+  },
+  "LIN": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "LINC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "LIND": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "LION": {
+    "bars": 1089,
+    "fires": 13
+  },
+  "LITE": {
+    "bars": 2752,
+    "fires": 48
+  },
+  "LIVN": {
+    "bars": 2691,
+    "fires": 47
+  },
+  "LKFN": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "LMNR": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "LMRI": {
+    "bars": 139,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "LMT": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "LNG": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "LLY": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "LMAT": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "LMB": {
+    "bars": 2992,
+    "fires": 50
+  },
+  "LMND": {
+    "bars": 1507,
+    "fires": 32
+  },
+  "LNN": {
+    "bars": 3143,
+    "fires": 70
+  },
+  "LNSR": {
+    "bars": 1443,
+    "fires": 19
+  },
+  "LNT": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "LNTH": {
+    "bars": 2771,
+    "fires": 47
+  },
+  "LOB": {
+    "bars": 2752,
+    "fires": 49
+  },
+  "LOCO": {
+    "bars": 3002,
+    "fires": 48
+  },
+  "LOVE": {
+    "bars": 2014,
+    "fires": 33
+  },
+  "LOW": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "LPA": {
+    "bars": 567,
+    "fires": 8
+  },
+  "LPG": {
+    "bars": 3056,
+    "fires": 52
+  },
+  "LPRO": {
+    "bars": 2079,
+    "fires": 34
+  },
+  "LQDA": {
+    "bars": 1994,
+    "fires": 35
+  },
+  "LTBR": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "LTC": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "LTH": {
+    "bars": 1188,
+    "fires": 15
+  },
+  "LUCD": {
+    "bars": 1183,
+    "fires": 22
+  },
+  "LQDT": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "LRCX": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "LRMR": {
+    "bars": 3027,
+    "fires": 62
+  },
+  "LRN": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "LULU": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "LUMN": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "LUNG": {
+    "bars": 1444,
+    "fires": 28
+  },
+  "LUNR": {
+    "bars": 1159,
+    "fires": 17
+  },
+  "LUV": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "LVS": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "LVWR": {
+    "bars": 1406,
+    "fires": 19
+  },
+  "LWAY": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "LXEO": {
+    "bars": 666,
+    "fires": 12
+  },
+  "LXFR": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "LXP": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "LXU": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "LYB": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "LYTS": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "LYV": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "LZ": {
+    "bars": 1257,
+    "fires": 23
+  },
+  "LZB": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "LZM": {
+    "bars": 1142,
+    "fires": 17
+  },
+  "MA": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "MAA": {
+    "bars": 3140,
+    "fires": 66
+  },
+  "MAC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "MAGN": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "MAMA": {
+    "bars": 1245,
+    "fires": 21
+  },
+  "MAR": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "MARA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "MAS": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "MASS": {
+    "bars": 1389,
+    "fires": 21
+  },
+  "MATV": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "MATW": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "MATX": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "MAX": {
+    "bars": 1425,
+    "fires": 23
+  },
+  "MAZE": {
+    "bars": 356,
+    "fires": 1
+  },
+  "MBC": {
+    "bars": 892,
+    "fires": 14
+  },
+  "MBI": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "MBIN": {
+    "bars": 2180,
+    "fires": 36
+  },
+  "MBUU": {
+    "bars": 3123,
+    "fires": 54
+  },
+  "MBWM": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "MBX": {
+    "bars": 451,
+    "fires": 8
+  },
+  "MC": {
+    "bars": 3071,
+    "fires": 60
+  },
+  "MCB": {
+    "bars": 2172,
+    "fires": 39
+  },
+  "MCBS": {
+    "bars": 1715,
+    "fires": 32
+  },
+  "MCD": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "MCFT": {
+    "bars": 2756,
+    "fires": 45
+  },
+  "MCHB": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "MCS": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "MCY": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "MD": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "MDA": {
+    "bars": 75,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "MCHP": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "MCK": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "MCO": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "MCRI": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "MDV": {
+    "bars": 1100,
+    "fires": 21
+  },
+  "MDWD": {
+    "bars": 3090,
+    "fires": 55
+  },
+  "MDXG": {
+    "bars": 3143,
+    "fires": 45
+  },
+  "MEC": {
+    "bars": 1797,
+    "fires": 33
+  },
+  "MDB": {
+    "bars": 2183,
+    "fires": 38
+  },
+  "MDGL": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "MDLZ": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "MDT": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "MED": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "MEI": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "MELI": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "MET": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "META": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "METC": {
+    "bars": 2365,
+    "fires": 47
+  },
+  "MFA": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "MFIN": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "MH": {
+    "bars": 237,
+    "fires": 1
+  },
+  "MHK": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "MHO": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "MIAX": {
+    "bars": 222,
+    "fires": 1
+  },
+  "MG": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "MGEE": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "MGM": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "MGNI": {
+    "bars": 3081,
+    "fires": 54
+  },
+  "MGPI": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "MGRC": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "MGTX": {
+    "bars": 2027,
+    "fires": 35
+  },
+  "MGY": {
+    "bars": 2264,
+    "fires": 42
+  },
+  "MIR": {
+    "bars": 1473,
+    "fires": 27
+  },
+  "MIRM": {
+    "bars": 1749,
+    "fires": 28
+  },
+  "MITK": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "MITT": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "MKC": {
+    "bars": 3140,
+    "fires": 67
+  },
+  "MKSI": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "MKTW": {
+    "bars": 1457,
+    "fires": 27
+  },
+  "MLAB": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "MLYS": {
+    "bars": 850,
+    "fires": 11
+  },
+  "MMI": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "MMM": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "MMS": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "MLKN": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "MLM": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "MLP": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "MLR": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "MMSI": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "MNKD": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "MNPR": {
+    "bars": 1641,
+    "fires": 26
+  },
+  "MNRO": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "MNSB": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "MNST": {
+    "bars": 3143,
+    "fires": 44
+  },
+  "MNTK": {
+    "bars": 1367,
+    "fires": 23
+  },
+  "MO": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "MPC": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "MPLT": {
+    "bars": 171,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "MPTI": {
+    "bars": 940,
+    "fires": 13
+  },
+  "MPWR": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "MOD": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "MOG-A": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "MOH": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "MOS": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "MOV": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "MP": {
+    "bars": 1512,
+    "fires": 24
+  },
+  "MPAA": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "MPB": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "MQ": {
+    "bars": 1272,
+    "fires": 25
+  },
+  "MRBK": {
+    "bars": 2173,
+    "fires": 42
+  },
+  "MRCY": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "MRDN": {
+    "bars": 3143,
+    "fires": 43
+  },
+  "MRK": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "MRNA": {
+    "bars": 1898,
+    "fires": 33
+  },
+  "MRTN": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "MRVI": {
+    "bars": 1408,
+    "fires": 23
+  },
+  "MRVL": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "MRX": {
+    "bars": 548,
+    "fires": 7
+  },
+  "MS": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "MSBI": {
+    "bars": 2541,
+    "fires": 47
+  },
+  "MSCI": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "MSEX": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "MSFT": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "MSGE": {
+    "bars": 806,
+    "fires": 11
+  },
+  "MSI": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "MSM": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "MSTR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "MTB": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "MUR": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "MVBF": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "MVIS": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "MVST": {
+    "bars": 1827,
+    "fires": 29
+  },
+  "MTUS": {
+    "bars": 3027,
+    "fires": 51
+  },
+  "MTW": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "MTX": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "MU": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "MTD": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "MTH": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "MTRN": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "MTRX": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "MYFW": {
+    "bars": 1999,
+    "fires": 31
+  },
+  "MYGN": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "MYO": {
+    "bars": 2277,
+    "fires": 31
+  },
+  "MYPS": {
+    "bars": 1388,
+    "fires": 19
+  },
+  "MWA": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "MXCT": {
+    "bars": 1236,
+    "fires": 17
+  },
+  "MXL": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "MYE": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "NAT": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "NATH": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "NATL": {
+    "bars": 683,
+    "fires": 6
+  },
+  "NATR": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "MYRG": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "MZTI": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "NABL": {
+    "bars": 1245,
+    "fires": 23
+  },
+  "NAGE": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "NAVI": {
+    "bars": 3070,
+    "fires": 52
+  },
+  "NAVN": {
+    "bars": 168,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "NB": {
+    "bars": 824,
+    "fires": 20
+  },
+  "NBBK": {
+    "bars": 629,
+    "fires": 13
+  },
+  "NBHC": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "NBIS": {
+    "bars": 425,
+    "fires": 4
+  },
+  "NBN": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "NBR": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "NDAQ": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "NDSN": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "NE": {
+    "bars": 1272,
+    "fires": 18
+  },
+  "NECB": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "NBTB": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "NC": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "NCLH": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "NCMI": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "NEE": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "NEM": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "NEO": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "NEOG": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "NEON": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "NESR": {
+    "bars": 498,
+    "fires": 7
+  },
+  "NET": {
+    "bars": 1706,
+    "fires": 28
+  },
+  "NEWT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "NEXN": {
+    "bars": 1265,
+    "fires": 16
+  },
+  "NEXT": {
+    "bars": 2778,
+    "fires": 51
+  },
+  "NFBK": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "NFE": {
+    "bars": 1865,
+    "fires": 34
+  },
+  "NFLX": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "NG": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "NGNE": {
+    "bars": 3099,
+    "fires": 49
+  },
+  "NGS": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "NGVC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "NGVT": {
+    "bars": 2556,
+    "fires": 54
+  },
+  "NHC": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "NHI": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "NI": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "NIC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "NIO": {
+    "bars": 1958,
+    "fires": 30
+  },
+  "NJR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "NKE": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "NKSH": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "NKTX": {
+    "bars": 1502,
+    "fires": 26
+  },
+  "NL": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "NLOP": {
+    "bars": 671,
+    "fires": 10
+  },
+  "NMAX": {
+    "bars": 316,
+    "fires": 3
+  },
+  "NMIH": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "NMRK": {
+    "bars": 2146,
+    "fires": 35
+  },
+  "NN": {
+    "bars": 1422,
+    "fires": 27
+  },
+  "NNE": {
+    "bars": 539,
+    "fires": 6
+  },
+  "NNI": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "NNOX": {
+    "bars": 1472,
+    "fires": 26
+  },
+  "NOW": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "NPB": {
+    "bars": 345,
+    "fires": 6
+  },
+  "NPCE": {
+    "bars": 1305,
+    "fires": 13
+  },
+  "NPK": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "NOC": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "NODK": {
+    "bars": 2337,
+    "fires": 48
+  },
+  "NOG": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "NOVT": {
+    "bars": 3143,
+    "fires": 70
+  },
+  "NRDS": {
+    "bars": 1168,
+    "fires": 15
+  },
+  "NRDY": {
+    "bars": 1404,
+    "fires": 21
+  },
+  "NREF": {
+    "bars": 1608,
+    "fires": 33
+  },
+  "NRG": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "NPKI": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "NPO": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "NPWR": {
+    "bars": 1231,
+    "fires": 11
+  },
+  "NRC": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "NRIM": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "NRIX": {
+    "bars": 1492,
+    "fires": 29
+  },
+  "NSC": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "NSIT": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "NSP": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "NSSC": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "NTAP": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "NTB": {
+    "bars": 2461,
+    "fires": 40
+  },
+  "NTST": {
+    "bars": 1478,
+    "fires": 24
+  },
+  "NUE": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "NUS": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "NUTX": {
+    "bars": 1065,
+    "fires": 13
+  },
+  "NTCT": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "NTGR": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "NTLA": {
+    "bars": 2553,
+    "fires": 44
+  },
+  "NTRS": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "NUVB": {
+    "bars": 1469,
+    "fires": 27
+  },
+  "NUVL": {
+    "bars": 1237,
+    "fires": 23
+  },
+  "NVAX": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "NVCR": {
+    "bars": 2703,
+    "fires": 42
+  },
+  "NVCT": {
+    "bars": 1105,
+    "fires": 15
+  },
+  "NVDA": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "NVEC": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "NVGS": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "NVMI": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "NVO": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "NVR": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "NVT": {
+    "bars": 2056,
+    "fires": 32
+  },
+  "NVTS": {
+    "bars": 1179,
+    "fires": 19
+  },
+  "NWBI": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "NWE": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "NWFL": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "NXPI": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "NXRT": {
+    "bars": 2839,
+    "fires": 52
+  },
+  "NXT": {
+    "bars": 851,
+    "fires": 10
+  },
+  "NXXT": {
+    "bars": 1204,
+    "fires": 18
+  },
+  "NX": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "NXDR": {
+    "bars": 1166,
+    "fires": 18
+  },
+  "NXDT": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "NXE": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "NWN": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "NWPX": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "NWS": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "NWSA": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "O": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "OABI": {
+    "bars": 1193,
+    "fires": 19
+  },
+  "OBK": {
+    "bars": 2049,
+    "fires": 36
+  },
+  "OBT": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "OC": {
+    "bars": 3140,
+    "fires": 67
+  },
+  "OCFC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "OCUL": {
+    "bars": 3002,
+    "fires": 56
+  },
+  "ODC": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ODFL": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "OEC": {
+    "bars": 3002,
+    "fires": 48
+  },
+  "OFG": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "OFIX": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "OIS": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "OKE": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "OKLO": {
+    "bars": 1252,
+    "fires": 20
+  },
+  "OKTA": {
+    "bars": 2318,
+    "fires": 43
+  },
+  "OFLX": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "OGS": {
+    "bars": 3133,
+    "fires": 66
+  },
+  "OI": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "OII": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "OLLI": {
+    "bars": 2754,
+    "fires": 55
+  },
+  "OLMA": {
+    "bars": 1409,
+    "fires": 25
+  },
+  "OLP": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "OLPX": {
+    "bars": 1193,
+    "fires": 17
+  },
+  "OM": {
+    "bars": 1456,
+    "fires": 22
+  },
+  "OMC": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "OMCL": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "OMDA": {
+    "bars": 269,
+    "fires": 1
+  },
+  "ONIT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "ONT": {
+    "bars": 1493,
+    "fires": 23
+  },
+  "ONTO": {
+    "bars": 1675,
+    "fires": 29
+  },
+  "OOMA": {
+    "bars": 2755,
+    "fires": 47
+  },
+  "OMER": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ON": {
+    "bars": 3140,
+    "fires": 46
+  },
+  "ONB": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "ONEW": {
+    "bars": 1608,
+    "fires": 32
+  },
+  "OPAL": {
+    "bars": 1283,
+    "fires": 30
+  },
+  "OPBK": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "OPCH": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "OPFI": {
+    "bars": 1408,
+    "fires": 29
+  },
+  "OPK": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "OPLN": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "OPRT": {
+    "bars": 1700,
+    "fires": 25
+  },
+  "OPRX": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "OPTU": {
+    "bars": 2269,
+    "fires": 41
+  },
+  "ORA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ORC": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "ORCL": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "ORGO": {
+    "bars": 2385,
+    "fires": 44
+  },
+  "ORIC": {
+    "bars": 1555,
+    "fires": 31
+  },
+  "ORKA": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "ORLY": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "ORN": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "ORRF": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "OSBC": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "OSCR": {
+    "bars": 1340,
+    "fires": 24
+  },
+  "OSW": {
+    "bars": 2165,
+    "fires": 38
+  },
+  "OTIS": {
+    "bars": 1577,
+    "fires": 27
+  },
+  "OTTR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "OUST": {
+    "bars": 1438,
+    "fires": 21
+  },
+  "OSG": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "OSIS": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "OSPN": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "OSUR": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "OUT": {
+    "bars": 3084,
+    "fires": 52
+  },
+  "OVBC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "OVLY": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "OXM": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "PACS": {
+    "bars": 558,
+    "fires": 7
+  },
+  "PAGS": {
+    "bars": 2121,
+    "fires": 31
+  },
+  "PAHC": {
+    "bars": 3074,
+    "fires": 48
+  },
+  "PAL": {
+    "bars": 538,
+    "fires": 6
+  },
+  "OXY": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "PAA": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "PACB": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PACK": {
+    "bars": 2088,
+    "fires": 26
+  },
+  "PARR": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "PATH": {
+    "bars": 1303,
+    "fires": 24
+  },
+  "PATK": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "PAX": {
+    "bars": 1367,
+    "fires": 28
+  },
+  "PAMT": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "PANL": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "PANW": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "PAR": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "PAYO": {
+    "bars": 1433,
+    "fires": 19
+  },
+  "PAYS": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "PAYX": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "PBF": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "PBFS": {
+    "bars": 1749,
+    "fires": 31
+  },
+  "PBH": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "PBI": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "PBYI": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "PCAR": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "PCB": {
+    "bars": 1983,
+    "fires": 33
+  },
+  "PCG": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "PCOR": {
+    "bars": 1282,
+    "fires": 16
+  },
+  "PCRX": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "PCT": {
+    "bars": 1500,
+    "fires": 22
+  },
+  "PCVX": {
+    "bars": 1521,
+    "fires": 23
+  },
+  "PCYO": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "PD": {
+    "bars": 1816,
+    "fires": 38
+  },
+  "PDD": {
+    "bars": 1994,
+    "fires": 35
+  },
+  "PDEX": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PDFS": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "PDLB": {
+    "bars": 2199,
+    "fires": 42
+  },
+  "PDM": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "PDYN": {
+    "bars": 1196,
+    "fires": 15
+  },
+  "PEB": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "PEBK": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PEBO": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "PECO": {
+    "bars": 1344,
+    "fires": 27
+  },
+  "PEG": {
+    "bars": 3140,
+    "fires": 65
+  },
+  "PENG": {
+    "bars": 2289,
+    "fires": 40
+  },
+  "PEP": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PESI": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "PFBC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "PFE": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "PFG": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "PFIS": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "PFS": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "PFSI": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "PG": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "PGC": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "PGEN": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "PHAT": {
+    "bars": 1679,
+    "fires": 30
+  },
+  "PHIN": {
+    "bars": 756,
+    "fires": 9
+  },
+  "PHM": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "PHR": {
+    "bars": 1749,
+    "fires": 31
+  },
+  "PGNY": {
+    "bars": 1679,
+    "fires": 24
+  },
+  "PGR": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "PGY": {
+    "bars": 1306,
+    "fires": 20
+  },
+  "PH": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "PI": {
+    "bars": 2501,
+    "fires": 46
+  },
+  "PII": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PINE": {
+    "bars": 1659,
+    "fires": 39
+  },
+  "PIPR": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "PKOH": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "PL": {
+    "bars": 1303,
+    "fires": 25
+  },
+  "PLAB": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "PLAY": {
+    "bars": 2948,
+    "fires": 47
+  },
+  "PJT": {
+    "bars": 2710,
+    "fires": 42
+  },
+  "PKBK": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "PKE": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "PKG": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "PLBC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "PLD": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "PLGO": {
+    "bars": 755,
+    "fires": 11
+  },
+  "PLMR": {
+    "bars": 1812,
+    "fires": 30
+  },
+  "PLOW": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PLPC": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "PLSE": {
+    "bars": 2545,
+    "fires": 47
+  },
+  "PLTK": {
+    "bars": 1370,
+    "fires": 25
+  },
+  "PLXS": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "PM": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "PMI": {
+    "bars": 211,
+    "fires": 2
+  },
+  "PMT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "PLTR": {
+    "bars": 1445,
+    "fires": 26
+  },
+  "PLUG": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PLUS": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "PLX": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "PMTS": {
+    "bars": 2698,
+    "fires": 39
+  },
+  "PNBK": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PNC": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "PNR": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "POWW": {
+    "bars": 2363,
+    "fires": 41
+  },
+  "PPG": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "PPHC": {
+    "bars": 108,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "PPL": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "PNRG": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "PNTG": {
+    "bars": 1697,
+    "fires": 29
+  },
+  "PNW": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "PODD": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "POOL": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "POR": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "POWI": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "POWL": {
+    "bars": 3143,
+    "fires": 45
+  },
+  "PPTA": {
+    "bars": 1349,
+    "fires": 24
+  },
+  "PR": {
+    "bars": 2565,
+    "fires": 44
+  },
+  "PRAA": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "PRAX": {
+    "bars": 1433,
+    "fires": 20
+  },
+  "PRCH": {
+    "bars": 1626,
+    "fires": 29
+  },
+  "PRCT": {
+    "bars": 1204,
+    "fires": 25
+  },
+  "PRDO": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "PRG": {
+    "bars": 3143,
+    "fires": 42
+  },
+  "PRLB": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "PRM": {
+    "bars": 1165,
+    "fires": 16
+  },
+  "PRME": {
+    "bars": 927,
+    "fires": 14
+  },
+  "PROP": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "PRGS": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PRIM": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "PRK": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "PRKS": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PRSU": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "PRTA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "PRTH": {
+    "bars": 2405,
+    "fires": 49
+  },
+  "PRU": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "PRVA": {
+    "bars": 1301,
+    "fires": 27
+  },
+  "PSA": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "PSFE": {
+    "bars": 1438,
+    "fires": 26
+  },
+  "PSIX": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "PSKY": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "PSMT": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "PSNL": {
+    "bars": 1768,
+    "fires": 30
+  },
+  "PSTL": {
+    "bars": 1793,
+    "fires": 33
+  },
+  "PTGX": {
+    "bars": 2486,
+    "fires": 39
+  },
+  "PTLO": {
+    "bars": 1178,
+    "fires": 19
+  },
+  "PTON": {
+    "bars": 1700,
+    "fires": 25
+  },
+  "PUBM": {
+    "bars": 1396,
+    "fires": 22
+  },
+  "PSX": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "PTC": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "PTCT": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "PTEN": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "PXED": {
+    "bars": 183,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "PYPL": {
+    "bars": 2765,
+    "fires": 49
+  },
+  "PZZA": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "Q": {
+    "bars": 168,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "PUMP": {
+    "bars": 2336,
+    "fires": 31
+  },
+  "PVLA": {
+    "bars": 2891,
+    "fires": 50
+  },
+  "PWP": {
+    "bars": 1406,
+    "fires": 24
+  },
+  "PWR": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "QLYS": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "QNST": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "QNT": {
+    "bars": 17,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "QSI": {
+    "bars": 1413,
+    "fires": 31
+  },
+  "QBTS": {
+    "bars": 1394,
+    "fires": 18
+  },
+  "QCOM": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "QCRH": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "QDEL": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "RAMP": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "RAPP": {
+    "bars": 518,
+    "fires": 11
+  },
+  "RBB": {
+    "bars": 2246,
+    "fires": 37
+  },
+  "RBBN": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "QTRX": {
+    "bars": 2152,
+    "fires": 37
+  },
+  "QTWO": {
+    "bars": 3090,
+    "fires": 57
+  },
+  "QUAD": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "QUBT": {
+    "bars": 3143,
+    "fires": 42
+  },
+  "RBCAA": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "RBKB": {
+    "bars": 1874,
+    "fires": 30
+  },
+  "RBLX": {
+    "bars": 1332,
+    "fires": 18
+  },
+  "RBRK": {
+    "bars": 545,
+    "fires": 6
+  },
+  "RC": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "RCAT": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "RCEL": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "RCKT": {
+    "bars": 2860,
+    "fires": 56
+  },
+  "RDN": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "RDNT": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "RDVT": {
+    "bars": 2078,
+    "fires": 35
+  },
+  "RDW": {
+    "bars": 1372,
+    "fires": 24
+  },
+  "REAL": {
+    "bars": 1762,
+    "fires": 24
+  },
+  "REAX": {
+    "bars": 1376,
+    "fires": 23
+  },
+  "REFI": {
+    "bars": 1145,
+    "fires": 21
+  },
+  "REG": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "RCKY": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "RCL": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "RCMT": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "RCUS": {
+    "bars": 2086,
+    "fires": 39
+  },
+  "REGN": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "RELL": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "RELY": {
+    "bars": 1198,
+    "fires": 15
+  },
+  "REPL": {
+    "bars": 1998,
+    "fires": 31
+  },
+  "RGR": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "RGTI": {
+    "bars": 1305,
+    "fires": 20
+  },
+  "RHHBY": {
+    "bars": 3141,
+    "fires": 55
+  },
+  "RHLD": {
+    "bars": 341,
+    "fires": 4
+  },
+  "RF": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "RGCO": {
+    "bars": 3143,
+    "fires": 72
+  },
+  "RGNX": {
+    "bars": 2713,
+    "fires": 49
+  },
+  "RGP": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "REPX": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "RES": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "REX": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "REZI": {
+    "bars": 1928,
+    "fires": 27
+  },
+  "RIOT": {
+    "bars": 2579,
+    "fires": 40
+  },
+  "RIVN": {
+    "bars": 1161,
+    "fires": 16
+  },
+  "RJF": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "RKLB": {
+    "bars": 1406,
+    "fires": 17
+  },
+  "RHP": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "RICK": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "RIG": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "RIGL": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "RL": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "RLAY": {
+    "bars": 1498,
+    "fires": 25
+  },
+  "RLGT": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "RLJ": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "RM": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "RMAX": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "RMBI": {
+    "bars": 1760,
+    "fires": 34
+  },
+  "RMBS": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "RMD": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "RMNI": {
+    "bars": 2726,
+    "fires": 40
+  },
+  "RMR": {
+    "bars": 2652,
+    "fires": 48
+  },
+  "RNAC": {
+    "bars": 2521,
+    "fires": 52
+  },
+  "RNGR": {
+    "bars": 2234,
+    "fires": 44
+  },
+  "RNST": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ROAD": {
+    "bars": 2051,
+    "fires": 34
+  },
+  "ROCK": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ROP": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "ROST": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "RPAY": {
+    "bars": 2001,
+    "fires": 33
+  },
+  "RPC": {
+    "bars": 1178,
+    "fires": 14
+  },
+  "ROG": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "ROK": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "ROL": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "ROOT": {
+    "bars": 1425,
+    "fires": 27
+  },
+  "RPD": {
+    "bars": 2756,
+    "fires": 45
+  },
+  "RPT": {
+    "bars": 2862,
+    "fires": 51
+  },
+  "RR": {
+    "bars": 656,
+    "fires": 5
+  },
+  "RRBI": {
+    "bars": 1801,
+    "fires": 28
+  },
+  "RRR": {
+    "bars": 2560,
+    "fires": 43
+  },
+  "RSG": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "RSI": {
+    "bars": 1554,
+    "fires": 29
+  },
+  "RSVR": {
+    "bars": 1379,
+    "fires": 23
+  },
+  "RTX": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "RUM": {
+    "bars": 1311,
+    "fires": 22
+  },
+  "RUN": {
+    "bars": 2743,
+    "fires": 51
+  },
+  "RUSHA": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "RXO": {
+    "bars": 922,
+    "fires": 19
+  },
+  "RXRX": {
+    "bars": 1309,
+    "fires": 25
+  },
+  "RXST": {
+    "bars": 1236,
+    "fires": 19
+  },
+  "RXT": {
+    "bars": 1484,
+    "fires": 29
+  },
+  "RVLV": {
+    "bars": 1777,
+    "fires": 31
+  },
+  "RVSB": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "RVTY": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "RWT": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "RYAM": {
+    "bars": 3030,
+    "fires": 41
+  },
+  "RYTM": {
+    "bars": 2194,
+    "fires": 37
+  },
+  "RYZ": {
+    "bars": 2992,
+    "fires": 44
+  },
+  "RZLT": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "RZLV": {
+    "bars": 1164,
+    "fires": 27
+  },
+  "S": {
+    "bars": 1254,
+    "fires": 24
+  },
+  "SABR": {
+    "bars": 3070,
+    "fires": 52
+  },
+  "SAFE": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "SAFT": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "SAFX": {
+    "bars": 375,
+    "fires": 3
+  },
+  "SAH": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "SAMG": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "SANA": {
+    "bars": 1358,
+    "fires": 18
+  },
+  "SANM": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "SATL": {
+    "bars": 1323,
+    "fires": 23
+  },
+  "SB": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "SBAC": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "SBC": {
+    "bars": 945,
+    "fires": 20
+  },
+  "SBCF": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "SBFG": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "SCSC": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "SD": {
+    "bars": 2449,
+    "fires": 46
+  },
+  "SDGR": {
+    "bars": 1609,
+    "fires": 33
+  },
+  "SDRL": {
+    "bars": 931,
+    "fires": 13
+  },
+  "SBGI": {
+    "bars": 3143,
+    "fires": 68
+  },
+  "SBH": {
+    "bars": 3143,
+    "fires": 44
+  },
+  "SBRA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "SBSI": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "SBUX": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "SCHL": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "SCHW": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "SCL": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "SEAT": {
+    "bars": 1179,
+    "fires": 28
+  },
+  "SEG": {
+    "bars": 483,
+    "fires": 7
+  },
+  "SEI": {
+    "bars": 2297,
+    "fires": 37
+  },
+  "SEM": {
+    "bars": 3141,
+    "fires": 62
+  },
+  "SENEA": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "SEPN": {
+    "bars": 421,
+    "fires": 6
+  },
+  "SERV": {
+    "bars": 581,
+    "fires": 10
+  },
+  "SEVN": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "SEZL": {
+    "bars": 703,
+    "fires": 11
+  },
+  "SFBC": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "SFBS": {
+    "bars": 3052,
+    "fires": 59
+  },
+  "SFIX": {
+    "bars": 2165,
+    "fires": 35
+  },
+  "SGC": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "SGHC": {
+    "bars": 1407,
+    "fires": 27
+  },
+  "SGHT": {
+    "bars": 1247,
+    "fires": 15
+  },
+  "SGML": {
+    "bars": 2007,
+    "fires": 29
+  },
+  "SFL": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "SFNC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "SFST": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "SG": {
+    "bars": 1158,
+    "fires": 19
+  },
+  "SGRY": {
+    "bars": 2704,
+    "fires": 44
+  },
+  "SHAK": {
+    "bars": 2872,
+    "fires": 47
+  },
+  "SHBI": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "SHEN": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "SHLS": {
+    "bars": 1363,
+    "fires": 27
+  },
+  "SHO": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "SHOE": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "SHOO": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "SHOP": {
+    "bars": 2796,
+    "fires": 49
+  },
+  "SHW": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "SI": {
+    "bars": 232,
+    "fires": 4
+  },
+  "SIBN": {
+    "bars": 1936,
+    "fires": 34
+  },
+  "SILA": {
+    "bars": 512,
+    "fires": 4
+  },
+  "SION": {
+    "bars": 351,
+    "fires": 3
+  },
+  "SITC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "SITM": {
+    "bars": 1661,
+    "fires": 25
+  },
+  "SIEB": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "SIG": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "SIGA": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "SIGI": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "SKWD": {
+    "bars": 869,
+    "fires": 17
+  },
+  "SKY": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "SKYH": {
+    "bars": 1397,
+    "fires": 25
+  },
+  "SKYT": {
+    "bars": 1306,
+    "fires": 21
+  },
+  "SJM": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "SKIL": {
+    "bars": 1743,
+    "fires": 29
+  },
+  "SKIN": {
+    "bars": 1406,
+    "fires": 27
+  },
+  "SKT": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "SLDB": {
+    "bars": 2119,
+    "fires": 36
+  },
+  "SLDE": {
+    "bars": 261,
+    "fires": 3
+  },
+  "SLDP": {
+    "bars": 1287,
+    "fires": 18
+  },
+  "SLG": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "SKYW": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "SKYX": {
+    "bars": 1101,
+    "fires": 14
+  },
+  "SLAB": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "SLB": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "SLSN": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "SLVM": {
+    "bars": 1198,
+    "fires": 23
+  },
+  "SM": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "SMA": {
+    "bars": 314,
+    "fires": 5
+  },
+  "SLND": {
+    "bars": 1134,
+    "fires": 19
+  },
+  "SLP": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "SLQT": {
+    "bars": 1536,
+    "fires": 19
+  },
+  "SLS": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "SMBC": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "SMBK": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "SMC": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "SMCI": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "SNDA": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "SNDK": {
+    "bars": 347,
+    "fires": 4
+  },
+  "SNDX": {
+    "bars": 2599,
+    "fires": 43
+  },
+  "SNEX": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "SMR": {
+    "bars": 1089,
+    "fires": 20
+  },
+  "SMTC": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "SMTI": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "SNA": {
+    "bars": 3140,
+    "fires": 63
+  },
+  "SMHI": {
+    "bars": 2283,
+    "fires": 35
+  },
+  "SMID": {
+    "bars": 3143,
+    "fires": 44
+  },
+  "SMP": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "SMPL": {
+    "bars": 2258,
+    "fires": 41
+  },
+  "SO": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "SOC": {
+    "bars": 1308,
+    "fires": 17
+  },
+  "SOFI": {
+    "bars": 1377,
+    "fires": 23
+  },
+  "SOLV": {
+    "bars": 566,
+    "fires": 5
+  },
+  "SNFCA": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "SNOW": {
+    "bars": 1452,
+    "fires": 26
+  },
+  "SNPS": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "SNWV": {
+    "bars": 426,
+    "fires": 5
+  },
+  "SPCX": {
+    "bars": 11,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "SPFI": {
+    "bars": 1797,
+    "fires": 28
+  },
+  "SPG": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "SPGI": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "SONO": {
+    "bars": 1989,
+    "fires": 28
+  },
+  "SONY": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "SOUN": {
+    "bars": 1048,
+    "fires": 17
+  },
+  "SPB": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "SPHR": {
+    "bars": 1565,
+    "fires": 22
+  },
+  "SPIR": {
+    "bars": 1421,
+    "fires": 21
+  },
+  "SPNT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "SPOK": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "SPRY": {
+    "bars": 1399,
+    "fires": 22
+  },
+  "SPSC": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "SPT": {
+    "bars": 1645,
+    "fires": 35
+  },
+  "SPWR": {
+    "bars": 877,
+    "fires": 10
+  },
+  "SRE": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "SRRK": {
+    "bars": 2036,
+    "fires": 36
+  },
+  "SRTA": {
+    "bars": 1672,
+    "fires": 25
+  },
+  "SSB": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "SPXC": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "SR": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "SRBK": {
+    "bars": 698,
+    "fires": 13
+  },
+  "SRCE": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "SSP": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "SSRM": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "SSTI": {
+    "bars": 2280,
+    "fires": 43
+  },
+  "SSTK": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "STEL": {
+    "bars": 2170,
+    "fires": 32
+  },
+  "STEP": {
+    "bars": 1455,
+    "fires": 25
+  },
+  "STGW": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "STIM": {
+    "bars": 2013,
+    "fires": 27
+  },
+  "STAA": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "STBA": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "STC": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "STE": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "STLD": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "STM": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "STNE": {
+    "bars": 1930,
+    "fires": 35
+  },
+  "STNG": {
+    "bars": 3143,
+    "fires": 69
+  },
+  "STRT": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "STRW": {
+    "bars": 843,
+    "fires": 9
+  },
+  "STRZ": {
+    "bars": 290,
+    "fires": 2
+  },
+  "STT": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "STOK": {
+    "bars": 1769,
+    "fires": 28
+  },
+  "STRA": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "STRL": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "STRS": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "STX": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "STXS": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "STZ": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "SUNS": {
+    "bars": 498,
+    "fires": 7
+  },
+  "SUPN": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "SVC": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "SVCO": {
+    "bars": 538,
+    "fires": 7
+  },
+  "SVRA": {
+    "bars": 2307,
+    "fires": 39
+  },
+  "SVV": {
+    "bars": 755,
+    "fires": 12
+  },
+  "SW": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "SWBI": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "SWIM": {
+    "bars": 1304,
+    "fires": 27
+  },
+  "SWK": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "SWKS": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "SWX": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "SXC": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "SXI": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "SXT": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "SYBT": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "SYF": {
+    "bars": 2995,
+    "fires": 53
+  },
+  "SYK": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "SYM": {
+    "bars": 1333,
+    "fires": 19
+  },
+  "SYNA": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "SYRE": {
+    "bars": 2574,
+    "fires": 50
+  },
+  "SYY": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "T": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "TALK": {
+    "bars": 1488,
+    "fires": 21
+  },
+  "TALO": {
+    "bars": 2047,
+    "fires": 37
+  },
+  "TAP": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "TARA": {
+    "bars": 2940,
+    "fires": 49
+  },
+  "TARS": {
+    "bars": 1433,
+    "fires": 21
+  },
+  "TBBK": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "TBCH": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "TBI": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "TBPH": {
+    "bars": 3050,
+    "fires": 57
+  },
+  "TBRG": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "TCBI": {
+    "bars": 3143,
+    "fires": 43
+  },
+  "TCBK": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "TCI": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "TCMD": {
+    "bars": 2496,
+    "fires": 37
+  },
+  "TCX": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "TDAY": {
+    "bars": 3121,
+    "fires": 48
+  },
+  "TDG": {
+    "bars": 3140,
+    "fires": 63
+  },
+  "TDOC": {
+    "bars": 2768,
+    "fires": 54
+  },
+  "TECX": {
+    "bars": 2018,
+    "fires": 34
+  },
+  "TEL": {
+    "bars": 3140,
+    "fires": 65
+  },
+  "TEM": {
+    "bars": 510,
+    "fires": 5
+  },
+  "TENB": {
+    "bars": 1994,
+    "fires": 38
+  },
+  "TDS": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "TDUP": {
+    "bars": 1323,
+    "fires": 26
+  },
+  "TDW": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "TDY": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "TE": {
+    "bars": 1627,
+    "fires": 24
+  },
+  "TEAD": {
+    "bars": 1241,
+    "fires": 23
+  },
+  "TEAM": {
+    "bars": 2652,
+    "fires": 43
+  },
+  "TECH": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "TER": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "TEX": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "TFC": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "TFIN": {
+    "bars": 2928,
+    "fires": 48
+  },
+  "TIC": {
+    "bars": 345,
+    "fires": 2
+  },
+  "TILE": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "TIPT": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "TITN": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "TH": {
+    "bars": 2089,
+    "fires": 28
+  },
+  "THFF": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "THRM": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "THRY": {
+    "bars": 2063,
+    "fires": 28
+  },
+  "TG": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "TGLS": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "TGT": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "TGTX": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "TLN": {
+    "bars": 770,
+    "fires": 11
+  },
+  "TLS": {
+    "bars": 1409,
+    "fires": 28
+  },
+  "TLSI": {
+    "bars": 1356,
+    "fires": 18
+  },
+  "TMCI": {
+    "bars": 1304,
+    "fires": 18
+  },
+  "TJX": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "TK": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "TKNO": {
+    "bars": 1260,
+    "fires": 16
+  },
+  "TKO": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "TMDX": {
+    "bars": 1802,
+    "fires": 29
+  },
+  "TMHC": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "TMO": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "TMP": {
+    "bars": 3143,
+    "fires": 69
+  },
+  "TMUS": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "TNC": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "TNDM": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "TNET": {
+    "bars": 3085,
+    "fires": 43
+  },
+  "TNGX": {
+    "bars": 1463,
+    "fires": 23
+  },
+  "TNK": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "TNXP": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "TOI": {
+    "bars": 1527,
+    "fires": 22
+  },
+  "TOL": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "TOST": {
+    "bars": 1196,
+    "fires": 18
+  },
+  "TOWN": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "TPB": {
+    "bars": 2550,
+    "fires": 40
+  },
+  "TPC": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "TPL": {
+    "bars": 3140,
+    "fires": 46
+  },
+  "TPR": {
+    "bars": 3140,
+    "fires": 46
+  },
+  "TR": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "TRAK": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "TRC": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "TRDA": {
+    "bars": 1172,
+    "fires": 21
+  },
+  "TREE": {
+    "bars": 3143,
+    "fires": 44
+  },
+  "TRGP": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "TRI": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "TRIP": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "TRMB": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "TRMK": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "TRN": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "TRNO": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "TRNS": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "TRTX": {
+    "bars": 2250,
+    "fires": 38
+  },
+  "TRUP": {
+    "bars": 3007,
+    "fires": 46
+  },
+  "TRV": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "TRVI": {
+    "bars": 1799,
+    "fires": 29
+  },
+  "TROW": {
+    "bars": 3140,
+    "fires": 63
+  },
+  "TROX": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "TRS": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "TRST": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "TSN": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "TSSI": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "TT": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "TTAM": {
+    "bars": 351,
+    "fires": 5
+  },
+  "TSBK": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "TSCO": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "TSHA": {
+    "bars": 1449,
+    "fires": 25
+  },
+  "TSLA": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "TTMI": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "TTWO": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "TUSK": {
+    "bars": 2441,
+    "fires": 45
+  },
+  "TVGN": {
+    "bars": 1126,
+    "fires": 12
+  },
+  "TTD": {
+    "bars": 2455,
+    "fires": 52
+  },
+  "TTEC": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "TTGT": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "TTI": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "TWST": {
+    "bars": 1926,
+    "fires": 34
+  },
+  "TXG": {
+    "bars": 1710,
+    "fires": 27
+  },
+  "TXN": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "TXNM": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "TVRD": {
+    "bars": 3123,
+    "fires": 48
+  },
+  "TVTX": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "TWI": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "TWO": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "TXT": {
+    "bars": 3140,
+    "fires": 59
+  },
+  "TYL": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "TYRA": {
+    "bars": 1204,
+    "fires": 21
+  },
+  "TZOO": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "U": {
+    "bars": 1450,
+    "fires": 15
+  },
+  "UAL": {
+    "bars": 3140,
+    "fires": 48
+  },
+  "UAMY": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "UBER": {
+    "bars": 1793,
+    "fires": 30
+  },
+  "UBSI": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "UCB": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "UCTT": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "UDR": {
+    "bars": 3140,
+    "fires": 65
+  },
+  "UE": {
+    "bars": 2881,
+    "fires": 49
+  },
+  "UEC": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "UFCS": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "UFPI": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "ULCC": {
+    "bars": 1319,
+    "fires": 17
+  },
+  "ULH": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "ULTA": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "UMBF": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "UFPT": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "UHS": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "UHT": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "UIS": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "UMH": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "UNB": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "UNF": {
+    "bars": 3143,
+    "fires": 69
+  },
+  "UNFI": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "UNH": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "UNIT": {
+    "bars": 2818,
+    "fires": 47
+  },
+  "UNP": {
+    "bars": 3140,
+    "fires": 58
+  },
+  "UNTY": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "UPB": {
+    "bars": 431,
+    "fires": 4
+  },
+  "UPBD": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "UPS": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "UPST": {
+    "bars": 1391,
+    "fires": 24
+  },
+  "UPWK": {
+    "bars": 1946,
+    "fires": 27
+  },
+  "URBN": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "URG": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "URGN": {
+    "bars": 2303,
+    "fires": 40
+  },
+  "URI": {
+    "bars": 3140,
+    "fires": 46
+  },
+  "UROY": {
+    "bars": 1298,
+    "fires": 23
+  },
+  "USAR": {
+    "bars": 744,
+    "fires": 11
+  },
+  "USAU": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "USB": {
+    "bars": 3140,
+    "fires": 64
+  },
+  "USCB": {
+    "bars": 1241,
+    "fires": 25
+  },
+  "USGO": {
+    "bars": 803,
+    "fires": 15
+  },
+  "USLM": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "USNA": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "USPH": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "UTI": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "UTL": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "UTMD": {
+    "bars": 3143,
+    "fires": 69
+  },
+  "UTZ": {
+    "bars": 1909,
+    "fires": 35
+  },
+  "UUUU": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "UVE": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "VAC": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "VAL": {
+    "bars": 1298,
+    "fires": 24
+  },
+  "VALU": {
+    "bars": 3143,
+    "fires": 75
+  },
+  "VC": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "UVSP": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "UVV": {
+    "bars": 3143,
+    "fires": 49
+  },
+  "V": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "VABK": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "VEEV": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "VEL": {
+    "bars": 1622,
+    "fires": 31
+  },
+  "VERA": {
+    "bars": 1289,
+    "fires": 16
+  },
+  "VERX": {
+    "bars": 1489,
+    "fires": 20
+  },
+  "VCEL": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "VCTR": {
+    "bars": 2110,
+    "fires": 38
+  },
+  "VCYT": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "VECO": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "VGAS": {
+    "bars": 1191,
+    "fires": 19
+  },
+  "VHI": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "VIA": {
+    "bars": 202,
+    "fires": 0
+  },
+  "VIAV": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "VICI": {
+    "bars": 2133,
+    "fires": 32
+  },
+  "VICR": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "VIK": {
+    "bars": 541,
+    "fires": 7
+  },
+  "VIR": {
+    "bars": 1689,
+    "fires": 25
+  },
+  "VIRC": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "VISN": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "VITL": {
+    "bars": 1487,
+    "fires": 24
+  },
+  "VKTX": {
+    "bars": 2809,
+    "fires": 48
+  },
+  "VLGEA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "VLO": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "VLTO": {
+    "bars": 685,
+    "fires": 13
+  },
+  "VLY": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "VMC": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "VMD": {
+    "bars": 1733,
+    "fires": 27
+  },
+  "VNDA": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "VOXR": {
+    "bars": 1485,
+    "fires": 30
+  },
+  "VOYG": {
+    "bars": 266,
+    "fires": 2
+  },
+  "VPG": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "VRDN": {
+    "bars": 3028,
+    "fires": 46
+  },
+  "VREX": {
+    "bars": 2374,
+    "fires": 37
+  },
+  "VRM": {
+    "bars": 343,
+    "fires": 7
+  },
+  "VRNS": {
+    "bars": 3104,
+    "fires": 57
+  },
+  "VRRM": {
+    "bars": 2331,
+    "fires": 45
+  },
+  "VRSK": {
+    "bars": 3140,
+    "fires": 50
+  },
+  "VSTM": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "VSTS": {
+    "bars": 693,
+    "fires": 7
+  },
+  "VSXY": {
+    "bars": 1243,
+    "fires": 18
+  },
+  "VTEX": {
+    "bars": 1243,
+    "fires": 24
+  },
+  "VRSN": {
+    "bars": 3140,
+    "fires": 47
+  },
+  "VRT": {
+    "bars": 1986,
+    "fires": 33
+  },
+  "VRTS": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "VRTX": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "VSAT": {
+    "bars": 3143,
+    "fires": 51
+  },
+  "VSEC": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "VSH": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "VST": {
+    "bars": 2445,
+    "fires": 42
+  },
+  "VTOL": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "VTR": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "VTRS": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "VTS": {
+    "bars": 872,
+    "fires": 18
+  },
+  "VUZI": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "VVX": {
+    "bars": 2966,
+    "fires": 55
+  },
+  "VYGR": {
+    "bars": 2674,
+    "fires": 48
+  },
+  "VYX": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "WAL": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "WALD": {
+    "bars": 1291,
+    "fires": 22
+  },
+  "WASH": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "WAT": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "VZ": {
+    "bars": 3140,
+    "fires": 63
+  },
+  "WAB": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "WABC": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "WAFD": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "WAY": {
+    "bars": 518,
+    "fires": 10
+  },
+  "WBD": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "WBS": {
+    "bars": 3140,
+    "fires": 53
+  },
+  "WBTN": {
+    "bars": 505,
+    "fires": 7
+  },
+  "WDFC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "WEAV": {
+    "bars": 1163,
+    "fires": 17
+  },
+  "WEC": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "WELL": {
+    "bars": 3140,
+    "fires": 62
+  },
+  "WCC": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "WD": {
+    "bars": 3143,
+    "fires": 48
+  },
+  "WDAY": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "WDC": {
+    "bars": 3143,
+    "fires": 62
+  },
+  "WERN": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "WEST": {
+    "bars": 1179,
+    "fires": 19
+  },
+  "WEYS": {
+    "bars": 3143,
+    "fires": 70
+  },
+  "WFC": {
+    "bars": 3140,
+    "fires": 57
+  },
+  "WGO": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "WGS": {
+    "bars": 1420,
+    "fires": 21
+  },
+  "WH": {
+    "bars": 2037,
+    "fires": 42
+  },
+  "WHD": {
+    "bars": 2110,
+    "fires": 38
+  },
+  "WLDN": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "WLFC": {
+    "bars": 3143,
+    "fires": 50
+  },
+  "WLTH": {
+    "bars": 137,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "WLY": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "WHG": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "WINA": {
+    "bars": 3143,
+    "fires": 67
+  },
+  "WK": {
+    "bars": 2904,
+    "fires": 48
+  },
+  "WKC": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "WNC": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "WNEB": {
+    "bars": 3143,
+    "fires": 63
+  },
+  "WOOF": {
+    "bars": 1372,
+    "fires": 22
+  },
+  "WOR": {
+    "bars": 3143,
+    "fires": 46
+  },
+  "WM": {
+    "bars": 3140,
+    "fires": 51
+  },
+  "WMB": {
+    "bars": 3140,
+    "fires": 49
+  },
+  "WMK": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "WMT": {
+    "bars": 3143,
+    "fires": 52
+  },
+  "WRB": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "WRBY": {
+    "bars": 1194,
+    "fires": 21
+  },
+  "WRLD": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "WS": {
+    "bars": 650,
+    "fires": 10
+  },
+  "WSBC": {
+    "bars": 3143,
+    "fires": 54
+  },
+  "WSBF": {
+    "bars": 3143,
+    "fires": 65
+  },
+  "WSFS": {
+    "bars": 3143,
+    "fires": 47
+  },
+  "WSM": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "WSO": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "WSR": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "WST": {
+    "bars": 3140,
+    "fires": 41
+  },
+  "WT": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "WTBA": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "WTFC": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "WTI": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "WTS": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "WTTR": {
+    "bars": 2267,
+    "fires": 38
+  },
+  "WTW": {
+    "bars": 3140,
+    "fires": 54
+  },
+  "WU": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "WULF": {
+    "bars": 3143,
+    "fires": 61
+  },
+  "WVE": {
+    "bars": 2674,
+    "fires": 46
+  },
+  "WWW": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "WY": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "WYFI": {
+    "bars": 227,
+    "fires": 1
+  },
+  "XHR": {
+    "bars": 2869,
+    "fires": 54
+  },
+  "XMTR": {
+    "bars": 1257,
+    "fires": 16
+  },
+  "XNCR": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "XOM": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "WYNN": {
+    "bars": 3140,
+    "fires": 60
+  },
+  "XEL": {
+    "bars": 3143,
+    "fires": 55
+  },
+  "XENE": {
+    "bars": 2930,
+    "fires": 55
+  },
+  "XERS": {
+    "bars": 2018,
+    "fires": 33
+  },
+  "XOMA": {
+    "bars": 3143,
+    "fires": 56
+  },
+  "XPEL": {
+    "bars": 1761,
+    "fires": 29
+  },
+  "XPER": {
+    "bars": 949,
+    "fires": 15
+  },
+  "XPEV": {
+    "bars": 1465,
+    "fires": 25
+  },
+  "XPOF": {
+    "bars": 1241,
+    "fires": 20
+  },
+  "XPRO": {
+    "bars": 3143,
+    "fires": 58
+  },
+  "XRN": {
+    "bars": 2515,
+    "fires": 44
+  },
+  "XRX": {
+    "bars": 3143,
+    "fires": 57
+  },
+  "YEXT": {
+    "bars": 2317,
+    "fires": 40
+  },
+  "YORW": {
+    "bars": 3143,
+    "fires": 66
+  },
+  "YOU": {
+    "bars": 1257,
+    "fires": 20
+  },
+  "YSS": {
+    "bars": 107,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "XYL": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "XYZ": {
+    "bars": 2665,
+    "fires": 37
+  },
+  "XZO": {
+    "bars": 164,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "YELP": {
+    "bars": 3143,
+    "fires": 60
+  },
+  "YUM": {
+    "bars": 3140,
+    "fires": 52
+  },
+  "ZBH": {
+    "bars": 3140,
+    "fires": 61
+  },
+  "ZBIO": {
+    "bars": 451,
+    "fires": 8
+  },
+  "ZBRA": {
+    "bars": 3140,
+    "fires": 55
+  },
+  "ZD": {
+    "bars": 3143,
+    "fires": 59
+  },
+  "ZETA": {
+    "bars": 1271,
+    "fires": 25
+  },
+  "ZGN": {
+    "bars": 1137,
+    "fires": 20
+  },
+  "ZIP": {
+    "bars": 1281,
+    "fires": 32
+  },
+  "ZS": {
+    "bars": 2082,
+    "fires": 30
+  },
+  "ZTS": {
+    "bars": 3140,
+    "fires": 56
+  },
+  "ZUMZ": {
+    "bars": 3143,
+    "fires": 53
+  },
+  "ZVIA": {
+    "bars": 1242,
+    "fires": 24
+  },
+  "ZVRA": {
+    "bars": 2820,
+    "fires": 46
+  },
+  "ZWS": {
+    "bars": 3143,
+    "fires": 64
+  },
+  "ZYME": {
+    "bars": 2307,
+    "fires": 37
+  }
+}
