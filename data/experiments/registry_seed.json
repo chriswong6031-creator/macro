@@ -2062,6 +2062,46 @@
       "state": "L4 RAN 2026-07-04 (data/options_exit/exit_crowd_l4_interim.json): PRE-FDR INTERIM, verdict ACCRUE. Flow history is ~3 months (2026 only); no sector-ETF holdings; era splits not computable. L1-L3 blocked on thetadata_eod manifest (n_roots=0). Registration effective this commit (prereg RATIFIED 2026-07-04, research/EXIT_CROWDING_PHASE0_PREREG.md).",
       "next_step": "Accrue ETF-holdings + board history; complete the thetadata universe pass to unblock L1-L3; re-run the full 16-trial family then print BH q-values once. Display-only per house law — no hard gate into any engine on pass (China falsification binding).",
       "phase_hint": "options-alpha EXIT-CROWD — L4 PRE-FDR interim done; L1-L3 pending thetadata manifest; family FDR pending"
+    },
+    {
+      "id": "options-entry-gate-maturation",
+      "name": "Options Entry-Quality Gate Maturation (S-IVSPREAD-F / S-SKEW_DECEL / S-TOP_RISK / S-PIN_RISK / S-VOI2)",
+      "kind": "validation",
+      "priority": "high",
+      "cadence": "daily (live-accrual, nightly stamp pass)",
+      "what": "Five W-C pre-registered fire-conditioned bucket tests (S-IVSPREAD-F, S-SKEW_DECEL, S-TOP_RISK, S-PIN_RISK, S-VOI2) accruing toward n>=30 per bucket before any verdict. Each test conditions on a new options-state stamp column (opt_ivspread_rel, opt_skew/opt_skew_5d_chg, opt_pin_risk) and computes bootstrap-CI deltas on A10 primitives (post_cushion_breach, terminal_state_clean8_21, fwd_mfe_21). BH-FDR family = 22 tests at alpha=0.10.",
+      "source": "scripts/validate_options_entry.py + engine/options_stamp.py",
+      "storage": "data/options_entry/gate.json",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-05",
+      "come_back_on": "2026-10-15",
+      "come_back_note": "2026-10-15: check n counts per bucket (need >=30 in each of the 5 W-C buckets for first verdicts). Earlier signal families (S-IVR/S-DOI/S-VOI) share the same come-back window. BH-FDR q-values computed once the first family member clears n>=30.",
+      "maturation": "n>=30 per condition bucket AND bootstrap 95%-CI excludes 0 in beneficial direction AND BH q<=0.10 over the 22-test family. S-TOP_RISK and S-PIN_RISK are caution-only (de-escalation only, never short per RO-3). Status transitions: building_history -> scorable (any bucket ready) -> signal (any bucket passes FDR-corrected CI). Scored gate (scored=true) requires W5 passage.",
+      "status": "accruing",
+      "state": "All 5 W-C buckets building_history (day 0 of accrual, 2026-07-05). stamp cols opt_ivspread_rel/opt_skew/opt_skew_5d_chg/opt_opex_days/opt_pin_risk/opt_wall_dist_up_pct/opt_wall_dist_down_pct added to STAMP_COLS; nightly stamp pass extended. Skew coverage: 13d/~356 tickers; ivspread coverage: 6d/~344 tickers. gate.json schema upgraded to v2 with per_family_status + fdr_family block.",
+      "next_step": "Review gate.json n counts at come-back; if any bucket near n=30, extend window. After first FDR-passing verdict, coordinate with Setup-Species Stage B for W5 score-wiring.",
+      "phase_hint": "options-alpha W-C: new buckets accruing"
+    },
+    {
+      "id": "skew-ivspread-validation-clock",
+      "name": "Skew / IV-Spread Cross-Sectional Validation Clock (S-CWIV / S-XZZ live extension)",
+      "kind": "validation",
+      "priority": "high",
+      "cadence": "daily (live-accrual snapshot)",
+      "what": "options_skew/snapshots.parquet and options_ivspread/snapshots.parquet accruing toward the cross-sectional gate requirements (120 dates x >=15 names for S-CWIV / S-XZZ; HAC t>2 on rank-IC vs fwd returns). The W-C stamp extension (opt_skew, opt_ivspread_rel) also feeds the fire-conditioned bucket tests (S-SKEW_DECEL, S-IVSPREAD-F) in the entry gate. Two separate clocks: (a) cross-sectional IC clock for the existing §4 S-CWIV/S-XZZ rows; (b) fire-conditioned bucket clock for the W-C rows.",
+      "source": "scripts/validate_options_entry.py (bucket tests) + future cross-sectional IC harness (to be built)",
+      "storage": "data/options_skew/snapshots.parquet + data/options_ivspread/snapshots.parquet + data/options_entry/gate.json",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-05",
+      "come_back_on": "2026-12-15",
+      "come_back_note": "2026-12-15: first read of S-CWIV (call-put IV spread cross-sectional IC, CW 2010) and S-XZZ (skew cross-sectional IC, XZZ 2010) — needs 120 dates from first snapshot (2026-06-21) = ~Dec 2026. Fire-conditioned bucket tests (S-SKEW_DECEL, S-IVSPREAD-F) may mature earlier (~Q4-26) if board fires accrue n>=30 per bucket.",
+      "maturation": "Cross-sectional IC gate: 120 dates x >=15 names, HAC t>2 (existing §4 S-CWIV/S-XZZ rows). Fire-conditioned gate: n>=30 per bucket (W-C rows, come-back 2026-10-15). Skew: 13 trading-day snapshots as of 2026-07-05 (~356 tickers/day). IV-spread: 6 trading-day snapshots (~344 tickers/day).",
+      "status": "accruing",
+      "state": "Skew snapshots: 13 dates (2026-06-21..07-05), ~356 tickers/date (4,634 rows). Ivspread snapshots: 6 dates (2026-06-28..07-05), ~344 tickers/date (2,034 rows). Both stores gitignored (R2-backed). W-C stamp cols added to nightly stamp pass. gate.json v2 now includes per_family_status + fdr_family block and W-C coverage percentages.",
+      "next_step": "At come-back: (1) confirm daily accrual healthy (run_status.json); (2) check n counts in W-C bucket tests; (3) if 120+ dates present, build cross-sectional IC harness for S-CWIV/S-XZZ. Cross-sectional IC harness NOT yet built — add to backlog.",
+      "phase_hint": "options-alpha W-C: skew/ivspread dual clock"
     }
   ]
 }

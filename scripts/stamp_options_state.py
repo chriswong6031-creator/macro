@@ -1,10 +1,11 @@
 """scripts/stamp_options_state.py — nightly options-state stamping on the US board ledger.
 
-Options Alpha program W1.3 (research/OPTIONS_ALPHA_MASTERPLAN.md, rulings A6/A9/A10).
+Options Alpha program W1.3 / W-C (research/OPTIONS_ALPHA_MASTERPLAN.md, rulings A6/A9/A10;
+W-C 2026-07-05 extends with skew/ivspread/opex/wall-dist/pin-risk columns).
 
 Runs AFTER ``scripts.grade_us_board --nightly`` in the daily.yml render job (see the
 "US Buy Board ledger" step). Given the freshly-graded + accumulated
-``data/us_board_ledger/retro_grades.parquet``, it adds the eight nullable options-state
+``data/us_board_ledger/retro_grades.parquet``, it adds the nullable options-state
 stamp columns (``engine.options_stamp.STAMP_COLS``) to any row that is not yet stamped and
 writes the frame back.
 
@@ -16,6 +17,11 @@ schema-union / PIT-stamp pattern):
     never overwritten (backfill-does-not-overwrite-non-null; a later re-run is idempotent).
   * PIT: ``engine.options_stamp.stamp_options_state`` uses only store data with as-of ≤ the
     fire's ``as_of`` date. No lookahead.
+
+W-C additions: the stamp_ledger pass pre-loads the skew and ivspread snapshot frames
+once per run (avoiding repeated parquet reads per row) and passes them into
+stamp_options_state as ``skew_df`` / ``ivspread_df``. These frames are absent locally
+(gitignored R2 stores) → None is passed → all W-C cols stamp null. Coverage is printed.
 
 This script NEVER touches grading columns or grading logic — Setup-Species Stage B owns
 those (A9). It only unions in the ``opt_*`` columns. Backfill covers every existing row in
@@ -31,7 +37,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from engine.options_stamp import STAMP_COLS, _default_chain_dates, stamp_options_state
+from engine.options_stamp import (
+    STAMP_COLS,
+    _default_chain_dates,
+    _default_read_skew_snapshots,
+    _default_read_ivspread_snapshots,
+    stamp_options_state,
+)
 from lib import config
 
 LEDGER_PATH = config.data_dir() / "us_board_ledger" / "retro_grades.parquet"
@@ -53,7 +65,13 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
 
     Only rows where ALL stamp columns are null are stamped (never overwrites non-null).
     Stamps are cached per (as_of, ticker) since a board can list a name in several
-    lanes/horizons — the options state is identical for all of them."""
+    lanes/horizons — the options state is identical for all of them.
+
+    W-C: skew and ivspread snapshot DataFrames are loaded once per call (not per row)
+    and passed into stamp_options_state to avoid repeated parquet reads.  When these
+    stores are absent locally (gitignored R2) the frames are None and the W-C stamp
+    columns stay null — this is correct and expected (they will be filled on the R2
+    runner where the stores are present)."""
     if df.empty:
         return df, 0
     df = _ensure_stamp_columns(df.copy())
@@ -64,6 +82,11 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
 
     # chain-date list is expensive-ish (a glob) — compute once and reuse across rows
     chain_dates = _default_chain_dates()
+
+    # W-C: pre-load snapshot frames once per run (absent locally → None; fine)
+    skew_df = _default_read_skew_snapshots()
+    ivspread_df = _default_read_ivspread_snapshots()
+
     cache: dict[tuple, dict] = {}
     newly_stamped = 0
 
@@ -72,7 +95,12 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
         ticker = df.at[idx, "ticker"]
         key = (as_of, ticker)
         if key not in cache:
-            cache[key] = stamp_options_state(as_of, ticker, chain_dates=chain_dates)
+            cache[key] = stamp_options_state(
+                as_of, ticker,
+                chain_dates=chain_dates,
+                skew_df=skew_df,
+                ivspread_df=ivspread_df,
+            )
         stamp = cache[key]
         # apply only if the stamp produced at least one non-null value (else leave the row
         # unstamped so a future run — once coverage extends — can fill it)
@@ -113,6 +141,15 @@ def main() -> None:
         print(f"[options_stamp] stamped {n_newly} newly-stamped rows; "
               f"{n_unstamped}/{n_before} rows still unstamped "
               f"(no chain/summary coverage for those as_of/ticker)")
+        # W-C coverage summary
+        wc_cols = ["opt_ivspread_rel", "opt_skew", "opt_skew_5d_chg",
+                   "opt_opex_days", "opt_pin_risk",
+                   "opt_wall_dist_up_pct", "opt_wall_dist_down_pct"]
+        for col in wc_cols:
+            if col in df.columns:
+                n_col = int(df[col].notna().sum())
+                pct = round(n_col / max(n_before, 1) * 100, 1)
+                print(f"  W-C coverage [{col}]: {n_col}/{n_before} rows ({pct}%)")
 
 
 if __name__ == "__main__":
