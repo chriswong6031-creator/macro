@@ -1314,8 +1314,8 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .splitbtn:hover .sb-go{transform:translateX(2px)}
 
 .us{--accent:#416aec} .cn{--accent:#e35d6a} .hk{--accent:#a855f7} .ca{--accent:#e5484d} .btc{--accent:#f7931a}
-.com{--accent:#d4a12a} .fx{--accent:#14b8a6} .bd{--accent:#0ea5e9} .xa{--accent:#8b5cf6}
-.etf{--accent:#3b82f6} .str{--accent:#10b981} .wl{--accent:#64748b}
+.com{--accent:#d4a12a} .fx{--accent:#14b8a6} .bd{--accent:#0ea5e9} .term{--accent:#22c55e}
+.cyc{--accent:#6366f1} .sec{--accent:#14b8a6} .rep{--accent:#8b5cf6}
 
 /* ===== compact alerts (secondary, bottom) ===== */
 .alerts{margin-top:4px}
@@ -1771,11 +1771,9 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
     b_score = (bonds or {}).get("score")
     b_phase = (bonds or {}).get("phase") or ""
     fx_risk = (forex or {}).get("risk", "")
-    ca_corr = (crossasset or {}).get("correlation", "")
-    n_strat = (strategies or {}).get("n", 0)
 
-    def card(cls, ic, h_en, h_zh, body, go_en, go_zh, href):
-        return ('<a class="glass acc card ' + cls + '" href="' + href + '">'
+    def card(cls, ic, h_en, h_zh, body, go_en, go_zh, href, attrs=""):
+        return ('<a class="glass acc card ' + cls + '" href="' + href + '"' + attrs + '>'
                 '<div class="card-top"><span class="ico" aria-hidden="true">' + ic + '</span>'
                 '<h3 class="card-h">' + _bi(h_en, h_zh) + '</h3></div>' + body
                 + '<span class="go">' + _bi(go_en, go_zh) + '</span></a>')
@@ -1793,19 +1791,21 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
     com = ('<div class="chips"><span class="pill ' + com_q + '">' + _bi(com_label, _GQUAD_ZH.get(com_label, com_label))
            + '</span>' + ('<span class="pill">' + _bi("Favored: " + fav, "偏好：" + fav) + '</span>' if fav else "") + '</div>')
     fx = '<div class="chips"><span class="pill">' + _bi((forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else ""), (forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else "")) + '</span></div>'
-    xa = '<div class="chips"><span class="pill">' + _bi((crossasset or {}).get("regime", "—") + ((" · " + ca_corr) if ca_corr else ""), (crossasset or {}).get("regime", "—") + ((" · " + ca_corr) if ca_corr else "")) + '</span></div>'
-    etfc = '<div class="chips"><span class="pill">' + _bi("Manager & index flows", "经理人与指数资金流") + '</span></div>'
-    strc = '<div class="chips"><span class="pill">' + _bi(str(n_strat) + " strategies", str(n_strat) + " 个策略") + '</span></div>'
-    wlc = '<div class="chips"><span class="pill">' + _bi("Your holdings", "你的持仓") + '</span></div>'
+    term = '<div class="chips"><span class="pill on">' + _bi("Trading charts", "交易图表") + '</span><span class="pill">' + _bi("Live terminal", "实时终端") + '</span></div>'
+    cyc = '<div class="chips"><span class="pill">' + _bi("Cycle clocks", "周期时钟") + '</span><span class="pill">' + _bi("Country regimes", "国家周期") + '</span></div>'
+    sec_us = '<div class="chips"><span class="pill">' + _bi("US sectors", "美股行业") + '</span><span class="pill">' + _bi("Rotation desk", "轮动面板") + '</span></div>'
+    sec_cn = '<div class="chips"><span class="pill">' + _bi("CN sectors", "中国行业") + '</span><span class="pill">' + _bi("Rotation desk", "轮动面板") + '</span></div>'
+    rep = '<div class="chips"><span class="pill">' + _bi("Research library", "研究库") + '</span><span class="pill">' + _bi("Deep dives", "深度报告") + '</span></div>'
     cards = [
+        card("term", "▣", "Terminal", "交易终端", term, "Trading charts & stock workspace", "交易图表与个股工作台", "https://app.mastermind-x.com", ' rel="noopener"'),
+        card("cyc", "◷", "Cycle Intelligence", "周期智能", cyc, "Country cycle dashboards", "国家周期看板", "cycle.html"),
+        card("sec l-en", "▦", "US Sectors", "美股行业", sec_us, "Sector Central rotation map", "行业轮动中心", "sector_central.html"),
+        card("sec l-zh", "▦", "CN Sectors", "CN Sectors", sec_cn, "Sector Central rotation map", "中国行业轮动中心", "sector_central_china.html"),
+        card("rep", "◇", "Research Reports", "研究报告", rep, "Read the latest research desk", "阅读最新研究", "reports.html"),
         card("btc", "₿", "Bitcoin Vector", "比特币向量", btc, "Risk, momentum & allocation", "风险、动量与配置", "vector.html"),
         card("bd", "🏛️", "Bonds & Bond Health", "债券与债券健康", bd, "Curve, credit & cycle clock", "曲线、信用与周期时钟", "bonds.html"),
         card("com", "◆", "Commodity Vector", "大宗商品向量", com, "Allocation & shock detection", "配置与冲击检测", "commodities.html"),
         card("fx", "💱", "Forex Vector", "外汇向量", fx, "Dollar-smile currency board", "美元微笑货币面板", "forex.html"),
-        card("xa", "🧭", "Cross-Asset", "跨资产", xa, "Trend & correlation regime", "趋势与相关性体制", "crossasset.html"),
-        card("etf", "🐋", "ETF Flow Radar", "ETF 资金雷达", etfc, "Accumulation & trims", "增持与减持", "etfs.html"),
-        card("str", "🎛️", "Strategy Scorecards", "策略记分卡", strc, "Macro-factor tactical strategies", "宏观因子战术策略", "strategies.html"),
-        card("wl", "📋", "Watchlist", "持仓清单", wlc, "Track holdings with live signals", "跟踪持仓与实时信号", "watchlist.html"),
     ]
     return ('<div class="band"><h2>' + _bi("Vectors & strategies", "向量与策略") + '</h2><span class="ln"></span></div>'
             '<div class="nav vc reveal">' + "".join(cards) + '</div>')
