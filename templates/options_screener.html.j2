@@ -1,0 +1,377 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro chip(en, zh='', cls='') -%}
+<span class="chip{% if cls %} chip-{{ cls }}{% endif %}"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Options Screener — IV, GEX, flow · 期权筛选台</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body { padding:24px max(40px,calc((100vw - 1400px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; font-weight:600; letter-spacing:.2px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:11px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+
+  /* ---- chip row ---- */
+  .toprow { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; margin-bottom:14px; }
+  .chip { display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px;
+    border:1px solid var(--line); background:var(--panel2); color:var(--muted); white-space:nowrap; }
+  .chip-ok  { color:var(--up);   border-color:var(--up);   background:color-mix(in srgb,var(--up) 10%, transparent); }
+  .chip-warn{ color:var(--orange); border-color:var(--orange); background:color-mix(in srgb,var(--orange) 10%, transparent); }
+  .chip-soft{ color:var(--muted); border-color:var(--muted); font-style:italic; }
+
+  /* ---- honest-box ---- */
+  .honest-box { font-size:12px; line-height:1.55; color:var(--muted); background:var(--panel2); border:1px solid var(--line);
+    border-radius:10px; padding:10px 14px; margin-bottom:14px; }
+  .honest-box strong { color:var(--text); }
+
+  /* ---- controls row ---- */
+  .ctrl-row { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin-bottom:10px; }
+  .ctrl-row input[type=text] { padding:7px 11px; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); color:var(--text); font:inherit; font-size:13px; flex:1 1 200px; max-width:320px; }
+  .ctrl-row input:focus { outline:none; border-color:var(--info); }
+  .ctrl-row select { padding:7px 10px; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); color:var(--text); font:inherit; font-size:13px; cursor:pointer; }
+  .ctrl-row label { font-size:12px; color:var(--muted); }
+
+  /* ---- screener table ---- */
+  .tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table.sc-tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.sc-tbl thead th { text-align:right; color:var(--muted); font-weight:500; padding:7px 10px 5px;
+    border-bottom:2px solid var(--line); white-space:nowrap; position:sticky; top:0; background:var(--panel); z-index:2; }
+  table.sc-tbl thead th:first-child,
+  table.sc-tbl thead th:nth-child(2) { text-align:left; }
+  table.sc-tbl thead th.sortable { cursor:pointer; user-select:none; }
+  table.sc-tbl thead th.sortable:hover { color:var(--text); }
+  table.sc-tbl thead th.sorted { color:var(--text); }
+  table.sc-tbl thead th .sarrow { font-size:9px; opacity:.35; margin-left:3px; font-weight:700; }
+  table.sc-tbl thead th.sorted .sarrow { opacity:.9; color:var(--link); }
+  table.sc-tbl tbody td { padding:6px 10px; border-bottom:1px solid var(--line); text-align:right;
+    font-variant-numeric:tabular-nums; }
+  table.sc-tbl tbody td:first-child,
+  table.sc-tbl tbody td:nth-child(2) { text-align:left; }
+  table.sc-tbl tbody tr:hover td { background:var(--panel2); }
+  table.sc-tbl tbody .tk { font-weight:700; font-size:13px; }
+  table.sc-tbl tbody .na { color:var(--muted); }
+
+  /* ---- young badge ---- */
+  .young-badge { font-size:10px; font-weight:600; padding:1px 5px; border-radius:5px;
+    background:color-mix(in srgb,var(--orange) 15%, transparent);
+    color:var(--orange); border:1px solid var(--orange); white-space:nowrap; vertical-align:middle; margin-left:4px; }
+
+  /* ---- tone chip ---- */
+  .tone { font-size:11px; font-weight:600; padding:2px 7px; border-radius:12px; white-space:nowrap; }
+  .tone-call { color:var(--up);   background:color-mix(in srgb,var(--up) 12%, transparent);   border:1px solid var(--up); }
+  .tone-put  { color:var(--down); background:color-mix(in srgb,var(--down) 12%, transparent); border:1px solid var(--down); }
+  .tone-neu  { color:var(--muted); border:1px solid var(--line); background:transparent; }
+
+  /* ---- coverage stamp ---- */
+  .cov-stamp { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.6; }
+
+  /* ---- help popover ---- */
+  .help { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%;
+    border:1px solid var(--muted); color:var(--muted); font-size:9px; font-weight:700; cursor:help;
+    position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%);
+    width:260px; background:var(--panel); border:1px solid var(--line); padding:9px 11px;
+    border-radius:8px; z-index:60; font-size:11.5px; line-height:1.45; color:var(--text); font-weight:400;
+    box-shadow:var(--popover-shadow); pointer-events:none; text-align:left; white-space:normal; }
+  .help:hover .tip { display:block; }
+
+  /* ---- responsive hide ---- */
+  @media (max-width:900px) {
+    .sc-hide-sm { display:none; }
+  }
+  @media (max-width:640px) {
+    .sc-hide-xs { display:none; }
+  }
+</style>
+</head>
+<body>
+{% set nav_search_placeholder_en = 'Search any stock - US, China, HK, Canada and more...' %}
+{% set nav_search_placeholder_zh = '搜索任意股票 - 美股、A股、港股、加股等...' %}
+{% include "_site_nav.html.j2" ignore missing %}
+
+<div class="toprow">
+  <h1>📊 {{ t('Options Screener', '期权筛选台') }}</h1>
+  {{ chip('EOD · display-only', 'EOD · 仅供展示') }}
+  {{ chip(coverage.n_names|string ~ ' names', coverage.n_names|string ~ ' 个标的') }}
+  {% if coverage.tape_flow_present %}
+  {{ chip('tape-flow present', '逐笔流量已就位', 'ok') }}
+  {% endif %}
+  <span class="muted sm">{{ t('built', '构建于') }} {{ built }}</span>
+</div>
+
+<div class="honest-box">
+  <strong>{{ t('Coverage &amp; data provenance', '覆盖范围与数据说明') }}</strong> ·
+  {{ t(
+    'IV · GEX · walls · max-pain: Polygon.io options chain snapshots, ' ~ coverage.n_names|string ~ ' underlyings, daily since 2026-06-15 (accruing). '
+    ~ 'IV-rank = percentile within available history — labelled "young (n=Xd)" when fewer than '
+    ~ coverage.young_threshold|string ~ ' calendar days are stored; do NOT treat a young IV-rank as a '
+    ~ coverage.young_threshold|string ~ '-day percentile. '
+    ~ 'Options flow (volume · premium · P/C ratio): ' ~ coverage.n_names|string ~ ' names, last trading session. '
+    ~ 'Net-premium tone is a labeled heuristic only — magnitude is reliable, direction is SOFT (signing incomplete). '
+    ~ 'Implied-move proxy = IV30 × √(30÷365) × 100%. '
+    ~ 'Nothing here feeds any score or rank path.',
+
+    'IV · GEX · 墙位 · 最大痛点：Polygon.io 期权链快照，'
+    ~ coverage.n_names|string ~ ' 个标的，每日数据自 2026-06-15 起累积。'
+    ~ 'IV分位 = 当前IV30在可用历史中的百分位——当历史不足 '
+    ~ coverage.young_threshold|string ~ ' 个日历日时，标注"young (n=Xd)"；请勿将 young 分位视为完整 '
+    ~ coverage.young_threshold|string ~ ' 日历史分位。'
+    ~ '期权流量（成交量 · 权利金 · 认沽/认购比）：' ~ coverage.n_names|string ~ ' 个标的，最近交易日数据。'
+    ~ '净权利金方向为启发式标签——量级可靠，方向为软性参考（签名机制尚未完整）。'
+    ~ '隐含波动幅度 = IV30 × √(30÷365) × 100%。'
+    ~ '本页所有数据均不进入任何评分或排名流程。'
+  ) }}
+</div>
+
+<div class="panel">
+  <div class="ctrl-row">
+    <input id="os-search" type="text"
+      placeholder="{{ t('Filter ticker or sector…', '按代码或行业筛选…') }}"
+      autocomplete="off" spellcheck="false">
+    <label>
+      {{ t('Sector', '行业') }}
+      <select id="os-sector">
+        <option value="">{{ t('All sectors', '全部行业') }}</option>
+      </select>
+    </label>
+    <label>
+      {{ t('Sort', '排序') }}
+      <select id="os-sort">
+        <option value="gross_premium_mn">{{ t('Premium (gross)', '总权利金') }}</option>
+        <option value="volume">{{ t('Options volume', '期权成交量') }}</option>
+        <option value="iv30">{{ t('IV30 (high→low)', 'IV30（高→低）') }}</option>
+        <option value="iv_rank">{{ t('IV Rank', 'IV分位') }}</option>
+        <option value="pc_oi">{{ t('P/C OI ratio', '认沽/认购OI比') }}</option>
+        <option value="implied_move_30d">{{ t('Implied move', '隐含波幅') }}</option>
+      </select>
+    </label>
+    <span class="muted sm" id="os-count"></span>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="sc-tbl" id="os-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-col="ticker">{{ t('Ticker','代码') }}<span class="sarrow">↕</span></th>
+          <th class="sortable sc-hide-sm" data-col="sector">{{ t('Sector','行业') }}<span class="sarrow">↕</span></th>
+          <th class="sortable" data-col="iv30">
+            IV30<span class="help">?<span class="tip">{{ t('30-day implied volatility from the options chain (annualised %).',
+              '期权链30日隐含波动率（年化%）。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable" data-col="iv_rank">
+            {{ t('IV Rank','IV分位') }}<span class="help">?<span class="tip">{{ t(
+              'Percentile of current IV30 within available history. "young (n=Xd)" = fewer than '
+              ~ coverage.young_threshold|string ~ ' days of history — treat with caution.',
+              '当前IV30在可用历史内的百分位。"young (n=Xd)"表示历史不足'
+              ~ coverage.young_threshold|string ~ '日，需谨慎参考。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable sc-hide-xs" data-col="implied_move_30d">
+            {{ t('Impl. Move','隐含波幅') }}<span class="help">?<span class="tip">{{ t(
+              'IV30 × √(30÷365) × 100% — expected ±move over 30 calendar days (1-sigma).',
+              'IV30 × √(30÷365) × 100%，30日历日内的预期±波动幅度（1倍标准差）。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable" data-col="pc_oi">
+            {{ t('P/C OI','认沽/认购OI') }}<span class="help">?<span class="tip">{{ t(
+              'Put/Call open-interest ratio. >1 = more puts outstanding.',
+              '认沽/认购未平仓合约比率。>1表示认沽仓位更多。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+          <th class="sortable" data-col="volume">{{ t('Opt. Volume','期权成交量') }}<span class="sarrow">↕</span></th>
+          <th class="sortable" data-col="gross_premium_mn">
+            {{ t('Gross Prem. ($M)','总权利金（百万$）') }}<span class="sarrow">↕</span>
+          </th>
+          <th class="sc-hide-sm" data-col="max_pain">{{ t('Max Pain','最大痛点') }}</th>
+          <th class="sc-hide-sm" data-col="gex_tier">{{ t('GEX Tier','GEX层级') }}</th>
+          <th class="sortable sc-hide-xs" data-col="net_prem_tone">
+            {{ t('Net Prem. Tone','净权利金方向') }}<span class="help">?<span class="tip">{{ t(
+              'Labeled heuristic only — direction is SOFT (signing incomplete). Magnitude is reliable.',
+              '仅为启发式标签——方向为软性参考（签名机制尚未完整），量级可靠。') }}</span></span><span class="sarrow">↕</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody id="os-body"></tbody>
+    </table>
+  </div>
+
+  <div class="cov-stamp">
+    {{ t(
+      coverage.n_names|string ~ ' names · ' ~ coverage.n_young|string ~ ' with young IV-rank (< '
+      ~ coverage.young_threshold|string ~ 'd history) · '
+      ~ coverage.n_mature|string ~ ' mature · median history '
+      ~ coverage.median_depth_days|string ~ ' calendar days',
+
+      coverage.n_names|string ~ ' 个标的 · '
+      ~ coverage.n_young|string ~ ' 个IV分位偏年轻（历史不足'
+      ~ coverage.young_threshold|string ~ '日） · '
+      ~ coverage.n_mature|string ~ ' 个历史充足 · 历史中位数 '
+      ~ coverage.median_depth_days|string ~ ' 个日历日'
+    ) }}
+  </div>
+</div>
+
+<script type="application/json" id="os-rows">{{ rows_json | safe }}</script>
+<script>
+(function(){
+  var ROWS = JSON.parse(document.getElementById('os-rows').textContent);
+  var sortCol = 'gross_premium_mn', sortDir = 'desc';
+
+  // ---- sector dropdown ----
+  var sectors = {};
+  ROWS.forEach(function(r){ if(r.sector) sectors[r.sector] = 1; });
+  var secSel = document.getElementById('os-sector');
+  Object.keys(sectors).sort().forEach(function(s){
+    var o = document.createElement('option');
+    o.value = s; o.textContent = s;
+    secSel.appendChild(o);
+  });
+
+  function fmtIV(v){ return v == null ? '<span class="na">—</span>' : v.toFixed(1) + '%'; }
+  function fmtRank(r, n, young){
+    if(r == null) return '<span class="na">—</span>';
+    var txt = r.toFixed(0) + 'th';
+    if(young) txt += ' <span class="young-badge" title="fewer than ' + n + ' days of history — treat with caution">young&nbsp;n=' + n + 'd</span>';
+    return txt;
+  }
+  function fmtMove(v){ return v == null ? '<span class="na">—</span>' : '±' + v.toFixed(1) + '%'; }
+  function fmtPC(v){ return v == null ? '<span class="na">—</span>' : v.toFixed(2) + 'x'; }
+  function fmtVol(v){
+    if(v == null) return '<span class="na">—</span>';
+    if(v >= 1e6) return (v/1e6).toFixed(1) + 'M';
+    if(v >= 1e3) return (v/1e3).toFixed(0) + 'K';
+    return v.toString();
+  }
+  function fmtPrem(v){ return v == null ? '<span class="na">—</span>' : '$' + v.toFixed(1) + 'M'; }
+  function fmtPrice(v){ return v == null ? '<span class="na">—</span>' : '$' + v.toFixed(2); }
+  function fmtTier(v){
+    if(!v) return '<span class="na">—</span>';
+    var cls = v === 'full' ? '' : (v === 'lite' ? 'muted' : 'muted');
+    return '<span class="' + cls + '">' + v + '</span>';
+  }
+  function fmtTone(v){
+    if(!v) return '<span class="na">—</span>';
+    if(v === 'call-leaning') return '<span class="tone tone-call l-en">call-leaning</span><span class="tone tone-call l-zh">偏认购</span>';
+    if(v === 'put-leaning')  return '<span class="tone tone-put  l-en">put-leaning</span><span class="tone tone-put  l-zh">偏认沽</span>';
+    return '<span class="tone tone-neu l-en">neutral</span><span class="tone tone-neu l-zh">中性</span>';
+  }
+
+  function render(){
+    var search = (document.getElementById('os-search').value || '').trim().toUpperCase();
+    var sector = secSel.value;
+    var filtered = ROWS.filter(function(r){
+      if(search && r.ticker.indexOf(search) === -1 && (r.sector||'').toUpperCase().indexOf(search) === -1) return false;
+      if(sector && r.sector !== sector) return false;
+      return true;
+    });
+
+    // sort
+    var col = sortCol, dir = sortDir;
+    var toneOrder = {'call-leaning':1,'neutral':0,'put-leaning':-1,'':null};
+    filtered.sort(function(a, b){
+      var av = a[col], bv = b[col];
+      // nulls last
+      if(av == null && bv == null) return 0;
+      if(av == null) return 1;
+      if(bv == null) return -1;
+      // tone is string
+      if(col === 'net_prem_tone'){
+        var ao = toneOrder[av] != null ? toneOrder[av] : 0;
+        var bo = toneOrder[bv] != null ? toneOrder[bv] : 0;
+        return dir === 'desc' ? bo - ao : ao - bo;
+      }
+      if(col === 'ticker' || col === 'sector'){
+        return dir === 'desc' ? bv.localeCompare(av) : av.localeCompare(bv);
+      }
+      return dir === 'desc' ? bv - av : av - bv;
+    });
+
+    var tbody = document.getElementById('os-body');
+    var html = '';
+    filtered.forEach(function(r){
+      html += '<tr>';
+      html += '<td class="tk">' + r.ticker + '</td>';
+      html += '<td class="sc-hide-sm muted xs">' + (r.sector || '—') + '</td>';
+      html += '<td>' + fmtIV(r.iv30) + '</td>';
+      html += '<td>' + fmtRank(r.iv_rank, r.iv_rank_n, r.iv_rank_young) + '</td>';
+      html += '<td class="sc-hide-xs">' + fmtMove(r.implied_move_30d) + '</td>';
+      html += '<td>' + fmtPC(r.pc_oi) + '</td>';
+      html += '<td>' + fmtVol(r.volume) + '</td>';
+      html += '<td>' + fmtPrem(r.gross_premium_mn) + '</td>';
+      html += '<td class="sc-hide-sm">' + fmtPrice(r.max_pain) + '</td>';
+      html += '<td class="sc-hide-sm">' + fmtTier(r.gex_tier) + '</td>';
+      html += '<td class="sc-hide-xs">' + fmtTone(r.net_prem_tone) + '</td>';
+      html += '</tr>';
+    });
+    tbody.innerHTML = html || '<tr><td colspan="11" class="muted" style="text-align:center;padding:24px">{{ t("No rows match the current filter.", "当前筛选条件下无数据。") }}</td></tr>';
+    var ct = document.getElementById('os-count');
+    if(ct) ct.textContent = filtered.length + ' / ' + ROWS.length + '{{ t(" names", " 个标的") }}';
+  }
+
+  // ---- sort on header click ----
+  document.querySelectorAll('table.sc-tbl thead th.sortable').forEach(function(th){
+    th.addEventListener('click', function(){
+      var col = th.getAttribute('data-col');
+      if(!col) return;
+      if(sortCol === col){
+        sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+      } else {
+        sortCol = col;
+        sortDir = 'desc';
+      }
+      document.querySelectorAll('table.sc-tbl thead th').forEach(function(h){
+        h.classList.remove('sorted');
+        var arr = h.querySelector('.sarrow');
+        if(arr) arr.textContent = '↕';
+      });
+      th.classList.add('sorted');
+      var arr = th.querySelector('.sarrow');
+      if(arr) arr.textContent = sortDir === 'desc' ? '↓' : '↑';
+      render();
+    });
+  });
+
+  // ---- sort-select sync ----
+  var sortSel = document.getElementById('os-sort');
+  if(sortSel){
+    sortSel.addEventListener('change', function(){
+      sortCol = this.value;
+      sortDir = 'desc';
+      document.querySelectorAll('table.sc-tbl thead th').forEach(function(h){
+        h.classList.remove('sorted');
+        var arr = h.querySelector('.sarrow');
+        if(arr) arr.textContent = '↕';
+      });
+      var matching = document.querySelector('table.sc-tbl thead th[data-col="' + sortCol + '"]');
+      if(matching){
+        matching.classList.add('sorted');
+        var arr = matching.querySelector('.sarrow');
+        if(arr) arr.textContent = '↓';
+      }
+      render();
+    });
+  }
+
+  document.getElementById('os-search').addEventListener('input', render);
+  secSel.addEventListener('change', render);
+
+  // initial sort marker
+  var initTh = document.querySelector('table.sc-tbl thead th[data-col="' + sortCol + '"]');
+  if(initTh){ initTh.classList.add('sorted'); var arr = initTh.querySelector('.sarrow'); if(arr) arr.textContent = '↓'; }
+
+  render();
+})();
+</script>
+</body>
+</html>
