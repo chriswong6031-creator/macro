@@ -20,8 +20,13 @@ PRE-REGISTERED EXPECT-NULL PROTOCOL (RUL-5):
   noise by pre-registration. Any non-null additionally requires baskets OOS
   replication before a chip is even discussed (not this script's call).
 
-FROZEN STRATUM DEFINITION (not tunable — §3 F6 masterplan):
+STRATUM DEFINITION (frozen at W1 build — §3 F6 + RUL-F6-OPDEF):
+  The masterplan §3 F6 pre-registered "ADX14 rising-vs-low at fire." The full
+  operationalization was chosen by the W1 builder and frozen in masterplan
+  RUL-F6-OPDEF (ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md, appended to §3 F6):
   Stratum A (ADX-rising): adx14 > 20 AND adx14 > adx14.shift(5) at the fire bar.
+    level_threshold=20.0 (conventional trending floor; no alternative tested pre-read)
+    lookback=5 bars (one trading week; no alternative tested pre-read)
   Stratum B: complement (ADX low, or ADX not-rising, or close-only fires excluded).
   ADX14 via engine.stock_technicals.adx_dmi(high, low, close, n=14).
   Close-only fires (no H/L): EXCLUDED with counts printed (not silently zero-filled).
@@ -81,23 +86,17 @@ from scripts.research.entry_strata_phase0 import (  # noqa: E402
     compute_recall,
     grade_fires,
     load_fires,
-    FAMILY_BUDGETS,
     PROGRAM_ERAS,
-    BH_Q_THRESHOLD,
     N_BOOTSTRAP,
-    RNG_SEED,
 )
 
 from scripts.research.run_w1_nc import (  # noqa: E402
     fast_effect_table,
     fast_era_table,
-    bh_correction,
     _fmt_pct,
     _fmt_f,
     _ci_str,
-    _excl_zero,
     _write_effect_md,
-    EFFECT_OUTCOMES,
 )
 
 # ---------------------------------------------------------------------------
@@ -116,9 +115,12 @@ _VIXCLS_PATH    = _DATA / "fred" / "VIXCLS.parquet"
 VIX_BAND_LO = 33   # below-33pctile = low-vol
 VIX_BAND_HI = 67   # above-67pctile = high-vol
 
-# ADX stratum definition (frozen — §3 F6, not tunable)
-ADX_LEVEL_THRESHOLD = 20.0   # adx14 > 20
-ADX_LOOKBACK        = 5      # adx14 > adx14.shift(5)
+# ADX stratum operationalization — frozen at W1 build via RUL-F6-OPDEF
+# (masterplan §3 F6 pre-registered "rising-vs-low"; the specific numbers below
+# were chosen by the W1 builder and frozen in the masterplan RUL-F6-OPDEF block.
+# No alternative was tested before reading results.)
+ADX_LEVEL_THRESHOLD = 20.0   # adx14 > 20 (conventional "trending" floor)
+ADX_LOOKBACK        = 5      # adx14 > adx14.shift(5) (1-week lookback)
 
 # 52-week high window
 DIST_52W_WINDOW = 252  # bars
@@ -230,12 +232,17 @@ def compute_adx_at_fires(
         "insufficient_history": 0,
         "date_not_in_panel": 0,
         "adx_nan": 0,
+        "insufficient_lag5_history": 0,
     }
 
-    # Precompute full ADX14 series per ticker (vectorized — one pass per ticker)
+    # Precompute full ADX14 series per ticker (vectorized — one pass per ticker).
+    # Track tickers skipped for <28 bars so fires from those tickers are correctly
+    # attributed to "insufficient_history" (not "adx_nan") in the fire loop below.
     adx_cache: dict[str, pd.Series] = {}
+    short_history_tickers: set[str] = set()
     for ticker, df in hl_panels.items():
         if len(df) < 28:
+            short_history_tickers.add(ticker)
             continue
         try:
             adx_full, _, _ = adx_dmi(df["high"], df["low"], df["close"], 14)
@@ -261,7 +268,11 @@ def compute_adx_at_fires(
 
         adx_series = adx_cache.get(ticker)
         if adx_series is None:
-            exclusion_counts["adx_nan"] += 1
+            # Ticker in hl_panels but not in adx_cache: either <28 bars or compute error.
+            if ticker in short_history_tickers:
+                exclusion_counts["insufficient_history"] += 1
+            else:
+                exclusion_counts["adx_nan"] += 1
             adx_vals.append(None)
             adx_lag5_vals.append(None)
             continue
@@ -285,7 +296,9 @@ def compute_adx_at_fires(
         # ADX 5 bars ago (strictly prior to fire bar)
         lag5_loc = loc - ADX_LOOKBACK
         if lag5_loc < 0:
-            # Not enough history for the 5-bar lag — no rising condition possible
+            # Fire has valid ADX at bar but <5 bars of prior ADX history.
+            # No rising condition possible; fire will be NaN in stratum → excluded.
+            exclusion_counts["insufficient_lag5_history"] += 1
             adx_vals.append(adx_at_bar)
             adx_lag5_vals.append(None)
         else:
@@ -540,6 +553,17 @@ def run_sts_study(
     log.info("  Stratum B (adx_rising=0): %d fires", n_stratum_b)
     log.info("  Excluded (no H/L or insufficient history): %d fires", n_excluded)
 
+    # Exclusion-accounting reconciliation: the printed bucket counts must sum to the
+    # number of NaN-stratum fires.  A mismatch means a code path is dropping fires
+    # silently into the wrong bucket (or no bucket at all).
+    _buckets_sum = sum(excl_counts.values())
+    if _buckets_sum != n_excluded:
+        log.error(
+            "Exclusion-count mismatch: buckets sum to %d but stratum.isna()=%d "
+            "(counts=%s). Report totals will be inconsistent.",
+            _buckets_sum, n_excluded, excl_counts,
+        )
+
     # ----- Grade fires with ADX stratum column --------------------------------
     log.info("  Grading fires...")
     graded = grade_fires(fires, closes, extra_columns={"adx_rising": stratum})
@@ -586,7 +610,7 @@ def run_sts_study(
     # ----- Era table ----------------------------------------------------------
     era_tbl = fast_era_table(graded_adx, "adx_rising", panel_label=panel_name)
 
-    # ----- Era-split verdict (2 halves: 2012-2019 vs 2020-2026) --------------
+    # ----- Era-split by the 4 program eras (2012-2015, 2016-2019, 2020-2022, 2023-2026) ------
     graded_adx["_era"] = pd.to_datetime(graded_adx["date"]).apply(_assign_era)
     era_results: dict[str, Any] = {}
     for era_name in PROGRAM_ERAS:
@@ -869,6 +893,8 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
         a(f"- Insufficient history (< 28 bars): **{excl.get('insufficient_history', 0):,}**")
         a(f"- Date not in panel: **{excl.get('date_not_in_panel', 0):,}**")
         a(f"- ADX NaN (computation failure): **{excl.get('adx_nan', 0):,}**")
+        a(f"- Insufficient lag5 history (< 5 bars prior ADX): "
+          f"**{excl.get('insufficient_lag5_history', 0):,}**")
         a(f"- **Total excluded: {n_excl:,}** of {res.get('total_fires', 0):,} fires "
           f"({n_excl / max(1, res.get('total_fires', 1)):.1%})")
         a("")
@@ -1026,6 +1052,26 @@ def write_report(all_results: dict[str, Any], out_path: Path) -> None:
             a("- **POSSIBLE NON-NULL** (both CI-excluding-0 AND BH-rejected). "
               "Per RUL-5: baskets OOS replication required before chip discussion. "
               "Adjudication is upstream of this script.")
+            # §5 CHIP-path qualification check — print inline regardless of OOS outcome.
+            # The coef sign and magnitude relative to the frozen 2pp CHIP floor (W0 RUL-7)
+            # are load-bearing for adjudication framing.
+            if coef is not None:
+                chip_floor_pp = 2.0  # frozen 2pp floor, W0_BASELINES.md RUL-7
+                coef_pp = abs(coef) * 100.0
+                adverse_sign = coef > 0  # stop5 is adverse; a CHIP needs NEGATIVE coef
+                if adverse_sign or coef_pp < chip_floor_pp:
+                    reasons = []
+                    if adverse_sign:
+                        reasons.append("adverse sign (ADX-rising = MORE stops, not fewer)")
+                    if coef_pp < chip_floor_pp:
+                        reasons.append(
+                            f"magnitude {coef_pp:.1f}pp < {chip_floor_pp:.0f}pp §5 CHIP floor"
+                        )
+                    a(f"- **CHIP PATH FORECLOSED** regardless of OOS outcome: "
+                      f"{'; '.join(reasons)}. "
+                      "A CHIP requires a beneficial (negative) stop5 coef ≥ 2pp CI-excluding-0. "
+                      "The only live follow-up would be a HYGIENE/veto evaluation "
+                      "under its own §5 bar — not a chip.")
         else:
             a("- **NULL** — CI includes 0 or BH not rejected. "
               "Pre-registered expected outcome confirmed.")

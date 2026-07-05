@@ -67,11 +67,18 @@ Family: `esx_ts_adx` (budget=4, pre-registered at W0).
 
 ---
 
-## Frozen Stratum Definition
+## Stratum Operationalization (§3 F6 + RUL-F6-OPDEF)
 
-Not tunable (masterplan §3 F6):
+The masterplan §3 F6 pre-registered "ADX14 rising-vs-low at fire" as the S-TS
+candidate. The specific operationalization below was chosen by the W1 builder
+(no alternative threshold or lookback was tested before reading results) and is
+frozen via **RUL-F6-OPDEF** appended to §3 F6 in
+`research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md`. Any change requires a
+new ruling per RUL-7.
 
 - **Stratum A (adx_rising=1):** `adx14 > 20 AND adx14 > adx14_at_(bar−5)` at fire bar.
+  - `level_threshold = 20.0` (conventional "trending" floor; no alternative tested pre-read)
+  - `lookback = 5 bars` (one trading week; no alternative tested pre-read)
 - **Stratum B (adx_rising=0):** complement.
 - ADX14 via `engine.stock_technicals.adx_dmi(high, low, close, n=14)`.
 - Close-only fires: EXCLUDED (printed below, not silently zeroed).
@@ -110,6 +117,7 @@ excluded from the ADX stratum and printed here (not silently zeroed).
 - Insufficient history (< 28 bars): **0**
 - Date not in panel: **0**
 - ADX NaN (computation failure): **0**
+- Insufficient lag5 history (< 5 bars prior ADX): **0**
 - **Total excluded: 0** of 38,250 fires (0.0%)
 
 ### ADX14 Distribution at Fire Bars
@@ -193,6 +201,7 @@ excluded from the ADX stratum and printed here (not silently zeroed).
 - Insufficient history (< 28 bars): **0**
 - Date not in panel: **0**
 - ADX NaN (computation failure): **0**
+- Insufficient lag5 history (< 5 bars prior ADX): **0**
 - **Total excluded: 0** of 113,542 fires (0.0%)
 
 ### ADX14 Distribution at Fire Bars
@@ -329,6 +338,7 @@ excluding 0 on the primary endpoint (stop5)**.
 - CI excludes 0: YES
 - BH q ≤ 0.10 rejected: YES
 - **POSSIBLE NON-NULL** (both CI-excluding-0 AND BH-rejected). Per RUL-5: baskets OOS replication required before chip discussion. Adjudication is upstream of this script.
+- **CHIP PATH FORECLOSED** regardless of OOS outcome: adverse sign (ADX-rising = MORE stops, not fewer); magnitude 1.0pp < 2pp §5 CHIP floor. A CHIP requires a beneficial (negative) stop5 coef ≥ 2pp CI-excluding-0. The only live follow-up would be a HYGIENE/veto evaluation under its own §5 bar — not a chip.
 
 **Summary:** The pre-registered expectation was a null. See individual panel
 verdicts above. Single-era excursions in the era table cannot satisfy the non-null
