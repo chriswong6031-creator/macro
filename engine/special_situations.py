@@ -709,13 +709,51 @@ def _priors() -> tuple[dict, dict]:
     return stage_p, cat_p
 
 
+def _load_event_priors() -> dict:
+    """Load W3 event-intelligence priors (ss_event_priors.v2) from
+    data/special_situations/event_priors/*.json.  Returns {event_type: prior_dict}.
+    Returns {} gracefully if the directory is absent (artifact not yet generated)."""
+    import json as _json
+    ev_dir = config.data_dir() / GROUP / "event_priors"
+    result: dict = {}
+    if not ev_dir.exists():
+        return result
+    for jf in sorted(ev_dir.glob("*.json")):
+        try:
+            d = _json.loads(jf.read_text())
+            if d.get("schema", "").startswith("ss_event_priors"):
+                result[d["event_type"]] = d
+        except Exception:  # noqa: BLE001
+            pass
+    return result
+
+
 def _prior_for(cat, stage, stage_p: dict, cat_p: dict) -> dict | None:
     """Best prior for a situation: (category, stage) if it clears the sample floor, else
-    the category-level prior. None when neither has enough history. Context, not a forecast."""
+    the category-level prior.
+
+    v2 additive fields (max_dd_20d_pct, pre_drift_pct, hac_t_20d, ci90_20d) are
+    carried with None defaults for old-schema files — additive contract (M3 fix).
+
+    When the prior is sub-floor: returns an explicit {insufficient: True, n: K} block
+    so the display can print "insufficient history (n=K)" rather than silently absent
+    or an empty string (m1 fix)."""
     def _mk(p, scope):
-        return {"scope": scope, "n": int(p.get("n") or 0),
-                "win_20d_pct": p.get("win_20d_pct"), "med_ret_20d_pct": p.get("med_ret_20d_pct"),
-                "med_ret_60d_pct": p.get("med_ret_60d_pct")}
+        n = int(p.get("n") or 0)
+        if n < PRIOR_MIN_N or p.get("win_20d_pct") is None:
+            return {"insufficient": True, "n": n, "scope": scope}
+        return {
+            "scope": scope,
+            "n": n,
+            "win_20d_pct": p.get("win_20d_pct"),
+            "med_ret_20d_pct": p.get("med_ret_20d_pct"),
+            "med_ret_60d_pct": p.get("med_ret_60d_pct"),
+            # v2 additive fields (None when old-schema file)
+            "max_dd_20d_pct": p.get("max_dd_20d_pct"),
+            "pre_drift_pct": p.get("pre_drift_pct"),
+            "hac_t_20d": p.get("hac_t_20d"),
+            "ci90_20d": p.get("ci90_20d"),
+        }
     p = stage_p.get((cat, stage))
     if p and (p.get("n") or 0) >= PRIOR_MIN_N and p.get("win_20d_pct") is not None:
         return _mk(p, f"{cat} · {stage}")
@@ -737,6 +775,12 @@ def _attach_priors(sits: list[dict]) -> int:
             s["prior"] = pr
             n += 1
     return n
+
+
+def get_event_priors_context() -> dict:
+    """Return loaded W3 event-intelligence priors dict for cross-surface use.
+    DISPLAY-ONLY: is_context_only=True on every entry. Returns {} if not yet generated."""
+    return _load_event_priors()
 
 
 def desk_payload(latest_issue_only: bool = True) -> dict:

@@ -140,21 +140,24 @@
         var tip=[s2[0]-(r+2)*ddx, s2[1]-(r+2)*ddy];
         // Build gradient from oldest to tip
         defs+='<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+s0[0].toFixed(1)+'" y1="'+s0[1].toFixed(1)+'" x2="'+tip[0].toFixed(1)+'" y2="'+tip[1].toFixed(1)+'">'
-          +'<stop offset="0" stop-color="'+col+'" stop-opacity="0.06"></stop>'
-          +'<stop offset="0.5" stop-color="'+col+'" stop-opacity="0.38"></stop>'
-          +'<stop offset="1" stop-color="'+col+'" stop-opacity="0.95"></stop></linearGradient>';
+          +'<stop offset="0" stop-color="'+col+'" stop-opacity="0"></stop>'
+          +'<stop offset="0.45" stop-color="'+col+'" stop-opacity="0.20"></stop>'
+          +'<stop offset="0.8" stop-color="'+col+'" stop-opacity="0.62"></stop>'
+          +'<stop offset="1" stop-color="'+col+'" stop-opacity="1"></stop></linearGradient>';
         // Build path from all trail points to tip
         var pathD = 'M'+s0[0].toFixed(1)+' '+s0[1].toFixed(1);
         for(var ti=1;ti<allTPs.length-1;ti++){
           pathD+=' L'+X(allTPs[ti][0]).toFixed(1)+' '+Y(allTPs[ti][1]).toFixed(1);
         }
         pathD+=' L'+tip[0].toFixed(1)+' '+tip[1].toFixed(1);
-        tails+='<path d="'+pathD+'" stroke="url(#'+gid+')" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
-        var ang=Math.atan2(ddy,ddx), al=13, aw=0.46;
+        // soft under-halo for a gentle glow, then the crisp fading trail on top
+        tails+='<path d="'+pathD+'" stroke="'+col+'" stroke-opacity="0.09" stroke-width="5.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
+        tails+='<path d="'+pathD+'" stroke="url(#'+gid+')" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
+        var ang=Math.atan2(ddy,ddx), al=14, aw=0.44;
         tails+='<path d="M'+tip[0].toFixed(1)+' '+tip[1].toFixed(1)
           +' L'+(tip[0]-al*Math.cos(ang-aw)).toFixed(1)+' '+(tip[1]-al*Math.sin(ang-aw)).toFixed(1)
           +' L'+(tip[0]-al*Math.cos(ang+aw)).toFixed(1)+' '+(tip[1]-al*Math.sin(ang+aw)).toFixed(1)
-          +' Z" fill="'+col+'" fill-opacity="0.95"></path>';
+          +' Z" fill="'+col+'" fill-opacity="1"></path>';
       }
       // ring (episode)
       if (p.ring) {
@@ -162,7 +165,8 @@
         var rw = p.ringWeight||1.5;
         dots+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(r+4.5).toFixed(1)+'" fill="none" stroke="'+ringCol+'" stroke-width="'+rw+'" stroke-opacity=".9"></circle>';
       }
-      dots+='<circle class="sr-dot" cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+_qFill(q,p.hot?84:58)+'" stroke="'+col+'" stroke-opacity=".82" stroke-width="1.3" data-k="'+_esc(p.key)+'"></circle>';
+      dots+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(r+2.6).toFixed(1)+'" fill="'+_qFill(q,p.hot?26:15)+'" stroke="none"></circle>';
+      dots+='<circle class="sr-dot" cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+_qFill(q,p.hot?90:64)+'" stroke="'+col+'" stroke-opacity=".9" stroke-width="1.4" data-k="'+_esc(p.key)+'"></circle>';
       if (p.showLabel) {
         cands.push({key:p.key, x:px, y:py, r:r, txt:p.label||p.key, hot:!!p.hot});
       }

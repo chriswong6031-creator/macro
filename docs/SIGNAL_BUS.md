@@ -23,14 +23,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | qualitative-intelligence | 23 |
 | sector-pulse | 3 |
 | setup-species | 6 |
-| signal-commons | 1 |
+| signal-commons | 7 |
 | us-stocks-prebreakout | 2 |
 
 ### Artifacts by tier
 
 | tier | count |
 |---|---|
-| display | 46 |
+| display | 52 |
 | infrastructure | 30 |
 | scored | 4 |
 | shadow | 33 |
@@ -39,7 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 109 |
+| git | 115 |
 | gitignored-local | 3 |
 | r2 | 1 |
 
@@ -224,7 +224,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| event-priors-clinicaltrials | `data/special_situations/event_priors/clinicaltrials.json` | json | weekly | display | 2 | 0 |
+| event-priors-earnings | `data/special_situations/event_priors/earnings.json` | json | weekly | display | 2 | 0 |
+| event-priors-ipo-lockup | `data/special_situations/event_priors/ipo_lockup.json` | json | weekly | display | 2 | 0 |
+| event-priors-openfda | `data/special_situations/event_priors/openfda.json` | json | weekly | display | 2 | 0 |
+| event-priors-sp-index-changes | `data/special_situations/event_priors/sp_index_changes.json` | json | weekly | display | 2 | 0 |
 | kernel-half-lives | `data/neuralweb/half_life.json` | json | daily-engine | infrastructure | 1 | 0 |
+| event-priors-gov-contract | `data/special_situations/event_priors/gov_contract.json` | json | weekly | display | 0 | 0 |
 
 ### us-stocks-prebreakout
 
