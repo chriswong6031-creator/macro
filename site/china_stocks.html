@@ -874,6 +874,7 @@
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-cyc-sec { display: none; }
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-rec { gap: 5px; padding: 7px 10px; }
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-cyc { padding-top: 5px; line-height: 1.25; }
+  body:is(.page-macro, .page-china, .page-canada) { padding-top: 26px; }
   @media (max-width: 760px) {
     .rrx .rrx-odds { flex-direction: column; gap: 14px; }
     .rrx .rrx-odds-l { flex: 0 0 auto; }
@@ -1022,6 +1023,7 @@
   .cmd-hero .ms-divider::after { content: ""; flex: 1; height: 1px; background: var(--hair); }
   html[data-lang="zh"] .cmd-hero .ms-divider { letter-spacing: 0; }
   @media (prefers-reduced-motion: reduce) { .cmd-hero .qm { transition: none; } }
+  body.page-china, body.page-china-stocks { padding-top: 26px; }
 </style>
 </head>
 <body class="page-china-stocks">
@@ -1269,6 +1271,7 @@
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
@@ -1312,7 +1315,7 @@
       <span class="quad-badge quad-Q3"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span>
       <span class="chip c-muted"><span class="l-en">DEFENSIVE</span><span class="l-zh">防御</span></span>
     </div>
-    <p class="note" style="margin:8px 0 0;text-transform:none"><span class="l-en">Where to look for A-share entries — names that have washed out, formed a base, and are showing a fresh 3D/2D momentum turn (T1–T4 cascade). Rank is buy-readiness; washout and COILED context provide the setup confirmation.</span><span class="l-zh">在哪里找 A 股入场 —— 经历洗盘、完成筑底、出现3日/2日动量新转向（T1–T4 级联）的个股。排序代表买入就绪度；洗盘与蓄势背景提供形态确认。</span>
+    <p class="note" style="margin:8px 0 0;text-transform:none"><span class="l-en">A-share entry watchlist: washed-out names with a fresh 3D/2D turn. Rank means buy-readiness, not advice.</span><span class="l-zh">A股入场观察表：洗盘后出现3日/2日新转向的个股。排序表示买入就绪度，非建议。</span>
       <a href="china.html" style="color:var(--link);font-weight:600">← <span class="l-en">China macro dashboard</span><span class="l-zh">中国宏观看板</span></a></p>
   </div>
   
@@ -1327,19 +1330,19 @@
   <div class="panel span12" id="standouts">
     <h2><span class="l-en">⚡ Standout individual stocks</span><span class="l-zh">⚡ 表现突出的个股</span>
       <span class="note" style="text-transform:none">· <span class="l-en">washout → base → fresh turn · T1–T4 entry cascade</span><span class="l-zh">洗盘 → 筑底 → 新转向 · T1–T4 入场级联</span></span>
-      <span class="help wide">?<span class="tip"><span class="l-en"><b>Washout → base → fresh turn.</b> Admission is a fresh <b>MACD-RSI × StochRSI cross at a low</b> (graded T1 master → T4 earliest) — not an extended breakout.<p>🌊 <b>2W washout</b>: the 2-week StochRSI reclaimed 20 → a more durable base. ⚡ <b>Coiled</b>: a compressed, cohort-washed base.</p><span class='lad up'><b>ENTRY</b> · fresh turn in a live setup — the only actionable shelf.</span><span class='lad info'><b>RIPENING</b> · setup forming, cascade not yet fired — watch, don’t act.</span><span class='lad muted'><b>RAN / LATE</b> · signal already passed — shown for honesty, don’t chase.</span><p><b>Rank</b> = cascade tier + washout/Coiled context; the <b>0–100 score is buy-readiness, not an edge probability</b>. The validated A-share reversal basket is a separate product; forward grades are accruing (~21 sessions). Context to size and confirm — <b>not a buy list</b>.</p></span><span class="l-zh"><b>洗盘 → 筑底 → 新转向。</b>准入＝低位出现<b>MACD-RSI × StochRSI 新交叉</b>（评级 T1 主确认 → T4 最早信号）—— 而非延伸突破。<p>🌊 <b>2周洗盘</b>：2周 StochRSI 收复 20 → 底部更耐久。⚡ <b>蓄势</b>：压缩、群体洗净的底部。</p><span class='lad up'><b>ENTRY 入场</b> · 活跃形态中的新鲜转向 —— 唯一可操作板块。</span><span class='lad info'><b>RIPENING 待熟</b> · 形态形成、级联未触发 —— 观察，勿动。</span><span class='lad muted'><b>RAN / LATE 已过</b> · 信号已过 —— 仅为诚实展示，勿追。</span><p><b>排序</b>＝级联层级＋洗盘/蓄势背景；<b>0–100 评分是买入就绪度，而非优势概率</b>。已验证的 A 股反转篮子是独立产品；前瞻成绩正在累积（约 21 个交易日）。用于定仓与确认 —— <b>而非买入清单</b>。</p></span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Washed-out names with a fresh 3D/2D turn. ENTRY is the only actionable shelf; RIPENING is watch-only; RAN/LATE means do not chase. Context, not a buy list.</span><span class="l-zh">洗盘后出现3日/2日新转向的个股。ENTRY为可操作板块；RIPENING仅观察；RAN/LATE表示不要追。仅作背景，非买入清单。</span></span></span>
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none"><span class="l-en">Washout → base → fresh 3D/2D turn (T1 master → T4 earliest). Ordered by cascade tier + washout/⚡ Coiled context — the 0–100 score is buy-readiness, not the rank. Not a buy list.</span><span class="l-zh">洗盘 → 筑底 → 3日/2日新转向（T1 主确认 → T4 最早）。按级联层级＋洗盘/⚡ 蓄势背景排序 —— 0–100 评分是买入就绪度，并非排序。而非买入清单。</span></p>
+    <p class="note" style="margin:0 0 2px;text-transform:none"><span class="l-en">Washed-out names with a fresh turn. Rank uses cascade tier plus washout/coiled context; score means buy-readiness. Context, not a buy list.</span><span class="l-zh">洗盘后出现新转向的个股。排序基于级联层级与洗盘/蓄势背景；评分表示买入就绪度。仅作背景，非买入清单。</span></p>
     
     
     
     <div class="nb-legend">
       <span class="lg-k"><span class="l-en">Reading the cards</span><span class="l-zh">如何看卡片</span></span>
-      <span><b><span class="l-en">Score</span><span class="l-zh">评分</span></b> = <span class="l-en">buy-readiness 0–100 — how set up the name is to rise FROM HERE after its washout/base/turn (penalised if it has already run); NOT a conviction-edge probability</span><span class="l-zh">买入就绪度 0–100 — 该股经历洗盘/筑底/转向后当前的上行准备程度（若已大涨则扣分）；并非信念优势概率</span></span>
+      <span><b><span class="l-en">Score</span><span class="l-zh">评分</span></b> = <span class="l-en">buy-readiness 0–100, not an edge probability</span><span class="l-zh">买入就绪度0–100，并非优势概率</span></span>
       <span class="lg-sep">·</span>
-      <span><b><span class="l-en">Rank</span><span class="l-zh">排序</span></b>: <span class="l-en">board order is cascade tier + washout/COILED context — the score is separate and does not drive rank</span><span class="l-zh">榜单排序由级联层级＋洗盘/蓄势背景决定 —— 评分独立，不驱动排序</span></span>
+      <span><b><span class="l-en">Rank</span><span class="l-zh">排序</span></b>: <span class="l-en">cascade tier + washout/coiled context</span><span class="l-zh">级联层级 + 洗盘/蓄势背景</span></span>
       <span class="lg-sep">·</span>
-      <span><b><span class="l-en">Two gauges</span><span class="l-zh">两个量表</span></b>: <span class="l-en">Conviction (setup quality) + a separate Entry gauge (when & at what price) — a high score with Entry = "hold" means the setup is real but timing is not yet there</span><span class="l-zh">确信度（形态质量）＋ 独立的入场量表（何时、以何价）—— 高分但入场＝"观望"意味着形态真实但时机未到</span></span>
+      <span><b><span class="l-en">Two gauges</span><span class="l-zh">两个量表</span></b>: <span class="l-en">setup quality + entry timing</span><span class="l-zh">形态质量 + 入场时机</span></span>
       <span class="lg-sep">·</span><span><b><span class="l-en">Edge basis</span><span class="l-zh">优势来源</span></b>: <span class="l-en">Reversal context — validated but high-variance, not a buy list</span><span class="l-zh">均值回归参考 — 已验证但高波动，非买入清单</span></span>
     </div>
     
@@ -1382,7 +1385,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>58</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>58</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -1493,7 +1496,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>37</span>
+          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>37</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -1599,7 +1602,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>65</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>65</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -1717,7 +1720,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -1828,7 +1831,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>47</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>47</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -1946,7 +1949,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>37</span>
+          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>37</span>
           <span class="nb-verdict"><span class="l-en">Basing near a low — reversal setting up</span><span class="l-zh">底部区域 — 反转酝酿</span></span>
         </div>
         
@@ -2053,7 +2056,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>42</span>
+          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>42</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -2159,7 +2162,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>47</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>47</span>
           <span class="nb-verdict"><span class="l-en">Reversal buy — washed out and turning up</span><span class="l-zh">反转买点 — 超跌企稳上行</span></span>
         </div>
         
@@ -2265,7 +2268,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -2376,7 +2379,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>39</span>
+          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>39</span>
           <span class="nb-verdict"><span class="l-en">Uptrend — hold, add on dips</span><span class="l-zh">上行趋势 — 持有，回调加仓</span></span>
         </div>
         
@@ -2487,7 +2490,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -2598,7 +2601,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -2709,7 +2712,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -2815,7 +2818,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-high" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>76</span>
+          <span class="nb-cscore band-high" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>76</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -2926,7 +2929,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-high" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>70</span>
+          <span class="nb-cscore band-high" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>70</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -3039,7 +3042,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -3150,7 +3153,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>41</span>
+          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>41</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -3261,7 +3264,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -3367,7 +3370,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -3478,7 +3481,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -3589,7 +3592,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -3700,7 +3703,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -3811,7 +3814,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -3918,7 +3921,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -4024,7 +4027,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -4130,7 +4133,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -4241,7 +4244,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -4347,7 +4350,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -4458,7 +4461,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -4564,7 +4567,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -4670,7 +4673,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>54</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>54</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -4776,7 +4779,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -4887,7 +4890,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -4998,7 +5001,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -5104,7 +5107,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -5215,7 +5218,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -5321,7 +5324,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>4</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>4</span>
           <span class="nb-verdict"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
         </div>
         
@@ -5432,7 +5435,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>14</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>14</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -5543,7 +5546,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>46</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>46</span>
           <span class="nb-verdict"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
         </div>
         
@@ -5654,7 +5657,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -5760,7 +5763,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>53</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>53</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -5871,7 +5874,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-high" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>80</span>
+          <span class="nb-cscore band-high" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>80</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -5989,7 +5992,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
         </div>
         
@@ -6095,7 +6098,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -6201,7 +6204,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -6307,7 +6310,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -6413,7 +6416,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -6524,7 +6527,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>7</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>7</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -6630,7 +6633,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -6736,7 +6739,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -6842,7 +6845,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -6953,7 +6956,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -7064,7 +7067,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>48</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>48</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -7175,7 +7178,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -7281,7 +7284,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -7387,7 +7390,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -7493,7 +7496,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -7604,7 +7607,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -7715,7 +7718,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>40</span>
+          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>40</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -7826,7 +7829,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -7937,7 +7940,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -8048,7 +8051,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -8159,7 +8162,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>55</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>55</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -8270,7 +8273,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>65</span>
+          <span class="nb-cscore band-constructive" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>65</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -8381,7 +8384,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>14</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>14</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -8492,7 +8495,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -8598,7 +8601,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>14</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>14</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -8709,7 +8712,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -8815,7 +8818,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -8926,7 +8929,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -9033,7 +9036,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -9139,7 +9142,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -9245,7 +9248,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -9351,7 +9354,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -9462,7 +9465,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -9573,7 +9576,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>7</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>7</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -9684,7 +9687,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -9795,7 +9798,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>38</span>
+          <span class="nb-cscore band-neutral" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>38</span>
           <span class="nb-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></span>
         </div>
         
@@ -9913,7 +9916,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -10019,7 +10022,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>10</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -10125,7 +10128,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -10236,7 +10239,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>14</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>14</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -10347,7 +10350,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>11</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -10453,7 +10456,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>8</span>
           <span class="nb-verdict"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
         </div>
         
@@ -10559,7 +10562,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -10665,7 +10668,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -10771,7 +10774,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>12</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -10877,7 +10880,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>7</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>7</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -10983,7 +10986,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -11089,7 +11092,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -11195,7 +11198,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>13</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -11301,7 +11304,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -11412,7 +11415,7 @@
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 — how set up this name is to rise FROM HERE after its washout/base/turn: confluence quality, entry timing and extension, PENALISED if it has already run. NOT a conviction-edge probability, and NOT the rank driver (board order is cascade tier + washout/COILED context)." data-tip-zh="买入就绪度 0–100 — 该股经历洗盘/筑底/转向后的上行准备程度：共振质量、入场时机与延伸情况，若已大涨则扣分。并非信念优势概率，也不驱动排序（排序由级联层级＋洗盘/蓄势背景决定）。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
+          <span class="nb-cscore band-low" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank"><span class="l-en">ready</span><span class="l-zh">就绪</span></span>9</span>
           <span class="nb-verdict"><span class="l-en">Countertrend bounce — not a base yet</span><span class="l-zh">反弹 — 尚未筑底</span></span>
         </div>
         
@@ -13562,7 +13565,7 @@
       <a href="china_lookup.html#001391.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>001391.SZ</b> <span class="note"><span class="l-en">Air China Cargo Co., Ltd.</span><span class="l-zh">国货航</span></span> <span class="neg">-3.00</span></a><a href="china_lookup.html#300525.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300525.SZ</b> <span class="note"><span class="l-en">Fujian Boss Software Corp.</span><span class="l-zh">博思软件</span></span> <span class="neg">-2.85</span></a><a href="china_lookup.html#688522.SS" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>688522.SS</b> <span class="note"><span class="l-en">Guangdong Naruida Technology Co., Ltd.</span><span class="l-zh">纳睿雷达</span></span> <span class="neg">-2.75</span></a><a href="china_lookup.html#603160.SS" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>603160.SS</b> <span class="note"><span class="l-en">Shenzhen Goodix Technology Co., Ltd.</span><span class="l-zh">汇顶科技</span></span> <span class="neg">-2.73</span></a><a href="china_lookup.html#002139.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>002139.SZ</b> <span class="note"><span class="l-en">Shenzhen Topband Co., Ltd.</span><span class="l-zh">拓邦股份</span></span> <span class="neg">-2.69</span></a><a href="china_lookup.html#002101.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>002101.SZ</b> <span class="note"><span class="l-en">Guangdong Hongtu Technology (holdings) Co.,Ltd.</span><span class="l-zh">广东鸿图</span></span> <span class="neg">-2.64</span></a><a href="china_lookup.html#300070.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300070.SZ</b> <span class="note"><span class="l-en">Beijing Originwater Technology Co., Ltd.</span><span class="l-zh">碧水源</span></span> <span class="neg">-2.63</span></a><a href="china_lookup.html#600085.SS" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>600085.SS</b> <span class="note"><span class="l-en">Beijing Tongrentang Co., Ltd</span><span class="l-zh">同仁堂</span></span> <span class="neg">-2.56</span></a><a href="china_lookup.html#300284.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300284.SZ</b> <span class="note"><span class="l-en">JSTI Group</span><span class="l-zh">苏交科</span></span> <span class="neg">-2.42</span></a><a href="china_lookup.html#600009.SS" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>600009.SS</b> <span class="note"><span class="l-en">Shanghai International Airport Co., Ltd.</span><span class="l-zh">上海机场</span></span> <span class="neg">-2.41</span></a><a href="china_lookup.html#002368.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>002368.SZ</b> <span class="note"><span class="l-en">Taiji Computer Corporation Limited</span><span class="l-zh">太极股份</span></span> <span class="neg">-2.37</span></a><a href="china_lookup.html#000625.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>000625.SZ</b> <span class="note"><span class="l-en">Chongqing Changan Automobile Company Limited</span><span class="l-zh">长安汽车</span></span> <span class="neg">-2.36</span></a>
     </p>
     
-    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Washout &rarr; base &rarr; fresh turn (T1&ndash;T4 cascade). Rank = cascade tier + washout/COILED context; displayed score = buy-readiness (not rank). The validated A-share within-sector reversal basket edge is a <a href="cn_reversal_sleeve.html" style="color:var(--link)">separate quarterly basket product</a> &mdash; it is not what drives this board. Forward grades are accruing (board_track above); first maturities ~21 sessions from ledger start.</span><span class="l-zh">洗盘 &rarr; 筑底 &rarr; 新转向（T1&ndash;T4 级联）。排序＝级联层级＋洗盘/蓄势背景；显示评分＝买入就绪度（非排序）。已验证的A股板块内反转篮子优势是<a href="cn_reversal_sleeve.html" style="color:var(--link)">独立的季度篮子产品</a> &mdash;&mdash; 并非驱动本看板的因素。前瞻成绩正在累积（见上方榜单成绩单）；首批成熟约在账本开始后21个交易日。</span></p>
+    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Setup path: washout &rarr; base &rarr; fresh turn. Score = buy-readiness; forward grades are still accruing.</span><span class="l-zh">设置路径：洗盘 &rarr; 筑底 &rarr; 新转向。评分＝买入就绪度；前瞻成绩仍在累积。</span></p>
 
     
     
@@ -13571,7 +13574,7 @@
     <div class="nb-track" style="margin:14px 0 0;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--link) 4%,var(--panel))">
       <div style="font-weight:700;font-size:12.5px;margin-bottom:5px">📒 <span class="l-en">Board track record</span><span class="l-zh">榜单成绩单</span>
         <span class="note" style="text-transform:none;font-weight:400">· <span class="l-en">does the top of this board actually beat the index?</span><span class="l-zh">本榜单头部是否真的跑赢指数？</span></span>
-        <span class="help">?<span class="tip"><span class="l-en">The honest forward ledger for the BOARD ORDER itself (not the per-name score). Every session we log the ranked top-N and, once matured, grade each pick's forward return RELATIVE to the CSI300 (510300.SS), measured from a fill-realistic T+1 (H+L)/2 entry — never the untradeable reference close, never a look-ahead marker date, with locked-limit days excluded. 'Hit vs CSI300' = the share of picks that beat the index (with a Wilson confidence interval for the small sample). A well-ordered board should show rank #1 outperforming (a NEGATIVE rank-IC) and extended names lagging. Display-only accountability telemetry — it accrues honestly and reads 'accruing' until enough picks mature.</span><span class="l-zh">针对榜单排序本身（而非个股评分）的诚实前瞻账本。每个交易日记录排名靠前的名单，成熟后按相对沪深300（510300.SS）的前瞻收益打分，入场采用可成交的 T+1（最高+最低)/2 —— 绝不用无法成交的参考收盘价、绝不用带前视的标记日，且剔除一字涨停日。“跑赢沪深300”＝跑赢指数的占比（小样本附 Wilson 置信区间）。排序良好的榜单应显示第1名跑赢（rank-IC 为负）、已大涨个股落后。仅展示的问责遥测 —— 诚实累积，样本不足时显示“累积中”。</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Forward ledger for the board order. Matured picks are graded vs CSI300 from a realistic T+1 entry.</span><span class="l-zh">榜单排序的前瞻账本。成熟样本按相对沪深300、可成交T+1入场打分。</span></span></span>
       </div>
       
       
@@ -13591,7 +13594,7 @@
   <div class="panel span12" id="stock-screener">
     <h2><span class="l-en">🎯 Stock screener — one board, two validated lenses</span><span class="l-zh">🎯 选股面板 — 一板双镜</span>
       <span class="note" style="text-transform:none">· <span class="l-en">switch the lens; the table re-sorts</span><span class="l-zh">切换视角；表格随之重排</span> · 2026-07-03</span>
-      <span class="help wide">?<span class="tip"><span class="l-en"><b>Scattered single-signal screens, consolidated into one switchable board.</b> Two validated A-share lenses:<span class='lad info'><b>🔄 Mean-reversion</b> — the deepest 3-month within-sector dips; the one FDR-surviving edge (Sharpe 0.58). High-variance, buys weakness.</span><span class='lad up'><b>🛡 Low-vol defensive</b> — the lowest-volatility names; market-like return, shallower drawdowns (Sharpe 0.98 vs 0.88). A risk-reducing tilt.</span><p><b>▲ Sector-turn boost</b>: rows whose sector washed out with the name and is now turning (a fresh 2D-MACD × 3D-StochRSI cross, or peers basing) are tinted and float to the top of the default order. A <b>display re-rank, never a filter</b> — sector-state gating was falsified (china-reversal-gated.md).</p><p>Click any column for the pure sort. Context to size and confirm — <b>not a buy list</b>.</p></span><span class="l-zh"><b>把分散的单一信号筛选合并为一块可切换的面板。</b>两种已验证的 A 股视角：<span class='lad info'><b>🔄 均值回归</b> —— 板块内近 3 月跌幅最深者；唯一通过 FDR 的优势（夏普 0.58）。高波动、买入弱势。</span><span class='lad up'><b>🛡 防御低波</b> —— 波动率最低者；收益与市场相近、回撤更浅（夏普 0.98 对 0.88）。降低风险的倾向。</span><p><b>▲ 板块转向提升</b>：若某股所在板块随其一同洗盘、且正在转向（板块合成指数刚出现 2D-MACD × 3D-StochRSI 新交叉，或同板块个股筑底），该行会着色并浮至默认排序顶部。<b>仅为展示层重排、绝非过滤</b> —— 板块状态作为门槛已被证伪（china-reversal-gated.md）。</p><p>点击任意列即为纯排序。用于定仓与确认 —— <b>而非买入清单</b>。</p></span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Two validated lenses: within-sector mean reversion and low-vol defensive. Sortable context, not a buy list.</span><span class="l-zh">两种已验证视角：板块内均值回归与防御低波。可排序背景，非买入清单。</span></span></span>
     </h2>
     <div class="sb-seg" role="tablist" aria-label="screener mode">
       <button role="tab" data-mode="reversal" aria-selected="true"><span class="l-en">🔄 Mean-reversion</span><span class="l-zh">🔄 均值回归</span></button>
@@ -13600,7 +13603,7 @@
     <p class="note sb-cap" id="sb-cap"><!-- per-mode caption injected by JS --></p>
     <p class="note sbt-legend" id="sbt-legend" style="display:none"><!-- sector-turn legend injected by JS when any sector is boosted --></p>
     <table class="sb-table"><thead id="sb-head"></thead><tbody id="sb-body"></tbody></table>
-    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Validated A-share effects only: short-term within-sector REVERSAL (Sharpe 0.58) and the LOW-VOL defensive tilt (Sharpe 0.98 vs 0.88 market). Classic momentum / value / quality were tested over ~35 years and do NOT clear FDR on A-shares. A research surface to size and confirm — not a confident buy list; cycle state is a drawdown/structure tool, not a timing oracle.</span><span class="l-zh">仅采用已验证的A股效应：短期板块内反转（夏普0.58）与低波防御倾向（夏普0.98 对 市场0.88）。经典动量／价值／质量在约35年里测试均未通过FDR。用于定仓与确认的研究面板 —— 而非买入清单；周期状态是回撤/结构工具，而非择时神谕。</span></p>
+    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Validated lenses only: short-term reversal and low-vol defensive. Research context, not a buy list.</span><span class="l-zh">仅保留已验证视角：短期反转与防御低波。研究背景，非买入清单。</span></p>
     <script type="application/json" id="sb-data">{"alpha": [{"alpha": 2.86, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "extended", "name": "Grace Fabric Technology Co.,Ltd. / \u5b8f\u548c\u79d1\u6280", "price": 238.0, "resid_ann": 269.5, "rev_1m": 22.5, "rev_pctile": 87.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 98.0, "rs6m": 99.0, "sector": "Basic Materials", "sector_n": 227, "sector_rank": 1, "ticker": "603256.SS", "total_mom": 334.2}, {"alpha": 2.69, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "entry": "intact", "name": "Zhende Medical Co., Ltd. / \u632f\u5fb7\u533b\u7597", "price": 86.01, "resid_ann": 145.7, "rev_1m": 1.7, "rev_pctile": 62.0, "rs": 93.0, "rs12m": 91.0, "rs3m": 33.0, "rs6m": 71.0, "sector": "Healthcare", "sector_n": 121, "sector_rank": 1, "ticker": "603301.SS", "total_mom": 158.3}, {"alpha": 2.69, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "entry": "pullback", "name": "Zhongji Innolight Co., Ltd. / \u4e2d\u9645\u65ed\u521b", "price": 1116.0, "resid_ann": 197.7, "rev_1m": -11.5, "rev_pctile": 22.0, "rs": 99.0, "rs12m": 98.0, "rs3m": 90.0, "rs6m": 86.0, "sector": "Technology", "sector_n": 352, "sector_rank": 1, "ticker": "300308.SZ", "total_mom": 284.8}, {"alpha": 2.67, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Shareate Tools Ltd. / \u65b0\u9510\u80a1\u4efd", "price": 110.45, "resid_ann": 165.1, "rev_1m": 47.9, "rev_pctile": 97.0, "rs": 97.0, "rs12m": 98.0, "rs3m": 94.0, "rs6m": 98.0, "sector": "Industrials", "sector_n": 329, "sector_rank": 1, "ticker": "688257.SS", "total_mom": 212.2}, {"alpha": 2.57, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "intact", "name": "Yangtze Optical Fibre And Cable Joint Stock Limited Company / \u957f\u98de\u5149\u7ea4", "price": 475.08, "resid_ann": 224.9, "rev_1m": 9.4, "rev_pctile": 75.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 84.0, "rs6m": 97.0, "sector": "Technology", "sector_n": 352, "sector_rank": 2, "ticker": "601869.SS", "total_mom": 287.5}, {"alpha": 2.51, "cycle": "TOPPING", "cycle_dir": "down", "cycle_zh": "\u505a\u9876\u4e2d", "entry": "intact", "name": "Han\u0027s Laser Technology Industry Group Co., Ltd. / \u5927\u65cf\u6fc0\u5149", "price": 129.64, "resid_ann": 138.5, "rev_1m": 2.2, "rev_pctile": 63.0, "rs": 95.0, "rs12m": 94.0, "rs3m": 93.0, "rs6m": 96.0, "sector": "Industrials", "sector_n": 329, "sector_rank": 2, "ticker": "002008.SZ", "total_mom": 186.9}, {"alpha": 2.43, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "extended", "name": "Guangdong Dtech Technology Co., Ltd. / \u9f0e\u6cf0\u9ad8\u79d1", "price": 518.04, "resid_ann": 208.0, "rev_1m": 34.0, "rev_pctile": 93.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 97.0, "rs6m": 97.0, "sector": "Technology", "sector_n": 352, "sector_rank": 3, "ticker": "301377.SZ", "total_mom": 293.2}, {"alpha": 2.38, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "pullback", "name": "Jiangsu Lettall Electronic Co.,Ltd / \u5229\u901a\u7535\u5b50", "price": 166.61, "resid_ann": 175.5, "rev_1m": -16.6, "rev_pctile": 12.0, "rs": 98.0, "rs12m": 97.0, "rs3m": 97.0, "rs6m": 99.0, "sector": "Technology", "sector_n": 352, "sector_rank": 4, "ticker": "603629.SS", "total_mom": 236.7}, {"alpha": 2.35, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "extended", "name": "Yuanjie Semiconductor Technology Co., Ltd. / \u6e90\u6770\u79d1\u6280", "price": 1659.23, "resid_ann": 220.8, "rev_1m": 19.6, "rev_pctile": 85.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 95.0, "rs6m": 97.0, "sector": "Technology", "sector_n": 352, "sector_rank": 5, "ticker": "688498.SS", "total_mom": 306.9}, {"alpha": 2.35, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "intact", "name": "Far East Smarter Energy Co., Ltd. / \u8fdc\u4e1c\u80a1\u4efd", "price": 28.45, "resid_ann": 140.5, "rev_1m": 8.7, "rev_pctile": 74.0, "rs": 96.0, "rs12m": 95.0, "rs3m": 93.0, "rs6m": 97.0, "sector": "Industrials", "sector_n": 329, "sector_rank": 3, "ticker": "600869.SS", "total_mom": 187.6}, {"alpha": 2.34, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "extended", "name": "OKE Precision Cutting Tools Co., Ltd. / \u6b27\u79d1\u4ebf", "price": 172.0, "resid_ann": 183.9, "rev_1m": 19.0, "rev_pctile": 85.0, "rs": 98.0, "rs12m": 98.0, "rs3m": 94.0, "rs6m": 98.0, "sector": "Industrials", "sector_n": 329, "sector_rank": 4, "ticker": "688308.SS", "total_mom": 238.5}, {"alpha": 2.32, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "pullback", "name": "Beijing Sifang Automation Co.,Ltd / \u56db\u65b9\u80a1\u4efd", "price": 58.0, "resid_ann": 131.8, "rev_1m": -25.5, "rev_pctile": 4.0, "rs": 94.0, "rs12m": 90.0, "rs3m": 80.0, "rs6m": 88.0, "sector": "Industrials", "sector_n": 329, "sector_rank": 5, "ticker": "601126.SS", "total_mom": 170.9}, {"alpha": 2.26, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "extended", "name": "Hangzhou Cable Co., Ltd. / \u676d\u7535\u80a1\u4efd", "price": 49.0, "resid_ann": 178.0, "rev_1m": 14.6, "rev_pctile": 81.0, "rs": 97.0, "rs12m": 98.0, "rs3m": 88.0, "rs6m": 98.0, "sector": "Industrials", "sector_n": 329, "sector_rank": 6, "ticker": "603618.SS", "total_mom": 217.7}, {"alpha": 2.22, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "intact", "name": "Hengtong Optic-Electric Co., Ltd. / \u4ea8\u901a\u5149\u7535", "price": 89.42, "resid_ann": 142.4, "rev_1m": 1.1, "rev_pctile": 60.0, "rs": 97.0, "rs12m": 96.0, "rs3m": 87.0, "rs6m": 96.0, "sector": "Technology", "sector_n": 352, "sector_rank": 6, "ticker": "600487.SS", "total_mom": 197.8}, {"alpha": 2.22, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "extended", "name": "Shenzhen Han\u0027s CNC Technology Co., Ltd. / \u5927\u65cf\u6570\u63a7", "price": 343.0, "resid_ann": 175.2, "rev_1m": 21.1, "rev_pctile": 87.0, "rs": 98.0, "rs12m": 98.0, "rs3m": 92.0, "rs6m": 95.0, "sector": "Industrials", "sector_n": 329, "sector_rank": 7, "ticker": "301200.SZ", "total_mom": 229.2}, {"alpha": 2.17, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "intact", "name": "Eoptolink Technology Inc., Ltd. / \u65b0\u6613\u76db", "price": 526.0, "resid_ann": 171.2, "rev_1m": -2.7, "rev_pctile": 50.0, "rs": 98.0, "rs12m": 96.0, "rs3m": 87.0, "rs6m": 83.0, "sector": "Technology", "sector_n": 352, "sector_rank": 7, "ticker": "300502.SZ", "total_mom": 253.3}], "lowvol": [{"beta": -0.06, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 6619.0, "name": "China Yangtze Power Co., Ltd. / \u957f\u6c5f\u7535\u529b", "price": 27.05, "sector": "Utilities", "ticker": "600900.SS", "vol_pct_ann": 12.3, "vol_rank_pct": 0.0}, {"beta": 0.07, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 932.0, "name": "Daqin Railway Co., Ltd. / \u5927\u79e6\u94c1\u8def", "price": 4.69, "sector": "Industrials", "ticker": "601006.SS", "vol_pct_ann": 13.5, "vol_rank_pct": 0.0}, {"beta": 0.11, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 872.0, "name": "Yunnan Baiyao Group Co.,Ltd / \u4e91\u5357\u767d\u836f", "price": 48.86, "sector": "Healthcare", "ticker": "000538.SZ", "vol_pct_ann": 13.6, "vol_rank_pct": 0.0}, {"beta": 0.05, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 18965.0, "name": "China Mobile Limited / \u4e2d\u56fd\u79fb\u52a8", "price": 87.48, "sector": "Communication Services", "ticker": "600941.SS", "vol_pct_ann": 14.2, "vol_rank_pct": 0.0}, {"beta": 0.2, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 598.0, "name": "Shanghai Pharmaceuticals Holding Co., Ltd / \u4e0a\u6d77\u533b\u836f", "price": 16.12, "sector": "Healthcare", "ticker": "601607.SS", "vol_pct_ann": 14.3, "vol_rank_pct": 0.0}, {"beta": 0.05, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 2265.0, "name": "Beijing-Shanghai High-Speed Railway Co., Ltd. / \u4eac\u6caa\u9ad8\u94c1", "price": 4.63, "sector": "Industrials", "ticker": "601816.SS", "vol_pct_ann": 14.6, "vol_rank_pct": 0.0}, {"beta": 0.16, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 1131.0, "name": "Shanghai International Port (Group) Co., Ltd. / \u4e0a\u6e2f\u96c6\u56e2", "price": 4.86, "sector": "Industrials", "ticker": "600018.SS", "vol_pct_ann": 14.6, "vol_rank_pct": 0.0}, {"beta": 0.21, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 1078.0, "name": "China Three Gorges Renewables (Group) Co.,Ltd. / \u4e09\u5ce1\u80fd\u6e90", "price": 3.77, "sector": "Utilities", "ticker": "600905.SS", "vol_pct_ann": 14.8, "vol_rank_pct": 1.0}, {"beta": 0.22, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 30.0, "name": "Chongqing Fuling Zhacai Group Co., Ltd. / \u6daa\u9675\u69a8\u83dc", "price": 11.17, "sector": "Consumer Defensive", "ticker": "002507.SZ", "vol_pct_ann": 15.0, "vol_rank_pct": 1.0}, {"beta": 0.22, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 1851.0, "name": "China State Construction Engineering Corporation Limited / \u4e2d\u56fd\u5efa\u7b51", "price": 4.48, "sector": "Industrials", "ticker": "601668.SS", "vol_pct_ann": 15.1, "vol_rank_pct": 1.0}, {"beta": 0.27, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 30.0, "name": "Jiangsu Hengshun Vinegar-Industry Co.,Ltd / \u6052\u987a\u918b\u4e1a", "price": 6.52, "sector": "Consumer Defensive", "ticker": "600305.SS", "vol_pct_ann": 15.3, "vol_rank_pct": 1.0}, {"beta": 0.24, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 30.0, "name": "Bright Dairy \u0026 Food Co.,Ltd / \u5149\u660e\u4e73\u4e1a", "price": 6.33, "sector": "Consumer Defensive", "ticker": "600597.SS", "vol_pct_ann": 15.4, "vol_rank_pct": 1.0}, {"beta": 0.28, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 344.0, "name": "Guangzhou Baiyunshan Pharmaceutical Holdings Company Limited / \u767d\u4e91\u5c71", "price": 21.19, "sector": "Healthcare", "ticker": "600332.SS", "vol_pct_ann": 15.6, "vol_rank_pct": 1.0}, {"beta": -0.01, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 1064.0, "name": "Bank of Beijing Co., Ltd. / \u5317\u4eac\u94f6\u884c", "price": 5.03, "sector": "Financial Services", "ticker": "601169.SS", "vol_pct_ann": 15.6, "vol_rank_pct": 1.0}, {"beta": 0.31, "cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 304.0, "name": "Shanghai RAAS Blood Products Co., Ltd. / \u4e0a\u6d77\u83b1\u58eb", "price": 4.61, "sector": "Healthcare", "ticker": "002252.SZ", "vol_pct_ann": 15.8, "vol_rank_pct": 1.0}, {"beta": 0.13, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "mktcap_yi": 362.0, "name": "Youngor Fashion Co., Ltd. / \u96c5\u6208\u5c14", "price": 7.83, "sector": "Consumer Cyclical", "ticker": "600177.SS", "vol_pct_ann": 15.9, "vol_rank_pct": 1.0}], "reversal": [{"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 866.0, "name": "CNPC Capital Company Limited / \u4e2d\u6cb9\u8d44\u672c", "price": 6.85, "ret_3m": -32.8, "rev_z": 2.0, "sector": "Financial Services", "sector_n": 95, "sector_rank": 1, "ticker": "000617.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Anhui Huaheng Biotechnology Co., Ltd. / \u534e\u6052\u751f\u7269", "price": 16.66, "ret_3m": -40.9, "rev_z": 1.76, "sector": "Healthcare", "sector_n": 122, "sector_rank": 1, "ticker": "688639.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Xinjiang Xintai Natural Gas Co., Ltd. / \u65b0\u5929\u7136\u6c14", "price": 22.61, "ret_3m": -37.2, "rev_z": 1.68, "sector": "Utilities", "sector_n": 57, "sector_rank": 1, "ticker": "603393.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Zhongman Petroleum and Natural Gas Group Corp.,Ltd. / \u4e2d\u66fc\u77f3\u6cb9", "price": 19.16, "ret_3m": -43.9, "rev_z": 1.66, "sector": "Energy", "sector_n": 35, "sector_rank": 1, "ticker": "603619.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 306.0, "name": "Leo Group Co., Ltd. / \u5229\u6b27\u80a1\u4efd", "price": 4.52, "ret_3m": -41.8, "rev_z": 1.53, "sector": "Communication Services", "sector_n": 47, "sector_rank": 1, "ticker": "002131.SZ"}, {"cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 30.0, "name": "Soho Holly Futures Co., Ltd. / \u5f18\u4e1a\u671f\u8d27", "price": 7.34, "ret_3m": -24.2, "rev_z": 1.46, "sector": "Financial Services", "sector_n": 95, "sector_rank": 2, "ticker": "001236.SZ"}, {"cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 30.0, "name": "Star Lake Bioscience Co., Inc.Zhaoqing Guangdong / \u661f\u6e56\u79d1\u6280", "price": 4.67, "ret_3m": -34.5, "rev_z": 1.44, "sector": "Healthcare", "sector_n": 122, "sector_rank": 2, "ticker": "600866.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Zhongmin Energy Co., Ltd. / \u4e2d\u95fd\u80fd\u6e90", "price": 5.13, "ret_3m": -32.7, "rev_z": 1.43, "sector": "Utilities", "sector_n": 57, "sector_rank": 2, "ticker": "600163.SS"}, {"cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 447.0, "name": "Shenzhen Salubris Pharmaceuticals Co., Ltd. / \u4fe1\u7acb\u6cf0", "price": 40.08, "ret_3m": -33.6, "rev_z": 1.4, "sector": "Healthcare", "sector_n": 122, "sector_rank": 3, "ticker": "002294.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Shenzhen SOFARSOLAR Co., Ltd. / \u9996\u822a\u65b0\u80fd", "price": 26.64, "ret_3m": -43.8, "rev_z": 1.35, "sector": "Technology", "sector_n": 360, "sector_rank": 1, "ticker": "301658.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "NYOCOR Co., Ltd. / \u91d1\u5f00\u65b0\u80fd", "price": 6.04, "ret_3m": -31.2, "rev_z": 1.34, "sector": "Utilities", "sector_n": 57, "sector_rank": 3, "ticker": "600821.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Oriental Energy Co., Ltd. / \u4e1c\u534e\u80fd\u6e90", "price": 5.41, "ret_3m": -37.6, "rev_z": 1.34, "sector": "Energy", "sector_n": 35, "sector_rank": 2, "ticker": "002221.SZ"}, {"cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 30.0, "name": "Heilongjiang ZBD Pharmaceutical Co., Ltd. / \u73cd\u5b9d\u5c9b", "price": 4.79, "ret_3m": -32.3, "rev_z": 1.34, "sector": "Healthcare", "sector_n": 122, "sector_rank": 4, "ticker": "603567.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Beijing Jingyuntong Technology Co., Ltd. / \u4eac\u8fd0\u901a", "price": 3.0, "ret_3m": -40.1, "rev_z": 1.29, "sector": "Technology", "sector_n": 360, "sector_rank": 2, "ticker": "601908.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "SolaX Power Network Technology (Zhejiang) Co., Ltd. / \u827e\u7f57\u80fd\u6e90", "price": 73.93, "ret_3m": -36.8, "rev_z": 1.24, "sector": "Technology", "sector_n": 360, "sector_rank": 3, "ticker": "688717.SS"}, {"cycle": "UNCONFIRMED TURN", "cycle_dir": "caution", "cycle_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "mktcap_yi": 270.0, "name": "Bestechnic (Shanghai) Co., Ltd. / \u6052\u7384\u79d1\u6280", "price": 113.97, "ret_3m": -35.1, "rev_z": 1.22, "sector": "Technology", "sector_n": 360, "sector_rank": 4, "ticker": "688608.SS"}]}</script>
     <script type="application/json" id="sb-seczh">{"Basic Materials": "\u539f\u6750\u6599", "Communication Services": "\u901a\u4fe1\u670d\u52a1", "Consumer Cyclical": "\u53ef\u9009\u6d88\u8d39", "Consumer Defensive": "\u5fc5\u9700\u6d88\u8d39", "Energy": "\u80fd\u6e90", "Financial Services": "\u91d1\u878d", "Healthcare": "\u533b\u7597\u4fdd\u5065", "Industrials": "\u5de5\u4e1a", "Real Estate": "\u623f\u5730\u4ea7", "Technology": "\u79d1\u6280", "Utilities": "\u516c\u7528\u4e8b\u4e1a"}</script>
     <script type="application/json" id="sb-turn">{"Basic Materials": {"boost": 0, "dd_126d": -4.9, "leg_peers": false, "leg_turn": false, "n": 230, "peers": {"based_frac": 0.35, "based_n": 50, "perk_n": 44, "washed_frac": 0.63, "washed_n": 144}, "ret_63d": 11.3, "turn": null, "washout": false}, "Communication Services": {"boost": 0, "dd_126d": -28.7, "leg_peers": false, "leg_turn": false, "n": 47, "peers": {"based_frac": 0.13, "based_n": 5, "perk_n": 5, "washed_frac": 0.81, "washed_n": 38}, "ret_63d": -12.9, "turn": null, "washout": true}, "Consumer Cyclical": {"boost": 0, "dd_126d": -15.8, "leg_peers": false, "leg_turn": false, "n": 121, "peers": {"based_frac": 0.16, "based_n": 12, "perk_n": 9, "washed_frac": 0.64, "washed_n": 77}, "ret_63d": -3.3, "turn": null, "washout": true}, "Consumer Defensive": {"boost": 2, "dd_126d": -15.4, "leg_peers": false, "leg_turn": true, "n": 57, "peers": {"based_frac": 0.27, "based_n": 10, "perk_n": 8, "washed_frac": 0.65, "washed_n": 37}, "ret_63d": -8.6, "turn": {"provisional": false, "sub": "deep", "ticks": 1, "tier": "T2"}, "washout": true}, "Energy": {"boost": 0, "dd_126d": -20.4, "leg_peers": false, "leg_turn": false, "n": 35, "peers": {"based_frac": 0.12, "based_n": 2, "perk_n": 2, "washed_frac": 0.46, "washed_n": 16}, "ret_63d": -10.8, "turn": null, "washout": true}, "Financial Services": {"boost": 1, "dd_126d": -10.6, "leg_peers": true, "leg_turn": false, "n": 95, "peers": {"based_frac": 0.62, "based_n": 28, "perk_n": 27, "washed_frac": 0.47, "washed_n": 45}, "ret_63d": -1.1, "turn": null, "washout": true}, "Healthcare": {"boost": 2, "dd_126d": -13.3, "leg_peers": true, "leg_turn": true, "n": 123, "peers": {"based_frac": 0.54, "based_n": 50, "perk_n": 41, "washed_frac": 0.76, "washed_n": 93}, "ret_63d": -5.7, "turn": {"provisional": false, "sub": "deep", "ticks": 2, "tier": "T2"}, "washout": true}, "Industrials": {"boost": 0, "dd_126d": -7.8, "leg_peers": false, "leg_turn": false, "n": 332, "peers": {"based_frac": 0.23, "based_n": 44, "perk_n": 38, "washed_frac": 0.57, "washed_n": 189}, "ret_63d": 5.9, "turn": null, "washout": false}, "Real Estate": {"boost": 0, "dd_126d": -25.6, "leg_peers": false, "leg_turn": false, "n": 19, "peers": {"based_frac": 0.0, "based_n": 0, "perk_n": 0, "washed_frac": 0.84, "washed_n": 16}, "ret_63d": -12.6, "turn": null, "washout": true}, "Technology": {"boost": 0, "dd_126d": -5.0, "leg_peers": false, "leg_turn": false, "n": 362, "peers": {"based_frac": 0.51, "based_n": 90, "perk_n": 85, "washed_frac": 0.49, "washed_n": 177}, "ret_63d": 39.3, "turn": null, "washout": false}, "Utilities": {"boost": 0, "dd_126d": -18.8, "leg_peers": false, "leg_turn": false, "n": 57, "peers": {"based_frac": 0.11, "based_n": 1, "perk_n": 0, "washed_frac": 0.16, "washed_n": 9}, "ret_63d": -6.7, "turn": null, "washout": true}}</script>
@@ -13665,9 +13668,9 @@
       };
       var MODES = {
         reversal: { cols: ['stock', 'sector', 'price', 'ret3m', 'revz', 'srank', 'mcap', 'cycle'],
-          cap: bl('The deepest 3-month within-sector dips — the validated A-share reversal edge (Sharpe 0.58). High-variance, buys weakness; size small, not a buy list.', '板块内近 3 月跌幅最深者 —— 已验证的 A 股反转优势（夏普 0.58）。高波动、买入弱势；宜小仓位，而非买入清单。') },
+          cap: bl('Deepest 3-month dips vs sector. Validated mean-reversion lens; not a buy list.', '相对板块近3个月跌幅最深。已验证的均值回归视角；非买入清单。') },
         lowvol: { cols: ['stock', 'sector', 'price', 'vol', 'beta', 'mcap', 'cycle'],
-          cap: bl('The lowest-volatility names — market-like returns with shallower drawdowns (the validated defensive tilt, Sharpe 0.98 vs 0.88). Risk-aware exposure, not return maximization.', '波动率最低者 —— 收益与市场相近但回撤更浅（已验证的防御倾向，夏普 0.98 对 0.88）。风险可控的敞口，而非收益最大化。') },
+          cap: bl('Lowest-volatility names. Defensive exposure lens, not return maximization.', '波动率最低的个股。防御敞口视角，非收益最大化。') },
       };
       var cur = 'reversal', sortCol = null, sortDir = 'desc', userSorted = false;
       var legend = document.getElementById('sbt-legend');
@@ -13744,6 +13747,191 @@
   </div>
   
 
+  <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
+  
+  <div class="panel span12" id="alpha-leaders">
+    <h2><span class="l-en">📊 Sector relative strength — read the mean-reversion flag</span><span class="l-zh">📊 板块相对强度 — 关注均值回归标记</span>
+      <span class="note" style="text-transform:none">· <span class="l-en">sector-neutral residual · vs CSI 300</span><span class="l-zh">板块中性残差 · 相对沪深300</span> · 1453 <span class="l-en">names</span><span class="l-zh">只</span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Sector-neutral relative strength is context. Read the entry flag; high alpha is not a buy signal in A-shares.</span><span class="l-zh">板块中性相对强度仅作背景。请看入场标记；A股高alpha不是买入信号。</span></span></span>
+    </h2>
+    <table class="sortable">
+      <thead><tr>
+        <th class="l"><span class="l-en">Stock</span><span class="l-zh">个股</span></th>
+        <th class="l"><span class="l-en">Sector</span><span class="l-zh">板块</span></th>
+        <th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th>
+        <th><span class="l-en">sector rank</span><span class="l-zh">板块排名</span></th>
+        <th><span class="l-en">idio ann</span><span class="l-zh">年化残差</span></th>
+        <th><span class="l-en">1-mo</span><span class="l-zh">近一月</span></th>
+        <th class="l"><span class="l-en">entry</span><span class="l-zh">入场</span></th>
+      </tr></thead>
+      <tbody>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#603256.SS"><b>603256.SS</b></a> <span class="note"><span class="l-en">Grace Fabric Technology Co.,Ltd.</span><span class="l-zh">宏和科技</span></span></td>
+        <td class="l note"><span class="l-en">Basic Materials</span><span class="l-zh">原材料</span></td>
+        <td><b class="pos">+2.86</b></td>
+        <td class="note">1/227</td>
+        <td class="pos">+270%</td>
+        <td class="pos">+22.5%</td>
+        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#603301.SS"><b>603301.SS</b></a> <span class="note"><span class="l-en">Zhende Medical Co., Ltd.</span><span class="l-zh">振德医疗</span></span></td>
+        <td class="l note"><span class="l-en">Healthcare</span><span class="l-zh">医疗保健</span></td>
+        <td><b class="pos">+2.69</b></td>
+        <td class="note">1/121</td>
+        <td class="pos">+146%</td>
+        <td class="pos">+1.7%</td>
+        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#300308.SZ"><b>300308.SZ</b></a> <span class="note"><span class="l-en">Zhongji Innolight Co., Ltd.</span><span class="l-zh">中际旭创</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.69</b></td>
+        <td class="note">1/352</td>
+        <td class="pos">+198%</td>
+        <td class="neg">-11.5%</td>
+        <td class="l"><span class="alpha-entry ae-pullback"><span class="l-en">pullback</span><span class="l-zh">回调买点</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#688257.SS"><b>688257.SS</b></a> <span class="note"><span class="l-en">Shareate Tools Ltd.</span><span class="l-zh">新锐股份</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.67</b></td>
+        <td class="note">1/329</td>
+        <td class="pos">+165%</td>
+        <td class="pos">+47.9%</td>
+        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#601869.SS"><b>601869.SS</b></a> <span class="note"><span class="l-en">Yangtze Optical Fibre And Cable Joint Stock Limited Company</span><span class="l-zh">长飞光纤</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.57</b></td>
+        <td class="note">2/352</td>
+        <td class="pos">+225%</td>
+        <td class="pos">+9.4%</td>
+        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#002008.SZ"><b>002008.SZ</b></a> <span class="note"><span class="l-en">Han's Laser Technology Industry Group Co., Ltd.</span><span class="l-zh">大族激光</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.51</b></td>
+        <td class="note">2/329</td>
+        <td class="pos">+138%</td>
+        <td class="pos">+2.2%</td>
+        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#301377.SZ"><b>301377.SZ</b></a> <span class="note"><span class="l-en">Guangdong Dtech Technology Co., Ltd.</span><span class="l-zh">鼎泰高科</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.43</b></td>
+        <td class="note">3/352</td>
+        <td class="pos">+208%</td>
+        <td class="pos">+34.0%</td>
+        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#603629.SS"><b>603629.SS</b></a> <span class="note"><span class="l-en">Jiangsu Lettall Electronic Co.,Ltd</span><span class="l-zh">利通电子</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.38</b></td>
+        <td class="note">4/352</td>
+        <td class="pos">+176%</td>
+        <td class="neg">-16.6%</td>
+        <td class="l"><span class="alpha-entry ae-pullback"><span class="l-en">pullback</span><span class="l-zh">回调买点</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#688498.SS"><b>688498.SS</b></a> <span class="note"><span class="l-en">Yuanjie Semiconductor Technology Co., Ltd.</span><span class="l-zh">源杰科技</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.35</b></td>
+        <td class="note">5/352</td>
+        <td class="pos">+221%</td>
+        <td class="pos">+19.6%</td>
+        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#600869.SS"><b>600869.SS</b></a> <span class="note"><span class="l-en">Far East Smarter Energy Co., Ltd.</span><span class="l-zh">远东股份</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.35</b></td>
+        <td class="note">3/329</td>
+        <td class="pos">+140%</td>
+        <td class="pos">+8.7%</td>
+        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#688308.SS"><b>688308.SS</b></a> <span class="note"><span class="l-en">OKE Precision Cutting Tools Co., Ltd.</span><span class="l-zh">欧科亿</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.34</b></td>
+        <td class="note">4/329</td>
+        <td class="pos">+184%</td>
+        <td class="pos">+19.0%</td>
+        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#601126.SS"><b>601126.SS</b></a> <span class="note"><span class="l-en">Beijing Sifang Automation Co.,Ltd</span><span class="l-zh">四方股份</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.32</b></td>
+        <td class="note">5/329</td>
+        <td class="pos">+132%</td>
+        <td class="neg">-25.5%</td>
+        <td class="l"><span class="alpha-entry ae-pullback"><span class="l-en">pullback</span><span class="l-zh">回调买点</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#603618.SS"><b>603618.SS</b></a> <span class="note"><span class="l-en">Hangzhou Cable Co., Ltd.</span><span class="l-zh">杭电股份</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.26</b></td>
+        <td class="note">6/329</td>
+        <td class="pos">+178%</td>
+        <td class="pos">+14.6%</td>
+        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#600487.SS"><b>600487.SS</b></a> <span class="note"><span class="l-en">Hengtong Optic-Electric Co., Ltd.</span><span class="l-zh">亨通光电</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.22</b></td>
+        <td class="note">6/352</td>
+        <td class="pos">+142%</td>
+        <td class="pos">+1.1%</td>
+        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#301200.SZ"><b>301200.SZ</b></a> <span class="note"><span class="l-en">Shenzhen Han's CNC Technology Co., Ltd.</span><span class="l-zh">大族数控</span></span></td>
+        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td><b class="pos">+2.22</b></td>
+        <td class="note">7/329</td>
+        <td class="pos">+175%</td>
+        <td class="pos">+21.1%</td>
+        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l"><a href="china_lookup.html#300502.SZ"><b>300502.SZ</b></a> <span class="note"><span class="l-en">Eoptolink Technology Inc., Ltd.</span><span class="l-zh">新易盛</span></span></td>
+        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
+        <td><b class="pos">+2.17</b></td>
+        <td class="note">7/352</td>
+        <td class="pos">+171%</td>
+        <td class="neg">-2.7%</td>
+        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
+      </tr>
+      
+      </tbody>
+    </table>
+    <p class="note" style="margin:6px 0 0;font-size:11px"><span class="l-en">Relative-strength context only. Use the entry flag, not alpha rank, as the cleaner read.</span><span class="l-zh">相对强度仅作背景。更干净的读法是入场标记，而非alpha排名。</span></p>
+  </div>
+  
+
   
 
   
@@ -13753,9 +13941,8 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-05 04:27 UTC ·
-  <span class="l-en">Free public data (yfinance + Eastmoney), mechanical &amp; backtested · not investment advice</span><span class="l-zh">免费公开数据（yfinance + 东方财富），机械化并经回测 · 非投资建议</span><br>
-  <span class="l-en">Sector ETFs ~5y history (display-grade RS); regime &amp; ladder calibrated on the deep 2006–2026 panel.</span><span class="l-zh">板块ETF约5年历史（展示级相对强弱）；周期与阶梯基于2006–2026深度样本校准。</span>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-05 05:01 UTC<br>
+  <span class="made">© 2026 MastermindX Inc</span>
 </div>
 
 <script>

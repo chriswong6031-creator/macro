@@ -449,6 +449,7 @@
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
@@ -516,14 +517,14 @@
     <div class="kpi"><div class="k"><span class="l-en">Avg correlation</span><span class="l-zh">平均相关性</span></div>
       <div class="v">0.54</div><div class="s"><span class="l-en">cross-market, USD</span><span class="l-zh">跨市场，美元</span></div></div>
   </div>
-  <p class="caveat" style="margin-top:13px"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-02 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-05 05:01 UTC · <span class="l-en">display-only / descriptive — nothing here is a scored buy/sell</span><span class="l-zh">仅供展示 / 描述性 — 此处无评分买卖</span>
+  <p class="caveat" style="margin-top:13px"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-02 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-05 05:36 UTC · <span class="l-en">context only</span><span class="l-zh">仅作背景</span>
     · <a href="intl_stocks.html" style="color:var(--link);font-weight:700"><span class="l-en">Stock dashboard</span><span class="l-zh">股票看板</span> →</a></p>
 </div>
 
 <!-- ===== USD performance leaderboard (centerpiece) ===== -->
 
 <div class="panel accent">
-  <div class="sec-h"><h2><span class="l-en">Performance in US dollars</span><span class="l-zh">以美元计的表现</span> <span class="help">?<span class="tip"><span class="l-en">Each market’s primary index rebuilt in US dollars (local index × FX, or ÷ FX for USD-quoted pairs) and ranked over the chosen horizon. The bar splits the USD move into its EQUITY leg (the local index) and its CURRENCY leg (FX) — which sum exactly to the USD return by construction — so you can see when a roaring local market is handed back to a weak currency (Japan ran +90% locally but a sliding yen left only +58% in USD). Price-return indices, not total return.</span><span class="l-zh">每个市场的主指数以美元重建（本币指数 × 汇率，USD 报价对则 ÷ 汇率）并按所选周期排名。柱状图将美元涨跌拆分为股票腿（本币指数）与货币腿（汇率）—— 二者精确相加等于美元收益 —— 由此可见火热的本币市场被弱势货币吞噬（日本本币 +90%，但日元走弱后美元仅 +58%）。价格指数，非全收益。</span></span></span></h2>
+  <div class="sec-h"><h2><span class="l-en">Performance in US dollars</span><span class="l-zh">以美元计的表现</span> <span class="help">?<span class="tip"><span class="l-en">Shows each market in USD, split into local stock return and currency effect. Price return only.</span><span class="l-zh">以美元看各市场表现，并拆成股市涨跌与汇率影响。仅价格回报。</span></span></span></h2>
     <span class="sub"><span class="l-en">local equity + currency = USD return</span><span class="l-zh">本币股票 + 货币 = 美元收益</span></span>
     <span style="flex:1"></span>
     <div class="seg" id="lb-seg"><button type="button" data-h="1m"><span class="l-en">1M</span><span class="l-zh">1月</span></button><button type="button" data-h="3m"><span class="l-en">3M</span><span class="l-zh">3月</span></button><button type="button" data-h="6m"><span class="l-en">6M</span><span class="l-zh">6月</span></button><button type="button" data-h="12m" class="on"><span class="l-en">12M</span><span class="l-zh">12月</span></button><button type="button" data-h="ytd"><span class="l-en">YTD</span><span class="l-zh">年初至今</span></button></div>
@@ -541,7 +542,7 @@
 <!-- ===== US vs the World rotation (RRG) ===== -->
 
 <div class="panel">
-  <div class="sec-h"><h2><span class="l-en">US vs the World — capital rotation</span><span class="l-zh">美国 vs 全球 — 资本轮动</span> <span class="help">?<span class="tip"><span class="l-en">A relative-rotation map. Each market’s relative-strength line vs the US (S&P 500 price index, already in USD) is placed by RELATIVE LEVEL (left↔right: behind vs ahead of the US over the past year) and RELATIVE MOMENTUM (down↔up: losing vs gaining ground). The four corners: Leading (ahead & accelerating), Weakening (ahead but rolling over), Improving (behind but catching up), Lagging (behind & still slipping). The tilt verdict reads whether capital is, net, rotating out of US exceptionalism. Display-only.</span><span class="l-zh">相对轮动图。每个市场相对美国（标普500价格指数，已是美元）的相对强弱线，按相对水平（左右：过去一年落后/领先美国）与相对动量（上下：失去/获得动能）定位。四角：领先（领先且加速）、走弱（领先但回落）、改善（落后但追赶）、落后（落后且继续下滑）。倾向判断衡量资本是否净流出美国例外论。仅供展示。</span></span></span></h2>
+  <div class="sec-h"><h2><span class="l-en">US vs the World — capital rotation</span><span class="l-zh">美国 vs 全球 — 资本轮动</span> <span class="help">?<span class="tip"><span class="l-en">Maps who is beating the US and whether that lead is improving or fading. Display-only.</span><span class="l-zh">显示谁跑赢美国，以及领先是在增强还是减弱。仅展示。</span></span></span></h2>
     <span style="flex:1"></span><span class="tilt mixed"><span class="l-en">Mixed — no decisive US/ex-US rotation</span><span class="l-zh">分化 — 美国与非美无明显轮动</span></span></div>
   <div class="twocol">
     <div class="rrg">
@@ -664,7 +665,7 @@
         
         </tbody>
       </table>
-      <p class="caveat" style="margin-top:10px"><span class="l-en">Relative to the S&P 500 price index (USD). Positive = the market out-ran the US over that window. A relative-strength lens, not a forward-edge claim.</span><span class="l-zh">相对标普500价格指数（美元）。正值 = 该市场在该周期跑赢美国。相对强弱视角，非前瞻收益主张。</span></p>
+      <p class="caveat" style="margin-top:10px"><span class="l-en">Positive = beat the S&P 500 over that window. Relative-strength lens only.</span><span class="l-zh">正值 = 该周期跑赢标普500。仅相对强弱视角。</span></p>
     </div>
   </div>
 </div>
@@ -672,7 +673,7 @@
 
 <!-- ===== Cross-country comparison grid (the reference table) ===== -->
 <div class="panel">
-  <h2><span class="l-en">Cross-country comparison</span><span class="l-zh">跨国对比</span> <span class="help">?<span class="tip"><span class="l-en">Every economy on the same axes. Regime = growth×inflation quad (with confidence). Recession & drawdown-risk are 0-100 history-anchored display gauges. Real yield = 10y − latest CPI. CPI/GDP/unemployment show the latest official print with its as-of month (greyed when stale — FRED OECD series are discontinued for several economies). The 1Y spark is the index in USD.</span><span class="l-zh">所有经济体使用相同坐标轴。周期 = 增长×通胀象限（含置信度）。衰退与回撤风险为 0-100 历史锚定展示型刻度。实际收益 = 10年 − 最新 CPI。CPI/GDP/失业率显示最新官方数据及截至月份（滞后则置灰 — 多国 FRED OECD 序列已停更）。1年走势为美元计指数。</span></span></span></h2>
+  <h2><span class="l-en">Cross-country comparison</span><span class="l-zh">跨国对比</span> <span class="help">?<span class="tip"><span class="l-en">Same scorecard for every economy: regime, recession risk, rates, CPI, FX, and equity stretch.</span><span class="l-zh">每个经济体用同一套表：周期、衰退风险、利率、CPI、汇率与股市拉伸。</span></span></span></h2>
   <div class="gridwrap">
   <table class="cmp">
     <thead><tr>
@@ -844,7 +845,7 @@
 
 
 <div class="panel">
-  <div class="sec-h"><h2><span class="l-en">Rates & curve desk</span><span class="l-zh">利率与曲线室</span> <span class="help">?<span class="tip"><span class="l-en">The rates story made visual: each market’s yield-curve shape (10y − 3m), real 10y (10y − latest CPI), the 3-month drift of the long end, and the CARRY each 10y offers over the US 10y anchor — the biggest single pull on global fixed-income flows. The mini-curve plots the 3m and 10y points; the spark is the 10y-yield history. Monthly OECD/ECB data on FRED; several series lag or are discontinued and are dated honestly.</span><span class="l-zh">将利率故事可视化：每个市场的收益率曲线形态（10年 − 3月）、实际10年（10年 − 最新CPI）、长端的3月漂移，以及各国10年相对美国10年锚的套息 —— 全球固收资金的最大单一引力。迷你曲线绘制3月与10年两点；走势线为10年收益率历史。FRED 上的月度 OECD/ECB 数据；部分序列滞后或停更，均如实标注。</span></span></span></h2>
+  <div class="sec-h"><h2><span class="l-en">Rates & curve desk</span><span class="l-zh">利率与曲线室</span> <span class="help">?<span class="tip"><span class="l-en">Compares yield curves, real yields, 10-year yield drift, and carry vs the US.</span><span class="l-zh">比较收益率曲线、实际利率、10年利率变化，以及相对美国的套息。</span></span></span></h2>
     <span style="flex:1"></span>
     <span class="sub"><span class="l-en">US anchor</span><span class="l-zh">美国锚</span>: <b style="color:var(--text)">4.44%</b> 10y · 4.14% 2y · <span class="l-en">curve</span><span class="l-zh">曲线</span> +0.30</span>
   </div>
@@ -990,7 +991,7 @@
     <!-- Eurozone periphery -->
     
     <div>
-      <h3>🇪🇺 <span class="l-en">Eurozone fragmentation — peripheral spreads over Bund</span><span class="l-zh">欧元区分化 — 外围国相对德债利差</span> <span class="help">?<span class="tip"><span class="l-en">Peripheral 10y yields minus the German Bund, in basis points. Widening = stress / fragmentation risk; tightening = convergence. The classic Eurozone tail-risk gauge.</span><span class="l-zh">外围国 10 年期收益率减德国国债，单位基点。走阔 = 外围压力／分化风险；收窄 = 收敛。经典的欧元区尾部风险指标。</span></span></span></h3>
+      <h3>🇪🇺 <span class="l-en">Eurozone fragmentation — peripheral spreads over Bund</span><span class="l-zh">欧元区分化 — 外围国相对德债利差</span> <span class="help">?<span class="tip"><span class="l-en">Wider spreads mean more Eurozone stress; tighter spreads mean calmer conditions.</span><span class="l-zh">利差走阔代表欧元区压力上升；收窄代表环境更稳。</span></span></span></h3>
       <table class="sb">
         <thead><tr><th class="l"><span class="l-en">Spread</span><span class="l-zh">利差</span></th><th><span class="l-en">bps</span><span class="l-zh">基点</span></th><th><span class="l-en">3m</span><span class="l-zh">3月</span></th><th class="l"><span class="l-en">Read</span><span class="l-zh">读数</span></th></tr></thead>
         <tbody>
@@ -1028,7 +1029,7 @@
         <span class="rk"><span class="l-en">As of</span><span class="l-zh">截至</span></span><span class="rv" style="font-weight:600;color:var(--muted)">2026-06-28</span>
       </div>
       <div style="margin-top:8px;opacity:.85"><svg class="nch" viewBox="0 0 200 40" preserveAspectRatio="none" width="100%" height="40"><polyline points="0,40 0.0,9.6 3.8,9.9 7.7,10.0 11.5,9.7 15.4,9.8 19.2,9.8 23.1,13.1 26.9,18.7 30.8,19.9 34.6,20.3 38.5,21.4 42.3,21.6 46.2,21.6 50.0,27.1 53.8,27.5 57.7,27.9 61.5,28.0 65.4,29.2 69.2,29.6 73.1,29.7 76.9,30.5 80.8,31.2 84.6,31.7 88.5,34.2 92.3,34.3 96.2,34.5 100.0,35.0 103.8,35.5 107.7,35.7 111.5,36.0 115.4,36.0 119.2,36.5 123.1,36.8 126.9,36.2 130.8,36.6 134.6,37.6 138.5,37.0 142.3,37.3 146.2,37.7 150.0,38.2 153.8,39.4 157.7,39.8 161.5,40.0 165.4,38.6 169.2,39.0 173.1,39.3 176.9,37.5 180.8,37.9 184.6,38.8 188.5,38.0 192.3,38.6 196.2,39.0 200.0,39.5 200,40" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,9.6 3.8,9.9 7.7,10.0 11.5,9.7 15.4,9.8 19.2,9.8 23.1,13.1 26.9,18.7 30.8,19.9 34.6,20.3 38.5,21.4 42.3,21.6 46.2,21.6 50.0,27.1 53.8,27.5 57.7,27.9 61.5,28.0 65.4,29.2 69.2,29.6 73.1,29.7 76.9,30.5 80.8,31.2 84.6,31.7 88.5,34.2 92.3,34.3 96.2,34.5 100.0,35.0 103.8,35.5 107.7,35.7 111.5,36.0 115.4,36.0 119.2,36.5 123.1,36.8 126.9,36.2 130.8,36.6 134.6,37.6 138.5,37.0 142.3,37.3 146.2,37.7 150.0,38.2 153.8,39.4 157.7,39.8 161.5,40.0 165.4,38.6 169.2,39.0 173.1,39.3 176.9,37.5 180.8,37.9 184.6,38.8 188.5,38.0 192.3,38.6 196.2,39.0 200.0,39.5" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="200.0" cy="39.5" r="2.6" fill="var(--down)"/></svg></div>
-      <p class="caveat" style="margin-top:6px"><span class="l-en">QT — balance sheet still draining</span><span class="l-zh">缩表 — 资产负债表仍在收缩</span> · <span class="l-en">ECB only — the one major CB with a clean keyless weekly series here.</span><span class="l-zh">仅欧央行 — 此处唯一具有干净免密钥周度序列的主要央行。</span></p>
+      <p class="caveat" style="margin-top:6px"><span class="l-en">QT — balance sheet still draining</span><span class="l-zh">缩表 — 资产负债表仍在收缩</span> · <span class="l-en">ECB-only clean weekly series.</span><span class="l-zh">仅欧央行周度序列。</span></p>
     </div>
     
   </div>
@@ -1037,7 +1038,7 @@
 
 <!-- ===== Growth × inflation regime map ===== -->
 <div class="panel">
-  <h2><span class="l-en">Regime map — growth × inflation</span><span class="l-zh">周期图 — 增长 × 通胀</span> <span class="help">?<span class="tip"><span class="l-en">Where each economy sits on the macro clock. Horizontal = growth score, vertical = inflation score (−1…+1). Reflation (top-right) and Goldilocks (bottom-right) are growth-positive; Stagflation (top-left) and Growth-scare (bottom-left) are growth-negative. The inflation axis leans on each economy’s current CPI direction where fresh, plus oil and the long-yield trend.</span><span class="l-zh">每个经济体在宏观时钟上的位置。横轴 = 增长得分，纵轴 = 通胀得分（−1…+1）。再通胀（右上）与金发女孩（右下）增长为正；滞胀（左上）与增长恐慌（左下）增长为负。通胀轴在数据新鲜处采用各自当前 CPI 方向，并结合油价与长端收益趋势。</span></span></span></h2>
+  <h2><span class="l-en">Regime map — growth × inflation</span><span class="l-zh">周期图 — 增长 × 通胀</span> <span class="help">?<span class="tip"><span class="l-en">Places each economy on the growth/inflation clock. Right side = better growth; top = more inflation pressure.</span><span class="l-zh">把每个经济体放在增长/通胀时钟上。右侧增长更好；上方通胀压力更高。</span></span></span></h2>
   <div class="scatter">
     <div class="axx"></div><div class="axy"></div>
     <div class="ql" style="left:8px;top:8px">↖ <span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></div>
@@ -1088,13 +1089,13 @@
       </div>
     
   </div>
-  <p class="caveat" style="margin-top:8px"><span class="l-en">Most economies cluster risk-on (growth positive). Descriptive snapshot of the growth/inflation mix — not a forward forecast.</span><span class="l-zh">多数经济体聚集于风险偏好区（增长为正）。增长／通胀组合的描述性快照 — 非前瞻预测。</span></p>
+  <p class="caveat" style="margin-top:8px"><span class="l-en">Snapshot only, not a forecast.</span><span class="l-zh">仅快照，非预测。</span></p>
 </div>
 
 <!-- ===== Correlation & diversification heatmap ===== -->
 
 <div class="panel">
-  <div class="sec-h"><h2><span class="l-en">Cross-market correlation</span><span class="l-zh">跨市场相关性</span> <span class="help">?<span class="tip"><span class="l-en">Pairwise correlation of the daily USD-return streams (every international market + the US) over the trailing window. High everywhere = these markets move together and offer little diversification; lower = real diversification on offer. The average off-diagonal is the one-number read.</span><span class="l-zh">过去窗口内各市场每日美元收益的两两相关性（所有国际市场 + 美国）。处处偏高 = 同涨同跌、分散价值低；偏低 = 存在真正的分散空间。平均非对角值为单一读数。</span></span></span></h2>
+  <div class="sec-h"><h2><span class="l-en">Cross-market correlation</span><span class="l-zh">跨市场相关性</span> <span class="help">?<span class="tip"><span class="l-en">Shows whether markets are moving together. Lower correlation means better diversification.</span><span class="l-zh">显示各市场是否同涨同跌。相关性越低，分散越好。</span></span></span></h2>
     <span style="flex:1"></span><span class="sub"><span class="l-en">avg</span><span class="l-zh">平均</span> <b style="color:var(--text)">0.54</b> · 252d</span></div>
   <div class="heatwrap">
     <table class="heat">
@@ -1400,7 +1401,7 @@
       </tbody>
     </table>
   </div>
-  <p class="caveat" style="margin-top:9px"><span class="l-en">Moderately correlated — some diversification on offer</span><span class="l-zh">中度相关 — 有一定分散空间</span> · <span class="l-en">Redder = more correlated (less diversification); greener = lower correlation. USD weekly returns (week-end closes, so the markets’ different holiday calendars line up without injecting spurious zero-return days). Display-only.</span><span class="l-zh">越红 = 相关性越高（分散越少）；越绿 = 相关性越低。美元周度收益（采用周末收盘价，使各市场不同的假期日历对齐，避免引入虚假的零收益日）。仅供展示。</span></p>
+  <p class="caveat" style="margin-top:9px"><span class="l-en">Moderately correlated — some diversification on offer</span><span class="l-zh">中度相关 — 有一定分散空间</span> · <span class="l-en">Red = more correlated; green = more diversifying. Display-only.</span><span class="l-zh">红 = 相关更高；绿 = 更能分散。仅展示。</span></p>
 </div>
 
 
@@ -1548,6 +1549,8 @@
   </div>
 </div>
 
+
+
 <script>
 document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
   btn.addEventListener('click', function(){
@@ -1604,8 +1607,5 @@ document.querySelectorAll('.more-btn[data-more]').forEach(function(btn){
 
 <script src="theme.js"></script>
 <script src="tablesort.js"></script>
-<footer class="site-footer">
-  <span class="made">© 2026 MastermindX Inc</span>
-</footer>
 </body>
 </html>

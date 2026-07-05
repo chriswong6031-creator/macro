@@ -42,6 +42,7 @@
          "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
   /* breathing room on wide desktops — content centered, never edge-to-edge */
   @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
+  body.page-macro { padding-top: 26px; }
   a { text-decoration: none; }
   h1 { font-size: 20px; margin: 0 0 2px; }
   h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted);
@@ -288,6 +289,7 @@
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-cyc-sec { display: none; }
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-rec { gap: 5px; padding: 7px 10px; }
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-cyc { padding-top: 5px; line-height: 1.25; }
+  body:is(.page-macro, .page-china, .page-canada) { padding-top: 26px; }
   @media (max-width: 760px) {
     .rrx .rrx-odds { flex-direction: column; gap: 14px; }
     .rrx .rrx-odds-l { flex: 0 0 auto; }
@@ -1633,6 +1635,7 @@
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>

@@ -321,6 +321,7 @@
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
@@ -360,7 +361,7 @@
       <span class="asof"><span class="pfx"><span class="l-en">as of</span><span class="l-zh">截至</span> </span><span id="asof">—</span></span>
     </div>
     <p class="story" id="story"></p>
-    <p class="tagline"><span class="l-en">Curated S&amp;P/TSX thematic baskets — every membership decision dated and documented; equal-weighted, monthly-rebalanced, buy-and-hold between rebalances. Benchmarked to the S&amp;P/TSX Composite (XIC.TO). Where a listed sector ETF approximates the theme the basket is cross-checked against it daily. A monitoring/structure frame, not a buy list.</span><span class="l-zh">精选标普/多伦多主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。以标普/多伦多综合指数为基准。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。</span></p>
+    <p class="tagline"><span class="l-en">Curated S&amp;P/TSX theme baskets. Equal-weighted, monthly rebalanced, benchmarked to XIC.TO. Monitoring context, not a buy list.</span><span class="l-zh">精选标普/多伦多主题篮子。等权、月度再平衡，对标 XIC.TO。仅作监测背景，非买入清单。</span></p>
   </header>
 
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
@@ -732,14 +733,14 @@
   <div id="content">
     <section id="table-section">
       <h2><span class="idx">01</span><span class="l-en">Performance table</span><span class="l-zh">表现一览</span></h2>
-      <p class="sub"><span class="l-en">All baskets, watchlist-style. Click a column to sort; toggle the value between raw return, vs S&amp;P/TSX, and σ (the move z-scored vs the basket&#39;s own trailing year — computed horizons only). Click a name to jump to its members.</span><span class="l-zh">全部篮子，自选股式表格。点击列标题排序；可在原始回报、相对标普/多伦多、σ（相对该篮子自身过去一年的 z 分数 — 仅限定窗）之间切换。点击名称跳转至成分。</span></p>
+      <p class="sub"><span class="l-en">All baskets in a sortable watchlist. Toggle raw, relative, or own-history z-score.</span><span class="l-zh">全部篮子的可排序观察表。可切换原始、相对或自身历史z分数。</span></p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
     </section>
 
     <section id="chart-section">
       <h2><span class="idx">02</span><span class="l-en">Performance</span><span class="l-zh">走势对比</span></h2>
-      <p class="sub"><span class="l-en">Rebased to 0% at the start of the selected window. Click legend entries to toggle baskets. The full &#34;All&#34; range is ~5 years (our free-cache ceiling); series before a basket&#39;s creation date are a backtest of the membership at creation. Powered by TradingView Lightweight Charts.</span><span class="l-zh">在所选窗口起点重设为 0%。点击图例可切换篮子。&#34;全部&#34;区间约 5 年（免费缓存上限）；篮子创建日之前为按创建时成分的回测。由 TradingView Lightweight Charts 提供。</span></p>
+      <p class="sub"><span class="l-en">Rebased to 0% for the selected window. Click legend entries to show or hide baskets.</span><span class="l-zh">所选窗口起点重设为0%。点击图例显示或隐藏篮子。</span></p>
       <div class="chartbar">
         <span class="tabs" id="chart-modes" role="group"></span>
         <span class="tabs" id="chart-ranges" role="group"></span>
@@ -757,8 +758,8 @@
   </div>
 
   <footer>
-    <span class="l-en">Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE canada_search S&amp;P/TSX Composite price cache (~5y), benchmarked to the S&amp;P/TSX Composite. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费的 china_search 大市值 A 股价格缓存（约 5 年），以标普/多伦多综合指数为基准。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-05 05:02 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-05 05:37 UTC</span><br>
+    <span class="made">© 2026 MastermindX Inc</span>
   </footer>
 
 <script src="lightweight-charts.js"></script>
@@ -782,6 +783,7 @@ const BENCH_COLOR = () => cssv('--muted') || '#94a3b8';
 const LANG = () => document.documentElement.getAttribute('data-lang')||'en';
 const bn  = b => (LANG()==='zh' && b && b.name_zh) ? b.name_zh : (b?b.name:'');
 const bth = b => (LANG()==='zh' && b && b.thesis_zh) ? b.thesis_zh : (b?b.thesis:'');
+const shortText = (s,n=145) => { s=String(s||''); return s.length>n ? s.slice(0,n).replace(/\s+\S*$/,'')+'...' : s; };
 const BENCH = () => LANG()==='zh' ? (BASKETS.benchmark_label_zh||'标普/多伦多') : (BASKETS.benchmark_label||'S&P/TSX');
 const CAT_ZH = {}; (BASKETS.categories||[]).forEach((c,i)=>CAT_ZH[c]=(BASKETS.categories_zh||[])[i]||c);
 const catLabel = c => (LANG()==='zh' && CAT_ZH[c]) ? CAT_ZH[c] : c;
@@ -912,7 +914,7 @@ function renderCards(){
         return `<div class="card" style="--c:${colorOf[b.id]}" data-id="${b.id}">
           <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))}</div>
           <div class="meta">${b.n_members}${memberW}${since} ${esc(b.created)}${ref}</div>
-          <div class="th">${esc(bth(b))}</div>
+          <div class="th">${esc(shortText(bth(b),135))}</div>
           <div class="perf">${kpi(hzLabel(bhz),b.perf?.[bhz])}${kpi('YTD',b.perf?.ytd)}<span class="spark">${sparkSvg(spk,{w:96,h:30,color:colorOf[b.id]})}</span></div>
         </div>`; }).join('');
     return cards?`<h3 class="cat">${esc(catLabel(cat))}</h3><div class="cards">${cards}</div>`:'';
@@ -925,13 +927,13 @@ function memRows(b){ return (b.members||[]).map(m=>`<tr><td><a href="canada_stoc
 function detailSection(b){
   const p=b.perf||{}; const kr=(k,h)=>`<div><div class="k">${k} ${esc(VS())}</div><div class="v ${cls(p[h]?.rel)}">${fmtPct(p[h]?.rel)}</div></div>`;
   const zh=LANG()==='zh';
-  const ref=b.reference?`<p class="refline">${zh?'交叉验证对标':'Cross-checked vs'} <b>${esc(b.reference.label)}</b>${b.reference.name?' — '+esc(b.reference.name):''}: ${zh?'日相关性':'daily correlation'} <b>${b.reference.corr.toFixed(2)}</b>, ${zh?'市场调整后':'market-adjusted'} <b>${b.reference.rel_corr.toFixed(2)}</b> ${zh?'，共':'over'} ${b.reference.n} ${zh?'个交易日':'sessions'}. <span class="muted">(${zh?'市场调整剥离共同的市场Beta — 篮子−基准 vs ETF−基准。':'market-adjusted strips shared market beta — basket−bench vs ETF−bench.'})</span></p>`:'';
+	  const ref=b.reference?`<p class="refline">${zh?'对标':'Cross-check'} <b>${esc(b.reference.label)}</b>${b.reference.name?' — '+esc(b.reference.name):''}: r <b>${b.reference.corr.toFixed(2)}</b>, adj <b>${b.reference.rel_corr.toFixed(2)}</b>, ${b.reference.n} ${zh?'日':'sessions'}.</p>`:'';
   const warns=[]; if((b.missing||[]).length) warns.push(`<span class="warn">${zh?'已剔除（不在缓存）':'excluded (not in free cache)'}: ${b.missing.map(esc).join(', ')}</span>`);
   (b.partial||[]).forEach(pp=>warns.push(`<span class="warn">${esc(pp.symbol)} ${zh?'纳入于':'enters'} ${esc(pp.from)}</span>`));
   const clog=(b.changelog||[]).map(c=>`<li><b>${esc(c.date)}</b> — ${esc(c.action)}: ${esc(c.note)}</li>`).join('');
   const memHdr = zh?['代码','理由','纳入','20d','YTD']:['Symbol','Rationale','Added','20d','YTD'];
   return `<div class="detail" id="b-${b.id}"><h4><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))} <span class="chip">${esc(catLabel(b.category))}</span></h4>
-    <p class="th">${esc(bth(b))}</p>
+	    <p class="th">${esc(shortText(bth(b),220))}</p>
     <div class="kpirow">${kr('20d','20d')}${kr('60d','60d')}${kr('MTD','mtd')}${kr('YTD','ytd')}${kr(zh?'全程':'Full','full')}</div>
     ${ref}<div>${warns.join(' ')}</div>
     <details open><summary>${zh?'成分':'Members'} (${b.n_members}) &amp; ${zh?'变更记录':'changelog'}</summary>
@@ -982,8 +984,5 @@ if(document.readyState!=='loading') boot(); else document.addEventListener('DOMC
 </script>
 <script src="allocation_scorecard.js"></script>
 <script src="theme.js"></script>
-<footer class="site-footer">
-  <span class="made">© 2026 MastermindX Inc</span>
-</footer>
 </body>
 </html>
