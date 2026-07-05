@@ -119,11 +119,15 @@ def build(root: Path | None = None) -> Path:
         if cnt:
             state_counts[s] = cnt
 
-    # Overlay flag counts (raw overlay_flags field)
-    raw_overlays = Counter(r.get("overlay_flags") for r in rows)
-    overlay_counts: dict[str, int] = {
-        k: v for k, v in raw_overlays.items() if k and v > 0
-    }
+    # Overlay flag counts — split multi-flag values so 'COILED,EVENT_BLACKOUT'
+    # is counted as two separate flags, consistent with how the template splits on ','.
+    raw_overlays: Counter = Counter()
+    for r in rows:
+        for flag in (r.get("overlay_flags") or "").split(","):
+            flag = flag.strip()
+            if flag:
+                raw_overlays[flag] += 1
+    overlay_counts: dict[str, int] = dict(raw_overlays)
     # Also count coiled / star / event_blackout from boolean fields for the strip
     coiled_cnt = sum(1 for r in rows if r.get("coiled"))
     star_cnt = sum(1 for r in rows if r.get("star"))
