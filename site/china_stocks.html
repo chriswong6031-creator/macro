@@ -1011,9 +1011,21 @@
   .cmd-hero .ms-cell2.bad,  .cmd-hero .ms-conf.bad  { color: var(--down); }
   .cmd-hero .ms-cell2.flat, .cmd-hero .ms-conf.warn, .cmd-hero .ms-conf.flat { color: var(--warn); }
   .cmd-hero .ms-conf { font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .cmd-hero .ms-confstrip { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cmd-hero .ms-confchip { display: inline-flex; align-items: baseline; gap: 9px; min-width: 0; padding: 7px 10px;
+    border: var(--rule) solid var(--hair); border-radius: 8px; background: var(--tile); }
+  .cmd-hero .ms-confchip.good { border-color: color-mix(in srgb, var(--up) 32%, var(--hair)); }
+  .cmd-hero .ms-confchip.bad { border-color: color-mix(in srgb, var(--down) 32%, var(--hair)); }
+  .cmd-hero .ms-confchip.warn { border-color: color-mix(in srgb, var(--warn) 32%, var(--hair)); }
+  .cmd-hero .ms-tech { margin-top: 12px; padding-top: 12px; border-top: var(--rule) solid var(--hair); }
+  .cmd-hero .ms-tech-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 9px; font-weight: 700; }
+  .cmd-hero .ms-tech-head .note { font-weight: 400; text-transform: none; }
+  .cmd-hero .ms-tech-stat { font-family: var(--num); font-size: 17px; font-weight: 800; color: var(--ink-1); }
+  .cmd-hero .ms-tech .mtf-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   @media (max-width: 560px) {
     .cmd-hero table.ms-tapetbl th, .cmd-hero table.ms-tapetbl td { padding-left: 3px; padding-right: 3px; }
     .cmd-hero .ms-cell2 .rsi { display: none; }
+    .cmd-hero .ms-confchip { width: 100%; justify-content: space-between; }
   }
   .cmd-hero .ms-caveat { margin: 9px 0 0; font-size: 10.5px; line-height: 1.45; color: var(--ink-3); }
 
@@ -1827,7 +1839,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 12.94. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 12.94 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 12.94." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 12.94 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -2045,7 +2057,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 11.86. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 11.86 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 11.86." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 11.86 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -2156,7 +2168,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 5.85. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 5.85 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 5.85." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 5.85 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -2378,7 +2390,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 15.64. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 15.64 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 15.64." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 15.64 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -2484,7 +2496,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 29.04. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 29.04 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 29.04." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 29.04 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -2590,7 +2602,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 11.25. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 11.25 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 11.25." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 11.25 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -2918,7 +2930,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 5.31. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 5.31 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 5.31." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 5.31 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -3025,7 +3037,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 13.85. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 13.85 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 13.85." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 13.85 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -3131,7 +3143,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 27.42. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 27.42 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 27.42." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 27.42 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -3242,7 +3254,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 70.7. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 70.7 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 70.7." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 70.7 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -3348,7 +3360,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 13.91. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 13.91 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 13.91." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 13.91 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -3565,7 +3577,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 14.09. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 14.09 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 14.09." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 14.09 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -3671,7 +3683,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 32.36. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 32.36 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 32.36." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 32.36 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -4117,7 +4129,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 7.79. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 7.79 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 7.79." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 7.79 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -4228,7 +4240,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 21.94. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 21.94 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 21.94." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 21.94 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -4445,7 +4457,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 15.9. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 15.9 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 15.9." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 15.9 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -4556,7 +4568,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 13.79. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 13.79 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 13.79." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 13.79 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -4667,7 +4679,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 11.72. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 11.72 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 11.72." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 11.72 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -4778,7 +4790,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 2.41. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 2.41 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 2.41." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 2.41 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -5002,7 +5014,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 53.63. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 53.63 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 53.63." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 53.63 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -5113,7 +5125,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 38.0. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 38.0 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 38.0." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 38.0 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -5220,7 +5232,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 10.85. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 10.85 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 10.85." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 10.85 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -5444,7 +5456,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 3.93. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 3.93 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 3.93." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 3.93 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -5767,7 +5779,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 2.95. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 2.95 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 2.95." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 2.95 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -5873,7 +5885,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 29.75. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 29.75 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 29.75." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 29.75 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -5979,7 +5991,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 7.37. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 7.37 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 7.37." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 7.37 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -6090,7 +6102,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 14.7. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 14.7 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 14.7." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 14.7 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -6307,7 +6319,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 21.21. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 21.21 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 21.21." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 21.21 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -6418,7 +6430,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 9.35. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 9.35 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 9.35." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 9.35 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -6524,7 +6536,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 14.11. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 14.11 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 14.11." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 14.11 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -6630,7 +6642,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 3.88. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 3.88 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 3.88." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 3.88 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -6741,7 +6753,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 4.98. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 4.98 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 4.98." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 4.98 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -7069,7 +7081,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 23.95. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 23.95 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 23.95." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 23.95 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -7175,7 +7187,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 41.7. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 41.7 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 41.7." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 41.7 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -7281,7 +7293,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 16.56. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 16.56 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 16.56." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 16.56 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -7498,7 +7510,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 10.55. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 10.55 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 10.55." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 10.55 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -7604,7 +7616,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 4.99. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 4.99 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 4.99." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 4.99 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -7710,7 +7722,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 4.2. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 4.2 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 4.2." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 4.2 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -7821,7 +7833,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 28.21. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 28.21 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 28.21." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 28.21 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -8038,7 +8050,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 30.15. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 30.15 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 30.15." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 30.15 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -8144,7 +8156,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 22.16. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 22.16 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 22.16." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 22.16 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -8255,7 +8267,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 110.9. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 110.9 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 110.9." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 110.9 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -8366,7 +8378,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 10.97. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 10.97 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 10.97." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 10.97 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -8477,7 +8489,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 16.1. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 16.1 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 16.1." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 16.1 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -8588,7 +8600,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 37.59. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 37.59 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 37.59." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 37.59 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -8699,7 +8711,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 9.76. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 9.76 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 9.76." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 9.76 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -8810,7 +8822,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 12.62. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 12.62 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 12.62." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 12.62 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -8921,7 +8933,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 18.05. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 18.05 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 18.05." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 18.05 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -9032,7 +9044,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 62.8. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 62.8 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 62.8." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 62.8 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -9138,7 +9150,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 3.98. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 3.98 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 3.98." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 3.98 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -9249,7 +9261,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 13.87. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 13.87 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 13.87." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 13.87 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -9360,7 +9372,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 4.39. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 4.39 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 4.39." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 4.39 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -9466,7 +9478,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 25.82. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 25.82 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 25.82." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 25.82 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -9572,7 +9584,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 21.5. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 21.5 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 21.5." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 21.5 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -9683,7 +9695,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 47.0. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 47.0 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 47.0." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 47.0 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -9900,7 +9912,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 11.16. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 11.16 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 11.16." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 11.16 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -10011,7 +10023,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 1.23. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 1.23 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 1.23." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 1.23 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -10117,7 +10129,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 5.95. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 5.95 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 5.95." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 5.95 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -10228,7 +10240,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 3.13. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 3.13 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 3.13." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 3.13 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -10445,7 +10457,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 17.97. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 17.97 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 17.97." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 17.97 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -10556,7 +10568,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 12.44. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 12.44 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 12.44." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 12.44 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -10667,7 +10679,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 121.84. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 121.84 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 121.84." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 121.84 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -10889,7 +10901,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 4.15. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 4.15 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 4.15." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 4.15 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -11000,7 +11012,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 28.93. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 28.93 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 28.93." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 28.93 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -11222,7 +11234,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 5.09. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 5.09 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 5.09." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 5.09 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -11439,7 +11451,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 36.26. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 36.26 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 36.26." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 36.26 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -11656,7 +11668,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 85.5. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle." data-tip-zh="入场择时（量表2）— 何时、以何价买入。未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、止损设于 85.5 下方。在周线确认前并非投资性买入；多数最终失败，少数则开启新周期。">
+        <div class="nb-entry nbe-extended" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. Daily low forming, but the bigger trend is still bearish. Small size only; stop below 85.5." data-tip-zh="入场择时（量表2）— 何时、以何价买入。日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 85.5 下方。">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -11770,7 +11782,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 13.22. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — Daily low forming, but the bigger trend is still bearish. Small size only; stop below 13.22.">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -11910,7 +11922,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 4.86. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — Daily low forming, but the bigger trend is still bearish. Small size only; stop below 4.86.">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -12120,7 +12132,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 15.46. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — Daily low forming, but the bigger trend is still bearish. Small size only; stop below 15.46.">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -12190,7 +12202,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 10.62. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — Daily low forming, but the bigger trend is still bearish. Small size only; stop below 10.62.">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -12260,7 +12272,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 24.92. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — Daily low forming, but the bigger trend is still bearish. Small size only; stop below 24.92.">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -12406,7 +12418,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 25.92. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — Daily low forming, but the bigger trend is still bearish. Small size only; stop below 25.92.">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -12476,7 +12488,7 @@
         
         
         
-        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 11.78. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — Daily low forming, but the bigger trend is still bearish. Small size only; stop below 11.78.">
           <div class="nbe-head">
             <span class="nbe-dot a0"></span>
             <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
@@ -13837,190 +13849,6 @@
   </div>
   
 
-  <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
-  
-  <div class="panel span12" id="alpha-leaders">
-    <h2><span class="l-en">📊 Sector relative strength — read the mean-reversion flag</span><span class="l-zh">📊 板块相对强度 — 关注均值回归标记</span>
-      <span class="note" style="text-transform:none">· <span class="l-en">sector-neutral residual · vs CSI 300</span><span class="l-zh">板块中性残差 · 相对沪深300</span> · 1453 <span class="l-en">names</span><span class="l-zh">只</span></span>
-      <span class="help">?<span class="tip"><span class="l-en">Sector-neutral relative strength is context. Read the entry flag; high alpha is not a buy signal in A-shares.</span><span class="l-zh">板块中性相对强度仅作背景。请看入场标记；A股高alpha不是买入信号。</span></span></span>
-    </h2>
-    <table class="sortable">
-      <thead><tr>
-        <th class="l"><span class="l-en">Stock</span><span class="l-zh">个股</span></th>
-        <th class="l"><span class="l-en">Sector</span><span class="l-zh">板块</span></th>
-        <th><span class="l-en">alpha z</span><span class="l-zh">阿尔法 z</span></th>
-        <th><span class="l-en">sector rank</span><span class="l-zh">板块排名</span></th>
-        <th><span class="l-en">idio ann</span><span class="l-zh">年化残差</span></th>
-        <th><span class="l-en">1-mo</span><span class="l-zh">近一月</span></th>
-        <th class="l"><span class="l-en">entry</span><span class="l-zh">入场</span></th>
-      </tr></thead>
-      <tbody>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#603256.SS"><b>603256.SS</b></a> <span class="note"><span class="l-en">Grace Fabric Technology Co.,Ltd.</span><span class="l-zh">宏和科技</span></span></td>
-        <td class="l note"><span class="l-en">Basic Materials</span><span class="l-zh">原材料</span></td>
-        <td><b class="pos">+2.86</b></td>
-        <td class="note">1/227</td>
-        <td class="pos">+270%</td>
-        <td class="pos">+22.5%</td>
-        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#603301.SS"><b>603301.SS</b></a> <span class="note"><span class="l-en">Zhende Medical Co., Ltd.</span><span class="l-zh">振德医疗</span></span></td>
-        <td class="l note"><span class="l-en">Healthcare</span><span class="l-zh">医疗保健</span></td>
-        <td><b class="pos">+2.69</b></td>
-        <td class="note">1/121</td>
-        <td class="pos">+146%</td>
-        <td class="pos">+1.7%</td>
-        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#300308.SZ"><b>300308.SZ</b></a> <span class="note"><span class="l-en">Zhongji Innolight Co., Ltd.</span><span class="l-zh">中际旭创</span></span></td>
-        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
-        <td><b class="pos">+2.69</b></td>
-        <td class="note">1/352</td>
-        <td class="pos">+198%</td>
-        <td class="neg">-11.5%</td>
-        <td class="l"><span class="alpha-entry ae-pullback"><span class="l-en">pullback</span><span class="l-zh">回调买点</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#688257.SS"><b>688257.SS</b></a> <span class="note"><span class="l-en">Shareate Tools Ltd.</span><span class="l-zh">新锐股份</span></span></td>
-        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
-        <td><b class="pos">+2.67</b></td>
-        <td class="note">1/329</td>
-        <td class="pos">+165%</td>
-        <td class="pos">+47.9%</td>
-        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#601869.SS"><b>601869.SS</b></a> <span class="note"><span class="l-en">Yangtze Optical Fibre And Cable Joint Stock Limited Company</span><span class="l-zh">长飞光纤</span></span></td>
-        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
-        <td><b class="pos">+2.57</b></td>
-        <td class="note">2/352</td>
-        <td class="pos">+225%</td>
-        <td class="pos">+9.4%</td>
-        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#002008.SZ"><b>002008.SZ</b></a> <span class="note"><span class="l-en">Han's Laser Technology Industry Group Co., Ltd.</span><span class="l-zh">大族激光</span></span></td>
-        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
-        <td><b class="pos">+2.51</b></td>
-        <td class="note">2/329</td>
-        <td class="pos">+138%</td>
-        <td class="pos">+2.2%</td>
-        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#301377.SZ"><b>301377.SZ</b></a> <span class="note"><span class="l-en">Guangdong Dtech Technology Co., Ltd.</span><span class="l-zh">鼎泰高科</span></span></td>
-        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
-        <td><b class="pos">+2.43</b></td>
-        <td class="note">3/352</td>
-        <td class="pos">+208%</td>
-        <td class="pos">+34.0%</td>
-        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#603629.SS"><b>603629.SS</b></a> <span class="note"><span class="l-en">Jiangsu Lettall Electronic Co.,Ltd</span><span class="l-zh">利通电子</span></span></td>
-        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
-        <td><b class="pos">+2.38</b></td>
-        <td class="note">4/352</td>
-        <td class="pos">+176%</td>
-        <td class="neg">-16.6%</td>
-        <td class="l"><span class="alpha-entry ae-pullback"><span class="l-en">pullback</span><span class="l-zh">回调买点</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#688498.SS"><b>688498.SS</b></a> <span class="note"><span class="l-en">Yuanjie Semiconductor Technology Co., Ltd.</span><span class="l-zh">源杰科技</span></span></td>
-        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
-        <td><b class="pos">+2.35</b></td>
-        <td class="note">5/352</td>
-        <td class="pos">+221%</td>
-        <td class="pos">+19.6%</td>
-        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#600869.SS"><b>600869.SS</b></a> <span class="note"><span class="l-en">Far East Smarter Energy Co., Ltd.</span><span class="l-zh">远东股份</span></span></td>
-        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
-        <td><b class="pos">+2.35</b></td>
-        <td class="note">3/329</td>
-        <td class="pos">+140%</td>
-        <td class="pos">+8.7%</td>
-        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#688308.SS"><b>688308.SS</b></a> <span class="note"><span class="l-en">OKE Precision Cutting Tools Co., Ltd.</span><span class="l-zh">欧科亿</span></span></td>
-        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
-        <td><b class="pos">+2.34</b></td>
-        <td class="note">4/329</td>
-        <td class="pos">+184%</td>
-        <td class="pos">+19.0%</td>
-        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#601126.SS"><b>601126.SS</b></a> <span class="note"><span class="l-en">Beijing Sifang Automation Co.,Ltd</span><span class="l-zh">四方股份</span></span></td>
-        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
-        <td><b class="pos">+2.32</b></td>
-        <td class="note">5/329</td>
-        <td class="pos">+132%</td>
-        <td class="neg">-25.5%</td>
-        <td class="l"><span class="alpha-entry ae-pullback"><span class="l-en">pullback</span><span class="l-zh">回调买点</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#603618.SS"><b>603618.SS</b></a> <span class="note"><span class="l-en">Hangzhou Cable Co., Ltd.</span><span class="l-zh">杭电股份</span></span></td>
-        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
-        <td><b class="pos">+2.26</b></td>
-        <td class="note">6/329</td>
-        <td class="pos">+178%</td>
-        <td class="pos">+14.6%</td>
-        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#600487.SS"><b>600487.SS</b></a> <span class="note"><span class="l-en">Hengtong Optic-Electric Co., Ltd.</span><span class="l-zh">亨通光电</span></span></td>
-        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
-        <td><b class="pos">+2.22</b></td>
-        <td class="note">6/352</td>
-        <td class="pos">+142%</td>
-        <td class="pos">+1.1%</td>
-        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#301200.SZ"><b>301200.SZ</b></a> <span class="note"><span class="l-en">Shenzhen Han's CNC Technology Co., Ltd.</span><span class="l-zh">大族数控</span></span></td>
-        <td class="l note"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
-        <td><b class="pos">+2.22</b></td>
-        <td class="note">7/329</td>
-        <td class="pos">+175%</td>
-        <td class="pos">+21.1%</td>
-        <td class="l"><span class="alpha-entry ae-extended"><span class="l-en">extended</span><span class="l-zh">急涨偏热</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><a href="china_lookup.html#300502.SZ"><b>300502.SZ</b></a> <span class="note"><span class="l-en">Eoptolink Technology Inc., Ltd.</span><span class="l-zh">新易盛</span></span></td>
-        <td class="l note"><span class="l-en">Technology</span><span class="l-zh">科技</span></td>
-        <td><b class="pos">+2.17</b></td>
-        <td class="note">7/352</td>
-        <td class="pos">+171%</td>
-        <td class="neg">-2.7%</td>
-        <td class="l"><span class="alpha-entry ae-intact"><span class="l-en">intact</span><span class="l-zh">趋势完好</span></span></td>
-      </tr>
-      
-      </tbody>
-    </table>
-    <p class="note" style="margin:6px 0 0;font-size:11px"><span class="l-en">Relative-strength context only. Use the entry flag, not alpha rank, as the cleaner read.</span><span class="l-zh">相对强度仅作背景。更干净的读法是入场标记，而非alpha排名。</span></p>
-  </div>
-  
 
   
 
@@ -14031,7 +13859,7 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-05 07:14 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-05 09:39 UTC<br>
   <span class="made">© 2026 MastermindX Inc</span>
 </div>
 

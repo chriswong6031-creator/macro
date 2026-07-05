@@ -5,9 +5,9 @@
   "benchmark": "510300.SS",
   "benchmark_label": "CSI 300",
   "benchmark_label_zh": "沪深300",
-  "construction": "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day. Benchmark = CSI 300 (沪深300).",
-  "history_note": "Series before a basket's creation date are a backtest of the membership as of creation; live tracking starts at creation. Universe = the free china_search top-market-cap A-share cache (~5y).",
-  "note": "Curated A-share thematic baskets — hindsight-curated and descriptive, not an out-of-sample backtest and not a buy list.",
+  "construction": "Equal-weight baskets, rebalanced monthly, measured against CSI 300.",
+  "history_note": "Available history comes from the china_search cache. Pre-launch series use the basket's starting membership.",
+  "note": "Curated A-share theme baskets for monitoring rotation. Descriptive only, not a buy list.",
   "baskets": {
     "cn_semis": {
       "name": "Semiconductors",
@@ -18,8 +18,8 @@
       "etf_proxy_note": "半导体ETF — chip-localization basket",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The chip-localization (国产替代) complex: foundries, equipment, design IP and memory racing to build a domestic stack as export controls tighten. The purest read on China's self-sufficiency drive — high-beta, policy- and cycle-sensitive.",
-      "thesis_zh": "国产替代主线：晶圆代工、设备、设计与存储在出口管制下加速构建本土产业链。最纯粹的自主可控读数 — 高弹性，受政策与周期驱动。",
+      "thesis": "China chip-localization names across foundry, equipment, design and memory.",
+      "thesis_zh": "中国芯片国产化公司，覆盖晶圆代工、设备、设计和存储。",
       "members": [
         {
           "ticker": "688981.SS",
@@ -193,8 +193,8 @@
       "etf_proxy_note": "loose — broad Technology ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The AI capex hardware leg: 800G optical modules, AI servers, switch silicon and domestic accelerators that the data-centre build-out is denominated in. China's most explosive 2024-25 momentum theme and its tightest link to the global AI cycle.",
-      "thesis_zh": "AI 资本开支硬件腿：800G 光模块、AI 服务器、交换芯片与国产算力 — 数据中心建设的承载者。2024-25 最具爆发力的动量主题，与全球 AI 周期联系最紧。",
+      "thesis": "Optics, AI servers, switches and domestic accelerators tied to China AI capex.",
+      "thesis_zh": "光模块、AI 服务器、交换机和国产加速器，受中国 AI 资本开支影响。",
       "members": [
         {
           "ticker": "300308.SZ",
@@ -333,8 +333,8 @@
       "etf_proxy_note": "loose — broad Technology ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The Apple/Android hardware supply chain (果链): precision assembly, acoustics, glass, display and PCB. Levered to the smartphone cycle, AI-phone refresh and any handset-AI hardware upgrade.",
-      "thesis_zh": "苹果/安卓硬件供应链（果链）：精密组装、声学、玻璃、面板与 PCB。受智能手机周期、AI 手机换机与端侧 AI 硬件升级驱动。",
+      "thesis": "Apple/Android supply-chain names tied to smartphones, AI devices and hardware upgrades.",
+      "thesis_zh": "苹果和安卓供应链公司，受智能手机、AI 设备和硬件升级影响。",
       "members": [
         {
           "ticker": "002475.SZ",
@@ -459,8 +459,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Domestic software, fintech-data and the AIGC application layer (信创 + AI 应用): office suites, speech/LLM, financial terminals and security. Levered to IT-localization mandates and the monetisation of generative AI in China.",
-      "thesis_zh": "国产软件、金融数据与 AIGC 应用层（信创+AI应用）：办公套件、语音/大模型、金融终端与安全。受信创政策与生成式 AI 商业化驱动。",
+      "thesis": "Domestic software and AI application names tied to IT localization and generative AI demand.",
+      "thesis_zh": "国产软件和 AI 应用公司，受 IT 国产化和生成式 AI 需求影响。",
       "members": [
         {
           "ticker": "688111.SS",
@@ -585,8 +585,8 @@
       "etf_proxy_note": "新能源车ETF — battery-heavy",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The lithium-battery value chain — cells, lithium resource, separators, electrolyte and anode/cathode. China's dominant export-competitive complex; whipsawed by the lithium price cycle and global EV demand.",
-      "thesis_zh": "锂电池价值链 — 电芯、锂资源、隔膜、电解液与正负极。中国最具出口竞争力的产业集群；受锂价周期与全球电动车需求剧烈牵动。",
+      "thesis": "Lithium battery chain: cells, resources, materials and components. Driven by EV demand and lithium prices.",
+      "thesis_zh": "锂电池产业链：电芯、资源、材料和零部件。受电动车需求和锂价影响。",
       "members": [
         {
           "ticker": "300750.SZ",
@@ -723,8 +723,8 @@
       "etf_proxy_note": "光伏ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The solar manufacturing chain — silicon, wafers, cells, modules, inverters and film. A textbook over-capacity / price-war cyclical: huge global volume growth wrestling with brutal margin compression.",
-      "thesis_zh": "光伏制造链 — 硅料、硅片、电池、组件、逆变器与胶膜。典型的产能过剩/价格战周期：全球装机高增长与残酷的盈利压缩并存。",
+      "thesis": "Solar manufacturing chain from silicon to modules and inverters. Volume growth versus margin pressure.",
+      "thesis_zh": "光伏制造链，从硅料到组件和逆变器。量增与利润率压力并存。",
       "members": [
         {
           "ticker": "601012.SS",
@@ -849,8 +849,8 @@
       "etf_proxy_note": "智能汽车ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Whole-vehicle makers and key suppliers riding the EV/intelligent-driving transition and the export push — legacy OEMs reinventing, new-energy champions scaling, and the parts names (glass, thermal, smart-cockpit) levered to content-per-car.",
-      "thesis_zh": "整车与核心零部件，受电动化/智能化转型与出口浪潮驱动 — 传统车企转身、新能源龙头放量，零部件（玻璃、热管理、智能座舱）受单车价值量提升带动。",
+      "thesis": "China automakers and suppliers tied to EV adoption, intelligent driving and exports.",
+      "thesis_zh": "中国整车和供应商，受电动车渗透、智能驾驶和出口影响。",
       "members": [
         {
           "ticker": "002594.SZ",
@@ -982,8 +982,8 @@
       "etf_proxy_note": "军工ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The military-industrial complex — fighters, aero-engines, shipbuilding, milconnectors, infrared and satellites. A policy/order-book theme driven by the defense budget and modernization, largely decoupled from the consumer cycle.",
-      "thesis_zh": "军工产业链 — 战机、航发、船舶、军工连接器、红外与卫星。受国防预算与现代化订单驱动的政策主题，与消费周期基本脱钩。",
+      "thesis": "Military and aerospace suppliers tied to modernization budgets and order books.",
+      "thesis_zh": "军工和航空航天供应商，受现代化预算和订单影响。",
       "members": [
         {
           "ticker": "600760.SS",
@@ -1099,8 +1099,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Industrial automation and the humanoid-robot supply chain — servo drives, harmonic reducers, controllers and thermal/actuator parts. A high-beta 2024-25 thematic on the humanoid build-out and factory automation.",
-      "thesis_zh": "工业自动化与人形机器人供应链 — 伺服、谐波减速器、控制器与热管理/执行部件。受人形机器人放量与工厂自动化驱动的高弹性 2024-25 主题。",
+      "thesis": "Automation and humanoid-robot supply chain: drives, reducers, controllers and parts.",
+      "thesis_zh": "自动化和人形机器人供应链：驱动、减速器、控制器和零部件。",
       "members": [
         {
           "ticker": "300124.SZ",
@@ -1197,8 +1197,8 @@
       "etf_proxy_note": "酒ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The baijiu complex — the bellwether of Chinese premium consumption and the market's quintessential quality-franchise basket. Pricing power and mix versus the property-driven consumption-confidence cycle.",
-      "thesis_zh": "白酒板块 — 中国高端消费的风向标，也是市场最具代表性的优质消费特许经营篮子。提价与产品结构对决地产驱动的消费信心周期。",
+      "thesis": "Premium liquor leaders. Read on Chinese premium consumption and confidence.",
+      "thesis_zh": "高端白酒龙头。观察中国高端消费和信心。",
       "members": [
         {
           "ticker": "600519.SS",
@@ -1267,8 +1267,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "White-goods and appliance champions — global-scale, high-ROE, dividend-paying franchises levered to trade-in stimulus (以旧换新), export share gains and the property after-cycle.",
-      "thesis_zh": "白电与家电龙头 — 全球规模、高 ROE、分红型特许经营，受以旧换新刺激、出口份额提升与地产后周期驱动。",
+      "thesis": "White-goods and appliance leaders tied to trade-in stimulus, exports and property after-cycle.",
+      "thesis_zh": "白电和家电龙头，受以旧换新、出口和地产后周期影响。",
       "members": [
         {
           "ticker": "000333.SZ",
@@ -1344,8 +1344,8 @@
       "etf_proxy_note": "消费ETF — staples",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Staple food and non-alcoholic beverage leaders — dairy, condiments, energy drinks, cooking oil and meat. Defensive consumption with brand power; a barometer of mass-market demand and input-cost cycles.",
-      "thesis_zh": "必选食品与软饮龙头 — 乳制品、调味品、功能饮料、食用油与肉制品。具品牌力的防御性消费，是大众需求与成本周期的晴雨表。",
+      "thesis": "Staple food and beverage leaders. Defensive read on mass-market demand and input costs.",
+      "thesis_zh": "大众食品饮料龙头。防御性观察大众需求和成本。",
       "members": [
         {
           "ticker": "600887.SS",
@@ -1440,8 +1440,8 @@
       "etf_proxy_note": "创新药ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Innovative-drug developers and the CXO outsourcing chain (CRO/CDMO). The R&D-and-globalization growth engine of China healthcare — levered to out-licensing deals, biotech funding and overseas demand.",
-      "thesis_zh": "创新药企与 CXO 外包链（CRO/CDMO）。中国医药的研发与出海成长引擎 — 受对外授权（BD）、生物科技融资与海外需求驱动。",
+      "thesis": "Innovative pharma and CRO/CDMO names tied to licensing, funding and overseas demand.",
+      "thesis_zh": "创新药和 CRO/CDMO 公司，受授权交易、融资和海外需求影响。",
       "members": [
         {
           "ticker": "603259.SS",
@@ -1559,8 +1559,8 @@
       "etf_proxy_note": "医疗ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Medical-equipment makers, healthcare services and branded traditional-Chinese-medicine (中药) franchises — domestic-substitution device leaders plus defensive, pricing-power consumer-health brands.",
-      "thesis_zh": "医疗设备、医疗服务与品牌中药特许经营 — 国产替代的器械龙头，叠加具提价能力的防御型消费医疗品牌。",
+      "thesis": "Medical devices, services and TCM brands tied to domestic substitution and defensive health demand.",
+      "thesis_zh": "医疗器械、服务和中药品牌，受国产替代和防御性医疗需求影响。",
       "members": [
         {
           "ticker": "300760.SZ",
@@ -1678,8 +1678,8 @@
       "etf_proxy_note": "银行ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The banking complex — the big-four state lenders, the joint-stock leaders and the high-growth city/rural banks. The core of the high-dividend (高股息) trade and a direct read on credit, net-interest-margin and property risk.",
-      "thesis_zh": "银行板块 — 国有大行、股份行龙头与高成长城农商行。高股息交易的核心，也是信用、净息差与地产风险的直接读数。",
+      "thesis": "Major banks and regional lenders. Core high-dividend read on credit, margins and property risk.",
+      "thesis_zh": "大型银行和区域银行。高股息核心板块，反映信贷、息差和地产风险。",
       "members": [
         {
           "ticker": "601398.SS",
@@ -1825,8 +1825,8 @@
       "etf_proxy_note": "证券ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Securities firms and the fintech-trading platforms — the high-beta vanguard of any A-share bull market. Levered to turnover, margin balances, IPO/M&A activity and consolidation among the majors.",
-      "thesis_zh": "证券公司与金融科技交易平台 — A 股牛市的高弹性先锋。受成交额、两融余额、IPO/并购活动与头部券商整合驱动。",
+      "thesis": "Brokerages and trading platforms tied to turnover, margin balances and capital-market activity.",
+      "thesis_zh": "券商和交易平台，受成交额、两融余额和资本市场活跃度影响。",
       "members": [
         {
           "ticker": "600030.SS",
@@ -1951,8 +1951,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The big listed insurers — life and P&C franchises whose earnings and book value swing on the equity market, long-bond yields and new-business value. A leveraged play on a domestic risk-on turn.",
-      "thesis_zh": "上市大型险企 — 寿险与财险特许经营，利润与净资产随权益市场、长债收益率与新业务价值波动。对国内风险偏好回升的杠杆化表达。",
+      "thesis": "Life and P&C insurers tied to equity markets, yields and new-business value.",
+      "thesis_zh": "寿险和财险公司，受股市、利率和新业务价值影响。",
       "members": [
         {
           "ticker": "601318.SS",
@@ -2007,8 +2007,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The state-owned-enterprise re-rating theme (中国特色估值体系) — the three oil majors, the telecom carriers and the big infrastructure/utility SOEs. A policy-driven, high-dividend value trade on raising returns and valuations of central SOEs.",
-      "thesis_zh": "央企估值重塑主题（中国特色估值体系）— 三桶油、电信运营商与大型基建/公用事业央企。受提升央企回报与估值政策驱动的高股息价值交易。",
+      "thesis": "Central SOE value basket: oil, telecom, infrastructure and utilities with high dividends.",
+      "thesis_zh": "央企价值篮子：石油、电信、基建和公用事业，高股息特征。",
       "members": [
         {
           "ticker": "601857.SS",
@@ -2140,8 +2140,8 @@
       "etf_proxy_note": "",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "The gold-mining complex — producers levered to the bullion price, central-bank buying and the real-rate / de-dollarization narrative. A high-beta way to express the gold cycle from A-shares.",
-      "thesis_zh": "黄金采矿板块 — 受金价、央行购金与实际利率/去美元化叙事驱动的生产商。从 A 股表达黄金周期的高弹性方式。",
+      "thesis": "Gold miners levered to bullion, real rates and central-bank demand.",
+      "thesis_zh": "黄金矿商，受金价、实际利率和央行需求影响。",
       "members": [
         {
           "ticker": "601899.SS",
@@ -2203,8 +2203,8 @@
       "etf_proxy_note": "有色金属ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Base and industrial metals — copper, aluminium and molybdenum producers levered to the global growth cycle, the green-capex demand pull and supply discipline. The China read on the commodity super-theme.",
-      "thesis_zh": "基本金属与工业金属 — 铜、铝、钼生产商，受全球增长周期、绿色资本开支需求与供给约束驱动。表达大宗超级主题的中国读数。",
+      "thesis": "Copper, aluminium and industrial metals producers tied to global growth and green capex.",
+      "thesis_zh": "铜、铝和工业金属生产商，受全球增长和绿色资本开支影响。",
       "members": [
         {
           "ticker": "603993.SS",
@@ -2315,8 +2315,8 @@
       "etf_proxy_note": "loose — broad nonferrous ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Rare-earth resource and permanent-magnet makers — the upstream of EV motors, wind turbines and robotics, and a strategic export-control chokepoint. A policy-and-price theme on China's near-monopoly in the supply chain.",
-      "thesis_zh": "稀土资源与永磁制造 — 电机、风机与机器人的上游，也是战略出口管制的咽喉。受中国近乎垄断供应链的政策与价格驱动的主题。",
+      "thesis": "Rare-earth and magnet makers tied to EV motors, wind, robotics and export controls.",
+      "thesis_zh": "稀土和磁材公司，受电机、风电、机器人和出口管制影响。",
       "members": [
         {
           "ticker": "600111.SS",
@@ -2399,8 +2399,8 @@
       "etf_proxy_note": "煤炭ETF",
       "created": "2021-06-15",
       "weighting": "equal",
-      "thesis": "Thermal and coking coal producers — the heart of the high-dividend (红利) trade: heavy free-cash-flow, high payout ratios and pricing tied to power demand and supply policy. Defensive yield with cyclical tail risk.",
-      "thesis_zh": "动力煤与焦煤生产商 — 红利交易的核心：充沛自由现金流、高分红比例，价格挂钩电力需求与供给政策。带周期尾部风险的防御性高股息。",
+      "thesis": "Coal producers with high payout and power-demand exposure.",
+      "thesis_zh": "煤炭生产商，高派息并受电力需求影响。",
       "members": [
         {
           "ticker": "601088.SS",

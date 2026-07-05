@@ -18,19 +18,20 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | neural-web | 24 |
-| options-alpha | 2 |
+| options-alpha | 4 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
 | sector-pulse | 3 |
 | setup-species | 6 |
+| signal-commons | 7 |
 | us-stocks-prebreakout | 2 |
 
 ### Artifacts by tier
 
 | tier | count |
 |---|---|
-| display | 44 |
-| infrastructure | 29 |
+| display | 52 |
+| infrastructure | 30 |
 | scored | 4 |
 | shadow | 33 |
 
@@ -38,8 +39,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 107 |
-| gitignored-local | 2 |
+| git | 115 |
+| gitignored-local | 3 |
 | r2 | 1 |
 
 ## Artifacts by owner_program
@@ -149,8 +150,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| polygon-gex-summaries | `data/polygon_gex/summary_*.parquet` | parquet | collect | display | 4 | 0 |
 | vol-regime-gate | `data/vol_regime/gate.json` | json | on-demand | scored | 3 | 0 |
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
+| options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 
 ### oracle
 
@@ -216,6 +219,18 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | signal-archive-track-record | `data/signal_archive/track_record.parquet` | parquet | daily-engine | shadow | 4 | 0 |
 | species-registry | `data/species/registry.json` | json | on-demand | infrastructure | 4 | 0 |
 | experiments-registry-seed | `data/experiments/registry_seed.json` | json | daily-engine | infrastructure | 3 | 0 |
+
+### signal-commons
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| event-priors-clinicaltrials | `data/special_situations/event_priors/clinicaltrials.json` | json | weekly | display | 2 | 0 |
+| event-priors-earnings | `data/special_situations/event_priors/earnings.json` | json | weekly | display | 2 | 0 |
+| event-priors-ipo-lockup | `data/special_situations/event_priors/ipo_lockup.json` | json | weekly | display | 2 | 0 |
+| event-priors-openfda | `data/special_situations/event_priors/openfda.json` | json | weekly | display | 2 | 0 |
+| event-priors-sp-index-changes | `data/special_situations/event_priors/sp_index_changes.json` | json | weekly | display | 2 | 0 |
+| kernel-half-lives | `data/neuralweb/half_life.json` | json | daily-engine | infrastructure | 1 | 0 |
+| event-priors-gov-contract | `data/special_situations/event_priors/gov_contract.json` | json | weekly | display | 0 | 0 |
 
 ### us-stocks-prebreakout
 
@@ -512,6 +527,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/decay.py`
 - **extra writers:**
   - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_families() defined in the producer; no independent write logic
+
+### kernel-half-lives
+
+- **path:** `data/neuralweb/half_life.json`
+- **declared producer:** `engine/neuralweb/half_life.py`
+- **extra writers:**
+  - scripts/build_kernel_half_lives.py — thin CLI wrapper; calls write_half_lives() defined in the producer; no independent write logic
 
 ### lagging-signals
 

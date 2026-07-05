@@ -254,8 +254,8 @@
     </div>
     <div class="ign-radar" id="ign-radar"><span class="rd-ic">⚠️</span><span id="ign-radar-txt"></span></div>
     <p class="ign-note">{{ t(
-      'Baskets ranked by TURN evidence — fresh breadth thrust (members newly crossing their 20-day line), relative-strength curvature (is RS turning up, not just high), and a weekly higher-timeframe confirm. Display-only, forward-graded, NOT validated: this is a descriptive read, not a buy signal, and its forward value is being scored in public. Narrow market — ignition is context, not a ranker.',
-      '篮子按拐点证据排名 — 新鲜广度推力（成分股刚上穿 20 日线）、相对强度曲率（RS 是否正在向上拐，而非仅仅偏高），以及周线高周期确认。仅供展示、前瞻打分、未经验证：这是描述性读数而非买入信号，其前瞻价值正在公开打分中。窄市场 — 点火为参考背景，非排序依据。') }}</p>
+      'Turn evidence: fresh breadth, improving relative strength and weekly confirmation. Descriptive only, not a buy signal.',
+      '拐点证据：新鲜广度、相对强度改善与周线确认。仅作描述，并非买入信号。') }}</p>
     <p class="ign-note" id="ign-scoreboard"></p>
     <div class="ign-strip"><div class="ign-cards" id="ign-cards"></div></div>
   </section>
@@ -321,8 +321,8 @@
     <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
       <span class="sect-tag">{{ t('buy now · wait for a pullback · reduce / avoid', '立即买入 · 等待回调 · 减仓回避') }}</span></h2>
     <p class="sub">{{ t(
-      'The executional shortlist, split honestly: "Buy now" lists only in-favour themes that ALSO have a clean entry setup right now; in-favour themes without one sit in the wait-for-a-pullback column — being in favour is not the same as being buyable today. Plus the reduce / avoid side. Click any theme to see the specific stocks. If nothing has a clean entry, the right move is patience.',
-      '可执行清单，如实拆分："立即买入"仅列出既被看好、又当前具备干净入场点的主题；被看好但无干净入场点的主题列于"等待回调"一栏 — 被看好并不等于当下可买。另有减仓/回避一侧。点击任一主题可查看具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
+      'Shortlist by action: buyable now, wait for a better entry, or reduce / avoid. Click a theme for its stocks.',
+      '按操作分组：当前可买、等待更好入场点、或减仓/回避。点击主题查看个股。') }}</p>
     <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
@@ -331,8 +331,8 @@
     <h2><span class="idx">★</span>🧭 {{ t('Theme Rotation Desk', '主题轮动台') }}
       <span class="sect-tag">{{ t('scored · labeled · actionable', '评分 · 标注 · 可执行') }}</span></h2>
     <p class="sub">{{ t(
-      'Every theme scored 0–100 from transparent legs — trend, breadth, ±3% impulse, macro tailwind and a crowding penalty — then labeled (dominant / emerging / fading / deteriorating) with an actionable read. The verb accounts for dominant themes topping out vs less-dominant themes just emerging.',
-      '每个主题以透明分项打分 0–100 — 趋势、广度、±3% 脉冲、宏观顺风与拥挤惩罚 — 并标注（主导／新兴／退潮／走弱）及可执行结论。结论会区分见顶的主导主题与刚刚新兴的次主导主题。') }}</p>
+      'Each theme gets a 0–100 score, a trend label and an action read based on trend, breadth, impulse, macro support and crowding.',
+      '每个主题按趋势、广度、脉冲、宏观支持与拥挤度给出 0–100 分、趋势标签和操作结论。') }}</p>
     <div class="mctx" id="macro-ctx"></div>
     <p class="muted" id="theme-disclaimer" style="font-size:11.5px;margin:0 0 11px"></p>
     {# capped at 3 rows (theme.js initShowMore row-mode); reveals 3 more rows per click. #}
@@ -343,8 +343,8 @@
     <h2><span class="idx">★</span>🛑 {{ t('Market concentration & theme leadership', '市场集中度与主题领导力') }}
       <span class="sect-tag">{{ t('who owns the advance vs the decline', '谁主导上涨 vs 谁在下跌') }}</span></h2>
     <p class="sub">{{ t(
-      'The tape can narrow — a few names carry the index while breadth rots underneath. This reads the broad-market advance-decline (daily → monthly), which THEMES own the advancers vs sit in the decline, and the clean entries vs roll-over watch — so you accumulate the right theme and step out of the topping one.',
-      '行情会变窄 — 少数个股拉动指数，而广度在底下恶化。此处读取大盘涨跌家数（日→月）、哪些主题主导上涨、哪些处于下跌，以及干净入场 vs 回落观察 — 帮助你加仓正确的主题、退出见顶的主题。') }}</p>
+      'Shows whether leadership is broad or narrow, and which themes own the advance or the decline.',
+      '显示上涨是广泛还是集中，以及哪些主题主导上涨或下跌。') }}</p>
     <div id="concentration"></div>
   </section>
 
@@ -352,8 +352,8 @@
     <h2><span class="idx">★</span>📆 {{ t('5-Day Theme Rotation', '5日主题轮动') }}
       <span class="sect-tag">{{ t('weekly climbers & fallers', '本周上升与下降') }}</span></h2>
     <p class="sub">{{ t(
-      'Who moved this week — ranked by 5-day return relative to the ' ~ (bench_en|default('S&P 500')) ~ ', with the change in 20-day relative-strength rank over the same 5 sessions. A fast read on which themes to lean into and which are losing the tape.',
-      '本周谁在动 — 以相对' ~ (bench_zh|default('标普 500')) ~ '的 5 日回报排名，并标注同期 20 日相对强度排名的变化。快速判断该倾向哪些主题、哪些正在失去走势。') }}</p>
+      'Weekly movers ranked by 5-day return versus ' ~ (bench_en|default('S&P 500')) ~ ', plus the change in 20-day relative-strength rank.',
+      '按相对' ~ (bench_zh|default('标普 500')) ~ '的 5 日回报排序，并显示 20 日相对强度排名变化。') }}</p>
     <div class="rotwrap" id="rotation"></div>
   </section>
 
@@ -361,8 +361,7 @@
     <h2><span class="idx">★</span>⚡ {{ t('Impulse & Extremes', '脉冲与极值') }}
       <span class="sect-tag">{{ t('across the thematic universe', '覆盖全部主题成分') }}</span></h2>
     <p class="sub">{{ t(
-      'Breadth of the daily move across every name in the baskets: how many jumped ≥3% vs fell ≥3% (impulse / volatility), and how many printed a fresh 52-week high vs low. Net counts read the tape\'s pressure at a glance.',
-      '篮子内所有个股当日波动的广度：多少只上涨≥3%、多少只下跌≥3%（脉冲／波动），以及多少只创 52 周新高对新低。净数一眼读出走势压力。') }}</p>
+      'Daily breadth across basket members: big movers and new 52-week highs or lows.',
+      '篮子成分的日度广度：大涨大跌个股，以及 52 周新高/新低。') }}</p>
     <div class="scards" id="scorecards"></div>
   </section>
-

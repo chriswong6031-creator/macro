@@ -57,12 +57,33 @@
 </div>
 
 {% if ms.mtf and ms.mtf.indices %}
-{# the multi-timeframe tape — the broad market across four horizons #}
+{# the multi-timeframe tape — one confluence read, with an optional benchmark technical card #}
 <section class="ms-tape">
   <div class="tape-head">
     <p class="tape-title">{{ t(board.tape_title_en, board.tape_title_zh) }}{{ help(board.tape_help_en, board.tape_help_zh) }}</p>
-    <span class="tape-sub">{{ t('arrow · RSI','箭头 · RSI') }}</span>
+    <span class="tape-sub">{{ t('confluence','合流') if board.compact_tape else t('arrow · RSI','箭头 · RSI') }}</span>
   </div>
+  {% if board.compact_tape %}
+  <div class="ms-confstrip">
+    {% for r in ms.mtf.indices %}
+    <span class="ms-confchip {{ r.tone }}">
+      <span class="t-inst">{{ t(r.label_en, r.label_zh) }}</span>
+      <span class="ms-conf {{ r.tone }}">{{ t(r.confluence_en, r.confluence_zh) }}</span>
+    </span>
+    {% endfor %}
+  </div>
+  {% if board.show_benchmark_mtf and benchmark %}
+  <div class="ms-tech">
+    <div class="ms-tech-head">
+      <span>{{ td(benchmark.name) }} <span class="note">{{ t('technical chart', '技术图') }}</span></span>
+      <span class="ms-tech-stat">{{ '%.2f'|format(benchmark.price) }}</span>
+      <span class="{{ 'pos' if benchmark.chg>=0 else 'neg' }}">{{ '%+.2f'|format(benchmark.chg) }}%</span>
+      <span class="lad {{ 'up' if benchmark.dir=='up' else ('down' if benchmark.dir=='down' else 'flat') }}">{{ td(benchmark.label or benchmark.state) }}</span>
+    </div>
+    <div class="mtf" data-mtf='{{ benchmark.mtf_json }}'></div>
+  </div>
+  {% endif %}
+  {% else %}
   <table class="ms-tapetbl">
     <thead><tr>
       <th class="l">{{ t('Index','指数') }}</th>
@@ -81,6 +102,7 @@
     {% endfor %}
     </tbody>
   </table>
+  {% endif %}
   {% if ms.caveat_en %}<p class="ms-caveat">{{ t(ms.caveat_en, ms.caveat_zh) }}</p>{% endif %}
 </section>
 {% endif %}

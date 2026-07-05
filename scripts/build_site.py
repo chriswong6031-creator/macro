@@ -2846,6 +2846,14 @@ def main() -> int:
         write_live_config(site)
     except Exception as e:  # noqa: BLE001 — additive, never block the build
         log.warning("live_config.js skipped: %s", e)
+    # Risk-Radar EXTREME alert tape (site/rr_banner.json) — the second channel of the
+    # shared wh_banner.js top bar. Fires only at the radar's gate-confirmed "risk-off"
+    # band; otherwise writes an inert alert:null. Additive + degrade-silent.
+    try:
+        from scripts.build_rr_banner import build as build_rr_banner
+        build_rr_banner(site)
+    except Exception as e:  # noqa: BLE001 — additive, never block the build
+        log.warning("rr_banner.json skipped: %s", e)
     # per-ticker factor betas for the watchlist's Portfolio Exposure panel — the
     # client aggregates these against the user's holdings (engine/factor_exposure.py;
     # validated in reports/factor-exposure-phase0.md). Additive + graceful.
@@ -3517,6 +3525,12 @@ def main() -> int:
         if _kf_src.exists():
             (nwd / "kernel_families.json").write_bytes(_kf_src.read_bytes())
             log.info("neuralwebdata: copied kernel_families.json")
+        # Signal Commons W2: copy half-life artifact for committee chip display
+        # (display-only; zero behavior-changing consumers)
+        _hl_src = config.data_dir() / "neuralweb" / "half_life.json"
+        if _hl_src.exists():
+            (nwd / "half_life.json").write_bytes(_hl_src.read_bytes())
+            log.info("neuralwebdata: copied half_life.json")
         # Supabase config (same as watchlist / theme.js)
         _nw_wl = config.load().get("watchlist", {})
         _nw_sup = (_nw_wl.get("supabase") or {})

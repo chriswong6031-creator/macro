@@ -151,11 +151,17 @@ def load_context(root: Path) -> ProvenanceContext:
     si_path = root / "data" / "neuralweb" / "spine_index.parquet"
     if si_path.exists():
         try:
-            si = pd.read_parquet(si_path, columns=[
+            # W1: also read role flags and falsifier if present (fail-open: absent on old index)
+            _base_cols = [
                 "signal_id", "engine", "family", "ledger", "as_of",
                 "symbol", "universe", "horizon", "direction", "score",
                 "outcome_excess", "outcome_graded", "graded_at",
-            ])
+            ]
+            _w1_cols = ["is_sizing", "is_veto", "is_alpha", "is_timing", "is_context", "falsifier"]
+            import pyarrow.parquet as _pq  # noqa: PLC0415
+            _available = [c.name for c in _pq.read_schema(si_path)]
+            _read_cols = _base_cols + [c for c in _w1_cols if c in _available]
+            si = pd.read_parquet(si_path, columns=_read_cols)
             # Restrict to US entity-level rows (universe vocabulary: us_track_record,
             # qledger, us_1500, us_altdata; excludes cn_stocks, ca_stocks, hk_stocks)
             _US_UNIVERSES = {"us_track_record", "qledger", "us_1500", "us_altdata",
@@ -173,7 +179,8 @@ def load_context(root: Path) -> ProvenanceContext:
                 eng = str(row["engine"])
                 if sym not in ctx.spine_latest:
                     ctx.spine_latest[sym] = {}
-                ctx.spine_latest[sym][eng] = {
+                # W1: include role flags and falsifier (nullable; conservative defaults if absent)
+                _role_row: dict = {
                     "signal_id": str(row["signal_id"]),
                     "engine": eng,
                     "family": str(row["family"]),
@@ -185,7 +192,22 @@ def load_context(root: Path) -> ProvenanceContext:
                     "outcome_excess": _safe(row.get("outcome_excess")),
                     "outcome_graded": bool(row.get("outcome_graded")),
                     "graded_at": str(row["graded_at"]) if row.get("graded_at") and str(row.get("graded_at")) not in ("nan", "None", "") else None,
+                    # W1 role flags (default to conservative values if column absent from index)
+                    "is_sizing":  bool(row["is_sizing"])  if "is_sizing"  in row.index else False,
+                    "is_veto":    bool(row["is_veto"])    if "is_veto"    in row.index else False,
+                    "is_alpha":   bool(row["is_alpha"])   if "is_alpha"   in row.index else False,
+                    "is_timing":  bool(row["is_timing"])  if "is_timing"  in row.index else False,
+                    "is_context": bool(row["is_context"]) if "is_context" in row.index else True,
+                    # falsifier: nullable str
+                    "falsifier": (
+                        str(row["falsifier"])
+                        if "falsifier" in row.index
+                           and row.get("falsifier") is not None
+                           and str(row.get("falsifier")) not in ("nan", "None", "")
+                        else None
+                    ),
                 }
+                ctx.spine_latest[sym][eng] = _role_row
         except Exception as e:  # noqa: BLE001
             log.warning("provenance: spine_index load failed (%s)", e)
 
@@ -245,6 +267,40 @@ def _kernel_cell(ctx: ProvenanceContext, engine: str, horizon: int | None = None
         if cell:
             return dict(cell)
     return {"shrunken_ic": None, "wilson_ci_low": None, "n_eff": None, "armed": None}
+
+
+def _role_badge(spine_row: dict | None) -> dict:
+    """Derive a one-badge role dict from spine row's W1 flags.
+
+    Badge precedence: veto > alpha > sizing > timing > context.
+    Returns {"role": str, "role_en": str, "role_zh": str, "falsifier": str|None}.
+    If spine_row is None or has no W1 flags, returns conservative default (context).
+
+    W1 open question: is_timing is always False this wave (no mechanical source).
+    Precedence ratified in design: veto → alpha → sizing → timing → context.
+    """
+    if not spine_row:
+        return {"role": "context", "role_en": "context", "role_zh": "背景", "falsifier": None}
+
+    is_veto    = bool(spine_row.get("is_veto",    False))
+    is_alpha   = bool(spine_row.get("is_alpha",   False))
+    is_sizing  = bool(spine_row.get("is_sizing",  False))
+    is_timing  = bool(spine_row.get("is_timing",  False))
+
+    if is_veto:
+        role, role_en, role_zh = "veto",    "veto",    "否决"
+    elif is_alpha:
+        role, role_en, role_zh = "alpha",   "alpha",   "阿尔法"
+    elif is_sizing:
+        role, role_en, role_zh = "sizing",  "sizing",  "仓位"
+    elif is_timing:
+        role, role_en, role_zh = "timing",  "timing",  "择时"
+    else:
+        role, role_en, role_zh = "context", "context", "背景"
+
+    falsifier_text: str | None = spine_row.get("falsifier")  # already str|None from load_context
+
+    return {"role": role, "role_en": role_en, "role_zh": role_zh, "falsifier": falsifier_text}
 
 
 def _qual_state(family_key: str) -> dict:
@@ -345,6 +401,7 @@ def _row_altdata(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
     spine = _spine_row(ctx, ticker, "altdata")
     kernel = _kernel_cell(ctx, "altdata", horizon=5)
     qual = _qual_state("altdata")
+    role = _role_badge(spine)  # W1
     as_of = (spine or {}).get("as_of") or ad.get("as_of")
     _dir_altdata = _safe((spine or {}).get("direction"))
     return [{
@@ -364,6 +421,11 @@ def _row_altdata(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
         "as_of": as_of,
         "direction": _dir_altdata if _dir_altdata is not None else 1,
         "is_display_only": True,
+        # W1 role + falsifier
+        "role":       role["role"],
+        "role_en":    role["role_en"],
+        "role_zh":    role["role_zh"],
+        "falsifier":  role["falsifier"],
         # source-specific
         "convergence_score": _safe(conv_score),
         "channels": ad.get("channels"),
@@ -380,6 +442,7 @@ def _row_radar(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
         return []
     kernel = _kernel_cell(ctx, "radar", horizon=5)
     qual = _qual_state("radar.edge_score")
+    role = _role_badge(spine)  # W1
     # radar edge state from rec (already assembled in build_stock_library)
     radar_score = None
     radar_state = None
@@ -405,6 +468,11 @@ def _row_radar(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
         "as_of": spine.get("as_of"),
         "direction": _dir_radar if _dir_radar is not None else 1,
         "is_display_only": True,
+        # W1 role + falsifier
+        "role":       role["role"],
+        "role_en":    role["role_en"],
+        "role_zh":    role["role_zh"],
+        "falsifier":  role["falsifier"],
         # source-specific
         "edge_score": _safe(radar_score),
         "state": radar_state,
@@ -420,6 +488,7 @@ def _row_us_board(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
         return []
     kernel = _kernel_cell(ctx, "us_board", horizon=5)
     qual = _qual_state("us_board")
+    role = _role_badge(spine)  # W1
     _dir_us_board = _safe(spine.get("direction"))
     return [{
         "claim_source": "us_board",
@@ -438,6 +507,11 @@ def _row_us_board(ticker: str, rec: dict, ctx: ProvenanceContext) -> list[dict]:
         "as_of": spine.get("as_of"),
         "direction": _dir_us_board if _dir_us_board is not None else 1,
         "is_display_only": True,
+        # W1 role + falsifier
+        "role":       role["role"],
+        "role_en":    role["role_en"],
+        "role_zh":    role["role_zh"],
+        "falsifier":  role["falsifier"],
         # source-specific
         "board_score": _safe(spine.get("score")),
         "outcome_graded": bool(spine.get("outcome_graded", False)),

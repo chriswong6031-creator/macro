@@ -2,7 +2,7 @@
   "schema": "override_shadow.v1",
   "stub": false,
   "stub_note": "v1: W1 measured overlay merged onto the W3 panel payload (weekly gated-vs-raw series, prior-cycle same-point context, cum gap). Per-cycle attribution + breakeven fan live in data/vector/gate_attribution.json.",
-  "generated_at": "2026-07-04 07:29 UTC",
+  "generated_at": "2026-07-05 07:58 UTC",
   "audience": "owner-only",
   "override": {
     "id": "midterm_blackout",
@@ -33,14 +33,14 @@
     "dampening_path_pct": [
       -84.0,
       -77.0,
-      -52.0
+      -50.0
     ],
     "dampening_note": "Amplitude is dampening cycle-over-cycle (institutionalisation) \u2014 the last leg is the CURRENT drawdown, still open, never banked.",
     "pivot_fit_mae_days": 7.2,
     "pivot_fit_note": "IN-SAMPLE: the same pivots also set the 1064/364 parameters \u2014 this is fit quality, not forecast skill."
   },
   "counterfactual": {
-    "asof": "2026-07-02",
+    "asof": "2026-07-05",
     "gated_pct": {
       "conservative": 0.0,
       "moderate": 0.0,
@@ -48,23 +48,23 @@
       "optimal": 0.0
     },
     "raw_pct": {
-      "conservative": 1.5,
-      "moderate": 1.5,
-      "aggressive": 1.5,
-      "optimal": 1.5
+      "conservative": 0.0,
+      "moderate": 0.0,
+      "aggressive": 0.0,
+      "optimal": 0.0
     },
     "raw_source": "signals.parquet alloc_*_raw (W0 dual series)",
     "parity_ok": true,
-    "ytd_raw_mean_pct": 16.0,
-    "ytd_raw_days_gt0": 102,
-    "ytd_days": 183
+    "ytd_raw_mean_pct": 15.6,
+    "ytd_raw_days_gt0": 101,
+    "ytd_days": 186
   },
   "falsifiers": {
     "items": [
       {
         "key": "dampening",
         "level": "ok",
-        "text": "Drawdown -52% so far vs ~-80% prior-bear avg (bear still developing).",
+        "text": "Drawdown -50% so far vs ~-80% prior-bear avg (bear still developing).",
         "evaluability": "in_window",
         "evaluable": true,
         "why": "Fires only once the projected bottom window opens (2026-10-01) \u2014 a fair-comparison guard, and that date is inside the gate window."
@@ -72,7 +72,7 @@
       {
         "key": "timing",
         "level": "ok",
-        "text": "Pre-bottom: ~91d until the projected window opens (Oct 2026). Scale in, don't lump in.",
+        "text": "Pre-bottom: ~88d until the projected window opens (Oct 2026). Scale in, don't lump in.",
         "evaluability": "in_window",
         "evaluable": true,
         "why": "W2: escalates to WATCH past the halving clock's worst historical case (2026-10-31 \u2014 inside the gate window), ALERT past the peak-anchored trail (2026-12-10)."
@@ -115,132 +115,132 @@
       {
         "d": "2026-01-11",
         "gated": 1.0,
-        "raw": 0.9976
+        "raw": 0.9977
       },
       {
         "d": "2026-01-18",
         "gated": 1.0,
-        "raw": 0.9889
+        "raw": 0.9891
       },
       {
         "d": "2026-01-25",
         "gated": 1.0,
-        "raw": 0.9674
+        "raw": 0.9679
       },
       {
         "d": "2026-02-01",
         "gated": 1.0,
-        "raw": 0.9584
+        "raw": 0.9589
       },
       {
         "d": "2026-02-08",
         "gated": 1.0,
-        "raw": 0.9429
+        "raw": 0.9434
       },
       {
         "d": "2026-02-15",
         "gated": 1.0,
-        "raw": 0.9419
+        "raw": 0.9424
       },
       {
         "d": "2026-02-22",
         "gated": 1.0,
-        "raw": 0.9394
+        "raw": 0.9399
       },
       {
         "d": "2026-03-01",
         "gated": 1.0,
-        "raw": 0.9418
+        "raw": 0.9423
       },
       {
         "d": "2026-03-08",
         "gated": 1.0,
-        "raw": 0.9418
+        "raw": 0.9423
       },
       {
         "d": "2026-03-15",
         "gated": 1.0,
-        "raw": 0.9418
+        "raw": 0.9423
       },
       {
         "d": "2026-03-22",
         "gated": 1.0,
-        "raw": 0.9418
+        "raw": 0.9423
       },
       {
         "d": "2026-03-29",
         "gated": 1.0,
-        "raw": 0.9418
+        "raw": 0.9423
       },
       {
         "d": "2026-04-05",
         "gated": 1.0,
-        "raw": 0.9418
+        "raw": 0.9423
       },
       {
         "d": "2026-04-12",
         "gated": 1.0,
-        "raw": 0.9317
+        "raw": 0.9325
       },
       {
         "d": "2026-04-19",
         "gated": 1.0,
-        "raw": 0.9405
+        "raw": 0.9404
       },
       {
         "d": "2026-04-26",
         "gated": 1.0,
-        "raw": 0.9656
+        "raw": 0.9657
       },
       {
         "d": "2026-05-03",
         "gated": 1.0,
-        "raw": 0.9615
+        "raw": 0.9616
       },
       {
         "d": "2026-05-10",
         "gated": 1.0,
-        "raw": 0.9864
+        "raw": 0.9865
       },
       {
         "d": "2026-05-17",
         "gated": 1.0,
-        "raw": 0.9524
+        "raw": 0.9525
       },
       {
         "d": "2026-05-24",
         "gated": 1.0,
-        "raw": 0.9499
+        "raw": 0.9501
       },
       {
         "d": "2026-05-31",
         "gated": 1.0,
-        "raw": 0.9499
+        "raw": 0.9501
       },
       {
         "d": "2026-06-07",
         "gated": 1.0,
-        "raw": 0.9368
+        "raw": 0.937
       },
       {
         "d": "2026-06-14",
         "gated": 1.0,
-        "raw": 0.9387
+        "raw": 0.9389
       },
       {
         "d": "2026-06-21",
         "gated": 1.0,
-        "raw": 0.9398
+        "raw": 0.94
       },
       {
         "d": "2026-06-28",
         "gated": 1.0,
-        "raw": 0.9391
+        "raw": 0.9393
       },
       {
         "d": "2026-07-05",
         "gated": 1.0,
-        "raw": 0.9412
+        "raw": 0.9415
       }
     ],
     "prior_cycles": [
@@ -251,21 +251,21 @@
       },
       {
         "year": 2022,
-        "raw_at_same_elapsed_pct": -20.1,
+        "raw_at_same_elapsed_pct": -18.7,
         "raw_by_release_pct": -15.2
       }
     ],
-    "framing": "Both sides (D3): the gate is ahead of the ungated engine by 5.9pp since Jan 1; in 2018 the ungated engine was -13.3% at this same point and finished the gate window at -19.9%; in 2022 the ungated engine was -20.1% at this same point and finished the gate window at -15.2%.",
+    "framing": "Both sides (D3): the gate is ahead of the ungated engine by 5.9pp since Jan 1; in 2018 the ungated engine was -13.3% at this same point and finished the gate window at -19.9%; in 2022 the ungated engine was -18.7% at this same point and finished the gate window at -15.2%.",
     "no_action_affordances": true
   },
-  "as_of": "2026-07-04",
+  "as_of": "2026-07-05",
   "gate_engaged": "2026-01-01",
-  "days_since_gate": 184,
-  "current_ungated_alloc": 0.0146,
+  "days_since_gate": 185,
+  "current_ungated_alloc": 0.0,
   "current_gated_alloc": 0.0,
-  "cum_gap_pct": -5.88,
+  "cum_gap_pct": -5.85,
   "gated_equity_final": 1.0,
-  "raw_equity_final": 0.941159,
+  "raw_equity_final": 0.941469,
   "weekly_series": [
     {
       "date": "2026-01-04",
@@ -275,132 +275,132 @@
     {
       "date": "2026-01-11",
       "gated_equity": 1.0,
-      "raw_equity": 0.997619
+      "raw_equity": 0.997672
     },
     {
       "date": "2026-01-18",
       "gated_equity": 1.0,
-      "raw_equity": 0.98894
+      "raw_equity": 0.9891
     },
     {
       "date": "2026-01-25",
       "gated_equity": 1.0,
-      "raw_equity": 0.967404
+      "raw_equity": 0.967929
     },
     {
       "date": "2026-02-01",
       "gated_equity": 1.0,
-      "raw_equity": 0.958351
+      "raw_equity": 0.958872
     },
     {
       "date": "2026-02-08",
       "gated_equity": 1.0,
-      "raw_equity": 0.942907
+      "raw_equity": 0.943419
     },
     {
       "date": "2026-02-15",
       "gated_equity": 1.0,
-      "raw_equity": 0.941864
+      "raw_equity": 0.942376
     },
     {
       "date": "2026-02-22",
       "gated_equity": 1.0,
-      "raw_equity": 0.939406
+      "raw_equity": 0.939916
     },
     {
       "date": "2026-03-01",
       "gated_equity": 1.0,
-      "raw_equity": 0.941813
+      "raw_equity": 0.942324
     },
     {
       "date": "2026-03-08",
       "gated_equity": 1.0,
-      "raw_equity": 0.941813
+      "raw_equity": 0.942324
     },
     {
       "date": "2026-03-15",
       "gated_equity": 1.0,
-      "raw_equity": 0.941813
+      "raw_equity": 0.942324
     },
     {
       "date": "2026-03-22",
       "gated_equity": 1.0,
-      "raw_equity": 0.941813
+      "raw_equity": 0.942324
     },
     {
       "date": "2026-03-29",
       "gated_equity": 1.0,
-      "raw_equity": 0.941813
+      "raw_equity": 0.942324
     },
     {
       "date": "2026-04-05",
       "gated_equity": 1.0,
-      "raw_equity": 0.941813
+      "raw_equity": 0.942324
     },
     {
       "date": "2026-04-12",
       "gated_equity": 1.0,
-      "raw_equity": 0.931701
+      "raw_equity": 0.932467
     },
     {
       "date": "2026-04-19",
       "gated_equity": 1.0,
-      "raw_equity": 0.94051
+      "raw_equity": 0.940389
     },
     {
       "date": "2026-04-26",
       "gated_equity": 1.0,
-      "raw_equity": 0.965622
+      "raw_equity": 0.965654
     },
     {
       "date": "2026-05-03",
       "gated_equity": 1.0,
-      "raw_equity": 0.961518
+      "raw_equity": 0.961629
     },
     {
       "date": "2026-05-10",
       "gated_equity": 1.0,
-      "raw_equity": 0.986443
+      "raw_equity": 0.986499
     },
     {
       "date": "2026-05-17",
       "gated_equity": 1.0,
-      "raw_equity": 0.952379
+      "raw_equity": 0.952468
     },
     {
       "date": "2026-05-24",
       "gated_equity": 1.0,
-      "raw_equity": 0.949933
+      "raw_equity": 0.950067
     },
     {
       "date": "2026-05-31",
       "gated_equity": 1.0,
-      "raw_equity": 0.949928
+      "raw_equity": 0.950063
     },
     {
       "date": "2026-06-07",
       "gated_equity": 1.0,
-      "raw_equity": 0.936824
+      "raw_equity": 0.936957
     },
     {
       "date": "2026-06-14",
       "gated_equity": 1.0,
-      "raw_equity": 0.93873
+      "raw_equity": 0.938863
     },
     {
       "date": "2026-06-21",
       "gated_equity": 1.0,
-      "raw_equity": 0.939818
+      "raw_equity": 0.939951
     },
     {
       "date": "2026-06-28",
       "gated_equity": 1.0,
-      "raw_equity": 0.939125
+      "raw_equity": 0.939258
     },
     {
       "date": "2026-07-05",
       "gated_equity": 1.0,
-      "raw_equity": 0.941159
+      "raw_equity": 0.941469
     }
   ],
   "prior_cycles": {
@@ -417,11 +417,11 @@
       "gate_verdict": "saved"
     },
     "2022": {
-      "same_point_raw_gap_pct": -18.65,
+      "same_point_raw_gap_pct": -18.71,
       "full_window_raw_return_pct": -15.17,
       "btc_window_return_pct": -61.14,
       "gate_verdict": "saved"
     }
   },
-  "framing_note": "n=3 path shapes. At this point (184d into gate), current raw is -5.9% vs gated (cash). 2018: raw -13.3% (trailing gated cash) at same point, full window raw=-19.9% \u2192 gate SAVED money | 2022: raw -18.7% (trailing gated cash) at same point, full window raw=-15.2% \u2192 gate SAVED money. Gate saved in 2/3, cost in 0/3 prior cycles. No action recommended."
+  "framing_note": "n=3 path shapes. At this point (185d into gate), current raw is -5.9% vs gated (cash). 2018: raw -13.3% (trailing gated cash) at same point, full window raw=-19.9% \u2192 gate SAVED money | 2022: raw -18.7% (trailing gated cash) at same point, full window raw=-15.2% \u2192 gate SAVED money. Gate saved in 2/3, cost in 0/3 prior cycles. No action recommended."
 }

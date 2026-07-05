@@ -79,17 +79,32 @@ def _arb_str(a: dict | None) -> str:
 
 
 def _prior_str(p: dict | None) -> str:
-    """Compact historical-context line: 'hist 60% win · +2.4%/20d (n=10)'."""
+    """Compact historical-context line.
+
+    v1: 'hist 60% win · +2.4%/20d (n=10)'
+    v2 (if drawdown/pre-drift available): adds '· dd −4.1% · pre +1.2%'
+    insufficient: 'insufficient history (n=K)' — never "" and never a number (m1 fix).
+    """
     if not p:
         return ""
+    # Insufficient-history case: must print, not silently absent (m1 fix)
+    if p.get("insufficient"):
+        k = p.get("n", 0)
+        return f"insufficient history (n={k})"
     bits = []
     if p.get("win_20d_pct") is not None:
         bits.append(f"{p['win_20d_pct']:.0f}% win")
     if p.get("med_ret_20d_pct") is not None:
         bits.append(f"{p['med_ret_20d_pct']:+.1f}%/20d")
+    # v2 additive fields (None on old-schema files — skipped gracefully)
+    if p.get("max_dd_20d_pct") is not None:
+        bits.append(f"dd {p['max_dd_20d_pct']:+.1f}%")
+    if p.get("pre_drift_pct") is not None:
+        bits.append(f"pre {p['pre_drift_pct']:+.1f}%")
     if not bits:
         return ""
-    return "hist " + " · ".join(bits) + f" (n={p.get('n', 0)})"
+    n = p.get("n", 0)
+    return "hist " + " · ".join(bits) + f" (n={n})"
 
 
 def _usd_m(mc) -> str:

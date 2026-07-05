@@ -2435,6 +2435,41 @@ artifacts:
       (primary) + spine_index.parquet (recency_trend). Envelope sibling-stamped per
       wrapper-prohibition law.
 
+  # --- Signal Commons W2: measured holding-horizon half-lives ---
+  kernel-half-lives:
+    path: data/neuralweb/half_life.json
+    format: json
+    producer: engine/neuralweb/half_life.py
+    known_extra_writers:
+      - "scripts/build_kernel_half_lives.py — thin CLI wrapper; calls write_half_lives() defined in the producer; no independent write logic"
+    owner_program: signal-commons
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py  # copies half_life.json to site/neuralwebdata/ for committee chips (display-only)
+    external_consumers: []
+    notes: >
+      DISPLAY-FIRST LAW: zero behavior-changing consumers. W2 "Measured Half-Lives":
+      holding-horizon decay curves fitted per engine family from kernel_estimates.parquet
+      (shrunken_ic per horizon) + spine_index.parquet (n_eff counts for bootstrap).
+      HONESTY: staleness half-life is UNMEASURED (fill_offset uniformly=1 across all
+      replay parquets; needs delayed-fill accrual in replay harness — W0-blocked item).
+      decay_kind="horizon" only; staleness never emits a number. outcome_unit mandatory
+      per family (magnitude vs signed_excess) to prevent B3 cross-family conflation.
+      Conservative defaults: family_floor=200, curve_floor=3, cell_floor=WILSON_MIN_N=12,
+      bootstrap=90pct event-block 200 resamples. Monotone-decrease gate is pre-registered
+      hard gate: rising curves emit half_life=null reason="edge_non_decaying". Expected
+      honest outcome: all families null (track_record IC rises; radar/us_board<3 horizons).
+      Sentinel key "status":"fit_ran" distinguishes successful all-null run from crashed job.
+      Envelope sibling-stamped per wrapper-prohibition law. Inputs: kernel_estimates.parquet
+      + spine_index.parquet. Script: scripts/build_kernel_half_lives.py (off render path).
+
   # --- Neural Web W3 PR3: lagging-signal detector ---
   lagging-signals:
     path: data/neuralweb/lagging_signals.json
@@ -2956,3 +2991,209 @@ artifacts:
       (refused→granted or granted→refused) to preserve the governance ledger as a
       sparse record of consequential state changes.  Today: granted=False (empty
       attention record — n=0 < 25).  SINGLE-WRITER: grade_cortex_attention.py ONLY.
+
+  # ============================================================
+  # OPTIONS NERVES — P4.1 registration (2026-07-05)
+  # gex_state and options_events deferred (producers not live yet)
+  # ============================================================
+
+  # --- 1 consumer ---
+  options-flow-index:
+    path: site/flow/index.json
+    format: json
+    producer: scripts/build_options_flow.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_flow.context.v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:flow-board
+    notes: >
+      353-name manifest board written by scripts/build_options_flow.py (line ~176).
+      Companion per-name payloads at site/flow/<KEY>.json and compact bot context
+      at site/flow/mastermind.json (same producer, same cadence).
+      Provenance caveat: DIRECTION is soft — signing_gate root false as of 2026-07-05
+      (tape-scoped ratification not yet passed); MAGNITUDE (net dollar flow,
+      gamma_flow, 0DTE pct) is reliable. Accrual store: data/options_flow/summary_<SYM>.parquet
+      (one row/day per underlying, written via store.upsert). Display-only: this
+      artifact MUST NOT feed any scored surface or arithmetic weight path until
+      signing_gate root is true.
+
+  # --- 4 consumers ---
+  polygon-gex-summaries:
+    path: data/polygon_gex/summary_*.parquet
+    format: parquet
+    producer: scripts/build_polygon_gex.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: gitignored-local
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_stamp.py
+      - engine/altdata.py
+      - scripts/validate_gex.py
+      - scripts/audit_options_accrual.py
+    external_consumers: []
+    notes: >
+      Per-underlying IV surface summary: iv30, opt_wall_up, opt_wall_down,
+      put_call_oi_ratio, max_pain, gex — one row per date per name.
+      Companion chain store at data/polygon_gex/chains/<date>.parquet
+      (per-contract OI/volume/iv/delta rows; same producer, same cadence).
+      Coverage: Polygon Standard snapshot since 2026-06-15 (~384 names).
+      Deep vendor IV history (2017+) arrives with the ThetaData universe pass
+      (deferred; iv_surface upgrade wave not yet started). Display-only: iv30
+      consumed via options_stamp for stock-card overlay and gex_board; no
+      scored arithmetic path currently reads this store.
+
+  # --- W3 Event Intelligence priors (Signal Commons, 2026-07-05) ---
+  event-priors-clinicaltrials:
+    path: data/special_situations/event_priors/clinicaltrials.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for Phase-3 clinical trial starts and clinical halts.
+      HAC/BH-FDR/DSR/split-half harness; survivorship floor included (n_imputed_zero).
+      is_context_only=true — display-only context, no scored arithmetic.
+      Regenerated weekly in special-sits-backfill.yml.
+
+  event-priors-openfda:
+    path: data/special_situations/event_priors/openfda.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for FDA approvals and label expansions.
+      HAC/BH-FDR/DSR/split-half harness; survivorship floor included.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-sp-index-changes:
+    path: data/special_situations/event_priors/sp_index_changes.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for S&P index additions and removals (announce_date PIT anchor).
+      Currently emits null-print (insufficient history — 28 events as of 2026-07-05, below
+      K>=8 floor). Machinery in place; prior populates once collector accumulates months.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-ipo-lockup:
+    path: data/special_situations/event_priors/ipo_lockup.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for IPO lockup expirations (priced_date + per-deal lockup_days).
+      HAC/BH-FDR/DSR/split-half harness; survivorship floor included.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-earnings:
+    path: data/special_situations/event_priors/earnings.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for earnings (asof_date from eps_quarterly; overlaid with
+      real SEC filed date where available per edgar_eps collector). SUE-bucketed into
+      quintiles (sue_q1..q5) where engine.sue available.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-gov-contract:
+    path: data/special_situations/event_priors/gov_contract.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      W3 gov-contract stub: null-only (insufficient=true). No awardee-ticker mapping
+      available in sam_gov data (theme-level only). Deferred to W6 data-gap pass.
+      Written so the event type is visible as known-but-unbuildable rather than absent.

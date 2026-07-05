@@ -263,7 +263,7 @@ function renderRotation(){
     return `<div class="rotrow">${dot}<span class="rn"><a href="${(window.BASKET_BASE||'basket/')}${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a></span>
       <span class="rv ${cls(t.delta_5d)}">${fmtPct(t.delta_5d)}</span>
       <span class="rk ${ac}" title="5d rank change${traj?' · '+traj:''}">${ar}${t.rank_5d?Math.abs(t.rank_5d):''}${traj?`<span class="rk20"> · ${traj}</span>`:''}</span></div>`;};
-  const subtitle=`<p class="rot-sub">${L('Rank velocity across the theme board — descriptive, not a forecast','主题榜排名速度——描述性，非预测')}</p>`;
+  const subtitle=`<p class="rot-sub">${L('Rank changes across themes; descriptive only.','主题排名变化；仅作描述。')}</p>`;
   const col=(en,zh,emo,arr)=>`<div class="rotcol"><h4>${emo} ${L(en,zh)}</h4>${arr.length?arr.map(row).join(''):`<div class="muted sm" style="padding:6px 0">${L('none','无')}</div>`}</div>`;
   const rotEl=document.getElementById('rotation');
   rotEl.innerHTML=subtitle+`<div class="rotwrap" style="margin-top:6px">${col('Weekly climbers','本周上升','▲',rot.climbers||[])}${col('Weekly fallers','本周下降','▽',rot.fallers||[])}</div>`;
@@ -306,7 +306,7 @@ function renderSleeveChip(){
   host.innerHTML=`<div class="sleeve-chip" style="border-left:3px solid ${sev}" title="${esc((sc.passport&&sc.passport.note)||'')}">
     <span class="sl-main">🛰️ <b>${L(esc(sc.label_en||''),esc(sc.label_zh||sc.label_en||''))}</b></span>
     ${sc.dominant_driver_en?`<span class="muted sm">· ${L(esc(sc.dominant_driver_en),esc(sc.dominant_driver_zh||sc.dominant_driver_en))}</span>`:''}
-    <span class="sl-tag muted">${L('validated drawdown-control sizing — sizes the sleeve, never picks names; not a return forecast','已验证的回撤控制仓位 — 只调整整体仓位，不选个股；并非收益预测')}</span>
+    <span class="sl-tag muted">${L('Drawdown-control sizing; not a return forecast.','回撤控制仓位；并非收益预测。')}</span>
   </div>`;
 }
 // Honest TRANSPARENCY chip: shows WHY basket gross is trimmed (the live vol-regime sizing
@@ -333,7 +333,7 @@ function renderRegimeSizing(){
     <div class="rs-head"><span class="rs-ic">⚠</span>
       <span class="rs-main">${L('Choppy markets — basket positions trimmed to','市场波动加大 — 篮子仓位已缩减至常规水平的')} <b>${pct}%</b>${L(' of normal','')}${regLbl?' ('+regLbl+')':''}</span></div>
     <div class="rs-decomp muted sm">${L('How it\'s set','计算方式')}: ${decompStr}${demoted?` · ${demoted} ${L('theme(s) eased to hold-only','个主题降为仅持有')}`:''}</div>
-    <div class="rs-note muted xs">${L('Why: when the market gets more volatile we automatically hold smaller positions to limit losses. This only changes how much you hold — never which baskets are worth owning.','原因：市场波动加大时，我们会自动减小仓位以控制回撤。这只调整持仓大小，绝不改变哪些篮子值得持有。')}</div>
+    <div class="rs-note muted xs">${L('Volatile markets get smaller position sizes. This does not change the basket ranking.','波动加大时降低仓位；不改变篮子排序。')}</div>
   </div>`;
 }
 function renderConcentration(){
@@ -391,7 +391,7 @@ function openSc(kind){
   const ov=_scOverlay(); let hd='',sub='',bd='';
   if(kind==='impulse'){
     hd=L('±3% daily impulse','±3% 当日脉冲');
-    sub=L('Every basket member that moved ≥3% today — the impulse / volatility tape.','今日波动≥3%的所有篮子成分 — 脉冲／波动一览。');
+    sub=L('Basket members that moved at least 3% today.','今日涨跌幅至少 3% 的篮子成分。');
     bd=`<div class="scm-2col">${_scCol(L('Surged ≥3%','涨≥3%'),s.up_names,true,'up')}${_scCol(L('Dropped ≥3%','跌≥3%'),s.down_names,true,'dn')}</div>`;
   } else if(kind==='extremes'){
     hd=L('52-week extremes','52周极值');
@@ -399,7 +399,7 @@ function openSc(kind){
     bd=`<div class="scm-2col">${_scCol(L('New 52-wk highs','创52周新高'),s.nh_names,false,'up')}${_scCol(L('New 52-wk lows','创52周新低'),s.nl_names,false,'dn')}</div>`;
   } else if(kind==='reco'){
     hd=L('Recommendation tally','建议统计');
-    sub=L('Where every theme lands on the desk read. Click a theme to open it.','每个主题的台面结论分布。点击主题可打开详情。');
+    sub=L('Action buckets for every theme. Click a theme to open it.','所有主题的操作分组。点击主题打开详情。');
     const grp=(en,zh,keys,tone)=>{ const arr=[].concat(...keys.map(k=>rc[k]||[]));
       const rows=arr.length?arr.map(t=>`<a class="scm-row" href="${_bbase()}${esc(t.id)}.html"><span class="scm-nm">${L(esc(t.name),esc(t.name_zh||t.name))}</span><span class="scm-th">${esc((t.label||'').toUpperCase())}</span><span class="scm-r">${t.score}</span></a>`).join(''):`<div class="scm-empty">${L('none','无')}</div>`;
       return `<div class="scm-col"><div class="scm-colh ${tone}">${L(en,zh)} <b>${arr.length}</b></div>${rows}</div>`; };

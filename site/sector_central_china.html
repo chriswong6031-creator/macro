@@ -20,7 +20,6 @@
   .scc-kick { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .scc-title { font-size: clamp(22px, 3vw, 34px); font-weight: 800; letter-spacing: -.02em; margin: 4px 0 6px; }
   .scc-sub { color: var(--muted); max-width: 90ch; font-size: 13.5px; }
-  .scc-asof { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
   /* regime banner */
   .regime { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 10px; margin: 14px 0; }
   @media (max-width: 880px) { .regime { grid-template-columns: 1fr 1fr; } }
@@ -47,11 +46,6 @@
     border-left: 3px solid var(--down); border-radius: 11px;
     background: color-mix(in srgb, var(--down) 5%, var(--panel)); color: var(--text); }
   .rg-stale-notice .rg-stale-ic { flex: none; color: var(--down); font-size: 15px; margin-top: 1px; }
-  /* plain "new here?" orientation strip */
-  .scc-howto { margin: 12px 0 2px; padding: 11px 14px; font-size: 13px; line-height: 1.55; color: var(--muted);
-    background: color-mix(in srgb, var(--link) 6%, var(--panel)); border: 1px solid color-mix(in srgb, var(--link) 22%, var(--line));
-    border-left: 3px solid var(--link); border-radius: 11px; max-width: 96ch; }
-  .scc-howto b { color: var(--text); }
   /* plain-language headline row spanning the full regime grid */
   .regime .rg-headline-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px;
     font-size: 14.5px; font-weight: 650; line-height: 1.4; padding: 11px 14px; border: 1px solid var(--line);
@@ -141,13 +135,7 @@
   .scc-section-h .scc-section-sub { font-size: 12.5px; color: var(--muted); }
   /* the embedded overlay reuses cycle.css/.sc-* but lives outside a .cyc-wrap — give the stage a panel frame */
   .scc-cycle .cyc-stage { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px; }
-  /* embedded live sector desk */
-  .scc-desk { margin: 16px 0 6px; }
-  .scc-desk-chips { display: flex; gap: 9px; flex-wrap: wrap; margin: 10px 0; }
-  .scc-desk-chips .chipset { border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; background: var(--panel); min-width: 200px; flex: 1; }
-  .scc-desk-chips .chipset .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
-  .scc-desk-chips .ch { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; margin: 0 4px 4px 0; }
-  .scc-desk-chips .ch b { font-variant-numeric: tabular-nums; }
+  /* embedded live sector desk table */
   .scc-desk-tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; }
   table.scc-desk-tbl { border-collapse: collapse; width: 100%; min-width: 920px; font-size: 12.5px; }
   table.scc-desk-tbl th, table.scc-desk-tbl td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
@@ -179,8 +167,6 @@
   .card-nm a:hover { color: var(--link); border-bottom-color: var(--link); }
   /* mobile: pack the live-desk quick-read chips 2-up so they don't push the chart down */
   @media (max-width: 880px) {
-    .scc-desk-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .scc-desk-chips .chipset { min-width: 0; }
     .scc-rail { gap: 7px; }
     .scc-rail a { font-size: 12px; padding: 8px 10px; }
   }
@@ -238,6 +224,7 @@
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -469,31 +456,16 @@
   <header class="scc-hd">
     <div class="scc-kick"><span class="l-en">China Sector Central Intelligence</span><span class="l-zh">中国行业中枢情报</span> 🇨🇳</div>
     <h1 class="scc-title"><span class="l-en">Every China sector &amp; theme, in one read</span><span class="l-zh">每个中国行业与主题，一个研判</span></h1>
-    <p class="scc-sub"><span class="l-en">Every China sector & theme fused into one conviction read: <b>where we are</b> (cycle state) and
-      <b>what's next</b> (evidence-gated conditional odds) LEAD; the <b>validated credit/vol/margin regime GATES</b> it; momentum, flow & crowding
-      CONFIRM and size — never override. Each card shows its reasoning trace; every dated call is logged and graded.</span><span class="l-zh">将每个中国行业与主题融合为一个信念研判：<b>当前位置</b>（周期状态）与<b>未来倾向</b>（经证据门槛的条件概率）主导；
-      经验证的<b>信用/波动率/融资体制进行门控</b>；动量、资金流与拥挤度仅作确认与定仓，绝不反转。每张卡片展示其推理链；每个带日期的判断都会被记录并评分。</span></p>
-    <div class="scc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <b id="scc-asof">…</b></div>
+    <p class="scc-sub"><span class="l-en">A simpler desk for China sectors and themes: what looks healthy, weak, early, or overheated.</span><span class="l-zh">中国行业与主题的简化看板：哪些偏强、偏弱、偏早，哪些已经过热。</span></p>
   </header>
-
-  <p class="scc-howto"><span class="l-en"><b>New here?</b> This page maps where each China sector &amp; theme sits in its cycle on a 0–100 clock. <b>Low</b> = beaten-down / washed-out, <b>high</b> = stretched / late. Tap any line or card to read one sector’s story.</span><span class="l-zh"><b>第一次来？</b>本页用 0–100 时钟展示每个中国行业与主题在其周期中的位置。<b>低</b>=超跌／超卖，<b>高</b>=拉伸／晚期。点按任意曲线或卡片即可查看某行业的走势故事。</span></p>
 
   <div id="regime" class="regime"></div>
   <div class="scc-rail">
-    <a href="#sc-cyclemap">🌀 <span class="l-en">See the cycle map</span><span class="l-zh">查看周期图谱</span></a>
-    <a href="#sc-board">🧠 <span class="l-en">Conviction board</span><span class="l-zh">信念研判</span></a>
-    <a href="#sc-desk-table" id="sc-rail-table">📊 <span class="l-en">Full sector table</span><span class="l-zh">完整行业表</span></a>
-    <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets &amp; Rotation</span><span class="l-zh">主题篮子与轮动</span> →</a>
+    <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span></a>
+    <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">细分行业轮动</span></a>
+    <a href="subsectors_china.html">🔗 <span class="l-en">Subsector Confluence</span><span class="l-zh">细分行业共振</span></a>
+    <a href="china_heatmap.html">🌡 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span></a>
   </div>
-
-  
-  <section class="scc-desk" id="sc-desk" hidden>
-    <div class="scc-section-h">
-      <h2><span class="l-en">Live sector desk — quick read</span><span class="l-zh">行业实时看板 — 速览</span></h2>
-      <span class="scc-section-sub"><span class="l-en">The strongest, weakest, most beaten-down &amp; most overheated sectors right now. The full table is below the cycle map.</span><span class="l-zh">当前最强、最弱、最超跌与最过热的行业。完整表格在周期图谱下方。</span></span>
-    </div>
-    <div class="scc-desk-chips" id="sc-desk-chips"></div>
-  </section>
 
   
   <div class="scc-universe">
@@ -607,50 +579,27 @@
                     'Washed out':'超跌','Beaten down':'超跌','Euphoric':'过热','Overheated':'过热','Recovering':'复苏'};
   // reasoning layers are emitted Title-case multi-word
   var LAYER_ZH={'Cycle state':'周期状态','Forward odds':'前瞻概率','Regime gate':'体制门控','Momentum':'动量','Fragility':'脆弱度','Crowding':'拥挤度','Flow':'资金流','Heat':'热度','Trend':'趋势'};
-  var asof=document.getElementById('scc-asof'); if(asof) asof.textContent=D.as_of||'';
   document.getElementById('n-sec').textContent=(D.sectors||[]).length;
   document.getElementById('n-bsk').textContent=(D.baskets||[]).length;
 
   /* ---- regime banner ---- */
   function regimeBanner(){
     var risk=M.risk_on, tone=(risk==null)?'mix':(risk>0.15?'on':risk<-0.15?'off':'mix');
-    var toneCls={on:'rg-on',off:'rg-off',mix:'rg-mix'}[tone];
-    // this page follows the desk's "Western colours always" choice (good=green, bad=red in
-    // BOTH languages). theme.js flips the --up/--down tokens in zh, so pick the token that
-    // stays green / red regardless of language to keep the bar in step with the flipped text.
-    var GREEN = lang()==='zh' ? 'var(--down)' : 'var(--up)';
-    var RED   = lang()==='zh' ? 'var(--up)'   : 'var(--down)';
-    var dr=M.derisk_blended, drPct=dr!=null?Math.round(dr*100):null;
-    var flow=M.flow||{}, tv=flow.turnover||{}, sb=flow.southbound||{}, mg=flow.margin||{};
     // plain-language headline so a non-expert gets the "is this good or bad?" read instantly
     var headTxt = tone==='on' ? L('China equities are risk-on right now — a broadly supportive backdrop.','当前A股偏好风险——整体环境较为有利。')
       : tone==='off' ? L('China equities are leaning defensive right now — a cautious backdrop.','当前A股偏防御——环境趋于谨慎。')
       : L('China equities are mixed right now — no strong risk signal either way.','当前A股信号中性——风险方向不明确。');
     var headIc = tone==='off' ? '⚠' : tone==='on' ? '✓' : '•';
     var head='<div class="rg-headline-row rg-hl-'+tone+'"><span class="rg-hl-ic">'+headIc+'</span><span>'+headTxt+'</span></div>';
-    var cells=[];
-    cells.push('<div class="rg-cell lead"><div class="rg-k">'+L('Market backdrop','市场环境')+' · '+L('validated','已验证')+'</div>'+
-      '<div class="rg-v '+toneCls+'">'+(lang()==='zh' && M.state_zh ? esc(M.state_zh) : esc(M.state_en||'—'))+'</div>'+
-      '<div class="rg-bar"><i style="width:'+(drPct!=null?drPct:50)+'%;background:'+(tone==='off'?RED:tone==='on'?GREEN:'var(--muted)')+'"></i></div>'+
-      '<div class="rg-d">'+L('de-risk','降险')+' '+(dr!=null?dr:'—')+' · '+L('gate ×','门控 ×')+(M.gate_factor!=null?M.gate_factor:'—')+'</div></div>');
-    cells.push('<div class="rg-cell"><div class="rg-k">'+L('Quad','象限')+'</div>'+
-      '<div class="rg-v">'+zhv(M.quad_name||M.quad||'—', QUAD_ZH)+'</div>'+
-      '<div class="rg-d">'+L('growth','增长')+' '+(M.growth_score!=null?M.growth_score:'—')+' · '+L('infl','通胀')+' '+(M.inflation_score!=null?M.inflation_score:'—')+'</div></div>');
-    cells.push('<div class="rg-cell"><div class="rg-k">'+L('PBoC liquidity','央行流动性')+'</div>'+
-      '<div class="rg-v" style="font-size:16px">'+zhv(M.liquidity||'—', LIQ_ZH)+'</div>'+
-      '<div class="rg-d">'+L('turnover','成交')+' '+(tv.turnover_t!=null?tv.turnover_t+'T ('+esc(tv.band||'')+')':'—')+'</div></div>');
-    cells.push('<div class="rg-cell"><div class="rg-k">'+L('Flow & froth','资金与拥挤')+' · '+L('display','展示')+'</div>'+
-      '<div class="rg-v" style="font-size:15px">'+(sb.net!=null?(sb.net>0?'+':'')+sb.net+' '+L('SB','南向'):'—')+'</div>'+
-      '<div class="rg-d">'+L('margin','融资')+' '+(mg.pctile!=null?mg.pctile+'%ile':'—')+' · '+L('valn froth','估值拥挤')+' '+(flow.froth_anchor!=null?Math.round(flow.froth_anchor)+'%ile':'—')+'</div></div>');
 
     // W0.4: regime-cap notice — render whenever the gate pins any tier structurally unreachable.
     // gate_caps_tier is set by engine.china_sector_central._regime_anchor() when gate < 0.29
     // (the floor below which Accumulate is mathematically unreachable regardless of sector setup).
     var capHtml = '';
-    if (M.gate_caps_tier) {
+    if (M.gate_caps_tier && tone !== 'off') {
       capHtml = '<div class="rg-cap-notice"><span class="rg-cap-ic">⚠</span><span>' +
-        L('Risk-off regime (gate ×' + (M.gate_factor != null ? M.gate_factor : '—') + ') currently caps all sector calls below <b>' + esc(M.gate_caps_tier) + '</b>. This is the genuine regime signal — not a data error. The cap lifts automatically when the credit/vol/margin de-risk blend falls below 0.60.',
-          '风险偏离状态（门控 ×' + (M.gate_factor != null ? M.gate_factor : '—') + '）当前将所有行业研判上限压低至<b>' + esc(M.gate_caps_tier) + '</b>以下。这是真实的体制信号，而非数据错误。当信用/波动率/融资降险综合值降至 0.60 以下时，上限将自动解除。') +
+        L('Regime cap is active; sector calls are capped below <b>' + esc(M.gate_caps_tier) + '</b>.',
+          '体制上限已启用；行业研判被压低至<b>' + esc(M.gate_caps_tier) + '</b>以下。') +
         '</span></div>';
     }
 
@@ -668,7 +617,7 @@
         '</span></div>';
     }
 
-    document.getElementById('regime').innerHTML = head + cells.join('') + capHtml + staleHtml;
+    document.getElementById('regime').innerHTML = head + capHtml + staleHtml;
   }
 
   /* ---- conviction card ---- */
@@ -749,16 +698,9 @@
       '<polygon points="'+pad+','+(h-pad)+' '+pts+' '+(w-pad)+','+(h-pad)+'" fill="url(#'+gid+')"/>'+
       '<polyline fill="none" stroke="'+col+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" points="'+pts+'"/></svg>';
   }
-  function deskChip(x, extra){ return '<span class="ch">'+esc(lang()==='zh'?(x.name_zh||x.name):x.name)+' '+extra+'</span>'; }
   function renderDesk(){
     if(!DESK) return;
-    var sec=DESK.sectors||[], sm=DESK.summary||{};
-    function chipset(k, arr, val){ return '<div class="chipset"><div class="k">'+k+'</div>'+(arr||[]).map(function(x){return deskChip(x,val(x));}).join('')+'</div>'; }
-    document.getElementById('sc-desk-chips').innerHTML=
-      chipset('🏆 '+L('RS leaders (60d)','相对强度领先'), sm.leaders, function(x){return pcCell(x.rs_60d);})+
-      chipset('🐌 '+L('RS laggards','相对强度落后'), sm.laggards, function(x){return pcCell(x.rs_60d);})+
-      chipset('📉 '+L('Beaten down','超跌'), sm.washed_out, function(x){return '<b>'+Math.round(x.score)+'</b>';})+
-      chipset('📈 '+L('Overheated','过热'), sm.euphoric, function(x){return '<b>'+Math.round(x.score)+'</b>';});
+    var sec=DESK.sectors||[];
     var head='<thead><tr>'+
       '<th data-c="0" data-t="s">'+L('Sector','行业')+'</th><th data-c="1" data-t="n">'+L('ETF','ETF')+'</th>'+
       '<th data-c="2" data-t="n">1D</th><th data-c="3" data-t="n">5D</th><th data-c="4" data-t="n">20D</th><th data-c="5" data-t="n">YTD</th>'+
@@ -794,7 +736,6 @@
     document.getElementById('sc-desk-key').innerHTML=
       L('Cycle position','周期位置')+': <span class="pk pk-lo"></span> '+L('beaten down (near lows)','超跌（接近低位）')+
       ' → <span class="pk pk-hi"></span> '+L('overheated (near highs)','过热（接近高位）')+' · '+L('green = doing well, red = doing poorly','绿=表现强，红=表现弱');
-    document.getElementById('sc-desk').hidden=false;
     var dt=document.getElementById('sc-desk-table');
     if(dt){ dt.hidden=false; dt.open = window.innerWidth>880; }   // open on desktop, collapsed on phones
   }
@@ -831,12 +772,9 @@
   }
   function boot(){
     regimeBanner(); renderBoard(); renderGrader(); loadDesk(); linkTabs();
-    // card name / "open cycle →" / desk name → focus the embedded cycle map in place when possible
+    // card name / "open cycle →" / table name → focus the embedded cycle map in place when possible
     var board=document.getElementById('board'); if(board) board.addEventListener('click', focusDelegate);
-    var desk=document.getElementById('sc-desk'); if(desk) desk.addEventListener('click', focusDelegate);
-    // the "Full sector table" rail link should OPEN the (mobile-collapsed) table it jumps to
-    var railTbl=document.getElementById('sc-rail-table');
-    if(railTbl) railTbl.addEventListener('click', function(){ var dt=document.getElementById('sc-desk-table'); if(dt) dt.open=true; });
+    var deskTable=document.getElementById('sc-desk-table'); if(deskTable) deskTable.addEventListener('click', focusDelegate);
     document.addEventListener('langchange', function(){ regimeBanner(); renderBoard(); renderGrader(); renderDesk(); });
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
@@ -850,5 +788,6 @@
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

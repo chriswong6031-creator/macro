@@ -166,19 +166,35 @@ def build_pack(n_requested: int = 10, mode: str = "focus",
     compounds = _jsonl(REG)
     trials = _jsonl(LEDGER)
     eff_by_id: dict[str, str] = {}
+    eff_num: dict[str, float] = {}
     for t in trials:
         cid = t.get("compound_id")
         e63, h63 = t.get("effect_63d"), t.get("hit_63d")
         if cid and e63 is not None:
             eff_by_id[cid] = (f"screened: effect63={e63*100:+.2f}% "
                               f"hit63={(h63 or 0)*100:.1f}% n={t.get('n')}")
+            eff_num[cid] = e63
 
-    tested_lines = []
+    # Compaction: as the registry grows past ~40, listing every dead compound
+    # bloats the prompt.  The ingest (oracle_ingest_brainstorm) hard-dedups exact
+    # repeats regardless, so the prompt only needs the NOTABLE results verbatim
+    # (|effect63| >= 0.7% either sign, or not-yet-screened) plus a count of the
+    # rest.  Dead SHAPES are already fenced in the screen priors below.
+    _NOTABLE = 0.007
+    tested_lines, noise_n = [], 0
     for c in compounds:
         cid = c.get("id", "?")
+        e = eff_num.get(cid)
+        if e is None or abs(e) >= _NOTABLE:
+            tested_lines.append(
+                f"- [{cid}] {c.get('name','')}: rule={json.dumps(c.get('entry_rule'))} "
+                f"({eff_by_id.get(cid, 'not yet screened')})")
+        else:
+            noise_n += 1
+    if noise_n:
         tested_lines.append(
-            f"- [{cid}] {c.get('name','')}: rule={json.dumps(c.get('entry_rule'))} "
-            f"({eff_by_id.get(cid, 'not yet screened')})")
+            f"- (+ {noise_n} more screened as NOISE, |effect63|<0.7% — already "
+            "tested, do not re-propose; the ingest hard-dedups exact repeats.)")
 
     episode_fields = ("direction(in|out), tier(onset|confirmed|undeniable), "
                       "complex_scope(same|opposite|any), within_sessions, min_count "
@@ -245,13 +261,28 @@ COLUMN SCALES (wrong scale = a rule that never fires — respect these):
 - 0-1: vix_pctile, breadth_50, persistence (~0.23-0.75), cohesion (~0.09-0.78).
 - 0/1 flags: washout_w, spy_above_200d, cohesion_rebuild (use ">value":0 or ge 1).
 - small decimals (daily/rolling returns): ret, vel_1w, vel_1m, vel_3m, accel,
-  tlt_ret_10d.  z-scores (~ -3..+3, tails to +-8): accel_z, turnover_z.
+  tlt_ret_10d, oil_ret_10d, dollar_chg_10d.  z-scores (~ -3..+3, tails to +-8):
+  accel_z, turnover_z.
+- macro spreads/levels (%pts or index units, NOT 0-1): yc_slope (~-1..+3;
+  <0 = curve inverted), hy_oas_chg_10d (~-4..+5, 10d change in HY credit
+  spread; >0 = credit stress rising), fin_conditions (NFCI ~-1..+3; >0 = tight).
 - Do NOT value_col-compare columns of DIFFERENT scales (e.g. stochrsi vs rs,
   vix_pctile vs turnover_z) — the comparison is degenerate/always-true.
 
+NEW cross-asset regime columns (full-history, just added — the FRESHEST,
+least-explored mechanism space): hy_oas_chg_10d (credit stress), yc_slope
+(yield curve), oil_ret_10d (energy), dollar_chg_10d (USD), fin_conditions
+(NFCI).  Sector rotation is DRIVEN by these — energy<->oil, financials<->curve,
+tech/materials<->dollar+credit.  PRIORITISE this run: novel triggers on them
+(e.g. hy_oas_chg_10d crossed_above 0 = credit stress onset; yc_slope
+crossed_below 0 = inversion) and conditioning the washout/flow edge on these
+regimes.  All clear the era gate.
+
 HISTORY COVERAGE (HARD promotability constraint):
 - FULL history 1998->: ret, rs, vel_*, accel, accel_z, persistence, vix_pctile,
-  tlt_ret_10d, spy_above_200d, washout_w, stochrsi_w_k/d.
+  tlt_ret_10d, spy_above_200d, washout_w, stochrsi_w_k/d, hy_oas_chg_10d (1999+),
+  yc_slope (1998+), oil_ret_10d (1999+), fin_conditions (1999+),
+  dollar_chg_10d (2006+ — 20y, still clears the gate).
 - 2021+ ONLY (~5yr, ~13.5k rows): breadth_50, cohesion, cohesion_chg,
   turnover_z, cohesion_rebuild.  A rule CONDITIONED on any of these fires only
   post-2021, so it CANNOT clear the era-consistency gate (3 of 4 eras) and is

@@ -39,7 +39,7 @@ from engine.neuralweb import query as Q
 # ---------------------------------------------------------------------------
 
 def _make_spine(tmp_path: Path) -> Path:
-    """Write a minimal spine predictions.parquet."""
+    """Write a minimal spine predictions.parquet (W1 schema with role flags)."""
     rows = [
         {
             "signal_id": "spine:2026-01-01:AAPL:21",
@@ -58,6 +58,14 @@ def _make_spine(tmp_path: Path) -> Path:
             "outcome_graded": True,
             "graded_at": "2026-02-01",
             "meta": "{}",
+            # W1 role flags
+            "is_sizing":  True,
+            "is_veto":    False,
+            "is_alpha":   True,
+            "is_timing":  False,
+            "is_context": False,
+            "falsifier":  None,
+            "half_life":  None,
         }
     ]
     p = tmp_path / "data" / "spine"
@@ -635,6 +643,8 @@ def _make_spine_with_altdata_conv(tmp_path: Path) -> Path:
             "outcome_graded": True,
             "graded_at": None,
             "meta": "{}",
+            "is_sizing": True, "is_veto": False, "is_alpha": True,
+            "is_timing": False, "is_context": False, "falsifier": None, "half_life": None,
         },
         # altdata_conv row WITH qledger twin → excluded when twin_keys supplied
         {
@@ -654,6 +664,8 @@ def _make_spine_with_altdata_conv(tmp_path: Path) -> Path:
             "outcome_graded": False,  # ungraded in spine
             "graded_at": None,
             "meta": "{}",
+            "is_sizing": False, "is_veto": False, "is_alpha": False,
+            "is_timing": False, "is_context": True, "falsifier": "NVDA fails to beat SPY.", "half_life": None,
         },
         # altdata_conv ORPHAN (no qledger twin) → RETAINED with ledger='spine'
         {
@@ -673,6 +685,8 @@ def _make_spine_with_altdata_conv(tmp_path: Path) -> Path:
             "outcome_graded": False,
             "graded_at": None,
             "meta": "{}",
+            "is_sizing": False, "is_veto": False, "is_alpha": False,
+            "is_timing": False, "is_context": True, "falsifier": None, "half_life": None,
         },
     ]
     p = tmp_path / "data" / "spine"
@@ -914,6 +928,8 @@ def _make_spine_null_graded_at(tmp_path: Path) -> Path:
             "outcome_graded": True,   # graded
             "graded_at": None,        # but NO timestamp — mirrors real spine
             "meta": "{}",
+            "is_sizing": True, "is_veto": False, "is_alpha": True,
+            "is_timing": False, "is_context": False, "falsifier": None, "half_life": None,
         },
         {
             "signal_id": "spine:2026-03-01:GE:63",
@@ -932,6 +948,8 @@ def _make_spine_null_graded_at(tmp_path: Path) -> Path:
             "outcome_graded": False,  # ungraded — graded_at stays null
             "graded_at": None,
             "meta": "{}",
+            "is_sizing": False, "is_veto": False, "is_alpha": False,
+            "is_timing": False, "is_context": True, "falsifier": None, "half_life": None,
         },
     ]
     p = tmp_path / "data" / "spine"
@@ -973,4 +991,105 @@ def test_adapt_spine_graded_at_backfill(tmp_path):
     assert ge_row["outcome_graded"] == False, "GE row must be ungraded"  # noqa: E712
     assert ge_row["graded_at"] is None or str(ge_row["graded_at"]) in ("None", "nan", ""), (
         f"ungraded rows must NOT have graded_at backfilled; got {ge_row['graded_at']!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# (20) W1 Spine v2 — role flags in adapt_spine
+# ---------------------------------------------------------------------------
+
+def test_adapt_spine_maps_w1_role_flags(tmp_path):
+    """adapt_spine must map W1 role flags (is_sizing/is_alpha/is_context/etc.) from the
+    spine parquet into the index row dict.  A buy row (is_sizing=True, is_alpha=True)
+    must flow through; a context row (is_context=True) must also flow correctly."""
+    _make_spine(tmp_path)  # spine fixture: AAPL buy row with is_sizing=True, is_alpha=True
+    df, gaps = Q.adapt_spine(root=tmp_path)
+    assert not df.empty
+    assert list(df.columns) == Q.COLUMNS
+    row = df.iloc[0]
+    # Buy row: is_sizing=True, is_alpha=True, is_context=False
+    assert row["is_sizing"]  == True,  f"is_sizing expected True; got {row['is_sizing']}"   # noqa: E712
+    assert row["is_alpha"]   == True,  f"is_alpha expected True; got {row['is_alpha']}"     # noqa: E712
+    assert row["is_context"] == False, f"is_context expected False; got {row['is_context']}" # noqa: E712
+    assert row["is_veto"]    == False  # noqa: E712
+    assert row["is_timing"]  == False  # noqa: E712
+
+
+def test_adapt_spine_falsifier_passthrough(tmp_path):
+    """adapt_spine must carry falsifier text from the spine parquet into the index row."""
+    # Write a spine with a context altdata_conv row that has a falsifier
+    rows = [{
+        "signal_id": "altdata_conv:NVDA-test",
+        "engine": "altdata_conv",
+        "version": "v1",
+        "family": "altdata:convergence",
+        "as_of": "2026-07-02",
+        "symbol": "NVDA",
+        "universe": "us_altdata",
+        "horizon": 63,
+        "score": 2.0,
+        "size_binding": False,
+        "direction": 1,
+        "event_key": "NVDA:2026-07-02",
+        "outcome_excess": None,
+        "outcome_graded": False,
+        "graded_at": None,
+        "meta": "{}",
+        "is_sizing": False, "is_veto": False, "is_alpha": False,
+        "is_timing": False, "is_context": True,
+        "falsifier": "NVDA fails to beat SPY by >5% over 63 days.",
+        "half_life": None,
+    }]
+    p = tmp_path / "data" / "spine"
+    p.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_parquet(p / "predictions.parquet", index=False)
+
+    df, gaps = Q.adapt_spine(root=tmp_path)
+    assert not df.empty
+    row = df.iloc[0]
+    assert row["falsifier"] == "NVDA fails to beat SPY by >5% over 63 days."
+    assert row["is_context"] == True   # noqa: E712
+
+
+def test_old_spine_index_loads_with_conservative_defaults(tmp_path):
+    """W1 R8: loading an old spine_index.parquet (without W1 cols) must yield
+    is_context=True and other flags=False (not NaN) for pre-W1 rows."""
+    # Simulate an old 31-col index (no W1 cols) written before W1
+    old_cols = [c for c in Q.COLUMNS if c not in
+                ("is_sizing", "is_veto", "is_alpha", "is_timing", "is_context", "falsifier", "half_life")]
+    row = {c: None for c in old_cols}
+    row.update({"signal_id": "old:row:1", "engine": "us_board", "ledger": "spine",
+                "family": "us_board:buy", "as_of": "2026-01-01", "symbol": "AAPL"})
+    out = tmp_path / "data" / "neuralweb"
+    out.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([row]).to_parquet(out / "spine_index.parquet", index=False)
+
+    df = Q.load_index(root=tmp_path)
+    assert list(df.columns) == Q.COLUMNS, "load_index must return full COLUMNS even for old index"
+    r = df.iloc[0]
+    # Conservative defaults for pre-W1 rows
+    assert r["is_context"] == True,  f"is_context must default True; got {r['is_context']}"  # noqa: E712
+    assert r["is_sizing"]  == False, f"is_sizing must default False; got {r['is_sizing']}"   # noqa: E712
+    assert r["is_alpha"]   == False, f"is_alpha must default False; got {r['is_alpha']}"     # noqa: E712
+    assert r["is_veto"]    == False, f"is_veto must default False; got {r['is_veto']}"       # noqa: E712
+    assert r["is_timing"]  == False, f"is_timing must default False; got {r['is_timing']}"   # noqa: E712
+    # falsifier defaults None; half_life defaults NaN (not a flag, no conservative override)
+    assert r["falsifier"] is None or str(r["falsifier"]) in ("None", "nan", "")
+
+
+def test_w1_cols_in_build_index(tmp_path):
+    """build_index must produce a frame that includes the 7 W1 columns."""
+    _make_spine(tmp_path)
+    df, gaps = Q.build_index(root=tmp_path)
+    for col in ("is_sizing", "is_veto", "is_alpha", "is_timing", "is_context", "falsifier", "half_life"):
+        assert col in df.columns, f"W1 column {col!r} missing from build_index output"
+
+
+def test_columns_pin_drift_guard(tmp_path):
+    """_SPINE_COLS in test_kernel.py mirrors Q.COLUMNS exactly; this test verifies
+    that any future drift is caught here (the kernel test has a hardcoded literal)."""
+    from tests.test_kernel import _SPINE_COLS
+    assert _SPINE_COLS == Q.COLUMNS, (
+        "test_kernel._SPINE_COLS is a hardcoded copy of Q.COLUMNS — it has drifted. "
+        "Update _SPINE_COLS in tests/test_kernel.py to match engine.neuralweb.query.COLUMNS."
     )
