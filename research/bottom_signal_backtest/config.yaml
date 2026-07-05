@@ -1,0 +1,34 @@
+data:
+  ohlcv_dir: data/baskets/ohlcv
+  benchmark_dir: data/yahoo
+  sector_map: data/sp500_heatmap/industry_map.json
+  start_date: "2014-01-02"
+  end_date: null
+  min_history_days: 520
+  max_tickers: null
+
+signal:
+  weekly_macd_fast: 12
+  weekly_macd_slow: 26
+  weekly_macd_signal: 9
+  stoch_rsi_rsi: 14
+  stoch_rsi_window: 14
+  stoch_rsi_k: 3
+  stoch_rsi_d: 3
+  oversold_line: 20
+  cross_alignment_days: 10
+  cooldown_days: 20
+
+validation:
+  static_splits:
+    train: ["2014-01-02", "2017-12-31"]
+    validation: ["2018-01-01", "2021-12-31"]
+    test: ["2022-01-01", "2026-12-31"]
+  rolling_train_years: 3
+  rolling_validation_years: 1
+  rolling_test_years: 1
+
+outputs:
+  root: research/bottom_signal_backtest
+  results_dir: research/bottom_signal_backtest/results
+  charts_dir: research/bottom_signal_backtest/charts
