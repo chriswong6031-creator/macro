@@ -216,8 +216,17 @@ def _coalesce_batch(df: pd.DataFrame, session_date: str) -> pd.DataFrame:
 # ── DTE / moneyness for a coalesced row ──────────────────────────────────────
 
 def _enrich_contract_row(row: pd.Series, session_date: str,
-                         oi_prev: pd.DataFrame | None) -> dict:
-    """Compute dte, dte_bucket, mny_bucket, vol_gt_oi, zerodte from a coalesced row."""
+                         oi_prev: pd.DataFrame | None,
+                         contract_vol: dict | None = None,
+                         prev_close: float | None = None) -> dict:
+    """Compute dte, dte_bucket, mny_bucket, vol_gt_oi, zerodte from a coalesced row.
+
+    contract_vol : cumulative day-volume dict keyed by (exp, strike, right) —
+                   used for the vol_gt_oi check (FIX 1).  When None falls back
+                   to the per-batch coalesced size (legacy behaviour).
+    prev_close   : prior-session underlying close; used for real moneyness
+                   bucketing (FIX 3).  None → 'unknown'.
+    """
     exp_str = str(row.get("expiration", ""))
     try:
         exp_dt = pd.Timestamp(exp_str)
@@ -229,10 +238,25 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
     dte_bucket_val = str(_dte_bucket(pd.Series([dte_val])).iloc[0])
     zerodte = dte_bucket_val == "0d"
 
-    # Moneyness — unknown without underlying_price
-    mny_bucket_val = "atm"  # default
+    # FIX 3 — honest moneyness via prior-session close
+    mny_bucket_val = "unknown"
+    if prev_close is not None and prev_close > 0:
+        try:
+            strike_val = float(row.get("strike", 0))
+            right_val  = str(row.get("right", "C")).upper()[:1]
+            if strike_val > 0:
+                tmp = pd.DataFrame([{
+                    "underlying_price": prev_close,
+                    "strike": strike_val,
+                    "right": right_val,
+                }])
+                signed_money = _compute_signed_moneyness(tmp)
+                mny_bucket_val = str(_moneyness_bucket(signed_money).iloc[0])
+        except Exception as e:  # noqa: BLE001
+            log.debug("live_flow: moneyness compute failed: %s", e)
+            mny_bucket_val = "unknown"
 
-    # vol_gt_oi
+    # FIX 1 — vol_gt_oi: use cumulative day-volume from state, not per-batch size
     vol_gt_oi_val = None
     if oi_prev is not None and not oi_prev.empty:
         try:
@@ -248,8 +272,14 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
             ]
             if not oi_match.empty and "open_interest" in oi_match.columns:
                 oi_val = float(oi_match["open_interest"].iloc[0])
-                contract_vol = float(row.get("size", 0))
-                vol_gt_oi_val = bool(contract_vol > oi_val)
+                # FIX 1: use cumulative day volume from state (not per-batch coalesced size)
+                contract_key = (exp_norm, strike_val, right_norm)
+                if contract_vol is not None and contract_key in contract_vol:
+                    cum_vol = float(contract_vol[contract_key])
+                else:
+                    # fallback: use the per-batch coalesced size
+                    cum_vol = float(row.get("size", 0))
+                vol_gt_oi_val = bool(cum_vol > oi_val)
         except Exception as e:  # noqa: BLE001
             log.debug("live_flow: vol_gt_oi check failed: %s", e)
 
@@ -309,6 +339,7 @@ def process_batch(
     name_floor: int = DEFAULT_NAME_FLOOR,
     etf_anchors: list[str] | None = None,
     names_sectors: dict[str, tuple[str, str]] | None = None,
+    prev_close: float | None = None,
 ) -> dict:
     """Process one poll batch → events, unusual_names, heat, updated state.
 
@@ -321,12 +352,15 @@ def process_batch(
                            emitted_ids   : set of already-emitted event ids for today
                            contract_vol  : {(exp,strike,right): cumulative_day_vol}
                            notability_history : {(exp,strike,right): n_cycles_notable}
+                           seen_sequences : {(exp,strike,right): max_sequence_seen}
     oi_prev            : t-1 OI frame (columns: expiration, strike, right, open_interest).
     baselines          : {ROOT: {mean, std, n_obs, computed_asof}} from build_live_flow_baselines.
     etf_floor          : minimum premium for ETF anchors.
     name_floor         : minimum premium for single names.
     etf_anchors        : set of ETF root symbols.
     names_sectors      : {ticker: (name, GICS_sector)} — for group labeling.
+    prev_close         : prior-session underlying close for honest moneyness (FIX 3).
+                         None → mny_bucket='unknown'.
 
     Returns
     -------
@@ -341,6 +375,8 @@ def process_batch(
     notability_hist: dict            = dict(ps.get("notability_history", {}))
     # running root-level gross premium this session
     root_gross_today: dict[str, float] = dict(ps.get("root_gross_today", {}))
+    # FIX 2 — per-contract max sequence seen (row-level dedup for overlapping windows)
+    seen_sequences: dict             = dict(ps.get("seen_sequences", {}))
 
     # Names/sectors for group labeling
     ns = names_sectors if names_sectors is not None else _load_names_sectors()
@@ -365,11 +401,51 @@ def process_batch(
                 "contract_vol": contract_vol,
                 "notability_history": notability_hist,
                 "root_gross_today": root_gross_today,
+                "seen_sequences": seen_sequences,
             },
             "meta_notes": ["batch empty — no prints"],
         }
 
     combined = pd.concat(frames, ignore_index=True)
+
+    # FIX 2 — row-level sequence dedup before any accumulation.
+    # For overlapping windows (time_window mode) and full-day re-pulls (full_day mode)
+    # rows already processed in a previous cycle are identified by their sequence number
+    # being <= the max sequence already seen for that contract.
+    # This makes both overlap and idempotent re-pull safe.
+    if "sequence" in combined.columns:
+        contract_cols_dedup = [c for c in ("expiration", "strike", "right") if c in combined.columns]
+        if contract_cols_dedup:
+            seq_series = pd.to_numeric(combined["sequence"], errors="coerce")
+            keep_mask = pd.Series(True, index=combined.index)
+            for idx_r in combined.index:
+                row_d = combined.loc[idx_r]
+                exp_d   = str(row_d.get("expiration", ""))
+                stk_d   = float(row_d.get("strike", 0)) if pd.notna(row_d.get("strike")) else 0.0
+                right_d = str(row_d.get("right", "C")).upper()[:1]
+                seq_d   = seq_series.loc[idx_r]
+                if pd.isna(seq_d):
+                    continue
+                key_d   = (exp_d, stk_d, right_d)
+                max_seen = seen_sequences.get(key_d)
+                if max_seen is not None and seq_d <= max_seen:
+                    keep_mask.loc[idx_r] = False
+            combined = combined[keep_mask].copy()
+        # Advance seen_sequences with the max sequence from surviving rows
+        if not combined.empty:
+            seq_series2 = pd.to_numeric(combined["sequence"], errors="coerce")
+            for idx_r in combined.index:
+                row_d = combined.loc[idx_r]
+                exp_d   = str(row_d.get("expiration", ""))
+                stk_d   = float(row_d.get("strike", 0)) if pd.notna(row_d.get("strike")) else 0.0
+                right_d = str(row_d.get("right", "C")).upper()[:1]
+                seq_d   = seq_series2.loc[idx_r]
+                if pd.isna(seq_d):
+                    continue
+                key_d = (exp_d, stk_d, right_d)
+                if key_d not in seen_sequences or seq_d > seen_sequences[key_d]:
+                    seen_sequences[key_d] = float(seq_d)
+
     combined = _sign_batch(combined)
     if combined.empty:
         return {
@@ -381,6 +457,7 @@ def process_batch(
                 "contract_vol": contract_vol,
                 "notability_history": notability_hist,
                 "root_gross_today": root_gross_today,
+                "seen_sequences": seen_sequences,
             },
             "meta_notes": ["batch empty after signing filter"],
         }
@@ -429,6 +506,7 @@ def process_batch(
                 "contract_vol": contract_vol,
                 "notability_history": notability_hist,
                 "root_gross_today": root_gross_today,
+                "seen_sequences": seen_sequences,
             },
             "meta_notes": [],
         }
@@ -470,7 +548,9 @@ def process_batch(
         notability_hist[contract_key] = n_cycles
         repeated = n_cycles >= 2
 
-        enrich = _enrich_contract_row(row, session_date, oi_prev)
+        enrich = _enrich_contract_row(row, session_date, oi_prev,
+                                       contract_vol=contract_vol,
+                                       prev_close=prev_close)
         dte_val  = enrich["dte"]
         ts_val   = str(row.get("ts", batch_ts)) or batch_ts
 
@@ -524,8 +604,9 @@ def process_batch(
             "contract_vol": contract_vol,
             "notability_history": notability_hist,
             "root_gross_today": root_gross_today,
+            "seen_sequences": seen_sequences,
         },
-        "meta_notes": [],
+        "meta_notes": ["moneyness vs prior-session close (approx.)"],
     }
 
 

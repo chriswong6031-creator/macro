@@ -208,6 +208,38 @@ def _load_oi_prev(root: str, session_date: str) -> object | None:
         return None
 
 
+# ── prior-session close loader (FIX 3 — moneyness) ───────────────────────────
+
+def _load_prev_close(root: str, session_date: str) -> float | None:
+    """Return the prior-session close for `root` from the yahoo store.
+
+    Looks up data/yahoo/{ROOT}.parquet, takes the LAST row with date STRICTLY
+    before session_date (never session_date itself — lookahead law).
+    Returns None if the store is absent or no qualifying row exists.
+    INERT: never raises — missing store must not crash a cycle.
+    """
+    try:
+        from lib import store
+        import pandas as pd
+
+        safe_root = root.upper().replace("^", "_").replace("=", "_").replace("/", "_")
+        df = store.read("yahoo", safe_root)
+        if df is None or df.empty or "close" not in df.columns:
+            return None
+        sess_dt = pd.Timestamp(session_date)
+        # Strictly before session_date — no lookahead
+        prior = df[df.index < sess_dt]
+        if prior.empty:
+            return None
+        last_close = prior["close"].iloc[-1]
+        if pd.isna(last_close) or float(last_close) <= 0:
+            return None
+        return float(last_close)
+    except Exception as e:  # noqa: BLE001
+        log.debug("poller: prev_close failed for %s: %s", root, e)
+        return None
+
+
 # ── state I/O ─────────────────────────────────────────────────────────────────
 
 def _load_day_state(session_date: str) -> dict:
@@ -234,6 +266,9 @@ def _load_day_state(session_date: str) -> dict:
         raw["notability_history"] = {
             _restore_key(k): v for k, v in raw.get("notability_history", {}).items()
         }
+        raw["seen_sequences"] = {
+            _restore_key(k): v for k, v in raw.get("seen_sequences", {}).items()
+        }
         return raw
     except Exception as e:  # noqa: BLE001
         log.warning("poller: could not load day state: %s", e)
@@ -259,6 +294,8 @@ def _save_day_state(session_date: str, state: dict) -> None:
                                     for k, v in state.get("contract_vol", {}).items()}
         raw["notability_history"] = {_state_key(k): v
                                      for k, v in state.get("notability_history", {}).items()}
+        raw["seen_sequences"]     = {_state_key(k): v
+                                     for k, v in state.get("seen_sequences", {}).items()}
         tmp = p.with_suffix(".tmp.json")
         tmp.write_text(json.dumps(raw, default=str))
         tmp.rename(p)
@@ -398,11 +435,19 @@ def run_cycle(
     day_state: dict,
     baselines: dict,
     cfg: dict,
-    cycle_watermarks: dict,   # {root: last_trade_ts_str} — mutated in place
+    cycle_watermarks: dict,   # FIX 2: {root: {"ts": str, "seq": float}} — mutated in place
 ) -> tuple[dict, dict, dict, list[str]]:
     """Run one poll cycle.  Returns (feed_data, heat_data, updated_day_state, meta_notes).
 
     Fetches all roots in parallel (max_concurrent=2), runs the engine, aggregates.
+
+    FIX 2 — per-root watermarks + overlap dedup:
+      cycle_watermarks[root] = {"ts": last_trade_ts_str, "seq": max_sequence_seen}
+      time_window mode: start_time = watermark_ts - 30s overlap (RTH open on first cycle).
+      Row-level dedup inside the engine (seen_sequences state) makes overlap safe.
+      full_day mode: always pulls full day; engine dedup ensures idempotency.
+
+    FIX 3 — prev_close loaded per-root from yahoo store for honest moneyness.
     """
     from engine import live_flow as lf
     import pandas as pd
@@ -421,33 +466,49 @@ def run_cycle(
     batch_ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     cycle_t0 = time.perf_counter()
 
-    # Determine time-window params
-    start_time_param: str | None = None
-    end_time_param: str | None   = None
-    if delta_mode == "time_window":
-        # Watermark minus 90s safety buffer
-        now_et = datetime.now(ET)
-        # go back PROBE_WINDOW=90s from now to get the watermark
-        wm = now_et - timedelta(seconds=PROBE_WINDOW)
-        start_time_param = wm.strftime("%H:%M:%S")
-        end_time_param   = None  # up to "now"
+    # FIX 2 — compute per-root start_time for time_window mode
+    # For full_day mode start_time is always None (pull full day; dedup handles idempotency)
+    RTH_OPEN = "09:30:00"
+    _OVERLAP_SEC = 30   # 30s overlap safety window
+
+    def _root_start_time(root: str) -> str | None:
+        """Return start_time for this root's fetch, or None (full day)."""
+        if delta_mode != "time_window":
+            return None
+        wm = cycle_watermarks.get(root)
+        if not wm or not wm.get("ts"):
+            # First cycle for this root → start from RTH open
+            return RTH_OPEN
+        # Advance watermark by subtracting overlap
+        try:
+            wm_dt = datetime.fromisoformat(wm["ts"].replace("Z", "+00:00"))
+            wm_et = wm_dt.astimezone(ET)
+            overlap_dt = wm_et - timedelta(seconds=_OVERLAP_SEC)
+            return overlap_dt.strftime("%H:%M:%S")
+        except Exception:  # noqa: BLE001
+            return RTH_OPEN
 
     all_events: list[dict]  = list(day_state.get("all_events", []))
     root_gross: dict        = dict(day_state.get("root_gross_today", {}))
     emitted_ids: set[str]   = set(day_state.get("emitted_ids", set()))
     contract_vol: dict      = dict(day_state.get("contract_vol", {}))
     notab_hist: dict        = dict(day_state.get("notability_history", {}))
+    seen_sequences: dict    = dict(day_state.get("seen_sequences", {}))
 
     heat_rows: list[dict]   = []
     unusual_by_root: dict   = {}
     meta_notes: list[str]   = []
     requests_count          = 0
 
-    # Fetch in parallel (max_concurrent=2)
+    # Fetch in parallel (max_concurrent=2); per-root start_time in time_window mode
     fetch_results: dict[str, tuple] = {}
     with ThreadPoolExecutor(max_workers=max_w) as pool:
         futs = {
-            pool.submit(_fetch_root, root, session_date, start_time_param, end_time_param): root
+            pool.submit(
+                _fetch_root, root, session_date,
+                _root_start_time(root),   # per-root watermark start
+                None,                     # end_time always None ("now")
+            ): root
             for root in roots
         }
         for fut in as_completed(futs):
@@ -462,12 +523,38 @@ def run_cycle(
             log.debug("poller: skip %s (both legs failed)", root)
             continue
 
-        # Per-root prior state
+        # FIX 2 — advance per-root watermark from trade_timestamp in returned rows
+        # (done before the engine call so a crash mid-root doesn't lose the watermark)
+        for df_part in (calls_df, puts_df):
+            if df_part is not None and not df_part.empty and "trade_timestamp" in df_part.columns:
+                try:
+                    import pandas as pd
+                    max_ts = df_part["trade_timestamp"].dropna().max()
+                    max_seq_val = None
+                    if "sequence" in df_part.columns:
+                        max_seq_val = float(pd.to_numeric(
+                            df_part["sequence"], errors="coerce").dropna().max())
+                    if max_ts and str(max_ts) not in ("NaT", "nan", ""):
+                        wm_cur = cycle_watermarks.get(root, {})
+                        cur_ts  = wm_cur.get("ts")
+                        if cur_ts is None or str(max_ts) > cur_ts:
+                            wm_new = {"ts": str(max_ts)}
+                            if max_seq_val is not None and not (max_seq_val != max_seq_val):
+                                wm_new["seq"] = max_seq_val
+                            cycle_watermarks[root] = wm_new
+                except Exception as e:  # noqa: BLE001
+                    log.debug("poller: watermark advance failed for %s: %s", root, e)
+
+        # FIX 3 — load prev_close for honest moneyness
+        prev_close = _load_prev_close(root, session_date)
+
+        # Per-root prior state (shared mutable; engine accumulates)
         prior = {
             "emitted_ids":      emitted_ids,
             "contract_vol":     contract_vol,
             "notability_history": notab_hist,
             "root_gross_today": root_gross,
+            "seen_sequences":   seen_sequences,
         }
 
         try:
@@ -483,6 +570,7 @@ def run_cycle(
                 etf_floor=etf_floor,
                 name_floor=name_floor,
                 etf_anchors=list(etf_anchors_set),
+                prev_close=prev_close,
             )
         except Exception as e:  # noqa: BLE001
             log.warning("poller: engine failed for %s: %s", root, e)
@@ -490,10 +578,11 @@ def run_cycle(
 
         # Merge state
         state_out = result.get("state", {})
-        emitted_ids   = state_out.get("emitted_ids", emitted_ids)
-        contract_vol  = state_out.get("contract_vol", contract_vol)
-        notab_hist    = state_out.get("notability_history", notab_hist)
-        root_gross    = state_out.get("root_gross_today", root_gross)
+        emitted_ids     = state_out.get("emitted_ids", emitted_ids)
+        contract_vol    = state_out.get("contract_vol", contract_vol)
+        notab_hist      = state_out.get("notability_history", notab_hist)
+        root_gross      = state_out.get("root_gross_today", root_gross)
+        seen_sequences  = state_out.get("seen_sequences", seen_sequences)
 
         # Accumulate new events
         for ev in result.get("events", []):
@@ -599,6 +688,7 @@ def run_cycle(
         "contract_vol":       contract_vol,
         "notability_history": notab_hist,
         "root_gross_today":   root_gross,
+        "seen_sequences":     seen_sequences,
     }
 
     return feed_payload, heat_payload, meta_payload, updated_state
@@ -651,9 +741,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         roots = _resolve_universe(cfg)
     log.info("poller: universe=%d roots", len(roots))
 
-    # delta_mode probe
-    delta_mode = _probe_delta_mode(session_date)
-    log.info("poller: delta_mode=%s", delta_mode)
+    # FIX 2 — historical smokes (--date override) must use full_day:
+    # time-windowed pulls anchored to a live clock make no sense on a past session.
+    if args.date:
+        delta_mode = "full_day"
+        log.info("poller: delta_mode=full_day (forced — historical --date override)")
+    else:
+        delta_mode = _probe_delta_mode(session_date)
+        log.info("poller: delta_mode=%s", delta_mode)
 
     # Load baselines (static for the session)
     baselines = _load_baselines()

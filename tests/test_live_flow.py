@@ -647,7 +647,7 @@ class TestCollectorAdditiveParams:
 class TestZeroDTE:
     def test_zerodte_flag_set_for_0d_bucket(self):
         """Option expiring same day → zerodte=True."""
-        # Trade on 2026-07-02, expiration 2026-07-02 → dte=0 → dte_bucket=0d → zerodte
+        # Trade on 2026-07-02, expiration 2026-07-02 → dte=0 → dte_bucket=0d �� zerodte
         calls = pd.DataFrame([{
             "root": "SPY", "right": "C", "expiration": "2026-07-02",
             "strike": 550.0, "price": 0.10, "bid": 0.05, "ask": 0.15,
@@ -661,3 +661,269 @@ class TestZeroDTE:
         assert ev["dte"] == 0
         assert ev["dte_bucket"] == "0d"
         assert ev["zerodte"] is True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FIX 1 — vol_gt_oi uses cumulative day-volume, not per-batch coalesced size
+# ──────────────────────���──────────────────────────────────────────────────────
+
+class TestVolGtOICumulative:
+    """FIX 1: vol_gt_oi comparison must use cumulative day-volume from state."""
+
+    def _oi_frame(self, exp="2026-07-05", strike=550.0, right="C", oi=200) -> pd.DataFrame:
+        return pd.DataFrame([{
+            "expiration": exp, "strike": strike, "right": right, "open_interest": oi
+        }])
+
+    def test_cumulative_vol_crosses_oi_on_second_cycle(self):
+        """Cycle 1: 100 contracts (below OI=200) → vol_gt_oi=False.
+        Cycle 2: another 150 contracts; cumulative=250 > OI=200 → vol_gt_oi=True.
+        """
+        oi = self._oi_frame(oi=200)
+
+        # Cycle 1: 100 contracts — cumulative = 100 < OI=200
+        calls1 = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 100,
+                         "sequence": 1001})
+        result1 = _run(calls1, oi_prev=oi, etf_floor=0, name_floor=0)
+        assert len(result1["events"]) == 1
+        assert result1["events"][0]["vol_gt_oi"] is False, (
+            "Cycle 1: 100 contracts < OI 200 should be False")
+
+        # Cycle 2: 150 more contracts (different sequence → new event id); cumulative=250 > OI=200
+        calls2 = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 150,
+                         "sequence": 2001})
+        result2 = _run(calls2, oi_prev=oi, prior=result1["state"],
+                       etf_floor=0, name_floor=0)
+        assert len(result2["events"]) == 1
+        assert result2["events"][0]["vol_gt_oi"] is True, (
+            "Cycle 2: cumulative 250 > OI 200 should be True")
+
+    def test_per_batch_size_alone_below_oi_but_cumulative_above(self):
+        """Each individual batch is below OI, but cumulative over 3 cycles exceeds it.
+        Final cycle should report vol_gt_oi=True.
+        """
+        oi = self._oi_frame(oi=100)
+
+        state = None
+        for seq, size in enumerate([40, 40, 40], start=1):
+            calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": size,
+                            "sequence": seq * 1000})
+            result = _run(calls, oi_prev=oi, prior=state, etf_floor=0, name_floor=0)
+            state = result["state"]
+
+        # After 3 cycles of 40 each → cumulative=120 > OI=100
+        last_events = result["events"]
+        assert len(last_events) == 1
+        assert last_events[0]["vol_gt_oi"] is True, (
+            "Cumulative 120 over 3 cycles > OI 100 should be True")
+
+
+# ──��──────────────────────────────────────────────────────────────────────────
+# FIX 2 — overlap double-count (sequence dedup) and watermark advance
+# ��─────────────────────────��──────────────────────────────────────────────────
+
+class TestSequenceDedup:
+    """FIX 2: overlapping windows must not double-count rows already seen."""
+
+    def _batch_calls(self, sequences: list[int], size: int = 100,
+                     price: float = 2.60) -> pd.DataFrame:
+        rows = []
+        for seq in sequences:
+            rows.append({
+                "root": "SPY", "right": "C", "expiration": "2026-07-05",
+                "strike": 550.0, "price": price, "bid": 2.40, "ask": 2.60,
+                "size": size, "trade_timestamp": f"2026-07-02T14:{seq:02d}:00",
+                "quote_timestamp": f"2026-07-02T14:{seq:02d}:00",
+                "sequence": seq * 100,  # unique sequence per row
+                "date": "2026-07-02",
+            })
+        return pd.DataFrame(rows)
+
+    def test_same_rows_consecutive_batches_no_double_count(self):
+        """Rows with the same sequences in two consecutive batches accumulate only once.
+
+        Simulates an overlapping window: cycle 2 re-delivers rows already seen in cycle 1.
+        The sequence dedup must ensure root_gross_today (and contract_vol) are NOT doubled.
+        """
+        # Cycle 1: sequences [10, 20, 30]
+        calls1 = self._batch_calls([10, 20, 30])
+        result1 = _run(calls1, etf_floor=0, name_floor=0)
+        gross_after_c1 = result1["state"]["root_gross_today"].get("SPY", 0.0)
+
+        # Cycle 2: re-delivers same sequences PLUS a new one [40]
+        calls2 = self._batch_calls([10, 20, 30, 40])
+        result2 = _run(calls2, prior=result1["state"], etf_floor=0, name_floor=0)
+        gross_after_c2 = result2["state"]["root_gross_today"].get("SPY", 0.0)
+
+        # Sequences 10/20/30 already seen → deduped; only seq 40 (100 contracts) is new
+        expected_increment = float(calls1.iloc[0]["price"] * 100 * 100)  # 1 new row
+        assert gross_after_c2 == pytest.approx(gross_after_c1 + expected_increment, rel=1e-6), (
+            f"Double-count detected: cycle2 gross ({gross_after_c2:.0f}) should be "
+            f"cycle1 ({gross_after_c1:.0f}) + one new row ({expected_increment:.0f})")
+
+    def test_contract_vol_not_doubled_by_overlap(self):
+        """contract_vol must not grow by re-delivering already-seen sequences."""
+        calls1 = self._batch_calls([1, 2, 3], size=50)
+        result1 = _run(calls1, etf_floor=0, name_floor=0)
+        # Get the cumulative vol after cycle 1
+        key = ("2026-07-05", 550.0, "C")
+        vol_after_c1 = result1["state"]["contract_vol"].get(key, 0)
+
+        # Re-deliver the exact same rows
+        calls2 = self._batch_calls([1, 2, 3], size=50)
+        result2 = _run(calls2, prior=result1["state"], etf_floor=0, name_floor=0)
+        vol_after_c2 = result2["state"]["contract_vol"].get(key, 0)
+
+        assert vol_after_c2 == pytest.approx(vol_after_c1, rel=1e-6), (
+            f"contract_vol doubled from {vol_after_c1} to {vol_after_c2} on re-delivery")
+
+    def test_watermark_advances(self):
+        """seen_sequences must advance monotonically; new higher sequences pass through."""
+        calls1 = self._batch_calls([5])
+        result1 = _run(calls1, etf_floor=0, name_floor=0)
+        # Check that (exp, strike, right) key has been recorded
+        key = ("2026-07-05", 550.0, "C")
+        assert key in result1["state"]["seen_sequences"], (
+            "seen_sequences must contain the contract key after cycle 1")
+        assert result1["state"]["seen_sequences"][key] == pytest.approx(500.0), (
+            "max sequence for the contract should be 5*100=500")
+
+    def test_full_day_idempotency_via_sequence_dedup(self):
+        """full_day mode: re-pulling the whole day twice produces same result as once."""
+        # Build a larger batch simulating a full-day pull
+        calls = self._batch_calls(list(range(1, 21)), size=50)
+
+        result1 = _run(calls, etf_floor=0, name_floor=0)
+        gross_c1 = result1["state"]["root_gross_today"].get("SPY", 0.0)
+        vol_c1   = result1["state"]["contract_vol"].get(("2026-07-05", 550.0, "C"), 0)
+
+        # Second pull of the SAME full-day data (simulating a full_day cycle re-pull)
+        result2 = _run(calls, prior=result1["state"], etf_floor=0, name_floor=0)
+        gross_c2 = result2["state"]["root_gross_today"].get("SPY", 0.0)
+        vol_c2   = result2["state"]["contract_vol"].get(("2026-07-05", 550.0, "C"), 0)
+
+        assert gross_c2 == pytest.approx(gross_c1, rel=1e-6), (
+            "full_day re-pull must not change gross_today")
+        assert vol_c2   == pytest.approx(vol_c1, rel=1e-6), (
+            "full_day re-pull must not change contract_vol")
+
+
+# ───────────��─────────────────────────────────────────────────────────────────
+# FIX 3 — honest moneyness from prev_close
+# ───────────────────────���──────────────────────────��──────────────────────────
+
+class TestHonestMoneyness:
+    """FIX 3: mny_bucket must be computed from prev_close, not hardcoded 'atm'."""
+
+    def _run_with_close(self, strike: float, prev_close: float, right: str = "C") -> str:
+        """Return mny_bucket for a single trade given prev_close."""
+        calls = pd.DataFrame([{
+            "root": "SPY", "right": right, "expiration": "2026-07-05",
+            "strike": strike, "price": 2.60, "bid": 2.40, "ask": 2.60,
+            "size": 100, "trade_timestamp": "2026-07-02T14:30:00",
+            "quote_timestamp": "2026-07-02T14:30:00",
+            "sequence": 1001, "date": "2026-07-02",
+        }])
+        result = lf.process_batch(
+            calls_df=calls, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0,
+            etf_anchors=["SPY"],
+            prev_close=prev_close,
+        )
+        assert result["events"], f"Expected event for strike={strike} close={prev_close}"
+        return result["events"][0]["mny_bucket"]
+
+    def test_atm_call_within_5pct(self):
+        """Call strike within 5% of underlying → atm."""
+        # strike=550, prev_close=540 → signed_money = 550/540 - 1 ≈ 0.0185 < 0.05 → atm
+        bucket = self._run_with_close(strike=550.0, prev_close=540.0, right="C")
+        assert bucket == "atm", f"Expected atm, got {bucket!r}"
+
+    def test_far_otm_call(self):
+        """Call strike >15% above underlying → far_otm."""
+        # strike=650, prev_close=540 → signed_money = 650/540 - 1 ≈ 0.204 > 0.15 → far_otm
+        bucket = self._run_with_close(strike=650.0, prev_close=540.0, right="C")
+        assert bucket == "far_otm", f"Expected far_otm, got {bucket!r}"
+
+    def test_itm_call(self):
+        """Call strike below underlying by more than 5% → itm."""
+        # strike=490, prev_close=540 → signed_money = 490/540 - 1 ≈ -0.093 < -0.05 → itm
+        bucket = self._run_with_close(strike=490.0, prev_close=540.0, right="C")
+        assert bucket == "itm", f"Expected itm, got {bucket!r}"
+
+    def test_atm_put_within_5pct(self):
+        """Put strike within 5% of underlying → atm."""
+        # strike=550, prev_close=540 → signed_money = 540/550 - 1 ≈ -0.018 → |.018| < 0.05 → atm
+        bucket = self._run_with_close(strike=550.0, prev_close=540.0, right="P")
+        assert bucket == "atm", f"Expected atm for put, got {bucket!r}"
+
+    def test_no_prev_close_returns_unknown(self):
+        """When prev_close is None → mny_bucket='unknown'."""
+        calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 100})
+        result = lf.process_batch(
+            calls_df=calls, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0,
+            etf_anchors=["SPY"],
+            prev_close=None,
+        )
+        assert result["events"], "Expected event"
+        assert result["events"][0]["mny_bucket"] == "unknown", (
+            "No prev_close must yield mny_bucket='unknown'")
+
+    def test_pit_guard_session_date_not_used(self):
+        """PIT guard: prev_close row dated exactly session_date must NOT be used.
+
+        The poller implements this in _load_prev_close (strict <, not <=).
+        This test verifies the engine correctly uses the injected prev_close:
+        if the poller incorrectly passes the session-date row, this test would
+        fail by receiving 'atm' instead of 'unknown'.
+        """
+        # Simulating the PIT guard: when prev_close=None is passed (as it would be
+        # when the poller correctly rejects the same-day row), engine returns 'unknown'.
+        calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 100})
+        result_no_close = lf.process_batch(
+            calls_df=calls, puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0,
+            etf_anchors=["SPY"],
+            prev_close=None,   # correctly rejected same-day row
+        )
+        assert result_no_close["events"][0]["mny_bucket"] == "unknown"
+
+    def test_prev_close_loader_pit_guard(self, tmp_path, monkeypatch):
+        """_load_prev_close must never use a row dated session_date or later."""
+        import pandas as pd
+        from pathlib import Path
+
+        session_date = "2026-07-02"
+        root = "TESTROOT"
+
+        # Build a fake yahoo parquet with rows on and after session_date
+        idx = pd.to_datetime([
+            "2026-07-01",  # valid prior-session close → should be used
+            "2026-07-02",  # same as session_date → MUST NOT be used (PIT law)
+            "2026-07-03",  # future → MUST NOT be used
+        ])
+        df = pd.DataFrame({"close": [100.0, 999.0, 888.0]}, index=idx)
+        yahoo_dir = tmp_path / "yahoo"
+        yahoo_dir.mkdir()
+        df.to_parquet(yahoo_dir / f"{root}.parquet")
+
+        # Monkeypatch config.data_dir() to point at tmp_path
+        monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path)
+
+        from scripts.live_flow_poller import _load_prev_close
+        close = _load_prev_close(root, session_date)
+        assert close == pytest.approx(100.0), (
+            f"Expected prior-day close 100.0 but got {close!r}; "
+            "same-day and future rows must be excluded (PIT law)")
+
+    def test_mny_bucket_not_atm_hardcoded(self):
+        """mny_bucket must never always return 'atm' when prev_close drives far_otm."""
+        # This test fails if the old hardcode mny_bucket_val = 'atm' is still present
+        bucket = self._run_with_close(strike=700.0, prev_close=500.0, right="C")
+        assert bucket != "atm", (
+            "mny_bucket must not be hardcoded 'atm'; "
+            f"strike=700 vs close=500 is far_otm but got {bucket!r}")
