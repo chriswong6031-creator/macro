@@ -49,6 +49,14 @@ import pandas as pd
 
 BUYABLE_TIERS = {"T1", "T2", "T3"}   # matches signal_gate.BUYABLE_TIERS (T4 excluded)
 
+# Import MIN_HISTORY so the dumper stays in sync with tier_stream's own gate.
+# Done at module level here; the worker also imports inside the subprocess for
+# safety (multiprocessing spawn).
+try:
+    from engine.confluence_tiers import MIN_HISTORY as _MIN_HISTORY_SENTINEL
+except ImportError:
+    _MIN_HISTORY_SENTINEL = 200  # fallback — only used for this module-level constant
+
 PANEL_CONFIGS: dict[str, dict[str, Any]] = {
     "deep": {
         "glob": "data/stocks/*.parquet",
@@ -90,7 +98,13 @@ def _process_ticker(args: tuple[str, str, str]) -> dict[str, Any]:
             close = close.copy()
             close.index = pd.to_datetime(close.index)
 
-        bars = int(close.dropna().__len__())
+        # Drop NaNs once here so the dumper's index matches ts's index exactly,
+        # mirroring the precedent in validate_provisional_replay._fresh_ticks_signal_fn.
+        # This avoids pandas UserWarning about boolean Series reindex misalignment and
+        # prevents interior NaNs from manufacturing spurious fresh_start events.
+        close = close.dropna()
+
+        bars = int(len(close))
 
         # Import inside worker so multiprocessing doesn't need pre-forked state
         import sys as _sys
@@ -99,21 +113,32 @@ def _process_ticker(args: tuple[str, str, str]) -> dict[str, Any]:
         if repo_root not in _sys.path:
             _sys.path.insert(0, repo_root)
 
-        from engine.confluence_tiers import tier_stream
+        from engine.confluence_tiers import tier_stream, MIN_HISTORY
 
         ts = tier_stream(close)
 
         if ts.empty:
             # tier_stream returns empty frame on exception OR thin history.
-            # Distinguish: try to detect thin history.
-            n_bars = len(close.dropna())
-            reason = "thin history (<200 bars)" if n_bars < 200 else "tier_stream returned empty (possible internal error)"
-            return {
-                "ticker": ticker, "bars": bars, "fires": 0,
-                "error": reason if n_bars < 200 else None,
-                "warning": reason if n_bars >= 200 else None,
-                "records": [],
-            }
+            # Distinguish using MIN_HISTORY (the same constant tier_stream uses internally).
+            # IMPORTANT: >=MIN_HISTORY bars + empty result means a possible corrupt input or
+            # internal exception — this must be recorded as an ERROR (not a warning) so that
+            # the summary error-count is accurate and --resume re-tries it on --force.
+            n_bars = len(close)
+            if n_bars < MIN_HISTORY:
+                reason = f"thin history (<{MIN_HISTORY} bars)"
+                return {
+                    "ticker": ticker, "bars": bars, "fires": 0,
+                    "error": reason, "records": [],
+                }
+            else:
+                reason = (
+                    f"tier_stream returned empty on >={MIN_HISTORY} bars "
+                    "(possible corrupt input / internal exception)"
+                )
+                return {
+                    "ticker": ticker, "bars": bars, "fires": 0,
+                    "error": reason, "records": [],
+                }
 
         # fresh_start: first bar where board tier appears (new cross, not every held bar)
         board = ts["tier"].isin(BUYABLE_TIERS)
@@ -251,8 +276,6 @@ def run(panel: str, data_root: Path, out_parquet: Path, manifest_path: Path,
         entry: dict[str, Any] = {"bars": r["bars"], "fires": r["fires"]}
         if r.get("error"):
             entry["error"] = r["error"]
-        if r.get("warning"):
-            entry["warning"] = r["warning"]
         new_manifest[ticker] = entry
         all_records.extend(r["records"])
 
@@ -263,6 +286,7 @@ def run(panel: str, data_root: Path, out_parquet: Path, manifest_path: Path,
         combined = pd.concat([existing_df, new_df], ignore_index=True)
         # Deduplicate on (ticker, date, tier) — should not be needed but safe
         combined = combined.drop_duplicates(subset=["ticker", "date", "tier"])
+        combined = combined.sort_values(["ticker", "date", "tier"]).reset_index(drop=True)
         combined.to_parquet(out_parquet, index=False)
         print(f"Parquet updated (resume merge): {len(combined)} total fire rows → {out_parquet}")
     elif all_records:
@@ -270,6 +294,9 @@ def run(panel: str, data_root: Path, out_parquet: Path, manifest_path: Path,
         fire_df = fire_df[["ticker", "date", "tier", "sub", "ticks",
                             "not_topped", "eligible", "panel"]]
         fire_df["date"] = pd.to_datetime(fire_df["date"])
+        # Sort deterministically so any re-run (--force) produces a bit-identical
+        # artifact rather than a spurious whole-blob diff in git.
+        fire_df = fire_df.sort_values(["ticker", "date", "tier"]).reset_index(drop=True)
         fire_df.to_parquet(out_parquet, index=False)
         print(f"Parquet written: {len(fire_df)} fire rows → {out_parquet}")
     elif not resume:
@@ -279,9 +306,9 @@ def run(panel: str, data_root: Path, out_parquet: Path, manifest_path: Path,
         fire_df.to_parquet(out_parquet, index=False)
         print(f"Parquet written: 0 fire rows (empty) → {out_parquet}")
 
-    # Write manifest
+    # Write manifest — sorted by ticker for deterministic output across re-runs.
     with open(manifest_path, "w") as f:
-        json.dump(new_manifest, f, indent=2)
+        json.dump(dict(sorted(new_manifest.items())), f, indent=2)
     print(f"Manifest written: {len(new_manifest)} tickers → {manifest_path}")
 
     _print_summary(new_manifest, panel)
