@@ -24,22 +24,38 @@ Day state is persisted at `data/live_flow_state/day_state_{date}.json`.
 
 ## launchd autostart
 
-The plist at `ops/launchd/com.mastermind.liveflow.plist` schedules the poller
-to start at 09:25 ET on weekdays.  The poller uses `--rth-only` to self-exit
-after 16:05 ET.
+Two plists manage the options-flow stack:
 
-### Install
+| Plist | Job | Schedule | Log paths |
+|---|---|---|---|
+| `com.mastermind.liveflow.plist` | Live poller (RTH) | Weekdays 09:25 ET | `/tmp/liveflow.stdout.log` `/tmp/liveflow.stderr.log` |
+| `com.mastermind.optionshub.plist` | Nightly hub builder | Weekdays 16:45 ET | `/tmp/optionshub.stdout.log` `/tmp/optionshub.stderr.log` |
+
+Both plists use `ops/launchd/run_with_env.sh` to source `.env` before launching
+Python.  Secrets (`R2_*`, `THETADATA_STORE`) must be in the `.env` file at
+`/Users/chriswong/Documents/Cluade/Macro Dashboard/.env`.  **Never inline secrets
+in the plist EnvironmentVariables block.**
+
+### Live-flow poller — install
 
 ```bash
 cp ops/launchd/com.mastermind.liveflow.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.mastermind.liveflow.plist
 ```
 
+### Options-hub nightly builder — install
+
+```bash
+cp ops/launchd/com.mastermind.optionshub.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.mastermind.optionshub.plist
+```
+
 ### Verify
 
 ```bash
-launchctl list | grep liveflow
+launchctl list | grep mastermind
 tail -f /tmp/liveflow.stdout.log
+tail -f /tmp/optionshub.stdout.log
 ```
 
 ### Uninstall
@@ -47,10 +63,32 @@ tail -f /tmp/liveflow.stdout.log
 ```bash
 launchctl unload ~/Library/LaunchAgents/com.mastermind.liveflow.plist
 rm ~/Library/LaunchAgents/com.mastermind.liveflow.plist
+
+launchctl unload ~/Library/LaunchAgents/com.mastermind.optionshub.plist
+rm ~/Library/LaunchAgents/com.mastermind.optionshub.plist
 ```
 
-**DO NOT load the plist directly from the repo** — copy it first; launchd
+**DO NOT load a plist directly from the repo** — copy it first; launchd
 requires the exact installed path when unloading.
+
+### What runs when
+
+| Time (ET, weekdays) | Job |
+|---|---|
+| 09:25 | `live_flow_poller` starts (--rth-only) |
+| 16:05 | `live_flow_poller` self-exits (--rth-only window closed) |
+| 16:45 | `build_options_hub_nightly` runs (all roots, --publish) |
+
+### run_status registration
+
+Both jobs write a status entry into `data/run_status.json` (via `lib.store.write_status`)
+after each run.  The keys are `live_flow_poller` and `options_hub_nightly` under
+`sources`.  The data-health circuit-breaker audit (`scripts/healthcheck.py`) reads
+these — if either producer stops writing, the healthcheck will eventually flag it.
+
+NOTE: wiring these into the GitHub Actions `daily.yml` circuit-breaker audit pass
+belongs to a dedicated ops wave — add `sources.live_flow_poller` and
+`sources.options_hub_nightly` to the healthcheck thresholds when that wave lands.
 
 ## Theta Terminal dependency
 

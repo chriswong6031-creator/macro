@@ -318,21 +318,32 @@ def main() -> None:
     out_dir = Path(args.out) if args.out else (data_root / "live_flow_out" / "options_hub")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    theta_store = Path(args.theta_store) if args.theta_store else (data_root / "thetadata_eod")
+    # Item 5 — THETADATA_STORE env: explicit override wins over all auto-detect paths.
+    # Priority: --theta-store CLI > THETADATA_STORE env > data/thetadata_eod default.
+    _theta_store_env = os.environ.get("THETADATA_STORE")
+    if args.theta_store:
+        theta_store = Path(args.theta_store)
+    elif _theta_store_env:
+        theta_store = Path(_theta_store_env)
+        log.info("options_hub_builder: THETADATA_STORE env → %s", theta_store)
+    else:
+        theta_store = data_root / "thetadata_eod"
 
     # If the configured store has no eod/ or greeks/ subdirectories, fall back to the
     # canonical Mac ops-wt path (the brief: "T1 store via symlink data/thetadata_eod ->
     # /Users/chriswong/theta-ops-wt/data/thetadata_eod (create if missing)").
-    # In CI the THETADATA_STORE env var should point directly to the real store.
-    _OPS_WT_STORE = Path("/Users/chriswong/theta-ops-wt/data/thetadata_eod")
-    if (not (theta_store / "eod").exists() and
-            not (theta_store / "greeks").exists() and
-            _OPS_WT_STORE.exists()):
-        log.info(
-            "options_hub_builder: %s has no eod/greeks subdirs — falling back to %s",
-            theta_store, _OPS_WT_STORE,
-        )
-        theta_store = _OPS_WT_STORE
+    # This convenience auto-detect ONLY fires when neither --theta-store nor
+    # THETADATA_STORE env are set (guarded by the else branch above).
+    if not args.theta_store and not _theta_store_env:
+        _OPS_WT_STORE = Path("/Users/chriswong/theta-ops-wt/data/thetadata_eod")
+        if (not (theta_store / "eod").exists() and
+                not (theta_store / "greeks").exists() and
+                _OPS_WT_STORE.exists()):
+            log.info(
+                "options_hub_builder: %s has no eod/greeks subdirs — falling back to %s",
+                theta_store, _OPS_WT_STORE,
+            )
+            theta_store = _OPS_WT_STORE
 
     # ── resolve roots ─────────────────────────────────────────────────────────
     if args.roots:
@@ -424,6 +435,28 @@ def main() -> None:
     )
     if roots_skipped:
         log.warning("options_hub_builder: skipped roots: %s", roots_skipped)
+
+    # Item 6 — register options_hub_nightly in the run_status/circuit-breaker pattern.
+    # Mirrors the established pattern in scripts/collect.py + lib/store.write_status.
+    try:
+        import sys as _sys                      # noqa: PLC0415
+        _repo = Path(__file__).resolve().parent.parent
+        if str(_repo) not in _sys.path:
+            _sys.path.insert(0, str(_repo))
+        from lib import store as _store         # noqa: PLC0415
+        from datetime import datetime as _dt, timezone as _tz  # noqa: PLC0415
+        _rs = _store.read_status()
+        _rs.setdefault("sources", {})["options_hub_nightly"] = {
+            "status":        "ok" if not roots_skipped else "partial",
+            "roots_ok":      len(roots_ok),
+            "roots_skipped": len(roots_skipped),
+            "asof":          asof,
+            "checked_at":    _dt.now(_tz.utc).isoformat(),
+        }
+        _store.write_status(_rs)
+        log.info("options_hub_builder: run_status updated")
+    except Exception as _rs_err:   # noqa: BLE001
+        log.debug("options_hub_builder: run_status write failed (non-fatal): %s", _rs_err)
 
 
 if __name__ == "__main__":
