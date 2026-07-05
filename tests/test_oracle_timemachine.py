@@ -10,7 +10,7 @@ Tests:
 (e) No NaN leakage into JSON (null/None instead)
 (f) Registry ids are dense 0-based integers
 (g) Tier-M skips months where accel_z is 100% null
-(h) Tier-M uses only Friday (or fallback Thursday) dates
+(h) Tier-M emits all trading days (daily granularity, no Friday-only filter)
 """
 from __future__ import annotations
 
@@ -135,9 +135,9 @@ def test_chunk_values_match_panel_s():
 
 
 def test_chunk_values_match_panel_m():
-    """Tier-M chunk values match panel (weekly granularity, Friday dates only)."""
+    """Tier-M chunk values match panel (daily granularity, all trading days)."""
     nodes = [f"node{i}" for i in range(5)]
-    # Build a month of daily data with Fridays
+    # Build a month of daily data
     dates = pd.bdate_range("2022-02-01", "2022-02-28").strftime("%Y-%m-%d").tolist()
     panel = _make_panel(nodes, dates, rs_seed=20)
     registry = _simple_registry(5)
@@ -146,10 +146,10 @@ def test_chunk_values_match_panel_m():
     assert len(chunks) >= 1
 
     chunk = chunks[0]
-    # All dates in chunk must be Fridays (weekday==4) or at most Thursdays
-    for d_str in chunk["dates"]:
-        wday = pd.Timestamp(d_str).weekday()
-        assert wday in (3, 4), f"Non-Fri/Thu date in Tier-M chunk: {d_str} weekday={wday}"
+    # All panel dates for the month must appear in the chunk
+    assert set(chunk["dates"]) == set(dates), (
+        "Tier-M chunk should contain all trading days, not just Fridays"
+    )
 
     # Spot-check values for first date
     date_ts = pd.Timestamp(chunk["dates"][0])
@@ -190,10 +190,11 @@ def test_chunk_size_budget_s():
 
 
 def test_chunk_size_budget_m():
-    """Each Tier-M monthly chunk serialises to < 400 KB."""
+    """Each Tier-M monthly chunk serialises to < 400 KB (daily granularity)."""
     nodes = [f"node{i}" for i in range(354)]  # full node count
-    fridays = _friday_dates(12, "2022-02-04")  # 12 Fridays ≈ 3 months
-    panel = _make_panel(nodes, fridays)
+    # Use a full month of daily trading days (~21 dates) — realistic daily budget
+    daily_dates = pd.bdate_range("2022-02-01", "2022-02-28").strftime("%Y-%m-%d").tolist()
+    panel = _make_panel(nodes, daily_dates)
     registry = [
         {"id": i, "name": n, "name_zh": None, "theme": "T", "tier": "subsector"}
         for i, n in enumerate(nodes)
@@ -349,20 +350,24 @@ def test_tierm_skips_all_null_accel_months():
     assert any("2022" in p for p in periods), "Real month should be included"
 
 
-# ── (h) Tier-M uses only Friday/Thursday dates ───────────────────────────────
+# ── (h) Tier-M emits ALL trading days (daily granularity) ────────────────────
 
-def test_tierm_friday_dates_only():
-    """Tier-M chunk dates must all be Fridays or Thursdays (fallback)."""
+def test_tierm_daily_dates():
+    """Tier-M chunk dates must include all trading days, not just Fridays."""
     nodes = ["node0", "node1"]
-    # Full month of daily data
+    # Full month of daily data — includes Mon-Fri
     all_dates = pd.bdate_range("2022-02-01", "2022-02-28").strftime("%Y-%m-%d").tolist()
     panel = _make_panel(nodes, all_dates)
     registry = _simple_registry(2)
     chunks = build_chunks_m(panel, registry)
 
-    for chunk in chunks:
-        for d_str in chunk["dates"]:
-            wday = pd.Timestamp(d_str).weekday()
-            assert wday in (3, 4), (
-                f"Non-Fri/Thu date in Tier-M chunk {chunk['period']}: {d_str}"
-            )
+    assert len(chunks) == 1, "Expected one chunk for 2022-02"
+    chunk = chunks[0]
+
+    # Must contain ALL panel dates for the month
+    assert set(chunk["dates"]) == set(all_dates), (
+        "Tier-M chunk should contain every trading day, not just Fridays"
+    )
+    # Must include at least one non-Friday weekday (Monday–Thursday)
+    non_fri = [d for d in chunk["dates"] if pd.Timestamp(d).weekday() != 4]
+    assert len(non_fri) > 0, "Expected non-Friday dates in daily Tier-M chunk"

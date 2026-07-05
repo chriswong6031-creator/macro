@@ -7,9 +7,246 @@
  *   • "Emerging now" + "Fading" rails — the accelerating early-entry list and
  *     the leaders rolling over;
  *   • a sortable leadership/velocity table.
- * Toggle Subsectors ⇄ Themes. No framework; colours come from the live theme
- * tokens so a theme/lang switch recolours instantly.
+ * Toggle Subsectors ⇄ Themes ⇄ Sector ETFs. No framework; colours come from the
+ * live theme tokens so a theme/lang switch recolours instantly.
+ *
+ * window.SRR is exported at the top level: a shared renderer used by both
+ * the live rotation desk and the Time Machine.
  */
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * PART 1 — Shared Rotation Renderer (window.SRR)
+ * SRR.render(container, spec) draws an SVG RRG scatter into `container`.
+ *
+ * spec: {
+ *   points: [{key, label, quadrant, x, y, r, trail:[[x,y]...]|null,
+ *             ring:'in'|'out'|null, ringWeight:number, showLabel:bool, hot:bool}],
+ *   domain: {xMin,xMax,yMin,yMax} | null  (auto from points),
+ *   axis:   {xLo,xHi,yLo,yHi}            (bilingual end-label strings),
+ *   zoomQuadrant: 'leading'|'weakening'|'improving'|'lagging'|null,
+ *   onHover: function(key, clientX, clientY)|null,
+ *   onClick: function(key)|null,
+ *   ariaLabel: string
+ * }
+ * ──────────────────────────────────────────────────────────────────────────── */
+(function (global) {
+  'use strict';
+
+  // ---- shared helpers (duplicated in the desk scope below for closure safety) ----
+  function _esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function _isZh(){return typeof document!=='undefined'&&document.documentElement.getAttribute('data-lang')==='zh';}
+
+  var QCOL_SRR={leading:'--up',weakening:'--warn',improving:'--link',lagging:'--down'};
+  var QUAD_SRR={
+    leading:  {en:'Leading',   zh:'领先', cls:'q-lead'},
+    weakening:{en:'Weakening', zh:'走弱', cls:'q-weak'},
+    improving:{en:'Improving', zh:'改善', cls:'q-impr'},
+    lagging:  {en:'Lagging',   zh:'落后', cls:'q-lag'}
+  };
+  var QUADX_SRR={
+    leading:  {en:'strong & rising',    zh:'强且上行'},
+    weakening:{en:'strong but fading',  zh:'强但转弱'},
+    improving:{en:'turning up',         zh:'触底回升'},
+    lagging:  {en:'weak & falling',     zh:'弱且下行'}
+  };
+  function _qFill(q,a){return 'color-mix(in srgb, var('+(QCOL_SRR[q]||'--muted')+') '+a+'%, transparent)';}
+
+  function SRR_render(container, spec) {
+    var pts     = spec.points || [];
+    var zoom    = spec.zoomQuadrant || null;
+    var axs     = spec.axis || {};
+    var onHov   = spec.onHover || null;
+    var onClk   = spec.onClick || null;
+
+    var W = Math.max(320, container.clientWidth || 820);
+    var H = Math.max(470, Math.min(W * 0.54, 720));
+    // If container is taller (e.g. TM fixed-size box), use the taller dimension
+    if (container._tmHeight) H = container._tmHeight;
+    var pad = {l:56, r:24, t:30, b:52};
+    var plotX=pad.l, plotY=pad.t, plotW=W-pad.l-pad.r, plotH=H-pad.t-pad.b;
+
+    // --- domain ---
+    var xMin, xMax, yMin, yMax;
+    if (spec.domain) {
+      xMin=spec.domain.xMin; xMax=spec.domain.xMax;
+      yMin=spec.domain.yMin; yMax=spec.domain.yMax;
+    } else if (zoom) {
+      var zpts = pts.filter(function(p){return p.quadrant===zoom;});
+      if (zpts.length) {
+        var xa=[], ya=[];
+        zpts.forEach(function(p){
+          xa.push(p.x); ya.push(p.y);
+          (p.trail||[]).forEach(function(t){xa.push(t[0]);ya.push(t[1]);});
+        });
+        xMin=Math.min.apply(null,xa); xMax=Math.max.apply(null,xa);
+        yMin=Math.min.apply(null,ya); yMax=Math.max.apply(null,ya);
+        var px=(xMax-xMin||1)*0.16, py=(yMax-yMin||1)*0.16;
+        xMin-=px; xMax+=px; yMin-=py; yMax+=py;
+        if(zoom==='leading'||zoom==='weakening') xMin=Math.min(xMin,-0.05); else xMax=Math.max(xMax,0.05);
+        if(zoom==='leading'||zoom==='improving') yMin=Math.min(yMin,-0.05); else yMax=Math.max(yMax,0.05);
+      } else {
+        xMin=-1.2; xMax=1.2; yMin=-1.2; yMax=1.2;
+      }
+    } else {
+      var xs=pts.map(function(p){return p.x;}), ys=pts.map(function(p){return p.y;});
+      var xm=Math.max(0.6,Math.max.apply(null,xs.map(Math.abs)))*1.12,
+          ym=Math.max(0.6,Math.max.apply(null,ys.map(Math.abs)))*1.12;
+      xMin=-xm; xMax=xm; yMin=-ym; yMax=ym;
+    }
+    function X(v){return plotX+(v-xMin)/((xMax-xMin)||1)*plotW;}
+    function Y(v){return plotY+(yMax-v)/((yMax-yMin)||1)*plotH;}
+    var cx=X(0), cy=Y(0);
+
+    // --- filter to visible points ---
+    var visPts = zoom ? pts.filter(function(p){return p.quadrant===zoom;}) : pts;
+
+    // --- backgrounds ---
+    var bg;
+    if (zoom) {
+      bg='<rect x="'+plotX+'" y="'+plotY+'" width="'+plotW+'" height="'+plotH+'" fill="'+_qFill(zoom,8)+'"></rect>';
+    } else {
+      bg=''
+        +'<rect x="'+cx+'" y="'+plotY+'" width="'+(plotX+plotW-cx)+'" height="'+(cy-plotY)+'" fill="'+_qFill('leading',7)+'" class="sr-qz" data-q="leading"></rect>'
+        +'<rect x="'+plotX+'" y="'+plotY+'" width="'+(cx-plotX)+'" height="'+(cy-plotY)+'" fill="'+_qFill('improving',7)+'" class="sr-qz" data-q="improving"></rect>'
+        +'<rect x="'+cx+'" y="'+cy+'" width="'+(plotX+plotW-cx)+'" height="'+(plotY+plotH-cy)+'" fill="'+_qFill('weakening',7)+'" class="sr-qz" data-q="weakening"></rect>'
+        +'<rect x="'+plotX+'" y="'+cy+'" width="'+(cx-plotX)+'" height="'+(plotY+plotH-cy)+'" fill="'+_qFill('lagging',7)+'" class="sr-qz" data-q="lagging"></rect>';
+    }
+
+    // --- center cross ---
+    var lines='';
+    if(cx>=plotX-0.5&&cx<=plotX+plotW+0.5) lines+='<line x1="'+cx.toFixed(1)+'" y1="'+plotY+'" x2="'+cx.toFixed(1)+'" y2="'+(plotY+plotH)+'" stroke="var(--line)"></line>';
+    if(cy>=plotY-0.5&&cy<=plotY+plotH+0.5) lines+='<line x1="'+plotX+'" y1="'+cy.toFixed(1)+'" x2="'+(plotX+plotW)+'" y2="'+cy.toFixed(1)+'" stroke="var(--line)"></line>';
+
+    // --- trails + dots ---
+    var defs='', tails='', dots='', cands=[], gi=0;
+    visPts.forEach(function(p) {
+      var q=p.quadrant, col='var('+(QCOL_SRR[q]||'--muted')+')';
+      var r=p.r||6;
+      var px=X(p.x), py=Y(p.y);
+      // trail
+      var trail = p.trail||[];
+      if (trail.length > 0) {
+        var gid='srg'+(gi++);
+        var allTPs = trail.concat([[p.x,p.y]]);
+        var s0=[X(allTPs[0][0]),Y(allTPs[0][1])];
+        var s1=allTPs.length>1?[X(allTPs[Math.floor(allTPs.length/2)][0]),Y(allTPs[Math.floor(allTPs.length/2)][1])]:s0;
+        var s2=[px,py];
+        // direction from last trail segment to now
+        var prevTP = allTPs[allTPs.length-2];
+        var ddx=s2[0]-(prevTP?X(prevTP[0]):s1[0]), ddy=s2[1]-(prevTP?Y(prevTP[1]):s1[1]);
+        var dl=Math.sqrt(ddx*ddx+ddy*ddy);
+        if(dl<0.5){ddx=s2[0]-s0[0];ddy=s2[1]-s0[1];dl=Math.sqrt(ddx*ddx+ddy*ddy)||1;}
+        ddx/=dl; ddy/=dl;
+        var tip=[s2[0]-(r+2)*ddx, s2[1]-(r+2)*ddy];
+        // Build gradient from oldest to tip
+        defs+='<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+s0[0].toFixed(1)+'" y1="'+s0[1].toFixed(1)+'" x2="'+tip[0].toFixed(1)+'" y2="'+tip[1].toFixed(1)+'">'
+          +'<stop offset="0" stop-color="'+col+'" stop-opacity="0.06"></stop>'
+          +'<stop offset="0.5" stop-color="'+col+'" stop-opacity="0.38"></stop>'
+          +'<stop offset="1" stop-color="'+col+'" stop-opacity="0.95"></stop></linearGradient>';
+        // Build path from all trail points to tip
+        var pathD = 'M'+s0[0].toFixed(1)+' '+s0[1].toFixed(1);
+        for(var ti=1;ti<allTPs.length-1;ti++){
+          pathD+=' L'+X(allTPs[ti][0]).toFixed(1)+' '+Y(allTPs[ti][1]).toFixed(1);
+        }
+        pathD+=' L'+tip[0].toFixed(1)+' '+tip[1].toFixed(1);
+        tails+='<path d="'+pathD+'" stroke="url(#'+gid+')" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
+        var ang=Math.atan2(ddy,ddx), al=13, aw=0.46;
+        tails+='<path d="M'+tip[0].toFixed(1)+' '+tip[1].toFixed(1)
+          +' L'+(tip[0]-al*Math.cos(ang-aw)).toFixed(1)+' '+(tip[1]-al*Math.sin(ang-aw)).toFixed(1)
+          +' L'+(tip[0]-al*Math.cos(ang+aw)).toFixed(1)+' '+(tip[1]-al*Math.sin(ang+aw)).toFixed(1)
+          +' Z" fill="'+col+'" fill-opacity="0.95"></path>';
+      }
+      // ring (episode)
+      if (p.ring) {
+        var ringCol = p.ring==='in'?'var(--up)':'var(--down)';
+        var rw = p.ringWeight||1.5;
+        dots+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(r+4.5).toFixed(1)+'" fill="none" stroke="'+ringCol+'" stroke-width="'+rw+'" stroke-opacity=".9"></circle>';
+      }
+      dots+='<circle class="sr-dot" cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+_qFill(q,p.hot?84:58)+'" stroke="'+col+'" stroke-opacity=".82" stroke-width="1.3" data-k="'+_esc(p.key)+'"></circle>';
+      if (p.showLabel) {
+        cands.push({key:p.key, x:px, y:py, r:r, txt:p.label||p.key, hot:!!p.hot});
+      }
+    });
+
+    // --- greedy label placement with collision drop ---
+    var labels='', placed=[];
+    cands.slice().sort(function(a,b){return (a.hot?0:1)-(b.hot?0:1);}).forEach(function(c){
+      var left=c.x>plotX+plotW*0.66, lw=c.txt.length*6.7+5;
+      var lx=left?(c.x-c.r-4-lw):(c.x+c.r+4), ly=c.y+3.6;
+      var box=[lx,ly-11,lx+lw,ly+4];
+      for(var i=0;i<placed.length;i++){var b=placed[i];if(box[0]<b[2]&&box[2]>b[0]&&box[1]<b[3]&&box[3]>b[1])return;}
+      placed.push(box);
+      labels+='<text class="sr-dlab'+(c.hot?' sr-dlab-hot':'')+'" x="'+(left?(c.x-c.r-4):(c.x+c.r+4)).toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+(left?'end':'start')+'">'+_esc(c.txt)+'</text>';
+    });
+
+    // --- quadrant corner labels ---
+    var qlab='';
+    function corner(q,x,y,anc){
+      var qd=QUAD_SRR[q], qx=QUADX_SRR[q];
+      return '<text class="sr-qlab '+qd.cls+'" x="'+x+'" y="'+y+'" text-anchor="'+anc+'">'+_esc((_isZh()?qd.zh:qd.en).toUpperCase())+'</text>'
+        +'<text class="sr-qsub '+qd.cls+'" x="'+x+'" y="'+(y+16)+'" text-anchor="'+anc+'">'+_esc(_isZh()?qx.zh:qx.en)+'</text>';
+    }
+    if (zoom) {
+      qlab=corner(zoom,plotX+8,plotY+18,'start');
+    } else {
+      qlab=corner('leading',plotX+plotW-8,plotY+18,'end')
+        +corner('improving',plotX+8,plotY+18,'start')
+        +corner('weakening',plotX+plotW-8,plotY+plotH-26,'end')
+        +corner('lagging',plotX+8,plotY+plotH-26,'start');
+    }
+
+    // --- axis rails + end labels ---
+    var xLo=axs.xLo||(_isZh()?'弱于大盘':'WEAKER');
+    var xHi=axs.xHi||(_isZh()?'强于大盘':'STRONGER');
+    var yHi=axs.yHi||(_isZh()?'升温':'HEATING UP');
+    var yLo=axs.yLo||(_isZh()?'降温':'COOLING');
+    var axDefs='<linearGradient id="sr-xg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--down)" stop-opacity="0.6"></stop><stop offset="0.5" stop-color="var(--muted)" stop-opacity="0.18"></stop><stop offset="1" stop-color="var(--up)" stop-opacity="0.75"></stop></linearGradient>'
+      +'<linearGradient id="sr-yg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--up)" stop-opacity="0.75"></stop><stop offset="0.5" stop-color="var(--muted)" stop-opacity="0.18"></stop><stop offset="1" stop-color="var(--down)" stop-opacity="0.6"></stop></linearGradient>';
+    var axBars='<rect x="'+plotX+'" y="'+(plotY+plotH+9).toFixed(1)+'" width="'+plotW.toFixed(1)+'" height="5" rx="2.5" fill="url(#sr-xg)"></rect>'
+      +'<rect x="'+(plotX-17)+'" y="'+plotY+'" width="5" height="'+plotH.toFixed(1)+'" rx="2.5" fill="url(#sr-yg)"></rect>';
+    var axis=axBars
+      +'<text class="sr-axc sr-ax-dn" x="'+plotX+'" y="'+(H-11)+'" text-anchor="start">◀ '+_esc(xLo)+'</text>'
+      +'<text class="sr-axc sr-ax-up" x="'+(plotX+plotW)+'" y="'+(H-11)+'" text-anchor="end">'+_esc(xHi)+' ▶</text>'
+      +'<text class="sr-axc sr-ax-up" x="16" y="'+(plotY+4)+'" text-anchor="end" transform="rotate(-90 16 '+(plotY+4)+')">'+_esc(yHi)+' ▲</text>'
+      +'<text class="sr-axc sr-ax-dn" x="16" y="'+(plotY+plotH-4)+'" text-anchor="start" transform="rotate(-90 16 '+(plotY+plotH-4)+')">▼ '+_esc(yLo)+'</text>';
+
+    var empty=zoom&&!visPts.length?'<text class="sr-axc" x="'+(plotX+plotW/2)+'" y="'+(plotY+plotH/2)+'" text-anchor="middle">'+_esc(_isZh()?'该象限暂无成分':'nothing in this quadrant')+'</text>':'';
+    var org={leading:'right top',improving:'left top',weakening:'right bottom',lagging:'left bottom'}[zoom]||'center center';
+
+    var aria = spec.ariaLabel || ('Rotation map, '+visPts.length+' items');
+    var svg='<svg class="sr-map'+( zoom?' sr-zoomed':'')+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+_esc(aria)+'" style="transform-origin:'+org+'">'
+      +'<defs>'+defs+axDefs+'</defs>'+bg+lines+qlab+axis+tails+dots+labels+empty+'</svg>';
+
+    container.innerHTML=svg;
+
+    var sv=container.querySelector('svg');
+    if (sv) {
+      sv.addEventListener('mousemove',function(e){
+        var t=e.target.closest('.sr-dot');
+        if(!t){if(onHov)onHov(null,e.clientX,e.clientY);return;}
+        if(onHov)onHov(t.getAttribute('data-k'),e.clientX,e.clientY);
+      });
+      sv.addEventListener('mouseleave',function(){if(onHov)onHov(null,0,0);});
+      sv.addEventListener('click',function(e){
+        var t=e.target.closest('.sr-dot');
+        if(t&&onClk){onClk(t.getAttribute('data-k'));return;}
+        // Return quadrant info to caller via data-q attribute click
+        var z=e.target.closest('.sr-qz');
+        if(z&&onClk){onClk('@quadrant:'+z.getAttribute('data-q'));}
+      });
+    }
+  }
+
+  // Export the shared renderer
+  if (typeof global !== 'undefined') {
+    global.SRR = { render: SRR_render };
+  }
+
+})(typeof window !== 'undefined' ? window : this);
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * PART 2 — The Rotation Desk
+ * ──────────────────────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
   // Per-region config (US default). A China/other page sets window.SR_CFG before this
@@ -34,6 +271,7 @@
   };
   function pcCls(v){return v==null?'':(v>=0?'up':'dn');}
 
+  // _unit: 'subsectors' | 'themes' | 'sectors'
   var _data=null, _unit='subsectors', _sortKey='emerging_score', _sortDir=-1, _zoom=null, _fs=false, _vsMore=false;
 
   function boot(){
@@ -109,21 +347,39 @@
       +'<div class="sr-tr-disc">'+L(esc(tr.disclaimer||''),esc(tr.disclaimer_zh||tr.disclaimer||''))+'</div>';
   }
 
-  function items(){return _unit==='themes'?_data.themes:_data.subsectors;}
+  // items() returns the active unit's array
+  function items(){
+    if(_unit==='sectors') return (_data.sectors||[]);
+    if(_unit==='themes')  return _data.themes;
+    return _data.subsectors;
+  }
   function themeOf(it){return isZh()?(it.theme_zh||it.theme):it.theme;}
-  function nameOf(it){return _unit==='themes'?themeOf(it):(isZh()?(it.name_zh||it.name):it.name);}
-  function keyOf(it){return _unit==='themes'?it.theme:it.key;}
-  // per-subsector detail page (themes have none). Relative to the rotation page.
+  function nameOf(it){
+    if(_unit==='themes') return themeOf(it);
+    return isZh()?(it.name_zh||it.name):it.name;
+  }
+  function keyOf(it){
+    if(_unit==='themes') return it.theme;
+    if(_unit==='sectors') return it.key;
+    return it.key;
+  }
+  // per-subsector detail page (themes + sectors have none). Relative to the rotation page.
   function detailHref(k){return DETAIL_DIR+encodeURIComponent(k)+'.html';}
   function hasDetail(){return _unit==='subsectors';}
 
   function render(root){
     root.className='sr-scope';
+    // Build toggle buttons — sectors only when _data.sectors exists
+    var hasSectors = _data && Array.isArray(_data.sectors) && _data.sectors.length > 0;
+    var sectorBtn = hasSectors
+      ? '<button type="button" data-u="sectors" class="'+(_unit==='sectors'?'on':'')+'">'+L('Sector ETFs','行业ETF')+' <b>'+(_data.n_sectors||_data.sectors.length)+'</b></button>'
+      : '';
     root.innerHTML=''
       +'<div class="sr-bar">'
         +'<div class="sr-toggle" role="group">'
           +'<button type="button" data-u="subsectors" class="'+(_unit==='subsectors'?'on':'')+'">'+L('Subsectors','子行业')+' <b>'+_data.n_subsectors+'</b></button>'
           +'<button type="button" data-u="themes" class="'+(_unit==='themes'?'on':'')+'">'+L('Themes','主题')+' <b>'+_data.n_themes+'</b></button>'
+          +sectorBtn
         +'</div>'
         +'<div class="sr-grow"></div>'
         +'<div class="sr-meta">'+L('Broad-universe · multi-horizon velocity','全市场 · 多周期速度')+'</div>'
@@ -168,11 +424,7 @@
     for(k in vals){var vv=vals[k];o[k]=(vv!=null&&isFinite(vv)&&s>1e-9)?(vv-m)/s:0;} return o;
   }
   // Reconstruct each item's rotation TRAIL (p0 oldest → p2 now) from its own
-  // multi-horizon relative strength. p2 reproduces the engine's plotted
-  // (rs_ratio, rs_mom); p1/p0 slide the horizon window back, tracing where the
-  // leadership came from — so the tail shows direction of travel and its length
-  // shows speed. Z-scores are computed over the full current unit (matches the
-  // engine's cross-section), then sliced to whatever subset we draw.
+  // multi-horizon relative strength.
   function _trails(its){
     var H=['1W','1M','3M','6M','1Y'],z={};
     H.forEach(function(h){var col={};its.forEach(function(d){col[keyOf(d)]=(d.rs&&d.rs[h]!=null)?d.rs[h]:null;});z[h]=_zmap(col);});
@@ -188,8 +440,7 @@
     return out;
   }
 
-  // The map card: zoom chips + legend + the plot. Redraws itself on chip click
-  // (cheap, keeps zoom state) without re-rendering the whole page.
+  // The map card: zoom chips + legend + the plot.
   function drawMapCard(card){
     var zq=_zoom||'all';
     var qorder=['leading','improving','weakening','lagging'];
@@ -197,10 +448,10 @@
       return '<button class="sr-zc'+on+'" data-q="'+q+'" aria-pressed="'+(zq===q?'true':'false')+'"'+(q!=='all'?' style="--zc:var('+QCOL[q]+')"':'')+'>'+inner+'</button>';}
     var chips=chip('all','','',L('All','全部'))
       +qorder.map(function(q){return chip(q,q,q,'<span class="sr-zc-dot"></span><span class="sr-zc-tx">'+L(QUAD[q].en,QUAD[q].zh)+'<i>'+L(QUADX[q].en,QUADX[q].zh)+'</i></span>');}).join('');
-    var hint=_zoom?L('press Esc or “All” to zoom out','按 Esc 或“全部”退出放大'):L('tip: click a quadrant to zoom in','提示：点击象限可放大');
+    var hint=_zoom?L('press Esc or "All" to zoom out','按 Esc 或"全部"退出放大'):L('tip: click a quadrant to zoom in','提示：点击象限可放大');
     var legend='<div class="sr-legend">'
       +'<span class="sr-lg"><span class="sr-lg-tail"></span>'+L('trail = where it came from','轨迹 = 来路')+'</span>'
-      +'<span class="sr-lg"><span class="sr-lg-arw">➜</span>'+L('arrow = where it’s heading','箭头 = 去向')+'</span>'
+      +'<span class="sr-lg"><span class="sr-lg-arw">➜</span>'+L('arrow = where it\'s heading','箭头 = 去向')+'</span>'
       +(_unit==='subsectors'?'<span class="sr-lg"><span class="sr-lg-dot"></span>'+L('bigger dot = more stocks','越大 = 成分股越多')+'</span>':'')
       +'<span class="sr-lg sr-lg-hint">'+hint+'</span></div>';
     card.innerHTML='<div class="sr-map-hd">'
@@ -210,8 +461,6 @@
       +'</div>'
       +legend
       +'<div class="sr-map-wrap"></div>';
-    // reconcile fullscreen state so a re-render (theme/lang/unit toggle) can never
-    // strand body.sr-fs-lock or drop the overlay.
     card.classList.toggle('sr-fs',_fs); document.body.classList.toggle('sr-fs-lock',_fs);
     Array.prototype.forEach.call(card.querySelectorAll('.sr-zc'),function(b){
       b.addEventListener('click',function(){var q=b.getAttribute('data-q');_zoom=(q==='all')?null:q;drawMapCard(card);});
@@ -263,13 +512,10 @@
     var lab={};
     if(_zoom){ its.forEach(function(d){lab[keyOf(d)]=1;}); }
     else if(_unit==='themes'){ its.forEach(function(d){lab[keyOf(d)]=1;}); }
+    else if(_unit==='sectors'){ its.forEach(function(d){lab[keyOf(d)]=1;}); }  // label all 11
     else {['emerging','fading','leaders'].forEach(function(b){(_data.highlights[b]||[]).slice(0,10).forEach(function(k){lab[k]=1;});});}
     var fast={};
     if(_zoom){ its.slice().sort(function(a,b){return tl[keyOf(b)].speed-tl[keyOf(a)].speed;}).slice(0,3).forEach(function(d,i){fast[keyOf(d)]=i+1;}); }
-    // Only genuine movers get a trail — a speed floor plus a hard cap in the overview
-    // (the fastest N) keep the map from becoming a hairball. Each trail is ONE gradient
-    // stroke (faint at the origin → bold near the dot) capped with a big arrowhead that
-    // lands ON the circle edge, not buried inside it.
     var TAILMIN=_zoom?0.30:0.65;
     var tailKeys={};
     (function(){
@@ -280,15 +526,17 @@
     var defs='',tails='',dots='',cands=[],gi=0;
     its.forEach(function(d){
       var k=keyOf(d),x=X(d.rs_ratio),y=Y(d.rs_mom),q=d.quadrant,col='var('+QCOL[q]+')';
-      var base=_unit==='themes'?7:(4+Math.min(9,(d.n_members||4)*0.55));      // wider size spread
+      var base;
+      if(_unit==='themes'||_unit==='sectors') base=7;
+      else base=(4+Math.min(9,(d.n_members||4)*0.55));
       var r=_zoom?base+1.8:base, hot=d.emerging_score>0, t=tl[k];
       if(tailKeys[k]&&t){
         var gid='srg'+(gi++);
         var s0=[X(t.p0[0]),Y(t.p0[1])],s1=[X(t.p1[0]),Y(t.p1[1])],s2=[x,y];
         var ddx=s2[0]-s1[0],ddy=s2[1]-s1[1],dl=Math.sqrt(ddx*ddx+ddy*ddy);
-        if(dl<0.5){ddx=s2[0]-s0[0];ddy=s2[1]-s0[1];dl=Math.sqrt(ddx*ddx+ddy*ddy)||1;} // degenerate → use p0→now
+        if(dl<0.5){ddx=s2[0]-s0[0];ddy=s2[1]-s0[1];dl=Math.sqrt(ddx*ddx+ddy*ddy)||1;}
         ddx/=dl;ddy/=dl;
-        var tip=[s2[0]-(r+2)*ddx, s2[1]-(r+2)*ddy];                            // stop at the dot edge
+        var tip=[s2[0]-(r+2)*ddx, s2[1]-(r+2)*ddy];
         defs+='<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+s0[0].toFixed(1)+'" y1="'+s0[1].toFixed(1)+'" x2="'+tip[0].toFixed(1)+'" y2="'+tip[1].toFixed(1)+'">'
           +'<stop offset="0" stop-color="'+col+'" stop-opacity="0.06"></stop><stop offset="0.5" stop-color="'+col+'" stop-opacity="0.38"></stop><stop offset="1" stop-color="'+col+'" stop-opacity="0.95"></stop></linearGradient>';
         tails+='<path d="M'+s0[0].toFixed(1)+' '+s0[1].toFixed(1)+' L'+s1[0].toFixed(1)+' '+s1[1].toFixed(1)+' L'+tip[0].toFixed(1)+' '+tip[1].toFixed(1)+'" stroke="url(#'+gid+')" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
@@ -300,11 +548,6 @@
       dots+='<circle class="sr-dot" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+qFill(q,hot?84:58)+'" stroke="'+col+'" stroke-opacity=".82" stroke-width="1.3" data-k="'+esc(k)+'"></circle>';
       if(lab[k])cands.push({x:x,y:y,r:r,txt:(fast[k]?('#'+fast[k]+' '):'')+nameOf(d),hot:!!fast[k],rank:fast[k]||99,spd:(t||{}).speed||0});
     });
-    // Labels: place greedily by priority (ringed movers first, then fastest) and DROP
-    // any that would overprint a placed one — the dropped dot stays hoverable and its
-    // name is still in the scorecard below. Keeps both the dense overview highlight
-    // cluster and the full zoom view legible. Left-anchor when the dot is in the right
-    // third so text never runs off the plot edge.
     var labels='',placed=[];
     cands.slice().sort(function(a,b){return (a.rank-b.rank)||(b.spd-a.spd);}).forEach(function(c){
       var left=c.x>plotX+plotW*0.66, lw=c.txt.length*6.7+5;
@@ -316,16 +559,15 @@
       labels+='<text class="sr-dlab'+(c.hot?' sr-dlab-hot':'')+'" x="'+(left?(c.x-c.r-4):(c.x+c.r+4)).toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+(left?'end':'start')+'">'+esc(c.txt)+'</text>';
     });
     // quadrant corner labels
+    var QUAD_L={leading:{en:'Leading',zh:'领先',cls:'q-lead'},weakening:{en:'Weakening',zh:'走弱',cls:'q-weak'},improving:{en:'Improving',zh:'改善',cls:'q-impr'},lagging:{en:'Lagging',zh:'落后',cls:'q-lag'}};
+    var QUADX_L={leading:{en:'strong & rising',zh:'强且上行'},weakening:{en:'strong but fading',zh:'强但转弱'},improving:{en:'turning up',zh:'触底回升'},lagging:{en:'weak & falling',zh:'弱且下行'}};
     var qlab='';
-    function corner(q,x,y,anc){var qd=QUAD[q],qx=QUADX[q];
+    function corner(q,x,y,anc){var qd=QUAD_L[q],qx=QUADX_L[q];
       return '<text class="sr-qlab '+qd.cls+'" x="'+x+'" y="'+y+'" text-anchor="'+anc+'">'+esc((isZh()?qd.zh:qd.en).toUpperCase())+'</text>'
         +'<text class="sr-qsub '+qd.cls+'" x="'+x+'" y="'+(y+16)+'" text-anchor="'+anc+'">'+esc(isZh()?qx.zh:qx.en)+'</text>';}
     if(_zoom){ qlab=corner(_zoom,plotX+8,plotY+18,'start'); }
     else { qlab=corner('leading',plotX+plotW-8,plotY+18,'end')+corner('improving',plotX+8,plotY+18,'start')
         +corner('weakening',plotX+plotW-8,plotY+plotH-26,'end')+corner('lagging',plotX+8,plotY+plotH-26,'start'); }
-    // Axis clarity: coloured gradient rails (red weaker → green stronger on X;
-    // green heating → red cooling on Y) plus big bold coloured end-labels with
-    // arrows. No tiny grey text — you read direction from colour at a glance.
     var axDefs='<linearGradient id="sr-xg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--down)" stop-opacity="0.6"></stop><stop offset="0.5" stop-color="var(--muted)" stop-opacity="0.18"></stop><stop offset="1" stop-color="var(--up)" stop-opacity="0.75"></stop></linearGradient>'
       +'<linearGradient id="sr-yg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--up)" stop-opacity="0.75"></stop><stop offset="0.5" stop-color="var(--muted)" stop-opacity="0.18"></stop><stop offset="1" stop-color="var(--down)" stop-opacity="0.6"></stop></linearGradient>';
     var axBars='<rect x="'+plotX+'" y="'+(plotY+plotH+9).toFixed(1)+'" width="'+plotW.toFixed(1)+'" height="5" rx="2.5" fill="url(#sr-xg)"></rect>'
@@ -338,9 +580,8 @@
       +'<text class="sr-axc sr-ax-up" x="16" y="'+(plotY+4)+'" text-anchor="end" transform="rotate(-90 16 '+(plotY+4)+')">'+esc(yHi)+' ▲</text>'
       +'<text class="sr-axc sr-ax-dn" x="16" y="'+(plotY+plotH-4)+'" text-anchor="start" transform="rotate(-90 16 '+(plotY+plotH-4)+')">▼ '+esc(yLo)+'</text>';
     var empty=_zoom&&!its.length?'<text class="sr-axc" x="'+(plotX+plotW/2)+'" y="'+(plotY+plotH/2)+'" text-anchor="middle">'+esc(isZh()?'该象限暂无成分':'nothing in this quadrant')+'</text>':'';
-    var aria='Rotation map — '+its.length+' '+(_unit==='themes'?'themes':'subsectors')+(_zoom?(' in the '+_zoom+' quadrant'):'')
+    var aria='Rotation map — '+its.length+' '+(_unit==='themes'?'themes':_unit==='sectors'?'sectors':'subsectors')+(_zoom?(' in the '+_zoom+' quadrant'):'')
       +'. Horizontal axis strength vs market, vertical axis heating vs cooling.';
-    // zoom animation emanates from the clicked quadrant's corner (camera push-in).
     var org={leading:'right top',improving:'left top',weakening:'right bottom',lagging:'left bottom'}[_zoom]||'center center';
     var svg='<svg class="sr-map'+(_zoom?' sr-zoomed':'')+'" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="'+esc(aria)+'" style="transform-origin:'+org+'">'
       +'<defs>'+defs+axDefs+'</defs>'+bg+lines+qlab+axis+tails+dots+labels+empty+'</svg>';
@@ -357,8 +598,8 @@
   /* ---------- head-to-head: rotating IN vs rotating OUT ---------- */
   function drawVersus(el){
     function itemByKey(k){var a=items(),i;for(i=0;i<a.length;i++)if(keyOf(a[i])===k)return a[i];return null;}
-    var em,fa,MAX=12,N=_vsMore?MAX:6;   // 6 collapsed → up to 12 on "see more"
-    if(_unit==='themes'){ var ts=items().slice();
+    var em,fa,MAX=12,N=_vsMore?MAX:6;
+    if(_unit==='themes'||_unit==='sectors'){ var ts=items().slice();
       em=ts.filter(function(d){return d.rs_mom>0;}).sort(function(a,b){return b.emerging_score-a.emerging_score;}).slice(0,MAX);
       fa=ts.filter(function(d){return d.rs_ratio>0&&d.rs_mom<0;}).sort(function(a,b){return a.rs_mom-b.rs_mom;}).slice(0,MAX);
     } else {
@@ -366,8 +607,6 @@
       fa=(_data.highlights.fading||[]).map(itemByKey).filter(Boolean).slice(0,MAX);
     }
     function row(d,i){
-      // "trend" = rs_mom (the map's vertical axis: heating +, cooling −) shown on
-      // BOTH sides so the two columns compare like-for-like on one scale.
       var q=QUAD[d.quadrant], w1=d.perf?d.perf['1W']:null, m1=d.perf?d.perf['1M']:null;
       var key=d.rs_mom, kt=(key==null?'—':(key>0?'+':(key<0?'−':''))+Math.abs(+key).toFixed(1));
       return '<div class="sr-vs-row" data-k="'+esc(keyOf(d))+'">'
@@ -395,7 +634,7 @@
         +'<div class="sr-vs-side out"><span class="sr-vs-ttl">'+L('Rotating out','正在轮出')+' ▼</span>'
           +'<span class="sr-vs-sub">'+L('leaders rolling over','龙头走弱')+'</span></div>'
       +'</div>'
-      +'<div class="sr-vs-key">'+L('1W · 1M = return · trend = heating (+) or cooling (−), the map’s vertical axis',
+      +'<div class="sr-vs-key">'+L('1W · 1M = return · trend = heating (+) or cooling (−), the map\'s vertical axis',
                                     '1周 · 1月 = 涨跌 · 趋势 = 升温(+)/降温(−)，即图中纵轴')+'</div>'
       +'<div class="sr-vs-body">'+col(em.slice(0,N),'in')+'<div class="sr-vs-spine"></div>'+col(fa.slice(0,N),'out')+'</div>'
       +((em.length>6||fa.length>6)?'<button type="button" class="sr-vs-more">'+(_vsMore?L('See less','收起')+' ↑':L('See more','查看更多')+' ↓')+'</button>':'')
@@ -424,19 +663,21 @@
   ];
   function cellVal(d,c){ if(c.perf) return d.perf?d.perf[c.k]:null; if(c.k==='name') return nameOf(d); if(c.k==='theme') return themeOf(d); return d[c.k]; }
   function drawTable(el){
-    if(_unit==='themes') COLS[0].en='Theme';else COLS[0].en='Subsector';
+    if(_unit==='themes') COLS[0].en='Theme'; else if(_unit==='sectors') COLS[0].en='Sector'; else COLS[0].en='Subsector';
+    // For sectors: hide the theme column (it's redundant — all are "Sector ETFs")
+    var hideTCol = (_unit==='themes'||_unit==='sectors');
     var its=items().slice().sort(function(a,b){
       var va=sortVal(a),vb=sortVal(b);
       if(va==null)va=-1e9; if(vb==null)vb=-1e9;
       if(typeof va==='string')return _sortDir*va.localeCompare(vb);
       return _sortDir*(va-vb);
     });
-    var head=COLS.filter(function(c){return !(_unit==='themes'&&c.k==='theme');}).map(function(c){
+    var head=COLS.filter(function(c){return !(hideTCol&&c.k==='theme');}).map(function(c){
       var on=c.k===_sortKey?(' on '+(_sortDir<0?'desc':'asc')):'';
       return '<th class="'+(c.num?'num':'')+on+'" data-k="'+c.k+'">'+L(c.en,c.zh)+'</th>';
     }).join('');
     var rows=its.map(function(d){
-      var tds=COLS.filter(function(c){return !(_unit==='themes'&&c.k==='theme');}).map(function(c){
+      var tds=COLS.filter(function(c){return !(hideTCol&&c.k==='theme');}).map(function(c){
         if(c.k==='quadrant'){var q=QUAD[d.quadrant];return '<td><span class="sr-q '+q.cls+'">'+(isZh()?q.zh:q.en)+'</span></td>';}
         var v=cellVal(d,c);
         if(c.perf)return '<td class="num '+pcCls(v)+'">'+fmtPc(v)+'</td>';
@@ -470,8 +711,13 @@
       .map(function(h){var v=d.perf?d.perf[h]:null;return '<div class="sr-tsp"><span>'+h+'</span><b class="'+pcCls(v)+'">'+fmtPc(v)+'</b></div>';}).join('');
     var mem=(d.members||[]).slice(0,8).map(function(m){return '<span class="sr-chip '+pcCls(m['1M'])+'">'+esc(m.t)+' '+fmtPc(m['1M'])+'</span>';}).join('');
     var el=tipEl();
+    // Build secondary info line depending on unit
+    var secLine;
+    if(_unit==='subsectors') secLine='<div class="sr-tip-th">'+esc(themeOf(d))+' · '+d.n_members+' '+L('names','只')+'</div>';
+    else if(_unit==='sectors') secLine='<div class="sr-tip-th">'+L('Sector ETF','行业ETF')+'</div>';
+    else secLine='<div class="sr-tip-th">'+d.n_subs+' '+L('subsectors','子行业')+'</div>';
     el.innerHTML='<div class="sr-tip-hd"><b>'+esc(nameOf(d))+'</b><span class="sr-q '+q.cls+'">'+(isZh()?q.zh:q.en)+'</span></div>'
-      +(_unit==='subsectors'?'<div class="sr-tip-th">'+esc(themeOf(d))+' · '+d.n_members+' '+L('names','只')+'</div>':'<div class="sr-tip-th">'+d.n_subs+' '+L('subsectors','子行业')+'</div>')
+      +secLine
       +'<div class="sr-tsp-row">'+sp+'</div>'
       +'<div class="sr-tip-mt">'+L('accel','加速')+' <b class="'+pcCls(d.accel)+'">'+(d.accel==null?'—':(d.accel>0?'+':'')+d.accel.toFixed(1))+'</b> · '
         +L('RS','相对强度')+' <b>'+(d.rs_ratio>0?'+':'')+d.rs_ratio.toFixed(2)+'</b> · '+L('mom','动量')+' <b class="'+pcCls(d.rs_mom)+'">'+(d.rs_mom>0?'+':'')+d.rs_mom.toFixed(2)+'</b></div>'

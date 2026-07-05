@@ -5,8 +5,12 @@ and emits the frontend-ready JSON feed under site/oracledata/:
 
   tm_manifest.json          — tier metadata + node registry + chunk index
   tm_s_<YYYY-Qn>.json       — Tier-S (sector) quarterly chunk
-  tm_m_<YYYYMmm>.json       — Tier-M (subsector) monthly chunk
+  tm_m_<YYYYMmm>.json       — Tier-M (subsector) monthly chunk, DAILY granularity
   tm_episodes.json          — episode overlay feed + preset playlist
+
+Tier-M chunks are now daily (all trading days, no Friday-only filter).  Chunks
+are lazy-loaded per year by the UI, so per-chunk size is what matters — the total
+uncompressed feed can be up to ~20 MB across all years without impacting load time.
 
 This script runs OFF the 67-minute render path (same as build_oracle_panel.py).
 Wire it into your nightly Mac cron or run manually after a panel rebuild.
@@ -208,11 +212,13 @@ def main() -> None:
 
     log.info("=" * 60)
     log.info("Total size: %.2f MB (%d bytes)", total_bytes / 1024 / 1024, total_bytes)
-    if total_bytes > 6 * 1024 * 1024:
-        log.warning("OVER 6 MB BUDGET — consider halving resolution or dropping"
-                    " sparse columns")
+    # Tier-M chunks are daily and lazy-loaded per year by the UI; per-chunk size
+    # is what matters, not the total.  Warning ceiling raised to 20 MB total.
+    if total_bytes > 20 * 1024 * 1024:
+        log.warning("OVER 20 MB BUDGET — check per-chunk sizes; individual chunks"
+                    " should remain under 400 KB for fast lazy loading")
     else:
-        log.info("Within 6 MB budget OK.")
+        log.info("Within 20 MB budget OK.")
 
     if not args.dry_run:
         log.info("Files written to: %s", out_dir)

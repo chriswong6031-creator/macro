@@ -24,10 +24,13 @@ Design
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Mapping, Sequence
 
 import numpy as np
+
+log = logging.getLogger(__name__)
 
 
 def _load_names_zh() -> dict:
@@ -231,3 +234,141 @@ def compute_rotation(
         "n_subsectors": len(subsectors),
         "n_themes": len(themes),
     }
+
+
+# ── Sector ETF cross-section ─────────────────────────────────────────────────
+
+# 11 SPDR sector ETFs with display metadata.
+SECTOR_ETFS = [
+    ("XLB",  "Materials",          "材料"),
+    ("XLC",  "Comm Services",      "通信"),
+    ("XLE",  "Energy",             "能源"),
+    ("XLF",  "Financials",         "金融"),
+    ("XLI",  "Industrials",        "工业"),
+    ("XLK",  "Technology",         "科技"),
+    ("XLP",  "Cons Staples",       "必需消费"),
+    ("XLRE", "Real Estate",        "房地产"),
+    ("XLU",  "Utilities",          "公用事业"),
+    ("XLV",  "Health Care",        "医疗保健"),
+    ("XLY",  "Cons Discretionary", "可选消费"),
+]
+
+# Row-count offsets for rolling return horizons (approximate trading days).
+# MTD/YTD use calendar anchors instead.
+_ROW_OFFSETS: dict[str, int] = {
+    "1D": 1,
+    "1W": 5,
+    "1M": 21,
+    "3M": 63,
+    "6M": 126,
+    "1Y": 252,
+}
+
+
+def _pct_return(close_series, n_rows: int) -> float | None:
+    """Return (last / prior - 1)*100 using row offset; None if history too short."""
+    if len(close_series) <= n_rows:
+        return None
+    prior = close_series.iloc[-(n_rows + 1)]
+    last = close_series.iloc[-1]
+    if prior is None or prior != prior or prior == 0:  # NaN or zero guard
+        return None
+    return float((last / prior - 1) * 100)
+
+
+def _pct_return_to_date(close_series, anchor_date) -> float | None:
+    """Return % change from the last close ON or BEFORE anchor_date to the latest close."""
+    try:
+        import pandas as pd
+        candidates = close_series[close_series.index <= pd.Timestamp(anchor_date)]
+        if candidates.empty:
+            return None
+        prior = float(candidates.iloc[-1])
+        last = float(close_series.iloc[-1])
+        if prior == 0:
+            return None
+        return (last / prior - 1) * 100
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def compute_sector_etf_perf(yahoo_dir: Path) -> dict[str, dict[str, float | None]]:
+    """Load all 11 SPDR parquets and compute the same HORIZONS returns used by
+    the subsector pipeline.  Returns ``{ticker: {horizon: pct}}``.
+
+    Any horizon that cannot be computed is left as ``None`` — the downstream
+    ``_rotation_metrics`` call degrades gracefully on nulls.
+    """
+    try:
+        import pandas as pd
+    except ImportError:
+        log.error("pandas not available — sector ETF perf skipped")
+        return {}
+
+    result: dict[str, dict[str, float | None]] = {}
+    for ticker, _name, _zh in SECTOR_ETFS:
+        path = yahoo_dir / f"{ticker}.parquet"
+        if not path.exists():
+            log.warning("sector ETF parquet missing: %s", path)
+            result[ticker] = {h: None for h in HORIZONS}
+            continue
+        try:
+            df = pd.read_parquet(path, columns=["close"])
+            closes = df["close"].sort_index().dropna()
+            if closes.empty:
+                result[ticker] = {h: None for h in HORIZONS}
+                continue
+            last_date = closes.index[-1]
+            perfs: dict[str, float | None] = {}
+            # Rolling horizons from row offsets
+            for h, n in _ROW_OFFSETS.items():
+                perfs[h] = _pct_return(closes, n)
+            # MTD: from last trading day of prior month (i.e. closes on/before the
+            # 1st calendar day of last_date's month minus 1 day).
+            month_start = last_date.replace(day=1)
+            import datetime as _dt
+            prior_month_end = month_start - _dt.timedelta(days=1)
+            perfs["MTD"] = _pct_return_to_date(closes, prior_month_end)
+            # YTD: from last trading day of prior year
+            year_start = last_date.replace(month=1, day=1)
+            prior_year_end = year_start - _dt.timedelta(days=1)
+            perfs["YTD"] = _pct_return_to_date(closes, prior_year_end)
+            result[ticker] = perfs
+        except Exception as exc:  # noqa: BLE001
+            log.warning("sector ETF perf error for %s: %s", ticker, exc)
+            result[ticker] = {h: None for h in HORIZONS}
+    return result
+
+
+def build_sectors_array(metrics: dict[str, dict]) -> list[dict]:
+    """Turn ``_rotation_metrics`` output into the sectors contract array.
+
+    Contract shape per item (mirrors subsector fields that the frontend reads):
+    ``key, name, name_zh, theme, theme_zh, quadrant, rs_ratio, rs_mom, accel,
+    emerging_score, perf, rs``
+    """
+    name_map = {t: (n, zh) for t, n, zh in SECTOR_ETFS}
+    sectors = []
+    for ticker, met in metrics.items():
+        en_name, zh_name = name_map.get(ticker, (ticker, ticker))
+        # Restrict perf to the horizons the contract specifies (1D/1W/1M/3M/6M/1Y)
+        perf_full = met.get("perf") or {}
+        perf_out = {h: perf_full.get(h) for h in ["1D", "1W", "1M", "3M", "6M", "1Y"]}
+        rs_full = met.get("rs") or {}
+        rs_out = {h: rs_full.get(h) for h in ["1W", "1M", "3M", "6M", "1Y"]}
+        sectors.append({
+            "key": ticker,
+            "name": en_name,
+            "name_zh": zh_name,
+            "theme": "Sector ETFs",
+            "theme_zh": "行业ETF",
+            "quadrant": met.get("quadrant", "lagging"),
+            "rs_ratio": met.get("rs_ratio"),
+            "rs_mom": met.get("rs_mom"),
+            "accel": met.get("accel"),
+            "emerging_score": met.get("emerging_score"),
+            "perf": perf_out,
+            "rs": rs_out,
+        })
+    sectors.sort(key=lambda s: (s["emerging_score"] or 0), reverse=True)
+    return sectors
