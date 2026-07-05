@@ -417,17 +417,42 @@ def _build_regime(
     yahoo_dir: Path | None,
     index: pd.DatetimeIndex,
 ) -> pd.DataFrame:
-    """Load VIX, TLT, SPY from yahoo/ and build regime columns.
+    """Load VIX, TLT, SPY from yahoo/ and FRED macros; build regime columns.
 
     Degrades to NaN columns when files are absent (offline / CI).
+
+    FRED release-lag guard
+    ----------------------
+    FRED series are not available in real time: daily series typically publish
+    1 business day after their reference date; NFCI (weekly) is released every
+    Wednesday for the prior week.  To guarantee strict causal ordering, every
+    FRED series is reindexed to the panel's trading-day spine, forward-filled
+    to carry the last known value, and then shifted by ONE ROW (shift(1)) so
+    that a panel row for date t uses only values that were known by t−1.
+    All transforms (diff, pct_change, level) are applied AFTER the shift.
     """
     vix_pctile = pd.Series(np.nan, index=index, dtype=float, name="vix_pctile")
     tlt_ret_10d = pd.Series(np.nan, index=index, dtype=float, name="tlt_ret_10d")
     spy_above_200d = pd.Series(np.nan, index=index, dtype=float, name="spy_above_200d")
 
+    # FRED-sourced columns — initialised to NaN; populated below if files exist.
+    hy_oas_chg_10d = pd.Series(np.nan, index=index, dtype=float, name="hy_oas_chg_10d")
+    yc_slope = pd.Series(np.nan, index=index, dtype=float, name="yc_slope")
+    oil_ret_10d = pd.Series(np.nan, index=index, dtype=float, name="oil_ret_10d")
+    dollar_chg_10d = pd.Series(np.nan, index=index, dtype=float, name="dollar_chg_10d")
+    fin_conditions = pd.Series(np.nan, index=index, dtype=float, name="fin_conditions")
+
     if yahoo_dir is None or not yahoo_dir.exists():
-        return pd.DataFrame({"vix_pctile": vix_pctile, "tlt_ret_10d": tlt_ret_10d,
-                             "spy_above_200d": spy_above_200d})
+        return pd.DataFrame({
+            "vix_pctile": vix_pctile,
+            "tlt_ret_10d": tlt_ret_10d,
+            "spy_above_200d": spy_above_200d,
+            "hy_oas_chg_10d": hy_oas_chg_10d,
+            "yc_slope": yc_slope,
+            "oil_ret_10d": oil_ret_10d,
+            "dollar_chg_10d": dollar_chg_10d,
+            "fin_conditions": fin_conditions,
+        })
 
     # VIX
     vix_path = yahoo_dir / f"{_VIX_TICKER}.parquet"
@@ -460,10 +485,93 @@ def _build_regime(
         except Exception:  # noqa: BLE001
             log.warning("SPY load failed — spy_above_200d set to NaN")
 
+    # ---- FRED macro regime columns ----
+    # Derive fred_dir from yahoo_dir (data/yahoo → data/fred).
+    fred_dir = yahoo_dir.parent / "fred"
+
+    def _load_fred(filename: str) -> pd.Series | None:
+        """Load a FRED parquet robustly; return None on any failure."""
+        p = fred_dir / filename
+        if not p.exists():
+            return None
+        try:
+            df = pd.read_parquet(p)
+            # Prefer 'value' column (canonical FRED download); fall back to first col.
+            s = df["value"] if "value" in df.columns else df.iloc[:, 0]
+            if not isinstance(s.index, pd.DatetimeIndex):
+                s.index = pd.to_datetime(s.index)
+            return s
+        except Exception:  # noqa: BLE001
+            return None
+
+    # 1. HY OAS — BAMLH0A0HYM2 (ICE BofA US HY spread, %pts)
+    #    Rising = credit stress / risk-off.
+    #    Transform: 10-trading-day change of the shifted (causal) series.
+    s_hy = _load_fred("BAMLH0A0HYM2.parquet")
+    if s_hy is not None:
+        try:
+            # shift(1): row t uses FRED value last published ≤ t−1 (release-lag guard).
+            s_causal = s_hy.reindex(index).ffill().shift(1)
+            hy_oas_chg_10d = s_causal.diff(10).rename("hy_oas_chg_10d")
+        except Exception:  # noqa: BLE001
+            log.warning("BAMLH0A0HYM2 compute failed — hy_oas_chg_10d set to NaN")
+
+    # 2. Yield-curve slope — T10Y2Y (10y minus 2y Treasury, %pts)
+    #    Already stationary as a spread; use raw level.
+    #    Negative = inverted curve.
+    s_yc = _load_fred("T10Y2Y.parquet")
+    if s_yc is not None:
+        try:
+            # shift(1): release-lag guard.
+            yc_slope = s_yc.reindex(index).ffill().shift(1).rename("yc_slope")
+        except Exception:  # noqa: BLE001
+            log.warning("T10Y2Y compute failed — yc_slope set to NaN")
+
+    # 3. WTI crude oil — DCOILWTICO (USD/bbl)
+    #    Transform: 10-trading-day percent change of the shifted (causal) series.
+    s_oil = _load_fred("DCOILWTICO.parquet")
+    if s_oil is not None:
+        try:
+            # shift(1): release-lag guard.
+            s_causal = s_oil.reindex(index).ffill().shift(1)
+            oil_ret_10d = s_causal.pct_change(10, fill_method=None).rename("oil_ret_10d")
+        except Exception:  # noqa: BLE001
+            log.warning("DCOILWTICO compute failed — oil_ret_10d set to NaN")
+
+    # 4. Broad USD — DTWEXBGS (Federal Reserve broad dollar index)
+    #    Transform: 10-trading-day percent change of the shifted (causal) series.
+    s_usd = _load_fred("DTWEXBGS.parquet")
+    if s_usd is not None:
+        try:
+            # shift(1): release-lag guard.
+            s_causal = s_usd.reindex(index).ffill().shift(1)
+            dollar_chg_10d = s_causal.pct_change(10, fill_method=None).rename("dollar_chg_10d")
+        except Exception:  # noqa: BLE001
+            log.warning("DTWEXBGS compute failed — dollar_chg_10d set to NaN")
+
+    # 5. NFCI — National Financial Conditions Index (weekly, released Wed for prior week)
+    #    Positive = tight financial conditions; negative = loose.
+    #    Use raw level; NFCI is stationary by construction.
+    s_nfci = _load_fred("NFCI.parquet")
+    if s_nfci is not None:
+        try:
+            # shift(1): release-lag guard (especially important for weekly NFCI
+            # which is released midweek for the prior week — ffill propagates
+            # the reading across non-release days, shift ensures we never use
+            # a reading on the same day it was published).
+            fin_conditions = s_nfci.reindex(index).ffill().shift(1).rename("fin_conditions")
+        except Exception:  # noqa: BLE001
+            log.warning("NFCI compute failed — fin_conditions set to NaN")
+
     return pd.DataFrame({
         "vix_pctile": vix_pctile,
         "tlt_ret_10d": tlt_ret_10d,
         "spy_above_200d": spy_above_200d,
+        "hy_oas_chg_10d": hy_oas_chg_10d,
+        "yc_slope": yc_slope,
+        "oil_ret_10d": oil_ret_10d,
+        "dollar_chg_10d": dollar_chg_10d,
+        "fin_conditions": fin_conditions,
     })
 
 
@@ -1075,4 +1183,31 @@ COLUMN_SCHEMA: list[str] = [
     #   footprint — not a forecast, an observed pattern classification.
     #   EN: Cohesion rebuild signal (C4)  |  ZH: 凝聚力重建信号（C4复合）
     "cohesion_rebuild",
+    # ----- Cross-asset / macro regime columns (added 2026-07-05) -----
+    # All five are market-wide (same value for every node on a given date).
+    # CAUSAL: each FRED series is reindexed to the trading-day spine,
+    # forward-filled, and shift(1)ed before any transform so that panel row t
+    # uses only FRED data published on or before t−1 (release-lag guard).
+    #
+    # hy_oas_chg_10d — HY option-adjusted spread 10-day change (%pts).
+    #   Source: FRED BAMLH0A0HYM2 (ICE BofA US HY spread).
+    #   Rising = credit stress / risk-off environment.
+    #   EN: HY credit spread 10d chg  |  ZH: 高收益利差10日变化
+    "hy_oas_chg_10d",
+    # yc_slope — 10y minus 2y Treasury spread, raw level (%pts).
+    #   Source: FRED T10Y2Y.  Negative = inverted yield curve.
+    #   EN: Yield curve slope (10y−2y)  |  ZH: 收益率曲线斜率（10年-2年）
+    "yc_slope",
+    # oil_ret_10d — WTI crude oil 10-day percent return (dimensionless).
+    #   Source: FRED DCOILWTICO.
+    #   EN: WTI crude 10d return  |  ZH: WTI原油10日涨跌
+    "oil_ret_10d",
+    # dollar_chg_10d — Broad USD index 10-day percent change (dimensionless).
+    #   Source: FRED DTWEXBGS (Federal Reserve broad dollar index).
+    #   EN: Broad USD 10d change  |  ZH: 美元指数10日变化
+    "dollar_chg_10d",
+    # fin_conditions — NFCI raw level (positive = tight, negative = loose).
+    #   Source: FRED NFCI (weekly; released Wed for the prior week).
+    #   EN: NFCI financial conditions  |  ZH: 全国金融状况指数
+    "fin_conditions",
 ]
