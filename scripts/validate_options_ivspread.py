@@ -13,14 +13,24 @@ status="insufficient_history", scored=False. Re-run as the GEX desk's chain snap
 accrue; the apparatus is leak-free and forward-compatible.
 
 Output: data/options_ivspread/validation_gate.json
+
+Refactoring note (Phase-B gate re-run harness):
+  build_panel() accepts an optional `chain_provider` argument for injecting an
+  alternative per-date chain-frame source (e.g. the ThetaData historical store).
+  Default (chain_provider=None) is byte-identical to the original: reads from
+  the durable snapshot ledger + polygon_gex chains, exactly as before.
+  Pass a callable (date_str, root) -> pd.DataFrame | None to use a different store.
+  The entrypoint main() is unchanged; use --store thetadata to switch.
 """
 from __future__ import annotations
 
+import argparse
 import glob
 import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -40,11 +50,21 @@ _MIN_NAMES = 15              # cross-sectional breadth floor per date
 _T_BAR = 2.0
 
 
-def build_panel() -> pd.DataFrame:
-    """ivspread per (date, underlying) + that day's spot. PRIMARY source is the durable
-    snapshot ledger (engine.options_ivspread — date-stable, dedup'd, survives chain pruning);
-    supplemented by any dated chain snapshots not yet in the ledger. Deduped by
-    (date, underlying), ledger wins."""
+def build_panel(
+    chain_provider: Callable[[str, str], "pd.DataFrame | None"] | None = None,
+) -> pd.DataFrame:
+    """ivspread per (date, underlying) + that day's spot.
+
+    Default (chain_provider=None): reads from the durable snapshot ledger
+    (engine.options_ivspread — date-stable, dedup'd, survives chain pruning),
+    supplemented by any dated chain snapshots not yet in the ledger.
+    Byte-identical to the original implementation when no provider is passed.
+
+    When chain_provider is supplied (Phase-B re-run harness):
+      The provider is called as provider(date_str, root) for each
+      (date, root) combination in the alternative store. Results are merged
+      with the same dedup logic (ledger wins on conflicts).
+    """
     rows, seen = [], set()
     led = S.load_history()
     if led is not None and not led.empty:
@@ -65,6 +85,36 @@ def build_panel() -> pd.DataFrame:
                 rows.append({"date": d, "underlying": u,
                              "ivspread": m["ivspread"], "spot": m["spot"]})
                 seen.add((d, u))
+
+    # Injected provider (Phase-B ThetaData path) — appends to the same panel
+    if chain_provider is not None:
+        try:
+            from engine.thetadata_store import universe as td_universe, store_root  # noqa: PLC0415
+            import os  # noqa: PLC0415
+            td_store = os.environ.get("THETADATA_STORE")
+            roots = td_universe(store=td_store)
+            from engine.thetadata_store import store_root  # noqa: PLC0415, F811
+            for root in roots:
+                base = store_root(td_store) / "greeks" / root
+                if not base.exists():
+                    continue
+                for f in sorted(base.glob("*.parquet")):
+                    try:
+                        df = pd.read_parquet(f, columns=["date"])
+                        for d in pd.to_datetime(df["date"]).dt.date.astype(str).unique():
+                            chain_frame = chain_provider(d, root)
+                            if chain_frame is None or chain_frame.empty:
+                                continue
+                            for u, m in S.ivspread_map(chain_frame, relative=False).items():
+                                if (d, u) not in seen:
+                                    rows.append({"date": d, "underlying": u,
+                                                 "ivspread": m["ivspread"], "spot": m["spot"]})
+                                    seen.add((d, u))
+                    except Exception as e:  # noqa: BLE001
+                        log.debug("provider chain %s/%s: %s", root, f, e)
+        except Exception as e:  # noqa: BLE001
+            log.warning("chain_provider integration failed: %s", e)
+
     return pd.DataFrame(rows)
 
 
@@ -95,13 +145,29 @@ def _fwd_ic(panel: pd.DataFrame, h: int) -> dict:
     if not ics:
         return {"n_dates": 0}
     summ = V.ic_summary(np.array(ics), periods_per_year=max(1, 252 // h))
+    # ic_summary() returns "t_hac" (Newey-West HAC t-stat) — NOT "t" or "hac_t".
+    # Using the wrong key silently produces NaN t-stats and a dead gate verdict.
     return {"n_dates": len(ics), "mean_ic": round(float(summ.get("mean_ic", float("nan"))), 4),
-            "hac_t": round(float(summ.get("t", summ.get("hac_t", float("nan")))), 2)}
+            "hac_t": round(float(summ.get("t_hac", float("nan"))), 2)}
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--store", default=None,
+                        choices=["thetadata"],
+                        help="Chain provider: 'thetadata' injects the ThetaData store. "
+                             "Default (omitted): uses polygon_gex chains (original behaviour).")
+    args, _ = parser.parse_known_args()
+
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    panel = build_panel()
+
+    chain_provider = None
+    if args.store == "thetadata":
+        from engine.thetadata_store import make_chain_provider  # noqa: PLC0415
+        chain_provider = make_chain_provider(require_iv=True)
+        log.info("Using ThetaData chain provider (--store thetadata)")
+
+    panel = build_panel(chain_provider=chain_provider)
     n_dates = panel["date"].nunique() if not panel.empty else 0
     n_names = panel["underlying"].nunique() if not panel.empty else 0
     log.info("ivspread panel: %d dates × %d underlyings (%d rows)", n_dates, n_names, len(panel))
