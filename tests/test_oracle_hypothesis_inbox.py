@@ -190,7 +190,10 @@ def test_outside_envelope_fires(tmp_path: Path, monkeypatch) -> None:
     data_dir = tmp_path
 
     nodes = ["XLK", "XLF", "XLE", "XLB", "XLC"]
-    _make_panel_s(oracle_dir, nodes, n_dates=60, start="2025-09-01")
+    # Panel must span from before the analogue episodes (2024-01-01) to after the query onset
+    # (2026-07-10) to give find_analogues enough session indices to pass the leakage law.
+    # 670 business days ≈ 2024-01-02 to 2026-07-10.
+    _make_panel_s(oracle_dir, nodes, n_dates=670, start="2024-01-02")
 
     # Analogue episodes (old, well before 2026-07-04) with known 21d outcomes
     analogues = []
@@ -283,7 +286,7 @@ def test_inside_envelope_silent(tmp_path: Path) -> None:
     data_dir = tmp_path
 
     nodes = ["XLK", "XLF", "XLE", "XLB", "XLC"]
-    _make_panel_s(oracle_dir, nodes, n_dates=60, start="2025-09-01")
+    _make_panel_s(oracle_dir, nodes, n_dates=670, start="2024-01-02")
 
     analogues = []
     onset_dates = pd.bdate_range("2024-01-01", periods=7)
@@ -436,21 +439,27 @@ def test_detection_miss_flood_cap(tmp_path: Path, caplog) -> None:
     oracle_dir = _make_oracle_dir(tmp_path)
     data_dir = tmp_path
 
-    # Create 15 nodes all with extreme outlier rs-changes
-    n_nodes = 15
-    nodes = [f"NODE{i:02d}" for i in range(n_nodes)]
+    # Create 200 normal nodes near zero + 15 outlier nodes with massive moves.
+    # With 200 normals (rs_chg≈0) anchoring the mean/std, the 15 outliers
+    # (rs_chg≈1.0) achieve cross-sectional |z| ≈ 3.6 — comfortably above 2.0.
+    # This ensures > _DETECTION_FLOOD_CAP candidates so the truncation fires.
+    n_outliers = 15
+    n_normal = 200
+    outlier_nodes = [f"OUT{i:02d}" for i in range(n_outliers)]
+    normal_nodes = [f"NRM{i:03d}" for i in range(n_normal)]
+    nodes_all = outlier_nodes + normal_nodes
     n_dates = 25
     dates = pd.bdate_range(start="2026-01-02", periods=n_dates)
     rng = np.random.default_rng(77)
     rows = []
-    for i, node in enumerate(nodes):
+    for i, node in enumerate(nodes_all):
         base_rs = 0.0
+        is_outlier = node.startswith("OUT")
         for j, d in enumerate(dates):
-            # Last 10 sessions: all have large positive moves
-            if j >= n_dates - 10:
-                delta = 0.10 + i * 0.001   # all above 3sigma
+            if is_outlier and j >= n_dates - 10:
+                delta = 0.10   # large positive move per session
             else:
-                delta = float(rng.normal(0, 0.0001))
+                delta = float(rng.normal(0, 0.00001))  # near-zero noise
             base_rs += delta
             rows.append({
                 "node": node,

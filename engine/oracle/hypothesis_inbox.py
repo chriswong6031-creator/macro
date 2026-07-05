@@ -647,6 +647,9 @@ def run_hypothesis_inbox(data_dir: Path, dry_run: bool = False) -> dict[str, int
 
     if is_first_run:
         log.info("hypothesis_inbox: first run detected — seeding silently")
+        # Initialize state with sentinel keys so _save_state writes non-empty JSON
+        state["graded_episode_ids"] = []
+        state["sentinel_log_line_count"] = 0
 
     counts: dict[str, int] = {
         "analogue_surprise": 0,
@@ -657,25 +660,43 @@ def run_hypothesis_inbox(data_dir: Path, dry_run: bool = False) -> dict[str, int
     }
 
     # --- Collector 1: Analogue Surprise ---
-    rows_1 = _collect_analogue_surprise(data_dir, inbox_path, state, is_first_run)
+    # Each collector is wrapped in an independent try/except so a crash in one
+    # does not block any subsequent collector (flood law § design law).
+    try:
+        rows_1 = _collect_analogue_surprise(data_dir, inbox_path, state, is_first_run)
+    except Exception as e:  # noqa: BLE001
+        log.error("analogue_surprise: collector raised: %s", e)
+        rows_1 = []
     if rows_1 and not dry_run:
         _append_rows(inbox_path, rows_1)
     counts["analogue_surprise"] = len(rows_1)
 
     # --- Collector 2: Detection Miss ---
-    rows_2 = _collect_detection_miss(data_dir, inbox_path, is_first_run)
+    try:
+        rows_2 = _collect_detection_miss(data_dir, inbox_path, is_first_run)
+    except Exception as e:  # noqa: BLE001
+        log.error("detection_miss: collector raised: %s", e)
+        rows_2 = []
     if rows_2 and not dry_run:
         _append_rows(inbox_path, rows_2)
     counts["detection_miss"] = len(rows_2)
 
     # --- Collector 3: Screen-Live Divergence ---
-    rows_3 = _collect_screen_live_divergence(data_dir, inbox_path, is_first_run)
+    try:
+        rows_3 = _collect_screen_live_divergence(data_dir, inbox_path, is_first_run)
+    except Exception as e:  # noqa: BLE001
+        log.error("screen_live_divergence: collector raised: %s", e)
+        rows_3 = []
     if rows_3 and not dry_run:
         _append_rows(inbox_path, rows_3)
     counts["screen_live_divergence"] = len(rows_3)
 
     # --- Collector 4: Sentinel Mirror ---
-    rows_4 = _collect_sentinel_mirror(data_dir, inbox_path, state, is_first_run)
+    try:
+        rows_4 = _collect_sentinel_mirror(data_dir, inbox_path, state, is_first_run)
+    except Exception as e:  # noqa: BLE001
+        log.error("sentinel_mirror: collector raised: %s", e)
+        rows_4 = []
     if rows_4 and not dry_run:
         _append_rows(inbox_path, rows_4)
     counts["sentinel"] = len(rows_4)
