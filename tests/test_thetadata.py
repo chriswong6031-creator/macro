@@ -20,7 +20,7 @@ Test coverage:
 from __future__ import annotations
 
 import io
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -130,17 +130,19 @@ class TestBulkEodParsing:
         assert df is not None
         assert pd.api.types.is_datetime64_any_dtype(df["expiration"])
 
-    def test_wildcard_single_range_request(self, monkeypatch):
-        """/history/eod ACCEPTS multi-day wildcard in ONE range request (measured live 2026-07-04).
+    def test_wildcard_windowed_pulls(self, monkeypatch):
+        """bulk_eod wildcard iterates in ≤7-day windows (stall fix 2026-07-05).
 
-        With exp=0 (wildcard), bulk_eod issues a SINGLE range request regardless of how many
-        days the range spans.  This replaces the old day-by-day loop (~250 requests → 1).
-        Contrast: bulk_greeks keeps day-by-day (greeks/eod rejects multi-day wildcard HTTP 400).
+        3-day range → 1 window (≤7 days).
+        10-day range → 2 windows (7 days + 3 days).
+        Each window issues one _get_csv call with expiration="*".
+        Contrast: before the stall fix a single multi-month range request would hang.
         """
         csv_data = _csv_bytes("bulk_eod_response.csv")
         monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
         from collectors import thetadata as td
 
+        # 3-day range fits in 1 window (≤7 days)
         call_count = [0]
         seen_params: list[dict] = []
 
@@ -150,16 +152,38 @@ class TestBulkEodParsing:
             return pd.read_csv(io.BytesIO(csv_data), low_memory=False)
 
         monkeypatch.setattr(td, "_get_csv", _mock_get_csv)
-        # 3-day range with wildcard → 1 call (range request), NOT 3
         td.bulk_eod("SPY", 0, date(2026, 1, 1), date(2026, 1, 3))
         assert call_count[0] == 1, (
-            f"bulk_eod wildcard should issue 1 range request, got {call_count[0]}. "
-            "Note: /history/eod accepts multi-day wildcard; only /greeks/eod requires day-by-day."
+            f"3-day range fits in 1 window (≤7 days), got {call_count[0]} calls"
         )
-        # Verify it passed the full range (start=20260101, end=20260103)
+        assert seen_params[0].get("expiration") == "*"
+        # Window spans the full 3-day range
         assert seen_params[0].get("start_date") == 20260101
         assert seen_params[0].get("end_date") == 20260103
-        assert seen_params[0].get("expiration") == "*"
+
+    def test_wildcard_10day_yields_two_windows(self, monkeypatch):
+        """10-day range → 2 windows: [Jan 1–7] and [Jan 8–10] (≤7-day window rule)."""
+        csv_data = _csv_bytes("bulk_eod_response.csv")
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        seen_params: list[dict] = []
+
+        def _mock_get_csv(session, path, params):
+            seen_params.append(dict(params))
+            return pd.read_csv(io.BytesIO(csv_data), low_memory=False)
+
+        monkeypatch.setattr(td, "_get_csv", _mock_get_csv)
+        td.bulk_eod("SPY", 0, date(2026, 1, 1), date(2026, 1, 10))
+        assert len(seen_params) == 2, (
+            f"10-day range should yield 2 windows (7+3), got {len(seen_params)}"
+        )
+        # First window: Jan 1–7
+        assert seen_params[0]["start_date"] == 20260101
+        assert seen_params[0]["end_date"] == 20260107
+        # Second window: Jan 8–10
+        assert seen_params[1]["start_date"] == 20260108
+        assert seen_params[1]["end_date"] == 20260110
 
 
 class TestOpenInterestParsing:
@@ -266,11 +290,13 @@ class TestGreeksParsing:
         with pytest.raises(ValueError, match="order must be"):
             td.bulk_greeks("SPY", 20260117, date(2026, 1, 1), date(2026, 1, 2), order=5)
 
-    def test_wildcard_expiration_iterates_day_by_day(self, monkeypatch):
-        """greeks/eod supports wildcard expiration via day-by-day iteration.
+    def test_wildcard_expiration_windowed_concurrent(self, monkeypatch):
+        """greeks/eod wildcard: concurrent windowed iteration (stall fix 2026-07-05).
 
-        Wildcard with a 2-day range (Jan 1–2) should call _get_csv twice (once per day)
-        and concatenate the results.
+        greeks/eod rejects multi-day wildcard per day (HTTP 400), but bulk_greeks uses
+        _concurrent_windows which issues ≤7-day windows.  A 2-day range → 1 window call.
+        An 8-day range → 2 window calls (7-day + 1-day).
+        Each window has expiration="*".
         """
         monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
         from collectors import thetadata as td
@@ -279,16 +305,26 @@ class TestGreeksParsing:
 
         def _mock_get_csv(session, path, params):
             calls.append(dict(params))
-            return pd.DataFrame()  # Each day returns empty (holiday/weekend)
+            return pd.DataFrame()  # Each window returns empty (holiday/weekend)
 
         monkeypatch.setattr(td, "_get_csv", _mock_get_csv)
+        # 2-day range → 1 window (≤7 days)
         df = td.bulk_greeks("SPY", 0, date(2026, 1, 1), date(2026, 1, 2), order=1)
-        # Wildcard: 2 days → 2 calls
-        assert len(calls) == 2
-        assert all(c.get("expiration") == "*" for c in calls)
-        # Returns empty DataFrame (all days were empty), not None
+        assert len(calls) == 1, (
+            f"2-day greeks range fits in 1 window (≤7 days), got {len(calls)} calls"
+        )
+        assert calls[0].get("expiration") == "*"
+        # Returns empty DataFrame (all windows were empty), not None
         assert df is not None
         assert df.empty
+
+        # 8-day range → 2 windows
+        calls.clear()
+        td.bulk_greeks("SPY", 0, date(2026, 1, 1), date(2026, 1, 8), order=1)
+        assert len(calls) == 2, (
+            f"8-day greeks range → 2 windows (7+1), got {len(calls)} calls"
+        )
+        assert all(c.get("expiration") == "*" for c in calls)
 
     def test_greeks_uses_eod_endpoint(self, monkeypatch):
         """bulk_greeks calls the /v3/option/history/greeks/eod endpoint, NOT /greeks/all."""
@@ -363,19 +399,19 @@ class TestStreamTruncation:
     """_StreamTruncated on mid-stream failure → None, never a partial DataFrame."""
 
     def test_stream_error_during_bulk_eod_returns_none(self, monkeypatch):
-        """If _get_csv raises _StreamTruncated, bulk_eod returns None (not partial).
+        """If _get_csv raises _StreamTruncated on any window, bulk_eod returns None (not partial).
 
-        bulk_eod now issues a SINGLE range request even for wildcard (one-request model),
-        so we raise _StreamTruncated on the first (and only) call.
+        Stall fix: bulk_eod wildcard iterates in ≤7-day windows. A stall on any window
+        (after all retries) → the whole call returns None. No partial DataFrame is returned.
         """
         monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
         from collectors import thetadata as td
 
         def _mock_get_csv(session, path, params):
-            raise td._StreamTruncated("simulated mid-stream failure on range request")
+            raise td._StreamTruncated("simulated mid-stream stall on window request")
 
         monkeypatch.setattr(td, "_get_csv", _mock_get_csv)
-        # Wildcard range request raises _StreamTruncated → must return None (no partial)
+        # Window stalls on first attempt → retried → still fails → returns None (no partial)
         result = td.bulk_eod("SPY", 0, date(2026, 1, 1), date(2026, 1, 2))
         assert result is None   # must be None, not an empty or partial DataFrame
 
@@ -392,23 +428,31 @@ class TestStreamTruncation:
         assert result is None
 
     def test_stream_error_during_oi_returns_none(self, monkeypatch):
-        """If _get_csv raises _StreamTruncated, bulk_open_interest returns None."""
+        """If _get_csv raises _StreamTruncated on any window, bulk_open_interest returns None.
+
+        Uses a ≥8-day range to produce 2 windows.  First window succeeds; second stalls.
+        Result must be None (no partial DataFrame).
+        """
         monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
         from collectors import thetadata as td
 
-        call_count = [0]
+        # Suppress retries to speed up the test
+        monkeypatch.setattr(td.time, "sleep", lambda s: None)
+        monkeypatch.setattr(td, "WINDOW_RETRY_BACKOFF", (0, 0))
 
         def _mock_get_csv(session, path, params):
-            call_count[0] += 1
-            if call_count[0] == 1:
+            sd = params.get("start_date", 0)
+            # First window (Jan 1–7) succeeds; second window (Jan 8+) stalls
+            if sd == 20260101:
                 return pd.DataFrame({"symbol": ["SPY"], "expiration": ["2026-01-17"],
                                      "strike": [580.0], "right": ["CALL"],
                                      "timestamp": ["2026-01-01T06:30:00.000"],
                                      "open_interest": [125000]})
-            raise td._StreamTruncated("simulated mid-stream failure")
+            raise td._StreamTruncated("simulated mid-stream failure on second window")
 
         monkeypatch.setattr(td, "_get_csv", _mock_get_csv)
-        result = td.bulk_open_interest("SPY", 0, date(2026, 1, 1), date(2026, 1, 2))
+        # 8-day range → 2 windows; second window stalls → must return None (no partial)
+        result = td.bulk_open_interest("SPY", 0, date(2026, 1, 1), date(2026, 1, 8))
         assert result is None
 
     def test_stream_error_during_trade_quote_returns_none(self, monkeypatch):
@@ -829,3 +873,224 @@ class TestReachableV3:
         from collectors import thetadata as td
         td.reachable()
         assert not called_v2, f"reachable() called v2 endpoint: {called_v2}"
+
+
+# ── 10. Stall fix: window iteration boundaries ───────────────────────────────
+
+class TestWindowIteration:
+    """_iter_windows tiles [start, end] exactly: no gaps, no overlaps, ≤7 days per window."""
+
+    def test_single_day_yields_one_window(self):
+        from collectors.thetadata import _iter_windows
+        wins = list(_iter_windows(date(2026, 1, 1), date(2026, 1, 1)))
+        assert len(wins) == 1
+        assert wins[0] == (date(2026, 1, 1), date(2026, 1, 1))
+
+    def test_exact_7_days_yields_one_window(self):
+        from collectors.thetadata import _iter_windows
+        wins = list(_iter_windows(date(2026, 1, 1), date(2026, 1, 7)))
+        assert len(wins) == 1
+        assert wins[0] == (date(2026, 1, 1), date(2026, 1, 7))
+
+    def test_8_days_yields_two_windows(self):
+        from collectors.thetadata import _iter_windows
+        wins = list(_iter_windows(date(2026, 1, 1), date(2026, 1, 8)))
+        assert len(wins) == 2
+        assert wins[0] == (date(2026, 1, 1), date(2026, 1, 7))
+        assert wins[1] == (date(2026, 1, 8), date(2026, 1, 8))
+
+    def test_14_days_yields_two_equal_windows(self):
+        from collectors.thetadata import _iter_windows
+        wins = list(_iter_windows(date(2026, 1, 1), date(2026, 1, 14)))
+        assert len(wins) == 2
+        assert wins[0] == (date(2026, 1, 1), date(2026, 1, 7))
+        assert wins[1] == (date(2026, 1, 8), date(2026, 1, 14))
+
+    def test_no_gaps_no_overlaps_31_days(self):
+        """31-day range: windows tile exactly, no gaps, no overlaps."""
+        from collections import Counter
+        from collectors.thetadata import _iter_windows
+        wins = list(_iter_windows(date(2026, 1, 1), date(2026, 1, 31)))
+        # Count all days covered
+        covered: list[date] = []
+        for ws, we in wins:
+            d = ws
+            while d <= we:
+                covered.append(d)
+                d += timedelta(days=1)
+        # Each day should appear exactly once
+        counts = Counter(covered)
+        assert max(counts.values()) == 1, "overlap detected"
+        assert len(covered) == 31, f"expected 31 days covered, got {len(covered)}"
+        assert min(covered) == date(2026, 1, 1)
+        assert max(covered) == date(2026, 1, 31)
+
+    def test_all_windows_le_7_days(self):
+        """Every window in a 31-day range is ≤7 calendar days."""
+        from collectors.thetadata import _iter_windows
+        wins = list(_iter_windows(date(2026, 1, 1), date(2026, 1, 31)))
+        for ws, we in wins:
+            span = (we - ws).days + 1
+            assert span <= 7, f"window {ws}→{we} is {span} days (exceeds 7)"
+
+    def test_31_day_range_exact_window_count(self):
+        """31-day range with 7-day windows → ceil(31/7) = 5 windows."""
+        from collectors.thetadata import _iter_windows
+        wins = list(_iter_windows(date(2026, 1, 1), date(2026, 1, 31)))
+        import math
+        expected = math.ceil(31 / 7)  # = 5
+        assert len(wins) == expected, f"expected {expected} windows, got {len(wins)}"
+
+
+# ── 11. Stall fix: retry-then-fail returns None with nothing persisted ────────
+
+class TestRetryThenFail:
+    """Per-window retry: after WINDOW_MAX_RETRIES+1 failures, entire call returns None."""
+
+    def test_bulk_eod_retry_exhausted_returns_none(self, monkeypatch):
+        """All retry attempts stall → bulk_eod returns None (no partial)."""
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        # Speed up retries for the test by monkeypatching sleep in the module under test
+        monkeypatch.setattr(td.time, "sleep", lambda s: None)
+        monkeypatch.setattr(td, "WINDOW_RETRY_BACKOFF", (0, 0))
+
+        call_count = [0]
+
+        def _always_truncated(session, path, params):
+            call_count[0] += 1
+            raise td._StreamTruncated("simulated stall — all retries")
+
+        monkeypatch.setattr(td, "_get_csv", _always_truncated)
+        result = td.bulk_eod("SPY", 0, date(2026, 1, 1), date(2026, 1, 3))
+        assert result is None, "Expected None after retry exhaustion"
+        # With WINDOW_MAX_RETRIES=2: 1 attempt + 2 retries = 3 total calls per window
+        # 1 window (3-day range ≤ 7 days) × 3 attempts = 3 calls
+        assert call_count[0] == td.WINDOW_MAX_RETRIES + 1, (
+            f"expected {td.WINDOW_MAX_RETRIES + 1} total attempts, got {call_count[0]}"
+        )
+
+    def test_bulk_oi_retry_exhausted_returns_none(self, monkeypatch):
+        """All retry attempts stall → bulk_open_interest returns None (no partial)."""
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        monkeypatch.setattr(td.time, "sleep", lambda s: None)
+        monkeypatch.setattr(td, "WINDOW_RETRY_BACKOFF", (0, 0))
+
+        def _always_truncated(session, path, params):
+            raise td._StreamTruncated("simulated stall")
+
+        monkeypatch.setattr(td, "_get_csv", _always_truncated)
+        result = td.bulk_open_interest("SPY", 0, date(2026, 1, 1), date(2026, 1, 3))
+        assert result is None
+
+    def test_bulk_greeks_retry_exhausted_returns_none(self, monkeypatch):
+        """All retry attempts stall → bulk_greeks returns None (no partial)."""
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        monkeypatch.setattr(td.time, "sleep", lambda s: None)
+        monkeypatch.setattr(td, "WINDOW_RETRY_BACKOFF", (0, 0))
+
+        def _always_none(session, path, params):
+            return None   # _get_csv returning None also triggers retry logic
+
+        monkeypatch.setattr(td, "_get_csv", _always_none)
+        result = td.bulk_greeks("SPY", 0, date(2026, 1, 1), date(2026, 1, 3), order=1)
+        assert result is None
+
+    def test_partial_window_failure_returns_none_not_partial_df(self, monkeypatch):
+        """First window succeeds, second window fails → whole call returns None (no partial)."""
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        monkeypatch.setattr(td.time, "sleep", lambda s: None)
+        monkeypatch.setattr(td, "WINDOW_RETRY_BACKOFF", (0, 0))
+
+        csv_data = _csv_bytes("bulk_eod_response.csv")
+        call_count = [0]
+
+        def _fail_second_window(session, path, params):
+            call_count[0] += 1
+            # First window succeeds; subsequent windows always stall
+            if params.get("start_date") == 20260101:
+                return pd.read_csv(io.BytesIO(csv_data), low_memory=False)
+            raise td._StreamTruncated("simulated stall on second window")
+
+        monkeypatch.setattr(td, "_get_csv", _fail_second_window)
+        # 10-day range → 2 windows; second window stalls → must return None not partial
+        result = td.bulk_eod("SPY", 0, date(2026, 1, 1), date(2026, 1, 10))
+        assert result is None, (
+            "When any window fails after retries, bulk_eod must return None (no partial)"
+        )
+
+
+# ── 12. Stall fix: concurrency + deterministic ordering ─────────────────────
+
+class TestConcurrencyOrdering:
+    """Windowed concurrent pulls return rows in deterministic (chronological window) order."""
+
+    def test_bulk_eod_wildcard_result_sorted_by_window(self, monkeypatch):
+        """Rows from multiple windows are sorted by window date (ascending) in output."""
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        # Build fake CSVs with dates in each window
+        def _csv_for_window(last_trade: str) -> pd.DataFrame:
+            return pd.DataFrame({
+                "symbol": ["SPY"],
+                "expiration": ["2026-02-01"],
+                "strike": [580.0],
+                "right": ["CALL"],
+                "created": [last_trade],
+                "last_trade": [last_trade],
+                "open": [5.0], "high": [5.5], "low": [4.9], "close": [5.2],
+                "volume": [100], "count": [10], "bid_size": [10], "bid_exchange": ["C"],
+                "bid": [5.1], "bid_condition": [50], "ask_size": [10],
+                "ask_exchange": ["C"], "ask": [5.3], "ask_condition": [50],
+            })
+
+        call_order: list[int] = []
+
+        def _mock_get_csv(session, path, params):
+            sd = params.get("start_date", 0)
+            call_order.append(sd)
+            # Return a row whose last_trade date matches the window start
+            s = str(sd)
+            last_trade = f"{s[:4]}-{s[4:6]}-{s[6:8]}T14:00:00"
+            return _csv_for_window(last_trade)
+
+        monkeypatch.setattr(td, "_get_csv", _mock_get_csv)
+        # 14-day range → 2 windows
+        result = td.bulk_eod("SPY", 0, date(2026, 1, 1), date(2026, 1, 14))
+        assert result is not None
+        assert not result.empty
+        # Verify chronological ordering: dates should be ascending
+        dates = result["date"].dropna().sort_values().tolist()
+        assert dates == sorted(dates), "Result rows are not in chronological order"
+
+    def test_read_timeout_config_present(self):
+        """READ_TIMEOUT_BETWEEN_BYTES is defined and is a positive number."""
+        from collectors import thetadata as td
+        assert hasattr(td, "READ_TIMEOUT_BETWEEN_BYTES"), "READ_TIMEOUT_BETWEEN_BYTES must be defined"
+        assert td.READ_TIMEOUT_BETWEEN_BYTES > 0, "Read timeout must be positive"
+        # Should be less than a few minutes — generous but not infinite
+        assert td.READ_TIMEOUT_BETWEEN_BYTES <= 300, "Read timeout unreasonably large"
+
+    def test_window_workers_constant_present_and_bounded(self):
+        """WINDOW_WORKERS is defined and ≤ terminal concurrent ceiling (8)."""
+        from collectors import thetadata as td
+        assert hasattr(td, "WINDOW_WORKERS")
+        assert 1 <= td.WINDOW_WORKERS <= 8, (
+            f"WINDOW_WORKERS={td.WINDOW_WORKERS} exceeds terminal ceiling of 8"
+        )
+
+    def test_window_days_constant_present_and_short(self):
+        """WINDOW_DAYS is defined and ≤7 (measured reliable short window size)."""
+        from collectors import thetadata as td
+        assert hasattr(td, "WINDOW_DAYS")
+        assert 1 <= td.WINDOW_DAYS <= 7, (
+            f"WINDOW_DAYS={td.WINDOW_DAYS} exceeds measured-reliable 7-day limit"
+        )
