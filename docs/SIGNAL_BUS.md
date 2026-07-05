@@ -134,7 +134,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 0 | 0 |
 | kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
-| risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly-engine | display | 0 | 0 |
+| risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
 
 ### options-alpha
 

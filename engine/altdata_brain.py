@@ -493,7 +493,7 @@ def synthesize(state: dict, cfg: dict | None = None, call=None,
             "granted": a3.granted,
             "lift_lb": a3.lift_lb,
             "reason": a3.reason,
-            "evidence_asof": None,   # populated below from the track_record path
+            "evidence_asof": a3.evidence_asof,   # real track_record date, present on all outcomes
             "evaluated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         },
         "generated_at": datetime.now(timezone.utc).isoformat(), "state_asof": asof,
@@ -503,15 +503,8 @@ def synthesize(state: dict, cfg: dict | None = None, call=None,
         "confidence": "low", "n_clusters": state.get("n_clusters"),
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
     }
-    # Populate evidence_asof from lapses_at backtrack (governance transparency)
-    if a3.lapses_at:
-        try:
-            from datetime import timedelta
-            lapse_dt = datetime.fromisoformat(a3.lapses_at)
-            brief["article3"]["evidence_asof"] = (
-                lapse_dt - timedelta(days=120)).date().isoformat()
-        except Exception:  # noqa: BLE001
-            pass
+    # evidence_asof is now carried directly from GrantResult.evidence_asof on all outcomes
+    # (granted and refused alike). No backtrack from lapses_at needed.
     fn = call or _make_call(cfg)
     if fn is None:
         brief["degraded_reason"] = "no_client_or_token"

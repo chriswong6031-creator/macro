@@ -240,12 +240,16 @@ class GrantResult:
     lapses_at : str | None
         ISO-8601 UTC datetime when this grant expires (evidence_asof + max_staleness_days).
         None when the grant is already refused.
+    evidence_asof : str | None
+        ISO-8601 date of the most recent graded entry used in evaluation.
+        Populated regardless of the granted/refused outcome.
     """
     granted: bool
     lift_lb: float | None
     wilson_lb: float | None
     reason: str
     lapses_at: str | None
+    evidence_asof: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -323,6 +327,7 @@ def grant_authority(
             wilson_lb=None,
             reason=f"insufficient-n: n={n} < min_n={min_n}",
             lapses_at=None,
+            evidence_asof=evidence_asof_str,
         )
     if hits < min_events:
         return GrantResult(
@@ -331,6 +336,7 @@ def grant_authority(
             wilson_lb=None,
             reason=f"insufficient-events: hits={hits} < min_events={min_events}",
             lapses_at=None,
+            evidence_asof=evidence_asof_str,
         )
 
     # Gate 2 — Wilson CI lower-bound lift > 1.25
@@ -347,6 +353,7 @@ def grant_authority(
             wilson_lb=round(wb, 6),
             reason="zero-base-rate: cannot compute lift",
             lapses_at=None,
+            evidence_asof=evidence_asof_str,
         )
     lift_lb = wb / base_rate
 
@@ -357,6 +364,7 @@ def grant_authority(
             wilson_lb=round(wb, 6),
             reason=f"lift-lb-insufficient: wilson_lb/base={lift_lb:.4f} <= {_LIFT_THRESHOLD}",
             lapses_at=None,
+            evidence_asof=evidence_asof_str,
         )
 
     # Gate 3 — freshness
@@ -373,6 +381,7 @@ def grant_authority(
                     wilson_lb=round(wb, 6),
                     reason=f"stale-evidence: {staleness}d > max {max_staleness_days}d",
                     lapses_at=None,
+                    evidence_asof=evidence_asof_str,
                 )
             lapse_dt = asof_dt + timedelta(days=max_staleness_days)
         except Exception:  # noqa: BLE001
@@ -387,4 +396,5 @@ def grant_authority(
         wilson_lb=round(wb, 6),
         reason="granted: n-floors cleared, wilson-lift > 1.25, evidence fresh",
         lapses_at=lapses_at,
+        evidence_asof=evidence_asof_str,
     )

@@ -453,3 +453,85 @@ class TestA7StillRefused:
         )
         assert not result.granted
         assert "article-1-origination-ban" in result.reason
+
+
+# ---------------------------------------------------------------------------
+# T10 — mastermind.json propagation (INTEGRITY FIX 2)
+# ---------------------------------------------------------------------------
+
+class TestMastermindPropagation:
+    """build_mastermind() propagates article3 + is_context_only from the brain brief.
+    Two-organisms law: the bot reads flags per its own logic; no existing keys are changed.
+    """
+
+    def _minimal_by_ticker(self) -> dict:
+        return {"as_of": "2026-07-04", "tickers": {}}
+
+    def test_article3_and_is_context_only_propagated_when_brain_present(self, tmp_path):
+        """When brain has article3 block, mastermind.json carries it additively."""
+        import engine.altdata_emit as EM
+        brain = {
+            "theses": [],
+            "article3": {
+                "granted": False,
+                "lift_lb": None,
+                "reason": "insufficient-n: n=5 < min_n=25",
+                "evidence_asof": "2026-07-04",
+                "evaluated_at": "2026-07-04T23:27:19+00:00",
+            },
+            "is_context_only": True,
+            "actionable": False,
+            "regime_read": None,
+            "disclaimer": "test disclaimer",
+        }
+        out = EM.build_mastermind(self._minimal_by_ticker(), brain, {}, {}, {}, root=tmp_path)
+        assert "article3" in out, "mastermind.json must carry article3"
+        a3 = out["article3"]
+        assert a3["granted"] is False
+        assert a3["reason"] == "insufficient-n: n=5 < min_n=25"
+        assert a3["evidence_asof"] == "2026-07-04"
+        assert out["is_context_only"] is True
+
+    def test_brain_absent_defaults_refuse_by_default(self, tmp_path):
+        """When brain is absent/None: article3=None, is_context_only=True (refuse-by-default)."""
+        import engine.altdata_emit as EM
+        out = EM.build_mastermind(self._minimal_by_ticker(), None, {}, {}, {}, root=tmp_path)
+        assert out["article3"] is None
+        assert out["is_context_only"] is True, "must default True (refuse-by-default) when brain absent"
+
+    def test_brain_empty_dict_defaults_refuse_by_default(self, tmp_path):
+        """When brain is {} (no theses): article3=None, is_context_only=True."""
+        import engine.altdata_emit as EM
+        out = EM.build_mastermind(self._minimal_by_ticker(), {}, {}, {}, {}, root=tmp_path)
+        assert out["article3"] is None
+        assert out["is_context_only"] is True
+
+    def test_existing_keys_not_removed(self, tmp_path):
+        """Additive only — no pre-existing mastermind.json keys are removed."""
+        import engine.altdata_emit as EM
+        out = EM.build_mastermind(self._minimal_by_ticker(), None, {}, {}, {}, root=tmp_path)
+        for key in ("schema", "as_of", "generated_utc", "contract", "regime_read",
+                    "brain_present", "brain_usable", "calibration",
+                    "n_signals", "n_broken", "signals", "broken_signals", "disclaimer"):
+            assert key in out, f"pre-existing key {key!r} must still be present"
+
+    def test_article3_granted_propagated(self, tmp_path):
+        """When brain has granted=True article3, is_context_only is False."""
+        import engine.altdata_emit as EM
+        brain = {
+            "theses": [],
+            "article3": {
+                "granted": True,
+                "lift_lb": 1.35,
+                "reason": "granted: n-floors cleared, wilson-lift > 1.25, evidence fresh",
+                "evidence_asof": "2026-07-04",
+                "evaluated_at": "2026-07-04T23:27:19+00:00",
+            },
+            "is_context_only": False,
+            "actionable": True,
+            "regime_read": None,
+            "disclaimer": None,
+        }
+        out = EM.build_mastermind(self._minimal_by_ticker(), brain, {}, {}, {}, root=tmp_path)
+        assert out["article3"]["granted"] is True
+        assert out["is_context_only"] is False
