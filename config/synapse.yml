@@ -2991,7 +2991,7 @@ artifacts:
       artifact MUST NOT feed any scored surface or arithmetic weight path until
       signing_gate root is true.
 
-  # --- 5 consumers ---
+  # --- 4 consumers ---
   polygon-gex-summaries:
     path: data/polygon_gex/summary_*.parquet
     format: parquet
@@ -3010,7 +3010,6 @@ artifacts:
       - engine/options_stamp.py
       - engine/altdata.py
       - scripts/validate_gex.py
-      - scripts/build_gex_board.py
       - scripts/audit_options_accrual.py
     external_consumers: []
     notes: >
