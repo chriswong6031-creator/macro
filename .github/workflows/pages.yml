@@ -1,11 +1,16 @@
 name: pages
-# DISABLED auto-trigger: mastermind-x.com is served by the VPS (Caddy behind
-# Cloudflare, pulling main every ~3 min), NOT GitHub Pages (Pages is dormant —
-# no custom domain). This workflow used to fire on EVERY site/** commit only to
-# deploy to the `github-pages` environment, whose one-deploy-at-a-time
-# serialization CANCELLED concurrent renders during merge-sprees (the 1-2h freeze).
-# Kept manual-only in case Pages is ever revived. See render.yml (renders + commits
-# site/ to main, which the VPS serves).
+# MANUAL-ONLY re-deploy button for the GitHub Pages MIRROR. mastermind-x.com is
+# served via Tencent EdgeOne (DNSPod nameservers; apex/www/admin/app all CNAME to
+# *.eo.dnse3.com — verified 2026-07-05), with the VPS Caddy (pulling main every
+# ~3 min) as origin — NOT GitHub Pages and NOT Cloudflare. GitHub Pages
+# (chriswong6031-creator.github.io/macro, no custom domain) is a live mirror that
+# daily.yml and weekly.yml deploy on every nightly/weekly run (their deploy-pages
+# steps); this workflow only exists to re-deploy that mirror on demand. Auto-trigger
+# stays OFF: the `github-pages` environment's one-deploy-at-a-time serialization
+# CANCELLED concurrent renders during merge-sprees (the 1-2h freeze). NB a one-off
+# "Deployment failed, try again later" from actions/deploy-pages (e.g. run
+# 28734041930, 2026-07-05) is the Pages backend being transient — the daily.yml
+# deploy of the same tree succeeded 19 minutes later; re-dispatch before debugging.
 on:
   workflow_dispatch:
 
