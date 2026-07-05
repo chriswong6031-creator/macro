@@ -3497,9 +3497,12 @@ def main() -> int:
     # snapshot as the themes treemap; a separate lens from our curated baskets.
     try:
         from scripts.build_subsector_rotation import build as build_subsector_rotation
-        build_subsector_rotation(site, generated_utc=generated)
+        from engine.subsector_sponsorship import EPISTEMIC_CAVEAT_EN, EPISTEMIC_CAVEAT_ZH
+        sr_payload = build_subsector_rotation(site, generated_utc=generated)
         out_sr = site / "subsector_rotation.html"
-        write_page(out_sr, env.get_template("subsector_rotation.html.j2").render())
+        write_page(out_sr, env.get_template("subsector_rotation.html.j2").render(
+            sponsorship=(sr_payload or {}).get("sponsorship") or {},
+            epi_en=EPISTEMIC_CAVEAT_EN, epi_zh=EPISTEMIC_CAVEAT_ZH))
         log.info("wrote %s (%.0f KB)", out_sr, out_sr.stat().st_size / 1024)
         # per-subsector detail pages (site/rotation/<key>.html) — additive, data-driven.
         try:

@@ -1011,6 +1011,23 @@ def main() -> int:
         log.info("sector_pulse: %d tickers mapped to themes", len(_sector_pulse_map))
     except Exception as _spe:  # noqa: BLE001 — additive; pulse failure must not break the build
         log.warning("sector_pulse precompute skipped (%s)", _spe)
+    # Neural Web sponsorship — SRSS Phase 4 per-ticker chip (DISPLAY-ONLY, never scored).
+    # A LIGHT read+join off the already-written shadow parquet
+    # (data/spine/subsector_sponsorship.parquet, written nightly by
+    # engine.spine.write_subsector_sponsorship) — no recomputation of the join/
+    # classification rules here. Computed ONCE, looked up per name below; absent
+    # for any ticker with no live match (never a fabricated read).
+    _sponsorship_map: "dict[str, dict]" = {}
+    try:
+        from engine import subsector_sponsorship as _ssp
+        for _spo_row in _ssp.load_display_rows():
+            en, zh = _ssp.plain_language(
+                _spo_row["name"], _spo_row.get("name_zh"),
+                _spo_row["sponsorship_state"], _spo_row.get("rs_mom"))
+            _sponsorship_map[_spo_row["ticker"]] = {**_spo_row, "plain_en": en, "plain_zh": zh}
+        log.info("sponsorship: %d tickers with a live SRSS match", len(_sponsorship_map))
+    except Exception as _spoe:  # noqa: BLE001 — additive; must not break the stockdata build
+        log.warning("sponsorship precompute skipped (%s)", _spoe)
     # per-stock Macro-sensitivity context (rate-beta tier + duration + live-regime
     # head/tailwind + inflation label) — reads factor_betas.json (written by build_site
     # just before this) + data/transmission/latest.json (the Rate & Inflation Transmission
@@ -1681,6 +1698,13 @@ def main() -> int:
             if _sp_row:
                 rec["sector_pulse"] = _sp_row
         except Exception as _spe2:  # noqa: BLE001 — additive; must not break the stockdata build
+            pass
+        # Neural Web sponsorship chip — absent when this ticker has no live SRSS match.
+        try:
+            _spo_row = _sponsorship_map.get(ticker) or _sponsorship_map.get(ticker.upper())
+            if _spo_row:
+                rec["sponsorship"] = _spo_row
+        except Exception:  # noqa: BLE001 — additive; must not break the stockdata build
             pass
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring

@@ -1577,6 +1577,41 @@ artifacts:
       (Spearman + Newey-West HAC t). 'proven' requires matured n AND significant HAC-t.
       Distinct from site-marketdata-subsector-rotation (the display output artifact).
 
+  # --- SRSS Phase 2: subsector sponsorship spine adapter (shadow, display-only) ---
+  subsector-sponsorship-spine:
+    path: data/spine/subsector_sponsorship.parquet
+    format: parquet
+    producer: engine/spine.py
+    known_extra_writers:
+      - "scripts/build_subsector_sponsorship.py — CLI runner; calls write_subsector_sponsorship()"
+    owner_program: entry-stack-expansion
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: spine.predictions.v1
+    tier: shadow
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/confluence.py
+    external_consumers: []
+    notes: >
+      SRSS Phase 2 production wiring (research/entry_stack/sponsorship_phase0.py was the
+      research-only Phase 0 harness; classification/join logic now shared via
+      engine/subsector_sponsorship.py). adapt_subsector_sponsorship() joins today's live
+      per-stock gate fires (data/us_board_ledger/snapshots.jsonl, the same forward ledger
+      grade_us_board.py --nightly accrues) to the latest subsector-rotation-snapshots row
+      via the SAME nearest-prior-date leak-safe join Phase 0 validated. Deliberately kept
+      OUT of data/spine/predictions.parquet (spine-predictions above) — rows here are
+      NEVER graded (outcome_graded always False, score always 0.0, size_binding always
+      False) so they can never enter graded_rows()/measured_ic() or move any pooled
+      score. direction is inherited from the source fire only, never invented.
+      meta.display_only=True on every row (same convention confluence.py's edges use).
+      Coverage will accrue slowly: subsector-rotation-snapshots has ~1wk of history as of
+      this build (2026-06-28 start) so most fires still find no match — expected, not a
+      bug (see research/entry_stack/sponsorship_phase0.py's coverage report).
+
   # --- W2 sweep 19: Index Leadership Track Record ---
   index-leadership-snapshots:
     path: data/index_leadership/snapshots.jsonl
