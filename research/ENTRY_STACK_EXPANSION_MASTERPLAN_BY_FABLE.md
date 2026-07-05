@@ -120,6 +120,8 @@ Adjacency (R2): trend/location guards falsified (exposure artifact); CT-LANE not
 Expectation: **pre-registered expect-null.** Value = a citable kill (or a surprise worth having).
 ⟦RT⟧ Non-null is defined ONLY as: pooled FE coefficient with BH-adjusted CI excluding 0. Single-era excursions are noise by pre-registration. Any non-null must then replicate on baskets OOS before even a chip is discussed.
 
+**RUL-F6-OPDEF (W1 builder ruling, 2026-07-05):** The phrase "ADX14 rising-vs-low at fire" in the line above is a terse label, not a complete operationalization. The W1 builder chose `adx14 > 20 AND adx14 > adx14.shift(5)` as the single operationalization: level threshold = 20.0 (the conventional "trending" floor in the ADX literature, consistent with "vs-low" meaning rising *and* above a low-trend floor) and lookback = 5 bars (one trading week, shortest window that removes same-week noise). No alternative threshold or lookback was tested before reading results. These parameters are hereby frozen per RUL-7: any later change requires a new ruling logged here, never a silent edit. The "rising-vs-low" label in §3 F6 above is superseded by this explicit definition for all W1+ adjudication purposes.
+
 ### Tier D — demoted (allowed only if capacity remains; hostile-adjacent)
 
 **D1. S-PP — Pocket pivot** (volume thrust off quiet base). Adjacent to falsified H4 (volume-as-positive-filter); differs by being an event (day-of thrust) not a state divergence. Appendix family only, after F-tier verdicts. Expect-null.
