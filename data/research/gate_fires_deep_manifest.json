@@ -1,0 +1,902 @@
+{
+  "AAPL": {
+    "bars": 11480,
+    "fires": 194
+  },
+  "ABBV": {
+    "bars": 3395,
+    "fires": 50
+  },
+  "ABNB": {
+    "bars": 1395,
+    "fires": 23
+  },
+  "ABT": {
+    "bars": 11668,
+    "fires": 225
+  },
+  "AMT": {
+    "bars": 7130,
+    "fires": 123
+  },
+  "AMZN": {
+    "bars": 7328,
+    "fires": 123
+  },
+  "APD": {
+    "bars": 11668,
+    "fires": 222
+  },
+  "APH": {
+    "bars": 8722,
+    "fires": 154
+  },
+  "AMAT": {
+    "bars": 11668,
+    "fires": 223
+  },
+  "AMCR": {
+    "bars": 3553,
+    "fires": 61
+  },
+  "AMD": {
+    "bars": 11668,
+    "fires": 190
+  },
+  "AMGN": {
+    "bars": 10845,
+    "fires": 191
+  },
+  "ADM": {
+    "bars": 11668,
+    "fires": 199
+  },
+  "ADP": {
+    "bars": 11668,
+    "fires": 222
+  },
+  "AEE": {
+    "bars": 7168,
+    "fires": 121
+  },
+  "AEP": {
+    "bars": 16233,
+    "fires": 285
+  },
+  "ATO": {
+    "bars": 10711,
+    "fires": 228
+  },
+  "AVB": {
+    "bars": 8131,
+    "fires": 155
+  },
+  "AVGO": {
+    "bars": 4252,
+    "fires": 75
+  },
+  "AXP": {
+    "bars": 13634,
+    "fires": 252
+  },
+  "AZO": {
+    "bars": 8877,
+    "fires": 159
+  },
+  "BA": {
+    "bars": 16233,
+    "fires": 279
+  },
+  "BAC": {
+    "bars": 13454,
+    "fires": 245
+  },
+  "BKNG": {
+    "bars": 6856,
+    "fires": 124
+  },
+  "BKR": {
+    "bars": 9885,
+    "fires": 182
+  },
+  "BLK": {
+    "bars": 6728,
+    "fires": 127
+  },
+  "BMY": {
+    "bars": 13634,
+    "fires": 249
+  },
+  "BNY": {
+    "bars": 13404,
+    "fires": 244
+  },
+  "BRK-B": {
+    "bars": 7585,
+    "fires": 147
+  },
+  "BX": {
+    "bars": 4787,
+    "fires": 85
+  },
+  "C": {
+    "bars": 12477,
+    "fires": 229
+  },
+  "CASY": {
+    "bars": 10758,
+    "fires": 204
+  },
+  "CAT": {
+    "bars": 16233,
+    "fires": 301
+  },
+  "CB": {
+    "bars": 8375,
+    "fires": 166
+  },
+  "CBRE": {
+    "bars": 32,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "CCI": {
+    "bars": 7011,
+    "fires": 135
+  },
+  "CEG": {
+    "bars": 1117,
+    "fires": 19
+  },
+  "CHTR": {
+    "bars": 4148,
+    "fires": 72
+  },
+  "CI": {
+    "bars": 11153,
+    "fires": 210
+  },
+  "CL": {
+    "bars": 13405,
+    "fires": 242
+  },
+  "COP": {
+    "bars": 11215,
+    "fires": 222
+  },
+  "COST": {
+    "bars": 10073,
+    "fires": 175
+  },
+  "CRH": {
+    "bars": 9311,
+    "fires": 169
+  },
+  "CSCO": {
+    "bars": 9159,
+    "fires": 170
+  },
+  "CMCSA": {
+    "bars": 11668,
+    "fires": 221
+  },
+  "CMI": {
+    "bars": 13454,
+    "fires": 234
+  },
+  "CNP": {
+    "bars": 16233,
+    "fires": 302
+  },
+  "COF": {
+    "bars": 7958,
+    "fires": 138
+  },
+  "CSX": {
+    "bars": 11507,
+    "fires": 218
+  },
+  "CTVA": {
+    "bars": 1786,
+    "fires": 35
+  },
+  "CVS": {
+    "bars": 13454,
+    "fires": 253
+  },
+  "CVX": {
+    "bars": 16233,
+    "fires": 309
+  },
+  "D": {
+    "bars": 11668,
+    "fires": 218
+  },
+  "DASH": {
+    "bars": 1396,
+    "fires": 18
+  },
+  "DD": {
+    "bars": 13634,
+    "fires": 258
+  },
+  "DE": {
+    "bars": 13634,
+    "fires": 256
+  },
+  "DG": {
+    "bars": 4182,
+    "fires": 71
+  },
+  "DHR": {
+    "bars": 11974,
+    "fires": 223
+  },
+  "DIS": {
+    "bars": 16233,
+    "fires": 258
+  },
+  "DLR": {
+    "bars": 5452,
+    "fires": 102
+  },
+  "DOW": {
+    "bars": 1832,
+    "fires": 31
+  },
+  "DTE": {
+    "bars": 16233,
+    "fires": 307
+  },
+  "DUK": {
+    "bars": 11668,
+    "fires": 206
+  },
+  "DVN": {
+    "bars": 10316,
+    "fires": 191
+  },
+  "EA": {
+    "bars": 9263,
+    "fires": 167
+  },
+  "EBAY": {
+    "bars": 6985,
+    "fires": 133
+  },
+  "ECHO": {
+    "bars": 4654,
+    "fires": 87
+  },
+  "ECL": {
+    "bars": 13454,
+    "fires": 247
+  },
+  "ED": {
+    "bars": 16233,
+    "fires": 294
+  },
+  "ELV": {
+    "bars": 6207,
+    "fires": 121
+  },
+  "EOG": {
+    "bars": 9253,
+    "fires": 175
+  },
+  "EQIX": {
+    "bars": 6510,
+    "fires": 109
+  },
+  "F": {
+    "bars": 13634,
+    "fires": 260
+  },
+  "FANG": {
+    "bars": 3448,
+    "fires": 58
+  },
+  "FCX": {
+    "bars": 7797,
+    "fires": 141
+  },
+  "FOXA": {
+    "bars": 1838,
+    "fires": 35
+  },
+  "ETR": {
+    "bars": 13634,
+    "fires": 250
+  },
+  "EXC": {
+    "bars": 13405,
+    "fires": 244
+  },
+  "EXE": {
+    "bars": 1354,
+    "fires": 22
+  },
+  "EXR": {
+    "bars": 5505,
+    "fires": 105
+  },
+  "EQR": {
+    "bars": 8278,
+    "fires": 159
+  },
+  "EQT": {
+    "bars": 11668,
+    "fires": 217
+  },
+  "ESS": {
+    "bars": 8072,
+    "fires": 160
+  },
+  "ETN": {
+    "bars": 13634,
+    "fires": 237
+  },
+  "GM": {
+    "bars": 3927,
+    "fires": 64
+  },
+  "GOOG": {
+    "bars": 5502,
+    "fires": 95
+  },
+  "GOOGL": {
+    "bars": 5502,
+    "fires": 90
+  },
+  "GS": {
+    "bars": 6833,
+    "fires": 117
+  },
+  "GD": {
+    "bars": 16233,
+    "fires": 283
+  },
+  "GE": {
+    "bars": 16233,
+    "fires": 286
+  },
+  "GEV": {
+    "bars": 568,
+    "fires": 5
+  },
+  "GILD": {
+    "bars": 8672,
+    "fires": 168
+  },
+  "HAL": {
+    "bars": 13634,
+    "fires": 245
+  },
+  "HD": {
+    "bars": 11285,
+    "fires": 192
+  },
+  "HLT": {
+    "bars": 3156,
+    "fires": 60
+  },
+  "HON": {
+    "bars": 16230,
+    "fires": 294
+  },
+  "HSY": {
+    "bars": 11668,
+    "fires": 197
+  },
+  "HWM": {
+    "bars": 2429,
+    "fires": 40
+  },
+  "IBM": {
+    "bars": 16233,
+    "fires": 265
+  },
+  "IFF": {
+    "bars": 12993,
+    "fires": 241
+  },
+  "INTC": {
+    "bars": 11668,
+    "fires": 224
+  },
+  "IP": {
+    "bars": 16233,
+    "fires": 326
+  },
+  "IRM": {
+    "bars": 7653,
+    "fires": 122
+  },
+  "ISRG": {
+    "bars": 32,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "JCI": {
+    "bars": 9764,
+    "fires": 167
+  },
+  "JNJ": {
+    "bars": 16233,
+    "fires": 293
+  },
+  "JPM": {
+    "bars": 11668,
+    "fires": 208
+  },
+  "KDP": {
+    "bars": 4567,
+    "fires": 78
+  },
+  "KIM": {
+    "bars": 8712,
+    "fires": 150
+  },
+  "KLAC": {
+    "bars": 11525,
+    "fires": 207
+  },
+  "KMB": {
+    "bars": 11668,
+    "fires": 216
+  },
+  "KMI": {
+    "bars": 35,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "KO": {
+    "bars": 16233,
+    "fires": 317
+  },
+  "KR": {
+    "bars": 16233,
+    "fires": 292
+  },
+  "KVUE": {
+    "bars": 793,
+    "fires": 9
+  },
+  "LIN": {
+    "bars": 8570,
+    "fires": 166
+  },
+  "LYV": {
+    "bars": 5163,
+    "fires": 91
+  },
+  "MA": {
+    "bars": 5057,
+    "fires": 95
+  },
+  "MAR": {
+    "bars": 7114,
+    "fires": 127
+  },
+  "MCD": {
+    "bars": 15098,
+    "fires": 259
+  },
+  "LLY": {
+    "bars": 13634,
+    "fires": 245
+  },
+  "LMT": {
+    "bars": 16232,
+    "fires": 267
+  },
+  "LOW": {
+    "bars": 11668,
+    "fires": 199
+  },
+  "LRCX": {
+    "bars": 10622,
+    "fires": 202
+  },
+  "MCK": {
+    "bars": 7962,
+    "fires": 131
+  },
+  "MDLZ": {
+    "bars": 6300,
+    "fires": 120
+  },
+  "MDT": {
+    "bars": 13405,
+    "fires": 256
+  },
+  "META": {
+    "bars": 3550,
+    "fires": 60
+  },
+  "MPC": {
+    "bars": 3777,
+    "fires": 61
+  },
+  "MRK": {
+    "bars": 16233,
+    "fires": 322
+  },
+  "MRVL": {
+    "bars": 6539,
+    "fires": 123
+  },
+  "MS": {
+    "bars": 8397,
+    "fires": 172
+  },
+  "MLM": {
+    "bars": 32,
+    "fires": 0,
+    "error": "thin history (<200 bars)"
+  },
+  "MMM": {
+    "bars": 16229,
+    "fires": 300
+  },
+  "MNST": {
+    "bars": 10219,
+    "fires": 171
+  },
+  "MO": {
+    "bars": 16233,
+    "fires": 273
+  },
+  "NFLX": {
+    "bars": 6066,
+    "fires": 104
+  },
+  "NKE": {
+    "bars": 11488,
+    "fires": 209
+  },
+  "NRG": {
+    "bars": 5681,
+    "fires": 106
+  },
+  "NUE": {
+    "bars": 11668,
+    "fires": 210
+  },
+  "MSFT": {
+    "bars": 10154,
+    "fires": 187
+  },
+  "MU": {
+    "bars": 10603,
+    "fires": 196
+  },
+  "NEE": {
+    "bars": 13454,
+    "fires": 263
+  },
+  "NEM": {
+    "bars": 11668,
+    "fires": 214
+  },
+  "NVDA": {
+    "bars": 6903,
+    "fires": 122
+  },
+  "NWSA": {
+    "bars": 3279,
+    "fires": 55
+  },
+  "O": {
+    "bars": 7979,
+    "fires": 141
+  },
+  "OKE": {
+    "bars": 11530,
+    "fires": 195
+  },
+  "PKG": {
+    "bars": 6646,
+    "fires": 122
+  },
+  "PLD": {
+    "bars": 7195,
+    "fires": 131
+  },
+  "PLTR": {
+    "bars": 1445,
+    "fires": 26
+  },
+  "PM": {
+    "bars": 4603,
+    "fires": 74
+  },
+  "OMC": {
+    "bars": 11668,
+    "fires": 212
+  },
+  "ORCL": {
+    "bars": 10155,
+    "fires": 189
+  },
+  "ORLY": {
+    "bars": 8355,
+    "fires": 161
+  },
+  "OXY": {
+    "bars": 11215,
+    "fires": 211
+  },
+  "PANW": {
+    "bars": 3507,
+    "fires": 63
+  },
+  "PCG": {
+    "bars": 13634,
+    "fires": 243
+  },
+  "PEG": {
+    "bars": 11720,
+    "fires": 218
+  },
+  "PEP": {
+    "bars": 13634,
+    "fires": 260
+  },
+  "PFE": {
+    "bars": 13634,
+    "fires": 249
+  },
+  "PG": {
+    "bars": 16233,
+    "fires": 298
+  },
+  "PGR": {
+    "bars": 11668,
+    "fires": 202
+  },
+  "PH": {
+    "bars": 11668,
+    "fires": 212
+  },
+  "SATS": {
+    "bars": 4645,
+    "fires": 87
+  },
+  "SBAC": {
+    "bars": 6803,
+    "fires": 132
+  },
+  "SBUX": {
+    "bars": 8563,
+    "fires": 143
+  },
+  "SCHW": {
+    "bars": 9768,
+    "fires": 175
+  },
+  "PNC": {
+    "bars": 12761,
+    "fires": 239
+  },
+  "PPG": {
+    "bars": 11668,
+    "fires": 205
+  },
+  "PSA": {
+    "bars": 11497,
+    "fires": 219
+  },
+  "PSX": {
+    "bars": 3576,
+    "fires": 64
+  },
+  "PWR": {
+    "bars": 7140,
+    "fires": 116
+  },
+  "RCL": {
+    "bars": 8352,
+    "fires": 151
+  },
+  "ROST": {
+    "bars": 10303,
+    "fires": 178
+  },
+  "RTX": {
+    "bars": 16170,
+    "fires": 287
+  },
+  "SHW": {
+    "bars": 11668,
+    "fires": 203
+  },
+  "SLB": {
+    "bars": 11215,
+    "fires": 215
+  },
+  "SNDK": {
+    "bars": 347,
+    "fires": 4
+  },
+  "SO": {
+    "bars": 11215,
+    "fires": 188
+  },
+  "SPG": {
+    "bars": 8192,
+    "fires": 165
+  },
+  "SPGI": {
+    "bars": 13454,
+    "fires": 228
+  },
+  "SRE": {
+    "bars": 7046,
+    "fires": 133
+  },
+  "STLD": {
+    "bars": 7447,
+    "fires": 132
+  },
+  "STX": {
+    "bars": 5924,
+    "fires": 96
+  },
+  "SW": {
+    "bars": 4539,
+    "fires": 65
+  },
+  "SYK": {
+    "bars": 11668,
+    "fires": 221
+  },
+  "SYY": {
+    "bars": 13401,
+    "fires": 235
+  },
+  "T": {
+    "bars": 10736,
+    "fires": 214
+  },
+  "TGT": {
+    "bars": 13454,
+    "fires": 239
+  },
+  "TJX": {
+    "bars": 9828,
+    "fires": 189
+  },
+  "TKO": {
+    "bars": 6716,
+    "fires": 123
+  },
+  "TMO": {
+    "bars": 11668,
+    "fires": 208
+  },
+  "TMUS": {
+    "bars": 4832,
+    "fires": 95
+  },
+  "TPL": {
+    "bars": 11668,
+    "fires": 199
+  },
+  "TRGP": {
+    "bars": 3915,
+    "fires": 60
+  },
+  "TSLA": {
+    "bars": 4027,
+    "fires": 63
+  },
+  "TT": {
+    "bars": 11668,
+    "fires": 206
+  },
+  "TTD": {
+    "bars": 2458,
+    "fires": 52
+  },
+  "TTWO": {
+    "bars": 7350,
+    "fires": 133
+  },
+  "TXN": {
+    "bars": 13634,
+    "fires": 250
+  },
+  "UBER": {
+    "bars": 1796,
+    "fires": 30
+  },
+  "UNH": {
+    "bars": 10507,
+    "fires": 207
+  },
+  "UNP": {
+    "bars": 11720,
+    "fires": 218
+  },
+  "USB": {
+    "bars": 13404,
+    "fires": 231
+  },
+  "V": {
+    "bars": 4601,
+    "fires": 94
+  },
+  "VICI": {
+    "bars": 2136,
+    "fires": 32
+  },
+  "VLO": {
+    "bars": 11214,
+    "fires": 174
+  },
+  "VMC": {
+    "bars": 13454,
+    "fires": 239
+  },
+  "VRT": {
+    "bars": 1989,
+    "fires": 33
+  },
+  "VRTX": {
+    "bars": 8798,
+    "fires": 154
+  },
+  "VST": {
+    "bars": 2448,
+    "fires": 42
+  },
+  "VTR": {
+    "bars": 7336,
+    "fires": 117
+  },
+  "VZ": {
+    "bars": 10736,
+    "fires": 201
+  },
+  "WBD": {
+    "bars": 5279,
+    "fires": 101
+  },
+  "WDC": {
+    "bars": 12015,
+    "fires": 211
+  },
+  "WEC": {
+    "bars": 11668,
+    "fires": 215
+  },
+  "WELL": {
+    "bars": 11666,
+    "fires": 208
+  },
+  "WFC": {
+    "bars": 13634,
+    "fires": 250
+  },
+  "WMB": {
+    "bars": 11215,
+    "fires": 211
+  },
+  "WMT": {
+    "bars": 13574,
+    "fires": 249
+  },
+  "WY": {
+    "bars": 13404,
+    "fires": 254
+  },
+  "XEL": {
+    "bars": 13454,
+    "fires": 238
+  },
+  "XOM": {
+    "bars": 16232,
+    "fires": 324
+  }
+}
