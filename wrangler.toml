@@ -1,14 +1,21 @@
 # Cloudflare Workers Builds runs `npx wrangler deploy` from the REPOSITORY ROOT.
 # With no config here, wrangler auto-detects the repo as a static site
 # (Framework: Static, `npx cecil build` -> `_site`) and the build FAILS because
-# `_site` is never produced. That misdetection is the persistent
-# "Workers Builds: macro" red X (the worker/ lockfile fix never applied, because
-# the build never runs inside worker/).
+# `_site` is never produced. This root config pins the build to the real, tiny
+# live-quotes Worker (dormant — its URL is not wired into the site, see
+# worker/DEPLOY.md; site/live_config.js ships LIVE_QUOTES_URL=""). Local/manual
+# deploys still use worker/wrangler.toml.
 #
-# This root config pins the build to the real, tiny live-quotes Worker so CI
-# deploys the "macro" service deterministically. The Worker is dormant (its URL
-# is not wired into the site — see worker/DEPLOY.md), so this just keeps the
-# build green. Local/manual deploys still use worker/wrangler.toml.
+# STATUS 2026-07-05: the pin (#737) kept the check green 2026-06-30 → 2026-07-03
+# 17:23 -0700; it went red again from the next built commit (20:37 -0700) with NO
+# repo-side change — `npx wrangler@latest deploy --dry-run` from the root still
+# passes locally (wrangler 4.107.0). The failure is Cloudflare-side; the build log
+# is dashboard-only (dash.cloudflare.com → Workers & Pages → macro → Builds).
+# Prime suspect: the Workers-Builds-managed API token being rolled/deleted during
+# the R2 token work of 2026-07-01/07-04. Fix (or disconnect the repo from Workers
+# Builds — the deploy is ceremonial) in the dashboard; nothing in this repo can
+# cure it. The check is NOT required (main is unprotected): red X pollutes, never
+# blocks merges.
 name = "macro"
 main = "worker/quotes.worker.js"
 compatibility_date = "2024-11-01"
