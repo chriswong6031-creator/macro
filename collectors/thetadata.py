@@ -413,8 +413,8 @@ def _fetch_window_with_retry(
                     time.sleep(backoff)
                     continue
                 log.warning(
-                    "thetadata: window %s %s→%s failed after %d attempts — aborting",
-                    root, path, win_start, win_end, WINDOW_MAX_RETRIES + 1)
+                    "thetadata: window %s %s %s→%s failed after %d attempts — aborting",
+                    root, path.split("/")[-1], win_start, win_end, WINDOW_MAX_RETRIES + 1)
                 return None
             log.info("thetadata: %s %s %s→%s rows=%d elapsed=%.1fs",
                      root, path.split("/")[-1], win_start, win_end, rows, elapsed)
@@ -442,17 +442,21 @@ def _concurrent_windows(
     end_date: date | str | int,
     *,
     root: str,
+    window_days: int = WINDOW_DAYS,
 ) -> pd.DataFrame | None:
-    """Pull [start_date, end_date] in ≤WINDOW_DAYS windows using WINDOW_WORKERS threads.
+    """Pull [start_date, end_date] in ≤window_days windows using WINDOW_WORKERS threads.
 
     Windows are submitted in chronological order.  Results are sorted by window start
     date after gather to ensure deterministic ordering in the concatenated DataFrame.
     On any window's final failure: cancel/drain remaining futures, return None.
 
+    window_days=WINDOW_DAYS (7) for eod/oi wildcard (short ranges measured reliable).
+    window_days=1 for greeks/eod wildcard (API rejects multi-day: HTTP 400).
+
     This is the stall fix: short windows avoid server-side assembly latency that causes
     the terminal to stream a few KB then hang indefinitely on long date ranges.
     """
-    windows = list(_iter_windows(start_date, end_date))
+    windows = list(_iter_windows(start_date, end_date, window_days=window_days))
     if not windows:
         return pd.DataFrame()
 
@@ -757,21 +761,17 @@ def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
         return None
 
     if exp_param == "*":
-        # greeks/eod rejects multi-day wildcard (HTTP 400); iterate day-by-day concurrently.
-        # Each day is one request; results concatenated in chronological order.
-        days = list(_iter_days(start_date, end_date))
-        if not days:
-            return pd.DataFrame()
-
-        # Reuse _concurrent_windows with 1-day windows to get retry + concurrency.
-        # Each "window" is exactly one calendar day (start == end).
+        # greeks/eod rejects multi-day wildcard (HTTP 400: "When expiration=*, you must
+        # request data a day-at-a-time").  Use 1-day windows so each request has
+        # start_date == end_date, satisfying the API constraint.
+        # Concurrency + retry are handled by _concurrent_windows with window_days=1.
         base_params = {
             "symbol": root.upper(),
             "expiration": "*",
         }
         df = _concurrent_windows(
             "/v3/option/history/greeks/eod", base_params, start_date, end_date,
-            root=root)
+            root=root, window_days=1)
         if df is None:
             log.warning(
                 "thetadata: bulk_greeks(%s, exp=*, %s→%s, order=%d) failed — returning None",

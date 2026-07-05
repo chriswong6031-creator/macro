@@ -290,12 +290,13 @@ class TestGreeksParsing:
         with pytest.raises(ValueError, match="order must be"):
             td.bulk_greeks("SPY", 20260117, date(2026, 1, 1), date(2026, 1, 2), order=5)
 
-    def test_wildcard_expiration_windowed_concurrent(self, monkeypatch):
-        """greeks/eod wildcard: concurrent windowed iteration (stall fix 2026-07-05).
+    def test_wildcard_expiration_day_by_day_concurrent(self, monkeypatch):
+        """greeks/eod wildcard: 1-day windows (API rejects multi-day wildcard: HTTP 400).
 
-        greeks/eod rejects multi-day wildcard per day (HTTP 400), but bulk_greeks uses
-        _concurrent_windows which issues ≤7-day windows.  A 2-day range → 1 window call.
-        An 8-day range → 2 window calls (7-day + 1-day).
+        greeks/eod requires start_date == end_date when expiration="*".
+        bulk_greeks uses _concurrent_windows with window_days=1, so each window is
+        exactly 1 calendar day.  A 2-day range → 2 calls (one per day).
+        An 8-day range → 8 calls (one per day).
         Each window has expiration="*".
         """
         monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
@@ -305,26 +306,23 @@ class TestGreeksParsing:
 
         def _mock_get_csv(session, path, params):
             calls.append(dict(params))
-            return pd.DataFrame()  # Each window returns empty (holiday/weekend)
+            return pd.DataFrame()  # Each day returns empty (holiday/weekend)
 
         monkeypatch.setattr(td, "_get_csv", _mock_get_csv)
-        # 2-day range → 1 window (≤7 days)
+        # 2-day range → 2 calls (1-day windows: start_date == end_date for greeks)
         df = td.bulk_greeks("SPY", 0, date(2026, 1, 1), date(2026, 1, 2), order=1)
-        assert len(calls) == 1, (
-            f"2-day greeks range fits in 1 window (≤7 days), got {len(calls)} calls"
-        )
-        assert calls[0].get("expiration") == "*"
-        # Returns empty DataFrame (all windows were empty), not None
-        assert df is not None
-        assert df.empty
-
-        # 8-day range → 2 windows
-        calls.clear()
-        td.bulk_greeks("SPY", 0, date(2026, 1, 1), date(2026, 1, 8), order=1)
         assert len(calls) == 2, (
-            f"8-day greeks range → 2 windows (7+1), got {len(calls)} calls"
+            f"2-day greeks range → 2 day-by-day calls (window_days=1), got {len(calls)}"
         )
         assert all(c.get("expiration") == "*" for c in calls)
+        # Each window: start_date == end_date
+        for c in calls:
+            assert c.get("start_date") == c.get("end_date"), (
+                f"greeks window start != end: {c}"
+            )
+        # Returns empty DataFrame (all days were empty), not None
+        assert df is not None
+        assert df.empty
 
     def test_greeks_uses_eod_endpoint(self, monkeypatch):
         """bulk_greeks calls the /v3/option/history/greeks/eod endpoint, NOT /greeks/all."""
