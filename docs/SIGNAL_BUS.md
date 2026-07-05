@@ -18,7 +18,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | neural-web | 24 |
-| options-alpha | 2 |
+| options-alpha | 4 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
 | sector-pulse | 3 |
@@ -29,7 +29,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 44 |
+| display | 46 |
 | infrastructure | 29 |
 | scored | 4 |
 | shadow | 33 |
@@ -38,8 +38,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 107 |
-| gitignored-local | 2 |
+| git | 108 |
+| gitignored-local | 3 |
 | r2 | 1 |
 
 ## Artifacts by owner_program
@@ -149,8 +149,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| polygon-gex-summaries | `data/polygon_gex/summary_*.parquet` | parquet | collect | display | 4 | 0 |
 | vol-regime-gate | `data/vol_regime/gate.json` | json | on-demand | scored | 3 | 0 |
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
+| options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 
 ### oracle
 
