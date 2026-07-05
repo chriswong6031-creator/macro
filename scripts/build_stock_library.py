@@ -2175,7 +2175,8 @@ def main() -> int:
                     _t_eb, _p_eb, _tier_eb = _item_eb
                     # Skip HOLD (any active state) — launched/intact/broken are all
                     # treated as open position; earnings gate does not re-suppress them.
-                    _hd_eb = (_p_eb.get("hold") or {}) if hasattr(_p_eb, "get") else {}
+                    # NOTE: hold state lives on row_by_t (rec["hold"]), NOT on prof (_p_eb).
+                    _hd_eb = (row_by_t[_t_eb].get("hold") or {}) if _t_eb in row_by_t else {}
                     if _hd_eb.get("state") in {"launched", "intact", "broken"}:
                         _buyable_after_eb.append(_item_eb)
                         continue
@@ -2192,7 +2193,8 @@ def main() -> int:
                 # Assess Lane-R recovery candidates
                 _recovery_after_eb: list[tuple] = []
                 for _t_eb, _p_eb in _recovery_cands:
-                    _hd_eb = (_p_eb.get("hold") or {}) if hasattr(_p_eb, "get") else {}
+                    # NOTE: hold state lives on row_by_t (rec["hold"]), NOT on prof (_p_eb).
+                    _hd_eb = (row_by_t[_t_eb].get("hold") or {}) if _t_eb in row_by_t else {}
                     if _hd_eb.get("state") in {"launched", "intact", "broken"}:
                         _recovery_after_eb.append((_t_eb, _p_eb))
                         continue
@@ -2495,10 +2497,18 @@ def main() -> int:
             if _eb_row and not _eb_row.get("stale") and _eb_row.get("days_to_earnings") is not None:
                 _eb_days = _eb_row["days_to_earnings"]
                 if _eb_days is not None and _eb_days <= 7:
+                    # Map Nasdaq raw time tokens to display-friendly labels.
+                    _raw_nt = _eb_row.get("next_time")
+                    _nt_labels = {
+                        "time-after-hours": "after close",
+                        "time-pre-market": "pre-market",
+                        "time-not-supplied": None,
+                    }
+                    _disp_nt = _nt_labels.get(_raw_nt, _raw_nt) if _raw_nt else None
                     r["earnings_soon"] = {
                         "days_to": _eb_days,
                         "next_date": _eb_row.get("next_date"),
-                        "next_time": _eb_row.get("next_time"),
+                        "next_time": _disp_nt,
                         "in_blackout": bool(_eb_row.get("in_blackout")),
                     }
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so

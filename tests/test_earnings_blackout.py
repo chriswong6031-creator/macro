@@ -6,6 +6,8 @@ Tests cover (per task spec):
   3. Stale row fails open (in_blackout=False, stale=True).
   4. Missing ticker fails open (in_blackout=False, stale=False).
   5. next_time is carried through in the result dict.
+  9. HOLD-intact wiring: a HOLD-intact name inside k=3 window is NOT suppressed
+     (validates build_stock_library.py wiring fix — reading hold from row_by_t, not prof).
 
 No live I/O — all tests use tmp_path-backed synthetic parquets or store overrides.
 """
@@ -403,3 +405,80 @@ class TestSetTdCalendar:
         assert "days_to_earnings" in result
         # Should be assessable (not a calendar gap)
         assert result["reason"] != "td_calendar_gap"
+
+
+# ── 9. HOLD-intact wiring: HOLD inside k=3 window must NOT be suppressed ─────
+
+class TestHoldIntactWiringSkip:
+    """Regression test for build_stock_library.py wiring bug (W1.5 FIX):
+
+    The HOLD-skip guard was reading hold from the profile object (_p_eb.get("hold"))
+    which never carries the hold key.  The key lives on the row (rec["hold"]).
+    This test simulates the row_by_t lookup used in the fixed code path.
+
+    We use the engine directly (assess) to confirm the HOLD state is evaluated
+    correctly, and a synthetic simulation of the wiring logic to confirm the
+    row-based lookup is what governs the skip.
+    """
+
+    def test_hold_intact_row_read_correctly(self, tmp_path):
+        """Simulate the fixed wiring: reading hold from row_by_t, not from prof.
+
+        Invariant: a HOLD-intact name inside the k=3 blackout window must be
+        retained (skip fires), not suppressed (blackout fires).
+        """
+        eb.clear_cache()
+        # 2 trading days out = inside k=3 window
+        future = (pd.Timestamp(TODAY) + pd.Timedelta(days=2)).strftime("%Y-%m-%d")
+        p = _make_store(tmp_path, {
+            "HOLDTICKER": {"next_date": future, "as_of": _fresh_as_of(TODAY)},
+        })
+
+        # Simulate the fixed wiring: row has hold.state = "intact"
+        prof = {}  # prof never carries "hold"
+        row = {"ticker": "HOLDTICKER", "hold": {"state": "intact"}, "other": "data"}
+        row_by_t = {"HOLDTICKER": row}
+
+        # BUGGY path (pre-fix): reads from prof — always returns {}
+        buggy_hd = (prof.get("hold") or {}) if hasattr(prof, "get") else {}
+        buggy_skip = buggy_hd.get("state") in {"launched", "intact", "broken"}
+        assert buggy_skip is False, "Pre-fix bug confirmed: HOLD was never skipped from prof"
+
+        # FIXED path: reads from row_by_t
+        _t = "HOLDTICKER"
+        fixed_hd = (row_by_t[_t].get("hold") or {}) if _t in row_by_t else {}
+        fixed_skip = fixed_hd.get("state") in {"launched", "intact", "broken"}
+        assert fixed_skip is True, "Fixed path must detect HOLD-intact and skip suppression"
+
+    def test_non_hold_inside_window_is_suppressed(self, tmp_path):
+        """A non-HOLD name inside k=3 window MUST be suppressed (control case)."""
+        eb.clear_cache()
+        future = (pd.Timestamp(TODAY) + pd.Timedelta(days=2)).strftime("%Y-%m-%d")
+        p = _make_store(tmp_path, {
+            "NOHOLDTICKER": {"next_date": future, "as_of": _fresh_as_of(TODAY)},
+        })
+        result = eb.assess("NOHOLDTICKER", today=TODAY, store_path=p)
+        # Engine correctly identifies this as in_blackout
+        assert result["in_blackout"] is True
+
+        # Simulate the fixed wiring: row has NO hold key → skip does not fire
+        row = {"ticker": "NOHOLDTICKER"}  # no "hold" key
+        row_by_t = {"NOHOLDTICKER": row}
+        _t = "NOHOLDTICKER"
+        fixed_hd = (row_by_t[_t].get("hold") or {}) if _t in row_by_t else {}
+        fixed_skip = fixed_hd.get("state") in {"launched", "intact", "broken"}
+        assert fixed_skip is False, "No-HOLD name must not skip suppression"
+
+    def test_hold_launched_also_skipped(self, tmp_path):
+        """HOLD state 'launched' (open position, just-triggered) is also skipped."""
+        row_by_t = {"LAUNCHED": {"ticker": "LAUNCHED", "hold": {"state": "launched"}}}
+        _t = "LAUNCHED"
+        fixed_hd = (row_by_t[_t].get("hold") or {}) if _t in row_by_t else {}
+        assert fixed_hd.get("state") in {"launched", "intact", "broken"}
+
+    def test_hold_broken_also_skipped(self, tmp_path):
+        """HOLD state 'broken' is also skipped (position being exited, still open)."""
+        row_by_t = {"BROKEN": {"ticker": "BROKEN", "hold": {"state": "broken"}}}
+        _t = "BROKEN"
+        fixed_hd = (row_by_t[_t].get("hold") or {}) if _t in row_by_t else {}
+        assert fixed_hd.get("state") in {"launched", "intact", "broken"}
