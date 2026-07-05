@@ -3358,6 +3358,12 @@ artifacts:
       Two new rolling columns (dist_21d_low_pct, dist_126d_high_pct) are the only
       new price computations. rs_repair_state and sponsorship_state are unavailable
       until #1302 W0.4 and lane B2 respectively.
+      nw-quant-synthesis item A (FR-9/FR-10): three additive per-ticker columns bound
+      from engine/stock_fundamentals._leverage_ratios() via data/edgar/statements.parquet:
+        interest_coverage, net_debt_to_op_income, net_debt_to_ebitda.
+      All three are None-safe; Financial-sector names and sparse filers produce None.
+      net_debt_to_ebitda requires D&A (DepreciationDepletionAndAmortization) which
+      accrues via the collectors/edgar_facts.py weekly drip — mostly None until drip runs.
 
   bottom-sensors-json:
     path: site/neuralwebdata/bottom_sensors.json

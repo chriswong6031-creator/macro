@@ -489,6 +489,83 @@ def _altman(latest: dict, mktcap: float | None) -> dict | None:
     return {"z": round(z, 2), "zone": zone, "approx": approx}
 
 
+def _leverage_ratios(rows: list[dict]) -> dict:
+    """Bottom-survival-quality leverage ratios from statement rows (PIT-filtered by caller).
+
+    Follows the _altman()/_piotroski() pattern: takes the list of per-fiscal-year
+    statement rows already filtered to fy <= panel-row fy, uses only the LATEST row.
+    Returns a dict with up to four keys; any ratio that cannot be computed (missing or
+    zero denominator, all-None inputs) is absent from the dict (not set to 0/None) so
+    the caller can detect unavailability via .get() returning None.
+
+    None-safety law: never use `x or default` on values that can be 0 — use explicit
+    `is None` checks throughout (repo footgun; 0 is a valid financial value).
+
+    Ratios:
+      interest_coverage      = op_income / interest_exp
+                               None if either is None, or interest_exp <= 0.
+      net_debt               = (debt_lt or 0) + (debt_cur or 0) − cash
+                               None if ALL THREE inputs are None (don't fabricate zero).
+      net_debt_to_op_income  = net_debt / op_income
+                               None unless op_income > 0.  Labeled proxy for net_debt/EBITDA.
+      net_debt_to_ebitda     = net_debt / (op_income + depreciation)
+                               None unless depreciation is present AND denominator > 0.
+                               Will be None for nearly everything until the drip accrues D&A.
+    """
+    if not rows:
+        return {}
+    latest = rows[-1]
+
+    def _g(key):
+        """Fetch a scalar from the latest row using explicit None check (not `or`)."""
+        v = latest.get(key)
+        return _num(v)
+
+    op_income = _g("op_income")
+    interest_exp = _g("interest_exp")
+    debt_lt = _g("debt_lt")
+    debt_cur = _g("debt_cur")
+    cash = _g("cash")
+    depreciation = _g("depreciation")
+
+    out: dict = {}
+
+    # ── interest_coverage ────────────────────────────────────────────────────
+    if op_income is not None and interest_exp is not None and interest_exp > 0:
+        out["interest_coverage"] = round(op_income / interest_exp, 2)
+
+    # ── net_debt ─────────────────────────────────────────────────────────────
+    # Treat individual missing debt fields as 0 only when at least one debt field
+    # is present — avoids fabricating zero net_debt from fully-missing data.
+    if debt_lt is None and debt_cur is None and cash is None:
+        net_debt = None          # all three missing: no basis to compute
+    else:
+        # Use 0 for individually missing components when peer fields are present.
+        debt_lt_v = debt_lt if debt_lt is not None else 0.0
+        debt_cur_v = debt_cur if debt_cur is not None else 0.0
+        cash_v = cash if cash is not None else 0.0
+        net_debt = debt_lt_v + debt_cur_v - cash_v
+
+    if net_debt is not None:
+        out["net_debt"] = round(net_debt, 0)
+
+    # ── net_debt_to_op_income (labeled EBITDA proxy) ─────────────────────────
+    if net_debt is not None and op_income is not None and op_income > 0:
+        out["net_debt_to_op_income"] = round(net_debt / op_income, 2)
+
+    # ── net_debt_to_ebitda (true ratio; requires D&A from weekly drip) ────────
+    if (
+        net_debt is not None
+        and op_income is not None
+        and depreciation is not None
+    ):
+        ebitda = op_income + depreciation
+        if ebitda > 0:
+            out["net_debt_to_ebitda"] = round(net_debt / ebitda, 2)
+
+    return out
+
+
 def _cagr(series: list) -> float | None:
     s = [x for x in series if x is not None]
     if len(series) < 2 or series[0] is None or series[-1] is None:
@@ -1313,6 +1390,11 @@ def panels() -> dict[str, dict]:
             betas=betas_map.get(str(t)),
         )
         fin = _financials(t, f, deep.get(t), my)
+        # Leverage ratios: computed from the PIT-filtered statement rows (same rows
+        # already used for _multiyear).  None-safe throughout; Financial-sector names
+        # and names without statements will produce an empty dict which is excluded by
+        # the `if v` filter below (display-only, partial coverage expected).
+        lev = _leverage_ratios(rows or [])
         blocks = {
             "profile": _profile(t, f, fac, M, arche, profiles.get(str(t))),
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
@@ -1328,6 +1410,9 @@ def panels() -> dict[str, dict]:
             # investment factor z's + single-period ratios + (where companyfacts has
             # run) the multi-year trend. DISPLAY-ONLY: baked for the reader, never scored.
             "accounting_quality": _accounting_quality(fac, fin, my, rows, aq_cfg),
+            # bottom-survival-quality leverage ratios (display-only; partial coverage
+            # until the weekly D&A drip accrues; Financial-sector names mostly absent).
+            "leverage_ratios": lev if lev else None,
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",
