@@ -110,7 +110,8 @@
   // (capture phase so it runs before the browser follows the <a>). Leaves
   // new-tab / modified clicks and intl_stock.html (not in Terminal yet) alone.
   // TODO: add 'intl_stock.html' here once the Terminal backfill lands.
-  var TERMINAL_PAGES = { 'stock.html': 1, 'china_lookup.html': 1, 'hk_lookup.html': 1, 'canada_stock.html': 1 };
+  // null-prototype map so an href-derived key can't hit Object.prototype ('constructor', etc.)
+  var TERMINAL_PAGES = Object.assign(Object.create(null), { 'stock.html': 1, 'china_lookup.html': 1, 'hk_lookup.html': 1, 'canada_stock.html': 1 });
   document.addEventListener('click', function (e) {
     if (!mmTerminalOn() || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
