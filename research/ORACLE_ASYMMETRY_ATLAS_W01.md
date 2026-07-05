@@ -4,7 +4,7 @@
 **Date:** 2026-07-05
 **Nature:** DESCRIPTIVE measurement only. No new signals. No claim language.
 **Grading basis:** close-to-close approximation; intraday H/L unwired (W0.2)
-**Routing tables:** n≤12 descriptive only.
+**Routing tables:** DESCRIPTIVE ONLY — broad-sweep enumeration over full history (NOT restricted to p3b placebo-survivor fires; actual n reported per table).
 
 > IMPORTANT: The word "validated" does not appear in this document per Oracle Constitution §II.
 > Every table carries the close-only honesty label and n + immature count.
@@ -27,6 +27,8 @@ n=357, immature=2, matured n=355
 | DEAD_MONEY | 231 | 65.1% |
 | CUSHIONED | 0 | 0.0% |
 | CLEAN_LIFTOFF | 87 | 24.5% |
+
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
 **Policy R-multiple (rot21):** p10=-1.00 p25=-0.21 p50=0.31 p75=0.76 p90=1.25 mean=0.28
 
@@ -77,7 +79,7 @@ n=357, immature=2, matured n=355
 | Exhaust exit (FLOOR label) | 355 | 0.16 | 0.30 | n/a |
 | Accel-flip exit | 355 | 0.16 | 0.25 | n/a |
 
-*Detection lag (exhaust_date − accel_flip_date): n=356 mean=13.2d p50=5.0d p75=20.0d p90=39.0d. Exhaust-exit R-multiples are a FLOOR vs reflex exits.*
+*Detection lag (exhaust_date − accel_flip_date): n=355 mean=9.4d p50=3.0d p75=14.0d p90=27.0d. Exhaust-exit R-multiples are a FLOOR vs reflex exits.*
 
 ### ep_onset_in | pos63
 close-to-close approximation; intraday H/L unwired (W0.2)
@@ -140,7 +142,7 @@ n=357, immature=7, matured n=350
 | Exhaust exit (FLOOR label) | 350 | 0.15 | 0.30 | n/a |
 | Accel-flip exit | 350 | 0.16 | 0.24 | n/a |
 
-*Detection lag (exhaust_date − accel_flip_date): n=356 mean=13.2d p50=5.0d p75=20.0d p90=39.0d. Exhaust-exit R-multiples are a FLOOR vs reflex exits.*
+*Detection lag (exhaust_date − accel_flip_date): n=350 mean=9.4d p50=3.0d p75=14.0d p90=27.0d. Exhaust-exit R-multiples are a FLOOR vs reflex exits.*
 
 
 ## Family: ep_onset_out
@@ -156,6 +158,8 @@ n=392, immature=4, matured n=388
 | DEAD_MONEY | 148 | 38.1% |
 | CUSHIONED | 0 | 0.0% |
 | CLEAN_LIFTOFF | 144 | 37.1% |
+
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
 **Policy R-multiple (rot21):** p10=-1.00 p25=-1.00 p50=-0.19 p75=0.55 p90=1.40 mean=0.05
 
@@ -206,7 +210,7 @@ n=392, immature=4, matured n=388
 | Exhaust exit (FLOOR label) | 388 | -0.15 | 0.04 | n/a |
 | Accel-flip exit | 388 | -0.08 | 0.09 | n/a |
 
-*Detection lag (exhaust_date − accel_flip_date): n=390 mean=6.8d p50=2.0d p75=9.0d p90=19.1d. Exhaust-exit R-multiples are a FLOOR vs reflex exits.*
+*Detection lag (exhaust_date − accel_flip_date): n=388 mean=4.9d p50=2.0d p75=7.0d p90=14.0d. Exhaust-exit R-multiples are a FLOOR vs reflex exits.*
 
 ### ep_onset_out | pos63
 **SHORT-SIDE** | close-to-close approximation; intraday H/L unwired (W0.2)
@@ -269,7 +273,7 @@ n=392, immature=8, matured n=384
 | Exhaust exit (FLOOR label) | 384 | -0.15 | 0.04 | n/a |
 | Accel-flip exit | 384 | -0.08 | 0.10 | n/a |
 
-*Detection lag (exhaust_date − accel_flip_date): n=390 mean=6.8d p50=2.0d p75=9.0d p90=19.1d. Exhaust-exit R-multiples are a FLOOR vs reflex exits.*
+*Detection lag (exhaust_date − accel_flip_date): n=384 mean=5.0d p50=2.0d p75=7.0d p90=14.0d. Exhaust-exit R-multiples are a FLOOR vs reflex exits.*
 
 
 ## Family: washout_p8
@@ -285,6 +289,8 @@ n=641, immature=2, matured n=639
 | DEAD_MONEY | 383 | 59.9% |
 | CUSHIONED | 0 | 0.0% |
 | CLEAN_LIFTOFF | 155 | 24.3% |
+
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
 **Policy R-multiple (rot21):** p10=-1.00 p25=-0.35 p50=0.26 p75=0.81 p90=1.24 mean=0.24
 
@@ -316,62 +322,64 @@ n=641, immature=2, matured n=639
 ### washout_p8 | rot21 | dedup=first21 (headline)
 close-to-close approximation; intraday H/L unwired (W0.2)
 
-n=608, immature=1, matured n=607
+n=577, immature=1, matured n=576
 
 | State | N | % |
 |---|---|---|
-| STOPPED | 96 | 15.8% |
-| DEAD_MONEY | 369 | 60.8% |
+| STOPPED | 91 | 15.8% |
+| DEAD_MONEY | 353 | 61.3% |
 | CUSHIONED | 0 | 0.0% |
-| CLEAN_LIFTOFF | 142 | 23.4% |
+| CLEAN_LIFTOFF | 132 | 22.9% |
 
-**Policy R-multiple (rot21):** p10=-1.00 p25=-0.37 p50=0.25 p75=0.80 p90=1.23 mean=0.23
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
-**MFE_R@21d:** p10=0.07 p25=0.29 p50=0.60 p75=0.96 p90=1.40 mean=0.69
-**MAE_R@21d:** p10=-1.34 p25=-0.78 p50=-0.30 p75=-0.07 p90=0.00 mean=-0.55
-**MFE_R@63d:** p10=0.23 p25=0.57 p50=1.11 p75=1.88 p90=2.64 mean=1.33
-**MAE_R@63d:** p10=-2.25 p25=-1.42 p50=-0.60 p75=-0.21 p90=0.00 mean=-0.96
+**Policy R-multiple (rot21):** p10=-1.00 p25=-0.38 p50=0.25 p75=0.80 p90=1.23 mean=0.22
+
+**MFE_R@21d:** p10=0.07 p25=0.29 p50=0.60 p75=0.95 p90=1.40 mean=0.69
+**MAE_R@21d:** p10=-1.34 p25=-0.78 p50=-0.31 p75=-0.07 p90=0.00 mean=-0.55
+**MFE_R@63d:** p10=0.23 p25=0.58 p50=1.10 p75=1.87 p90=2.64 mean=1.33
+**MAE_R@63d:** p10=-2.33 p25=-1.43 p50=-0.62 p75=-0.21 p90=0.00 mean=-0.98
 
 **% never touch −1R (close basis):** 84.2%
 
-**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 23.4%
+**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 22.9%
 
 **Era strata (rot21):**
 | Era | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| 1999-2014 | 338 | 0.17 | 0.18 | 22.5% |
-| 2015-2019 | 108 | 0.31 | 0.21 | 18.5% |
-| 2020-2022 | 76 | 0.55 | 0.40 | 26.3% |
-| 2023-2026 | 85 | 0.39 | 0.29 | 30.6% |
+| 1999-2014 | 323 | 0.17 | 0.18 | 22.3% |
+| 2015-2019 | 101 | 0.29 | 0.22 | 17.8% |
+| 2020-2022 | 70 | 0.57 | 0.43 | 27.1% |
+| 2023-2026 | 82 | 0.32 | 0.23 | 28.0% |
 
 **Regime strata:**
 | Regime | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| High VIX (≥0.6) | 275 | 0.35 | 0.28 | 24.4% |
-| Low VIX (<0.6) | 327 | 0.20 | 0.20 | 22.9% |
-| SPY above 200d | 377 | 0.29 | 0.27 | 24.4% |
-| SPY below 200d | 230 | 0.23 | 0.16 | 21.7% |
+| High VIX (≥0.6) | 261 | 0.35 | 0.26 | 22.6% |
+| Low VIX (<0.6) | 310 | 0.21 | 0.21 | 23.5% |
+| SPY above 200d | 359 | 0.29 | 0.27 | 24.2% |
+| SPY below 200d | 217 | 0.23 | 0.15 | 20.7% |
 
 **Per-node strata:**
 | Node | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| XLB | 57 | 0.39 | 0.29 | 19.3% |
+| XLB | 53 | 0.41 | 0.29 | 18.9% |
 | XLC | 17 | 0.20 | 0.11 | 17.6% |
-| XLE | 67 | 0.17 | 0.16 | 17.9% |
-| XLF | 68 | 0.15 | 0.23 | 26.5% |
-| XLI | 66 | 0.28 | 0.36 | 28.8% |
-| XLK | 68 | -0.02 | 0.15 | 23.5% |
-| XLP | 59 | 0.36 | 0.22 | 23.7% |
+| XLE | 65 | 0.19 | 0.18 | 18.5% |
+| XLF | 66 | 0.15 | 0.21 | 25.8% |
+| XLI | 62 | 0.25 | 0.35 | 27.4% |
+| XLK | 63 | -0.04 | 0.13 | 22.2% |
+| XLP | 54 | 0.37 | 0.21 | 22.2% |
 | XLRE | 22 | 0.40 | 0.22 | 27.3% |
-| XLU | 57 | 0.51 | 0.31 | 21.1% |
-| XLV | 61 | 0.15 | 0.20 | 27.9% |
-| XLY | 65 | 0.24 | 0.18 | 21.5% |
+| XLU | 56 | 0.51 | 0.27 | 19.6% |
+| XLV | 56 | 0.18 | 0.24 | 30.4% |
+| XLY | 62 | 0.23 | 0.18 | 21.0% |
 
 **Exit variant comparison (washout_p8 | rot21):**
 | Exit | N matured | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| Fixed horizon | 1246 | 0.26 | 0.23 | 23.8% |
-| Accel-flip exit | 1246 | 0.04 | 0.10 | n/a |
+| Fixed horizon | 1215 | 0.26 | 0.23 | 23.6% |
+| Accel-flip exit | 1215 | 0.04 | 0.10 | n/a |
 
 ### washout_p8 | pos63 | dedup=raw (appendix — reconciles to ledger)
 close-to-close approximation; intraday H/L unwired (W0.2)
@@ -415,62 +423,62 @@ n=641, immature=12, matured n=629
 ### washout_p8 | pos63 | dedup=first21 (headline)
 close-to-close approximation; intraday H/L unwired (W0.2)
 
-n=608, immature=11, matured n=597
+n=577, immature=11, matured n=566
 
 | State | N | % |
 |---|---|---|
-| STOPPED | 198 | 33.2% |
-| DEAD_MONEY | 112 | 18.8% |
-| CUSHIONED | 172 | 28.8% |
-| CLEAN_LIFTOFF | 115 | 19.3% |
+| STOPPED | 190 | 33.6% |
+| DEAD_MONEY | 108 | 19.1% |
+| CUSHIONED | 160 | 28.3% |
+| CLEAN_LIFTOFF | 108 | 19.1% |
 
-**Policy R-multiple (pos63):** p10=-1.00 p25=-1.00 p50=0.31 p75=1.26 p90=2.10 mean=0.39
+**Policy R-multiple (pos63):** p10=-1.00 p25=-1.00 p50=0.28 p75=1.25 p90=2.10 mean=0.38
 
-**MFE_R@21d:** p10=0.07 p25=0.28 p50=0.60 p75=0.95 p90=1.40 mean=0.69
-**MAE_R@21d:** p10=-1.37 p25=-0.78 p50=-0.31 p75=-0.07 p90=0.00 mean=-0.56
-**MFE_R@63d:** p10=0.23 p25=0.57 p50=1.11 p75=1.88 p90=2.64 mean=1.33
-**MAE_R@63d:** p10=-2.25 p25=-1.42 p50=-0.60 p75=-0.21 p90=0.00 mean=-0.96
+**MFE_R@21d:** p10=0.07 p25=0.28 p50=0.59 p75=0.94 p90=1.40 mean=0.68
+**MAE_R@21d:** p10=-1.37 p25=-0.80 p50=-0.32 p75=-0.08 p90=0.00 mean=-0.56
+**MFE_R@63d:** p10=0.23 p25=0.58 p50=1.10 p75=1.87 p90=2.64 mean=1.33
+**MAE_R@63d:** p10=-2.33 p25=-1.43 p50=-0.62 p75=-0.21 p90=0.00 mean=-0.98
 
-**% never touch −1R (close basis):** 66.7%
+**% never touch −1R (close basis):** 66.3%
 
-**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 48.1%
+**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 47.3%
 
 **Era strata (pos63):**
 | Era | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| 1999-2014 | 338 | 0.23 | 0.38 | 48.5% |
-| 2015-2019 | 108 | 0.44 | 0.36 | 44.4% |
-| 2020-2022 | 76 | 0.39 | 0.35 | 48.7% |
-| 2023-2026 | 75 | 0.47 | 0.53 | 50.7% |
+| 1999-2014 | 323 | 0.20 | 0.36 | 47.4% |
+| 2015-2019 | 101 | 0.46 | 0.37 | 44.6% |
+| 2020-2022 | 70 | 0.46 | 0.39 | 50.0% |
+| 2023-2026 | 72 | 0.07 | 0.46 | 48.6% |
 
 **Regime strata:**
 | Regime | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| High VIX (≥0.6) | 268 | 0.36 | 0.37 | 47.8% |
-| Low VIX (<0.6) | 324 | 0.30 | 0.43 | 49.1% |
-| SPY above 200d | 373 | 0.40 | 0.48 | 51.5% |
-| SPY below 200d | 224 | 0.22 | 0.25 | 42.4% |
+| High VIX (≥0.6) | 254 | 0.31 | 0.34 | 45.7% |
+| Low VIX (<0.6) | 307 | 0.30 | 0.43 | 49.5% |
+| SPY above 200d | 355 | 0.39 | 0.46 | 51.3% |
+| SPY below 200d | 211 | 0.20 | 0.23 | 40.8% |
 
 **Per-node strata:**
 | Node | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| XLB | 56 | 0.21 | 0.35 | 53.6% |
+| XLB | 52 | 0.21 | 0.39 | 53.8% |
 | XLC | 16 | -0.21 | 0.06 | 43.8% |
-| XLE | 66 | 0.47 | 0.41 | 47.0% |
-| XLF | 68 | 0.22 | 0.42 | 42.6% |
-| XLI | 65 | 0.36 | 0.38 | 50.8% |
-| XLK | 67 | 0.23 | 0.36 | 46.3% |
-| XLP | 58 | 0.26 | 0.44 | 50.0% |
+| XLE | 64 | 0.54 | 0.45 | 48.4% |
+| XLF | 66 | 0.21 | 0.39 | 40.9% |
+| XLI | 61 | 0.36 | 0.37 | 49.2% |
+| XLK | 62 | 0.15 | 0.26 | 43.5% |
+| XLP | 53 | 0.22 | 0.41 | 49.1% |
 | XLRE | 21 | 0.47 | 0.33 | 42.9% |
-| XLU | 57 | 0.62 | 0.62 | 57.9% |
-| XLV | 59 | 0.42 | 0.27 | 40.7% |
-| XLY | 64 | 0.41 | 0.38 | 48.4% |
+| XLU | 56 | 0.58 | 0.59 | 57.1% |
+| XLV | 54 | 0.32 | 0.24 | 40.7% |
+| XLY | 61 | 0.40 | 0.38 | 47.5% |
 
 **Exit variant comparison (washout_p8 | pos63):**
 | Exit | N matured | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| Fixed horizon | 1226 | 0.30 | 0.39 | 48.1% |
-| Accel-flip exit | 1226 | 0.03 | 0.09 | n/a |
+| Fixed horizon | 1195 | 0.30 | 0.38 | 47.8% |
+| Accel-flip exit | 1195 | 0.03 | 0.09 | n/a |
 
 
 ## Family: a15
@@ -486,6 +494,8 @@ n=2367, immature=10, matured n=2357
 | DEAD_MONEY | 1369 | 58.1% |
 | CUSHIONED | 0 | 0.0% |
 | CLEAN_LIFTOFF | 741 | 31.4% |
+
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
 **Policy R-multiple (rot21):** p10=-1.00 p25=-0.11 p50=0.43 p75=0.91 p90=1.45 mean=0.41
 
@@ -517,60 +527,62 @@ n=2367, immature=10, matured n=2357
 ### a15 | rot21 | dedup=first21 (headline)
 close-to-close approximation; intraday H/L unwired (W0.2)
 
-n=259, immature=2, matured n=257
+n=197, immature=1, matured n=196
 
 | State | N | % |
 |---|---|---|
-| STOPPED | 34 | 13.2% |
-| DEAD_MONEY | 133 | 51.8% |
+| STOPPED | 31 | 15.8% |
+| DEAD_MONEY | 93 | 47.4% |
 | CUSHIONED | 0 | 0.0% |
-| CLEAN_LIFTOFF | 90 | 35.0% |
+| CLEAN_LIFTOFF | 72 | 36.7% |
 
-**Policy R-multiple (rot21):** p10=-1.00 p25=-0.12 p50=0.43 p75=0.99 p90=1.46 mean=0.41
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
-**MFE_R@21d:** p10=0.12 p25=0.43 p50=0.83 p75=1.24 p90=1.65 mean=0.87
-**MAE_R@21d:** p10=-1.10 p25=-0.66 p50=-0.28 p75=-0.02 p90=0.00 mean=-0.47
-**MFE_R@63d:** p10=0.36 p25=0.81 p50=1.39 p75=2.23 p90=3.01 mean=1.59
-**MAE_R@63d:** p10=-1.90 p25=-1.01 p50=-0.49 p75=-0.14 p90=0.00 mean=-0.76
+**Policy R-multiple (rot21):** p10=-1.00 p25=-0.23 p50=0.43 p75=1.00 p90=1.46 mean=0.38
 
-**% never touch −1R (close basis):** 86.8%
+**MFE_R@21d:** p10=0.12 p25=0.46 p50=0.87 p75=1.26 p90=1.67 mean=0.88
+**MAE_R@21d:** p10=-1.33 p25=-0.73 p50=-0.34 p75=-0.04 p90=0.00 mean=-0.53
+**MFE_R@63d:** p10=0.41 p25=0.81 p50=1.43 p75=2.25 p90=3.00 mean=1.62
+**MAE_R@63d:** p10=-1.98 p25=-1.09 p50=-0.50 p75=-0.18 p90=0.00 mean=-0.79
 
-**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 35.0%
+**% never touch −1R (close basis):** 84.2%
+
+**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 36.7%
 
 **Era strata (rot21):**
 | Era | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| 1999-2014 | 138 | 0.51 | 0.38 | 32.6% |
-| 2015-2019 | 43 | 0.33 | 0.38 | 27.9% |
-| 2020-2022 | 38 | 0.44 | 0.54 | 42.1% |
-| 2023-2026 | 38 | 0.44 | 0.44 | 44.7% |
+| 1999-2014 | 105 | 0.55 | 0.36 | 34.3% |
+| 2015-2019 | 33 | 0.29 | 0.37 | 36.4% |
+| 2020-2022 | 29 | 0.47 | 0.61 | 41.4% |
+| 2023-2026 | 29 | 0.23 | 0.25 | 41.4% |
 
 **Regime strata:**
 | Regime | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| High VIX (≥0.6) | 176 | 0.40 | 0.29 | 29.0% |
-| Low VIX (<0.6) | 81 | 0.72 | 0.67 | 48.1% |
-| SPY above 200d | 124 | 0.54 | 0.52 | 37.1% |
-| SPY below 200d | 133 | 0.41 | 0.31 | 33.1% |
+| High VIX (≥0.6) | 140 | 0.34 | 0.28 | 30.7% |
+| Low VIX (<0.6) | 56 | 0.74 | 0.65 | 51.8% |
+| SPY above 200d | 90 | 0.59 | 0.49 | 41.1% |
+| SPY below 200d | 106 | 0.39 | 0.30 | 33.0% |
 
 **Per-node strata:**
 | Node | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| XLB | 45 | 0.62 | 0.44 | 37.8% |
-| XLE | 43 | 0.42 | 0.36 | 32.6% |
-| XLF | 52 | 0.39 | 0.39 | 34.6% |
-| XLI | 35 | 0.88 | 0.58 | 48.6% |
-| XLK | 32 | 0.42 | 0.34 | 25.0% |
+| XLB | 33 | 0.56 | 0.32 | 42.4% |
+| XLE | 34 | 0.41 | 0.30 | 32.4% |
+| XLF | 41 | 0.37 | 0.33 | 34.1% |
+| XLI | 26 | 0.88 | 0.61 | 46.2% |
+| XLK | 21 | 0.47 | 0.42 | 23.8% |
 | XLP | 11 | 0.43 | 0.43 | 36.4% |
-| XLRE | 9 | 0.60 | 0.75 | 44.4% |
-| XLU | 14 | 0.48 | 0.44 | 35.7% |
-| XLV | 16 | 0.19 | 0.06 | 18.8% |
+| XLRE | 6 | 1.13 | 0.91 | 66.7% |
+| XLU | 10 | 0.40 | 0.47 | 50.0% |
+| XLV | 14 | 0.20 | 0.07 | 21.4% |
 
 **Exit variant comparison (a15 | rot21):**
 | Exit | N matured | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| Fixed horizon | 2614 | 0.43 | 0.41 | 31.8% |
-| Accel-flip exit | 2614 | 0.08 | 0.16 | n/a |
+| Fixed horizon | 2553 | 0.43 | 0.41 | 31.8% |
+| Accel-flip exit | 2553 | 0.08 | 0.15 | n/a |
 
 ### a15 | pos63 | dedup=raw (appendix — reconciles to ledger)
 close-to-close approximation; intraday H/L unwired (W0.2)
@@ -614,60 +626,60 @@ n=2367, immature=16, matured n=2351
 ### a15 | pos63 | dedup=first21 (headline)
 close-to-close approximation; intraday H/L unwired (W0.2)
 
-n=259, immature=2, matured n=257
+n=197, immature=1, matured n=196
 
 | State | N | % |
 |---|---|---|
-| STOPPED | 66 | 25.7% |
-| DEAD_MONEY | 45 | 17.5% |
-| CUSHIONED | 72 | 28.0% |
-| CLEAN_LIFTOFF | 74 | 28.8% |
+| STOPPED | 53 | 27.0% |
+| DEAD_MONEY | 29 | 14.8% |
+| CUSHIONED | 56 | 28.6% |
+| CLEAN_LIFTOFF | 58 | 29.6% |
 
-**Policy R-multiple (pos63):** p10=-1.00 p25=-1.00 p50=0.62 p75=1.67 p90=2.54 mean=0.71
+**Policy R-multiple (pos63):** p10=-1.00 p25=-1.00 p50=0.61 p75=1.66 p90=2.57 mean=0.70
 
-**MFE_R@21d:** p10=0.12 p25=0.43 p50=0.83 p75=1.24 p90=1.65 mean=0.87
-**MAE_R@21d:** p10=-1.10 p25=-0.66 p50=-0.28 p75=-0.02 p90=0.00 mean=-0.47
-**MFE_R@63d:** p10=0.36 p25=0.81 p50=1.39 p75=2.23 p90=3.01 mean=1.59
-**MAE_R@63d:** p10=-1.90 p25=-1.01 p50=-0.49 p75=-0.14 p90=0.00 mean=-0.76
+**MFE_R@21d:** p10=0.12 p25=0.46 p50=0.87 p75=1.26 p90=1.67 mean=0.88
+**MAE_R@21d:** p10=-1.33 p25=-0.73 p50=-0.34 p75=-0.04 p90=0.00 mean=-0.53
+**MFE_R@63d:** p10=0.41 p25=0.81 p50=1.43 p75=2.25 p90=3.00 mean=1.62
+**MAE_R@63d:** p10=-1.98 p25=-1.09 p50=-0.50 p75=-0.18 p90=0.00 mean=-0.79
 
-**% never touch −1R (close basis):** 74.3%
+**% never touch −1R (close basis):** 73.0%
 
-**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 56.8%
+**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 58.2%
 
 **Era strata (pos63):**
 | Era | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| 1999-2014 | 138 | 0.58 | 0.66 | 56.5% |
-| 2015-2019 | 43 | 0.62 | 0.65 | 53.5% |
-| 2020-2022 | 38 | 0.78 | 0.48 | 57.9% |
-| 2023-2026 | 38 | 0.61 | 1.19 | 60.5% |
+| 1999-2014 | 105 | 0.49 | 0.65 | 56.2% |
+| 2015-2019 | 33 | 0.83 | 0.74 | 57.6% |
+| 2020-2022 | 29 | 0.87 | 0.56 | 69.0% |
+| 2023-2026 | 29 | 0.58 | 0.98 | 55.2% |
 
 **Regime strata:**
 | Regime | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| High VIX (≥0.6) | 176 | 0.56 | 0.55 | 51.1% |
-| Low VIX (<0.6) | 81 | 1.19 | 1.07 | 69.1% |
-| SPY above 200d | 124 | 0.70 | 0.86 | 63.7% |
-| SPY below 200d | 133 | 0.56 | 0.57 | 50.4% |
+| High VIX (≥0.6) | 140 | 0.57 | 0.58 | 54.3% |
+| Low VIX (<0.6) | 56 | 1.11 | 1.02 | 67.9% |
+| SPY above 200d | 90 | 0.74 | 0.87 | 65.6% |
+| SPY below 200d | 106 | 0.51 | 0.56 | 51.9% |
 
 **Per-node strata:**
 | Node | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| XLB | 45 | 0.53 | 0.70 | 62.2% |
-| XLE | 43 | 0.57 | 0.72 | 60.5% |
-| XLF | 52 | 0.27 | 0.35 | 46.2% |
-| XLI | 35 | 0.50 | 0.88 | 62.9% |
-| XLK | 32 | 0.94 | 0.81 | 56.2% |
+| XLB | 33 | 0.47 | 0.64 | 60.6% |
+| XLE | 34 | 0.53 | 0.71 | 58.8% |
+| XLF | 41 | 0.26 | 0.31 | 48.8% |
+| XLI | 26 | 1.20 | 1.01 | 65.4% |
+| XLK | 21 | 0.84 | 0.82 | 61.9% |
 | XLP | 11 | 0.75 | 1.03 | 54.5% |
-| XLRE | 9 | 1.10 | 1.04 | 55.6% |
-| XLU | 14 | 1.19 | 1.18 | 64.3% |
-| XLV | 16 | 0.35 | 0.53 | 50.0% |
+| XLRE | 6 | 1.14 | 1.22 | 66.7% |
+| XLU | 10 | 1.19 | 1.16 | 70.0% |
+| XLV | 14 | 0.35 | 0.39 | 50.0% |
 
 **Exit variant comparison (a15 | pos63):**
 | Exit | N matured | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| Fixed horizon | 2608 | 0.58 | 0.63 | 52.9% |
-| Accel-flip exit | 2608 | 0.08 | 0.15 | n/a |
+| Fixed horizon | 2547 | 0.58 | 0.63 | 52.9% |
+| Accel-flip exit | 2547 | 0.08 | 0.15 | n/a |
 
 
 ## Family: a9
@@ -683,6 +695,8 @@ n=446, immature=8, matured n=438
 | DEAD_MONEY | 259 | 59.1% |
 | CUSHIONED | 0 | 0.0% |
 | CLEAN_LIFTOFF | 112 | 25.6% |
+
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
 **Policy R-multiple (rot21):** p10=-1.00 p25=-0.26 p50=0.32 p75=0.80 p90=1.29 mean=0.26
 
@@ -714,55 +728,57 @@ n=446, immature=8, matured n=438
 ### a9 | rot21 | dedup=first21 (headline)
 close-to-close approximation; intraday H/L unwired (W0.2)
 
-n=52, immature=2, matured n=50
+n=46, immature=2, matured n=44
 
 | State | N | % |
 |---|---|---|
-| STOPPED | 12 | 24.0% |
-| DEAD_MONEY | 21 | 42.0% |
+| STOPPED | 12 | 27.3% |
+| DEAD_MONEY | 17 | 38.6% |
 | CUSHIONED | 0 | 0.0% |
-| CLEAN_LIFTOFF | 17 | 34.0% |
+| CLEAN_LIFTOFF | 15 | 34.1% |
 
-**Policy R-multiple (rot21):** p10=-1.00 p25=-0.56 p50=0.22 p75=0.91 p90=1.24 mean=0.19
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
-**MFE_R@21d:** p10=0.01 p25=0.35 p50=0.71 p75=1.19 p90=1.50 mean=0.76
-**MAE_R@21d:** p10=-1.61 p25=-0.99 p50=-0.48 p75=-0.15 p90=0.00 mean=-0.70
-**MFE_R@63d:** p10=0.31 p25=0.51 p50=1.30 p75=1.94 p90=2.90 mean=1.44
-**MAE_R@63d:** p10=-2.25 p25=-1.20 p50=-0.60 p75=-0.22 p90=-0.08 mean=-1.04
+**Policy R-multiple (rot21):** p10=-1.00 p25=-1.00 p50=0.22 p75=0.93 p90=1.23 mean=0.17
 
-**% never touch −1R (close basis):** 76.0%
+**MFE_R@21d:** p10=0.01 p25=0.33 p50=0.76 p75=1.23 p90=1.48 mean=0.77
+**MAE_R@21d:** p10=-1.70 p25=-1.04 p50=-0.53 p75=-0.14 p90=0.00 mean=-0.74
+**MFE_R@63d:** p10=0.16 p25=0.63 p50=1.39 p75=1.93 p90=2.90 mean=1.44
+**MAE_R@63d:** p10=-2.65 p25=-1.38 p50=-0.64 p75=-0.22 p90=-0.03 mean=-1.13
 
-**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 34.0%
+**% never touch −1R (close basis):** 72.7%
+
+**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 34.1%
 
 **Era strata (rot21):**
 | Era | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| 1999-2014 | 21 | -0.19 | -0.08 | 19.0% |
+| 1999-2014 | 17 | -0.19 | -0.07 | 23.5% |
 | 2015-2019 | 8 | 0.20 | 0.13 | 25.0% |
-| 2020-2022 | 14 | 0.79 | 0.38 | 42.9% |
-| 2023-2026 | 7 | 0.45 | 0.67 | 71.4% |
+| 2020-2022 | 13 | 0.79 | 0.35 | 38.5% |
+| 2023-2026 | 6 | 0.45 | 0.50 | 66.7% |
 
 **Regime strata:**
 | Regime | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| High VIX (≥0.6) | 39 | 0.21 | 0.19 | 33.3% |
-| Low VIX (<0.6) | 11 | 0.32 | 0.19 | 36.4% |
-| SPY above 200d | 25 | 0.32 | 0.13 | 40.0% |
-| SPY below 200d | 25 | 0.21 | 0.25 | 28.0% |
+| High VIX (≥0.6) | 35 | 0.21 | 0.20 | 34.3% |
+| Low VIX (<0.6) | 9 | 0.32 | 0.07 | 33.3% |
+| SPY above 200d | 23 | 0.32 | 0.07 | 39.1% |
+| SPY below 200d | 21 | 0.21 | 0.27 | 28.6% |
 
 **Per-node strata:**
 | Node | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| XLB | 14 | -0.19 | 0.10 | 35.7% |
-| XLE | 17 | 0.14 | 0.03 | 23.5% |
-| XLRE | 11 | 0.83 | 0.49 | 45.5% |
+| XLB | 12 | -0.07 | 0.18 | 41.7% |
+| XLE | 14 | 0.09 | -0.03 | 21.4% |
+| XLRE | 10 | 0.53 | 0.37 | 40.0% |
 | XLU | 8 | 0.45 | 0.25 | 37.5% |
 
 **Exit variant comparison (a9 | rot21):**
 | Exit | N matured | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| Fixed horizon | 488 | 0.32 | 0.26 | 26.4% |
-| Accel-flip exit | 488 | 0.03 | 0.05 | n/a |
+| Fixed horizon | 482 | 0.32 | 0.25 | 26.3% |
+| Accel-flip exit | 482 | 0.03 | 0.05 | n/a |
 
 ### a9 | pos63 | dedup=raw (appendix — reconciles to ledger)
 close-to-close approximation; intraday H/L unwired (W0.2)
@@ -806,55 +822,55 @@ n=446, immature=8, matured n=438
 ### a9 | pos63 | dedup=first21 (headline)
 close-to-close approximation; intraday H/L unwired (W0.2)
 
-n=52, immature=2, matured n=50
+n=46, immature=2, matured n=44
 
 | State | N | % |
 |---|---|---|
-| STOPPED | 18 | 36.0% |
-| DEAD_MONEY | 7 | 14.0% |
-| CUSHIONED | 15 | 30.0% |
-| CLEAN_LIFTOFF | 10 | 20.0% |
+| STOPPED | 18 | 40.9% |
+| DEAD_MONEY | 3 | 6.8% |
+| CUSHIONED | 15 | 34.1% |
+| CLEAN_LIFTOFF | 8 | 18.2% |
 
-**Policy R-multiple (pos63):** p10=-1.00 p25=-1.00 p50=0.30 p75=1.16 p90=2.38 mean=0.44
+**Policy R-multiple (pos63):** p10=-1.00 p25=-1.00 p50=0.35 p75=1.16 p90=2.34 mean=0.38
 
-**MFE_R@21d:** p10=0.01 p25=0.35 p50=0.71 p75=1.19 p90=1.50 mean=0.76
-**MAE_R@21d:** p10=-1.61 p25=-0.99 p50=-0.48 p75=-0.15 p90=0.00 mean=-0.70
-**MFE_R@63d:** p10=0.31 p25=0.51 p50=1.30 p75=1.94 p90=2.90 mean=1.44
-**MAE_R@63d:** p10=-2.25 p25=-1.20 p50=-0.60 p75=-0.22 p90=-0.08 mean=-1.04
+**MFE_R@21d:** p10=0.01 p25=0.33 p50=0.76 p75=1.23 p90=1.48 mean=0.77
+**MAE_R@21d:** p10=-1.70 p25=-1.04 p50=-0.53 p75=-0.14 p90=0.00 mean=-0.74
+**MFE_R@63d:** p10=0.16 p25=0.63 p50=1.39 p75=1.93 p90=2.90 mean=1.44
+**MAE_R@63d:** p10=-2.65 p25=-1.38 p50=-0.64 p75=-0.22 p90=-0.03 mean=-1.13
 
-**% never touch −1R (close basis):** 64.0%
+**% never touch −1R (close basis):** 59.1%
 
-**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 50.0%
+**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 52.3%
 
 **Era strata (pos63):**
 | Era | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| 1999-2014 | 21 | 0.01 | -0.07 | 28.6% |
+| 1999-2014 | 17 | -1.00 | -0.11 | 35.3% |
 | 2015-2019 | 8 | 0.00 | 0.41 | 50.0% |
-| 2020-2022 | 14 | 1.11 | 0.78 | 64.3% |
-| 2023-2026 | 7 | 0.57 | 1.29 | 85.7% |
+| 2020-2022 | 13 | 1.07 | 0.72 | 61.5% |
+| 2023-2026 | 6 | 0.55 | 0.98 | 83.3% |
 
 **Regime strata:**
 | Regime | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| High VIX (≥0.6) | 39 | 0.29 | 0.24 | 48.7% |
-| Low VIX (<0.6) | 11 | 0.52 | 1.12 | 54.5% |
-| SPY above 200d | 25 | 0.52 | 0.45 | 52.0% |
-| SPY below 200d | 25 | 0.29 | 0.43 | 48.0% |
+| High VIX (≥0.6) | 35 | 0.29 | 0.22 | 51.4% |
+| Low VIX (<0.6) | 9 | 0.52 | 0.98 | 55.6% |
+| SPY above 200d | 23 | 0.52 | 0.33 | 52.2% |
+| SPY below 200d | 21 | 0.29 | 0.43 | 52.4% |
 
 **Per-node strata:**
 | Node | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| XLB | 14 | 0.15 | 0.25 | 35.7% |
-| XLE | 17 | 0.09 | 0.06 | 41.2% |
-| XLRE | 11 | 1.17 | 1.20 | 63.6% |
+| XLB | 12 | 0.15 | 0.30 | 41.7% |
+| XLE | 14 | -1.00 | -0.07 | 42.9% |
+| XLRE | 10 | 1.06 | 1.00 | 60.0% |
 | XLU | 8 | 0.53 | 0.51 | 75.0% |
 
 **Exit variant comparison (a9 | pos63):**
 | Exit | N matured | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| Fixed horizon | 488 | 0.20 | 0.33 | 46.9% |
-| Accel-flip exit | 488 | 0.03 | 0.05 | n/a |
+| Fixed horizon | 482 | 0.20 | 0.32 | 47.1% |
+| Accel-flip exit | 482 | 0.03 | 0.05 | n/a |
 
 
 ## Family: a17
@@ -870,6 +886,8 @@ n=268, immature=6, matured n=262
 | DEAD_MONEY | 135 | 51.5% |
 | CUSHIONED | 0 | 0.0% |
 | CLEAN_LIFTOFF | 79 | 30.2% |
+
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
 **Policy R-multiple (rot21):** p10=-1.00 p25=-0.27 p50=0.43 p75=0.89 p90=1.46 mean=0.31
 
@@ -901,55 +919,57 @@ n=268, immature=6, matured n=262
 ### a17 | rot21 | dedup=first21 (headline)
 close-to-close approximation; intraday H/L unwired (W0.2)
 
-n=50, immature=2, matured n=48
+n=44, immature=2, matured n=42
 
 | State | N | % |
 |---|---|---|
-| STOPPED | 9 | 18.8% |
-| DEAD_MONEY | 24 | 50.0% |
+| STOPPED | 9 | 21.4% |
+| DEAD_MONEY | 20 | 47.6% |
 | CUSHIONED | 0 | 0.0% |
-| CLEAN_LIFTOFF | 15 | 31.2% |
+| CLEAN_LIFTOFF | 13 | 31.0% |
 
-**Policy R-multiple (rot21):** p10=-1.00 p25=-0.40 p50=0.42 p75=0.89 p90=1.25 mean=0.29
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
-**MFE_R@21d:** p10=0.21 p25=0.46 p50=0.78 p75=1.09 p90=1.46 mean=0.80
-**MAE_R@21d:** p10=-1.64 p25=-0.82 p50=-0.37 p75=-0.12 p90=0.00 mean=-0.67
-**MFE_R@63d:** p10=0.41 p25=0.63 p50=1.20 p75=1.96 p90=2.90 mean=1.45
-**MAE_R@63d:** p10=-2.20 p25=-1.12 p50=-0.61 p75=-0.21 p90=-0.04 mean=-1.00
+**Policy R-multiple (rot21):** p10=-1.00 p25=-0.41 p50=0.42 p75=0.91 p90=1.23 mean=0.27
 
-**% never touch −1R (close basis):** 81.2%
+**MFE_R@21d:** p10=0.22 p25=0.45 p50=0.78 p75=1.10 p90=1.43 mean=0.80
+**MAE_R@21d:** p10=-1.73 p25=-0.95 p50=-0.46 p75=-0.14 p90=0.00 mean=-0.72
+**MFE_R@63d:** p10=0.39 p25=0.68 p50=1.25 p75=1.94 p90=2.86 mean=1.44
+**MAE_R@63d:** p10=-2.76 p25=-1.28 p50=-0.63 p75=-0.23 p90=-0.01 mean=-1.09
 
-**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 31.2%
+**% never touch −1R (close basis):** 78.6%
+
+**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 31.0%
 
 **Era strata (rot21):**
 | Era | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| 1999-2014 | 21 | 0.14 | 0.12 | 19.0% |
+| 1999-2014 | 17 | 0.14 | 0.14 | 23.5% |
 | 2015-2019 | 7 | 0.18 | 0.08 | 14.3% |
-| 2020-2022 | 14 | 0.79 | 0.43 | 42.9% |
-| 2023-2026 | 6 | 0.84 | 0.79 | 66.7% |
+| 2020-2022 | 13 | 0.79 | 0.40 | 38.5% |
+| 2023-2026 | 5 | 0.80 | 0.61 | 60.0% |
 
 **Regime strata:**
 | Regime | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| High VIX (≥0.6) | 38 | 0.46 | 0.31 | 31.6% |
-| Low VIX (<0.6) | 10 | 0.11 | 0.22 | 30.0% |
-| SPY above 200d | 24 | 0.38 | 0.30 | 37.5% |
-| SPY below 200d | 24 | 0.44 | 0.28 | 25.0% |
+| High VIX (≥0.6) | 34 | 0.46 | 0.32 | 32.4% |
+| Low VIX (<0.6) | 8 | 0.06 | 0.08 | 25.0% |
+| SPY above 200d | 22 | 0.38 | 0.25 | 36.4% |
+| SPY below 200d | 20 | 0.44 | 0.29 | 25.0% |
 
 **Per-node strata:**
 | Node | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| XLB | 13 | 0.05 | 0.20 | 30.8% |
-| XLE | 16 | 0.32 | 0.18 | 18.8% |
-| XLRE | 11 | 0.83 | 0.51 | 45.5% |
+| XLB | 11 | 0.32 | 0.30 | 36.4% |
+| XLE | 13 | 0.18 | 0.10 | 15.4% |
+| XLRE | 10 | 0.65 | 0.39 | 40.0% |
 | XLU | 8 | 0.73 | 0.35 | 37.5% |
 
 **Exit variant comparison (a17 | rot21):**
 | Exit | N matured | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| Fixed horizon | 310 | 0.43 | 0.31 | 30.3% |
-| Accel-flip exit | 310 | 0.07 | 0.05 | n/a |
+| Fixed horizon | 304 | 0.43 | 0.31 | 30.3% |
+| Accel-flip exit | 304 | 0.07 | 0.05 | n/a |
 
 ### a17 | pos63 | dedup=raw (appendix — reconciles to ledger)
 close-to-close approximation; intraday H/L unwired (W0.2)
@@ -993,61 +1013,61 @@ n=268, immature=6, matured n=262
 ### a17 | pos63 | dedup=first21 (headline)
 close-to-close approximation; intraday H/L unwired (W0.2)
 
-n=50, immature=2, matured n=48
+n=44, immature=2, matured n=42
 
 | State | N | % |
 |---|---|---|
-| STOPPED | 13 | 27.1% |
-| DEAD_MONEY | 11 | 22.9% |
-| CUSHIONED | 14 | 29.2% |
-| CLEAN_LIFTOFF | 10 | 20.8% |
+| STOPPED | 13 | 31.0% |
+| DEAD_MONEY | 7 | 16.7% |
+| CUSHIONED | 14 | 33.3% |
+| CLEAN_LIFTOFF | 8 | 19.0% |
 
-**Policy R-multiple (pos63):** p10=-1.00 p25=-1.00 p50=0.50 p75=1.23 p90=2.32 mean=0.55
+**Policy R-multiple (pos63):** p10=-1.00 p25=-1.00 p50=0.50 p75=1.16 p90=2.26 mean=0.49
 
-**MFE_R@21d:** p10=0.21 p25=0.46 p50=0.78 p75=1.09 p90=1.46 mean=0.80
-**MAE_R@21d:** p10=-1.64 p25=-0.82 p50=-0.37 p75=-0.12 p90=0.00 mean=-0.67
-**MFE_R@63d:** p10=0.41 p25=0.63 p50=1.20 p75=1.96 p90=2.90 mean=1.45
-**MAE_R@63d:** p10=-2.20 p25=-1.12 p50=-0.61 p75=-0.21 p90=-0.04 mean=-1.00
+**MFE_R@21d:** p10=0.22 p25=0.45 p50=0.78 p75=1.10 p90=1.43 mean=0.80
+**MAE_R@21d:** p10=-1.73 p25=-0.95 p50=-0.46 p75=-0.14 p90=0.00 mean=-0.72
+**MFE_R@63d:** p10=0.39 p25=0.68 p50=1.25 p75=1.94 p90=2.86 mean=1.44
+**MAE_R@63d:** p10=-2.76 p25=-1.28 p50=-0.63 p75=-0.23 p90=-0.01 mean=-1.09
 
-**% never touch −1R (close basis):** 72.9%
+**% never touch −1R (close basis):** 69.0%
 
-**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 50.0%
+**Win rate (CUSHIONED+CLEAN_LIFTOFF):** 52.4%
 
 **Era strata (pos63):**
 | Era | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| 1999-2014 | 21 | 0.31 | 0.15 | 28.6% |
+| 1999-2014 | 17 | 0.29 | 0.14 | 35.3% |
 | 2015-2019 | 7 | -0.12 | 0.31 | 42.9% |
-| 2020-2022 | 14 | 1.11 | 0.76 | 64.3% |
-| 2023-2026 | 6 | 0.76 | 1.68 | 100.0% |
+| 2020-2022 | 13 | 1.07 | 0.70 | 61.5% |
+| 2023-2026 | 5 | 0.57 | 1.39 | 100.0% |
 
 **Regime strata:**
 | Regime | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| High VIX (≥0.6) | 38 | 0.45 | 0.34 | 47.4% |
-| Low VIX (<0.6) | 10 | 1.22 | 1.34 | 60.0% |
-| SPY above 200d | 24 | 0.57 | 0.71 | 54.2% |
-| SPY below 200d | 24 | 0.30 | 0.38 | 45.8% |
+| High VIX (≥0.6) | 34 | 0.45 | 0.31 | 50.0% |
+| Low VIX (<0.6) | 8 | 1.22 | 1.23 | 62.5% |
+| SPY above 200d | 22 | 0.57 | 0.61 | 54.5% |
+| SPY below 200d | 20 | 0.21 | 0.35 | 50.0% |
 
 **Per-node strata:**
 | Node | N | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| XLB | 13 | 0.29 | 0.33 | 30.8% |
-| XLE | 16 | 0.49 | 0.31 | 43.8% |
-| XLRE | 11 | 1.17 | 1.20 | 63.6% |
+| XLB | 11 | 0.29 | 0.39 | 36.4% |
+| XLE | 13 | 0.42 | 0.18 | 46.2% |
+| XLRE | 10 | 1.06 | 1.00 | 60.0% |
 | XLU | 8 | 0.55 | 0.48 | 75.0% |
 
 **Exit variant comparison (a17 | pos63):**
 | Exit | N matured | Median R | Mean R | Win% |
 |---|---|---|---|---|
-| Fixed horizon | 310 | 0.33 | 0.41 | 48.1% |
-| Accel-flip exit | 310 | 0.07 | 0.05 | n/a |
+| Fixed horizon | 304 | 0.32 | 0.40 | 48.4% |
+| Accel-flip exit | 304 | 0.07 | 0.05 | n/a |
 
 
 ## Family: routing_6
 
 ### routing_6 | rot21
-**n≤12 descriptive only** | close-to-close approximation; intraday H/L unwired (W0.2)
+**DESCRIPTIVE ONLY — broad-sweep enumeration (NOT the p3b placebo-survivor set; n is the full-history onset sweep, not the ~10-12 p3b survivor fires per cell)** | close-to-close approximation; intraday H/L unwired (W0.2)
 
 n=565, immature=11, matured n=554
 
@@ -1057,6 +1077,8 @@ n=565, immature=11, matured n=554
 | DEAD_MONEY | 233 | 42.1% |
 | CUSHIONED | 0 | 0.0% |
 | CLEAN_LIFTOFF | 183 | 33.0% |
+
+*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 (cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*
 
 **Policy R-multiple (rot21):** p10=-1.00 p25=-1.00 p50=0.22 p75=0.93 p90=1.51 mean=0.19
 
@@ -1100,7 +1122,7 @@ n=565, immature=11, matured n=554
 | Accel-flip exit | 554 | 0.08 | 0.05 | n/a |
 
 ### routing_6 | pos63
-**n≤12 descriptive only** | close-to-close approximation; intraday H/L unwired (W0.2)
+**DESCRIPTIVE ONLY — broad-sweep enumeration (NOT the p3b placebo-survivor set; n is the full-history onset sweep, not the ~10-12 p3b survivor fires per cell)** | close-to-close approximation; intraday H/L unwired (W0.2)
 
 n=565, immature=12, matured n=553
 

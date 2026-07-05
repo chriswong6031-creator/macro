@@ -360,12 +360,11 @@ def grade_event(
             node_ret = fm.get(f"fwd_ret_{h}")
             spy_ret  = spy_fm.get(f"fwd_ret_{h}")
             if node_ret is not None and spy_ret is not None:
-                if direction == "out":
-                    # short-side excess: (1-node_ret) vs (1-spy_ret) relative
-                    # Simplest: excess = spy_ret - node_ret (you're short, spy is the benchmark)
-                    result[f"excess_{h}"] = round(spy_ret - node_ret, 6)
-                else:
-                    result[f"excess_{h}"] = round(node_ret - spy_ret, 6)
+                # For direction=='out', fm was computed on grading_close = invert_close(...)
+                # so node_ret is already the direction-adjusted (inverted) return.
+                # excess = direction-adjusted node return - SPY return; same formula both sides.
+                # (Previously: spy_ret - node_ret for 'out' was sign-inverted — fix round 2026-07-05)
+                result[f"excess_{h}"] = round(node_ret - spy_ret, 6)
             else:
                 result[f"excess_{h}"] = None
 
@@ -418,7 +417,8 @@ def grade_event(
             result["accel_flip_exit_R"] = None
         if exhausted_date is not None and pd.notna(exhausted_date) and flip_date is not None:
             exh_ts = pd.Timestamp(exhausted_date)
-            result["exhaust_minus_accel_flip_lag"] = int((exh_ts - flip_date).days)
+            # Spec: detection lag in sessions (trading days), not calendar days
+            result["exhaust_minus_accel_flip_lag"] = _business_day_gap(flip_date, exh_ts)
         else:
             result["exhaust_minus_accel_flip_lag"] = None
     else:
@@ -450,16 +450,50 @@ def grade_event(
 # first21 dedup (spec §4.7)
 # ---------------------------------------------------------------------------
 
-def first21_dedup(dates: list[pd.Timestamp]) -> list[pd.Timestamp]:
-    """Drop any fire within 21 sessions of a kept fire on same node.
+def _business_day_gap(d1: pd.Timestamp, d2: pd.Timestamp) -> int:
+    """Count business days strictly between d1 and d2 (exclusive of d1, inclusive of d2).
 
-    Works on a sorted list of entry-trigger dates for ONE node.
+    Uses numpy busday_count which matches pd.bdate_range semantics (Mon-Fri, no holiday cal).
+    Returns an integer >= 0.
+    """
+    return int(np.busday_count(d1.date(), d2.date()))
+
+
+def first21_dedup(
+    dates: list[pd.Timestamp],
+    trading_index: pd.DatetimeIndex | None = None,
+) -> list[pd.Timestamp]:
+    """Drop any fire within 21 TRADING SESSIONS of a kept fire on same node.
+
+    Spec §4.7: '21 sessions' means trading days, not calendar days.
+    21 trading sessions ≈ 29-31 calendar days; the prior calendar-day
+    implementation (gap > 21 calendar days) under-deduplicated.
+
+    Fix (fix-round 2026-07-05): gap measured in business days via
+    np.busday_count (Mon-Fri, no holiday adjustment — consistent with
+    pd.bdate_range used throughout the test fixtures and close series).
+
+    Args:
+        dates: sorted (or unsorted) list of trigger dates for ONE node.
+        trading_index: optional actual trading DatetimeIndex for the node;
+            if supplied, gaps are counted by positional iloc distance
+            (most accurate). Falls back to busday_count when None.
     """
     if not dates:
         return []
     kept: list[pd.Timestamp] = []
     for d in sorted(dates):
-        if not kept or (d - kept[-1]).days > 21:
+        if not kept:
+            kept.append(d)
+            continue
+        if trading_index is not None:
+            # Use positional gap on the actual trading index
+            loc_last = int(np.searchsorted(trading_index.values, np.datetime64(kept[-1]), side="left"))
+            loc_d    = int(np.searchsorted(trading_index.values, np.datetime64(d), side="left"))
+            gap = loc_d - loc_last
+        else:
+            gap = _business_day_gap(kept[-1], d)
+        if gap > 21:
             kept.append(d)
     return kept
 
@@ -698,7 +732,10 @@ def grade_family(
             sorted_evs = sorted(node_events, key=lambda x: x["trigger_date"])
             if dedup_var == "first21":
                 dates = [e["trigger_date"] for e in sorted_evs]
-                kept_dates = set(first21_dedup(dates))
+                # Pass the node's actual trading index so session gaps are exact
+                node_close = closes.get(node)
+                trading_idx = node_close.sort_index().index if node_close is not None and not node_close.empty else None
+                kept_dates = set(first21_dedup(dates, trading_index=trading_idx))
                 kept_evs = [e for e in sorted_evs if e["trigger_date"] in kept_dates]
             else:  # raw / single
                 kept_evs = sorted_evs
@@ -802,7 +839,11 @@ def _terminal_state_table(
     """Generate terminal-state distribution table for a family/param slice."""
     lines = [f"### {title}"]
     if is_routing:
-        lines.append("**n≤12 descriptive only** | " + honesty_label)
+        lines.append(
+            "**DESCRIPTIVE ONLY — broad-sweep enumeration (NOT the p3b placebo-survivor set; "
+            "n is the full-history onset sweep, not the ~10-12 p3b survivor fires per cell)** | "
+            + honesty_label
+        )
     elif is_short:
         lines.append(f"**SHORT-SIDE** | {honesty_label}")
     else:
@@ -832,6 +873,17 @@ def _terminal_state_table(
         n = state_counts[s]
         lines.append(f"| {s} | {n} | {_pct(n, m)} |")
     lines.append("")
+
+    # Note: rot21 uses k=1 (cushion_mult == liftoff_mult), so CUSHIONED is structurally 0
+    # — liftoff fires on the same bar cushion would, collapsing CUSHIONED into CLEAN_LIFTOFF.
+    param_check = df["parameterization"].iloc[0] if len(df) > 0 else ""
+    if param_check == "rot21" and state_counts.get(TerminalState.CUSHIONED, 0) == 0:
+        lines.append(
+            "*Note: CUSHIONED=0 is expected for rot21. Because rot21 sets k=1 "
+            "(cushion_mult = liftoff_mult = 1+σ), liftoff triggers on the same bar that "
+            "cushion would — CUSHIONED is unreachable by construction, not due to market behavior.*"
+        )
+        lines.append("")
 
     # R-multiple distribution (per parameterization)
     param = df["parameterization"].iloc[0] if len(df) > 0 else ""
@@ -948,9 +1000,11 @@ def _node_strata_table(df: pd.DataFrame, param: str) -> str:
         n = len(sub)
         r_s = sub[r_col].dropna()
         win = int((sub["state"].isin([TerminalState.CUSHIONED, TerminalState.CLEAN_LIFTOFF])).sum())
+        # Pre-format to avoid ValueError when r_s is empty (f-string :.2f on 'n/a' str crashes)
+        med_str = f"{r_s.median():.2f}" if len(r_s) else "n/a"
+        mean_str = f"{r_s.mean():.2f}" if len(r_s) else "n/a"
         lines.append(
-            f"| {node} | {n} | {r_s.median() if len(r_s) else 'n/a':.2f} | "
-            f"{r_s.mean() if len(r_s) else 'n/a':.2f} | {_pct(win, n)} |"
+            f"| {node} | {n} | {med_str} | {mean_str} | {_pct(win, n)} |"
         )
     lines.append("")
     return "\n".join(lines)
@@ -999,9 +1053,9 @@ def _exit_variant_table(df: pd.DataFrame, family_id: str, param: str) -> str:
 
     lines.append("")
 
-    # Lag distribution (exhaust vs accel_flip)
-    if "exhaust_minus_accel_flip_lag" in df.columns:
-        lag = df["exhaust_minus_accel_flip_lag"].dropna()
+    # Lag distribution (exhaust vs accel_flip) — computed from matured slice only
+    if "exhaust_minus_accel_flip_lag" in matured.columns:
+        lag = matured["exhaust_minus_accel_flip_lag"].dropna()
         if len(lag) > 0:
             lines.append(
                 f"*Detection lag (exhaust_date − accel_flip_date): "
@@ -1027,7 +1081,7 @@ def generate_atlas(graded_df: pd.DataFrame, output_path: Path) -> None:
 **Date:** 2026-07-05
 **Nature:** DESCRIPTIVE measurement only. No new signals. No claim language.
 **Grading basis:** {HONESTY_LABEL}
-**Routing tables:** n≤12 descriptive only.
+**Routing tables:** DESCRIPTIVE ONLY — broad-sweep enumeration over full history (NOT restricted to p3b placebo-survivor fires; actual n reported per table).
 
 > IMPORTANT: The word "validated" does not appear in this document per Oracle Constitution §II.
 > Every table carries the close-only honesty label and n + immature count.

@@ -195,22 +195,33 @@ class TestShortSideDirection:
 # ---------------------------------------------------------------------------
 
 class TestFirst21Dedup:
-    """Spec §7: first21 dedup."""
+    """Spec §7: first21 dedup — 21 TRADING SESSIONS, not calendar days."""
 
     def test_drops_fires_within_21_sessions(self):
-        """Fires within 21 calendar days of a kept fire are dropped."""
+        """Fires within 21 trading sessions of a kept fire are dropped.
+
+        np.busday_offset('2021-01-04', 21) = '2021-02-02'; that date is ≤21 sessions → dropped.
+        np.busday_offset('2021-01-04', 22) = '2021-02-03'; 22 bdays from 01-04 → kept.
+        """
+        import numpy as np
+        d0 = pd.Timestamp("2021-01-04")
+        # Verify the business-day arithmetic we rely on
+        assert np.busday_count(d0.date(), pd.Timestamp("2021-02-02").date()) == 21
+        assert np.busday_count(d0.date(), pd.Timestamp("2021-02-03").date()) == 22
+
         dates = [
             pd.Timestamp("2021-01-04"),   # kept
-            pd.Timestamp("2021-01-10"),   # within 21 days → dropped
-            pd.Timestamp("2021-01-20"),   # within 21 days → dropped
-            pd.Timestamp("2021-02-05"),   # > 21 days after 01-04 → kept
-            pd.Timestamp("2021-02-06"),   # within 21 days of 02-05 → dropped
-            pd.Timestamp("2021-03-15"),   # > 21 days after 02-05 → kept
+            pd.Timestamp("2021-01-10"),   # few bdays → dropped
+            pd.Timestamp("2021-01-20"),   # < 21 bdays → dropped
+            pd.Timestamp("2021-02-02"),   # exactly 21 bdays → dropped (not > 21)
+            pd.Timestamp("2021-02-03"),   # 22 bdays from 01-04 → kept
+            pd.Timestamp("2021-02-04"),   # 1 bday from 02-03 → dropped
+            pd.Timestamp("2021-03-15"),   # > 21 bdays from 02-03 → kept
         ]
         kept = first21_dedup(dates)
-        assert len(kept) == 3
+        assert len(kept) == 3, f"Expected 3 kept fires, got {len(kept)}: {kept}"
         assert kept[0] == pd.Timestamp("2021-01-04")
-        assert kept[1] == pd.Timestamp("2021-02-05")
+        assert kept[1] == pd.Timestamp("2021-02-03")
         assert kept[2] == pd.Timestamp("2021-03-15")
 
     def test_empty_list(self):
@@ -220,21 +231,52 @@ class TestFirst21Dedup:
         d = pd.Timestamp("2021-01-04")
         assert first21_dedup([d]) == [d]
 
-    def test_exactly_21_days_apart_is_kept(self):
-        """Exactly 21 calendar days apart: (d2 - d1).days = 21 > 21 is False → dropped."""
+    def test_exactly_21_sessions_is_dropped(self):
+        """Exactly 21 trading sessions apart: busday_count = 21, not > 21 → dropped."""
+        import numpy as np
         d1 = pd.Timestamp("2021-01-04")
-        d2 = pd.Timestamp("2021-01-25")  # exactly 21 calendar days later
-        assert (d2 - d1).days == 21
-        # Our rule: keep if (d - last_kept).days > 21
-        # 21 > 21 is False → dropped
+        d2 = pd.Timestamp("2021-02-02")  # exactly 21 bdays after 2021-01-04
+        assert np.busday_count(d1.date(), d2.date()) == 21
+        # Our rule: keep if gap > 21 sessions; 21 > 21 is False → dropped
         kept = first21_dedup([d1, d2])
-        assert len(kept) == 1, f"21 calendar days exactly should be dropped; got {kept}"
+        assert len(kept) == 1, f"Exactly 21 sessions should be dropped; got {kept}"
 
-    def test_22_days_apart_is_kept(self):
+    def test_22_sessions_apart_is_kept(self):
+        """22 trading sessions apart → kept."""
+        import numpy as np
         d1 = pd.Timestamp("2021-01-04")
-        d2 = pd.Timestamp("2021-01-26")  # 22 calendar days later
+        d2 = pd.Timestamp("2021-02-03")  # 22 bdays after 2021-01-04
+        assert np.busday_count(d1.date(), d2.date()) == 22
         kept = first21_dedup([d1, d2])
-        assert len(kept) == 2
+        assert len(kept) == 2, f"22 sessions should be kept; got {kept}"
+
+    def test_calendar_close_but_few_sessions(self):
+        """Two dates 21 calendar days apart but only 15 trading sessions.
+        Under session semantics: 15 < 21 → dropped (but under old calendar semantics:
+        21 cal days is exactly boundary of old rule, and was treated as ≤21 → dropped there too).
+        Key: this date pair has fewer bdays (15) than cal days (21), confirming the
+        implementation uses business days not calendar days."""
+        # 15 bdays < 21 → should be dropped
+        d1 = pd.Timestamp("2021-01-04")
+        d2 = pd.Timestamp("2021-01-25")  # 21 calendar days, 15 bdays (Mon Jan 4 → Mon Jan 25)
+        import numpy as np
+        bdays = np.busday_count(d1.date(), d2.date())
+        assert bdays == 15, f"Expected 15 bdays between Jan 4 and Jan 25; got {bdays}"
+        kept = first21_dedup([d1, d2])
+        # 15 sessions < 21 → dropped
+        assert len(kept) == 1, f"15 sessions should be dropped under session semantics; got {kept}"
+
+    def test_with_trading_index(self):
+        """Passing an actual trading index uses positional gaps (most accurate)."""
+        # Build a synthetic trading index with 50 business days
+        idx = pd.bdate_range("2021-01-04", periods=50)
+        d1 = idx[0]
+        d2 = idx[21]   # exactly 21 sessions away (iloc distance=21) → dropped
+        d3 = idx[22]   # 22 sessions from d1 → kept
+        kept = first21_dedup([d1, d2, d3], trading_index=idx)
+        assert len(kept) == 2, f"Expected 2 kept (d1, d3); got {kept}"
+        assert kept[0] == d1
+        assert kept[1] == d3
 
 
 # ---------------------------------------------------------------------------
@@ -423,6 +465,107 @@ class TestGradeEventShort:
                 assert policy_r <= 0, (
                     f"Short event with rising price should have policy R <= 0; got {policy_r}"
                 )
+
+
+# ---------------------------------------------------------------------------
+# §7 Test 7b: short-side excess sign (blocker fix pinned by unit test)
+# ---------------------------------------------------------------------------
+
+class TestShortSideExcessSign:
+    """excess_{h} for direction=='out' must be direction-adjusted node_ret - spy_ret.
+
+    Blocker fix 2026-07-05: the pre-fix code did spy_ret - node_ret for 'out',
+    which was the arithmetic negation of the correct value.
+
+    Fixture: node falls 10%, SPY falls 2% over the forward horizon.
+      - direction-adjusted node return (inverted close): +(≈11.1%) — a short win
+      - spy return: -2%
+      - correct excess = inv_node_ret - spy_ret ≈ +0.111 - (-0.02) ≈ +0.131  (positive: short outperforms)
+      - wrong (pre-fix): spy_ret - inv_node_ret ≈ -0.02 - 0.111 ≈ -0.131  (negative: wrong sign)
+    """
+
+    def test_short_excess_sign_falling_node_rising_spy(self):
+        """Falling node + rising SPY → short excess should be positive (short outperforms)."""
+        # Build 22 volatile bars for sigma, then controlled forward bars
+        rng = np.random.default_rng(7)
+        base = [100.0]
+        for _ in range(21):
+            base.append(base[-1] * (1 + rng.normal(0, 0.015)))
+
+        entry = base[-1]
+        # Node falls 10% over 22 forward bars (fill + 21 forward = horizon 21)
+        node_fwd = [entry * 0.90] * 22
+        node_prices = base + node_fwd
+
+        spy_base = [50.0]
+        for _ in range(21):
+            spy_base.append(spy_base[-1] * (1 + rng.normal(0, 0.01)))
+        spy_entry = spy_base[-1]
+        # SPY rises 2% over same window
+        spy_fwd = [spy_entry * 1.02] * 22
+        spy_prices = spy_base + spy_fwd
+
+        close = _make_close(node_prices)
+        spy_close = _make_close(spy_prices)
+        trigger = close.index[20]  # trigger at bar 20, fill at bar 21
+
+        result = grade_event(
+            close=close,
+            trigger_date=trigger,
+            direction="out",
+            parameterization="rot21",
+            spy_close=spy_close,
+        )
+
+        exc = result.get("excess_21")
+        assert exc is not None, "excess_21 should be computed when spy_close is provided"
+        # Short with falling node → direction-adjusted return is positive;
+        # correct excess = inv_node_ret - spy_ret > 0
+        assert exc > 0, (
+            f"Short-side excess with falling node / rising SPY should be positive "
+            f"(short outperforms); got {exc:.6f}. "
+            f"Pre-fix bug was spy_ret - node_ret (sign negated)."
+        )
+
+    def test_short_excess_sign_rising_node_flat_spy(self):
+        """Rising node + flat SPY → short excess should be negative (short underperforms)."""
+        rng = np.random.default_rng(13)
+        base = [100.0]
+        for _ in range(21):
+            base.append(base[-1] * (1 + rng.normal(0, 0.015)))
+        entry = base[-1]
+        # Node rises 15% over 22 forward bars → bad for short
+        node_fwd = [entry * 1.15] * 22
+        node_prices = base + node_fwd
+
+        spy_base = [50.0]
+        for _ in range(21):
+            spy_base.append(spy_base[-1] * (1 + rng.normal(0, 0.01)))
+        spy_entry = spy_base[-1]
+        # SPY flat
+        spy_fwd = [spy_entry] * 22
+        spy_prices = spy_base + spy_fwd
+
+        close = _make_close(node_prices)
+        spy_close = _make_close(spy_prices)
+        trigger = close.index[20]
+
+        result = grade_event(
+            close=close,
+            trigger_date=trigger,
+            direction="out",
+            parameterization="rot21",
+            spy_close=spy_close,
+        )
+
+        exc = result.get("excess_21")
+        assert exc is not None, "excess_21 should be computed"
+        # Rising node → inv_close falls → direction-adjusted return negative;
+        # excess = inv_node_ret - spy_ret < 0
+        assert exc < 0, (
+            f"Short-side excess with rising node / flat SPY should be negative "
+            f"(short underperforms); got {exc:.6f}."
+        )
 
 
 # ---------------------------------------------------------------------------
