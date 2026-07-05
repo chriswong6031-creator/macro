@@ -3197,3 +3197,51 @@ artifacts:
       W3 gov-contract stub: null-only (insufficient=true). No awardee-ticker mapping
       available in sam_gov data (theme-level only). Deferred to W6 data-gap pass.
       Written so the event type is visible as known-but-unbuildable rather than absent.
+
+  # --- Entry-Stack Expansion Amendment 1 Lane B0 (bottom-sensor envelope) ---
+  bottom-sensors-parquet:
+    path: data/neuralweb/bottom_sensors.parquet
+    format: parquet
+    producer: scripts/build_bottom_sensors.py
+    known_extra_writers: []
+    owner_program: entry-stack-expansion
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: bottom_sensors.labels_v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/neuralwebdata/bottom_sensors.json
+    external_consumers: []
+    notes: >
+      Amendment 1, Lane B0, PR-1. Bottom-sensor envelope for the US board.
+      is_display_only=true — ranks nothing, gates nothing, alerts nothing.
+      labels_version=labels_v1 (frozen thresholds; any change = new version logged
+      in research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md).
+      Bind-first: fields from signal_gate.json / us_standouts.json / hold.py outputs.
+      Two new rolling columns (dist_21d_low_pct, dist_126d_high_pct) are the only
+      new price computations. rs_repair_state and sponsorship_state are unavailable
+      until #1302 W0.4 and lane B2 respectively.
+
+  bottom-sensors-json:
+    path: site/neuralwebdata/bottom_sensors.json
+    format: json
+    producer: scripts/build_bottom_sensors.py
+    known_extra_writers: []
+    owner_program: entry-stack-expansion
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: bottom_sensors.labels_v1
+    tier: display
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      QA/debug JSON companion to bottom-sensors-parquet.
+      is_display_only=true — display and debug surface only.
