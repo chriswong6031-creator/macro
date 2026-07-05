@@ -379,6 +379,20 @@ def _normalize_expiration_param(exp: int | str | date) -> str:
     return str(_date_int(exp))
 
 
+def _endpoint_label(path: str) -> str:
+    """Human-readable label for a URL path segment used in log lines.
+
+    `path.split("/")[-1]` on /v3/option/history/greeks/eod returns "eod", which
+    is indistinguishable from the plain EOD endpoint.  For paths whose last two
+    segments are "greeks/eod" (or "greeks/<anything>"), return "greeks" so log
+    lines read "SPY greeks 2026-01-01→2026-01-07" instead of "SPY eod".
+    """
+    parts = [p for p in path.split("/") if p]
+    if len(parts) >= 2 and parts[-2] == "greeks":
+        return "greeks"
+    return parts[-1] if parts else path
+
+
 def _fetch_window_with_retry(
     session: requests.Session,
     path: str,
@@ -414,10 +428,10 @@ def _fetch_window_with_retry(
                     continue
                 log.warning(
                     "thetadata: window %s %s %s→%s failed after %d attempts — aborting",
-                    root, path.split("/")[-1], win_start, win_end, WINDOW_MAX_RETRIES + 1)
+                    root, _endpoint_label(path), win_start, win_end, WINDOW_MAX_RETRIES + 1)
                 return None
             log.info("thetadata: %s %s %s→%s rows=%d elapsed=%.1fs",
-                     root, path.split("/")[-1], win_start, win_end, rows, elapsed)
+                     root, _endpoint_label(path), win_start, win_end, rows, elapsed)
             return df
         except _StreamTruncated as e:
             elapsed = time.perf_counter() - t0

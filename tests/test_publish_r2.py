@@ -101,3 +101,32 @@ def test_cli_flags_reach_publish(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["publish_r2", "--force-manifest"])
     main()
     assert seen["manifest"] is True and seen["force_manifest"] is True
+
+
+# ── thetadata_eod registration ────────────────────────────────────────────────
+
+def test_thetadata_eod_in_default_dirs():
+    """thetadata_eod must appear in DEFAULT_DIRS (ruling A4: raw vendor pulls → R2)."""
+    from scripts.publish_r2 import DEFAULT_DIRS
+    assert "thetadata_eod" in DEFAULT_DIRS, (
+        "thetadata_eod not registered in publish_r2.DEFAULT_DIRS — "
+        "Options Alpha masterplan ruling A4 requires it"
+    )
+
+
+def test_thetadata_eod_in_data_dirs():
+    """thetadata_eod is a data-dir store (lives under data/, not site/)."""
+    from scripts.publish_r2 import _DATA_DIRS
+    assert "thetadata_eod" in _DATA_DIRS
+
+
+def test_thetadata_eod_partial_tree_refused():
+    """Partial checkout of thetadata_eod (just the committed JSON stubs) must be refused."""
+    ok, why = _data_dir_syncable("thetadata_eod", 2)
+    assert not ok and "partial checkout" in why
+
+
+def test_thetadata_eod_full_tree_syncable():
+    """A materialised thetadata_eod store (many parquets) must be accepted."""
+    from scripts.publish_r2 import _DATA_DIR_MIN_FILES
+    assert _data_dir_syncable("thetadata_eod", _DATA_DIR_MIN_FILES + 1)[0]
