@@ -1128,6 +1128,12 @@ def main(alpha: dict | None = None) -> dict | None:
                 rec["entry_signal"] = es
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("china entry-signal for %s failed (%s)", ticker, e)
+        # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
+        # Same MACD-2D x StochRSI-3D gate the China standout board ranks by, persisted per
+        # name so the basket_china Holdings table can push a fresh confluence cross to the
+        # top. Slim allow_nan-safe subset; mirrors rec["entry_signal"] (build_stock_library
+        # parity). None-tolerant — unrated names get {eligible:false, tier_cascade:null}.
+        rec["signal"] = signal_gate.buy_signal(sig_verdict.get(ticker))
         # ---- POTENTIAL score (engine/china_name_score) — the displayed CN buy-readiness ----
         # Replaces the old reversal-percentile (which ranked the most beaten-down name highest):
         # a trigger-gated washout confluence answering "set up to rise FROM HERE, actionable now?".

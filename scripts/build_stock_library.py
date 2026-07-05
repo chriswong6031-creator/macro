@@ -1559,6 +1559,12 @@ def main() -> int:
                 rec["entry_signal"] = es
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("entry-signal for %s failed (%s)", ticker, e)
+        # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
+        # The owner's MACD-2D x StochRSI-3D gate (already computed above as sig_verdict),
+        # persisted per name so the theme/basket-detail Holdings table can surface a fresh
+        # confluence cross to the top — the same tier the standout board ranks by. Slim,
+        # allow_nan-safe subset (buy_signal); mirrors rec["entry_signal"]. None-tolerant.
+        rec["signal"] = signal_gate.buy_signal(sig_verdict.get(ticker))
         # ---- Pullback buy-zone (display-only) ---------------------------------
         # turn an "Extended — don't chase" verdict into a concrete level: the rising 50d /
         # the out-of-chase line for a timeable leader, or a "this is a chase, the reset is X%
