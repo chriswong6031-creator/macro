@@ -69,7 +69,7 @@ def _read_inbox_ids(inbox_path: Path) -> set[str]:
             row_id = row.get("id")
             if row_id:
                 ids.add(row_id)
-        except (json.JSONDecodeError, Exception):  # noqa: BLE001
+        except json.JSONDecodeError:  # noqa: BLE001
             pass
     return ids
 
@@ -412,16 +412,21 @@ def _collect_detection_miss(
                     ),
                 })
 
-        # Flood cap: top 10 by |z|
+        # Flood cap: top N by |z|, with 3 slots RESERVED for Tier-S (the
+        # headline tier) so a broad Tier-M day cannot starve ETF-level misses
+        # out of the inbox entirely (review nit on #1295).
         candidates.sort(key=lambda r: abs(r["move_z"]), reverse=True)
-        truncated = len(candidates) - _DETECTION_FLOOD_CAP
+        s_rows = [r for r in candidates if r.get("tier") == "s"][:3]
+        rest = [r for r in candidates if r not in s_rows]
+        new_rows = (s_rows + rest)[:_DETECTION_FLOOD_CAP]
+        new_rows.sort(key=lambda r: abs(r["move_z"]), reverse=True)
+        truncated = len(candidates) - len(new_rows)
         if truncated > 0:
             log.warning(
-                "detection_miss: flood cap hit — %d candidates, keeping top %d, "
-                "truncated %d",
-                len(candidates), _DETECTION_FLOOD_CAP, truncated,
+                "detection_miss: flood cap hit — %d candidates, keeping %d "
+                "(3 Tier-S slots reserved), truncated %d",
+                len(candidates), len(new_rows), truncated,
             )
-        new_rows = candidates[:_DETECTION_FLOOD_CAP]
         return new_rows
 
     except Exception as e:  # noqa: BLE001
@@ -466,7 +471,7 @@ def _collect_screen_live_divergence(
                 continue
             try:
                 registry.append(json.loads(line))
-            except (json.JSONDecodeError, Exception):  # noqa: BLE001
+            except json.JSONDecodeError:  # noqa: BLE001
                 pass
 
         if not registry:
@@ -481,7 +486,7 @@ def _collect_screen_live_divergence(
                     continue
                 try:
                     r = json.loads(line)
-                except (json.JSONDecodeError, Exception):  # noqa: BLE001
+                except json.JSONDecodeError:  # noqa: BLE001
                     continue
                 cid = r.get("compound_id", "")
                 if not cid:
@@ -594,7 +599,7 @@ def _collect_sentinel_mirror(
                 continue
             try:
                 sentinel_row = json.loads(line)
-            except (json.JSONDecodeError, Exception):  # noqa: BLE001
+            except json.JSONDecodeError:  # noqa: BLE001
                 continue
 
             # Build unique ID from sentinel fields

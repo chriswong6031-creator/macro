@@ -863,15 +863,7 @@ def _step_hypothesis_inbox(data_dir: Path, dry_run: bool) -> dict[str, int]:
     try:
         from engine.oracle.hypothesis_inbox import run_hypothesis_inbox
         counts = run_hypothesis_inbox(data_dir, dry_run=dry_run)
-        log.info(
-            "hypothesis_inbox: total=%d (analogue_surprise=%d, detection_miss=%d, "
-            "screen_live_divergence=%d, sentinel=%d)",
-            counts["total"],
-            counts["analogue_surprise"],
-            counts["detection_miss"],
-            counts["screen_live_divergence"],
-            counts["sentinel"],
-        )
+        # (breakdown already logged inside run_hypothesis_inbox — no dup)
         return counts
     except Exception as e:  # noqa: BLE001
         _annotation(f"oracle_nightly: hypothesis_inbox FAILED: {e}")
@@ -973,7 +965,7 @@ def main() -> int:
 
     # --- Step 14: Hypothesis inbox (P9) — append-only at END per additive-only law ---
     inbox_counts = _step_hypothesis_inbox(data_dir, args.dry_run)
-    if not inbox_counts and inbox_counts != {}:
+    if not inbox_counts:  # empty dict = failure sentinel (review major: old guard was dead logic)
         # An empty dict means failure was caught inside _step_hypothesis_inbox
         failures.append("hypothesis_inbox")
 
