@@ -27,7 +27,9 @@ def _make_snap(tickers: list[str], settlement: str, **kw) -> pd.DataFrame:
         "si_change_pct": kw.get("si_change_pct", 11.1),
         "settlement_date": settlement,
     } for t in tickers}
-    return pd.DataFrame.from_dict(rows, orient="index")
+    df = pd.DataFrame.from_dict(rows, orient="index")
+    df.index.name = "ticker"   # mirrors _snapshot() which uses df.set_index("ticker")
+    return df
 
 
 # ---------------------------------------------------------------------------
@@ -37,13 +39,16 @@ def _make_snap(tickers: list[str], settlement: str, **kw) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def _accrue(snap: pd.DataFrame, hist_p, capture_date: pd.Timestamp) -> pd.DataFrame:
-    """Run the accrual block from fetch_short_interest() against *hist_p*."""
+    """Run the accrual block from fetch_short_interest() against *hist_p*.
+
+    This is an exact copy of the accrual block in fetch_short_interest() so that
+    tests exercise the IDENTICAL call shape as production (house law).  No rename
+    fallback: _make_snap() sets index.name='ticker' exactly as _snapshot() does via
+    df.set_index('ticker'), so reset_index() always yields a 'ticker' column here.
+    """
     hist_snap = snap.copy()
     hist_snap["capture_date"] = capture_date
-    hist_snap = hist_snap.reset_index()          # ticker column
-    if hist_snap.columns[0] != "ticker":
-        # reset_index names the old index; rename if it came out as "index"
-        hist_snap = hist_snap.rename(columns={"index": "ticker"})
+    hist_snap = hist_snap.reset_index()          # ticker becomes a column
     if hist_p.exists():
         hist_snap = pd.concat([pd.read_parquet(hist_p), hist_snap], ignore_index=True)
         hist_snap = hist_snap.drop_duplicates(

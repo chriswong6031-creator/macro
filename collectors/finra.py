@@ -141,11 +141,23 @@ def fetch_short_interest(force: bool = False, max_age_days: int = 4) -> pd.DataF
     snap.to_parquet(cache)
     log.info("finra short interest: %d universe names, settlement %s", len(snap), settlement)
 
-    # PIT history accrual — append-only, keyed on (settlement_date, ticker).
-    # settlement_date is already in the snapshot (set above in _snapshot()).
-    # capture_date records the UTC calendar day this snapshot was fetched.
-    # Dedup key is (settlement_date, ticker); keep="last" so a same-day re-run
-    # overwrites without duplicating (idempotent within a calendar day).
+    # "Latest-known-per-settlement" convenience store — NOT a PIT-safe backtest source.
+    #
+    # Dedup key is (settlement_date, ticker) with keep="last".  This means that if
+    # the same settlement is captured on two different calendar days (e.g. because
+    # FINRA restated/corrected a figure), the LATER capture wins and the earlier
+    # vintage is overwritten.  capture_date is stored as a column but cannot be used
+    # to reconstruct point-in-time state because prior rows are deleted on restatement.
+    #
+    # This design is intentional for the current consumer (engine/equity_factors.py),
+    # which only needs the most-recent best estimate of short interest.  Any future
+    # consumer that requires PIT correctness — e.g. a backtest that must join on what
+    # was knowable on a given date — MUST NOT use short_interest_history.parquet as-is
+    # and must instead build a true vintage matrix keyed on (settlement_date, ticker,
+    # capture_date) where all captures are retained.
+    #
+    # Contrast: collectors/finra_short_volume.py uses (date, ticker) safely because
+    # daily short-volume data is never revised by FINRA.
     hist_p = cache.parent / "short_interest_history.parquet"
     hist_snap = snap.copy()
     capture_date = pd.Timestamp.now("UTC").normalize().tz_localize(None)
