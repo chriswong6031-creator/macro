@@ -150,6 +150,9 @@ lanes:
       - id: build_kernel_diagnostics
         module: scripts.build_kernel_diagnostics
         note: "neural-web W3 PR3 — decay curves (kernel_families.json) + lagging-signal detector (lagging_signals.json); display-first, resilient"
+      - id: build_kernel_half_lives
+        module: scripts.build_kernel_half_lives
+        note: "signal-commons W2 — measured holding-horizon half-lives (half_life.json); monotone-decrease gate, nulls printed; display-only, resilient"
       - id: build_confluence_graph
         module: scripts.build_confluence_graph
         note: "neural-web W4 — confluence graph v1 (typed nodes: engine/sector/regime/thesis/episode; feeds/stable/leads/contradicts/confirms edges; contradiction detector 6 pairs; display-only under hard law)"
