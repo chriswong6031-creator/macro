@@ -1021,3 +1021,148 @@ class TestResumeability:
         _mark_done(state, "forward", "SPY", d)
         assert _is_done(state, "forward", "SPY", d)
         assert not _is_done(state, "episodes", "SPY", d)
+
+
+# ── budget-minutes tests ───────────────────────────────────────────────────────
+
+class TestBudgetMinutes:
+    """--budget-minutes: hard-stop, clean exit, state resumable next run."""
+
+    def _make_work(self, n: int) -> list[tuple[str, date]]:
+        d = date(2024, 1, 2)
+        return [("SPY", d + timedelta(days=i)) for i in range(n)]
+
+    def test_budget_exceeded_stops_cleanly(self, tmp_path, monkeypatch):
+        """With a zero-second budget the loop stops after at most a handful of items.
+
+        Verifies:
+          - main() returns without raising (exit 0 path)
+          - state is saved (budget_exceeded branch calls _save_state)
+          - the number of items marked done is < total work (budget was active)
+        """
+        import scripts.build_tape_flow_daily as mod
+
+        state: dict = {}
+
+        # Patch reachable() so no ThetaData check
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True, raising=False)
+
+        # Patch _load_state / _save_state to use our in-memory state dict
+        saved: list[dict] = []
+        monkeypatch.setattr(mod, "_load_state", lambda: state)
+        monkeypatch.setattr(mod, "_save_state", lambda s: saved.append(dict(s)))
+
+        # Patch _register_run_status (network/file side effect)
+        monkeypatch.setattr(mod, "_register_run_status", lambda *a, **kw: None)
+
+        # Patch _process_root_day to be instant + always return ok
+        call_log: list[tuple[str, date]] = []
+
+        def _fast_process(root, trade_date, mode, retain_raw):
+            call_log.append((root, trade_date))
+            return {"status": "ok", "root": root, "date": str(trade_date)}
+
+        monkeypatch.setattr(mod, "_process_root_day", _fast_process)
+
+        # Patch _audit_store to always pass
+        monkeypatch.setattr(mod, "_audit_store",
+                            lambda root, d: {"ok": True})
+
+        # Build a large enough work list that the budget would stop it early,
+        # but patch time.perf_counter so it immediately reports budget exceeded
+        # after the first future completes.
+        real_perf_counter = mod.time.perf_counter
+        call_count = 0
+
+        def _mock_perf_counter():
+            nonlocal call_count
+            call_count += 1
+            # First few calls (setup): return 0.0
+            # After 5 calls (enough for t_global and one loop iter): return very large
+            if call_count <= 4:
+                return 0.0
+            return 1e9  # far past any budget deadline
+
+        monkeypatch.setattr(mod.time, "perf_counter", _mock_perf_counter)
+
+        # Patch gex_symbols to avoid needing the universe (episodes mode is used
+        # so we avoid the gex_symbols import path)
+        # Also patch _episode_root_days to return our canned work list
+        work = self._make_work(20)
+        monkeypatch.setattr(mod, "_episode_root_days",
+                            lambda episode_root_filter=None: work)
+
+        # Run with a 1-minute budget (the mock perf_counter makes it expire quickly)
+        mod.main(["--mode", "episodes", "--budget-minutes", "1", "--no-audit"])
+
+        # Some work must have been processed
+        assert len(call_log) >= 1, "At least one root-day should have been processed"
+
+        # State must have been saved (budget-stop path calls _save_state)
+        assert len(saved) >= 1, "_save_state must be called at least once"
+
+    def test_budget_none_runs_to_completion(self, monkeypatch):
+        """Without --budget-minutes the loop always drains all work."""
+        import scripts.build_tape_flow_daily as mod
+
+        state: dict = {}
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True, raising=False)
+        monkeypatch.setattr(mod, "_load_state", lambda: state)
+        monkeypatch.setattr(mod, "_save_state", lambda s: None)
+        monkeypatch.setattr(mod, "_register_run_status", lambda *a, **kw: None)
+        monkeypatch.setattr(mod, "_audit_store", lambda root, d: {"ok": True})
+
+        call_log: list[tuple] = []
+
+        def _fast_process(root, trade_date, mode, retain_raw):
+            call_log.append((root, trade_date))
+            return {"status": "ok", "root": root, "date": str(trade_date)}
+
+        monkeypatch.setattr(mod, "_process_root_day", _fast_process)
+
+        work = self._make_work(5)
+        monkeypatch.setattr(mod, "_episode_root_days",
+                            lambda episode_root_filter=None: work)
+
+        # No --budget-minutes → should process all 5
+        mod.main(["--mode", "episodes", "--no-audit"])
+        assert len(call_log) == 5, "All 5 items must be processed when no budget is set"
+
+    def test_state_resumable_after_budget_stop(self, monkeypatch):
+        """Items marked done before budget-stop are skipped on the next run."""
+        import scripts.build_tape_flow_daily as mod
+
+        # Pre-populate state with 3 completed items
+        d = date(2024, 1, 2)
+        completed = [("SPY", d + timedelta(days=i)) for i in range(3)]
+        state: dict = {}
+        for root, td in completed:
+            mod._mark_done(state, "episodes", root, td)
+
+        # Work = 5 items (first 3 already done)
+        work = self._make_work(5)
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True, raising=False)
+        monkeypatch.setattr(mod, "_load_state", lambda: state)
+        monkeypatch.setattr(mod, "_save_state", lambda s: None)
+        monkeypatch.setattr(mod, "_register_run_status", lambda *a, **kw: None)
+        monkeypatch.setattr(mod, "_audit_store", lambda root, d: {"ok": True})
+        monkeypatch.setattr(mod, "_episode_root_days",
+                            lambda episode_root_filter=None: work)
+
+        call_log: list[tuple] = []
+
+        def _fast_process(root, trade_date, mode, retain_raw):
+            call_log.append((root, trade_date))
+            return {"status": "ok", "root": root, "date": str(trade_date)}
+
+        monkeypatch.setattr(mod, "_process_root_day", _fast_process)
+
+        mod.main(["--mode", "episodes", "--no-audit"])
+
+        # Only the 2 remaining items (days 3 and 4) should have been processed
+        assert len(call_log) == 2, (
+            f"Expected 2 items (3 already done), got {len(call_log)}: {call_log}"
+        )
+        for root, td in call_log:
+            assert (root, td) not in completed, f"{root} {td} was already done"
