@@ -18,8 +18,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| neural-web | 24 |
-| options-alpha | 4 |
+| neural-web | 25 |
+| options-alpha | 6 |
+| options-nw-entry-intelligence | 3 |
 | oracle | 13 |
 | qualitative-intelligence | 23 |
 | sector-pulse | 3 |
@@ -31,18 +32,18 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 54 |
-| infrastructure | 30 |
+| display | 58 |
+| infrastructure | 31 |
 | scored | 4 |
-| shadow | 33 |
+| shadow | 34 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 117 |
+| git | 122 |
 | gitignored-local | 3 |
-| r2 | 1 |
+| r2 | 2 |
 
 ## Artifacts by owner_program
 
@@ -152,6 +153,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
+| research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
 
 ### options-alpha
@@ -162,6 +164,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | vol-regime-gate | `data/vol_regime/gate.json` | json | on-demand | scored | 3 | 0 |
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
 | options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
+| options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |
+| options-skew-snapshots | `data/options_skew/snapshots.parquet` | parquet | collect | display | 1 | 0 |
+
+### options-nw-entry-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| live-options-flow-current | `live_flow/feed_current.json` | json | collect | display | 0 | 1 |
+| options-entry-state | `data/options_entry/state.parquet` | parquet | collect | display | 1 | 0 |
+| options-entry-gate | `data/options_entry/gate.json` | json | collect | shadow | 0 | 0 |
 
 ### oracle
 
@@ -588,6 +600,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/regime_vector.py`
 - **extra writers:**
   - engine/run.py — calls regime_vector.py:487 and stores result at line 681; run.py is the orchestrator
+
+### research-queue
+
+- **path:** `data/neuralweb/research_queue.json`
+- **declared producer:** `engine/neuralweb/research_queue.py`
+- **extra writers:**
+  - scripts/build_research_queue.py — thin CLI wrapper; calls write_queue() defined in the producer; no independent write logic
 
 ### sector-central-calls
 
