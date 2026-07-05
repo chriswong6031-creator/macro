@@ -47,6 +47,19 @@ _KNOWN_NULLS = """\
 - Defensive-rotation -> vol-shock prediction: falsified (DEFENSIVE_ROTATION.md).
 - 28 of 34 high-VIX routing cells: small-n bootstrap artifacts (P3b placebo)."""
 
+# Tier-1 screen priors from external-brainstorm round 1 (2026-07-04). NOT
+# gauntleted — treat as strong priors, not proofs. The individual compounds and
+# their numbers appear live in the "Specced/screened" section above; these are
+# the GENERALISED shape-lessons so the model does not re-propose a trivially
+# different variant of a screened-dead family.
+_SCREEN_PRIORS = """\
+- Leadership CONTINUATION (rs>0 + persistence/breadth/cohesion, NO flow-event
+  trigger): flat-to-negative on tier-s (round-1 B1 -1.5%, B2 -3.3%, D2 -0.9%,
+  C1 -0.5%). "Quiet leadership" / "group-confirmed RS turn" variants are the
+  dead unconditioned-momentum null wearing conditioners. Do not re-propose.
+- A high hit-rate at tiny n is NOISE, not edge (round-1 A4: +5.5% / 86% hit at
+  n=21 — a sampling mirage). See the COVERAGE FLOOR in the rules below."""
+
 
 def _jsonl(path: Path) -> list[dict]:
     rows = []
@@ -122,6 +135,9 @@ Specced/screened compounds ({len(compounds)}):
 Adjudicated dead ends (pre-registered tests; do not re-till):
 {_KNOWN_NULLS}
 
+Tier-1 screen priors (round-1 brainstorm; strong priors, NOT gauntleted):
+{_SCREEN_PRIORS}
+
 === OUTPUT FORMAT (return ONLY a JSON list of specs) ===
 [{{"id": "<SHORT_UNIQUE_ID>", "family": "<A-F or NEW:<name>>",
   "name": "<what the rule does — plain>",
@@ -136,6 +152,13 @@ review); prefer tier "s" for anything you'd want promotable; conditioning
 compounds (X only-when Y) beat raw signals here — the measured nulls above
 show unconditioned signals are dead; diversity across families beats ten
 variants of one idea.
+
+COVERAGE FLOOR (hard): only propose rules you expect to TRIGGER >=100 times
+across 11 ETFs over 1998-> (roughly 4+ entries/yr). Rules gated on rare
+multi-node episode cascades, deep tier requirements, or narrow numeric bands
+screen at n<30 and CANNOT be promoted — a strong hit-rate at n=20 is a
+sampling mirage, not an edge (see screen priors). Favour conditioners that
+fire often enough to measure: broad regime/flow states over rare coincidences.
 === END PACK ===
 """
 
