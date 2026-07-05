@@ -268,14 +268,18 @@ def test_w1c_block_is_balanced():
 
 
 def test_shelf_headers_have_dual_spans():
-    """Every shelf header (ENTRY, RIPENING, RAN/LATE) must contain both l-en and l-zh spans."""
+    """The RIPENING and RAN/LATE shelf headers must contain both l-en and l-zh spans.
+
+    The ENTRY shelf header was intentionally removed (the ENTRY grid is the default top
+    list — no banner needed), so st-entry no longer appears as a shelf tag. The per-card
+    stg-entry badge still marks each ENTRY card.
+    """
     start = SRC.index("{# ── W1-C: ENTRY SHELF")
     end = SRC.index("{# ── BOARD TRACK RECORD")
     section = SRC[start:end]
     assert 'class="l-en"' in section, "No l-en span found in W1-C shelf section"
     assert 'class="l-zh"' in section, "No l-zh span found in W1-C shelf section"
-    # All three shelf tag classes must appear
-    assert "st-entry" in section, "ENTRY shelf tag class missing"
+    # The RIPENING and RAN/LATE shelves still carry headers
     assert "st-ripe" in section, "RIPENING shelf tag class missing"
     assert "st-ran" in section, "RAN shelf tag class missing"
 
