@@ -2142,7 +2142,22 @@ def main() -> int:
         # HYGIENE GATE — fresh-entry suppression only (RUL-4-legal).
         # HOLD/LAUNCHED names are never touched; only fresh-fire buy candidates.
         # Fail-open law: missing store / stale store => never suppresses.
+        #
+        # Injection: pass the already-built close-series index as the trading-day
+        # calendar so earnings_blackout skips the redundant data/stocks/*.parquet
+        # re-read (_build_td_calendar cold cost ~5s on 224+ files).
         try:
+            _td_dates: "pd.DatetimeIndex | None" = None
+            try:
+                import pandas as _pd_eb
+                _td_dates = _pd_eb.DatetimeIndex(sorted(set(
+                    idx
+                    for (_, cl, *_) in uni
+                    for idx in cl.index
+                )))
+                _eb.set_td_calendar(_td_dates)
+            except Exception:  # noqa: BLE001 — graceful: fall through to internal glob
+                pass
             _eb_store_info = _eb.store_staleness()
             _eb_store_stale = _eb_store_info.get("stale", True)
             _eb_suppressed: list[tuple] = []   # (t, p, tier) suppressed from buy
@@ -2158,9 +2173,10 @@ def main() -> int:
                 _buyable_after_eb: list[tuple] = []
                 for _item_eb in buyable:
                     _t_eb, _p_eb, _tier_eb = _item_eb
-                    # Skip HOLD_LAUNCHED names — they are NEVER fresh-entry candidates
+                    # Skip HOLD (any active state) — launched/intact/broken are all
+                    # treated as open position; earnings gate does not re-suppress them.
                     _hd_eb = (_p_eb.get("hold") or {}) if hasattr(_p_eb, "get") else {}
-                    if (_hd_eb.get("state") == "launched"):
+                    if _hd_eb.get("state") in {"launched", "intact", "broken"}:
                         _buyable_after_eb.append(_item_eb)
                         continue
                     _ev = _eb.assess(_t_eb)
@@ -2177,7 +2193,7 @@ def main() -> int:
                 _recovery_after_eb: list[tuple] = []
                 for _t_eb, _p_eb in _recovery_cands:
                     _hd_eb = (_p_eb.get("hold") or {}) if hasattr(_p_eb, "get") else {}
-                    if _hd_eb.get("state") == "launched":
+                    if _hd_eb.get("state") in {"launched", "intact", "broken"}:
                         _recovery_after_eb.append((_t_eb, _p_eb))
                         continue
                     _ev = _eb_blackout_map.get(_t_eb) or _eb.assess(_t_eb)

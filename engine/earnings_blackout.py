@@ -12,7 +12,8 @@ PER-ROW LAW (adjudicated 2026-07-05):
 FAIL-OPEN law: missing store / missing ticker / stale row => in_blackout=False
 with stale flag set.  The veto NEVER blocks a board build.
 
-LIVE SEMANTICS: key on next_date (+ next_time where present),
+LIVE SEMANTICS: key on next_date; next_time is carried for display only
+(it does not participate in the blackout verdict).
 NEVER on 8-K filing calendar dates.  Same-day 8-Ks are mostly filed
 after-hours; the live veto must never block an already-announced name.
 
@@ -98,6 +99,15 @@ def _build_td_calendar() -> pd.DatetimeIndex:
         cal = pd.DatetimeIndex(sorted(all_dates))
     # Extend with bdate_range for future dates not yet in the price store.
     # The store ends at the last close date; next_date may be in the future.
+    # KNOWN IMPRECISION: bdate_range does not exclude NYSE market holidays (e.g.
+    # July 4th observed, Thanksgiving, Christmas).  This inflates trading-day
+    # distances and as_of ages by at most +1 session per holiday in the window.
+    # Effect on staleness: the store may be judged fresh one session earlier than
+    # it truly is (fail-open direction — errs toward NOT suppressing, not safety
+    # hole).  Effect on days_to_earnings near a holiday: could shift k=3 boundary
+    # by ±1 session.  To avoid adding a calendar dependency, this imprecision is
+    # documented here rather than corrected.  The injection hook set_td_calendar()
+    # allows callers with a holiday-clean calendar to override this.
     last = cal[-1]
     extension_end = last + pd.Timedelta(days=365)
     future = pd.bdate_range(last + pd.Timedelta(days=1), extension_end)
@@ -142,7 +152,7 @@ def _parse_as_of(as_of_str: str) -> pd.Timestamp | None:
     try:
         ts = pd.Timestamp(as_of_str)
         if ts.tzinfo is not None:
-            ts = ts.tz_localize(None) if ts.tzinfo is None else ts.tz_convert(None)
+            ts = ts.tz_convert(None)
         return ts.normalize()  # midnight, tz-naive
     except Exception:  # noqa: BLE001
         return None
@@ -296,6 +306,30 @@ def assess(ticker: str,
         "stale": False,
         "reason": f"k={_BLACKOUT_K}_blackout" if in_blackout else "outside_window",
     }
+
+
+def set_td_calendar(td_index: "pd.DatetimeIndex") -> None:
+    """Inject a pre-built trading-day calendar, bypassing the full-parquet-glob.
+
+    build_stock_library already loads per-ticker close series; calling this
+    with the union of all close-series indices eliminates the redundant
+    data/stocks/*.parquet re-read that _build_td_calendar() would otherwise
+    perform on cold start (O(n_tickers) I/O).  Must be called before the
+    first assess() or store_staleness() call within a build.
+
+    The injected calendar is extended with bdate_range to cover future dates
+    (same KNOWN IMPRECISION as the auto-built calendar — holiday-blind beyond
+    the last price close).
+    """
+    global _cached_td_calendar  # noqa: PLW0603
+    if td_index is None or len(td_index) == 0:
+        return
+    last = td_index[-1]
+    extension_end = last + pd.Timedelta(days=365)
+    future = pd.bdate_range(last + pd.Timedelta(days=1), extension_end)
+    if len(future):
+        td_index = td_index.append(future)
+    _cached_td_calendar = td_index
 
 
 def clear_cache() -> None:

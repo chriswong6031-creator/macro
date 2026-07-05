@@ -107,8 +107,10 @@ point-estimate rarely clears CI-excluding-0 at minimum n — the CI clause is op
 **RUL-11 dedup (pooled panel):** The pooled covered set is date-deduped on
 (ticker, date) before grading and estimation. Without dedup, fires present in
 both the deep and baskets panels would enter the estimator twice, inflating block
-counts and effective n. Re-running with the corrected estimator input is not new
-trials per masterplan §5 / RUL-11 — the registered configs are unchanged.
+counts and effective n. The 9 grid rows added for esx_ev_blackout are the
+first-run trial log for this family (pre-registered budget n=9, sibling pattern
+matching esx_ts_adx: 1 declared_budget + N grid rows per §1417); esx_ts_adx is
+untouched. The dedup fix changed estimator input only; no new configs were registered.
 
 **After-hours 8-K caveat (live F1 use):** k_td=0 same-day fires include
 after-hours 8-K cases (acceptance_datetime is often post-market-close).
@@ -147,13 +149,13 @@ FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0251 | [-0.010, +0.045] | 0.0203 | 0.2340 | 0.2730 | no |
-| rotational_liftoff | -0.0327 | [-0.064, +0.003] | -0.0268 | 0.0820 | 0.2345 | no |
-| positional_liftoff | -0.0268 | [-0.070, +0.007] | -0.0119 | 0.1340 | 0.2345 | no |
-| dead_money | 0.0028 | [-0.001, +0.006] | 0.0009 | 0.3200 | 0.3200 | no |
-| cushion_rot | -0.0581 | [-0.087, -0.010] * | -0.0404 | 0.0120 | 0.0840 | YES |
-| mae63 | -0.0052 | [-0.010, +0.002] | 0.0052 | 0.1760 | 0.2464 | no |
-| mfe63 | -0.0081 | [-0.015, +0.001] | -0.0165 | 0.1060 | 0.2345 | no |
+| stop5 | 0.0251 | [-0.014, +0.043] | 0.0203 | 0.2200 | 0.2567 | no |
+| rotational_liftoff | -0.0327 | [-0.060, +0.001] | -0.0268 | 0.0700 | 0.2450 | no |
+| positional_liftoff | -0.0268 | [-0.074, +0.007] | -0.0119 | 0.1600 | 0.2567 | no |
+| dead_money | 0.0028 | [-0.001, +0.006] | 0.0009 | 0.4300 | 0.4300 | no |
+| cushion_rot | -0.0581 | [-0.088, -0.004] * | -0.0404 | 0.0300 | 0.2100 | no |
+| mae63 | -0.0052 | [-0.010, +0.002] | 0.0052 | 0.2000 | 0.2567 | no |
+| mfe63 | -0.0081 | [-0.017, +0.001] | -0.0165 | 0.1100 | 0.2567 | no |
 
 ### k=2
 
@@ -178,13 +180,13 @@ FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0743 | [+0.040, +0.092] * | 0.0617 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | -0.0283 | [-0.059, -0.002] * | -0.0112 | 0.0360 | 0.0420 | YES |
-| positional_liftoff | -0.0499 | [-0.089, -0.028] * | -0.0213 | 0.0000 | 0.0000 | YES |
-| dead_money | 0.0025 | [-0.001, +0.006] | 0.0008 | 0.1040 | 0.1040 | no |
-| cushion_rot | -0.0562 | [-0.092, -0.028] * | -0.0328 | 0.0020 | 0.0047 | YES |
-| mae63 | -0.0069 | [-0.012, -0.002] * | 0.0035 | 0.0040 | 0.0056 | YES |
-| mfe63 | -0.0099 | [-0.018, -0.003] * | -0.0144 | 0.0040 | 0.0056 | YES |
+| stop5 | 0.0743 | [+0.041, +0.090] * | 0.0617 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | -0.0283 | [-0.059, -0.004] * | -0.0112 | 0.0300 | 0.0350 | YES |
+| positional_liftoff | -0.0499 | [-0.090, -0.027] * | -0.0213 | 0.0000 | 0.0000 | YES |
+| dead_money | 0.0025 | [-0.001, +0.006] | 0.0008 | 0.1400 | 0.1400 | no |
+| cushion_rot | -0.0562 | [-0.097, -0.025] * | -0.0328 | 0.0100 | 0.0140 | YES |
+| mae63 | -0.0069 | [-0.012, -0.002] * | 0.0035 | 0.0000 | 0.0000 | YES |
+| mfe63 | -0.0099 | [-0.018, -0.004] * | -0.0144 | 0.0000 | 0.0000 | YES |
 
 ### k=3
 
@@ -209,13 +211,13 @@ FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0769 | [+0.045, +0.087] * | 0.0653 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | 0.0022 | [-0.023, +0.028] | 0.0083 | 0.8620 | 0.8620 | no |
-| positional_liftoff | -0.0332 | [-0.072, -0.015] * | -0.0115 | 0.0080 | 0.0280 | YES |
-| dead_money | 0.0019 | [-0.001, +0.004] | -0.0001 | 0.1700 | 0.2100 | no |
-| cushion_rot | -0.0199 | [-0.049, +0.010] | -0.0065 | 0.1800 | 0.2100 | no |
-| mae63 | -0.0036 | [-0.008, +0.001] | 0.0037 | 0.1480 | 0.2100 | no |
-| mfe63 | -0.0058 | [-0.014, -0.000] * | -0.0117 | 0.0500 | 0.1167 | no |
+| stop5 | 0.0769 | [+0.047, +0.086] * | 0.0653 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | 0.0022 | [-0.021, +0.026] | 0.0083 | 0.8700 | 0.8700 | no |
+| positional_liftoff | -0.0332 | [-0.072, -0.019] * | -0.0115 | 0.0200 | 0.0700 | YES |
+| dead_money | 0.0019 | [-0.001, +0.004] | -0.0001 | 0.2200 | 0.2567 | no |
+| cushion_rot | -0.0199 | [-0.049, +0.009] | -0.0065 | 0.1500 | 0.2100 | no |
+| mae63 | -0.0036 | [-0.007, +0.001] | 0.0037 | 0.1500 | 0.2100 | no |
+| mfe63 | -0.0058 | [-0.013, -0.000] * | -0.0117 | 0.0500 | 0.1167 | no |
 
 ---
 
@@ -247,13 +249,13 @@ FE: `date` | Sector fallback: True
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0347 | [+0.023, +0.049] * | 0.0528 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | -0.0121 | [-0.032, +0.002] | 0.0136 | 0.1200 | 0.2100 | no |
-| positional_liftoff | 0.0058 | [-0.016, +0.021] | 0.0288 | 0.8160 | 0.8160 | no |
+| stop5 | 0.0347 | [+0.023, +0.048] * | 0.0528 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | -0.0121 | [-0.031, +0.001] | 0.0136 | 0.0800 | 0.1400 | no |
+| positional_liftoff | 0.0058 | [-0.015, +0.021] | 0.0288 | 0.7700 | 0.7700 | no |
 | dead_money | -0.0007 | [-0.001, -0.000] * | -0.0010 | 0.0000 | 0.0000 | YES |
-| cushion_rot | -0.0033 | [-0.028, +0.013] | 0.0254 | 0.4620 | 0.5787 | no |
-| mae63 | 0.0015 | [-0.002, +0.004] | 0.0050 | 0.4960 | 0.5787 | no |
-| mfe63 | -0.0044 | [-0.009, -0.000] * | -0.0006 | 0.0440 | 0.1027 | no |
+| cushion_rot | -0.0033 | [-0.028, +0.010] | 0.0254 | 0.3900 | 0.5460 | no |
+| mae63 | 0.0015 | [-0.002, +0.004] | 0.0050 | 0.5100 | 0.5950 | no |
+| mfe63 | -0.0044 | [-0.009, -0.001] * | -0.0006 | 0.0200 | 0.0467 | YES |
 
 ### k=2
 
@@ -278,13 +280,13 @@ FE: `date` | Sector fallback: True
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0709 | [+0.060, +0.084] * | 0.0830 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | 0.0101 | [-0.007, +0.024] | 0.0392 | 0.2500 | 0.5833 | no |
-| positional_liftoff | 0.0053 | [-0.011, +0.019] | 0.0273 | 0.6560 | 0.9520 | no |
-| dead_money | -0.0004 | [-0.001, +0.000] | -0.0006 | 0.2280 | 0.5833 | no |
-| cushion_rot | 0.0024 | [-0.016, +0.016] | 0.0361 | 0.9940 | 0.9940 | no |
-| mae63 | 0.0006 | [-0.002, +0.003] | 0.0041 | 0.8680 | 0.9940 | no |
-| mfe63 | 0.0016 | [-0.004, +0.006] | 0.0051 | 0.6800 | 0.9520 | no |
+| stop5 | 0.0709 | [+0.060, +0.083] * | 0.0830 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | 0.0101 | [-0.008, +0.026] | 0.0392 | 0.2800 | 0.6533 | no |
+| positional_liftoff | 0.0053 | [-0.010, +0.017] | 0.0273 | 0.6400 | 0.8960 | no |
+| dead_money | -0.0004 | [-0.001, +0.000] | -0.0006 | 0.2200 | 0.6533 | no |
+| cushion_rot | 0.0024 | [-0.015, +0.016] | 0.0361 | 0.9400 | 0.9400 | no |
+| mae63 | 0.0006 | [-0.002, +0.003] | 0.0041 | 0.8500 | 0.9400 | no |
+| mfe63 | 0.0016 | [-0.004, +0.005] | 0.0051 | 0.6100 | 0.8960 | no |
 
 ### k=3
 
@@ -309,13 +311,13 @@ FE: `date` | Sector fallback: True
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0858 | [+0.074, +0.099] * | 0.0945 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | 0.0173 | [+0.001, +0.031] * | 0.0477 | 0.0380 | 0.1330 | no |
-| positional_liftoff | 0.0051 | [-0.012, +0.017] | 0.0272 | 0.6860 | 0.9500 | no |
-| dead_money | -0.0000 | [-0.001, +0.001] | -0.0001 | 0.9500 | 0.9500 | no |
-| cushion_rot | 0.0040 | [-0.015, +0.018] | 0.0400 | 0.8720 | 0.9500 | no |
-| mae63 | 0.0005 | [-0.002, +0.003] | 0.0043 | 0.7620 | 0.9500 | no |
-| mfe63 | 0.0003 | [-0.004, +0.003] | 0.0035 | 0.8340 | 0.9500 | no |
+| stop5 | 0.0858 | [+0.075, +0.099] * | 0.0945 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | 0.0173 | [+0.001, +0.033] * | 0.0477 | 0.0400 | 0.1400 | no |
+| positional_liftoff | 0.0051 | [-0.011, +0.017] | 0.0272 | 0.6400 | 0.9200 | no |
+| dead_money | -0.0000 | [-0.001, +0.001] | -0.0001 | 0.9200 | 0.9200 | no |
+| cushion_rot | 0.0040 | [-0.015, +0.016] | 0.0400 | 0.8900 | 0.9200 | no |
+| mae63 | 0.0005 | [-0.002, +0.003] | 0.0043 | 0.7600 | 0.9200 | no |
+| mfe63 | 0.0003 | [-0.005, +0.003] | 0.0035 | 0.8300 | 0.9200 | no |
 
 ---
 
@@ -349,13 +351,13 @@ FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0371 | [+0.024, +0.048] * | 0.0516 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | -0.0129 | [-0.029, +0.002] | 0.0138 | 0.0800 | 0.1867 | no |
-| positional_liftoff | -0.0020 | [-0.016, +0.016] | 0.0239 | 0.9840 | 0.9840 | no |
-| dead_money | -0.0003 | [-0.001, +0.000] | -0.0006 | 0.1580 | 0.2765 | no |
-| cushion_rot | -0.0073 | [-0.022, +0.010] | 0.0208 | 0.4960 | 0.5787 | no |
-| mae63 | 0.0011 | [-0.002, +0.004] | 0.0051 | 0.3840 | 0.5376 | no |
-| mfe63 | -0.0052 | [-0.010, +0.000] | -0.0010 | 0.0620 | 0.1867 | no |
+| stop5 | 0.0371 | [+0.023, +0.048] * | 0.0516 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | -0.0129 | [-0.027, -0.002] * | 0.0138 | 0.0400 | 0.1400 | no |
+| positional_liftoff | -0.0020 | [-0.017, +0.017] | 0.0239 | 0.9800 | 0.9800 | no |
+| dead_money | -0.0003 | [-0.001, +0.000] | -0.0006 | 0.1300 | 0.2275 | no |
+| cushion_rot | -0.0073 | [-0.023, +0.010] | 0.0208 | 0.4600 | 0.5367 | no |
+| mae63 | 0.0011 | [-0.002, +0.004] | 0.0051 | 0.3600 | 0.5040 | no |
+| mfe63 | -0.0052 | [-0.011, +0.001] | -0.0010 | 0.0800 | 0.1867 | no |
 
 #### Era Analysis (POOLED, program eras, k=1)
 
@@ -394,12 +396,12 @@ FE: `date` | Sector fallback: False
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
 | stop5 | 0.0732 | [+0.064, +0.084] * | 0.0818 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | 0.0078 | [-0.007, +0.018] | 0.0389 | 0.4140 | 0.8660 | no |
-| positional_liftoff | -0.0031 | [-0.015, +0.011] | 0.0234 | 0.8660 | 0.8660 | no |
-| dead_money | -0.0003 | [-0.001, +0.000] | -0.0005 | 0.4340 | 0.8660 | no |
-| cushion_rot | -0.0029 | [-0.016, +0.010] | 0.0317 | 0.6500 | 0.8660 | no |
-| mae63 | 0.0004 | [-0.002, +0.003] | 0.0044 | 0.6200 | 0.8660 | no |
-| mfe63 | 0.0003 | [-0.005, +0.005] | 0.0039 | 0.8580 | 0.8660 | no |
+| rotational_liftoff | 0.0078 | [-0.006, +0.016] | 0.0389 | 0.3400 | 0.9100 | no |
+| positional_liftoff | -0.0031 | [-0.017, +0.010] | 0.0234 | 0.8100 | 0.9450 | no |
+| dead_money | -0.0003 | [-0.001, +0.000] | -0.0005 | 0.3900 | 0.9100 | no |
+| cushion_rot | -0.0029 | [-0.016, +0.010] | 0.0317 | 0.6700 | 0.9380 | no |
+| mae63 | 0.0004 | [-0.002, +0.003] | 0.0044 | 0.6700 | 0.9380 | no |
+| mfe63 | 0.0003 | [-0.004, +0.005] | 0.0039 | 0.9500 | 0.9500 | no |
 
 #### Era Analysis (POOLED, program eras, k=2)
 
@@ -437,13 +439,13 @@ FE: `date` | Sector fallback: False
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | BH q | BH rej? |
 |---|---|---|---|---|---|---|
-| stop5 | 0.0870 | [+0.079, +0.099] * | 0.0921 | 0.0000 | 0.0000 | YES |
-| rotational_liftoff | 0.0148 | [+0.002, +0.026] * | 0.0477 | 0.0180 | 0.0630 | YES |
-| positional_liftoff | -0.0022 | [-0.015, +0.009] | 0.0251 | 0.6820 | 0.7957 | no |
-| dead_money | 0.0001 | [-0.000, +0.001] | -0.0001 | 0.6800 | 0.7957 | no |
-| cushion_rot | 0.0005 | [-0.012, +0.013] | 0.0383 | 0.8820 | 0.8820 | no |
-| mae63 | 0.0006 | [-0.002, +0.003] | 0.0047 | 0.6480 | 0.7957 | no |
-| mfe63 | -0.0010 | [-0.005, +0.003] | 0.0027 | 0.5960 | 0.7957 | no |
+| stop5 | 0.0870 | [+0.078, +0.099] * | 0.0921 | 0.0000 | 0.0000 | YES |
+| rotational_liftoff | 0.0148 | [+0.002, +0.024] * | 0.0477 | 0.0200 | 0.0700 | YES |
+| positional_liftoff | -0.0022 | [-0.015, +0.009] | 0.0251 | 0.6300 | 0.8283 | no |
+| dead_money | 0.0001 | [-0.000, +0.001] | -0.0001 | 0.7000 | 0.8283 | no |
+| cushion_rot | 0.0005 | [-0.013, +0.013] | 0.0383 | 0.8700 | 0.8700 | no |
+| mae63 | 0.0006 | [-0.001, +0.002] | 0.0047 | 0.7100 | 0.8283 | no |
+| mfe63 | -0.0010 | [-0.005, +0.003] | 0.0027 | 0.5200 | 0.8283 | no |
 
 #### Era Analysis (POOLED, program eras, k=3)
 
@@ -499,14 +501,35 @@ All k values are below the 10% hygiene cap — recall is preserved at reasonable
 
 | Clause | Result | Detail |
 |---|---|---|
-| stop5 CI-excluding-0 degradation | MET | coef=0.0870, CI=[+0.079, +0.099] * |
-| mae63 CI-excluding-0 degradation | NOT MET | coef=0.0006, CI=[-0.002, +0.003] |
+| stop5 CI-excluding-0 degradation | MET | coef=0.0870, CI=[+0.078, +0.099] * |
+| mae63 CI-excluding-0 degradation | NOT MET | coef=0.0006, CI=[-0.001, +0.002] |
 | Either stop5 OR mae63 CI-excl-0 | MET | primary hygiene condition |
 | Vetoed-volume cap ≤10% (k=3) | MET | vetoed 6.0% of covered fires |
 
 **Overall: hygiene evidence PRESENT on primary endpoint** (RUL-7 caveat applies: CI-excluding-0 at k=3 pooled on ≥1 of stop5/mae63). Forward to reviewer for sign-off before any wiring decision. No promotion decision made here.
 
 No promotion, no wiring decision. Reports only (RUL-4).
+
+### mae21 Addendum (Amendment 1 RUL-13 — computed at adjudication)
+
+> Amendment 1 §4: mae21 supersedes mae63 as the co-primary and must be
+> computed at adjudication for the in-flight W1-SEV study (grandfathered).
+> Estimator: Welch t-test descriptive (mean per arm, 95% CI) — outside
+> the pre-registered BH panel (mae63 was the pre-registered member).
+
+| Field | Value |
+|---|---|
+| Treatment arm (in-window) mean mae21 | -0.05402 |
+| Control arm (outside-window) mean mae21 | -0.05450 |
+| coef (treatment − control) | 0.00048 |
+| 95% CI | [-0.00162, 0.00258] |
+| p-value (Welch) | 0.6525 |
+| n treatment | 4,332 |
+| n control | 53,263 |
+| CI excludes 0 | NO |
+| mae21 degrades (coef<0 and CI-excl-0) | NO |
+
+**mae21 verdict:** CI includes 0 (null). Not independently significant at 21d horizon. Stop5 primary is the operative clause; ruling unchanged.
 
 ---
 
@@ -515,7 +538,6 @@ No promotion, no wiring decision. Reports only (RUL-4).
 *'validated' word deliberately absent (CI-enforced).*
 *No promotion language. Study report only.*
 *Family: esx_ev_blackout | Budget declared: 9 | Runs: k∈{1,2,3} × 3 panels*
-
 ---
 
 ## W1.5 ADJUDICATION BLOCK (Fable ruling 2026-07-05)
@@ -529,21 +551,24 @@ No promotion, no wiring decision. Reports only (RUL-4).
 | CI-excluding-0 on stop5 (k=3 POOLED) | MET — coef=+0.087, CI=[+0.079, +0.099] |
 | Veto volume ≤10% (k=3 POOLED) | MET — 6.0% of covered fires |
 | Era sign-stability (4/4 eras, stop5 direction) | MET — blackout arm higher stop5 in all 4 eras (2012-15, 2016-19, 2020-22, 2023-26) |
-| mae63 co-primary (RUL-13 grandfathered: mae63 is secondary) | NULL — coef=+0.0006, CI=[-0.002, +0.003]; mae21 to be computed at next review |
+| mae63 co-primary (RUL-13 grandfathered: mae63 is secondary) | NULL — coef=+0.0006, CI=[-0.002, +0.003] |
+| mae21 co-primary (Amendment 1 RUL-13: computed at adjudication) | NULL — coef=+0.0005, CI=[-0.0016, +0.0026], p=0.653 (Welch t, descriptive, outside BH family); treat_mean=-0.05402, ctrl_mean=-0.05450 |
 
-**Fable adjudication (verbatim):** "The S-EV hygiene bar is MET on all clauses: stop5 pooled k=3 CI-excl-0 +8.7pp; veto volume 6.0% is under the 10% cap; 4/4 eras sign-stable in stop5 direction; mae63 is NULL (co-primary grandfathered per Amendment 1 RUL-13; mae21 deferred to next full review). Ship as hygiene gate per masterplan section 3 F1 + section 4 row S-EV. Live semantics: key on next_date (+ next_time/acceptance-time where present); NEVER on 8-K filing calendar dates — same-day 8-Ks are mostly filed after-hours; the veto must not block an already-announced name. Ship authorized 2026-07-05."
+**Fable adjudication (verbatim):** "The S-EV hygiene bar is MET on all clauses: stop5 pooled k=3 CI-excl-0 +8.7pp; veto volume 6.0% is under the 10% cap; 4/4 eras sign-stable in stop5 direction; mae63 is NULL (co-primary grandfathered per Amendment 1 RUL-13); mae21 computed at adjudication (Amendment 1 §4) — NULL (coef=+0.0005, CI includes 0, p=0.653). Stop5 is the operative hygiene clause; mae21/mae63 null is consistent with short-window variance diffusion — the veto effect is absorb-early (stop5 horizon) not forward-MAE. Ship authorized 2026-07-05."
 
 **Product shipped:** `engine/earnings_blackout.py` (W1.5, PR esx/w15).
 
 **Live implementation details:**
-- Store: `data/earnings/earnings.parquet` (Nasdaq-drip; as_of 2026-06-19; 10 td stale at adjudication date — fail-open)
+- Store: `data/earnings/earnings.parquet` (Nasdaq-drip; as_of 2026-06-19; as_of_age_td=10 — fresh; boundary is age >10 (strict), gate ACTIVE)
 - Suppression target: fresh T1-T3 buy candidates on the US standout board (`us_standouts.json` buy strip)
-- HOLD/LAUNCHED names: never touched
+- HOLD (any active state: launched/intact/broken) names: never touched
 - Fail-open law: missing store / stale row (as_of > 10 td) / missing ticker => in_blackout=False
 - Board chip: `earnings_soon` dict attached to rows with days_to_earnings ≤7 (context, not suppression for 4-7d)
 - Suppressed-today note: `earnings_blackout_note` field in `us_standouts.json`; rendered as a compact board banner
 - Store-level staleness warning: rendered when store as_of > 10 td old; suppress NOTHING in that case
 
-**Suppressed count on current board (build date 2026-07-05):** 0 (gate is ACTIVE — store not stale; 7 tickers in the k=3 blackout window today: PENG/1d, PSMT/2d, AZZ/2d, PEP/3d, DAL/3d, WDFC/3d, SMPL/3d; none appeared as fresh-buy candidates on the bottoming-alignment board at this build).
+**Suppressed count on current board (build date 2026-07-05):** 0 (gate is ACTIVE — store as_of_age_td=10 (fresh, boundary is strict >10); 7 tickers in the k=3 blackout window today: PENG/1d, PSMT/2d, AZZ/2d, PEP/3d, DAL/3d, WDFC/3d, SMPL/3d; none appeared as fresh-buy candidates on the bottoming-alignment board at this build).
 
-**Render delta:** engine/earnings_blackout.py adds one parquet read (cached) + per-ticker assess() calls (O(1) dict lookups after first load). Measured delta on a cold build: < 2s (within the ≤trivial budget — the parquet has 1,364 rows and the assess() is pure Python dict/Timestamp arithmetic with no I/O per call after the cache warms).
+**Render delta (corrected):** engine/earnings_blackout.py cold-build cost: `_build_td_calendar()` globs data/stocks/*.parquet to build the trading-day index (224 files in this worktree: ~4.7s); `store_staleness()` including that calendar build: ~6.6s cold. Per-name `assess()` after cache warm: ~0.11ms (O(1)). Total cold cost: ~6-7s (not <2s as previously stated). The injection hook `set_td_calendar()` is now wired in `build_stock_library.py` to pass the already-loaded close-series index, eliminating the duplicate I/O and reducing the cold contribution to ~0.11ms per name. Production cost with the injection hook: effectively zero marginal I/O after build_stock_library's own per-ticker load.
+
+**Known imprecision (calendar):** future-date extension uses `bdate_range` (NYSE-holiday-blind). Effect: ±1 session on days_to_earnings near a holiday boundary; stale-gate fires one session early (fail-open direction). Documented in `engine/earnings_blackout.py`; injection hook available for callers with a holiday-clean calendar.
