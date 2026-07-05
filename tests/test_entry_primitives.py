@@ -462,12 +462,20 @@ class TestAmihudSeries:
 
 
 def test_amihud_no_lookahead():
-    """Shift-audit: amihud value at t must equal full-series value at t."""
-    close = _ramp(200, 10.0, 0.2)
-    vol = _flat(200, 1e6)
+    """Shift-audit: amihud value at t must equal full-series value at t.
 
-    def _amihud_wrap(close, volume, win):
-        return amihud_series(close, volume, win=win)
+    Uses a variable-return fixture (random walk close + variable volume) so the
+    1e-12 equality is verified on non-zero, non-trivial amihud values rather than
+    an identically-zero constant series.
+    """
+    np.random.seed(7)
+    n = 200
+    idx = _idx(n)
+    # Random-walk close: returns vary, producing non-trivial |ret|/volume
+    rets = np.random.randn(n) * 0.01
+    close = pd.Series(100.0 * np.exp(np.cumsum(rets)), index=idx)
+    # Variable volume (not flat) so amihud = mean(|ret|/vol) has non-zero variance
+    vol = pd.Series(np.random.randint(500_000, 5_000_000, n).astype(float), index=idx)
 
     full = amihud_series(close, vol, win=20)
     for t in [30, 60, 100, 140, 180]:
@@ -476,6 +484,8 @@ def test_amihud_no_lookahead():
         tv = trunc.iloc[t]
         if np.isnan(fv) and np.isnan(tv):
             continue
+        # Ensure the value is actually non-zero so the test is meaningful
+        assert not (fv == 0.0 and tv == 0.0), f"Both zero at t={t} — fixture not exercising non-trivial values"
         assert abs(fv - tv) < 1e-12, f"Lookahead at t={t}: full={fv}, trunc={tv}"
 
 
@@ -536,11 +546,21 @@ class TestCorwinSchultzSpreadSeries:
 
 
 def test_corwin_schultz_no_lookahead():
-    """Shift-audit: CS spread at t on truncated data equals full-series value."""
+    """Shift-audit: CS spread at t on truncated data equals full-series value.
+
+    Uses a variable H/L-width fixture (randomised range ratios) so CS alpha is
+    positive on multiple bars and the 1e-12 equality is verified on non-zero,
+    varying spread values — not all-zero constant-ratio output.
+    """
+    np.random.seed(13)
     n = 150
-    close = _ramp(n)
-    high = close * 1.015
-    low = close * 0.985
+    idx = _idx(n)
+    # Random-walk midpoint
+    mid = pd.Series(100.0 * np.exp(np.cumsum(np.random.randn(n) * 0.008)), index=idx)
+    # Variable H/L widths: ratio drawn from [1.005, 1.06]
+    ratio = pd.Series(np.random.uniform(1.005, 1.06, n), index=idx)
+    high = mid * ratio
+    low = mid / ratio
     full = corwin_schultz_spread_series(high, low)
     for t in [5, 30, 60, 100, 130]:
         trunc = corwin_schultz_spread_series(high.iloc[: t + 1], low.iloc[: t + 1])
@@ -548,6 +568,9 @@ def test_corwin_schultz_no_lookahead():
         tv = trunc.iloc[t]
         if np.isnan(fv) and np.isnan(tv):
             continue
+        # Ensure the value is non-trivially non-zero on at least the final check points
+        if t >= 30:
+            assert fv > 0, f"Expected positive CS spread at t={t}; fixture may be degenerate"
         assert abs(fv - tv) < 1e-12, f"Lookahead at t={t}: full={fv}, trunc={tv}"
 
 
@@ -633,6 +656,13 @@ class TestUndercutRallyEvents:
         base_low = pd.Series(base + [80.0] + [99.0] + [99.0] * 18, index=_idx(n))
         result = undercut_rally_events(base_close, low=base_low, high=base_high, n=21, k=3)
         assert result["event"].sum() >= 1
+
+    def test_hl_mode_requires_high(self):
+        """Passing low but not high must raise a descriptive ValueError, not a deep TypeError."""
+        close, _ = _build_ur_fixture()
+        low = close * 0.99
+        with pytest.raises(ValueError, match="H/L mode requires both low and high"):
+            undercut_rally_events(close, low=low, high=None)
 
     def test_output_columns(self):
         """Output DataFrame must have all required columns."""

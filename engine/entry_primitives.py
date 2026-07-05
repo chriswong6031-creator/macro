@@ -461,11 +461,15 @@ def undercut_rally_events(
         (default k=3), evaluated bar-by-bar.  No same-bar fill: the event
         fires on the RECLAIM BAR, not the undercut bar.
 
-    Episode deduplication:
-        An undercut episode opens at the first qualifying undercut.  Subsequent
-        undercuts before a reclaim extend the episode but do not open a new
-        one.  One episode → one event (keyed to the first reclaim bar within k
-        bars of the first qualifying undercut).
+    Episode continuation (emergent, not an explicit dedup rule):
+        After a qualifying undercut, the scanner seeks a reclaim on the next k
+        bars.  If no reclaim is found within k bars, the episode expires and
+        the scanner advances one bar from the original undercut.  Because
+        rolling_low = close.shift(1).rolling(N).min() now includes the prior
+        sub-level closes, the frozen rolling low is lower, and later re-undercuts
+        typically fail the depth gate — so a single flush usually produces at
+        most one event.  This is an emergent consequence of the frozen rolling-low
+        definition (masterplan F2), not an explicitly enforced dedup rule.
 
     Parameters
     ----------
@@ -496,6 +500,11 @@ def undercut_rally_events(
                             the undercut bar; NaN where event is False.
     """
     hl_mode = low is not None
+    if hl_mode and high is None:
+        raise ValueError(
+            "H/L mode requires both low and high (ATR14 depth arm); "
+            "pass high, or use close-only mode by omitting low"
+        )
     idx = close.index
     n_bars = len(close)
 
@@ -504,8 +513,7 @@ def undercut_rally_events(
 
     # --- ATR for H/L mode depth gate ---
     if hl_mode:
-        from engine.stock_technicals import atr as _atr  # local import avoids circular
-        _atr_series = _atr(high, low, close, n=atr_n)
+        _atr_series = atr(high, low, close, n=atr_n)
     else:
         _atr_series = None
 
