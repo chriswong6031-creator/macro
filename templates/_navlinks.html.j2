@@ -73,6 +73,7 @@
         <a href="{{ NP }}news.html">📰 {{ t('News Feed', '新闻流') }}<span class="d">{{ t('Macro headlines · catalysts · sentiment', '宏观头条 · 日程 · 情绪') }}</span></a>
         <a href="{{ NP }}alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
         <a href="{{ NP }}gex.html">🧲 {{ t('Options Desk', '期权台') }}<span class="d">{{ t('GEX · walls · vol surface', 'GEX · 墙 · 波动率曲面') }}</span></a>
+        {% if darkpool_enabled is not defined or darkpool_enabled %}<a href="{{ NP }}darkpool.html">🌑 {{ t('Dark Pool Desk', '场外暗池台') }}<span class="d">{{ t('Off-exchange volume · short ratio · ATS venues', '场外成交量 · 融券比率 · ATS场所') }}</span></a>{% endif %}
       </div>
     </div>
     <div class="nav-dd">

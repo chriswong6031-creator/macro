@@ -5432,6 +5432,15 @@ pit:
 
 
 # --------------------------------------------------------------------------- #
+# darkpool — Dark Pool Desk v1 (P1.5, roadmap R5).
+# T1e: FINRA CNMSshvol off-exchange daily volume (EOD, ~6pm ET, ~27 dates bootstrapped).
+# T2e: FINRA OTC Transparency weekly per-ATS venue breakdown (keyless, 2–4wk lag).
+# enabled: false → builder skips page + nav entry (kill-switch, roadmap P3.6).
+# --------------------------------------------------------------------------- #
+darkpool:
+  enabled: true                   # kill-switch: false → no page, no nav entry
+
+# --------------------------------------------------------------------------- #
 # Oracle — Rotation Intelligence Web (engine/oracle/, P5).
 # ADD NEW KEYS AT THE END OF THIS BLOCK ONLY — never reorder.
 # --------------------------------------------------------------------------- #
