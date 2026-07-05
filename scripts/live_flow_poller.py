@@ -478,6 +478,7 @@ def run_cycle(
     baselines: dict,
     cfg: dict,
     cycle_watermarks: dict,   # FIX 2: {root: {"ts": str, "seq": float}} — mutated in place
+    forced_full_day: bool = False,  # True when --date override forces full_day regardless of probe
 ) -> tuple[dict, dict, dict, dict, dict]:
     """Run one poll cycle.  Returns (feed_data, heat_data, meta_data, updated_day_state, tide_day_state).
 
@@ -600,13 +601,27 @@ def run_cycle(
         # FIX 3 — load prev_close for honest moneyness
         prev_close = _load_prev_close(root, session_date)
 
-        # Per-root prior state (shared mutable; engine accumulates)
+        # Per-root prior state — pass ALL accumulators so the engine starts from the
+        # running cross-root total rather than empty dicts.  The engine deep-copies each
+        # dict on entry (lines 399-416 of live_flow.py), so passing the live references
+        # here is safe — no aliasing hazard between concurrent workers because fetch is
+        # already done (parallel phase is over) and processing is sequential.
         prior = {
             "emitted_ids":      emitted_ids,
             "contract_vol":     contract_vol,
             "notability_history": notab_hist,
             "root_gross_today": root_gross,
             "seen_sequences":   seen_sequences,
+            # FIX: tide accumulators were missing — each root was starting fresh and the
+            # last root's result was overwriting all prior roots' data (drop-all bug).
+            "market_tide_minutes": market_tide_minutes,
+            "sector_tide":         sector_tide,
+            "dte_tide":            dte_tide,
+            "root_minutes":        root_minutes_acc,
+            "root_strikes":        root_strikes_acc,
+            "root_expiries":       root_expiries_acc,
+            "root_top_contracts":  root_top_contr,
+            "sweep_clusters":      sweep_clusters_acc,
         }
 
         try:
@@ -705,11 +720,19 @@ def run_cycle(
     else:
         notes.append(f"{baseline_note_ready} roots have EOD-252 baselines.")
     if delta_mode == "full_day":
-        notes.append("Incremental time-window pulls not supported on this terminal; "
-                     "using full-day re-pull each cycle.")
+        if forced_full_day:
+            notes.append("Historical session — full-day mode forced (--date override).")
+        else:
+            notes.append("Incremental time-window pulls not supported on this terminal; "
+                         "using full-day re-pull each cycle.")
     if truncated:
         notes.append(f"Events capped at {lf.MAX_EVENTS}; oldest dropped.")
-    notes.extend(meta_notes)
+    # Deduplicate meta_notes: same note from N roots appears only once
+    seen_notes: set[str] = set()
+    for note in meta_notes:
+        if note not in seen_notes:
+            seen_notes.add(note)
+            notes.append(note)
 
     feed_payload = {
         "schema":       "live_flow.feed/v1",
@@ -903,6 +926,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 baselines=baselines,
                 cfg=cfg,
                 cycle_watermarks=watermarks,
+                forced_full_day=bool(args.date),
             )
         except Exception as e:  # noqa: BLE001
             log.error("poller: cycle #%d unhandled error: %s", cycle_n, e, exc_info=True)
@@ -960,6 +984,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                     baselines=baselines,
                     names_sectors=ns_map,
                 )
+                # Skip empty payloads — minutes=0 AND strikes=0 means no data landed for
+                # this root (e.g. fetch failed under contention); publishing an empty file
+                # would overwrite a valid prior-cycle file with stale zeros.
+                n_min = len(tk_payload.get("minutes", []))
+                n_str = len(tk_payload.get("strikes", []))
+                if n_min == 0 and n_str == 0:
+                    log.info("poller: skip empty ticker JSON for %s (minutes=0, strikes=0)",
+                             tick_root)
+                    continue
                 tk_file = tick_root.upper().replace(".", "_") + ".json"
                 tk_local = _tickers_out_dir / tk_file
                 tmp_tk = tk_local.with_suffix(".tmp.json")
