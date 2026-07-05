@@ -127,8 +127,9 @@ def _write_reports(report: dict, now: datetime) -> None:
 
 
 def _notify(report: dict) -> None:
-    """Best-effort outbound alert via the W6b push spine (dedup + priority floor applied).
-    The non-zero exit is the primary signal; push_ops_alert() is a no-op when disabled.
+    """Best-effort outbound alert via the W6b push spine.
+    The non-zero exit is the primary signal; push_ops_alert() dispatches raw
+    even when alert_push.enabled=false (dedup/ledger skipped, transport fires).
     W6b: replaces the former direct send_telegram/send_discord call."""
     msg = "🚨 signal-sanity tripwire FAILED — " + "; ".join(report["fail_reasons"][:6])
     try:

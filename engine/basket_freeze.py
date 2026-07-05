@@ -358,8 +358,9 @@ def _freeze_domain_inner(
         result["freeze_skipped"] = True
         result["skip_reason"] = f"churn_guard: {'; '.join(churn_violations[:3])}"
         result["n_skipped_churn"] = len(churn_violations)
-        # Fire notify via the W6b push spine (dedup + priority floor applied).
-        # push_ops_alert() is a pure no-op when alert_push.enabled=false.
+        # Fire notify via the W6b push spine.
+        # push_ops_alert() dispatches raw even when alert_push.enabled=false
+        # (dedup/ledger skipped, transport fires — liveness alerts are never silenced).
         # W6b: replaces the former direct send_telegram/send_discord call.
         try:
             from engine.alert_triage import push_ops_alert  # noqa: PLC0415

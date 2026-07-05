@@ -3,13 +3,18 @@
 Guards the W6b adapter (push_ops_alert) and per-lane ledger design:
 
 1. ADAPTER BEHAVIOR: message preserved verbatim; severity mapped; dedup window
-   enforced; disabled-config no-op.
+   enforced; disabled-config dispatches raw (no dedup, no ledger).
 2. PER-LANE SINGLE-WRITER: each lane writes only to its own ledger file.
 3. CROSS-LANE DEDUP: a key in one lane's ledger suppresses dispatch to the
    same key from another lane within the window.
 4. STATIC GUARD: the 3 migrated senders no longer call send_telegram directly
    (they call push_ops_alert instead).
 5. ENABLED STATE: config.yml has alert_push.enabled=true (W6b operator event).
+
+BLOCKER FIX (LANE-CHECK #4): push_ops_alert() is dispatch-always for ops
+lanes.  When alert_push.enabled=false the dedup spine and per-lane ledger are
+bypassed, but send_telegram/send_discord are still called raw.  Disabling the
+noise-reduction spine cannot silence a heartbeat or tripwire failure.
 """
 from __future__ import annotations
 
@@ -52,38 +57,87 @@ def _enabled_cfg(tmp_root: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 1. DISABLED CONFIG — pure no-op
+# 1. DISABLED CONFIG — raw dispatch (no dedup, no ledger)
+#
+# BLOCKER FIX (LANE-CHECK #4): when alert_push.enabled=false, push_ops_alert()
+# must still call send_telegram/send_discord raw so that a flag flip cannot
+# silence a heartbeat or tripwire failure.  Only the dedup spine and per-lane
+# ledger are skipped; the transport fires unconditionally.
 # ---------------------------------------------------------------------------
 
 class TestDisabledConfig:
-    def test_no_dispatch_when_disabled(self, tmp_path):
+    def test_dispatch_raw_when_disabled(self, tmp_path):
+        """When spine is disabled the transport must still fire (raw, no dedup)."""
+        sent = []
+
+        def fake_send_telegram(msg):
+            sent.append(msg)
+            return True
+
         with patch("engine.alert_triage.config") as mock_cfg:
             mock_cfg.load.return_value = {"alert_push": {"enabled": False, "window_hours": 6}}
             mock_cfg.data_dir.return_value = tmp_path / "data"
-            result = at.push_ops_alert(
-                source="healthcheck",
-                type_="heartbeat_failed",
-                message="test",
-                severity="critical",
-                lane="healthcheck",
-                _now=_NOW,
-            )
-        assert result is False
+            with patch("scripts.notify.send_telegram", fake_send_telegram), \
+                 patch("scripts.notify.send_discord", return_value=False):
+                result = at.push_ops_alert(
+                    source="healthcheck",
+                    type_="heartbeat_failed",
+                    message="LIVENESS_ALERT",
+                    severity="critical",
+                    lane="healthcheck",
+                    root=tmp_path,
+                    _now=_NOW,
+                )
+        assert result is True, "disabled spine must not silence a liveness alert"
+        assert sent == ["LIVENESS_ALERT"], "message must be dispatched verbatim"
 
     def test_no_ledger_written_when_disabled(self, tmp_path):
+        """When spine is disabled the per-lane ledger must NOT be written (no dedup overhead)."""
         with patch("engine.alert_triage.config") as mock_cfg:
             mock_cfg.load.return_value = {"alert_push": {"enabled": False, "window_hours": 6}}
             mock_cfg.data_dir.return_value = tmp_path / "data"
-            at.push_ops_alert(
-                source="signal_sanity",
-                type_="tripwire_failed",
-                message="test",
-                severity="critical",
-                lane="signal_sanity",
-                _now=_NOW,
-            )
+            with patch("scripts.notify.send_telegram", return_value=True), \
+                 patch("scripts.notify.send_discord", return_value=False):
+                at.push_ops_alert(
+                    source="signal_sanity",
+                    type_="tripwire_failed",
+                    message="test",
+                    severity="critical",
+                    lane="signal_sanity",
+                    root=tmp_path,
+                    _now=_NOW,
+                )
         ledger = tmp_path / "data" / "alert_triage" / "push_sent_signal_sanity.jsonl"
-        assert not ledger.exists()
+        assert not ledger.exists(), "ledger must not be written when spine is disabled"
+
+    def test_no_dedup_when_disabled(self, tmp_path):
+        """When spine is disabled, a prior entry in the ledger must NOT suppress dispatch."""
+        # Pre-populate the lane ledger as if a prior send occurred recently
+        ledger = tmp_path / "data" / "alert_triage" / "push_sent_signal_sanity.jsonl"
+        _write_sent_record(ledger, "signal_sanity", "tripwire_failed", _PAST_IN_WINDOW)
+
+        sent = []
+
+        def fake_send_telegram(msg):
+            sent.append(msg)
+            return True
+
+        with patch("engine.alert_triage.config") as mock_cfg:
+            mock_cfg.load.return_value = {"alert_push": {"enabled": False, "window_hours": 6}}
+            mock_cfg.data_dir.return_value = tmp_path / "data"
+            with patch("scripts.notify.send_telegram", fake_send_telegram), \
+                 patch("scripts.notify.send_discord", return_value=False):
+                result = at.push_ops_alert(
+                    source="signal_sanity",
+                    type_="tripwire_failed",
+                    message="TRIPWIRE",
+                    severity="critical",
+                    lane="signal_sanity",
+                    root=tmp_path,
+                    _now=_NOW,
+                )
+        assert result is True, "disabled spine must dispatch even if ledger shows a prior send"
+        assert "TRIPWIRE" in sent, "message must reach transport"
 
 
 # ---------------------------------------------------------------------------

@@ -861,14 +861,19 @@ def push_priority_alerts(
 # send_telegram/send_discord directly with no dedup and no priority floor.
 #
 # DESIGN INVARIANTS:
-# 1. CONFIG-GATED: same alert_push.enabled gate as push_priority_alerts().
-#    When disabled → pure no-op (returns False). No fallback to direct send.
+# 1. DISPATCH-ALWAYS FOR OPS LANES: ops/liveness alerts (heartbeat, tripwire,
+#    churn-guard) MUST reach the operator regardless of the enabled flag.
+#    When alert_push.enabled=false the dedup spine and per-lane ledger are
+#    skipped, but send_telegram/send_discord are still called raw so that
+#    disabling the noise-reduction spine cannot silence a critical liveness
+#    alert.  The flag controls dedup+ledger overhead only, not the send.
 # 2. PER-LANE SINGLE-WRITER: the caller names its lane; the dedup record is
 #    appended ONLY to data/alert_triage/push_sent_<lane>.jsonl. Single-writer
 #    law per file is preserved. No lock needed.
-# 3. DEDUP WINDOW: before dispatch, reads ALL push_sent*.jsonl files (the
-#    original push_sent.jsonl + all per-lane files) so cross-lane duplicates
-#    are also suppressed within the window_hours window.
+# 3. DEDUP WINDOW (enabled only): before dispatch, reads ALL push_sent*.jsonl
+#    files (the original push_sent.jsonl + all per-lane files) so cross-lane
+#    duplicates are also suppressed within the window_hours window.  Skipped
+#    entirely when enabled=false (raw dispatch has no dedup).
 # 4. MESSAGE PRESERVED: the caller supplies the message text verbatim; no
 #    content rewriting. The ops message is wrapped in a minimal envelope only
 #    for the dedup key (source + type_ + "").
@@ -918,11 +923,14 @@ def push_ops_alert(
     _now: datetime | None = None,
     _dedup_store: Path | None = None,
 ) -> bool:
-    """Dispatch a single ops-tier alert through the push spine.
+    """Dispatch a single ops-tier alert, bypassing the spine only for dedup/ledger.
 
     This is the W6b adapter for senders that previously called send_telegram/
-    send_discord directly. It applies the config-gate, per-lane dedup, and
-    dispatches via the same channels as push_priority_alerts().
+    send_discord directly.  Unlike push_priority_alerts(), ops/liveness alerts
+    are dispatch-always: ``alert_push.enabled=false`` disables the dedup spine
+    and per-lane ledger but still calls send_telegram/send_discord raw so that
+    a heartbeat or tripwire failure is never silenced by a flag flip.  When the
+    spine is enabled, per-lane dedup and the JSONL ledger are applied normally.
 
     Parameters
     ----------
@@ -960,29 +968,42 @@ def push_ops_alert(
     Never raises — always returns bool.
     """
     # --- CONFIG GATE --------------------------------------------------------
+    # Ops/liveness alerts dispatch unconditionally — disabling the spine
+    # (alert_push.enabled=false) must not silence a heartbeat or tripwire
+    # failure.  When disabled we skip the dedup+ledger path and call the
+    # transport raw so the operator still receives the alert.
+    _spine_enabled = False
+    _window_hours = window_hours if window_hours is not None else 6
     try:
         cfg = config.load()
         push_cfg = cfg.get("alert_push") or {}
-        if not push_cfg.get("enabled", False):
-            log.debug("push_ops_alert(%s/%s): disabled (alert_push.enabled=false)", source, type_)
-            return False
-        _window_hours = window_hours if window_hours is not None else int(push_cfg.get("window_hours", 6))
+        _spine_enabled = bool(push_cfg.get("enabled", False))
+        if window_hours is None:
+            _window_hours = int(push_cfg.get("window_hours", 6))
     except Exception as e:  # noqa: BLE001
-        log.warning("push_ops_alert(%s/%s): config read failed (%s) — no-op", source, type_, e)
-        return False
+        log.warning("push_ops_alert(%s/%s): config read failed (%s) — proceeding with raw dispatch",
+                    source, type_, e)
 
     now = _now if _now is not None else datetime.now(timezone.utc)
     _lane = lane or source
 
-    # --- DEDUP: read ALL lanes (read-many) ----------------------------------
-    try:
-        dedup_key = (str(source), str(type_), "")
-        all_recent = _load_recent_sends_all_lanes(_window_hours, now, root=root)
-        if dedup_key in all_recent:
-            log.info("push_ops_alert(%s/%s): in dedup window (%dh) — skipped", source, type_, _window_hours)
-            return False
-    except Exception as e:  # noqa: BLE001
-        log.warning("push_ops_alert(%s/%s): dedup check failed (%s) — proceeding", source, type_, e)
+    # --- DEDUP: read ALL lanes (read-many) — spine-enabled path only --------
+    # When the spine is disabled we skip dedup entirely and dispatch raw so
+    # that alert_push.enabled=false cannot silence a liveness/tripwire alert.
+    if _spine_enabled:
+        try:
+            dedup_key = (str(source), str(type_), "")
+            all_recent = _load_recent_sends_all_lanes(_window_hours, now, root=root)
+            if dedup_key in all_recent:
+                log.info("push_ops_alert(%s/%s): in dedup window (%dh) — skipped",
+                         source, type_, _window_hours)
+                return False
+        except Exception as e:  # noqa: BLE001
+            log.warning("push_ops_alert(%s/%s): dedup check failed (%s) — proceeding",
+                        source, type_, e)
+    else:
+        log.debug("push_ops_alert(%s/%s): spine disabled — raw dispatch (no dedup, no ledger)",
+                  source, type_)
 
     # --- DISPATCH -----------------------------------------------------------
     try:
@@ -1002,23 +1023,24 @@ def push_ops_alert(
         log.warning("push_ops_alert(%s/%s): send_discord failed (%s)", source, type_, e)
 
     if ok_tg or ok_dc:
-        # --- WRITE: per-lane ledger only (write-one) ------------------------
-        rec = {
-            "source": source,
-            "type": type_,
-            "asset": "",
-            "headline": message[:120],
-            "priority": -1,   # ops alerts have no triage priority score
-            "severity": severity,
-            "sent_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
-        write_path = _dedup_store if _dedup_store is not None else _ops_lane_path(_lane, root=root)
-        try:
-            write_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(write_path, "a", encoding="utf-8") as fh:
-                fh.write(json.dumps(rec) + "\n")
-        except Exception as e:  # noqa: BLE001
-            log.warning("push_ops_alert: lane ledger append failed (non-fatal): %s", e)
+        if _spine_enabled:
+            # --- WRITE: per-lane ledger only (write-one, spine-enabled path) ----
+            rec = {
+                "source": source,
+                "type": type_,
+                "asset": "",
+                "headline": message[:120],
+                "priority": -1,   # ops alerts have no triage priority score
+                "severity": severity,
+                "sent_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
+            write_path = _dedup_store if _dedup_store is not None else _ops_lane_path(_lane, root=root)
+            try:
+                write_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(write_path, "a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(rec) + "\n")
+            except Exception as e:  # noqa: BLE001
+                log.warning("push_ops_alert: lane ledger append failed (non-fatal): %s", e)
         log.info("push_ops_alert: dispatched %s/%s severity=%s", source, type_, severity)
         return True
 
