@@ -417,7 +417,7 @@
 <div class="wrap">
   <section class="tm-section" id="tm-section" aria-label="Time Machine">
     <h2>⏱ <span class="l-en">Rotation Time Machine</span><span class="l-zh">轮动时光机</span></h2>
-    <p class="tm-sub"><span class="l-en">Replay the full measured history of sector &amp; subsector relative rotation. Each dot is a sector or subsector; horizontal axis = relative strength (right = stronger vs peers), vertical = whether that strength is heating up or cooling (up = accelerating). Short trails show the last 6 dates so each path stays readable. Episode annotations mark measured rotation events from the catalog. No predictive claim — this replays measured history.</span><span class="l-zh">回放板块与子行业相对轮动的完整实测历史。每个点代表一个板块或子行业；横轴 = 相对强度（越靠右越强），纵轴 = 该强度是在升温还是降温（越靠上越热）。短轨迹显示近6个交易日，令每条路径清晰可辨。情节注释标记了来自数据库的实际轮动事件。无预测性主张——仅回放实测历史。</span></p>
+    <p class="tm-sub"><span class="l-en">Replay the full measured history of sector &amp; subsector relative rotation. Each dot is a sector or subsector; horizontal axis = relative strength (right = stronger vs peers), vertical = whether that strength is heating up or cooling (up = gaining momentum). Short trails show the last 6 dates so each path stays readable. Episode annotations mark measured rotation events from the catalog. No predictive claim — this replays measured history.</span><span class="l-zh">回放板块与子行业相对轮动的完整实测历史。每个点代表一个板块或子行业；横轴 = 相对强度（越靠右越强），纵轴 = 该强度是在升温还是降温（越靠上越热）。短轨迹显示近6个交易日，令每条路径清晰可辨。情节注释标记了来自数据库的实际轮动事件。无预测性主张——仅回放实测历史。</span></p>
 
     <!-- Preset playlist -->
     <div class="tm-presets" id="tm-presets">
@@ -432,10 +432,10 @@
           <span class="l-en">Sectors 1998→</span><span class="l-zh">板块 1998→</span>
         </button>
         <button class="tm-tier-btn" data-tmunit="subsectors" id="tm-btn-subsectors">
-          <span class="l-en">Subsectors 2022→</span><span class="l-zh">子行业 2022→</span>
+          <span class="l-en">Subsectors 2021→</span><span class="l-zh">子行业 2021→</span>
         </button>
         <button class="tm-tier-btn" data-tmunit="themes" id="tm-btn-themes">
-          <span class="l-en">Themes 2022→</span><span class="l-zh">主题 2022→</span>
+          <span class="l-en">Themes 2021→</span><span class="l-zh">主题 2021→</span>
         </button>
       </div>
     </div>
@@ -1071,7 +1071,7 @@ function _showTmTip(key, pts, cx, cy){
     : esc(pt.theme||'');
   el.innerHTML = '<div class="sr-tip-hd"><b>'+esc(name)+'</b><span class="sr-q '+qd.cls+'">'+(isZh()?qd.zh:qd.en)+'</span></div>'
     +'<div class="sr-tip-th">'+thLine+'</div>'
-    +'<div class="sr-tip-mt"><span class="l-en">RS</span><span class="l-zh">相对强度</span> <b>'+rsStr+'</b> · <span class="l-en">Accel</span><span class="l-zh">加速</span> <b class="'+(pt.az>=0?'up':'dn')+'">'+azStr+'</b></div>'
+    +'<div class="sr-tip-mt"><span class="l-en">RS</span><span class="l-zh">相对强度</span> <b>'+rsStr+'</b> · <span class="l-en">Mom</span><span class="l-zh">动量</span> <b class="'+(pt.az>=0?'up':'dn')+'">'+azStr+'</b></div>'
     +scoreRow
     +epLine;
   el.classList.add('on');

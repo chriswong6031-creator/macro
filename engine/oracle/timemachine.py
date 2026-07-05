@@ -8,21 +8,21 @@ Granularity:
   Tier M — monthly chunks, DAILY data (354 nodes × ~21 dates ≈ 145 KB/chunk).
   Chunks are lazy-loaded per year by the UI, so per-chunk size is what matters;
   total feed size scales to ~20 MB uncompressed across all years.
-  Months where accel_z is 100 % null (2021-07 → 2022-01) are skipped for Tier M
+  Months where EITHER axis is 100 % null (warm-up) are skipped for Tier M
   (the RRG visualization needs both axes).
 
 Chunk format (per tier per period):
   {
     "dates": ["YYYY-MM-DD", ...],          # sorted ascending
     "data": {                              # keyed by node_id (int str)
-        "0": [[rs, accel_z], ...],         # parallel to dates; null where missing
+        "0": [[rs_ratio, rs_mom], ...],    # parallel to dates; null where missing (v3 desk-parity coords)
         ...
     }
   }
 
 Manifest format:
   {
-    "schema_version": 2,
+    "schema_version": 3,
     "built_at": "ISO UTC",
     "tiers": {
       "s": {"label": "Sectors", "granularity": "daily", "period_type": "Q",
@@ -46,6 +46,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 log = logging.getLogger(__name__)
@@ -175,6 +176,83 @@ def _quantize(v: float) -> float | None:
     return round(f, 2)
 
 
+# ── RRG coordinate transform (desk parity, schema v3) ────────────────────────
+#
+# The tape originally plotted the oracle panel's raw features — ``rs`` (a
+# ONE-DAY relative return, panel.py: ``ret - bench_ret``) and ``accel_z`` —
+# which were built for episode detection, not as chart coordinates: the
+# x-axis was daily noise and the dots jumped frame to frame. rrg_transform
+# re-derives both axes with the SAME math the live rotation desk uses
+# (engine/subsector_rotation.py::compute_rotation), evaluated at every date:
+#
+#   perf_h   = h-day return of the node level          h ∈ {1W,1M,3M,6M}
+#   rel_h    = perf_h − cross-sectional MEDIAN(perf_h)          (per date)
+#   z_h      = cross-sectional z-score of rel_h                 (per date)
+#   x  rs_ratio = mean(z_1M, z_3M)
+#   y  rs_mom   = mean(z_1W, z_1M) − mean(z_3M, z_6M)
+#
+# Desk-parity details copied exactly: population std with an sd≤1e-9 → 0.0
+# guard; the momentum back-leg falls back to 0.0 while 3M/6M are warming up
+# (compute_rotation's ``or 0.0``). Divergence (deliberate, tape-only): a node
+# with no 1M history yet emits NaN → null → not plotted, instead of the
+# desk's snapshot-only 0.0 — a warm-up node must not sit fake-centred.
+
+_RRG_HORIZONS: dict[str, int] = {"1W": 5, "1M": 21, "3M": 63, "6M": 126}
+
+
+def _to_long(wide: pd.DataFrame) -> pd.Series:
+    """(date × node) frame → Series indexed by (node, date), no stack() dance."""
+    idx = pd.MultiIndex.from_product(
+        [wide.index, wide.columns], names=["date", "node"])
+    return pd.Series(wide.to_numpy().ravel(), index=idx).reorder_levels(["node", "date"])
+
+
+def _nanmean2(a: pd.DataFrame, b: pd.DataFrame) -> pd.DataFrame:
+    """Element-wise nanmean of two aligned frames (NaN only where BOTH are NaN)."""
+    av, bv = a.to_numpy(), b.to_numpy()
+    an, bn = np.isnan(av), np.isnan(bv)
+    s = np.where(an, 0.0, av) + np.where(bn, 0.0, bv)
+    c = (~an).astype(int) + (~bn).astype(int)
+    out = np.divide(s, c, out=np.full_like(s, np.nan), where=c > 0)
+    return pd.DataFrame(out, index=a.index, columns=a.columns)
+
+
+def rrg_transform(panel: pd.DataFrame) -> pd.DataFrame:
+    """Overwrite ``rs``/``accel_z`` with desk-parity RRG coords (see block comment).
+
+    Input: (node, date)-indexed panel with a daily ``ret`` column. Returns a
+    COPY where ``rs`` ← rs_ratio and ``accel_z`` ← rs_mom, so the chunk
+    builders (which read those column names) need no changes. Interior
+    missing rets compound as 0% (rare; display-tape tolerance); dates before
+    a node's first valid ret stay NaN and never plot.
+    """
+    ret_w = panel["ret"].unstack("node").sort_index()
+    alive = ret_w.notna().cummax()
+    lvl = (1.0 + ret_w.fillna(0.0)).cumprod().where(alive)
+
+    z: dict[str, pd.DataFrame] = {}
+    for name, h in _RRG_HORIZONS.items():
+        perf = lvl / lvl.shift(h) - 1.0
+        # require the node to have been alive a full window ago
+        perf = perf.where(alive.shift(h, fill_value=False))
+        rel = perf.sub(perf.median(axis=1), axis=0)
+        sd = rel.std(axis=1, ddof=0)
+        zz = rel.sub(rel.mean(axis=1), axis=0).div(sd.where(sd > 1e-9), axis=0)
+        degen = ~(sd > 1e-9)
+        if degen.any():  # desk guard: degenerate cross-section → 0.0 (NaNs stay NaN)
+            zz.loc[degen] = rel.loc[degen].where(rel.loc[degen].isna(), 0.0)
+        z[name] = zz
+
+    rs_ratio = _nanmean2(z["1M"], z["3M"])
+    back = _nanmean2(z["3M"], z["6M"]).fillna(0.0)   # desk `or 0.0` warm-up fallback
+    rs_mom = _nanmean2(z["1W"], z["1M"]) - back
+
+    out = panel.copy()
+    out["rs"] = _to_long(rs_ratio).reindex(out.index)
+    out["accel_z"] = _to_long(rs_mom).reindex(out.index)
+    return out
+
+
 def build_chunks_s(
     panel_s: pd.DataFrame,
     registry: list[dict],
@@ -249,7 +327,7 @@ def build_chunks_m(
         sub = panel_m[mask]
 
         # Skip months where accel_z is 100% null (early Tier-M warm-up period)
-        if sub["accel_z"].isna().all():
+        if sub["accel_z"].isna().all() or sub["rs"].isna().all():
             log.debug("Skipping %s: accel_z 100%% null", period)
             continue
 
@@ -501,7 +579,7 @@ def build_manifest(
     tier_m_dates = [d for c in chunks_m for d in c["dates"]]
 
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "built_at": built_at,
         "tiers": {
             "s": {
