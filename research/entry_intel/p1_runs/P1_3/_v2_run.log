@@ -1,0 +1,140 @@
+========================================================================
+P1.3 TRIO ABLATION — P1_3 — ROUND 2 (defect-corrected re-run)
+========================================================================
+
+§5 CONFORMANCE CHECKLIST (P0_MEASUREMENT_MEMO.md v1.0 2026-07-04 + §6 v1.1)
+
+  [x] Cites P0_MEASUREMENT_MEMO.md v1.0 (2026-07-04) + §6 v1.1 amendments
+  [x] Primary window = 2022-06-30 -> last-full-replay-date (v1.1 amendment: 250-bar warmup)
+  [x] Verdict-grade statistics on survivor_bias==False rows only
+  [x] horizon_censored rows excluded per-horizon (verdict_grade==True rows all uncensored)
+  [x] Returns INSUFFICIENT-POWER if n_clusters < 25
+
+Replay path: /Users/chriswong/Documents/Cluade/Macro Dashboard/data/replay/replay_boarded.parquet
+Replay MD5:  906175f9eb8caa351ed6d7d5c56265d3
+scipy version: 1.18.0 — OK
+
+Loading replay_boarded.parquet...
+  Full shape: (961656, 66)
+
+Column name mapping (PREREG name -> actual column):
+  episode_cluster_id -> episode_id: OK
+  cohort_washout_proximity -> washout_proximity: OK
+  rs_vs_sector_quartile -> rs_sector_quartile: OK
+  fwd_21d -> fwd_ret_21: OK
+  fwd_63d -> fwd_ret_63: OK
+  survivor_bias_stamp -> survivor_bias: OK
+
+────────────────────────────────────────────────────────────────────────
+POPULATION CENSUS
+────────────────────────────────────────────────────────────────────────
+  Total rows in replay:          961,656
+  Total fires (all):             57,640
+  Verdict-grade fires (primary): 49,939
+  Stamped rows (excluded):       0  (survivor_bias==True)
+  Horizon-censored fires:        7,701  (NOT verdict_grade, pre-excluded)
+  Effective verdict window:      2022-06-30 -> 2025-12-29
+  Episode clusters (unique):     22,295
+
+STAMP TEXT (§2.3):
+  survivor-biased panel: 0% of member-months lack price history for this era;
+  all rows Massive-sourced (survivor_bias==False); delisted-name recall verified 100%.
+
+washout_proximity: boolean; True(in-window)=22,965  False(outside)=26,974
+rs_sector_quartile (nulls excluded from F2 = 3,828):
+rs_sector_quartile
+1.0    13016
+2.0    12632
+3.0    11101
+4.0     9362
+NaN     3828
+ext_z range [-3.290, 5.350]; ext_z>2.0 = 2,299
+
+Rank sizing: median fires/day=43; tier_frac(1/(N-1))=0.0238; RW bonus=+0.10
+
+────────────────────────────────────────────────────────────────────────
+CALIBRATION CONTROLS (mandatory — run before the registered grid)
+────────────────────────────────────────────────────────────────────────
+
+(1) NEGATIVE control: apply the test to episode-permuted labels on real data x200
+   rejection rate @alpha=0.05: 0.035  (expect ~0.05)
+   p-value distribution: mean=0.488 median=0.495 min=0.021 max=0.998
+   KS-uniformity test: D=0.081, p=0.140  (large p => consistent with uniform)
+   NEGATIVE control: PASS
+
+(2) POSITIVE control: inject a synthetic +10pp episode-level liftoff effect; expect p<<0.05
+   injected shift=0.05 in return space -> liftoff-rate(A) 61.0% -> 80.7%  (Δ=+19.7pp)
+   test on injected effect: perm_p=2.00e-04  param_p=0.00e+00  r=-0.2969
+   POSITIVE control: PASS  (detects injected effect at p<0.05)
+
+
+Both-halves split: midpoint=2024-04-04 | H1 n=23,984 | H2 n=25,955
+
+Episode-label purity check (group membership constant within episode):
+  F1 HG (F1_pass): impure episodes = 50
+  F2 HG (F2_pass): impure episodes = 1729
+  F3 HG (F3_pass): impure episodes = 343
+  F1 RW (F1_moved_up): impure episodes = 721
+  F2 RW (F2_moved_up): impure episodes = 2149
+  F3 RW (F3_moved_up): impure episodes = 1994
+  NOTE: some episodes span both groups; the permutation still resamples at the
+  episode level (whole episode -> single drawn label), which is conservative and
+  valid — it treats the majority/first label as the episode's clustered unit.
+
+────────────────────────────────────────────────────────────────────────
+EXECUTING 30 REGISTERED TRIALS (episode label-permutation null, N_PERM=5000)
+────────────────────────────────────────────────────────────────────────
+  T01: F1 HG 21d STOPPED      Δ=  +2.41pp fav=N perm_p=0.0002 param_p=8.68e-128 r=-0.1247 sign=Y 
+  T02: F1 HG 21d DEAD_MONEY   Δ= -13.19pp fav=Y perm_p=0.0002 param_p=8.68e-128 r=-0.1247 sign=Y 
+  T03: F1 HG 21d CUSHIONED    Δ=  -4.10pp fav=N perm_p=0.0002 param_p=8.68e-128 r=-0.1247 sign=Y 
+  T04: F1 HG 63d STOPPED      Δ=  -5.21pp fav=Y perm_p=0.0002 param_p=1.90e-79 r=-0.0978 sign=Y 
+  T05: F1 HG 63d DEAD_MONEY   Δ=  -0.13pp fav=Y perm_p=0.0002 param_p=1.90e-79 r=-0.0978 sign=Y 
+  T06: F1 HG 63d CUSHIONED    Δ=  -2.15pp fav=N perm_p=0.0002 param_p=1.90e-79 r=-0.0978 sign=Y 
+  T07: F1 RW 21d STOPPED      Δ=  +2.58pp fav=N perm_p=0.0002 param_p=4.40e-96 r=-0.1091 sign=Y 
+  T08: F1 RW 21d CUSHIONED    Δ=  -3.62pp fav=N perm_p=0.0002 param_p=4.40e-96 r=-0.1091 sign=Y 
+  T09: F1 RW 63d STOPPED      Δ=  -4.55pp fav=Y perm_p=0.0002 param_p=8.57e-58 r=-0.0840 sign=Y 
+  T10: F1 RW 63d CUSHIONED    Δ=  -1.79pp fav=N perm_p=0.0002 param_p=8.57e-58 r=-0.0840 sign=Y 
+  T11: F2 HG 21d STOPPED      Δ=  +1.19pp fav=N perm_p=0.1766 param_p=3.03e-02 r=+0.0117 sign=Y 
+  T12: F2 HG 21d DEAD_MONEY   Δ=  -0.43pp fav=Y perm_p=0.1766 param_p=3.03e-02 r=+0.0117 sign=N 
+  T13: F2 HG 21d CUSHIONED    Δ=  -0.48pp fav=N perm_p=0.1766 param_p=3.03e-02 r=+0.0117 sign=Y 
+  T14: F2 HG 63d STOPPED      Δ=  +1.89pp fav=N perm_p=0.2372 param_p=4.84e-02 r=+0.0106 sign=Y 
+  T15: F2 HG 63d DEAD_MONEY   Δ=  -0.11pp fav=Y perm_p=0.2372 param_p=4.84e-02 r=+0.0106 sign=Y 
+  T16: F2 HG 63d CUSHIONED    Δ=  +0.06pp fav=Y perm_p=0.2372 param_p=4.84e-02 r=+0.0106 sign=N 
+  T17: F2 RW 21d STOPPED      Δ=  -0.96pp fav=Y perm_p=0.0684 param_p=2.70e-03 r=-0.0156 sign=Y 
+  T18: F2 RW 21d CUSHIONED    Δ=  +0.15pp fav=Y perm_p=0.0684 param_p=2.70e-03 r=-0.0156 sign=Y 
+  T19: F2 RW 63d STOPPED      Δ=  -0.04pp fav=Y perm_p=0.0426 param_p=5.55e-04 r=-0.0180 sign=N 
+  T20: F2 RW 63d CUSHIONED    Δ=  +0.68pp fav=Y perm_p=0.0426 param_p=5.55e-04 r=-0.0180 sign=Y 
+  T21: F3 HG 21d STOPPED      Δ=  -0.43pp fav=Y perm_p=0.0026 param_p=6.87e-07 r=-0.0612 sign=Y 
+  T22: F3 HG 21d DEAD_MONEY   Δ=  -3.63pp fav=Y perm_p=0.0026 param_p=6.87e-07 r=-0.0612 sign=Y 
+  T23: F3 HG 21d CUSHIONED    Δ=  -0.97pp fav=N perm_p=0.0026 param_p=6.87e-07 r=-0.0612 sign=Y 
+  T24: F3 HG 63d STOPPED      Δ=  -5.00pp fav=Y perm_p=0.0648 param_p=2.10e-03 r=-0.0379 sign=Y 
+  T25: F3 HG 63d DEAD_MONEY   Δ=  +0.09pp fav=N perm_p=0.0648 param_p=2.10e-03 r=-0.0379 sign=Y 
+  T26: F3 HG 63d CUSHIONED    Δ=  -0.23pp fav=N perm_p=0.0648 param_p=2.10e-03 r=-0.0379 sign=N 
+  T27: F3 RW 21d STOPPED      Δ=  +0.10pp fav=N perm_p=0.0176 param_p=7.68e-05 r=-0.0205 sign=N 
+  T28: F3 RW 21d CUSHIONED    Δ=  +0.06pp fav=Y perm_p=0.0176 param_p=7.68e-05 r=-0.0205 sign=N 
+  T29: F3 RW 63d STOPPED      Δ=  -1.70pp fav=Y perm_p=0.1284 param_p=8.64e-03 r=-0.0136 sign=N 
+  T30: F3 RW 63d CUSHIONED    Δ=  +0.30pp fav=Y perm_p=0.1284 param_p=8.64e-03 r=-0.0136 sign=N 
+
+Sanity gate: PASS — no param/perm divergence of the round-1 defect signature.
+
+BH q<=0.10 across m=30: n_survive=22, min BH-adj p=0.0006
+
+────────────────────────────────────────────────────────────────────────
+FACTOR VERDICTS
+────────────────────────────────────────────────────────────────────────
+  F1: GATE-REJECT+SHIPS-RW
+  F2: SHIPS-RW-ONLY
+  F3: SHIPS-HG-ONLY
+
+FIRE-RATE IMPACT (Mode-A HG):
+  F1: block 26,974/49,939 = 54.0% >40% GATE-REJECT
+  F2: block 22,378/46,111 = 48.5% >40% GATE-REJECT
+  F3: block 2,299/49,939 = 4.6% OK 
+
+WHOLE-STUDY VERDICT: PARTIAL_SURVIVORS
+
+Saved: /Users/chriswong/Documents/Cluade/Macro Dashboard/research/entry_intel/p1_runs/P1_3/results.json
+
+========================================================================
+P1.3 ROUND-2 RUN COMPLETE
+========================================================================
