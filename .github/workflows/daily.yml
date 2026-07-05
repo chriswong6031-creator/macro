@@ -950,6 +950,19 @@ jobs:
         # engine-render.yml (express lane) also runs this step — its regime/market_state
         # recompute would otherwise drift ahead of the committed world_state copies.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
+      - name: options_flow_attention reflex trigger (W-D — nightly EOD fold)
+        if: always()
+        # Neural Web W-D (RO-8): direction-free reflex that fires when an on-board
+        # name shows a vol>OI magnitude burst (z-score ≥ 2.0 on fresh_contracts /
+        # premium_mn) or is within 1% of a GEX wall/flip.  Reads EOD parquets from
+        # data/options_flow/ + data/polygon_gex/ (written by the collect job) and
+        # board membership from site/factordata/us_standouts*.json (written by
+        # build_site above — both artifacts are present by this step).
+        # Appends to data/reflexes/options_flow_attention/firings.jsonl.
+        # Covered by 'git add data/' in 'commit engine outputs' below.
+        # Fail-soft: dormant until flow summaries accumulate ≥5 rows of history;
+        # never kills the nightly.
+        run: python -m scripts.build_options_flow_attention || echo "::warning::build_options_flow_attention failed (non-fatal — reflex dormant this run)"
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |
