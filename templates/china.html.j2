@@ -563,7 +563,7 @@
 {% include "_market_state.css.j2" %}
 </style>
 </head>
-<body>
+<body class="{{ 'page-china-stocks' if mode == 'stocks' else 'page-china' }}">
 
 <nav class="site-nav">
     {% include "_navlinks.html.j2" %}
@@ -2208,4 +2208,3 @@ window.__CHART_SWAP__ = {
 </script>
 </body>
 </html>
-
