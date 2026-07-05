@@ -232,3 +232,6 @@ data/oracle/memory_active_analogues.json
 # hypothesis_state.json is also governance data (tracks graded ids + sentinel line count).
 !data/oracle/hypothesis_inbox.jsonl
 !data/oracle/hypothesis_state.json
+
+# W0.2 OHLC store (reproducible from collector + manifest; not committed)
+data/yahoo_ohlc/
