@@ -416,6 +416,7 @@ jobs:
           cl_gex() {
             brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
             brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
+            brun darkpool     "dark pool desk (build_darkpool_desk)"        scripts.build_darkpool_desk
             brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
             brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
             brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
@@ -446,7 +447,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology seasonality reports policy_intent policy_watch special index_changes"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology seasonality reports policy_intent policy_watch special index_changes"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

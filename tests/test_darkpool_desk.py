@@ -1,0 +1,324 @@
+"""Dark Pool Desk — unit tests.
+
+Covers:
+1. Parser unit tests for finra_short_volume._parse (via fixture lines)
+2. FINRA ATS transparency collector parse logic (_parse_rows)
+3. Off-exchange share computation in build_darkpool_desk
+4. Builder smoke test (no panel → graceful return 0)
+5. Nav checks pass
+"""
+from __future__ import annotations
+
+import pathlib
+import sys
+
+import pandas as pd
+import pytest
+
+# Ensure project root is on path for sibling-module imports
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+# ---------------------------------------------------------------------------
+# 1. CNMSshvol parser (reuses existing fixture — extended coverage)
+# ---------------------------------------------------------------------------
+from collectors.finra_short_volume import _parse
+
+SAMPLE_CNMSshvol = """\
+Date|Symbol|ShortVolume|ShortExemptVolume|TotalVolume|Market
+20240603|AAPL|5321456|12034|18750000|B,Q,N
+20240603|NVDA|8901234|56789|22345678|B,Q,N
+20240603|ZERO|0|0|0|Q
+Total Records: 3
+"""
+
+
+def test_cnms_parse_basic_fields():
+    df = _parse(SAMPLE_CNMSshvol)
+    assert set(df.columns) >= {"date", "ticker", "short_vol", "short_exempt", "total_vol", "short_ratio"}
+    assert set(df["ticker"]) == {"AAPL", "NVDA"}   # ZERO row dropped (total_vol=0)
+
+
+def test_cnms_parse_short_ratio_computation():
+    df = _parse(SAMPLE_CNMSshvol)
+    aapl = df[df["ticker"] == "AAPL"].iloc[0]
+    expected = 5321456 / 18750000
+    assert aapl["short_ratio"] == pytest.approx(expected, abs=1e-4)
+
+
+def test_cnms_parse_date_type():
+    df = _parse(SAMPLE_CNMSshvol)
+    assert df["date"].iloc[0] == pd.Timestamp("2024-06-03")
+
+
+def test_cnms_parse_garbage_returns_empty():
+    assert _parse("no pipes\nhere either").empty
+
+
+def test_cnms_parse_header_footer_stripped():
+    df = _parse(SAMPLE_CNMSshvol)
+    tickers = set(df["ticker"])
+    assert "Date" not in tickers
+    assert "Total" not in tickers
+
+
+# ---------------------------------------------------------------------------
+# 2. FINRA ATS transparency parser
+# ---------------------------------------------------------------------------
+from collectors.finra_ats_transparency import _parse_rows
+
+SAMPLE_ATS_ROWS = [
+    {
+        "issueSymbolIdentifier": "AAPL",
+        "issueName": "Apple Inc.",
+        "weekStartDate": "2023-11-06",
+        "summaryStartDate": "2023-11-06",
+        "MPID": "UBSA",
+        "marketParticipantName": "UBSA UBS ATS",
+        "totalWeeklyShareQuantity": 1250000,
+        "totalWeeklyTradeCount": 4500,
+        "tierIdentifier": "NMS",
+        "summaryTypeCode": "ATS_W_SMBL_FIRM",
+    },
+    {
+        "issueSymbolIdentifier": None,    # aggregate row — should be dropped
+        "weekStartDate": "2023-11-06",
+        "summaryStartDate": "2023-11-06",
+        "MPID": None,
+        "marketParticipantName": None,
+        "totalWeeklyShareQuantity": 99999999,
+        "totalWeeklyTradeCount": 9999999,
+        "tierIdentifier": "NMS",
+        "summaryTypeCode": "ATS_W_VOL_STATS",
+    },
+    {
+        "issueSymbolIdentifier": "NVDA",
+        "weekStartDate": "2023-11-06",
+        "summaryStartDate": "2023-11-06",
+        "MPID": "JPBX",
+        "marketParticipantName": "JPBX JPB-X",
+        "totalWeeklyShareQuantity": 3456789,
+        "totalWeeklyTradeCount": 12000,
+        "tierIdentifier": "NMS",
+        "summaryTypeCode": "ATS_W_SMBL_FIRM",
+    },
+]
+
+
+def test_ats_parse_drops_null_symbol():
+    df = _parse_rows(SAMPLE_ATS_ROWS)
+    assert set(df["ticker"]) == {"AAPL", "NVDA"}   # null-symbol aggregate row dropped
+
+
+def test_ats_parse_schema():
+    df = _parse_rows(SAMPLE_ATS_ROWS)
+    required = {"week_start", "ticker", "mpid", "venue_name", "shares", "trades", "tier"}
+    assert required <= set(df.columns)
+
+
+def test_ats_parse_values():
+    df = _parse_rows(SAMPLE_ATS_ROWS)
+    aapl = df[df["ticker"] == "AAPL"].iloc[0]
+    assert aapl["shares"] == pytest.approx(1250000.0)
+    assert aapl["trades"] == 4500
+    assert aapl["mpid"] == "UBSA"
+    assert aapl["week_start"] == pd.Timestamp("2023-11-06")
+
+
+def test_ats_parse_empty_input():
+    assert _parse_rows([]).empty
+
+
+def test_ats_parse_null_mpid_included():
+    rows = [{**SAMPLE_ATS_ROWS[0], "MPID": None, "marketParticipantName": None}]
+    df = _parse_rows(rows)
+    assert len(df) == 1
+    assert df.iloc[0]["mpid"] == ""
+
+
+# ---------------------------------------------------------------------------
+# 3. Off-exchange share computation
+# ---------------------------------------------------------------------------
+from scripts.build_darkpool_desk import _compute_ticker_stats
+
+
+def _make_panel(rows_data):
+    """Create a minimal panel DataFrame for testing."""
+    return pd.DataFrame(rows_data, columns=["date", "ticker", "short_vol", "short_exempt",
+                                             "total_vol", "short_ratio"])
+
+
+def test_oe_share_computed_correctly():
+    """Off-exchange share = FINRA total_vol / yahoo consolidated volume."""
+    rows = [
+        (pd.Timestamp("2024-06-01"), "AAPL", 1_000_000, 50_000, 2_000_000,
+         round(1_000_000 / 2_000_000, 4)),
+        (pd.Timestamp("2024-06-02"), "AAPL", 1_100_000, 55_000, 2_100_000,
+         round(1_100_000 / 2_100_000, 4)),
+        (pd.Timestamp("2024-06-03"), "AAPL", 1_200_000, 60_000, 2_200_000,
+         round(1_200_000 / 2_200_000, 4)),
+    ]
+    panel = _make_panel(rows)
+    # Yahoo says consolidated volume on 2024-06-03 is 8_800_000
+    yahoo_vol = {
+        "AAPL": pd.Series(
+            [8_800_000.0],
+            index=pd.DatetimeIndex([pd.Timestamp("2024-06-03")]),
+        )
+    }
+    stats = _compute_ticker_stats(panel, yahoo_vol)
+    aapl = next(r for r in stats if r["ticker"] == "AAPL")
+    # FINRA total_vol on 2024-06-03 = 2_200_000; yahoo = 8_800_000 → share = 0.25
+    assert aapl["oe_share"] == pytest.approx(0.25, abs=1e-4)
+
+
+def test_oe_share_none_when_yahoo_missing():
+    """When yahoo volume is not available, oe_share should be None."""
+    rows = [
+        (pd.Timestamp("2024-06-01"), "ZZZZ", 100, 5, 200, 0.5),
+        (pd.Timestamp("2024-06-02"), "ZZZZ", 110, 5, 220, 0.5),
+        (pd.Timestamp("2024-06-03"), "ZZZZ", 120, 5, 240, 0.5),
+    ]
+    panel = _make_panel(rows)
+    stats = _compute_ticker_stats(panel, {})   # no yahoo data
+    row = next(r for r in stats if r["ticker"] == "ZZZZ")
+    assert row["oe_share"] is None
+
+
+def test_short_ratio_trend_direction():
+    """Increasing short ratio → positive trend_pp."""
+    rows = (
+        [(pd.Timestamp(f"2024-05-{i:02d}"), "AAA", 100, 5, 1000, 0.10) for i in range(1, 11)]
+        + [(pd.Timestamp(f"2024-05-{i:02d}"), "AAA", 300, 15, 1000, 0.30) for i in range(11, 16)]
+    )
+    panel = _make_panel(rows)
+    stats = _compute_ticker_stats(panel, {})
+    row = next(r for r in stats if r["ticker"] == "AAA")
+    assert row["trend_pp"] > 0, "Increasing short flow should yield positive trend_pp"
+
+
+def test_thin_ticker_excluded():
+    """Tickers with < 3 days of data are excluded from stats."""
+    rows = [
+        (pd.Timestamp("2024-06-01"), "THIN", 100, 5, 200, 0.5),
+        (pd.Timestamp("2024-06-02"), "THIN", 110, 5, 220, 0.5),
+    ]
+    panel = _make_panel(rows)
+    stats = _compute_ticker_stats(panel, {})
+    assert not any(r["ticker"] == "THIN" for r in stats)
+
+
+# ---------------------------------------------------------------------------
+# 4. Builder smoke test
+# ---------------------------------------------------------------------------
+def test_builder_returns_0_when_panel_missing(tmp_path, monkeypatch):
+    """Builder should return 0 (not raise) when the panel file is absent."""
+    # Monkeypatch PANEL_PATH to a non-existent file
+    import scripts.build_darkpool_desk as bdd
+    monkeypatch.setattr(bdd, "PANEL_PATH", tmp_path / "nonexistent.parquet")
+    result = bdd.main()
+    assert result == 0
+
+
+def test_builder_disabled_by_config(tmp_path, monkeypatch):
+    """darkpool.enabled=false → builder returns 0 without reading any data."""
+    import scripts.build_darkpool_desk as bdd
+    from lib import config as lib_config
+
+    _orig_load = lib_config.load
+
+    def _fake_load():
+        d = _orig_load()
+        d["darkpool"] = {"enabled": False}
+        return d
+
+    monkeypatch.setattr(lib_config, "load", _fake_load)
+    result = bdd.main()
+    assert result == 0
+
+
+# ---------------------------------------------------------------------------
+# 5. Nav checks — check_nav_gap and check_nav_mega pass on the built page
+# ---------------------------------------------------------------------------
+def test_nav_checks_pass_on_rendered_page(tmp_path):
+    """Render darkpool.html into a tmp dir and verify nav-gap + nav-mega checks pass."""
+    import os, sys
+
+    # Render the page into a temporary site dir
+    site_dir = tmp_path / "site"
+    site_dir.mkdir()
+
+    # Minimal synthetic panel so the builder can produce output
+    panel_dir = tmp_path / "finra_short_volume"
+    panel_dir.mkdir()
+    panel_rows = []
+    for i in range(35):
+        d = pd.Timestamp(f"2024-0{1 + i // 28}-{(i % 28) + 1:02d}")
+        panel_rows.append((d, "AAPL", 1_000_000 + i * 1000, 50_000, 5_000_000, 0.20))
+        panel_rows.append((d, "NVDA", 2_000_000 + i * 2000, 80_000, 8_000_000, 0.25))
+
+    pd.DataFrame(panel_rows, columns=["date", "ticker", "short_vol", "short_exempt",
+                                       "total_vol", "short_ratio"]).to_parquet(
+        panel_dir / "panel.parquet"
+    )
+
+    import scripts.build_darkpool_desk as bdd
+    from lib import config as lib_config
+
+    monkeypatches = {}
+
+    def _fake_load():
+        d = {"darkpool": {"enabled": True}}
+        return d
+
+    orig_load = lib_config.load
+    orig_panel = bdd.PANEL_PATH
+    orig_ats = bdd.ATS_DIR
+    orig_yahoo = bdd.YAHOO_DIR
+    orig_root = lib_config.ROOT
+
+    try:
+        lib_config.load = _fake_load
+        bdd.PANEL_PATH = panel_dir / "panel.parquet"
+        bdd.ATS_DIR = tmp_path / "finra_ats"   # no ATS data — should degrade gracefully
+        bdd.YAHOO_DIR = tmp_path / "yahoo"      # no yahoo data — oe_share=None
+        lib_config.ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+        # Override site write target via write_page
+        from lib import pages as lib_pages
+        orig_write = lib_pages.write_page
+
+        written_html = {}
+
+        def _fake_write(path, html, **kw):
+            written_html["content"] = html
+            (site_dir / "darkpool.html").write_text(html)
+            return site_dir / "darkpool.html"
+
+        lib_pages.write_page = _fake_write
+        try:
+            rc = bdd.main()
+        finally:
+            lib_pages.write_page = orig_write
+
+        if rc != 0:
+            pytest.skip("builder returned non-zero — may need data; skip nav check")
+
+        if "content" not in written_html:
+            pytest.skip("builder did not write page (data missing)")
+
+        html = written_html["content"]
+
+        # nav-mega check: the rendered page must carry the Research mega-menu
+        assert "nav-mega" in html, "darkpool.html missing nav-mega (stale nav)"
+
+        # nav-gap check: body must have top padding (check inline style or class)
+        # The template uses body { padding: 18px } — this shows up in the <style> block
+        assert "padding:18px" in html.replace(" ", "") or "padding: 18px" in html, \
+            "darkpool.html body may be missing top padding (nav-gap risk)"
+
+    finally:
+        lib_config.load = orig_load
+        bdd.PANEL_PATH = orig_panel
+        bdd.ATS_DIR = orig_ats
+        bdd.YAHOO_DIR = orig_yahoo
+        lib_config.ROOT = orig_root

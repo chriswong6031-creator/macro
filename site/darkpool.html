@@ -1,0 +1,2797 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Dark Pool Desk — off-exchange &amp; short volume</span><span class="l-zh">场外暗池台 — 场外成交与融券量</span></title>
+<meta name="description" content="<span class="l-en">FINRA off-exchange volume, short ratio trends, and ATS venue transparency data. EOD, display-only.</span><span class="l-zh">FINRA场外成交量、融券比率趋势及ATS场所透明数据。收盘后，仅供展示。</span>">
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1400px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; font-weight:700; margin:0; }
+  h2 { font-size:13px; margin:0 0 4px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
+  .muted { color:var(--muted); }
+  .sm { font-size:12px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .toprow { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
+  .chip { display:inline-flex; align-items:center; font-size:11.5px; padding:2px 9px; border-radius:20px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); white-space:nowrap; }
+  .chip.warn { background:rgba(255,190,0,.10); border-color:rgba(255,190,0,.35); color:#b8860b; }
+  .chip.lag { background:rgba(120,130,180,.10); border-color:rgba(120,130,180,.30); color:var(--muted); }
+  .chip.ok { background:rgba(35,134,54,.10); border-color:rgba(35,134,54,.30); color:var(--up); }
+  .honest-box { background:rgba(255,190,0,.07); border:1px solid rgba(255,190,0,.25); border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; line-height:1.6; color:var(--muted); }
+  .honest-box strong { color:var(--text); }
+  /* Table */
+  .tbl-wrap { overflow-x:auto; margin-top:8px; }
+  table.dp-tbl { border-collapse:collapse; width:100%; font-size:12.5px; }
+  table.dp-tbl th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em; padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+  table.dp-tbl th:first-child { text-align:left; }
+  table.dp-tbl td { padding:5px 8px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
+  table.dp-tbl td:first-child { text-align:left; font-weight:600; }
+  table.dp-tbl tr:hover td { background:var(--panel2); }
+  .bar-cell { position:relative; }
+  .bar-bg { position:absolute; top:4px; right:0; height:calc(100% - 8px); opacity:.18; border-radius:3px 0 0 3px; }
+  .bar-pos { background:var(--up); }
+  .bar-neg { background:var(--down); }
+  .num-pos { color:var(--up); }
+  .num-neg { color:var(--down); }
+  .num-neu { color:var(--muted); }
+  /* ATS venue table */
+  .venue-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px; margin-top:10px; }
+  .venue-card { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .venue-card .vname { font-size:12.5px; font-weight:600; margin-bottom:2px; }
+  .venue-card .vmpid { font-size:11px; color:var(--muted); margin-bottom:6px; }
+  .venue-card .vstat { display:flex; justify-content:space-between; font-size:11.5px; }
+  .venue-card .vstat .lbl { color:var(--muted); }
+  /* search filter */
+  #dp-search { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px 10px; font-size:13px; color:var(--text); width:100%; max-width:260px; outline:none; }
+  #dp-search::placeholder { color:var(--muted); }
+  /* tip popover */
+  .tip-wrap { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:9px; font-weight:700; cursor:help; position:relative; vertical-align:middle; margin-left:3px; }
+  .tip-pop { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:260px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 12px; z-index:80; font-size:12px; line-height:1.5; color:var(--text); box-shadow:0 4px 16px rgba(0,0,0,.18); pointer-events:none; }
+  .tip-wrap:hover .tip-pop { display:block; }
+  @media (max-width:640px){ table.dp-tbl th,.dp-hide { display:none; } table.dp-tbl th:nth-child(-n+3), table.dp-tbl td:nth-child(-n+3) { display:table-cell; } }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+    
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+        
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" class="search-box" placeholder="<span class="l-en">Search…</span><span class="l-zh">搜索…</span>" autocomplete="off" spellcheck="false">
+    <div class="search-results"></div>
+  </div>
+  
+
+<nav class="site-nav">
+  
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+        
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+</nav>
+
+<div class="toprow">
+  <h1>🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span></h1>
+  <span class="chip "><span class="l-en">EOD · display-only</span><span class="l-zh">EOD · 仅供展示</span></span>
+  
+  <span class="chip warn"><span class="l-en">⚠ thin history (26 dates)</span><span class="l-zh">⚠ 历史数据不足（26 天）</span></span>
+  
+  <span class="muted sm"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-01 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-05 03:35 UTC</span>
+</div>
+
+<div class="honest-box">
+  <strong><span class="l-en">Data provenance</span><span class="l-zh">数据来源说明</span></strong> ·
+  <span class="l-en">T1e: FINRA CNMSshvol — off-exchange (FINRA-facility) volume and short-sale volume reported by FINRA member firms. This is NOT live trading data and NOT direct dark-pool print data. &#34;Short ratio&#34; = short-sale volume ÷ FINRA-facility total volume. &#34;Off-exchange share&#34; = FINRA-facility volume ÷ yahoo consolidated day volume (denominator labeled per row). T2e: FINRA OTC Transparency weekly per-ATS venue data — 2–4 week publication lag; not a real-time feed.</span><span class="l-zh">T1e：FINRA CNMSshvol — FINRA成员机构上报的场外（FINRA设施）成交量与卖空成交量。本数据非实时交易数据，亦非直接的暗池成交记录。&#34;融券比率&#34;=卖空成交量÷FINRA设施总成交量。&#34;场外占比&#34;=FINRA设施成交量÷雅虎综合日成交量（各行标注分母来源）。T2e：FINRA场外透明度每周各ATS场所数据——公布滞后2–4周，非实时数据。</span>
+</div>
+
+
+<div class="panel">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+    <h2><span class="l-en">Off-Exchange Volume — Per Name</span><span class="l-zh">场外成交量 — 各个股</span></h2>
+    <input id="dp-search" type="text" placeholder="<span class="l-en">Filter ticker…</span><span class="l-zh">筛选代码…</span>" autocomplete="off">
+    <span class="muted sm"><span class="l-en">display universe:</span><span class="l-zh">展示范围：</span> 360 <span class="l-en">names</span><span class="l-zh">个股</span></span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="dp-tbl" id="dp-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Date</span><span class="l-zh">日期</span></th>
+          <th><span class="l-en">Short Ratio</span><span class="l-zh">融券比率</span>
+            <span class="tip-wrap" data-tip-en="Short-sale volume ÷ FINRA-facility total volume for this session. FINRA-facility vol is off-exchange (reported to FINRA consolidated market surveillance). NOT the NYSE/Nasdaq consolidated tape ratio." data-tip-zh="卖空成交量÷当日FINRA设施总成交量。FINRA设施成交量为场外成交（上报FINRA综合市场监督系统），非NYSE/纳斯达克综合报价带比率。">[?]<span class="tip-pop"><span class="l-en">Short-sale volume ÷ FINRA-facility total volume for this session.</span><span class="l-zh">卖空成交量÷当日FINRA设施总成交量。</span></span></span>
+          </th>
+          <th class="dp-hide"><span class="l-en">Recent 5d</span><span class="l-zh">近5日</span></th>
+          <th class="dp-hide"><span class="l-en">Baseline 40d</span><span class="l-zh">基准40日</span></th>
+          <th><span class="l-en">Trend (pp)</span><span class="l-zh">趋势(pp)</span>
+            <span class="tip-wrap" data-tip-en="Recent 5-day volume-weighted short ratio minus 40-day baseline, in percentage points. Positive = building off-exchange short flow vs baseline." data-tip-zh="近5日量加权融券比率减去40日基准，单位百分点。正值=相对基准场外空头流量增强。">[?]<span class="tip-pop"><span class="l-en">Recent 5d − 40d baseline (pp). Positive = building short flow.</span><span class="l-zh">近5日 − 40日基准（pp）。正值=空头流量增强。</span></span></span>
+          </th>
+          <th><span class="l-en">Ratio Z</span><span class="l-zh">比率Z值</span>
+            <span class="tip-wrap" data-tip-en="Short ratio z-score vs own history. Magnitude shows how unusual today's reading is relative to this name's typical range." data-tip-zh="融券比率相对自身历史的Z值。数值大小反映当日读数偏离该股历史典型区间的程度。">[?]<span class="tip-pop"><span class="l-en">Z-score vs own history. |z|>2 = unusual.</span><span class="l-zh">相对自身历史Z值。|z|>2为异常。</span></span></span>
+          </th>
+          <th><span class="l-en">Off-Ex Share</span><span class="l-zh">场外占比</span>
+            <span class="tip-wrap" data-tip-en="FINRA-facility total volume ÷ consolidated day volume (yahoo). Measures what fraction of this name's daily volume was reported to FINRA's off-exchange facilities. Denominator source labeled per row." data-tip-zh="FINRA设施总成交量÷综合日成交量（雅虎）。衡量该股当日成交量中上报FINRA场外设施的比例，各行注明分母来源。">[?]<span class="tip-pop"><span class="l-en">FINRA-facility vol ÷ consolidated vol (yahoo). Off-exchange share of total trading.</span><span class="l-zh">FINRA设施成交量÷综合成交量（雅虎）。场外成交占总成交比例。</span></span></span>
+          </th>
+          <th class="dp-hide"><span class="l-en">Days</span><span class="l-zh">天数</span></th>
+        </tr>
+      </thead>
+      <tbody id="dp-tbody">
+      
+        
+        
+        <tr data-tk="AZO">
+          <td>AZO</td>
+          <td class="muted">2026-07-01</td>
+          <td>55.5%</td>
+          <td class="dp-hide">56.5%</td>
+          <td class="dp-hide">57.6%</td>
+          <td class="num-pos">-1.10</td>
+          <td class="num-neu">-0.65</td>
+          <td>
+            
+              75.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="APP">
+          <td>APP</td>
+          <td class="muted">2026-07-01</td>
+          <td>43.0%</td>
+          <td class="dp-hide">53.2%</td>
+          <td class="dp-hide">50.2%</td>
+          <td class="num-neg">+2.95</td>
+          <td class="num-neu">-1.16</td>
+          <td>
+            
+              57.1%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="MARA">
+          <td>MARA</td>
+          <td class="muted">2026-07-01</td>
+          <td>63.2%</td>
+          <td class="dp-hide">61.7%</td>
+          <td class="dp-hide">55.6%</td>
+          <td class="num-neg">+6.00</td>
+          <td class="num-neu">+1.40</td>
+          <td>
+            
+              52.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="STX">
+          <td>STX</td>
+          <td class="muted">2026-07-01</td>
+          <td>29.3%</td>
+          <td class="dp-hide">27.3%</td>
+          <td class="dp-hide">35.8%</td>
+          <td class="num-pos">-8.45</td>
+          <td class="num-neu">-0.92</td>
+          <td>
+            
+              49.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="FIVE">
+          <td>FIVE</td>
+          <td class="muted">2026-07-01</td>
+          <td>47.3%</td>
+          <td class="dp-hide">43.9%</td>
+          <td class="dp-hide">43.4%</td>
+          <td class="num-neg">+0.52</td>
+          <td class="num-neu">+0.29</td>
+          <td>
+            
+              48.9%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="PLTR">
+          <td>PLTR</td>
+          <td class="muted">2026-07-01</td>
+          <td>36.6%</td>
+          <td class="dp-hide">35.0%</td>
+          <td class="dp-hide">39.0%</td>
+          <td class="num-pos">-3.92</td>
+          <td class="num-neu">-0.44</td>
+          <td>
+            
+              48.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ROK">
+          <td>ROK</td>
+          <td class="muted">2026-07-01</td>
+          <td>50.0%</td>
+          <td class="dp-hide">66.0%</td>
+          <td class="dp-hide">65.1%</td>
+          <td class="num-neg">+0.94</td>
+          <td class="num-pos">-2.45</td>
+          <td>
+            
+              48.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="HOOD">
+          <td>HOOD</td>
+          <td class="muted">2026-07-01</td>
+          <td>61.3%</td>
+          <td class="dp-hide">58.9%</td>
+          <td class="dp-hide">51.2%</td>
+          <td class="num-neg">+7.65</td>
+          <td class="num-neg">+1.80</td>
+          <td>
+            
+              47.7%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="GPN">
+          <td>GPN</td>
+          <td class="muted">2026-07-01</td>
+          <td>40.5%</td>
+          <td class="dp-hide">51.4%</td>
+          <td class="dp-hide">61.6%</td>
+          <td class="num-pos">-10.22</td>
+          <td class="num-pos">-2.78</td>
+          <td>
+            
+              47.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="TLN">
+          <td>TLN</td>
+          <td class="muted">2026-07-01</td>
+          <td>52.8%</td>
+          <td class="dp-hide">47.3%</td>
+          <td class="dp-hide">49.3%</td>
+          <td class="num-pos">-2.00</td>
+          <td class="num-neu">+0.32</td>
+          <td>
+            
+              47.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="GLW">
+          <td>GLW</td>
+          <td class="muted">2026-07-01</td>
+          <td>34.1%</td>
+          <td class="dp-hide">47.2%</td>
+          <td class="dp-hide">47.3%</td>
+          <td class="num-pos">-0.09</td>
+          <td class="num-pos">-1.76</td>
+          <td>
+            
+              47.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="GEV">
+          <td>GEV</td>
+          <td class="muted">2026-07-01</td>
+          <td>60.9%</td>
+          <td class="dp-hide">58.3%</td>
+          <td class="dp-hide">56.7%</td>
+          <td class="num-neg">+1.68</td>
+          <td class="num-neu">+0.65</td>
+          <td>
+            
+              47.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="NVT">
+          <td>NVT</td>
+          <td class="muted">2026-07-01</td>
+          <td>26.3%</td>
+          <td class="dp-hide">24.7%</td>
+          <td class="dp-hide">32.0%</td>
+          <td class="num-pos">-7.34</td>
+          <td class="num-neu">-0.47</td>
+          <td>
+            
+              47.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="OKTA">
+          <td>OKTA</td>
+          <td class="muted">2026-07-01</td>
+          <td>34.9%</td>
+          <td class="dp-hide">45.6%</td>
+          <td class="dp-hide">49.1%</td>
+          <td class="num-pos">-3.51</td>
+          <td class="num-pos">-1.59</td>
+          <td>
+            
+              46.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="PANW">
+          <td>PANW</td>
+          <td class="muted">2026-07-01</td>
+          <td>49.1%</td>
+          <td class="dp-hide">51.4%</td>
+          <td class="dp-hide">47.3%</td>
+          <td class="num-neg">+4.10</td>
+          <td class="num-neu">-0.01</td>
+          <td>
+            
+              46.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="LITE">
+          <td>LITE</td>
+          <td class="muted">2026-07-01</td>
+          <td>56.4%</td>
+          <td class="dp-hide">53.6%</td>
+          <td class="dp-hide">43.4%</td>
+          <td class="num-neg">+10.20</td>
+          <td class="num-neg">+1.91</td>
+          <td>
+            
+              46.4%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="HIMS">
+          <td>HIMS</td>
+          <td class="muted">2026-07-01</td>
+          <td>56.8%</td>
+          <td class="dp-hide">56.7%</td>
+          <td class="dp-hide">56.4%</td>
+          <td class="num-neg">+0.33</td>
+          <td class="num-neu">+0.15</td>
+          <td>
+            
+              46.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="MP">
+          <td>MP</td>
+          <td class="muted">2026-07-01</td>
+          <td>68.1%</td>
+          <td class="dp-hide">61.5%</td>
+          <td class="dp-hide">62.3%</td>
+          <td class="num-pos">-0.85</td>
+          <td class="num-neu">+1.16</td>
+          <td>
+            
+              45.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="MKSI">
+          <td>MKSI</td>
+          <td class="muted">2026-07-01</td>
+          <td>47.7%</td>
+          <td class="dp-hide">47.0%</td>
+          <td class="dp-hide">45.1%</td>
+          <td class="num-neg">+1.90</td>
+          <td class="num-neu">+0.48</td>
+          <td>
+            
+              45.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ACLS">
+          <td>ACLS</td>
+          <td class="muted">2026-07-01</td>
+          <td>73.5%</td>
+          <td class="dp-hide">59.1%</td>
+          <td class="dp-hide">51.1%</td>
+          <td class="num-neg">+8.01</td>
+          <td class="num-neg">+2.12</td>
+          <td>
+            
+              45.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="TSLA">
+          <td>TSLA</td>
+          <td class="muted">2026-07-01</td>
+          <td>63.7%</td>
+          <td class="dp-hide">56.4%</td>
+          <td class="dp-hide">50.4%</td>
+          <td class="num-neg">+6.01</td>
+          <td class="num-neg">+2.32</td>
+          <td>
+            
+              45.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="NXT">
+          <td>NXT</td>
+          <td class="muted">2026-07-01</td>
+          <td>55.2%</td>
+          <td class="dp-hide">42.7%</td>
+          <td class="dp-hide">46.0%</td>
+          <td class="num-pos">-3.28</td>
+          <td class="num-neu">+0.28</td>
+          <td>
+            
+              45.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="VST">
+          <td>VST</td>
+          <td class="muted">2026-07-01</td>
+          <td>45.4%</td>
+          <td class="dp-hide">45.8%</td>
+          <td class="dp-hide">41.4%</td>
+          <td class="num-neg">+4.36</td>
+          <td class="num-neu">+0.73</td>
+          <td>
+            
+              45.1%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="BWXT">
+          <td>BWXT</td>
+          <td class="muted">2026-07-01</td>
+          <td>47.1%</td>
+          <td class="dp-hide">46.6%</td>
+          <td class="dp-hide">50.9%</td>
+          <td class="num-pos">-4.37</td>
+          <td class="num-neu">-0.51</td>
+          <td>
+            
+              45.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ORLY">
+          <td>ORLY</td>
+          <td class="muted">2026-07-01</td>
+          <td>18.0%</td>
+          <td class="dp-hide">30.9%</td>
+          <td class="dp-hide">31.0%</td>
+          <td class="num-pos">-0.05</td>
+          <td class="num-pos">-1.60</td>
+          <td>
+            
+              45.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="APH">
+          <td>APH</td>
+          <td class="muted">2026-07-01</td>
+          <td>47.8%</td>
+          <td class="dp-hide">44.2%</td>
+          <td class="dp-hide">42.9%</td>
+          <td class="num-neg">+1.31</td>
+          <td class="num-neu">+0.85</td>
+          <td>
+            
+              44.9%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="COHR">
+          <td>COHR</td>
+          <td class="muted">2026-07-01</td>
+          <td>57.4%</td>
+          <td class="dp-hide">54.1%</td>
+          <td class="dp-hide">48.5%</td>
+          <td class="num-neg">+5.62</td>
+          <td class="num-neu">+0.82</td>
+          <td>
+            
+              44.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="AVAV">
+          <td>AVAV</td>
+          <td class="muted">2026-07-01</td>
+          <td>54.3%</td>
+          <td class="dp-hide">62.4%</td>
+          <td class="dp-hide">60.0%</td>
+          <td class="num-neg">+2.34</td>
+          <td class="num-neu">-0.41</td>
+          <td>
+            
+              44.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ICHR">
+          <td>ICHR</td>
+          <td class="muted">2026-07-01</td>
+          <td>73.2%</td>
+          <td class="dp-hide">58.6%</td>
+          <td class="dp-hide">52.5%</td>
+          <td class="num-neg">+6.04</td>
+          <td class="num-neg">+2.62</td>
+          <td>
+            
+              44.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="CIEN">
+          <td>CIEN</td>
+          <td class="muted">2026-07-01</td>
+          <td>54.9%</td>
+          <td class="dp-hide">54.0%</td>
+          <td class="dp-hide">41.2%</td>
+          <td class="num-neg">+12.72</td>
+          <td class="num-neu">+1.32</td>
+          <td>
+            
+              44.4%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="DVN">
+          <td>DVN</td>
+          <td class="muted">2026-07-01</td>
+          <td>41.5%</td>
+          <td class="dp-hide">44.3%</td>
+          <td class="dp-hide">38.6%</td>
+          <td class="num-neg">+5.75</td>
+          <td class="num-neu">+0.35</td>
+          <td>
+            
+              43.7%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ZBRA">
+          <td>ZBRA</td>
+          <td class="muted">2026-07-01</td>
+          <td>52.3%</td>
+          <td class="dp-hide">56.0%</td>
+          <td class="dp-hide">52.3%</td>
+          <td class="num-neg">+3.77</td>
+          <td class="num-neu">-0.05</td>
+          <td>
+            
+              43.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="COF">
+          <td>COF</td>
+          <td class="muted">2026-07-01</td>
+          <td>23.2%</td>
+          <td class="dp-hide">35.0%</td>
+          <td class="dp-hide">27.5%</td>
+          <td class="num-neg">+7.43</td>
+          <td class="num-neu">-0.51</td>
+          <td>
+            
+              43.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="HII">
+          <td>HII</td>
+          <td class="muted">2026-07-01</td>
+          <td>59.6%</td>
+          <td class="dp-hide">43.9%</td>
+          <td class="dp-hide">46.8%</td>
+          <td class="num-pos">-2.83</td>
+          <td class="num-neu">+1.12</td>
+          <td>
+            
+              43.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="LOW">
+          <td>LOW</td>
+          <td class="muted">2026-07-01</td>
+          <td>47.9%</td>
+          <td class="dp-hide">52.4%</td>
+          <td class="dp-hide">45.1%</td>
+          <td class="num-neg">+7.29</td>
+          <td class="num-neu">+0.30</td>
+          <td>
+            
+              43.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ONTO">
+          <td>ONTO</td>
+          <td class="muted">2026-07-01</td>
+          <td>52.3%</td>
+          <td class="dp-hide">51.1%</td>
+          <td class="dp-hide">52.3%</td>
+          <td class="num-pos">-1.26</td>
+          <td class="num-neu">-0.03</td>
+          <td>
+            
+              43.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ORCL">
+          <td>ORCL</td>
+          <td class="muted">2026-07-01</td>
+          <td>19.1%</td>
+          <td class="dp-hide">19.5%</td>
+          <td class="dp-hide">29.7%</td>
+          <td class="num-pos">-10.20</td>
+          <td class="num-pos">-1.52</td>
+          <td>
+            
+              43.1%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="NOC">
+          <td>NOC</td>
+          <td class="muted">2026-07-01</td>
+          <td>34.3%</td>
+          <td class="dp-hide">28.2%</td>
+          <td class="dp-hide">36.0%</td>
+          <td class="num-pos">-7.80</td>
+          <td class="num-neu">-0.29</td>
+          <td>
+            
+              43.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="UCTT">
+          <td>UCTT</td>
+          <td class="muted">2026-07-01</td>
+          <td>67.1%</td>
+          <td class="dp-hide">57.5%</td>
+          <td class="dp-hide">55.2%</td>
+          <td class="num-neg">+2.27</td>
+          <td class="num-neg">+1.85</td>
+          <td>
+            
+              42.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="DELL">
+          <td>DELL</td>
+          <td class="muted">2026-07-01</td>
+          <td>52.5%</td>
+          <td class="dp-hide">50.0%</td>
+          <td class="dp-hide">44.6%</td>
+          <td class="num-neg">+5.39</td>
+          <td class="num-neu">+0.33</td>
+          <td>
+            
+              42.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="CAT">
+          <td>CAT</td>
+          <td class="muted">2026-07-01</td>
+          <td>51.7%</td>
+          <td class="dp-hide">61.1%</td>
+          <td class="dp-hide">56.6%</td>
+          <td class="num-neg">+4.57</td>
+          <td class="num-neu">-0.52</td>
+          <td>
+            
+              42.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="MRVL">
+          <td>MRVL</td>
+          <td class="muted">2026-07-01</td>
+          <td>57.7%</td>
+          <td class="dp-hide">46.5%</td>
+          <td class="dp-hide">35.3%</td>
+          <td class="num-neg">+11.19</td>
+          <td class="num-neg">+2.49</td>
+          <td>
+            
+              42.4%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="COHU">
+          <td>COHU</td>
+          <td class="muted">2026-07-01</td>
+          <td>30.8%</td>
+          <td class="dp-hide">32.1%</td>
+          <td class="dp-hide">41.0%</td>
+          <td class="num-pos">-8.88</td>
+          <td class="num-neu">-0.92</td>
+          <td>
+            
+              42.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="TEL">
+          <td>TEL</td>
+          <td class="muted">2026-07-01</td>
+          <td>33.7%</td>
+          <td class="dp-hide">39.6%</td>
+          <td class="dp-hide">41.1%</td>
+          <td class="num-pos">-1.54</td>
+          <td class="num-neu">-0.73</td>
+          <td>
+            
+              42.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="CGNX">
+          <td>CGNX</td>
+          <td class="muted">2026-07-01</td>
+          <td>52.9%</td>
+          <td class="dp-hide">66.8%</td>
+          <td class="dp-hide">64.5%</td>
+          <td class="num-neg">+2.25</td>
+          <td class="num-neu">-1.14</td>
+          <td>
+            
+              42.1%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="MU">
+          <td>MU</td>
+          <td class="muted">2026-07-01</td>
+          <td>50.6%</td>
+          <td class="dp-hide">49.9%</td>
+          <td class="dp-hide">41.0%</td>
+          <td class="num-neg">+8.88</td>
+          <td class="num-neu">+1.39</td>
+          <td>
+            
+              42.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="PWR">
+          <td>PWR</td>
+          <td class="muted">2026-07-01</td>
+          <td>34.8%</td>
+          <td class="dp-hide">32.7%</td>
+          <td class="dp-hide">42.8%</td>
+          <td class="num-pos">-10.14</td>
+          <td class="num-neu">-0.99</td>
+          <td>
+            
+              42.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="NOW">
+          <td>NOW</td>
+          <td class="muted">2026-07-01</td>
+          <td>54.6%</td>
+          <td class="dp-hide">39.4%</td>
+          <td class="dp-hide">41.0%</td>
+          <td class="num-pos">-1.58</td>
+          <td class="num-neg">+1.71</td>
+          <td>
+            
+              42.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="BA">
+          <td>BA</td>
+          <td class="muted">2026-07-01</td>
+          <td>43.1%</td>
+          <td class="dp-hide">42.6%</td>
+          <td class="dp-hide">47.5%</td>
+          <td class="num-pos">-4.89</td>
+          <td class="num-neu">-0.37</td>
+          <td>
+            
+              42.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="HON">
+          <td>HON</td>
+          <td class="muted">2026-07-01</td>
+          <td>30.3%</td>
+          <td class="dp-hide">48.7%</td>
+          <td class="dp-hide">55.3%</td>
+          <td class="num-pos">-6.59</td>
+          <td class="num-pos">-3.22</td>
+          <td>
+            
+              41.9%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="AEIS">
+          <td>AEIS</td>
+          <td class="muted">2026-07-01</td>
+          <td>45.5%</td>
+          <td class="dp-hide">30.8%</td>
+          <td class="dp-hide">37.8%</td>
+          <td class="num-pos">-6.97</td>
+          <td class="num-neu">+0.51</td>
+          <td>
+            
+              41.9%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="HUBB">
+          <td>HUBB</td>
+          <td class="muted">2026-07-01</td>
+          <td>43.1%</td>
+          <td class="dp-hide">47.1%</td>
+          <td class="dp-hide">52.3%</td>
+          <td class="num-pos">-5.22</td>
+          <td class="num-neu">-0.82</td>
+          <td>
+            
+              41.9%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="DDOG">
+          <td>DDOG</td>
+          <td class="muted">2026-07-01</td>
+          <td>49.1%</td>
+          <td class="dp-hide">51.6%</td>
+          <td class="dp-hide">39.7%</td>
+          <td class="num-neg">+11.90</td>
+          <td class="num-neu">+0.82</td>
+          <td>
+            
+              41.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="KTOS">
+          <td>KTOS</td>
+          <td class="muted">2026-07-01</td>
+          <td>52.3%</td>
+          <td class="dp-hide">47.7%</td>
+          <td class="dp-hide">48.2%</td>
+          <td class="num-pos">-0.50</td>
+          <td class="num-neu">+0.50</td>
+          <td>
+            
+              41.7%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="IBM">
+          <td>IBM</td>
+          <td class="muted">2026-07-01</td>
+          <td>64.4%</td>
+          <td class="dp-hide">63.3%</td>
+          <td class="dp-hide">57.6%</td>
+          <td class="num-neg">+5.61</td>
+          <td class="num-neu">+1.18</td>
+          <td>
+            
+              41.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="META">
+          <td>META</td>
+          <td class="muted">2026-07-01</td>
+          <td>38.0%</td>
+          <td class="dp-hide">35.3%</td>
+          <td class="dp-hide">33.8%</td>
+          <td class="num-neg">+1.55</td>
+          <td class="num-neu">+0.84</td>
+          <td>
+            
+              41.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="CLSK">
+          <td>CLSK</td>
+          <td class="muted">2026-07-01</td>
+          <td>39.5%</td>
+          <td class="dp-hide">39.2%</td>
+          <td class="dp-hide">41.6%</td>
+          <td class="num-pos">-2.31</td>
+          <td class="num-neu">-0.18</td>
+          <td>
+            
+              41.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="LMT">
+          <td>LMT</td>
+          <td class="muted">2026-07-01</td>
+          <td>43.4%</td>
+          <td class="dp-hide">43.6%</td>
+          <td class="dp-hide">47.7%</td>
+          <td class="num-pos">-4.12</td>
+          <td class="num-neu">-0.40</td>
+          <td>
+            
+              41.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="JKHY">
+          <td>JKHY</td>
+          <td class="muted">2026-07-01</td>
+          <td>62.4%</td>
+          <td class="dp-hide">59.3%</td>
+          <td class="dp-hide">41.0%</td>
+          <td class="num-neg">+18.29</td>
+          <td class="num-neg">+1.84</td>
+          <td>
+            
+              41.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="HSY">
+          <td>HSY</td>
+          <td class="muted">2026-07-01</td>
+          <td>46.1%</td>
+          <td class="dp-hide">63.2%</td>
+          <td class="dp-hide">61.7%</td>
+          <td class="num-neg">+1.54</td>
+          <td class="num-pos">-1.68</td>
+          <td>
+            
+              41.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="PTC">
+          <td>PTC</td>
+          <td class="muted">2026-07-01</td>
+          <td>30.5%</td>
+          <td class="dp-hide">27.8%</td>
+          <td class="dp-hide">33.6%</td>
+          <td class="num-pos">-5.76</td>
+          <td class="num-neu">-0.42</td>
+          <td>
+            
+              41.4%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="AMZN">
+          <td>AMZN</td>
+          <td class="muted">2026-07-01</td>
+          <td>23.0%</td>
+          <td class="dp-hide">21.8%</td>
+          <td class="dp-hide">25.7%</td>
+          <td class="num-pos">-3.88</td>
+          <td class="num-neu">-0.91</td>
+          <td>
+            
+              41.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="LDOS">
+          <td>LDOS</td>
+          <td class="muted">2026-07-01</td>
+          <td>63.1%</td>
+          <td class="dp-hide">54.6%</td>
+          <td class="dp-hide">53.2%</td>
+          <td class="num-neg">+1.43</td>
+          <td class="num-neu">+1.10</td>
+          <td>
+            
+              41.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="FORM">
+          <td>FORM</td>
+          <td class="muted">2026-07-01</td>
+          <td>35.8%</td>
+          <td class="dp-hide">34.9%</td>
+          <td class="dp-hide">42.0%</td>
+          <td class="num-pos">-7.10</td>
+          <td class="num-neu">-0.80</td>
+          <td>
+            
+              41.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="KO">
+          <td>KO</td>
+          <td class="muted">2026-07-01</td>
+          <td>23.2%</td>
+          <td class="dp-hide">33.8%</td>
+          <td class="dp-hide">46.1%</td>
+          <td class="num-pos">-12.32</td>
+          <td class="num-pos">-2.28</td>
+          <td>
+            
+              41.1%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="WDC">
+          <td>WDC</td>
+          <td class="muted">2026-07-01</td>
+          <td>30.2%</td>
+          <td class="dp-hide">32.1%</td>
+          <td class="dp-hide">42.7%</td>
+          <td class="num-pos">-10.57</td>
+          <td class="num-neu">-1.29</td>
+          <td>
+            
+              41.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="MSFT">
+          <td>MSFT</td>
+          <td class="muted">2026-07-01</td>
+          <td>36.6%</td>
+          <td class="dp-hide">27.2%</td>
+          <td class="dp-hide">30.8%</td>
+          <td class="num-pos">-3.59</td>
+          <td class="num-neu">+0.87</td>
+          <td>
+            
+              40.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="SMCI">
+          <td>SMCI</td>
+          <td class="muted">2026-07-01</td>
+          <td>52.7%</td>
+          <td class="dp-hide">48.8%</td>
+          <td class="dp-hide">46.6%</td>
+          <td class="num-neg">+2.26</td>
+          <td class="num-neu">+1.25</td>
+          <td>
+            
+              40.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="VECO">
+          <td>VECO</td>
+          <td class="muted">2026-07-01</td>
+          <td>55.0%</td>
+          <td class="dp-hide">43.5%</td>
+          <td class="dp-hide">61.5%</td>
+          <td class="num-pos">-18.05</td>
+          <td class="num-neu">-0.57</td>
+          <td>
+            
+              40.7%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="TSCO">
+          <td>TSCO</td>
+          <td class="muted">2026-07-01</td>
+          <td>40.8%</td>
+          <td class="dp-hide">35.2%</td>
+          <td class="dp-hide">39.6%</td>
+          <td class="num-pos">-4.36</td>
+          <td class="num-neu">+0.07</td>
+          <td>
+            
+              40.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="CEG">
+          <td>CEG</td>
+          <td class="muted">2026-07-01</td>
+          <td>51.8%</td>
+          <td class="dp-hide">51.7%</td>
+          <td class="dp-hide">51.4%</td>
+          <td class="num-neg">+0.22</td>
+          <td class="num-neu">-0.09</td>
+          <td>
+            
+              40.4%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ETN">
+          <td>ETN</td>
+          <td class="muted">2026-07-01</td>
+          <td>62.5%</td>
+          <td class="dp-hide">61.1%</td>
+          <td class="dp-hide">62.5%</td>
+          <td class="num-pos">-1.40</td>
+          <td class="num-neu">-0.01</td>
+          <td>
+            
+              40.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="NEE">
+          <td>NEE</td>
+          <td class="muted">2026-07-01</td>
+          <td>47.5%</td>
+          <td class="dp-hide">56.0%</td>
+          <td class="dp-hide">44.4%</td>
+          <td class="num-neg">+11.61</td>
+          <td class="num-neu">+0.36</td>
+          <td>
+            
+              40.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="TJX">
+          <td>TJX</td>
+          <td class="muted">2026-07-01</td>
+          <td>37.8%</td>
+          <td class="dp-hide">42.4%</td>
+          <td class="dp-hide">37.4%</td>
+          <td class="num-neg">+4.99</td>
+          <td class="num-neu">+0.15</td>
+          <td>
+            
+              39.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="QLYS">
+          <td>QLYS</td>
+          <td class="muted">2026-07-01</td>
+          <td>85.7%</td>
+          <td class="dp-hide">73.2%</td>
+          <td class="dp-hide">75.6%</td>
+          <td class="num-pos">-2.40</td>
+          <td class="num-neu">+1.02</td>
+          <td>
+            
+              39.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="FBIN">
+          <td>FBIN</td>
+          <td class="muted">2026-07-01</td>
+          <td>50.5%</td>
+          <td class="dp-hide">42.8%</td>
+          <td class="dp-hide">44.3%</td>
+          <td class="num-pos">-1.46</td>
+          <td class="num-neu">+0.42</td>
+          <td>
+            
+              39.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="POWL">
+          <td>POWL</td>
+          <td class="muted">2026-07-01</td>
+          <td>56.2%</td>
+          <td class="dp-hide">53.8%</td>
+          <td class="dp-hide">53.9%</td>
+          <td class="num-pos">-0.03</td>
+          <td class="num-neu">+0.10</td>
+          <td>
+            
+              39.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="NOVT">
+          <td>NOVT</td>
+          <td class="muted">2026-07-01</td>
+          <td>55.0%</td>
+          <td class="dp-hide">59.8%</td>
+          <td class="dp-hide">60.3%</td>
+          <td class="num-pos">-0.55</td>
+          <td class="num-neu">-0.63</td>
+          <td>
+            
+              39.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">9</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="WMT">
+          <td>WMT</td>
+          <td class="muted">2026-07-01</td>
+          <td>40.3%</td>
+          <td class="dp-hide">42.9%</td>
+          <td class="dp-hide">44.7%</td>
+          <td class="num-pos">-1.81</td>
+          <td class="num-neu">-0.55</td>
+          <td>
+            
+              39.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ANET">
+          <td>ANET</td>
+          <td class="muted">2026-07-01</td>
+          <td>57.8%</td>
+          <td class="dp-hide">50.6%</td>
+          <td class="dp-hide">50.7%</td>
+          <td class="num-pos">-0.10</td>
+          <td class="num-neu">+1.12</td>
+          <td>
+            
+              39.1%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="D">
+          <td>D</td>
+          <td class="muted">2026-07-01</td>
+          <td>25.1%</td>
+          <td class="dp-hide">35.9%</td>
+          <td class="dp-hide">54.3%</td>
+          <td class="num-pos">-18.38</td>
+          <td class="num-pos">-1.87</td>
+          <td>
+            
+              38.9%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ISRG">
+          <td>ISRG</td>
+          <td class="muted">2026-07-01</td>
+          <td>42.6%</td>
+          <td class="dp-hide">30.2%</td>
+          <td class="dp-hide">38.9%</td>
+          <td class="num-pos">-8.62</td>
+          <td class="num-neu">+0.37</td>
+          <td>
+            
+              38.9%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="TDG">
+          <td>TDG</td>
+          <td class="muted">2026-07-01</td>
+          <td>32.9%</td>
+          <td class="dp-hide">34.0%</td>
+          <td class="dp-hide">53.0%</td>
+          <td class="num-pos">-19.06</td>
+          <td class="num-pos">-1.58</td>
+          <td>
+            
+              38.8%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="COIN">
+          <td>COIN</td>
+          <td class="muted">2026-07-01</td>
+          <td>38.1%</td>
+          <td class="dp-hide">51.8%</td>
+          <td class="dp-hide">45.5%</td>
+          <td class="num-neg">+6.33</td>
+          <td class="num-neu">-1.18</td>
+          <td>
+            
+              38.7%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ALB">
+          <td>ALB</td>
+          <td class="muted">2026-07-01</td>
+          <td>60.7%</td>
+          <td class="dp-hide">59.3%</td>
+          <td class="dp-hide">58.2%</td>
+          <td class="num-neg">+1.10</td>
+          <td class="num-neu">+0.46</td>
+          <td>
+            
+              38.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="EQT">
+          <td>EQT</td>
+          <td class="muted">2026-07-01</td>
+          <td>53.7%</td>
+          <td class="dp-hide">61.0%</td>
+          <td class="dp-hide">50.3%</td>
+          <td class="num-neg">+10.71</td>
+          <td class="num-neu">+0.39</td>
+          <td>
+            
+              38.6%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="PFE">
+          <td>PFE</td>
+          <td class="muted">2026-07-01</td>
+          <td>40.0%</td>
+          <td class="dp-hide">38.3%</td>
+          <td class="dp-hide">47.1%</td>
+          <td class="num-pos">-8.83</td>
+          <td class="num-neu">-0.73</td>
+          <td>
+            
+              38.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="SNDK">
+          <td>SNDK</td>
+          <td class="muted">2026-07-01</td>
+          <td>54.6%</td>
+          <td class="dp-hide">42.0%</td>
+          <td class="dp-hide">43.5%</td>
+          <td class="num-pos">-1.43</td>
+          <td class="num-neu">+1.38</td>
+          <td>
+            
+              38.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="CLX">
+          <td>CLX</td>
+          <td class="muted">2026-07-01</td>
+          <td>57.5%</td>
+          <td class="dp-hide">61.0%</td>
+          <td class="dp-hide">63.1%</td>
+          <td class="num-pos">-2.12</td>
+          <td class="num-neu">-0.84</td>
+          <td>
+            
+              38.3%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="HBAN">
+          <td>HBAN</td>
+          <td class="muted">2026-07-01</td>
+          <td>50.6%</td>
+          <td class="dp-hide">52.2%</td>
+          <td class="dp-hide">52.5%</td>
+          <td class="num-pos">-0.28</td>
+          <td class="num-neu">-0.32</td>
+          <td>
+            
+              38.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="CARR">
+          <td>CARR</td>
+          <td class="muted">2026-07-01</td>
+          <td>36.8%</td>
+          <td class="dp-hide">45.2%</td>
+          <td class="dp-hide">46.4%</td>
+          <td class="num-pos">-1.22</td>
+          <td class="num-neu">-0.99</td>
+          <td>
+            
+              38.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="INTU">
+          <td>INTU</td>
+          <td class="muted">2026-07-01</td>
+          <td>28.0%</td>
+          <td class="dp-hide">30.3%</td>
+          <td class="dp-hide">29.6%</td>
+          <td class="num-neg">+0.71</td>
+          <td class="num-neu">-0.36</td>
+          <td>
+            
+              38.1%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="HWM">
+          <td>HWM</td>
+          <td class="muted">2026-07-01</td>
+          <td>17.9%</td>
+          <td class="dp-hide">21.6%</td>
+          <td class="dp-hide">35.7%</td>
+          <td class="num-pos">-14.16</td>
+          <td class="num-pos">-1.57</td>
+          <td>
+            
+              38.0%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="AMD">
+          <td>AMD</td>
+          <td class="muted">2026-07-01</td>
+          <td>51.4%</td>
+          <td class="dp-hide">51.8%</td>
+          <td class="dp-hide">48.2%</td>
+          <td class="num-neg">+3.61</td>
+          <td class="num-neu">+0.58</td>
+          <td>
+            
+              37.9%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="CVX">
+          <td>CVX</td>
+          <td class="muted">2026-07-01</td>
+          <td>22.0%</td>
+          <td class="dp-hide">29.4%</td>
+          <td class="dp-hide">30.5%</td>
+          <td class="num-pos">-1.06</td>
+          <td class="num-neu">-1.32</td>
+          <td>
+            
+              37.7%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="KLIC">
+          <td>KLIC</td>
+          <td class="muted">2026-07-01</td>
+          <td>48.9%</td>
+          <td class="dp-hide">42.9%</td>
+          <td class="dp-hide">52.7%</td>
+          <td class="num-pos">-9.80</td>
+          <td class="num-neu">-0.46</td>
+          <td>
+            
+              37.7%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="CI">
+          <td>CI</td>
+          <td class="muted">2026-07-01</td>
+          <td>25.4%</td>
+          <td class="dp-hide">38.5%</td>
+          <td class="dp-hide">48.9%</td>
+          <td class="num-pos">-10.39</td>
+          <td class="num-pos">-2.19</td>
+          <td>
+            
+              37.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="ROST">
+          <td>ROST</td>
+          <td class="muted">2026-07-01</td>
+          <td>53.4%</td>
+          <td class="dp-hide">44.5%</td>
+          <td class="dp-hide">46.9%</td>
+          <td class="num-pos">-2.38</td>
+          <td class="num-neu">+0.98</td>
+          <td>
+            
+              37.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="VRT">
+          <td>VRT</td>
+          <td class="muted">2026-07-01</td>
+          <td>53.7%</td>
+          <td class="dp-hide">43.1%</td>
+          <td class="dp-hide">51.5%</td>
+          <td class="num-pos">-8.38</td>
+          <td class="num-neu">+0.17</td>
+          <td>
+            
+              37.5%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+        
+        
+        <tr data-tk="XYZ">
+          <td>XYZ</td>
+          <td class="muted">2026-07-01</td>
+          <td>34.6%</td>
+          <td class="dp-hide">35.5%</td>
+          <td class="dp-hide">47.6%</td>
+          <td class="num-pos">-12.03</td>
+          <td class="num-pos">-1.58</td>
+          <td>
+            
+              37.2%
+              <span class="muted sm" title="denominator: yahoo consolidated vol">†</span>
+            
+          </td>
+          <td class="dp-hide muted">26</td>
+        </tr>
+      
+      </tbody>
+    </table>
+  </div>
+  
+  <p class="muted sm" style="margin-top:8px;">
+    <span class="l-en">Showing top</span><span class="l-zh">显示前</span> 100 <span class="l-en">of</span><span class="l-zh">共</span> 273 <span class="l-en">names by off-exchange share / short ratio.</span><span class="l-zh">个股，按场外占比或融券比率排序。</span>
+  </p>
+  
+  <p class="muted sm" style="margin-top:6px;">
+    † <span class="l-en">Off-exchange share denominator: yahoo consolidated day volume (T+0, adjusted close).</span><span class="l-zh">场外占比分母：雅虎综合日成交量（T+0，复权收盘价）。</span>
+  </p>
+</div>
+
+
+<div class="panel">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+    <h2><span class="l-en">Weekly ATS Venue Breakdown</span><span class="l-zh">每周ATS场所分项</span></h2>
+    
+    <span class="chip lag"><span class="l-en">⏱ 2–4 wk publication lag</span><span class="l-zh">⏱ 2–4 wk publication lag</span></span>
+    
+    
+    <span class="muted sm"><span class="l-en">week of</span><span class="l-zh">报告周：</span> 2023-11-06</span>
+    
+  </div>
+  
+  <p class="muted sm" style="margin-bottom:10px;">
+    <span class="l-en">Source: FINRA OTC Transparency API (keyless). Aggregate weekly shares and trades per registered ATS for</span><span class="l-zh">来源：FINRA场外透明度API（无需密钥）。每个注册ATS场所的每周累计成交量与交易笔数，涵盖</span>
+    8089 <span class="l-en">symbols. NOT &#34;live&#34; — 2–4 week publication lag from reporting week end.</span><span class="l-zh">个标的。非实时数据——距报告周结束有2–4周公布滞后。</span>
+  </p>
+  <div class="venue-grid">
+    
+    <div class="venue-card">
+      <div class="vname">UBSA UBS ATS</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> UBSA</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 118,474,127</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 1,556,136</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 1042</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">INCR INTELLIGENT CROSS LLC</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> INCR</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 107,130,852</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 1,265,740</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 1029</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">SGMT SIGMA X2</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> SGMT</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 90,386,850</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 1,254,975</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 998</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">JPMX JPM-X</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> JPMX</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 52,259,479</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 438,716</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 800</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">EBXL LEVEL ATS</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> EBXL</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 50,843,980</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 776,603</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 1022</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">MSPL MS POOL (ATS-4)</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> MSPL</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 48,996,100</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 272,616</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 735</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">MLIX INSTINCT X</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> MLIX</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 40,996,889</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 293,399</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 905</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">LATS THE BARCLAYS ATS</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> LATS</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 33,977,732</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 303,953</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 929</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">BIDS BIDS ATS</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> BIDS</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 24,821,581</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 29,498</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 505</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">MSTX MS TRAJECTORY CROSS (ATS-1)</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> MSTX</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 23,660,400</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 104,879</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 417</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">KCGM VIRTU MATCHIT ATS</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> KCGM</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 20,124,666</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 152,457</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 850</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">PURE PURESTREAM</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> PURE</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 14,100,672</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 351,465</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 376</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">IATS IBKR ATS</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> IATS</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 12,550,064</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 48,056</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 851</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">XSTM CROSSSTREAM</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> XSTM</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 11,365,907</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 34,909</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 571</span>
+      </div>
+    </div>
+    
+    <div class="venue-card">
+      <div class="vname">ITGP POSIT</div>
+      <div class="vmpid"><span class="l-en">MPID:</span><span class="l-zh">MPID：</span> ITGP</div>
+      <div class="vstat">
+        <span><span class="lbl"><span class="l-en">Shares</span><span class="l-zh">成交量</span></span> 10,605,471</span>
+        <span><span class="lbl"><span class="l-en">Trades</span><span class="l-zh">笔数</span></span> 35,725</span>
+        <span><span class="lbl"><span class="l-en">Symbols</span><span class="l-zh">标的</span></span> 666</span>
+      </div>
+    </div>
+    
+  </div>
+  
+</div>
+
+
+<div class="panel">
+  <h2><span class="l-en">Methodology &amp; Limitations</span><span class="l-zh">方法论与局限性</span></h2>
+  <div style="font-size:13px; line-height:1.7; color:var(--muted); max-width:820px;">
+    <p>
+      <strong class="l-en">T1e — Off-exchange (FINRA-facility) volume:</strong>
+      <strong class="l-zh">T1e — 场外（FINRA设施）成交量：</strong>
+      <span class="l-en">FINRA publishes daily consolidated short-volume (CNMSshvol) files reporting each member firm's short-sale and total volume routed through FINRA-regulated facilities (e.g. FINRA's Alternative Display Facility, broker internalization). These are NOT equivalent to NYSE/Nasdaq consolidated tape volumes.</span>
+      <span class="l-zh">FINRA每日发布综合融券成交量（CNMSshvol）文件，记录各成员机构通过FINRA监管设施（如FINRA另类显示设施、券商内部化）路由的卖空及总成交量。此数据与NYSE/纳斯达克综合报价带成交量并不等同。</span>
+    </p>
+    <p>
+      <strong class="l-en">Short ratio:</strong>
+      <strong class="l-zh">融券比率：</strong>
+      <span class="l-en">Short-sale volume ÷ FINRA-facility total volume for the session. A higher ratio means more of the off-exchange routed volume was flagged short. This is a noisy, daily signal; standalone predictive edge is modest and contested in academic literature. Used here as a positioning context confirmer, not a scored alpha factor.</span>
+      <span class="l-zh">当日卖空成交量÷FINRA设施总成交量。比率越高说明场外路由成交量中被标记为卖空的比例越大。该信号噪声较大，独立预测能力有限，学术界亦存争议。本台仅作为仓位情境印证，非评分型阿尔法因子。</span>
+    </p>
+    <p>
+      <strong class="l-en">Off-exchange share denominator:</strong>
+      <strong class="l-zh">场外占比分母：</strong>
+      <span class="l-en">Consolidated day volume sourced from Yahoo Finance EOD data (adjusted close series). This is the best available free denominator for the display universe; note that Yahoo volumes can lag intraday rounding differences vs official tape totals.</span>
+      <span class="l-zh">综合日成交量来源于雅虎财经EOD数据（复权收盘价序列）。这是展示范围内最优质的免费分母数据；需注意雅虎成交量与官方报价带汇总数据可能存在日内舍入差异。</span>
+    </p>
+    <p>
+      <strong class="l-en">T2e — FINRA OTC Transparency (weekly ATS):</strong>
+      <strong class="l-zh">T2e — FINRA场外透明度（每周ATS）：</strong>
+      <span class="l-en">FINRA's OTC Transparency programme mandates weekly reporting from all registered ATS. Data is published with a 2–4 week lag via the FINRA API (api.finra.org/data/group/OTCMarket/name/weeklysummary, keyless). The venue table shows aggregate shares and trade counts per ATS for the latest published reporting week.</span>
+      <span class="l-zh">FINRA场外透明度计划要求所有注册ATS每周上报数据，经由FINRA API（api.finra.org，无需密钥）公布，滞后2–4周。场所表展示最新公布报告周各ATS的汇总成交量与交易笔数。</span>
+    </p>
+    <p class="sm">
+      <span class="l-en">Display universe: ~360 names (options universe gex_symbols). Full ~8-year backfill restricted to this universe to satisfy the 30 MB git-tracked-file ceiling (projected full-universe file ~67 MB). Denominator source: Yahoo Finance consolidated volume, labeled per row.</span>
+      <span class="l-zh">展示范围：约360个标的（期权范围gex_symbols）。完整~8年回填数据受限于此范围，以满足30MB git追踪文件上限（全范围预计约67MB）。分母来源：雅虎财经综合成交量，各行标注。</span>
+    </p>
+  </div>
+</div>
+
+<script>
+// Ticker filter
+var inp = document.getElementById('dp-search');
+if (inp) {
+  inp.addEventListener('input', function() {
+    var q = inp.value.trim().toUpperCase();
+    var rows = document.querySelectorAll('#dp-tbody tr');
+    rows.forEach(function(r) {
+      r.style.display = !q || (r.dataset.tk || '').indexOf(q) !== -1 ? '' : 'none';
+    });
+  });
+}
+// Tip popovers lang switch
+document.addEventListener('DOMContentLoaded', function() {
+  var lang = document.documentElement.getAttribute('data-lang') || '';
+  document.querySelectorAll('.tip-wrap').forEach(function(el) {
+    var pop = el.querySelector('.tip-pop');
+    if (!pop) return;
+    var en = el.dataset.tipEn, zh = el.dataset.tipZh;
+    if (lang === 'zh' && zh) pop.textContent = zh;
+    else if (en) pop.textContent = en;
+  });
+});
+</script>
+<script src="theme.js"></script>
+</body>
+</html>
