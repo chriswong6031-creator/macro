@@ -2,11 +2,7 @@
   "_debounce": {
     "lead": {
       "displayed": "cn_robotics",
-      "pending": {
-        "bucket": "2026-07-03",
-        "count": 1,
-        "tid": "cn_pharma_cxo"
-      }
+      "pending": null
     },
     "reco": {
       "cn_defense": {
@@ -37,21 +33,21 @@
     "name_zh": "\u5bb6\u7535",
     "rank": 11,
     "reco": "hold",
-    "score": 44
+    "score": 47
   },
   "cn_autos": {
     "label": "deteriorating",
     "name": "Autos & NEV Makers",
     "name_zh": "\u6c7d\u8f66\u6574\u8f66",
-    "rank": 17,
+    "rank": 16,
     "reco": "avoid",
-    "score": 34
+    "score": 37
   },
   "cn_baijiu": {
     "label": "deteriorating",
     "name": "Baijiu / Liquor",
     "name_zh": "\u767d\u9152",
-    "rank": 19,
+    "rank": 18,
     "reco": "avoid",
     "score": 33
   },
@@ -69,13 +65,13 @@
     "name_zh": "\u9502\u7535\u6c60",
     "rank": 10,
     "reco": "avoid",
-    "score": 45
+    "score": 51
   },
   "cn_brokers": {
     "label": "dominant",
     "name": "Brokers & Securities",
     "name_zh": "\u5238\u5546",
-    "rank": 4,
+    "rank": 5,
     "reco": "accumulate",
     "score": 70
   },
@@ -101,7 +97,7 @@
     "name_zh": "\u519b\u5de5\u822a\u5929",
     "rank": 8,
     "reco": "enter",
-    "score": 57
+    "score": 59
   },
   "cn_food_bev": {
     "label": "deteriorating",
@@ -115,9 +111,9 @@
     "label": "deteriorating",
     "name": "Gold Miners",
     "name_zh": "\u9ec4\u91d1",
-    "rank": 15,
+    "rank": 13,
     "reco": "avoid",
-    "score": 38
+    "score": 41
   },
   "cn_insurers": {
     "label": "emerging",
@@ -131,7 +127,7 @@
     "label": "deteriorating",
     "name": "Medical Devices & TCM",
     "name_zh": "\u533b\u7597\u5668\u68b0\u4e0e\u4e2d\u836f",
-    "rank": 14,
+    "rank": 15,
     "reco": "avoid",
     "score": 39
   },
@@ -139,7 +135,7 @@
     "label": "deteriorating",
     "name": "Industrial Metals",
     "name_zh": "\u6709\u8272\u91d1\u5c5e",
-    "rank": 13,
+    "rank": 14,
     "reco": "avoid",
     "score": 41
   },
@@ -147,7 +143,7 @@
     "label": "dominant",
     "name": "Innovative Pharma & CXO",
     "name_zh": "\u521b\u65b0\u836f\u4e0eCXO",
-    "rank": 1,
+    "rank": 2,
     "reco": "hold",
     "score": 80
   },
@@ -155,17 +151,17 @@
     "label": "dominant",
     "name": "Rare Earth & Magnets",
     "name_zh": "\u7a00\u571f\u6c38\u78c1",
-    "rank": 5,
+    "rank": 4,
     "reco": "accumulate",
-    "score": 69
+    "score": 71
   },
   "cn_robotics": {
     "label": "dominant",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 2,
+    "rank": 1,
     "reco": "accumulate",
-    "score": 79
+    "score": 80
   },
   "cn_semis": {
     "label": "dominant",
@@ -187,16 +183,16 @@
     "label": "deteriorating",
     "name": "Software & AI Apps",
     "name_zh": "\u8f6f\u4ef6\u4e0eAI\u5e94\u7528",
-    "rank": 16,
+    "rank": 17,
     "reco": "avoid",
-    "score": 36
+    "score": 33
   },
   "cn_solar": {
     "label": "deteriorating",
     "name": "Solar / Photovoltaics",
     "name_zh": "\u5149\u4f0f",
-    "rank": 18,
+    "rank": 19,
     "reco": "avoid",
-    "score": 33
+    "score": 32
   }
 }
