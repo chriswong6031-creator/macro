@@ -50,8 +50,8 @@ gather_state() + world_state summary producing just the memo
 MODEL (D8 ruling)
 Primary: claude-opus-4-8 (Opus-class), via engine.llm_auth.make_call
 waterfall (CLAUDE_CODE_OAUTH_TOKEN → ANTHROPIC_API_KEY).
-DeepSeek NOT in the deliberation path.  DeepSeek Flash ONLY for zh
-translation of the memo (reuses master_brain's _translate pattern).
+DeepSeek NOT in the deliberation path.  zh translation of the memo: PR2
+(will reuse master_brain's _translate pattern; DeepSeek permitted there ONLY).
 
 DENY ROOTS (bot_mcp pattern)
 READ_ROOTS = [data/, site/, docs/, research/]
@@ -947,13 +947,21 @@ def _run_tool_loop(
         }
         memo_result = _tool_write_memo(root, memo_params, now_str, probation_status)
 
-    # Stamp census into memo if it already exists
+    # Stamp census into memo and re-mirror site copy so both are identical.
+    # _tool_write_memo was called with tool_call_census={} (unknown at write time);
+    # we update both copies here to avoid the data/site divergence.
     if memo_result and not memo_result.get("error"):
         try:
             memo_path = _cortex_dir(root) / "memo.json"
             memo = json.loads(memo_path.read_text(encoding="utf-8"))
             memo["tool_call_census"] = tool_call_census
-            memo_path.write_text(json.dumps(memo, indent=2, default=str), encoding="utf-8")
+            memo_serialized = json.dumps(memo, indent=2, default=str)
+            memo_path.write_text(memo_serialized, encoding="utf-8")
+            # Keep site mirror in sync — re-write with the final census stamp.
+            site_nw = _site(root, "neuralweb")
+            if site_nw.parent.exists():
+                site_nw.mkdir(parents=True, exist_ok=True)
+                (site_nw / "cortex_memo.json").write_text(memo_serialized, encoding="utf-8")
         except Exception:  # noqa: BLE001
             pass
 

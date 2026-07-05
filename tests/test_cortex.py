@@ -698,3 +698,117 @@ class TestDryRun:
         # Tool call census must reflect what was called
         assert "read_world_state" in memo.get("tool_call_census", {})
         assert "write_memo" in memo.get("tool_call_census", {})
+
+
+# ---------------------------------------------------------------------------
+# 11. NIT1 — memo census consistency: data/ and site/ copies must be identical
+# ---------------------------------------------------------------------------
+
+class TestMemoCensusConsistency:
+    """After _run_tool_loop, both memo copies must carry the same tool_call_census.
+
+    Regression guard for the post-hoc census stamp: _tool_write_memo is called
+    with census={} (census unknown at write time); the stamp runs after the loop
+    and must re-mirror the site copy so the two files are byte-for-byte identical.
+    """
+
+    def test_both_copies_identical_after_dry_run(self, repo):
+        """data/neuralweb/cortex/memo.json == site/neuralweb/cortex_memo.json after run."""
+        from engine.neuralweb.cortex import _run_tool_loop
+
+        # Scripted: read_world_state → write_memo → end_turn
+        sequence = [
+            ("tool_use", "read_world_state", {}, "tu_1"),
+            ("tool_use", "write_memo",
+             {"summary": "Census consistency test",
+              "what_fired": [],
+              "contradictions_review": "",
+              "decaying_families": [],
+              "deserves_operator": []},
+             "tu_2"),
+            ("end_turn", None, None, None),
+        ]
+        seq_iter = iter(sequence)
+
+        mock_client = MagicMock()
+        def _side_effect(**kwargs):
+            kind, name, inp, tid = next(seq_iter)
+            if kind == "end_turn":
+                resp = MagicMock()
+                resp.stop_reason = "end_turn"
+                resp.content = []
+                return resp
+            block = MagicMock()
+            block.type = "tool_use"
+            block.name = name
+            block.input = inp
+            block.id = tid
+            resp = MagicMock()
+            resp.stop_reason = "tool_use"
+            resp.content = [block]
+            return resp
+        mock_client.messages.create.side_effect = _side_effect
+
+        cfg = {"max_tool_calls": 10, "max_tokens": 2048}
+        providers = [{"name": "oauth", "env_var": "X", "cred": "tok",
+                      "client": mock_client, "model": "claude-opus-4-8"}]
+
+        _run_tool_loop(repo, cfg, providers, _NOW_STR, _PROBATION)
+
+        data_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        site_path = repo / "site" / "neuralweb" / "cortex_memo.json"
+
+        assert data_path.exists(), "data memo.json must exist"
+        assert site_path.exists(), "site cortex_memo.json must exist"
+
+        data_memo = json.loads(data_path.read_text(encoding="utf-8"))
+        site_memo = json.loads(site_path.read_text(encoding="utf-8"))
+
+        # Both copies must carry the same census (NIT1 regression guard).
+        assert data_memo.get("tool_call_census") == site_memo.get("tool_call_census"), (
+            f"data census={data_memo.get('tool_call_census')} "
+            f"site census={site_memo.get('tool_call_census')}"
+        )
+        # And the full dicts must be identical.
+        assert data_memo == site_memo, (
+            "data/neuralweb/cortex/memo.json and site/neuralweb/cortex_memo.json "
+            "diverged — the post-hoc census stamp must re-mirror the site copy."
+        )
+
+    def test_both_copies_identical_after_budget_exhaustion(self, repo):
+        """Even when budget is exhausted, site copy must match data copy."""
+        from engine.neuralweb.cortex import _run_tool_loop
+
+        call_count = [0]
+        mock_client = MagicMock()
+        def _side_effect(**kwargs):
+            call_count[0] += 1
+            block = MagicMock()
+            block.type = "tool_use"
+            block.name = "read_world_state"
+            block.input = {}
+            block.id = f"tool_{call_count[0]}"
+            resp = MagicMock()
+            resp.stop_reason = "tool_use"
+            resp.content = [block]
+            return resp
+        mock_client.messages.create.side_effect = _side_effect
+
+        cfg = {"max_tool_calls": 3, "max_tokens": 1024}
+        providers = [{"name": "oauth", "env_var": "X", "cred": "tok",
+                      "client": mock_client, "model": "claude-opus-4-8"}]
+
+        _run_tool_loop(repo, cfg, providers, _NOW_STR, _PROBATION)
+
+        data_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        site_path = repo / "site" / "neuralweb" / "cortex_memo.json"
+
+        assert data_path.exists()
+        assert site_path.exists()
+
+        data_memo = json.loads(data_path.read_text(encoding="utf-8"))
+        site_memo = json.loads(site_path.read_text(encoding="utf-8"))
+
+        assert data_memo == site_memo, (
+            "Budget-exhausted memo: data and site copies diverged."
+        )
