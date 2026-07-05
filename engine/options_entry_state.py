@@ -62,7 +62,6 @@ import numpy as np
 import pandas as pd
 
 from engine import gex_confirm
-from engine.opex import expiration_days
 
 log = logging.getLogger(__name__)
 
@@ -416,12 +415,12 @@ def build_state(root: str | Path | None = None) -> pd.DataFrame:
         wall_down_dist_pct = gex.get("wall_down_dist_pct")
         max_pain_dist_pct = gex.get("max_pain_dist_pct")
 
-        # gamma_regime_structurally_constant: True when GEX data is present.
+        # gamma_regime_structurally_constant: True when a gamma_regime value is present.
         # Audit #29: single-name gamma_regime is structurally constant per ticker
         # (the GEX resolver consistently categorises each name in the same regime
         # over the current ~19-day history).  This caveat column documents that
         # the gamma_regime value should not be interpreted as a time-varying signal.
-        gamma_regime_structurally_constant = bool(gex)
+        gamma_regime_structurally_constant = gamma_regime is not None
 
         # ---- iv_rank fields (STRUCTURALLY NULL until A9 IV-backfill PR) ---
         # A9 ruling: iv_rank_252 requires ~252 trading days of per-name IV history.
