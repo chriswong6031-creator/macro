@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="theme.css">
 <script>
   window.SUPABASE_CFG = {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "FAKE"};
-  window.COMMITTEE_GENERATED = "2026-07-04T12:00:00Z";
+  window.COMMITTEE_GENERATED = "2026-07-05T04:17:49Z";
 </script>
 <style>
 * { box-sizing:border-box; }
@@ -174,6 +174,7 @@ body { padding-bottom:56px; }
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -444,16 +445,16 @@ body { padding-bottom:56px; }
     </div>
     <div class="plain-eng">
       <strong><span class="l-en">In plain English:</span><span class="l-zh">用白话说：</span></strong>
-      <span class="l-en">Each node is an engine, sector, regime, thesis, or episode. Blue edges confirm (signals firing together); red edges contradict (signals pointing opposite directions). Faded edges are older than 30 days. Pulsing edges fired in the last 24 hours.</span><span class="l-zh">每个节点代表引擎、板块、周期、论点或事件。蓝色边确认（信号共同触发）；红色边矛盾（信号方向相反）。淡化的边超过30天。闪烁的边在过去24小时内触发。</span>
+      <span class="l-en">Each node is an engine, sector, regime, thesis, or episode. Blue edges confirm (signals firing together); red edges contradict (signals pointing opposite directions). Edges pulse when the graph was refreshed in the last 24 hours.</span><span class="l-zh">每个节点代表引擎、板块、周期、论点或事件。蓝色边确认（信号共同触发）；红色边矛盾（信号方向相反）。当图表在过去24小时内刷新时，边会闪烁。</span>
     </div>
     <div class="cm-loading" id="graph_loading"><span class="l-en">Loading graph…</span><span class="l-zh">加载图中…</span></div>
     <canvas id="graph_canvas" aria-label="Confluence graph汇聚图"></canvas>
+    <div id="graph_subset_note" class="graph-subset-note" style="font-size:0.82em;color:var(--muted);margin:0.35em 0 0.1em"></div>
     <div class="graph-legend">
       <span class="gl-dot" style="background:var(--link)"></span> <span class="l-en">Engine / Sector node</span><span class="l-zh">引擎/板块节点</span> &nbsp;
       <span class="gl-dot" style="background:color-mix(in srgb,var(--link) 60%,transparent);border:1px solid var(--link)"></span> <span class="l-en">Regime / Thesis</span><span class="l-zh">周期/论点</span> &nbsp;
       <span style="width:28px;height:3px;background:color-mix(in srgb,var(--up) 80%,transparent);display:inline-block;vertical-align:middle"></span> <span class="l-en">Confirms edge</span><span class="l-zh">确认边</span> &nbsp;
-      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--down) 80%,transparent);display:inline-block;vertical-align:middle"></span> <span class="l-en">Contradicts edge</span><span class="l-zh">矛盾边</span> &nbsp;
-      <span style="width:28px;height:3px;background:var(--muted);display:inline-block;vertical-align:middle;opacity:.35"></span> <span class="l-en">Feeds edge (structural)</span><span class="l-zh">馈送边（结构性）</span>
+      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--down) 80%,transparent);display:inline-block;vertical-align:middle"></span> <span class="l-en">Contradicts edge</span><span class="l-zh">矛盾边</span>
     </div>
   </div>
 
@@ -657,7 +658,7 @@ body { padding-bottom:56px; }
     } else {
       html += '<div style="overflow-x:auto"><table class="prov-table">'
         + '<thead><tr>'
-        + '<th>Source</th><th>Family</th><th>Ladder</th><th>Kernel IC</th><th>Wilson LB</th><th>Armed</th><th>Staleness</th><th>Direction</th><th>Graded</th><th>Details</th>'
+        + '<th>Source</th><th>Family</th><th>Ladder</th><th data-tip-en="Shrunken information coefficient — correlation scale, typically &lt;1%" data-tip-zh="压缩信息系数——相关系数尺度，通常&lt;1%">Kernel IC</th><th data-tip-en="Wilson hit-rate CI lower bound — probability scale, not the same unit as Kernel IC" data-tip-zh="Wilson命中率置信区间下界——概率尺度，与IC单位不同">Wilson LB<br><small style=\'font-weight:normal;font-size:10px\'>(hit-rate)</small></th><th>Armed</th><th>Staleness</th><th>Direction</th><th>Graded</th><th>Details</th>'
         + '</tr></thead><tbody>';
       provRows.forEach(function (row, i) {
         html += renderProvRow(row, i);
@@ -668,7 +669,7 @@ body { padding-bottom:56px; }
     // Display-only notice
     html += '<p style="font-size:11px;color:var(--muted);margin-top:10px">'
       + '<em>All kernel IC values are display-only estimates. First FDR decision batch: October 2026. '
-      + 'US tickers only (v1). is_context_only = true on all rows.</em></p>';
+      + 'US tickers only (v1). is_display_only = true on all rows.</em></p>';
 
     view.innerHTML = html;
     view.querySelectorAll('.source-expand').forEach(function (el) {
@@ -796,6 +797,20 @@ body { padding-bottom:56px; }
       if (seen.has(n.id)) return false;
       seen.add(n.id); return true;
     });
+
+    // Subset note: N displayed of M total (engines, sectors, regimes, and theses/episodes
+    // participating in confirms/contradicts edges; structural feeds edges hidden)
+    var subsetEl = document.getElementById('graph_subset_note');
+    if (subsetEl) {
+      var N_shown = displayNodes.length;
+      var M_total = nodes.length;
+      var isZh = document.documentElement.lang === 'zh' || (navigator.language || '').startsWith('zh');
+      if (isZh) {
+        subsetEl.textContent = '显示 ' + N_shown + '（共 ' + M_total + ' 个）节点（引擎、板块、周期，以及参与确认/矛盾边的论点/事件）；结构性馈入边已隐藏。';
+      } else {
+        subsetEl.textContent = 'Showing ' + N_shown + ' of ' + M_total + ' nodes (engines, sectors, regimes, and the theses/episodes participating in confirms/contradicts edges); structural feeds edges hidden.';
+      }
+    }
 
     // Set canvas dimensions
     var W = canvas.offsetWidth || 700;
@@ -1074,7 +1089,7 @@ body { padding-bottom:56px; }
         + (armed ? 'ARMED' : 'DISPLAY') + '</span></div>'
         + '<div class="kf-ic ' + icClass + '">' + icStr + '</div>'
         + '<div class="kf-sub">'
-        + (wlb != null ? 'Wilson LB: ' + (wlb * 100).toFixed(1) + '%' : '') + ' '
+        + (wlb != null ? 'Wilson LB (hit-rate): ' + (wlb * 100).toFixed(1) + '%' : '') + ' '
         + (nEff != null ? '· n=' + nEff : '') + '</div>'
         + '<div class="kf-sub">Horizons: ' + horizons.join(', ') + 'd</div>'
         + (stale.days_since_last_fire != null
