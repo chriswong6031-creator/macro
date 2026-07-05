@@ -2193,20 +2193,27 @@ def main() -> int:
         # weekly_phase comes from profiles[t]["alignment"]["weekly"] (the _tf_phase()
         # value: "rising"/"rolling"/"falling"/"turning"/"unknown"). This is the primary
         # discriminator for ARMED-continuation vs PRIME-bottoming lane detection.
-        # above_trend: sourced from rec["tech"]["above200"] (bool: price > 200d SMA)
-        # which is computed by stock_technicals.snapshot(). Fallback chain:
-        #   tech.above200 → row.above_trend (if already set earlier).
-        def _get_above_trend(r_dict):
-            """Extract above_trend bool from the most reliable source."""
-            # Primary: tech snapshot (computed by stock_technicals.snapshot)
-            _tech = r_dict.get("tech") or {}
-            _ab200 = _tech.get("above200")
-            if _ab200 is not None:
-                return bool(_ab200)
-            # Fallback: already set on the row (e.g., from a prior propagation pass)
-            _existing = r_dict.get("above_trend")
-            if _existing is not None:
-                return bool(_existing)
+        # above_trend: sourced from sig_verdict[t].get("above200") — the signal_gate
+        # already computes this boolean (price > 200d SMA) in gate() and emits it as a
+        # top-level verdict key.  Board rows in row_by_t do NOT carry a "tech" sub-dict
+        # at Step A time (tech snapshot is absent from the buy-loop dict), so the
+        # previous primary path (r_dict.get("tech").get("above200")) always returned
+        # None — hence 0% fill in the P2.4 real-build (VERIFY_P2_4_REALBUILD.md F1).
+        # Fix (AC-5): use sig_verdict[ticker].get("above200") as the primary source.
+        # sig_verdict is built at L1344 (same closure scope) from signal_gate.gate()
+        # which populates above200 for every analysed name.
+        def _get_above_trend(ticker_str):
+            """Extract above_trend bool; primary = sig_verdict[t].above200."""
+            # Primary: signal_gate verdict (above200 populated for all analysed names)
+            _sv_ab = (sig_verdict.get(ticker_str) or {}).get("above200")
+            if _sv_ab is not None:
+                return bool(_sv_ab)
+            # Fallback: already set on the row (e.g. from a prior propagation pass)
+            _r_fb = row_by_t.get(ticker_str)
+            if _r_fb is not None:
+                _existing = _r_fb.get("above_trend")
+                if _existing is not None:
+                    return bool(_existing)
             return None
 
         # buyable = (t, p, tier) triples; _recovery_cands = (t, p) pairs — iterate separately
@@ -2218,7 +2225,7 @@ def main() -> int:
             _wph_a = _align_a.get("weekly")
             if _wph_a is not None:
                 _r_a["weekly_phase"] = _wph_a
-            _atrd_a = _get_above_trend(_r_a)
+            _atrd_a = _get_above_trend(_t_a)
             if _atrd_a is not None:
                 _r_a["above_trend"] = _atrd_a
         for _t_a, _p_a in _recovery_cands:
@@ -2230,7 +2237,7 @@ def main() -> int:
             _wph_a = _align_a.get("weekly")
             if _wph_a is not None:
                 _r_a["weekly_phase"] = _wph_a
-            _atrd_a = _get_above_trend(_r_a)
+            _atrd_a = _get_above_trend(_t_a)
             if _atrd_a is not None:
                 _r_a["above_trend"] = _atrd_a
         # Also propagate weekly_phase + above_trend for watch rows.
@@ -2245,7 +2252,7 @@ def main() -> int:
             _wph_a = _align_a.get("weekly")
             if _wph_a is not None:
                 _r_a["weekly_phase"] = _wph_a
-            _atrd_a = _get_above_trend(_r_a)
+            _atrd_a = _get_above_trend(_t_a)
             if _atrd_a is not None:
                 _r_a["above_trend"] = _atrd_a
 
@@ -2290,9 +2297,20 @@ def main() -> int:
 
         _all_buy_rows = _trend_rows_ordered + _recovery_rows_ordered
 
+        # P2.4 spec §3.1: watch rows must carry lane="watch" so lane_counts has a
+        # "watch" key (not None).  Previously _tag() was only called for buy rows;
+        # watch rows were assembled raw from row_by_t with lane=None — producing the
+        # "null:24" key in lane_counts (VERIFY_P2_4_REALBUILD.md AC-2 gap / F2).
+        def _tag_watch(t):
+            r = row_by_t[t]
+            r.setdefault("lane", "watch")   # don't overwrite if already set
+            if r.get("lane") != "watch":
+                r["lane"] = "watch"
+            return r
+
         wide = {"as_of": alpha_asof, "rank_by": "bottoming-alignment", "gate_go": gate_go,
                 "buy": _all_buy_rows,
-                "watch": [row_by_t[t] for t, _ in watch[:24]],
+                "watch": [_tag_watch(t) for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
                 "concentration": _concentration_stat,
                 # G6a donor-sector: page-level context chip (not per-row; None when insufficient data)
@@ -2303,8 +2321,12 @@ def main() -> int:
             r["conviction"] = profiles.get(t)
             # P2.4 Step D: ext_z top-level field — extension z-score for the anti-chase
             # context chip (display-only per R10; F3 gate promotion is P3's jurisdiction).
-            _extz_p = (profiles.get(t) or {})
-            _extz_v = ((_extz_p.get("axes") or {}).get("extension") or {}).get("z")
+            # Source: ext_map[t]["ext_z"] — the pre-computed per-name extension z-score
+            # built at L1238 via extension_signals(_ext_closes).  The previous path read
+            # profiles[t]["axes"]["extension"]["z"] which is NOT populated at profiles
+            # level — hence 0% fill in the P2.4 real-build (VERIFY_P2_4_REALBUILD.md F3).
+            # Fix: source directly from ext_map which is available in the same scope.
+            _extz_v = (ext_map.get(t) or {}).get("ext_z")
             if _extz_v is not None:
                 try:
                     r["ext_z"] = round(float(_extz_v), 2)
@@ -2312,10 +2334,9 @@ def main() -> int:
                     pass
             # P2.4 Step C: above_trend propagation — final catch-all for rows that
             # weren't captured in Step A (e.g. laggard rows not in buy/watch lists).
-            # Source: tech.above200 (from stock_technicals.snapshot, verified path).
+            # Source: sig_verdict[t].above200 (consistent with Step A fix above).
             if r.get("above_trend") is None:
-                _tech_e = r.get("tech") or {}
-                _atrd_e = _tech_e.get("above200")
+                _atrd_e = (sig_verdict.get(t) or {}).get("above200")
                 if _atrd_e is not None:
                     r["above_trend"] = bool(_atrd_e)
             r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
