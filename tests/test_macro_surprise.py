@@ -375,6 +375,9 @@ STUB_DROP = [
     "Unemployment Insurance Weekly Claims",
     "Gross Domestic Product",
     "Personal Income and Outlays",
+    # Date-suffixed stubs: trailing period tokens must not dilute the alias match
+    "The Employment Situation - June 2026",
+    "Consumer Price Index - May 2026",
 ]
 
 STUB_KEEP = [

@@ -259,22 +259,22 @@ def is_release_stub(title: str) -> bool:
     # Quick value-indicator guard: if the ORIGINAL title clearly carries data, it's news.
     if _VALUE_INDICATORS.search(title):
         return False
-    # Near-exact match: the normalised title must be dominated by the alias (the alias
-    # covers most of the title), using token-ratio: overlap / max_len >= 0.80.
-    # This prevents partial-phrase matches like "Powell cites employment situation..."
-    # from matching the "employment situation" alias.
+    # Near-exact match: the alias must be (almost) fully covered by the title,
+    # AND the title must not carry much beyond the alias. Coverage is measured
+    # against the ALIAS length — not max(title, alias) — so trailing date tokens
+    # ("The Employment Situation - June 2026") don't dilute the ratio; the
+    # extra-token cap alone bounds how much the title may add. Partial-phrase
+    # matches like "Powell cites employment situation..." still fail on both
+    # counts (incomplete alias coverage and/or too many extra tokens).
     normed_tokens = set(normed.split())
     for alias_norm, _key in _STUB_NORM:
         alias_tokens = set(alias_norm.split())
         if not alias_tokens:
             continue
         overlap = len(normed_tokens & alias_tokens)
-        max_len = max(len(normed_tokens), len(alias_tokens))
-        # Require: (a) high token-overlap ratio AND (b) title not much longer than alias
-        # (a longer title with additional context words is news, not a stub).
-        ratio = overlap / max_len if max_len > 0 else 0
+        alias_coverage = overlap / len(alias_tokens)
         title_extra_tokens = len(normed_tokens - alias_tokens)
-        if ratio >= 0.80 and title_extra_tokens <= 3:
+        if alias_coverage >= 0.80 and title_extra_tokens <= 3:
             return True
     return False
 
