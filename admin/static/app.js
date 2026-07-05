@@ -54,6 +54,7 @@ const TABS = [
   ["overview", "Overview"], ["experiments", "Experiments"], ["vector", "BTC Override"], ["analytics", "Analytics"], ["users", "Users"],
   ["system", "System"], ["health", "Health"], ["features", "Features"],
   ["brief", "AI Brief"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"],
+  ["neural_web", "Neural Web"],
 ];
 let CURRENT = "overview";
 let SUMMARY = null;
@@ -599,6 +600,259 @@ RENDER.content = async () => {
     if (l.count) { const sec = h(`<div></div>`); sec.innerHTML = `<div class="section">Broken internal links <span class="cnt">${l.count}</span></div>
       <table><thead><tr><th>Page</th><th>Link</th></tr></thead><tbody>${l.broken.map(b => `<tr><td class="mono">${esc(b.page)}</td><td class="mono" style="color:var(--bad)">${esc(b.link)}</td></tr>`).join("")}</tbody></table>`; $("#view").appendChild(sec); }
   };
+};
+
+/* ---- NEURAL WEB (W8a) --------------------------------------------------- */
+/* Operator HQ: four collapsible sections over the whole nervous system.
+   Panel reads COMMITTED artifacts only — the VPS-clone model (no engine imports).
+   Every section fails-open: missing artifact → honest 'not yet written' card. */
+
+function nwCollapse(id, title, bodyHtml, open = true) {
+  const uid = "nwsec-" + id;
+  return `<details ${open ? "open" : ""} class="nw-section">
+    <summary class="section" style="cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;opacity:.5">${open ? "▾" : "▸"}</span>${title}
+    </summary>
+    <div id="${uid}">${bodyHtml}</div>
+  </details>`;
+}
+
+function nwMissing(note) {
+  return `<div class="card"><div class="sub" style="color:var(--warn)">${esc(note || "artifact not yet written")}</div></div>`;
+}
+
+function nwFmtAge(hrs) {
+  if (hrs == null) return `<span class="muted">—</span>`;
+  const cls = hrs > 48 ? "bad" : hrs > 30 ? "warn" : "ok";
+  return `<span style="color:var(--${cls})">${fmtAge(hrs)}</span>`;
+}
+
+function nwPill(label, cls) {
+  return `<span class="statpill ${cls}">${esc(label)}</span>`;
+}
+
+/* Section A — Engine-Health Board */
+function nwSectionEngineHealth(eh) {
+  if (!eh) return nwMissing("engine_health missing");
+  let html = `<div class="grid">`;
+
+  // Spine index card
+  const sp = eh.spine || {};
+  html += card("Spine Index", sp.missing
+    ? `<div class="sub" style="color:var(--warn)">${esc(sp.note)}</div>`
+    : `<div class="kv"><span>Produced</span><b>${nwFmtAge(sp.age_hours)} ago</b></div>
+       <div class="kv"><span>Timestamp</span><span class="mono sub">${esc(sp.produced_at || "—")}</span></div>
+       <div class="kv"><span>Hash</span><span class="mono sub">${esc(sp.inputs_hash || "—")}</span></div>`);
+
+  // Kernel decisions card
+  const kd = eh.kernel || {};
+  html += card("Kernel Decisions", kd.missing
+    ? `<div class="sub" style="color:var(--warn)">${esc(kd.note)}</div>`
+    : `<div class="kv"><span>Batch run</span><b>${kd.display_only ? nwPill("none yet — display-only", "s-warn") : nwPill("run", "s-ok")}</b></div>
+       <div class="kv"><span>Next batch due</span><b>${esc(kd.next_batch_due || "—")}</b></div>
+       <div class="kv"><span>Survivors</span><b>${kd.n_survivors != null ? kd.n_survivors : "—"}</b></div>
+       <div class="note muted" style="margin-top:6px">${esc(kd.note || "")}</div>`);
+
+  // SLA compliance card
+  const sla = eh.sla || {};
+  const slaColor = sla.missing ? "warn" : sla.n_breaches === 0 ? "ok" : sla.n_breaches < 5 ? "warn" : "bad";
+  html += card("SLA Compliance", sla.missing
+    ? `<div class="sub" style="color:var(--warn)">${esc(sla.note)}</div>`
+    : `<div class="big" style="color:var(--${slaColor})">${sla.n_breaches}<span class="sub"> breaches</span></div>
+       <div class="sub">${sla.total} artifacts registered · ${sla.n_no_mtime || 0} on-VPS-only (no local mtime)</div>`);
+
+  // Kernel families armed
+  const kf = eh.kernel_families || {};
+  html += card("Kernel Families", kf.missing
+    ? `<div class="sub" style="color:var(--warn)">${esc(kf.note)}</div>`
+    : `<div class="big">${kf.n_armed}<span class="sub">/${kf.n_total} armed</span></div>
+       <div class="sub">${kf.n_armed === 0 ? "No families armed yet" : kf.armed_names.join(", ")}</div>`);
+
+  // Lagging signal families
+  const lg = eh.lagging || {};
+  html += card("Lagging Signal Families", lg.missing
+    ? `<div class="sub" style="color:var(--warn)">${esc(lg.note)}</div>`
+    : `<div class="big" style="color:${lg.n_flagged > 0 ? "var(--warn)" : "var(--ok)"}">${lg.n_flagged}<span class="sub"> flagged</span></div>
+       <div class="sub">${lg.n_families} total families${lg.n_flagged ? " — " + lg.flagged_names.slice(0, 4).join(", ") + (lg.flagged_names.length > 4 ? "…" : "") : " — all clear"}</div>`);
+
+  // Read-gate baseline
+  const rg = eh.read_gate || {};
+  html += card("Read-Gate Baseline", rg.missing
+    ? `<div class="sub" style="color:var(--warn)">${esc(rg.note)}</div>`
+    : `<div class="big">${rg.n_undeclared}<span class="sub"> undeclared readers</span></div>
+       <div class="sub">only-shrinks ratchet — new entries block CI</div>`);
+
+  html += `</div>`;
+
+  // SLA breach table (if any)
+  if (!sla.missing && sla.n_breaches > 0) {
+    const breaches = sla.breaches || [];
+    html += `<div class="section" style="margin-top:14px">SLA Breaches — sorted worst-first <span class="cnt">${breaches.length}</span></div>
+      <table><thead><tr><th>Artifact</th><th>Tier</th><th>Owner</th><th class="r">SLA (h)</th><th class="r">Age (h)</th><th class="r">Overdue (h)</th><th>Path</th></tr></thead><tbody>
+      ${breaches.map(b => `<tr>
+        <td><b>${esc(b.id)}</b></td>
+        <td class="sub">${esc(b.tier)}</td>
+        <td class="sub">${esc(b.owner)}</td>
+        <td class="r">${b.sla_hours}</td>
+        <td class="r" style="color:var(--warn)">${b.age_hours}</td>
+        <td class="r" style="color:var(--bad)">+${b.overdue_hours}</td>
+        <td class="mono sub" style="font-size:11px">${esc(b.path)}</td>
+      </tr>`).join("")}
+      </tbody></table>`;
+  }
+
+  // Kernel families detail table
+  if (!kf.missing && kf.families && kf.families.length) {
+    html += `<div class="section" style="margin-top:14px">Kernel Families Detail <span class="cnt">${kf.families.length}</span></div>
+      <table><thead><tr><th>Family</th><th>Armed</th><th>Days since last fire</th><th>Last fire date</th><th>Horizons</th><th>n_eff</th></tr></thead><tbody>
+      ${kf.families.map(f => `<tr>
+        <td><b>${esc(f.name)}</b></td>
+        <td>${f.armed ? nwPill("armed", "s-ok") : nwPill("not armed", "s-mut")}</td>
+        <td class="r">${f.staleness_days != null ? f.staleness_days : "—"}</td>
+        <td class="mono sub">${esc(f.date_last || "—")}</td>
+        <td class="sub">${esc((f.horizon_keys || []).join(", ") || "—")}</td>
+        <td class="r">${f.n_eff != null ? f.n_eff : "—"}</td>
+      </tr>`).join("")}
+      </tbody></table>`;
+  }
+
+  return html;
+}
+
+/* Section B — Reflexes & Firings */
+function nwSectionReflexLog(rl) {
+  if (!rl) return nwMissing("reflex_log missing");
+  if (rl.missing) return nwMissing(rl.note);
+
+  let html = `<div class="grid">
+    ${card("Registered Reflexes", `<div class="big">${rl.n_registered}</div><div class="sub">in config/reflexes.yml</div>`)}
+    ${card("Mirroring (firings.jsonl live)", `<div class="big" style="color:${rl.n_mirroring > 0 ? "var(--ok)" : "var(--muted)"}">${rl.n_mirroring}</div><div class="sub">of ${rl.n_registered} have firings.jsonl</div>`)}
+  </div>`;
+
+  html += `<div class="section" style="margin-top:14px">All Reflexes <span class="cnt">${(rl.per_reflex || []).length}</span></div>
+    <table><thead><tr><th>Reflex</th><th>Status</th><th>Firings (7d)</th><th>Last fired</th><th>Push-tier candidate</th><th>Claim family</th></tr></thead><tbody>
+    ${(rl.per_reflex || []).map(r => `<tr>
+      <td><b>${esc(r.name)}</b><div class="note sub" style="max-width:280px">${esc(r.description || "")}</div></td>
+      <td>${r.mirroring ? nwPill("mirroring", "s-ok") : nwPill("registered", "s-mut")}</td>
+      <td class="r">${r.n_firings_7d}</td>
+      <td class="mono sub">${r.last_fired ? nwFmtAge(r.last_fired_age_hours) + " ago" : "—"}</td>
+      <td>${r.push_tier_candidate ? nwPill("W6b candidate", "s-warn") : nwPill("sub-hour lane", "s-mut")}</td>
+      <td class="mono sub" style="font-size:11px">${esc(r.claim_family || "—")}</td>
+    </tr>${(r.recent_firings || []).length ? `<tr style="background:var(--line)"><td colspan="6" style="padding:4px 8px">
+      <span class="muted sub">Recent firings: </span>
+      ${r.recent_firings.map(f => `<span class="mono sub" style="margin-right:12px">${esc(f.ts || f.timestamp || f.fired_at || "?")} · ${esc(f.trigger_key || f.action || f.scope_key || "")}</span>`).join("")}
+    </td></tr>` : ""}`).join("")}
+    </tbody></table>`;
+
+  return html;
+}
+
+/* Section C — Bus Graph (Confluence) */
+function nwSectionBusGraph(bg) {
+  if (!bg) return nwMissing("bus_graph missing");
+  if (bg.missing) return nwMissing(bg.note);
+
+  let html = `<div class="card" style="margin-bottom:10px"><div class="sub" style="color:var(--warn)">
+    Confluence is <b>display_only=true</b> — no edge gates or ranks any consumer. Numbers below are informational only.
+  </div></div>`;
+
+  html += `<div class="grid">
+    ${card("Nodes", `<div class="big">${bg.n_nodes}</div><div class="sub">signal nodes in graph</div>`)}
+    ${card("Edges", `<div class="big">${bg.n_edges}</div><div class="sub">${Object.entries(bg.edge_types || {}).map(([t, n]) => `${n} ${t}`).join(" · ") || "—"}</div>`)}
+    ${card("Contradictions", `<div class="big" style="color:${bg.n_contradictions > 0 ? "var(--warn)" : "var(--ok)"}">${bg.n_contradictions}</div>
+      <div class="sub">${Object.entries(bg.by_severity || {}).map(([s, n]) => `${n} ${s}`).join(" · ") || "none"}</div>`)}
+  </div>`;
+
+  if (bg.top_pair_ids && bg.top_pair_ids.length) {
+    html += `<div class="section" style="margin-top:14px">Top Contradiction Pairs</div>
+      <table><thead><tr><th>Pair ID</th><th>Details</th></tr></thead><tbody>
+      ${bg.top_pair_ids.map(pid => {
+        const rec = (bg.top_contradictions || []).find(r => r.pair_id === pid);
+        return `<tr><td class="mono"><b>${esc(pid)}</b></td><td class="sub">${rec
+          ? esc(rec.note || rec.description || JSON.stringify(rec).slice(0, 120))
+          : "—"}</td></tr>`;
+      }).join("")}
+      </tbody></table>`;
+  }
+
+  html += `<div class="sub muted" style="margin-top:8px">as-of ${esc(bg.asof || "—")} · display_only enforced by hard law in graph schema</div>`;
+  return html;
+}
+
+/* Section D — Governance */
+function nwSectionGovernance(gov) {
+  if (!gov) return nwMissing("governance missing");
+  let html = "";
+
+  // Cortex probation card
+  const prob = gov.probation || {};
+  html += `<div class="grid">`;
+  if (prob.missing) {
+    html += card("Cortex Probation", `<div class="sub" style="color:var(--warn)">${esc(prob.note)}</div>`);
+  } else {
+    html += card("Cortex Probation", `
+      <div class="kv"><span>Tier</span><b>${nwPill(prob.tier || "?", prob.granted ? "s-ok" : "s-warn")}</b></div>
+      <div class="kv"><span>A2 granted</span><b style="color:${prob.granted ? "var(--ok)" : "var(--warn)"}">${prob.granted ? "YES" : "NO"}</b></div>
+      <div class="kv"><span>Reason</span><span class="sub">${esc(prob.reason || "—")}</span></div>
+      <div class="kv"><span>Graded / min_n</span><b>${prob.n_graded != null ? prob.n_graded : "—"} / ${prob.min_n}</b></div>
+      <div class="kv"><span>Hits / min_events</span><b>${prob.hits != null ? prob.hits : "—"} / ${prob.min_events}</b></div>
+      ${prob.lapses_at ? `<div class="kv"><span>Lapses at</span><b>${esc(prob.lapses_at)}</b></div>` : ""}`);
+  }
+
+  // Cortex memo card
+  const cm = gov.cortex_memo || {};
+  if (cm.missing) {
+    html += card("Cortex Memo", `<div class="sub" style="color:var(--warn)">${esc(cm.note)}</div>`);
+  } else {
+    html += card("Cortex Memo", `
+      <div class="kv"><span>As of</span><span class="mono sub">${esc(cm.as_of || "—")}</span></div>
+      <div class="note" style="margin-top:6px">${esc(cm.summary || "—")}</div>
+      ${cm.what_fired && cm.what_fired.length ? `<div class="kv" style="margin-top:8px"><span>Fired</span><span class="sub">${cm.what_fired.map(s => esc(s)).join("; ")}</span></div>` : ""}
+      ${cm.deserves_operator && cm.deserves_operator.length ? `<div class="kv"><span>Operator items</span><span class="sub">${cm.deserves_operator.map(s => esc(s)).join("; ")}</span></div>` : ""}
+      <div class="kv" style="margin-top:6px"><span>Tool calls</span><span class="mono sub">${Object.entries(cm.tool_call_census || {}).map(([k, n]) => `${k}×${n}`).join(", ") || "—"}</span></div>
+      ${cm.is_context_only ? `<div class="note muted" style="margin-top:4px">context-only — no live agent authority</div>` : ""}`);
+  }
+
+  html += `</div>`;
+
+  // Governance ledger table
+  const evts = gov.recent_events || [];
+  const EVT_CLS = { authority_grant: "s-ok", authority_lapse: "s-bad", tier_promotion: "s-ok", tier_demotion: "s-bad", article3_review: "s-warn", article6_review: "s-warn", a6_auto_apply: "s-warn", a6_llm_proposed: "s-warn", config_arm: "s-ok", config_disarm: "s-bad", operator_override: "s-warn" };
+  html += `<div class="section" style="margin-top:14px">Governance Ledger — last ${evts.length} events (newest first)</div>`;
+  if (!evts.length) {
+    html += `<div class="card"><div class="sub muted">No governance events yet.</div></div>`;
+  } else {
+    html += `<table><thead><tr><th>Timestamp</th><th>Event type</th><th>Target</th><th>Art.</th><th>Author</th><th>Note</th></tr></thead><tbody>
+      ${evts.map(e => `<tr>
+        <td class="mono sub" style="font-size:11px;white-space:nowrap">${esc((e.ts || "?").slice(0, 19))}</td>
+        <td>${nwPill(e.event_type || "?", EVT_CLS[e.event_type] || "s-mut")}</td>
+        <td class="mono sub" style="max-width:180px;word-break:break-all">${esc(e.target || "—")}</td>
+        <td class="sub">${e.article != null ? "A" + e.article : "—"}</td>
+        <td class="sub">${esc(e.authored_by || "—")}</td>
+        <td class="sub" style="max-width:300px">${esc((e.note || "").slice(0, 160))}</td>
+      </tr>`).join("")}
+    </tbody></table>`;
+  }
+
+  return html;
+}
+
+RENDER.neural_web = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub" style="margin-bottom:12px">Neural Web operator HQ — committed artifacts only (VPS-clone model). Sections collapse/expand. Deployed = auto-updates on git pull.</div>
+    <div class="sub" style="margin-bottom:8px;color:var(--muted)">Loading Neural Web…</div>`;
+  const d = await api("/api/neural_web");
+  if (!d.ok) {
+    v.innerHTML = card("Neural Web", `<div class="sub" style="color:var(--bad)">${esc(d.error || "panel error")}</div>`);
+    return;
+  }
+  v.innerHTML = `
+    <div class="sub" style="margin-bottom:12px">Committed artifacts only · no engine imports · fail-open per section</div>
+    ${nwCollapse("engine_health", "A — Engine-Health Board", nwSectionEngineHealth(d.engine_health), true)}
+    ${nwCollapse("reflex_log", "B — Reflexes &amp; Firings", nwSectionReflexLog(d.reflex_log), true)}
+    ${nwCollapse("bus_graph", "C — Bus Graph (Confluence)", nwSectionBusGraph(d.bus_graph), false)}
+    ${nwCollapse("governance", "D — Governance Ledger", nwSectionGovernance(d.governance), true)}
+  `;
 };
 
 /* ---- boot --------------------------------------------------------------- */
