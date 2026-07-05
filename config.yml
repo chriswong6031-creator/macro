@@ -2426,9 +2426,11 @@ alert_push:
   # (basket_freeze, signal_sanity, healthcheck) already push raw Telegram today with
   # NO dedup and NO priority floor. Routing them through push_ops_alert() reduces
   # operator noise strictly — the dedup window + priority floor suppress repeat fires
-  # that would otherwise reach the phone. The operator can disable at any time by
-  # setting enabled: false; the migrated senders then fall silent (no fallback to
-  # direct send). Signal-sentinel migrations (vector/commodity) are phase 3 and are
+  # that would otherwise reach the phone. enabled: false turns off ONLY the
+  # dedup/priority/ledger layer — the migrated ops senders fall back to raw direct
+  # dispatch (ops/liveness alerts are never silenced). enabled: true is the
+  # noise-REDUCED mode (priority floor + 6h dedup). Signal-sentinel migrations
+  # (vector/commodity) are phase 3 and are
   # NOT enabled here. Per design adjudication 2026-07-04: this IS the Article-2
   # operator-attention event; it is stated plainly in the W6b PR body.
   enabled: true
