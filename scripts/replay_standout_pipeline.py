@@ -151,20 +151,37 @@ log = logging.getLogger("replay")
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _load_sector_map() -> dict[str, str]:
-    """Load ticker→sector from us_standouts.json (buy+watch rows). Falls back
-    to empty dict when the file is absent — sector is display context only."""
+    """Load ticker→sector for the whole replay universe.
+
+    v3 (post full-universe run): the v2 source (us_standouts.json buy+watch
+    rows) covered only ~6% of the 1,033-ticker universe and silently gutted
+    rs_sector_quartile (5% fill on fires vs 83% among labeled names). Primary
+    source is now the breadth constituents panels (503 + 400 names with a
+    `sector` column); us_standouts rows layer on top as an override. Labels
+    are the CURRENT GICS snapshot, not PIT-historical — the P1.2 PREREG
+    already carries this caveat; delisted ex-members absent from the current
+    panels remain unlabeled (honest null, ~10% of universe)."""
+    sector_map: dict[str, str] = {}
+    for cpath in (CANONICAL_DATA / "breadth" / "constituents.parquet",
+                  CANONICAL_DATA / "midcap_breadth" / "constituents.parquet"):
+        try:
+            cdf = pd.read_parquet(cpath)
+            for t, s in cdf["sector"].items():
+                if isinstance(t, str) and t and isinstance(s, str) and s:
+                    sector_map[t] = s
+        except Exception:
+            continue
     try:
         with open(US_STANDOUTS_JSON) as f:
             d = json.load(f)
-        sector_map: dict[str, str] = {}
         for row in (d.get("buy") or []) + (d.get("watch") or []):
             t = row.get("ticker") or ""
             s = row.get("sector") or ""
             if t and s:
                 sector_map[t] = s
-        return sector_map
     except Exception:
-        return {}
+        pass
+    return sector_map
 
 
 def _read_close(path: Path) -> pd.Series | None:
