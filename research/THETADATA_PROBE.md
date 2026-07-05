@@ -238,6 +238,30 @@ BOTH acceptance bars passed with n=16,366 (3.3× MIN_N_TRADES).  Fable adjudicat
 required before flipping `direction_reliable: true` in the root gate (per §7.1).
 `direction_reliable_tape: true` in the sub-key records the measurement.
 
+### 4.6 FABLE ADJUDICATION (2026-07-04) — RATIFIED, scoped to tape
+
+Ruling on the pre-committed §7.1 acceptance criteria (first valid calibration, §4.3):
+
+1. **`thetadata_tape.direction_reliable_tape: true` is RATIFIED as the standing verdict
+   for `signing_source=tape` features.** Both bars met at adequate n (agreement 0.8848 ≥
+   0.75, in the literature band 0.77–0.84; net-sign recovery 0.80 ≥ 0.75 vs the 0.41
+   bar-data baseline that killed F7). The criteria were pre-committed before measurement;
+   they are not renegotiated in either direction post-hoc.
+2. **The root `direction_reliable: false` stays false permanently** — it describes
+   BAR-sourced signing (minute aggregates, 0.41), which remains dead. Consumers must
+   key on `signing_source`; mixed-source aggregates remain forbidden (LIVE_ORDER_FLOW
+   §8.2). The root key is a legacy verdict about a different instrument, not a pending
+   upgrade slot.
+3. **O-OPT §2.2 signed-legs condition is SATISFIED on the tape side** — signed features
+   built from trade+NBBO (`signing_source=tape`) may enter O-OPT as gate-eligible legs
+   once the T2a feature store exists.
+4. **Continuous-validation follow-up registered:** the calibration is one day, one
+   20-min window, 15 contracts (vs the Databento benchmark's 1,167). As T2a builds,
+   re-run the calibration on ≥5 additional sessions spanning a high-VIX and a calm day;
+   if any session's agreement or recovery drops below 0.75, the ratification SUSPENDS
+   pending investigation (recorded here). Direction tone in UI stays `~`-soft until the
+   multi-session extension confirms.
+
 ---
 
 ## §5 API Contract Ambiguities — All Resolved
