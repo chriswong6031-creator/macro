@@ -131,14 +131,11 @@
 
   <div id="sc-app"><div class="empty">{{ t('Loading…', '加载中…') }}</div></div>
 
-  <div class="sc-foot">{{ t(
-    "Equal-weight synthetic member-average index per 同花顺 concept; <b>today's</b> curated THS membership (a descriptive consolidated tape, hindsight-curated — not an out-of-sample backtest). EOD daily. 3-day bars are calendar-business-day buckets. The cascade is leak-free (it projects from past bars only); A-share suspensions are carried forward and limit-up/down days reflect traded reality. Concepts with fewer than 3 priced members or under ~1y history are dropped entirely; those with <b>fewer than 6 priced members are shown but flagged ⚠ thin and collapsed out of the headline lists</b> — an equal-weight index on so few names is driven by 1–2 stocks, so its tier &amp; regime read is high-variance (a heuristic breadth flag, not a validated reliability number). The regime base rates were measured on US sector ETFs and are NOT shown for China — but the BUY/SETUP/TOPPING/SELL state logic is market-agnostic technical analysis. DISPLAY-ONLY entry-quality / risk — confirm before acting; not alpha.",
-    "每个同花顺概念为等权合成成分均值指数；采用<b>当前</b>精选同花顺成分（描述性合并行情，后视精选——非样本外回测）。日终数据。三日K线按日历交易日分桶。级联无未来函数（仅用过去K线外推）；A股停牌按前收延续，涨跌停日反映真实成交。有价成分少于3只或历史不足约1年的概念直接剔除；<b>少于6只有价成分的概念仍展示但标记 ⚠ 偏薄并从头条列表折叠</b>——如此少成分的等权指数由1-2只个股主导，层级与状态读数高波动（启发式宽度标记，非验证过的可信度数值）。状态机基准率基于美国行业ETF测得，故不在中国展示——但 买入/预备/见顶/卖出 状态逻辑为市场无关的技术分析。仅供展示的入场质量/风险——行动前请确认；非阿尔法。") }}</div>
+  <div class="sc-foot">{{ t('Built', '生成于') }} {{ generated_utc }}</div>
 </div>
 
 <footer class="site-footer">
-  <span class="made">Made with ❤️ in Canada</span>
-  <span class="dev">Developed by Chris Wong</span>
+  <span class="made">© 2026 MastermindX Inc</span>
 </footer>
 
 <script src="theme.js"></script>

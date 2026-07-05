@@ -115,14 +115,11 @@
 
   <div id="sc-app"><div class="empty">{{ t('Loading…', '加载中…') }}</div></div>
 
-  <div class="sc-foot">{{ t(
-    "Equal-weight synthetic member-average index per group; <b>today's</b> S&amp;P-500 / curated membership (a descriptive consolidated tape, survivorship-tinted — not an out-of-sample backtest). EOD daily. 3-day bars are calendar-business-day buckets (not TradingView's session-from-IPO anchor, the same known offset that applies to single names). The cascade is leak-free (it projects from past bars only). Thin sub-industries (&lt;3 priced members or &lt;~1y history) are omitted and counted under coverage. The state machine's SPDR-calibrated base rates are out-of-domain here and are deliberately not shown as validated numbers. DISPLAY-ONLY entry-quality / risk — confirm before acting.",
-    "每组为等权合成成分均值指数；采用<b>当前</b>标普500/精选成分（描述性合并行情，含幸存者偏差——非样本外回测）。日终数据。三日K线按日历交易日分桶（非 TradingView 自IPO按交易日分组的锚点，与个股相同的已知偏移）。级联无未来函数（仅用过去K线外推）。过薄子行业（少于3只有价成分或不足约1年历史）已省略并计入覆盖。状态机的 SPDR 校准基准率在此为域外，故不作为已验证数字展示。仅供展示的入场质量/风险——行动前请确认。") }}</div>
+  <div class="sc-foot">{{ t('Built', '生成于') }} {{ generated_utc }}</div>
 </div>
 
 <footer class="site-footer">
-  <span class="made">Made with ❤️ in Canada</span>
-  <span class="dev">Developed by Chris Wong</span>
+  <span class="made">© 2026 MastermindX Inc</span>
 </footer>
 
 <script src="theme.js"></script>

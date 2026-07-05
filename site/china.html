@@ -1022,6 +1022,7 @@
   .cmd-hero .ms-divider::after { content: ""; flex: 1; height: 1px; background: var(--hair); }
   html[data-lang="zh"] .cmd-hero .ms-divider { letter-spacing: 0; }
   @media (prefers-reduced-motion: reduce) { .cmd-hero .qm { transition: none; } }
+  body.page-china, body.page-china-stocks { padding-top: 26px; }
 </style>
 </head>
 <body class="page-china">
@@ -1330,7 +1331,7 @@
     <div class="rrx-id">
       <div class="rrx-ttl"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>
         <span class="rrx-badge"><span class="l-en">CAUTION</span><span class="l-zh">警戒</span> · 85/100</span>
-        <span class="help">?<span class="tip"><span class="l-en">A leading drawdown-risk gauge, built only from signals that passed a strict backtest. It watches the kinds of stress that actually lead this market's drawdowns and stays quiet until the broad market is actually breaking. It measures the ODDS of a pullback, not the direction — use it to size down, never to pick stocks. Every call is graded afterwards and the gauge is re-tuned from its own misses.</span><span class="l-zh">领先的回撤风险指标，仅由通过严格回测的信号构成。它监测真正领先本市场回撤的压力类型，在大盘真正破位前保持沉默。它衡量回撤的“概率”而非方向——用于降低仓位，绝非选股。每次判断事后都会被评判，并据其失误自我再校准。</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Pullback-risk gauge. Use high readings to trim risk, not to pick stocks.</span><span class="l-zh">回撤风险仪表。高读数用于降风险，不用于选股。</span></span></span>
       </div>
       <div class="rrx-dom"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></div>
 
@@ -2284,7 +2285,7 @@
 
   <div class="panel span12" id="china-news">
     <h2>📰 <span class="l-en">Macro news & official policy tone</span><span class="l-zh">宏观新闻与官方政策基调</span>
-      <span class="help">?<span class="tip"><span class="l-en">Three keyless, display-only legs. (1) Official policy tone — a z-score of a crude keyword proxy on the daily CCTV 新闻联播 (Xinwen Lianbo) broadcast: does official language lean supportive/pro-growth or cautious/risk-tilted? Read RELATIVE (z vs a trailing window), never as an absolute sentiment. (2) Official policy/release pages plus global wire via GDELT. (3) Eastmoney 全球财经快讯. Headlines are theme-gated, deduped, scored for macro importance/channel/ticker relevance, then intelligence-ranked. No per-headline AI. Nothing here feeds any score, signal, regime or allocation, and the mechanical model never sees it.</span><span class="l-zh">三条无需密钥、仅展示的分腿。（1）官方政策基调 —— 对每日央视《新闻联播》文本的粗略关键词代理做 z 标准化：官方措辞偏积极/稳增长，还是偏谨慎/防风险？按相对值（相对滚动窗口的 z）解读，而非绝对情绪。（2）官方政策/发布页面与 GDELT 全球新闻线。（3）东方财富《全球财经快讯》。头条经主题筛选、去重，并按宏观重要性、传导通道与相关标的打分后排序。无逐条新闻 AI。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Official tone and selected macro headlines.</span><span class="l-zh">官方基调与筛选后的宏观新闻。</span></span></span>
     </h2>
 
     <div class="cn-tone">
@@ -2395,13 +2396,13 @@
   <!-- ===================== REGIME PLAYBOOK (posture · where · next · calibration) ===================== -->
   <div class="panel span12" id="regime-playbook">
     <h2><span class="l-en">Regime playbook — posture, where we are & what's next</span><span class="l-zh">周期策略 — 姿态、所处位置与下一步</span>
-      <span class="help">?<span class="tip"><span class="l-en">How to play the current regime: the risk-posture dial (built from the quad's calibrated edge + live internals), where this regime sits vs its own history, the base-rate odds for what comes next, and the honest calibration note. Sector names are risk filters — no stable monthly single-sector outperformance signal exists in China.</span><span class="l-zh">如何交易当前周期：风险姿态刻度盘（由象限校准优势＋实时内部结构构建）、当前周期相对自身历史的位置、下一步的基准概率，以及诚实的校准说明。板块名称是风险过滤器 — 中国不存在稳定的月度单一板块跑赢信号。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Posture, sector filters and likely next regime.</span><span class="l-zh">姿态、板块过滤与下一周期概率。</span></span></span>
     </h2>
 
   <!-- ===================== HOW TO TRADE NOW ===================== -->
   <div class="msec flush">
     <h3 class="msec-h"><span class="l-en">How to trade the current regime</span><span class="l-zh">如何交易当前周期</span>
-      <span class="help">?<span class="tip"><span class="l-en">The dial is the headline: how much risk current conditions support, built from the quad's calibrated edge plus live internals (PBoC liquidity, margin crowding, southbound flow, the M1-M2 scissors). Sector names are risk filters — no stable monthly single-sector outperformance signal exists in China.</span><span class="l-zh">刻度盘是核心：当前条件支持多大风险，由象限的校准优势加实时内部结构（央行流动性、两融拥挤度、南向资金、M1-M2 剪刀差）构建。板块名称是风险过滤器 — 中国不存在稳定的月度单一板块跑赢信号。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">The dial shows how much risk current conditions support.</span><span class="l-zh">刻度盘显示当前条件支持多少风险。</span></span></span>
     </h3>
     <div class="pdial">
 
@@ -3237,9 +3238,8 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-05 04:18 UTC ·
-  <span class="l-en">Free public data (yfinance + Eastmoney), mechanical &amp; backtested · not investment advice</span><span class="l-zh">免费公开数据（yfinance + 东方财富），机械化并经回测 · 非投资建议</span><br>
-  <span class="l-en">Sector ETFs ~5y history (display-grade RS); regime &amp; ladder calibrated on the deep 2006–2026 panel.</span><span class="l-zh">板块ETF约5年历史（展示级相对强弱）；周期与阶梯基于2006–2026深度样本校准。</span>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-05 04:18 UTC<br>
+  <span class="made">© 2026 MastermindX Inc</span>
 </div>
 
 <script>
