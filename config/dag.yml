@@ -274,6 +274,14 @@ lanes:
       - id: build_bottom_sensors
         module: scripts.build_bottom_sensors
         note: non-fatal; display-only bottom-sensor envelope (Amendment 1 Lane B0) — wired 2026-07-06 after build_world_state; benchmark 2.29s
+      - id: build_thesis_funnel_history
+        module: scripts.research.build_thesis_funnel_snapshot
+        note: >
+          non-fatal; LT-4 thesis funnel longitudinal history append (PR-A2).
+          Invoked as build_thesis_funnel_snapshot --write-history; gated on that
+          flag per sole-advancer law. Appends keep-FIRST rows (ticker, snapshot_date)
+          to data/research/thesis_funnel_history.parquet. Runs after build_bottom_sensors.
+          Display-only; no scored_path_surfaces; FIREWALL LH-R1.
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)

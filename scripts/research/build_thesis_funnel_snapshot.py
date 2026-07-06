@@ -13,6 +13,9 @@ Output:
   data/research/thesis_funnel_states.parquet
   data/research/thesis_funnel_states_manifest.json
 
+Optional (nightly-only via --write-history):
+  data/research/thesis_funnel_history.parquet   (append-only longitudinal store)
+
 Synapse: config/synapse.yml
   tier: display
   horizon_role: hold_thesis
@@ -29,10 +32,15 @@ Timing:
   computation for each ticker is in-memory (pure function with no I/O).
   The main bottleneck is parquet I/O at startup.
 
+Nightly-only write law (--write-history):
+  The history append is gated on this flag.  The daily.yml engine job passes it;
+  on-demand and smoke runs MUST NOT pass it (sole-advancer law).
+
 Usage:
     python scripts/research/build_thesis_funnel_snapshot.py
     python scripts/research/build_thesis_funnel_snapshot.py --dry-run
     python scripts/research/build_thesis_funnel_snapshot.py --smoke  # first 200 tickers
+    python scripts/research/build_thesis_funnel_snapshot.py --write-history  # nightly only
 """
 from __future__ import annotations
 
@@ -258,6 +266,15 @@ def main(argv: list[str] | None = None) -> int:
                         help="Compute but do not write output files")
     parser.add_argument("--smoke", action="store_true",
                         help="First 200 tickers only (fast smoke-test)")
+    parser.add_argument(
+        "--write-history",
+        action="store_true",
+        help=(
+            "Append snapshot rows to data/research/thesis_funnel_history.parquet "
+            "(keep-FIRST per ticker+date). NIGHTLY ONLY — sole-advancer law. "
+            "Never pass from on-demand / smoke / dry-run invocations."
+        ),
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(
@@ -336,6 +353,22 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {'TOTAL':<35}  {len(df)}")
     print(f"\n  elapsed: {elapsed:.1f}s  ({len(tickers)} tickers)")
     print(f"  as_of: {date.today()}")
+
+    # ---- Longitudinal history append (nightly-only; gated on --write-history) ----
+    if args.write_history:
+        try:
+            from scripts.research.build_thesis_funnel_history import (  # noqa: PLC0415
+                append_history,
+            )
+            summary = append_history(df, snapshot_date=str(date.today()))
+            log.info(
+                "thesis_funnel_history: wrote=%d skipped=%d drift=%s",
+                summary["n_written"],
+                summary["n_skipped"],
+                summary["drift_detected"],
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("thesis_funnel_history: append failed (non-fatal): %s", exc)
 
     return 0
 

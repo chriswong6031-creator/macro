@@ -1045,6 +1045,18 @@ jobs:
         # Benchmark: 2.29s on the full US universe (~1722 names, 2026-07-06).
         # Fail-soft: missing optional inputs degrade gracefully; never blocks the commit.
         run: python -m scripts.build_bottom_sensors || echo "::warning::build_bottom_sensors failed (non-fatal - keeping last committed bottom sensors)"
+      - name: LT-4 thesis funnel history append (PR-A2 — nightly longitudinal store)
+        if: always()
+        # LT-4 thesis funnel longitudinal history — append-only per (ticker, snapshot_date).
+        # Runs build_thesis_funnel_snapshot with --write-history (sole-advancer law: this flag
+        # is ONLY passed from this step). Reads data/edgar/{statements,fundamentals_panel,
+        # statements_quarterly}.parquet (committed by collect job). Writes
+        # data/research/thesis_funnel_history.parquet (keep-FIRST per ticker+date; same-date
+        # re-runs are idempotent no-ops). Also writes the snapshot parquet + manifest as a
+        # side-effect. Display-only; no scored_path_surfaces; FIREWALL LH-R1.
+        # Output covered by 'git add data/' in 'commit engine outputs' below.
+        # Benchmark: ~15s (per LT4_FUNNEL_SHADOW_REPORT.md); well under 30s threshold.
+        run: python -m scripts.research.build_thesis_funnel_snapshot --write-history || echo "::warning::build_thesis_funnel_history failed (non-fatal — keeping last committed history)"
       - name: build mastermind context (NW bridge)
         if: always()
         # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and
