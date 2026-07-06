@@ -553,11 +553,18 @@ def _build_fire_coordinates(
                 gaps.append(f"fire_coordinates: panel absent — {len(buy_lane)} buy-lane tickers skipped")
             return []
         coords, agg_gaps = [], []
+        null_tier_skipped = 0
         for entry in buy_lane:
             ticker = str(entry.get("ticker") or "")
             if not ticker:
                 continue
             tier = (entry.get("signal") or {}).get("tier_cascade")
+            # B2: only record fire_coordinates rows for entries the gate actually emitted
+            # (tier_cascade is not None).  held/topped names (tier_cascade=null / eligible=false)
+            # are buy-lane entries but NOT fires — recording them would pollute the fire tape.
+            if tier is None:
+                null_tier_skipped += 1
+                continue
             try:
                 ticker_rows = panel_df[(panel_df["ticker"] == ticker) & (panel_df["date"] == board_as_of)]
                 if hasattr(ticker_rows, "empty") and ticker_rows.empty:
@@ -595,6 +602,11 @@ def _build_fire_coordinates(
             except Exception as exc:  # noqa: BLE001
                 agg_gaps.append(ticker)
                 log.debug("fire_coordinates: failed for %s — %s", ticker, exc)
+        if null_tier_skipped:
+            gaps.append(
+                f"fire_coordinates: {null_tier_skipped} buy-lane entries skipped "
+                f"(tier_cascade=null — held/topped, not fires)"
+            )
         if agg_gaps:
             gaps.append(
                 f"fire_coordinates: {len(agg_gaps)} tickers had no panel row at {board_as_of}: "
@@ -682,7 +694,8 @@ def build_factor_intelligence_state(
         gaps.append("data/factordata/panel/: absent or empty — operating in no-panel mode")
         log.info("build_factor_intelligence_state: no panel — honest gaps mode")
 
-    # Build sub-blocks
+    # Build sub-blocks — ALL gap-producing work (including coordinates) runs BEFORE
+    # state serialization and before the history digest gaps_count is computed (B1).
     panel_block = _build_panel_block(panel_df, as_of_date, gaps)
     scorecard_block = _build_scorecard_block(repo, gaps)
     factor_weather = _build_factor_weather_block(repo, gaps)
@@ -691,6 +704,16 @@ def build_factor_intelligence_state(
     hypotheses_block = _build_hypotheses_block(repo, gaps)
     allowed_actions = _build_allowed_actions()
     board_coordinates = _build_board_coordinates(repo, panel_df, as_of_date, gaps)
+
+    # Build fire_coordinates BEFORE serialization so any gap notes it appends
+    # (e.g. "fire_coordinates: panel absent — N buy-lane tickers skipped") are
+    # captured in the state artifact and in the history digest's gaps_count (B1).
+    fire_coords_path = _fire_coords_path(repo)
+    fire_rows_pending: list[dict[str, Any]] = []
+    try:
+        fire_rows_pending = _build_fire_coordinates(repo, panel_df, as_of_date, gaps)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_factor_intelligence_state: fire_coordinates build failed — %s", exc)
 
     state: dict[str, Any] = {
         "schema": _SCHEMA,
@@ -722,7 +745,8 @@ def build_factor_intelligence_state(
     except Exception as exc:  # noqa: BLE001
         log.error("build_factor_intelligence_state: FAILED to write state artifact — %s", exc)
 
-    # Append history digest (idempotent on as_of)
+    # Append history digest (idempotent on as_of) — gaps_count uses the FINAL gaps
+    # list (after fire_coordinates ran above), so it matches the persisted artifact (B1).
     history_path = _history_path(repo)
     try:
         if as_of_date not in _load_jsonl_as_of_keys(history_path):
@@ -735,21 +759,19 @@ def build_factor_intelligence_state(
     except Exception as exc:  # noqa: BLE001
         log.warning("build_factor_intelligence_state: history append failed — %s", exc)
 
-    # Append fire coordinates (idempotent on (as_of, ticker))
-    fire_coords_path = _fire_coords_path(repo)
+    # Persist fire coordinates (idempotent on (as_of, ticker)) — rows already built above (B1).
     try:
-        fire_rows = _build_fire_coordinates(repo, panel_df, as_of_date, gaps)
-        if fire_rows:
+        if fire_rows_pending:
             existing_keys = _load_jsonl_ticker_keys(fire_coords_path)
             n_written = 0
-            for row in fire_rows:
+            for row in fire_rows_pending:
                 key = (str(row.get("as_of") or ""), str(row.get("ticker") or ""))
                 if key not in existing_keys:
                     _append_jsonl_row(fire_coords_path, row)
                     n_written += 1
             log.info(
                 "build_factor_intelligence_state: wrote %d/%d fire coordinates for %s",
-                n_written, len(fire_rows), as_of_date,
+                n_written, len(fire_rows_pending), as_of_date,
             )
     except Exception as exc:  # noqa: BLE001
         log.warning("build_factor_intelligence_state: fire_coordinates append failed — %s", exc)

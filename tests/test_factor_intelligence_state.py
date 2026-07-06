@@ -363,3 +363,123 @@ def test_nan_coerced_to_null(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     # Round-trip: must parse cleanly
     parsed = json.loads(raw_text)
     assert isinstance(parsed, dict)
+
+
+# ---------------------------------------------------------------------------
+# Test (B1 regression): panel absent → fire_coordinates gap in PERSISTED artifact
+# ---------------------------------------------------------------------------
+
+def test_b1_fire_coordinates_gap_in_persisted_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """B1 regression: with panel absent, persisted factor_intelligence_state.json gaps list
+    contains the fire_coordinates gap note, and the history row's gaps_count matches
+    the persisted artifact's len(gaps)."""
+    # Provide standouts so the panel-absent branch of _build_fire_coordinates fires
+    _make_standouts(tmp_path, _AS_OF, ["AAPL", "MSFT"])
+    _patch_world_state(monkeypatch)
+
+    state = build_factor_intelligence_state(root=tmp_path, as_of_date=_AS_OF)
+
+    # The returned state dict must contain the fire_coordinates gap
+    fire_coord_gaps = [g for g in state["gaps"] if "fire_coordinates" in g and "panel absent" in g]
+    assert fire_coord_gaps, (
+        "Expected a 'fire_coordinates: panel absent' gap note in the in-memory state, "
+        f"but gaps were: {state['gaps']}"
+    )
+
+    # The PERSISTED artifact must also contain the same gap note (B1: written after gap is appended)
+    data_path = tmp_path / "data" / "neuralweb" / "factor_intelligence_state.json"
+    assert data_path.exists(), "State artifact not written"
+    persisted = json.loads(data_path.read_text(encoding="utf-8"))
+    persisted_fire_gaps = [
+        g for g in persisted["gaps"] if "fire_coordinates" in g and "panel absent" in g
+    ]
+    assert persisted_fire_gaps, (
+        "B1 failure: fire_coordinates gap note was NOT present in the persisted artifact. "
+        f"Persisted gaps: {persisted['gaps']}"
+    )
+
+    # History row's gaps_count must match the persisted artifact's len(gaps)
+    hist_path = tmp_path / "data" / "factordata" / "factor_state_history.jsonl"
+    assert hist_path.exists(), "History JSONL not written"
+    hist_rows = [json.loads(l) for l in hist_path.read_text().splitlines() if l.strip()]
+    assert len(hist_rows) == 1
+    history_gaps_count = hist_rows[0]["gaps_count"]
+    persisted_gaps_count = len(persisted["gaps"])
+    assert history_gaps_count == persisted_gaps_count, (
+        f"B1 failure: history row gaps_count={history_gaps_count} != "
+        f"persisted artifact len(gaps)={persisted_gaps_count}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Test (B2): null-tier buy-lane entry → in board_coordinates, NOT in fire_coordinates
+# ---------------------------------------------------------------------------
+
+def _make_standouts_mixed_tier(root: Path, as_of: str) -> None:
+    """Standouts with one T1-tier entry (AAPL) and one null-tier entry (HELD)."""
+    buy = [
+        {"ticker": "AAPL", "signal": {"tier_cascade": "T1", "eligible": True}},
+        {"ticker": "HELD", "signal": {"tier_cascade": None, "eligible": False}},
+    ]
+    _write_json(root / "site" / "factordata" / "us_standouts.json", {
+        "as_of": as_of,
+        "buy": buy,
+        "reduce": [],
+    })
+
+
+def test_b2_null_tier_entry_in_board_not_in_fire(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """B2: a buy-lane entry with tier_cascade=null appears in latest_board_coordinates
+    (diagnostic context) but NOT in fire_coordinates (fire tape)."""
+    _make_synthetic_panel(tmp_path, _AS_OF)
+    # Extend the panel to include HELD ticker
+    panel_dir = tmp_path / "data" / "factordata" / "panel"
+    month = _AS_OF[:7]
+    part_path = panel_dir / month / "panel.parquet"
+    existing = pd.read_parquet(part_path)
+    import pandas as _pd
+    dates = _pd.bdate_range(end=_AS_OF, periods=65).strftime("%Y-%m-%d").tolist()
+    extra_rows = [
+        {
+            "date": d, "ticker": "HELD", "style_regime": "value",
+            "style_regime_pending": None, "dna_class": "value_deep",
+            "alibi_share_20d": 0.3, "twin_bleed_flag": False,
+            "twin_rel_20d": 0.0, "alpha_z_house": 0.5,
+            "contrib_20d_momentum": 0.01, "contrib_20d_quality": 0.02, "contrib_20d_value": 0.03,
+        }
+        for d in dates
+    ]
+    combined = _pd.concat([existing, _pd.DataFrame(extra_rows)], ignore_index=True)
+    combined.to_parquet(part_path, index=False)
+
+    _make_standouts_mixed_tier(tmp_path, _AS_OF)
+    _patch_world_state(monkeypatch)
+
+    state = build_factor_intelligence_state(root=tmp_path, as_of_date=_AS_OF)
+
+    # board_coordinates: HELD (null tier) should appear — it's diagnostic context for all buy-lane names
+    board_tickers = {entry["ticker"] for entry in state["latest_board_coordinates"]}
+    assert "HELD" in board_tickers, (
+        f"B2: HELD (null-tier) should be in latest_board_coordinates, but got: {board_tickers}"
+    )
+    assert "AAPL" in board_tickers, "AAPL (T1) should also be in latest_board_coordinates"
+
+    # fire_coordinates: HELD must NOT appear — null tier_cascade means not a fire
+    fire_path = tmp_path / "data" / "factordata" / "fire_coordinates.jsonl"
+    assert fire_path.exists(), "fire_coordinates.jsonl not written"
+    fire_rows = [json.loads(l) for l in fire_path.read_text().splitlines() if l.strip()]
+    fire_tickers = {r["ticker"] for r in fire_rows}
+    assert "HELD" not in fire_tickers, (
+        f"B2 failure: HELD (null-tier) should NOT be in fire_coordinates, but found: {fire_tickers}"
+    )
+    assert "AAPL" in fire_tickers, "AAPL (T1) should be in fire_coordinates"
+
+    # A gap/info note about the skipped null-tier entry should be present
+    null_tier_gaps = [g for g in state["gaps"] if "null" in g.lower() or "held" in g.lower() or "skipped" in g.lower()]
+    assert null_tier_gaps, (
+        f"B2: expected a gap note about null-tier skipped entries, gaps were: {state['gaps']}"
+    )

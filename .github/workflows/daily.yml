@@ -1369,7 +1369,8 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           # Own commit lane (W7b PR2 + P1-D): all cortex + factor_attention subtrees — STAGING LAW
           git add data/reflexes/cortex_attention/ 2>/dev/null || true
-          git add data/reflexes/factor_attention/ 2>/dev/null || true
+          git add data/reflexes/factor_attention/grades.jsonl 2>/dev/null || true
+          git add data/reflexes/factor_attention/probation.json 2>/dev/null || true
           git add data/neuralweb/cortex/ 2>/dev/null || true
           git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
           git add data/neuralweb/governance.jsonl 2>/dev/null || true
