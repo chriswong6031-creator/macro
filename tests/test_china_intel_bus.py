@@ -215,6 +215,32 @@ def test_regime_chip_for_date_not_in_index(tmp_path, monkeypatch):
     assert result is None
 
 
+def test_regime_chip_weekend_date_backward_asof(tmp_path, monkeypatch):
+    """Weekend-dated event (regime_history is trading-days-only) maps back to
+    the prior trading day's row — exact-match would silently drop the chip."""
+    import pandas as pd
+    import types
+    import engine.china_intel_bus as _bus
+
+    p = tmp_path / "data" / "china_regime"
+    p.mkdir(parents=True)
+    df = pd.DataFrame({
+        "quad": ["Q2", "Q3"],
+        "quad_name": ["Reflation", "Stagflation"],
+        "liquidity": ["expanding", "contracting"],
+        "cycle": ["early", "late"],
+    }, index=pd.DatetimeIndex(["2026-07-02", "2026-07-03"]))  # Thu, Fri
+    df.to_parquet(p / "regime_history.parquet")
+
+    fake_config = types.SimpleNamespace(ROOT=tmp_path)
+    monkeypatch.setattr(_bus, "config", fake_config)
+    _bus._REGIME_HISTORY_CACHE.clear()
+
+    result = _bus._regime_chip_for_date("2026-07-05")  # Sunday announcement
+    assert result is not None
+    assert result["quad"] == "Q3"  # Friday's row, never a later one
+
+
 def test_policy_phrase_events_get_regime_chips(tmp_path, monkeypatch):
     """recent_events get regime_chip stamped when parquet has the date."""
     import pandas as pd

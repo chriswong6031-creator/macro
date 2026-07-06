@@ -99,19 +99,25 @@ def _regime_chip_for_date(date_str: str) -> dict | None:
         if pstr not in _REGIME_HISTORY_CACHE:
             if not p.exists():
                 return None
-            _REGIME_HISTORY_CACHE[pstr] = pd.read_parquet(p, columns=["quad", "quad_name", "liquidity", "cycle"])
+            _df = pd.read_parquet(p, columns=["quad", "quad_name", "liquidity", "cycle"])
+            _df.index = pd.to_datetime(_df.index)
+            _REGIME_HISTORY_CACHE[pstr] = _df.sort_index()
         df = _REGIME_HISTORY_CACHE[pstr]
         if df is None or df.empty:
             return None
-        key = str(date_str)[:10]
-        try:
-            row = df.loc[key]
-        except KeyError:
-            return None
-        quad = str(row["quad"]) if not isinstance(row, pd.DataFrame) else str(row["quad"].iloc[0])
-        quad_name = str(row["quad_name"]) if not isinstance(row, pd.DataFrame) else str(row["quad_name"].iloc[0])
-        liquidity = str(row["liquidity"]) if not isinstance(row, pd.DataFrame) else str(row["liquidity"].iloc[0])
-        cycle = str(row["cycle"]) if not isinstance(row, pd.DataFrame) else str(row["cycle"].iloc[0])
+        # Backward as-of join: latest regime row AT/BEFORE the event date.
+        # Exact-match would drop weekend-dated announcements and future-dated
+        # unlocks (regime_history is trading-days-only, ends today). PIT-honest:
+        # never reads a regime row later than the event date.
+        ts = pd.Timestamp(str(date_str)[:10])
+        pos = df.index.get_indexer([ts], method="ffill")[0]
+        if pos < 0:
+            return None  # event predates regime history
+        row = df.iloc[pos]
+        quad = str(row["quad"])
+        quad_name = str(row["quad_name"])
+        liquidity = str(row["liquidity"])
+        cycle = str(row["cycle"])
         if any(v in ("nan", "", "None", "none") for v in (quad, quad_name)):
             return None
         return {"quad": quad, "quad_name": quad_name, "liquidity": liquidity, "cycle": cycle}

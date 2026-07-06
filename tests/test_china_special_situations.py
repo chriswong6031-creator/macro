@@ -470,7 +470,12 @@ def test_regime_chip_happy_path(tmp_path, monkeypatch):
 
 
 def test_unlock_events_get_regime_chips(tmp_path, monkeypatch):
-    """Unlock events get regime_chip stamped when parquet covers the unlock date."""
+    """FUTURE-dated unlock events map back to the latest available regime row.
+
+    Production shape: regime_history ends TODAY (the nightly cannot write future
+    rows), while unlock events are filtered to date >= today. The backward
+    as-of join must stamp the latest known regime, not KeyError on the future date.
+    """
     import pandas as pd
     import lib.config as cfg
     import engine.china_special_situations as _css
@@ -484,8 +489,9 @@ def test_unlock_events_get_regime_chips(tmp_path, monkeypatch):
     tomorrow = (pd.Timestamp.today() + pd.Timedelta(days=1))
     tomorrow_str = tomorrow.strftime("%Y-%m-%d")
     today = pd.Timestamp.today().strftime("%Y-%m-%d")
+    last_trading = (pd.Timestamp.today() - pd.Timedelta(days=3)).strftime("%Y-%m-%d")
 
-    # Write regime_history with the unlock date
+    # Regime history ends BEFORE the unlock date (the only shape the nightly emits)
     rp = data_dir / "china_regime"
     rp.mkdir(parents=True)
     rdf = pd.DataFrame({
@@ -493,7 +499,7 @@ def test_unlock_events_get_regime_chips(tmp_path, monkeypatch):
         "quad_name": ["Goldilocks"],
         "liquidity": ["expanding"],
         "cycle": ["early"],
-    }, index=pd.DatetimeIndex([tomorrow_str]))
+    }, index=pd.DatetimeIndex([last_trading]))
     rdf.to_parquet(rp / "regime_history.parquet")
 
     # Write unlock fixture
