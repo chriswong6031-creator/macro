@@ -2,7 +2,7 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-02",
-  "generated_utc": "2026-07-06T13:34:23Z",
+  "generated_utc": "2026-07-06T14:07:52Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
@@ -65,14 +65,11 @@
       "earnings_leg": {
         "next_date": "2026-08-06",
         "same_week_peers": [
-          "BIO",
-          "BMY",
           "CVSA",
           "DBX",
           "MATW",
           "NI",
           "NWSA",
-          "OMCL",
           "PJT"
         ],
         "has_data": true
@@ -122,14 +119,11 @@
       "earnings_leg": {
         "next_date": "2026-08-05",
         "same_week_peers": [
-          "BIO",
-          "BMY",
           "CVSA",
           "DBX",
           "HE",
           "MATW",
           "NWSA",
-          "OMCL",
           "PJT"
         ],
         "has_data": true
@@ -226,15 +220,12 @@
       "earnings_leg": {
         "next_date": "2026-08-04",
         "same_week_peers": [
-          "BIO",
-          "BMY",
           "CVSA",
           "DBX",
           "HE",
           "MATW",
           "NI",
-          "NWSA",
-          "OMCL"
+          "NWSA"
         ],
         "has_data": true
       },
@@ -276,22 +267,14 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": true
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-07-30",
         "same_week_peers": [
           "BIO",
-          "CVSA",
-          "DBX",
-          "HE",
-          "MATW",
-          "NI",
-          "NWSA",
-          "OMCL",
-          "PJT",
-          "TR"
+          "OMCL"
         ],
         "has_data": true
       },
@@ -337,14 +320,11 @@
       "earnings_leg": {
         "next_date": "2026-08-06",
         "same_week_peers": [
-          "BIO",
-          "BMY",
           "DBX",
           "HE",
           "MATW",
           "NI",
           "NWSA",
-          "OMCL",
           "PJT"
         ],
         "has_data": true
@@ -387,22 +367,14 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": true
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-07-30",
         "same_week_peers": [
           "BMY",
-          "CVSA",
-          "DBX",
-          "HE",
-          "MATW",
-          "NI",
-          "NWSA",
-          "OMCL",
-          "PJT",
-          "TR"
+          "OMCL"
         ],
         "has_data": true
       },
@@ -444,22 +416,14 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": true
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-07-30",
         "same_week_peers": [
           "BIO",
-          "BMY",
-          "CVSA",
-          "DBX",
-          "HE",
-          "MATW",
-          "NI",
-          "NWSA",
-          "PJT",
-          "TR"
+          "BMY"
         ],
         "has_data": true
       },
@@ -505,14 +469,11 @@
       "earnings_leg": {
         "next_date": "2026-08-04",
         "same_week_peers": [
-          "BIO",
-          "BMY",
           "CVSA",
           "DBX",
           "HE",
           "NI",
           "NWSA",
-          "OMCL",
           "PJT"
         ],
         "has_data": true
@@ -604,11 +565,8 @@
       "earnings_leg": {
         "next_date": "2026-07-23",
         "same_week_peers": [
-          "BIO",
-          "BMY",
           "GEV",
-          "NEE",
-          "OMCL"
+          "NEE"
         ],
         "has_data": true
       },
@@ -652,14 +610,11 @@
       "earnings_leg": {
         "next_date": "2026-08-06",
         "same_week_peers": [
-          "BIO",
-          "BMY",
           "CVSA",
           "HE",
           "MATW",
           "NI",
           "NWSA",
-          "OMCL",
           "PJT"
         ],
         "has_data": true
@@ -704,14 +659,11 @@
       "earnings_leg": {
         "next_date": "2026-08-04",
         "same_week_peers": [
-          "BIO",
-          "BMY",
           "CVSA",
           "DBX",
           "HE",
           "MATW",
           "NI",
-          "OMCL",
           "PJT"
         ],
         "has_data": true

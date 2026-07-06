@@ -258,6 +258,11 @@ def same_thesis_groups(
     Uses a simple union-find to extract connected components where every edge
     weight >= threshold. Emits groups of size >= min_size.
 
+    Membership is single-linkage/transitive: a name may join a group via ONE
+    strong edge >= 0.65, not pairwise cohesion. Hidden concentration through a
+    common hub is intentionally captured; a chained member is not necessarily
+    similar to every other member in the component.
+
     Returns list of dicts, each with:
       members: list[str]        — tickers in the component (sorted)
       size: int                 — component size
@@ -348,7 +353,7 @@ def same_thesis_groups(
         elif best_shared:
             label = best_shared[0].split(":", 1)[1] if ":" in best_shared[0] else best_shared[0]
         else:
-            label = "shared-factor-profile"
+            label = "shared-membership"
 
         groups.append({
             "members": members,
@@ -366,7 +371,7 @@ def earnings_week_annotation(
     tickers: list[str],
     earnings_store: "pd.DataFrame | None",
     as_of_date: str,
-    window_days: int = 7,
+    window_days: int = 3,
 ) -> dict[str, dict]:
     """Annotate each ticker with same-earnings-week cluster info.
 
@@ -380,7 +385,8 @@ def earnings_week_annotation(
                     indexed by ticker (upper-case), with 'next_date' column.
                     May be None (fail-open).
     as_of_date: reference date string (ISO format) for week-window computation
-    window_days: number of calendar days defining "same week" (default 7)
+    window_days: number of calendar days defining "same week" (default 3,
+                 i.e. ±3 calendar days ≈ same trading week per the spec)
 
     Returns
     -------

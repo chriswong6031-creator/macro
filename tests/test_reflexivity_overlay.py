@@ -729,6 +729,42 @@ class TestSameThesisGroups:
             f"Expected 'Technology', got {groups[0]['label']!r}"
         )
 
+    def test_transitive_chain_single_component(self):
+        """M1 — single-linkage transitive closure: A-B sim 0.7, B-C sim 0.7, A-C sim 0.1
+        → all three merged into ONE component of size 3 (chain semantics ratified).
+        A chained member (C) is not necessarily similar to every other member (A)."""
+        S = np.array([
+            [1.0, 0.7, 0.1],
+            [0.7, 1.0, 0.7],
+            [0.1, 0.7, 1.0],
+        ])
+        tickers = ["A", "B", "C"]
+        groups = same_thesis_groups(S, tickers, {}, threshold=0.65, min_size=3)
+        assert len(groups) == 1, (
+            f"Expected 1 transitive component (A→B→C), got {len(groups)}"
+        )
+        assert groups[0]["size"] == 3, (
+            f"Expected component size 3, got {groups[0]['size']}"
+        )
+        assert set(groups[0]["members"]) == {"A", "B", "C"}, (
+            f"Expected all three members, got {groups[0]['members']}"
+        )
+
+    def test_membership_only_fallback_label(self):
+        """M3 — when pair_basis is empty (membership-only fallback path),
+        the component label must be 'shared-membership', not 'shared-factor-profile'."""
+        from engine.reflexivity import DUPLICATE_THRESH
+        S = np.full((3, 3), DUPLICATE_THRESH + 0.05)
+        np.fill_diagonal(S, 1.0)
+        tickers = ["A", "B", "C"]
+        # Empty pair_basis → triggers the membership-only fallback path
+        groups = same_thesis_groups(S, tickers, {}, min_size=3)
+        assert len(groups) == 1
+        assert groups[0]["label"] == "shared-membership", (
+            f"Membership-only fallback label must be 'shared-membership', "
+            f"got {groups[0]['label']!r}"
+        )
+
     def test_empty_tickers_returns_empty(self):
         """Empty ticker list → empty groups."""
         S = np.zeros((0, 0))
