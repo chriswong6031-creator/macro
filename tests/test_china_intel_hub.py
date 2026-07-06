@@ -46,7 +46,7 @@ _FIXTURES = {
 def test_briefing_v2_fans_in_all_five_surfaces(monkeypatch):
     monkeypatch.setattr(bus, "_read_json", lambda rel: _FIXTURES.get(rel))
     b = bus.briefing(asof="2026-06-20")
-    assert b["schema"] == "china_intel.briefing.v3"
+    assert b["schema"] == "china_intel.briefing.v4"
     assert set(b["surfaces_present"]) == {"news", "policy", "altdata", "radar", "analysis"}
     # enriched blocks
     assert b["news"]["band_label_en"] == "Supportive"               # zh-leak fix carried
