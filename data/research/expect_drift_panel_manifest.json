@@ -1,8 +1,8 @@
 {
   "artifact": "expect_drift_panel",
   "version": "LT-2a-v1",
-  "generated_at": "2026-07-06T08:46:00.947146+00:00",
-  "runtime_seconds": 396.5,
+  "generated_at": "2026-07-06T09:11:05.881666+00:00",
+  "runtime_seconds": 322.7,
   "prereg_reference": "research/long_hold/EXPECT_DRIFT_FAMILY_PREREG.md",
   "population": {
     "source": "data/research/long_hold_labels.parquet",
@@ -30,10 +30,10 @@
     "sue_latest": 43.97,
     "sue_streak": 43.97,
     "pead_drift": 19.07,
-    "bad_news_absorption": 34.7,
-    "good_news_hold": 30.96,
+    "bad_news_absorption": 34.55,
+    "good_news_hold": 28.48,
     "sue_accel": 43.97,
-    "confirmed_absorption": 18.81
+    "confirmed_absorption": 18.74
   },
   "fdr_family": "long_hold",
   "horizon_role": "hold_thesis",
