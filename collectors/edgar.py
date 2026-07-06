@@ -45,6 +45,11 @@ FLOW = {
     "cfo": "NetCashProvidedByUsedInOperatingActivities",
     "dividends": "PaymentsOfDividendsCommonStock",
     "repurchases": "PaymentsForRepurchaseOfCommonStock",
+    # W2 PR-H additions (Long-Hold Thesis Layer, 2026-07-06):
+    # op_income: needed to un-alias quality_z ≡ profitability_z (W1 kill-test finding)
+    # interest_exp: needed for interest_coverage (was 0% coverage in W1 due to absence here)
+    "op_income": "OperatingIncomeLoss",
+    "interest_exp": "InterestExpense",
 }
 REVENUE_CONCEPTS = ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax"]
 
@@ -378,7 +383,12 @@ def fetch_fundamentals(force: bool = False, max_age_days: int = 7) -> pd.DataFra
 # now on (separate); this module removes the look-ahead, which is the larger bias.
 # --------------------------------------------------------------------------- #
 PANEL_NUMERIC = ["assets", "equity", "debt_lt", "shares", "ni", "gross_profit",
-                 "cfo", "dividends", "repurchases", "revenue", "assets_prior", "ni_prior"]
+                 "cfo", "dividends", "repurchases", "revenue", "assets_prior", "ni_prior",
+                 # W2 PR-H: op_income + interest_exp to fix quality_z≡profitability_z alias
+                 # and restore interest_coverage (was 0% coverage in W1 kill-test).
+                 # PIT discipline is identical to existing FLOW fields: values are stamped
+                 # with asof_date = period_end + reporting_lag_days (120d conservative proxy).
+                 "op_income", "interest_exp"]
 
 
 def _panel_path():

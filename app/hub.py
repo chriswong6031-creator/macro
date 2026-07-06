@@ -161,3 +161,31 @@ def hub_hot() -> dict[str, Any]:
     speculation, or rolls. Display context only.
     """
     return _hub_fetch("hot_contracts.json")
+
+
+@router.get("/api/hub/ctx")
+def hub_ctx() -> dict[str, Any]:
+    """Options Hub market context: index_gex, fear_greed, sector_etf_flows.
+
+    Nightly-computed aggregate context. Display context only.
+    """
+    return _hub_fetch("context.json")
+
+
+@router.get("/api/hub/oiconf")
+def hub_oiconf() -> dict[str, Any]:
+    """OI-confirmed contracts: prev session notable ∩ today ΔOI movers.
+
+    OI is always t-1 or older per the OI timing law. Display context only.
+    """
+    return _hub_fetch("oi_confirmed.json")
+
+
+@router.get("/api/hub/tctx/{root}")
+def hub_tctx(root: str) -> dict[str, Any]:
+    """Ticker context: tape-flow z-scores for one root.
+
+    z is null when history_n < 20. Display context only.
+    """
+    root = _sanitize_root(root)
+    return _hub_fetch(f"tickers_ctx/{root}.json")

@@ -1,0 +1,96 @@
+name: edgar-flow-ops
+# Long-Hold Thesis Layer W2 PR-H — off-render EDGAR FLOW backfill.
+#
+# Actions:
+#   sample    — fetch/re-fetch ~30 tickers to validate new concept columns
+#               end-to-end (depreciation, SBC, R&D).  Run first.
+#   backfill  — full 1,334-ticker re-fetch at SEC pacing (~45 min).
+#               Run once after feat/long-hold-w2-edgar-flow merges to populate
+#               the new SBC + R&D columns universe-wide; subsequent weekly drip
+#               (REFRESH_DAYS=30) maintains them.
+#
+# NIGHTLY-SOLE-ADVANCER LAW:
+#   This workflow DOES NOT push to main.  The updated statements.parquet rides
+#   the next nightly ENGINE job's broad "git add data/" sweep.
+#
+# PACING:
+#   edgar_facts.py sleeps 0.12 s between companyfacts calls (SEC fair-access).
+#   Full 1,334-ticker run ≈ 160 s HTTP + JSON parse ≈ real-time 40-50 min.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to run"
+        required: true
+        type: choice
+        options:
+          - sample
+          - backfill
+
+permissions:
+  contents: read
+
+concurrency:
+  group: edgar-flow-ops-${{ github.event.inputs.action }}
+  cancel-in-progress: false
+
+jobs:
+  edgar-flow-ops:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - run: pip install -r requirements.txt
+
+      # ── ACTION: sample ────────────────────────────────────────────────────
+      - name: sample validation (30 tickers, force re-fetch)
+        if: github.event.inputs.action == 'sample'
+        timeout-minutes: 10
+        run: |
+          echo "=== EDGAR Flow Sample Validation ===" >&2
+          echo "start: $(date -u)" >&2
+          python -m scripts.backfill_edgar_flow \
+            --max 30 \
+            --force \
+            --tickers AAPL MSFT NVDA AMZN GOOGL META TSLA JPM V UNH \
+                      XOM JNJ WMT PG MA HD CVX ABBV BAC KO \
+                      PFE AVGO LLY COST MRK PEP TMO ACN AMD ABT \
+            2>&1 | tee /tmp/edgar_flow_sample.log; rc=${PIPESTATUS[0]}
+          echo "=== Sample exit code: $rc ===" >&2
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning::edgar_flow sample exited $rc — check log"
+          fi
+          exit 0  # fail-soft: data writes are not blocking
+
+      # ── ACTION: backfill ──────────────────────────────────────────────────
+      - name: full universe backfill (force re-fetch of all tickers)
+        if: github.event.inputs.action == 'backfill'
+        timeout-minutes: 80
+        run: |
+          echo "=== EDGAR Flow Full Universe Backfill ===" >&2
+          echo "start: $(date -u)" >&2
+          python -m scripts.backfill_edgar_flow \
+            --max 9999 \
+            --force \
+            2>&1 | tee /tmp/edgar_flow_backfill.log; rc=${PIPESTATUS[0]}
+          echo "end: $(date -u)" >&2
+          echo "=== Backfill exit code: $rc ===" >&2
+          # Print coverage summary from log
+          echo "--- Coverage summary (from log) ---" >&2
+          grep -E "coverage|ticker-coverage|ABSENT|W2 PR-H" /tmp/edgar_flow_backfill.log \
+            | tail -20 >&2 || true
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning::edgar_flow backfill exited $rc — check log"
+          fi
+          # Data rides the next nightly ENGINE job's git add data/
+          echo "=== statements.parquet updated on runner. Nightly ENGINE job will git-add it. ===" >&2
+          exit 0  # fail-soft: non-fatal (nightly drip will catch any gaps)
