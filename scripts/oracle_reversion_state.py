@@ -54,7 +54,33 @@ SCHEMA = "oracle_reversion_state.v1"
 _ARTIFACT_ID = "oracle-reversion-state"   # must match synapse.yml key
 _REGISTRY_PATH_REL = Path("oracle") / "compounds" / "registry.jsonl"
 _FORWARD_DIR_REL = Path("oracle") / "reversion_forward"
+_AUTHORITY_PATH_REL = Path("oracle") / "reversion_authority.json"  # P2 authority file
 _OUT_REL = Path("basketdata") / "oracle_reversion_state.json"
+
+
+# ---------------------------------------------------------------------------
+# Authority reader (P2 sidecar wiring — additive, fail-open)
+# ---------------------------------------------------------------------------
+
+def _load_authority(data_dir: Path) -> dict[str, dict]:
+    """Load reversion_authority.json written by P2 promotion scan.
+
+    Returns {compound_id: authority_record} or empty dict if absent.
+    Fail-open: any parse error returns empty dict, never raises.
+
+    Per W4_SPEC.md §W4.a: 'P1 sidecar wired additively to read authority if
+    not already.' The authority_level surfaces in the sidecar record so that
+    ratified tiers are visible.
+    """
+    path = data_dir / _AUTHORITY_PATH_REL
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+        return dict(data.get("authorities") or {})
+    except Exception as exc:  # noqa: BLE001
+        log.warning("oracle_reversion_state: could not load authority file: %s", exc)
+        return {}
 
 
 # ---------------------------------------------------------------------------
@@ -266,8 +292,14 @@ def _build_signal_record(
     compound: dict,
     data_dir: Path,
     latest_date_by_tier: dict[str, pd.Timestamp | None],
+    authority_map: dict[str, dict] | None = None,
 ) -> dict[str, Any]:
-    """Build one signal record for the sidecar output."""
+    """Build one signal record for the sidecar output.
+
+    authority_map: {compound_id: authority_record} from the P2 promotion scan
+    (reversion_authority.json). If absent or the compound has no ratified entry,
+    authority_level defaults to "display" as before (additive, fail-open).
+    """
     cid = compound["id"]
     reversion = compound.get("reversion", {})
     universe = compound.get("universe", {})
@@ -301,6 +333,18 @@ def _build_signal_record(
     # Live stats
     live = _compute_live_stats(ledger_rows, operating_regime, data_dir, tier)
 
+    # P2 authority wiring (additive, fail-open):
+    # If the P2 promotion scan has ratified an authority level for this compound,
+    # surface it here. Otherwise default to "display".
+    authority_level = "display"
+    article2_surface = "display"
+    if authority_map:
+        auth_rec = authority_map.get(cid, {})
+        ratified_level = auth_rec.get("authority_level")
+        if ratified_level in ("confirmer", "scored"):
+            authority_level = ratified_level
+            article2_surface = ratified_level
+
     return {
         "id": cid,
         "name": compound.get("name", cid),
@@ -308,8 +352,8 @@ def _build_signal_record(
         "cluster": reversion.get("cluster", None),
         "universe_tier": tier,
         "operating_regime": operating_regime,
-        "authority_level": "display",       # ALWAYS display — never escalate here
-        "article2_surface": "display",      # Article 2: no money path
+        "authority_level": authority_level,
+        "article2_surface": article2_surface,
         "fired_today": fired_today,
         "backtest": backtest,
         "live": live,
@@ -337,10 +381,20 @@ def build_reversion_state(
         t: _latest_panel_date(data_dir, t) for t in tiers_needed
     }
 
+    # Load P2 authority map additively (fail-open: returns {} if absent)
+    authority_map = _load_authority(data_dir)
+    if authority_map:
+        log.info(
+            "oracle_reversion_state: loaded authority for %d compound(s) from P2",
+            len(authority_map),
+        )
+
     signals: list[dict] = []
     for compound in compounds:
         try:
-            record = _build_signal_record(compound, data_dir, latest_date_by_tier)
+            record = _build_signal_record(
+                compound, data_dir, latest_date_by_tier, authority_map=authority_map
+            )
             signals.append(record)
         except Exception as e:  # noqa: BLE001
             log.warning("oracle_reversion_state: %s failed: %s", compound.get("id"), e)

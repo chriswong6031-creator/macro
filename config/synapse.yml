@@ -2178,9 +2178,87 @@ artifacts:
     external_consumers: []
     notes: >
       Sidecar alongside oracle_state.json — does NOT modify the oracle_state.v1
-      episode contract. authority_level is ALWAYS 'display'; no ranking surface
-      is touched (Article 2). Live block is honest at n=0 (nulls, never fabricated).
+      episode contract. authority_level surfaces ratified P2 tiers when present;
+      defaults to 'display' when authority file absent (additive, fail-open wiring).
+      Live block is honest at n=0 (nulls, never fabricated).
       See research/ORACLE_REVERSION_PROMOTION_TRACK_DESIGN.md §2 (sidecar rationale).
+
+  # P2: reversion promotion queue (infrastructure tier, Fable adjudication)
+  oracle-reversion-promotion-queue:
+    path: data/oracle/reversion_promotion_queue.json
+    format: json
+    producer: scripts/oracle_reversion_promotion_scan.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: reversion_promotion_queue.v1
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_promotion_scan.py
+    external_consumers: []
+    notes: >
+      P2 promotion scan output. NEVER auto-promotes. Candidates require
+      Fable/operator adjudication (ratified_by must be set by a human-committed
+      edit). Lapse proposals also land here.
+      ORACLE_REVERSION_PROMOTION_PREREG.md gates are FROZEN.
+      Source: W4_SPEC.md §W4.a.
+
+  # P2: reversion authority (infrastructure tier, written only by promotion scan)
+  oracle-reversion-authority:
+    path: data/oracle/reversion_authority.json
+    format: json
+    producer: scripts/oracle_reversion_promotion_scan.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: updated_at
+    freshness_sla_hours: 30
+    schema: reversion_authority.v1
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_state.py
+    external_consumers: []
+    notes: >
+      Written ONLY by oracle_reversion_promotion_scan.py. Authority entries
+      exist ONLY for compounds with human-ratified queue rows (ratified_by set
+      by human-committed edit). P1 sidecar reads this additively (fail-open).
+      Source: W4_SPEC.md §W4.a.
+
+  # W4.b: reversion kill-requeue registry
+  oracle-reversion-kill-requeue:
+    path: data/oracle/reversion_kill_requeue.jsonl
+    format: jsonl
+    producer: scripts/oracle_reversion_screen.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: on-demand
+    storage: git
+    asof_field: killed_at_asof
+    freshness_sla_hours: 9999
+    schema: none
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_promotion_scan.py
+    external_consumers: []
+    notes: >
+      Append-only kill-requeue registry. Written when oracle_reversion_screen.py
+      detects UNDERPOWERED-ACCRUING (all point estimates positive, power<50%).
+      Keep-first by compound_id. Promotion scan checks for requeue_at_n=2×n_at_kill
+      and prints a REMINDER (never auto-rescreens — counted-trials law).
+      Source: W4_SPEC.md §W4.b.
 
   # --- 3 consumers ---
   site-basket-flow:
