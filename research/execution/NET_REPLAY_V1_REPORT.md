@@ -68,39 +68,48 @@ taxes
 
 **Reference horizon = 126 bars. Net adjustment = −(round-trip cost) + carry credit for freed capital.**
 
+**Note: all values in this table are read directly from the committed `data/execution/net_replay_v1_summary.json`.**
+
 | Cell | n fires | WR (gross) | Mean ret (gross) | Net@$10k | Net@$100k | Net@$1M | Net cost bps @$10k | Carry freed days |
 |---|---|---|---|---|---|---|---|---|
-| hold_5 | 49,939 | 0.528 | +0.28% | +1.99% | +1.99% | +1.95% | −176† | 175.3 |
-| hold_10 | 49,939 | 0.555 | +0.88% | +2.51% | +2.51% | +2.48% | −163† | 168.3 |
-| **hold_21** | **49,939** | **0.577** | **+1.93%** | **+3.40%** | **+3.40%** | **+3.37%** | **−147†** | **149.4** |
-| hold_42 | 49,939 | 0.564 | +2.60% | +3.77% | +3.76% | +3.73% | −117† | 120.5 |
-| hold_63 | 49,939 | 0.585 | +4.26% | +5.12% | +5.12% | +5.08% | −86† | 91.5 |
-| hold_126 | 49,939 | 0.590 | +7.32% | +7.26% | +7.26% | +7.22% | +6 | 0.0 |
-| **ema_trail_s8** | **49,939** | **0.623** | **+4.45%** | **+5.97%** | **+5.97%** | **+5.93%** | **−152†** | **160.3** |
-| trail_stop_8pct | 49,939 | 0.419 | +1.85% | +2.98% | +2.97% | +2.94% | −113† | 121.8 |
-| trail_stop_12pct | 49,939 | 0.443 | +2.74% | +3.67% | +3.67% | +3.64% | −93† | 101.9 |
-| trail_stop_15pct | 49,939 | 0.467 | +3.53% | +4.28% | +4.28% | +4.25% | −75† | 80.8 |
-| **trail_stop_20pct** | **49,939** | **0.516** | **+4.51%** | **+4.99%** | **+4.99%** | **+4.95%** | **−48†** | **51.5** |
-| barrier_s5_t8 | 49,939 | 0.472 | +1.11% | +2.59% | +2.58% | +2.55% | −148† | 156.6 |
-| barrier_s5_t15 | 49,939 | 0.365 | +1.61% | +3.04% | +3.04% | +3.00% | −143† | 151.9 |
-| barrier_s8_t15 | 49,939 | 0.467 | +2.19% | +3.55% | +3.54% | +3.51% | −136† | 143.8 |
-| barrier_s8_t25 | 49,939 | 0.410 | +2.67% | +3.84% | +3.84% | +3.80% | −117† | 124.0 |
+| hold_5 | 49,939 | 0.528 | +0.28% | +1.99% | +1.98% | +1.95% | −171† | 175.3 |
+| hold_10 | 49,939 | 0.555 | +0.88% | +2.51% | +2.51% | +2.48% | −163† | 168.0 |
+| **hold_21** | **49,939** | **0.577** | **+1.93%** | **+3.40%** | **+3.39%** | **+3.37%** | **−147†** | **152.1** |
+| hold_42 | 49,939 | 0.564 | +2.60% | +3.77% | +3.76% | +3.73% | −117† | 121.7 |
+| hold_63 | 49,939 | 0.585 | +4.26% | +5.12% | +5.11% | +5.08% | −86† | 91.2 |
+| hold_126 | 49,939 | 0.590 | +7.32% | +7.26% | +7.25% | +7.22% | +6 | 0.0 |
+| **ema_trail_s8** | **49,939** | **0.623** | **+4.45%** | **+5.97%** | **+5.96%** | **+5.93%** | **−152†** | **156.4** |
+| trail_stop_8pct | 49,939 | 0.419 | +1.85% | +2.98% | +2.97% | +2.94% | −113† | 117.8 |
+| trail_stop_12pct | 49,939 | 0.443 | +2.74% | +3.67% | +3.66% | +3.64% | −93† | 98.6 |
+| trail_stop_15pct | 49,939 | 0.467 | +3.53% | +4.28% | +4.28% | +4.25% | −75† | 80.9 |
+| **trail_stop_20pct** | **49,939** | **0.516** | **+4.51%** | **+4.99%** | **+4.98%** | **+4.95%** | **−48†** | **53.7** |
+| barrier_s5_t8 | 49,939 | 0.472 | +1.11% | +2.59% | +2.58% | +2.56% | −148† | 152.9 |
+| barrier_s5_t15 | 49,939 | 0.365 | +1.61% | +3.04% | +3.03% | +3.00% | −143† | 147.3 |
+| barrier_s8_t15 | 49,939 | 0.467 | +2.19% | +3.55% | +3.54% | +3.51% | −136† | 140.4 |
+| barrier_s8_t25 | 49,939 | 0.410 | +2.67% | +3.84% | +3.83% | +3.80% | −117† | 121.7 |
 
 †Negative net cost bps = carry credit exceeds friction (economically correct: shorter holds free capital that earns DTB3).
 
 **hold_126** is the reference cell: zero freed capital, no carry credit, net adjustment = pure friction cost only.
 
-### WAIT-GRID-V1 — delay ladder at hold_21
+### WAIT-GRID-V1 — delay ladder at hold_21 and hold_63
 
-| Cell | n fires | WR (gross) | Mean ret (gross) | Net@$10k | Net@$1M | Net cost bps @$10k |
-|---|---|---|---|---|---|---|
-| delay1_hold21 | 49,939 | 0.577 | +1.93% | +3.40% | +3.37% | −147† |
-| delay2_hold21 | 49,939 | 0.575 | +1.94% | +3.41% | +3.38% | −147† |
-| delay3_hold21 | 49,939 | 0.574 | +1.95% | +3.42% | +3.39% | −147† |
-| delay5_hold21 | 49,939 | 0.576 | +1.96% | +3.43% | +3.40% | −147† |
-| delay10_hold21 | 49,939 | 0.560 | +1.66% | +3.13% | +3.10% | −147† |
+**Note: all values read directly from the committed `data/execution/net_replay_v1_summary.json`. The wait_grid_v1 surface contains 10 cells: 5 at hold_21 and 5 at hold_63.**
 
-All delay cells share the same carry profile (hold_21 from reference). The delay itself shifts the entry bar but does not change the holding period assumption used in this summary-mean degradation.
+| Cell | n fires | WR (gross) | Mean ret (gross) | Net@$10k | Net@$1M | Net cost bps @$10k | Carry freed days |
+|---|---|---|---|---|---|---|---|
+| delay1_hold21 | 49,939 | 0.5767 | +1.93% | +3.40% | +3.37% | −147† | 152.1 |
+| delay2_hold21 | 49,939 | 0.5749 | +1.94% | +3.41% | +3.38% | −147† | 152.1 |
+| delay3_hold21 | 49,939 | 0.5745 | +1.95% | +3.42% | +3.39% | −147† | 152.1 |
+| delay5_hold21 | 49,939 | 0.5757 | +1.96% | +3.43% | +3.40% | −147† | 152.1 |
+| delay10_hold21 | 49,939 | 0.5596 | +1.66% | +3.13% | +3.10% | −147† | 152.1 |
+| delay1_hold63 | 49,939 | 0.5849 | +4.26% | +5.12% | +5.08% | −86† | 91.2 |
+| delay2_hold63 | 49,939 | 0.5874 | +4.33% | +5.19% | +5.15% | −86† | 91.2 |
+| delay3_hold63 | 49,939 | 0.5885 | +4.41% | +5.27% | +5.23% | −86† | 91.2 |
+| delay5_hold63 | 49,939 | 0.5881 | +4.41% | +5.27% | +5.23% | −86† | 91.2 |
+| delay10_hold63 | 49,939 | 0.5826 | +4.21% | +5.07% | +5.03% | −86† | 91.2 |
+
+The hold_21 and hold_63 groups have different carry profiles (152.1 freed days vs 91.2 freed days respectively) because the holding period assumption differs. Within each group, carry is identical across delay steps (the delay shifts the entry bar but not the holding period used in this summary-mean degradation).
 
 ---
 
