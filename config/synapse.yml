@@ -4722,6 +4722,36 @@ artifacts:
       (end-of-collect, after all graders). Companion markdown table at docs/GRADING_CLOSURE.md.
       Fixes are per-program follow-ups; this rail makes standing status visible.
 
+  # --- NW Rails post-Fable PR-1: DQ-2 operator-action grading harness ---
+  operator-grading:
+    path: data/governance/operator_grading.json
+    format: json
+    producer: scripts/grade_operator_actions.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: operator_grading.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NW Rails post-Fable queue PR-1 (DQ-2) — operator-action grading harness.
+      Grades operator decisions (acted/dismissed/overrode/snoozed) against the qledger
+      claims/grades corpus. Three pre-declared contrasts: C1 overrode_accuracy,
+      C2 dismissed_then_worked, C3 acted_then_failed. Floor n>=25 graded actions per
+      contrast; artifact ships in accruing state until floor is reached (correct).
+      FDR family 'operator', declared budget 3, BH step-up q=0.10.
+      NEVER wired into daily.yml — ops-lane manual cadence only.
+      Single writer: scripts/grade_operator_actions.py. BH and bootstrap imported from
+      engine.btc_override_ledger (not re-implemented). Action ledger gitignored at
+      data/operator/ (RUL-P10 path a). Display-only until gauntleted.
+
   # --- NW Rails R1 (PR-1) ---
   rule-experiment-registry:
     path: data/rule_experiments/registry.jsonl
