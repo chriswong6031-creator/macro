@@ -1030,6 +1030,8 @@ modules:
       - data/oracle/episodes.json
       - site/basketdata/oracle_state.json
       - data/breadth/breadth.parquet
+      - data/oracle/compounds/registry.jsonl
+      - data/oracle/reversion_forward/*.jsonl
     writes:
       - site/basketdata/oracle_state.json
       - data/oracle/oracle_alerts.jsonl
@@ -1038,10 +1040,15 @@ modules:
       - data/oracle/memory_base_rates.json
       - data/oracle/forward_ledger.jsonl
       - site/wh_banner.json
+      - data/oracle/reversion_forward/*.jsonl
+      - site/basketdata/oracle_reversion_state.json
     impure: false
     needs_secrets: false
     event_driven: true
-    note: Event-driven — detects new rotation complexes vs prior state by diffing oracle_state
+    note: >
+      Event-driven — detects new rotation complexes vs prior state by diffing oracle_state.
+      P0 (Step 11b): reversion forward ledger nightly accrual + grading.
+      P1 (Step 11c): oracle_reversion_state.json sidecar (display tier, no authority granted).
 
   - module: scripts.build_world_state
     reads:

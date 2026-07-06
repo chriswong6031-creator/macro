@@ -809,6 +809,57 @@ def _step_compound_live_accrual(data_dir: Path, dry_run: bool) -> bool:
         return False
 
 
+def _step_reversion_forward_ledger(data_dir: Path, dry_run: bool) -> bool:
+    """P0: Reversion forward ledger — nightly single-writer (Step 11b).
+
+    For each registry compound with a ``reversion`` block (gauntlet PASS),
+    evaluates its entry rule on the latest panel date, appends new fires to
+    ``data/oracle/reversion_forward/<compound_id>.jsonl`` (idempotent), and
+    grades rows whose exit_date <= latest date.
+
+    Non-fatal: failure prints a warning but never blocks subsequent steps.
+    Outputs land under data/ which is covered by 'git add data/' (sentinel-gap law).
+    """
+    log.info("=== Step 11b: Reversion forward ledger (P0) ===")
+    try:
+        from scripts.oracle_reversion_forward_ledger import run_reversion_forward_ledger
+        summary = run_reversion_forward_ledger(data_dir, dry_run=dry_run)
+        log.info(
+            "reversion_forward_ledger: n_compounds=%d fired=%d graded=%d skipped=%d",
+            summary.get("n_compounds", 0),
+            summary.get("total_fired", 0),
+            summary.get("total_graded", 0),
+            summary.get("n_skipped", 0),
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: reversion_forward_ledger FAILED: {e}")
+        return False
+
+
+def _step_reversion_state(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
+    """P1: Oracle reversion state sidecar writer (Step 11c, display tier only).
+
+    Writes ``site/basketdata/oracle_reversion_state.json`` (schema
+    oracle_reversion_state.v1).  Display tier only — no authority granted,
+    no ranking surface touched (Article 2).
+
+    Non-fatal: failure never blocks subsequent steps.
+    Output lands under site/ which is covered by 'git add site/' (sentinel-gap law).
+    """
+    log.info("=== Step 11c: Reversion state sidecar (P1, display tier) ===")
+    try:
+        from scripts.oracle_reversion_state import build_reversion_state
+        payload = build_reversion_state(data_dir, site_dir, dry_run=dry_run)
+        n = payload.get("n_signals", 0)
+        fired = sum(len(s.get("fired_today", [])) for s in payload.get("signals", []))
+        log.info("reversion_state: n_signals=%d fired_today_total=%d", n, fired)
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: reversion_state FAILED: {e}")
+        return False
+
+
 def _step_promotion_scan(data_dir: Path, dry_run: bool) -> bool:
     """W-B1: Run promotion scan as the LAST nightly step (loud-error pattern)."""
     log.info("=== Step 12: Promotion scan ===")
@@ -954,6 +1005,14 @@ def main() -> int:
     # --- Step 11: Compound live accrual (W-B3) ---
     if not _step_compound_live_accrual(data_dir, args.dry_run):
         failures.append("compound_live_accrual")
+
+    # --- Step 11b: Reversion forward ledger (P0) ---
+    if not _step_reversion_forward_ledger(data_dir, args.dry_run):
+        failures.append("reversion_forward_ledger")
+
+    # --- Step 11c: Reversion state sidecar (P1, display tier) ---
+    if not _step_reversion_state(data_dir, site_dir, args.dry_run):
+        failures.append("reversion_state")
 
     # --- Step 12: Promotion scan (W-B1) ---
     if not _step_promotion_scan(data_dir, args.dry_run):
