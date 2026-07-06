@@ -76,6 +76,8 @@ __all__ = [
     "adapt_us_board",
     "adapt_altdata",
     "adapt_desk_scorer",
+    "adapt_subsector_sponsorship",
+    "write_subsector_sponsorship",
     "rebuild_from_adapters",
 ]
 
@@ -540,6 +542,224 @@ def adapt_desk_scorer(root=None, desks: dict | None = None) -> list[SpinePredict
                 half_life=None,
             ))
     return out
+
+
+# --------------------------------------------------------------------------- #
+# SRSS Phase 2 — subsector sponsorship adapter (shadow tier, display-only)
+# --------------------------------------------------------------------------- #
+# "Today's live gate fires" source: data/us_board_ledger/snapshots.jsonl, the
+# SAME append-only forward ledger scripts/grade_us_board.py --nightly accrues
+# (retro_grades.parquet, read by adapt_us_board() above, is the MATURED/graded
+# view of this same stream — it only carries a row once a full grading pass has
+# run). snapshots.jsonl carries the as-fired board the instant it is committed,
+# which is what "live" means here — reading it directly (not retro_grades)
+# avoids waiting on maturation for a purely descriptive annotation that is
+# never itself graded (see below).
+_SPONSORSHIP_BOARD = ("data", "us_board_ledger", "snapshots.jsonl")
+
+# House convention (mirrors adapt_us_board's lane->direction mapping exactly):
+# buy/watch lanes are long-lean, laggards is the short-lean lane. This is read
+# FROM the source event's own lane, never invented.
+_LANE_DIRECTION = {"buy": 1, "watch": 1, "laggards": -1, "laggard": -1}
+
+
+def _load_latest_board_fires(root=None) -> list[dict]:
+    """Flatten the MOST RECENT snapshot in data/us_board_ledger/snapshots.jsonl
+    into one dict per (as_of, ticker, lane) fire — the "today's live gate
+    fires" input to ``adapt_subsector_sponsorship``. Fail-open: returns []
+    if the ledger is absent/unreadable/empty."""
+    from lib import config
+    base = config.data_dir() if root is None else (Path(root) / "data")
+    p = base / "us_board_ledger" / "snapshots.jsonl"
+    if not p.exists():
+        return []
+    try:
+        lines = [ln for ln in p.read_text().splitlines() if ln.strip()]
+    except Exception as e:  # noqa: BLE001
+        log.warning("adapt_subsector_sponsorship: snapshots.jsonl read failed: %s", e)
+        return []
+    if not lines:
+        return []
+    try:
+        latest = json.loads(lines[-1])
+    except Exception as e:  # noqa: BLE001
+        log.warning("adapt_subsector_sponsorship: latest snapshot line unparsable: %s", e)
+        return []
+    as_of = latest.get("as_of")
+    if not as_of:
+        return []
+    out: list[dict] = []
+    for lane in ("buy", "watch", "laggards"):
+        for row in latest.get(lane) or []:
+            tk = row.get("ticker")
+            if not tk:
+                continue
+            out.append({
+                "ticker": tk,
+                "as_of": as_of,
+                "lane": lane,
+                "direction": _LANE_DIRECTION.get(lane, 0),
+            })
+    return out
+
+
+def adapt_subsector_sponsorship(root=None, fires: list[dict] | None = None) -> list[SpinePrediction]:
+    """Subsector-rotation sponsorship annotation → spine rows (SRSS Phase 2).
+
+    Joins today's live per-stock gate fires (``fires``, defaulting to
+    ``_load_latest_board_fires`` — see above) to the latest PIT subsector
+    rotation snapshot (``data/subsector_rotation/snapshots.jsonl``) via the
+    SAME nearest-prior-date, leak-safe join Phase 0 built and validated
+    (``engine.subsector_sponsorship.RotationIndex`` / ``classify_sponsorship``
+    — imported, not re-derived).
+
+    ARTICLE-1 / DISPLAY-ONLY CONTRACT (hard):
+      * ``direction`` is INHERITED from the source fire's own lane/direction
+        field only — never invented. A fire with no direction information at
+        all yields ``direction=0`` (context), not a fabricated lean.
+      * ``score`` is always 0.0 — this row NEVER carries an originating
+        conviction/rank score. The rotation ledger's own display score is
+        carried through under ``meta["sponsorship_score"]`` for DISPLAY ONLY
+        (confluence.py copies it to an edge attribute; nothing sums it into
+        any weighted aggregate — see engine/neuralweb/confluence.py).
+      * ``size_binding`` is always False (never sizes money).
+      * ``outcome_excess``/``outcome_graded`` are always None/False — this is
+        a descriptive annotation, never graded, so it can never enter
+        ``graded_rows()``/``measured_ic()`` and cannot move any pooled score.
+      * ``meta["display_only"] = True`` — the same display-only convention
+        confluence.py stamps on every edge (see confluence.py's ``_edge()``
+        helper and its module docstring hard law).
+
+    This is a SHADOW-tier artifact: it is NOT written into the shared
+    data/spine/predictions.parquet (unlike the other three adapters here) —
+    see ``write_subsector_sponsorship`` — to avoid mixing a
+    never-graded, zero-score context stream into the one ledger every pooling
+    /kernel/half-life consumer iterates over engine-by-engine.
+
+    Returns [] fail-open (bare root, absent ledgers, or no matches).
+    """
+    root_path = root
+    from lib import config
+    r = Path(root_path) if root_path else config.ROOT
+
+    if fires is None:
+        fires = _load_latest_board_fires(root_path)
+    if not fires:
+        return []
+
+    from engine.subsector_sponsorship import (
+        RotationIndex,
+        classify_sponsorship,
+        confidence_tier,
+        is_stale,
+        load_snapshots,
+    )
+
+    snapshots = load_snapshots(r)
+    if not snapshots:
+        return []
+    ridx = RotationIndex(snapshots)
+
+    out: list[SpinePrediction] = []
+    for fire in fires:
+        ticker = fire.get("ticker")
+        as_of = fire.get("as_of")
+        if not ticker or not as_of:
+            continue
+        try:
+            event_date = pd.Timestamp(as_of)
+        except Exception:  # noqa: BLE001
+            continue
+
+        # direction: inherit ONLY from the source fire. No "direction" key at
+        # all (and no lane) means direction=0 — never fabricate a lean.
+        raw_dir = fire.get("direction")
+        if raw_dir is None:
+            lane = fire.get("lane")
+            raw_dir = _LANE_DIRECTION.get(lane, 0) if lane else 0
+        elif isinstance(raw_dir, str):
+            raw_dir = {"long": 1, "short": -1}.get(raw_dir.lower(), 0)
+        try:
+            direction = int(raw_dir)
+        except (TypeError, ValueError):
+            direction = 0
+
+        match = ridx.lookup(ticker, event_date)
+        if match is None:
+            continue  # no-match: not silently guessed, simply no row emitted
+
+        rotation_date = pd.Timestamp(match.get("date"))
+        n_members = len(match.get("members") or [])
+        stale = is_stale(rotation_date, event_date)
+        state = classify_sponsorship(
+            match.get("quadrant"), match.get("rs_mom"), match.get("accel"),
+            match.get("score"), n_members, stale,
+        )
+        tier = confidence_tier(n_members)
+
+        out.append(SpinePrediction(
+            signal_id=f"subsector_sponsorship:{as_of}:{ticker}:{fire.get('lane', 'na')}",
+            engine="subsector_sponsorship",
+            family=f"subsector_sponsorship:{state.lower()}",
+            as_of=str(as_of),
+            symbol=str(ticker),
+            horizon=21,          # nominal context horizon; never graded (see docstring)
+            score=0.0,           # never an originating score — see docstring
+            direction=direction,  # inherited only, never invented
+            size_binding=False,   # never sizes money
+            universe="us_1500",
+            outcome_excess=None,
+            outcome_graded=False,
+            meta={
+                "display_only": True,
+                "sponsorship_state": state,
+                "confidence_tier": tier,
+                "sponsorship_score": _num(match.get("score")),
+                "rotation_key": match.get("key"),
+                "rotation_asof": str(rotation_date.date()),
+                "n_members": n_members,
+                "stale": bool(stale),
+                "source_lane": fire.get("lane"),
+            },
+            falsifier=None,
+            half_life=None,
+        ))
+    return out
+
+
+def write_subsector_sponsorship(root=None, fires: list[dict] | None = None) -> dict:
+    """Build ``adapt_subsector_sponsorship`` rows and write them to their OWN
+    shadow-tier parquet (data/spine/subsector_sponsorship.parquet) — kept
+    OUT of data/spine/predictions.parquet on purpose (see adapter docstring).
+    Idempotent on signal_id (last-wins), same convention as ``emit``.
+    Degrade-never-raise. Returns {"rows_in": n, "path": str, "total_rows": n}."""
+    from lib import config
+    base = config.data_dir() if root is None else (Path(root) / "data")
+    out_path = base / "spine" / "subsector_sponsorship.parquet"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        rows = adapt_subsector_sponsorship(root=root, fires=fires)
+        new = [p.as_row() for p in rows]
+        nf = pd.DataFrame(new) if new else _empty()
+        if out_path.exists():
+            try:
+                cur = pd.read_parquet(out_path)
+            except Exception:  # noqa: BLE001
+                cur = _empty()
+        else:
+            cur = _empty()
+        for c in COLUMNS:
+            if c not in nf.columns:
+                nf[c] = None
+            if c not in cur.columns:
+                cur[c] = None
+        merged = pd.concat([cur[COLUMNS], nf[COLUMNS]], ignore_index=True) if len(nf) else cur[COLUMNS]
+        merged = merged.drop_duplicates(subset=["signal_id"], keep="last").reset_index(drop=True)
+        merged.to_parquet(out_path, index=False)
+        return {"rows_in": len(new), "path": str(out_path), "total_rows": int(len(merged))}
+    except Exception as e:  # noqa: BLE001
+        log.warning("write_subsector_sponsorship failed: %s", e)
+        return {"rows_in": 0, "path": str(out_path), "total_rows": 0}
 
 
 def rebuild_from_adapters(root=None) -> dict:
