@@ -47,10 +47,54 @@ the token string is never logged.
 from __future__ import annotations
 
 import logging
+import re
 import threading
 from typing import Any, Callable
 
 log = logging.getLogger(__name__)
+
+# --------------------------------------------------------------------------- #
+# Token sanitization
+# --------------------------------------------------------------------------- #
+_PRINTABLE_ASCII_RE = re.compile(r"^[\x21-\x7E]+$")
+
+
+def _sanitize_token(tok: str, env: str) -> str | None:
+    """Collapse internal whitespace and validate printable ASCII.
+
+    Legitimate API tokens never contain whitespace.  A token pasted with a
+    line-wrap arrives with embedded ``\\n`` / spaces that produce an illegal
+    HTTP Authorization header, which the Anthropic SDK surfaces as a generic
+    "Connection error."
+
+    Returns the sanitized token, or ``None`` if it is still invalid after
+    sanitization (non-printable / non-ASCII chars → provider must be skipped).
+    Logs a WARNING when the token was changed (secret should be re-set) or when
+    it is completely invalid.
+    """
+    sanitized = "".join(tok.split())  # collapse ALL internal whitespace
+    if sanitized != tok:
+        log.warning(
+            "llm_auth: credential in %s contained whitespace/newlines — "
+            "whitespace removed; token will be used but the GitHub secret "
+            "should be re-set to avoid this (pasted with a line-wrap?)",
+            env,
+        )
+    if not sanitized:
+        log.warning(
+            "llm_auth: credential in %s is empty after whitespace removal — "
+            "skipping provider",
+            env,
+        )
+        return None
+    if not _PRINTABLE_ASCII_RE.match(sanitized):
+        log.warning(
+            "llm_auth: credential in %s contains non-printable/non-ASCII "
+            "characters — re-set the GitHub secret; skipping provider",
+            env,
+        )
+        return None
+    return sanitized
 
 # --------------------------------------------------------------------------- #
 # process-scoped dead-provider registry (thread-safe)
@@ -254,6 +298,9 @@ def build_providers(
             tok = _config.secret(env)
             if not tok:
                 continue
+            tok = _sanitize_token(tok, env)
+            if tok is None:
+                continue
             try:
                 import anthropic
                 hdrs = {"anthropic-beta": OAUTH_BETA}
@@ -271,6 +318,9 @@ def build_providers(
             key = _config.secret(env)
             if not key:
                 continue
+            key = _sanitize_token(key, env)
+            if key is None:
+                continue
             try:
                 import anthropic
                 hdrs = dict(extra_headers) if extra_headers else {}
@@ -285,6 +335,9 @@ def build_providers(
             env = cfg.get("deepseek_key_env", "DEEPSEEK_API_KEY")
             key = _config.secret(env)
             if not key:
+                continue
+            key = _sanitize_token(key, env)
+            if key is None:
                 continue
             try:
                 import anthropic

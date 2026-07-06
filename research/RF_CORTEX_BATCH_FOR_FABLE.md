@@ -1,8 +1,9 @@
 # Research Factory — Cortex Batch (Batch B) (program seed, for a future Fable session)
 
-**Status:** NOT STARTED — deferred because `data/neuralweb/machine_registry.jsonl` has ZERO registrations to date (verified 2026-07-06; the file does not exist). The factory's cortex adapter is BUILT and merged (`engine/research_factory/adapter_cortex.py`, #1581) and is absent-file-safe — there is simply nothing to wrap yet.
+**Status:** ARMED — 2026-07-06 Fable session: census complete, seams re-verified, conformance hardening shipped, rulings recorded (see §6). Trigger unchanged.
 **Prepared:** 2026-07-06 by the Fable session that built the factory (charter: `research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md`, W0–W7 COMPLETE).
-**Trigger to start:** machine_registry has ≥1 hypothesis with an evaluator verdict (`passed` / `insufficient-n` trending, or anything Fable wants challenged). Watch: cortex just received provider-failover honesty fixes (#1625), so registrations may begin; the weekly budget is 3 (hard, server-side, ISO week Mon–Sun in `engine/neuralweb/metabolism.py`).
+**Trigger to start:** machine_registry has ≥1 hypothesis with an evaluator verdict (`passed` / `insufficient-n` trending, or anything Fable wants challenged). Watch: cortex deliberation is failing at turn 0 with "Connection error." — ops action required before registrations can begin; see §6 for root-cause and fix. The weekly budget is 3 (hard, server-side, ISO week Mon–Sun in `engine/neuralweb/metabolism.py`).
+**Come-back:** 2026-08-03 — if `data/neuralweb/machine_registry.jsonl` is still absent by then, the ops action needs escalation.
 
 ## 1. What this batch is
 
@@ -37,3 +38,32 @@ Success criteria (from the study, still binding): **no change to the cortex budg
 ## 5. What to read first in a fresh session
 
 Charter RF-2/RF-3/RF-6/RF-13; `engine/research_factory/adapter_cortex.py`; `engine/neuralweb/metabolism.py` (registration/budget/come_back); `scripts/evaluate_cortex_hypotheses.py` (verdicts); `research/research_factory/OPERATING_RUNBOOK.md`; memory `research-factory-program` and `neural-web-program`.
+
+---
+
+## 6. Program log — ARMED 2026-07-06
+
+**Status change.** NOT STARTED → ARMED (2026-07-06, Fable session). A full census of every binding seam in §2 was run, conformance hardening was built and shipped, and all Fable rulings were recorded (R1–R6 below). The trigger is unchanged: first `machine_registry.jsonl` registrations with evaluator verdicts.
+
+**Root-cause of zero registrations.** Diagnosed from CI logs, run 28772063146 and predecessors. The cortex LLM tool loop is fully wired — `stake_hypothesis` is exposed and instructed in the system prompt — but every live deliberation has failed at turn 0. Timeline: 2026-07-01→07-03 calls reached Anthropic and returned HTTP 401 "Invalid bearer token". The `CLAUDE_CODE_OAUTH_TOKEN` secret was updated 2026-07-04 at 22:57Z. Since that update, every cortex call fails instantly with SDK "Connection error." — consistent with a corrupted secret value (internal line-wrap or non-ASCII character making an illegal HTTP header), not a network block. GitHub egress from the runner works in the same jobs. `ANTHROPIC_API_KEY` is not set at all in the repo, so there is no failover provider.
+
+OPS ACTION (operator): re-set `CLAUDE_CODE_OAUTH_TOKEN` cleanly — single line, no wrapping — e.g. `gh secret set CLAUDE_CODE_OAUTH_TOKEN` with a carefully-piped value. Consider also setting `ANTHROPIC_API_KEY` as a failover. In-repo hardening shipped in this session: token sanitization in `engine/llm_auth.py` `build_providers()` (whitespace-collapse + printable-ASCII validation with warnings) and a fix in `cortex.py` run_status stamping so degraded runs keep the staleness/retry gate open. The prior silent-failure path saved `last_run_state.json` on degraded runs, defeating the #1722 retry logic; the stale state file was deleted.
+
+**Seam corrections found by the census.** Four §2 claims did not hold and were fixed or recorded:
+
+1. RF-13 timestamp check (`spec_ref` registration timestamp ≥ `registered_at`) was docstring-only — now enforced as a warn-and-flag in `engine/research_factory/adapter_cortex.py`.
+2. Ingest did NOT auto-set `candidate_type='cortex_hypothesis'`. It defaulted to `external_idea`, which would have taken the `rf_family` accounting path and double-counted the shared cortex trial family. Fixed: adapter now auto-types incoming cortex rows as `cortex_hypothesis` with `trial_accounting.mode='cortex_shared'` and requires a `spec_ref`.
+3. No status projection map existed. Raw metabolism vocabulary was passed through; factory states are a different vocabulary. Fixed: a mapping was added per RF-2 (`registered`→`screened`, `insufficient-n`→`awaiting_data`, `failed`→`numeric_rejected`, `passed`→`screened`). Note `screened` means challenge-eligible; the projection never promotes.
+4. DOC CORRECTION: §2's claim that the factory reads `TrialLedger().effective_n('cortex')` was aspirational — nothing in Batch B mechanics actually needs it. Recorded as a doc correction; no build (ruling R5).
+
+**Fable rulings:**
+- R1: Challenge only evaluator-passed rows plus any Fable-nominated rows. Skip `registered`/`insufficient-n` rows with no verdict.
+- R2: Cortex lens added as `research/research_factory/CHALLENGER_PROMPT.md` Lens 6 (this session). CODEOWNERS tracking deferred to W-CODEGEN per charter RF-16.
+- R3: Cortex budget stays 3/week — reaffirmed. No raise before the funnel has kill-rate evidence.
+- R4: Ingest auto-typing required and shipped pre-trigger.
+- R5: `TrialLedger().effective_n('cortex')` reference in §2 is a doc correction; no build needed for Batch B mechanics.
+- R6: Trigger-unblock hardening shipped (llm_auth sanitization + cortex.py staleness fix). Ops action flagged separately.
+
+**Visibility.** No new watch infrastructure is needed. `engine/experiments_registry.py` already auto-injects `machine_registry.jsonl` rows into the admin Experiments tab (`hook='cortex_evaluator'`) with `ready=True` and an alert on `passed`/`gate_open` verdicts. The trigger will surface itself in the operator's existing alert surface once registrations begin.
+
+**Come-back: 2026-08-03.** If `data/neuralweb/machine_registry.jsonl` is still absent by then, the cortex pipeline is still broken and the ops action needs escalation. If rows exist, proceed with §3 as written.

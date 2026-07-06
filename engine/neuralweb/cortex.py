@@ -482,7 +482,7 @@ def _detect_context_stale(root: Path, now_str: str) -> tuple[bool, str | None]:
 
 def _tool_write_memo(root: Path, params: dict, now_str: str, probation_status: dict) -> dict:
     """Write the committee memo to data/neuralweb/cortex/memo.json."""
-    memo = {
+    memo: dict = {
         "schema": _SCHEMA_MEMO,
         "as_of": now_str,
         "summary": params.get("summary", ""),
@@ -494,6 +494,11 @@ def _tool_write_memo(root: Path, params: dict, now_str: str, probation_status: d
         "tool_call_census": params.get("tool_call_census", {}),
         "is_context_only": True,
     }
+    # Include run_status when provided at write time (forced-write / fallback paths).
+    # The normal tool-loop path stamps run_status via a post-hoc rewrite; including
+    # it here as well means the key is always present even if that rewrite fails.
+    if "run_status" in params:
+        memo["run_status"] = params["run_status"]
 
     cortex_dir = _cortex_dir(root)
     cortex_dir.mkdir(parents=True, exist_ok=True)
@@ -1311,9 +1316,7 @@ def _single_call_fallback(
     memo_params["tool_call_census"] = {"fallback_call": 1}
     probation_status["degraded_reason"] = degraded_reason
 
-    result = _tool_write_memo(root, memo_params, now_str, probation_status)
-
-    # Stamp run_status for the single-call fallback path.
+    # Build run_status BEFORE writing the memo so it can be included at write time.
     # This path is ALWAYS degraded: the tool loop was unavailable regardless of
     # whether a fallback LLM call succeeded.  degraded=True unconditionally.
     from engine import llm_auth as _llm_auth  # noqa: PLC0415
@@ -1347,7 +1350,14 @@ def _single_call_fallback(
         "context_stale": context_stale,
         "context_as_of": context_as_of,
     }
+    # Embed run_status at write time — belt-and-suspenders so it is present
+    # even if the post-hoc rewrite below fails.
+    memo_params["run_status"] = run_status
 
+    result = _tool_write_memo(root, memo_params, now_str, probation_status)
+
+    # Post-hoc: re-mirror site copy with run_status (site/ may not have existed
+    # at the time _tool_write_memo ran).
     if result and not result.get("error"):
         try:
             memo_path = _cortex_dir(root) / "memo.json"
@@ -1359,8 +1369,12 @@ def _single_call_fallback(
             if site_nw.parent.exists():
                 site_nw.mkdir(parents=True, exist_ok=True)
                 (site_nw / "cortex_memo.json").write_text(memo_serialized, encoding="utf-8")
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            log.warning(
+                "cortex: failed to re-mirror run_status into site copy — "
+                "run_status embedded at write time remains valid (%s)",
+                _exc,
+            )
 
     return result
 
@@ -1543,24 +1557,9 @@ def _run_tool_loop(
         if tool_results:
             messages.append({"role": "user", "content": tool_results})
 
-    # If budget hit without a memo, force write one
-    if not memo_written:
-        log.warning("cortex: budget exhausted (%d/%d tool calls) — forcing write_memo",
-                    tool_call_count, max_tool_calls)
-        memo_params = {
-            "summary": (
-                f"Budget exhausted after {tool_call_count} tool-call batches "
-                f"({n_tool_calls_total} individual calls). Partial deliberation only."
-            ),
-            "what_fired": [],
-            "contradictions_review": "Incomplete — budget exhausted before contradictions review.",
-            "decaying_families": [],
-            "deserves_operator": [],
-            "tool_call_census": tool_call_census,
-        }
-        memo_result = _tool_write_memo(root, memo_params, now_str, probation_status)
-
-    # Build run_status block
+    # Build run_status block BEFORE the forced-write so it can be included
+    # directly in memo_params (rather than relying on a post-hoc read-modify-write
+    # that could be silently swallowed).
     has_model_response = bool(provider_attempts) and any(a["ok"] for a in provider_attempts)
     context_stale, context_as_of = _detect_context_stale(root, now_str)
 
@@ -1592,6 +1591,25 @@ def _run_tool_loop(
         "context_as_of": context_as_of,
     }
 
+    # If budget hit without a memo, force write one — include run_status at
+    # write time so it is present even if the post-hoc rewrite below fails.
+    if not memo_written:
+        log.warning("cortex: budget exhausted (%d/%d tool calls) — forcing write_memo",
+                    tool_call_count, max_tool_calls)
+        memo_params = {
+            "summary": (
+                f"Budget exhausted after {tool_call_count} tool-call batches "
+                f"({n_tool_calls_total} individual calls). Partial deliberation only."
+            ),
+            "what_fired": [],
+            "contradictions_review": "Incomplete — budget exhausted before contradictions review.",
+            "decaying_families": [],
+            "deserves_operator": [],
+            "tool_call_census": tool_call_census,
+            "run_status": run_status,
+        }
+        memo_result = _tool_write_memo(root, memo_params, now_str, probation_status)
+
     # Stamp stale-context note into deserves_operator when stale
     if context_stale and memo_result and not memo_result.get("error"):
         try:
@@ -1603,12 +1621,14 @@ def _run_tool_loop(
                 do_list.append(stale_note)
             memo["deserves_operator"] = do_list
             memo_path.write_text(json.dumps(memo, indent=2, default=str), encoding="utf-8")
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("cortex: failed to stamp stale-context note into memo (%s)", _exc)
 
-    # Stamp census + run_status into memo and re-mirror site copy so both are identical.
-    # _tool_write_memo was called with tool_call_census={} (unknown at write time);
-    # we update both copies here to avoid the data/site divergence.
+    # Post-hoc: stamp census + run_status into memo and re-mirror site copy.
+    # _tool_write_memo may have been called before run_status was built (normal
+    # tool-loop path); we update both copies here so data/ and site/ are identical.
+    # Belt-and-suspenders: run_status is ALSO embedded at write time for the
+    # forced-write path above, so it is present even if this block raises.
     if memo_result and not memo_result.get("error"):
         try:
             memo_path = _cortex_dir(root) / "memo.json"
@@ -1622,8 +1642,12 @@ def _run_tool_loop(
             if site_nw.parent.exists():
                 site_nw.mkdir(parents=True, exist_ok=True)
                 (site_nw / "cortex_memo.json").write_text(memo_serialized, encoding="utf-8")
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            log.warning(
+                "cortex: failed to stamp run_status/census into memo — "
+                "run_status embedded at write time may be used as fallback (%s)",
+                _exc,
+            )
 
     return memo_result
 
@@ -1751,7 +1775,27 @@ def run(root: Path | None = None, force: bool = False) -> int:
     try:
         _memo_path = _cortex_dir(root) / "memo.json"
         _memo_doc = json.loads(_memo_path.read_text(encoding="utf-8"))
-        _memo_run_status = _memo_doc.get("run_status", {}).get("status", "ok")
+        _raw_run_status = _memo_doc.get("run_status")
+        if isinstance(_raw_run_status, dict):
+            _memo_run_status = _raw_run_status.get("status", "ok")
+        elif _raw_run_status is None:
+            # Belt-and-suspenders: run_status absent means the stamping failed.
+            # Treat as degraded when the memo content indicates a failed run so
+            # the gate stays open and tonight retries.
+            _summary = _memo_doc.get("summary", "")
+            _census = _memo_doc.get("tool_call_census", {})
+            _degraded_summary = (
+                "Budget exhausted after 0" in _summary
+                or "Partial deliberation" in _summary
+                or "[DEGRADED:" in _summary
+            )
+            _empty_census = not _census or list(_census.values()) == [0] * len(_census)
+            if _degraded_summary or _empty_census:
+                log.warning(
+                    "cortex: memo has no run_status and degraded summary/census — "
+                    "treating as degraded so gate stays open"
+                )
+                _memo_run_status = "degraded"
     except Exception:  # noqa: BLE001
         pass  # read/parse failure → keep conservative default, save below
 

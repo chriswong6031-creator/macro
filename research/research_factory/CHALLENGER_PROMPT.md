@@ -29,7 +29,7 @@ NOT permitted: "sector X underperformed in 2022 therefore this signal fails" —
 
 ---
 
-## LENS STRUCTURE — Review all five lenses
+## LENS STRUCTURE — Review all applicable lenses (five standard; Lens 6 for cortex only)
 
 ### Lens 1: PIT Compliance and Lookahead
 
@@ -86,6 +86,20 @@ Ask:
 - Is the candidate's `candidate_type` consistent with the domain and mechanism? (E.g. an alpha_grammar candidate claiming an oracle mechanism.)
 - Article 1 (display-only): the candidate's stated `authority: display_only` — does anything in the design implicitly require a scored path?
 - Article 2 (no LLM signals): does the mechanism rely on LLM-originated signal values?
+
+### Lens 6: Cortex-Specific (candidate_type='cortex_hypothesis' only)
+
+*Skip this lens entirely for any other candidate_type.*
+
+Ask:
+
+**(a) Metabolism gate mechanics.** The hypothesis was registered through `engine/neuralweb/metabolism.py`'s 3/week hard budget with a `pre_committed_gate` and a `come_back` clock (`registered_at + horizon_d + 7`). Challenge: is the `pre_committed_gate` as registered actually falsifiable — does it specify a concrete metric, threshold, and evaluation window such that a competent analyst could independently determine pass/fail without judgment? If the gate is a vague directional claim ("the hypothesis will be confirmed"), flag `mechanism` blocker (not falsifiable). Also challenge whether `horizon_d` is consistent with the mechanism's natural horizon: a structural lead-lag thesis registered with `horizon_d=5` is a mismatch even if the gate is well-formed; flag it as a `mechanism` major.
+
+**(b) Self-reference risk.** Cortex-attention-derived evidence is constitutionally excluded at three layers (`metabolism._validate_hypothesis`, `evaluate_cortex_hypotheses._SELF_LEDGER_EXCLUSIONS`, `research_queue._has_self_ref`). The three-layer guard targets direct `cortex_attention` column references, but the exclusion can be circumvented indirectly. Challenge: does the `spine_query` or any conditioning variable in the hypothesis draw on a family, engine output, or ledger that is itself downstream of cortex attention scores (e.g. a rotation signal whose weight-update loop reads cortex-graded lobes, or a fdr_family ledger that accumulates cortex-owned hypotheses)? If yes, flag `authority` blocker (indirect self-reference).
+
+**(c) PATH A/B ruler correctness.** The `claim_shape` field routes evaluation: `lead_lag`, `sector_conditional`, and `conditional_regime` shapes go to PATH A (qledger forward-return); `entry_quality` goes to PATH B (walk-forward stop-out). These are incompatible rulers — a wrong assignment makes any result meaningless in both directions. Challenge: given the actual mechanism described, is the assigned `claim_shape` the correct one? An `entry_quality` claim (asks "does this entry time produce better stop-out performance?") measured on a forward-return ruler will show a null even if the signal is real; a `lead_lag` claim measured on PATH B will conflate entry precision with directional edge. If the assigned shape and the described mechanism do not agree, flag `mechanism` blocker (wrong-ruler assignment).
+
+This lens applies only to cortex candidates and generates blockers/advisories in the same output contract fields as the other lenses (`blockers`, `non_blocking_concerns`). No new output fields are added.
 
 ---
 
