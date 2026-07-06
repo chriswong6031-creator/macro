@@ -88,7 +88,7 @@ subsetting alone is insufficient as a proxy for a new signal.
 ## Adjacency Citations (RUL-2)
 
 **M1 FSI turn:** `validate_stress_gate.py` — OFR FSI is DISPLAY-ONLY verdict
-(coincident indicator). The turn (M1) is the inverse of the validated de-risk
+(coincident indicator). The turn (M1) is the inverse of the calibrated de-risk
 leg; its sign at fire-time tests whether FSI peaking improves entry quality.
 
 **M2 HY-OAS turn:** `credit_oas_roc` is a calibrated Tier-A de-risk leg in the
@@ -697,9 +697,11 @@ when ≥2 leg verdicts are filed.
 
 **NC-2 eq_band status:** DEFERRED (A2 §C3). CHIP promotion blocked regardless.
 
+**RUL-24 control disclosure:** the third mandatory control (market_state/risk_regime) is `unavailable_v1` in the macro_fire_context panel (snapshot engines, no historical series — see panel meta). Every trial therefore partials VIX + spy_dd126 only (plus hy_oas level for M1 per the shared-source rules). The F5 kill-rule is operationalized as VIX+drawdown-only this wave; a regime-state control awaits a future panel version.
+
 **Null result declaration:** Any trial with CI-including-0 on stop5 is a NULL.
 Nulls are printed above, not hidden. Market-level conditioning is low-power at
-the fire level (flag base-rates: M1 ~4.9%, M2 ~4.3%, P1 ~4.0%, P2 ~7.1%)
+the fire level (per-trial recall: M1 5.9% deep / 1.8% baskets; M2 3.7% / 0.9%; P1 5.9% / 7.5%; P2 7.1% / 7.5%)
 — CI-including-0 does not rule out a true market-regime effect.
 
 **Anti-fusion (RUL-25):** No fused macro/positioning score permitted.
@@ -723,7 +725,7 @@ No promotion language. Report only (RUL-4).
 Family readings, no promotion implied:
 
 1. **`esx_macro_release` is a NULL family (8/8 trials).** Neither stress turn-def (FSI, HY-OAS) shows a CI-excluding-0 effect on stop5 or mae21 on either panel, in either contrast — including the sharper turn-vs-elevated-not-turning arm. The paper's own kill rule (must add value beyond VIX + SPY drawdown) is the reason: with those controls partialled, the turn carries no fire-level information. Disposition: no spine emission earned; macro stress release stays display-only weather (the existing conditions.py/risk-radar surfaces already carry it); reserve 0; any future life is live kernel accrual only.
-2. **`esx_pos_reset`: P1 (NAAIM) null. P2 (COT reset) is mildly ADVERSE** — baskets stop5 +3.2pp [0.6, 5.7], family BH q=0.096, adverse direction sign-stable 4/4 eras (deep same direction, borderline CI). mae21 and the vol-zone do not corroborate, so this reads as a 5-day stop-rate effect only. The "positioning permission" leg of the Codex stack is not merely unsupported — at the fire level the reset window marks elevated short-horizon stop risk. Disposition: never a positive permission context (Signal Commons R3 anti-fusion stands); NOT wired as a caution context either at q=0.096 with non-corroborating co-primaries — printed and parked; reserve 4 holds pending the pctile-column export that would enable contrast B; revisit at kernel accrual.
+2. **`esx_pos_reset`: P1 (NAAIM) null. P2 (COT reset) is mildly ADVERSE** — baskets stop5 +3.2pp [0.6, 5.7], family BH q=0.096, adverse direction sign-stable 4/4 baskets eras on raw era rates (deep: 3/4 eras adverse, aggregate same direction, borderline CI). mae21 and the vol-zone do not corroborate, so this reads as a 5-day stop-rate effect only. The "positioning permission" leg of the Codex stack is not merely unsupported — at the fire level the reset window marks elevated short-horizon stop risk. Disposition: never a positive permission context (Signal Commons R3 anti-fusion stands); NOT wired as a caution context either at q=0.096 with non-corroborating co-primaries — printed and parked; reserve 4 holds pending the pctile-column export that would enable contrast B; revisit at kernel accrual.
 3. **Program consequence:** with insider null-at-entry (#1566) and macro/positioning null-or-inverted here, the non-technical stack's ENTRY-time value now rests on event hygiene (S-EV, confirmed in the ESX lane) + the T2 buyback-actuals unlock + display-only envelope context. `esx_support_dose` remains LOCKED — it requires ≥2 leg families with favorable entry verdicts and currently has zero.
 
 *Adjudication note on a phase-0 report; moves no registry state; ships no product change.*

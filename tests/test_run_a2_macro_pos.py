@@ -275,7 +275,7 @@ class TestNullFlagDrops:
 # ---------------------------------------------------------------------------
 
 class TestPlantedMarketEffect:
-    """Verify r1m recovers a planted effect and contrast-B mask restricts correctly."""
+    """Pipeline smoke (finite coef) + contrast-B mask restriction on graded synthetic fires."""
 
     @pytest.fixture(scope="class")
     @classmethod
@@ -444,3 +444,43 @@ class TestBudgetAccounting:
         )
         assert FAMILY_BUDGETS[runner.FAMILY_MACRO]["budget"] == runner.BUDGET_MACRO_DECL
         assert FAMILY_BUDGETS[runner.FAMILY_POS]["budget"] == runner.BUDGET_POS_DECL
+
+
+class TestR1MRecoversPlantedMarketEffect:
+    """True known-answer: hand-built graded frame with a planted market-level
+    effect + a correlated confounder; r1m must recover the effect only after
+    partialling the confounder (mirrors the harness r1m fixture design)."""
+
+    def test_recovers_planted_effect_with_confounded_control(self):
+        rng = np.random.default_rng(123)
+        n_dates, per_date = 220, 6
+        rows = []
+        dates = pd.bdate_range("2015-01-05", periods=n_dates)
+        for i, d in enumerate(dates):
+            flag = 1.0 if (i % 5 == 0) else 0.0          # market-level: constant within date
+            vix = 18.0 + 6.0 * flag + rng.standard_normal()  # confounder correlated with flag
+            for j in range(per_date):
+                p_stop = 0.15 + 0.12 * flag + 0.004 * (vix - 18.0)
+                rows.append({
+                    "date": d, "ticker": f"T{j}",
+                    "stop5": float(rng.random() < p_stop),
+                    "flag": flag, "vix": vix,
+                    "spy_dd126": -0.05 + 0.01 * rng.standard_normal(),
+                })
+        df = pd.DataFrame(rows)
+        res = r1m_estimate(df, "stop5", "flag", ["vix", "spy_dd126"],
+                           n_bootstrap=200, rng_seed=0)
+        assert res["coef"] is not None
+        # planted direct effect is +12pp; accept generous recovery band
+        assert 0.04 < res["coef"] < 0.22, f"coef {res['coef']} not near planted +0.12"
+        assert res["ci_lo"] > 0, f"CI should exclude 0, got [{res['ci_lo']}, {res['ci_hi']}]"
+
+    def test_raises_without_controls(self):
+        df = pd.DataFrame({
+            "date": pd.bdate_range("2020-01-01", periods=30),
+            "ticker": ["X"] * 30,
+            "stop5": np.random.default_rng(1).random(30) < 0.2,
+            "flag": ([1.0, 0.0, 0.0] * 10),
+        })
+        with pytest.raises(ValueError):
+            r1m_estimate(df, "stop5", "flag", [], n_bootstrap=10, rng_seed=0)
