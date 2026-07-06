@@ -20,7 +20,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intl-fix | 1 |
 | long-hold | 5 |
 | neural-web | 27 |
-| nw-rails | 1 |
+| nw-rails | 2 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 20 |
@@ -35,7 +35,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 67 |
-| infrastructure | 36 |
+| infrastructure | 37 |
 | scored | 4 |
 | shadow | 36 |
 
@@ -43,7 +43,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 138 |
+| git | 139 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -175,6 +175,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 2 | 0 |
+| grading-closure | `data/governance/grading_closure.json` | json | collect | infrastructure | 1 | 0 |
 
 ### options-alpha
 
