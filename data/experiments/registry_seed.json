@@ -2398,6 +2398,48 @@
       "state": "active",
       "next_step": "Dispatch W-OVC Sonnet build wave per adjudication §5 docket.",
       "phase_hint": "display_only"
+    },
+    {
+      "id": "narr-2-story-decay",
+      "name": "NARR-2 — qledger claim-family decay curves (come-back)",
+      "kind": "study",
+      "priority": "medium",
+      "cadence": "quarterly",
+      "what": "Codex three-lobes adjudication RUL-C6: family-level decay curves for qledger claims (usefulness at 5/21/63 sessions by claim_family/desk) are calendar-gated — 100% of the 2,815 grades are horizon_d=5 today; no 21d/63d grade has matured. No build ships now. When 21d/63d grades mature, qledger families join the existing kernel_families.json decay surface (no parallel apparatus).",
+      "source": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+      "storage": "site/qledger/track_record.json",
+      "started": "2026-07-06",
+      "come_back_on": "2026-10-01",
+      "come_back_note": "At come-back: check site/qledger/track_record.json grade_horizons — if 21d (and ideally 63d) families show matured grades at meaningful n, dispatch the decay-curve extension onto the kernel_families surface. If still 5d-only, push the date one quarter.",
+      "maturation": "Calendar-gated on qledger 21d/63d grade maturation (claims began ~2026-06; 63d matures ~2026-09+). QI program owns qledger semantics; this is a read-only surface extension."
+    },
+    {
+      "id": "narr-3-contradiction-arbitration",
+      "name": "NARR-3 — narrative-vs-price contradiction arbitration (come-back)",
+      "kind": "study",
+      "priority": "medium",
+      "cadence": "quarterly",
+      "what": "Codex three-lobes adjudication RUL-C5: 'when narrative and price disagree, who historically wins' is retro-gradeable from the git history of committed contradiction records (world_state.json / confluence graph, live since 2026-07-04) joined to forward outcomes. No new nightly grader ships (two-lobe-cap bandwidth discipline). Output would be de-escalation rule CANDIDATES only, per Article 1.",
+      "source": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+      "storage": "data/neuralweb/world_state.json",
+      "started": "2026-07-06",
+      "come_back_on": "2026-10-01",
+      "come_back_note": "At come-back: ~3 months of contradiction records + matured 21d qledger grades should exist. Reconstruct the contradiction tape PIT from git history, grade each record's two sides at h5/h21, and pre-register the arbitration study BEFORE computing win rates (register the design first; the tape reconstruction itself is legal).",
+      "maturation": "Needs BOTH contradiction-record depth (accruing since 2026-07-04) and 21d qledger grade maturation. Any study registers its own prereg with frozen gates before overlap is computed."
+    },
+    {
+      "id": "macro-tx-phase0",
+      "name": "L6-P0 — macro-transmission Phase-0 gate-clearing study",
+      "kind": "study",
+      "priority": "high",
+      "cadence": "once",
+      "what": "Docket L6 gate-clearing study: does a hostile macro condition (rates/USD/credit shocks, financial-conditions percentile — four separate axes, never fused) at fire date separate h21 fire outcomes at pooled/sector grain, sign-stable with episode-clustered CIs excluding 0 in both OOS halves? Prereg frozen at research/macro_tx/L6_PHASE0_PREREG.md BEFORE any overlap computed; fdr_family='macro_tx' flat pooled, declared budget 12; drawdown-stratified confound control. P0-PASS re-opens the L6 charter question (still subject to the two-lobe cap); P0-FAIL prints nulls and L6 stays gated.",
+      "source": "research/macro_tx/L6_PHASE0_PREREG.md",
+      "storage": "research/macro_tx/L6_PHASE0_REPORT.md",
+      "started": "2026-07-06",
+      "come_back_on": "2026-07-20",
+      "come_back_note": "Harness (scripts/research/macro_tx_phase0.py) dispatched same-day 2026-07-06 with Opus stats review before report merge. If the report has not merged by come-back, chase the build; if merged, record the P0 verdict here and (on PASS) open the L6 charter question at the docket.",
+      "maturation": "Runs on existing graded history (spine_index track_record ledger) — no accrual wait; the gate is build+review latency, not calendar."
     }
   ]
 }
