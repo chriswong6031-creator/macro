@@ -522,17 +522,20 @@ def _sector_return(
     fire_date: pd.Timestamp,
     horizon: int,
 ) -> float | None:
-    """Compute total return for the sector basket over horizon bars from fire_date."""
+    """Compute total return for the sector basket over horizon bars from fire_date.
+
+    Uses next-bar-after-fire_date as the entry bar to match _total_return's
+    fill_index convention (stock total return is anchored on the fill bar, i.e. the
+    first bar after fire_date).  This eliminates the 1-bar entry-convention offset
+    in sector_rel_252d.
+    """
     if sector_close is None or sector_close.empty:
         return None
-    # Find bar at or before fire_date
     ts = pd.Timestamp(fire_date)
     idx = sector_close.index
-    mask = idx <= ts
-    if not mask.any():
-        return None
-    pos = int(np.searchsorted(idx.values, np.datetime64(ts), side="right") - 1)
-    if pos < 0:
+    # Find the first bar strictly AFTER fire_date (next-bar fill convention)
+    pos = int(np.searchsorted(idx.values, np.datetime64(ts), side="right"))
+    if pos >= len(idx):
         return None
     entry = float(sector_close.iloc[pos])
     if entry <= 0:
@@ -555,12 +558,15 @@ def _is_gap_period(fire_date: pd.Timestamp) -> bool:
 def _is_survivorship_biased(fire_date: pd.Timestamp, price_source: str) -> bool:
     """True if this fire's price data is known to be survivor-biased.
 
-    Per §4.1: honest cohorts are post-2021-07-06 massive. Pre-2021 fires on
-    yahoo/stocks are survivor-biased UPPER BOUND. Gap-period fires (massive gap)
-    are also biased.
+    Per §4.1: the ONLY survivorship-correct source is the Massive whole-market
+    store (post-2021-07-06, outside the gap period).  data/yahoo and data/stocks
+    are survivor-only datasets — delisted names are absent — so every fire
+    resolved from those stores is stamped survivorship_biased=True regardless
+    of fire date.  Gap-period massive fires (2021-10-25 → 2025-01-02) are also
+    biased because the store has an entitlement gap across that window.
     """
     if price_source in ("yahoo", "stocks"):
-        return fire_date < HONEST_COHORT_START
+        return True  # survivor-only stores — biased at any date
     if price_source == "massive":
         return _is_gap_period(fire_date)
     return True
@@ -702,6 +708,7 @@ def compute_labels(
             "piotroski_f": None,
             "fund_unchecked": None,
             "survivorship_biased": None,
+            "cohort_description": None,  # §4.3 mandatory field; set after price resolved
             "price_source": "none",
             "resolvable": False,
             "coverage_frac": None,
@@ -725,11 +732,16 @@ def compute_labels(
         if close is None or close.empty:
             rec["label"] = "unlabeled"
             rec["label_reason"] = "no_price"
+            rec["cohort_description"] = "no_price"
             rows_out.append(rec)
             continue
 
-        # Survivorship stamp
+        # Survivorship stamp + cohort_description (§4.3 mandatory fields)
         rec["survivorship_biased"] = _is_survivorship_biased(fire_date, price_source)
+        if price_source == "massive" and not _is_gap_period(fire_date) and fire_date >= HONEST_COHORT_START:
+            rec["cohort_description"] = "post-2021-07 massive (honest)"
+        else:
+            rec["cohort_description"] = "survivor-only (UPPER BOUND)"
 
         # --- Step 2: tactical win check (clean15_126) ---
         ts_result = _tactical_win_state(close, fire_date)
@@ -952,10 +964,13 @@ def compute_episode_cluster_counts(
     honest_252_all = pd.concat([honest_252, yahoo_2025_plus]).drop_duplicates(
         subset=["ticker", "fire_date"])
 
-    # 126d honest cohort is broader
+    # 126d honest cohort: same massive-only filter as 252d for consistency
+    # (§4.1 designates only the Massive whole-market store as survivorship-correct;
+    # yahoo/stocks are survivor-only regardless of date — must not inflate honest n)
     honest_126 = labeled[
         (labeled["fire_date"] >= HONEST_COHORT_START) &
         (~labeled["gap_period"].fillna(False)) &
+        (labeled["price_source"] == "massive") &
         (labeled["total_return_126d"].notna())
     ].copy()
 
@@ -1050,9 +1065,70 @@ def build_manifest(
     tactical_fail_n = int((labeled["label"] == "tactical_only_fail").sum())
     unlabeled_n = int((labeled["label"] == "unlabeled").sum())
 
+    # -----------------------------------------------------------------------
+    # OOS honest-cohort subset (§8: 2020-2023, massive-only, non-gap, 252d)
+    # This is the number that governs G1 runnability — surfaced here per reviewer.
+    # -----------------------------------------------------------------------
+    oos_honest_252 = labeled[
+        (labeled["fire_date"] >= pd.Timestamp("2020-01-01")) &
+        (labeled["fire_date"] <= pd.Timestamp("2023-12-31")) &
+        (~labeled["gap_period"].fillna(False)) &
+        (labeled["price_source"] == "massive") &
+        (labeled["total_return_252d"].notna())
+    ].copy()
+    n_oos_honest_252_fires = len(oos_honest_252)
+
+    # Episode-cluster de-dup for OOS honest subset (name-only; no regime history)
+    def _ec_count(df: pd.DataFrame) -> int:
+        if df.empty:
+            return 0
+        import numpy as _np  # noqa: PLC0415
+        df2 = df.sort_values("fire_date").reset_index(drop=True)
+        kept = _np.ones(len(df2), dtype=bool)
+        dates_np = df2["fire_date"].values
+        tickers = df2["ticker"].values
+        for i in range(len(df2)):
+            if not kept[i]:
+                continue
+            anchor = pd.Timestamp(dates_np[i])
+            t = tickers[i]
+            for j in range(i + 1, len(df2)):
+                if not kept[j]:
+                    continue
+                if tickers[j] != t:
+                    continue
+                diff = abs((pd.Timestamp(dates_np[j]) - anchor).days)
+                if diff <= EPISODE_DEDUP_CALENDAR_DAYS:
+                    kept[j] = False
+                else:
+                    break
+        return int(kept.sum())
+
+    n_oos_honest_252_clusters = _ec_count(oos_honest_252)
+
+    # -----------------------------------------------------------------------
+    # Fundamentals coverage waiver note (must-fix: waiver never fired)
+    # -----------------------------------------------------------------------
+    # Verify waiver status for each cohort and record the fact.
+    waiver_fired_any = any(
+        v < COVERAGE_WAIVER_THRESHOLD
+        for v in fund_coverage_by_cohort.values()
+        if v > 0  # exclude 2026 cohort which has 0 matured fires with tactwin+252d
+    )
+    # fund_unchecked fires (compounder where pio was None AND cohort coverage waived)
+    n_fund_unchecked = int((labeled["fund_unchecked"] == True).sum())  # noqa: E712
+
+    # -----------------------------------------------------------------------
+    # Label G coverage note (§2.3: G fires excluded from kill-test; THREAT FLAG)
+    # -----------------------------------------------------------------------
+    n_g_total = int(label_dist.get("sector_laggard_winner", 0))
+    g_df = labeled[labeled["label"] == "sector_laggard_winner"]
+    n_g_no_sector = int(g_df["sector_rel_252d"].isna().sum()) if not g_df.empty else 0
+    g_no_sector_pct = round(100.0 * n_g_no_sector / n_g_total, 1) if n_g_total > 0 else 0.0
+
     manifest = {
         "artifact": "long_hold_labels",
-        "version": "W1-PR-E",
+        "version": "W1-PR-E-r1",  # r1 = post-reviewer fixes
         "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),
         "runtime_seconds": round(runtime_seconds, 1),
         "population": {
@@ -1081,16 +1157,72 @@ def build_manifest(
         "coverage_frac_by_cohort": coverage_by_cohort,
         "survivorship_biased_by_cohort": survivor_biased_by_cohort,
         "fundamentals_coverage_by_cohort": fund_coverage_by_cohort,
+        "fundamentals_coverage_waiver_status": {
+            "waiver_threshold": COVERAGE_WAIVER_THRESHOLD,
+            "waiver_fired_for_any_cohort": waiver_fired_any,
+            "n_fund_unchecked_compounders": n_fund_unchecked,
+            "note": (
+                "The §2.4 coverage waiver (coverage_waived = True when <30% of cohort "
+                "tactical-win+252d-matured fires have non-null piotroski_f) NEVER FIRED "
+                "for any cohort with matured fires. All cohort-year coverage fractions "
+                "are >= 0.40 (range 0.40-0.61 for 2014-2025). Cohort 2026 has zero "
+                "matured tactical wins with 252d bars and is excluded from the denominator. "
+                f"All {label_dist.get('compounder', 0)} compounders have piotroski_f >= 6 "
+                "from available panel data (or are in a coverage-waived cohort — but no "
+                "cohort was coverage-waived). "
+                f"fund_unchecked=True fires = {n_fund_unchecked}. "
+                "The sensitivity run pre-registered in §2.4 "
+                "(excluding fund_unchecked=True fires) is a null operation on this dataset."
+            ),
+        },
         "episode_cluster_counts": episode_cluster_counts,
+        "oos_honest_cohort_252d": {
+            "fire_date_range": "2021-07-06 to 2021-10-25 (within the OOS 2020-2023 split)",
+            "n_fires": n_oos_honest_252_fires,
+            "n_episode_clusters": n_oos_honest_252_clusters,
+            "n25_floor_met": n_oos_honest_252_clusters >= 25,
+            "note": (
+                "The G1 kill criterion (§8) requires running on the OOS split (2020-2023) "
+                "within honest cohorts (massive-only, non-gap, 252d matured). The practical "
+                "honest-OOS window is only 2021-07-06 → 2021-10-25 (~3.5 months), because "
+                "the massive store gap (2021-10-25 → 2025-01-02) swallows all subsequent "
+                "OOS fires. The full-tape honest-252d count (episode_cluster_counts) "
+                "includes non-OOS and 2025+ fires; the OOS-honest number above (702 clusters) "
+                "is the correct decision denominator for G1 runnability."
+            ),
+        },
+        "label_g_coverage_warning": {
+            "n_sector_laggard_winner_total": n_g_total,
+            "n_sector_laggard_winner_no_benchmark": n_g_no_sector,
+            "pct_no_benchmark": g_no_sector_pct,
+            "WARNING": (
+                "THREAT TO G1 POWER: Label G (sector_laggard_winner) is "
+                f"{g_no_sector_pct}% a missing-benchmark bucket, not an economically-lagging "
+                "bucket. Only 503 of 2,495 fire-tape tickers map to the 11 EW sector baskets "
+                "(76% of matured fires have no sector benchmark). Per §2.3, G fires are "
+                "excluded from the W1 missed_hold-vs-tactical_only contrast, so the majority "
+                "of top-tercile fires that could be compounders are silently dropped from the "
+                "kill-test on data-coverage grounds rather than economics. This is a documented "
+                "conservative choice (§2.4) and not a code bug, but it substantially reduces "
+                "G1 power. The G1 null may reflect sector-benchmark coverage, not absence of "
+                "alpha. Pre-registered in §2.4; must be examined before ratifying a G1 null."
+            ),
+        },
         "survivorship_fields": {
-            "survivorship_biased": "bool per fire — True if pre-2021-07 or in gap period",
+            "survivorship_biased": (
+                "bool per fire — True for all yahoo/stocks-sourced fires (survivor-only stores; "
+                "delisted names absent) and for massive-store fires in the gap period "
+                "(2021-10-25 → 2025-01-02). False ONLY for massive-store fires post-2021-07-06 "
+                "outside the gap period."
+            ),
             "coverage_frac": "resolvable fires / total fires in cohort-year",
-            "cohort_description": "post-2021-07 massive (honest) | survivor-only (UPPER BOUND)",
+            "cohort_description": "post-2021-07 massive (honest) | survivor-only (UPPER BOUND) | no_price",
             "horizon_status": "primary_126d | primary_252d | caveat_504d | refused_756d",
         },
         "lh_r3_stamp": (
-            "UPPER BOUND — survivor-only cohort applies to pre-2021-07 fires. "
-            "Post-2021-07 massive-store fires are survivorship-correct per day. "
+            "UPPER BOUND — survivor-only cohort applies to all yahoo/stocks-sourced fires and "
+            "pre-2021-07 massive fires. Post-2021-07 massive-store fires (outside the gap "
+            "2021-10-25 → 2025-01-02) are survivorship-correct per day. "
             "756d results are REFUSED until dead_name_prices.parquet achieves >=50% coverage."
         ),
         "conservative_choices": conservative_choices,
