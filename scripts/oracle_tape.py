@@ -107,6 +107,76 @@ def _load_rows(tape_path: Path) -> list[dict]:
     return rows
 
 
+def _snapshot_system_state(nodes: list[str], data_dir: Path) -> dict | None:
+    """Capture Oracle's current state for the given nodes from forward_ledger.jsonl.
+
+    Written at tape-add time so the PIT state is permanently recorded even before
+    the nightly resolver runs. Returns a dict {node: direction} for all nodes that
+    have an active episode as of the latest ledger pit_stamp, or None on any error.
+
+    This field is ADDITIVE to the tape schema — older rows lack it (null treated as
+    unresolvable by the resolver, which falls back to ledger reconstruction).
+
+    Single-writer law is preserved: this function only READS the ledger.
+    """
+    try:
+        ledger_path = data_dir / "oracle" / "forward_ledger.jsonl"
+        if not ledger_path.exists():
+            return None
+
+        # Find the latest pit_stamp in the ledger
+        latest_ps = ""
+        node_state: dict[str, str] = {}
+        for line in ledger_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            ps = str(row.get("pit_stamp", ""))[:10]
+            if ps > latest_ps:
+                latest_ps = ps
+            nd = str(row.get("node", ""))
+            direction = str(row.get("direction", ""))
+            if nd and direction and ps == latest_ps:
+                node_state[nd] = direction
+
+        if not latest_ps:
+            return None
+
+        # If latest_ps was updated we may need a second pass (single-pass may miss
+        # nodes from earlier stamps). Quick two-pass approach:
+        node_state_final: dict[str, str] = {}
+        for line in ledger_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            ps = str(row.get("pit_stamp", ""))[:10]
+            if ps != latest_ps:
+                continue
+            nd = str(row.get("node", ""))
+            direction = str(row.get("direction", ""))
+            if nd and direction:
+                node_state_final[nd] = direction
+
+        snapshot = {
+            "asof": latest_ps,
+            "node_states": {
+                node: node_state_final.get(node, "absent")
+                for node in nodes
+            },
+        }
+        return snapshot
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _cmd_add(args: argparse.Namespace, data_dir: Path) -> int:
     tape_path = _tape_path(data_dir)
     tape_path.parent.mkdir(parents=True, exist_ok=True)
@@ -134,6 +204,10 @@ def _cmd_add(args: argparse.Namespace, data_dir: Path) -> int:
             print(f"ERROR: --conviction must be 1-5, got {conviction}", file=sys.stderr)
             return 1
 
+    # Capture a write-time system_state snapshot for each node from
+    # forward_ledger.jsonl — additive field, null-on-error (never blocks add).
+    system_state_snapshot: dict | None = _snapshot_system_state(nodes, data_dir)
+
     row: dict = {
         "id": row_id,
         "type": "operator_tape",
@@ -145,6 +219,7 @@ def _cmd_add(args: argparse.Namespace, data_dir: Path) -> int:
         "invalidation": args.invalidation if args.invalidation else None,
         "conviction": conviction,
         "converted": None,
+        "system_state_snapshot": system_state_snapshot,  # additive; null if unresolvable
     }
 
     # Append (single-writer: open in append mode)
