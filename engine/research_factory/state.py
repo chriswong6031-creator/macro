@@ -6,6 +6,10 @@ presence, and the screened-without-trial-accounting refusal gate.
 All logic is pure (no I/O except the one optional ledger existence check for
 the 'screened' gate).  Callers do the I/O; this module just validates.
 
+Note: this module does NOT enforce append-only or monotonic as_of ordering
+on the transitions ledger — those properties are upheld by the caller
+(engine.research_factory.ledger) and the nightly-writer law (RF-8).
+
 State machine source: research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §4.
 Actor law source: §3 RF-5.
 """
@@ -83,6 +87,10 @@ _MANDATORY_ON_ENTRY: dict[str, list[str]] = {
     "challenged":       ["challenge_packet_ref"],
     # human_review: review_packet_ref required (§4 table)
     "human_review":     ["review_packet_ref"],
+    # paper: seed_entry_ref, regime_at_entry, expected_half_life_d required (§4 table)
+    "paper":            ["seed_entry_ref", "regime_at_entry", "expected_half_life_d"],
+    # promote_eligible: promotion_gate_ref required (§4 table)
+    "promote_eligible": ["promotion_gate_ref"],
 }
 
 # ---------------------------------------------------------------------------
@@ -132,7 +140,13 @@ def _check_screened_gate(candidate: dict | None,
                 "the 'screened' transition is refused: trial_accounting.mode='rf_family' "
                 "requires a non-empty family name (RF-6)"
             )
-        # Check the family has a declared budget in the trial ledger.
+        # Check the family has been declared in the trial ledger.
+        # RF-6 permits two declaration paths:
+        #   (a) log_declared_budget() — writes a row with kind=='declared_budget'
+        #   (b) log_grid()/log_trial() — writes rows with a config_hash and family
+        #       (no 'kind' field); the presence of at least one such row means the
+        #       grid was pre-logged before the screening run.
+        # Either path satisfies the declaration requirement.
         path = Path(ledger_path) if ledger_path else Path("data") / "trial_ledger.jsonl"
         declared_families: set[str] = set()
         if path.exists():
@@ -146,17 +160,23 @@ def _check_screened_gate(candidate: dict | None,
                             row = _json.loads(line)
                         except Exception:
                             continue
+                        fam = row.get("family")
+                        if not fam:
+                            continue
+                        # Path (a): explicit declared_budget row
                         if row.get("kind") == "declared_budget":
-                            fam = row.get("family")
-                            if fam:
-                                declared_families.add(fam)
+                            declared_families.add(fam)
+                        # Path (b): grid/trial row — presence of config_hash is
+                        # sufficient evidence the grid was logged before screening
+                        elif row.get("config_hash"):
+                            declared_families.add(fam)
             except OSError:
                 pass
         if family not in declared_families:
             return (
                 f"the 'screened' transition is refused: rf_family {family!r} has no "
                 f"declared-budget/grid row in data/trial_ledger.jsonl — call "
-                f"TrialLedger.log_declared_budget() before screening (RF-6)"
+                f"TrialLedger.log_declared_budget() or log_grid() before screening (RF-6)"
             )
 
     return None  # gate passed

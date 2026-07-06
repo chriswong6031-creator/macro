@@ -499,8 +499,13 @@ class TestAuthorityGuardPlantedViolation:
             "Expected HARD finding for import of engine.research_factory in Article-2 module"
         )
 
-    def test_allowlisted_module_skipped(self, tmp_path):
-        """A module in the allowlist is exempted from findings."""
+    def test_allowlisted_module_emits_warn_not_hard(self, tmp_path):
+        """A module in the allowlist has its Article-2 HARD downgraded to WARN.
+
+        The guard must NOT silently skip allowlisted modules: a WARN finding
+        must still be emitted so the allowlisted read remains visible in CI
+        output (RF-11 guard contract).
+        """
         from scripts.check_research_factory_authority import scan
 
         # Write an allowlist that exempts engine/alert_triage.py
@@ -518,7 +523,20 @@ class TestAuthorityGuardPlantedViolation:
             ),
         }
         findings = scan(tmp_path, extra_files=synthetic)
-        assert not findings, f"Expected no findings for allowlisted module; got: {findings}"
+        # Must emit a finding (visible in CI), but severity must be WARN not HARD
+        assert findings, (
+            "Expected a WARN finding for allowlisted module; "
+            "allowlist must not silently suppress the read"
+        )
+        hard = [f for f in findings if f["severity"] == "HARD"]
+        warn = [f for f in findings if f["severity"] == "WARN"]
+        assert not hard, (
+            f"Allowlisted Article-2 module must not produce HARD finding; got: {hard}"
+        )
+        assert warn, f"Expected WARN finding for allowlisted module; got: {findings}"
+        assert all(f.get("allowlisted") for f in warn), (
+            "WARN findings for allowlisted module must carry allowlisted=True"
+        )
 
 
 # ---------------------------------------------------------------------------

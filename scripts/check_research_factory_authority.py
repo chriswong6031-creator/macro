@@ -12,7 +12,7 @@ board-rank / alert pipeline.
 Exit codes
 ----------
 0 : No violations found (clean).
-1 : One or more violations found, or allowlist is absent.
+1 : One or more HARD violations found.
 
 Allowlist
 ---------
@@ -21,8 +21,12 @@ entry has the form::
 
   {"module": "engine/foo.py", "reason": "..."}
 
-A module listed here is exempted from the hard-fail (but still printed as
-a warning so the allowlist stays visible).
+An absent allowlist file is treated as empty (no failure — no exit-1).
+A module listed in the allowlist has any Article-2 HARD finding downgraded to
+WARN so the read remains visible in CI output.  The allowlist is NOT a silent
+bypass: the finding is always printed as a WARN, ensuring allowlisted
+money-path reads stay visible and the allowlist cannot silently suppress a
+violation.
 
 Pattern
 -------
@@ -158,9 +162,7 @@ def scan(root: Path,
 
     for rel_path, source_text in file_iter:
         mod = rel_path.replace("\\", "/")
-        # Skip allowlisted modules
-        if mod in allowlist:
-            continue
+        is_allowlisted = mod in allowlist
 
         for pat in _PATTERNS:
             if pat not in source_text:
@@ -169,12 +171,20 @@ def scan(root: Path,
             lines = source_text.splitlines()
             for i, line in enumerate(lines, start=1):
                 if pat in line:
-                    severity = "HARD" if mod in _ARTICLE2_MODULES else "WARN"
+                    if is_allowlisted:
+                        # Allowlisted modules are downgraded to WARN regardless
+                        # of Article-2 status, so the bypass remains visible in
+                        # CI output and the allowlist cannot silently suppress
+                        # an Article-2 money-path read (RF-11 guard contract).
+                        severity = "WARN"
+                    else:
+                        severity = "HARD" if mod in _ARTICLE2_MODULES else "WARN"
                     findings.append({
                         "module": mod,
                         "line_no": i,
                         "pattern": pat,
                         "severity": severity,
+                        "allowlisted": is_allowlisted,
                     })
 
     findings.sort(key=lambda f: (f["module"], f["line_no"], f["pattern"]))
@@ -284,11 +294,18 @@ def main() -> int:
 
     if warn:
         for f in warn:
-            print(
-                f"  [WARN] {f['module']}:{f['line_no']} — "
-                f"reads factory data ({f['pattern']!r}); not an Article-2 surface "
-                f"but should be declared or avoided"
-            )
+            if f.get("allowlisted"):
+                print(
+                    f"  [WARN/allowlisted] {f['module']}:{f['line_no']} — "
+                    f"reads factory data ({f['pattern']!r}); Article-2 HARD downgraded "
+                    f"to WARN because module is in authority_allowlist.json"
+                )
+            else:
+                print(
+                    f"  [WARN] {f['module']}:{f['line_no']} — "
+                    f"reads factory data ({f['pattern']!r}); not an Article-2 surface "
+                    f"but should be declared or avoided"
+                )
         print(
             f"::warning::check_research_factory_authority: {len(warn)} non-Article-2 "
             f"module(s) read factory data — add to authority_allowlist.json if intentional"

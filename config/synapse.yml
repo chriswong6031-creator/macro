@@ -4366,7 +4366,7 @@ artifacts:
   research-factory-candidates:
     path: data/research_factory/candidates.jsonl
     format: jsonl
-    producer: scripts/check_research_factory_authority.py
+    producer: scripts/research_factory_ingest.py
     known_extra_writers:
       - "scripts/research_factory_ingest.py — W2 ingest writer (planned)"
     owner_program: research-factory
@@ -4383,14 +4383,16 @@ artifacts:
     notes: >
       Research Factory W1 (RF-11). Candidate identity ledger — append-only JSONL.
       Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
-      Producer at W1 is the authority-guard script (creates the file path on first
-      ingest in W2); the ingest writer (W2) is listed as a known_extra_writer.
+      Producer is the W2 ingest writer (planned: scripts/research_factory_ingest.py);
+      W1 ships the path registration and schemas only — the file is first written at W2.
+      scripts/check_research_factory_authority.py is the read-only authority guard
+      and must NOT be listed as a ledger writer.
       See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.1.
 
   research-factory-transitions:
     path: data/research_factory/transitions.jsonl
     format: jsonl
-    producer: scripts/check_research_factory_authority.py
+    producer: scripts/research_factory_ingest.py
     known_extra_writers:
       - "scripts/research_factory_ingest.py — W2 transition writer (planned)"
       - "scripts/research_factory_decide.py — W5 decision recorder (planned)"
@@ -4409,12 +4411,15 @@ artifacts:
       Research Factory W1 (RF-11). State-transition audit log — append-only JSONL.
       Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
       This is the sole audit history; rows are never deleted.
+      Producer is the W2 ingest writer (planned: scripts/research_factory_ingest.py).
+      scripts/check_research_factory_authority.py is the read-only authority guard
+      and must NOT be listed as a ledger writer.
       See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.2.
 
   research-factory-paper-monitor:
     path: data/research_factory/paper_monitor.jsonl
     format: jsonl
-    producer: scripts/check_research_factory_authority.py
+    producer: scripts/research_factory_monitor.py
     known_extra_writers:
       - "scripts/research_factory_monitor.py — W6 nightly monitor writer (planned)"
     owner_program: research-factory
@@ -4432,4 +4437,7 @@ artifacts:
       Research Factory W1 (RF-11). Paper-phase monitor forward ledger — keep-first
       per (candidate_id, as_of); advanced only by the nightly engine job (W6+).
       Authority ceiling A0-A2 display-only; cadence flips to daily-engine at W6.
+      Producer is the W6 monitor writer (planned: scripts/research_factory_monitor.py).
+      scripts/check_research_factory_authority.py is the read-only authority guard
+      and must NOT be listed as a ledger writer.
       See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.4.

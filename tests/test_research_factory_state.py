@@ -273,11 +273,17 @@ class TestScreenedGate:
         transition("registered", "screened", "script", row, candidate=candidate)
 
     def test_screened_rf_family_no_declared_budget_raises(self, tmp_path):
-        """rf_family mode with no declared budget in ledger is refused."""
+        """rf_family mode with no declaration in ledger is refused.
+
+        A row with neither kind=='declared_budget' nor a config_hash does NOT
+        satisfy the RF-6 gate (it is e.g. a metadata/comment row, not a
+        grid/trial or declared-budget row).
+        """
         ledger = tmp_path / "trial_ledger.jsonl"
-        # Write a non-declared-budget row — should not satisfy the gate
+        # Write a row with NO config_hash and no kind=='declared_budget' —
+        # must not satisfy the gate.
         ledger.write_text(
-            json.dumps({"family": "rf.test.foo", "kind": "trial", "config_hash": "abc"}) + "\n"
+            json.dumps({"family": "rf.test.foo", "note": "metadata only"}) + "\n"
         )
         candidate = _make_candidate(trial_accounting={
             "mode": "rf_family",
@@ -293,6 +299,34 @@ class TestScreenedGate:
         with pytest.raises(IllegalTransition, match="no declared-budget/grid row"):
             transition("registered", "screened", "script", row,
                        candidate=candidate, ledger_path=ledger)
+
+    def test_screened_rf_family_grid_row_passes(self, tmp_path):
+        """rf_family mode passes when a log_grid()/log_trial() row exists.
+
+        RF-6 permits declaration via log_grid()/log_trial() (rows carry
+        config_hash but no kind=='declared_budget').  A candidate whose
+        budget was declared by logging the actual grid must be accepted.
+        """
+        ledger = tmp_path / "trial_ledger.jsonl"
+        # Write a row as log_trial() would — family + config_hash, no 'kind' field
+        ledger.write_text(
+            json.dumps({"family": "rf.test.foo", "config_hash": "abc123",
+                        "config": {"window": 20}}) + "\n"
+        )
+        candidate = _make_candidate(trial_accounting={
+            "mode": "rf_family",
+            "family": "rf.test.foo",
+            "declared_at": None,
+        })
+        row = _make_transition_row(**{
+            "from": "registered",
+            "to": "screened",
+            "actor": "script",
+            "artifact_refs": ["x"],
+        })
+        # Should not raise — grid row satisfies the RF-6 gate
+        transition("registered", "screened", "script", row,
+                   candidate=candidate, ledger_path=ledger)
 
     def test_screened_rf_family_with_declared_budget_passes(self, tmp_path):
         """rf_family mode passes when declared_budget row exists."""
@@ -424,6 +458,58 @@ class TestMandatoryFields:
         with pytest.raises(IllegalTransition, match="missing mandatory field"):
             transition("human_review", "deferred", "fable", row)
 
+    def test_paper_without_seed_entry_ref_raises(self):
+        """paper requires seed_entry_ref, regime_at_entry, expected_half_life_d (§4)."""
+        row = _make_transition_row(**{
+            "from": "human_review",
+            "to": "paper",
+            "actor": "fable",
+            "actor_ref": "session/PR-9999",
+            "review_packet_ref": "data/research_factory/review/test.json",
+            # seed_entry_ref / regime_at_entry / expected_half_life_d intentionally absent
+        })
+        with pytest.raises(IllegalTransition, match="missing mandatory field"):
+            transition("human_review", "paper", "fable", row)
+
+    def test_paper_with_all_mandatory_fields_passes(self):
+        """paper with all §4-mandatory fields present must not raise."""
+        row = _make_transition_row(**{
+            "from": "human_review",
+            "to": "paper",
+            "actor": "fable",
+            "actor_ref": "session/PR-9999",
+            "review_packet_ref": "data/research_factory/review/test.json",
+            "seed_entry_ref": "data/research_factory/seeds/rf-test-001.json",
+            "regime_at_entry": "bull",
+            "expected_half_life_d": 90,
+        })
+        # Should not raise
+        transition("human_review", "paper", "fable", row)
+
+    def test_promote_eligible_without_promotion_gate_ref_raises(self):
+        """promote_eligible requires promotion_gate_ref (§4)."""
+        row = _make_transition_row(**{
+            "from": "paper",
+            "to": "promote_eligible",
+            "actor": "fable",
+            "actor_ref": "session/PR-9999",
+            # promotion_gate_ref intentionally absent
+        })
+        with pytest.raises(IllegalTransition, match="missing mandatory field"):
+            transition("paper", "promote_eligible", "fable", row)
+
+    def test_promote_eligible_with_promotion_gate_ref_passes(self):
+        """promote_eligible with promotion_gate_ref present must not raise."""
+        row = _make_transition_row(**{
+            "from": "paper",
+            "to": "promote_eligible",
+            "actor": "fable",
+            "actor_ref": "session/PR-9999",
+            "promotion_gate_ref": "data/research_factory/gates/rf-test-001.json",
+        })
+        # Should not raise
+        transition("paper", "promote_eligible", "fable", row)
+
 
 # ---------------------------------------------------------------------------
 # 6. Smoke: all allowed transitions in the matrix pass validation (no false positives)
@@ -449,13 +535,19 @@ class TestAllowedTransitionsSmoke:
             "actor": actor,
             "actor_ref": actor_ref,
             "as_of": "2026-07-06T00:00:00Z",
-            # Provide all potentially-mandatory fields
+            # Provide all potentially-mandatory fields (§4 table)
             "come_back_on": "2027-01-01",
             "kill_evidence": {"n_at_kill": 5, "kill_class": "falsified"},
             "program_doc_ref": "research/FOO_PROGRAM.md",
             "artifact_refs": ["data/oracle/compounds/registry.jsonl"],
             "challenge_packet_ref": "data/research_factory/challenges/rf-smoke-001.json",
             "review_packet_ref": "data/research_factory/review/rf-smoke-001.json",
+            # paper mandatory fields (§4)
+            "seed_entry_ref": "data/research_factory/seeds/rf-smoke-001.json",
+            "regime_at_entry": "bull",
+            "expected_half_life_d": 90,
+            # promote_eligible mandatory fields (§4)
+            "promotion_gate_ref": "data/research_factory/gates/rf-smoke-001.json",
         }
 
     @pytest.mark.parametrize("from_state,to_states", [

@@ -130,8 +130,10 @@ on:
       - "tests/test_contract_drift.py"
       # Research Factory W1 (RF-11): authority guard, ledger schemas, state machine.
       - "scripts/research_factory*.py"
+      - "scripts/*research_factory*.py"
       - "data/research_factory/**"
       - "tests/test_research_factory*.py"
+      - "config/synapse.yml"
   workflow_dispatch:
 
 permissions:
