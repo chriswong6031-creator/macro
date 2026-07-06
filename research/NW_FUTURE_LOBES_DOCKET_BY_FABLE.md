@@ -119,6 +119,10 @@ Raw-price-plane loss (auto_adjust seams), retroactive universe deletion, and adj
 
 ---
 
+## 7.5 Chartered (2026-07-06)
+
+R1+R3 (rail, chartered together per §6), L1 short-side, L3 dispersion, and the R2/R4 governance waves were chartered by `research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md` (the build authority; this docket remains the taxonomy authority). L2's regret substrate ships as R1's first registered rule-experiment batch WITHOUT an L2 charter — the two-lobe concurrency cap holds. L4 receives accrual instrumentation only (no charter). One §2 correction from that program's census: the flat `fdr_family='replay'` mandated in §2/R1 above is load-bearing — TrialLedger pools on exact family strings, so per-experiment sub-families would defeat the anti-fishing budget; the build program's governor restores the flat family after its own red-team caught the deviation.
+
 ## 8. Provenance
 
 - Verification lane (Sonnet): parquet schemas, engine modules, masterplan status lines — all §7 corrections carry file-level evidence.
