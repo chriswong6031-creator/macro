@@ -455,6 +455,77 @@ class TestDryRunWritesNothing:
         summary = run(rf_dir=rf_dir, data_dir=tmp_path, dry_run=False, count=False)
         assert "routes" in summary
 
+    def test_dry_run_with_count_true_no_disk_writes(self, tmp_path):
+        """run(dry_run=True, count=True) must write NOTHING to disk (blocker fix).
+
+        Seeds an exploratory 63d oracle compound so the count path would
+        normally reach _run_63d_screen → screen_compound → trial_ledger.jsonl.
+        With dry_run=True, neither trial_ledger.jsonl nor transitions.jsonl
+        may be created, and the compound registry status must be unchanged.
+        """
+        # Build candidates.jsonl
+        rf_dir = tmp_path / "research_factory"
+        rf_dir.mkdir(parents=True, exist_ok=True)
+        candidate = {
+            "schema": "research_factory.candidate.v1",
+            "authority": "display_only",
+            "candidate_id": "rf-dry-count-001",
+            "created_at": "2026-07-06T00:00:00Z",
+            "source": "oracle_brainstorm",
+            "candidate_type": "oracle_compound",
+            "domain": "oracle",
+            "status": "registered",
+            "hypothesis": "dry-run count test",
+            "mechanism": "test",
+            "spec_ref": "DRY_COMPOUND_X",
+            "trial_accounting": {"mode": "read_only", "family": None},
+        }
+        (rf_dir / "candidates.jsonl").write_text(json.dumps(candidate) + "\n")
+
+        # Build a minimal oracle registry with an exploratory 63d compound
+        oracle_compounds_dir = tmp_path / "oracle" / "compounds"
+        oracle_compounds_dir.mkdir(parents=True, exist_ok=True)
+        compound_row = {
+            "id": "DRY_COMPOUND_X",
+            "status": "exploratory",
+            "family": "X",
+            "entry_rule": {"col": "washout_w", "op": "gt", "value": 0},
+            "universe": {"tier": "s"},
+        }
+        registry_path = oracle_compounds_dir / "registry.jsonl"
+        registry_path.write_text(json.dumps(compound_row) + "\n")
+        trial_ledger_path = oracle_compounds_dir / "trial_ledger.jsonl"
+
+        # Snapshot registry content before run
+        registry_before = registry_path.read_text()
+
+        # Import and run with the dangerous combination: dry_run=True, count=True
+        # This must NOT write trial_ledger.jsonl or transitions.jsonl
+        from scripts.research_factory_run import run
+        # Patch screen_compound to a sentinel that would write if called without dry_run
+        from unittest.mock import patch, MagicMock
+        mock_screen = MagicMock(return_value={"dry_run_safe": True})
+        with patch("scripts.oracle_screen.screen_compound", mock_screen, create=True):
+            summary = run(
+                rf_dir=rf_dir, data_dir=tmp_path, dry_run=True, count=True
+            )
+
+        # Invariant: no transition ledger
+        assert not (rf_dir / "transitions.jsonl").exists(), (
+            "transitions.jsonl must not exist after dry_run=True run"
+        )
+        # Invariant: no trial_ledger written (compound status unchanged)
+        assert not trial_ledger_path.exists(), (
+            "trial_ledger.jsonl must not be created by dry_run=True, count=True run"
+        )
+        # Invariant: registry is byte-for-byte unchanged
+        assert registry_path.read_text() == registry_before, (
+            "oracle registry must not be mutated by dry_run=True, count=True run"
+        )
+        # Summary correctly reflects dry_run=True
+        assert summary["dry_run"] is True
+        assert summary["effective_count"] is False
+
 
 # ===========================================================================
 # 9. Kill evidence attached on numeric_rejected (RF-10)

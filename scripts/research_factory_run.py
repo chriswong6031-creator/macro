@@ -78,6 +78,8 @@ def _route_candidate(
     *,
     data_dir: Path,
     count: bool,
+    dry_run: bool = True,
+    _alpha_cache: dict | None = None,
 ) -> dict:
     """Route one registered candidate to its domain adapter.
 
@@ -85,6 +87,9 @@ def _route_candidate(
       candidate_id, source, domain, adapter_result, action, reason
     where action ∈ {'transition_screened', 'transition_numeric_rejected',
                     'transition_awaiting_data', 'no_action', 'error'}
+
+    _alpha_cache : mutable dict passed from run() to share alpha_grammar
+                   route_all results across candidates (minor perf fix).
     """
     cid = candidate.get("candidate_id", "?")
     source = candidate.get("source", "")
@@ -125,7 +130,9 @@ def _route_candidate(
             result["adapter_result"] = {"spec_ref": spec_ref, "found": False}
             return result
 
-        adapter_result = route_compound(compound, data_dir=data_dir, count=count)
+        adapter_result = route_compound(
+            compound, data_dir=data_dir, count=count, dry_run=dry_run
+        )
         result["adapter_result"] = adapter_result
         projected = adapter_result.get("projected_state", "registered")
         re_refused = adapter_result.get("re_screen_refused", False)
@@ -199,8 +206,13 @@ def _route_candidate(
 
     # --- Alpha grammar domain ---
     if source == "alpha_grammar" or ctype == "alpha_family":
-        from engine.research_factory.adapter_alpha_grammar import route_all
-        family_results = route_all(data_dir)
+        from engine.research_factory.adapter_alpha_grammar import route_all as _ag_route_all
+        # Use caller-supplied cache to avoid re-reading parquet for every candidate
+        _cache = _alpha_cache if _alpha_cache is not None else {}
+        cache_key = str(data_dir)
+        if cache_key not in _cache:
+            _cache[cache_key] = _ag_route_all(data_dir)
+        family_results = _cache[cache_key]
         spec_ref = candidate.get("spec_ref") or candidate.get("candidate_id")
         # Find matching family
         fam_result = next(
@@ -280,9 +292,11 @@ def _build_transition_row(
 
     # For awaiting_data: require come_back_on (RF-4)
     if to_state == "awaiting_data":
-        # Default come_back_on = 90 days from now
-        import datetime as _dt
-        come_back = _dt.date.today() + _dt.timedelta(days=90)
+        # Default come_back_on = 90 days from UTC now (minor fix: tz-consistent)
+        come_back = (
+            datetime.datetime.now(datetime.timezone.utc).date()
+            + datetime.timedelta(days=90)
+        )
         row["come_back_on"] = come_back.isoformat()
 
     return row
@@ -363,8 +377,15 @@ def run(
     dry_run: bool = True,
     count: bool = False,
 ) -> dict:
-    """Main runner.  Returns a summary dict."""
+    """Main runner.  Returns a summary dict.
+
+    Invariant: dry_run=True ALWAYS produces zero disk writes.
+    count is silently suppressed when dry_run=True so the public API call
+    run(dry_run=True, count=True) is safe (blocker fix).
+    """
     as_of = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    # Enforce: counted writes require both count=True AND dry_run=False
+    effective_count = count and not dry_run
 
     candidates = load_candidates(rf_dir)
     registered = filter_registered(candidates)
@@ -374,26 +395,38 @@ def run(
     )
 
     if dry_run:
-        log.info("Mode: DRY-RUN — no writes to disk")
+        log.info("Mode: DRY-RUN — no writes to disk%s",
+                 " (count suppressed)" if count else "")
     else:
-        log.info("Mode: EXECUTE%s", " + COUNT (63d oracle screens allowed)" if count else "")
+        log.info("Mode: EXECUTE%s",
+                 " + COUNT (63d oracle screens allowed)" if effective_count else "")
 
     summary: dict[str, Any] = {
         "n_candidates": len(candidates),
         "n_registered": len(registered),
         "dry_run": dry_run,
         "count": count,
+        "effective_count": effective_count,
         "as_of": as_of,
         "routes": [],
         "transitions_attempted": 0,
         "transitions_ok": 0,
     }
 
+    # Shared cache for alpha_grammar route_all (one parquet load per run)
+    _alpha_cache: dict = {}
+
     for candidate in registered:
         cid = candidate.get("candidate_id", "?")
         log.info("Processing candidate: %s (source=%s)", cid, candidate.get("source"))
 
-        routing = _route_candidate(candidate, data_dir=data_dir, count=count)
+        routing = _route_candidate(
+            candidate,
+            data_dir=data_dir,
+            count=effective_count,
+            dry_run=dry_run,
+            _alpha_cache=_alpha_cache,
+        )
         action = routing.get("action", "no_action")
         reason = routing.get("reason", "")
         adapter_result = routing.get("adapter_result")

@@ -229,10 +229,14 @@ def _run_63d_screen(
     compound: dict,
     data_dir: Path,
     count: bool,
+    dry_run: bool = False,
 ) -> dict | None:
     """Invoke oracle_screen for a 63d-track compound.
 
     Gated: raises PermissionError unless count=True.
+    When dry_run=True the screen is invoked in compute-only mode (no ledger
+    append, no registry status flip) — mirrors the dry_run parameter exposed
+    by scripts.oracle_screen.screen_compound.
     Returns the screen result dict or None on error.
 
     NEVER called for reversion-track compounds.
@@ -249,7 +253,7 @@ def _run_63d_screen(
         log.error("_run_63d_screen: cannot import oracle_screen: %s", exc)
         return None
     try:
-        result = _screen_63d(compound, data_dir)
+        result = _screen_63d(compound, data_dir, dry_run=dry_run)
         return result
     except Exception as exc:  # noqa: BLE001
         log.error("_run_63d_screen: %s failed: %s", compound.get("id"), exc)
@@ -265,6 +269,7 @@ def route_compound(
     *,
     data_dir: Path | None = None,
     count: bool = False,
+    dry_run: bool = False,
 ) -> dict:
     """Route a single oracle compound through the factory adapter.
 
@@ -274,6 +279,10 @@ def route_compound(
     data_dir  : Optional root data directory (default: Path("data")).
     count     : If True, allows a counted 63d oracle_screen invocation.
                 Default False per RF-13 (factory default is read-only observer).
+    dry_run   : If True, the 63d screen is run in compute-only mode (no ledger
+                append, no registry status flip).  count=True + dry_run=True is
+                the safe "measure without mutating" call pattern; count is
+                effectively suppressed when dry_run=True (RF-6 / invariant).
 
     Returns
     -------
@@ -288,6 +297,8 @@ def route_compound(
       re_screen_refused: bool — True if 63d re-screen was refused per RF-13
     """
     _dir = Path(data_dir) if data_dir else Path("data")
+    # dry_run suppresses counted writes even when count=True (blocker fix RF-6)
+    effective_count = count and not dry_run
     compound_id = compound.get("id", "?")
     domain_status = compound.get("status", "exploratory")
     projected_state = project_oracle_status(domain_status)
@@ -352,8 +363,11 @@ def route_compound(
             }
         else:
             # Compound is exploratory — invoke counted screen if allowed
-            if count:
-                screen_result = _run_63d_screen(compound, _dir, count=True)
+            # effective_count = count and not dry_run (enforced at boundary above)
+            if effective_count:
+                screen_result = _run_63d_screen(
+                    compound, _dir, count=True, dry_run=dry_run
+                )
                 artifact = {
                     "track": "63d",
                     "source": "oracle_screen",
@@ -406,16 +420,23 @@ def route_all(
     *,
     data_dir: Path | None = None,
     count: bool = False,
+    dry_run: bool = False,
 ) -> list[dict]:
     """Route all compounds in ``compounds`` through the oracle adapter.
 
     Parameters match ``route_compound``.  Returns a list of result dicts.
+    PermissionError is re-raised so a refused counted screen can never be
+    silently swallowed by the broad-except fallback (minor finding fix).
     """
     results: list[dict] = []
     for compound in compounds:
         try:
-            result = route_compound(compound, data_dir=data_dir, count=count)
+            result = route_compound(
+                compound, data_dir=data_dir, count=count, dry_run=dry_run
+            )
             results.append(result)
+        except PermissionError:
+            raise
         except Exception as exc:  # noqa: BLE001
             log.error(
                 "route_all: route_compound failed for %s: %s",
