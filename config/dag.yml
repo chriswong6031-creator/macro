@@ -411,6 +411,23 @@ lanes:
           outputs: [data/neuralweb/machine_registry.jsonl (status update),
                     data/neuralweb/cortex/evaluator_run.json,
                     data/neuralweb/governance.jsonl]
+      - id: build_neuralweb_health_cortex
+        module: scripts.build_neuralweb_health
+        note: >
+          PR-C NW lobe-status surface — cortex-job phase (--refresh-cortex flag).
+          Second phase of the two-phase health build: re-reads cortex grader outputs
+          (data/reflexes/cortex_attention/grades.jsonl, probation.json) written by
+          grade_cortex_attention and grade_factor_attention, then patches
+          overall_status/summary_counts in the health.json already written by the
+          engine-job phase. Runs with `if: always()` so health.json reflects the
+          latest cortex state even when cortex_deliberation is skipped or fails.
+          Non-fatal (always exits 0 in the workflow step).
+          inputs: [data/neuralweb/health.json,
+                   data/reflexes/cortex_attention/grades.jsonl,
+                   data/reflexes/factor_attention/grades.jsonl,
+                   data/neuralweb/cortex/last_run_state.json]
+          outputs: [data/neuralweb/health.json,
+                    site/neuralweb/health.json]
 
   # ── asia-close.yml / asia ───────────────────────────────────────────────
   - workflow: .github/workflows/asia-close.yml
