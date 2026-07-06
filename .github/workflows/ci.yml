@@ -110,6 +110,7 @@ on:
       - "scripts/check_synapse_reads.py"
       - "data/neuralweb/read_gate_baseline.json"
       - "tests/test_synapse_read_gate.py"
+      - "tests/test_horizon_firewall.py"
       # neural-web program (W0): synapse.yml registry, gen_signal_bus_doc generator,
       # committed SIGNAL_BUS.md, and the three test files must all trigger the gate so a
       # config edit that produces a stale doc — or an envelope refactor that breaks
@@ -432,7 +433,7 @@ jobs:
       - name: synapse read-gate — warn tier + Article-2 hard fail
         run: python3 scripts/check_synapse_reads.py
       - name: synapse read-gate unit tests
-        run: python -m pytest tests/test_synapse_read_gate.py -q
+        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py -q
 
   neural-web:
     # neural-web program (W0, #1253 post-mortem): three test files were run by ZERO

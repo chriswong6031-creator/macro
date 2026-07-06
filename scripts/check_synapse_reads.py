@@ -819,8 +819,13 @@ def main() -> int:
     if n_fw_violations > 0:
         print(
             f"\nhorizon-firewall HARD FAIL: {n_fw_violations} cross-horizon registry "
-            f"violation(s). Fix horizon_role stamps or remove the offending surface/"
-            f"consumer entries in config/synapse.yml."
+            f"violation(s) [LH-R1 — research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md].\n"
+            f"Entry (~2-4wk) and hold-thesis (~12-36mo) horizons must remain mechanically "
+            f"separated at the registry level.\n"
+            f"Fix options: (a) correct the horizon_role stamp on the offending artifact, or "
+            f"(b) remove the cross-horizon surface/consumer entry from config/synapse.yml, or "
+            f"(c) reclassify the artifact as 'dual' if both horizons are genuinely intended "
+            f"(requires a 'notes' field explaining the dual use)."
         )
         return 1
     else:

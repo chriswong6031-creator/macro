@@ -30,6 +30,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts.check_synapse_reads import (  # noqa: E402
     HorizonViolation,
+    _ARTICLE2_MAP,
     _ENTRY_ARTICLE2_SURFACES,
     _HOLD_SURFACE_MAP,
     _HOLD_SURFACE_MODULES,
@@ -331,6 +332,12 @@ _KEYSTONE_FILES = sorted(
 )
 
 # Pattern that would indicate reading a long_hold data path.
+# NOTE — known blind spots (acceptable for v1, per check_synapse_reads.py lines 44-47):
+#   os.path.join('data/research', 'long_hold_...')  →  NOT matched (path split across args)
+#   'data/research/' + 'long_hold_...'              →  NOT matched (string concatenation)
+# The check catches plain literals, f-strings with the full path in one quoted segment,
+# and aliased-def literals.  Do not assume it provides exhaustive coverage of all
+# possible path constructions.
 _LONG_HOLD_PATH_RE = re.compile(r"""['"](data/research/long_hold[^\'"]*)['""]""")
 
 
@@ -416,4 +423,63 @@ class TestRealRegistryFirewallClean:
         ]
         assert len(entry_arts) >= 1, (
             "No tactical_entry artifacts found in registry — PR-C stamps may not be present."
+        )
+
+    def test_article2_map_in_sync_with_registry_meta(self) -> None:
+        """
+        _ARTICLE2_MAP.keys() must stay in sync with meta.article2_surfaces in
+        config/synapse.yml.
+
+        If a future agent charters a new Article-2 entry surface by adding it to
+        meta.article2_surfaces without also editing _ARTICLE2_MAP, the Direction-A
+        firewall check (_ENTRY_ARTICLE2_SURFACES = frozenset(_ARTICLE2_MAP.keys()))
+        would silently fail to catch hold_thesis artifacts routing to that surface.
+        This test hard-fails if the two sets diverge (LH-R1 bypass vector).
+        """
+        reg = load_registry(REPO_ROOT)
+        registry_surfaces = set(reg.get("meta", {}).get("article2_surfaces") or [])
+        hardcoded_surfaces = set(_ARTICLE2_MAP.keys())
+        missing_in_map = registry_surfaces - hardcoded_surfaces
+        extra_in_map = hardcoded_surfaces - registry_surfaces
+        assert not missing_in_map, (
+            f"meta.article2_surfaces in synapse.yml has surfaces not in _ARTICLE2_MAP: "
+            f"{missing_in_map!r}. Add them to _ARTICLE2_MAP in scripts/check_synapse_reads.py "
+            f"so the Direction-A horizon firewall covers them (LH-R1)."
+        )
+        assert not extra_in_map, (
+            f"_ARTICLE2_MAP in scripts/check_synapse_reads.py has surfaces not in "
+            f"meta.article2_surfaces: {extra_in_map!r}. Either add them to synapse.yml or "
+            f"remove them from _ARTICLE2_MAP (LH-R1)."
+        )
+
+    def test_no_hold_thesis_artifacts_with_scored_path_surfaces_while_hold_map_empty(
+        self,
+    ) -> None:
+        """
+        Direction B activation guard: if _HOLD_SURFACE_MAP is still empty (W0/W1/W2)
+        but a hold_thesis artifact has declared scored_path_surfaces, the firewall
+        has no teeth for that artifact.  Hard-fail here so the W3 author cannot forget
+        to populate _HOLD_SURFACE_MAP.
+
+        Once hold surfaces are chartered (W3 PR-L/M), _HOLD_SURFACE_MAP must be
+        populated before registering hold_thesis artifacts with scored_path_surfaces.
+        """
+        if _HOLD_SURFACE_MAP:
+            # Direction B is active — this guard is no longer needed.
+            return
+        reg = load_registry(REPO_ROOT)
+        offenders = [
+            art_id
+            for art_id, v in (reg.get("artifacts") or {}).items()
+            if (
+                isinstance(v, dict)
+                and v.get("horizon_role") == "hold_thesis"
+                and list(v.get("scored_path_surfaces") or [])
+            )
+        ]
+        assert offenders == [], (
+            f"hold_thesis artifact(s) declare scored_path_surfaces but _HOLD_SURFACE_MAP "
+            f"is empty: {offenders!r}. Populate _HOLD_SURFACE_MAP in "
+            f"scripts/check_synapse_reads.py before adding hold_thesis scored_path_surfaces "
+            f"(LH-R1 Direction-B activation, W3)."
         )
