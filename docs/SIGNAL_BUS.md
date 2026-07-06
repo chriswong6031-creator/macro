@@ -12,15 +12,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|
 | btc-vector | 5 |
 | china-alpha | 7 |
-| china-intel-hub | 1 |
-| cycle-intelligence | 4 |
+| china-intel-hub | 2 |
+| cycle-intelligence | 10 |
 | engine-fix | 16 |
 | entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 17 |
+| long-hold | 20 |
 | neural-web | 33 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
@@ -38,8 +38,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 94 |
-| infrastructure | 42 |
+| display | 99 |
+| infrastructure | 47 |
 | scored | 4 |
 | shadow | 37 |
 
@@ -47,7 +47,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 171 |
+| git | 181 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -79,7 +79,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| site-china-special-sits | `site/chinaspecialdata/special.json` | json | asia-close | display | 1 | 0 |
+| site-china-special-sits | `site/chinaspecialdata/special.json` | json | asia-close | display | 2 | 0 |
+| site-china-intel-command | `site/china_intel/command.json` | json | asia-close | display | 1 | 0 |
 
 ### cycle-intelligence
 
@@ -89,6 +90,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | country-cycles-forward-log | `data/country_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
 | sector-cycles-forward-log | `data/sector_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
 | hazard-model | `data/hazard/model_price_c4414dcb.json` | json | on-demand | scored | 4 | 0 |
+| cycle-pattern-truths | `data/cycle_pattern/truths.jsonl` | jsonl | on-demand | display | 1 | 0 |
+| cycle-pattern-entities | `data/cycle_pattern/entities.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
+| cycle-pattern-outcomes | `data/cycle_pattern/outcomes.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
+| cycle-pattern-state-daily-live | `data/cycle_pattern/state_daily_live.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
+| cycle-pattern-state-monthly | `data/cycle_pattern/state_monthly.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
+| signal-archive-context-daily | `data/signal_archive/context_daily.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 
 ### engine-fix
 
@@ -167,6 +174,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
+| long-hold-thesis-funnel-panel | `embedded: thesis_funnel inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| long-hold-thesis-funnel-states | `data/research/thesis_funnel_states.parquet` | parquet | on-demand | display | 1 | 0 |
+| long-hold-thesis-funnel-states-manifest | `data/research/thesis_funnel_states_manifest.json` | json | on-demand | display | 1 | 0 |
 | moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 1 | 0 |
 
@@ -690,6 +700,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/expectation_state.py`
 - **extra writers:**
   - engine/stock_fundamentals.py — expectation_states() called inside panels(); result keyed as 'expectation_state'
+
+### long-hold-thesis-funnel-panel
+
+- **path:** `embedded: thesis_funnel inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/thesis_funnel.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_thesis_funnel_block() called inside panels(); result keyed as 'thesis_funnel'
 
 ### market-state-latest
 

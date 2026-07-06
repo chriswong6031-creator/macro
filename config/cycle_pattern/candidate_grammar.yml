@@ -1,0 +1,326 @@
+# CPI Candidate Grammar — Lattice / Trial Grammar
+# ======================================================
+# Governs which condition dimensions, targets, and budgets are allowed for
+# cycle-pattern candidates registered in the Research Factory (domain:
+# cycle_pattern).  Referenced by the trial harness and enforced by
+# check_cycle_pattern_authority.py.
+#
+# Masterplan refs: §6 architecture, §7 P2 governance machinery, §5
+# prediction-target doctrine, §4 information program, §8 preregistration.
+# Codex report W3 lattice-grammar section.
+#
+# House rules (binding):
+#   - No sklearn / statsmodels / scipy.stats in any engine code.
+#   - Estimator default: shrunken_cell (James-Stein toward phase/family mean).
+#   - FDR applied at PROMOTION only; exploration accumulates shrunken posteriors.
+#   - PIT discipline: every feature is a pure function of tape <= t.
+#   - Embargo window [embargo_start, present] is IMMUTABLE — never train on it.
+#   - n_floor: minimum month-blocks (non-overlapping) per cell; below this the
+#     cell is DATA_MISSING, not FAIL.
+#
+# Schema version: v0  (2026-07-06)
+
+schema_version: "v0"
+owner_program: "cycle-intelligence"
+created: "2026-07-06"
+
+# ── Allowed condition dimensions ──────────────────────────────────────────────
+# Each entry defines a dimension usable in lattice cell conditions.
+# Only dimensions listed here may appear in candidate condition_dims fields.
+allowed_condition_dimensions:
+
+  # ── Phase / state ────────────────────────────────────────────────────────
+  - name: phase
+    description: >
+      Raw cycle phase label from the price-basis ontology (5-wheel):
+      FRESH-BUY, UPTREND, PEAK, DECLINE, TROUGH.
+    values: [FRESH-BUY, UPTREND, PEAK, DECLINE, TROUGH]
+    pit_class: pit_pure
+
+  - name: phase_v2
+    description: >
+      Phase_v2 label (extended ontology with RECOVERY/REPAIR; cross-checked
+      against pos_v2 in check_cycle_consistency.py).
+    values: [ACCUMULATION, UPTREND, PEAK, DISTRIBUTION, DECLINE, TROUGH,
+             RECOVERY, REPAIR]
+    pit_class: pit_pure
+
+  # ── Position / oscillator bins ───────────────────────────────────────────
+  - name: pos_bin
+    description: >
+      Cycle position tercile or quartile bin (low/mid/high, or Q1–Q4).
+      Labels must be stable across family; bin edges from the training window.
+    values: [Q1, Q2, Q3, Q4, low, mid, high]
+    pit_class: pit_pure
+
+  - name: osc_slope_sign
+    description: >
+      Sign of oscillator slope at stamp date (+1 / 0 / -1); derived from
+      pos_v2 first difference over a trailing window.
+    values: [positive, flat, negative]
+    pit_class: pit_pure
+
+  # ── Age / overdue / hazard ───────────────────────────────────────────────
+  - name: age_bucket
+    description: >
+      Age of current phase in months, binned into terciles or quartiles
+      relative to the family median phase duration.
+    values: [young, mid, mature, aged]
+    pit_class: pit_pure
+
+  - name: overdue
+    description: >
+      Boolean: current phase age > 90th-percentile family duration.
+    values: [true, false]
+    pit_class: pit_pure
+
+  - name: hazard_src
+    description: >
+      Which hazard model produced the probability (price_c4414dcb or future
+      refits); used to version hazard cells.
+    values_open: true    # specific model ids not enumerated; validated at runtime
+    pit_class: mixed     # hazard model itself has mixed pit_class (see CPI-004)
+
+  - name: hazard_prob_bin
+    description: >
+      Hazard probability tercile or quartile bin derived from the shipped model.
+    values: [low, mid, high, Q1, Q2, Q3, Q4]
+    pit_class: mixed
+
+  # ── Trend / RS / vol ─────────────────────────────────────────────────────
+  - name: trend_pass
+    description: >
+      Boolean: instrument price > 200d MA at stamp date.
+    values: [true, false]
+    pit_class: pit_pure
+
+  - name: rs_bin
+    description: >
+      Relative-strength tercile or quartile of the instrument vs its family
+      at stamp date (trailing 12m).
+    values: [low, mid, high, Q1, Q2, Q3, Q4]
+    pit_class: pit_pure
+
+  - name: vol_pctile_bin
+    description: >
+      Realized-volatility percentile bin (trailing 63d vs own 3y history).
+    values: [low, mid, high, Q1, Q2, Q3, Q4]
+    pit_class: pit_pure
+
+  # ── Macro / regime context (revision-optimistic until FT-7 passes) ───────
+  - name: quad
+    description: >
+      Macro regime quad label (growth/inflation quadrant from regime.json).
+      ALL cells using this dimension carry pit_class=revision_optimistic until
+      the vintage-true macro spine (FT-7 / P-D5-1) passes its gate.
+      Tag: revision_optimistic.
+    values: [Q1_expansion, Q2_stagflation, Q3_deflation, Q4_reflation,
+             unknown]
+    pit_class: revision_optimistic
+    tag: revision_optimistic
+
+  - name: family
+    description: >
+      Entity family (us_sector, country, cn_sector, hk_sector, basket).
+    values: [us_sector, country, cn_sector, hk_sector, basket]
+    pit_class: pit_pure
+
+  - name: region
+    description: >
+      Broad geographic region (US, Global, CN, HK, EM, DM).
+    values: [US, Global, CN, HK, EM, DM]
+    pit_class: pit_pure
+
+  # ── Cross-entity / breadth dimensions (FT-4) ─────────────────────────────
+  - name: sync_tercile
+    description: >
+      Family synchronisation tercile at stamp date: what fraction of family
+      members share the same phase direction (FT-4 covariate).
+    values: [low, mid, high]
+    pit_class: pit_pure
+
+  - name: phase_breadth_bin
+    description: >
+      Fraction of family members in late-cycle phases (PEAK + DISTRIBUTION +
+      DECLINE), binned: low (<25%), mid (25–60%), high (>60%).  FT-4 covariate.
+    values: [low, mid, high]
+    pit_class: pit_pure
+
+
+# ── Allowed targets ───────────────────────────────────────────────────────────
+# Candidates may ONLY specify targets from this list.  Raw return targets
+# (ret_fwd_* alone) are explicitly FORBIDDEN — see forbidden_targets below.
+allowed_targets:
+
+  # Tail risk / drawdown (P3 lattice)
+  - name: max_drawdown_fwd_63d_tail
+    description: >
+      P(63-day max drawdown worse than family p10 baseline).
+      Discrete/bounded; baseline is the phase-pooled shrunken mean.
+    family: lattice
+    baseline: phase_pooled_shrunken_mean
+    min_horizon_days: 63
+
+  - name: max_drawdown_fwd_126d_tail
+    description: >
+      P(126-day max drawdown worse than family p10 baseline).
+    family: lattice
+    baseline: phase_pooled_shrunken_mean
+    min_horizon_days: 126
+
+  # Turn events (hazard family; covariate expansion via FT trials)
+  - name: turn_event_1m
+    description: >
+      P(leg turns within 1 month) — binomial event; baseline is the
+      family-stratified age-only KM prior.
+    family: hazard
+    baseline: family_stratified_km
+    min_horizon_days: 21
+
+  - name: turn_event_3m
+    description: >
+      P(leg turns within 3 months); baseline is KM prior.
+    family: hazard
+    baseline: family_stratified_km
+    min_horizon_days: 63
+
+  - name: turn_event_6m
+    description: >
+      P(leg turns within 6 months); baseline is KM prior.
+    family: hazard
+    baseline: family_stratified_km
+    min_horizon_days: 126
+
+  # Phase-change targets
+  - name: phase_changed_1m
+    description: >
+      Binary: phase label differs between t and t+21 trading days.
+      Baseline: unconditional empirical phase-change rate per family.
+    family: lattice
+    baseline: family_empirical_phase_change_rate
+    min_horizon_days: 21
+
+  - name: phase_changed_3m
+    description: >
+      Binary: phase label differs between t and t+63 trading days.
+    family: lattice
+    baseline: family_empirical_phase_change_rate
+    min_horizon_days: 63
+
+  # False-repair composite (P4)
+  - name: false_repair
+    description: >
+      Binary: phase is Recovery or Repair at stamp t, AND a down turn-event
+      fires within 6 months (price falls to a new leg low below the prior
+      trough).  Defined: phase in {Recovery, Repair} at t AND
+      turn_event_down_6m == 1.  Baseline: family base rate by age_bucket.
+    family: lattice
+    baseline: family_false_repair_base_rate_by_age_bucket
+    definition: "phase_v2 in ['RECOVERY', 'REPAIR'] at t AND turn_event_down_6m=1"
+    min_horizon_days: 126
+
+  # Phase persistence (P3 lattice)
+  - name: phase_persistence
+    description: >
+      P(current phase survives 3 months without a phase-label change).
+      Baseline: per-family phase duration prior (empirical survival at 63d).
+    family: lattice
+    baseline: family_phase_duration_prior
+
+
+# ── Forbidden targets (standing nulls / constitutional bars) ──────────────────
+# Any candidate specifying one of these targets MUST be rejected by the
+# trial harness.  The Research Factory IllegalTransition check enforces this.
+forbidden_targets:
+
+  - name: ret_fwd_alone
+    description: >
+      Raw forward absolute return from cycle state alone — with no drawdown
+      adjustment, no family excess calculation, and no vol-residualization.
+      Standing null: CPI-001 (KG-1).  No exception until CPI-001 is falsified
+      by a new preregistered trial.
+    truth_id: CPI-001
+    rule_id: CPI-FORBIDDEN-001
+    note: >
+      Candidates MAY combine return with a drawdown-adjustment or vol-
+      residualization (those become max_drawdown_fwd targets, not return
+      targets), or express excess return within a preregistered FT family.
+      The ban is on ret_fwd_* as the SOLE stated target without any
+      risk-adjustment layer.
+
+
+# ── Per-trial-family budget fields ───────────────────────────────────────────
+# Each trial family declares its budget before any cells are evaluated.
+# The trial harness reads these fields; the Research Factory RF-6 gate
+# requires a trial-ledger entry for each family before the first screened
+# candidate is registered.
+trial_family_budgets:
+
+  # Lattice family — drawdown-tail + persistence cells (P3)
+  - family_id: cycle_pattern_lattice
+    description: >
+      Shrinkage-first lattice over allowed_condition_dimensions × risk/event
+      targets.  Exploration uses shrunken_cell estimator (James-Stein toward
+      phase/family pooled mean); FDR applied at promotion only.
+    max_cells: 480          # absolute ceiling per preregistration (RF-6 guard)
+    fdr_q: 0.10             # BH-FDR threshold at promotion
+    estimator: shrunken_cell
+    embargo_start: "2024-01-01"   # IMMUTABLE — never train on data >= this date
+    n_floor: 40             # minimum month-blocks per cell; below = DATA_MISSING
+    targets_allowed:
+      - max_drawdown_fwd_63d_tail
+      - max_drawdown_fwd_126d_tail
+      - phase_changed_1m
+      - phase_changed_3m
+      - phase_persistence
+      - false_repair
+    notes: >
+      Cell-count budget: 5 phases × 4 pos_bins × 2 families × 3 horizons =
+      120 base cells; supplementary cells (osc_slope_sign, age_bucket,
+      trend_pass) may expand up to max_cells.  Every expansion batch must
+      be logged as a new ledger entry before evaluation.
+
+  # Feature-trial family — covariate-expansion (FT-1..FT-7, P3/P4)
+  - family_id: cycle_pattern_ft
+    description: >
+      Preregistered feature-trial families (FT-x): join covariate family X
+      into the lake, refit the hazard model, walk-forward per frozen W4.2
+      harness, gate on paired ΔBrier CI + BH-FDR within this family.
+      One ledger entry per FT family; candidate counts declared before run.
+    max_cells: 120          # per FT-x batch; separate ledger entry per batch
+    fdr_q: 0.10
+    estimator: shrunken_cell
+    embargo_start: "2024-01-01"
+    n_floor: 40
+    targets_allowed:
+      - turn_event_1m
+      - turn_event_3m
+      - turn_event_6m
+      - max_drawdown_fwd_63d_tail
+      - max_drawdown_fwd_126d_tail
+    notes: >
+      Baseline is ALWAYS the current shipped model (not KM raw).  X must add
+      information beyond what the current model already captures.  FT-1
+      (breadth) and FT-4 (cross-entity structure) run first — cheapest and
+      purest PIT.  FT-7 (vintage-true macro) is the gate that unlocks
+      revision_optimistic quad cells.
+
+  # Hazard-cell family — existing 6-cell model + future refits (P0/P2/P3)
+  - family_id: cycle_pattern_hazard
+    description: >
+      The shipped 6-cell hazard model (up/dn × 1m/3m/6m); future annual
+      refits + FT-gated covariate additions register here.  Cells already
+      adjudicated (CPI-004, CPI-005, CPI-006) serve as the baseline truth
+      layer; new cells must beat this baseline, not KM.
+    max_cells: 60
+    fdr_q: 0.10
+    estimator: shrunken_cell
+    embargo_start: "2024-01-01"
+    n_floor: 40
+    targets_allowed:
+      - turn_event_1m
+      - turn_event_3m
+      - turn_event_6m
+    notes: >
+      Annual refits: LOG-AND-SKIP (never auto-commit); a human commits the
+      refit artifact after reviewing the diff-and-alert output.
