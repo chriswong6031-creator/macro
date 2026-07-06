@@ -1,12 +1,14 @@
 {
   "exp_id": "disp_gate_v1",
-  "run_at": "2026-07-06T14:29:49.610303+00:00",
-  "runtime_s": 16.2,
-  "vintage": "2026-07-06T14:29Z",
+  "run_at": "2026-07-06T14:40:50.988056+00:00",
+  "runtime_s": 14.2,
+  "vintage": "2026-07-06T14:40Z",
   "house_law_note": "gross_mult_live = 1.0 HARD CONSTRAINT (RUL-F3.7). descriptive-only batch.",
   "prereg": "research/dispersion/L3_PREREG.md",
   "verdict_criteria": "descriptive-only",
   "pooled_replay_trial_count": 31,
+  "survivorship_caveat": "PANEL SURVIVORSHIP DISCLOSED: breadth/_closes_deep.parquet is today's surviving universe backfilled through history. All tickers are currently active (zero delisted/inactive in last 365d). Per-date non-null name count rises monotonically from sparse early history to today's full universe. The expanding-window percentile denominator (CSD history since inception) is therefore computed against a survivor-biased distribution: surviving stocks carry lower historical idiosyncratic dispersion (they include no Enron-style blowups, M&A-departed names, or delisted tickers that blew up cross-sectional variance). This biases the regime percentile level \u2014 surviving-universe CSD is understated at early dates \u2014 which may shift lean_in/lean_out state assignments relative to a full-universe panel. Because all fires are 2022+ and the panel universe is largest and most stable in recent years, the bias is lowest in the fire population window. However, the CSD percentile denominator reaches back to 1962 under the expanding basis and the early-history survivor-only distribution inflates the denominator, potentially understating the true percentile rank of recent CSD values. All regime state assignments carry this caveat. The trailing-252d sensitivity basis (using only 252-day rolling CSD) is less affected since it avoids the 60-year survivor-only denominator. NO delisted/inactive correction has been applied. This is a structural limitation of the panel; results are descriptive and should not be used for formal inference without a delisted-inclusive universe.",
+  "clustering_deviation_note": "PREREG DEVIATION CORRECTED (PR-A2 fix): Original build used TICKER_YYYY-Www per-ticker ISO-week clustering. This deviated from L3_PREREG.md Standing Notes lines 122-124 which freeze clustering as 'contiguous blocks within \u00b130d'. The original scheme (a) gave different cluster IDs to different tickers on the same macro-shock date (missing cross-ticker tape correlation) and (b) could split fires 2-3 days apart across an ISO-week boundary. This build uses the prereg-spec BLOCK_<YYYYMMDD> scheme: fires within 30 calendar days of a block's start share one cluster ID regardless of ticker. This narrows n_clusters and widens CIs relative to the original build (fewer, larger clusters = more conservative).",
   "panel_info": {
     "earliest_date": "1962-01-02",
     "latest_date": "2026-07-02",
@@ -84,7 +86,7 @@
     "total_fires": 49939,
     "n_excluded_feasibility": 0,
     "n_included": 49939,
-    "n_clusters_total": 22300,
+    "n_clusters_total": 41,
     "fire_date_range": [
       "2022-06-30",
       "2025-12-29"
@@ -105,42 +107,42 @@
     "expanding": {
       "lean_in": {
         "n_fires": 10586,
-        "n_clusters": 5008,
+        "n_clusters": 17,
         "stop5_rate": 0.3579,
-        "stop5_ci90_lo": 0.3467,
-        "stop5_ci90_hi": 0.3691,
+        "stop5_ci90_lo": null,
+        "stop5_ci90_hi": null,
         "dead_money_rate": 0.194,
-        "dead_money_ci90_lo": 0.1862,
-        "dead_money_ci90_hi": 0.2026,
+        "dead_money_ci90_lo": null,
+        "dead_money_ci90_hi": null,
         "clean_liftoff_rate": 0.352,
         "mean_ret_21d": 0.0249,
-        "ci_note": "episode-clustered bootstrap 90% CI, 5008 clusters"
+        "ci_note": "sparse \u2014 17 clusters < 25 floor \u2014 descriptive only, no bootstrap CIs"
       },
       "neutral": {
         "n_fires": 28887,
-        "n_clusters": 13826,
+        "n_clusters": 39,
         "stop5_rate": 0.3723,
-        "stop5_ci90_lo": 0.3653,
-        "stop5_ci90_hi": 0.3792,
+        "stop5_ci90_lo": 0.3214,
+        "stop5_ci90_hi": 0.4321,
         "dead_money_rate": 0.1791,
-        "dead_money_ci90_lo": 0.1746,
-        "dead_money_ci90_hi": 0.1842,
+        "dead_money_ci90_lo": 0.1606,
+        "dead_money_ci90_hi": 0.1995,
         "clean_liftoff_rate": 0.3722,
         "mean_ret_21d": 0.0256,
-        "ci_note": "episode-clustered bootstrap 90% CI, 13826 clusters"
+        "ci_note": "episode-clustered bootstrap 90% CI, 39 clusters"
       },
       "lean_out": {
         "n_fires": 10466,
-        "n_clusters": 5210,
+        "n_clusters": 20,
         "stop5_rate": 0.4927,
-        "stop5_ci90_lo": 0.4816,
-        "stop5_ci90_hi": 0.5052,
+        "stop5_ci90_lo": null,
+        "stop5_ci90_hi": null,
         "dead_money_rate": 0.186,
-        "dead_money_ci90_lo": 0.1783,
-        "dead_money_ci90_hi": 0.1941,
+        "dead_money_ci90_lo": null,
+        "dead_money_ci90_hi": null,
         "clean_liftoff_rate": 0.2561,
         "mean_ret_21d": -0.004,
-        "ci_note": "episode-clustered bootstrap 90% CI, 5210 clusters"
+        "ci_note": "sparse \u2014 20 clusters < 25 floor \u2014 descriptive only, no bootstrap CIs"
       },
       "_primary_conclusion_check": {
         "gap_pp": 13.48,
@@ -151,42 +153,42 @@
     "trailing_252": {
       "lean_in": {
         "n_fires": 17428,
-        "n_clusters": 7997,
+        "n_clusters": 26,
         "stop5_rate": 0.3694,
-        "stop5_ci90_lo": 0.3607,
-        "stop5_ci90_hi": 0.3792,
+        "stop5_ci90_lo": 0.285,
+        "stop5_ci90_hi": 0.4695,
         "dead_money_rate": 0.1867,
-        "dead_money_ci90_lo": 0.1807,
-        "dead_money_ci90_hi": 0.1934,
+        "dead_money_ci90_lo": 0.161,
+        "dead_money_ci90_hi": 0.2178,
         "clean_liftoff_rate": 0.3627,
         "mean_ret_21d": 0.026,
-        "ci_note": "episode-clustered bootstrap 90% CI, 7997 clusters"
+        "ci_note": "episode-clustered bootstrap 90% CI, 26 clusters"
       },
       "neutral": {
         "n_fires": 14421,
-        "n_clusters": 7666,
+        "n_clusters": 34,
         "stop5_rate": 0.3802,
-        "stop5_ci90_lo": 0.3701,
-        "stop5_ci90_hi": 0.3903,
+        "stop5_ci90_lo": 0.324,
+        "stop5_ci90_hi": 0.4495,
         "dead_money_rate": 0.1876,
-        "dead_money_ci90_lo": 0.1811,
-        "dead_money_ci90_hi": 0.1939,
+        "dead_money_ci90_lo": 0.1689,
+        "dead_money_ci90_hi": 0.2066,
         "clean_liftoff_rate": 0.3621,
         "mean_ret_21d": 0.0236,
-        "ci_note": "episode-clustered bootstrap 90% CI, 7666 clusters"
+        "ci_note": "episode-clustered bootstrap 90% CI, 34 clusters"
       },
       "lean_out": {
         "n_fires": 18090,
-        "n_clusters": 9033,
+        "n_clusters": 28,
         "stop5_rate": 0.4301,
-        "stop5_ci90_lo": 0.4211,
-        "stop5_ci90_hi": 0.4391,
+        "stop5_ci90_lo": 0.3759,
+        "stop5_ci90_hi": 0.4929,
         "dead_money_rate": 0.1778,
-        "dead_money_ci90_lo": 0.1717,
-        "dead_money_ci90_hi": 0.1841,
+        "dead_money_ci90_lo": 0.1596,
+        "dead_money_ci90_hi": 0.1963,
         "clean_liftoff_rate": 0.3104,
         "mean_ret_21d": 0.0093,
-        "ci_note": "episode-clustered bootstrap 90% CI, 9033 clusters"
+        "ci_note": "episode-clustered bootstrap 90% CI, 28 clusters"
       },
       "_primary_conclusion_check": {
         "gap_pp": 6.07,
@@ -424,7 +426,8 @@
     }
   },
   "defer_reasons": [
-    "flip_rate=31.4% > 15% \u2014 NON-STATIONARITY flag"
+    "flip_rate=31.4% > 15% \u2014 NON-STATIONARITY flag",
+    "basis=expanding: cluster floor not met (lean_in=17, lean_out=20, floor=25)"
   ],
   "overall_verdict": "DEFER",
   "cell_hashes": [

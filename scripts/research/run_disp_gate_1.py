@@ -393,15 +393,44 @@ def _compute_spy_covariates(spy_closes: pd.Series, fire_dates: pd.DatetimeIndex)
 # ---------------------------------------------------------------------------
 
 def _assign_episode_clusters(fires_df: pd.DataFrame) -> pd.Series:
-    """Assign episode cluster IDs: TICKER_YYYY-Www (ISO week).
+    """Assign episode cluster IDs using contiguous calendar-time blocks (±30d).
 
-    This clusters fires that are in the same calendar week for the same ticker,
-    capturing correlated outcomes from overlapping return windows.
+    Matches the frozen prereg (L3_PREREG.md Standing Notes):
+    "Bootstrap resamples episode clusters (contiguous blocks within ±30d)"
+
+    Implementation: sort fires by signal_date, then assign a new cluster
+    whenever a fire's date is more than 30 calendar days after the earliest
+    date in the current block (i.e. fires within 30d of the block's start
+    share a cluster ID). This is CROSS-TICKER — two fires from different
+    tickers on the same macro-shock date fall in the SAME cluster, correctly
+    capturing tape-time correlated outcomes.
+
+    Cluster ID format: BLOCK_<YYYYMMDD> where YYYYMMDD is the start date of
+    each contiguous block.
+
+    NOTE: The original implementation used TICKER_YYYY-Www (per-ticker ISO week).
+    That deviated from the prereg by (a) giving different cluster IDs to
+    different tickers on the same date (missing cross-ticker tape correlation)
+    and (b) splitting fires 2-3 days apart across ISO-week boundaries.
+    This fix restores the prereg-specified definition.
+    Deviation logged here and in the summary for transparency.
     """
     dates = pd.to_datetime(fires_df["signal_date"])
-    tickers = fires_df["ticker"]
-    year_week = dates.dt.strftime("%Y-W%V")
-    return tickers + "_" + year_week
+    sorted_dates = dates.sort_values()
+
+    cluster_ids = pd.Series(index=fires_df.index, dtype=str)
+    block_start: pd.Timestamp | None = None
+    block_label: str = ""
+    block_idx: int = 0
+
+    for orig_idx, fd in sorted_dates.items():
+        if block_start is None or (fd - block_start).days > 30:
+            block_start = fd
+            block_label = f"BLOCK_{fd.strftime('%Y%m%d')}"
+            block_idx += 1
+        cluster_ids[orig_idx] = block_label
+
+    return cluster_ids
 
 
 # ---------------------------------------------------------------------------
@@ -955,6 +984,31 @@ def run(
     # Build summary dict
     # -----------------------------------------------------------------------
     t1 = datetime.now(timezone.utc)
+
+    # Survivorship caveat (must appear verbatim per Opus reviewer must-fix item)
+    _SURVIVORSHIP_CAVEAT = (
+        "PANEL SURVIVORSHIP DISCLOSED: breadth/_closes_deep.parquet is today's surviving "
+        "universe backfilled through history. All tickers are currently active (zero "
+        "delisted/inactive in last 365d). Per-date non-null name count rises monotonically "
+        "from sparse early history to today's full universe. The expanding-window percentile "
+        "denominator (CSD history since inception) is therefore computed against a "
+        "survivor-biased distribution: surviving stocks carry lower historical idiosyncratic "
+        "dispersion (they include no Enron-style blowups, M&A-departed names, or delisted "
+        "tickers that blew up cross-sectional variance). This biases the regime percentile "
+        "level — surviving-universe CSD is understated at early dates — which may shift "
+        "lean_in/lean_out state assignments relative to a full-universe panel. Because all "
+        "fires are 2022+ and the panel universe is largest and most stable in recent years, "
+        "the bias is lowest in the fire population window. However, the CSD percentile "
+        "denominator reaches back to 1962 under the expanding basis and the early-history "
+        "survivor-only distribution inflates the denominator, potentially understating the "
+        "true percentile rank of recent CSD values. All regime state assignments carry this "
+        "caveat. The trailing-252d sensitivity basis (using only 252-day rolling CSD) is "
+        "less affected since it avoids the 60-year survivor-only denominator. "
+        "NO delisted/inactive correction has been applied. This is a structural limitation "
+        "of the panel; results are descriptive and should not be used for formal inference "
+        "without a delisted-inclusive universe."
+    )
+
     summary = {
         "exp_id": "disp_gate_v1",
         "run_at": t0.isoformat(),
@@ -964,6 +1018,18 @@ def run(
         "prereg": "research/dispersion/L3_PREREG.md",
         "verdict_criteria": "descriptive-only",
         "pooled_replay_trial_count": 31,  # 15 exit_grid + 10 wait_grid + 6 disp_gate = 31
+        "survivorship_caveat": _SURVIVORSHIP_CAVEAT,
+        "clustering_deviation_note": (
+            "PREREG DEVIATION CORRECTED (PR-A2 fix): Original build used TICKER_YYYY-Www "
+            "per-ticker ISO-week clustering. This deviated from L3_PREREG.md Standing Notes "
+            "lines 122-124 which freeze clustering as 'contiguous blocks within ±30d'. "
+            "The original scheme (a) gave different cluster IDs to different tickers on the "
+            "same macro-shock date (missing cross-ticker tape correlation) and (b) could split "
+            "fires 2-3 days apart across an ISO-week boundary. This build uses the prereg-spec "
+            "BLOCK_<YYYYMMDD> scheme: fires within 30 calendar days of a block's start share "
+            "one cluster ID regardless of ticker. This narrows n_clusters and widens CIs "
+            "relative to the original build (fewer, larger clusters = more conservative)."
+        ),
         "panel_info": {
             "earliest_date": str(panel_earliest.date()),
             "latest_date": str(panel_latest.date()),
@@ -1031,6 +1097,9 @@ def _build_report(summary: dict, fires_df: pd.DataFrame) -> str:
     flip_info = summary.get("basis_flip_rate", {})
     cov_splits = summary.get("covariate_splits", {})
 
+    survivorship_caveat = summary.get("survivorship_caveat", "")
+    clustering_deviation_note = summary.get("clustering_deviation_note", "")
+
     lines = [
         "# DISP-GATE-1 — Dispersion Regime Descriptive Readout",
         "",
@@ -1046,6 +1115,20 @@ def _build_report(summary: dict, fires_df: pd.DataFrame) -> str:
         "",
         "---",
         "",
+        "## MANDATORY DISCLOSURE: Panel Survivorship",
+        "",
+        "> **PANEL SURVIVORSHIP (structural limitation):**",
+        f"> {survivorship_caveat}",
+        "",
+        "---",
+        "",
+        "## MANDATORY DISCLOSURE: Episode-Clustering",
+        "",
+        "> **CLUSTERING METHOD (prereg compliance):**",
+        f"> {clustering_deviation_note}",
+        "",
+        "---",
+        "",
         "## In plain English",
         "",
         "We looked at whether stock-picking fires from our system perform differently",
@@ -1057,6 +1140,8 @@ def _build_report(summary: dict, fires_df: pd.DataFrame) -> str:
         "down 5%+ in 21 days) or went nowhere (dead_money = returned less than ±2%).",
         "This is a descriptive readout only — no sizing changes and no promotion gates",
         "are evaluated here.",
+        "Note: the panel used to compute historical CSD percentiles is a survivor-only",
+        "universe (today's active stocks backfilled). See survivorship disclosure above.",
         "",
         "---",
         "",
@@ -1219,6 +1304,11 @@ def _build_report(summary: dict, fires_df: pd.DataFrame) -> str:
         "- `gross_mult_live = 1.0` HARD CONSTRAINT (RUL-F3.7)",
         "- Nulls printed, not hidden. DEFER is a valid result.",
         "- Episode-clustered bootstrap CIs where n_clusters >= 25; otherwise sparse note printed.",
+        "- **PANEL SURVIVORSHIP:** All CSD percentile assignments carry survivor-only bias.",
+        "  See mandatory disclosure at top of report. Trailing-252d sensitivity basis is",
+        "  less affected (avoids 60-year survivor-only denominator).",
+        "- **CLUSTERING:** Uses prereg-spec contiguous ±30d BLOCK clusters (cross-ticker),",
+        "  NOT the original per-ticker ISO-week scheme. CIs are wider (more conservative).",
         "",
     ]
 

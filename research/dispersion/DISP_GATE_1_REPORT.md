@@ -1,6 +1,6 @@
 # DISP-GATE-1 — Dispersion Regime Descriptive Readout
 
-**Vintage:** 2026-07-06T14:29Z
+**Vintage:** 2026-07-06T14:40Z
 **Bound by:** `research/dispersion/L3_PREREG.md` (frozen design)
 **Status:** DEFER
 **Framing:** Display-only, fire-tape counterfactual. No held-position ledger exists.
@@ -9,6 +9,20 @@
 > **HARD CONSTRAINT (RUL-F3.7):** `gross_mult_live` is and remains 1.0 regardless
 > of this readout. This study can only enable a display flag; no sizing change is
 > authorized by any outcome of this batch.
+
+---
+
+## MANDATORY DISCLOSURE: Panel Survivorship
+
+> **PANEL SURVIVORSHIP (structural limitation):**
+> PANEL SURVIVORSHIP DISCLOSED: breadth/_closes_deep.parquet is today's surviving universe backfilled through history. All tickers are currently active (zero delisted/inactive in last 365d). Per-date non-null name count rises monotonically from sparse early history to today's full universe. The expanding-window percentile denominator (CSD history since inception) is therefore computed against a survivor-biased distribution: surviving stocks carry lower historical idiosyncratic dispersion (they include no Enron-style blowups, M&A-departed names, or delisted tickers that blew up cross-sectional variance). This biases the regime percentile level — surviving-universe CSD is understated at early dates — which may shift lean_in/lean_out state assignments relative to a full-universe panel. Because all fires are 2022+ and the panel universe is largest and most stable in recent years, the bias is lowest in the fire population window. However, the CSD percentile denominator reaches back to 1962 under the expanding basis and the early-history survivor-only distribution inflates the denominator, potentially understating the true percentile rank of recent CSD values. All regime state assignments carry this caveat. The trailing-252d sensitivity basis (using only 252-day rolling CSD) is less affected since it avoids the 60-year survivor-only denominator. NO delisted/inactive correction has been applied. This is a structural limitation of the panel; results are descriptive and should not be used for formal inference without a delisted-inclusive universe.
+
+---
+
+## MANDATORY DISCLOSURE: Episode-Clustering
+
+> **CLUSTERING METHOD (prereg compliance):**
+> PREREG DEVIATION CORRECTED (PR-A2 fix): Original build used TICKER_YYYY-Www per-ticker ISO-week clustering. This deviated from L3_PREREG.md Standing Notes lines 122-124 which freeze clustering as 'contiguous blocks within ±30d'. The original scheme (a) gave different cluster IDs to different tickers on the same macro-shock date (missing cross-ticker tape correlation) and (b) could split fires 2-3 days apart across an ISO-week boundary. This build uses the prereg-spec BLOCK_<YYYYMMDD> scheme: fires within 30 calendar days of a block's start share one cluster ID regardless of ticker. This narrows n_clusters and widens CIs relative to the original build (fewer, larger clusters = more conservative).
 
 ---
 
@@ -23,6 +37,8 @@ fire, then measured how often fires ended in a painful drawdown (stop5 = drew
 down 5%+ in 21 days) or went nowhere (dead_money = returned less than ±2%).
 This is a descriptive readout only — no sizing changes and no promotion gates
 are evaluated here.
+Note: the panel used to compute historical CSD percentiles is a survivor-only
+universe (today's active stocks backfilled). See survivorship disclosure above.
 
 ---
 
@@ -31,7 +47,7 @@ are evaluated here.
 - Total fires in population: **49,939**
 - Fires excluded (< 252 prior panel bars): **0** (0.0%)
 - Fires included in analysis: **49,939**
-- Episode clusters (TICKER_YYYY-Www): **22,300**
+- Episode clusters (TICKER_YYYY-Www): **41**
 
 ### Panel coverage
 
@@ -126,9 +142,9 @@ Per-year date counts (data-quality column):
 
 | State | N fires | N clusters | stop5 rate | stop5 CI 90% | dead_money rate | dead_money CI 90% | mean ret_21d |
 |-------|---------|-----------|-----------|--------------|----------------|-----------------|-------------|
-| lean_in | 10,586 | 5,008 | 35.8% | [34.7%, 36.9%] | 19.4% | [18.6%, 20.3%] | 2.49% |
-| neutral | 28,887 | 13,826 | 37.2% | [36.5%, 37.9%] | 17.9% | [17.5%, 18.4%] | 2.56% |
-| lean_out | 10,466 | 5,210 | 49.3% | [48.2%, 50.5%] | 18.6% | [17.8%, 19.4%] | -0.40% |
+| lean_in | 10,586 | 17 | 35.8% | sparse — descriptive only | 19.4% | sparse — descriptive only | 2.49% |
+| neutral | 28,887 | 39 | 37.2% | [32.1%, 43.2%] | 17.9% | [16.1%, 20.0%] | 2.56% |
+| lean_out | 10,466 | 20 | 49.3% | sparse — descriptive only | 18.6% | sparse — descriptive only | -0.40% |
 
 **lean_out vs lean_in stop5 gap:** +13.5pp  (directional; >=5pp)
 
@@ -136,9 +152,9 @@ Per-year date counts (data-quality column):
 
 | State | N fires | N clusters | stop5 rate | stop5 CI 90% | dead_money rate | dead_money CI 90% | mean ret_21d |
 |-------|---------|-----------|-----------|--------------|----------------|-----------------|-------------|
-| lean_in | 17,428 | 7,997 | 36.9% | [36.1%, 37.9%] | 18.7% | [18.1%, 19.3%] | 2.60% |
-| neutral | 14,421 | 7,666 | 38.0% | [37.0%, 39.0%] | 18.8% | [18.1%, 19.4%] | 2.36% |
-| lean_out | 18,090 | 9,033 | 43.0% | [42.1%, 43.9%] | 17.8% | [17.2%, 18.4%] | 0.93% |
+| lean_in | 17,428 | 26 | 36.9% | [28.5%, 46.9%] | 18.7% | [16.1%, 21.8%] | 2.60% |
+| neutral | 14,421 | 34 | 38.0% | [32.4%, 45.0%] | 18.8% | [16.9%, 20.7%] | 2.36% |
+| lean_out | 18,090 | 28 | 43.0% | [37.6%, 49.3%] | 17.8% | [16.0%, 19.6%] | 0.93% |
 
 **lean_out vs lean_in stop5 gap:** +6.1pp  (directional; >=5pp)
 
@@ -192,6 +208,7 @@ Per-year date counts (data-quality column):
 
 Defer reasons:
 - flip_rate=31.4% > 15% — NON-STATIONARITY flag
+- basis=expanding: cluster floor not met (lean_in=17, lean_out=20, floor=25)
 
 ---
 
@@ -205,3 +222,8 @@ Defer reasons:
 - `gross_mult_live = 1.0` HARD CONSTRAINT (RUL-F3.7)
 - Nulls printed, not hidden. DEFER is a valid result.
 - Episode-clustered bootstrap CIs where n_clusters >= 25; otherwise sparse note printed.
+- **PANEL SURVIVORSHIP:** All CSD percentile assignments carry survivor-only bias.
+  See mandatory disclosure at top of report. Trailing-252d sensitivity basis is
+  less affected (avoids 60-year survivor-only denominator).
+- **CLUSTERING:** Uses prereg-spec contiguous ±30d BLOCK clusters (cross-ticker),
+  NOT the original per-ticker ISO-week scheme. CIs are wider (more conservative).

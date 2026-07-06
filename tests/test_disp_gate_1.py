@@ -293,34 +293,100 @@ class TestOutcomeComputation:
 # ---------------------------------------------------------------------------
 
 class TestEpisodeClusters:
-    """Tests for episode cluster ID assignment."""
+    """Tests for episode cluster ID assignment.
 
-    def test_cluster_format_is_ticker_week(self):
-        """Cluster IDs must follow TICKER_YYYY-Www pattern."""
+    The prereg (L3_PREREG.md Standing Notes lines 122-124) freezes clustering as
+    'contiguous blocks within ±30d'. The implementation uses BLOCK_<YYYYMMDD>
+    IDs, cross-ticker (different tickers on the same macro-shock date share a
+    cluster), and starts a new block when a fire is >30 calendar days after the
+    current block's start date.
+    """
+
+    def test_cross_ticker_same_date_share_cluster(self):
+        """Fires from different tickers on the same date share one cluster ID (cross-ticker)."""
         fires = pd.DataFrame({
-            "ticker": ["AAPL", "MSFT"],
-            "signal_date": ["2023-06-05", "2023-06-06"],  # same week
+            "ticker": ["AAPL", "MSFT", "GOOG"],
+            "signal_date": ["2023-06-05", "2023-06-05", "2023-06-06"],  # all within 30d block
         })
         clusters = _assign_episode_clusters(fires)
-        # Both should have the same week suffix
-        assert clusters.iloc[0].startswith("AAPL_2023-W")
-        assert clusters.iloc[1].startswith("MSFT_2023-W")
-        # Same ticker, same week = same cluster
-        fires2 = pd.DataFrame({
-            "ticker": ["AAPL", "AAPL"],
-            "signal_date": ["2023-06-05", "2023-06-07"],  # same week, Mon + Wed
-        })
-        clusters2 = _assign_episode_clusters(fires2)
-        assert clusters2.iloc[0] == clusters2.iloc[1]
+        # All three should be in the same block (within 30d of block start)
+        assert clusters.iloc[0] == clusters.iloc[1] == clusters.iloc[2]
+        # All must start with BLOCK_ prefix
+        assert clusters.iloc[0].startswith("BLOCK_")
 
-    def test_different_weeks_different_clusters(self):
-        """Same ticker, different weeks → different cluster IDs."""
+    def test_cluster_format_is_block_date(self):
+        """Cluster IDs must follow BLOCK_YYYYMMDD pattern."""
         fires = pd.DataFrame({
-            "ticker": ["AAPL", "AAPL"],
-            "signal_date": ["2023-06-05", "2023-06-19"],  # 2 weeks apart
+            "ticker": ["AAPL"],
+            "signal_date": ["2023-06-05"],
+        })
+        clusters = _assign_episode_clusters(fires)
+        assert clusters.iloc[0] == "BLOCK_20230605"
+
+    def test_fires_within_30d_share_cluster(self):
+        """Fires within 30 calendar days of a block start share the same cluster."""
+        fires = pd.DataFrame({
+            "ticker": ["AAPL", "MSFT"],
+            "signal_date": ["2023-06-05", "2023-07-04"],  # exactly 29 days apart
+        })
+        clusters = _assign_episode_clusters(fires)
+        assert clusters.iloc[0] == clusters.iloc[1]
+
+    def test_fires_beyond_30d_get_new_cluster(self):
+        """Fires more than 30 calendar days from block start get a new cluster."""
+        fires = pd.DataFrame({
+            "ticker": ["AAPL", "MSFT"],
+            "signal_date": ["2023-06-05", "2023-07-06"],  # 31 days apart
         })
         clusters = _assign_episode_clusters(fires)
         assert clusters.iloc[0] != clusters.iloc[1]
+        assert clusters.iloc[1].startswith("BLOCK_")
+
+    def test_iso_week_boundary_does_not_split_nearby_fires(self):
+        """Fires 2-3 days apart that cross an ISO week boundary must NOT be split.
+
+        This was the failure mode of the original TICKER_YYYY-Www scheme:
+        fires on Sunday vs Monday would get different week IDs despite being
+        only 1 day apart. The ±30d block scheme avoids this.
+        """
+        # 2023-07-02 (Sunday) and 2023-07-03 (Monday) — different ISO weeks but only 1 day apart
+        fires = pd.DataFrame({
+            "ticker": ["AAPL", "AAPL"],
+            "signal_date": ["2023-07-02", "2023-07-03"],
+        })
+        clusters = _assign_episode_clusters(fires)
+        # Must be in the same block (only 1 day apart << 30d threshold)
+        assert clusters.iloc[0] == clusters.iloc[1]
+
+    def test_same_ticker_far_apart_get_different_clusters(self):
+        """Same ticker, fires > 30 calendar days apart → different cluster IDs."""
+        fires = pd.DataFrame({
+            "ticker": ["AAPL", "AAPL"],
+            "signal_date": ["2023-06-05", "2023-08-05"],  # ~61 days apart
+        })
+        clusters = _assign_episode_clusters(fires)
+        assert clusters.iloc[0] != clusters.iloc[1]
+
+    def test_cluster_ids_are_stable_across_calls(self):
+        """Same input always produces same cluster IDs (deterministic)."""
+        fires = pd.DataFrame({
+            "ticker": ["AAPL", "MSFT", "GOOG"],
+            "signal_date": ["2023-06-05", "2023-06-10", "2023-08-01"],
+        })
+        c1 = _assign_episode_clusters(fires)
+        c2 = _assign_episode_clusters(fires)
+        assert list(c1) == list(c2)
+
+    def test_block_count_correct_for_spaced_fires(self):
+        """Three fires, each >30d apart → three distinct cluster blocks."""
+        fires = pd.DataFrame({
+            "ticker": ["AAPL", "MSFT", "GOOG"],
+            "signal_date": ["2023-01-05", "2023-03-01", "2023-05-15"],
+        })
+        clusters = _assign_episode_clusters(fires)
+        assert clusters.nunique() == 3, (
+            f"Expected 3 distinct blocks for fires >30d apart, got {clusters.nunique()}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -629,3 +695,185 @@ class TestOutcomeCrossCheck:
         result = _compute_outcomes(fires)
         assert bool(result["stop5"].iloc[0]) is True
         assert bool(result["dead_money"].iloc[0]) is False
+
+
+# ---------------------------------------------------------------------------
+# Test 11: Survivorship disclosure present in summary and report
+# ---------------------------------------------------------------------------
+
+class TestSurvivorshipDisclosure:
+    """Survivorship bias caveat must appear in summary JSON and report output."""
+
+    def test_summary_has_survivorship_caveat_key(self):
+        """Summary JSON must include 'survivorship_caveat' key with non-empty text."""
+        from scripts.research.run_disp_gate_1 import run as disp_run
+
+        rng = np.random.default_rng(7)
+        n_dates = 600
+        n_tickers = 30
+        dates = pd.bdate_range("2019-01-01", periods=n_dates)
+        prices = 100 * np.exp(np.cumsum(rng.normal(0, 0.015, (n_dates, n_tickers)), axis=0))
+        panel = pd.DataFrame(prices, index=dates, columns=[f"TK{i:03d}" for i in range(n_tickers)])
+
+        spy = pd.Series(100 * np.exp(np.cumsum(rng.normal(0, 0.01, n_dates))), index=dates)
+
+        fire_dates = [str(d.date()) for d in dates[350:450:20]]
+        fires = pd.DataFrame({
+            "ticker": ["TK000"] * len(fire_dates),
+            "signal_date": fire_dates,
+            "verdict_type": ["fire"] * len(fire_dates),
+            "verdict_grade": [True] * len(fire_dates),
+            "fwd_ret_21": [0.03] * len(fire_dates),
+            "fwd_mdd_21": [-0.04] * len(fire_dates),
+            "fwd_mfe_21": [0.06] * len(fire_dates),
+        })
+
+        # Write fires to a tmp parquet for the harness to load
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as tmpdir:
+            replay_path = Path(tmpdir) / "replay_boarded.parquet"
+            fires.to_parquet(replay_path)
+            summary = disp_run(
+                replay_path=replay_path,
+                panel_override=panel,
+                spy_closes_override=spy,
+                summary_out=None,
+                report_out=None,
+                verbose=False,
+            )
+
+        assert "survivorship_caveat" in summary, "summary must contain 'survivorship_caveat' key"
+        caveat = summary["survivorship_caveat"]
+        assert len(caveat) > 50, f"survivorship_caveat is suspiciously short: {caveat!r}"
+        # Must mention survivor/survivorship
+        assert "survivor" in caveat.lower(), "survivorship_caveat must mention survivor/survivorship"
+
+    def test_summary_has_clustering_deviation_note(self):
+        """Summary JSON must include 'clustering_deviation_note' key documenting the prereg compliance."""
+        from scripts.research.run_disp_gate_1 import run as disp_run
+
+        rng = np.random.default_rng(8)
+        n_dates = 600
+        n_tickers = 30
+        dates = pd.bdate_range("2019-01-01", periods=n_dates)
+        prices = 100 * np.exp(np.cumsum(rng.normal(0, 0.015, (n_dates, n_tickers)), axis=0))
+        panel = pd.DataFrame(prices, index=dates, columns=[f"TK{i:03d}" for i in range(n_tickers)])
+
+        spy = pd.Series(100 * np.exp(np.cumsum(rng.normal(0, 0.01, n_dates))), index=dates)
+
+        fire_dates = [str(d.date()) for d in dates[350:450:20]]
+        fires = pd.DataFrame({
+            "ticker": ["TK000"] * len(fire_dates),
+            "signal_date": fire_dates,
+            "verdict_type": ["fire"] * len(fire_dates),
+            "verdict_grade": [True] * len(fire_dates),
+            "fwd_ret_21": [0.03] * len(fire_dates),
+            "fwd_mdd_21": [-0.04] * len(fire_dates),
+            "fwd_mfe_21": [0.06] * len(fire_dates),
+        })
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            replay_path = Path(tmpdir) / "replay_boarded.parquet"
+            fires.to_parquet(replay_path)
+            summary = disp_run(
+                replay_path=replay_path,
+                panel_override=panel,
+                spy_closes_override=spy,
+                summary_out=None,
+                report_out=None,
+                verbose=False,
+            )
+
+        assert "clustering_deviation_note" in summary, (
+            "summary must contain 'clustering_deviation_note' key"
+        )
+        note = summary["clustering_deviation_note"]
+        assert "BLOCK" in note, "clustering note must reference the BLOCK_ scheme"
+        assert "prereg" in note.lower() or "PREREG" in note, (
+            "clustering note must reference the prereg"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test 12: Report text contains survivorship and clustering disclosures
+# ---------------------------------------------------------------------------
+
+class TestReportDisclosures:
+    """Report markdown must contain survivorship and clustering disclosures."""
+
+    def test_report_contains_survivorship_section(self):
+        """_build_report output must contain 'PANEL SURVIVORSHIP' text."""
+        from scripts.research.run_disp_gate_1 import _build_report
+
+        # Build a minimal summary dict with the required fields
+        summary = {
+            "vintage": "2026-07-06T00:00Z",
+            "overall_verdict": "DEFER",
+            "defer_reasons": ["test reason"],
+            "arm_results": {},
+            "fire_population": {
+                "total_fires": 100,
+                "n_excluded_feasibility": 0,
+                "n_included": 100,
+                "n_clusters_total": 10,
+            },
+            "feasibility_gate": {"min_prior_bars": 252, "n_excluded": 0, "exclusion_pct": 0.0},
+            "panel_info": {
+                "earliest_date": "2019-01-01",
+                "latest_date": "2024-12-31",
+                "n_dates": 1500,
+                "n_tickers": 30,
+                "per_year_dates": {2019: 252, 2020: 253},
+            },
+            "basis_flip_rate": {"flip_rate": 0.05, "flip_count": 5, "n_valid_both": 100, "flag_gt15pct": False},
+            "covariate_splits": {},
+            "pooled_replay_trial_count": 31,
+            "survivorship_caveat": "PANEL SURVIVORSHIP DISCLOSED: test caveat text about survivor bias.",
+            "clustering_deviation_note": "PREREG DEVIATION CORRECTED: uses BLOCK scheme from prereg.",
+        }
+
+        fires_df = pd.DataFrame({"ticker": [], "signal_date": []})
+        report = _build_report(summary, fires_df)
+
+        assert "PANEL SURVIVORSHIP" in report, "Report must contain 'PANEL SURVIVORSHIP' section"
+        assert "MANDATORY DISCLOSURE" in report, "Report must contain 'MANDATORY DISCLOSURE' headings"
+        assert "survivor" in report.lower(), "Report must mention survivorship"
+
+    def test_report_contains_clustering_section(self):
+        """_build_report output must contain clustering deviation disclosure."""
+        from scripts.research.run_disp_gate_1 import _build_report
+
+        summary = {
+            "vintage": "2026-07-06T00:00Z",
+            "overall_verdict": "DEFER",
+            "defer_reasons": ["test reason"],
+            "arm_results": {},
+            "fire_population": {
+                "total_fires": 100,
+                "n_excluded_feasibility": 0,
+                "n_included": 100,
+                "n_clusters_total": 10,
+            },
+            "feasibility_gate": {"min_prior_bars": 252, "n_excluded": 0, "exclusion_pct": 0.0},
+            "panel_info": {
+                "earliest_date": "2019-01-01",
+                "latest_date": "2024-12-31",
+                "n_dates": 1500,
+                "n_tickers": 30,
+                "per_year_dates": {2019: 252, 2020: 253},
+            },
+            "basis_flip_rate": {"flip_rate": 0.05, "flip_count": 5, "n_valid_both": 100, "flag_gt15pct": False},
+            "covariate_splits": {},
+            "pooled_replay_trial_count": 31,
+            "survivorship_caveat": "PANEL SURVIVORSHIP DISCLOSED: test caveat.",
+            "clustering_deviation_note": "PREREG DEVIATION CORRECTED: uses BLOCK scheme from prereg.",
+        }
+
+        fires_df = pd.DataFrame({"ticker": [], "signal_date": []})
+        report = _build_report(summary, fires_df)
+
+        assert "Episode-Clustering" in report or "CLUSTERING" in report, (
+            "Report must contain clustering disclosure section"
+        )
+        assert "BLOCK" in report, "Report must mention the BLOCK_ cluster scheme"
