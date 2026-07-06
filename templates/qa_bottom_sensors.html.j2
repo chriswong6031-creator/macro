@@ -1,0 +1,356 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bottom Sensor QA — Entry Stack</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+@media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+a { color:var(--link); text-decoration:none; }
+
+/* page header */
+.qa-hero { max-width:1060px; margin:0 auto 20px; }
+.qa-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 6px; }
+.qa-hero h1 { font-size:26px; margin:0 0 4px; letter-spacing:-.01em; }
+html[data-lang="zh"] .qa-hero h1 { letter-spacing:0; }
+.qa-hero .meta { font-size:12px; color:var(--muted); }
+.qa-hero .display-only-badge { display:inline-block; font-size:10px; font-weight:700; padding:2px 9px; border-radius:999px; background:color-mix(in srgb,var(--warn) 14%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); letter-spacing:.06em; vertical-align:middle; margin-left:10px; }
+
+/* summary strip */
+.qa-strip { max-width:1060px; margin:0 auto 18px; display:flex; flex-wrap:wrap; gap:10px; }
+.qa-stat { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 16px; min-width:120px; }
+.qa-stat .qs-val { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text); }
+.qa-stat .qs-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+.qa-stat.qs-accent .qs-val { color:var(--up); }
+
+/* filter bar */
+.qa-filter { max-width:1060px; margin:0 auto 12px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.qa-filter input[type=text] { flex:1; min-width:200px; padding:7px 12px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:13.5px; outline:none; }
+.qa-filter input[type=text]:focus { border-color:var(--link); }
+.qa-filter select { padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:13.5px; outline:none; cursor:pointer; }
+.qa-filter select:focus { border-color:var(--link); }
+.qa-filter label { font-size:12px; color:var(--muted); }
+
+/* table */
+.tbl-wrap { max-width:1060px; margin:0 auto; overflow-x:auto; }
+table.qa-tbl { border-collapse:collapse; width:100%; font-size:12.5px; min-width:900px; }
+table.qa-tbl th { text-align:left; padding:7px 8px; background:var(--panel2); color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em; border-bottom:2px solid var(--line); position:sticky; top:0; z-index:2; cursor:pointer; user-select:none; white-space:nowrap; }
+table.qa-tbl th:hover { color:var(--text); }
+table.qa-tbl th .sort-ind { margin-left:3px; opacity:.45; font-size:10px; }
+table.qa-tbl th.sorted .sort-ind { opacity:1; color:var(--link); }
+table.qa-tbl td { padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:middle; white-space:nowrap; }
+table.qa-tbl tr:hover td { background:color-mix(in srgb,var(--link) 5%,transparent); }
+table.qa-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
+table.qa-tbl td.sym { font-weight:700; font-family:ui-monospace,Menlo,monospace; font-size:12px; }
+table.qa-tbl td.dash { color:var(--muted); }
+
+/* state badges */
+.bs-badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; letter-spacing:.03em; white-space:nowrap; }
+.bs-HOLD_LAUNCHED { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 35%,transparent); }
+.bs-FRESH_FIRE_DURABLE_CAND { background:color-mix(in srgb,#5b8def 15%,transparent); color:#5b8def; border:1px solid color-mix(in srgb,#5b8def 35%,transparent); }
+.bs-FRESH_FIRE_TACTICAL { background:color-mix(in srgb,#3fb6c0 15%,transparent); color:#3fb6c0; border:1px solid color-mix(in srgb,#3fb6c0 35%,transparent); }
+.bs-CHASE_RISK { background:color-mix(in srgb,var(--warn) 15%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); }
+.bs-DEAD_MONEY_RISK { background:color-mix(in srgb,#d23f3f 15%,transparent); color:#d23f3f; border:1px solid color-mix(in srgb,#d23f3f 35%,transparent); }
+.bs-EARLY_WATCH { background:color-mix(in srgb,#c77dff 15%,transparent); color:#c77dff; border:1px solid color-mix(in srgb,#c77dff 35%,transparent); }
+.bs-KNIFE_RISK { background:color-mix(in srgb,#e0607a 15%,transparent); color:#e0607a; border:1px solid color-mix(in srgb,#e0607a 35%,transparent); }
+.bs-WATCH { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+
+/* overlay flag chips */
+.ov-chip { display:inline-block; padding:1px 6px; border-radius:5px; font-size:10px; font-weight:700; margin:1px 2px; white-space:nowrap; }
+.ov-EVENT_BLACKOUT { background:color-mix(in srgb,#e0607a 15%,transparent); color:#e0607a; }
+.ov-COILED { background:color-mix(in srgb,#5b8def 15%,transparent); color:#5b8def; }
+.ov-STAR { background:color-mix(in srgb,#e0973a 15%,transparent); color:#e0973a; }
+
+/* tier badges */
+.tier-chip { display:inline-block; padding:1px 6px; border-radius:5px; font-size:11px; font-weight:700; }
+.tier-T1 { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--up); }
+.tier-T2 { background:color-mix(in srgb,#5b8def 15%,transparent); color:#5b8def; }
+.tier-T3 { background:color-mix(in srgb,#3fb6c0 15%,transparent); color:#3fb6c0; }
+.tier-T4 { background:color-mix(in srgb,var(--warn) 15%,transparent); color:var(--warn); }
+
+/* entry quality band */
+.eqb-chip { display:inline-block; padding:1px 6px; border-radius:5px; font-size:11px; font-weight:700; }
+.eqb-A { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--up); }
+.eqb-B { background:color-mix(in srgb,#5b8def 15%,transparent); color:#5b8def; }
+.eqb-C { background:color-mix(in srgb,var(--warn) 15%,transparent); color:var(--warn); }
+.eqb-D { background:color-mix(in srgb,#d23f3f 15%,transparent); color:#d23f3f; }
+
+/* dist coloring — zh UP/DOWN token flip applies via --up/--down vars */
+.dist-near { color:var(--up); font-weight:600; }   /* near 21d low = potential bottom */
+.dist-far  { color:var(--down); font-weight:600; } /* far from 21d low = chase risk */
+html[data-lang="zh"] .dist-near { color:var(--up); }   /* --up already swapped to red in zh */
+html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped to green in zh */
+
+/* explainer block */
+.qa-explainer { max-width:1060px; margin:28px auto 0; border:1px solid var(--line); border-radius:12px; padding:16px 20px; background:var(--panel2); font-size:13px; line-height:1.65; }
+.qa-explainer h2 { font-size:14px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:0 0 10px; }
+.qa-explainer p { margin:0 0 8px; }
+.qa-explainer p:last-child { margin:0; }
+.qa-explainer .plain-en { }
+.qa-explainer .plain-zh { }
+
+/* paging / count */
+.qa-count { max-width:1060px; margin:0 auto 6px; font-size:12px; color:var(--muted); }
+#qa-count-num { font-weight:700; color:var(--text); }
+
+/* popover */
+.has-tip { cursor:help; border-bottom:1px dashed var(--muted); }
+</style>
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+
+<div class="qa-hero">
+  <div class="eyebrow">{{ t('Entry Stack · Lane B0', '入场堆栈 · 通道 B0') }}<span class="display-only-badge">{{ t('DISPLAY-ONLY', '仅展示') }}</span></div>
+  <h1>{{ t('Bottom Sensor QA Surface', '底部传感器 QA 界面') }}</h1>
+  <div class="meta">
+    {{ t('labels_version', '标签版本') }}: <strong>{{ labels_version }}</strong> &nbsp;·&nbsp;
+    {{ t('as_of', '数据日期') }}: <strong>{{ as_of }}</strong> &nbsp;·&nbsp;
+    {{ t('computed', '计算日期') }}: <strong>{{ computed_at }}</strong> &nbsp;·&nbsp;
+    <span class="has-tip"
+      data-tip-en="These labels are descriptive display only. They rank nothing, gate nothing, and trigger no alerts. No label has earned ranking authority — that requires a separate pre-registered family study."
+      data-tip-zh="这些标签仅为描述性展示。不进行排名、不作为门控条件、不触发警报。任何标签均未获得排名权限——需通过独立的预注册家族研究方能获得。">{{ t('display-only · no ranking authority', '仅展示 · 无排名权限') }}</span>
+  </div>
+</div>
+
+{# ── Summary strip ── #}
+<div class="qa-strip">
+  {% set state_order = ['HOLD_LAUNCHED','FRESH_FIRE_DURABLE_CAND','FRESH_FIRE_TACTICAL','EARLY_WATCH','CHASE_RISK','DEAD_MONEY_RISK','KNIFE_RISK','WATCH'] %}
+  <div class="qa-stat">
+    <div class="qs-val">{{ n_rows }}</div>
+    <div class="qs-lbl">{{ t('Total names', '总名称数') }}</div>
+  </div>
+  {% for state in state_order %}
+    {% if state_counts.get(state, 0) > 0 %}
+    <div class="qa-stat{% if state in ('HOLD_LAUNCHED','FRESH_FIRE_DURABLE_CAND','FRESH_FIRE_TACTICAL') %} qs-accent{% endif %}">
+      <div class="qs-val">{{ state_counts.get(state, 0) }}</div>
+      <div class="qs-lbl">{{ state.replace('_',' ') }}</div>
+    </div>
+    {% endif %}
+  {% endfor %}
+  {% if overlay_counts %}
+  {% for ov, cnt in overlay_counts.items() %}
+  {% if ov and cnt > 0 %}
+  <div class="qa-stat">
+    <div class="qs-val">{{ cnt }}</div>
+    <div class="qs-lbl">{{ ov.replace('_',' ') }}</div>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+</div>
+
+{# ── Filter controls ── #}
+<div class="qa-filter">
+  <label for="qa-sym-filter">{{ t('Search:', '搜索：') }}</label>
+  <input type="text" id="qa-sym-filter" placeholder="{{ t('symbol …', '代码…') }}" oninput="qaFilter()">
+  <label for="qa-state-filter">{{ t('State:', '状态：') }}</label>
+  <select id="qa-state-filter" onchange="qaFilter()">
+    <option value="">{{ t('All states', '全部状态') }}</option>
+    <option value="HOLD_LAUNCHED">HOLD_LAUNCHED</option>
+    <option value="FRESH_FIRE_DURABLE_CAND">FRESH_FIRE_DURABLE_CAND</option>
+    <option value="FRESH_FIRE_TACTICAL">FRESH_FIRE_TACTICAL</option>
+    <option value="EARLY_WATCH">EARLY_WATCH</option>
+    <option value="CHASE_RISK">CHASE_RISK</option>
+    <option value="DEAD_MONEY_RISK">DEAD_MONEY_RISK</option>
+    <option value="KNIFE_RISK">KNIFE_RISK</option>
+    <option value="WATCH">WATCH</option>
+  </select>
+  <label for="qa-tier-filter">{{ t('Tier:', '层级：') }}</label>
+  <select id="qa-tier-filter" onchange="qaFilter()">
+    <option value="">{{ t('All tiers', '全部层级') }}</option>
+    <option value="T1">T1</option>
+    <option value="T2">T2</option>
+    <option value="T3">T3</option>
+    <option value="T4">T4</option>
+    <option value="none">{{ t('No tier', '无层级') }}</option>
+  </select>
+</div>
+<div class="qa-count"><span id="qa-count-num">{{ n_rows }}</span> {{ t('rows shown', '行显示') }}</div>
+
+{# ── Main table ── #}
+<div class="tbl-wrap">
+<table class="qa-tbl" id="qa-tbl">
+<thead>
+<tr>
+  <th onclick="qaSort('symbol')" data-col="symbol">{{ t('Symbol','代码') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('bottom_state')" data-col="bottom_state">{{ t('State','状态') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('overlay_flags')" data-col="overlay_flags"
+    data-tip-en="EVENT_BLACKOUT = earnings within 3 days. COILED = volatility compressed. STAR = high-conviction."
+    data-tip-zh="EVENT_BLACKOUT = 3个交易日内有财报。COILED = 波动压缩。STAR = 高确信度。">{{ t('Overlays','叠加标志') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('trigger_tier')" data-col="trigger_tier"
+    data-tip-en="T1–T4: signal tier from the gate engine. Lower number = stronger setup."
+    data-tip-zh="T1–T4：门控引擎信号层级。数字越小=形态越强。">{{ t('Tier','层级') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('trigger_age_ticks')" data-col="trigger_age_ticks"
+    data-tip-en="Bars since the signal fired. Fresh = 0–2."
+    data-tip-zh="信号触发后经过的K线数。新鲜 = 0–2。">{{ t('Ticks','周期') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('dist_21d_low_pct')" data-col="dist_21d_low_pct"
+    data-tip-en="Distance above the prior 21-session rolling low. Low values = near a bottom; high values = chasing."
+    data-tip-zh="高于前21交易日滚动低点的距离。低值=接近底部；高值=追涨。">{{ t('Dist 21d Low%','距21日低点%') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('dist_126d_high_pct')" data-col="dist_126d_high_pct"
+    data-tip-en="Distance below the prior 126-session rolling high (negative = below peak)."
+    data-tip-zh="低于前126交易日滚动高点的距离（负值=低于高点）。">{{ t('Dist 126d High%','距126日高点%') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('entry_quality_band')" data-col="entry_quality_band"
+    data-tip-en="Entry quality band (A/B/C/D) from the entry quality engine. Dash = unavailable."
+    data-tip-zh="入场质量评级（A/B/C/D），来自入场质量引擎。横线=不可用。">{{ t('EQ Band','入场质量') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('squeeze_state')" data-col="squeeze_state"
+    data-tip-en="Volatility squeeze state from the squeeze engine. Dash = unavailable."
+    data-tip-zh="来自轧空引擎的波动轧空状态。横线=不可用。">{{ t('Squeeze','轧空') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('earnings_days_to')" data-col="earnings_days_to"
+    data-tip-en="Calendar days until next earnings. Dash = no upcoming date found."
+    data-tip-zh="距下次财报的日历天数。横线=未找到即将到来的日期。">{{ t('Earn Days','财报天数') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('hold_state')" data-col="hold_state"
+    data-tip-en="Hold state from the hold engine (launched / intact / basing / stopped). Dash = no active hold record."
+    data-tip-zh="持有状态来自持有引擎（launched/intact/basing/stopped）。横线=无活跃持有记录。">{{ t('Hold State','持有状态') }} <span class="sort-ind">↕</span></th>
+</tr>
+</thead>
+<tbody id="qa-tbody">
+{% for r in rows %}
+{% set sym = r.symbol | default('') %}
+{% set state = r.bottom_state | default('WATCH') %}
+{% set overlays = r.get('overlay_flags') %}
+{% set tier = r.get('trigger_tier') %}
+{% set ticks = r.get('trigger_age_ticks') %}
+{% set dist21 = r.get('dist_21d_low_pct') %}
+{% set dist126 = r.get('dist_126d_high_pct') %}
+{% set eqb = r.get('entry_quality_band') %}
+{% set squeeze = r.get('squeeze_state') %}
+{% set earn_days = r.get('earnings_days_to') %}
+{% set hold_st = r.get('hold_state') %}
+<tr
+  data-sym="{{ sym }}"
+  data-symbol="{{ sym }}"
+  data-state="{{ state }}"
+  data-bottom_state="{{ state }}"
+  data-tier="{{ tier if tier else 'none' }}"
+  data-trigger_tier="{{ tier if tier is not none else '' }}"
+  data-overlay_flags="{{ overlays if overlays is not none else '' }}"
+  data-trigger_age_ticks="{{ ticks if ticks is not none else '' }}"
+  data-dist_21d_low_pct="{{ dist21 if dist21 is not none else '' }}"
+  data-dist_126d_high_pct="{{ dist126 if dist126 is not none else '' }}"
+  data-entry_quality_band="{{ eqb if eqb is not none else '' }}"
+  data-squeeze_state="{{ squeeze if squeeze is not none else '' }}"
+  data-earnings_days_to="{{ earn_days if earn_days is not none else '' }}"
+  data-hold_state="{{ hold_st if hold_st is not none else '' }}">
+  <td class="sym">{{ sym }}</td>
+  <td><span class="bs-badge bs-{{ state }}">{{ state }}</span></td>
+  <td>
+    {% if overlays %}
+      {% for flag in overlays.split(',') %}
+        <span class="ov-chip ov-{{ flag.strip() }}">{{ flag.strip() }}</span>
+      {% endfor %}
+    {% elif r.coiled %}<span class="ov-chip ov-COILED">COILED</span>
+    {% elif r.star %}<span class="ov-chip ov-STAR">STAR</span>
+    {% else %}<span class="dash">—</span>{% endif %}
+  </td>
+  <td>{% if tier %}<span class="tier-chip tier-{{ tier }}">{{ tier }}</span>{% else %}<span class="dash">—</span>{% endif %}</td>
+  <td class="num">{% if ticks is not none %}{{ ticks | int }}{% else %}<span class="dash">—</span>{% endif %}</td>
+  <td class="num">
+    {% if dist21 is not none %}
+      <span class="{{ 'dist-near' if dist21 <= 8 else ('dist-far' if dist21 >= 15 else '') }}">{{ '%.1f'|format(dist21) }}%</span>
+    {% else %}<span class="dash">—</span>{% endif %}
+  </td>
+  <td class="num">
+    {% if dist126 is not none %}{{ '%.1f'|format(dist126) }}%{% else %}<span class="dash">—</span>{% endif %}
+  </td>
+  <td>
+    {% if eqb is not none and eqb != '' %}<span class="eqb-chip eqb-{{ eqb }}">{{ eqb }}</span>{% else %}<span class="dash">—</span>{% endif %}
+  </td>
+  <td>{% if squeeze is not none and squeeze != '' %}{{ squeeze }}{% else %}<span class="dash">—</span>{% endif %}</td>
+  <td class="num">{% if earn_days is not none %}{{ earn_days | int }}{% else %}<span class="dash">—</span>{% endif %}</td>
+  <td>{% if hold_st is not none and hold_st != '' %}{{ hold_st }}{% else %}<span class="dash">—</span>{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+{# ── Plain-language explainer block ── #}
+<div class="qa-explainer">
+  <h2>{{ t('What is this surface?', '这个界面是什么？') }}</h2>
+  <div class="plain-en l-en">
+    <p><strong>Purpose:</strong> This page shows the <em>bottom-sensor envelope</em> — a set of descriptive state labels assigned to every US stock each nightly run. It is a QA surface, not a signal board.</p>
+    <p><strong>These labels are display-only.</strong> They rank nothing, gate nothing, and trigger no alerts. No label here has earned ranking authority in a pre-registered backtest family. Promotion of any label to ranking or gating authority requires its own pre-registered study with a published protocol.</p>
+    <p><strong>State meanings (v1):</strong> HOLD_LAUNCHED = a name the hold engine has marked as launched (take-anchored). FRESH_FIRE_DURABLE_CAND = fresh T1–T3 signal within 2 ticks, coiled setup, near 21-day low. FRESH_FIRE_TACTICAL = fresh T1–T3 signal, not coiled. CHASE_RISK = signal present but stale or far from low. DEAD_MONEY_RISK = hold engine shows basing with minimal movement. EARLY_WATCH = drawing down from 126-day high with a near cross-signal. KNIFE_RISK = knife-block condition binding. WATCH = default.</p>
+    <p><strong>Overlays:</strong> EVENT_BLACKOUT = earnings within 3 trading days (per-row fresh rule). COILED = volatility compressed. STAR = high-conviction setup flag.</p>
+    <p><strong>Missing fields</strong> render as a dash (—). Sponsorship state arrives in a parallel PR (lane B2). RS repair state is stamped unavailable until Entry Intelligence #1302 W0.4 series exists.</p>
+  </div>
+  <div class="plain-zh l-zh">
+    <p><strong>用途：</strong>本页展示<em>底部传感器包络</em>——每次夜间运行为每支美股分配的描述性状态标签集合。这是一个质量保证（QA）界面，不是信号板。</p>
+    <p><strong>这些标签仅用于展示。</strong>不进行排名、不作为门控条件、不触发任何警报。此处任何标签均未在预注册回测家族中获得排名权限。任何标签若要升级为排名或门控权限，需通过独立的、具有公开协议的预注册研究。</p>
+    <p><strong>状态含义（v1）：</strong>HOLD_LAUNCHED = 持有引擎标记为已启动的标的（以成交价为锚点）。FRESH_FIRE_DURABLE_CAND = 2个周期内的T1–T3新鲜信号，且处于蓄势状态、接近21日低点。FRESH_FIRE_TACTICAL = 新鲜T1–T3信号，未处于蓄势状态。CHASE_RISK = 信号存在但陈旧或远离低点。DEAD_MONEY_RISK = 持有引擎显示横盘整理且价格变动极小。EARLY_WATCH = 从126日高点下跌且接近交叉信号。KNIFE_RISK = 刀锋阻断条件触发。WATCH = 默认状态。</p>
+    <p><strong>叠加标志：</strong>EVENT_BLACKOUT = 3个交易日内有财报（逐行实时规则）。COILED = 波动压缩。STAR = 高确信度形态标志。</p>
+    <p><strong>缺失字段</strong>显示为横线（—）。赞助状态将由并行PR（通道B2）提供。RS修复状态标注为不可用，直至入场智能#1302 W0.4系列数据可用。</p>
+  </div>
+</div>
+
+<footer style="max-width:1060px;margin:32px auto 0;border-top:1px solid var(--line);padding-top:12px;font-size:11.5px;color:var(--muted);">
+  {{ t('Display-only. Labels are descriptive and rank nothing. Not investment advice.',
+       '仅展示。标签为描述性，无排名权限。不构成投资建议。') }}
+  &nbsp;·&nbsp; Entry Stack Amendment 1, Lane B0 &nbsp;·&nbsp; labels_version: {{ labels_version }}
+</footer>
+
+<script src="theme.js"></script>
+<script>
+(function(){
+  // ── Filtering ──
+  var rows = Array.from(document.querySelectorAll('#qa-tbody tr'));
+  window.qaFilter = function(){
+    var sym = document.getElementById('qa-sym-filter').value.trim().toUpperCase();
+    var state = document.getElementById('qa-state-filter').value;
+    var tier = document.getElementById('qa-tier-filter').value;
+    var shown = 0;
+    rows.forEach(function(r){
+      var ms = !sym || r.dataset.sym.indexOf(sym) !== -1;
+      var mst = !state || r.dataset.state === state;
+      var mt = !tier || r.dataset.tier === tier;
+      var vis = ms && mst && mt;
+      r.style.display = vis ? '' : 'none';
+      if(vis) shown++;
+    });
+    document.getElementById('qa-count-num').textContent = shown;
+  };
+
+  // ── Sorting ──
+  var sortCol = null, sortAsc = true;
+  window.qaSort = function(col){
+    if(sortCol === col){ sortAsc = !sortAsc; } else { sortCol = col; sortAsc = true; }
+    // update header indicators
+    document.querySelectorAll('#qa-tbl th').forEach(function(th){
+      th.classList.remove('sorted');
+      th.querySelector('.sort-ind').textContent = '↕';
+    });
+    var th = document.querySelector('#qa-tbl th[data-col="'+col+'"]');
+    if(th){ th.classList.add('sorted'); th.querySelector('.sort-ind').textContent = sortAsc ? '↑' : '↓'; }
+    var tbody = document.getElementById('qa-tbody');
+    var arr = Array.from(tbody.querySelectorAll('tr'));
+    arr.sort(function(a,b){
+      var av = a.dataset[col] || a.querySelector('td[data-val-'+col+']')?.dataset['val'+col] || '';
+      var bv = b.dataset[col] || b.querySelector('td[data-val-'+col+']')?.dataset['val'+col] || '';
+      // try numeric
+      var an = parseFloat(av), bn = parseFloat(bv);
+      if(!isNaN(an) && !isNaN(bn)) return sortAsc ? an-bn : bn-an;
+      if(av < bv) return sortAsc ? -1 : 1;
+      if(av > bv) return sortAsc ? 1 : -1;
+      return 0;
+    });
+    arr.forEach(function(r){ tbody.appendChild(r); });
+    // recount visible
+    var shown = arr.filter(function(r){ return r.style.display !== 'none'; }).length;
+    document.getElementById('qa-count-num').textContent = shown;
+  };
+
+  // ── Popovers (data-tip-en / data-tip-zh) ──
+  // theme.js handles these natively; this is a fallback for elements created at render time
+  // (theme.js runs after this script so it will wire them up correctly)
+})();
+</script>
+</body>
+</html>

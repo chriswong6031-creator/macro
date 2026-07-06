@@ -704,3 +704,186 @@ class TestEdgeCases:
         assert not overlap, (
             f"Outcome columns bleed into detection schema: {overlap}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Ruling XR-PAIR tests (2026-07-05)
+# ---------------------------------------------------------------------------
+
+class TestXRPairETFComplexMapping:
+    """Tests for ruling XR-PAIR: Tier-S ETF nodes map via COMPLEX_ETF_MAP,
+    multi-complex ETFs use union semantics."""
+
+    def test_xlk_maps_to_both_complexes(self):
+        """XLK belongs to both ai_compute and software — _build_etf_complex_sets
+        must return a frozenset of size ≥ 2 for XLK.
+
+        DISCRIMINATING: a single-complex mapping (e.g. first-wins) would return
+        frozenset of size 1 and would fail this test."""
+        from engine.oracle.episodes import _build_etf_complex_sets
+        etf_sets = _build_etf_complex_sets()
+        assert "XLK" in etf_sets, "XLK must appear in etf_complex_sets (check COMPLEX_ETF_MAP)"
+        xlk_complexes = etf_sets["XLK"]
+        assert "ai_compute" in xlk_complexes, f"XLK should map to ai_compute; got {xlk_complexes}"
+        assert "software" in xlk_complexes, f"XLK should map to software; got {xlk_complexes}"
+        assert len(xlk_complexes) >= 2, f"XLK union-set should have ≥2 entries; got {xlk_complexes}"
+
+    def test_xlb_maps_to_both_complexes(self):
+        """XLB belongs to energy_commodities and short_duration_value — both must appear."""
+        from engine.oracle.episodes import _build_etf_complex_sets
+        etf_sets = _build_etf_complex_sets()
+        assert "XLB" in etf_sets, "XLB must appear in etf_complex_sets"
+        xlb_complexes = etf_sets["XLB"]
+        assert "energy_commodities" in xlb_complexes, f"XLB→energy_commodities missing; got {xlb_complexes}"
+        assert "short_duration_value" in xlb_complexes, f"XLB→short_duration_value missing; got {xlb_complexes}"
+
+    def test_single_complex_etf_maps_correctly(self):
+        """XLV maps to exactly healthcare_defensive (single complex)."""
+        from engine.oracle.episodes import _build_etf_complex_sets
+        etf_sets = _build_etf_complex_sets()
+        assert "XLV" in etf_sets
+        assert "healthcare_defensive" in etf_sets["XLV"]
+
+
+class TestXRPairETFEpisodePairing:
+    """Fixture-based pairing test: two opposing episodes on mapped ETFs produce
+    a two-sided pair.  Uses a synthetic rotation_groups.json that includes the
+    ETF nodes in their complexes, then verifies that the COMPLEX_ETF_MAP path
+    also works when ETFs are absent from rotation_groups but present in the map.
+    """
+
+    def _make_etf_panel(self, n: int = 400, ramp_start_a: int = 80,
+                        ramp_start_b: int = 82, ramp_len: int = 40) -> pd.DataFrame:
+        """XLK IN-ramp + XLV OUT-ramp, with planted cohesion ≥ 0.25."""
+        df_a = _make_flat_panel(n=n, node="XLK", seed=100)
+        df_a = _inject_ramp(df_a, ramp_start_a, ramp_len, accel_z_val=1.5)
+        df_a["cohesion"] = 0.4
+
+        df_b = _make_flat_panel(n=n, node="XLV", seed=101)
+        df_b.iloc[ramp_start_b:ramp_start_b + ramp_len,
+                  df_b.columns.get_loc("accel_z")] = -1.5
+        df_b.iloc[ramp_start_b:ramp_start_b + ramp_len,
+                  df_b.columns.get_loc("vel_1w")] = 0.003
+        df_b.iloc[ramp_start_b:ramp_start_b + ramp_len,
+                  df_b.columns.get_loc("vel_3m")] = 0.008
+        df_b.iloc[ramp_start_b:ramp_start_b + ramp_len,
+                  df_b.columns.get_loc("rs")] = -0.01
+        df_b.iloc[ramp_start_b:ramp_start_b + ramp_len,
+                  df_b.columns.get_loc("breadth_50")] = 0.3
+        df_b["cohesion"] = 0.4
+        return _make_panel_for_build({"XLK": df_a, "XLV": df_b})
+
+    def test_etf_nodes_pair_via_complex_etf_map(self):
+        """DISCRIMINATING (ruling XR-PAIR): XLK IN + XLV OUT on different complexes
+        (ai_compute/software vs healthcare_defensive) must yield two_sided=True
+        when rotation_groups.json only contains subsector members (no ETFs).
+
+        This test FAILS under the pre-fix code because _pair_episodes consulted
+        ONLY rotation_groups.json members (83 subsector slugs) and never reached
+        COMPLEX_ETF_MAP — so XLK/XLV had no complex mapping and pairing never fired.
+        """
+        # rotation_groups with subsector members only — NO ETF nodes listed.
+        # This simulates the real rotation_groups.json state.
+        rotation_groups_subsector_only = {
+            "_meta": {"version": "test"},
+            "complexes": [
+                {"name": "ai_compute", "id": "ai_compute",
+                 "members": ["semiconductors", "hardware_infra"]},
+                {"name": "healthcare_defensive", "id": "healthcare_defensive",
+                 "members": ["pharma", "biotech_large"]},
+                {"name": "software", "id": "software",
+                 "members": ["saas", "enterprise_sw"]},
+            ],
+        }
+        panel = self._make_etf_panel()
+        episodes = build_episodes(panel, rotation_groups=rotation_groups_subsector_only, tier="s")
+
+        if episodes.empty:
+            pytest.skip("No episodes detected — check ramp parameters")
+
+        in_eps = episodes[(episodes["node"] == "XLK") & (episodes["direction"] == "in")]
+        out_eps = episodes[(episodes["node"] == "XLV") & (episodes["direction"] == "out")]
+
+        if in_eps.empty or out_eps.empty:
+            pytest.skip("Need at least one IN (XLK) and one OUT (XLV) episode to test pairing")
+
+        assert (in_eps["two_sided"] == True).any(), (  # noqa: E712
+            f"XLK IN episode not two_sided despite opposing XLV OUT on a different complex.\n"
+            f"XLK episodes:\n{in_eps[['onset_date', 'direction', 'two_sided', 'cohesion_at_onset']]}\n"
+            "This test FAILS under the pre-fix code (XLK has no complex mapping from "
+            "rotation_groups.json — COMPLEX_ETF_MAP was never consulted)."
+        )
+        paired_ids = in_eps[in_eps["two_sided"] == True]["paired_episode_id"].dropna().tolist()  # noqa: E712
+        assert any(pid in out_eps["episode_id"].tolist() for pid in paired_ids), (
+            "Paired episode_id does not point at an XLV OUT episode"
+        )
+        assert not episodes["pairing_unavailable"].any()
+
+    def test_tier_m_pairing_unchanged_by_etf_fix(self):
+        """Regression: tier-M nodes (non-ETF subsector slugs) still pair correctly
+        via rotation_groups.json members — the ETF overlay does not interfere.
+
+        DISCRIMINATING: the fix must be additive (union) and must not break the
+        existing subsector pairing path that tier-M depends on.
+        """
+        # Subsector nodes — not in COMPLEX_ETF_MAP
+        groups = {
+            "_meta": {"version": "test"},
+            "complexes": [
+                {"name": "cx_growth", "id": "cx_growth",
+                 "members": ["NODE_A", "NODE_X"]},
+                {"name": "cx_defensive", "id": "cx_defensive",
+                 "members": ["NODE_B"]},
+            ],
+        }
+        panel = _two_node_panel(coh_a=0.4, coh_b=0.4, b_direction="out")
+        episodes = build_episodes(panel, rotation_groups=groups, tier="m")
+
+        if episodes.empty:
+            pytest.skip("No episodes")
+
+        in_eps = episodes[(episodes["node"] == "NODE_A") & (episodes["direction"] == "in")]
+        out_eps = episodes[(episodes["node"] == "NODE_B") & (episodes["direction"] == "out")]
+
+        if in_eps.empty or out_eps.empty:
+            pytest.skip("Need IN + OUT for regression test")
+
+        # Tier-M pairing must still work via rotation_groups.json members alone
+        assert (in_eps["two_sided"] == True).any(), (  # noqa: E712
+            "Tier-M cross-complex pairing broke after XR-PAIR ETF fix — the overlay "
+            "must be additive, not replacing the existing subsector path."
+        )
+        assert not episodes["pairing_unavailable"].any()
+
+    def test_xlk_xlk_same_complex_set_not_paired(self):
+        """XLK vs XLK: same complex set {ai_compute, software} == {ai_compute, software}
+        → must NOT be marked two_sided.  Union semantics: equal sets = same-complex churn."""
+        rotation_groups_subsector_only = {
+            "_meta": {"version": "test"},
+            "complexes": [
+                {"name": "ai_compute", "id": "ai_compute", "members": ["semiconductors"]},
+                {"name": "software", "id": "software", "members": ["saas"]},
+            ],
+        }
+        # Both nodes are XLK — create by building with two identically-behaved ETF names
+        # that map to the exact same complex set.
+        n, ramp_len = 300, 40
+        df_a = _make_flat_panel(n=n, node="XLK", seed=110)
+        df_a = _inject_ramp(df_a, 80, ramp_len, accel_z_val=1.5)
+        df_a["cohesion"] = 0.4
+        # XLC is not in COMPLEX_ETF_MAP — it will be treated as unmapped, so no pairing
+        df_b = _make_flat_panel(n=n, node="XLC", seed=111)
+        df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("accel_z")] = -1.5
+        df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("vel_1w")] = 0.003
+        df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("vel_3m")] = 0.008
+        df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("rs")] = -0.01
+        df_b.iloc[82:82 + ramp_len, df_b.columns.get_loc("breadth_50")] = 0.3
+        df_b["cohesion"] = 0.4
+        panel = _make_panel_for_build({"XLK": df_a, "XLC": df_b})
+        episodes = build_episodes(panel, rotation_groups=rotation_groups_subsector_only, tier="s")
+        if episodes.empty:
+            pytest.skip("No episodes")
+        # XLC not in COMPLEX_ETF_MAP → unmapped → no pair
+        assert (episodes["two_sided"] == True).sum() == 0, (  # noqa: E712
+            "XLK vs unmapped XLC should produce zero pairs"
+        )

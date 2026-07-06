@@ -1,6 +1,6 @@
 {
   "version": "2026-07-03",
-  "note": "Equal-weight thematic baskets over the FREE price universe. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest. Prices come from the breadth caches plus a baskets-only DEEP close store (data/baskets/extras.parquet): it carries on-thesis names outside the S&P-1500 (recent IPOs, crypto & nuclear) AND a deep ~3y tape for large-caps the breadth cache only holds in a ~15-month rolling window — so baskets render full history instead of a short stub. Recent IPOs / late entrants are still flagged partial where their own tape is short.",
+  "note": "Curated US theme baskets for monitoring rotation. Descriptive only, not a buy list.",
   "seed_date": "2023-05-09",
   "curated": "2026-07-03",
   "baskets": {
@@ -58,7 +58,7 @@
         }
       ],
       "etf_proxy_note": "loose — Mag7 ≈ 40% of QQQ",
-      "thesis": "The mega-cap complex that drives index returns and breadth: Apple, Microsoft, Nvidia, Amazon, Alphabet, Meta and Tesla. When the Seven lead, the tape is narrow; when they lag, leadership is broadening. A concentration gauge, not a buy list.",
+      "thesis": "Mega-cap tech leaders that drive index concentration and breadth.",
       "weighting": "equal",
       "changelog": [
         {
@@ -232,7 +232,7 @@
         }
       ],
       "etf_proxy_note": "semis proxy",
-      "thesis": "The picks-and-shovels of the AI build-out: compute, memory, networking, power and thermal. Levered to data-center capex rather than model monetization — the first to inflect up on an order cycle and the first to roll over when capex digestion arrives.",
+      "thesis": "Compute, memory, networking, power and cooling names tied to data-center capex.",
       "weighting": "equal",
       "changelog": [
         {
@@ -253,7 +253,7 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (10 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AMAT, LRCX, KLAC, QCOM, TER, APH, GLW, MPWR, MRVL, ARM."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         }
       ],
       "parent": "Artificial Intelligence",
@@ -381,7 +381,7 @@
         }
       ],
       "etf_proxy_note": "loose — broad tech",
-      "thesis": "Apps and platforms trying to MONETIZE AI rather than supply it — the contested leg. Re-rates on seat expansion and inference demand, de-rates when AI is feared to deflate seat-based software. The wide spread inside this basket is the whole point.",
+      "thesis": "Software and platform names trying to monetize AI through apps, seats and workflows.",
       "weighting": "equal",
       "changelog": [
         {
@@ -397,7 +397,7 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: INTU, IBM, WDAY, PANW, CRWD, APP, SNOW, NET."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         }
       ],
       "parent": "Software",
@@ -417,7 +417,7 @@
       "curated": "2026-06-22",
       "omitted": [
         "LUNR Intuitive Machines, VOYG Voyager, RDW Redwire (thin-liquidity new-space — excluded)",
-        "AXON Axon Enterprise (removed 2026-06-18: Tasers/body-cams/evidence-cloud for police = public-safety / law-enforcement tech, not a defense-budget prime; full-history corr only 0.39 with near-zero downside corr — wrong driver for the ITA prime-led basket)."
+        "AXON Axon — removed because public-safety software/hardware is not a defense-budget prime exposure."
       ],
       "members": [
         {
@@ -544,17 +544,17 @@
           "ticker": "DRS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Leonardo DRS — pure-play defense electronics/sensors prime (~80% DoD), advanced sensing/EW/network computing; fills the sensors/EW gap, same budget-cycle driver as LMT/NOC/RTX (added 2026-06-22; co-moves 0.67 daily / 0.62 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Leonardo DRS — pure-play defense electronics/sensors prime (~80% DoD), advanced sensing/EW/network computing; fills the sensors/EW gap, same budget-cycle driver as LMT/NOC/RTX."
         },
         {
           "ticker": "MRCY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Mercury Systems — defense processing/RF/EW subsystems (radar/EW/secure processing) embedded in prime platforms; same procurement/backlog cycle (added 2026-06-22; co-moves 0.64 daily / 0.63 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Mercury Systems — defense processing/RF/EW subsystems (radar/EW/secure processing) embedded in prime platforms; same procurement/backlog cycle."
         }
       ],
       "etf_proxy_note": "",
-      "thesis": "Primes and defense-tech levered to a rising global budget cycle: missiles, aircraft, space and the new autonomy entrants. Long-cycle backlog visibility; the cross-current is procurement reform and budget-ceiling risk.",
+      "thesis": "Defense primes and defense-tech names tied to budgets, backlog and autonomy.",
       "weighting": "equal",
       "changelog": [
         {
@@ -570,17 +570,17 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (6 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: GE, LDOS, TXT, CW, TDY, HEI."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         },
         {
           "action": "remove",
           "date": "2026-06-21",
-          "note": "AXON: removed — price action diverges from the theme AND it is a different sub-industry/driver (coherence audit). Tasers/body-cams/evidence-cloud for police = public-safety / law-enforcement tech, not a defense-budget prime; full-history corr only 0.39 with near-zero downside corr — wrong driver for the ITA prime-led basket"
+          "note": "AXON: removed after coherence audit; driver no longer matched the basket."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): DRS (0.67), MRCY (0.64). Seeded at the basket seed date so backtest history is continuous."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ],
       "parent": "Industrials",
@@ -748,7 +748,7 @@
         }
       ],
       "etf_proxy_note": "",
-      "thesis": "The electricity supply chain for AI + electrification: generation, grid equipment and the IPPs selling power to data centers. A multi-year demand-growth story after two decades of flat US load; rate-case and rate-of-return regulation is the governor.",
+      "thesis": "Generation, grid equipment and power sellers tied to AI and electrification load growth.",
       "weighting": "equal",
       "changelog": [
         {
@@ -764,22 +764,22 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: DUK, SO, AEP, SRE, HUBB, GNRC, BWXT."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         },
         {
           "action": "add",
           "date": "2026-06-21",
-          "note": "POWL: added at seed date for backtest history (recent IPOs flag partial) — quant-confirmed co-mover with the basket. Powell Industries — electrical switchgear & power-control packages for the grid/data-center buildout; high-beta grid-equipment pure-play"
+          "note": "POWL: added at seed date for comparable history."
         },
         {
           "action": "note",
           "date": "2026-06-21",
-          "note": "PCG: coherence audit — KEPT but flagged. deliberate divergence-flag: idiosyncratic California wildfire-recovery turnaround; low daily corr but thematically core (same regulated-utility sub-industry)."
+          "note": "PCG: coherence audit — KEPT but flagged."
         },
         {
           "action": "note",
           "date": "2026-06-21",
-          "note": "Coherence audit: the regulated-utility sleeve (DUK, D, SO, AEP, NEE, SRE) has low DAILY correlation to the basket's high-beta buildout leaders (corr ~0.0-0.30) but stays directionally aligned (weekly sign-agreement ~0.66-0.74) and is thesis-core ('generation ... rate-of-return regulation is the governor'; XLU proxy). KEPT per the explicit thesis; note that it dampens the equal-weight index's amplitude vs a pure-IPP/equipment read."
+          "note": "Regulated utilities retained as lower-beta power/load exposure; weekly direction stayed aligned."
         }
       ],
       "parent": "Energy & Power",
@@ -900,7 +900,7 @@
         }
       ],
       "etf_proxy_note": "industrials proxy",
-      "thesis": "Beneficiaries of onshoring and the US industrial-capex super-cycle: automation, power distribution, machinery and the equipment-rental layer. Levered to factory construction and IRA/CHIPS spending; sensitive to rates and the capex cycle turning.",
+      "thesis": "Automation, power, machinery and rental names tied to US factory construction and industrial capex.",
       "weighting": "equal",
       "changelog": [
         {
@@ -916,7 +916,7 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: HON, ITW, DOV, AME, IR, NDSN, GNRC."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         }
       ],
       "parent": "Industrials",
@@ -1032,35 +1032,35 @@
           "ticker": "SSB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "SouthState — Southeast super-regional (Florida/Carolinas, now Texas via Independent Bank); pure-play CRE/commercial lender on the rate-cut re-rate (added 2026-06-22; co-moves 0.88 daily / 0.89 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "SouthState — Southeast super-regional (Florida/Carolinas, now Texas via Independent Bank); pure-play CRE/commercial lender on the rate-cut re-rate."
         },
         {
           "ticker": "UMBF",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "UMB Financial — Kansas City super-regional, top-5 KRE holding; C&I/CRE commercial bank with yield-curve sensitivity like FITB/KEY (added 2026-06-22; co-moves 0.87 daily / 0.84 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "UMB Financial — Kansas City super-regional, top-5 KRE holding; C&I/CRE commercial bank with yield-curve sensitivity like FITB/KEY."
         },
         {
           "ticker": "BPOP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Popular Inc — Puerto Rico/US-mainland regional bank, a top-weighted KRE holding; deposit-funded lender exposed to the yield curve, CRE and deposit competition (added 2026-06-22; co-moves 0.85 daily / 0.80 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Popular Inc — Puerto Rico/US-mainland regional bank, a top-weighted KRE holding; deposit-funded lender exposed to the yield curve, CRE and deposit competition."
         },
         {
           "ticker": "COLB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Columbia Banking System (Umpqua, ~$66B assets) — West Coast deposit-funded commercial/CRE lender, top-15 KRE holding (added 2026-06-22; co-moves 0.85 daily / 0.88 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Columbia Banking System (Umpqua, ~$66B assets) — West Coast deposit-funded commercial/CRE lender, top-15 KRE holding."
         },
         {
           "ticker": "FCNCA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "First Citizens BancShares — super-regional commercial/CRE lender (~$236B assets, absorbed the SVB franchise); same yield-curve/deposit-competition/CRE-credit driver as MTB/USB/PNC (added 2026-06-22 on review; co-moves 0.76 daily / 0.77 weekly y1, a razor-thin near-miss just under the cohort bar 0.77 — kept per review override)."
+          "rationale": "First Citizens BancShares — super-regional commercial/CRE lender (~$236B assets, absorbed the SVB franchise); same yield-curve/deposit-competition/CRE-credit driver as MTB/USB/PNC."
         }
       ],
       "etf_proxy_note": "",
-      "thesis": "Mid- and large-regional lenders — the cleanest expression of the yield curve, CRE credit and deposit competition. Re-rate on steepening and rate cuts; the tail risk is CRE losses and a deposit-flight repeat.",
+      "thesis": "Regional lenders tied to the yield curve, CRE credit and deposit competition.",
       "weighting": "equal",
       "changelog": [
         {
@@ -1076,12 +1076,12 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: PNC, WAL, EWBC, CFR, FHN, WTFC, WBS."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): SSB (0.88), UMBF (0.87), BPOP (0.85), COLB (0.85); review-override near-misses re-added (within 0.02 of bar 0.77): FCNCA (0.755). Seeded at the basket seed date so backtest history is continuous."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ],
       "parent": "Financials",
@@ -1157,7 +1157,7 @@
         }
       ],
       "etf_proxy_note": "loose — broad health",
-      "thesis": "Health insurers and managed-care orgs — defensive cash flows whipsawed by the medical-loss-ratio cycle and Medicare Advantage rate notices. A policy-and-utilization trade more than a growth one.",
+      "thesis": "Health insurers tied to medical-cost trends, Medicare Advantage and policy changes.",
       "weighting": "equal",
       "changelog": [
         {
@@ -1296,17 +1296,17 @@
           "ticker": "MTH",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Meritage Homes — top-5 entry-level/first-move-up homebuilder, highly rate-sensitive (rate buydowns); peer to DHI/LEN/PHM/KBH/TOL (added 2026-06-22; co-moves 0.88 daily / 0.90 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Meritage Homes — top-5 entry-level/first-move-up homebuilder, highly rate-sensitive (rate buydowns); peer to DHI/LEN/PHM/KBH/TOL."
         },
         {
           "ticker": "IBP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Installed Building Products — residential insulation/building-products installer, chief rival to BLD; housing-starts driver (added 2026-06-22 on review; co-moves 0.67 daily / 0.66 weekly y1, a razor-thin near-miss just under the cohort bar 0.68 — kept per review override)."
+          "rationale": "Installed Building Products — residential insulation/building-products installer, chief rival to BLD; housing-starts driver."
         }
       ],
       "etf_proxy_note": "",
-      "thesis": "The housing chain — builders and building-products — geared to mortgage rates and the structural under-supply of US homes. Rate-cut beneficiaries with order-cancellation risk if rates stay high.",
+      "thesis": "Builders and building-products names tied to mortgage rates and housing supply.",
       "weighting": "equal",
       "changelog": [
         {
@@ -1322,12 +1322,12 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: TOL, KBH, BLD, OC, FBIN, CARR, MHK, LII."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): MTH (0.88); review-override near-misses re-added (within 0.02 of bar 0.68): IBP (0.669). Seeded at the basket seed date so backtest history is continuous. DROPPED below the bar: CVCO (0.625<bar 0.681)."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ],
       "parent": "Consumer",
@@ -1475,17 +1475,17 @@
           "ticker": "FLYW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Flywire — payment-enablement/vertical processor; cash-to-card take-rate driver in the digital-payments processing complex (added 2026-06-22; co-moves 0.53 daily / 0.54 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Flywire — payment-enablement/vertical processor; cash-to-card take-rate driver in the digital-payments processing complex."
         },
         {
           "ticker": "MQ",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Marqeta — modern card-issuing/transaction-processing platform; take-rate/consumer-spend driver alongside FI/GPN/FOUR/TOST (added 2026-06-22; co-moves 0.46 daily / 0.50 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Marqeta — modern card-issuing/transaction-processing platform; take-rate/consumer-spend driver alongside FI/GPN/FOUR/TOST."
         }
       ],
       "etf_proxy_note": "",
-      "thesis": "Card networks and payment processors — secular cash-to-card plus consumer-spend cyclicality, now with the AI/stablecoin disruption overhang on the processors.",
+      "thesis": "Card networks and payment processors tied to spending, cash-to-card and stablecoin disruption.",
       "weighting": "equal",
       "changelog": [
         {
@@ -1506,7 +1506,7 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: XYZ, FOUR, JKHY, WU, FI, AFRM, SOFI, TOST."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         },
         {
           "date": "2026-06-18",
@@ -1516,7 +1516,7 @@
         {
           "action": "remove",
           "date": "2026-06-21",
-          "note": "FUTU: removed — price action diverges from the theme AND it is a different sub-industry/driver (coherence audit). HK/China online brokerage (Futubull/moomoo) driven by China/HK trading volume & regulation, not card/payment volume; basket-minimum co-mover, corr 0.29, R^2~0.08"
+          "note": "FUTU: removed after coherence audit; driver no longer matched the basket."
         },
         {
           "action": "note",
@@ -1526,7 +1526,7 @@
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): FLYW (0.53), MQ (0.46). Seeded at the basket seed date so backtest history is continuous."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ],
       "parent": "Financials",
@@ -1663,23 +1663,23 @@
           "ticker": "PR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Permian Resources — second-largest Permian pure-play E&P (Delaware Basin); crude-price/capital-discipline trade alongside FANG/EOG/DVN/OXY (added 2026-06-22; co-moves 0.79 daily / 0.84 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Permian Resources — second-largest Permian pure-play E&P (Delaware Basin); crude-price/capital-discipline trade alongside FANG/EOG/DVN/OXY."
         },
         {
           "ticker": "PAA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Plains All American — crude-focused midstream (~8 MMbbl/d via pipelines/terminals/storage); fee-based throughput driver like WMB/KMI (added 2026-06-22; co-moves 0.62 daily / 0.75 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Plains All American — crude-focused midstream (~8 MMbbl/d via pipelines/terminals/storage); fee-based throughput driver like WMB/KMI."
         },
         {
           "ticker": "DINO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "HF Sinclair — independent mid-continent/Rockies refiner with marketing/lubricants/midstream; crack-spread/refined-margin driver alongside MPC/PSX/VLO (added 2026-06-22; co-moves 0.60 daily / 0.51 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "HF Sinclair — independent mid-continent/Rockies refiner with marketing/lubricants/midstream; crack-spread/refined-margin driver alongside MPC/PSX/VLO."
         }
       ],
       "etf_proxy_note": "energy proxy",
-      "thesis": "The US energy complex end-to-end: integrateds, E&P, oilfield services, refiners and midstream. A crude-price + capital-discipline trade; midstream adds a data-center-power/natgas demand kicker.",
+      "thesis": "Integrateds, E&P, services, refiners and midstream tied to crude, gas and capital discipline.",
       "weighting": "equal",
       "changelog": [
         {
@@ -1690,12 +1690,12 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: FANG, DVN, HAL, BKR, OKE, TRGP, EQT, LNG."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): PR (0.79), PAA (0.62), DINO (0.60). Seeded at the basket seed date so backtest history is continuous. DROPPED below the bar: MPLX (0.330<bar 0.590)."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ],
       "parent": "Energy & Power",
@@ -1828,7 +1828,7 @@
         }
       ],
       "etf_proxy_note": "staples proxy",
-      "thesis": "Staples and defensive cash-flows — the low-beta ballast that leads in risk-off and lags in risk-on. A relative-performance regime tell more than an absolute-return engine; GLP-1 and private-label are the structural cross-currents.",
+      "thesis": "Staples and low-beta cash-flow names that lead in risk-off and lag in risk-on.",
       "weighting": "equal",
       "changelog": [
         {
@@ -1844,7 +1844,7 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: MO, PM, CHD, CLX, HSY, KDP, MKC."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         }
       ],
       "parent": "Defensives",
@@ -1988,29 +1988,29 @@
           "ticker": "ALK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Alaska Air Group — major US network airline and core JETS constituent; same fuel/demand/operating-leverage cyclicality as DAL/UAL/LUV/AAL (added 2026-06-22; co-moves 0.75 daily / 0.70 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Alaska Air Group — major US network airline and core JETS constituent; same fuel/demand/operating-leverage cyclicality as DAL/UAL/LUV/AAL."
         },
         {
           "ticker": "VIK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Viking Holdings — large-cap premium cruise operator; same discretionary-travel/advance-bookings driver as RCL/CCL/NCLH (added 2026-06-22; co-moves 0.75 daily / 0.70 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Viking Holdings — large-cap premium cruise operator; same discretionary-travel/advance-bookings driver as RCL/CCL/NCLH."
         },
         {
           "ticker": "ALGT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Allegiant Travel — leisure-focused ultra-low-cost carrier; the 'experiences over goods' airline leg alongside LUV/AAL (added 2026-06-22; co-moves 0.69 daily / 0.70 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Allegiant Travel — leisure-focused ultra-low-cost carrier; the 'experiences over goods' airline leg alongside LUV/AAL."
         },
         {
           "ticker": "BYD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Boyd Gaming — diversified regional US casino operator; discretionary leisure-spend driver like MGM/CZR/WYNN/LVS (added 2026-06-22; co-moves 0.58 daily / 0.51 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Boyd Gaming — diversified regional US casino operator; discretionary leisure-spend driver like MGM/CZR/WYNN/LVS."
         }
       ],
       "etf_proxy_note": "",
-      "thesis": "Travel and experiences — airlines, cruises, lodging and gaming. The 'experiences over goods' consumer trade; high operating leverage cuts both ways and it's first to roll over on a consumer slowdown.",
+      "thesis": "Airlines, cruises, lodging and gaming tied to experience spending and consumer slowdowns.",
       "weighting": "equal",
       "changelog": [
         {
@@ -2026,12 +2026,12 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (6 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AAL, WYNN, CZR, H, WH, DKNG."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): ALK (0.75), VIK (0.75), ALGT (0.69), BYD (0.58). Seeded at the basket seed date so backtest history is continuous."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ],
       "parent": "Consumer",
@@ -2165,23 +2165,23 @@
           "ticker": "OLLI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ollie's Bargain Outlet — #1 US closeout/extreme-value retailer; trade-down/value play alongside TJX/ROST/BURL/DG/DLTR (added 2026-06-22; co-moves 0.54 daily / 0.51 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Ollie's Bargain Outlet — #1 US closeout/extreme-value retailer; trade-down/value play alongside TJX/ROST/BURL/DG/DLTR."
         },
         {
           "ticker": "ASO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Academy Sports + Outdoors — value-tilted big-box sporting-goods/outdoor retailer, head-to-head peer of DKS (added 2026-06-22; co-moves 0.51 daily / 0.51 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Academy Sports + Outdoors — value-tilted big-box sporting-goods/outdoor retailer, head-to-head peer of DKS."
         },
         {
           "ticker": "PSMT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "PriceSmart — warehouse membership-club operator (LatAm/Caribbean); same Costco/BJ's club model and trade-down resilience as COST/BJ (added 2026-06-22; co-moves 0.45 daily / 0.58 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "PriceSmart — warehouse membership-club operator (LatAm/Caribbean); same Costco/BJ's club model and trade-down resilience as COST/BJ."
         }
       ],
       "etf_proxy_note": "loose — broad cons. disc.",
-      "thesis": "Big-box, off-price and discount retail — a consumer-health and trade-down gauge. Off-price and discounters win in a stretched consumer; discretionary big-box is the spend-confidence tell.",
+      "thesis": "Big-box, off-price and discount retail tied to consumer health and trade-down behavior.",
       "weighting": "equal",
       "changelog": [
         {
@@ -2192,12 +2192,12 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AZO, ORLY, ULTA, BJ, FIVE, BURL, DKS, TSCO."
+          "note": "Expanded membership with liquid on-theme names and deeper close history."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): OLLI (0.54), ASO (0.51), PSMT (0.45). Seeded at the basket seed date so backtest history is continuous."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ],
       "parent": "Consumer",
@@ -2217,7 +2217,7 @@
       "omitted": [
         "BLSH Bullish, GEMI Gemini, ETOR eToro, STRC (too-recent / illiquid — excluded)",
         "BITF, WULF, CIFR, APLD, BTDR (miners that pivoted to AI/HPC — tracked in AI Neoclouds, not crypto exposure)",
-        "IREN, CORZ, HUT, RIOT (exited 2026-06: pivoted to AI/HPC hosting and decoupled from BTC; 2026-07-03 audit re-confirmed all four as neocloud beta — RIOT is a statistical tie (0.55/0.55 at 90d) kept in Neoclouds on its declared AI-datacenter pivot, re-audit next curation)"
+        "IREN, CORZ, HUT, RIOT — moved out after AI/HPC hosting exposure reduced pure BTC beta."
       ],
       "members": [
         {
@@ -2242,19 +2242,19 @@
           "ticker": "CRCL",
           "added": "2025-06-05",
           "removed": null,
-          "rationale": "Circle — USDC stablecoin issuer; moat broken ~2026-06-30 by the 'Open USD' 140-company consortium (partners keep the reserve yield; CRCL −39% in a month). Kept as the stablecoin-sector beta monitor; EXCLUDED from Crypto & Digital Rails per §10.4"
+          "rationale": "Circle — USDC stablecoin issuer."
         },
         {
           "ticker": "GLXY",
           "added": "2025-05-16",
           "removed": null,
-          "rationale": "Galaxy Digital — crypto trading/asset-management franchise; RE-ADMITTED 2026-07-03: BTC beta dominates (corr to IBIT 0.69/0.72/0.72 at 40/90/180d vs 0.39/0.46/0.54 to CRWV+NBIS); the Helios AI lease is a sleeve, not the business"
+          "rationale": "Galaxy Digital — crypto trading/asset-management franchise."
         },
         {
           "ticker": "MARA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "MARA Holdings — pure-play scale miner + ~50K-BTC treasury; RE-ADMITTED 2026-07-03: BTC beta still dominates (corr to IBIT 0.77/0.55/0.71 at 40/90/180d vs 0.43/0.31/0.48 to CRWV+NBIS) and majority revenue is still BTC mining"
+          "rationale": "MARA Holdings — pure-play scale miner + ~50K-BTC treasury."
         },
         {
           "ticker": "RIOT",
@@ -2266,7 +2266,7 @@
           "ticker": "CLSK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "CleanSpark — pure-play BTC miner (~12K-BTC treasury, HPC still pilot-scale); RE-ADMITTED 2026-07-03: BTC beta dominates (corr to IBIT 0.62/0.62/0.70 at 40/90/180d vs 0.37/0.43/0.54 to CRWV+NBIS)"
+          "rationale": "CleanSpark — pure-play BTC miner (~12K-BTC treasury, HPC still pilot-scale)."
         },
         {
           "ticker": "IREN",
@@ -2294,7 +2294,7 @@
         }
       ],
       "etf_proxy_note": "spot-BTC ETF",
-      "thesis": "Pure crypto-asset beta — the US exchange (COIN), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL — moat broken by Open USD, kept as the sector monitor), spot-ETH (ETHA), and the mining/franchise names whose BTC beta still dominates (MARA, CLSK, GLXY — re-admitted 2026-07-03 after a correlation audit). Miners with majority AI/HPC beta live in AI Neoclouds; the higher-conviction expression of the theme is Crypto & Digital Rails (§10.4). A regime sensor, not a buy list.",
+      "thesis": "Crypto-asset beta through exchanges, ETFs, miners and treasury proxies. Regime sensor, not a buy list.",
       "weighting": "equal",
       "changelog": [
         {
@@ -2310,7 +2310,7 @@
         {
           "date": "2026-06-18",
           "action": "remove",
-          "note": "Removed IREN, CORZ, HUT — bitcoin miners that pivoted to AI/HPC hyperscaler hosting during the BTC bear market and decoupled from bitcoin (40d return-corr to IBIT: IREN 0.47, CORZ 0.38, HUT 0.33; CORZ/HUT now correlate MORE to NVDA/CoreWeave than to BTC). They were injecting AI-capex beta into the crypto basket's scores/signals. Kept the pure-play miners whose BTC beta still dominates (MARA 0.67, RIOT 0.51, CLSK 0.58)."
+          "note": "Removed IREN, CORZ and HUT after their AI/HPC hosting exposure pulled them away from pure bitcoin beta."
         },
         {
           "date": "2026-06-18",
@@ -2325,7 +2325,7 @@
         {
           "date": "2026-07-03",
           "action": "add",
-          "note": "Second Act follow-through audit (data through 2026-07-01). RE-ADMITTED MARA/CLSK/GLXY from AI Neoclouds — the June exits overshot: 40/90/180d return-corr to IBIT (MARA 0.77/0.55/0.71, CLSK 0.62/0.62/0.70, GLXY 0.69/0.72/0.72) still dominates their corr to the CRWV+NBIS neocloud anchor, and all three still earn majority revenue from BTC mining/treasury/trading — the honest edge-case rule: majority-BTC revenue stays crypto, majority contracted AI/HPC moves. Confirmed IREN/CORZ/HUT/APLD/WULF/CIFR/BTDR as neocloud beta (stay). Noted CRCL moat break (Open USD, ~2026-06-30). Sibling basket Crypto & Digital Rails founded today per §10.4."
+          "note": "Second Act follow-through audit: MARA, CLSK and GLXY re-admitted after BTC beta still dominated AI/HPC beta."
         }
       ],
       "parent": "Crypto",
@@ -2345,7 +2345,7 @@
       "created": "2026-07-03",
       "curated": "2026-07-03",
       "omitted": [
-        "CRCL Circle — EXPLICITLY EXCLUDED per Second Act §10.4: the 'Open USD' 140-company consortium (launched ~2026-06-30) lets partners keep the reserve yield; the issuer without distribution is a money-market fund with extra steps (CRCL −39% in a month). Own the distribution instead (COIN/HOOD/CME).",
+        "CRCL Circle — excluded because stablecoin issuer economics weakened after Open USD; keep the theme in rails/distribution instead.",
         "SECZ Securitize — the BUIDL tokenization platform itself, listed NYSE 2026-07-02 via the Cantor SPAC; first candidate for the tokenization sleeve once the tape seasons (too-recent per house rule).",
         "WT WisdomTree — tokenized-fund platform considered for the sleeve; kept tight to the two BUIDL-adjacent majors (BLK/BEN).",
         "Metaplanet (3350.T) — DAT complex, Tokyo-listed, outside the US cache; its sub-1x mNAV stands as DAT-overhang evidence, not an investable line here."
@@ -2391,16 +2391,16 @@
           "ticker": "MSTR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "[DAT TRADING SLEEVE — never core] Strategy — purchases paused, first coin sales since 2022, 847K coins at $75.7K basis with an authorized sell drip: the telegraphed permanent overhang. Admitted per §10.4 only as the tagged trading sleeve, played against its own overhang."
+          "rationale": "[DAT TRADING SLEEVE — never core] Strategy — purchases paused, first coin sales since 2022, 847K coins at $75.7K basis with an authorized sell drip: the telegraphed permanent overhang."
         }
       ],
-      "thesis": "Founded by The Second Act §10.4 (2026-07-03): while the fourth BTC bear ran (−53% from the Oct-2025 top), the rails won the standards war — x402 settles agentic payments with USDC at 99.8% protocol share, Google AP2 adopted it, Mastercard shipped Agent Pay, Visa runs $7B annualized stablecoin settlement. Own the distribution (COIN, HOOD, CME) plus a tokenization sleeve (BLK, BEN — BUIDL-adjacent managers), anchored by spot BTC (IBIT) into the Oct–Dec 2026 trough window ($42–58K primary floor). CRCL is explicitly excluded — Open USD broke the issuer moat; in stablecoins distribution owns the economics. The DAT complex enters only as a tagged trading sleeve (MSTR). Assembly is timed to the October confluence. KILL CRITERION: if the §10.2 turn-confirmation set (ETF flows positive 3+ weeks, hashprice above miner marginal cost, dominance rolling over, spot-led rallies) has not appeared by February 2027, the basket dies. A monitoring basket, not a buy list.",
+      "thesis": "Crypto distribution and settlement rails: exchanges, brokers, CME, tokenization managers and spot BTC.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-07-03",
           "action": "create",
-          "note": "Founded per The Second Act §10.4 (site/report_second_act.html; research/SECOND_ACT_NOTE.md) — the section is the basket's founding document. 7 equal-weight members: IBIT (cycle anchor) + COIN/HOOD/CME (distribution rails) + BLK/BEN (tokenization sleeve) + MSTR ([DAT TRADING SLEEVE] tag — admitted, never core). CRCL explicitly excluded (Open USD consortium broke the issuer moat, −39% in a month); SECZ (Securitize, the BUIDL platform, NYSE 2026-07-02) watch-listed for the sleeve once seasoned. Members backdated to the seed date for backtest history (partial flags mark IBIT's Jan-2024 tape start). Kill criterion: §10.2 confirmation set failing by Feb 2027."
+          "note": "Founded from The Second Act §10.4 with a BTC anchor, distribution rails, tokenization managers and an MSTR trading sleeve."
         }
       ],
       "parent": "Crypto",
@@ -2496,28 +2496,28 @@
           "ticker": "CLSK",
           "added": "2023-05-09",
           "removed": "2026-07-06",
-          "rationale": "CLSK — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.62/0.62/0.70 vs 0.37/0.43/0.54; still a pure-play BTC miner, HPC pilot-scale). Exit staged to 2026-07-06 to stay under the freeze truncation guard."
+          "rationale": "CLSK — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.62/0.62/0.70 vs 0.37/0.43/0.54."
         },
         {
           "ticker": "MARA",
           "added": "2023-05-09",
           "removed": "2026-07-04",
-          "rationale": "MARA — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.77/0.55/0.71 (40/90/180d) vs 0.43/0.31/0.48 to CRWV+NBIS; majority revenue still BTC mining + ~50K-BTC treasury). Exit staged to 2026-07-04 to stay under the freeze truncation guard."
+          "rationale": "MARA — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.77/0.55/0.71 (40/90/180d) vs 0.43/0.31/0.48 to CRWV+NBIS."
         },
         {
           "ticker": "GLXY",
           "added": "2023-05-09",
           "removed": "2026-07-08",
-          "rationale": "GLXY — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.69/0.72/0.72 vs 0.39/0.46/0.54; crypto trading/AM franchise — Helios lease is a sleeve, not the business). Exit staged to 2026-07-08 to stay under the freeze truncation guard."
+          "rationale": "GLXY — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.69/0.72/0.72 vs 0.39/0.46/0.54."
         }
       ],
-      "thesis": "A basket of GPU-cloud and AI-HPC hosting pure-plays — \"neoclouds\" renting Nvidia capacity to AI labs plus ex-bitcoin miners converting power and datacenter shells into compute leases — driven by hyperscaler capex, GPU supply, power availability, and signed take-or-pay contracts. Treat it as a monitoring lens on the AI compute buildout, not a buy list: names are early-stage, capital-intensive, lease-concentrated, and highly volatile.",
+      "thesis": "GPU-cloud and AI/HPC hosting pure plays, including miners converting power into compute leases.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded AI Neoclouds & HPC Hosting — 9 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). GPU cloud / AI-HPC datacenter hosting pure-plays, including ex-bitcoin miners that pivoted power and datacenter assets into AI compute leasing"
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         },
         {
           "date": "2026-06-18",
@@ -2527,7 +2527,7 @@
         {
           "date": "2026-07-03",
           "action": "remove",
-          "note": "2026-07-03 correlation audit (data through 2026-07-01): MARA/CLSK/GLXY exit back to Crypto — their BTC beta still dominates the neocloud anchor at every window (see per-member rationales) and their majority revenue is still BTC-native, so they were injecting crypto beta into this basket's signal exactly as the AI names once polluted Crypto. Exits are STAGED 07-04/07-06/07-08 (one name per ~2 build days) so no single day shrinks membership >15% and trips the basket_freeze truncation guard (13→10 at once = 23%). IREN/CORZ/HUT/APLD/WULF/CIFR/BTDR confirmed neocloud beta at 90/180d and stay. RIOT is a statistical tie (IBIT 0.55 vs neocloud 0.55 at 90d; 0.61/0.61 at 180d, neocloud-leaning at 40d) — stays on its declared AI-datacenter pivot; flagged for re-audit at next curation."
+          "note": "Correlation audit: MARA, CLSK and GLXY moved back to Crypto after BTC beta still dominated neocloud exposure."
         }
       ]
     },
@@ -2635,18 +2635,18 @@
           "rationale": "Klaviyo — marketing-automation SaaS; durable subscription / seat-growth franchise (added 2026-06-21; co-moves 0.69)."
         }
       ],
-      "thesis": "Enterprise application and infrastructure SaaS franchises whose value rests on seat growth, net-revenue retention and durable subscription economics rather than the AI story — driven by software budgets, deal cycles, rates (long-duration multiples) and the SaaS net-retention regime. A monitoring lens on classic-software leadership, not a buy list.",
+      "thesis": "Classic enterprise software and SaaS names driven by budgets, retention and rates.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Non-AI Software — 13 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Enterprise SaaS / application & infra software whose thesis is NOT primarily the AI narrative"
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         },
         {
           "action": "add",
           "date": "2026-06-21",
-          "note": "KVYO: added at seed date for backtest history (recent IPOs flag partial) — quant-confirmed co-mover with the basket. Klaviyo — marketing-automation SaaS; durable subscription / seat-growth franchise"
+          "note": "KVYO: added at seed date for comparable history."
         }
       ]
     },
@@ -2745,36 +2745,36 @@
           "ticker": "STM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "STMicroelectronics (ADR) — broad-line analog/MCU/power/discrete chips for auto & industrial; sub-industry peer of TXN/ADI/MCHP/ON/NXPI (added 2026-06-22; co-moves 0.71 daily / 0.69 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "STMicroelectronics ADR — broad-line analog/MCU/power/discrete chips for auto & industrial; sub-industry peer of TXN/ADI/MCHP/ON/NXPI."
         },
         {
           "ticker": "HPE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Hewlett Packard Enterprise — diversified enterprise IT (servers, hybrid cloud, networking incl. Juniper); enterprise-IT/networking driver like CSCO/DELL/HPQ (added 2026-06-22; co-moves 0.59 daily / 0.39 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Hewlett Packard Enterprise — diversified enterprise IT (servers, hybrid cloud, networking incl. Juniper); enterprise-IT/networking driver like CSCO/DELL/HPQ."
         }
       ],
-      "thesis": "Diversified legacy tech: enterprise IT, networking gear, connectors and broad-line analog/MCU/power chips whose demand rides industrial, auto and datacenter capex rather than the AI-accelerator boom. Driven by inventory normalization, the industrial/auto cycle and infrastructure spend — a monitoring lens on the non-AI side of tech, not a buy list.",
+      "thesis": "Legacy tech hardware, networking and analog/power chips tied to industrial, auto and datacenter cycles.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Non-AI Tech & Hardware — 12 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Legacy / diversified tech hardware, networking and non-AI analog/MCU semiconductors."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         },
         {
           "action": "remove",
           "date": "2026-06-21",
-          "note": "IBM: removed — price action diverges from the theme AND it is a different sub-industry/driver (coherence audit). IBM (removed from non_ai_tech 2026-06-21: now trades on a software/AI/IT-services re-rate, monotonically decoupling from the legacy-hardware cohort — corr 0.14 vs 0.49 with a +110% return gap; retained in ai_software & quantum_computing"
+          "note": "IBM: removed after coherence audit; driver no longer matched the basket."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): STM (0.71), HPE (0.59). Seeded at the basket seed date so backtest history is continuous. DROPPED below the bar: APTV (weekly 0.285<0.30)."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ],
       "omitted": [
-        "IBM (removed from non_ai_tech 2026-06-21: now trades on a software/AI/IT-services re-rate, monotonically decoupling from the legacy-hardware cohort — corr 0.14 vs 0.49 with a +110% return gap; retained in ai_software & quantum_computing)."
+        "IBM ."
       ]
     },
     "ai_semiconductors": {
@@ -2869,7 +2869,7 @@
           "rationale": "Cerebras — wafer-scale AI inference/training chips; IPO May-2026 (flag partial)"
         }
       ],
-      "thesis": "AI Semiconductors tracks the silicon supply chain behind AI compute — merchant GPUs, custom training/inference ASICs, the networking chips that lash accelerators together, and the power and server hardware around them — driven by hyperscaler and enterprise capex on training and inference buildouts. It is a monitoring lens on the AI-compute cycle, not a buy list.",
+      "thesis": "AI silicon supply chain: GPUs, ASICs, networking, power and server hardware.",
       "weighting": "equal",
       "changelog": [
         {
@@ -2984,33 +2984,33 @@
           "ticker": "CAMT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Camtek — pure-play semiconductor inspection & metrology equipment; advanced-packaging/HBM tool demand, process-control peer to KLAC/ONTO/NVMI (added 2026-06-22; co-moves 0.79 daily / 0.73 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Camtek — pure-play semiconductor inspection & metrology equipment; advanced-packaging/HBM tool demand, process-control peer to KLAC/ONTO/NVMI."
         },
         {
           "ticker": "KLIC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Kulicke & Soffa — assembly/packaging equipment levered to AI/HBM advanced packaging (TCB for CoWoS); back-end semicap cycle (added 2026-06-22; co-moves 0.73 daily / 0.72 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Kulicke & Soffa — assembly/packaging equipment levered to AI/HBM advanced packaging (TCB for CoWoS); back-end semicap cycle."
         },
         {
           "ticker": "VECO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Veeco Instruments — WFE process-equipment (laser anneal, ion-beam, MOCVD, ALD, advanced-packaging litho); front-end peer to AMAT/LRCX (ACLS merger pending 2H26) (added 2026-06-22 on review; co-moves 0.67 daily / 0.69 weekly y1, a razor-thin near-miss just under the cohort bar 0.69 — kept per review override)."
+          "rationale": "Veeco Instruments — WFE process-equipment (laser anneal, ion-beam, MOCVD, ALD, advanced-packaging litho); front-end peer to AMAT/LRCX."
         }
       ],
-      "thesis": "Wafer-fab equipment (WFE) and metrology vendors are the pick-and-shovel layer of the AI build-out, selling the deposition, etch, litho-adjacent and inspection tools plus subsystems that enable leading-edge logic, HBM/DRAM and advanced packaging; the cycle is driven by fab capex, foundry/memory utilization and China localization spend. This is a monitoring lens for capex-cycle and AI-supply-chain breadth, not a buy list.",
+      "thesis": "Wafer-fab equipment, metrology and subsystems tied to fab capex and advanced packaging.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Semiconductor Equipment (WFE) — 13 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Wafer-fab equipment, metrology and subsystem suppliers — the AI-capex pick-and-shovel layer."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): CAMT (0.79), KLIC (0.73); review-override near-misses re-added (within 0.02 of bar 0.69): VECO (0.674). Seeded at the basket seed date so backtest history is continuous. DROPPED below the bar: ACMR (0.647<bar 0.691)."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ]
     },
@@ -3064,7 +3064,7 @@
           "rationale": "NetApp — enterprise data-storage systems and software; AI data-pipeline storage demand"
         }
       ],
-      "thesis": "This basket tracks the AI-memory cycle: DRAM and high-bandwidth memory (HBM) for accelerators, NAND flash, and the enterprise HDD/SSD storage that AI data buildout demands. It is driven by memory pricing cycles, HBM capacity sold to GPU makers, and hyperscaler storage capex — a monitoring lens on the cycle, not a buy list.",
+      "thesis": "DRAM, HBM, NAND and storage names tied to AI data and memory pricing cycles.",
       "weighting": "equal",
       "changelog": [
         {
@@ -3075,11 +3075,11 @@
         {
           "action": "remove",
           "date": "2026-06-21",
-          "note": "NTAP: removed — price action diverges from the theme AND it is a different sub-industry/driver (coherence audit). enterprise storage-systems integrator, not a DRAM/HBM/NAND maker; price action decoupled from the AI-memory-pricing cycle — leave-one-out 1y corr 0.21 vs basket median 0.74, weekly corr 0.17, recent sign-agreement sub-coin-flip — it skews the memory-cycle index"
+          "note": "NTAP: removed after coherence audit; driver no longer matched the basket."
         }
       ],
       "omitted": [
-        "NTAP NetApp (removed 2026-06-18: enterprise storage-systems integrator, not a DRAM/HBM/NAND maker; price action decoupled from the AI-memory-pricing cycle — leave-one-out 1y corr 0.21 vs basket median 0.74, weekly corr 0.17, recent sign-agreement sub-coin-flip — it skews the memory-cycle index)."
+        "NTAP NetApp — removed because storage systems are not a direct DRAM/HBM/NAND memory cycle exposure."
       ]
     },
     "data_center_power": {
@@ -3150,13 +3150,13 @@
           "rationale": "GE Vernova — gas turbines, grid equipment and transformers supplying power to data centers"
         }
       ],
-      "thesis": "The picks-and-shovels of the AI buildout: switchgear, transformers, busways, power-conversion and liquid-cooling gear that moves megawatts from the grid into GPU racks, driven by surging hyperscaler capex and grid-electrification demand. A monitoring lens on the power bottleneck of AI, not a buy list.",
+      "thesis": "Switchgear, transformers, busways, power conversion and cooling tied to AI power bottlenecks.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Data-Center Power & Cooling — 8 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Electrical, thermal and power infrastructure feeding AI datacenters."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         }
       ]
     },
@@ -3251,7 +3251,7 @@
           "rationale": "Tenable — exposure management and vulnerability scanning (Nessus)"
         }
       ],
-      "thesis": "Pure-play security software spanning endpoint, network firewalls, identity/access, vulnerability management and cloud-native protection, driven by ransomware/breach risk, AI-attack escalation, zero-trust adoption and platform consolidation onto fewer vendors. This is a monitoring lens on the theme's relative strength and dispersion, not a buy list.",
+      "thesis": "Security software across endpoint, network, identity, vulnerability and cloud protection.",
       "weighting": "equal",
       "changelog": [
         {
@@ -3262,16 +3262,16 @@
         {
           "action": "remove",
           "date": "2026-06-21",
-          "note": "NSSC: removed — price action diverges from the theme AND it is a different sub-industry/driver (coherence audit). physical/electronic security HARDWARE — alarms, locks, access control — not pure-play security software; corr 0.10 vs basket 0.63 with NEGATIVE weekly (-0.06) and downside (-0.05) correlation"
+          "note": "NSSC: removed after coherence audit; driver no longer matched the basket."
         },
         {
           "action": "remove",
           "date": "2026-06-21",
-          "note": "YOU: removed — price action diverges from the theme AND it is a different sub-industry/driver (coherence audit). consumer biometric travel-lane subscription, a different sub-industry/driver from enterprise security software; structurally low co-movement across every window, corr 0.28 vs 0.63"
+          "note": "YOU: removed after coherence audit; driver no longer matched the basket."
         }
       ],
       "omitted": [
-        "NSSC Napco Security (removed 2026-06-18: physical/electronic security HARDWARE — alarms, locks, access control — not pure-play security software; corr 0.10 vs basket 0.63 with NEGATIVE weekly (-0.06) and downside (-0.05) correlation).",
+        "NSSC Napco Security  and downside (-0.05) correlation).",
         "YOU Clear Secure (removed 2026-06-18: consumer biometric travel-lane subscription, a different sub-industry/driver from enterprise security software; structurally low co-movement across every window, corr 0.28 vs 0.63)."
       ]
     },
@@ -3349,13 +3349,13 @@
           "rationale": "Nano Nuclear Energy — pre-revenue ZEUS/ODIN microreactor and nuclear-fuel-transport developer"
         }
       ],
-      "thesis": "Nuclear power as the carbon-free baseload bet on surging AI-datacenter electricity demand, spanning reactor-owning utilities, early-stage SMR/microreactor developers, and the fuel-and-services chain that supplies them. Driven by hyperscaler power-purchase deals, pro-nuclear policy, and grid scarcity — this is a monitoring lens on the theme, not a buy list.",
+      "thesis": "Utilities, SMR developers and fuel/services names tied to carbon-free baseload demand.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Nuclear & SMR Power — 9 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Nuclear utilities, SMR developers and the nuclear fuel/services chain — AI baseload power."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         }
       ]
     },
@@ -3447,31 +3447,31 @@
           "ticker": "SYM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Symbotic — AI-powered warehouse/fulfillment automation robotics; factory/warehouse-automation driver shared by ROK/ZBRA/PTC (added 2026-06-22 on review; co-moves 0.41 daily / 0.31 weekly y1, a razor-thin near-miss just under the cohort bar 0.43 — kept per review override)."
+          "rationale": "Symbotic — AI-powered warehouse/fulfillment automation robotics; factory/warehouse-automation driver shared by ROK/ZBRA/PTC."
         }
       ],
-      "thesis": "Robotics & Automation captures companies building the machine vision, motion control, surgical robots and factory software that drive industrial productivity, geared to capex cycles, labor costs and reshoring. Treat it as a monitoring lens on the automation theme, not a buy list.",
+      "thesis": "Machine vision, motion control, surgical robots and factory software tied to productivity and capex.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Robotics & Automation — 9 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Factory automation, machine vision, surgical robotics and industrial controls."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         },
         {
           "action": "add",
           "date": "2026-06-21",
-          "note": "EMR: added at seed date for backtest history (recent IPOs flag partial) — quant-confirmed co-mover with the basket. Emerson Electric — process automation & control systems; a core factory-automation pure-play"
+          "note": "EMR: added at seed date for comparable history."
         },
         {
           "action": "add",
           "date": "2026-06-21",
-          "note": "PH: added at seed date for backtest history (recent IPOs flag partial) — quant-confirmed co-mover with the basket. Parker Hannifin — motion & control (hydraulics/pneumatics/actuation), the motion layer of factory automation"
+          "note": "PH: added at seed date for comparable history."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). review-override near-misses re-added (within 0.02 of bar 0.43): SYM (0.412). Seeded at the basket seed date so backtest history is continuous."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ]
     },
@@ -3586,7 +3586,7 @@
           "coherence": "deliberate INVERSE leg: the dialysis name the drugs THREATEN — negative weekly/downside corr by design; kept as the thesis's 'hurt' side, not a trend representative."
         }
       ],
-      "thesis": "The incretin/GLP-1 complex that reshaped pharma: the LLY/NVO duopoly that owns the economics, the oral and next-gen pure-plays racing to the second wave (several washed out — Terns, Metsera, Catalent are gone), the fill-finish and CGM supply chain that benefits, and the dialysis names the drugs threaten. A monitoring lens on the most consequential drug narrative of the decade, not a buy list.",
+      "thesis": "GLP-1 leaders, challengers and supply-chain names tied to obesity-drug demand.",
       "weighting": "equal",
       "changelog": [
         {
@@ -3597,7 +3597,7 @@
         {
           "action": "note",
           "date": "2026-06-21",
-          "note": "DVA: coherence audit — KEPT but flagged. deliberate INVERSE leg: the dialysis name the drugs THREATEN — negative weekly/downside corr by design; kept as the thesis's 'hurt' side, not a trend representative."
+          "note": "DVA: coherence audit — KEPT but flagged."
         }
       ]
     },
@@ -3692,13 +3692,13 @@
           "rationale": "Honeywell — retains ~48% of Quantinuum; cleanest large-cap proxy"
         }
       ],
-      "thesis": "The quantum-compute frontier: liquid pure-plays spanning trapped-ion (IONQ, QNT), superconducting (RGTI), annealing (QBTS), photonic (QUBT) and neutral-atom (INFQ), plus the deep-pocketed big-tech programs (IBM, GOOGL, MSFT) and the GPU bridge (NVDA, via Honeywell HON). Still the NISQ era — this is a high-beta option on a narrative, not a fundamentals book. A monitoring lens, not a buy list.",
+      "thesis": "Quantum pure plays and big-tech programs. High-beta narrative basket.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Quantum Computing — 11 equal-weight members covering all five qubit modalities plus big-tech adjacencies. QNT/INFQ added at their 2026 IPO dates (flag partial). Ticker traps (QMCO, ARQQ) excluded."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         },
         {
           "action": "note",
@@ -3791,13 +3791,13 @@
           "rationale": "ASP Isotopes — TerraPower HALEU deal; enrichment-adjacent (pre-revenue)"
         }
       ],
-      "thesis": "The fuel side of the nuclear revival: producers (CCJ, UEC, UUUU, URG), tier-1 developers (NXE, DNN), the only royalty pure-play (UROY) and the US enrichment/HALEU layer (LEU, ASPI) that the AI-power and SMR build-out depends on. Driven by uranium spot, utility contracting and US fuel-independence policy — distinct from the reactor/utility names in the Nuclear & SMR basket. A monitoring lens, not a buy list.",
+      "thesis": "Uranium producers, developers, royalty and enrichment names tied to nuclear fuel demand.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Uranium & Nuclear Fuel — 10 equal-weight members; producers/developers/royalty/enrichment. Web-vetted US-listed lines (NXE not NXE.TO; UUUU not EFR). Reactor/utility names kept in nuclear_power."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         }
       ]
     },
@@ -3892,13 +3892,13 @@
           "rationale": "Critical Metals — Greenland rare-earth developer; EXIM LOI (speculative)"
         }
       ],
-      "thesis": "The ex-China critical-mineral supply chain that 2025–26 policy is trying to onshore: rare-earth and magnet producers (MP, USAR, UUUU), lithium (ALB, SGML, LAC), antimony (UAMY, PPTA) and other defense-critical metals (NB niobium, ALM tungsten, CRML). A high-headline-beta cluster that moves on DoD/EXIM/DOE deals as much as commodity spot — genuine producers and pre-revenue developers are deliberately mixed and flagged. A monitoring lens, not a buy list.",
+      "thesis": "Rare earths, lithium, antimony and other policy-sensitive critical-mineral names.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Critical Minerals & Rare Earths — 11 equal-weight members, US-listed only, producers and govt-backed developers separated in rationales. OTC/pre-revenue explorers (REEMF, ARRNF, ABAT) excluded."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         }
       ]
     },
@@ -4008,27 +4008,27 @@
           "ticker": "VOYG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Voyager Technologies — space + defense (Space Solutions, Defense & National Security, Starlab station); in-space-infrastructure/defense-contract driver like LUNR/RDW/KRMN (added 2026-06-22; co-moves 0.73 daily / 0.75 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Voyager Technologies — space + defense (Space Solutions, Defense & National Security, Starlab station); in-space-infrastructure/defense-contract driver like LUNR/RDW/KRMN."
         },
         {
           "ticker": "SATL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Satellogic — vertically integrated Earth-observation pure-play (own EO constellation + geospatial data); EO-imagery peer to PL/BKSY (added 2026-06-22; co-moves 0.61 daily / 0.40 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Satellogic — vertically integrated Earth-observation pure-play (own EO constellation + geospatial data); EO-imagery peer to PL/BKSY."
         }
       ],
-      "thesis": "The commercial space build-out across every segment: launch (RKLB, FLY, SPCX), direct-to-device cellular (ASTS), satcom incumbents (IRDM, VSAT, MDA), Earth observation (PL, BKSY), defense-space (KTOS, LUNR) and propulsion/components (RDW, KRMN). Heavy on post-SPAC and brand-new IPOs — high beta and dilution risk are the rule. Names that turned into merger-arb (GSAT) or spectrum plays (SATS) are excluded. A monitoring lens, not a buy list.",
+      "thesis": "Launch, direct-to-device, satcom, Earth observation and defense-space names.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Space Economy — 13 equal-weight members across launch/satcom/EO/D2D/defense-space/components. Recent IPOs (FLY, KRMN, MDA, SPCX) dated to listing (flag partial). Delisted/merger-arb names excluded."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         },
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): VOYG (0.73), SATL (0.61). Seeded at the basket seed date so backtest history is continuous."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ]
     },
@@ -4103,18 +4103,18 @@
           "rationale": "Tempus AI — AI-native precision-medicine & diagnostics platform (added 2026-06-21; co-moves 0.52)."
         }
       ],
-      "thesis": "The AI application and agent layer — where models become revenue. Enterprise agentic platforms (PLTR, NOW, CRM) and AI-native or AI-levered apps (APP, DUOL, SOUN). Deliberately split out from AI Software & Platforms (which mixes in data-infra and dev-tools) to isolate the monetization-of-agents narrative. The app layer inherits roughly the index's forward edge — this is an accountability/structure lens, not an oracle, and not a buy list.",
+      "thesis": "AI application and agent platforms where models become revenue.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded AI Agents & Applications — 6 equal-weight members isolating the agentic/app monetization layer from infra-heavy ai_software. Still-private AI names (Lambda, Crusoe, Databricks) noted as watchlist."
+          "note": "Seeded basket membership with liquid on-theme names for comparable history."
         },
         {
           "action": "add",
           "date": "2026-06-21",
-          "note": "PATH: added at seed date for backtest history (recent IPOs flag partial) — quant-confirmed co-mover with the basket. UiPath — agentic RPA / enterprise automation platform; an AI-native agent pure-play"
+          "note": "PATH: added at seed date for comparable history."
         },
         {
           "action": "add",
@@ -4142,7 +4142,7 @@
         "reinsurance",
         "underwriting-cycle"
       ],
-      "thesis": "Tracks the hard-vs-soft underwriting cycle, rate-on-line, reserve adequacy and float investment income across P&C, life and brokers — a monitoring lens on the insurance cycle, not a buy list.",
+      "thesis": "Insurers and brokers tied to underwriting cycle, reserves and float income.",
       "members": [
         {
           "ticker": "PGR",
@@ -4232,31 +4232,31 @@
           "ticker": "WRB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "W. R. Berkley — large commercial-lines P&C + specialty/E&S writer with reinsurance; underwriting-cycle peer to CB/TRV/ACGL (added 2026-06-22; co-moves 0.70 daily / 0.68 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "W. R. Berkley — large commercial-lines P&C + specialty/E&S writer with reinsurance; underwriting-cycle peer to CB/TRV/ACGL."
         },
         {
           "ticker": "EG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Everest Group — global reinsurer + primary P&C/specialty; reinsurance-pricing/rate-on-line/reserve-adequacy driver like ACGL (added 2026-06-22; co-moves 0.68 daily / 0.65 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Everest Group — global reinsurer + primary P&C/specialty; reinsurance-pricing/rate-on-line/reserve-adequacy driver like ACGL."
         },
         {
           "ticker": "BRO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Brown & Brown — pure-play insurance broker; commission/rate-on-line driver, the direct peer to MMC/AON/AJG (added 2026-06-22 on review; co-moves 0.58 daily / 0.57 weekly y1, a razor-thin near-miss just under the cohort bar 0.58 — kept per review override)."
+          "rationale": "Brown & Brown — pure-play insurance broker; commission/rate-on-line driver, the direct peer to MMC/AON/AJG."
         },
         {
           "ticker": "KNSL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Kinsale Capital — pure-play E&S specialty P&C; high-purity hard-market/underwriting-cycle play (higher-beta) (added 2026-06-22 on review; co-moves 0.57 daily / 0.45 weekly y1, a razor-thin near-miss just under the cohort bar 0.58 — kept per review override)."
+          "rationale": "Kinsale Capital — pure-play E&S specialty P&C; high-purity hard-market/underwriting-cycle play (higher-beta)."
         },
         {
           "ticker": "WTW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Willis Towers Watson — global insurance broker, the fourth major alongside MMC/AON/AJG; same commission/rate-on-line driver (added 2026-06-22 on review; co-moves 0.56 daily / 0.56 weekly y1, a razor-thin near-miss just under the cohort bar 0.58 — kept per review override)."
+          "rationale": "Willis Towers Watson — global insurance broker, the fourth major alongside MMC/AON/AJG; same commission/rate-on-line driver."
         }
       ],
       "changelog": [
@@ -4268,7 +4268,7 @@
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): WRB (0.70), EG (0.68); review-override near-misses re-added (within 0.02 of bar 0.58): BRO (0.582), KNSL (0.569), WTW (0.565). Seeded at the basket seed date so backtest history is continuous."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ]
     },
@@ -4290,7 +4290,7 @@
         "pipeline",
         "patent-cliff"
       ],
-      "thesis": "Tracks branded-pharma/big-biotech pipeline progress, patent-cliff exposure, drug pricing and M&A — a monitoring lens on the large-cap drug complex, not a buy list. Excludes the GLP-1/obesity leaders (own basket).",
+      "thesis": "Large pharma and biotech tied to pipelines, patent cliffs, pricing and M&A.",
       "members": [
         {
           "ticker": "JNJ",
@@ -4362,7 +4362,7 @@
         {
           "action": "remove",
           "date": "2026-06-21",
-          "note": "ZTS: removed — price action diverges from the theme AND it is a different sub-industry/driver (coherence audit). animal-health company — a separate pet/veterinary sub-industry & driver from the human large-cap drug complex; decoupling, corr 0.30 vs 0.52"
+          "note": "ZTS: removed after coherence audit; driver no longer matched the basket."
         }
       ],
       "omitted": [
@@ -4388,7 +4388,7 @@
         "tooling",
         "short-cycle"
       ],
-      "thesis": "Tracks MRO/industrial-distributor volumes & pricing, equipment-rental fleet utilization and short-cycle tooling demand — a monitoring lens on the industrial restock/capex pulse, not a buy list.",
+      "thesis": "MRO, equipment rental and tooling names tied to restock and industrial capex.",
       "members": [
         {
           "ticker": "GWW",
@@ -4454,13 +4454,13 @@
           "ticker": "FERG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ferguson Enterprises — distributor of plumbing/HVAC/waterworks/industrial-MRO; distribution volume/pricing driver like WSO (construction/resi tilt) (added 2026-06-22; co-moves 0.65 daily / 0.54 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "Ferguson Enterprises — distributor of plumbing/HVAC/waterworks/industrial-MRO; distribution volume/pricing driver like WSO (construction/resi tilt)."
         },
         {
           "ticker": "WCC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "WESCO International — B2B distributor of electrical/communications/industrial-MRO products & supply-chain solutions; volume/pricing driver like GWW/FAST/MSM (added 2026-06-22; co-moves 0.62 daily / 0.52 weekly y1 vs the basket — coherence-audit add)."
+          "rationale": "WESCO International — B2B distributor of electrical/communications/industrial-MRO products & supply-chain solutions; volume/pricing driver like GWW/FAST/MSM."
         }
       ],
       "changelog": [
@@ -4472,7 +4472,7 @@
         {
           "action": "add",
           "date": "2026-06-22",
-          "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): FERG (0.65), WCC (0.62). Seeded at the basket seed date so backtest history is continuous. DROPPED below the bar: DXPE (0.453<bar 0.499)."
+          "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
         }
       ]
     },
@@ -4486,7 +4486,7 @@
       "etf_proxy_note": "XLK is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Technology name, equal-weighted, versus the cap-weighted XLK. When this equal-weight line lags XLK the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Technology members versus XLK. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "AAPL",
@@ -4944,7 +4944,7 @@
       "etf_proxy_note": "XLF is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Financials name, equal-weighted, versus the cap-weighted XLF. When this equal-weight line lags XLF the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Financials members versus XLF. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "ACGL",
@@ -5414,7 +5414,7 @@
       "etf_proxy_note": "XLV is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Health Care name, equal-weighted, versus the cap-weighted XLV. When this equal-weight line lags XLV the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Health Care members versus XLV. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "A",
@@ -5782,7 +5782,7 @@
       "etf_proxy_note": "XLY is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Consumer Discretionary name, equal-weighted, versus the cap-weighted XLY. When this equal-weight line lags XLY the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Consumer Discretionary members versus XLY. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "ABNB",
@@ -6078,7 +6078,7 @@
       "etf_proxy_note": "XLC is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Communication Services name, equal-weighted, versus the cap-weighted XLC. When this equal-weight line lags XLC the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Communication Services members versus XLC. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "CHTR",
@@ -6230,7 +6230,7 @@
       "etf_proxy_note": "XLI is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Industrials name, equal-weighted, versus the cap-weighted XLI. When this equal-weight line lags XLI the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Industrials members versus XLI. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "ADP",
@@ -6724,7 +6724,7 @@
       "etf_proxy_note": "XLP is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Consumer Staples name, equal-weighted, versus the cap-weighted XLP. When this equal-weight line lags XLP the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Consumer Staples members versus XLP. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "ADM",
@@ -6948,7 +6948,7 @@
       "etf_proxy_note": "XLE is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Energy name, equal-weighted, versus the cap-weighted XLE. When this equal-weight line lags XLE the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Energy members versus XLE. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "APA",
@@ -7088,7 +7088,7 @@
       "etf_proxy_note": "XLU is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Utilities name, equal-weighted, versus the cap-weighted XLU. When this equal-weight line lags XLU the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Utilities members versus XLU. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "AEE",
@@ -7288,7 +7288,7 @@
       "etf_proxy_note": "XLRE is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Real Estate name, equal-weighted, versus the cap-weighted XLRE. When this equal-weight line lags XLRE the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Real Estate members versus XLRE. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "AMT",
@@ -7488,7 +7488,7 @@
       "etf_proxy_note": "XLB is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
-      "thesis": "Every S&P 500 Materials name, equal-weighted, versus the cap-weighted XLB. When this equal-weight line lags XLB the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "thesis": "Equal-weight S&P 500 Materials members versus XLB. Sector participation gauge, not a buy list.",
       "members": [
         {
           "ticker": "ALB",
@@ -7649,6 +7649,6 @@
       ]
     }
   },
-  "construction": "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day.",
-  "history_note": "Curated 2026-06 with knowledge of the period — the full ~3y series is a HINDSIGHT backtest of the as-of-creation membership, not an out-of-sample track. A monitoring/structure frame, not a buy list."
+  "construction": "Equal-weight baskets, rebalanced monthly.",
+  "history_note": "Available history comes from the S&P 1500 and baskets-only price caches."
 }

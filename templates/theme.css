@@ -181,9 +181,9 @@ html body :is(.tabbtn, .segbtn, .brief-tab-btn):hover {
 /* clickable card / tile containers — the landing's hover light-up, shared: a
    gentle lift, an accent border and a soft accent glow. Additive (hover only),
    so each card keeps its own base layout. */
-html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard) {
+html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard) {
   transition: transform .2s cubic-bezier(.2,.7,.3,1), border-color .2s ease, box-shadow .2s ease; }
-html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
+html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--link) 45%, var(--line));
   box-shadow: 0 14px 30px -16px color-mix(in srgb, var(--link) 40%, transparent); }
@@ -192,7 +192,7 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
    (:where) so it never fights component styles; only shows for keyboard nav. */
 :where(.navbtn, .theme-btn, .tm-btn, .vtm-btn, .lang-btn, .wl-btn, .fbtn, .tabbtn,
   .segbtn, .brief-tab-btn, .aff, .af-toggle, .sm-btn, .theme-switch, .lang-toggle,
-  .ai-brief-link, .nav-link, .nav-dd-menu a, a.actitem, a.idx-alloc, a.nbcard,
+  .ai-brief-link, .nav-link, .nav-dd-menu a, a.actitem, a.idx-alloc, .nbcard,
   a.scard):focus-visible {
   outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px; }
 
@@ -676,7 +676,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   .nav-search input { animation: none; }
   /* hover lifts collapse to a static accent (keep colour/shadow, drop the move) */
   .navbtn:hover, .theme-btn:hover, .af-toggle:hover, .nav-ctrls .ai-brief-link:hover,
-  html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover { transform: none; }
+  html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover { transform: none; }
 }
 
 /* pinned standing read — the ladder's current call, top of the feed */
@@ -849,18 +849,19 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   border: 1px solid color-mix(in srgb, var(--c, var(--muted)) 34%, transparent); }
 .sig-gate.sig-take { --c: var(--ok); }
 .sig-gate.sig-pending { --c: var(--warn); }
+.sig-gate.sig-t2 { --c: var(--ok); opacity:.82; }
 .sig-gate.sig-early { --c: var(--muted); }
 .sig-gate .sig-w { font-size:9.5px; font-weight:700; letter-spacing:.2px; opacity:.7;
   padding-left:3px; border-left:1px solid color-mix(in srgb, var(--c, var(--muted)) 30%, transparent); }
 /* provisional-basis marker (W6 #22): a T3 fresh fire is graded on an incomplete resample
    bucket and repaints at a measured 23.8% US / 15.1% CN — flagged wherever the tier renders
    (_sig_badge, Top-setups strip, discovery chip). Dashed border = tentative by design. */
-.prov-flag { display:inline-block; font-size:9px; font-weight:700; letter-spacing:.3px;
-  text-transform:uppercase; line-height:1; padding:1.5px 4px; border-radius:4px; margin-left:3px;
+.prov-flag { display:inline-block; font-size:9px; font-weight:800; letter-spacing:.4px;
+  text-transform:uppercase; line-height:1; padding:2px 5px; border-radius:4px; margin-left:4px;
   vertical-align:1px; white-space:nowrap; cursor:help;
-  background: color-mix(in srgb, var(--warn) 14%, var(--panel));
-  color: color-mix(in srgb, var(--warn) 78%, var(--text));
-  border: 1px dashed color-mix(in srgb, var(--warn) 45%, transparent); }
+  background: color-mix(in srgb, var(--warn) 22%, var(--panel));
+  color: color-mix(in srgb, var(--warn) 92%, var(--text));
+  border: 1.5px solid color-mix(in srgb, var(--warn) 60%, transparent); }
 
 /* ---- Collapsible "Show more" lists (buy/add & reduce/avoid columns) -------------------
    Keeps long action lists short: 7 rows on a wide screen, 5 on a narrow one, the rest behind

@@ -141,7 +141,7 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
   </div>
 
   <div class="h1">🎛️ {{ t('China Strategy Scorecards','中国策略记分卡') }}</div>
-  <div class="intro">{{ t('Tactical strategies for onshore China (A-shares). China is cyclical and mean-reverting, so naive price-trend timing whipsaws — the durable edges here are DIVERSIFICATION and signals orthogonal to price (the credit cycle, retail-leverage extremes, volatility regime). Click a card for the full backtest, the live recommendation, and the rule-book.','面向中国境内（A股）的战术策略。A股具周期性且均值回归，朴素的价格趋势择时会频繁打脸——这里的持久优势来自分散化以及与价格正交的信号（信用周期、散户杠杆极值、波动率状态）。点击卡片查看完整回测、实时建议与规则手册。') }}</div>
+  <div class="intro">{{ t('Onshore China strategies with live stance, backtest and rule-book on each card.','中国境内策略卡片：实时立场、回测与规则手册。') }}</div>
   {% if masterminds %}
   <div class="mm-hero">
     <div class="mm-hero-head">
@@ -169,7 +169,7 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
   </div>
   {% endif %}
 
-  <div class="note">{{ t('Honest framing: in China the cash leg earns almost nothing (CGB ~1.7%, money-market ~0.8%), so de-risking into cash is a drawdown trade, not a carry trade. Each card shows whether it beats CSI 300 buy-&-hold on CAGR, Sharpe and max drawdown — computed, not asserted. Backtests are net of cost and total-return.','诚实说明：在中国，现金腿几乎无收益（10年国债约1.7%、货币市场约0.8%），因此退守现金是回撤交易而非套息交易。每张卡片都显示其在年化、夏普与最大回撤上是否跑赢沪深300买入持有——均为计算所得，而非断言。回测扣除成本且基于总回报。') }}</div>
+  <div class="note">{{ t('Honest framing: cash is mainly a drawdown control leg. Each card compares against CSI 300 buy-and-hold.','诚实说明：现金主要用于控制回撤。每张卡片都与沪深300买入持有对比。') }}</div>
 
   <div class="sgrid">
     {% for c in cards %}
@@ -179,7 +179,7 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
         <h2>{{ t(c.name_en, c.name_zh) }}</h2>
         {% if c.experimental %}<span class="exp">⚗ {{ t('Experimental','实验性') }}</span>{% endif %}
       </div>
-      <p>{{ t(c.thesis_en, c.thesis_zh) }}</p>
+      <p>{{ t(c.thesis_en|truncate(125, true, '...'), c.thesis_zh|truncate(70, true, '...')) }}</p>
       <div class="metrics">
         <div><span class="m-k">CAGR</span><span class="m-v {{ 'win' if c.cagr >= c.hodl_cagr else 'lose' }}">{{ c.cagr }}%</span><span class="m-sub">{{ t('B&H','买持') }} {{ c.hodl_cagr }}%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v {{ 'win' if c.sharpe >= c.hodl_sharpe else 'lose' }}">{{ c.sharpe }}</span><span class="m-sub">{{ t('B&H','买持') }} {{ c.hodl_sharpe }}</span></div>
@@ -195,7 +195,8 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
   </div>
 
   <div class="foot">
-    {{ t('Mechanical, backtested on free public data, net of 3 bps one-way transaction cost, positions acting next-bar (no look-ahead). Total-return benchmarks (dividend/coupon-adjusted). Not investment advice — these are drawdown / risk-adjusted-return engines, not yield-maximizers or CAGR-beaters. Experimental strategies are pending full Phase-0 validation (leave-one-crisis-out, deflated-Sharpe gate). Built','机械化 · 基于免费公开数据回测，扣除 3 个基点单边交易成本，仓位次日生效（无前视）。总回报基准（经分红/票息调整）。非投资建议 —— 这些是回撤 / 风险调整收益引擎，并非收益最大化或跑赢年化的工具。实验性策略尚待完整 Phase-0 验证（留一危机、贬值夏普门槛）。生成于') }} {{ built }}.
+    {{ t('Built', '生成于') }} {{ built }}<br>
+    <span class="made">© 2026 MastermindX Inc</span>
   </div>
 </div>
 <script src="theme.js"></script>

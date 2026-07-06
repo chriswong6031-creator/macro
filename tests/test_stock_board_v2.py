@@ -226,3 +226,163 @@ def test_row_identity_fields_for_ledger():
                         "entry_open", v2._when_gate(r), v2._what_gate(r, 0.3), None, 0.7)
     for f in ("ticker", "lane", "rank", "gates_passed"):
         assert f in row
+
+
+# ---------------------------------------------------------------------------
+# W4 reflexivity overlay integration: render() accepts overlay kwarg
+# Template: card chips (data-tip-en/data-tip-zh) + board banner
+# ---------------------------------------------------------------------------
+
+class TestW4ReflexivityTemplateIntegration:
+    """Verify that the template renders reflexivity chips and the board banner
+    when rx is provided, and degrades gracefully when rx is None."""
+
+    def _minimal_payload(self):
+        """Minimal payload dict that render() can pass to the template."""
+        return {
+            "status": "ok", "as_of": "2026-07-05",
+            "generated_utc": "2026-07-05T00:00:00Z",
+            "shadow": True, "note": "test", "universe": 2,
+            "lanes": {
+                "entry_open": [{
+                    "ticker": "NVDA", "name": "NVIDIA Corp",
+                    "rank": 1, "sector": "Information Technology",
+                    "lane": "entry_open", "provisional": False,
+                    "leadership": 0.3, "group_state": "leading",
+                    "composite_z": 0.8, "alpha": 0.5,
+                    "edge_glyph": {"grade": "A", "tone": "pos", "verdict": "Leader", "pctile": 0.9},
+                    "entry_glyph": {"tier": "T1", "tone": "pos", "freshness": "fresh"},
+                    "chips": [],
+                    "when": {"off_high": -3.5, "fresh_bars": 1},
+                    "gates_passed": {"in_setups": True},
+                }],
+                "setting_up": [],
+            },
+            "counts": {"entry_open": 1, "setting_up": 0, "candidates": 2},
+            "concentration": {
+                "entry_open": {"n": 1, "n_sectors": 1, "top2_sector_share": 1.0,
+                               "effective_bets": 1.0, "effective_bets_basis": "X",
+                               "concentrated": False, "by_sector": {}},
+                "setting_up": {"n": 0, "n_sectors": 0, "top2_sector_share": 0.0,
+                               "effective_bets": 0.0, "effective_bets_basis": "X",
+                               "concentrated": False, "by_sector": {}},
+            },
+            "knobs": {}, "knobs_basis": "prior",
+            "reader_contract": {"version": "1.0", "sources": []},
+            "rotation_coverage": {},
+            "board_passport": {"basis": "dual-gate", "frame": "cross-sectional",
+                               "as_of": None, "n": 2},
+            "ledger": {},
+        }
+
+    def _render(self, payload, overlay=None):
+        """Render the template in-memory and return the HTML string."""
+        from jinja2 import Environment, FileSystemLoader
+        from lib import config
+        env = Environment(
+            loader=FileSystemLoader(str(config.ROOT / "templates")),
+            autoescape=True,
+        )
+        return env.get_template("us_stocks_v2.html.j2").render(
+            d=payload, built="2026-07-05 00:00 UTC", rx=overlay)
+
+    def test_render_without_overlay_no_crash(self):
+        """render() with overlay=None must not crash — first-pass render."""
+        payload = self._minimal_payload()
+        html = self._render(payload, overlay=None)
+        assert "Buy Board 2.0" in html
+        # No reflexivity banner when overlay absent
+        assert "W4 Reflexivity" not in html
+
+    def test_render_with_overlay_shows_board_banner(self):
+        """When rx is provided, the W4 board banner must appear in the HTML."""
+        payload = self._minimal_payload()
+        overlay = {
+            "schema": "reflexivity_overlay.v1",
+            "is_context_only": True,
+            "board_concentration": {"n": 2, "n_eff": 1.5, "basis": "membership-jaccard"},
+            "n_eff_by_lane": {"entry_open": 1.0, "setting_up": None},
+            "by_ticker": {
+                "NVDA": {
+                    "verdict": "duplicate",
+                    "max_similarity": 0.9,
+                    "basis": "membership+high-tier-factor",
+                    "nearest": [],
+                    "why_en": "Same bet as AMD — semis (90%).",
+                    "why_zh": "与 AMD 押注相同 — 半导体（90%）。",
+                },
+            },
+            "factor_caveat": "OOS-unstable secondaries excluded.",
+            "verdicts": {},
+        }
+        html = self._render(payload, overlay=overlay)
+        # Board banner must be present
+        assert "W4 Reflexivity" in html or "reflexivity" in html.lower()
+        # Per-ticker chip for NVDA (duplicate verdict)
+        assert "same bet" in html or "duplicate" in html.lower() or "⚠" in html
+
+    def test_render_with_overlay_uses_data_tip_not_title(self):
+        """Reflexivity chips must use data-tip-en/data-tip-zh, not title= (CI rule)."""
+        payload = self._minimal_payload()
+        overlay = {
+            "schema": "reflexivity_overlay.v1",
+            "board_concentration": {"n": 2, "n_eff": 1.5},
+            "n_eff_by_lane": {"entry_open": 1.0, "setting_up": None},
+            "by_ticker": {
+                "NVDA": {
+                    "verdict": "partial",
+                    "why_en": "Partial overlap with AMD.",
+                    "why_zh": "与 AMD 部分重叠。",
+                    "nearest": [],
+                },
+            },
+            "factor_caveat": "OOS-unstable.",
+            "verdicts": {},
+        }
+        html = self._render(payload, overlay=overlay)
+        # data-tip-en/zh must appear, title= must NOT appear for CJK tooltip content
+        assert "data-tip-en=" in html
+        assert "data-tip-zh=" in html
+        # The why text itself should appear in a data-tip attribute, not in title=
+        import re
+        # Find title= attributes that contain Chinese characters
+        cjk_in_title = re.search(r'title="[^"]*[一-鿿]', html)
+        assert cjk_in_title is None, (
+            f"CJK text found in title= attribute: {cjk_in_title.group() if cjk_in_title else ''}"
+        )
+
+    def test_render_overlay_new_verdict_no_chip(self):
+        """'new' verdict tickers must NOT get a reflexivity chip (only duplicate/partial)."""
+        payload = self._minimal_payload()
+        overlay = {
+            "schema": "reflexivity_overlay.v1",
+            "board_concentration": {"n": 2, "n_eff": 2.0},
+            "n_eff_by_lane": {"entry_open": 1.0, "setting_up": None},
+            "by_ticker": {
+                "NVDA": {
+                    "verdict": "new",  # new → no chip
+                    "why_en": "Distinct bet — nearest AMD at 15%.",
+                    "why_zh": "独立押注 — 最近的候选名称 AMD，相似度 15%。",
+                    "nearest": [],
+                },
+            },
+            "factor_caveat": "",
+            "verdicts": {},
+        }
+        html = self._render(payload, overlay=overlay)
+        # 'new' verdict should not produce a chip
+        assert "same bet" not in html
+        assert "partial overlap" not in html
+        assert "重复押注" not in html
+
+    def test_render_accepts_overlay_kwarg(self):
+        """render() must accept overlay kwarg without raising TypeError."""
+        payload = self._minimal_payload()
+        # render() is called from build_reflexivity_overlay._rerender_v2_preview
+        # with overlay=<dict>; the old signature had no overlay param → TypeError
+        import inspect
+        from scripts.build_stock_board_v2 import render as bv2_render
+        sig = inspect.signature(bv2_render)
+        assert "overlay" in sig.parameters, (
+            "render() must accept overlay kwarg (wired by build_reflexivity_overlay._rerender_v2_preview)"
+        )

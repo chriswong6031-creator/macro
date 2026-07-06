@@ -34,6 +34,10 @@ Steps (in order):
   14. Hypothesis inbox (P9) — four collectors: analogue_surprise, detection_miss,
                      screen_live_divergence, sentinel_mirror; append-only to
                      data/oracle/hypothesis_inbox.jsonl; first run seeds silently.
+  15. Rotation Turn Desk (W6) — DISPLAY-ONLY panel: armed A15 windows,
+                     member cascade fires, base rates, promotion clock.
+                     Artifact: site/basketdata/oracle_turn_desk.json.
+                     Forward ledger: data/oracle/turn_desk_ledger.jsonl.
 
 Usage
 -----
@@ -809,6 +813,57 @@ def _step_compound_live_accrual(data_dir: Path, dry_run: bool) -> bool:
         return False
 
 
+def _step_reversion_forward_ledger(data_dir: Path, dry_run: bool) -> bool:
+    """P0: Reversion forward ledger — nightly single-writer (Step 11b).
+
+    For each registry compound with a ``reversion`` block (gauntlet PASS),
+    evaluates its entry rule on the latest panel date, appends new fires to
+    ``data/oracle/reversion_forward/<compound_id>.jsonl`` (idempotent), and
+    grades rows whose exit_date <= latest date.
+
+    Non-fatal: failure prints a warning but never blocks subsequent steps.
+    Outputs land under data/ which is covered by 'git add data/' (sentinel-gap law).
+    """
+    log.info("=== Step 11b: Reversion forward ledger (P0) ===")
+    try:
+        from scripts.oracle_reversion_forward_ledger import run_reversion_forward_ledger
+        summary = run_reversion_forward_ledger(data_dir, dry_run=dry_run)
+        log.info(
+            "reversion_forward_ledger: n_compounds=%d fired=%d graded=%d skipped=%d",
+            summary.get("n_compounds", 0),
+            summary.get("total_fired", 0),
+            summary.get("total_graded", 0),
+            summary.get("n_skipped", 0),
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: reversion_forward_ledger FAILED: {e}")
+        return False
+
+
+def _step_reversion_state(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
+    """P1: Oracle reversion state sidecar writer (Step 11c, display tier only).
+
+    Writes ``site/basketdata/oracle_reversion_state.json`` (schema
+    oracle_reversion_state.v1).  Display tier only — no authority granted,
+    no ranking surface touched (Article 2).
+
+    Non-fatal: failure never blocks subsequent steps.
+    Output lands under site/ which is covered by 'git add site/' (sentinel-gap law).
+    """
+    log.info("=== Step 11c: Reversion state sidecar (P1, display tier) ===")
+    try:
+        from scripts.oracle_reversion_state import build_reversion_state
+        payload = build_reversion_state(data_dir, site_dir, dry_run=dry_run)
+        n = payload.get("n_signals", 0)
+        fired = sum(len(s.get("fired_today", [])) for s in payload.get("signals", []))
+        log.info("reversion_state: n_signals=%d fired_today_total=%d", n, fired)
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: reversion_state FAILED: {e}")
+        return False
+
+
 def _step_promotion_scan(data_dir: Path, dry_run: bool) -> bool:
     """W-B1: Run promotion scan as the LAST nightly step (loud-error pattern)."""
     log.info("=== Step 12: Promotion scan ===")
@@ -868,6 +923,643 @@ def _step_hypothesis_inbox(data_dir: Path, dry_run: bool) -> dict[str, int]:
     except Exception as e:  # noqa: BLE001
         _annotation(f"oracle_nightly: hypothesis_inbox FAILED: {e}")
         return {}
+
+
+# ---------------------------------------------------------------------------
+# Step 15: Rotation Turn Desk (W6)
+# ---------------------------------------------------------------------------
+
+# A15 compound spec — not in registry (scout finding: no A15 rows today);
+# rule: washout_w > 0 AND ep(out/onset/opposite/within_sessions=20/min_count=2)
+_A15_COMPOUND: dict = {
+    "id": "A15_WASHOUT_OPP_OUT_2NODE",
+    "universe": {"tier": "s"},
+    "entry_rule": {
+        "all": [
+            {"col": "washout_w", "op": "gt", "value": 0},
+            {
+                "episode_event": {
+                    "direction": "out",
+                    "tier": "onset",
+                    "complex_scope": "opposite",
+                    "within_sessions": 20,
+                    "min_count": 2,
+                }
+            },
+        ]
+    },
+    "condition_rule": None,
+}
+
+# GICS sector name -> ETF node (for mapping us_standouts sector field).
+# Derived from engine/oracle/panel.py::ETF_TO_SECTOR (canonical inverse) plus
+# non-canonical aliases emitted by the buy-lane builder (e.g. 'Technology',
+# 'Communications').  Aliases added here must NOT appear in ETF_TO_SECTOR so the
+# two-way round-trip is preserved; the canonical map is source-of-truth.
+def _build_sector_to_etf() -> dict[str, str]:
+    from engine.oracle.panel import ETF_TO_SECTOR as _ETS
+    _map = {sector: etf for etf, sector in _ETS.items()}
+    # Non-canonical aliases emitted by the buy-lane standouts builder.
+    # These are intentional additions, not duplicates of canonical names.
+    _map.setdefault("Technology", "XLK")          # buy lane alias for XLK
+    _map.setdefault("Communications", "XLC")       # buy lane alias for XLC
+    return _map
+
+
+_SECTOR_TO_ETF: dict[str, str] = _build_sector_to_etf()
+
+# Window length in sessions
+_A15_WINDOW_SESSIONS = 10
+# Maturity horizon for forward ledger grading
+_MATURITY_H = 21
+# Banned-implication key substrings (Constitution III)
+_BANNED_KEY_SUBS = ("forecast", "predicted", "target", "expected_return")
+
+
+def _step_turn_desk(
+    data_dir: Path, site_dir: Path, dry_run: bool
+) -> tuple[bool, list[dict], str, list[str]]:
+    """W6 Step 15: Rotation Turn Desk — armed windows + member fires + display artifact.
+
+    DISPLAY-ONLY under hard law: this artifact feeds no score, gate, or ordering.
+    Forward ledger (data/oracle/turn_desk_ledger.jsonl) is the accrual instrument
+    for the registered §5 promotion rule — no peeking logic.
+
+    Returns (ok, armed, panel_asof, all_dates_list) so Step 17 (W7) can stamp
+    the same window set without re-running the A15 rule.
+
+    Loud-error pattern: ::error:: + returns (False, [], "", []) ; pipeline continues.
+    """
+    log.info("=== Step 15: Rotation Turn Desk (W6) ===")
+    try:
+        import pandas as _pd
+        import json as _json
+        from datetime import datetime, timezone
+
+        from engine.oracle.compounds import (
+            get_entry_dates,
+            augment_panel_with_derived,
+        )
+        from engine.neuralweb.envelope import stamp_if_changed
+
+        # ── 1. Load panel + episodes + rotation_groups ──
+        panel_path = data_dir / "oracle" / "panel_s.parquet"
+        episodes_path = data_dir / "oracle" / "episodes_s.parquet"
+        rg_path = data_dir / "oracle" / "rotation_groups.json"
+
+        if not panel_path.exists():
+            _annotation("oracle_nightly: turn_desk — panel_s.parquet missing, skipping")
+            return False
+        if not episodes_path.exists():
+            _annotation("oracle_nightly: turn_desk — episodes_s.parquet missing, skipping")
+            return False
+
+        panel_raw = _pd.read_parquet(panel_path)
+        episodes_df = _pd.read_parquet(episodes_path)
+        rotation_groups = (
+            _json.loads(rg_path.read_text()) if rg_path.exists() else {"complexes": []}
+        )
+
+        panel_aug = augment_panel_with_derived(panel_raw.copy())
+
+        # ── 2. Recompute A15 entry dates (latest panel) ──
+        try:
+            entry_dates_raw = get_entry_dates(
+                _A15_COMPOUND, panel_aug, episodes_df, rotation_groups
+            )
+        except ValueError as e:
+            _annotation(f"oracle_nightly: turn_desk — A15 rule error: {e}")
+            entry_dates_raw = {}
+
+        if "__blocked__" in entry_dates_raw:
+            log.warning("turn_desk: A15 blocked (missing column)")
+            entry_dates_raw = {}
+
+        # ── 3. Determine panel asof (latest date) ──
+        all_dates_idx = panel_aug.index.get_level_values("date").unique().sort_values()
+        panel_asof = all_dates_idx[-1].strftime("%Y-%m-%d") if len(all_dates_idx) else ""
+
+        # Convert to sets of string dates for window logic
+        entry_dates_str: dict[str, set[str]] = {
+            node: {d.strftime("%Y-%m-%d") for d in dates}
+            for node, dates in entry_dates_raw.items()
+        }
+
+        # ── 4. Build armed windows ──
+        # Window = fire → +10 sessions from fire date; merged per node.
+        # We need the last N session dates to check recency.
+        all_dates_list = [d.strftime("%Y-%m-%d") for d in all_dates_idx]
+        date_to_pos: dict[str, int] = {d: i for i, d in enumerate(all_dates_list)}
+
+        armed: list[dict] = []
+        for node, fires in entry_dates_str.items():
+            if not fires:
+                continue
+            # Find fires in last _A15_WINDOW_SESSIONS sessions (from panel_asof)
+            asof_pos = date_to_pos.get(panel_asof, len(all_dates_list) - 1)
+            window_start_pos = max(0, asof_pos - _A15_WINDOW_SESSIONS + 1)
+            window_start_date = all_dates_list[window_start_pos]
+
+            recent_fires = sorted(f for f in fires if f >= window_start_date)
+            if not recent_fires:
+                continue
+
+            latest_fire = recent_fires[-1]
+            fire_pos = date_to_pos.get(latest_fire, 0)
+            window_end_pos = min(len(all_dates_list) - 1, fire_pos + _A15_WINDOW_SESSIONS - 1)
+            window_end = all_dates_list[window_end_pos]
+            sessions_remaining = max(0, window_end_pos - asof_pos)
+
+            # ETF nodes → names
+            # node is something like XLK, XLV etc.
+            from engine.oracle.panel import ETF_TO_SECTOR
+            sector_name_en = ETF_TO_SECTOR.get(node, node)
+
+            # ZH name lookup
+            _ZH_SECTOR = {
+                "XLK": "信息技术", "XLV": "医疗保健", "XLF": "金融",
+                "XLY": "可选消费", "XLC": "通信服务", "XLI": "工业",
+                "XLP": "必需消费", "XLE": "能源", "XLU": "公用事业",
+                "XLRE": "房地产", "XLB": "原材料",
+            }
+            armed.append({
+                "node": node,
+                "name_en": sector_name_en,
+                "name_zh": _ZH_SECTOR.get(node, node),
+                "fire_dates": sorted(fires),
+                "window_end": window_end,
+                "sessions_remaining": sessions_remaining,
+                "member_fires": [],  # filled below
+            })
+
+        log.info("turn_desk: %d armed sectors", len(armed))
+
+        # ── 5. Load member fires from us_standouts.json ──
+        standouts_path = site_dir / "factordata" / "us_standouts.json"
+        # signal_gate.json is declared in dag.yml reads but not consumed yet;
+        # variable removed to avoid dead-code confusion (spec §2.2 finding).
+
+        member_fires_asof = ""
+        if standouts_path.exists():
+            standouts = _read_json(standouts_path) or {}
+            member_fires_asof = standouts.get("as_of", "")
+            buy_rows = standouts.get("buy", [])
+            watch_rows = standouts.get("watch", [])
+            all_standout_rows = buy_rows + watch_rows
+
+            # Propagate member_fires_asof to each armed entry so the ledger
+            # writer can key member_fire rows on the standouts artifact date
+            # (stable for the same event) rather than panel_asof.
+            for _ae in armed:
+                _ae["_member_fires_asof"] = member_fires_asof
+
+            # Build a quick set of armed nodes
+            armed_nodes = {a["node"] for a in armed}
+
+            for row in all_standout_rows:
+                sig = row.get("signal", {}) if isinstance(row.get("signal"), dict) else {}
+                tc = sig.get("tier_cascade")
+                if tc not in ("T1", "T2", "T3"):
+                    continue
+                # Map sector field to ETF node
+                sector_str = row.get("sector", "")
+                etf_node = _SECTOR_TO_ETF.get(sector_str)
+                if etf_node is None:
+                    # Loud annotation so future label drift trips CI rather than
+                    # silently dropping T1-T3 fires (spec §2.1 blocker fix).
+                    _annotation(
+                        f"oracle_nightly: turn_desk — T1-T3 fire sector "
+                        f"'{sector_str}' (ticker={row.get('ticker','?')}) "
+                        f"not in _SECTOR_TO_ETF — fire dropped; add alias if intentional"
+                    )
+                    continue
+                if etf_node not in armed_nodes:
+                    continue
+                # Append to armed entry
+                for armed_entry in armed:
+                    if armed_entry["node"] == etf_node:
+                        armed_entry["member_fires"].append({
+                            "ticker": row.get("ticker", ""),
+                            "tier": tc,
+                            "provisional": bool(sig.get("provisional")),
+                            "fresh_bars": sig.get("fresh_bars"),
+                            "label": row.get("label", ""),
+                        })
+                        break
+
+        # ── 6. Build base_rates block (CONFIRMED display_with_edge, §W2 lineage) ──
+        base_rates = {
+            "in_window_wr21": 0.652,
+            "outside_window_wr21": 0.536,
+            "holdout_delta_pp": 10.7,
+            "holdout_ci_lo_pp": 3.8,
+            "holdout_ci_hi_pp": 17.9,
+            "modern_track_from": "2022-06-30",
+            "n_windows": 31,
+            "confidence_class": "display_with_edge",
+            "lineage": "#1533 W2_FORMAL_RESULTS",
+            "note": (
+                "IN-window member fires WR21 65.2% vs 53.6% outside "
+                "(holdout +10.7pp CI [+3.8, +17.9]); modern track ≥2022-06-30, "
+                "31 windows. Growth/cyclical tilt; defensive sectors negative. "
+                "NOT a forecast."
+            ),
+        }
+
+        # ── 7. Promotion clock ──
+        turn_desk_ledger_path = data_dir / "oracle" / "turn_desk_ledger.jsonl"
+        windows_accrued = 0
+        if turn_desk_ledger_path.exists():
+            for line in turn_desk_ledger_path.read_text().splitlines():
+                if line.strip():
+                    try:
+                        r = _json.loads(line)
+                        if r.get("kind") == "window_open":
+                            windows_accrued += 1
+                    except Exception:  # noqa: BLE001
+                        pass
+
+        promotion_clock = {
+            "windows_accrued": windows_accrued,
+            "windows_required": 15,
+        }
+
+        # ── 7b. Load existing qual_filter stamps for display (W7 additive) ──
+        # Read stamps written by previous runs (tonight's stamps are written in
+        # Step 17, AFTER this step; this block is display-only and degrades
+        # gracefully if the file is absent on first run).
+        _stamps_path = data_dir / "oracle" / "qual_filter_stamps.jsonl"
+        _stamps_by_window: dict[str, list[str]] = {}  # window_key → [filter_id, ...]
+        if _stamps_path.exists():
+            for _sl in _stamps_path.read_text().splitlines():
+                _sl = _sl.strip()
+                if not _sl:
+                    continue
+                try:
+                    _sr = _json.loads(_sl)
+                    if _sr.get("value") is True:
+                        _wk = _sr.get("window_key", "")
+                        _fid = _sr.get("filter_id", "")
+                        if _wk and _fid:
+                            _stamps_by_window.setdefault(_wk, []).append(_fid)
+                except Exception:  # noqa: BLE001
+                    pass
+        # Annotate each armed entry with its true-stamped filter ids (display only).
+        for _ae in armed:
+            _node = _ae["node"]
+            _ae_qual_true: list[str] = []
+            for _fd in _ae.get("fire_dates", []):
+                _wk = f"{_node}::a15::{_fd}"
+                _ae_qual_true.extend(_stamps_by_window.get(_wk, []))
+            _ae["qual_filters_true"] = sorted(set(_ae_qual_true))
+
+        # Compute qual_accrual_note for the payload caveats section.
+        _accrual_path = data_dir / "oracle" / "qual_filter_accrual.json"
+        _qual_accrual_note = ""
+        if _accrual_path.exists():
+            try:
+                _ac = _json.loads(_accrual_path.read_text())
+                _per = _ac.get("per_filter") or {}
+                _parts = [
+                    f"{fid} n={v.get('filter_true', {}).get('n', 0)}"
+                    for fid, v in _per.items()
+                ]
+                if _parts:
+                    _qual_accrual_note = "Qualitative filters accruing: " + "; ".join(_parts)
+            except Exception:  # noqa: BLE001
+                pass
+
+        # ── 8. Build payload ──
+        # n_windows=31 is the full-sample count; holdout arm has n=15.
+        # Disclaimer makes both counts explicit to avoid overstating holdout evidence.
+        disclaimers = [
+            "DISPLAY-WITH-EDGE — desk feeds no score, gate, or ordering surface.",
+            "WR21 65.2% vs 53.6% (holdout Δ+10.7pp CI [+3.8, +17.9]) — 31 modern-track windows (holdout n=15), ≥2022-06-30.",
+            "Growth/cyclical tilt; defensive sectors (XLV, XLP, XLU) were negative in-window.",
+            "T3 fires carry ~23.8% repaint risk — badge shown on each fire.",
+            "Not a forecast.",
+        ]
+        payload: dict = {
+            "schema": "oracle_turn_desk.v1",
+            "asof": panel_asof,
+            "member_fires_asof": member_fires_asof,
+            "armed": armed,
+            "base_rates": base_rates,
+            "promotion_clock": promotion_clock,
+            "qual_accrual_note": _qual_accrual_note,
+            "disclaimers": disclaimers,
+        }
+
+        # Final banned-key sweep — recursive over entire payload tree (dict keys + list items).
+        # Enforces Constitution III: no field name containing forecast/predicted/target/expected_return.
+        def _check_banned_keys_recursive(obj: object, path: str) -> bool:
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    for banned in _BANNED_KEY_SUBS:
+                        if banned in k:
+                            _annotation(
+                                f"oracle_nightly: turn_desk — BANNED key '{k}' at {path}"
+                            )
+                            return False
+                    if not _check_banned_keys_recursive(v, f"{path}.{k}"):
+                        return False
+            elif isinstance(obj, list):
+                for i, item in enumerate(obj):
+                    if not _check_banned_keys_recursive(item, f"{path}[{i}]"):
+                        return False
+            return True
+
+        if not _check_banned_keys_recursive(payload, "payload"):
+            return False
+
+        # ── 9. Stamp + write artifact ──
+        artifact_path = site_dir / "basketdata" / "oracle_turn_desk.json"
+        prev_payload = _read_json(artifact_path)
+        stamped = stamp_if_changed(
+            payload, prev_payload, artifact_id="oracle-turn-desk"
+        )
+
+        if not dry_run:
+            _write_json(artifact_path, stamped)
+        log.info(
+            "turn_desk: artifact written — armed=%d, member_fires_total=%d, asof=%s",
+            len(armed),
+            sum(len(a["member_fires"]) for a in armed),
+            panel_asof,
+        )
+
+        # ── 10. Forward ledger (keep-first) ──
+        if not dry_run:
+            _write_turn_desk_ledger(
+                armed, panel_asof, data_dir, all_dates_list, date_to_pos
+            )
+
+        return True, armed, panel_asof, all_dates_list
+
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: turn_desk FAILED: {e}")
+        return False, [], "", []
+
+
+def _step_qual_filter_stamps(
+    armed: list[dict],
+    panel_asof: str,
+    data_dir: Path,
+    all_dates_list: list[str],
+    dry_run: bool,
+) -> bool:
+    """W7 Step 17: Qualitative filter PIT stamping + accrual report.
+
+    Writes:
+      data/oracle/qual_filter_stamps.jsonl  (keep-first, PIT stamps)
+      data/oracle/qual_filter_accrual.json  (conditional WR21 on matured windows)
+
+    Loud-error pattern: ::error:: annotation + returns False; does not block
+    earlier steps.  Runs AFTER the turn desk (Step 15) so window_open keys exist.
+
+    Law: no retro-stamping of pre-existing windows — this step stamps only the
+    windows passed in `armed` (current night's armed set), which is always a
+    subset of the window_open rows just written to turn_desk_ledger.jsonl.
+    """
+    log.info("=== Step 17: Qualitative filter stamps + accrual (W7) ===")
+    try:
+        from engine.oracle.qual_filters import (
+            stamp_window_open, build_accrual_report, write_accrual_report
+        )
+
+        n_new = stamp_window_open(
+            armed, panel_asof, data_dir, all_dates_list, dry_run=dry_run
+        )
+        log.info("qual_filter_stamps: %d new stamp rows", n_new)
+
+        # Accrual report — runs even when no new stamps (updates as windows mature)
+        accrual = build_accrual_report(data_dir)
+        write_accrual_report(accrual, data_dir, dry_run=dry_run)
+        log.info(
+            "qual_filter_accrual: n_graded_windows=%d n_filters=%d",
+            accrual.get("n_graded_windows", 0),
+            len(accrual.get("per_filter") or {}),
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: qual_filter_stamps FAILED: {e}")
+        return False
+
+
+def _step_reversion_promotion_scan(
+    data_dir: Path,
+    site_dir: Path,
+    dry_run: bool,
+) -> bool:
+    """W4.a Step 16: Reversion promotion scan (P2, armed-not-fired).
+
+    Reads registry reversion-block compounds + P0 forward ledger (matured rows
+    only); calls grant_authority VERBATIM; writes
+    data/oracle/reversion_promotion_queue.json + data/oracle/reversion_authority.json
+    (only for human-ratified rows) + data/neuralweb/governance.jsonl events.
+
+    NEVER auto-promotes: all promotions require human ratified_by in queue row.
+
+    Additive nightly step placed at END per W4_SPEC.md §W4.a:
+    'Nightly step appended at END (after the current last step)'.
+
+    Loud-error pattern: ::error:: annotation + returns False; does not block
+    earlier steps.
+    """
+    log.info("=== Step 16: Reversion promotion scan (W4.a P2) ===")
+    try:
+        from scripts.oracle_reversion_promotion_scan import run_promotion_scan
+        summary = run_promotion_scan(data_dir, site_dir, dry_run=dry_run)
+        log.info(
+            "reversion_promotion_scan: n_compounds=%d candidates=%d lapses=%d accruing=%d",
+            summary.get("n_compounds", 0),
+            summary.get("n_candidates", 0),
+            summary.get("n_lapses", 0),
+            summary.get("n_accruing", 0),
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: reversion_promotion_scan FAILED: {e}")
+        return False
+
+
+def _write_turn_desk_ledger(
+    armed: list[dict],
+    panel_asof: str,
+    data_dir: Path,
+    all_dates_list: list[str],
+    date_to_pos: dict[str, int],
+) -> None:
+    """Append keep-first rows to data/oracle/turn_desk_ledger.jsonl.
+
+    Kinds:
+      window_open  — key node::a15::fire_date (one per A15 fire)
+      member_fire  — key window_key::ticker::fire_date (today's cascade fires in-window)
+
+    Nightly is the sole advancer; keep-first = once written, never overwritten.
+    """
+    import json as _json
+    from datetime import datetime, timezone
+
+    ledger_path = data_dir / "oracle" / "turn_desk_ledger.jsonl"
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load existing keys
+    existing_keys: set[str] = set()
+    if ledger_path.exists():
+        for line in ledger_path.read_text().splitlines():
+            if line.strip():
+                try:
+                    r = _json.loads(line)
+                    if r.get("key"):
+                        existing_keys.add(r["key"])
+                except Exception:  # noqa: BLE001
+                    pass
+
+    new_rows: list[dict] = []
+    now_utc = datetime.now(timezone.utc).isoformat()
+
+    for armed_entry in armed:
+        node = armed_entry["node"]
+        for fire_date in armed_entry.get("fire_dates", []):
+            wkey = f"{node}::a15::{fire_date}"
+            if wkey not in existing_keys:
+                new_rows.append({
+                    "kind": "window_open",
+                    "key": wkey,
+                    "node": node,
+                    "fire_date": fire_date,
+                    "pit_stamp": panel_asof,
+                    "registered_at": now_utc,
+                    # h=21 maturity fields (graded on subsequent nights)
+                    "fwd_ret_21": None,
+                    "outcome_mature": False,
+                })
+                existing_keys.add(wkey)
+
+        # member fires inside this window.
+        # Key on the member's OWN first cascade fire_date (member_fires_asof
+        # from the standouts artifact, falling back to panel_asof) rather than
+        # panel_asof, so cross-night re-observations of the same economic event
+        # are deduped and don't inflate the grading population (spec §4 fix).
+        member_fires_asof_for_key = armed_entry.get("_member_fires_asof", panel_asof)
+        for mf in armed_entry.get("member_fires", []):
+            ticker = mf.get("ticker", "")
+            wkey = f"{node}::a15::{armed_entry.get('fire_dates', [''])[0] if armed_entry.get('fire_dates') else ''}"
+            # Key on the asof of the standouts artifact (stable for the same
+            # cascade event across re-runs on the same night), not panel_asof.
+            mkey = f"{wkey}::{ticker}::{member_fires_asof_for_key}"
+            if mkey not in existing_keys:
+                new_rows.append({
+                    "kind": "member_fire",
+                    "key": mkey,
+                    "node": node,
+                    "ticker": ticker,
+                    "tier": mf.get("tier"),
+                    "provisional": mf.get("provisional"),
+                    "fire_date": member_fires_asof_for_key,
+                    "pit_stamp": panel_asof,
+                    "registered_at": now_utc,
+                    "fwd_ret_21": None,
+                    "outcome_mature": False,
+                })
+                existing_keys.add(mkey)
+
+    # Maturity grading pass for existing ungraded rows
+    _grade_turn_desk_ledger(ledger_path, data_dir, all_dates_list, date_to_pos)
+
+    if new_rows:
+        with open(ledger_path, "a") as fh:
+            for row in new_rows:
+                fh.write(_json.dumps(row, separators=(",", ":"), default=str) + "\n")
+        log.info("turn_desk_ledger: %d new rows appended", len(new_rows))
+
+
+def _grade_turn_desk_ledger(
+    ledger_path: Path,
+    data_dir: Path,
+    all_dates_list: list[str],
+    date_to_pos: dict[str, int],
+) -> None:
+    """Grade mature rows (h=21) using massive_stock_day closes (absolute return)."""
+    import json as _json
+    import pandas as _pd
+
+    if not ledger_path.exists():
+        return
+
+    massive_dir = data_dir / "massive_stock_day"
+    if not massive_dir.exists():
+        return
+
+    raw_lines = ledger_path.read_text().splitlines()
+    updated_lines: list[str] = []
+    changed = False
+
+    for line in raw_lines:
+        line_s = line.strip()
+        if not line_s:
+            updated_lines.append(line)
+            continue
+        try:
+            row = _json.loads(line_s)
+        except Exception:  # noqa: BLE001
+            updated_lines.append(line)
+            continue
+
+        if row.get("outcome_mature") is True or row.get("fwd_ret_21") is not None:
+            updated_lines.append(line)
+            continue
+
+        fire_date = row.get("fire_date", "")
+        ticker = row.get("ticker") if row.get("kind") == "member_fire" else None
+        if not ticker or not fire_date:
+            updated_lines.append(line)
+            continue
+
+        ticker_path = massive_dir / f"{ticker}.parquet"
+        if not ticker_path.exists():
+            updated_lines.append(line)
+            continue
+
+        try:
+            closes = _pd.read_parquet(ticker_path)["close"]
+            fire_pos = date_to_pos.get(fire_date)
+            if fire_pos is None:
+                updated_lines.append(line)
+                continue
+            exit_pos = fire_pos + _MATURITY_H
+            if exit_pos >= len(all_dates_list):
+                updated_lines.append(line)
+                continue
+            exit_date = all_dates_list[exit_pos]
+            # Entry = close at fire_date (executed at next close → fire_date+1)
+            entry_date_str = all_dates_list[min(fire_pos + 1, len(all_dates_list) - 1)]
+            entry_date = _pd.Timestamp(entry_date_str)
+            exit_date_ts = _pd.Timestamp(exit_date)
+            closes_sorted = closes.sort_index()
+            entry_prices = closes_sorted[closes_sorted.index <= entry_date]
+            exit_prices = closes_sorted[closes_sorted.index <= exit_date_ts]
+            if entry_prices.empty or exit_prices.empty:
+                updated_lines.append(line)
+                continue
+            entry_close = float(entry_prices.iloc[-1])
+            exit_close = float(exit_prices.iloc[-1])
+            if entry_close == 0:
+                updated_lines.append(line)
+                continue
+            fwd_ret_21 = round((exit_close / entry_close - 1), 6)
+            row["fwd_ret_21"] = fwd_ret_21
+            row["outcome_mature"] = True
+            updated_lines.append(_json.dumps(row, separators=(",", ":"), default=str))
+            changed = True
+        except Exception:  # noqa: BLE001
+            updated_lines.append(line)
+            continue
+
+    if changed:
+        ledger_path.write_text("\n".join(updated_lines) + "\n")
+        log.info("turn_desk_ledger: graded mature rows")
 
 
 # ---------------------------------------------------------------------------
@@ -955,6 +1647,14 @@ def main() -> int:
     if not _step_compound_live_accrual(data_dir, args.dry_run):
         failures.append("compound_live_accrual")
 
+    # --- Step 11b: Reversion forward ledger (P0) ---
+    if not _step_reversion_forward_ledger(data_dir, args.dry_run):
+        failures.append("reversion_forward_ledger")
+
+    # --- Step 11c: Reversion state sidecar (P1, display tier) ---
+    if not _step_reversion_state(data_dir, site_dir, args.dry_run):
+        failures.append("reversion_state")
+
     # --- Step 12: Promotion scan (W-B1) ---
     if not _step_promotion_scan(data_dir, args.dry_run):
         failures.append("promotion_scan")
@@ -968,6 +1668,28 @@ def main() -> int:
     if not inbox_counts:  # empty dict = failure sentinel (review major: old guard was dead logic)
         # An empty dict means failure was caught inside _step_hypothesis_inbox
         failures.append("hypothesis_inbox")
+
+    # --- Step 15: Rotation Turn Desk (W6) — DISPLAY-ONLY, additive at END ---
+    td_ok, td_armed, td_panel_asof, td_all_dates = _step_turn_desk(
+        data_dir, site_dir, args.dry_run
+    )
+    if not td_ok:
+        failures.append("turn_desk")
+
+    # --- Step 16: Reversion promotion scan (W4.a P2) — additive at END ---
+    # W4_SPEC.md: 'Nightly step appended at END (after the current last step)'
+    # NEVER auto-promotes; loud-error pattern; runs AFTER P0 ledger (11b) + P1
+    # sidecar (11c) so it has the freshest base_rate and matured rows.
+    if not _step_reversion_promotion_scan(data_dir, site_dir, args.dry_run):
+        failures.append("reversion_promotion_scan")
+
+    # --- Step 17: Qualitative filter stamps + accrual (W7) — additive at END ---
+    # Runs AFTER turn_desk (Step 15) so the window_open keys exist in the ledger.
+    # Seam: Step 15 returns armed + all_dates_list for PIT reuse without re-running A15.
+    if not _step_qual_filter_stamps(
+        td_armed, td_panel_asof, data_dir, td_all_dates, args.dry_run
+    ):
+        failures.append("qual_filter_stamps")
 
     elapsed = time.time() - t_total
     log.info(

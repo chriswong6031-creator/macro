@@ -300,6 +300,14 @@ Nothing flow-derived appears on any customer-facing SaaS surface until ThetaData
 derived-data display rights in writing (STOP D5).** This also keeps us out of the non-display
 "systems" fee category debate while everything is display/research.
 
+> **[SUPERSEDED 2026-07-04 — LICENSING WALL REMOVED.]** The operator purchased FULL display +
+> redistribution rights from ThetaData (+$1,000 on top of Pro): data and derived data may be
+> displayed on the front-end website without restriction. D5 is CLOSED. The internal-only
+> ruling above, rejection §6.7, and STOP D5 are all LIFTED — the flow desk, fear/greed
+> composite, and any flow-derived surface may ship customer-facing/public. Epistemic rules are
+> untouched: display-tier still cannot rank (Article 2), direction tone stays `~`-soft until
+> the multi-session calibration extension confirms, and nothing scores until its gate passes.
+
 **Build-vs-buy sanity check:** Unusual Whales (~$48–120/mo) is a human-eyeballs feed with
 unauditable "unusualness" heuristics and no bulk history for gauntlets. We are buying the tape
 to feed *engines and backtests* — UW cannot do that job at any price. Verdict: build thin, on
@@ -362,7 +370,7 @@ websocket daemon** until a graded reflex earns the push tier.
    ruling).
 6. **No streaming daemon pre-validation.** Sub-hour batch covers the swing horizon; the push
    tier is earned by a graded reflex, not assumed.
-7. **No customer-facing flow surfaces pre-licensing-confirmation** (§5.5).
+7. **No customer-facing flow surfaces pre-licensing-confirmation** (§5.5). *[LIFTED 2026-07-04 — full display+redistribution rights purchased; see §5.5 supersession note.]*
 8. **No sub-30-date "backtests"** on young stores while the backfill runs — doctrine §2.3
    stands; the whole point of the purchase is to make that rule cheap to obey.
 
@@ -545,3 +553,4 @@ routing: Sonnet builds, Opus reviews stats-heavy designs, Fable adjudicates._
      extension outstanding; UI tone stays `~`-soft until it confirms).
    - Neural Web W0–W8a completed 2026-07-04 → §5.3 nerve registrations are unblocked.
    - `trade_quote` has no bulk endpoint → T2a is throughput-probe-gated (roadmap R6/P2.0).
+| 2026-07-04 | LICENSING WALL REMOVED: operator purchased full display+redistribution rights (+$1,000). D5 closed; §5.5 internal-only ruling + rejection §6.7 lifted — flow desk & flow-derived surfaces may ship public. Epistemic tiers unchanged. |

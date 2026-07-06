@@ -49,6 +49,7 @@ from engine.oracle.timemachine import (  # noqa: E402
     build_chunks_m,
     build_episode_feed,
     build_manifest,
+    rrg_transform,
 )
 
 logging.basicConfig(
@@ -148,6 +149,13 @@ def main() -> None:
 
     # ── load inputs ────────────────────────────────────────────────────────
     panel_s, panel_m, ep_s, ep_m = _load_parquets()
+
+    # Desk-parity RRG coordinates (schema v3): replace the raw detection
+    # features (1-day rs / accel_z) with the live rotation desk's smoothed
+    # rs_ratio / rs_mom math so trails glide instead of jumping.
+    log.info("Applying desk-parity RRG transform (schema v3) ...")
+    panel_s = rrg_transform(panel_s)
+    panel_m = rrg_transform(panel_m)
     themes_tree = _load_themes_tree()
     names_zh = _load_names_zh()
     baskets_data = _load_baskets()

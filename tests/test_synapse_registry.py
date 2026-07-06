@@ -132,7 +132,7 @@ def test_unique_paths(reg):
 _VALID_TIERS = {"display", "shadow", "confirmer", "scored", "infrastructure"}
 _VALID_CADENCES = {
     "daily-engine", "collect", "asia-close", "intraday", "weekly", "on-demand",
-    "nightly-cortex",
+    "nightly-cortex", "nightly-factor-panel",
 }
 _VALID_STORAGES = {"git", "r2", "gitignored-local", "git+r2"}
 _VALID_FORMATS = {"json", "parquet", "jsonl", "js", "other"}
@@ -189,6 +189,7 @@ def _good_entry(**overrides) -> dict:
         "schema": "none",
         "tier": "display",
         "weights": "none",
+        "horizon_role": "context",
     }
     base.update(overrides)
     return base
@@ -307,3 +308,57 @@ def test_artifact_for_path_not_found(reg):
     """artifact_for_path should return None for an unknown path."""
     result = artifact_for_path(reg, "data/does/not/exist.json")
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Tests 12-14: horizon_role validation (LH-R1 firewall)
+# ---------------------------------------------------------------------------
+
+def test_all_artifacts_have_horizon_role(reg):
+    """Every registered artifact must declare a horizon_role (LH-R1 firewall)."""
+    missing = [
+        aid
+        for aid, entry in (reg.get("artifacts") or {}).items()
+        if isinstance(entry, dict) and not entry.get("horizon_role")
+    ]
+    assert not missing, (
+        f"{len(missing)} artifact(s) missing horizon_role:\n"
+        + "\n".join(f"  {aid}" for aid in missing)
+    )
+
+
+def test_all_horizon_roles_are_valid(reg):
+    """Every horizon_role value must be a member of the declared enum."""
+    _VALID_HORIZON_ROLES = {"tactical_entry", "hold_thesis", "dual", "context"}
+    invalid = [
+        f"{aid}: {entry.get('horizon_role')!r}"
+        for aid, entry in (reg.get("artifacts") or {}).items()
+        if isinstance(entry, dict) and entry.get("horizon_role") not in _VALID_HORIZON_ROLES
+    ]
+    assert not invalid, (
+        "Invalid horizon_role values found:\n" + "\n".join(invalid)
+    )
+
+
+def test_validator_missing_horizon_role(base_reg):
+    """A synthetic entry missing 'horizon_role' must produce a violation."""
+    entry = _good_entry()
+    del entry["horizon_role"]
+    mutated = _inject(base_reg, "_selftest_missing_horizon_role", entry)
+    violations = validate_registry(mutated, root=REPO_ROOT)
+    assert any("horizon_role" in v for v in violations), (
+        f"Expected horizon_role violation, got: {violations}"
+    )
+
+
+def test_validator_bad_horizon_role_enum(base_reg):
+    """A synthetic entry with an invalid horizon_role must produce a violation."""
+    entry = _good_entry(
+        path="data/_selftest/bad_horizon_role.json",
+        horizon_role="NOT_A_VALID_HORIZON_ROLE",
+    )
+    mutated = _inject(base_reg, "_selftest_bad_horizon_role", entry)
+    violations = validate_registry(mutated, root=REPO_ROOT)
+    assert any("horizon_role" in v for v in violations), (
+        f"Expected horizon_role enum violation, got: {violations}"
+    )

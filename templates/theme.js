@@ -83,13 +83,14 @@
   })();
 
   /* ---- Mastermind Terminal jump -------------------------------------------
-     Single-stock analysis now opens in the Terminal web app. US stock links
-     (stock.html#TICKER) and US search picks route to
-     app.mastermind-x.com/terminal?sym=TICKER for a seamless hand-off; the
-     origin is pre-warmed (DNS + TLS) so the first navigation is instant.
-     China/HK/Canada/Intl keep their in-page analyzers for now (their ticker
-     formats differ from the Terminal universe). Flip window.MM_TERMINAL = false
-     anywhere to restore the in-page US analyzer. */
+     Single-stock analysis now opens in the Terminal web app. US (stock.html),
+     China (china_lookup.html), HK (hk_lookup.html), Canada (canada_stock.html),
+     and International (intl_stock.html) stock links all route to
+     app.mastermind-x.com/terminal?sym=TICKER — their ticker formats (e.g.
+     600519.SS, 0002.HK, AAV.TO, 8035.T) already match the Terminal manifest
+     exactly so no transformation is needed. The origin is pre-warmed (DNS + TLS)
+     so the first navigation is instant.
+     Flip window.MM_TERMINAL = false anywhere to restore in-page analyzers. */
   var MM_TERMINAL_BASE = 'https://app.mastermind-x.com/terminal';
   function mmTerminalOn() { return window.MM_TERMINAL !== false; }
   // from=macro lets the Terminal show its prominent "back to Dashboard" button reliably even when the
@@ -104,21 +105,60 @@
       document.head.appendChild(l);
     });
   })();
-  // Re-route US single-stock links anywhere on the site → Terminal (capture phase
-  // so it runs before the browser follows the <a>). Leaves new-tab / modified
-  // clicks and non-US analyzers alone.
+  // Re-route Terminal-covered analyzer links anywhere on the site → Terminal
+  // (capture phase so it runs before the browser follows the <a>). Leaves
+  // new-tab / modified clicks alone.
+  // null-prototype map so an href-derived key can't hit Object.prototype ('constructor', etc.)
+  var TERMINAL_PAGES = Object.assign(Object.create(null), { 'stock.html': 1, 'china_lookup.html': 1, 'hk_lookup.html': 1, 'canada_stock.html': 1, 'intl_stock.html': 1 });
+  // The ticker a Terminal-covered analyzer link points at (else null). Shared by the
+  // hover-prefetch and the click-reroute below so the two can never drift.
+  function terminalTicker(a) {
+    if (!a || a.target === '_blank') return null;
+    var href = a.getAttribute('href') || '', h = href.indexOf('#');
+    if (h < 0) return null;
+    var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
+    if (!TERMINAL_PAGES[page]) return null;       // only Terminal-covered analyzers
+    var t = href.slice(h + 1);
+    return t ? decodeURIComponent(t) : null;
+  }
+  // Warm the SPECIFIC destination on hover / touch intent so the click navigation lands
+  // on an already-fetched document (the origin is pre-connected above; this adds the
+  // ?sym= page itself). Deduped per ticker; a failed/uncacheable prefetch is a silent no-op.
+  var _mmPrefetched = Object.create(null);
+  function prefetchTerminal(t) {
+    if (!t || _mmPrefetched[t] || !document.head) return;
+    _mmPrefetched[t] = 1;
+    var l = document.createElement('link');
+    l.rel = 'prefetch'; l.as = 'document'; l.href = terminalUrl(t);
+    document.head.appendChild(l);
+  }
+  ['pointerover', 'touchstart'].forEach(function (evt) {
+    document.addEventListener(evt, function (e) {
+      if (!mmTerminalOn()) return;
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      prefetchTerminal(terminalTicker(a));
+    }, { capture: true, passive: true });
+  });
   document.addEventListener('click', function (e) {
     if (!mmTerminalOn() || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-    if (!a || a.target === '_blank') return;
-    var href = a.getAttribute('href') || '', h = href.indexOf('#');
-    if (h < 0) return;
-    var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
-    if (page !== 'stock.html') return;            // US analyzer only
-    var t = href.slice(h + 1);
+    var t = terminalTicker(a);
     if (!t) return;
     e.preventDefault();
-    location.href = terminalUrl(decodeURIComponent(t));
+    location.href = terminalUrl(t);
+  }, true);
+
+  /* ---- nb-spot data-href handler -------------------------------------------
+     The .nb-spot[data-href] spotlight chip carries a basket URL in data-href.
+     Post div-restructure the outer anchor no longer wraps the chip, so we need
+     an explicit delegated handler. stopPropagation prevents the card-body handler
+     (dashboard.html.j2) from double-navigating. Mirrors the nb-cau pattern. */
+  document.addEventListener('click', function (e) {
+    var chip = e.target && e.target.closest ? e.target.closest('.nb-spot[data-href]') : null;
+    if (!chip) return;
+    e.preventDefault(); e.stopPropagation();
+    var href = chip.getAttribute('data-href');
+    if (href) { location.href = href; }
   }, true);
 
   /* ---- account / profile panel loader -------------------------------------
@@ -251,21 +291,29 @@
     // merge every market's nightly library into one universe; tag each row with the
     // analyzer it routes to and a market flag (Intl rows carry their own per-country
     // flag + market name, so prefer those when present)
-    var lib = [], rows = [], sel = -1;
-    STOCK_MARKETS.forEach(function (m) {
-      fetch(pfx + m.lib).then(function (r) { return r.json(); }).then(function (d) {
-        (d || []).forEach(function (x) {
-          x._tgt = m.target;
-          x._fl = x.fl || m.flag;
-          x._mk = x.mk || m.mkt;
-        });
-        lib = lib.concat(d || []);
-      }).catch(function () {});
-    });
+    var lib = [], rows = [], sel = -1, libsLoaded = false;
+    // Lazy-load the (heavy) per-market search indexes only once the user engages
+    // the search box, not on every page load — 'focus' fires before the first
+    // keystroke, so the universe is usually ready by the time they finish typing.
+    function loadLibs() {
+      if (libsLoaded) return; libsLoaded = true;
+      STOCK_MARKETS.forEach(function (m) {
+        fetch(pfx + m.lib).then(function (r) { return r.json(); }).then(function (d) {
+          (d || []).forEach(function (x) {
+            x._tgt = m.target;
+            x._fl = x.fl || m.flag;
+            x._mk = x.mk || m.mkt;
+          });
+          lib = lib.concat(d || []);
+          if (input.value.trim()) search();   // repaint if they've already typed
+        }).catch(function () {});
+      });
+    }
+    input.addEventListener('focus', loadLibs);
     function go(x) {
       if (!x) return;
-      // US picks open the Terminal; other markets keep their in-page analyzer
-      if (mmTerminalOn() && (x._tgt === 'stock.html' || x._mk === 'US')) { location.href = terminalUrl(x.t); return; }
+      // US, China, HK, Canada, and Intl picks all open the Terminal
+      if (mmTerminalOn() && TERMINAL_PAGES[x._tgt]) { location.href = terminalUrl(x.t); return; }
       location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t);
     }
     function close() { sugg.classList.remove('show'); sugg.innerHTML = ''; rows = []; sel = -1; }
@@ -634,9 +682,15 @@
   }
   function _isAuthReturn() {
     var h = location.hash || '', q = location.search || '';
-    // PKCE returns ?code=...; keep the legacy hash checks for robustness.
-    return /[?&]code=/.test(q) || /[?&]error=/.test(q) ||
-           h.indexOf('access_token=') >= 0 || /[#&]error=/.test(h);
+    // PKCE returns the auth code in the query (?code=), never in the hash. Errors
+    // can arrive in either the query (?error=) or the fragment (#error=), e.g. a
+    // provider-side denial. We deliberately do NOT treat a bare #access_token=
+    // hash as an auth return: under flowType:'pkce' (getSupabaseClient) the
+    // vendored gotrue-js _getSessionFromURL throws "Not a valid PKCE flow url."
+    // on any non-?code= URL, so hash tokens are never consumed and a pasted
+    // #access_token= link cannot seed/fixate a session. (Verified against the
+    // gotrue-js in supabase.js.) The old access_token= clause was dead legacy.
+    return /[?&]code=/.test(q) || /[?&]error=/.test(q) || /[#&]error=/.test(h);
   }
   function _emitAuth(detail) {
     try { window.dispatchEvent(new CustomEvent('mdx-auth', { detail: detail })); }

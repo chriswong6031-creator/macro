@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>China Allocation Strategy — Income Vector</title>
-<script src="plotly-2.32.0.min.js"></script>
+{% include '_plotly_head.html.j2' %}
 <style>
 :root{
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r2:{{C.r2}}; --r3:{{C.r3}}; --ink:{{C.ink}};
@@ -244,10 +244,9 @@ html[data-theme="dark"] .tag{background:#163024;color:#7fd6a6}
   </div>
   {% endif %}
 
-  <div class="note r">{{ t('Not investment advice. A static, diversified allocation is an educational research tool, not a managed product or a forecast. Onshore ETFs carry tracking, liquidity and policy risk; gold and bonds can fall together in a liquidity squeeze. China’s investable history is short (this blend backtests from 2013), so treat every statistic as indicative.','非投资建议。静态多元配置是教育性研究工具，并非受管理产品或预测。在岸 ETF 存在跟踪、流动性与政策风险；流动性紧缩时黄金与债券可能同跌。中国可投资历史较短（该组合自2013年回测），故所有统计仅供参考。') }}</div>
-
   <div class="foot">
-    {{ t('Mechanical, backtested on free public data (onshore ETF closes via yfinance; gold/bond from 2013). Independent of and never scored into the A-share regime engine (china_axes / china_regime / china_playbook). The strategy is a drawdown / risk-adjusted-return engine; it does not promise to beat the index. Built','机械化 · 基于免费公开数据回测（在岸 ETF 收盘价经 yfinance 获取；黄金/国债自2013年）。独立于 A 股周期引擎且从不计入其评分（china_axes / china_regime / china_playbook）。该策略为回撤 / 风险调整收益引擎，不承诺跑赢指数。生成于') }} {{ built }}.
+    {{ t('Built', '生成于') }} {{ built }}<br>
+    <span class="made">© 2026 MastermindX Inc</span>
   </div>
 </div>
 <script src="theme.js"></script>

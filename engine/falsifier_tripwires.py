@@ -66,6 +66,11 @@ class TripwireResult:
     legs: list[dict] = field(default_factory=list)   # per-leg detail for UI
     manual: dict | None = None  # {ttl_days, last_reviewed, note} for none/partial residuals
     overdue_days: int | None = None   # days past TTL for MANUAL entries
+    # nwqs-c scope extension: 'cycle' (default, existing behaviour) or 'ticker'.
+    # JSON entries MAY carry scope/tickers; schema-tolerant loading preserves
+    # existing 24 entries untouched (they simply get the default 'cycle' scope).
+    scope: str = "cycle"        # 'cycle' | 'ticker'
+    tickers: list[str] = field(default_factory=list)  # non-empty for scope='ticker'
 
 
 def _result_dict(r: TripwireResult) -> dict:
@@ -87,12 +92,70 @@ def _trading_days_stale(s: pd.Series, asof: pd.Timestamp) -> int:
     return max(0, len(pd.bdate_range(last, asof_d)) - 1)
 
 
+def _dilution_series(ticker: str, asof: pd.Timestamp) -> pd.Series | None:
+    """Materialise a daily rolling-90d count series from dilution_events.parquet.
+
+    This is the DSL bridge for future 'edgar_dilution:<TICKER>' series refs.
+    Returns a DatetimeIndex pd.Series[float] of dilution_events_trailing_90d
+    (rolling count of all S-3/S-3ASR/424B* filings in the trailing 90 calendar
+    days, evaluated at each date in the parquet), or None when the parquet is
+    absent (RENDER_NO_DRIP — degrade gracefully).
+
+    The series uses the full date range from the earliest filing to asof so DSL
+    ops like 'gt' / 'lt' can reference a threshold (e.g. 'value: 2' means at
+    least 3 events in 90 days → a dilution pressure signal).
+    """
+    try:
+        from lib import config as _config
+        path = _config.data_dir() / "edgar" / "dilution_events.parquet"
+        if not path.exists():
+            return None
+        df = pd.read_parquet(path)
+        if df.empty or "ticker" not in df.columns or "filing_date" not in df.columns:
+            return None
+        df["filing_date"] = pd.to_datetime(df["filing_date"], errors="coerce")
+        tk_rows = df[df["ticker"] == ticker.upper()].dropna(subset=["filing_date"])
+        if tk_rows.empty:
+            return None
+        # Build a daily indicator series (1 on filing day, 0 otherwise),
+        # then compute the trailing 90-day rolling sum to get a count series.
+        start = tk_rows["filing_date"].min()
+        end = min(asof, pd.Timestamp.now().normalize())
+        if start > end:
+            return None
+        idx = pd.date_range(start=start, end=end, freq="D")
+        indicator = pd.Series(0.0, index=idx)
+        for d in tk_rows["filing_date"].dropna():
+            ts = pd.Timestamp(d).normalize()
+            if ts in indicator.index:
+                indicator[ts] += 1.0
+        rolling_90 = indicator.rolling(90, min_periods=1).sum()
+        # Causal: truncate to asof
+        rolling_90 = rolling_90[rolling_90.index <= asof]
+        return rolling_90 if not rolling_90.empty else None
+    except Exception as exc:  # noqa: BLE001
+        log.debug("edgar_dilution series materialisation failed for %s: %s", ticker, exc)
+        return None
+
+
 def _load_series_ref(ref: str, asof: pd.Timestamp) -> tuple[pd.Series | None, int]:
     """Resolve a series ref → (series_up_to_asof, stale_trading_days).
-    Returns (None, -1) if the tape is completely missing."""
+    Returns (None, -1) if the tape is completely missing.
+
+    nwqs-c: recognises 'edgar_dilution:<TICKER>' refs and materialises the
+    derived daily rolling-90d count series from dilution_events.parquet.
+    """
     if ":" not in ref:
         return None, -1
     grp, tick = ref.split(":", 1)
+
+    # nwqs-c: edgar_dilution:<TICKER> — derived series, not in the standard store.
+    if grp == "edgar_dilution":
+        s = _dilution_series(tick, asof)
+        if s is None or s.empty:
+            return None, -1
+        stale = _trading_days_stale(s, asof)
+        return s, stale
 
     # handle ratio transform embedded in the ref (ratio:yahoo:GC=F)
     if grp == "ratio":
@@ -345,6 +408,10 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
         claim = entry.get("claim", "")
         direction = entry.get("direction", "refutes")
         manual = entry.get("manual")
+        # nwqs-c scope extension: schema-tolerant — existing entries carry no
+        # scope/tickers keys and receive the defaults ('cycle', []).
+        scope = entry.get("scope", "cycle")
+        tickers = list(entry.get("tickers") or [])
 
         # EXPIRED check
         if expires:
@@ -356,7 +423,7 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
                         state="EXPIRED", fired_on=None, latched=False,
                         current_leg=None, claim=claim, direction=direction,
                         coverage=coverage, expires=expires, legs=[],
-                        manual=manual,
+                        manual=manual, scope=scope, tickers=tickers,
                     ))
                     continue
             except ValueError:
@@ -377,7 +444,7 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
                 state="MANUAL", fired_on=None, latched=False,
                 current_leg=None, claim=claim, direction=direction,
                 coverage=coverage, expires=expires, legs=[],
-                manual=manual, overdue_days=overdue,
+                manual=manual, overdue_days=overdue, scope=scope, tickers=tickers,
             ))
             continue
 
@@ -394,7 +461,7 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
                 state="DATA_MISSING", fired_on=None, latched=False,
                 current_leg=None, claim=claim, direction=direction,
                 coverage=coverage, expires=expires, legs=leg_details,
-                manual=manual,
+                manual=manual, scope=scope, tickers=tickers,
             ))
             continue
 
@@ -408,7 +475,7 @@ def evaluate_all(asof: pd.Timestamp | None = None) -> list[TripwireResult]:
             current_leg=current_leg,
             claim=claim, direction=direction,
             coverage=coverage, expires=expires, legs=leg_details,
-            manual=manual,
+            manual=manual, scope=scope, tickers=tickers,
         ))
 
     return results
@@ -631,9 +698,16 @@ def evaluate_and_persist(asof: pd.Timestamp | None = None,
 
 # ── results → JSON-safe summary ───────────────────────────────────────────────
 def results_summary(results: list[TripwireResult]) -> dict:
-    """Group results by state for the cycle_engine.js payload and UI strip."""
+    """Group results by state for the cycle_engine.js payload and UI strip.
+
+    nwqs-c: scope=='ticker' entries are EXCLUDED from cycle grouping so that the
+    build_cycle.py UI strip is unaffected (it indexes by cycle key only).
+    """
     by_cycle: dict[str, list[dict]] = {}
     for r in results:
+        # scope='ticker' entries are not cycle-level; skip them here.
+        if r.scope == "ticker":
+            continue
         rec = {
             "id": r.id,
             "version": r.version,
@@ -658,6 +732,43 @@ def results_summary(results: list[TripwireResult]) -> dict:
         }
         by_cycle.setdefault(r.cycle, []).append(rec)
     return by_cycle
+
+
+def results_by_ticker(results: list[TripwireResult]) -> dict[str, list[dict]]:
+    """Group ticker-scoped results by ticker symbol.
+
+    Companion to results_summary(): handles only scope=='ticker' entries.
+    Returns dict[ticker → list[result_dicts]] for per-stock consumers.
+    An entry with scope='ticker' and tickers=['AAPL', 'MSFT'] appears under
+    BOTH keys.  Never raises.
+    """
+    by_ticker: dict[str, list[dict]] = {}
+    for r in results:
+        if r.scope != "ticker":
+            continue
+        rec = {
+            "id": r.id,
+            "version": r.version,
+            "state": r.state,
+            "fired_on": r.fired_on,
+            "latched": r.latched,
+            "current_leg": r.current_leg,
+            "claim": r.claim,
+            "direction": r.direction,
+            "coverage": r.coverage,
+            "expires": r.expires,
+            "cycle": r.cycle,
+            "legs": [
+                {k: v for k, v in d.items()
+                 if k in ("series", "op", "threshold", "value_now",
+                           "sustain_bars", "stale_trading_days", "result",
+                           "error", "note", "seasonal_skip")}
+                for d in r.legs
+            ],
+        }
+        for ticker in r.tickers:
+            by_ticker.setdefault(ticker, []).append(rec)
+    return by_ticker
 
 
 # ── standalone CLI ────────────────────────────────────────────────────────────

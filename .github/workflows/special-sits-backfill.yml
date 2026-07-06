@@ -55,6 +55,10 @@ jobs:
         run: python -m scripts.special_sits_backfill
       - name: refresh backtest priors (category x stage, filing-date entry)
         run: python -m scripts.backtest_special_situations || true
+      - name: refresh W3 event-intelligence priors (catalyst taxonomy; off render path)
+        # Writes to data/special_situations/event_priors/<type>.json — covered by
+        # `git add data/special_situations` below (B3 sentinel-staging-gap fix).
+        run: python -m scripts.backtest_event_priors || true
       - name: re-render desk from the enriched store
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -63,6 +67,7 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # data/special_situations is staged recursively — covers event_priors/*.json (B3 fix)
           git add data/special_situations site/special_situations.html site/allocationdata/special_situations.json data/regime/special_situations_latest.json
           if git diff --cached --quiet; then echo "no special-sits changes to commit"; exit 0; fi
           git commit -m "special-sits: backlog burn-down + priors refresh $(date -u +%F)"

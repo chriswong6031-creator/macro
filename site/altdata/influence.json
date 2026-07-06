@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-05T03:14:25.062001+00:00",
+  "generated_utc": "2026-07-06T08:37:21.143713+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,12 +749,11 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 8,
-      "alt_weighted": 2.75,
+      "alt_score": 7,
+      "alt_weighted": 2.5,
       "alt_channels": [
         "13f_add",
         "affiliation",
-        "cnbc_pick",
         "github_momentum",
         "hf_model_momentum",
         "patent_cluster",
@@ -801,12 +800,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.1,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
-        "hf_model_momentum"
+        "special_situation"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -848,11 +846,12 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.8,
+      "alt_score": 5,
+      "alt_weighted": 2.15,
       "alt_channels": [
         "13f_add",
         "affiliation",
+        "hf_model_momentum",
         "special_situation",
         "trump"
       ],
@@ -896,10 +895,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.4,
+      "alt_score": 4,
+      "alt_weighted": 1.65,
       "alt_channels": [
         "affiliation",
+        "cnbc_pick",
         "patent_cluster",
         "trump"
       ],
@@ -1093,13 +1093,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 2.05,
+      "alt_score": 4,
+      "alt_weighted": 1.7,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
-        "hf_model_momentum",
         "special_situation"
       ],
       "top_holder": {
@@ -1231,10 +1230,10 @@
       "n_actors": 1,
       "alt_corroborated": true,
       "alt_score": 3,
-      "alt_weighted": 1.1,
+      "alt_weighted": 1.15,
       "alt_channels": [
         "affiliation",
-        "news_sentiment",
+        "cnbc_pick",
         "patent_cluster"
       ],
       "top_holder": {
@@ -1328,12 +1327,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.15,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
       "alt_channels": [
         "affiliation",
-        "app_demand",
-        "cnbc_pick"
+        "app_demand"
       ],
       "top_holder": {
         "owner": "VOYA INVESTMENT MANAGEMENT LLC",
@@ -1726,11 +1724,11 @@
     },
     {
       "date": "2026-06-10",
-      "form": "S-1",
-      "company": "American Ventures Acquisition Corp. I",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/2111009/000121390026066994/ea0293721-s1_american1.htm"
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024735/ef20075853_8k.htm"
     },
     {
       "date": "2026-06-10",
@@ -1743,18 +1741,18 @@
     {
       "date": "2026-06-10",
       "form": "8-K",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024735/ef20075853_ex99-1.htm"
-    },
-    {
-      "date": "2026-06-10",
-      "form": "8-K",
       "company": "Hut 8 Corp.",
       "ticker": "HUT",
       "items": "1.01,2.03,9.01",
       "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926071952/tm2617190d1_8k.htm"
+    },
+    {
+      "date": "2026-06-10",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024735/ef20075853_ex99-1.htm"
     }
   ]
 }

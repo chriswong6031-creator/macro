@@ -118,6 +118,42 @@ jobs:
           # --exclude-group asia: China/HK collectors run in their own asia-close shard
           # (after the Asia cash close), not here — keeps this US-evening run lean.
           python -m scripts.collect --exclude-group asia
+      - name: T2a tape-flow features — forward accrual (collect lane, non-fatal)
+        # Pulls prior-trading-day trade+NBBO tape for the full gex_symbols() universe
+        # (~360 roots) via wildcard-bulk ThetaData endpoint (2 requests/root-day).
+        # Aggregates inline to signed-flow features; discards raw tape for single names.
+        # Requires ThetaData Terminal running on the self-hosted runner (port 25503).
+        # Budget: ~13 min/night at 6-concurrent (T2A_THROUGHPUT_PROBE.md §6a).
+        # Concurrency auto-capped to 2 when backfill_thetadata_eod is alive (pgrep).
+        # Non-fatal: terminal absent or any error logs a warning and does not fail the build.
+        # run_status.json registration: sources["tape_flow_forward"] (P0.7 pattern).
+        run: |
+          python -m scripts.build_tape_flow_daily --mode forward \
+            || echo "::warning::T2a tape-flow forward accrual failed (non-fatal)"
+      - name: T2a tape-flow features — episode-window backfill (non-fatal, budgeted)
+        # Tier-S episode windows 2022→, ±15d, ETF anchors only (≈11 nodes post-2022).
+        # Runs AFTER the forward step so the daily row always lands first.
+        # Hard-stop at 30 min (budget_deadline): state is persisted after every
+        # completed root-day; the next nightly run resumes from remaining work.
+        # Budget: 30 min — sized so episodes(30) + etf-history(20) + forward(~13)
+        # + collectors + Finviz (~35) < 100-min job timeout, ensuring "commit data"
+        # is always reached before GitHub Actions cancels the collect job.
+        # Outputs (data/tape_flow/daily/*.parquet + data/tape_flow/_state.json)
+        # are covered by the "commit data" step's `git add data/` below.
+        # Non-fatal: terminal absent or any error logs a warning and continues.
+        run: |
+          python -m scripts.build_tape_flow_daily --mode episodes --budget-minutes 30 \
+            || echo "::warning::T2a tape-flow episodes backfill failed (non-fatal)"
+      - name: T2a tape-flow features — ETF history backfill (non-fatal, budgeted)
+        # 20 ETF anchors, full history 2017→. R6 priority 3 — runs last, after forward
+        # and episodes, so earlier steps are never delayed by the large backlog.
+        # Hard-stop at 20 min (budget_deadline): state resumes each night until done.
+        # Budget: 20 min — see episodes comment above for the joint ceiling rationale.
+        # Outputs covered by `git add data/` in the commit step below (same as above).
+        # Non-fatal: terminal absent or any error logs a warning and continues.
+        run: |
+          python -m scripts.build_tape_flow_daily --mode etf-history --budget-minutes 20 \
+            || echo "::warning::T2a tape-flow ETF-history backfill failed (non-fatal)"
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
         # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
@@ -341,11 +377,20 @@ jobs:
           # (us_stocks_v2.html) + the shadow JSON — nothing live consumes it. main() swallows all
           # failures and returns 0, so this can NEVER break the render.
           run_py "buy board 2.0 shadow (build_stock_board_v2)" scripts.build_stock_board_v2
+          # Reflexivity overlay — W4, Signal Commons. Runs AFTER build_stock_board_v2 (reads
+          # us_standouts_v2.json) and AFTER build_site (reads factor_betas.json). Writes
+          # site/factordata/reflexivity_overlay.json — display-only duplicate-exposure read.
+          # returns 0 always, never breaks the render.
+          run_py "reflexivity overlay (build_reflexivity_overlay)" scripts.build_reflexivity_overlay
           # Impulse Tracker — AFTER build_site (a US-stocks sibling page): writes impulse.html +
           # factordata/impulse.json from the breadth close/volume caches + the regime read
           # (engine.run, above). Reactive early-ignition momentum screen; display/context only.
           # Reads only committed/cached data; returns 0 on error so it can never break the site.
           run_py "impulse tracker (build_impulse)" scripts.build_impulse
+          # L3 dispersion regime lens — NW Rails W2 PR-4 (§5). Emits data/dispersion/regime.json
+          # from the breadth close caches (same panel as build_stock_library). Display-only;
+          # gross_mult_live clamped 1.0. Seconds; never fatal.
+          run_py "L3 dispersion regime lens (build_dispersion_regime)" scripts.build_dispersion_regime
           # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.
@@ -418,8 +463,11 @@ jobs:
             brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
             brun darkpool     "dark pool desk (build_darkpool_desk)"        scripts.build_darkpool_desk
             brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
+            brun flow_desk    "group flow heatmap & market tide (build_flow_desk)" scripts.build_flow_desk
             brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
             brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
+            brun options_screener "US options screener page (build_options_screener)" scripts.build_options_screener
+            brun options_entry "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
           }
           cl_baskets() {
             brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
@@ -447,7 +495,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology seasonality reports policy_intent policy_watch special index_changes"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology seasonality reports policy_intent policy_watch special index_changes"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -681,6 +729,22 @@ jobs:
           cat /tmp/kernel_diagnostics.log
           [ "$rc" -ne 0 ] && echo "::warning title=build_kernel_diagnostics::rc=$rc (non-fatal)"
           exit 0
+      - name: build kernel half-lives (Signal Commons W2 — display-only)
+        # W2: per-family holding-horizon half-life estimates.  Staleness half-life
+        # declared UNMEASURED (fill_offset uniformly=1 in all replay parquets).
+        # Reads kernel_estimates.parquet + spine_index.parquet; writes
+        # data/neuralweb/half_life.json.  OFF RENDER PATH (build_site.py reads
+        # the resulting JSON for committee chip display only).
+        # SENTINEL LAW: always writes half_life.json (status=fit_ran or fit_failed)
+        # so a crashed job is distinguishable from a successful all-null result.
+        # Expected honest outcome: all families null (track_record IC rises;
+        # radar/us_board have <3 graded horizons).  Resilient wrapper (exit 0).
+        run: |
+          set +e
+          python -m scripts.build_kernel_half_lives > /tmp/kernel_half_lives.log 2>&1; rc=$?
+          cat /tmp/kernel_half_lives.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_kernel_half_lives::rc=$rc (non-fatal)"
+          exit 0
       - name: Confluence Graph (Neural Web W4 — display-only typed graph)
         # Builds data/neuralweb/confluence_graph.json — typed nodes (engine/sector/regime/
         # thesis/episode) and five edge families (feeds/stable/leads/contradicts/confirms).
@@ -891,6 +955,27 @@ jobs:
         # engine-render.yml (express lane) also runs this step — its regime/market_state
         # recompute would otherwise drift ahead of the committed world_state copies.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
+      - name: build mastermind context (NW bridge)
+        if: always()
+        # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and
+        # site/neuralwebdata/mastermind_context.json from committed NW outputs.
+        # Must run AFTER build world state so world_state.json is fresh.
+        # Resilient: fail-open; kept last committed context on error; never blocks the commit.
+        # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
+      - name: options_flow_attention reflex trigger (W-D — nightly EOD fold)
+        if: always()
+        # Neural Web W-D (RO-8): direction-free reflex that fires when an on-board
+        # name shows a vol>OI magnitude burst (z-score ≥ 2.0 on fresh_contracts /
+        # premium_mn) or is within 1% of a GEX wall/flip.  Reads EOD parquets from
+        # data/options_flow/ + data/polygon_gex/ (written by the collect job) and
+        # board membership from site/factordata/us_standouts*.json (written by
+        # build_site above — both artifacts are present by this step).
+        # Appends to data/reflexes/options_flow_attention/firings.jsonl.
+        # Covered by 'git add data/' in 'commit engine outputs' below.
+        # Fail-soft: dormant until flow summaries accumulate ≥5 rows of history;
+        # never kills the nightly.
+        run: python -m scripts.build_options_flow_attention || echo "::warning::build_options_flow_attention failed (non-fatal — reflex dormant this run)"
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |
@@ -1049,6 +1134,94 @@ jobs:
           done
           echo "::warning::could not push factor series after 5 attempts (non-fatal — daily reads the last committed json)"
 
+  # Factor Intelligence panel — incremental nightly append (RULING-C).
+  #
+  # Runs AFTER factor_series (needs factor_series.json for style_regime L/S leader
+  # input from chart_data.spread). Writes data/factordata/panel/ which is GITIGNORED
+  # — no commit step, no sentinel git-add changes required. Fail-soft (additive):
+  # a missing/bad panel NEVER blocks the dashboard going live.
+  #
+  # Incremental mode: only dates missing from the existing panel are built.
+  # One-shot deep backfill (--start 2020-01-01, ~25 min) runs SEPARATELY via
+  # `python -m scripts.build_factor_panel --backfill` — NOT in this nightly loop.
+  # See §RULING-C in research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md.
+  factor_panel:
+    needs: [factor_series]
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: restore breadth (S&P 500) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-fseries-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      # FIX-8 (RULING-C nightly bounds): pin to 10 trading days back so a cold
+      # runner never silently rebuilds a year. The one-shot deep backfill
+      # (--start 2020-01-01, ~25 min) MUST be run once manually before the panel
+      # has usable history depth. See build_factor_panel.py module docstring.
+      - name: factor panel (incremental — bounded 10-day window)
+        run: |
+          START=$(python -c "import pandas as pd; print((pd.Timestamp.today() - pd.tseries.offsets.BDay(10)).date())")
+          python -m scripts.build_factor_panel --start "$START" || echo "factor panel skipped (additive)"
+      # P1-D: Pair G borrowed_strength detector. Runs AFTER factor_panel step (needs
+      # today's panel partition). Fail-soft: a dormant detector emits no records and
+      # logs a gap note; it never kills the nightly. Output is data/neuralweb/
+      # factor_contradictions.jsonl — explicitly gitignored (R2-candidate; single-copy
+      # runner-local pending R2 sync); NOT gitignored implicitly via default untracked
+      # behavior. The sentinel commit step does not stage it.
+      - name: factor contradictions detector (Pair G borrowed_strength — P1-D)
+        run: |
+          set +e
+          python -m engine.neuralweb.factor_contradictions > /tmp/factor_contradictions.log 2>&1; rc=$?
+          cat /tmp/factor_contradictions.log
+          [ "$rc" -ne 0 ] && echo "::warning title=factor_contradictions::rc=$rc (non-fatal — dormant behavior expected until panel backfill)"
+          exit 0
+      # RUL-NW1: factor_panel job is the sole advancer of factor-namespace artifacts.
+      # Builds factor_intelligence_state.json + site mirror + history digest +
+      # fire_coordinates. Fail-open: always exits 0.
+      - name: build factor intelligence state
+        run: |
+          python -m scripts.build_factor_intelligence_state || echo "::warning::build_factor_intelligence_state failed (non-fatal — fail-open)"
+      # RUL-NW1: narrow allowlisted commit — stages ONLY these six paths.
+      # Never adds anything else (no git add data/).
+      # Firings staged here (not in cortex job) to fix the cross-job hole where
+      # factor_attention firings are written in THIS job's tree but the cortex
+      # job's commit step runs in a different tree where they never exist.
+      - name: commit factor intelligence outputs
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/neuralweb/factor_intelligence_state.json
+          git add site/neuralwebdata/factor_intelligence_state.json
+          git add data/factordata/factor_state_history.jsonl
+          git add data/factordata/fire_coordinates.jsonl
+          git add data/neuralweb/factor_contradictions.jsonl
+          git add data/reflexes/factor_attention/firings.jsonl
+          if git diff --cached --quiet; then echo "no factor intelligence changes"; exit 0; fi
+          git commit -m "factor-intelligence: nightly state artifact + pool $(date -u +%F)"
+          # best-effort push (own files -> rebases clean against engine/factor_series)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed factor intelligence outputs on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "factor-intelligence push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push factor intelligence after 5 attempts (non-fatal)"
+
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
   # now only writes the target ticker list (data/catalyst/brief_targets.json); the
@@ -1174,6 +1347,15 @@ jobs:
           cat /tmp/cortex_grade.log
           [ "$rc" -ne 0 ] && echo "::warning title=cortex_grade::rc=$rc (non-fatal)"
           exit 0
+      # P1-D: grade factor_attention reflex firings. Parallel grader to grade_cortex_attention;
+      # owns data/reflexes/factor_attention/grades.jsonl + probation.json (NOT cortex paths).
+      - name: grade factor attention + A2 earn-in (P1-D)
+        run: |
+          set +e
+          python -m scripts.grade_factor_attention > /tmp/factor_attention_grade.log 2>&1; rc=$?
+          cat /tmp/factor_attention_grade.log
+          [ "$rc" -ne 0 ] && echo "::warning title=factor_attention_grade::rc=$rc (non-fatal)"
+          exit 0
       - name: evaluate due cortex hypotheses (W7b PR2)
         run: |
           set +e
@@ -1185,8 +1367,10 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          # Own commit lane (W7b PR2): all cortex subtrees — STAGING LAW
+          # Own commit lane (W7b PR2 + P1-D): all cortex + factor_attention subtrees — STAGING LAW
           git add data/reflexes/cortex_attention/ 2>/dev/null || true
+          git add data/reflexes/factor_attention/grades.jsonl 2>/dev/null || true
+          git add data/reflexes/factor_attention/probation.json 2>/dev/null || true
           git add data/neuralweb/cortex/ 2>/dev/null || true
           git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
           git add data/neuralweb/governance.jsonl 2>/dev/null || true

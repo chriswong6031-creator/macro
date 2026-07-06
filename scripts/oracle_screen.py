@@ -109,9 +109,21 @@ def _compute_forward_returns(
     One row per (node, entry, horizon).
 
     Entry executes at NEXT close after the trigger date.
-    Excess = node_ret − SPY_ret (tier s: vs SPY; tier m: vs cross-node median).
+    Excess = node_ret − benchmark_ret.
+      tier s: benchmark = SPY.
+      tier m: benchmark = EQUAL-WEIGHT UNIVERSE mean forward return (cross-
+      sectional demean) — Tier-M has no single-ticker benchmark, and the edge
+      we want is RELATIVE rotation performance vs the subsector universe, not
+      market beta.  The universe level is the cumprod of each day's equal-weight
+      mean node return (causal: each day uses only that day's returns).
     """
     rows = []
+
+    # Tier-M cross-sectional benchmark: equal-weight universe cumulative level.
+    uni_level = None
+    if tier == "m" and "ret" in panel.columns:
+        uni_daily = panel.groupby(level="date")["ret"].mean()
+        uni_level = (1 + uni_daily.fillna(0)).cumprod()
 
     for node, dates in entry_dates.items():
         try:
@@ -161,27 +173,15 @@ def _compute_forward_returns(
                     spy_exit = spy_level.get(exit_date, np.nan)
                     if not (np.isnan(spy_exec) or np.isnan(spy_exit) or spy_exec == 0):
                         bench_ret = spy_exit / spy_exec - 1
-                else:
-                    # Tier m: use cross-node median from rs column (already computed)
-                    # Approximation: use the rs column's h-day sum as excess directly
-                    rs_window = node_panel.loc[exec_date:exit_date, "rs"] if "rs" in node_panel.columns else pd.Series(dtype=float)
-                    bench_ret = 0.0  # rs is already excess; we handle below
+                elif tier == "m" and uni_level is not None:
+                    # Cross-sectional demean: excess vs equal-weight universe over
+                    # the SAME [exec, exit] window.
+                    uni_exec = uni_level.get(exec_date, np.nan)
+                    uni_exit = uni_level.get(exit_date, np.nan)
+                    if not (np.isnan(uni_exec) or np.isnan(uni_exit) or uni_exec == 0):
+                        bench_ret = uni_exit / uni_exec - 1
 
                 excess = node_ret - bench_ret if not np.isnan(bench_ret) else np.nan
-
-                # For tier m, recompute using rs as the return series
-                if tier == "m":
-                    if "rs" in node_panel.columns:
-                        rs_s = node_panel["rs"].sort_index()
-                        rs_level = (1 + rs_s.fillna(0)).cumprod()
-                        rs_exec = rs_level.get(exec_date, np.nan)
-                        rs_exit = rs_level.get(exit_date, np.nan)
-                        if not (np.isnan(rs_exec) or np.isnan(rs_exit) or rs_exec == 0):
-                            excess = rs_exit / rs_exec - 1
-                        else:
-                            excess = np.nan
-                    else:
-                        excess = np.nan
 
                 rows.append({
                     "node": node,

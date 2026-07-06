@@ -1755,10 +1755,7 @@ def _verdict(proxy: dict) -> dict:
     out["alert_firing_gate"] = {
         "risk": (ag.get("risk", {}) or {}).get("gate"),
         "entry": (ag.get("entry", {}) or {}).get("gate"),
-        "note": "Fire the alert only above the OUT-OF-SAMPLE min_confidence (a None gate means "
-                "the lift CI did not clear 1.0 — keep firing but DON'T claim added precision). "
-                "Display the Platt-recalibrated probability as the confidence number; show "
-                "sub-threshold firings with a low-confidence badge (audit trail preserved)."}
+        "note": "Only high-confidence alerts claim added precision. Lower-confidence alerts stay visible for the audit trail."}
     any_go = any(out[n]["verdict"] == "measurable_edge" for n in ("emerging", "fading",
                  "deteriorating", "dominant"))
     out["GO"] = bool(any_go or (ag.get("risk", {}) or {}).get("verdict") == "calibratable"

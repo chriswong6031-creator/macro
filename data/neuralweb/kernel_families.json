@@ -23,7 +23,7 @@
       },
       "staleness": {
         "date_last": "2026-06-24",
-        "days_since_last_fire": 10
+        "days_since_last_fire": 12
       },
       "armed": false
     },
@@ -50,7 +50,7 @@
       },
       "staleness": {
         "date_last": "2026-06-29",
-        "days_since_last_fire": 5
+        "days_since_last_fire": 7
       },
       "armed": false
     },
@@ -77,65 +77,65 @@
       },
       "staleness": {
         "date_last": "2026-06-25",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 11
       },
       "armed": false
     },
     "radar": {
       "horizon_curve": {
-        "5": 0.00366
+        "5": 0.004471
       },
       "recency_trend": {
         "252d": {
-          "n_eff": 888,
-          "mean": 0.005813,
-          "wilson_ci_low": 0.498645
+          "n_eff": 915,
+          "mean": 0.007196,
+          "wilson_ci_low": 0.503122
         },
         "756d": {
-          "n_eff": 888,
-          "mean": 0.005813,
-          "wilson_ci_low": 0.498645
+          "n_eff": 915,
+          "mean": 0.007196,
+          "wilson_ci_low": 0.503122
         },
         "all": {
-          "n_eff": 888,
-          "mean": 0.005813,
-          "wilson_ci_low": 0.498645
+          "n_eff": 915,
+          "mean": 0.007196,
+          "wilson_ci_low": 0.503122
         }
       },
       "staleness": {
         "date_last": "2026-06-26",
-        "days_since_last_fire": 8
+        "days_since_last_fire": 10
       },
       "armed": false
     },
     "track_record": {
       "horizon_curve": {
-        "5": 0.04866,
-        "10": 0.057267,
+        "5": 0.048661,
+        "10": 0.057269,
         "21": 0.071669,
-        "63": 0.111153,
-        "126": 0.15783
+        "63": 0.111151,
+        "126": 0.157826
       },
       "recency_trend": {
         "252d": {
-          "n_eff": 970,
-          "mean": 0.02539,
-          "wilson_ci_low": 0.710638
+          "n_eff": 976,
+          "mean": 0.025485,
+          "wilson_ci_low": 0.71238
         },
         "756d": {
-          "n_eff": 2930,
-          "mean": 0.025829,
-          "wilson_ci_low": 0.747755
+          "n_eff": 2936,
+          "mean": 0.02586,
+          "wilson_ci_low": 0.748265
         },
         "all": {
-          "n_eff": 55380,
-          "mean": 0.024919,
-          "wilson_ci_low": 0.732971
+          "n_eff": 55386,
+          "mean": 0.024921,
+          "wilson_ci_low": 0.733
         }
       },
       "staleness": {
-        "date_last": "2026-06-23",
-        "days_since_last_fire": 11
+        "date_last": "2026-06-24",
+        "days_since_last_fire": 12
       },
       "armed": true
     },
@@ -163,15 +163,15 @@
       },
       "staleness": {
         "date_last": "2026-06-24",
-        "days_since_last_fire": 10
+        "days_since_last_fire": 12
       },
       "armed": true
     }
   },
-  "generated_from": "sha256:d19dd05eb85817014744042bb9f924af32e5cd4d3b6e03a5e86b9fe5af62d64d",
+  "generated_from": "sha256:2cace08c37a5551ca752e65ab9533d2b78d2948392c53b1ecade99d0cbe9f23b",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-07-04T20:44:48Z",
-  "inputs_hash": "sha256:8ae226fe42664142b61d8bf942d192a3ff69cf61549b540d3649342bdbd2bd1b",
+  "produced_at": "2026-07-06T08:37:06Z",
+  "inputs_hash": "sha256:cf87d56170b9deecda7f56177512fff0806e2a188914472eee6aff2c633f4536",
   "tier": "infrastructure"
 }

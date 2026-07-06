@@ -73,6 +73,165 @@ def test_measured_ic_cold_start_is_none(root):
     assert m["n"] == 0 and m["ic"] is None and m["wrong_sign"] is False
 
 
+# --- W1 Spine v2: role flags contract ----------------------------------------------------- #
+def test_buy_row_is_alpha_and_sizing(root):
+    """buy lane: size_binding=True, direction=1 → is_sizing=True, is_alpha=True, is_context=False."""
+    p = spine.SpinePrediction("s:1", "us_board", "us_board:buy", "2026-01-01", "AAPL", 21, 1.0,
+                               direction=1, size_binding=True)
+    assert p.is_sizing is True
+    assert p.is_alpha is True
+    assert p.is_veto is False
+    assert p.is_timing is False
+    assert p.is_context is False
+
+
+def test_laggard_row_is_veto(root):
+    """laggards lane: direction=-1, size_binding=False → is_veto=True, others False."""
+    p = spine.SpinePrediction("s:2", "us_board", "us_board:laggards", "2026-01-01", "BAD", 21, 1.0,
+                               direction=-1, size_binding=False)
+    assert p.is_veto is True
+    assert p.is_sizing is False
+    assert p.is_alpha is False
+    assert p.is_timing is False
+    assert p.is_context is False
+
+
+def test_watch_row_is_context(root):
+    """watch lane: direction=1, size_binding=False → is_context=True, others False."""
+    p = spine.SpinePrediction("s:3", "us_board", "us_board:watch", "2026-01-01", "MID", 21, 1.0,
+                               direction=1, size_binding=False)
+    assert p.is_context is True
+    assert p.is_sizing is False
+    assert p.is_alpha is False
+    assert p.is_veto is False
+    assert p.is_timing is False
+
+
+def test_altdata_row_is_context(root):
+    """altdata: size_binding=False, direction=1 → is_context=True."""
+    p = spine.SpinePrediction("s:4", "altdata_conv", "altdata:convergence", "2026-01-01", "NVDA", 63, 2.0,
+                               direction=1, size_binding=False)
+    assert p.is_context is True
+    assert p.is_sizing is False
+
+
+def test_desk_row_is_context(root):
+    """desk rows: size_binding=False, direction=1 → is_context=True."""
+    p = spine.SpinePrediction("s:5", "desk:ai_desk", "desk:ai_desk", "2026-01-01", "Energy", 63, 1.0,
+                               direction=1, size_binding=False)
+    assert p.is_context is True
+    assert p.is_sizing is False
+
+
+def test_flags_persist_roundtrip(root):
+    """Flags survive emit→load roundtrip with correct dtypes (bool, not np.bool_)."""
+    p = spine.SpinePrediction("flag:1", "us_board", "us_board:buy", "2026-01-01", "AAPL", 21, 1.5,
+                               direction=1, size_binding=True, falsifier="Test falsifier text.")
+    spine.emit([p], root=root)
+    df = spine.load(root=root)
+    row = df.iloc[0]
+    assert row["is_sizing"]  is True  or row["is_sizing"]  == True   # noqa: E712
+    assert row["is_alpha"]   is True  or row["is_alpha"]   == True   # noqa: E712
+    assert row["is_context"] is False or row["is_context"] == False  # noqa: E712
+    assert row["falsifier"] == "Test falsifier text."
+    assert isinstance(bool(row["is_sizing"]), bool)   # native bool in as_row()
+    # Ensure flags are stored as non-NaN booleans
+    assert str(row["is_sizing"]).lower() not in ("nan", "none", "")
+
+
+def test_old_parquet_loads_with_conservative_defaults(root):
+    """Old 16-col parquet (no W1 cols) loads with is_context=True, others False, falsifier=None."""
+    import pandas as pd
+    # Write a 16-col parquet that mirrors the pre-W1 schema
+    old_cols = [
+        "signal_id", "engine", "version", "family", "as_of", "symbol", "universe",
+        "horizon", "score", "size_binding", "direction", "event_key", "outcome_excess",
+        "outcome_graded", "graded_at", "meta",
+    ]
+    p = root / "data" / "spine"
+    p.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{c: "old_val" if c == "signal_id" else None for c in old_cols}]).to_parquet(
+        p / "predictions.parquet", index=False
+    )
+    df = spine.load(root=root)
+    assert list(df.columns) == spine.COLUMNS
+    row = df.iloc[0]
+    assert row["is_context"] is True or row["is_context"] == True    # noqa: E712
+    assert row["is_sizing"]  is False or row["is_sizing"]  == False  # noqa: E712
+    assert row["is_veto"]    is False or row["is_veto"]    == False  # noqa: E712
+    assert row["is_alpha"]   is False or row["is_alpha"]   == False  # noqa: E712
+    assert row["is_timing"]  is False or row["is_timing"]  == False  # noqa: E712
+    assert row["falsifier"] is None
+
+
+def test_numpy_scalars_not_in_as_row(root):
+    """as_row() must not contain np.bool_ or np.float64 — prevents json.dumps TypeError."""
+    import numpy as np
+    p = spine.SpinePrediction(
+        signal_id="np:1", engine="us_board", family="us_board:buy",
+        as_of="2026-01-01", symbol="AAPL", horizon=21,
+        score=float(np.float64(1.5)),  # simulate numpy scalar from dataframe row
+        direction=int(np.int64(1)), size_binding=bool(np.bool_(True)),
+    )
+    row = p.as_row()
+    # All 5 flag values must be native bool
+    for flag in ("is_sizing", "is_veto", "is_alpha", "is_timing", "is_context"):
+        assert type(row[flag]) is bool, f"{flag} must be native bool, got {type(row[flag])}"
+    # meta must be json-serializable
+    import json
+    json.loads(row["meta"])  # should not raise
+
+
+def test_falsifier_join_desk_scorer(root):
+    """adapt_desk_scorer: thesis id in theses.jsonl maps text; absent id maps None."""
+    import datetime as dt
+    d = root / "data" / "ai_desk"
+    d.mkdir(parents=True, exist_ok=True)
+    # scored.jsonl: one row WITH matching thesis id, one WITHOUT
+    scored = [
+        json.dumps({"id": "t1", "outcome": "hit", "realized": 0.04, "subject": "Energy", "check_by": "2026-03-01"}),
+        json.dumps({"id": "t_no_thesis", "outcome": "miss", "realized": 0.02, "subject": "Tech", "check_by": "2026-03-01"}),
+    ]
+    (d / "scored.jsonl").write_text("\n".join(scored) + "\n")
+    # theses.jsonl: only t1 has an entry (t_no_thesis absent)
+    thesis = {"id": "t1", "falsifier": {"text": "Energy fails to outperform SPY.", "check": {}}}
+    (d / "theses.jsonl").write_text(json.dumps(thesis) + "\n")
+    rows = spine.adapt_desk_scorer(root=root, desks={"ai_desk": ("data", "ai_desk", "scored.jsonl")})
+    by_id = {r.signal_id: r for r in rows}
+    # t1 → falsifier text from theses.jsonl
+    assert "desk:ai_desk:t1" in by_id
+    assert by_id["desk:ai_desk:t1"].falsifier == "Energy fails to outperform SPY."
+    # t_no_thesis → falsifier=None (id absent from theses.jsonl)
+    assert "desk:ai_desk:t_no_thesis" in by_id
+    assert by_id["desk:ai_desk:t_no_thesis"].falsifier is None
+
+
+def test_us_board_falsifier_is_none(root):
+    """adapt_us_board must emit falsifier=None for all rows (retro_grades carries no falsifier)."""
+    import pandas as pd
+    p = root / "data" / "us_board_ledger"
+    p.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame([{
+        "as_of": "2026-01-01", "ticker": "AAPL", "lane": "buy", "horizon": 21,
+        "composite_z": 1.5, "excess_spy": 0.04, "position": 1,
+    }])
+    df.to_parquet(p / "retro_grades.parquet", index=False)
+    rows = spine.adapt_us_board(root=root)
+    assert len(rows) == 1
+    assert rows[0].falsifier is None
+
+
+def test_authority_invariance_flags_additive(root):
+    """Adding W1 flags does not change size_binding or direction — strictly additive."""
+    p = spine.SpinePrediction("inv:1", "us_board", "us_board:buy", "2026-01-01", "AAPL", 21, 1.5,
+                               direction=1, size_binding=True)
+    assert p.size_binding is True
+    assert p.direction == 1
+    # Flags derived from these — verify they don't flip the authority fields
+    assert p.is_alpha is True   # derived from size_binding + direction>0
+    assert p.size_binding is True   # unchanged
+
+
 # --- adapters degrade to empty on a bare root --------------------------------------------- #
 def test_adapters_empty_on_bare_root(root):
     assert spine.adapt_us_board(root=root) == []

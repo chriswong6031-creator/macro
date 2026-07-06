@@ -108,8 +108,8 @@
     </div>
     <p class="story" id="story"></p>
     <p class="tagline">{{ t(
-      'Curated HK thematic baskets — every membership decision dated and documented; equal-weighted, monthly-rebalanced, buy-and-hold between rebalances. Benchmarked to the Hang Seng Index (HSI). Where a listed sector ETF approximates the theme the basket is cross-checked against it daily. A monitoring/structure frame, not a buy list.',
-      '精选香港主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。以恒生指数 (HSI) 为基准。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
+      'Equal-weight Hong Kong theme baskets measured against the Hang Seng Index. Use them to see which HK themes are leading or fading.',
+      '等权重香港主题篮子，对标恒生指数。用于观察哪些港股主题在走强或走弱。') }}</p>
   </header>
 
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
@@ -125,8 +125,8 @@
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "All baskets, watchlist-style. Click a column to sort; toggle the value between raw return, vs HSI, and σ (the move z-scored vs the basket's own trailing year — computed horizons only). Click a name to jump to its members.",
-        '全部篮子，自选股式表格。点击列标题排序；可在原始回报、相对恒指、σ（相对该篮子自身过去一年的 z 分数 — 仅限定窗）之间切换。点击名称跳转至成分。') }}</p>
+        "Sortable snapshot of every basket. Toggle between raw return, return versus HSI, and each basket's own z-score. Click a basket to see members.",
+        '所有篮子的可排序快照。可切换原始回报、相对恒指回报和篮子自身 z 分数。点击篮子查看成分。') }}</p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
     </section>
@@ -134,8 +134,8 @@
     <section id="chart-section">
       <h2><span class="idx">02</span>{{ t('Performance', '走势对比') }}</h2>
       <p class="sub">{{ t(
-        'Rebased to 0% at the start of the selected window. Click legend entries to toggle baskets. The full "All" range is ~5 years (our free-cache ceiling); series before a basket\'s creation date are a backtest of the membership at creation. Powered by TradingView Lightweight Charts.',
-        '在所选窗口起点重设为 0%。点击图例可切换篮子。"全部"区间约 5 年（免费缓存上限）；篮子创建日之前为按创建时成分的回测。由 TradingView Lightweight Charts 提供。') }}</p>
+        'Lines are rebased to 0% at the start of the window. Toggle baskets from the legend; "All" covers the available cache history.',
+        '曲线在窗口起点重设为 0%。可在图例中开关篮子；"全部"覆盖可用缓存历史。') }}</p>
       <div class="chartbar">
         <span class="tabs" id="chart-modes" role="group"></span>
         <span class="tabs" id="chart-ranges" role="group"></span>
@@ -154,8 +154,8 @@
 
   <footer>
     {{ t(
-      'Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE hk_search HK-listed price cache (~5y, HSI/HSCEI names), benchmarked to the Hang Seng Index. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.',
-      '仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费的 china_search 大市值 A 股价格缓存（约 5 年），以恒生指数 (HSI) 为基准。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。') }}
+      'Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the Hang Seng Index. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.',
+      '仅供参考，非投资建议。篮子等权重，并以恒生指数为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。') }}
     {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
   </footer>
 
@@ -302,7 +302,7 @@ function renderCards(){
   const el=document.getElementById('cards');
   el.innerHTML=(BASKETS.categories||[]).map(cat=>{
     const since = LANG()==='zh'?'自':'since';
-    const memberW = LANG()==='zh'?'只 · 等权 · ':' members · equal-weighted · ';
+    const memberW = LANG()==='zh'?'只 · ':' members · ';
     const cards=(BASKETS.baskets||[]).filter(b=>b.category===cat)
       .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
       .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));

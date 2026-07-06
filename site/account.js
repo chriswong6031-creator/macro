@@ -136,6 +136,25 @@
     if (_sb) return Promise.resolve(_sb);
     if (!SUPA) return Promise.resolve(null);
     return loadSDK().then(function () {
+      // FLOW NOTE — implicit, NOT pkce (deliberately inconsistent with theme.js,
+      // which is pkce). This client is created ONLY on the standalone app
+      // (mode 'standalone'); in _macro mode the SDK never loads (see getToken).
+      // The only auth this file initiates is a magic-link OTP (onSendLink ->
+      // signInWithOtp) — it never calls signInWithOAuth; the OTP return is
+      // consumed here via detectSessionInUrl. Implicit is kept ON PURPOSE: under
+      // pkce the code_verifier is stored in the requesting browser's localStorage
+      // before the email is sent, so a link opened on a DIFFERENT device (the
+      // common case for email links) has no verifier and the ?code= exchange
+      // fails — switching to pkce would break cross-device magic-link sign-in.
+      // theme.js can use pkce because its OAuth return is same-browser.
+      //
+      // Blast radius of staying implicit: on the standalone app a crafted
+      // #access_token= hash IS consumed by detectSessionInUrl, so that property
+      // does not get the anti-login-CSRF/fixation guarantee theme.js's pkce
+      // client has. The macro dashboard is unaffected (no SDK loads here). The
+      // proper fix — pkce + a 6-digit OTP-code fallback for cross-device — must be
+      // built and VERIFIED in the standalone app (Terminal) repo, not here. See
+      // ACCOUNTS_SETUP.md "Security model".
       _sb = window.supabase.createClient(SUPA.url, SUPA.anonKey, {
         auth: { persistSession: true, autoRefreshToken: true,
           detectSessionInUrl: true, flowType: 'implicit' }

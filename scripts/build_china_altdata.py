@@ -14,7 +14,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from lib import config
+from lib import config, site_assets
 from lib.pages import write_page
 
 log = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ def build() -> dict | None:
     for a in ASSETS:
         src = config.ROOT / "templates" / a
         if src.exists() and not (site / a).exists():
-            (site / a).write_text(src.read_text())
+            site_assets.copy_asset(a, src, site)
     log.info("wrote %s/china_altdata.html (%d KB)", site, len(html) // 1024)
 
     out = site / "chinaaltdata"

@@ -42,20 +42,33 @@
   th:first-child,td:first-child { text-align:left; }
   td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
   th.sel { color:var(--text); }
-  .bname { font-weight:600; cursor:pointer; }
-  .bname:hover { color:var(--link); }
+  .bname { font-weight:600; }
+  .blink { font-weight:650; color:inherit; text-decoration:none; }
+  .blink:hover { color:var(--link); text-decoration:underline; text-underline-offset:2px; }
   .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:middle; }
   #chart { height:420px; width:100%; }
-  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; max-height:156px; overflow:auto; padding-right:3px; }
   .lchip { display:inline-flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; color:var(--text); }
   .lchip.off { opacity:.34; }
   .lchip .lv { color:var(--muted); font-variant-numeric:tabular-nums; }
-  .toolbar { display:flex; align-items:center; gap:10px; margin:10px 0 4px; }
+  .toolbar { display:flex; align-items:center; gap:10px; margin:10px 0 4px; flex-wrap:wrap; }
   .toolbar .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .finder { display:grid; grid-template-columns:minmax(220px,1fr) auto; gap:10px; align-items:center; margin:14px 0 8px; }
+  .finder input { width:100%; border:1px solid var(--line); background:var(--panel); color:var(--text); border-radius:9px; padding:9px 11px; font-size:13px; outline:none; }
+  .finder input:focus { border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent); }
+  .finder .count { color:var(--muted); font-size:12px; white-space:nowrap; }
+  .catbar { display:flex; flex-wrap:wrap; gap:6px; margin:9px 0 4px; }
+  .catbar button { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:8px; padding:5px 9px; font-size:12px; cursor:pointer; }
+  .catbar button.on { background:var(--panel2); color:var(--text); font-weight:650; border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
+  .chart-note { font-size:12px; color:var(--muted); margin:6px 0 0; }
+  .see-more-wrap { display:flex; justify-content:center; padding:10px 0 4px; }
+  .see-more { border:1px solid var(--line); background:var(--panel2); color:var(--text); border-radius:8px; padding:7px 12px; font-size:12px; font-weight:650; cursor:pointer; }
+  .see-more:hover { border-color:var(--muted); }
   .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:13px; }
   .card { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,#888); border-radius:10px; padding:12px 13px; cursor:pointer; transition:border-color .15s; }
   .card:hover { border-color:var(--muted); }
   .card .nm { font-weight:650; font-size:14px; }
+  .card .nm .blink { font-size:14px; }
   .card .meta { color:var(--muted); font-size:11.5px; margin:3px 0 6px; }
   .card .th { font-size:12px; line-height:1.45; color:var(--text); opacity:.9; margin-bottom:9px; min-height:50px; }
   .card .perf { display:flex; align-items:center; gap:16px; }
@@ -64,6 +77,7 @@
   .card .spark { margin-left:auto; }
   .detail { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:13px 15px; margin-top:12px; scroll-margin-top:14px; }
   .detail h4 { margin:0 0 4px; font-size:15px; display:flex; align-items:center; gap:8px; }
+  .detail h4 .blink { font-size:15px; }
   .detail .th { color:var(--text); opacity:.92; font-size:12.5px; line-height:1.5; margin:0 0 9px; max-width:95ch; }
   .kpirow { display:flex; flex-wrap:wrap; gap:18px; margin:8px 0 10px; }
   .kpirow .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
@@ -78,6 +92,11 @@
   footer { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
   .pfx { color:var(--muted); }
   .asof { font-size:12px; color:var(--muted); margin-left:auto; }
+  @media (max-width:640px){
+    .finder { grid-template-columns:1fr; }
+    .finder .count { white-space:normal; }
+    #chart { height:360px; }
+  }
   /* W5-B Reversal Sleeve strategy card */
   .sleeve-strategy-card { border:1px solid color-mix(in srgb,var(--up) 35%,var(--line));
     border-left:3px solid var(--up); border-radius:10px; background:var(--panel); padding:13px 15px;
@@ -135,15 +154,15 @@
     <p class="story" id="story"></p>
     {% if lite %}
     <p class="tagline">{{ t(
-      "A-share thematic baskets that mirror 同花顺 (Tonghuashun) concept boards — we adopt THS's themes and their member lists verbatim, filtered to the free china_search price cache. Equal-weighted, point-in-time dated membership, buy-and-hold between changes. Benchmarked to the CSI 300 (沪深300). A monitoring/structure frame, not a buy list.",
-      '镜像同花顺概念板块的 A 股主题篮子 — 直接采用同花顺的主题及其成分股，并按免费 china_search 价格缓存过滤。等权重、按时点日期管理成分、调整间买入持有。以沪深 300 为基准。仅作监测/结构参考，并非买入清单。') }}
+      'Tonghuashun concept baskets filtered to the china_search price cache. Equal-weighted and measured against CSI 300. Use them for theme monitoring, not as a buy list.',
+      '同花顺概念篮子，按 china_search 价格缓存过滤。等权重，对标沪深 300。用于主题监测，不是买入清单。') }}
       <a href="baskets_china.html" style="white-space:nowrap">→ {{ t('curated baskets', '精选篮子') }}</a></p>
     {# cross-market AI-semis confirmer (rendered client-side; empty when unavailable) #}
     <div id="semis-chip"></div>
     {% else %}
     <p class="tagline">{{ t(
-      'Curated A-share thematic baskets — every membership decision dated and documented; equal-weighted, monthly-rebalanced, buy-and-hold between rebalances. Benchmarked to the CSI 300 (沪深300). Where a listed sector ETF approximates the theme the basket is cross-checked against it daily. A monitoring/structure frame, not a buy list.',
-      '精选 A 股主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。以沪深 300 为基准。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}
+      'Equal-weight A-share theme baskets measured against CSI 300. Use them to see which China themes are leading or fading.',
+      '等权重 A 股主题篮子，对标沪深 300。用于观察哪些中国主题在走强或走弱。') }}
       <a href="baskets_china_ths.html" style="white-space:nowrap">→ {{ t('同花顺 themes', '同花顺主题') }}</a></p>
     {% endif %}
   </header>
@@ -160,24 +179,35 @@
   {% endif %}
 
   <div id="content">
+    <div class="finder">
+      <input id="basket-search" type="search" autocomplete="off"
+        placeholder="Search THS concept, category, member or ticker..."
+        data-ph-zh="搜索同花顺概念、类别、成分或代码...">
+      <span class="count" id="basket-count"></span>
+    </div>
+
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "All baskets, watchlist-style. Click a column to sort; toggle the value between raw return, vs CSI 300, and σ (the move z-scored vs the basket's own trailing year — computed horizons only). Click a name to jump to its members.",
-        '全部篮子，自选股式表格。点击列标题排序；可在原始回报、相对沪深 300、σ（相对该篮子自身过去一年的 z 分数 — 仅限定窗）之间切换。点击名称跳转至成分。') }}</p>
+        "Sortable snapshot of every basket. Toggle between raw return, return versus CSI 300, and each basket's own z-score. Click a basket to see members.",
+        '所有篮子的可排序快照。可切换原始回报、相对沪深 300 回报和篮子自身 z 分数。点击篮子查看成分。') }}</p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
+      <div class="see-more-wrap"><button class="see-more" id="table-more" type="button"></button></div>
     </section>
 
     <section id="chart-section">
       <h2><span class="idx">02</span>{{ t('Performance', '走势对比') }}</h2>
       <p class="sub">{{ t(
-        'Rebased to 0% at the start of the selected window. Click legend entries to toggle baskets. The full "All" range is ~5 years (our free-cache ceiling); series before a basket\'s creation date are a backtest of the membership at creation. Powered by TradingView Lightweight Charts.',
-        '在所选窗口起点重设为 0%。点击图例可切换篮子。"全部"区间约 5 年（免费缓存上限）；篮子创建日之前为按创建时成分的回测。由 TradingView Lightweight Charts 提供。') }}</p>
+        'Lines are rebased to 0% at the start of the window. Toggle baskets from the legend; "All" covers the available cache history.',
+        '曲线在窗口起点重设为 0%。可在图例中开关篮子；"全部"覆盖可用缓存历史。') }}</p>
       <div class="chartbar">
+        <span class="tabs" id="chart-scope" role="group"></span>
         <span class="tabs" id="chart-modes" role="group"></span>
         <span class="tabs" id="chart-ranges" role="group"></span>
       </div>
+      <div class="catbar" id="chart-cats"></div>
+      <p class="chart-note" id="chart-note"></p>
       <div class="panel pad"><div id="chart"></div><div class="legend" id="chart-legend"></div></div>
     </section>
 
@@ -195,8 +225,8 @@
   <div class="sleeve-strategy-card" id="reversal-sleeve-card">
     <div class="sc-head"><span class="sc-tag">{{ t('VALIDATED EDGE','已验证优势') }}</span>{{ t('Reversal Sleeve','反转组合') }}</div>
     <p class="sc-sub">{{ t(
-      'Monthly-rebalanced contrarian basket — a portfolio, NOT stock tips; high variance, size small. The validated A-share within-sector 3M reversal edge shipped at its own product unit (deepest quintile, no gate, equal-weight). Forward ledger is accruing; grades publish when rebalances mature.',
-      '按月再平衡的逆向篮子——这是一个组合，不是个股建议；高波动，宜小仓位。已验证的A股板块内3月反转优势以其自身产品单元交付（最深五分位、无门槛、等权重）。前瞻台账正在累积，再平衡成熟后发布成绩。') }}</p>
+      'Monthly contrarian basket. Portfolio-level signal, not stock tips; high variance, small size. Forward results accrue as rebalances mature.',
+      '按月逆向篮子。组合层面的信号，不是个股建议；波动高、仓位宜小。前瞻结果会随再平衡成熟后累积。') }}</p>
     <div class="sc-stats">
       {# rd_n_members is passed by the builder when available; falls back gracefully #}
       {% if sleeve_stats %}
@@ -209,20 +239,20 @@
     </div>
     <a class="sc-link" href="cn_reversal_sleeve.html">{{ t('→ Open Reversal Sleeve page','→ 打开反转组合页面') }}</a>
     <p class="sc-note">{{ t(
-      'Upper bound on the available plane — both substrates are pure-survivor on the delisting axis; true out-of-sample number is at or below the re-derived stats. Gross of cost; high-turnover family. The forward ledger is the real record.',
-      '可用面板上的上界——两个底层数据库均在退市轴上为纯幸存者；真实样本外数值等于或低于再推导数据。成本前；高换手率品种。前瞻台账是真实记录。') }}</p>
+      'Historical numbers are an upper-bound estimate; the forward ledger is the real record.',
+      '历史数字是上界估计；前瞻台账才是真实记录。') }}</p>
   </div>
   {% endif %}
 
   <footer>
     {% if lite %}
     {{ t(
-      'Read-only analytics for informational purposes only — not investment advice. Themes and members mirror 同花顺 (Tonghuashun) concept boards, snapshotted over time and filtered to the FREE china_search top-market-cap A-share price cache (~5y); a theme\'s small-cap tail outside that cache is dropped (shown under each basket). Equal-weighted, point-in-time dated membership, buy-and-hold between changes, benchmarked to the CSI 300. First-run membership was applied as-of-today over the window, so early series are HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.',
-      '仅供参考的只读分析 — 非投资建议。主题与成分镜像同花顺概念板块，按时间快照并按免费 china_search 大市值 A 股价格缓存（约 5 年）过滤；缓存之外的小盘尾部已剔除（见各篮子）。等权重、按时点日期管理成分、调整间买入持有，以沪深 300 为基准。首轮成分以当下为准回填至全区间，故早期序列为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。') }}
+      'Informational only, not investment advice. Tonghuashun themes are filtered to the china_search price cache and benchmarked to CSI 300. Results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.',
+      '仅供参考，非投资建议。同花顺主题按 china_search 价格缓存过滤，并以沪深 300 为基准。结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。') }}
     {% else %}
     {{ t(
-      'Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE china_search top-market-cap A-share price cache (~5y), benchmarked to the CSI 300. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.',
-      '仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费的 china_search 大市值 A 股价格缓存（约 5 年），以沪深 300 为基准。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。') }}
+      'Informational only, not investment advice. Baskets are equal-weighted and benchmarked to CSI 300. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.',
+      '仅供参考，非投资建议。篮子等权重，并以沪深 300 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。') }}
     {% endif %}
     {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
   </footer>
@@ -252,11 +282,31 @@ const BENCH = () => LANG()==='zh' ? (BASKETS.benchmark_label_zh||'沪深300') : 
 const CAT_ZH = {}; (BASKETS.categories||[]).forEach((c,i)=>CAT_ZH[c]=(BASKETS.categories_zh||[])[i]||c);
 const catLabel = c => (LANG()==='zh' && CAT_ZH[c]) ? CAT_ZH[c] : c;
 const VS = () => (LANG()==='zh'?'相对 ':'vs ')+BENCH();
+const TABLE_LIMIT = 12;
+let query = '';
+let tableExpanded = false;
+let chartScope = localStorage.getItem('cnfw-chart-scope') || 'cats';
+let chartCat = localStorage.getItem('cnfw-chart-cat') || 'all';
 
 const fmtPct = x => x==null ? '—' : (x>=0?'+':'')+(x*100).toFixed(1)+'%';
 const fmtZ   = x => x==null ? '—' : (x>=0?'+':'')+x.toFixed(1)+'σ';
 const cls    = x => x==null ? 'muted' : (x>=0?'pos':'neg');
 const esc    = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm   = s => (s==null?'':String(s)).toLowerCase().replace(/[\s_\-·/()（）]+/g,'');
+const detailKey = b => ((b.detail_key || b.id || '').startsWith('ths_') ? (b.detail_key || b.id).replace(/_/g,'-') : (b.detail_key || b.id || ''));
+const detailHref = b => `subsector_china/${detailKey(b)}.html`;
+const nameLink = b => `<a class="blink" href="${esc(detailHref(b))}" data-nav="detail">${esc(bn(b))}</a>`;
+const basketText = b => [b?.id,b?.name,b?.name_zh,b?.category,b?.category_zh,b?.thesis,b?.thesis_zh,(b?.members||[]).map(m=>[m.symbol,m.name].join(' ')).join(' ')].join(' ');
+function filteredBaskets(){
+  const q=norm(query);
+  const rows=(BASKETS.baskets||[]);
+  return q ? rows.filter(b=>norm(basketText(b)).includes(q)) : rows.slice();
+}
+function updateCount(){
+  const el=document.getElementById('basket-count'); if(!el) return;
+  const n=filteredBaskets().length, total=(BASKETS.baskets||[]).length;
+  el.textContent = LANG()==='zh' ? `${n} / ${total} 个主题` : `${n} of ${total} themes`;
+}
 // bilingual span pair (local name — the non-lite page also loads baskets_desk.js, which owns `L`)
 const _bl    = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 const lastIdx = a => { for(let i=a.length-1;i>=0;i--) if(a[i]!=null) return i; return -1; };
@@ -295,20 +345,23 @@ function renderTabs(el, opts, active, cb){
 let btblMode = localStorage.getItem('cnfw-btbl-mode')||'rel';
 let btblSort = JSON.parse(localStorage.getItem('cnfw-btbl-sort')||'{"col":"20d","dir":-1}');
 function renderBTable(){
-  const rows = Object.entries(CHART.baskets).map(([id,lv])=>{
+  const allowed = new Set(filteredBaskets().map(b=>b.id));
+  let rows = Object.entries(CHART.baskets).filter(([id])=>allowed.has(id)).map(([id,lv])=>{
     const b=(BASKETS.baskets||[]).find(x=>x.id===id); const rl=ratio(lv);
     const src = btblMode==='raw'?lv:rl;
     const vals={}; TBL_COLS.forEach(c=>{ vals[c]= btblMode==='sigma' ? (/^\d/.test(c)?winZ(rl,c):null) : winRet(src,c); });
-    return {id,name:bn(b),color:colorOf[id]||'#888',spark:sparkTail(src),vals};
+    return {id,b,name:bn(b),color:colorOf[id]||'#888',spark:sparkTail(src),vals};
   });
   const sc=btblSort.col, dir=btblSort.dir;
   rows.sort((a,b)=>{ if(sc==='name') return a.name.localeCompare(b.name)*dir;
     const x=a.vals[sc], y=b.vals[sc]; if(x==null) return 1; if(y==null) return -1; return (x-y)*dir; });
+  const totalRows = rows.length;
+  const shownRows = tableExpanded ? rows : rows.slice(0,TABLE_LIMIT);
   const fmt = btblMode==='sigma' ? fmtZ : fmtPct;
   const th = c => `<th class="num ${c===sc?'sel':''}" data-c="${c}">${c}${c===sc?(dir<0?' ▾':' ▴'):''}</th>`;
   const nameHdr = LANG()==='zh'?'篮子':'Basket';
   let html = `<thead><tr><th data-c="name">${nameHdr}${sc==='name'?(dir<0?' ▾':' ▴'):''}</th><th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
-  html += rows.map(r=>`<tr><td class="bname" data-id="${r.id}"><span class="dot" style="background:${r.color}"></span>${esc(r.name)}</td>
+  html += shownRows.map(r=>`<tr><td class="bname" data-id="${r.id}"><span class="dot" style="background:${r.color}"></span>${nameLink(r.b)}</td>
     <td class="num">${sparkSvg(r.spark,{color:r.color})}</td>
     ${TBL_COLS.map(c=>`<td class="num ${cls(r.vals[c])}">${r.vals[c]==null?'<span class="muted">—</span>':fmt(r.vals[c])}</td>`).join('')}</tr>`).join('');
   if(btblMode==='raw'){ const bv={}; TBL_COLS.forEach(c=>bv[c]=winRet(CHART.bench,c));
@@ -318,16 +371,48 @@ function renderBTable(){
   tbl.querySelectorAll('th[data-c]').forEach(h=>h.onclick=()=>{ const c=h.dataset.c;
     if(c===btblSort.col) btblSort.dir*=-1; else btblSort={col:c,dir:c==='name'?1:-1};
     localStorage.setItem('cnfw-btbl-sort',JSON.stringify(btblSort)); renderBTable(); });
-  tbl.querySelectorAll('.bname[data-id]').forEach(n=>n.onclick=()=>openBasket(n.dataset.id));
+  const more=document.getElementById('table-more');
+  if(more){
+    const hiddenN=Math.max(0,totalRows-TABLE_LIMIT);
+    more.style.display=hiddenN?'inline-block':'none';
+    more.textContent=tableExpanded
+      ? (LANG()==='zh'?'收起':'Show less')
+      : (LANG()==='zh'?`查看更多 ${hiddenN} 个`:`See more ${hiddenN}`);
+    more.onclick=()=>{ tableExpanded=!tableExpanded; renderBTable(); };
+  }
+  updateCount();
 }
 
 // ---- 02 chart -------------------------------------------------------------
 let chart=null, chartMode='rel', chartRange=252, hidden={};
+function avgLevels(levelSets){
+  const out=[];
+  for(let i=0;i<CHART.dates.length;i++){
+    const vals=levelSets.map(a=>a?.[i]).filter(v=>v!=null);
+    out.push(vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null);
+  }
+  return out;
+}
 function chartSets(){
-  const sets=Object.entries(CHART.baskets).map(([id,levels])=>{ const b=(BASKETS.baskets||[]).find(x=>x.id===id);
-    return {key:id,label:bn(b),color:colorOf[id]||'#888',levels}; });
-  if(chartMode==='rel') return sets.map(s=>({...s,levels:ratio(s.levels)}));
-  return [...sets,{key:'bench',label:BENCH(),color:BENCH_COLOR(),levels:CHART.bench}];
+  const baskets=filteredBaskets();
+  const sourceLevels = id => chartMode==='rel' ? ratio(CHART.baskets[id]||[]) : (CHART.baskets[id]||[]);
+  if(chartScope==='cats'){
+    const cats=(BASKETS.categories||[]).map((c,i)=>({cat:c,color:PALETTE[i%PALETTE.length]}))
+      .filter(x=>chartCat==='all'||x.cat===chartCat)
+      .map(x=>{
+        const ids=baskets.filter(b=>b.category===x.cat && CHART.baskets[b.id]).map(b=>b.id);
+        return ids.length ? {key:'cat:'+x.cat,label:catLabel(x.cat),color:x.color,levels:avgLevels(ids.map(sourceLevels)),n:ids.length} : null;
+      }).filter(Boolean);
+    return chartMode==='abs' ? [...cats,{key:'bench',label:BENCH(),color:BENCH_COLOR(),levels:CHART.bench}] : cats;
+  }
+  let subBaskets=baskets.filter(b=>chartCat==='all'||b.category===chartCat);
+  if(chartCat==='all'){
+    subBaskets=subBaskets.slice().sort((a,b)=>Math.abs((b.perf?.['20d']?.rel)||0)-Math.abs((a.perf?.['20d']?.rel)||0)).slice(0,12);
+  }
+  const sets=subBaskets
+    .filter(b=>CHART.baskets[b.id])
+    .map(b=>({key:b.id,label:bn(b),color:colorOf[b.id]||'#888',levels:sourceLevels(b.id)}));
+  return chartMode==='abs' ? [...sets,{key:'bench',label:BENCH(),color:BENCH_COLOR(),levels:CHART.bench}] : sets;
 }
 function rangeStart(dates){ if(chartRange==='ytd'){ const y=dates[dates.length-1].slice(0,4); const i=dates.findIndex(d=>d.startsWith(y)); return i<=0?0:i-1; }
   return chartRange?Math.max(0,dates.length-chartRange):0; }
@@ -361,8 +446,29 @@ function renderChartLegend(){
   el.querySelectorAll('.lchip').forEach(c=>c.onclick=()=>{ hidden[c.dataset.k]=!hidden[c.dataset.k]; renderChart(); });
 }
 function initChartDefaults(){
-  const ranked=(BASKETS.baskets||[]).slice().sort((a,b)=>Math.abs((b.perf?.['20d']?.rel)||0)-Math.abs((a.perf?.['20d']?.rel)||0));
-  ranked.slice(6).forEach(b=>hidden[b.id]=true);
+  if(chartScope!=='subs') return;
+  const ranked=filteredBaskets().filter(b=>chartCat==='all'||b.category===chartCat)
+    .slice().sort((a,b)=>Math.abs((b.perf?.['20d']?.rel)||0)-Math.abs((a.perf?.['20d']?.rel)||0));
+  ranked.slice(8).forEach(b=>hidden[b.id]=true);
+}
+function renderChartCats(){
+  const host=document.getElementById('chart-cats'); if(!host) return;
+  const cats=['all',...(BASKETS.categories||[])];
+  host.innerHTML=cats.map(c=>{
+    const allLab = chartScope==='subs'
+      ? (LANG()==='zh'?'全部热门':'Top movers')
+      : (LANG()==='zh'?'全部类别':'All categories');
+    return `<button type="button" data-c="${esc(c)}" class="${c===chartCat?'on':''}">${c==='all'?allLab:esc(catLabel(c))}</button>`;
+  }).join('');
+  host.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    chartCat=b.dataset.c; localStorage.setItem('cnfw-chart-cat',chartCat); hidden={}; initChartDefaults(); renderChartCats(); renderChart();
+  });
+  const note=document.getElementById('chart-note');
+  if(note){
+    note.textContent = chartScope==='cats'
+      ? (LANG()==='zh'?'类别线 = 该类别内所有匹配主题的等权平均走势。':'Category lines are equal-weight averages of every matching theme inside that category.')
+      : (LANG()==='zh'?'子行业模式默认显示全市场热门主题；选择类别后可钻入该类别内的具体主题。':'Subsector mode starts with top movers across the market; choose a category to drill into that group.');
+  }
 }
 
 // ---- 03 cards + details ---------------------------------------------------
@@ -372,8 +478,8 @@ function renderCards(){
   const el=document.getElementById('cards');
   el.innerHTML=(BASKETS.categories||[]).map(cat=>{
     const since = LANG()==='zh'?'自':'since';
-    const memberW = LANG()==='zh'?'只 · 等权 · ':' members · equal-weighted · ';
-    const cards=(BASKETS.baskets||[]).filter(b=>b.category===cat)
+    const memberW = LANG()==='zh'?'只 · ':' members · ';
+    const cards=filteredBaskets().filter(b=>b.category===cat)
       .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
       .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));
         const ref=b.reference?` · ${LANG()==='zh'?'对标':'tracks'} ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
@@ -381,7 +487,7 @@ function renderCards(){
         const sx=b.ai_semis_confirmer;
         const sxBadge=(sx&&sx.on!=null)?`<span class="semis-badge ${sx.on?'on':''}" title="cross-market confirmer — global semis momentum context, not a buy signal (SMH/SOXX/TSM 4w-mom ${sx.semis_mom_4w==null?'—':sx.semis_mom_4w})">${_bl('AI-semis '+(sx.state||''),'全球AI半导体 '+(sx.on?'开启':'关闭'))}</span>`:'';
         return `<div class="card" style="--c:${colorOf[b.id]}" data-id="${b.id}">
-          <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))}${sxBadge}</div>
+          <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${nameLink(b)}${sxBadge}</div>
           <div class="meta">${b.n_members}${memberW}${since} ${esc(b.created)}${ref}</div>
           <div class="th">${esc(bth(b))}</div>
           <div class="perf">${kpi(hzLabel(bhz),b.perf?.[bhz])}${kpi('YTD',b.perf?.ytd)}<span class="spark">${sparkSvg(spk,{w:96,h:30,color:colorOf[b.id]})}</span></div>
@@ -389,6 +495,7 @@ function renderCards(){
     return cards?`<h3 class="cat">${esc(catLabel(cat))}</h3><div class="cards">${cards}</div>`:'';
   }).join('');
   el.querySelectorAll('.card').forEach(c=>c.onclick=()=>openBasket(c.dataset.id));
+  el.querySelectorAll('a[data-nav="detail"]').forEach(a=>a.onclick=e=>e.stopPropagation());
 }
 function memRows(b){ return (b.members||[]).map(m=>`<tr><td><a href="china_lookup.html#${encodeURIComponent(m.symbol)}"><b>${esc(m.symbol)}</b></a> <span class="muted sm">${esc(m.name)}</span></td>
   <td class="why">${esc(m.rationale)}</td><td class="num muted sm">${esc(m.added)}</td>
@@ -401,7 +508,7 @@ function detailSection(b){
   (b.partial||[]).forEach(pp=>warns.push(`<span class="warn">${esc(pp.symbol)} ${zh?'纳入于':'enters'} ${esc(pp.from)}</span>`));
   const clog=(b.changelog||[]).map(c=>`<li><b>${esc(c.date)}</b> — ${esc(c.action)}: ${esc(c.note)}</li>`).join('');
   const memHdr = zh?['代码','理由','纳入','20d','YTD']:['Symbol','Rationale','Added','20d','YTD'];
-  return `<div class="detail" id="b-${b.id}"><h4><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))} <span class="chip">${esc(catLabel(b.category))}</span></h4>
+  return `<div class="detail" id="b-${b.id}"><h4><span class="dot" style="background:${colorOf[b.id]}"></span>${nameLink(b)} <span class="chip">${esc(catLabel(b.category))}</span></h4>
     <p class="th">${esc(bth(b))}</p>
     <div class="kpirow">${kr('20d','20d')}${kr('60d','60d')}${kr('MTD','mtd')}${kr('YTD','ytd')}${kr(zh?'全程':'Full','full')}</div>
     ${ref}<div>${warns.join(' ')}</div>
@@ -412,7 +519,7 @@ function detailSection(b){
 }
 function renderDetails(){
   const el=document.getElementById('details');
-  el.innerHTML=(BASKETS.categories||[]).map(cat=>(BASKETS.baskets||[]).filter(b=>b.category===cat)
+  el.innerHTML=(BASKETS.categories||[]).map(cat=>filteredBaskets().filter(b=>b.category===cat)
     .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9)).map(detailSection).join('')).join('');
 }
 function openBasket(id){ const d=document.getElementById('b-'+id); if(!d) return; const det=d.querySelector('details'); if(det) det.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); }
@@ -430,6 +537,9 @@ function renderStory(){
 function renderModeTabs(){
   renderTabs(document.getElementById('btbl-mode'), [['raw', LANG()==='zh'?'原始':'Raw'],['rel',VS()],['sigma','σ']], btblMode, v=>{ btblMode=v; localStorage.setItem('cnfw-btbl-mode',v); renderBTable(); });
   renderTabs(document.getElementById('chart-modes'), [['rel',VS()],['abs', LANG()==='zh'?'绝对':'Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
+  renderTabs(document.getElementById('chart-scope'), [['cats', LANG()==='zh'?'类别':'Categories'],['subs', LANG()==='zh'?'子行业':'Subsectors']], chartScope, v=>{
+    chartScope=v; localStorage.setItem('cnfw-chart-scope',v); hidden={}; initChartDefaults(); renderChartCats(); renderChart();
+  });
 }
 
 // ---- page-level cross-market AI-semis confirmer chip (lite/THS page; #semis-chip host only
@@ -446,10 +556,18 @@ function renderSemisChip(){
   </div>`;
 }
 
-function renderAll(){ renderStory(); renderModeTabs(); renderBTable(); renderChart(); renderCards(); renderDetails(); }
+function renderAll(){ renderStory(); renderModeTabs(); renderBTable(); renderChartCats(); renderChart(); renderCards(); renderDetails(); updateCount(); }
 
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
+  const search=document.getElementById('basket-search');
+  if(search){
+    const syncPh=()=>{ const zh=LANG()==='zh'; search.placeholder=zh?(search.dataset.phZh||search.placeholder):'Search THS concept, category, member or ticker...'; };
+    search.value=query;
+    search.oninput=()=>{ query=search.value||''; tableExpanded=false; hidden={}; initChartDefaults(); renderBTable(); renderChartCats(); renderChart(); renderCards(); renderDetails(); updateCount(); };
+    syncPh();
+    document.addEventListener('langchange',syncPh);
+  }
   renderModeTabs();
   const rel=document.getElementById('chart-ranges');
   rel.innerHTML=RANGES.map(([lab,v])=>`<button data-v="${v}" class="${v===chartRange?'on':''}">${lab}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N days">`;
@@ -457,7 +575,7 @@ function boot(){
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cnfw-hz',v); renderCards(); renderDetails(); });
   initChartDefaults();
-  renderStory(); renderBTable(); renderChart(); renderCards(); renderDetails(); renderSemisChip();{% if not lite %} deskBoot();{% endif %}
+  renderStory(); renderBTable(); renderChartCats(); renderChart(); renderCards(); renderDetails(); renderSemisChip(); updateCount();{% if not lite %} deskBoot();{% endif %}
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);
   {% if not lite %}if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);{% endif %}
   document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderAll(); });

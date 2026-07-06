@@ -15,7 +15,7 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-<script src="plotly-2.32.0.min.js"></script>
+{% if mode != 'stocks' %}{% include '_plotly_head.html.j2' %}{% endif %}
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
@@ -185,6 +185,7 @@
   .nbe-pct { color:var(--muted); font-size:9px; font-variant-numeric:tabular-nums; }
   .ab { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .abcol h3 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
+  .abcol.ab-on_the_run h3 { color:#8b5cf6; }  /* neutral violet — NOT green/buy */
   .abcol .it { font-size:12.5px; padding:3px 0; border-bottom:1px solid var(--line); }
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:right; padding:4px 8px; border-bottom:1px solid var(--line); }
@@ -263,6 +264,7 @@
   .card.ent-wait { border-left:3px solid var(--muted); }
 {% include "_cmd_hero.css.j2" %}
 {% include "_market_state.css.j2" %}
+  body.page-canada { padding-top: 24px; }
 </style>
 </head>
 <body class="page-canada">
@@ -350,7 +352,7 @@
       <div class="hero-eyebrow"><span class="num">{{ latest.date }}</span> · {{ t('CANADA TSX REGIME', '加拿大 TSX 周期') }}
         · <span class="num {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ t('G','增') }} {{ '%+.2f'|format(latest.growth_score) }}</span>
         <span class="num {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ t('I','胀') }} {{ '%+.2f'|format(latest.inflation_score) }}</span>
-        {{ help("The four market regimes — combinations of growth and inflation DIRECTION (quadrants, not calendar quarters). GOLDILOCKS = growth↑ inflation↓. REFLATION = both rising (energy, materials, financials — the heart of the TSX). STAGFLATION = inflation↑ growth↓ (the dangerous one). GROWTH SCARE = both falling (bonds & staples). The TSX is commodity-heavy, so read the regime alongside the commodity/CAD overlay below.", "四种市场周期 — 增长与通胀方向的组合（象限，而非日历季度）。理想增长＝增长↑通胀↓；再通胀＝双升（能源、材料、金融 — 多伦多大盘的核心）；滞胀＝通胀↑增长↓（最危险）；增长恐慌＝双降（债券与必需消费）。TSX 大宗商品权重高，故周期需与下方大宗商品／加元叠加同看。") }}
+        {{ help("Growth and inflation create the four regimes. Because the TSX is commodity-heavy, read this with the CAD/commodity overlay.", "增长与通胀组成四种周期。TSX 大宗商品权重高，所以要和加元/商品叠加一起看。") }}
       </div>
       <div class="hero-regime">
         <span class="hr-dot" style="background:var(--q{{ Q[1] }});box-shadow:0 0 14px var(--q{{ Q[1] }})"></span>
@@ -363,19 +365,19 @@
     <div class="hero-vitals">
       <div class="vital">
         <div class="v-top"><span class="v-label">{{ t('BoC STANCE', '央行立场') }}</span>
-          {{ help('Bank of Canada policy-rate direction over ~3 months (cuts = expanding, hikes = contracting), with a GoC-curve steepening tilt.', '加拿大央行政策利率约三个月方向（降息＝扩张，加息＝收缩），并叠加加债收益率曲线变陡的倾向。') }}</div>
+          {{ help('Recent BoC rate direction. Cuts ease conditions; hikes tighten.', '近期加央行利率方向。降息偏宽松；加息偏紧。') }}</div>
         <span class="v-chip liq-{{ latest.liquidity_overlay }}">{{ td(latest.liquidity_overlay) }}</span>
         <span class="v-mean">{{ t('policy-rate direction', '政策利率方向') }}</span>
       </div>
       <div class="vital">
         <div class="v-top"><span class="v-label">{{ t('COMMODITIES', '大宗商品') }}</span>
-          {{ help('The TSX is commodity-heavy, so the concurrent commodity-and-currency risk gauge (WTI oil, gold, copper/gold, USD/CAD, S&P 500, VIX, DXY) is its #1 high-frequency driver. Risk-on = commodities firm + CAD strong. Terms of trade improving/deteriorating tracks the export-price tailwind. A concurrent state, not a forecast — see the overlay panel below.', 'TSX 大宗商品权重高，故同期的大宗与货币风险计（WTI 原油、黄金、铜金比、美元兑加元、标普500、VIX、美元指数）是其第一高频驱动。风险偏好＝大宗坚挺＋加元走强。贸易条件改善／恶化反映出口价格顺风。这是同期状态而非预测 — 详见下方叠加面板。') }}</div>
+          {{ help('Commodity strength plus a firm CAD usually helps Canada. This is current context, not a forecast.', '商品走强且加元坚挺通常利好加拿大。这是当前背景，非预测。') }}</div>
         <span class="v-chip {{ 'tone-up' if ov.state=='Risk-on' else ('tone-down' if ov.state=='Risk-off' else '') }}">{{ td(ov.state or 'unknown') }}</span>
         <span class="v-mean">{% if ov.terms_of_trade %}{{ t('terms of trade', '贸易条件') }} {{ td(ov.terms_of_trade) }}{% else %}{{ t('oil · gold · CAD', '原油 · 黄金 · 加元') }}{% endif %}</span>
       </div>
       <div class="vital">
         <div class="v-top"><span class="v-label">{{ t('AGREEMENT', '一致度') }}</span>
-          {{ help('How many of the underlying indicators point the same way. Mixed (&lt;30%) = expect chop, size down. Solid (&gt;45%) = the regime call is well-supported.', '底层指标中有多少指向同一方向。分歧（&lt;30%）= 预期震荡，缩小仓位。扎实（&gt;45%）= 周期判断有充分支撑。') }}</div>
+          {{ help('How many inputs agree. Low agreement means choppy signals.', '有多少输入方向一致。一致度低代表信号较乱。') }}</div>
         <span class="v-num num-lg">{{ '%.0f'|format(latest.confidence*100) }}<small>%</small></span>
         <span class="v-meter" style="--p:{{ (latest.confidence*100)|round|int }}%;--mc:{{ 'var(--up)' if latest.confidence>=0.45 else ('var(--warn)' if latest.confidence>=0.30 else 'var(--down)') }}"></span>
       </div>
@@ -394,7 +396,7 @@
 {% set ov = overlay or {} %}
 <div class="panel">
   <h2>{{ t('Commodity / CAD / BoC-vs-Fed overlay', '大宗商品／加元／央行-美联储 叠加') }}
-    {{ help('The single most important high-frequency read for the TSX: a concurrent commodity-and-currency risk gauge (WTI oil, gold, copper/gold, USD/CAD, S&P 500, VIX, DXY). Risk-on = commodities firm + CAD strong + US equity up. A CONCURRENT state, not a forecast; not yet calibrated to TSX forward returns — read as context.', 'TSX 最重要的高频读数：同期的大宗商品与货币风险计（WTI 原油、黄金、铜金比、美元兑加元、标普500、VIX、美元指数）。风险偏好＝大宗坚挺＋加元走强＋美股上行。这是同期状态而非预测；尚未对 TSX 前瞻收益做校准 — 作为背景阅读。') }}
+    {{ help('Fast read for the TSX: commodities, CAD, US risk appetite and volatility. Context only.', 'TSX 快速读数：商品、加元、美股风险偏好与波动率。仅作背景。') }}
   </h2>
   <div class="row" style="gap:18px">
     <span class="riskbig risk-{{ (ov.state or 'unknown')|lower|replace('-','') }}">{{ td(ov.state or 'unknown') }}</span>
@@ -423,7 +425,7 @@
 {% if curve_chart %}
 <div class="panel">
   <h2>{{ t('Bank of Canada rate path & GoC curve', '央行利率路径与加债收益率曲线') }}
-    {{ help('BoC policy (overnight) rate and the 2y / 10y Government of Canada benchmark yields. The 2s10s slope and the gap to the policy rate frame how restrictive policy is and whether the curve is steepening (often an easing tell).', '央行政策（隔夜）利率与 2 年／10 年加拿大政府基准债收益率。2s10s 斜率及其与政策利率的差距，反映政策的紧缩程度与曲线是否变陡（常为宽松信号）。') }}
+    {{ help('Shows BoC policy and the 2y/10y Canada yield curve.', '显示加央行政策利率与加拿大2年/10年曲线。') }}
   </h2>
   {{ curve_chart | safe }}
 </div>
@@ -440,7 +442,7 @@
 <!-- ===== Sector rotation ===== -->
 <div class="panel">
   <h2>{{ t('Sector rotation — TSX sector ETFs', '板块轮动 — TSX 板块 ETF') }}
-    {{ help('Each Canadian sector ETF ranked by relative strength vs the S&P/TSX Composite, with its own cycle/ladder state and multi-timeframe momentum. Energy, Financials, Materials & Gold dominate the index.', '每个加拿大板块 ETF 按相对标普/TSX 综合指数的相对强度排名，并附自身的周期／阶梯状态与多周期动量。能源、金融、材料与黄金主导该指数。') }}
+    {{ help('Canadian sectors ranked by strength vs the TSX, with trend and cycle state.', '加拿大板块按相对 TSX 强弱排序，并显示趋势与周期状态。') }}
   </h2>
   <div class="cards">
     {% for c in sectors %}
@@ -468,10 +470,10 @@
 <div class="panel">
   <h2>{{ t('What to act on — sector entry timing', '可执行 — 板块入场时机') }}</h2>
   <div class="ab">
-    {% set abmap = [('buy_now','✅ '+('立即买入' if False else 'Buy now'),'立即买入'), ('buy_soon','⏳ Buy soon','即将买入'), ('take_profits','💰 Take profits','止盈'), ('hold','✋ Hold','持有'), ('avoid','🚫 Avoid','回避')] %}
+    {% set abmap = [('buy_now','✅ '+('立即买入' if False else 'Buy now'),'立即买入'), ('buy_soon','⏳ Buy soon','即将买入'), ("on_the_run", "🏃 ON THE RUN — don't chase", '顺势运行 — 勿追高'), ('take_profits','💰 Take profits','止盈'), ('hold','✋ Hold','持有'), ('avoid','🚫 Avoid','回避')] %}
     {% for key, en, zh in abmap %}
-    {% set items = actions[key] %}
-    <div class="abcol">
+    {% set items = actions.get(key, []) %}
+    <div class="abcol ab-{{ key }}">
       <h3>{{ t(en, zh) }} <span class="muted">({{ items|length }})</span></h3>
       {% for it in items %}<div class="it">{{ td(it.name) }} <span class="muted small">{{ it.ticker }}</span></div>{% endfor %}
       {% if not items %}<div class="it muted">—</div>{% endif %}
@@ -501,19 +503,19 @@
 <div class="panel">
   <h2>{{ t('⚡ Standout TSX names — ripe-list screen', '⚡ 突出的 TSX 个股 — 成熟清单筛选') }}
     {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('bottoming and turning up (not still falling)', '筑底并开始转向（而非仍在下跌）') }}</span>{% endif %}
-    {{ help('How the list is ordered: first we keep names that are bottoming and starting to turn up — not ones still falling — then we put the ones you can buy today ahead of those still setting up, and sort each group by a momentum screen. The small #1, #2… is only the order within a group, not a score or a probability.', '榜单排序方式：先保留正在筑底、开始转向的个股（而非仍在下跌的），再把“今天就能买”的排在“仍在蓄势”的前面，然后在每组内按动量筛选排序。小徽章 #1、#2… 只是组内顺序，不是评分或概率。') }}
+    {{ help('Ranks bottoming TSX names: buyable now first, then names still setting up. # is order, not probability.', '排列正在筑底的 TSX 个股：可买的在前，仍在蓄势的在后。# 是顺序，不是概率。') }}
   </h2>
   {# ===== ONE desk-header "what this desk is / isn't" block (§7.2 / §7.3) — consolidates
      the caveat museum (the old per-page repetitions are DELETED; the tier badge lives on
      each card). Bilingual. ===== #}
   <div class="desk-hdr">
-    <p class="dh-is"><span class="l-en">A shortlist of TSX names that look ready — sorted by how buyable they are right now, with a public scoreboard below that grades every call.</span><span class="l-zh">一份看起来已就绪的 TSX 个股短名单 — 按“当前可买程度”排序，下方附公开记分牌，对每次入选前瞻评分。</span></p>
-    <p class="dh-isnt"><span class="l-en">Not a guaranteed buy list. The ranking is a screen we're still testing, so the #1, #2… is just an order, not a score. Educational context, not personal advice.</span><span class="l-zh">并非稳赚的买入清单。此排名是仍在检验中的筛选，因此 #1、#2… 只是顺序、而非评分。仅为教育性背景，非个人投资建议。</span>{{ help('Technical: the C7 momentum keystone test came back all-ACCRUE in the July 2026 phase-0 run, so the 0-100 composite score is suppressed and the board shows a within-group order instead. The momentum leg is FDR-stable but DSR-short — a real screen, not yet a validated edge. Re-test January 2027.', '技术说明：C7 动量关键测试在 2026 年 7 月 Phase-0 全部为 ACCRUE，故 0-100 综合评分被抑制，榜单改为显示组内顺序。动量腿通过 FDR 但 DSR 不足 — 是真实筛选器，尚非经验证优势。2027 年 1 月复测。') }}</p>
+    <p class="dh-is"><span class="l-en">A short list of TSX names that look closest to ready.</span><span class="l-zh">一份最接近就绪的 TSX 个股短名单。</span></p>
+    <p class="dh-isnt"><span class="l-en">Not a guaranteed buy list. The # is just the screen order.</span><span class="l-zh">不是保证买入清单。# 只是筛选顺序。</span>{{ help('The momentum screen is still being tested, so scores are hidden and only order is shown.', '动量筛选仍在检验中，所以隐藏分数，只显示顺序。') }}</p>
     {# CA2: CONFLUENCE stat — make a zero-cross tape VISIBLE. Counts board names with a
        FRESH MACD-2D × StochRSI-3D confluence buy TODAY (r.signal.tier). "0 of N" reads
        honestly when nothing crossed, rather than a silent all-None board. #}
     {% if setups.confluence %}
-    <p class="dh-conf" data-tip-en="A board name is a confluence BUY today only when its MACD-2D × StochRSI-3D just crossed up fresh (signal_gate tier T1–T4). Most tapes have zero — that is normal and now visible, not hidden." data-tip-zh="仅当 MACD-2D × StochRSI-3D 今日新鲜金叉（signal_gate 层级 T1–T4）时，该股才算今日汇合买入。多数行情为零 — 属正常且现已可见。">
+    <p class="dh-conf" data-tip-en="Counts names with a fresh multi-timeframe buy cross today. Zero is normal." data-tip-zh="统计今日出现新鲜多周期买入金叉的个股。为零很正常。">
       <span class="l-en">Confluence: <b class="{{ 'pos' if setups.confluence.crosses > 0 else 'neg' }}">{{ setups.confluence.crosses }}</b> buyable cross{{ '' if setups.confluence.crosses == 1 else 'es' }} today of {{ setups.confluence.board }} board names{% if setups.confluence.crosses == 0 %} — no fresh entry trigger on this tape{% endif %}.</span>
       <span class="l-zh">汇合：{{ setups.confluence.board }} 只榜单个股中今日有 <b class="{{ 'pos' if setups.confluence.crosses > 0 else 'neg' }}">{{ setups.confluence.crosses }}</b> 只出现可买金叉{% if setups.confluence.crosses == 0 %} — 本行情无新鲜入场触发{% endif %}。</span>
     </p>
@@ -578,7 +580,7 @@
       <div class="row" style="gap:8px">
         {# BRANCH B: composite 0-100 chip is SUPPRESSED; a small rank pill takes its place.
            The pill is a within-group order (#1, #2…), NOT a score/probability. #}
-        <span class="rankpill" data-tip-en="Within-group rank — NOT a score. Ordered by the residual-momentum SCREEN (accruing). See the board header for the ripe-list order." data-tip-zh="组内排名 — 非评分。按残差动量筛选（待验证）排序。榜单顺序见页首说明。">#{{ s.board_pos }}</span>
+        <span class="rankpill" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。">#{{ s.board_pos }}</span>
         <a href="canada_stock.html#{{ s.ticker }}"><b>{{ s.name or s.ticker }}</b></a>
         <span class="muted small">{{ s.ticker }}</span>
         <span style="flex:1"></span>
@@ -588,7 +590,7 @@
          (accruing) + insider cluster + entry window — built from fields already on the row. #}
       {% if s.lead_en %}<p class="nb-lead"><span class="l-en">{{ s.lead_en }}</span><span class="l-zh">{{ s.lead_zh or s.lead_en }}</span></p>{% endif %}
       <div class="row small muted" style="gap:10px; margin:5px 0">
-        {% if s.alpha is not none %}<span data-tip-en="Residual-momentum SCREEN z — a screen, NOT a validated composite (C7 phase-0: ACCRUE)." data-tip-zh="残差动量筛选 z — 是筛选器而非经验证综合分（C7 Phase-0：ACCRUE）。">{{ t('mom screen', '动量筛选') }} <b class="{{ 'pos' if s.alpha>=0 else 'neg' }}">{{ '%+.2f'|format(s.alpha) }}</b></span>{% endif %}
+        {% if s.alpha is not none %}<span data-tip-en="Momentum screen reading. Not a validated score." data-tip-zh="动量筛选读数。不是经验证评分。">{{ t('mom screen', '动量筛选') }} <b class="{{ 'pos' if s.alpha>=0 else 'neg' }}">{{ '%+.2f'|format(s.alpha) }}</b></span>{% endif %}
         {% if s.sector_rank %}<span>#{{ s.sector_rank }}/{{ s.sector_n }} {{ td(s.sector) }}</span>{% endif %}
         {% if s.off_high is not none %}<span>{{ '%.0f'|format(s.off_high) }}% {{ t('off high', '距高点') }}</span>{% endif %}
       </div>
@@ -603,15 +605,15 @@
            so the reader sees the gate RAN and found nothing, not a missing badge. #}
         {% set _sig = s.signal %}
         {% if _sig and _sig.tier %}
-        <span class="nb-vchip gate-tier gt-{{ _sig.tier|lower }}" data-tip-en="Confluence gate {{ _sig.tier }}{% if _sig.sub %} ({{ _sig.sub }}){% endif %} — a FRESH MACD-2D × StochRSI-3D buy cross fired today (signal_gate cascade). T1 = master/held take · T4 = earliest 2D-early. This is the entry-trigger tier, separate from the accruing momentum screen." data-tip-zh="汇合门槛 {{ _sig.tier }} — 今日出现新鲜 MACD-2D × StochRSI-3D 买入金叉（signal_gate 级联）。T1 = 主/持有 · T4 = 最早 2D。这是入场触发层级，独立于累积中的动量筛选。">🎯 {{ _sig.tier }}{% if _sig.sub %} · {{ _sig.sub }}{% endif %}</span>
+        <span class="nb-vchip gate-tier gt-{{ _sig.tier|lower }}" data-tip-en="{{ _sig.tier }}: fresh multi-timeframe buy cross today." data-tip-zh="{{ _sig.tier }}：今日新鲜多周期买入金叉。">🎯 {{ _sig.tier }}{% if _sig.sub %} · {{ _sig.sub }}{% endif %}</span>
         {% elif _sig %}
-        <span class="nb-vchip gate-none" data-tip-en="Confluence gate ran — no fresh MACD-2D × StochRSI-3D buy cross on this name today ({{ _sig.reason or 'no fresh entry' }}). It's on the ripe-list SCREEN, but there is no entry trigger yet. Wait for the cross, don't chase." data-tip-zh="汇合门槛已运行 — 今日该股无新鲜 MACD-2D × StochRSI-3D 买入金叉（{{ _sig.reason or '无新鲜入场' }}）。它在成熟清单筛选中，但尚无入场触发。等待金叉，勿追。">○ {{ t('no confluence cross', '无汇合金叉') }}</span>
+        <span class="nb-vchip gate-none" data-tip-en="No fresh entry cross today. Wait; don't chase." data-tip-zh="今日无新鲜入场金叉。等待，勿追。">○ {{ t('no confluence cross', '无汇合金叉') }}</span>
         {% endif %}
-        <span class="nb-vchip ev-accrue" data-tip-en="Momentum prior phase-0 2026-07: FDR-stable (q=0.0002 on the names panel) but DSR-short (0.37<0.90) and split-half not fully stable — a real screen, not a validated edge. Re-test 2027-01 (reports/c7-canada-momentum-phase0.md)." data-tip-zh="动量先验 Phase-0 2026-07：通过 FDR（个股面板 q=0.0002），但 DSR 不足（0.37<0.90）且拆半不完全稳定 — 是真实筛选器而非经验证优势。2027-01 复测。">{{ t('momentum screen · unproven', '动量筛选 · 未验证') }}</span>
-        {% if s.oil_tailwind %}<span class="nb-vchip ev-oil" data-tip-en="C1 phase-0: oil→XEG is the one ACCRUE (HAC t +2.75, FDR-pass, DSR-short; reports/c1-canada-commodity-phase0.md); gold/copper NO-GO. Fires only when the overlay oil factor is risk-on AND this name loads primarily on oil." data-tip-zh="C1 Phase-0：油→XEG 是唯一 ACCRUE（HAC t +2.75、通过 FDR、DSR 不足）；金/铜 NO-GO。仅当叠加油因子为风险偏好且该股主要负荷油时触发。">🛢 {{ t('oil tailwind', '油价顺风') }}</span>{% endif %}
-        {% if s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0 %}<span class="nb-vchip ev-insider" data-tip-en="Company insiders' own trades over the last {{ s.insider.window_days }} days: {{ s.insider.n_buys }} buys vs {{ s.insider.n_sells }} sells — a net buying signal. Shown as supporting context only; it does not affect the ranking." data-tip-zh="公司内部人在过去 {{ s.insider.window_days }} 天的交易：{{ s.insider.n_buys }} 笔买入 vs {{ s.insider.n_sells }} 笔卖出 — 净买入信号。仅作辅助参考，不影响排名。">👤 {{ t('insider buying', '内部人买入') }} {{ s.insider.n_buys }}/{{ s.insider.n_sells }}</span>{% endif %}
-        {% if s.earnings and s.earnings.days_to is defined and s.earnings.days_to is not none and s.earnings.days_to <= 21 %}<span class="nb-vchip ev-earn" data-tip-en="Next earnings report {{ s.earnings.next_date }} ({{ s.earnings.days_to }} days out) — a scheduled catalyst / volatility event. Context for timing, not a rank input." data-tip-zh="下次财报 {{ s.earnings.next_date }}（还有 {{ s.earnings.days_to }} 天）— 计划中的催化剂／波动事件。择时背景，非排名输入。">📅 {{ t('reports in', '财报还有') }} {{ s.earnings.days_to }}{{ t('d', '天') }}</span>{% endif %}
-        {% if s.extended %}<span class="nb-vchip vf-exp" data-tip-en="Extension log-and-grade — this name is stretched vs its 200d line (a risk-placement lens, NOT rank-affecting; phase-0 showed freshness does not cut drawdown)." data-tip-zh="扩张记录评分 — 该股相对 200 日线偏离（风险定位视角，不影响排名；Phase-0 显示新鲜度不减回撤）。">📐 {{ t('extended', '偏离') }}{% if s.extended.ext_z is not none %} z{{ '%+.1f'|format(s.extended.ext_z) }}{% endif %}</span>{% endif %}
+        <span class="nb-vchip ev-accrue" data-tip-en="Useful screen, still unproven as an edge." data-tip-zh="有用筛选，但尚未证明为优势。">{{ t('momentum screen · unproven', '动量筛选 · 未验证') }}</span>
+        {% if s.oil_tailwind %}<span class="nb-vchip ev-oil" data-tip-en="Oil is a live tailwind for this name." data-tip-zh="油价对该股形成当前顺风。">🛢 {{ t('oil tailwind', '油价顺风') }}</span>{% endif %}
+        {% if s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0 %}<span class="nb-vchip ev-insider" data-tip-en="Insiders have been net buyers. Context only." data-tip-zh="内部人近期净买入。仅作背景。">👤 {{ t('insider buying', '内部人买入') }} {{ s.insider.n_buys }}/{{ s.insider.n_sells }}</span>{% endif %}
+        {% if s.earnings and s.earnings.days_to is defined and s.earnings.days_to is not none and s.earnings.days_to <= 21 %}<span class="nb-vchip ev-earn" data-tip-en="Earnings soon. Timing context only." data-tip-zh="财报将近。仅择时背景。">📅 {{ t('reports in', '财报还有') }} {{ s.earnings.days_to }}{{ t('d', '天') }}</span>{% endif %}
+        {% if s.extended %}<span class="nb-vchip vf-exp" data-tip-en="Stretched vs trend. Chasing risk is higher." data-tip-zh="相对趋势偏高。追高风险更大。">📐 {{ t('extended', '偏离') }}{% if s.extended.ext_z is not none %} z{{ '%+.1f'|format(s.extended.ext_z) }}{% endif %}</span>{% endif %}
       </div>
       {% if s.spark_svg %}{{ s.spark_svg | safe }}{% endif %}
       {% if c %}
@@ -664,7 +666,7 @@
            rank effect. Presence-guarded (self-gates to None outside don't-chase territory). #}
         {% set _pz = s.pullback_zone %}
         {% if _pz and _pz.levels %}
-        <div class="nbe-zone nbe-pull" data-tip-en="Pullback zone (log-and-grade, not a rank input) — {{ _pz.headline_en }}" data-tip-zh="回撤区（记录评分，非排名输入）— {{ _pz.headline_zh }}">
+        <div class="nbe-zone nbe-pull" data-tip-en="Possible pullback entry area." data-tip-zh="可能的回撤入场区。">
           <span class="nbe-lbl">{% if _pz.stance == 'chase' %}{{ t('Don\'t chase — reset', '勿追 — 回撤至') }}{% else %}{{ t('Pullback zone', '回撤区') }}{% endif %}</span>
           <span class="nbe-px">{% for lv in _pz.levels %}${{ '%.2f'|format(lv.price) }}{% if lv.pull_pct is not none %} <span class="muted">({{ '%+.1f'|format(lv.pull_pct) }}%)</span>{% endif %}{{ '' if loop.last else ' · ' }}{% endfor %}</span>
         </div>
@@ -677,11 +679,11 @@
       <div class="nb-vf">
         {% set _hd = s.hold %}
         {% if _hd and _hd.state %}
-        <span class="nb-vchip {{ 'vf-coil' if _hd.state == 'intact' else ('vf-up' if _hd.state == 'launched' else 'vf-down') }}" data-tip-en="HOLD tracker (engine/hold, log-and-grade) — basing state vs the anchor {{ _hd.anchor }} ({{ _hd.anchor_src }}): {{ _hd.days_basing }}d basing, invalidation ${{ _hd.invalidation }}{% if _hd.provisional %} · provisional{% endif %}. Context for a held position, NOT a rank input." data-tip-zh="HOLD 跟踪（engine/hold，记录评分）— 相对锚点 {{ _hd.anchor }} 的筑底状态：{{ _hd.days_basing }} 天筑底，失效价 ${{ _hd.invalidation }}。持仓背景，非排名输入。">{% if _hd.state == 'intact' %}🪨 {{ t('basing', '筑底中') }} {{ _hd.days_basing }}d{% elif _hd.state == 'launched' %}🚀 {{ t('launched', '已启动') }}{% else %}💔 {{ t('base broken', '筑底破位') }}{% endif %}</span>
+        <span class="nb-vchip {{ 'vf-coil' if _hd.state == 'intact' else ('vf-up' if _hd.state == 'launched' else 'vf-down') }}" data-tip-en="Tracks whether the base is intact, launched, or broken." data-tip-zh="跟踪筑底是否完好、启动或破位。">{% if _hd.state == 'intact' %}🪨 {{ t('basing', '筑底中') }} {{ _hd.days_basing }}d{% elif _hd.state == 'launched' %}🚀 {{ t('launched', '已启动') }}{% else %}💔 {{ t('base broken', '筑底破位') }}{% endif %}</span>
         {% endif %}
         {% set _dt = s.dt_contra %}
         {% if _dt and _dt.state and _dt.state != 'neutral' %}
-        <span class="nb-vchip {{ 'vf-down' if _dt.state == 'fade' else 'vf-coil' }}" data-tip-en="DannyTrades contrarian (log-and-grade, not a rank input) — {{ _dt.headline.en if _dt.headline else _dt.state }}. Extension band (Spearman −0.88) + whale-fade; the vol-compression / crowding read." data-tip-zh="DannyTrades 逆向（记录评分，非排名输入）— {{ _dt.headline.zh if _dt.headline else _dt.state }}。">{% if _dt.state == 'fade' %}🌡 {{ t('crowded — fade', '拥挤 — 谨防回吐') }}{% else %}💧 {{ t('washed — bounce', '超卖 — 反弹') }}{% endif %}</span>
+        <span class="nb-vchip {{ 'vf-down' if _dt.state == 'fade' else 'vf-coil' }}" data-tip-en="Crowding or washout context." data-tip-zh="拥挤或洗盘背景。">{% if _dt.state == 'fade' %}🌡 {{ t('crowded — fade', '拥挤 — 谨防回吐') }}{% else %}💧 {{ t('washed — bounce', '超卖 — 反弹') }}{% endif %}</span>
         {% endif %}
       </div>
       {% endif %}
@@ -690,14 +692,14 @@
       {% set _rs = s.risk_sizing %}
       {% if _rs and _rs.size_mult is not none %}
       <div class="nb-bot">
-        <span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Suggested position size — own more of the calm names and less of the volatile ones. This ×{{ _rs.size_mult }} scales a normal position (forecast volatility {{ _rs.vol_ann_pct }}%/yr). It's about HOW MUCH to own, separate from whether to own it and when to buy." data-tip-zh="建议仓位大小 — 平静的标的多持有、波动大的少持有。此 ×{{ _rs.size_mult }} 在常规仓位上缩放（预测年化波动 {{ _rs.vol_ann_pct }}%）。这是“持有多少”，与“是否持有”“何时买入”相互独立。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>
+        <span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Suggested size: less for volatile names, more for calmer names." data-tip-zh="建议仓位：波动大少配，波动小多配。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>
       </div>
       {% endif %}
       {# volatility black hole (vol_squeeze) chip #}
       {% set _vs = c.vol_squeeze %}
       {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
       <div class="nb-vf">
-        <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }}" data-tip-zh="波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
+        <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="{{ 'Volatility is compressed; a move may be setting up.' if _vs.state=='COILED' else 'Volatility has already expanded; quiet entry may be gone.' }}" data-tip-zh="{{ '波动压缩，可能在酝酿行情。' if _vs.state=='COILED' else '波动已扩张，安静入场点可能已过。' }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
       </div>{% endif %}
       {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
       {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
@@ -718,11 +720,11 @@
         <span class="wg-tk">{{ w.ticker }}{% if wc and wc.score is not none %} <span class="muted small" style="font-weight:600">· {{ wc.score }}</span>{% endif %} <span class="muted small">{{ t('mom', '动量') }} {{ '%+.2f'|format(w.alpha) }}</span></span>
         <span class="wg-v">{{ w.name }}{% if wc and wc.verdict %} — <span class="l-en">{{ wc.verdict }}</span><span class="l-zh">{{ wc.verdict_zh or wc.verdict }}</span>{% endif %}</span>
         {% if w.watch_reason == 'knife' %}
-        <span class="wg-knife-chip" data-tip-en="Weekly timeframe is still FALLING — a strong momentum screen on a name whose higher timeframe hasn't turned. Held OUT of the entry groups (a falling knife keeps falling; bottoming-alignment gate, not a scored seam)." data-tip-zh="周线级别仍在下行 — 动量筛选强但高周期尚未转向。被排除在入场组之外（接飞刀会继续下跌；筑底共振门槛，非评分 seam）。">
+        <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
           <span class="l-en">🔻 weekly still falling — wait for the turn</span><span class="l-zh">🔻 周线仍下行 — 等待转向</span>
         </span>
         {% else %}
-        <span class="wg-blk-chip" data-tip-en="Bottoming-alignment gate blocked the entry: {{ w.block_reason or 'no fresh multi-timeframe turn yet' }}. Strong screen, no base yet." data-tip-zh="筑底共振门槛阻止入场：{{ w.block_reason_zh or w.block_reason or '尚无新鲜的多周期转向' }}。筛选强但尚未筑底。">
+        <span class="wg-blk-chip" data-tip-en="Strong screen, but entry is blocked until a base forms." data-tip-zh="筛选较强，但要等筑底后才可入场。">
           <span class="l-en">⏳ entry blocked — awaiting a base</span><span class="l-zh">⏳ 入场受阻 — 等待筑底</span>
         </span>
         {% endif %}
@@ -753,7 +755,7 @@
   {% if breadth %}
   <div class="panel">
     <h2>{{ t('Market breadth' if breadth.full else 'Large-cap breadth', '市场广度' if breadth.full else '大盘宽度') }}
-      {{ help('Breadth across the full S&P/TSX Composite — how many of the ~' ~ breadth.n_members ~ ' names are advancing, how many hold above their 50/200-day lines, and net new highs. A strong index riding on a shrinking number of stocks is fragile — broad participation confirms a move, thinning breadth is an early warning.' if breadth.full else 'Computed from the curated TSX large-cap constituents (not the full Composite). % above the 50/200-day average, new highs vs lows, and the advance/decline trend.', '覆盖完整标普/TSX 综合指数 — 约 ' ~ breadth.n_members ~ ' 只成分中有多少在上涨、多少守在 50／200 日均线上方，以及净新高。指数走强却只靠越来越少的股票支撑则脆弱 — 广泛参与确认走势，广度变薄是早期预警。' if breadth.full else '基于精选的 TSX 大盘成分股计算（非完整综合指数）。50／200 日均线上方占比、新高对新低，以及涨跌线趋势。') }}
+      {{ help('Shows how many TSX names are participating. Thin breadth makes rallies fragile.' if breadth.full else 'Large-cap participation: 50/200-day trend, new highs/lows, and advance/decline.', '显示有多少 TSX 个股参与行情。广度变薄则反弹更脆弱。' if breadth.full else '大盘股参与度：50/200日趋势、新高/新低与涨跌线。') }}
     </h2>
     <p class="{{ breadth.tone }}" style="margin:2px 0 10px; font-size:13px; line-height:1.5">
       {{ t('Participation looks', '参与度看起来') }}
@@ -791,7 +793,7 @@
 {% if housing %}
 <div class="panel">
   <h2>{{ t('Housing & household-debt context', '房地产与家庭债务背景') }}
-    {{ help('Real residential property prices (BIS via FRED). Canada carries among the highest household debt in the G7 and short mortgage-renewal cycles, so housing is a structural fragility the US engine does not weight as heavily. Display-only context.', '实际住宅地产价格（经 FRED 的 BIS 数据）。加拿大的家庭债务在 G7 中名列前茅、按揭续期周期短，因此房地产是结构性脆弱点，美国引擎对此权重远低。仅作背景展示。') }}
+    {{ help('Housing is a key Canada fragility because household debt and mortgage resets matter. Context only.', '住房是加拿大关键脆弱点，因为家庭债务和按揭续期很重要。仅作背景。') }}
   </h2>
   <div class="row" style="gap:18px">
     <div class="dial"><span class="lbl">{{ t('real house price idx', '实际房价指数') }}</span><b>{{ housing.level }}</b></div>
@@ -816,7 +818,7 @@
 {% endif %}
 {% endif %}{# /macro-only: housing + data health #}
 
-<p class="muted small">{{ t('Generated', '生成于') }} {{ built }} · {{ t('Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.', '无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。') }}</p>
+<p class="muted small">{{ t('Generated', '生成于') }} {{ built }}</p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>

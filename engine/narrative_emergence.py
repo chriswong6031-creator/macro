@@ -16,11 +16,9 @@ It produces, per forming narrative:
   * an honest caveat block + a "hype = late" caution when an IPO wave / stretched cohort or
     elevated macro attention is present.
 
-HONEST BY CONSTRUCTION. Detection is noisy (~half of flags are real, persistent themes) and
-the early-entry return edge is ~0 and negatively skewed. So the score ranks "how clearly a
-narrative is FORMING", not "how much it will pay". Nothing here is a buy list, nothing feeds
-a score/allocation, and the mechanical model never reads it. Pure/additive — returns None on
-shortfall, never raises.
+HONEST BY CONSTRUCTION. Detection is noisy and early entries have no reliable return edge.
+The score ranks cluster formation, not expected payoff. Nothing here is a buy list or feeds
+allocation. Pure/additive — returns None on shortfall, never raises.
 """
 from __future__ import annotations
 
@@ -92,9 +90,8 @@ def _attention_backdrop(root: Path) -> dict | None:
         "dominant": mn.get("dominant_themes")[:4],
         "window_days": mn.get("window_days"),
         "unscheduled_share": mn.get("unscheduled_share"),
-        "note_en": "Macro/policy/geo news flow right now — coincident backdrop, NOT a theme trigger. "
-                   "Heavy attention RAISES the bar (hype = late), it does not lower it.",
-        "note_zh": "当前宏观／政策／地缘新闻流 — 同步背景，而非主题触发。关注越热门，门槛越高（炒作=偏晚），不会降低门槛。",
+        "note_en": "Current macro, policy and geopolitics context. High attention can mean crowded or late.",
+        "note_zh": "当前宏观、政策与地缘背景。关注度高可能代表拥挤或偏晚。",
     }
 
 
@@ -132,13 +129,12 @@ def _why(cand: dict) -> tuple[str, str]:
     chg = cand["cohesion_chg"]
     mom = cand["mom_window"]
     arrow = "tightening" if chg > 0 else "loosening"
-    en = (f"{cand['n']} names moving together (avg pairwise correlation {coh}%), co-movement "
-          f"{arrow} (+{chg:.2f} vs the prior window) — the signature of a narrative forming. "
-          f"Not yet in any basket (overlap {int(cand['basket_overlap']*100)}%). "
-          f"Cohort {('up' if mom>=0 else 'down')} {abs(mom)*100:.0f}% over the window.")
-    zh = (f"{cand['n']} 只个股同步运动（平均两两相关性 {coh}%），共动正在"
-          f"{'收紧' if chg>0 else '松动'}（较前一窗口 +{chg:.2f}）— 叙事正在成形的特征。"
-          f"尚未纳入任何篮子（重叠 {int(cand['basket_overlap']*100)}%）。"
+    en = (f"{cand['n']} names are moving together: {coh}% average correlation, co-movement "
+          f"{arrow} by {chg:.2f}. Basket overlap is {int(cand['basket_overlap']*100)}%; "
+          f"the group is {('up' if mom>=0 else 'down')} {abs(mom)*100:.0f}% over the window.")
+    zh = (f"{cand['n']} 只个股同步运动：平均相关性 {coh}%，共动"
+          f"{'收紧' if chg>0 else '松动'} {chg:.2f}。"
+          f"篮子重叠度 {int(cand['basket_overlap']*100)}%；"
           f"区间内组合{'上涨' if mom>=0 else '下跌'} {abs(mom)*100:.0f}%。")
     return en, zh
 
@@ -190,25 +186,21 @@ def _recommended(cand: dict, ext: dict, top_n: int = 5) -> tuple[list[dict], flo
 
 
 def _caveats(cand: dict, stretched_share: float, attention_aligned: bool) -> tuple[list, list]:
-    en = ["Detection is noisy — roughly half of flagged clusters become real, persistent themes.",
-          "Early-entry return edge is ≈0 and negatively skewed; this is a watchlist / "
-          "avoid-the-peak tool, never a front-run signal.",
-          "Recommended tickers are ranked by clean ENTRY (least-extended first), not by "
-          "expected return — they are where to LOOK, not what to buy."]
-    zh = ["检测有噪声 — 约半数被标注的集群最终会成为真实、持续的主题。",
-          "早期入场的回报优势≈0 且负偏；这是观察清单／避免追高的工具，绝非抢跑信号。",
-          "推荐个股按干净入场（最不拉伸者优先）排序，而非按预期回报 — 是该看哪里，而非买什么。"]
+    en = ["Noisy signal; many clusters fade.",
+          "Watchlist only, not a buy signal.",
+          "Ticker order favors cleaner entries, not higher expected return."]
+    zh = ["信号有噪声，许多集群会消退。",
+          "仅作观察清单，并非买入信号。",
+          "个股排序偏向更干净的入场点，而非更高预期回报。"]
     if cand.get("ipo_wave"):
-        en.append("A recent-IPO wave is present — hype tends to mark LATE, not early. Treat as a caution.")
-        zh.append("存在近期 IPO 潮 — 炒作往往标志偏晚而非偏早，视为警示。")
+        en.append("Recent IPO activity adds hype risk.")
+        zh.append("近期 IPO 活跃，炒作风险更高。")
     if stretched_share >= 0.4:
-        en.append(f"{int(stretched_share*100)}% of the cohort is already stretched/parabolic — "
-                  "much of the move may be behind it.")
-        zh.append(f"{int(stretched_share*100)}% 的组合已处于拉伸／抛物状态 — 大部分涨幅可能已经发生。")
+        en.append(f"{int(stretched_share*100)}% of the group is already stretched.")
+        zh.append(f"{int(stretched_share*100)}% 的组合已经拉伸。")
     if attention_aligned:
-        en.append("This cluster's sector sits under a currently-hot macro narrative — elevated "
-                  "attention RAISES the bar (late-entry risk).")
-        zh.append("该集群所属板块正处于当前热门的宏观叙事之下 — 关注升温抬高门槛（偏晚入场风险）。")
+        en.append("Macro attention is high; late-entry risk is higher.")
+        zh.append("宏观关注度较高，偏晚入场风险更高。")
     return en, zh
 
 
@@ -278,11 +270,8 @@ def compute_emergence(region: str = "us", root=None, min_score: float = 40.0) ->
             "attention": backdrop, "ai_watch": _ai_watch(root, region),
             "narratives": narratives,
             "verdict": "display_only_forming_narratives",
-            "note_en": ("Narratives our models see FORMING — coherent, tightening groups of names "
-                        "not yet in any basket. Display-only and noisy: a watchlist / avoid-the-peak "
-                        "lens, never a buy list. Recommended tickers are ranked by clean entry."),
-            "note_zh": ("我们的模型看到正在成形的叙事 — 共动收紧、尚未纳入任何篮子的连贯个股群。"
-                        "仅供展示且有噪声：观察清单／避免追高，绝非买入清单。推荐个股按干净入场排序。"),
+            "note_en": "Emerging clusters not yet in a basket. Use as a watchlist, not a buy list.",
+            "note_zh": "尚未纳入篮子的成形集群。用于观察清单，并非买入清单。",
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("narrative_emergence[%s] failed: %s", region, e)

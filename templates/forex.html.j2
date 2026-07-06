@@ -13,7 +13,7 @@
 <title>Forex Vector — {{ as_of }}</title>
 {% set seo_title = 'Forex Vector — US Dollar Regime and FX Transmission | Mastermind' %}{% set seo_desc = 'An FX hub tracking the US dollar regime, major currency crosses and how currency moves transmit into equities and macro.' %}{% set seo_path = 'forex.html' %}
 {% include "_seo_head.html.j2" %}
-<script src="plotly-2.32.0.min.js"></script>
+{% include '_plotly_head.html.j2' %}
 <style>
 :root{
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r1:{{C.r1}}; --r2:{{C.r2}}; --r3:{{C.r3}};
@@ -98,6 +98,8 @@ html[data-theme="dark"] .fbar{background:#222732}
 .tl-type{flex:none;min-width:62px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
 .tl-asset{flex:none;min-width:66px;color:var(--muted);font-size:12px}
 .tl-head{color:var(--text)}
+.tl-ev.is-hidden,.tl-day.is-hidden{display:none}
+.tl-more{margin-top:10px;border:1px solid var(--grid);background:var(--panel);color:var(--text);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
 .sev-high .tl-type{color:var(--red)}.sev-medium .tl-type{color:#9a6a10}.sev-info .tl-type{color:var(--muted)}
 table.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
 table.tbl th,table.tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);text-align:right}
@@ -191,7 +193,7 @@ html[data-theme="dark"] .sbar{background:#222732}
 
 <div class="wrap">
   <div class="brand">💱 Forex <span class="gn">Vector</span></div>
-  <p class="lead">{{ t('A dollar-first currency board. The broad-dollar regime sits on top; each pair is scored on its move AFTER stripping the shared dollar beta, so the board is not one repeated dollar bet. Verdicts are RISK-CONTEXT, not trade calls.', '以美元为先的货币面板。广义美元格局置于顶部；每个货币对在剥离共同的美元贝塔后再评分，因此整个面板并非重复押注美元。结论为风险背景，而非交易建议。') }}
+  <p class="lead">{{ t('Dollar-first FX context. Each pair is scored after removing shared dollar beta, so the board is not one repeated USD trade. Context only, not trade calls.', '美元优先的外汇背景。每个货币对先剥离共同美元贝塔再评分，因此不是重复押注美元。仅作背景，非交易建议。') }}
   <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
 
   {# state-word -> (en, zh) maps for the desk chips #}
@@ -202,7 +204,7 @@ html[data-theme="dark"] .sbar{background:#222732}
 
   <!-- ===================== §01 · DOLLAR DESK ===================== -->
   <div class="section-h"><span class="sn">§01</span><h2>{{ t('Dollar Desk — the master variable', '美元桌 · 主控变量') }}</h2>
-    <span class="sh-sub">{{ t('the dollar routes ~89% of FX turnover and conditions commodities, equities, bonds & crypto', '美元承载约89%的外汇交易量，并影响大宗商品、股票、债券与加密货币') }}</span></div>
+    <span class="sh-sub">{{ t('the dollar sets the backdrop for FX and risk assets', '美元为外汇与风险资产设定背景') }}</span></div>
   <div class="grid cols-2" style="margin-bottom:14px">
     <div class="card">
       <h2>{{ t('Broad-dollar master · the dollar smile', '广义美元主控 · 美元微笑') }}</h2>
@@ -216,7 +218,7 @@ html[data-theme="dark"] .sbar{background:#222732}
       {% if desk and desk.lean %}
       {% set lc = 'supportive' if 'supportive' in desk.lean else ('soft' if 'soft' in desk.lean else 'mixed') %}
       <div style="margin-top:10px"><span class="desk-lean {{ lc }}">{{ t(desk.lean, desk.lean_zh) }}</span>
-        <span class="sub faint" style="margin-left:6px">{{ t('balance of context flags — a summary, not a score', '背景信号的平衡 — 仅为汇总，非评分') }}</span></div>
+        <span class="sub faint" style="margin-left:6px">{{ t('context summary, not a score', '背景汇总，非评分') }}</span></div>
       {% endif %}
       <div style="margin-top:12px">
         {% if dollar.favored %}<span class="sub">{{ t('Favored:', '受青睐：') }}</span>
@@ -231,19 +233,19 @@ html[data-theme="dark"] .sbar{background:#222732}
       </div>
       {% if dollar.dollar_day %}<span class="flag warn">⚑ {{ t('Dollar day — broad-$ move dominates; per-pair confidence is haircut.', '美元日 — 广义美元波动主导；各货币对信心已折减。') }}</span>{% endif %}
       {% if desk and desk.smile and desk.smile.triple_red %}<span class="tr-flag">⚑ {{ t('Triple-red — USD, equities & Treasuries falling together: the dollar is NOT acting as a haven.', '三红 — 美元、股票与国债同步下跌：美元未发挥避险作用。') }}</span>{% endif %}
-      <div class="sub" style="margin-top:12px">{{ t('The smile: the dollar tends to strengthen at BOTH ends — a US-led growth premium and a global risk-off haven bid — and weaken in the calm, synchronized-growth middle. This regime conditions every pair below.', '美元微笑：美元在两端都倾向走强 — 美国增长溢价与全球避险买盘 — 而在平静的同步增长中段走软。该格局影响下方每个货币对。') }}</div>
+      <div class="sub" style="margin-top:12px">{{ t('Dollar smile: USD can rise on US strength or global stress, and soften in calm synchronized growth.', '美元微笑：美元可因美国强势或全球压力而走强，在平静同步增长中走软。') }}</div>
     </div>
     <div class="card">
       <h2>{{ t('Broad dollar & risk-off composite', '广义美元与避险综合') }}</h2>
       {{ dollar.chart | safe }}
       {% if real_rate_chart %}<div style="margin-top:8px">{{ real_rate_chart | safe }}</div>
-      <div class="sub faint">{{ t('US 10y real yield is the dollar\'s structural anchor (rising real yields tend to support the USD — coincident, not a forecast).', '美国10年期实际收益率是美元的结构性锚（实际收益率上行通常支撑美元 — 同步关系，非预测）。') }}</div>{% endif %}
+      <div class="sub faint">{{ t('US 10y real yield is the dollar anchor; coincident, not a forecast.', '美国10年实际收益率是美元锚；同步关系，非预测。') }}</div>{% endif %}
     </div>
   </div>
 
   {% if desk %}
   <div class="card" style="margin-bottom:18px">
-    <h2>{{ t('Dollar signal stack', '美元信号栈') }} <span class="faint">· {{ t('all display-only context — never scored', '皆为展示性背景 — 从不评分') }}</span></h2>
+    <h2>{{ t('Dollar signal stack', '美元信号栈') }} <span class="faint">· {{ t('context only', '仅作背景') }}</span></h2>
     <div class="desk-grid">
       {% if desk.real_rate %}{% set r = desk.real_rate %}
       <div class="desk-tile">
@@ -309,7 +311,7 @@ html[data-theme="dark"] .sbar{background:#222732}
   <!-- ===================== §1.5 · FX STRESS & REGIME RADAR ===================== -->
   {% if regime and regime.scenarios %}
   <div class="section-h"><span class="sn">§1.5</span><h2>{{ t('FX Stress & Regime Radar', 'FX压力与格局雷达') }}</h2>
-    <span class="sh-sub">{{ t('the joint velocity + level configuration of currency moves → named macro scenarios with an empirical historical frequency', '货币速度+水平的联合配置 → 命名宏观情景及经验历史频率') }}</span></div>
+    <span class="sh-sub">{{ t('currency speed + levels mapped to named stress setups', '货币速度与水平映射到压力情景') }}</span></div>
   <div style="margin:2px 0 12px"><span class="lead-tag coincident">{{ t('coincident', '同步') }}</span>
     <span class="lead-tag context">{{ t('empirical base rate · display-only / never scored', '经验基率 · 仅供展示/从不评分') }}</span>
     {% if regime.dominant %}<span class="sub" style="margin-left:8px">{{ t('Dominant now:', '当前主导：') }}
@@ -464,7 +466,7 @@ html[data-theme="dark"] .sbar{background:#222732}
       {% endfor %}
     </div>
     {% endfor %}
-    <div class="sub faint" style="margin-top:8px">{{ t('Each currency\'s average appreciation against all the others over the window (bars, standardized), with its move vs USD on the right. Built from the dollar-orthogonalized pair residuals. DESCRIPTIVE trailing trend — green never means buy. EM/managed currencies (CNH, MXN, BRL) are noisier.', '每种货币在该周期内相对其他所有货币的平均升值（柱状，标准化），右侧为其相对美元的变动。基于剥离美元的货币对残差构建。描述性近端趋势 — 绿色绝不代表买入。新兴/受管理货币（离岸人民币、墨西哥比索、巴西雷亚尔）噪声更大。') }}</div>
+    <div class="sub faint" style="margin-top:8px">{{ t('Trailing strength vs other currencies and vs USD. Descriptive trend only; green does not mean buy.', '相对其他货币与美元的近端强弱。仅描述趋势；绿色不代表买入。') }}</div>
   </div>
   {% endif %}
 
@@ -544,7 +546,7 @@ html[data-theme="dark"] .sbar{background:#222732}
         </div>
         {% endfor %}
         {% if p.verdict.headline %}<div class="sub" style="margin-top:6px"><span class="l-en">{{ p.verdict.headline }}</span><span class="l-zh">{{ p.verdict.headline_zh }}</span></div>{% endif %}
-        <div class="sub faint" style="margin-top:4px">{{ t('Pure technical confluence on the FX-calibrated cycle preset (measured ~35d daily / ~34wk intermediate cycle) — a tactical timing overlay, not a return-validated alpha.', '纯技术共振，采用外汇校准的周期预设（实测约35天日周期 / 约34周中期周期）— 战术择时叠加，非经收益验证的超额收益。') }}</div>
+        <div class="sub faint" style="margin-top:4px">{{ t('Technical timing overlay only; not return-validated alpha.', '仅为技术择时叠加，非经收益验证的阿尔法。') }}</div>
       </div>
       {% endif %}
 
@@ -580,7 +582,7 @@ html[data-theme="dark"] .sbar{background:#222732}
       {% endfor %}
       </tbody>
     </table>
-    <div class="sub faint" style="margin-top:8px">{{ t('Carry % = foreign minus US short rate (annualized). Carry/vol penalizes fragile high-vol carry. REER gap = real-effective rate vs its 5y mean (+ = rich → mean-reversion headwind). Carry has fat-tailed crash risk — see the honesty note below.', '套息 % = 外币减美国短端利率（年化）。套息/波动惩罚高波动的脆弱套息。REER偏离 = 实际有效汇率相对5年均值（+ = 偏贵 → 均值回归阻力）。套息具肥尾崩盘风险 — 见下方诚信说明。') }}</div>
+    <div class="sub faint" style="margin-top:8px">{{ t('Carry is foreign minus US short rates. REER gap shows rich/cheap vs 5y history. Carry can crash in stress.', '套息为外币减美国短端利率。REER偏离显示相对5年历史的贵/便宜。套息在压力期可能崩盘。') }}</div>
   </div>
 
   <!-- ===================== §06 · INTERNATIONAL SCORECARDS ===================== -->
@@ -590,19 +592,19 @@ html[data-theme="dark"] .sbar{background:#222732}
     <span>{{ '%.2f'|format(m.sharpe) if m.sharpe is not none else '—' }}</span>
     <span class="sc-neg">{{ '%.0f'|format(m.maxdd) if m.maxdd is not none else '—' }}%</span></div>{% endmacro %}
   <div class="section-h"><span class="sn">§06</span><h2>{{ t('International scorecards', '国际记分卡') }}</h2>
-    <span class="sh-sub">{{ t('honest PIT backtests — risk premia with fat tails, not free alpha', '诚实的时点回测 — 带肥尾的风险溢价，非免费超额收益') }}</span></div>
+    <span class="sh-sub">{{ t('PIT backtests of risky premia, not free alpha', '风险溢价的时点回测，非免费阿尔法') }}</span></div>
   <div class="sc-grid">
     {% for c in scorecards %}
     <div class="sc-card">
       {% if c.key == 'carry' %}
         <div class="sc-name">{{ t('G10 carry basket', 'G10套息篮子') }}</div>
-        <div class="sc-thesis">{{ t('Long the highest-carry G10 currencies vs USD, short the lowest (vol-scaled, monthly). Carry harvests a REAL risk premium but crashes in risk-off — the Sharpe flatters; the drawdown and negative skew are the truth.', '做多套息最高的G10货币、做空最低者（按波动缩放，月度调仓）。套息是真实的风险溢价，但在避险时崩盘 — 夏普比率具误导性，回撤与负偏度才是真相。') }}</div>
+        <div class="sc-thesis">{{ t('Long high-carry G10, short low-carry. Real premium, but risk-off crashes matter more than Sharpe.', '做多高套息G10、做空低套息。是真实溢价，但避险崩盘比夏普更重要。') }}</div>
       {% elif c.key == 'haven' %}
         <div class="sc-name">{{ t('Risk-off haven basket', '避险货币篮子') }}</div>
-        <div class="sc-thesis">{{ t('The MIRROR of carry: long the havens (JPY, CHF) vs short the risk currencies (AUD, CAD, EM). It bleeds the carry differential as an insurance premium most of the time — but pays in risk-off. The calm-vs-stress split below is the whole point.', '套息的镜像：做多避险货币（日元、瑞郎）、做空风险货币（澳元、加元、新兴市场）。多数时候作为保险金消耗套息利差 — 但在避险时获利。下方的平静vs压力分解才是关键。') }}</div>
+        <div class="sc-thesis">{{ t('Mirror of carry: long havens, short risk currencies. Usually bleeds; pays during stress.', '套息的镜像：做多避险、做空风险货币。平时消耗，在压力期支付。') }}</div>
       {% elif c.key == 'dollar_trend' %}
         <div class="sc-name">{{ t('Dollar trend overlay', '美元趋势叠加') }}</div>
-        <div class="sc-thesis">{{ t('Long the dollar index when its 12-month trend is up, else flat. A crash-avoidance overlay vs buy & hold — NOT alpha (broad-dollar trend is weak and whippy).', '当美元指数12个月趋势向上时做多，否则空仓。相对买入持有的避险叠加 — 非超额收益（广义美元趋势弱且反复）。') }}</div>
+        <div class="sc-thesis">{{ t('Long DXY only when its 12-month trend is up. A drawdown filter, not alpha.', '仅在美元12个月趋势向上时做多。是回撤过滤器，非阿尔法。') }}</div>
       {% endif %}
       {% set fm = c.metrics.full %}
       <div class="sc-met">
@@ -639,7 +641,7 @@ html[data-theme="dark"] .sbar{background:#222732}
     {% for day in timeline %}
       <div class="tl-day">{{ day.daylabel }}</div>
       {% for e in day.events %}
-      <div class="tl-ev sev-{{ e.severity }}">
+      <div class="tl-ev sev-{{ e.severity }}" data-tl-event="1">
         <span class="tl-type">{{ e.label }}</span>
         <span class="tl-asset">{{ e.asset_label }}</span>
         <span class="tl-head"><span class="l-en">{{ e.headline }}</span><span class="l-zh">{{ e.headline_zh }}</span></span>
@@ -647,7 +649,8 @@ html[data-theme="dark"] .sbar{background:#222732}
       {% endfor %}
     {% endfor %}
     </div>
-    <div class="sub faint" style="margin-top:10px">{{ t('Deterministic daily state-change events (no intraday — FX has no hourly feed here). All context, not trade signals.', '确定性的每日状态变化事件（无日内 — 此处外汇无小时级数据）。皆为背景，非交易信号。') }}</div>
+    <button class="tl-more" type="button" data-open="{{ t('See more', '查看更多') }}" data-close="{{ t('Show less', '收起') }}">{{ t('See more', '查看更多') }}</button>
+    <div class="sub faint" style="margin-top:10px">{{ t('Daily state changes only. Context, not signals.', '仅日度状态变化。背景，非信号。') }}</div>
   </div>
   {% endif %}
 
@@ -655,12 +658,11 @@ html[data-theme="dark"] .sbar{background:#222732}
   <div class="card" style="margin-top:22px">
     <h2>{{ t('How to read this · and what it is not', '如何解读 · 以及它不是什么') }}</h2>
     <div class="note">
-      <p>{{ t('Each pair is scored by a multi-factor conviction engine — the same machinery as the Commodity Vector — over its DOLLAR-ORTHOGONALIZED residual: trend & structure (idiosyncratic, ex-dollar), carry (foreign minus US short rate, vol-penalized), risk appetite (the global risk-off composite times the currency\'s archetype beta — havens rally, risk currencies fall in stress), the per-pair risk index, residual shocks, and COT positioning when available. The score maps to a LONG / SHORT / FLAT bias on the BASE currency vs USD.', '每个货币对由一个多因子信心引擎评分 — 与大宗商品向量同一套机制 — 基于其剥离美元后的残差：趋势与结构（特异、去美元）、套息（外币减美国短端利率，按波动折减）、风险偏好（全球避险综合乘以货币原型贝塔 — 避险货币上涨、风险货币在压力下下跌）、单货币对风险指数、残差冲击，以及（可用时）COT持仓。评分映射为基础货币对美元的做多/做空/观望倾向。') }}</p>
-      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('FX violates uncovered interest parity (the carry "puzzle"), and carry has fat-tailed crash risk that clusters with equity crises (1998 / 2008 / 2015 / 2020 / 2024). So these are RISK-CONTEXT reads, not trade signals or measured alpha. Weights are MEASURED by split-half forward-return calibration (Spearman IC, split 2015, peg windows excised) — the glyph on each factor marks its verdict: ✓ CONFIRMED (held sign in both halves), ⇄ INVERTED (robustly predicts the opposite — e.g. the carry forward-premium puzzle), ~ DIRECTIONAL (full sample only), · CONTEXT (weak). Most FX factors land DIRECTIONAL or CONTEXT, so confidence stays dampened until a pair has ≥2 robust factors. Pegs & intervention zones (USD/JPY MoF, SNB, managed USD/CNH) cap or flatten the verdict.', '外汇违反无抛补利率平价（套息“谜题”），且套息具有与股市危机同步聚集的肥尾崩盘风险（1998/2008/2015/2020/2024）。因此这些是风险背景解读，而非交易信号或已测得的超额收益。权重由前后半段远期收益校准测得（Spearman IC，2015分割，剔除挂钩窗口）— 每个因子的字形标注其判定：✓ 已确认（两半段同号）、⇄ 反向（稳健预测相反方向，如套息远期溢价之谜）、~ 有方向（仅全样本）、· 背景（弱）。多数外汇因子落入有方向或背景，故在某货币对具备≥2个稳健因子前信心保持折减。挂钩与干预区间（美元/日元财务省、瑞士央行、受管理的美元/离岸人民币）会限制或抹平结论。') }}</p>
-      <p><b>{{ t('The Dollar Desk (§01) is display-only.', '美元桌（§01）仅供展示。') }}</b> {{ t('The dollar is the master variable — it conditions commodities, equities, bonds and crypto — so we read it deeply: real-rate regime, the Fed policy path (US leg of the rate differential), COT positioning, REER valuation, a multi-horizon trend stack, USD liquidity, and a smile-confirmation tally. But NONE of it is scored. The dollar move is often the tightening itself (coincident), FX direction is famously unforecastable (Meese-Rogoff), and every dollar leg is labeled coincident or context. The "lean" is a balance of context flags — a summary, not a trade call. There is deliberately no aggregate "USD → BUY/SELL".', '美元是主控变量 — 它影响大宗商品、股票、债券与加密货币 — 因此我们深入解读：实际利率格局、美联储政策路径（利差的美国端）、COT持仓、REER估值、多周期趋势栈、美元流动性，以及微笑确认计数。但这些都不参与评分。美元波动往往就是紧缩本身（同步），外汇方向出了名地不可预测（Meese-Rogoff），每个美元项都标注为同步或背景。"倾向"是背景信号的平衡 — 仅为汇总，非交易建议。我们刻意不给出汇总的"美元→买/卖"。') }}</p>
-      <p><b>{{ t('Transmission (§02) is contemporaneous.', '传导（§02）为同步关系。') }}</b> {{ t('Dollar↔asset correlations are computed live and are regime-dependent and unstable — sign flips happen, and the stability dot flags them. Gold is shown with its real-rate leg; the 10y-Treasury sign is unstable because the rate channel and haven channel oppose each other. This is a map of how today\'s dollar move is rippling, not a forecast — and it complements the cross-asset PCA on the Cross-Asset page (which asks "are the markets one bet?") rather than duplicating it. Scorecards (§06) are honest PIT backtests of risk premia with fat tails; the Max-DD and skew are the truth the Sharpe hides.', '美元与各资产的相关性为实时计算，随格局变化且不稳定 — 符号会翻转，稳定性圆点会标记之。黄金附带其实际利率项；10年期国债符号不稳定，因为利率渠道与避险渠道相互抵消。这是当前美元波动如何扩散的地图，而非预测 — 它与跨资产页面的PCA（"各市场是否同一笔交易？"）互补而非重复。记分卡（§06）是对带肥尾风险溢价的诚实时点回测；最大回撤与偏度才是夏普比率掩盖的真相。') }}</p>
-      <p><b>{{ t('The Stress & Regime Radar (§1.5) is an empirical base rate, not a forecast.', '压力与格局雷达（§1.5）是经验基率，而非预测。') }}</b> {{ t('Each scenario builds a strictly-causal stress intensity from the joint configuration of currency moves — VELOCITY (recent speed in σ-units and its acceleration) and LITERAL level (drawdowns, percentiles, distance to peg/intervention zones, the CNH basis). The probability is a PAST-TENSE conditional frequency: of all the days in history at least this stressed, the share that saw the defining adverse move within N days — shown beside the unconditional base rate, the sample n, an overlap-deflated n_eff = n/N (forward windows overlap, so the effective sample is smaller and the interval wider), and a Wilson 95% interval on both. We did NOT search a threshold to maximize it — today’s reading is the only condition — so there is no multiple-testing bias to correct. It is computed once over the full causal record (no peg-window excision, because this is a realized frequency, not a fitted weight), and it is DISPLAY-ONLY: it never feeds a score, conviction or BUY/SELL. FX direction is famously unforecastable (Meese-Rogoff); a wide interval means thin history, not low risk; and the record cannot capture tail events outside the sample (1998 / 2008 / 2015 / 2020 / 2024). Managed (USD/CNH) and intervention (USD/JPY MoF, SNB) regimes truncate the distribution — those scenarios are flagged illustrative.', '每个情景由货币走势的联合配置构建严格因果的压力强度 — 速度（近端走势的σ单位及其加速度）与实际水平（回撤、百分位、距挂钩/干预区的距离、离岸人民币基差）。概率为过去时的条件频率：在历史上所有至少同等压力的日子里，于N天内出现界定性不利走势的占比 — 并列出无条件基率、样本量n、经重叠折减的有效样本n_eff = n/N（远期窗口重叠，故有效样本更小、区间更宽），以及两者的Wilson 95%区间。我们并未搜索阈值来最大化它 — 当前读数是唯一条件 — 故无需校正多重检验偏差。它在完整因果记录上一次性计算（不剔除挂钩窗口，因为这是已实现频率而非拟合权重），且仅供展示：从不参与评分、信心或买/卖。外汇方向出了名地不可预测（Meese-Rogoff）；区间宽意味着历史样本薄，而非风险低；且记录无法涵盖样本外的尾部事件（1998/2008/2015/2020/2024）。受管理（美元/离岸人民币）与干预（美元/日元财务省、瑞士央行）体制会截断分布 — 相关情景标注为仅供示意。') }}</p>
-      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: Yahoo FX spot, FRED policy & short rates + broad-dollar legs + real yields (DFII10) + breakevens + Fed balance sheet & RRP + BIS REER, CFTC Commitments of Traders, Fed-funds (ZQ) futures for the policy path, and the ICE BofA MOVE bond-vol index.', '免费/无密钥：Yahoo外汇即期、FRED政策与短端利率+广义美元分项+实际收益率（DFII10）+盈亏平衡+美联储资产负债表与RRP+BIS实际有效汇率、CFTC交易商持仓、联邦基金（ZQ）期货政策路径、以及ICE BofA MOVE债券波动率指数。') }}
+      <p>{{ t('Pairs are scored on ex-dollar residuals: trend, carry, risk appetite, shocks and positioning when available.', '货币对基于去美元残差评分：趋势、套息、风险偏好、冲击及可用持仓。') }}</p>
+      <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('FX is hard to forecast and carry can crash in stress. Treat these reads as risk context, not alpha or trade signals.', '外汇难以预测，套息在压力期可能崩盘。请将这些读数视为风险背景，而非阿尔法或交易信号。') }}</p>
+      <p><b>{{ t('Dollar Desk.', '美元桌。') }}</b> {{ t('Display-only. The dollar is often the tightening impulse itself; the lean is a context summary, not a buy/sell call.', '仅展示。美元波动常常就是紧缩冲击本身；倾向只是背景汇总，不是买卖判断。') }}</p>
+      <p><b>{{ t('Stress Radar.', '压力雷达。') }}</b> {{ t('Shows past base rates for similar currency stress setups. Thin history means wide uncertainty.', '显示类似货币压力情景的历史基率。样本薄意味着不确定性宽。') }}</p>
+      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Yahoo FX, FRED rates and liquidity, BIS REER, CFTC COT, Fed funds futures and MOVE.', 'Yahoo外汇、FRED利率与流动性、BIS REER、CFTC COT、联邦基金期货与MOVE。') }}
       {% if not cot_ok %}<span class="flag info">ℹ {{ t('COT positioning is temporarily unavailable (CFTC endpoint outage); it populates on the next successful collection.', 'COT持仓暂不可用（CFTC接口故障）；将在下次成功采集时填充。') }}</span>{% endif %}</p>
       <p class="meta-foot">{{ t('History', '历史') }} {{ cal_span }} · {{ t('built', '构建于') }} {{ built }}</p>
     </div>
@@ -687,11 +689,37 @@ window.__CHART_SWAP__ = { colors:{}, labels:{
   });
 })();
 </script>
+<script>
+(function(){
+  var card = document.querySelector('.timeline');
+  if(!card) return;
+  var events = Array.from(card.querySelectorAll('[data-tl-event]'));
+  var btn = document.querySelector('.tl-more');
+  var limit = 8;
+  function sync(open){
+    events.forEach(function(ev, i){ ev.classList.toggle('is-hidden', !open && i >= limit); });
+    card.querySelectorAll('.tl-day').forEach(function(day){
+      var next = day.nextElementSibling, any = false;
+      while(next && !next.classList.contains('tl-day')){
+        if(next.matches('[data-tl-event]') && !next.classList.contains('is-hidden')) any = true;
+        next = next.nextElementSibling;
+      }
+      day.classList.toggle('is-hidden', !any);
+    });
+    if(btn) btn.textContent = open ? btn.dataset.close : btn.dataset.open;
+  }
+  if(btn && events.length > limit){
+    btn.addEventListener('click', function(){ sync(btn.textContent !== btn.dataset.close); });
+    sync(false);
+  } else if(btn) {
+    btn.hidden = true;
+  }
+})();
+</script>
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>
 <footer class="site-footer">
   <span>© 2026 MastermindX Inc</span>
-  <span class="faint">{{ t('Risk context, not investment advice.', '风险背景，非投资建议。') }}</span>
 </footer>
 </body>
 </html>

@@ -1,6 +1,6 @@
 """engine/options_stamp.py — point-in-time options-state stamp for the US board ledger.
 
-Part of the Options Alpha program (research/OPTIONS_ALPHA_MASTERPLAN.md, wave W1.3).
+Part of the Options Alpha program (research/OPTIONS_ALPHA_MASTERPLAN.md, waves W1.3 / W-C).
 
 Given a fire ``(as_of, ticker)`` on ``data/us_board_ledger/retro_grades.parquet`` this
 module returns a nullable options-state row from the PINNED positioning stores (ruling A6):
@@ -12,6 +12,19 @@ module returns a nullable options-state row from the PINNED positioning stores (
     ``opt_doi_slope_5d`` (5-day normalized near-money call-OI slope; null when < 5 prior
     chain days exist) and ``opt_voi_flag`` (today's chain volume > yesterday's OI on ≥1
     near-money contract — a fresh-positioning marker).
+  * ``data/options_skew/snapshots.parquet`` — per-ticker/date (date str column, underlying
+    str column, skew float), supplies ``opt_skew`` (latest-PIT skew on fire date) and
+    ``opt_skew_5d_chg`` (skew change over the prior 5 calendar days of available snapshots).
+  * ``data/options_ivspread/snapshots.parquet`` — per-ticker/date, supplies
+    ``opt_ivspread_rel`` (latest-PIT ivspread_rel on fire date).
+  * ``engine/opex.py`` — calendar-based OPEX tagging (no OI needed), supplies
+    ``opt_opex_days`` (trading days to next monthly OPEX, td_to_opex from opex.tag()).
+  * Wall distances (derived from summary ``opt_wall_up``/``opt_wall_down`` vs the summary
+    spot): ``opt_wall_dist_up_pct`` = (wall_up / spot − 1) × 100, positive = above spot;
+    ``opt_wall_dist_down_pct`` = (wall_down / spot − 1) × 100, negative = below spot.
+  * ``opt_pin_risk`` (bool): True when OPEX proximity + long gamma + near wall converge
+    (``opt_opex_days ≤ 5 AND opt_gamma_regime = 'long' AND
+    min(|opt_wall_dist_up_pct|, |opt_wall_dist_down_pct|) ≤ 2%``).
 
 ``opt_iv_rank_252`` is created ALWAYS-NULL here (ruling A9): a separate post-merge PR
 backfills it once the W1.1 IV-backfill series lands. This module NEVER computes it, even
@@ -19,12 +32,13 @@ if ``data/iv_history/`` appears.
 
 PIT DISCIPLINE (hard rule, tested): a stamp for a fire on date ``D`` uses ONLY store data
 with an as-of date ``≤ D``. summary rows are selected by the latest index date ``≤ D``;
-chain days are the trading days whose ``asof ≤ D``. No lookahead is possible.
+chain days are the trading days whose ``asof ≤ D``; skew/ivspread rows are selected by the
+latest ``date`` column value ``≤ D``; opex uses only the calendar date D. No lookahead.
 
 The ledger's ``as_of`` column is a STRING (``YYYY-MM-DD``); store dates are datetimes.
 All comparisons are done on ``date`` objects to avoid tz / ms-precision traps.
 
-Pure, side-effect-free, trivially testable: the two heavy readers are injectable so tests
+Pure, side-effect-free, trivially testable: all heavy readers are injectable so tests
 feed synthetic frames without touching disk.
 """
 from __future__ import annotations
@@ -41,18 +55,37 @@ import pandas as pd
 
 from lib import config
 
-# ── nullable stamp schema (ruling A6/A9) ─────────────────────────────────────
+# ── nullable stamp schema (ruling A6/A9; W-C additions 2026-07-05) ───────────
 # Order is the canonical column order for the ledger schema-union.
 STAMP_COLS: list[str] = [
-    "opt_gamma_regime",     # str: 'long'|'short' (summary gamma_regime)
-    "opt_dist_to_flip_pct",  # float: dist_to_flip_pct
-    "opt_wall_up",          # float: magnet_up (call/upside wall level)
-    "opt_wall_down",        # float: magnet_down (put/downside wall level)
-    "opt_iv30",             # float: iv30
-    "opt_iv_rank_252",      # float: ALWAYS NULL here (A9 — post-merge PR backfills)
-    "opt_doi_slope_5d",     # float: 5d normalized near-money call-OI slope (null if <5 prior days)
-    "opt_voi_flag",         # bool: today's vol > yesterday's OI on ≥1 near-money contract
+    "opt_gamma_regime",          # str: 'long'|'short' (summary gamma_regime)
+    "opt_dist_to_flip_pct",      # float: dist_to_flip_pct
+    "opt_wall_up",               # float: magnet_up (call/upside wall level)
+    "opt_wall_down",             # float: magnet_down (put/downside wall level)
+    "opt_iv30",                  # float: iv30
+    "opt_iv_rank_252",           # float: ALWAYS NULL here (A9 — post-merge PR backfills)
+    "opt_doi_slope_5d",          # float: 5d normalized near-money call-OI slope (null if <5 prior days)
+    "opt_voi_flag",              # bool: today's vol > yesterday's OI on ≥1 near-money contract
+    # W-C additions (2026-07-05) — new buckets S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2
+    "opt_ivspread_rel",          # float: call-put IV spread (rel, from ivspread snapshots); PIT ≤ as_of
+    "opt_skew",                  # float: 30d OTM put IV minus ATM call IV (from skew snapshots); PIT ≤ as_of
+    "opt_skew_5d_chg",           # float: opt_skew change over prior 5 calendar days of available snapshots
+    "opt_opex_days",             # int: trading days to next monthly OPEX (td_to_opex from opex.tag())
+    "opt_pin_risk",              # bool: opex_days<=5 AND gamma='long' AND min wall dist <=2% (S-PIN_RISK)
+    "opt_wall_dist_up_pct",      # float: (wall_up/spot - 1)*100 — positive = how far above spot
+    "opt_wall_dist_down_pct",    # float: (wall_down/spot - 1)*100 — negative = how far below spot
 ]
+
+# Coverage-gated columns: these require an external data store (polygon_gex, skew snapshots,
+# ivspread snapshots) to be non-null.  opt_opex_days is EXCLUDED because it is computed from
+# a local calendar (engine/opex.py) and will be non-null on virtually every valid business date
+# regardless of whether any options store has coverage for the ticker.
+#
+# The stamp_ledger retry gate (scripts/stamp_options_state.py) uses STAMP_COVERAGE_COLS — NOT
+# STAMP_COLS — to decide whether a row is "unstamped" and eligible for future re-stamping.
+# This preserves the W1.3 design: rows with only calendar-derived columns (opt_opex_days) remain
+# fully retryable when GEX/skew/ivspread coverage later arrives.
+STAMP_COVERAGE_COLS: list[str] = [c for c in STAMP_COLS if c != "opt_opex_days"]
 
 # every stamp starts as all-None so a name with no options coverage yields a clean null row
 _NULL_STAMP: dict = {c: None for c in STAMP_COLS}
@@ -116,6 +149,36 @@ def _default_read_chain(d: _dt.date) -> pd.DataFrame | None:
         return pd.read_parquet(
             p, columns=["underlying", "K", "is_call", "oi", "volume", "spot"]
         )
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _default_read_skew_snapshots() -> pd.DataFrame | None:
+    """Load data/options_skew/snapshots.parquet (all dates).
+
+    W-C: supplies opt_skew + opt_skew_5d_chg for S-SKEW_DECEL / S-TOP_RISK buckets.
+    Columns we use: date (str), underlying (str), skew (float).
+    Returns None if file absent (not on the render path; gitignored R2 store)."""
+    p = config.data_dir() / "options_skew" / "snapshots.parquet"
+    if not p.exists():
+        return None
+    try:
+        return pd.read_parquet(p, columns=["date", "underlying", "skew"])
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _default_read_ivspread_snapshots() -> pd.DataFrame | None:
+    """Load data/options_ivspread/snapshots.parquet (all dates).
+
+    W-C: supplies opt_ivspread_rel for S-IVSPREAD-F / S-TOP_RISK buckets.
+    Columns we use: date (str), underlying (str), ivspread_rel (float).
+    Returns None if file absent."""
+    p = config.data_dir() / "options_ivspread" / "snapshots.parquet"
+    if not p.exists():
+        return None
+    try:
+        return pd.read_parquet(p, columns=["date", "underlying", "ivspread_rel"])
     except Exception:  # noqa: BLE001
         return None
 
@@ -261,6 +324,162 @@ def _voi_flag_stamp(
     return bool(fresh)
 
 
+# ── W-C: skew/ivspread/opex/wall-dist stamps ────────────────────────────────
+# These are PIT-disciplined reads from the W-C snapshot stores.  They mirror the
+# summary-derived stamp pattern: latest row with date ≤ as_of, null on absence.
+
+def _skew_stamp(
+    as_of: _dt.date,
+    ticker: str,
+    skew_df: pd.DataFrame | None,
+) -> dict:
+    """opt_skew + opt_skew_5d_chg from data/options_skew/snapshots.parquet.
+
+    PIT: only rows with date ≤ as_of used. skew_5d_chg = latest minus the snapshot
+    from ≥ 5 calendar days earlier (the earliest qualifying row that is ≥ 5 days back
+    from the latest row date); None when fewer than 2 qualifying rows exist.
+
+    Returns a dict with keys opt_skew, opt_skew_5d_chg (both float | None)."""
+    out: dict = {"opt_skew": None, "opt_skew_5d_chg": None}
+    if skew_df is None or skew_df.empty:
+        return out
+    sub = skew_df[skew_df["underlying"] == ticker].copy()
+    if sub.empty:
+        return out
+    # PIT filter: date column is a string 'YYYY-MM-DD'
+    sub["_d"] = sub["date"].apply(_as_date)
+    sub = sub[sub["_d"].apply(lambda d: d is not None and d <= as_of)]
+    if sub.empty:
+        return out
+    sub = sub.sort_values("_d")
+
+    def _f(v):
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            return None
+        return None if math.isnan(f) else f
+
+    latest = sub.iloc[-1]
+    skew_val = _f(latest["skew"])
+    out["opt_skew"] = skew_val
+
+    if skew_val is not None and len(sub) >= 2:
+        latest_date = latest["_d"]
+        # look for a row at least 5 calendar days earlier than the latest snapshot date
+        cutoff = latest_date - _dt.timedelta(days=5)
+        earlier = sub[sub["_d"] <= cutoff]
+        if not earlier.empty:
+            prior_skew = _f(earlier.iloc[-1]["skew"])
+            if prior_skew is not None:
+                out["opt_skew_5d_chg"] = round(skew_val - prior_skew, 6)
+    return out
+
+
+def _ivspread_stamp(
+    as_of: _dt.date,
+    ticker: str,
+    ivspread_df: pd.DataFrame | None,
+) -> dict:
+    """opt_ivspread_rel from data/options_ivspread/snapshots.parquet.
+
+    PIT: only rows with date ≤ as_of. Returns dict with key opt_ivspread_rel."""
+    out: dict = {"opt_ivspread_rel": None}
+    if ivspread_df is None or ivspread_df.empty:
+        return out
+    sub = ivspread_df[ivspread_df["underlying"] == ticker].copy()
+    if sub.empty:
+        return out
+    sub["_d"] = sub["date"].apply(_as_date)
+    sub = sub[sub["_d"].apply(lambda d: d is not None and d <= as_of)]
+    if sub.empty:
+        return out
+    sub = sub.sort_values("_d")
+
+    def _f(v):
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            return None
+        return None if math.isnan(f) else f
+
+    out["opt_ivspread_rel"] = _f(sub.iloc[-1]["ivspread_rel"])
+    return out
+
+
+def _opex_stamp(as_of: _dt.date) -> dict:
+    """opt_opex_days from engine/opex.py calendar tags (no OI needed; PIT by construction).
+
+    Returns dict with key opt_opex_days (int | None). Wraps in try/except so a missing
+    or malformed calendar never breaks the whole stamp pass."""
+    out: dict = {"opt_opex_days": None}
+    try:
+        from engine import opex as _opex  # local import — avoid circular at module level
+        # build a small index spanning today ± 60 days to ensure we have a next-OPEX
+        today_ts = pd.Timestamp(as_of)
+        idx = pd.date_range(today_ts - pd.offsets.BDay(2), today_ts + pd.offsets.BDay(45), freq="B")
+        tagged = _opex.tag(idx)
+        row = tagged[tagged.index.date == as_of]
+        if row.empty:
+            return out
+        td_to = row.iloc[0].get("td_to") if hasattr(row.iloc[0], "get") else row.iloc[0]["td_to"]
+        if td_to is not None and not (isinstance(td_to, float) and math.isnan(td_to)):
+            out["opt_opex_days"] = int(td_to)
+    except Exception:  # noqa: BLE001 — opex calc failure must not break stamp pass
+        pass
+    return out
+
+
+def _wall_dist_stamp(
+    opt_wall_up: float | None,
+    opt_wall_down: float | None,
+    spot: float | None,
+) -> dict:
+    """Compute wall distance percentages from already-computed summary wall levels + spot.
+
+    opt_wall_dist_up_pct  = (wall_up / spot - 1) * 100  (positive when wall is above spot)
+    opt_wall_dist_down_pct = (wall_down / spot - 1) * 100  (negative when wall is below spot)
+
+    The spot is taken from the summary row's spot column (not chain spot) to stay consistent
+    with the GEX model's reference frame.  Returns dict with both keys."""
+    out: dict = {"opt_wall_dist_up_pct": None, "opt_wall_dist_down_pct": None}
+    if spot is None or not (spot > 0):
+        return out
+    if opt_wall_up is not None:
+        out["opt_wall_dist_up_pct"] = round((opt_wall_up / spot - 1.0) * 100.0, 4)
+    if opt_wall_down is not None:
+        out["opt_wall_dist_down_pct"] = round((opt_wall_down / spot - 1.0) * 100.0, 4)
+    return out
+
+
+def _pin_risk_flag(
+    opt_opex_days: int | None,
+    opt_gamma_regime: str | None,
+    opt_wall_dist_up_pct: float | None,
+    opt_wall_dist_down_pct: float | None,
+) -> bool | None:
+    """S-PIN_RISK: True when OPEX proximity + long-gamma + near-wall converge.
+
+    Condition (per pre-registration §4 W-C):
+      opt_opex_days <= 5
+      AND opt_gamma_regime == 'long'
+      AND min(|opt_wall_dist_up_pct|, |opt_wall_dist_down_pct|) <= 2%
+
+    Returns None when any required input is None (cannot evaluate the condition)."""
+    if opt_opex_days is None or opt_gamma_regime is None:
+        return None
+    if opt_wall_dist_up_pct is None and opt_wall_dist_down_pct is None:
+        return None
+    if not (opt_opex_days <= 5):
+        return False
+    if opt_gamma_regime != "long":
+        return False
+    dists = [abs(d) for d in (opt_wall_dist_up_pct, opt_wall_dist_down_pct) if d is not None]
+    if not dists:
+        return None
+    return bool(min(dists) <= 2.0)
+
+
 def stamp_options_state(
     as_of,
     ticker: str,
@@ -268,14 +487,28 @@ def stamp_options_state(
     read_summary: Callable[[str], pd.DataFrame | None] | None = None,
     chain_dates: list[_dt.date] | None = None,
     read_chain: Callable[[_dt.date], pd.DataFrame | None] | None = None,
+    skew_df: pd.DataFrame | None = None,
+    ivspread_df: pd.DataFrame | None = None,
+    _skew_loader: Callable[[], pd.DataFrame | None] | None = None,
+    _ivspread_loader: Callable[[], pd.DataFrame | None] | None = None,
 ) -> dict:
     """Return the nullable options-state stamp for a fire ``(as_of, ticker)``.
 
-    All eight ``STAMP_COLS`` are always present; any that cannot be computed from PIT data
+    All ``STAMP_COLS`` are always present; any that cannot be computed from PIT data
     are None. ``opt_iv_rank_252`` is ALWAYS None here (ruling A9).
 
     Readers are injectable for testing; defaults read the pinned disk stores. Adjusted roots
-    (numeric-suffixed, e.g. ``AAPL1``) are dropped rather than mis-parsed → all-null stamp."""
+    (numeric-suffixed, e.g. ``AAPL1``) are dropped rather than mis-parsed → all-null stamp.
+
+    Injectable parameters for W-C snapshot stores:
+      skew_df       — pre-loaded skew snapshots DataFrame (or None to load from disk)
+      ivspread_df   — pre-loaded ivspread snapshots DataFrame (or None to load from disk)
+      _skew_loader  — callable that returns the DataFrame (overrides disk default)
+      _ivspread_loader — same for ivspread
+
+    The stamp_ledger pass pre-loads these DataFrames once and passes them in to avoid
+    re-reading the parquet files for every (as_of, ticker) pair.
+    """
     d = _as_date(as_of)
     if d is None or not ticker or _ADJUSTED_ROOT.search(ticker):
         return dict(_NULL_STAMP)
@@ -285,9 +518,57 @@ def stamp_options_state(
     if chain_dates is None:
         chain_dates = _default_chain_dates()
 
+    # W-C snapshot frames: load once from disk if not pre-supplied
+    if skew_df is None:
+        loader = _skew_loader or _default_read_skew_snapshots
+        skew_df = loader()
+    if ivspread_df is None:
+        loader = _ivspread_loader or _default_read_ivspread_snapshots
+        ivspread_df = loader()
+
     stamp = dict(_NULL_STAMP)
-    stamp.update(_summary_stamp(d, read_summary(ticker)))
+    # W1.3 fields from GEX summary
+    summary_s = _summary_stamp(d, read_summary(ticker))
+    stamp.update(summary_s)
     stamp["opt_doi_slope_5d"] = _doi_slope_stamp(d, ticker, chain_dates, read_chain)
     stamp["opt_voi_flag"] = _voi_flag_stamp(d, ticker, chain_dates, read_chain)
     # opt_iv_rank_252 stays None by construction (A9)
+
+    # W-C fields: skew / ivspread / opex / wall-dist / pin-risk
+    stamp.update(_skew_stamp(d, ticker, skew_df))
+    stamp.update(_ivspread_stamp(d, ticker, ivspread_df))
+    stamp.update(_opex_stamp(d))
+
+    # wall distances need spot from the summary row (same row as wall levels)
+    spot = _spot_from_summary(d, read_summary(ticker))
+    stamp.update(_wall_dist_stamp(stamp.get("opt_wall_up"), stamp.get("opt_wall_down"), spot))
+
+    stamp["opt_pin_risk"] = _pin_risk_flag(
+        stamp.get("opt_opex_days"),
+        stamp.get("opt_gamma_regime"),
+        stamp.get("opt_wall_dist_up_pct"),
+        stamp.get("opt_wall_dist_down_pct"),
+    )
     return stamp
+
+
+def _spot_from_summary(as_of: _dt.date, sdf: pd.DataFrame | None) -> float | None:
+    """Extract spot price from the summary frame's 'spot' column (latest PIT row ≤ as_of).
+
+    The GEX summary parquet may or may not carry a spot column; returns None if absent.
+    This is used by _wall_dist_stamp to compute wall distances in percentage terms."""
+    if sdf is None or sdf.empty:
+        return None
+    idx_dates = pd.Index([_as_date(d) for d in sdf.index])
+    mask = np.array([d is not None and d <= as_of for d in idx_dates])
+    if not mask.any():
+        return None
+    row = sdf[mask].iloc[-1]
+    spot = row.get("spot")
+    if spot is None:
+        return None
+    try:
+        f = float(spot)
+        return None if math.isnan(f) else f
+    except (TypeError, ValueError):
+        return None

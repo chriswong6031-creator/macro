@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>{{ s.name_en }} — Active Strategy</title>
-<script src="plotly-2.32.0.min.js"></script>
+{% include '_plotly_head.html.j2' %}
 <style>
 :root{
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r2:{{C.r2}}; --r3:{{C.r3}}; --ink:{{C.ink}};
@@ -207,7 +207,7 @@ html[data-theme="dark"] .factchip{background:var(--grid)}
   </div>
 
   {% if caveat_en %}<div class="note r">{{ t(caveat_en, caveat_zh) }}</div>{% endif %}
-  <div class="foot">{{ t('Mechanical, backtested on free public data, net of cost + financing, positions acting next-bar (no look-ahead). Not investment advice — leverage amplifies losses as well as gains. Experimental: full Phase-0 (leave-one-crisis-out, deflated-Sharpe, pre-registration) is a fast-follow. Built','机械化 · 基于免费公开数据回测，扣除成本+融资，仓位次日生效（无前视）。非投资建议——杠杆会同时放大盈亏。实验性：完整 Phase-0（留一危机、贬值夏普、预先登记）为后续跟进。生成于') }} {{ built }}.</div>
+  <div class="foot">{{ t('Built', '生成于') }} {{ built }}<br><span class="made">© 2026 MastermindX Inc</span></div>
 </div>
 <script src="theme.js"></script>
 </body></html>

@@ -4,7 +4,8 @@ The dealer-gamma map we ship today assumes dealers are long calls / short puts �
 unobservable SIGN that is the layer's known weak point. This engine replaces the ASSUMPTION
 with a MEASURED read built from the actual day's traded volume: it signs each minute's
 per-contract volume by the option's own minute-close tick (a buy lifts the option, a sell
-hits it — the TICK RULE, the honest fallback when the per-trade NBBO tape is unavailable),
+hits it — the TICK RULE, the honest fallback this engine uses in lieu of the per-trade NBBO
+tape; that tape is now entitled but not yet wired in here — see HONEST FRAMING below),
 then infers the dealer side as the opposite of net customer flow.
 
 From one underlying's minute aggregates (collectors/massive_flatfiles) plus the per-contract
@@ -19,12 +20,22 @@ greeks + open-interest we already snapshot (data/polygon_gex), it produces:
   • VOL>OI new-position detection (fresh positioning) and 0DTE concentration / intraday profile
   • large prints (outsized single-contract minutes), direction-tagged
 
-HONEST FRAMING: minute-tick-rule signing is APPROXIMATE (no NBBO, no trade tape — both 403 on
-our plan; ~77–83% sign accuracy vs ~81–84% for full Lee-Ready, errors roughly symmetric so they
-wash in daily aggregates). EOD/T+1 cadence, not intraday-live. The sign accuracy is
-empirically calibratable against true quote-rule signs via collectors/databento_tbbo +
-scripts/calibrate_flow_signing. Display/context until that calibration gate passes; never a
-stand-alone buy/sell. See research/OPTIONS_FLOW_DATA.md.
+HONEST FRAMING: this engine's minute-tick-rule signing is APPROXIMATE BY DESIGN (~77–83% sign
+accuracy vs ~81–84% for full Lee-Ready, errors roughly symmetric so they wash in daily
+aggregates; EOD/T+1 cadence, not intraday-live). That approximation is intrinsic to the
+tick-rule method and stays true. What is NO LONGER true is the old "no NBBO, no trade tape —
+both 403 on our plan" premise: as of the ThetaData tier acquired 2026-07-04 the per-trade +
+prevailing-NBBO tape IS entitled and is pulled by collectors/thetadata.py trade_quote()
+(16,366 real trade+NBBO records in the calibration probe — research/THETADATA_PROBE.md), so
+the "403 on our plan" claim is obsolete. Rewiring THIS engine to consume that tape for true
+trade-level flow classification (sweep/block, open/close attribution, buyer/seller-initiated)
+is an engineering item scoped to the options-alpha program, gated by render budget: full-chain-
+per-name trade_quote() iteration is slow, so it belongs off the render path with R2 artifacts,
+not in this nightly engine. Until then the sign accuracy is empirically calibratable against
+true quote-rule signs via collectors/databento_tbbo + scripts/calibrate_flow_signing.
+Display/context until that calibration gate passes; never a stand-alone buy/sell. See
+research/OPTIONS_FLOW_DATA.md; correction rationale in
+research/SIGNAL_COMMONS_MASTERPLAN_BY_FABLE.md §2 R6 (amended 2026-07-05).
 """
 from __future__ import annotations
 

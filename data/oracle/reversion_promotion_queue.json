@@ -1,0 +1,103 @@
+{
+  "schema": "reversion_promotion_queue.v1",
+  "generated_at": "2026-07-06T08:39:29+00:00",
+  "n_compounds_scanned": 11,
+  "n_candidates": 0,
+  "n_lapses": 0,
+  "n_accruing": 11,
+  "n_requeue_reminders": 0,
+  "candidates": [],
+  "lapses": [],
+  "accruing": [
+    {
+      "compound_id": "A15_WASHOUT_OPP_OUT_2NODE",
+      "compound_name": "Washout during two-node opposite-complex outflow",
+      "cluster": null,
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "B4_WASHOUT_DOLLAR_RELIEF",
+      "compound_name": "Washout with dollar relief",
+      "cluster": null,
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "B4_EP_SAME_OUT_CREDIT_EASE",
+      "compound_name": "Same-complex outflow after credit stress eases",
+      "cluster": null,
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "R16_VBOT_ACCELZ_NEG2_K_LOW",
+      "compound_name": "V-bottom: acceleration repair from extreme with oscillator oversold",
+      "cluster": null,
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "E_DOLLAR_EASE_TLT_POS_K25",
+      "compound_name": "Dual cross-asset relief with oscillator oversold",
+      "cluster": "dollar-relief",
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "R3_B2_ACCELZ_NEG15_K20",
+      "compound_name": "V-bottom: accel repair from moderate extreme, deep oversold",
+      "cluster": "v-bottom-accel",
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "R4_E10_OIL_EASE_K30_VIX40",
+      "compound_name": "Oil-cost relief with oscillator oversold in stress",
+      "cluster": "oil-relief",
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "M1_OIL_DOWN_K30_RS_NEG",
+      "compound_name": "tier-M oil-relief rotation into oversold RS-laggards",
+      "cluster": "tier-m-oil (siblings M1_OIL_DOWN_WASHOUT n=38k, M1_OIL_CROSS_K25 \u2014 validated+attributed, not separately published; 62-72% overlap)",
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "SRM_BEARTAPE_ACCEL_K20",
+      "compound_name": "single-regime: bear-tape V-bottom rotation (tier-M)",
+      "cluster": null,
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "RSLAG_OVERSOLD_K20",
+      "compound_name": "oversold relative-laggard reversion (tier-M, dual-regime)",
+      "cluster": "rs-laggard {this, M1_OIL_DOWN_K30_RS_NEG} \u2014 48% entry-overlap (shared rs<-0.04 core); ~1.5 independent bets. This is the purer, oil-free, deeper-oversold member.",
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    },
+    {
+      "compound_id": "SEQ_TLT_RELIEF_WASHOUT",
+      "compound_name": "Rate relief then sector washout",
+      "cluster": null,
+      "live_n": 0,
+      "refuse_reason": "insufficient-n: n=0 < min_n=25",
+      "earliest_projected": "no fires yet"
+    }
+  ],
+  "requeue_reminders": [],
+  "note": "NEVER auto-promoted. All candidates require Fable/operator adjudication. Set ratified_by on a candidate row and commit to apply authority. ORACLE_REVERSION_PROMOTION_PREREG.md gates are FROZEN \u2014 do not retune."
+}

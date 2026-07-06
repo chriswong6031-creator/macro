@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Static guard: validates site/factordata/us_standouts.json for build-time contradictions.
 
-Four invariants checked (W2, mirroring check_nav_mega.py style):
+Five invariants checked (W2 original 4 + W4 reflexivity):
 
   (a) No FRESH-BUY-ish state/label with cross age > FRESH_TICKS+1 OR extension grade.
       The W8 arbiter should have demoted these at build time; a hit here means the arbiter
@@ -16,6 +16,12 @@ Four invariants checked (W2, mirroring check_nav_mega.py style):
   (d) Slot-1 alpha is not negative while positive-alpha rows exist in the same lane.
       If the board is supposed to rank by alpha DESC, the first row must have the highest alpha
       in its lane (or equal). A violation means the sort was applied incorrectly.
+
+  (e) W4 reflexivity (R-B): per-lane effective_bets from the board and per-lane n_eff from
+      the reflexivity overlay must not diverge by more than 3x.  Both numbers are computed over
+      the SAME per-lane candidate set (overlay emits n_eff_by_lane to match the population
+      that build_stock_board_v2._concentration() uses).  A >3x ratio means two contradictory
+      "independent bets" numbers are visible on the same lane of the board.
 
 Exit 0 on clean. Exit 1 with a readable table on violation.
 
@@ -125,6 +131,39 @@ def _check(artifact_path: str = "site/factordata/us_standouts.json") -> list[str
                 f"but max alpha in lane={max_alpha:.3f} > 0 (sort broken)"
             )
 
+    # ---- (e) W4 reflexivity R-B: no two divergent effective_bets numbers (per lane) ----
+    # Compare each lane's board effective_bets against the SAME LANE's n_eff from the
+    # reflexivity overlay (n_eff_by_lane).  Both are computed over identical candidate sets,
+    # so the 3x tolerance is meaningful and cannot false-trip from a union-vs-lane mismatch.
+    # Only fires when both artifacts are present and both have numeric values for that lane.
+    p_v2 = ROOT / "site" / "factordata" / "us_standouts_v2.json"
+    p_rx = ROOT / "site" / "factordata" / "reflexivity_overlay.json"
+    if p_v2.exists() and p_rx.exists():
+        try:
+            d_v2 = json.loads(p_v2.read_text())
+            d_rx = json.loads(p_rx.read_text())
+            # Use per-lane n_eff from overlay (matches the board's per-lane population).
+            # Fall back to the union n_eff only if n_eff_by_lane is absent (old overlay schema).
+            neff_by_lane_rx = d_rx.get("n_eff_by_lane") or {}
+            for lane_name in ("entry_open", "setting_up"):
+                conc_v2 = (d_v2.get("concentration") or {}).get(lane_name) or {}
+                eff_v2 = conc_v2.get("effective_bets")
+                basis_v2 = conc_v2.get("effective_bets_basis", "")
+                # Per-lane n_eff from overlay (same population as board _concentration call)
+                neff_rx_lane = neff_by_lane_rx.get(lane_name)
+                if (isinstance(eff_v2, (int, float)) and isinstance(neff_rx_lane, (int, float))
+                        and eff_v2 > 0 and neff_rx_lane > 0):
+                    ratio = max(eff_v2, neff_rx_lane) / min(eff_v2, neff_rx_lane)
+                    if ratio > 3.0:
+                        violations.append(
+                            f"(e) W4 R-B: board concentration lane={lane_name!r} effective_bets"
+                            f"={eff_v2} (basis={basis_v2!r}) diverges >3x from reflexivity "
+                            f"n_eff_by_lane={neff_rx_lane} — two contradictory independent-bets "
+                            f"numbers shown on the same lane."
+                        )
+        except Exception:  # noqa: BLE001  — missing/malformed artifacts are not a violation
+            pass
+
     return violations
 
 
@@ -149,8 +188,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print(
-        f"check_board_contradictions: OK — {artifact} passes all 4 board invariants "
-        f"(a: stale-fresh, b: imminent-blocked, c: band-verdict, d: alpha-sort)."
+        f"check_board_contradictions: OK — {artifact} passes all 5 board invariants "
+        f"(a: stale-fresh, b: imminent-blocked, c: band-verdict, d: alpha-sort, "
+        f"e: W4-reflexivity-neff-consistency)."
     )
     return 0
 

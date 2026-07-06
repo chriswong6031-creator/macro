@@ -1,11 +1,13 @@
-"""Tests for the narrative-basket → stock scored integration (the validated channel).
+"""Tests for the narrative-basket → stock scored integration (the backtested channel).
 
 Invariants:
   * a name whose primary narrative basket is BELOW its long-term trend (or fading /
     deteriorating) is SIZED DOWN via a subtract-only risk component + a caution — never
     re-ranked (the absolute-trend gate is the one backtested edge; momentum rank is not).
   * a healthy (above-trend, not-crowded) basket adds NO de-risk.
-  * the unified action board buckets baskets by reco and flags the validated risk side.
+  * the unified action board buckets baskets by reco and flags the risk side.
+  * us_sector_* themes go to sector_overlay, NOT narrative bucket rows.
+  * enter/accumulate without clean_entry lands in on_the_run; with it lands in buy lanes.
 """
 import json
 
@@ -91,31 +93,203 @@ def test_no_basket_alloc_is_inert():
 
 # --- unified action board ----------------------------------------------------
 def test_basket_action_items_buckets_and_validates(tmp_path):
+    """Narrative themes (non us_sector_*) route by reco + clean_entry; avoid is risk-flagged."""
     import scripts.build_site as bs
     bd = tmp_path / "basketdata"; bd.mkdir()
     (bd / "baskets.json").write_text(json.dumps({"theme_intel": {"themes": [
+        # accumulate + clean_entry → buy_now
         {"id": "memory_storage", "name": "Memory", "reco": "accumulate",
-         "reco_en": "ACCUMULATE", "score": 80, "signal_strength": {"grade": "descriptive"}},
+         "reco_en": "ACCUMULATE", "score": 80, "signal_strength": {"grade": "descriptive"},
+         "textures": {"clean_entry": {"flag": True, "quality": 0.8}}},
+        # avoid → avoid (risk side)
         {"id": "non_ai_software", "name": "Non-AI Software", "reco": "avoid",
          "reco_en": "AVOID", "score": 30, "signal_strength": {"grade": "backtested"}},
-        {"id": "uranium", "name": "Uranium", "reco": "enter", "reco_en": "ENTER", "score": 60},
-    ]}}))
+        # enter + clean_entry → buy_soon
+        {"id": "uranium", "name": "Uranium", "reco": "enter", "reco_en": "ENTER", "score": 60,
+         "textures": {"clean_entry": {"flag": True, "quality": 0.7}}},
+        # us_sector_tech accumulate → sector_overlay[XLK], NOT buy_now
+        {"id": "us_sector_tech", "name": "Tech (EW)", "name_zh": "科技（等权）",
+         "reco": "accumulate", "reco_en": "ACCUMULATE", "reco_zh": "加仓", "score": 75,
+         "textures": {"clean_entry": {"flag": True, "quality": 0.75}}},
+    ], "act_now": {"buy": [], "add_on_pullback": [], "reduce": []}}}))
     ad = tmp_path / "allocationdata"; ad.mkdir()
     (ad / "allocation.json").write_text(json.dumps({
         "ranks": [{"id": "memory_storage", "rank": 1, "eligible": True,
                    "gate": {"above_200dma": True}, "durability": {"bar": 0.8}}],
         "allocation": {"weights": [{"id": "memory_storage", "weight": 0.125}]}}))
     b = bs.basket_action_items(tmp_path)
+    # Memory goes to buy_now
     assert [x["name"] for x in b["buy_now"]] == ["Memory"]
     assert b["buy_now"][0]["book_wt"] == 0.125 and b["buy_now"][0]["validated"] is False
+    # Uranium goes to buy_soon (enter + clean_entry)
     assert [x["name"] for x in b["buy_soon"]] == ["Uranium"]
+    # Non-AI Software goes to avoid (risk-flagged)
     assert b["avoid"][0]["name"] == "Non-AI Software" and b["avoid"][0]["validated"] is True
-    assert all(x["kind"] == "theme" for lane in b.values() for x in lane)
+    # us_sector_tech must NOT appear in any narrative lane
+    all_lane_ids = [x["ticker"] for lane_k in ("buy_now", "buy_soon", "on_the_run",
+                                                "take_profits", "hold", "avoid")
+                    for x in b[lane_k]]
+    assert "us_sector_tech" not in all_lane_ids, "us_sector_ must go to sector_overlay only"
+    # us_sector_tech must appear in sector_overlay keyed by SPDR ticker
+    assert "XLK" in b["sector_overlay"]
+    assert b["sector_overlay"]["XLK"]["ticker"] == "us_sector_tech"
+    # sector_overlay items carry ew_lane
+    assert "ew_lane" in b["sector_overlay"]["XLK"]
+    # all narrative lane items are kind='theme'
+    assert all(x["kind"] == "theme"
+               for lane_k in ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid")
+               for x in b[lane_k])
+
+
+def test_basket_action_items_clean_entry_routing(tmp_path):
+    """enter/accumulate WITHOUT clean_entry lands in on_the_run; WITH it lands in buy lanes."""
+    import scripts.build_site as bs
+    bd = tmp_path / "basketdata"; bd.mkdir()
+    (bd / "baskets.json").write_text(json.dumps({"theme_intel": {"themes": [
+        # accumulate, no clean_entry → on_the_run
+        {"id": "semi_equipment", "name": "Semi Equipment", "reco": "accumulate",
+         "reco_en": "ACCUMULATE", "score": 65,
+         "textures": {"clean_entry": {"flag": False, "quality": 0.45}}},
+        # enter, no textures at all → on_the_run (flag defaults False, act_now not in buy list)
+        {"id": "gold_miners", "name": "Gold Miners", "reco": "enter",
+         "reco_en": "ENTER", "score": 55},
+        # accumulate + clean_entry → buy_now
+        {"id": "insurance", "name": "Insurance", "reco": "accumulate",
+         "reco_en": "ACCUMULATE", "score": 77,
+         "textures": {"clean_entry": {"flag": True, "quality": 0.75}}},
+        # enter + clean_entry → buy_soon
+        {"id": "biotech", "name": "Biotech", "reco": "enter",
+         "reco_en": "ENTER", "score": 60,
+         "textures": {"clean_entry": {"flag": True, "quality": 0.70}}},
+    ], "act_now": {"buy": [], "add_on_pullback": [], "reduce": []}}}))
+    (tmp_path / "allocationdata").mkdir()
+    (tmp_path / "allocationdata" / "allocation.json").write_text(json.dumps(
+        {"ranks": [], "allocation": {"weights": []}}))
+    b = bs.basket_action_items(tmp_path)
+    on_run_ids = [x["ticker"] for x in b["on_the_run"]]
+    assert "semi_equipment" in on_run_ids, "accumulate+no clean_entry→on_the_run"
+    assert "gold_miners" in on_run_ids, "enter+no textures→on_the_run"
+    assert [x["ticker"] for x in b["buy_now"]] == ["insurance"]
+    assert [x["ticker"] for x in b["buy_soon"]] == ["biotech"]
+    # on_the_run items carry run_reason_en
+    semi_item = next(x for x in b["on_the_run"] if x["ticker"] == "semi_equipment")
+    assert "run_reason_en" in semi_item
 
 
 def test_basket_action_items_graceful_without_files(tmp_path):
     b = __import__("scripts.build_site", fromlist=["x"]).basket_action_items(tmp_path)
-    assert b == {"buy_now": [], "buy_soon": [], "take_profits": [], "hold": [], "avoid": []}
+    # 6 bucket keys + sector_overlay
+    expected_keys = {"buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid",
+                     "sector_overlay"}
+    assert set(b.keys()) == expected_keys
+    for k in ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid"):
+        assert b[k] == []
+    assert b["sector_overlay"] == {}
+
+
+# --- action_board() urgency/tag routing + overlay merge ----------------------
+def _make_sector_timing(fund: str, urgency: str, tag: str = "", label: str = "TEST") -> dict:
+    """Build a minimal sector_timing entry mirroring real call shape."""
+    return {fund: {
+        "label": label,
+        "entry": {"urgency": urgency, "tag": tag, "text": "", "days_hi": None},
+        "age_short": None, "age_short_zh": None,
+        "eq_badge": None, "eq_dir": "flat", "eq_tip": None, "state_style": None,
+    }}
+
+
+def test_action_board_caution_tag_routing(tmp_path):
+    """caution+DON'T CHASE→on_the_run; caution+TAKE PROFITS→take_profits;
+    caution+UNCONFIRMED→avoid; exit→take_profits."""
+    import scripts.build_site as bs
+    st = {}
+    st.update(_make_sector_timing("XLK", "caution", "DON'T CHASE"))
+    st.update(_make_sector_timing("XLC", "caution", "TAKE PROFITS"))
+    st.update(_make_sector_timing("XLY", "caution", "UNCONFIRMED — HIGH RISK"))
+    st.update(_make_sector_timing("XLF", "exit"))
+    st.update(_make_sector_timing("XLI", "now"))
+    board = bs.action_board(st, [])
+    assert any(x["ticker"] == "XLK" for x in board["on_the_run"]), "DON'T CHASE→on_the_run"
+    assert any(x["ticker"] == "XLC" for x in board["take_profits"]), "caution+TP→take_profits"
+    assert any(x["ticker"] == "XLY" for x in board["avoid"]), "UNCONFIRMED→avoid"
+    assert any(x["ticker"] == "XLF" for x in board["take_profits"]), "exit→take_profits"
+    assert any(x["ticker"] == "XLI" for x in board["buy_now"]), "now→buy_now"
+    # No sector appears in two lanes
+    all_tickers = [x["ticker"] for lane in ("buy_now", "buy_soon", "on_the_run",
+                                             "take_profits", "hold", "avoid")
+                   for x in board[lane]]
+    assert len(all_tickers) == len(set(all_tickers)), "duplicate sector in two lanes"
+
+
+def _make_basket_items_with_sector_overlay(tmp_path, sector_themes: list) -> dict:
+    """Build basket_items via the REAL basket_action_items() so sector_overlay carries
+    whatever fields the builder actually produces (including 'reco').  Mirrors the real
+    call shape — tests must not hand-craft sector_overlay and risk drifting from production."""
+    import scripts.build_site as bs
+    bd = tmp_path / "basketdata"; bd.mkdir(exist_ok=True)
+    (bd / "baskets.json").write_text(json.dumps(
+        {"theme_intel": {"themes": sector_themes,
+                         "act_now": {"buy": [], "add_on_pullback": [], "reduce": []}}}))
+    (tmp_path / "allocationdata").mkdir(exist_ok=True)
+    (tmp_path / "allocationdata" / "allocation.json").write_text(
+        json.dumps({"ranks": [], "allocation": {"weights": []}}))
+    return bs.basket_action_items(tmp_path)
+
+
+def test_action_board_reduce_override(tmp_path):
+    """Cycle buy_now + EW overlay trim (from real basket_action_items output) →
+    moved to take_profits with gate_override=True.
+    Drives end-to-end from basket_action_items() so sector_overlay 'reco' field
+    matches production (fixes false-confidence from hand-crafted fixtures)."""
+    import scripts.build_site as bs
+    # Build basket_items via the real function: us_sector_health reco=trim
+    sector_themes = [
+        {"id": "us_sector_health", "name": "Health (EW)", "name_zh": "医疗（等权）",
+         "reco": "trim", "reco_en": "TRIM", "reco_zh": "减仓", "score": 40},
+    ]
+    basket_items = _make_basket_items_with_sector_overlay(tmp_path, sector_themes)
+    # Verify basket_action_items actually produced reco in the overlay entry
+    assert "XLV" in basket_items["sector_overlay"], "XLV must be in sector_overlay"
+    assert basket_items["sector_overlay"]["XLV"]["reco"] == "trim", \
+        "sector_overlay entry must carry reco for reduce-side override to fire"
+
+    # XLV: cycle says buy_now (urgency=now)
+    st = _make_sector_timing("XLV", "now")
+    board = bs.action_board(st, [], basket_items)
+    # XLV must be in take_profits, not buy_now (reduce-side override fired)
+    assert not any(x["ticker"] == "XLV" for x in board["buy_now"]), \
+        "XLV should be moved out of buy_now by reduce override"
+    tp_item = next((x for x in board["take_profits"] if x["ticker"] == "XLV"), None)
+    assert tp_item is not None, "XLV should appear in take_profits after gate override"
+    assert tp_item.get("gate_override") is True
+    assert "ew" in tp_item
+
+
+def test_action_board_ew_divergence_attach(tmp_path):
+    """Overlay accumulate (from real basket_action_items output) + cycle take_profits row
+    keeps its lane but carries item['ew'] — no override because reco is not trim/avoid."""
+    import scripts.build_site as bs
+    # Build basket_items via the real function: us_sector_materials reco=accumulate
+    sector_themes = [
+        {"id": "us_sector_materials", "name": "Materials (EW)", "name_zh": "材料（等权）",
+         "reco": "accumulate", "reco_en": "ACCUMULATE", "reco_zh": "加仓", "score": 70,
+         "textures": {"clean_entry": {"flag": True, "quality": 0.70}}},
+    ]
+    basket_items = _make_basket_items_with_sector_overlay(tmp_path, sector_themes)
+    assert "XLB" in basket_items["sector_overlay"], "XLB must be in sector_overlay"
+    assert basket_items["sector_overlay"]["XLB"]["reco"] == "accumulate", \
+        "sector_overlay entry must carry reco"
+
+    # XLB: cycle says caution (→ take_profits, no special tag)
+    st = _make_sector_timing("XLB", "caution", "ROLLING OVER")
+    board = bs.action_board(st, [], basket_items)
+    # XLB stays in take_profits (overlay is accumulate, not trim/avoid → no override)
+    tp_item = next((x for x in board["take_profits"] if x["ticker"] == "XLB"), None)
+    assert tp_item is not None, "XLB should remain in take_profits (no reduce override)"
+    assert tp_item.get("gate_override") is None or not tp_item.get("gate_override")
+    # But it carries the ew info
+    assert "ew" in tp_item
+    assert tp_item["ew"]["reco"] == "accumulate"
 
 
 # --- RFC-compliant JSON emit (no bare NaN/Inf reaches us_standouts.json) -----

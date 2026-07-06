@@ -8,6 +8,10 @@ __pycache__/
 # living OUTSIDE the git work-tree so `git reset --hard` can't expose a partial
 # file (app/deploy/update.sh + Caddyfile). Box-only; never committed.
 site.served/
+# retired 2026-07-05: Pages has no custom domain and workflow-type Pages deploys
+# ignore CNAME files anyway — listed here so an in-flight render on pre-removal
+# code can't re-commit it (git add skips ignored files).
+site/CNAME
 site/_tmp/
 site/stockdata/
 site/ohlc/
@@ -41,6 +45,9 @@ data/midcap_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
 data/canada_breadth/_closes_cache.parquet
+# R5: factor panel monthly partitions (off-render-path nightly artifact; R2-only by design,
+# regenerated every daily run; consumers join via (ticker,date) against the replay parquet).
+data/factordata/panel/
 # hk_shorts: positions.parquet + turnover.parquet + coverage.json are GIT-tracked
 # (NOT R2) because they are not regenerable without re-scraping and are critical
 # evidence for the H2a phase-0 test.  Only the _closes_cache-equivalent rebuild
@@ -102,6 +109,10 @@ data/sec_insider/insider_panel.parquet
 # deep-history close panel for the deep factor IC scorecard (offline backfill via
 # scripts.sue_deep_phase0; the small deep ic_scorecard.json IS committed, the 54MB panel is not).
 data/edgar/sue_deep_closes.parquet
+
+# PR-5 (L1 short-side): BD Phase-0 event tape — Mac-local, regenerable from massive_stock_day.
+# Summary JSON (breakdown_events_summary.json) IS committed (RUL-P10 path b).
+data/research/breakdown_events.parquet
 
 # Admin dashboard: local-only secrets / GA4 service-account keys (never commit)
 admin/.env
@@ -185,6 +196,20 @@ data/thetadata_eod/greeks/
 #                                              migration safety, phase out 2026-08-03)
 # Both are small (<5MB), non-regenerable, git-tracked. Not gitignored.
 
+# ThetaData T2a signed-flow features: data/tape_flow/daily/ is GIT-tracked (NOT R2).
+# Storage math: ~400 roots × 252 sessions/yr × 3y × ~80 bytes/row (parquet compressed)
+# ≈ 24 MB total — well under the ~30 MB git threshold.
+# Per-name parquets are append-only feature stores (aggregate-then-discard; no raw rows).
+# Revisit if universe exceeds 800 names or backfill extends to 12y (would reach ~193 MB → R2).
+# data/tape_flow/daily/ is intentionally NOT gitignored; all per-root parquets are committed.
+#
+# data/tape_flow/raw/ contains FULL tape bytes (ETF anchors + episode windows) — R2-plane only.
+# Only the manifest (_manifest.json) is committed; raw parquets are NEVER committed.
+data/tape_flow/raw/*.parquet
+# state file is tiny/git-tracked (resumable backfill):
+!data/tape_flow/_state.json
+!data/tape_flow/raw/_manifest.json
+
 # ObsidianBrain vault (own git repo; view over memory/ + research/, lives inside this folder)
 ObsidianBrain/
 
@@ -222,3 +247,39 @@ data/oracle/memory_active_analogues.json
 # hypothesis_state.json is also governance data (tracks graded ids + sentinel line count).
 !data/oracle/hypothesis_inbox.jsonl
 !data/oracle/hypothesis_state.json
+
+# Research Factory W1 (RF-8): broad exclude for bulk/replay artifacts; explicit
+# negations for the six durable git-tracked ledgers and the allowlist.
+data/research_factory/*
+!data/research_factory/candidates.jsonl
+!data/research_factory/transitions.jsonl
+!data/research_factory/challenges/
+!data/research_factory/review/
+!data/research_factory/health.jsonl
+!data/research_factory/paper_monitor.jsonl
+!data/research_factory/authority_allowlist.json
+
+# Live options-flow poller runtime artifacts (regenerated each session)
+# live_flow_baselines/baselines.json is git-TRACKED (small, ~50 roots × 4 fields)
+data/live_flow_state/
+data/live_flow_out/
+
+# W0.2 OHLC store (reproducible from collector + manifest; not committed)
+data/yahoo_ohlc/
+research/oracle_asymmetry/W2_member_trades.csv
+
+# NW Rails R1 (PR-1, RUL-P10) — Mac-local per-fire parquet files.
+# The small summary JSONs at data/rule_experiments/results/*_summary.json ARE committed
+# (git-committed, single-writer: scripts/run_rule_replay.py).
+# The large per-fire parquet files are Mac-local only (never staged by nightly blanket
+# git add data/).
+data/rule_experiments/results/*_perfire.parquet
+
+# NW Rails R1 (PR-1, RUL-P10 retroactive) — replay parquet files are Mac-local/server-local
+# only (not gitignored previously; made explicit per RUL-P10 to prevent accidental staging
+# by the nightly blanket git add data/).
+data/replay/*.parquet
+# NW Rails PR-8 / RUL-P10 (path a): operator action ledger.
+# Admin server is the single intraday writer; MUST NOT be staged by the nightly
+# blanket `git add data/` sweep. Off-band backup rides the admin host's path.
+data/operator/

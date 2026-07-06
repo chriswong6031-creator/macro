@@ -33,6 +33,7 @@ from engine.oracle.timemachine import (
     build_chunks_m,
     build_episode_feed,
     build_manifest,
+    rrg_transform,
 )
 
 
@@ -371,3 +372,82 @@ def test_tierm_daily_dates():
     # Must include at least one non-Friday weekday (Monday–Thursday)
     non_fri = [d for d in chunk["dates"] if pd.Timestamp(d).weekday() != 4]
     assert len(non_fri) > 0, "Expected non-Friday dates in daily Tier-M chunk"
+
+
+# ── rrg_transform (desk-parity coordinates, schema v3) ───────────────────────
+
+
+def _make_ret_panel(rets: dict[str, float], n_days: int = 150) -> pd.DataFrame:
+    """Panel with a constant daily ``ret`` per node, (node, date)-indexed."""
+    dates = pd.bdate_range("2024-01-02", periods=n_days)
+    records = []
+    for node, r in rets.items():
+        for dt in dates:
+            records.append({"node": node, "date": dt, "ret": r, "other": 1.0})
+    return pd.DataFrame(records).set_index(["node", "date"])
+
+
+def test_rrg_warmup_is_null():
+    """x needs the 1M (21d) leg, y needs the 1W (5d) leg; the frontend plots a
+    node only when BOTH are non-null, so warm-up nodes never render."""
+    out = rrg_transform(_make_ret_panel({"A": 0.002, "B": 0.0, "C": -0.002}))
+    a = out.xs("A", level="node").sort_index()
+    assert a["rs"].iloc[:21].isna().all(), "x must be null through the 1M warm-up"
+    assert a["accel_z"].iloc[:5].isna().all(), "y must be null through the 1W warm-up"
+    assert a["accel_z"].iloc[10:].notna().all(), "y must exist once 1W leg is alive"
+    assert a["rs"].iloc[30:].notna().all(), "x must exist once 1M leg is alive"
+
+
+def test_rrg_desk_parity_deterministic():
+    """Constant drift spread -> z-scores are the +-1.2247/0 arithmetic-progression
+    values; momentum back-leg uses the desk's 0.0 fallback while 3M/6M warm up."""
+    out = rrg_transform(_make_ret_panel({"A": 0.002, "B": 0.0, "C": -0.002}))
+    z3 = 1.224744871  # z of extreme in a 3-point near-symmetric cross-section
+    TOL = 0.05        # compounding skews +-drift slightly off perfect symmetry
+    a = out.xs("A", level="node").sort_index()
+    c = out.xs("C", level="node").sort_index()
+    # day ~40: 1W+1M alive, 3M/6M warming -> rs_ratio = z1M alone; mom = front - 0.0
+    assert abs(a["rs"].iloc[40] - z3) < TOL
+    assert abs(a["accel_z"].iloc[40] - z3) < TOL, "back-leg must 0.0-fallback while warming"
+    # final day (>=127): all legs alive -> rs_ratio ~= z; mom = front - back ~= 0
+    assert abs(a["rs"].iloc[-1] - z3) < TOL
+    assert abs(a["accel_z"].iloc[-1]) < TOL
+    assert abs(c["rs"].iloc[-1] + z3) < TOL  # near-symmetric loser
+
+
+def test_rrg_reference_one_date():
+    """Cross-check the vectorized transform against a literal dict-math
+    re-implementation of compute_rotation's formula on the final date."""
+    rng = np.random.default_rng(42)
+    dates = pd.bdate_range("2024-01-02", periods=160)
+    nodes = [f"N{i}" for i in range(7)]
+    records = []
+    for n in nodes:
+        for dt in dates:
+            records.append({"node": n, "date": dt,
+                            "ret": float(rng.normal(0.0005, 0.01))})
+    panel = pd.DataFrame(records).set_index(["node", "date"])
+    out = rrg_transform(panel)
+
+    # reference: levels -> horizon perfs -> median-rel -> cross-sectional z
+    lvl = (1.0 + panel["ret"].unstack("node")).cumprod()
+    HORIZONS = {"1W": 5, "1M": 21, "3M": 63, "6M": 126}
+    z = {}
+    for h, d in HORIZONS.items():
+        perf = (lvl.iloc[-1] / lvl.iloc[-1 - d] - 1.0)
+        rel = perf - perf.median()
+        z[h] = (rel - rel.mean()) / rel.std(ddof=0)
+    exp_x = (z["1M"] + z["3M"]) / 2
+    exp_y = (z["1W"] + z["1M"]) / 2 - (z["3M"] + z["6M"]) / 2
+    last = out.groupby(level="node").tail(1)
+    for n in nodes:
+        got_x = float(last.xs(n, level="node")["rs"].iloc[0])
+        got_y = float(last.xs(n, level="node")["accel_z"].iloc[0])
+        assert abs(got_x - float(exp_x[n])) < 1e-9, f"x mismatch for {n}"
+        assert abs(got_y - float(exp_y[n])) < 1e-9, f"y mismatch for {n}"
+
+
+def test_rrg_other_columns_untouched():
+    out = rrg_transform(_make_ret_panel({"A": 0.001, "B": -0.001}))
+    assert (out["other"] == 1.0).all()
+    assert (out["ret"].xs("A", level="node") == 0.001).all()

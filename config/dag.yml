@@ -26,6 +26,28 @@ lanes:
           'python scripts/fetch_finviz_themes.py' (not python -m), so the
           conformance parser cannot extract it via _PYTHON_M_RE. It is intentionally
           omitted from the declared module list to keep parser output consistent.
+      - id: tape_flow_forward
+        module: scripts.build_tape_flow_daily
+        args: [--mode, forward]
+        note: >
+          T2a tape-flow features — forward accrual (options-tape P2.x, #1435).
+          Prior-trading-day trade+NBBO tape for the gex_symbols() universe via
+          ThetaData wildcard-bulk; aggregates inline to signed-flow features.
+          Non-fatal: terminal absent or any error warns and continues.
+          outputs: [data/tape_flow/daily/*.parquet, data/tape_flow/_state.json]
+      - id: tape_flow_episodes
+        module: scripts.build_tape_flow_daily
+        args: [--mode, episodes, --budget-minutes, "30"]
+        note: >
+          T2a episode-window backfill (#1441) — Tier-S episodes 2022→, ETF anchors.
+          Hard-stop at 30 min (budget_deadline); state resumes next night.
+          Runs AFTER the forward step so the daily row always lands first. Non-fatal.
+      - id: tape_flow_etf_history
+        module: scripts.build_tape_flow_daily
+        args: [--mode, etf-history, --budget-minutes, "20"]
+        note: >
+          T2a ETF-history backfill (#1441) — 20 ETF anchors, full history 2017→.
+          Hard-stop at 20 min; runs last of the three tape-flow steps. Non-fatal.
 
   # ── daily.yml / engine ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
@@ -60,8 +82,14 @@ lanes:
         module: scripts.build_site
       - id: build_stock_board_v2
         module: scripts.build_stock_board_v2
+      - id: build_reflexivity_overlay
+        module: scripts.build_reflexivity_overlay
+        note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
       - id: build_impulse
         module: scripts.build_impulse
+      - id: build_dispersion_regime
+        module: scripts.build_dispersion_regime
+        note: NW Rails W2 PR-4 — L3 dispersion regime lens (display-only, seconds)
       - id: build_congress
         module: scripts.build_congress
       - id: build_foresight
@@ -81,8 +109,11 @@ lanes:
             - scripts.build_gex_board
             - scripts.build_vol_regime
             - scripts.build_options_flow
+            - scripts.build_flow_desk
+            - scripts.build_options_screener
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_entry_state
             - scripts.build_darkpool_desk
           cl_baskets:
             - scripts.build_baskets
@@ -150,6 +181,9 @@ lanes:
       - id: build_kernel_diagnostics
         module: scripts.build_kernel_diagnostics
         note: "neural-web W3 PR3 — decay curves (kernel_families.json) + lagging-signal detector (lagging_signals.json); display-first, resilient"
+      - id: build_kernel_half_lives
+        module: scripts.build_kernel_half_lives
+        note: "signal-commons W2 — measured holding-horizon half-lives (half_life.json); monotone-decrease gate, nulls printed; display-only, resilient"
       - id: build_confluence_graph
         module: scripts.build_confluence_graph
         note: "neural-web W4 — confluence graph v1 (typed nodes: engine/sector/regime/thesis/episode; feeds/stable/leads/contradicts/confirms edges; contradiction detector 6 pairs; display-only under hard law)"
@@ -196,6 +230,12 @@ lanes:
         module: scripts.oracle_nightly
       - id: build_world_state
         module: scripts.build_world_state
+      - id: build_nw_mastermind_context
+        module: scripts.build_nw_mastermind_context
+        note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)
+      - id: build_options_flow_attention
+        module: scripts.build_options_flow_attention
+        note: non-fatal reflex; neural-web W-D — direction-free options-flow attention trigger (nightly EOD fold)
       - id: build_feeds
         module: scripts.build_feeds
         note: non-fatal; per-ticker JSON feeds
@@ -210,6 +250,44 @@ lanes:
           step via a shell loop ('for mod in scripts.build_canada_library ...; do python -m
           $mod; done') which the conformance parser cannot extract (variable expansion).
           They are intentionally omitted from declared steps.
+
+  # ── daily.yml / factor_panel ───────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: factor_panel
+    steps:
+      - id: build_factor_panel
+        module: scripts.build_factor_panel
+        note: >
+          Incremental nightly factor panel build (bounded 10-day window).
+          Writes data/factordata/panel/ which is gitignored. Fail-soft.
+      - id: factor_contradictions_detector
+        module: engine.neuralweb.factor_contradictions
+        note: >
+          P1-D — Pair G borrowed_strength detector. Runs after factor_panel.
+          Writes data/neuralweb/factor_contradictions.jsonl and
+          data/reflexes/factor_attention/firings.jsonl (single-writer).
+          Non-fatal (always exits 0).
+          inputs: [data/factordata/panel/, site/factordata/us_standouts.json]
+          outputs: [data/neuralweb/factor_contradictions.jsonl,
+                    data/reflexes/factor_attention/firings.jsonl]
+      - id: build_factor_intelligence_state
+        module: scripts.build_factor_intelligence_state
+        note: >
+          RUL-NW1/NW10/NW11 — Builds committed factor intelligence state
+          artifact + long-term factor pool artifacts. Fail-open (always
+          exits 0). Single job advance per RUL-NW1 ruling.
+          inputs: [data/factordata/panel/, site/factordata/factor_series.json,
+                   data/edgar/ic_scorecard.json,
+                   data/neuralweb/factor_contradictions.jsonl,
+                   data/reflexes/factor_attention/firings.jsonl,
+                   data/reflexes/factor_attention/grades.jsonl,
+                   data/reflexes/factor_attention/probation.json,
+                   data/neuralweb/machine_registry.jsonl,
+                   site/factordata/us_standouts.json]
+          outputs: [data/neuralweb/factor_intelligence_state.json,
+                    site/neuralwebdata/factor_intelligence_state.json,
+                    data/factordata/factor_state_history.jsonl,
+                    data/factordata/fire_coordinates.jsonl]
 
   # ── daily.yml / factor_series ───────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
@@ -275,6 +353,19 @@ lanes:
                    data/neuralweb/world_state.json]
           outputs: [data/reflexes/cortex_attention/grades.jsonl,
                     data/neuralweb/cortex/probation.json,
+                    data/neuralweb/governance.jsonl]
+      - id: grade_factor_attention
+        module: scripts.grade_factor_attention
+        note: >
+          P1-D — Nightly factor_attention reflex grader + A2 earn-in.
+          Parallel grader to grade_cortex_attention; owns the
+          data/reflexes/factor_attention/ subtree (NOT cortex paths).
+          Runs AFTER grade_cortex_attention, BEFORE evaluate_cortex_hypotheses.
+          Non-fatal (always exits 0).
+          inputs: [data/reflexes/factor_attention/firings.jsonl,
+                   data/yahoo/*.parquet]
+          outputs: [data/reflexes/factor_attention/grades.jsonl,
+                    data/reflexes/factor_attention/probation.json,
                     data/neuralweb/governance.jsonl]
       - id: evaluate_cortex_hypotheses
         module: scripts.evaluate_cortex_hypotheses
@@ -366,6 +457,9 @@ lanes:
         module: scripts.build_site
       - id: build_stock_board_v2
         module: scripts.build_stock_board_v2
+      - id: build_reflexivity_overlay
+        module: scripts.build_reflexivity_overlay
+        note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
       - id: build_congress
         module: scripts.build_congress
       # parallel band (scope=all)
@@ -388,6 +482,7 @@ lanes:
             - scripts.build_options_flow
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_entry_state
           cl_baskets:
             - scripts.build_baskets
             - scripts.build_news
@@ -476,6 +571,7 @@ lanes:
             - scripts.build_options_flow
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_entry_state
           cl_baskets:
             - scripts.build_baskets
             - scripts.build_news
@@ -976,8 +1072,20 @@ modules:
       - data/oracle/panel*.parquet
       - data/oracle/graph_s.json
       - data/oracle/episodes.json
+      - data/oracle/episodes_s.parquet
+      - data/oracle/rotation_groups.json
       - site/basketdata/oracle_state.json
       - data/breadth/breadth.parquet
+      - data/oracle/compounds/registry.jsonl
+      - data/oracle/reversion_forward/*.jsonl
+      - site/factordata/us_standouts.json
+      - site/factordata/signal_gate.json
+      - data/oracle/turn_desk_ledger.jsonl
+      - data/massive_stock_day/*.parquet
+      - data/oracle/qual_filters/registry.jsonl
+      - data/market_state/latest.json
+      - data/oracle/qual_filter_stamps.jsonl
+      - data/oracle/qual_filter_accrual.json
     writes:
       - site/basketdata/oracle_state.json
       - data/oracle/oracle_alerts.jsonl
@@ -986,10 +1094,46 @@ modules:
       - data/oracle/memory_base_rates.json
       - data/oracle/forward_ledger.jsonl
       - site/wh_banner.json
+      - data/oracle/reversion_forward/*.jsonl
+      - site/basketdata/oracle_reversion_state.json
+      - site/basketdata/oracle_turn_desk.json
+      - data/oracle/turn_desk_ledger.jsonl
+      - data/oracle/qual_filter_stamps.jsonl
+      - data/oracle/qual_filter_accrual.json
     impure: false
     needs_secrets: false
     event_driven: true
-    note: Event-driven — detects new rotation complexes vs prior state by diffing oracle_state
+    note: >
+      Event-driven — detects new rotation complexes vs prior state by diffing oracle_state.
+      P0 (Step 11b): reversion forward ledger nightly accrual + grading.
+      P1 (Step 11c): oracle_reversion_state.json sidecar (display tier, reads P2 authority
+      additively). W6 (Step 15): Rotation Turn Desk — armed A15 windows + member fires
+      + display artifact + forward ledger (DISPLAY-ONLY under hard law).
+      W7 (Step 17): Qualitative filter PIT stamps + accrual report.
+
+  - module: scripts.oracle_reversion_promotion_scan
+    reads:
+      - data/oracle/compounds/registry.jsonl
+      - data/oracle/reversion_forward/*.jsonl
+      - data/oracle/reversion_promotion_queue.json
+      - data/oracle/reversion_authority.json
+      - data/oracle/reversion_kill_requeue.jsonl
+      - site/basketdata/oracle_reversion_state.json
+    writes:
+      - data/oracle/reversion_promotion_queue.json
+      - data/oracle/reversion_authority.json
+      - data/neuralweb/governance.jsonl
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      P2 (W4.a): reversion promotion scan — armed-not-fired. Reads P0 matured ledger,
+      evaluates against FROZEN PREREG floor (ORACLE_REVERSION_PROMOTION_PREREG.md),
+      calls grant_authority VERBATIM, queues candidates for Fable/operator adjudication.
+      NEVER auto-promotes. Applies ratification only for queue rows carrying human-committed
+      ratified_by. Emits governance.jsonl events per proposed tier transition (Article 2).
+      Lapse proposals (Article 3) also queued. At current n≈0 prints
+      'no candidates — accruing' with per-compound earliest projections.
 
   - module: scripts.build_world_state
     reads:

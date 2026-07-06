@@ -998,36 +998,22 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         "as_of": idx.max().strftime("%Y-%m-%d"),
         "bench_label": bench_label, "bench_label_zh": bench_label_zh,
         "disclaimer": {
-            "en": ("Transparent decision-support, not a validated buy list. Every theme score "
-                   "decomposes into the legs shown (trend · breadth · impulse · macro · MTF · "
-                   "vol-hole · −crowding); the macro leg is a documented regime prior, and baskets "
-                   "are ~3y hindsight-curated. The MTF (multi-timeframe trend) and vol-hole legs run "
-                   "on the basket's consolidated candle: Phase-0 measured ~0 forward-return edge for "
-                   "theme momentum, so they shape the READ and gate the recommendation against the "
-                   "long-term trend (drawdown control — the one validated channel), not a return "
-                   "forecast. Whale / volume / net-flow are display-only context. A focus/structure "
-                   "lens, like the Flow Lens — never an oracle."),
-            "zh": ("透明的决策支持，并非经验证的买入清单。每个主题评分都拆解为所示各项（趋势·广度·"
-                   "脉冲·宏观·多周期·波动洞·−拥挤）；宏观项为有据可查的周期先验，篮子为约3年事后筛选。"
-                   "多周期（趋势结构）与波动洞两项基于篮子的合成K线计算：Phase-0 实测主题动量对未来"
-                   "收益几乎无预测力，故它们用于刻画状态、并以长期趋势对建议进行回撤控制式约束（唯一"
-                   "经验证的渠道），而非收益预测。巨鲸/成交量/净流入仅作展示性背景。这是聚焦/结构透镜，"
-                   "如资金流透视 — 绝非预言。"),
+            "en": ("Decision support only, not a buy list. Scores combine trend, breadth, "
+                   "impulse, macro, timing and crowding. Use them to compare themes and "
+                   "control risk, not as return forecasts."),
+            "zh": ("仅作决策参考，不是买入清单。评分综合趋势、广度、脉冲、宏观、择时和拥挤度。"
+                   "用于比较主题和控制风险，不是收益预测。"),
         },
         "macro_context": mc["display"],
         "weights": WEIGHTS,
         "signal_calibration": cal,
         "regime_sizing": {
             **rg_size,
-            "en": ("Index vol-regime sizing (subtract-only): scale basket gross to "
+            "en": ("Volatility sizing: basket gross is scaled to "
                    f"~{int(round((rg_size.get('gross_scalar') or 1.0) * 100))}% of normal "
-                   "and stand aggressive recos down in a risk-off regime. Drawdown / "
-                   "capital-efficiency caution, not a return forecast — never lifts a score "
-                   "or rank. The continuous validated score moves money only when its gate is open."),
-            "zh": ("指数波动率状态仓位（仅做减法）：将篮子总仓位缩放至约"
-                   f"{int(round((rg_size.get('gross_scalar') or 1.0) * 100))}%，并在风险偏离"
-                   "状态下将激进建议下调。这是回撤/资金效率提示，并非收益预测——绝不抬高评分或排名。"
-                   "连续验证分数仅在其闸门开启时才动用资金。"),
+                   "in tougher regimes. This affects size only, not ranks."),
+            "zh": ("波动率仓位：在更困难的环境中，篮子总仓位缩放至约"
+                   f"{int(round((rg_size.get('gross_scalar') or 1.0) * 100))}%。只影响仓位，不影响排名。"),
         },
         "themes": themes,
         "rotation_5d": {"climbers": climbers, "fallers": fallers},

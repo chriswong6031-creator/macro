@@ -14,7 +14,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Commodity Vector — {{ as_of }}</title>
-<script src="plotly-2.32.0.min.js"></script>
+{% include '_plotly_head.html.j2' %}
 <style>
 :root{
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r1:{{C.r1}}; --r2:{{C.r2}}; --r3:{{C.r3}};
@@ -177,11 +177,18 @@ html[data-theme="dark"] .fbar .fmid{background:var(--card)} /* keep the centre t
 html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black in dark → use the lighter grid grey so the pill reads on the card */
 .tl-head{font-weight:600;color:var(--ink);font-size:14px;flex:1;min-width:200px}
 .tl-time{font-size:12px;color:var(--faint);font-weight:600}
-.tl-detail{padding:2px 0 12px;font-size:13px;color:var(--muted);line-height:1.6}
-.tl-item[hidden]{display:none}
-.tl-news{margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:9px;border:1px dashed var(--grid)}
-.tl-news-h{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px}
-.tl-news-item{display:block;font-size:12.5px;color:var(--text);padding:2px 0}
+	.tl-detail{padding:2px 0 12px;font-size:13px;color:var(--muted);line-height:1.6}
+	.tl-item[hidden]{display:none}
+	.tl-news{margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:9px;border:1px dashed var(--grid)}
+	.tl-news-h{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px}
+	.tl-news-item{display:block;font-size:12.5px;color:var(--text);padding:2px 0}
+	.tl-more{display:flex;justify-content:center;margin-top:12px}
+	.tl-more button{border:1px solid var(--grid);background:var(--bg);color:var(--ink);border-radius:9px;
+	  padding:8px 14px;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+	.tl-more button:hover{border-color:var(--blue);color:var(--blue)}
+	.tl-more button .tl-hide{display:none}
+	.tl-more button.is-expanded .tl-show{display:none}
+	.tl-more button.is-expanded .tl-hide{display:inline}
 /* upcoming catalysts */
 .cat-list{display:flex;flex-direction:column;gap:2px}
 .cat-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--grid);flex-wrap:wrap}
@@ -232,7 +239,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         {% for f in complex.favored %}<span class="pill fav">{{ td(f) }}</span>{% endfor %}
         {% else %}<span class="sub faint">{{ t('No clear tailwind — mixed complex.', '无明显顺风 — 综合走势分化。') }}</span>{% endif %}
       </div>
-      <div class="sub" style="margin-top:14px">{{ t('The quadrant is read off the dollar trend and the copper/gold growth proxy. Oil & copper run hottest in Reflation; gold is the regime-agnostic haven that also works in a deflation scare.', '该象限由美元趋势与铜/金增长代理读出。原油与铜在再通胀中最强；黄金是不依赖周期的避险资产，在通缩恐慌中同样有效。') }}</div>
+	      <div class="sub" style="margin-top:14px">{{ t('Read: dollar trend + copper/gold. Reflation favors oil and copper; deflation scares favor gold.', '读法：美元趋势 + 铜/金。再通胀利好原油与铜；通缩恐慌利好黄金。') }}</div>
     </div>
     <div class="card">
       <h3>{{ t('Relative performance · 2y (rebased)', '相对表现 · 2年（再基准化）') }}</h3>
@@ -274,7 +281,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         {% if a.dollar_corr is not none %}
         <div style="margin-top:9px;font-size:13px;color:var(--muted)">{{ t('USD sensitivity', '美元敏感度') }}:
           <b class="{{ 'down' if a.dollar_corr<0 else 'up' }}">{{ '%+.2f'|format(a.dollar_corr) }}</b>
-          <span style="font-size:12px;color:var(--muted);opacity:.85">{{ t('63d corr to the broad dollar — ', '63日对广义美元相关 — ') }}{% if a.dollar_corr < 0 %}{{ t('a stronger USD is a headwind', '美元走强为逆风') }}{% else %}{{ t('currently moves with USD', '当前与美元同向') }}{% endif %}{% if not a.dollar_stable %} · <b>{{ t('sign-unstable', '符号不稳定') }}</b>{% endif %}{{ t(' · contemporaneous, not a forecast', ' · 同步，非预测') }}</span>
+          <span style="font-size:12px;color:var(--muted);opacity:.85">{{ t('63d dollar link — ', '63日美元关系 — ') }}{% if a.dollar_corr < 0 %}{{ t('strong USD hurts', '美元强则承压') }}{% else %}{{ t('moves with USD', '与美元同向') }}{% endif %}{% if not a.dollar_stable %} · <b>{{ t('unstable', '不稳定') }}</b>{% endif %}</span>
         </div>
         {% endif %}
         <div class="slider">
@@ -298,7 +305,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
           {% if a.alloc_pct > 0 %}<div class="a" style="width:{{ a.alloc_pct }}%">{{ a.alloc_pct }}%</div>{% endif %}
           {% if a.alloc_pct < 100 %}<div class="cash" style="width:{{ 100-a.alloc_pct }}%">{{ 100-a.alloc_pct }}% {{ t('Cash','现金') }}</div>{% endif %}
         </div>
-        <div class="sub" style="margin-top:10px">{{ t('A drawdown-reduction overlay, not an alpha engine: it cuts deep buy-and-hold drawdowns by acting next-day on the risk/momentum state. Backtest', '一个降低回撤的叠加层，而非超额收益引擎：它根据风险/动量状态次日生效，削减买入持有的深度回撤。回测') }} ({{ cal_span }}):</div>
+	        <div class="sub" style="margin-top:10px">{{ t('Risk overlay, not alpha. It changes exposure next day from risk/momentum state. Backtest', '风险叠加层，不是超额收益引擎。它根据风险/动量状态次日调整仓位。回测') }} ({{ cal_span }}):</div>
         {% if a.score %}
         <div class="score">
           <div class="s"><div class="k">CAGR</div><div class="v">{{ a.score.cagr }}%</div><div class="h">{{ t('hold','持有') }} {{ a.score.hold_cagr }}%</div></div>
@@ -344,7 +351,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
           <span class="faint">{{ cy.days_in }}{{ t('d in of a typical','天 / 典型') }} {{ cy.median_len_d }}{{ t('d','天') }}</span>
           <span style="font-weight:700;color:var(--ink)">{% if cy.eta_days>0 %}~{{ cy.eta_days }}{{ t('d to a typical','天后达典型') }} {{ t(cy.next_event, cy.next_event_zh) }} <span class="faint" style="font-weight:500">({{ cy.eta_lo }}–{{ cy.eta_hi }}{{ t('d','天') }})</span>{% else %}{{ t('past the typical','已过典型') }} {{ t(cy.next_event, cy.next_event_zh) }} {{ t('window','窗口') }}{% endif %}</span>
         </div>
-        {% if not cv.reliable %}<div class="sub faint" style="margin-top:8px;font-size:11.5px">{{ t('Timing is lower-confidence for this commodity (its conviction score is weakly calibrated) — treat the cycle window as rough context, not a precise forecast.', '该商品的时机置信度较低（其裁决分数校准较弱）——周期窗口仅作粗略参考，并非精确预测。') }}</div>{% endif %}
+        {% if not cv.reliable %}<div class="sub faint" style="margin-top:8px;font-size:11.5px">{{ t('Lower confidence: use the cycle window as rough context.', '置信度较低：周期窗口仅作粗略背景。') }}</div>{% endif %}
       </div>
       {% endif %}
 
@@ -366,7 +373,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
           <span class="mp-tag {{ 'turning' if r.turning else ('fading' if r.fading else 'flat') }}">{{ t('turning','转向') if r.turning else (t('fading','转弱') if r.fading else t('steady','平稳')) }}</span>
         </div>
         {% endfor %}
-        <div class="sub faint" style="margin-top:9px;font-size:11.5px">{{ t('Each macro driver over a fast (~2-week) vs the engine\'s slow (3-month) window, signed so green = supportive for this metal, the grey tick = the slow read. DISPLAY-ONLY context — the fast read is noisy and is NOT fed into the score; it shows whether the drivers are starting to confirm a price move.','每个宏观驱动的快（约2周）与引擎的慢（3个月）窗口对比，绿色=对该金属为支撑，灰色刻度=慢窗读数。仅作展示背景 — 快窗读数噪声较大，不计入裁决分数；用于显示驱动是否开始确认价格走势。') }}</div>
+	        <div class="sub faint" style="margin-top:9px;font-size:11.5px">{{ t('Fast driver read vs the 3-month baseline. Green helps this asset. Display-only.', '快速驱动读数对比3个月基线。绿色对该品种有利。仅展示。') }}</div>
       </div>
       {% endif %}
 
@@ -387,7 +394,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         {% endfor %}
       </div>
       {% endfor %}
-      <div class="sub faint" style="margin-top:12px;font-size:12px">{{ t('Conviction = a weighted blend of the factors below, each weight a MEASURED forward-return strength (negative = the factor is contrarian for this commodity, e.g. oil\'s 12-month trend mean-reverts). Bars show each factor\'s net contribution (weight × reading). Cycle timing is from this commodity\'s own 25-year bull/bear leg durations — an estimate, not a guarantee.', '裁决 = 下列因素的加权融合，每个权重均为实测的前瞻收益强度（负值=该因素对此商品为逆向，如原油12个月趋势均值回归）。条形显示各因素的净贡献（权重 × 读数）。周期时机来自该商品自身25年的牛熊段时长——为估算，并非保证。') }}</div>
+	      <div class="sub faint" style="margin-top:12px;font-size:12px">{{ t('Bars show each factor\'s net push. Negative weights mean the factor is contrarian for this commodity.', '条形显示各因素的净推动。负权重表示该因素对此商品要反向解读。') }}</div>
     </div>
     {% endif %}
 
@@ -416,7 +423,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
     <div class="card" style="margin-top:18px">
       <h3>{{ t(a.label, a.zh) }} {{ t('price · Risk Index · residual shocks', '价格 · 风险指数 · 残差冲击') }}</h3>
       {{ a.chart|safe }}
-      <div class="sub" style="margin-top:6px">{{ t('Blue ▲ = an unexplained bid (price above what its macro drivers predict); red ▼ = unexplained pressure. Red area = Risk Index (right axis).', '蓝色 ▲ = 无法解释的买盘（价格高于宏观驱动所预测）；红色 ▼ = 无法解释的压力。红色区域 = 风险指数（右轴）。') }}</div>
+	      <div class="sub" style="margin-top:6px">{{ t('Blue ▲ = unexplained bid. Red ▼ = unexplained pressure. Red area = Risk Index.', '蓝色 ▲ = 无法解释的买盘。红色 ▼ = 无法解释的压力。红色区域 = 风险指数。') }}</div>
     </div>
 
     <!-- multi-timeframe momentum & technicals (cycle ladder + 5-TF table) -->
@@ -429,7 +436,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         {% if a.ladder.summary_line %}<div class="sub" style="margin-top:8px">{{ t(a.ladder.summary_line, a.ladder.summary_line_zh or a.ladder.summary_line) }}</div>{% endif %}
         {% if a.ladder.entry_text %}<div class="sub" style="margin-top:8px">{{ t(a.ladder.entry_text, a.ladder.entry_text_zh or a.ladder.entry_text) }}</div>
         {% elif a.ladder.next %}<div class="sub" style="margin-top:8px">{{ t(a.ladder.next, a.ladder.next_zh or a.ladder.next) }}</div>{% endif %}
-        <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('The same calibrated daily/weekly cycle engine the stock analyzer runs (graddhy / financial-tap methodology, equity preset). It is a timing / structure tool — trust the verdict above, which already applies this asset\'s measured calibration.', '与股票分析器相同的已校准日线/周线周期引擎（graddhy / financial-tap 方法，股票预设）。这是时机/结构工具 — 以上方裁决为准，其已纳入该品种的实测校准。') }}</div>
+	        <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Timing / structure only. The verdict above already applies this commodity\'s calibration.', '仅看时机/结构。上方裁决已纳入该商品自身校准。') }}</div>
       </div>
       <div class="card">
         <h3>{{ t('Momentum by timeframe','各周期动量') }}</h3>
@@ -449,7 +456,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
           </tr>
           {% endfor %}
         </table>
-        <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('RSI / StochRSI / MACD across five timeframes (daily → monthly). RSI ≥70 / Stoch ≥80 = overbought (red); ≤30 / ≤20 = oversold (green). These are the universal tape; the verdict above applies this asset\'s calibrated meaning.', 'RSI / 随机RSI / MACD 跨五个周期（日线 → 月线）。RSI ≥70 / 随机 ≥80 = 超买（红）；≤30 / ≤20 = 超卖（绿）。这些是通用盘面；上方裁决已纳入该品种的校准含义。') }}</div>
+	        <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Five timeframes. Red = overbought; green = oversold. Use the verdict for meaning.', '五个周期。红色=超买；绿色=超卖。含义以上方裁决为准。') }}</div>
       </div>
     </div>
     {% endif %}
@@ -462,7 +469,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         <h3>{{ t('Risk Index', '风险指数') }} {{ vbadge(a.verdicts.get('risk_index','')) }}</h3>
         <div class="mini"><div class="lab"><span>{{ t('Now','当前') }}</span><span><b>{{ a.risk_index }}</b>/100</span></div>
           <div class="bar"><div class="fill {{ 'red' if not a.risk_on else '' }}" style="width:{{ a.risk_index }}%"></div></div></div>
-        <div class="sub" style="margin-top:8px">{{ t('The reliable signal — judged on forward DRAWDOWN (its real job). High = deeper near-term drawdowns ahead.', '可靠信号 — 以前瞻回撤评判（其真正职责）。高 = 未来短期回撤更深。') }}</div>
+	        <div class="sub" style="margin-top:8px">{{ t('High risk means deeper near-term drawdown risk.', '风险高表示近期回撤风险更深。') }}</div>
       </div>
       <!-- trend / momentum -->
       <div class="card">
@@ -479,8 +486,8 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         {% if a.carry %}
         <div class="sigline"><span class="l">{{ t('Term structure (carry)','期限结构（展期收益）') }}</span><span class="r"><b style="color:var(--muted)">{{ t('backwardation','现货升水') if a.carry.state=='backwardation' else t('contango','期货升水') }}</b> ({{ '%+.1f'|format(a.carry.roll_ann) }}%/yr{% if a.carry.deep %} · {{ a.carry.deep.deep_pctile }} {{ t('%ile of','百分位/') }} {{ a.carry.deep.deep_years }}y{% endif %})</span></div>
         {% endif %}
-        <div class="sub" style="margin-top:8px">{{ t(a.driver_interp[0], a.driver_interp[1]) }}{% if a.carry %} {{ t('Roll yield = front (' ~ a.carry.front ~ ') vs second (' ~ a.carry.second ~ ') contract: positive (backwardation) earns carry for longs; negative (contango) bleeds.', '展期收益 = 近月（' ~ a.carry.front ~ '）对次月（' ~ a.carry.second ~ '）合约：正值（现货升水）对多头有利；负值（期货升水）则损耗。') }}{% endif %}</div>
-        {% if a.carry and a.carry.caveat_en %}<div class="sub" style="margin-top:6px;opacity:.85"><b>{{ t('Validated','已验证') }}:</b> {{ t(a.carry.caveat_en, a.carry.caveat_zh) }}</div>{% endif %}
+	        <div class="sub" style="margin-top:8px">{{ t(a.driver_interp[0], a.driver_interp[1]) }}{% if a.carry %} {{ t('Carry: positive helps longs; negative costs longs.', '展期：正值利好多头；负值消耗多头。') }}{% endif %}</div>
+	        {% if a.carry and a.carry.caveat_en %}<div class="sub" style="margin-top:6px;opacity:.85"><b>{{ t('Validated','已验证') }}:</b> {{ t('carry is context, not a standalone direction call.', '展期是背景，不是独立方向信号。') }}</div>{% endif %}
       </div>
     </div>
     <div class="grid cols-3" style="margin-top:18px">
@@ -497,7 +504,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         <div class="mini"><div class="lab"><span>{{ t('Spec net (3y %ile)','投机净持仓（3年百分位）') }}</span><span><b>{{ a.pos_pctile if a.pos_pctile is not none else '—' }}</b></span></div>
           <div class="bar"><div class="fill" style="width:{{ a.pos_pctile or 0 }}%"></div></div></div>
         <div class="sigline" style="border:none"><span class="l">{{ t('State','状态') }}</span><span class="r"><b>{{ td(a.pos_state) }}</b></span></div>
-        <div class="sub">{{ t('Context only at these horizons — crowding has tended to persist, not revert. A washout (crowded short) is the cleaner tell.', '在这些周期上仅作背景 — 拥挤往往延续而非反转。超卖（拥挤空头）是更干净的信号。') }}</div>
+        <div class="sub">{{ t('Crowding can persist. Crowded-short washouts are the cleaner signal.', '拥挤可延续。拥挤空头后的超卖更清晰。') }}</div>
       </div>
       <!-- asset-specific: GSR (metals) or Brent-WTI (oil) -->
       {% if a.key in ['gold','silver'] %}
@@ -506,14 +513,14 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         <div class="mini"><div class="lab"><span>{{ t('GSR (3y %ile)','金银比（3年百分位）') }}</span><span><b>{{ a.gsr_pctile if a.gsr_pctile is not none else '—' }}</b></span></div>
           <div class="bar"><div class="fill" style="width:{{ a.gsr_pctile or 0 }}%"></div></div></div>
         <div class="sigline" style="border:none"><span class="l">{{ t('State','状态') }}</span><span class="r"><b>{{ td(a.gsr_state) }}</b></span></div>
-        <div class="sub">{{ t('CONFIRMED both metals: a high ratio (silver cheap vs gold) preceded silver +11.7%/126d vs +3.5% — a value/mean-reversion tell.', '金银双双确认：高比值（白银相对黄金便宜）后白银未来126天 +11.7% 对比 +3.5% — 价值/均值回归信号。') }}</div>
+	        <div class="sub">{{ t('High ratio = silver cheap vs gold. Historically a mean-reversion setup.', '高比值=白银相对黄金便宜。历史上偏均值回归。') }}</div>
       </div>
       {% elif a.key == 'oil' %}
       <div class="card">
         <h3>{{ t('Brent − WTI spread', '布伦特 − WTI 价差') }} {{ vbadge(a.verdicts.get('bw_change','')) }}</h3>
         <div class="sigline"><span class="l">{{ t('Spread change (60d)','价差变化（60天）') }}</span><span class="r"><b>{{ '%+0.2f'|format(a.bw_change) if a.bw_change is not none else '—' }}</b></span></div>
         <div class="sigline"><span class="l">{{ t('Spread (3y %ile)','价差（3年百分位）') }}</span><span class="r"><b>{{ a.bw_pctile if a.bw_pctile is not none else '—' }}</b></span></div>
-        <div class="sub" style="margin-top:8px">{{ t('CONFIRMED for oil: a WIDENING Brent−WTI spread preceded WTI +8.2%/126d vs −1.8% when narrowing — a free supply/logistics tell.', '原油确认：布伦特−WTI 价差走阔后 WTI 未来126天 +8.2%，收窄时为 −1.8% — 免费的供给/物流信号。') }}</div>
+	        <div class="sub" style="margin-top:8px">{{ t('Wider spread has been better for WTI; narrowing is weaker.', '价差走阔对WTI更好；收窄偏弱。') }}</div>
       </div>
       {% if a.supply %}
       {% set sp = a.supply %}
@@ -527,14 +534,14 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
         {% if sp.days_supply is defined %}<div class="sigline"><span class="l">{{ t('Crude days of supply','原油可供天数') }}</span><span class="r"><b>{{ sp.days_supply }}</b> {{ t('days','天') }}</span></div>{% endif %}
         {% if sp.production_mbd is defined %}<div class="sigline"><span class="l">{{ t('Production / refinery','产量／炼厂') }}</span><span class="r"><b>{{ sp.production_mbd }}</b> Mb/d{% if sp.refinery_util is defined %} · {{ sp.refinery_util }}%{% endif %}</span></div>{% endif %}
         {% if sp.spr_chg_4w_mb is defined %}<div class="sigline" style="border:none"><span class="l">{{ t('SPR 4-week change','战略储备4周变化') }}</span><span class="r"><b>{{ '%+.1f'|format(sp.spr_chg_4w_mb) }}M</b> · <a href="spr.html">{{ t('global reserves →','全球储备 →') }}</a></span></div>{% endif %}
-        <div class="sub" style="margin-top:8px">{{ t(sp.caveat_en, sp.caveat_zh) }} {{ t('− = below 5y season (tight); + = above (ample).','− = 低于5年季节（偏紧）；+ = 高于（偏松）。') }}</div>
+	        <div class="sub" style="margin-top:8px">{{ t('Seasonal z-score: negative is tight, positive is ample.', '季节性 z 分数：负值偏紧，正值偏松。') }}</div>
       </div>
       {% endif %}
       {% endif %}
     </div>
 
     <!-- per-asset calibration table -->
-    {% if a.signals %}
+	    {% if a.signals and a.key != 'gold' %}
     <div class="section-title">{{ t(a.label, a.zh) }} · {{ t('measured forward records', '实测前瞻记录') }}</div>
     <div class="card">
       <table class="catbl">
@@ -544,7 +551,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
           <td class="r">{{ e.monotone.full }}</td><td class="r">{{ e.monotone.pre }}</td><td class="r">{{ e.monotone.post }}</td></tr>
         {% endfor %}
       </table>
-      <div class="sub" style="margin-top:10px">{{ t('+1 / −1 = forward-return rank-trend sign by band (want matches the signal\'s intent). CONFIRMED = holds in both halves of history. Trend signals judged near-term; macro signals at 126 days.', '+1 / −1 = 按分档的前瞻收益排序趋势符号（应与信号意图一致）。已确认 = 在历史前后两半段均成立。趋势信号近端评判；宏观信号在126天评判。') }}</div>
+	      <div class="sub" style="margin-top:10px">{{ t('CONFIRMED = worked in both history halves. +1 / -1 shows forward-return rank by signal band.', '已确认 = 在历史前后半段都有效。+1 / -1 表示按信号分档的前瞻收益排序。') }}</div>
     </div>
     {% endif %}
   </div>
@@ -604,10 +611,16 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
       </div>
       {% endfor %}
     </div>
+    <div class="tl-more">
+      <button type="button" id="tl-more-btn" aria-expanded="false">
+        <span class="tl-show">{{ t('See more alerts', '查看更多警报') }}</span>
+        <span class="tl-hide">{{ t('Show fewer alerts', '收起警报') }}</span>
+      </button>
+    </div>
     {% else %}
     <div class="sub faint" style="padding:10px 0">{{ t('No alerts in the last', '最近') }} {{ timeline_days }} {{ t('days — commodities quiet on every tracked signal.', '天无警报 — 所有跟踪信号均平静。') }}</div>
     {% endif %}
-    <div class="sub faint" style="margin-top:14px">{{ t('Daily state-change events (residual shocks, risk, driver, trend, allocation, COT, value) recompute from history; intraday price-shocks update ~30 min (Yahoo hourly, best-effort). Built', '每日状态变化事件（残差冲击、风险、驱动、趋势、配置、COT、价值）由历史重算；日内价格冲击约每30分钟更新（Yahoo 小时线，尽力而为）。生成于') }} {{ built }}.</div>
+	    <div class="sub faint" style="margin-top:14px">{{ t('Alerts refresh from history; intraday price shocks are best-effort. Built', '警报由历史重算；日内价格冲击为尽力更新。生成于') }} {{ built }}.</div>
   </div>
 
   <!-- ===================== HOW THE SHOCKS MAP ===================== -->
@@ -620,14 +633,12 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
       <tr><td class="a">{{ t('Copper — data-center build-out','铜 — 数据中心建设') }}</td><td>{{ t('Residual strength vs the growth + dollar model; COT spec build (now 97th %ile).','相对增长+美元模型的残差强势；COT 投机持仓累积（现处97百分位）。') }}</td></tr>
       <tr><td class="a">{{ t('OPEC / US supply','OPEC / 美国供给') }}</td><td>{{ t('Oil residual + COT positioning + the Brent−WTI spread.','原油残差 + COT 持仓 + 布伦特−WTI 价差。') }}</td></tr>
     </table>
-    <div class="sub" style="margin-top:10px">{{ t('Rather than scrape headlines, the engine detects the FOOTPRINT a shock leaves — a commodity moving in a way its macro drivers can\'t explain. A planned news-annotation layer (labelling a detected residual\'s likely cause) is deferred; it will be context, never a scoring input.','引擎不抓取新闻标题，而是检测冲击留下的足迹 — 商品以其宏观驱动无法解释的方式运动。计划中的新闻标注层（标注已检测残差的可能成因）暂缓；它将仅作背景，绝不作为评分输入。') }}</div>
+	    <div class="sub" style="margin-top:10px">{{ t('The engine looks for price moves macro drivers cannot explain. News labels are context only.', '引擎寻找宏观驱动无法解释的价格变化。新闻标签仅作背景。') }}</div>
   </div>
 
   <div class="foot">
-    Commodity Vector · {{ t('built','生成于') }} {{ built }} · {{ t('data as of','数据截至') }} {{ as_of }}.
-    {{ t('Mechanical, backtested on ~25 years of free public data (Yahoo futures, CFTC COT, FRED real yields/breakevens/broad-dollar). Every per-signal claim carries its measured split-half record.','机械化，基于约25年免费公开数据回测（Yahoo 期货、CFTC COT、FRED 实际收益率/通胀预期/广义美元）。每项信号主张均附其前后半段实测记录。') }}
-    {{ t('Not investment advice.','非投资建议。') }}
-    {{ t('Limitations:','局限性：') }} <a href="https://github.com/chriswong6031-creator/macro/blob/main/LIMITATIONS.md">LIMITATIONS.md</a>.
+    Commodity Vector · {{ t('built','生成于') }} {{ built }} · {{ t('data as of','数据截至') }} {{ as_of }}<br>
+    <span class="made">© 2026 MastermindX Inc</span>
   </div>
 </div>
 <script>
@@ -641,16 +652,33 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
   });});
 })();
 (function(){
-  var fil=document.querySelectorAll('.tlf'), items=document.querySelectorAll('.tl-item');
-  fil.forEach(function(b){b.addEventListener('click',function(){
-    fil.forEach(function(x){x.classList.remove('active')}); b.classList.add('active');
-    var f=b.dataset.f;
-    items.forEach(function(it){ it.hidden=!(f==='all'||it.dataset.f===f); });
+  var fil=document.querySelectorAll('.tlf'), items=[].slice.call(document.querySelectorAll('.tl-item'));
+  var more=document.getElementById('tl-more-btn'), state={filter:'all', expanded:false}, limit=8;
+  function applyTimeline(){
+    var shown=0, matching=0;
+    items.forEach(function(it){
+      var match=state.filter==='all'||it.dataset.f===state.filter;
+      if(!match){ it.hidden=true; return; }
+      matching += 1;
+      shown += 1;
+      it.hidden=!state.expanded && shown>limit;
+    });
     document.querySelectorAll('.tl-day').forEach(function(d){
       var any=[].slice.call(d.querySelectorAll('.tl-item')).some(function(i){return !i.hidden});
       d.style.display=any?'':'none';
     });
+    if(more){
+      more.parentElement.style.display=matching>limit?'flex':'none';
+      more.setAttribute('aria-expanded', state.expanded?'true':'false');
+      more.classList.toggle('is-expanded', state.expanded);
+    }
+  }
+  fil.forEach(function(b){b.addEventListener('click',function(){
+    fil.forEach(function(x){x.classList.remove('active')}); b.classList.add('active');
+    state.filter=b.dataset.f; state.expanded=false; applyTimeline();
   });});
+  if(more){ more.addEventListener('click',function(){ state.expanded=!state.expanded; applyTimeline(); }); }
+  applyTimeline();
 })();
 </script>
 <script>
