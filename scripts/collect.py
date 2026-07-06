@@ -747,6 +747,25 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a watcher crash must not abort the run
         log.error("[cctv_watcher] step crashed (non-fatal): %s", e)
 
+    # PR-A2 — breadth-divergence forward-log grader (end-of-collect, seconds-scale).
+    # Grades matured rows (stamp_date + 21 business days <= today) of
+    # data/breadth_divergence/forward_log.parquet in-place; idempotent re-runs.
+    # Runs BEFORE the closure audit so the audit sees freshly graded state.
+    try:
+        from scripts.grade_breadth_divergence import run_as_collect_step as _bd_grader
+        _bd_grader()
+    except Exception as e:  # noqa: BLE001 — a grader crash must not abort the run
+        log.error("[grade_breadth_divergence] step crashed (non-fatal): %s", e)
+
+    # PR-A2 — foresight policy-calendar date-accuracy grader (end-of-collect, seconds-scale).
+    # After next_comment_close_date passes, checks the federal_register store to confirm
+    # whether the predicted comment-close event occurred.  Idempotent re-runs.
+    try:
+        from scripts.grade_policy_calendar import run_as_collect_step as _pol_grader
+        _pol_grader()
+    except Exception as e:  # noqa: BLE001 — a grader crash must not abort the run
+        log.error("[grade_policy_calendar] step crashed (non-fatal): %s", e)
+
     # NW Rails PR-6 — grading-closure standing audit (RUL-P10 path b).
     # Walks all declared forward ledgers, classifies each as CLOSED / GRADER-STARVED
     # / LOG-ONLY, and writes data/governance/grading_closure.json + docs/GRADING_CLOSURE.md.
