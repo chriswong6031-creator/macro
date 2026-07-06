@@ -80,8 +80,9 @@ def test_reflex_log_shape():
     assert "n_mirroring" in rl
     assert "per_reflex" in rl
     assert isinstance(rl["per_reflex"], list)
-    # should have the 17 reflexes defined in config/reflexes.yml
-    assert rl["n_registered"] == 17
+    # should have the 18 reflexes defined in config/reflexes.yml
+    # (PR-5 added factor_deescalation_shadow as a dark scaffold — RUL-NW6)
+    assert rl["n_registered"] == 18
 
 
 def test_bus_graph_shape():

@@ -443,8 +443,14 @@ jobs:
         run: python3 scripts/check_synapse_registry.py
       - name: synapse read-gate — warn tier + Article-2 hard fail
         run: python3 scripts/check_synapse_reads.py
+      - name: factor boundary guard (RUL-NW9/NW11 — hard fail on Article-2 writes or forbidden fields)
+        run: python3 scripts/check_factor_boundaries.py
+      - name: factor boundary selftest (guard fires on planted violations)
+        run: python3 scripts/check_factor_boundaries.py --selftest
       - name: synapse read-gate unit tests
         run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py -q
+      - name: factor deescalation shadow + boundary guard tests
+        run: python -m pytest tests/test_factor_deescalation_shadow.py -q
 
   neural-web:
     # neural-web program (W0, #1253 post-mortem): three test files were run by ZERO

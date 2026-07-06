@@ -621,3 +621,53 @@ reflexes:
       (feat/flow-desk UNDEPLOYED). Nightly fold via adapt_reflexes() in
       engine.neuralweb.query. Staging: data/reflexes/ is covered by
       'git add data/' in daily.yml commit steps (collect + engine).
+
+  # ─── PR-5 (§D) — FACTOR DE-ESCALATION SHADOW (RUL-NW6, dark scaffold) ───
+
+  factor_deescalation_shadow:
+    description: >
+      Dark scaffold for the A3 de-escalation shadow ledger (NW §D PR-5, RUL-NW6).
+      Tracks would-have-fired de-escalation events for factor intelligence signals.
+      ENTIRELY DARK until BOTH conditions are met:
+        (1) A GATE-PASSED verdict exists in research/factor_intelligence/H2_VERDICT.md
+            or H4_VERDICT.md (the file must contain the line '**Verdict:** GATE-PASSED');
+        (2) An explicit Fable activation ruling is issued (RUL-NW6 floor requires
+            at least 25 episode-clustered events spanning at least 3 calendar months,
+            then Fable ruling). Zero firings today. firings_jsonl declared here for
+      registry completeness; path not created until activation conditions are met.
+      A3 clamp targets (ALLOWED when activated): altdata/narrative _reconcile displays
+      and display chips only. FORBIDDEN FOREVER: board_ordering, top_setups, push_floor,
+      alert escalation.
+    trigger:
+      type: nightly_factor_panel
+      source: scripts/build_factor_deescalation_shadow.py
+      condition: >
+        GATE-PASSED verdict in research/factor_intelligence/H{2,4}_VERDICT.md AND
+        explicit Fable activation ruling (RUL-NW6: at least 25 episode-clustered events
+        spanning at least 3 months first). Script exits 0 with DARK status when
+        conditions not met and writes nothing.
+      cadence_cron: "NOT WIRED INTO daily.yml — stays dark until activation"
+      lane: none
+    action:
+      type: [append_shadow_firings]
+      ledger: data/reflexes/factor_deescalation_shadow/firings.jsonl
+      constitutional_note: >
+        display_only=True unconditionally. No Article-2 surface is touched.
+        Shadow ledger only — no clamp wiring, no behavior modification.
+        Activation requires explicit Fable ruling after at least 25 clustered events
+        spanning at least 3 months (EI R6 convention). Idempotent on (as_of, ticker, primitive).
+    firings_jsonl: data/reflexes/factor_deescalation_shadow/firings.jsonl
+    claim_family: reflex.factor_deescalation_shadow
+    tier: shadow
+    push_tier: false
+    graded: false
+    graded_note: >
+      dark scaffold — zero firings until an H gate passes + Fable activation (RUL-NW6).
+      This reflex does not grade for return; it is a pre-activation observational
+      scaffold. Grading logic will be defined in the Fable activation ruling.
+    migration_status: registered
+    producer: scripts/build_factor_deescalation_shadow.py
+    nw_pr5_note: >
+      NW W2 PR-5: dark scaffold. NOT wired into daily.yml.
+      Script is callable manually or via dispatch after both activation conditions
+      are met. Checks for GATE-PASSED verdict before writing anything.
