@@ -739,6 +739,21 @@ def _check_dedup(
     existing_candidate_ids: set[str],
 ) -> DedupeResult | None:
     """Run RF-14 dedup in fixed order.  Returns DedupeResult if matched, None if clean."""
+    # 0. Factory ledger (idempotent re-ingest guard, RF-14) — checked FIRST so a
+    #    candidate that already exists in the ledger is caught before any external-
+    #    registry check.  Without this ordering, a candidate whose candidate_id is
+    #    already on disk but whose hypothesis also collides with the oracle/species/
+    #    machine/trial registry would return a non-factory_ledger registry, bypass the
+    #    disk-write skip, and append a duplicate row on every re-ingest run.
+    cid = cand.get("candidate_id", "")
+    if cid and cid in existing_candidate_ids:
+        return DedupeResult(
+            matched=True,
+            registry="factory_ledger",
+            matched_id=cid[:32],
+            reason="candidate_id already in factory ledger (idempotent re-ingest)",
+        )
+
     # 1. Oracle compounds registry (canonical rule-hash)
     entry_rule = cand.get("artifacts", {}).get("entry_rule") or (
         cand.get("evaluation_plan", {}).get("_entry_rule")  # fallback
@@ -798,16 +813,6 @@ def _check_dedup(
             registry="trial_ledger",
             matched_id=spec_ref[:32],
             reason="spec_ref matches trial-ledger family string",
-        )
-
-    # 5. Factory ledger (idempotent re-ingest guard, RF-14)
-    cid = cand.get("candidate_id", "")
-    if cid and cid in existing_candidate_ids:
-        return DedupeResult(
-            matched=True,
-            registry="factory_ledger",
-            matched_id=cid[:32],
-            reason="candidate_id already in factory ledger (idempotent re-ingest)",
         )
 
     return None
@@ -976,9 +981,42 @@ def run_ingest(
             raw_cand = dict(raw_cand)
             lineage = dict(raw_cand.get("lineage") or {})
             lineage["respin_of"] = respin_of
+
             # RF-15: child generation = parent.refinement_generation + 1.
-            # Resolve the parent from the factory ledger; default parent gen to 0
-            # (generation-0 parent → generation-1 child, still within the cap of 2).
+            # Resolve the parent from the factory ledger.
+            #
+            # FAIL-CLOSED rule: if the factory ledger exists (candidates.jsonl was
+            # loaded) but the parent candidate_id is not found in it, the respin is
+            # dropped with reason_code 'rf15_parent_not_found'.  We only allow the
+            # gen-1 default when the ledger is provably absent/empty (genuine first-
+            # generation respin where no ledger exists yet).
+            #
+            # This closes the anti-p-hacking rail: a researcher cannot silently
+            # register a gen-3 respin as gen-1 by supplying a parent_id that doesn't
+            # exist in the target rf_dir (fresh worktree, --rf-dir override, typo, or
+            # uncommitted candidates.jsonl).
+            ledger_exists = bool(existing_cands_by_id) or (
+                out_dir / "candidates.jsonl"
+            ).exists()
+            if ledger_exists and respin_of not in existing_cands_by_id:
+                cid_for_drop = raw_cand.get("candidate_id") or _make_candidate_id(
+                    raw_cand.get("source", "unknown"), raw_cand.get("hypothesis", "")[:32]
+                )
+                raw_cand["candidate_id"] = cid_for_drop
+                result.add_dropped(
+                    raw_cand,
+                    "rf15_parent_not_found",
+                    f"respin_of={respin_of!r} not found in factory ledger; "
+                    f"cannot compute generation — RF-15 fail-closed to prevent "
+                    f"silent gen-1 registration of a higher-generation respin",
+                )
+                print(
+                    f"  [DROP rf15_parent_not_found] {cid_for_drop}: "
+                    f"parent {respin_of!r} absent from ledger (RF-15 fail-closed)",
+                    file=sys.stderr,
+                )
+                continue
+
             parent_cand = existing_cands_by_id.get(respin_of, {})
             parent_gen = (parent_cand.get("lineage") or {}).get("refinement_generation", 0)
             child_gen = parent_gen + 1

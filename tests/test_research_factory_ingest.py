@@ -23,6 +23,13 @@ Tests (charter §6 W2 exit gate):
   20. Health builder: --write appends to health.jsonl.
   21. Health builder: keep-first per as_of.
   22. Dropped candidates all have recorded reason.
+  23. Ingest with --write actually writes to disk.
+  24. Idempotent re-ingest: same candidate_id → exactly one disk row.
+  25. RF-15 generation cap: respin of a gen-2 parent → rf15_generation_cap.
+  26. Health builder: mixed tz as_of values do not raise TypeError.
+  27. RF-15 fail-closed: respin parent absent from non-empty ledger → rf15_parent_not_found.
+  28. Dedup ordering: oracle-colliding re-ingested candidate → exactly one disk row.
+  29. Divergence: ADVISORY_REVIEW + reject not counted; ADVISORY_PASS/REJECT divergences counted.
 """
 from __future__ import annotations
 
@@ -1072,3 +1079,222 @@ def test_health_dwell_mixed_tz_offsets():
     health = compute_health(cands, transitions, challenges={})
     assert "median_dwell_days_by_state" in health
     assert health["median_dwell_days_by_state"].get("registered") is not None
+
+
+# ---------------------------------------------------------------------------
+# 27. RF-15 fail-closed: respin with parent absent from non-empty ledger → dropped
+# ---------------------------------------------------------------------------
+
+
+def test_rf15_parent_not_found_fails_closed(tmp_path):
+    """When respin_of is set and the factory ledger exists but the parent
+    candidate_id is not in it, the child must be dropped as 'rf15_parent_not_found'
+    rather than silently registering as generation-1 (RF-15 fail-closed rule)."""
+    rf_dir = tmp_path / "rf"
+    rf_dir.mkdir()
+
+    # Write a *different* candidate to the ledger so the ledger is non-empty
+    unrelated_cand = _make_candidate(
+        candidate_id="rf-unrelated-001",
+        status="registered",
+        lineage={"respin_of": None, "superseded_by": None, "refinement_generation": 0},
+    )
+    candidates_path = rf_dir / "candidates.jsonl"
+    candidates_path.write_text(json.dumps(unrelated_cand) + "\n", encoding="utf-8")
+
+    # Attempt respin of a parent that does NOT exist in the ledger
+    missing_parent_id = "rf-gen2-parent-XYZ"
+    child_cand = _build_candidate(
+        source="human",
+        candidate_type="external_idea",
+        domain="oracle",
+        hypothesis="rf15 fail-closed test child hypothesis washout",
+        mechanism="washout rf15 fail-closed child mechanism",
+        spec_ref=None,
+        entry_rule=None,
+        respin_of=missing_parent_id,
+    )
+
+    result = run_ingest(
+        [child_cand],
+        oracle_registry_path=tmp_path / "no_oracle.jsonl",
+        species_registry_path=tmp_path / "no_species.json",
+        machine_registry_path=tmp_path / "no_machine.jsonl",
+        trial_ledger_path=tmp_path / "no_ledger.jsonl",
+        respin_of=missing_parent_id,
+        actor="fable",
+        actor_ref="session-rf15-failclosed-test",
+        rf_dir=rf_dir,
+        dry_run=True,
+    )
+
+    assert len(result.registered) == 0, (
+        "child whose parent is absent from ledger must NOT be registered as gen-1"
+    )
+    assert len(result.dropped) == 1
+    _, rc, rt = result.dropped[0]
+    assert rc == "rf15_parent_not_found", (
+        f"expected 'rf15_parent_not_found', got {rc!r}; "
+        f"fail-closed rule prevents silent gen-1 registration"
+    )
+    assert missing_parent_id in rt, "drop reason must name the missing parent_id"
+
+
+# ---------------------------------------------------------------------------
+# 28. Dedup ordering: oracle-colliding candidate re-ingested leaves one disk row
+# ---------------------------------------------------------------------------
+
+
+def test_dedup_oracle_collision_reingest_no_duplicate_rows(tmp_path):
+    """A candidate whose candidate_id is already on disk AND whose entry_rule also
+    collides with the oracle registry must not accumulate extra rows on re-ingest.
+    The factory_ledger check (step 0) must fire before the oracle check (step 1)
+    so the disk-write skip applies and candidates.jsonl stays at exactly one row."""
+    rf_dir = tmp_path / "rf"
+
+    entry_rule = {"col": "reingest_oracle_col", "op": "gt", "value": 0}
+
+    # Oracle registry contains the same entry_rule
+    oracle_path = tmp_path / "oracle_registry.jsonl"
+    oracle_path.write_text(
+        json.dumps({"id": "C-REINGEST", "entry_rule": entry_rule, "status": "screened"}) + "\n",
+        encoding="utf-8",
+    )
+
+    cand = _build_candidate(
+        source="oracle_brainstorm",
+        candidate_type="oracle_compound",
+        domain="oracle",
+        hypothesis="reingest oracle collision test hypothesis washout",
+        mechanism="washout reingest oracle collision mechanism",
+        spec_ref="C-REINGEST",
+        entry_rule=entry_rule,
+    )
+    cand["artifacts"]["entry_rule"] = entry_rule
+    cand["candidate_id"] = "rf-reingest-oracle-001"
+
+    common_kwargs = dict(
+        oracle_registry_path=oracle_path,
+        species_registry_path=tmp_path / "no_species.json",
+        machine_registry_path=tmp_path / "no_machine.jsonl",
+        trial_ledger_path=tmp_path / "no_ledger.jsonl",
+        rf_dir=rf_dir,
+    )
+
+    # First ingest with the oracle registry ABSENT (no oracle path) so it registers.
+    # Use a clean oracle path to let the first run succeed.
+    result1 = run_ingest(
+        [cand],
+        oracle_registry_path=tmp_path / "no_oracle.jsonl",
+        species_registry_path=tmp_path / "no_species.json",
+        machine_registry_path=tmp_path / "no_machine.jsonl",
+        trial_ledger_path=tmp_path / "no_ledger.jsonl",
+        rf_dir=rf_dir,
+        dry_run=False,
+    )
+    assert len(result1.registered) == 1, "first run must register the candidate"
+
+    # Load the existing candidate_ids from disk
+    existing_ids: set[str] = set()
+    for ec in rf_ledger.load_jsonl(rf_dir / "candidates.jsonl"):
+        eid = ec.get("candidate_id")
+        if eid:
+            existing_ids.add(eid)
+    assert "rf-reingest-oracle-001" in existing_ids
+
+    # Second run: same candidate, now also collides with oracle registry.
+    # The factory_ledger check must fire first → skip disk write.
+    result2 = run_ingest(
+        [cand],
+        existing_candidate_ids=existing_ids,
+        dry_run=False,
+        **common_kwargs,
+    )
+    assert len(result2.registered) == 0, "second run must NOT register a duplicate"
+    assert len(result2.dropped) == 1
+    _, rc2, _ = result2.dropped[0]
+    assert rc2 == "deduped", f"expected 'deduped', got {rc2!r}"
+
+    # Disk must have exactly one candidate row regardless of oracle collision
+    cands_on_disk = rf_ledger.load_jsonl(rf_dir / "candidates.jsonl")
+    reg_trans_on_disk = [
+        t for t in rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
+        if t.get("to") == "registered"
+    ]
+    assert len(cands_on_disk) == 1, (
+        f"expected exactly 1 candidate on disk after re-ingest, got {len(cands_on_disk)}"
+    )
+    assert len(reg_trans_on_disk) == 1, (
+        f"expected exactly 1 registered transition, got {len(reg_trans_on_disk)}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 29. Divergence: ADVISORY_REVIEW + human reject does NOT count as divergence
+# ---------------------------------------------------------------------------
+
+
+def test_advisory_review_rejected_not_divergence():
+    """ADVISORY_REVIEW is a neutral recommendation (no directional expectation).
+    A human 'rejected' after ADVISORY_REVIEW is an intended human-authored kill, not
+    rubber-stamp divergence.  divergence_rate must be None or 0.0 for this pair."""
+    cand = _make_candidate(candidate_id="rf-div-test-001", status="human_review")
+    transitions = [
+        _make_transition("rf-div-test-001", "human_review", "rejected"),
+    ]
+    challenges = {
+        "rf-div-test-001": {
+            "reviewer": {"recommendation": "ADVISORY_REVIEW"},
+        }
+    }
+    health = compute_health([cand], transitions, challenges=challenges)
+    chd = health["challenger_divergence"]
+    # ADVISORY_REVIEW is excluded from numerator and denominator — total_adjudicated=0
+    assert chd["total_adjudicated"] == 0, (
+        f"ADVISORY_REVIEW must be excluded from adjudicated count; "
+        f"got total_adjudicated={chd['total_adjudicated']}"
+    )
+    assert chd["divergence_rate"] is None or chd["divergence_rate"] == 0.0, (
+        f"ADVISORY_REVIEW → rejected must NOT be divergence; "
+        f"got divergence_rate={chd['divergence_rate']}"
+    )
+
+
+def test_advisory_pass_rejected_is_divergence():
+    """ADVISORY_PASS + human 'rejected' IS a divergence (directional mismatch)."""
+    cand = _make_candidate(candidate_id="rf-div-test-002", status="human_review")
+    transitions = [
+        _make_transition("rf-div-test-002", "human_review", "rejected"),
+    ]
+    challenges = {
+        "rf-div-test-002": {
+            "reviewer": {"recommendation": "ADVISORY_PASS"},
+        }
+    }
+    health = compute_health([cand], transitions, challenges=challenges)
+    chd = health["challenger_divergence"]
+    assert chd["total_adjudicated"] == 1
+    assert chd["divergence_rate"] == 1.0, (
+        f"ADVISORY_PASS → rejected must count as divergence; "
+        f"got divergence_rate={chd['divergence_rate']}"
+    )
+
+
+def test_advisory_reject_not_rejected_is_divergence():
+    """ADVISORY_REJECT + human non-reject IS a divergence (directional mismatch)."""
+    cand = _make_candidate(candidate_id="rf-div-test-003", status="human_review")
+    transitions = [
+        _make_transition("rf-div-test-003", "human_review", "paper"),
+    ]
+    challenges = {
+        "rf-div-test-003": {
+            "reviewer": {"recommendation": "ADVISORY_REJECT"},
+        }
+    }
+    health = compute_health([cand], transitions, challenges=challenges)
+    chd = health["challenger_divergence"]
+    assert chd["total_adjudicated"] == 1
+    assert chd["divergence_rate"] == 1.0, (
+        f"ADVISORY_REJECT → paper must count as divergence; "
+        f"got divergence_rate={chd['divergence_rate']}"
+    )

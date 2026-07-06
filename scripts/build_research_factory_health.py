@@ -207,13 +207,20 @@ def compute_health(
         decisions = human_decisions.get(cid, [])
         if not advisory or not decisions:
             continue
+        # ADVISORY_REVIEW is a *neutral* recommendation (pass-to-human for review
+        # with no directional expectation per §5.3/RF-7).  A human 'rejected' after
+        # ADVISORY_REVIEW is exactly the intended human-authored kill, not a rubber-
+        # stamp divergence.  Only directional recommendations count toward the
+        # divergence numerator/denominator:
+        #   ADVISORY_REJECT  → expected: 'rejected'
+        #   ADVISORY_PASS    → expected: non-reject (paper/deferred/scoped_build)
+        if advisory not in ("ADVISORY_REJECT", "ADVISORY_PASS"):
+            continue
         total_adjudicated += 1
-        # ADVISORY_REJECT -> expected human decision: 'rejected'
-        # ADVISORY_PASS / ADVISORY_REVIEW -> expected: paper/deferred/scoped_build
         human_reject = any(d == "rejected" for d in decisions)
         if advisory == "ADVISORY_REJECT" and not human_reject:
             advisor_human_diverge += 1
-        elif advisory in ("ADVISORY_PASS", "ADVISORY_REVIEW") and human_reject:
+        elif advisory == "ADVISORY_PASS" and human_reject:
             advisor_human_diverge += 1
 
     divergence_rate = (
