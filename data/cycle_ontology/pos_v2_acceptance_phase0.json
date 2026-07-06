@@ -1,0 +1,288 @@
+{
+  "gap_tolerance_days": 45,
+  "families": {
+    "us_sector": {
+      "n_turns": 177,
+      "n_peaks": 89,
+      "n_troughs": 88,
+      "pos_v2_available": true,
+      "peak": {
+        "pos": {
+          "n": 89,
+          "min": 2.1,
+          "p25": 42.4,
+          "median": 65.7,
+          "p75": 88.4,
+          "max": 100.0,
+          "iqr": 46.0
+        },
+        "pos_v2": {
+          "n": 89,
+          "min": 6.4,
+          "p25": 83.5,
+          "median": 96.3,
+          "p75": 99.2,
+          "max": 100.0,
+          "iqr": 15.7
+        }
+      },
+      "trough": {
+        "pos": {
+          "n": 88,
+          "min": 0.1,
+          "p25": 2.2,
+          "median": 4.8,
+          "p75": 19.4,
+          "max": 63.1,
+          "iqr": 17.2
+        },
+        "pos_v2": {
+          "n": 88,
+          "min": 0.1,
+          "p25": 4.5,
+          "median": 12.9,
+          "p75": 37.2,
+          "max": 97.3,
+          "iqr": 32.6
+        }
+      },
+      "gap_days_abs_median": 8
+    },
+    "country": {
+      "n_turns": 935,
+      "n_peaks": 466,
+      "n_troughs": 469,
+      "pos_v2_available": true,
+      "peak": {
+        "pos": {
+          "n": 466,
+          "min": 0.8,
+          "p25": 42.3,
+          "median": 72.1,
+          "p75": 93.5,
+          "max": 99.9,
+          "iqr": 51.2
+        },
+        "pos_v2": {
+          "n": 466,
+          "min": 0.1,
+          "p25": 43.6,
+          "median": 79.8,
+          "p75": 94.5,
+          "max": 100.0,
+          "iqr": 51.0
+        }
+      },
+      "trough": {
+        "pos": {
+          "n": 469,
+          "min": 0.0,
+          "p25": 2.2,
+          "median": 11.1,
+          "p75": 39.7,
+          "max": 98.5,
+          "iqr": 37.5
+        },
+        "pos_v2": {
+          "n": 469,
+          "min": 0.0,
+          "p25": 2.6,
+          "median": 7.8,
+          "p75": 21.1,
+          "max": 99.9,
+          "iqr": 18.5
+        }
+      },
+      "gap_days_abs_median": 7
+    },
+    "cn_sector": {
+      "n_turns": 712,
+      "n_peaks": 355,
+      "n_troughs": 357,
+      "pos_v2_available": false,
+      "peak": {
+        "pos": {
+          "n": 355,
+          "min": 1.9,
+          "p25": 33.2,
+          "median": 69.8,
+          "p75": 96.2,
+          "max": 100.0,
+          "iqr": 63.0
+        },
+        "pos_v2": {
+          "n": 0,
+          "min": null,
+          "p25": null,
+          "median": null,
+          "p75": null,
+          "max": null,
+          "iqr": null
+        }
+      },
+      "trough": {
+        "pos": {
+          "n": 357,
+          "min": 0.0,
+          "p25": 2.8,
+          "median": 15.8,
+          "p75": 50.0,
+          "max": 99.3,
+          "iqr": 47.2
+        },
+        "pos_v2": {
+          "n": 0,
+          "min": null,
+          "p25": null,
+          "median": null,
+          "p75": null,
+          "max": null,
+          "iqr": null
+        }
+      },
+      "gap_days_abs_median": 8
+    }
+  },
+  "pooled_v2": {
+    "families": [
+      "us_sector",
+      "country"
+    ],
+    "n_peaks": 555,
+    "n_troughs": 557,
+    "peak": {
+      "pos": {
+        "n": 555,
+        "min": 0.8,
+        "p25": 42.3,
+        "median": 71.4,
+        "p75": 92.2,
+        "max": 100.0,
+        "iqr": 49.8
+      },
+      "pos_v2": {
+        "n": 555,
+        "min": 0.1,
+        "p25": 47.2,
+        "median": 83.5,
+        "p75": 96.0,
+        "max": 100.0,
+        "iqr": 48.8
+      }
+    },
+    "trough": {
+      "pos": {
+        "n": 557,
+        "min": 0.0,
+        "p25": 2.2,
+        "median": 9.3,
+        "p75": 35.6,
+        "max": 98.5,
+        "iqr": 33.4
+      },
+      "pos_v2": {
+        "n": 557,
+        "min": 0.0,
+        "p25": 2.8,
+        "median": 8.5,
+        "p75": 23.4,
+        "max": 99.9,
+        "iqr": 20.6
+      }
+    }
+  },
+  "legacy_pooled_all": {
+    "families": [
+      "us_sector",
+      "country",
+      "cn_sector"
+    ],
+    "peak": {
+      "pos": {
+        "n": 910,
+        "min": 0.8,
+        "p25": 38.5,
+        "median": 71.3,
+        "p75": 94.7,
+        "max": 100.0,
+        "iqr": 56.2
+      }
+    },
+    "trough": {
+      "pos": {
+        "n": 914,
+        "min": 0.0,
+        "p25": 2.4,
+        "median": 11.5,
+        "p75": 42.0,
+        "max": 99.3,
+        "iqr": 39.6
+      }
+    }
+  },
+  "maturation_gate": {
+    "peak": {
+      "n": 555,
+      "n_ok": true,
+      "iqr": 48.8,
+      "iqr_ok": false,
+      "median": 83.5,
+      "median_ok": true,
+      "pass": false
+    },
+    "trough": {
+      "n": 557,
+      "n_ok": true,
+      "iqr": 20.6,
+      "iqr_ok": true,
+      "median": 8.5,
+      "median_ok": true,
+      "pass": true
+    },
+    "pass": false,
+    "population": "all_confirmed_turns (pre-registered)"
+  },
+  "diagnostic_major_only": {
+    "note": "major=True filters ZigZag lower-highs / higher-lows (directional pivots far from cyclical extremes). Exploratory, not the prereg gate.",
+    "peak": {
+      "pos": {
+        "n": 417,
+        "min": 0.8,
+        "p25": 58.6,
+        "median": 80.8,
+        "p75": 96.0,
+        "max": 100.0,
+        "iqr": 37.4
+      },
+      "pos_v2": {
+        "n": 417,
+        "min": 0.1,
+        "p25": 72.2,
+        "median": 90.8,
+        "p75": 97.9,
+        "max": 100.0,
+        "iqr": 25.7
+      }
+    },
+    "trough": {
+      "pos": {
+        "n": 337,
+        "min": 0.0,
+        "p25": 1.2,
+        "median": 4.0,
+        "p75": 12.5,
+        "max": 87.4,
+        "iqr": 11.3
+      },
+      "pos_v2": {
+        "n": 337,
+        "min": 0.0,
+        "p25": 1.3,
+        "median": 4.5,
+        "p75": 11.3,
+        "max": 96.8,
+        "iqr": 10.0
+      }
+    }
+  }
+}
