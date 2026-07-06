@@ -61,11 +61,16 @@ DEFAULT_DIRS = [
                           #   THETADATA_STORE env (default data/thetadata_eod) + --dirs thetadata_eod
                           # Must run from the ops host (store host) where the parquets are
                           # materialised; the _DATA_DIR_MIN_FILES guard refuses CI partial checkouts.
+    "cctv_daily",         # CCTV 新闻联播 daily transcript monthly shards
+                          # (data/cctv_daily/YYYY-MM.parquet, gitignored); ~GB-class full history
+                          # — China Intel Cycles masterplan W1.2 (scripts/backfill_cctv_daily.py).
+                          # MANUAL LANE ONLY: never added to any workflow --dirs list.
+                          # Publish via: python scripts/publish_r2.py --dirs cctv_daily --no-manifest
 ]
 
 # Dirs whose source lives under data/ rather than site/ (per-ticker parquet stores
 # that are never rendered into site/ — published straight from the data plane).
-_DATA_DIRS = {"hk_stocks_ext", "massive_stock_day", "thetadata_eod"}
+_DATA_DIRS = {"hk_stocks_ext", "massive_stock_day", "thetadata_eod", "cctv_daily"}
 # A data-dir tree with fewer files than this is a PARTIAL CHECKOUT (the parquets are
 # gitignored — a CI runner checkout holds just the committed _manifest.json +
 # _backfill_state.json), not the store. Syncing it would overwrite R2's full-history

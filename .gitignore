@@ -93,6 +93,12 @@ data/china_news/flash_cache/
 # scrape completes. The derived tone history (cctv_tone_history.parquet) IS versioned.
 data/china_news/cctv_archive/*.parquet
 
+# CCTV 新闻联播 daily transcript store (W1.2 China Intel Cycles masterplan).
+# Monthly parquet shards: data/cctv_daily/YYYY-MM.parquet (~GB-class, Mac-local + R2).
+# Published via: python scripts/publish_r2.py --dirs cctv_daily --no-manifest
+# NEVER committed to git — long backfill outlives any PR; R2 is the durable copy.
+data/cctv_daily/*.parquet
+
 # News-vector GDELT fetch cache (regenerable, date-stamped). The append-only PIT
 # event store data/news_vector/events.parquet is NOT ignored — it must persist &
 # accrue forward vintages (like data/prediction_markets/snapshots.parquet).
