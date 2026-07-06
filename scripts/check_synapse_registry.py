@@ -167,9 +167,46 @@ def _run_selftest(root: Path) -> int:
         "schema": "none",
         "tier": "scored",
         "weights": "none",
+        "horizon_role": "context",
         # NOTE: no qual_ladder_ref and no notes
     }
     _test("scored tier without qual_ladder_ref/notes", reg5, "article 3 honesty")
+
+    # --- Test 6: missing horizon_role field ---
+    reg6 = copy.deepcopy(base_reg)
+    reg6["artifacts"]["_selftest_missing_horizon_role"] = {
+        "path": "data/_selftest/no_horizon_role.json",
+        "format": "json",
+        "producer": "engine/run.py",
+        "owner_program": "engine-fix",
+        "cadence": "daily-engine",
+        "storage": "git",
+        "asof_field": "asof",
+        "freshness_sla_hours": 30,
+        "schema": "none",
+        "tier": "display",
+        "weights": "none",
+        # NOTE: 'horizon_role' is intentionally missing
+    }
+    _test("missing required field 'horizon_role'", reg6, "horizon_role")
+
+    # --- Test 7: invalid horizon_role enum value ---
+    reg7 = copy.deepcopy(base_reg)
+    reg7["artifacts"]["_selftest_bad_horizon_role"] = {
+        "path": "data/_selftest/bad_horizon_role.json",
+        "format": "json",
+        "producer": "engine/run.py",
+        "owner_program": "engine-fix",
+        "cadence": "daily-engine",
+        "storage": "git",
+        "asof_field": "asof",
+        "freshness_sla_hours": 30,
+        "schema": "none",
+        "tier": "display",
+        "weights": "none",
+        "horizon_role": "NOT_A_VALID_HORIZON_ROLE",
+    }
+    _test("invalid horizon_role enum", reg7, "horizon_role")
 
     print()
     if all_passed:

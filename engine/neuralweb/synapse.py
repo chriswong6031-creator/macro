@@ -43,12 +43,13 @@ _VALID_STORAGES = {"git", "r2", "gitignored-local", "git+r2"}
 _VALID_ASOF_FIELDS = {"asof", "as_of", "date", "generated_utc", "authored", "null"}
 _VALID_TIERS = {"display", "shadow", "confirmer", "scored", "infrastructure"}
 _VALID_WEIGHTS = {"measured", "hand", "none"}
+_VALID_HORIZON_ROLES = {"tactical_entry", "hold_thesis", "dual", "context"}
 
 _REQUIRED_META_KEYS = {"schema_version", "description", "tier_vocabulary",
                        "article2_surfaces"}
 _REQUIRED_ARTIFACT_KEYS = {
     "path", "format", "producer", "owner_program", "cadence", "storage",
-    "asof_field", "freshness_sla_hours", "schema", "tier",
+    "asof_field", "freshness_sla_hours", "schema", "tier", "horizon_role",
 }
 
 # Repo-relative paths that contain placeholders (like <SYM>) — skip existence check.
@@ -178,6 +179,25 @@ def validate_registry(reg: dict, root: str | Path | None = None) -> list[str]:
         if tier is not None and tier not in _VALID_TIERS:
             violations.append(
                 f"{prefix}: tier {tier!r} not in {sorted(_VALID_TIERS)}"
+            )
+
+        # 2f2. Enum: horizon_role (LH-R1 firewall — required on every artifact)
+        horizon_role = entry.get("horizon_role")
+        if horizon_role is None:
+            violations.append(
+                f"{prefix}: missing required field 'horizon_role' "
+                f"(must be one of {sorted(_VALID_HORIZON_ROLES)})"
+            )
+        elif horizon_role not in _VALID_HORIZON_ROLES:
+            violations.append(
+                f"{prefix}: horizon_role {horizon_role!r} not in "
+                f"{sorted(_VALID_HORIZON_ROLES)}"
+            )
+        # dual requires a justification note
+        elif horizon_role == "dual" and not entry.get("notes"):
+            violations.append(
+                f"{prefix}: horizon_role='dual' requires a notes field "
+                f"justifying the separate calibrations"
             )
 
         # 2g. Enum: weights

@@ -21,6 +21,19 @@ meta:
     - top_setups       # discovery/top-setups page gating
     - attention_queue  # missing-tape attention queue
     - push_floor       # push-notification floor (notify.py)
+  horizon_role_vocabulary:
+    # LH-R1 (Long-Hold Thesis Masterplan W0): every artifact declares its horizon.
+    # The CI gate (check_synapse_registry.py) hard-fails any entry without this field.
+    # check_synapse_reads.py (PR-D) will enforce the firewall bidirectionally.
+    - tactical_entry  # feeds ~days-to-weeks entry/rotation decisions (entry-stack fires,
+                      # gates, boards, alert-triage surfaces, oracle rotation)
+    - hold_thesis     # feeds 12-36mo ownership evidence — NO artifacts stamped here yet;
+                      # first hold_thesis artifacts arrive in W1 after the missed-hold study
+    - dual            # feeds BOTH horizons with SEPARATE calibrations (rare; requires
+                      # a notes field justifying why one artifact serves both clocks)
+    - context         # descriptive/diagnostic, horizon-agnostic (regime, breadth,
+                      # neural-web infrastructure, qualitative desks, cycle data, BTC vector,
+                      # foresight, ops rails, cortex, governance)
 
 # ============================================================
 # DATA-PLANE ARTIFACTS (sorted by descending consumer_count)
@@ -40,6 +53,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces:
       - alert_triage
@@ -97,6 +111,7 @@ artifacts:
     freshness_sla_hours: 192
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -135,6 +150,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -171,6 +187,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -207,6 +224,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -244,6 +262,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -277,6 +296,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -307,6 +327,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -336,6 +357,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -364,6 +386,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -391,6 +414,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -418,6 +442,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: scored
+    horizon_role: context
     weights: measured
     scored_path_surfaces:
       - alert_triage
@@ -447,6 +472,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: hand
     scored_path_surfaces: []
     consumers:
@@ -473,6 +499,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -498,6 +525,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: spine.predictions.v1
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces:
       - alert_triage
@@ -524,6 +552,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -549,6 +578,7 @@ artifacts:
     freshness_sla_hours: 200
     schema: risk_radar_review.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -572,6 +602,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: china_sector_cycles.grader.v1
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -597,6 +628,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -620,6 +652,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -644,6 +677,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -669,6 +703,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: species_registry.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -692,6 +727,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: scored
+    horizon_role: context
     weights: measured
     scored_path_surfaces:
       - board_ordering
@@ -716,6 +752,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -741,6 +778,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: experiments_registry.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -763,6 +801,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -785,6 +824,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -807,6 +847,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: scored
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -829,6 +870,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: scored
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -851,6 +893,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -874,6 +917,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -895,6 +939,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -915,6 +960,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -937,6 +983,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -959,6 +1006,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -981,6 +1029,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1007,6 +1056,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1035,6 +1085,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1062,6 +1113,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1086,6 +1138,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1115,6 +1168,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1142,6 +1196,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1167,6 +1222,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1194,6 +1250,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1218,6 +1275,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1245,6 +1303,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1271,6 +1330,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1297,6 +1357,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1321,6 +1382,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1346,6 +1408,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1372,6 +1435,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1404,6 +1468,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1435,6 +1500,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1461,6 +1527,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1494,6 +1561,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1522,6 +1590,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1549,6 +1618,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1577,6 +1647,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1608,6 +1679,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1640,6 +1712,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -1679,6 +1752,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -1709,6 +1783,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: altdata.mastermind.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1737,6 +1812,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1763,6 +1839,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1788,6 +1865,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1808,6 +1886,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: altdata.by_ticker.v2
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1836,6 +1915,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: jsonschema:research/signal_engine/SCHEMA.json
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -1863,6 +1943,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1888,6 +1969,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - top_setups
@@ -1913,6 +1995,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1936,6 +2019,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1960,6 +2044,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1983,6 +2068,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2006,6 +2092,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -2030,6 +2117,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: oracle_state.v1
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2053,6 +2141,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2075,6 +2164,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2096,6 +2186,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2117,6 +2208,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: china_intel.briefing.v3
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2139,6 +2231,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: artifact_manifest.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2161,6 +2254,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2183,6 +2277,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2204,6 +2299,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -2225,6 +2321,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2245,6 +2342,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2265,6 +2363,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2287,6 +2386,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2308,6 +2408,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -2328,6 +2429,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2350,6 +2452,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2386,6 +2489,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2419,6 +2523,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2449,6 +2554,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2484,6 +2590,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -2515,6 +2622,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2554,6 +2662,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: neuralweb.confluence_graph.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2595,6 +2704,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2625,6 +2735,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2648,6 +2759,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2672,6 +2784,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2701,6 +2814,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2723,6 +2837,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2745,6 +2860,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2770,6 +2886,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2807,6 +2924,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: neuralweb.governance.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2838,6 +2956,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: neuralweb.cortex_memo.v1
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -2870,6 +2989,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: reflex.cortex_attention
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2897,6 +3017,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: neuralweb.hypothesis_inbox.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -2921,6 +3042,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: neuralweb.machine_registry.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2949,6 +3071,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: reflex.cortex_attention.grade.v1
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2976,6 +3099,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: neuralweb.cortex_probation.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3011,6 +3135,7 @@ artifacts:
     freshness_sla_hours: 200
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3093,6 +3218,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: options_flow.context.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -3122,6 +3248,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3155,6 +3282,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: options_entry_state.v1
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3184,6 +3312,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: options_entry.gate.v1
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -3208,6 +3337,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: options_skew.snapshots.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3233,6 +3363,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: options_ivspread.snapshots.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3258,6 +3389,7 @@ artifacts:
     freshness_sla_hours: 1
     schema: live_flow.feed_current.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -3287,6 +3419,7 @@ artifacts:
     freshness_sla_hours: 200
     schema: ss_event_priors.v2
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3311,6 +3444,7 @@ artifacts:
     freshness_sla_hours: 200
     schema: ss_event_priors.v2
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3334,6 +3468,7 @@ artifacts:
     freshness_sla_hours: 200
     schema: ss_event_priors.v2
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3358,6 +3493,7 @@ artifacts:
     freshness_sla_hours: 200
     schema: ss_event_priors.v2
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3381,6 +3517,7 @@ artifacts:
     freshness_sla_hours: 200
     schema: ss_event_priors.v2
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3405,6 +3542,7 @@ artifacts:
     freshness_sla_hours: 200
     schema: ss_event_priors.v2
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -3427,6 +3565,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: bottom_sensors.labels_v1
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -3462,6 +3601,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: bottom_sensors.labels_v1
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -3484,6 +3624,7 @@ artifacts:
     freshness_sla_hours: 168
     schema: research_queue.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
