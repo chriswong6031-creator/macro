@@ -13,6 +13,8 @@ import pytest
 from collectors.tsa_throughput import (
     compute_display_fields,
     parse_tsa_html,
+    us_federal_holidays,
+    _is_us_federal_holiday,
 )
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
@@ -160,3 +162,90 @@ def test_output_columns_present():
     out = compute_display_fields(df)
     for col in ("passengers", "avg7d", "yoy_pct", "vs2019_pct"):
         assert col in out.columns, f"Missing column: {col}"
+
+
+# ---------------------------------------------------------------------------
+# Holiday exclusion tests (Amendment A3)
+# ---------------------------------------------------------------------------
+
+def test_us_federal_holidays_independence_day_2019():
+    """Independence Day (Jul 4) must be in the 2019 federal holiday set."""
+    from datetime import date
+    holidays = us_federal_holidays(2019)
+    assert date(2019, 7, 4) in holidays, "Independence Day 2019 not in holiday set"
+
+
+def test_us_federal_holidays_observed_saturday():
+    """When Jul 4 falls on Saturday, observed Friday must also be in the set."""
+    from datetime import date
+    # 2026: Jul 4 is Saturday -> observed Jul 3
+    holidays = us_federal_holidays(2026)
+    assert date(2026, 7, 3) in holidays, "Observed Jul 4 (Fri Jul 3 2026) not in holiday set"
+    assert date(2026, 7, 4) in holidays, "Jul 4 2026 not in holiday set"
+
+
+def test_vs2019_pct_holiday_target_returns_nan():
+    """A target date that is a US federal holiday should return NaN vs2019_pct.
+
+    Concrete case: 2026-07-04 (Independence Day) should be NaN because
+    holiday counts are anomalously low and the comparison is not meaningful.
+    """
+    # Build a 2019 baseline and a July 2026 window that includes Jul 4
+    base_2019 = pd.DataFrame(
+        {"passengers": 2_200_000},
+        index=pd.date_range("2019-06-25", "2019-07-10", freq="D"),
+    )
+    target_2026 = pd.DataFrame(
+        {"passengers": 1_900_000},
+        index=pd.date_range("2026-06-25", "2026-07-10", freq="D"),
+    )
+    df = pd.concat([base_2019, target_2026])
+    out = compute_display_fields(df)
+    # Jul 4 2026 is a federal holiday -> should be NaN
+    assert pd.isna(out.loc["2026-07-04", "vs2019_pct"]), (
+        f"Expected NaN for Jul 4 2026 (holiday), got {out.loc['2026-07-04', 'vs2019_pct']}"
+    )
+
+
+def test_vs2019_pct_excludes_holiday_candidate_in_2019():
+    """The ±3-day candidate search must skip 2019 federal holidays.
+
+    Concrete case: 2026-07-02 (Thursday) should NOT match 2019-07-04 (Thursday,
+    Independence Day). After holiday exclusion, the function falls back to a
+    non-holiday 2019 date rather than producing the spurious +39% artifact.
+    """
+    # Build a 2019 baseline: normal range around Jul 4
+    # Set Jul 4 2019 anomalously low (holiday) and adjacent days at ~2.3M
+    idx_2019 = pd.date_range("2019-06-25", "2019-07-10", freq="D")
+    passengers_2019 = [2_300_000] * len(idx_2019)
+    # Make Jul 4 (index position for 2019-07-04) anomalously low
+    jul4_pos = list(idx_2019).index(pd.Timestamp("2019-07-04"))
+    passengers_2019[jul4_pos] = 800_000  # anomalously low holiday count
+
+    base_2019 = pd.DataFrame({"passengers": passengers_2019}, index=idx_2019)
+
+    # Target: 2026-07-02 (Thursday) at a normal travel level
+    target_2026 = pd.DataFrame(
+        {"passengers": [2_900_000]},
+        index=pd.DatetimeIndex(["2026-07-02"]),
+    )
+    df = pd.concat([base_2019, target_2026])
+    out = compute_display_fields(df)
+
+    vs2019_val = out.loc["2026-07-02", "vs2019_pct"]
+    # With holiday exclusion, the match should NOT use the 800K holiday count.
+    # The ratio 2900000/800000 - 1 = +262%, clearly wrong.
+    # After exclusion, we should get a much more modest value vs a ~2.3M baseline.
+    assert not pd.isna(vs2019_val), "Expected a non-NaN value for 2026-07-02"
+    assert vs2019_val < 100, (
+        f"vs2019_pct={vs2019_val:.1f}% looks like holiday-contaminated ratio "
+        f"(expected < 100% after excluding the Jul 4 2019 holiday candidate)"
+    )
+
+
+def test_is_us_federal_holiday_non_holiday():
+    """A regular weekday is not a federal holiday."""
+    # 2019-07-02 is a Tuesday, not a holiday
+    assert not _is_us_federal_holiday(pd.Timestamp("2019-07-02")), (
+        "2019-07-02 should not be a federal holiday"
+    )

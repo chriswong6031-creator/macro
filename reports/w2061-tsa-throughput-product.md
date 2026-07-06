@@ -51,13 +51,17 @@ The 2019 baseline is the natural pre-COVID reference point for travel demand; th
 ```
 date         passengers     avg7d      yoy_pct   vs2019_pct
 2026-07-01   2,654,017   2,734,886    +10.5%      +4.2%
-2026-07-02   2,901,753   2,733,643    +6.7%       +38.9%
-2026-07-03   2,572,397   2,686,184    -12.0%      +17.8%
-2026-07-04   1,882,467   2,587,161    -13.0%      -19.8%
+2026-07-02   2,901,753   2,733,643    +6.7%       +23.6%  (*)
+2026-07-03   2,572,397   2,686,184    -12.0%        NaN   (**)
+2026-07-04   1,882,467   2,587,161    -13.0%        NaN   (**)
 2026-07-05   2,914,375   2,584,833    +18.6%      +4.3%
 ```
 
-Note: Jul 4 (Independence Day) shows negative YoY and vs2019 because 2026 July 4 falls on a Saturday while 2025 July 4 fell on a Friday (higher travel day). Day-of-week positioning between holiday years causes this pattern; the avg7d smooths it.
+(*) Holiday-adjacent caveat: Jul 2 vs2019 = +23.6%. The previous computation reported +38.9% because the ±3-day weekday search matched 2026-07-02 (Thursday) to 2019-07-04 (Thursday = Independence Day, an anomalously low travel day at ~2.1M vs the normal ~2.3M range). That match was a day-type artifact, not a demand signal. The corrected value uses the nearest non-holiday 2019 date (2019-07-02, Tuesday — not a weekday match, but no non-holiday same-weekday exists in the ±3-day window around Jul 4 2019). See Amendment A3 below.
+
+(**) Jul 3 and Jul 4 2026 are US federal holidays (July 4 = Independence Day, falls on Saturday; observed = Friday July 3). vs2019_pct is NaN for all federal holiday dates on BOTH sides of the comparison. Holiday counts are anomalously low and a holiday-vs-non-holiday ratio is not a demand signal. The avg7d column smooths over these dates for trend display.
+
+**Holiday-adjacent warning (applies to all years):** Any vs2019_pct value where the target date or the matched 2019 date is within ±3 days of a US federal holiday may be affected by day-type mismatch even after holiday exclusion. Specifically: if the ±3-day same-weekday search finds no valid non-holiday candidate, the fallback uses the nearest non-holiday 2019 date regardless of weekday. These fallback values are lower quality and should be read alongside avg7d rather than in isolation. YoY % is not affected by holiday exclusion (both sides are the same calendar date).
 
 ---
 
@@ -66,12 +70,13 @@ Note: Jul 4 (Independence Day) shows negative YoY and vs2019 because 2026 July 4
 - **Passengers column:** point-in-time; TSA publishes the prior calendar day's count the following morning. The collector's `last_date` gate ensures no row is re-fetched from a future date.
 - **avg7d:** trailing 7-day rolling mean. No look-ahead; min_periods=1 means first 6 rows use partial windows (disclosed).
 - **yoy_pct:** uses same calendar date exactly ±1 year. If that exact date is missing (e.g. leap day), tries ±1 calendar day. If 2020 Feb 29 vs 2019: 2019 has no Feb 29, so ±1-day fallback hits Feb 28. This is disclosed and unavoidable with calendar-date YoY.
-- **vs2019_pct:** searches ±3 days for a 2019 date with the same weekday; falls back to nearest date within ±7 days regardless of weekday if no same-weekday match exists. Leap years (2020, 2024) have Feb 29 mapped to Feb 28 2019 as the approx anchor.
+- **vs2019_pct:** searches ±3 days for a 2019 date with the same weekday, EXCLUDING US federal holidays from both the target date and the 2019 candidate set (Amendment A3). Falls back to nearest non-holiday date within ±7 days regardless of weekday if no same-weekday non-holiday match exists. Holiday dates return NaN. Leap years (2020, 2024) have Feb 29 mapped to Feb 28 2019 as the approx anchor.
 
 ### Pre-registered amendments
 
 - **Amendment A1:** rows where the `Numbers` cell is blank or non-numeric are dropped rather than coerced to NaN. TSA occasionally publishes pages with placeholder rows for not-yet-available dates. Dropping is safer than storing NaN for a date that will later be filled.
 - **Amendment A2 (leap-day mapping):** Timestamp.replace(year=2019) raises ValueError for Feb 29 in leap years. Fallback: replace day=28 first, then apply ±3-day weekday search. Disclosed in docstring.
+- **Amendment A3 (holiday exclusion for vs2019_pct):** US federal holidays (all 11 official holidays plus their observed substitute dates per OPM rules) are excluded from BOTH the target date and the 2019 candidate set in _vs2019_pct. A holiday-vs-non-holiday match produces a spurious recovery figure that is purely a day-type artifact (demonstrated: 2026-07-02 vs 2019-07-04 yielded +38.9% when the correct figure after exclusion is +23.6%). Holiday dates return NaN. The self-contained holiday set is computed without external packages (pure stdlib + calendar module). Juneteenth included from 2019 onward for symmetry even though it became federal only in 2021 (travel patterns on June 19 pre-2021 are unaffected by this choice since the federal designation does not change historical airport volumes).
 
 ---
 
@@ -85,12 +90,13 @@ Note: Jul 4 (Independence Day) shows negative YoY and vs2019 because 2026 July 4
 
 ## Tests
 
-15 unit tests in `tests/test_tsa_throughput.py`. All pure logic, no network calls.
+18 unit tests in `tests/test_tsa_throughput.py`. All pure logic, no network calls.
 
 - Parser: row count, column types, value accuracy, header skip, blank-cell drop (amendment A1), deduplication, empty-HTML error, sort order
 - Display fields: avg7d correctness, min_periods behavior, YoY null for first year, YoY=0 for flat series, vs2019 null without 2019 data, vs2019≈0 for flat series, column presence
+- Holiday exclusion (Amendment A3): holiday target date returns NaN, holiday 2019 candidate excluded (non-holiday match used instead), self-contained holiday set includes Independence Day
 
-Result: **15/15 pass**.
+Result: **18/18 pass**.
 
 ---
 

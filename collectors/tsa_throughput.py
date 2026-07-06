@@ -15,9 +15,25 @@ PIT assumptions:
   - TSA publishes the prior calendar day's count each morning ET.
   - 7d average and YoY/2019 comparisons are computed in-process from the
     same parquet; no look-ahead (they reference only rows <= current row date).
-  - 2019-baseline % uses same weekday nearest match within ±3 days to reduce
-    day-of-week noise (holiday bunching in either year still distorts; noted).
+  - 2019-baseline % uses same weekday nearest match within ±3 days, EXCLUDING
+    US federal holidays from BOTH sides of the comparison. Holidays produce
+    anomalously low counts that are not representative of normal travel demand,
+    and a weekday-matched holiday-vs-non-holiday comparison produces spurious
+    recovery figures (e.g. matching a normal Thursday to Independence Day 2019
+    produces a +39% artifact that reads as demand recovery when it is purely
+    a day-type mismatch). Both the target date and the 2019 candidate date are
+    checked against a self-contained US federal holiday set. Holiday-to-holiday
+    matches (e.g. Jul 4 to Jul 4) are also excluded; the result is NaN for
+    those dates, which is the honest representation.
   - YoY % uses same calendar date ±0 days; if missing, ±1 day fallback.
+    Holiday dates are NOT excluded from YoY (both sides are the same calendar
+    date, so the comparison is self-consistent day-type vs day-type).
+
+Pre-registered amendment A3 (holiday exclusion): _vs2019_pct excludes US
+  federal holidays from both the target and candidate sets. A3 is not a new
+  gate; it is a correction to the display field to prevent materially misleading
+  chart-ready numbers on holiday-adjacent dates. The NaN output for holiday
+  dates is the correct honest representation for conditions desk display.
 
 Nightly wiring (for consolidation):
   Add to scripts/collect.py import block:
@@ -53,6 +69,99 @@ HEADERS = {
 }
 GROUP = "tsa"
 SERIES = "throughput"
+
+
+# ---------------------------------------------------------------------------
+# US Federal Holiday helpers (self-contained, no external package)
+# ---------------------------------------------------------------------------
+
+def _nth_weekday(year: int, month: int, n: int, weekday: int) -> date:
+    """Return the date of the n-th occurrence (1-based) of weekday in year/month.
+
+    weekday follows Python convention: 0=Monday, 6=Sunday.
+    """
+    d = date(year, month, 1)
+    # Advance to first occurrence of weekday in the month
+    days_until = (weekday - d.weekday()) % 7
+    d = d.replace(day=1 + days_until)
+    return d.replace(day=d.day + (n - 1) * 7)
+
+
+def _last_weekday(year: int, month: int, weekday: int) -> date:
+    """Return the last occurrence of weekday in year/month."""
+    import calendar
+    from datetime import timedelta
+    last_day = calendar.monthrange(year, month)[1]
+    last = date(year, month, last_day)
+    days_back = (last.weekday() - weekday) % 7
+    return last - timedelta(days=days_back)
+
+
+def _observed_holiday(d: date) -> date:
+    """Return the observed date for a holiday falling on weekend.
+
+    Saturday -> Friday; Sunday -> Monday.
+    Uses timedelta to correctly handle month/year boundaries.
+    """
+    from datetime import timedelta
+    if d.weekday() == 5:  # Saturday -> Friday
+        return d - timedelta(days=1)
+    if d.weekday() == 6:  # Sunday -> Monday
+        return d + timedelta(days=1)
+    return d
+
+
+def us_federal_holidays(year: int) -> frozenset[date]:
+    """Return a frozenset of US federal holiday dates for the given year.
+
+    Includes both the actual holiday date and the observed date when a holiday
+    falls on a weekend (per OPM rules: Saturday→Friday, Sunday→Monday).
+
+    Covers all 11 federal holidays:
+    New Year's Day, MLK Day, Presidents Day, Memorial Day, Juneteenth,
+    Independence Day, Labor Day, Columbus Day, Veterans Day,
+    Thanksgiving, Christmas Day.
+    """
+    import calendar as _cal
+
+    holidays: set[date] = set()
+
+    def _add(d: date) -> None:
+        holidays.add(d)
+        obs = _observed_holiday(d)
+        if obs != d:
+            holidays.add(obs)
+
+    # Fixed-date holidays
+    _add(date(year, 1, 1))   # New Year's Day
+    _add(date(year, 6, 19))  # Juneteenth (federal since 2021; include all years for symmetry)
+    _add(date(year, 7, 4))   # Independence Day
+    _add(date(year, 11, 11)) # Veterans Day
+    _add(date(year, 12, 25)) # Christmas Day
+
+    # Floating holidays
+    _add(_nth_weekday(year, 1, 3, 0))   # MLK Day: 3rd Monday of January
+    _add(_nth_weekday(year, 2, 3, 0))   # Presidents Day: 3rd Monday of February
+    _add(_last_weekday(year, 5, 0))     # Memorial Day: last Monday of May
+    _add(_nth_weekday(year, 9, 1, 0))   # Labor Day: 1st Monday of September
+    _add(_nth_weekday(year, 10, 2, 0))  # Columbus Day: 2nd Monday of October
+    _add(_nth_weekday(year, 11, 4, 3))  # Thanksgiving: 4th Thursday of November
+
+    return frozenset(holidays)
+
+
+# Cache holiday sets for years we query frequently
+_HOLIDAY_CACHE: dict[int, frozenset[date]] = {}
+
+
+def _is_us_federal_holiday(d: "pd.Timestamp | date") -> bool:
+    """Return True if d is a US federal holiday or its observed substitute."""
+    if isinstance(d, pd.Timestamp):
+        d = d.date()
+    year = d.year
+    if year not in _HOLIDAY_CACHE:
+        _HOLIDAY_CACHE[year] = us_federal_holidays(year)
+    return d in _HOLIDAY_CACHE[year]
 
 
 # ---------------------------------------------------------------------------
@@ -183,13 +292,32 @@ def _yoy_pct(s: pd.Series) -> pd.Series:
 
 
 def _vs2019_pct(s: pd.Series) -> pd.Series:
-    """% vs nearest same-weekday 2019 date (within ±3 days)."""
+    """% vs nearest same-weekday 2019 date (within ±3 days), holiday-excluded.
+
+    Amendment A3 (pre-registered): US federal holidays are excluded from BOTH
+    the target date and the 2019 candidate set. A holiday-vs-non-holiday match
+    (or vice versa) produces a spurious recovery figure that is purely a
+    day-type artifact (e.g. matching a normal Thursday to Independence Day 2019
+    yielded +38.9% vs2019). Holiday dates return NaN — the correct honest
+    representation for conditions desk display. Holiday-to-holiday matches
+    (e.g. Jul 4 to Jul 4) are also excluded since both sides are anomalously
+    low and the ratio is not representative of demand recovery.
+    """
     baseline = s[s.index.year == 2019]
     result = pd.Series(index=s.index, dtype=float)
     if baseline.empty:
         return result
+
+    # Build a non-holiday 2019 baseline index for candidate search
+    non_holiday_2019 = frozenset(
+        ts for ts in baseline.index if not _is_us_federal_holiday(ts)
+    )
+
     for dt in s.index:
         if dt.year == 2019:
+            continue
+        # Skip target dates that are themselves US federal holidays
+        if _is_us_federal_holiday(dt):
             continue
         target_weekday = dt.dayofweek
         # approximate same position in 2019; leap-day (Feb 29) maps to Feb 28
@@ -197,21 +325,32 @@ def _vs2019_pct(s: pd.Series) -> pd.Series:
             approx_2019 = dt.replace(year=2019)
         except ValueError:
             approx_2019 = dt.replace(year=2019, day=28)
-        # search ±3 days for matching weekday
+        # search ±3 days for matching weekday, excluding 2019 holidays
         best = None
         best_delta = 999
         for delta in range(-3, 4):
             candidate = approx_2019 + pd.Timedelta(days=delta)
-            if candidate in baseline.index and candidate.dayofweek == target_weekday:
+            if (
+                candidate in baseline.index
+                and candidate in non_holiday_2019
+                and candidate.dayofweek == target_weekday
+            ):
                 if abs(delta) < best_delta:
                     best_delta = abs(delta)
                     best = candidate
         if best is None:
-            # No weekday match; fall back to nearest date in 2019 regardless of weekday
-            diffs = abs((baseline.index - approx_2019).days)
-            nearest_idx = diffs.argmin()
-            if diffs[nearest_idx] <= 7:
-                best = baseline.index[nearest_idx]
+            # No weekday match among non-holidays; fall back to nearest
+            # non-holiday date in 2019 within ±7 days regardless of weekday
+            non_holiday_candidates = [
+                ts for ts in baseline.index
+                if ts in non_holiday_2019
+            ]
+            if non_holiday_candidates:
+                nh_index = pd.DatetimeIndex(non_holiday_candidates)
+                diffs = abs((nh_index - approx_2019).days)
+                nearest_idx = diffs.argmin()
+                if diffs[nearest_idx] <= 7:
+                    best = nh_index[nearest_idx]
         if best is not None and baseline[best] > 0:
             result[dt] = (s[dt] / baseline[best] - 1) * 100
     return result
