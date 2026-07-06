@@ -246,16 +246,17 @@ _SECTOR_FLOW_THESIS = ("Sector smart-money net-flow tends to lead the sector's p
 # --------------------------------------------------------------------------- #
 
 def _sig_ah_premium_z():
-    """Signal-A: A/H premium z-move vs its own trailing history.
+    """Signal-A+B: A/H premium z (signal-A) vs CSI 300 own-history z (signal-B).
+
+    A genuine TWO-LEG pair: fires ONLY when the premium z and onshore price z disagree
+    (opposite signs, both |z| ≥ 1.0). When both agree the divergence is in_line.
 
     Uses data/hk_ah_official/ah_premium.parquet (reconstructed liquid-10 daily index, col
-    `hsahp`). Falls back to ah_spot.parquet (accrued-forward snapshot) if ah_premium is
-    shallow or missing. Returns +1 when premium is ABOVE its 1y history (A-shares bid
-    relative to H — onshore demand leading), -1 when below.
+    `hsahp`). Falls back to ah_spot.parquet if ah_premium is shallow or missing.
+    CSI 300 own-history: data/china/510300.SS.parquet 63d return z vs its own 252-day history.
 
     DATA CAVEAT: ah_premium reconstructs CNY-equivalent H prices from USDCNY/USDHKD FX; the
-    level embeds FX moves. We report the z of the daily LEVEL series (not FX-stripped) — the
-    z is still informative for mean-reversion framing but is not pure demand signal.
+    level embeds FX moves. We report the z of the daily LEVEL series (not FX-stripped).
     """
     try:
         import numpy as np
@@ -272,19 +273,48 @@ def _sig_ah_premium_z():
         if len(s) < 60:
             return None
         cur = float(s.iloc[-1])
-        # z vs trailing 1y (252 trading days, or all available if < 252)
+        # signal-A: premium z vs trailing 1y (252 trading days, or all available if < 252)
         window = s.tail(252)
         mu, sd = float(window.mean()), float(window.std(ddof=0))
         z = _winz((cur - mu) / sd) if sd > 1e-9 else 0.0
         asof = s.index[-1].date()
-        # premium WIDENING (high z) = A bid relative to H = onshore demand leading H price
-        d = 1 if z > 0.4 else (-1 if z < -0.4 else 0)
+
+        # signal-B: CSI 300 own-history z (63d return z vs its own 252-day trailing window)
+        csi = store.read("china", "510300.SS")
+        csi_z = None
+        if csi is not None and "close" in csi.columns:
+            csi_close = csi["close"].dropna().sort_index()
+            if len(csi_close) >= 252 + 63:
+                csi_ret63 = csi_close.pct_change(63).dropna()
+                csi_cur = float(csi_ret63.iloc[-1])
+                csi_hist = csi_ret63.tail(252)
+                csi_mu, csi_sd = float(csi_hist.mean()), float(csi_hist.std(ddof=0))
+                csi_z = _winz((csi_cur - csi_mu) / csi_sd) if csi_sd > 1e-9 else 0.0
+
+        # TWO-LEG divergence: fire ONLY when legs DISAGREE and both exceed |z| >= 1.0
+        # premium_z > +1.0 AND csi_z < -1.0 → premium bidding up A-shares while onshore price lags
+        # premium_z < -1.0 AND csi_z > +1.0 → premium collapsed while onshore price still elevated
+        if csi_z is None:
+            # can't compute signal-B → fall back to single-leg with threshold 1.0
+            d = 1 if z > 1.0 else (-1 if z < -1.0 else 0)
+        elif z > 1.0 and csi_z < -1.0:
+            d = 1   # premium elevated, onshore price lagging
+        elif z < -1.0 and csi_z > 1.0:
+            d = -1  # premium compressed, onshore price still leading
+        else:
+            d = 0   # legs agree or within noise floor → in_line
+
         return {
-            "value": round(cur, 2), "z": round(z, 2), "dir": d,
+            "value": round(cur, 2), "z": round(z, 2), "csi_z": round(csi_z, 2) if csi_z is not None else None,
+            "dir": d,
             "strength": round(min(1.0, abs(z) / 2.0), 2),
             "data_asof": str(asof),
-            "detail_en": f"A/H premium {cur:.1f}% (z {z:+.2f} vs 1y history)",
-            "detail_zh": f"A/H溢价 {cur:.1f}%（z {z:+.2f}，相对1年历史）",
+            "detail_en": (f"A/H premium {cur:.1f}% (z {z:+.2f} vs 1y history); "
+                          f"CSI 300 price z {csi_z:+.2f}" if csi_z is not None else
+                          f"A/H premium {cur:.1f}% (z {z:+.2f} vs 1y history); CSI 300 z unavailable"),
+            "detail_zh": (f"A/H溢价 {cur:.1f}%（z {z:+.2f}，相对1年历史）；"
+                          f"沪深300价格z {csi_z:+.2f}" if csi_z is not None else
+                          f"A/H溢价 {cur:.1f}%（z {z:+.2f}）；沪深300z不可用"),
         }
     except Exception as e:  # noqa: BLE001
         log.debug("china_radar _sig_ah_premium_z failed (%s)", e)
@@ -340,18 +370,17 @@ def _sig_offshore_etf_gap(lookback_days: int = 5):
             return None
 
         # Align all series to a common date index
-        combined = pd.concat(etf_series, axis=1, keys=etf_used, sort=True).dropna(how="all")
-        offshore_eq = combined.mean(axis=1).dropna()
-
-        # Align with onshore benchmark
-        joined = pd.concat({"off": offshore_eq, "on": csi_close}, axis=1, sort=True).dropna()
-        if len(joined) < 252 + 20:
+        combined = pd.concat(etf_series, axis=1, keys=etf_used, sort=True)
+        if len(combined.dropna(how="all")) < 252 + 20:
             return None
 
-        # Compute trailing returns for both lookbacks
+        # Compute trailing returns for both lookbacks — EQUAL-WEIGHT IN RETURN SPACE:
+        # average each ETF's pct_change, then diff with onshore. This gives each ETF
+        # equal weight regardless of price level (KWEB ~$20 vs MCHI/CQQQ ~$40-50).
         results = []
         for lb in (5, 20):
-            off_ret = offshore_eq.pct_change(lb).dropna()
+            ret_frame = combined.pct_change(lb).dropna(how="all")
+            off_ret = ret_frame.mean(axis=1).dropna()
             on_ret = csi_close.pct_change(lb).dropna()
             gap = (off_ret - on_ret).dropna()
             if len(gap) < 252:
@@ -360,17 +389,18 @@ def _sig_offshore_etf_gap(lookback_days: int = 5):
             hist = gap.tail(252)
             mu, sd = float(hist.mean()), float(hist.std(ddof=0))
             z = _winz((cur_gap - mu) / sd) if sd > 1e-9 else 0.0
-            results.append((lb, cur_gap, z))
+            results.append((lb, cur_gap, z, gap))
 
         if not results:
             return None
 
         # Use the lookback with the stronger |z|
         best = max(results, key=lambda x: abs(x[2]))
-        lb, cur_gap, z = best
+        lb, cur_gap, z, gap_series = best
 
         # Optional FX-adjustment report (informational only — does not change direction signal)
         fx_note = ""
+        fx_note_zh = ""
         try:
             from pathlib import Path
             cny_path = config.data_dir() / "china_pboc" / "cny_fix.parquet"
@@ -380,32 +410,37 @@ def _sig_offshore_etf_gap(lookback_days: int = 5):
                 cny_s = cny_df["usd_cny"].dropna().sort_index()
                 if len(cny_s) >= lb + 1:
                     cny_chg = float(cny_s.iloc[-1] / cny_s.iloc[-1 - lb] - 1.0)
-                    # FX-adjusted offshore return = raw - CNY appreciation (approx)
-                    off_ret_raw = offshore_eq.pct_change(lb).dropna().iloc[-1]
+                    # FX-adjusted offshore return = raw equal-weight return - CNY appreciation (approx)
+                    ret_frame_fx = combined.pct_change(lb).dropna(how="all")
+                    off_ret_raw = float(ret_frame_fx.mean(axis=1).dropna().iloc[-1])
                     off_ret_adj = off_ret_raw - cny_chg
-                    on_ret_last = csi_close.pct_change(lb).dropna().iloc[-1]
+                    on_ret_last = float(csi_close.pct_change(lb).dropna().iloc[-1])
                     gap_adj = off_ret_adj - on_ret_last
-                    asof_cny = cny_s.index[-1].date()
                     staleness = (pd.Timestamp.today() - cny_s.index[-1]).days
                     if staleness <= 7:
                         fx_note = f"; FX-adj gap {gap_adj*100:+.1f}% (CNY {cny_chg*100:+.2f}%)"
+                        fx_note_zh = f"；汇率调整后差价 {gap_adj*100:+.1f}%（人民币 {cny_chg*100:+.2f}%）"
         except Exception:  # noqa: BLE001
             pass
 
-        asof = joined.index[-1].date()
-        d = 1 if z > 0.5 else (-1 if z < -0.5 else 0)
+        asof = gap_series.index[-1].date() if len(gap_series) > 0 else combined.index[-1].date()
+        d = 1 if z > 1.0 else (-1 if z < -1.0 else 0)
         etf_str = "/".join(etf_used)
+        composition_note = (
+            " Composition note: basket is tech/internet-tilted (KWEB=internet, CQQQ=tech-heavy) "
+            "vs CSI 300's financials tilt — gap partly reflects sector rotation, not pure venue sentiment."
+        )
         return {
             "value": round(cur_gap * 100, 2), "z": round(z, 2), "dir": d,
             "strength": round(min(1.0, abs(z) / 2.0), 2),
             "lookback_days": lb, "etf_used": etf_used,
             "data_asof": str(asof),
-            "detail_en": (f"Offshore ({etf_str}) {lb}d ret gap vs CSI300: "
+            "detail_en": (f"Offshore ({etf_str}) {lb}d equal-weight ret gap vs CSI300: "
                           f"{cur_gap*100:+.2f}% (z {z:+.2f}){fx_note}. "
-                          f"FX note: gap embeds USDCNY moves — see FX-adj if available."),
-            "detail_zh": (f"离岸ETF({etf_str}) {lb}日收益差 vs 沪深300: "
-                          f"{cur_gap*100:+.2f}%（z {z:+.2f}）{fx_note}。"
-                          f"注：差值包含人民币汇率影响。"),
+                          f"FX note: gap embeds USDCNY moves — see FX-adj if available.{composition_note}"),
+            "detail_zh": (f"离岸ETF({etf_str}) {lb}日等权收益差 vs 沪深300: "
+                          f"{cur_gap*100:+.2f}%（z {z:+.2f}）{fx_note_zh}。"
+                          f"注：差值包含人民币汇率影响；篮子偏科技/互联网，与沪深300金融偏重有差异。"),
         }
     except Exception as e:  # noqa: BLE001
         log.debug("china_radar _sig_offshore_etf_gap failed (%s)", e)
@@ -457,7 +492,7 @@ def _sig_southbound_vs_hk():
         hk_z = _winz((cur_hk - mu_h) / sd_h) if sd_h > 1e-9 else 0.0
 
         # Use flow_z as the signal direction; hk_z as the price-leg z
-        d = 1 if flow_z > 0.3 else (-1 if flow_z < -0.3 else 0)
+        d = 1 if flow_z > 1.0 else (-1 if flow_z < -1.0 else 0)
         flow_asof = s_net.index[-1].date()
         hk_asof = h_close.index[-1].date()
         data_asof = str(min(flow_asof, hk_asof))
@@ -492,14 +527,10 @@ _VENUE_PAIRS = [
         "A/H溢价z值",
         "CSI 300 (onshore)",
         "沪深300（境内）",
-        # Pair: A/H premium z vs CSI 300 direction — premium widening while onshore flat/down
-        # = onshore relative bid not yet confirmed by price. Framed as signal-A (premium z)
-        # vs signal-B (CSI 300 direction via price_rs of 510300.SS vs itself — treated as 0
-        # since 510300 IS the benchmark, so divergence = premium high but onshore not leading).
-        ("A/H premium widening (A-shares bid vs H) while CSI 300 is lagging its own history "
-         "suggests onshore-relative demand is not yet priced. Hypothesis: CSI 300 should "
-         "close the gap over ~3 months. DATA NOTE: gap embeds USDCNY/USDHKD FX; not "
-         "FX-stripped. Direction unproven — accruing as Phase-0 candidate."),
+        ("A/H premium z vs CSI 300 price z — a two-leg pair. Premium widening (A-shares bid vs H) "
+         "while CSI 300 price z is lagging its own history suggests onshore-relative demand has not yet "
+         "been confirmed by price. Fires only when both legs disagree and |z| >= 1.0. "
+         "DATA NOTE: premium embeds USDCNY/USDHKD FX, not FX-stripped. Direction unproven — accruing as Phase-0 candidate."),
     ),
     (
         "venue_offshore_gap",
@@ -509,10 +540,12 @@ _VENUE_PAIRS = [
         "CSI 300 (onshore)",
         "沪深300（境内）",
         ("Offshore China ETF basket (KWEB/MCHI/CQQQ — US-listed offshore listings; ASHR/GXC "
-         "excluded as they hold A-shares directly) total-return gap vs CSI 300. A strongly "
-         "positive gap (offshore outperforming) while onshore lags = offshore sentiment "
-         "leading. FX caveat: gap embeds USDCNY. Hypothesis: sustained offshore leadership "
-         "tends to attract onshore catch-up over ~3 months."),
+         "excluded as they hold A-shares directly) total-return equal-weight gap vs CSI 300. "
+         "A strongly positive gap (offshore outperforming) while onshore lags = offshore sentiment "
+         "leading. FX caveat: gap embeds USDCNY. Composition note: basket is tech/internet-tilted "
+         "(KWEB=internet, CQQQ=tech-heavy) vs CSI 300's financials tilt — gap partly reflects sector "
+         "rotation, not pure venue sentiment. Hypothesis: sustained offshore leadership tends to attract "
+         "onshore catch-up over ~3 months."),
     ),
     (
         "venue_southbound",
@@ -685,7 +718,8 @@ def _build_venue_row(cv, key, sen, szh, proxy_en, proxy_zh, sig, thesis,
     For the ledger, we record the signal z as `rs_at_fire` (repurposed field) since there
     is no true "price RS" in the sector sense.
     """
-    if sig is None or sig.get("dir", 0) == 0:
+    # None signal = no data → skip entirely
+    if sig is None:
         return None
 
     sdir = sig["dir"]
@@ -710,8 +744,13 @@ def _build_venue_row(cv, key, sen, szh, proxy_en, proxy_zh, sig, thesis,
     else:
         # For AH premium and offshore gap: direction IS the divergence signal.
         # Positive dir (premium high OR offshore leading) = potential onshore catch-up.
-        # Negative dir = potential onshore lag.
-        sign = "positive" if sdir > 0 else "negative"
+        # Negative dir = potential onshore lag. Zero = in_line (both legs agree or within noise floor).
+        if sdir > 0:
+            sign = "positive"
+        elif sdir < 0:
+            sign = "negative"
+        else:
+            sign = "in_line"
         price_rs_z = z_val   # report signal z in the rs_z field for consistency
         price_rs_pct = sig.get("value")
 
@@ -725,7 +764,20 @@ def _build_venue_row(cv, key, sen, szh, proxy_en, proxy_zh, sig, thesis,
                   f"pull back over ~3 months. {thesis}")
         hyp_zh = f"若{szh}出现负向背离，价格腿（{proxy_zh}）应在约3个月内回落。"
     else:
-        return None   # in-line venue rows are skipped (same as sector pairs)
+        # Return in-line row so it surfaces in scan()["in_line"] and n_pairs count
+        return {
+            "pair": pair, "signal_key": key, "family": "venue",
+            "signal_en": sen, "signal_zh": szh,
+            "sector": proxy_en, "sector_etf": None, "sector_en": proxy_en, "sector_zh": proxy_zh,
+            "sign": "in_line", "strength": 0.0, "conviction100": 0,
+            "signal_value": sig.get("value") if sig else None, "signal_dir": 0,
+            "signal_detail_en": sig.get("detail_en") if sig else None,
+            "signal_detail_zh": sig.get("detail_zh") if sig else None,
+            "price_rs": None, "price_rs_z": None,
+            "data_asof": sig.get("data_asof", "") if sig else "",
+            "reliability": {"hit_rate": None, "n_resolved": 0, "basis": "unproven"},
+            "candidates": [], "thesis": thesis, "hypothesis_en": "", "hypothesis_zh": "",
+        }
 
     rel = by_pair.get(pair) or by_signal.get(key) or {}
     n_res = rel.get("n_resolved", 0)
@@ -792,7 +844,7 @@ def scan(asof: date | str | None = None) -> dict | None:
             if row is not None:
                 rows.append(row)
             else:
-                log.debug("china_radar venue pair %s: skipped (no signal or in_line)", key)
+                log.debug("china_radar venue pair %s: no data, skipping", key)
         if not rows:
             return None
         active = [r for r in rows if r["sign"] != "in_line"]

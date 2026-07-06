@@ -2324,6 +2324,26 @@
         "asof": "2026-07-02",
         "source": "data/regime/latest.json"
       }
+    },
+    {
+      "id": "china-venue-divergence",
+      "name": "China Venue Divergence Radar — Phase-0 (AH premium, offshore ETF gap, southbound)",
+      "kind": "track_record",
+      "priority": "medium",
+      "cadence": "daily (asia-close lane only)",
+      "what": "Three cross-venue divergence pairs accruing in the China Radar: (1) venue_ah_premium: A/H premium z vs CSI 300 own-history z — two-leg pair, fires only when both disagree at |z|>=1.0; (2) venue_offshore_gap: KWEB/MCHI/CQQQ equal-weight return gap vs CSI 300 (z>=1.0 threshold); (3) venue_southbound: southbound Connect flow z vs HSCEI momentum z (flow z>=1.0). Graded on convergence metric (pair-specific): offshore gap on onshore catch-up, AH premium on mean-reversion, southbound on HSCEI forward return. Display-only, no allocation.",
+      "source": "engine/china_radar.py, engine/china_radar_ledger.py",
+      "storage": "data/china_radar/ledger.parquet",
+      "track_json": "",
+      "hook": "track_record",
+      "started": "2026-07-06",
+      "come_back_on": "2026-10-06",
+      "come_back_note": "2026-10-06 (~90 calendar days horizon for first matured rows); re-check grading when n_resolved>=3 per pair.",
+      "maturation": "n_resolved>=3 per pair per outcome metric; grading: (fwd>0 when sign=positive) else (fwd<0). No edge claimed — Phase-0 accumulation only.",
+      "status": "accruing",
+      "state": "ledger seeded 2026-07-06; 0 venue rows accrued (lane guard requires CN_LANE=asia); first fire expected nightly asia-close run.",
+      "next_step": "After n_resolved>=3 per pair: evaluate convergence metrics for statistical significance. If hit_rate>=0.6 at n>=10: graduate to Phase-1 (weekly inclusion in conviction). Composition bias (tech tilt in offshore basket vs financials tilt in CSI 300) must be documented before promoting offshore_gap.",
+      "phase_hint": "Phase 0 (accumulation)"
     }
   ]
 }
