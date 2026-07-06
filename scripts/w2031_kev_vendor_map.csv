@@ -1,0 +1,72 @@
+vendor,ticker,status,valid_from,valid_to,note
+Microsoft,MSFT,public,2021-11-03,,Continuously listed on NASDAQ throughout KEV history
+Cisco,CSCO,public,2021-11-03,,NYSE-listed throughout KEV history
+Apple,AAPL,public,2021-11-03,,NASDAQ-listed throughout KEV history
+Adobe,ADBE,public,2021-11-03,,NASDAQ-listed throughout KEV history
+Google,GOOGL,public,2021-11-03,,NASDAQ (Alphabet); use GOOGL
+Oracle,ORCL,public,2021-11-03,,NYSE-listed throughout KEV history
+Apache,,private,2021-11-03,,Apache Software Foundation non-profit; exclude
+Ivanti,,private,2021-11-03,,Private since KKR LBO; exclude
+Linux,,private,2021-11-03,,Linux Foundation non-profit; exclude
+D-Link,,private,2021-11-03,,Trades on Taiwan SE only; not US-listed; exclude
+Fortinet,FTNT,public,2021-11-03,,NASDAQ-listed throughout KEV history
+VMware,VMW,public,2021-11-03,2023-10-30,Broadcom acquired Oct 2023; use VMW before 2023-10-30
+Citrix,,delisted,2021-11-03,2022-09-08,Taken private Sep 2022; exclude
+Synacor,SYNC,public,2021-11-03,,NASDAQ small-cap throughout KEV history
+Android,,private,2021-11-03,,Google product; 'Android' is a separate KEV vendorProject string — excluded as private (remap not implemented; conservative)
+Palo Alto Networks,PANW,public,2021-11-03,,NASDAQ-listed throughout KEV history
+Samsung,,private,2021-11-03,,Korea-listed only; not US common equity; exclude
+SonicWall,,private,2021-11-03,,Francisco Partners private; exclude
+SAP,SAP,public,2021-11-03,,NYSE ADR listed throughout KEV history
+Mozilla,,private,2021-11-03,,Mozilla Foundation non-profit; exclude
+Atlassian,TEAM,public,2021-11-03,,NASDAQ-listed throughout KEV history
+Trend Micro,,private,2021-11-03,,Tokyo-listed only; no US common equity; exclude
+Qualcomm,QCOM,public,2021-11-03,,NASDAQ-listed throughout KEV history
+Zyxel,,private,2021-11-03,,Unitas Capital private; exclude
+SolarWinds,SWI,public,2021-11-03,2024-02-29,Silver Lake take-private ~early 2024; use SWI before
+QNAP,,private,2021-11-03,,Taiwan private; exclude
+Arm,ARM,public,2023-09-14,,NASDAQ IPO 2023-09-14; only events after IPO
+Zoho,,private,2021-11-03,,Zoho Corp private; exclude
+Juniper,JNPR,public,2021-11-03,,NYSE-listed throughout KEV history
+Progress,PRGS,public,2021-11-03,,NASDAQ-listed throughout KEV history
+NETGEAR,NTGR,public,2021-11-03,,NASDAQ-listed throughout KEV history
+F5,FFIV,public,2021-11-03,,NASDAQ-listed throughout KEV history
+Mitel,,private,2021-11-03,,Searchlight Capital private; exclude
+Sophos,,private,2021-11-03,,Thoma Bravo private; exclude
+Red Hat,,private,2021-11-03,,IBM subsidiary since 2019; exclude
+IBM,IBM,public,2021-11-03,,NYSE-listed throughout KEV history
+Jenkins,,private,2021-11-03,,Open-source project; exclude
+TP-Link,,private,2021-11-03,,China private; exclude
+Drupal,,private,2021-11-03,,Non-profit open-source; exclude
+GNU,,private,2021-11-03,,FSF non-profit; exclude
+RARLAB,,private,2021-11-03,,RARLAB GmbH private; exclude
+DrayTek,,private,2021-11-03,,Taiwan private; exclude
+Exim,,private,2021-11-03,,Open-source; exclude
+SimpleHelp,,private,2021-11-03,,Private UK; exclude
+Ubiquiti,UI,public,2021-11-03,,NYSE-listed throughout KEV history
+Kentico,,private,2021-11-03,,Czech private; exclude
+Craft CMS,,private,2021-11-03,,Pixel Tonic private; exclude
+Broadcom,AVGO,public,2021-11-03,,NASDAQ-listed; absorbed VMware Oct 2023
+GitLab,GTLB,public,2021-11-03,,NASDAQ IPO Oct 2021; in window for all KEV history
+Hewlett Packard Enterprise,HPE,public,2021-11-03,,NYSE-listed throughout KEV history
+Samba,,private,2021-11-03,,Open-source; exclude
+GeoServer,,private,2021-11-03,,Open-source; exclude
+PHP,,private,2021-11-03,,Open-source; exclude
+Veeam,,private,2021-11-03,,Private; exclude
+Pulse Secure,,private,2021-11-03,,Merged into Ivanti 2021; exclude
+Zimbra,,private,2021-11-03,,Open-source/private; exclude
+Telerik,,private,2021-11-03,,Now Progress Software; map via Progress row
+Datto,,private,2021-11-03,,Kaseya acquired 2022; exclude
+ConnectWise,,private,2021-11-03,,Thoma Bravo private; exclude
+ManageEngine,,private,2021-11-03,,Zoho division private; exclude
+Barracuda Networks,,private,2021-11-03,,KKR private; exclude
+Accellion,,private,2021-11-03,,Now Kiteworks private; exclude
+Kaseya,,private,2021-11-03,,Private; exclude
+Nagios,,private,2021-11-03,,Nagios Enterprises private; exclude
+OpenSSL,,private,2021-11-03,,Open-source Foundation; exclude
+XStream,,private,2021-11-03,,Open-source; exclude
+WSO2,,private,2021-11-03,,Private; exclude
+PaperCut,,private,2021-11-03,,Private; exclude
+Fortra,,private,2021-11-03,,HelpSystems private; exclude
+Joomla,,private,2021-11-03,,Open-source; exclude
+WordPress,,private,2021-11-03,,Open-source; exclude
