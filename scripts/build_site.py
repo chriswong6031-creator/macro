@@ -2084,6 +2084,29 @@ def _load_factor_series() -> dict | None:
         return None
 
 
+def _load_nw_factor_state() -> dict | None:
+    """Load the Neural Web factor intelligence state artifact (RUL-NW7/NW8, §D PR-4).
+
+    Reads data/neuralweb/factor_intelligence_state.json (committed artifact written by
+    the factor_panel job via scripts/build_factor_intelligence_state.py, RUL-NW1).
+    Fail-open: absent → None, template renders a DORMANT panel with an honest note.
+    Never raises; never imports engine modules.
+
+    Declared consumer in config/synapse.yml → factor-intelligence-state (RUL-NW11).
+    """
+    p = config.ROOT / "data" / "neuralweb" / "factor_intelligence_state.json"
+    if not p.exists():
+        return None
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(d, dict):
+            return None
+        return d
+    except Exception as e:  # noqa: BLE001
+        log.warning("nw factor state unreadable: %s", e)
+        return None
+
+
 def build_factors_page(env: Environment, site: Path, generated: str) -> dict | None:
     """Render factors.html — the cross-sectional equity factor rankings (SEC
     EDGAR fundamentals x prices). Fundamentals fetch is cached weekly; ranks
@@ -2136,11 +2159,13 @@ def build_factors_page(env: Environment, site: Path, generated: str) -> dict | N
     ic = _load_ic_scorecard()                  # leak-free point-in-time IC (degrade-never-raise)
     breadth = _load_breadth()                  # market-member breadth context (degrade-never-raise)
     series = _load_factor_series()             # factor portfolio return series (degrade-never-raise)
+    nw_state = _load_nw_factor_state()         # NW factor intelligence state (RUL-NW7/NW8, fail-open)
     html = env.get_template("factors.html.j2").render(
-        fac=fac, ic=ic, breadth=breadth, series=series, generated_utc=generated)
+        fac=fac, ic=ic, breadth=breadth, series=series,
+        nw_state=nw_state, generated_utc=generated)
     write_page(site / "factors.html", html)
-    log.info("wrote factors.html (%d names, FY%s, ic=%s)", fac.get("n"), fac.get("fy"),
-             "yes" if ic else "no")
+    log.info("wrote factors.html (%d names, FY%s, ic=%s, nw_state=%s)", fac.get("n"), fac.get("fy"),
+             "yes" if ic else "no", "yes" if nw_state else "no")
     return fac
 
 

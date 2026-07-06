@@ -854,6 +854,67 @@ function nwSectionGovernance(gov) {
   return html;
 }
 
+/* Section E — Factor Intelligence (§D PR-4, RUL-NW7/NW8) */
+function nwSectionFactorIntelligence(fi) {
+  if (!fi) return nwMissing("factor_intelligence section missing");
+  let html = `<div class="grid">`;
+
+  // State artifact freshness card
+  if (fi.state_missing) {
+    html += card("State Artifact", `<div class="sub" style="color:var(--warn)">data/neuralweb/factor_intelligence_state.json not yet written — factor_panel job has not run. Panel dormant.</div>`);
+  } else {
+    const ageColor = fi.state_age_hours == null ? "muted" : fi.state_age_hours > 48 ? "bad" : fi.state_age_hours > 30 ? "warn" : "ok";
+    html += card("State Artifact", `
+      <div class="kv"><span>As of</span><b>${esc(fi.state_as_of || "—")}</b></div>
+      <div class="kv"><span>Freshness</span><b>${nwFmtAge(fi.state_age_hours)}</b></div>`);
+  }
+
+  // Panel health card
+  const ph = fi.panel_health || {};
+  html += card("Panel Health", fi.state_missing
+    ? `<div class="sub" style="color:var(--warn)">state artifact absent</div>`
+    : `<div class="kv"><span>Dates</span><b>${ph.n_dates != null ? ph.n_dates : "—"}</b></div>
+       <div class="kv"><span>Latest</span><b>${esc(ph.latest_date || "—")}</b></div>
+       <div class="kv"><span>Floor (≥60d)</span><b style="color:var(--${ph.floor_met ? "ok" : "warn"})">${ph.floor_met ? "✓ met" : "pending"}</b></div>`);
+
+  // Pair G ledger card
+  const pg = fi.pair_g || {};
+  html += card("Pair G Ledger", `
+    <div class="kv"><span>Ledger present</span><b style="color:var(--${pg.ledger_present ? "ok" : "muted"})">${pg.ledger_present ? "yes" : "not yet"}</b></div>
+    <div class="kv"><span>Today count</span><b>${pg.today_count != null ? pg.today_count : "—"}</b></div>
+    <div class="note muted" style="margin-top:4px">Severity ceiling: note (H2 gate-passed required for tension)</div>`);
+
+  // Factor attention authority card
+  const fa = fi.factor_attention || {};
+  const attColor = fa.granted ? "ok" : "muted";
+  html += card("Factor Attention Authority", `
+    <div class="kv"><span>Tier</span><b>${esc(fa.tier || "—")}</b></div>
+    <div class="kv"><span>Granted</span><b style="color:var(--${attColor})">${fa.granted ? "yes" : "no"}</b></div>
+    <div class="kv"><span>Firings</span><b>${fa.n_firings != null ? fa.n_firings : "—"}</b></div>
+    <div class="kv"><span>Graded</span><b>${fa.n_graded != null ? fa.n_graded : "—"}</b></div>
+    <div class="note muted" style="margin-top:4px">${esc(fa.reason || "")}</div>`);
+
+  // Hypotheses block card
+  const hyp = fi.hypotheses || {};
+  const hypEntries = ["h1","h2","h3","h4","h5"].map(hi => {
+    const s = (hyp[hi] || {}).status || "not-visible-in-tree";
+    const chipCls = s === "gate-passed" ? "s-ok" : s === "accruing" ? "s-warn" : "s-muted";
+    return `<div class="kv"><span>${hi.toUpperCase()}</span><b>${nwPill("BH-WITHHELD", "s-bad")} <span class="muted sub">(${esc(s)})</span></b></div>`;
+  }).join("");
+  html += card("Hypotheses H1–H5", `
+    ${hypEntries}
+    <div class="note muted" style="margin-top:4px">BH-WITHHELD mandatory on all 5 until family FDR sweep (est. ≥2027)</div>`);
+
+  // §9.2 Alerts card
+  const alerts = fi.alerts || [];
+  html += card("§9.2 Alerts", alerts.length === 0
+    ? `<div class="sub" style="color:var(--ok)">No alerts</div>`
+    : `<ul style="margin:0;padding-left:16px">${alerts.map(a => `<li class="sub" style="color:var(--warn);margin-bottom:4px">${esc(a)}</li>`).join("")}</ul>`);
+
+  html += `</div>`;
+  return html;
+}
+
 RENDER.neural_web = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="sub" style="margin-bottom:12px">Neural Web operator HQ — committed artifacts only (VPS-clone model). Sections collapse/expand. Deployed = auto-updates on git pull.</div>
@@ -869,6 +930,7 @@ RENDER.neural_web = async () => {
     ${nwCollapse("reflex_log", "B — Reflexes &amp; Firings", nwSectionReflexLog(d.reflex_log), true)}
     ${nwCollapse("bus_graph", "C — Bus Graph (Confluence)", nwSectionBusGraph(d.bus_graph), false)}
     ${nwCollapse("governance", "D — Governance Ledger", nwSectionGovernance(d.governance), true)}
+    ${nwCollapse("factor_intelligence", "E — Factor Intelligence (NW W2)", nwSectionFactorIntelligence(d.factor_intelligence), false)}
   `;
 };
 

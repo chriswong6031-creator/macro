@@ -4542,7 +4542,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_site.py
+      - admin/neural_web.py
     notes: >
       RUL-NW1 — factor_panel job is sole advancer. Context-only committed
       digest of factor intelligence state (panel health, factor weather,
@@ -4551,6 +4553,8 @@ artifacts:
       (RUL-NW9). No scored-path surfaces — display and admin rendering only.
       Written by scripts/build_factor_intelligence_state.py after the
       factor_contradictions step in the factor_panel job.
+      Consumers: scripts/build_site.py (factors.html NW status panel, RUL-NW7/NW8
+      §D PR-4) and admin/neural_web.py (factor_intelligence section, §D PR-4).
 
   site-factor-intelligence-state:
     path: site/neuralwebdata/factor_intelligence_state.json
