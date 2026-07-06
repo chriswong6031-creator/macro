@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 157, (
-        f"Expected 157 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 162, (
+        f"Expected 162 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (W7b added machine-registry, cortex-attention-grades, cortex-probation = 104->107;"
         " W6b added ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck = 107->110;"
@@ -103,7 +103,9 @@ def test_all_artifact_ids_present():
         " OTA W7 qualitative fusion added oracle-qual-filter-registry, oracle-qual-filter-stamps,"
         " oracle-qual-filter-accrual = 151->154;"
         " research-factory W1 added research-factory-candidates, research-factory-transitions,"
-        " research-factory-paper-monitor = 154->157)"
+        " research-factory-paper-monitor = 154->157;"
+        " factor-intel NW W1 added factor-intelligence-state, site-factor-intelligence-state,"
+        " factor-state-history, fire-coordinates, factor-contradictions-ledger = 157->162)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]
