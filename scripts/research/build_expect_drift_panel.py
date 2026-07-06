@@ -460,20 +460,20 @@ def _good_news_hold_feature(
 
 
 # ---------------------------------------------------------------------------
-# Get d_q at event: the most recent visible d_q at fire_date for the quarter
-# corresponding to E(f)
+# Get d_q at event: the most recent visible d_q at E(f) (prereg ED-4/ED-5)
 # ---------------------------------------------------------------------------
 
 def _dq_at_event(
     ticker_eps: pd.DataFrame,
-    fire_date: pd.Timestamp,
+    event_date: pd.Timestamp,
 ) -> float | None:
-    """Return d_q for the most recent visible quarter at fire_date.
+    """Return d_q for the most recent quarter visible at E(f).
 
     d_q = eps_q - eps_{q-4}. Uses the same seasonal-diff construction as SUE.
-    This is the d_q value that informs bad_news_absorption and good_news_hold.
+    Anchored at E(f), not fire_date (ED-4/ED-5: "Most recent visible d_q at
+    E(f)") — a quarter announced between E(f) and the fire must not swap in.
     """
-    visible = ticker_eps[ticker_eps["asof_date"] <= fire_date].sort_values("period_end")
+    visible = ticker_eps[ticker_eps["asof_date"] <= event_date].sort_values("period_end")
     if len(visible) < _SUE_MIN_DIFFS + 1:
         return None
 
@@ -536,7 +536,7 @@ def _compute_features_for_fire(
 
         # d_q at E(f) for bad_news_absorption / good_news_hold
         if ticker_eps is not None and len(ticker_eps) > 0:
-            dq = _dq_at_event(ticker_eps, fire_date)
+            dq = _dq_at_event(ticker_eps, event_date)
         else:
             dq = None
 
