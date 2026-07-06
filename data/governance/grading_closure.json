@@ -1,10 +1,10 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-07-06T04:38:22.703385+00:00",
+  "generated_at": "2026-07-06T13:22:18.436215+00:00",
   "n_ledgers": 26,
   "n_closed": 7,
-  "n_grader_starved": 16,
-  "n_log_only": 3,
+  "n_grader_starved": 19,
+  "n_log_only": 0,
   "ledgers": [
     {
       "key": "qledger_claims",
@@ -120,23 +120,23 @@
       "key": "breadth_divergence_forward_log",
       "path": "data/breadth_divergence/forward_log.parquet",
       "storage": "present",
-      "grader_wired": "N",
+      "grader_wired": "Y:scripts/grade_breadth_divergence.py",
       "n_logged": 26,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",
-      "verdict": "LOG-ONLY"
+      "verdict": "GRADER-STARVED"
     },
     {
       "key": "risk_radar_forward_log",
       "path": "data/risk_radar/forward_log.jsonl",
       "storage": "present",
-      "grader_wired": "N",
+      "grader_wired": "Y:engine/risk_radar_audit.py",
       "n_logged": 8,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",
-      "verdict": "LOG-ONLY"
+      "verdict": "GRADER-STARVED"
     },
     {
       "key": "risk_radar_intl_cn",
@@ -220,9 +220,9 @@
       "path": "data/vector/override_ledger.jsonl",
       "storage": "present",
       "grader_wired": "Y:engine/btc_override_ledger.py",
-      "n_logged": 5,
+      "n_logged": 6,
       "n_graded": 0,
-      "last_graded_at": "2026-07-05",
+      "last_graded_at": "2026-07-06",
       "tune_step": "N",
       "verdict": "GRADER-STARVED"
     },
@@ -231,9 +231,9 @@
       "path": "data/foresight/log.jsonl",
       "storage": "present",
       "grader_wired": "Y:engine/foresight_grader.py",
-      "n_logged": 34,
+      "n_logged": 37,
       "n_graded": 0,
-      "last_graded_at": "2026-07-05",
+      "last_graded_at": "2026-07-06",
       "tune_step": "N",
       "verdict": "GRADER-STARVED"
     },
@@ -241,12 +241,12 @@
       "key": "foresight_policy_calendar_ledger",
       "path": "data/foresight/policy_calendar_ledger.jsonl",
       "storage": "present",
-      "grader_wired": "N",
-      "n_logged": 29,
+      "grader_wired": "Y:scripts/grade_policy_calendar.py",
+      "n_logged": 43,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",
-      "verdict": "LOG-ONLY"
+      "verdict": "GRADER-STARVED"
     },
     {
       "key": "froth_fragility_log",
@@ -273,9 +273,9 @@
     {
       "key": "species_antichase_shadow_ledger",
       "path": "data/signal_archive/antichase_shadow_ledger.parquet",
-      "storage": "absent-by-design: seeded when F3_ANTICHASE species accrues its first ledger row",
+      "storage": "present",
       "grader_wired": "Y:engine/species_registry.py",
-      "n_logged": 0,
+      "n_logged": 43,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",
@@ -284,9 +284,9 @@
     {
       "key": "species_f1d_shadow_ledger",
       "path": "data/signal_archive/f1d_shadow_ledger.parquet",
-      "storage": "absent-by-design: seeded when EI-F1D-RW species accrues its first ledger row",
+      "storage": "present",
       "grader_wired": "Y:engine/species_registry.py",
-      "n_logged": 0,
+      "n_logged": 43,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",
