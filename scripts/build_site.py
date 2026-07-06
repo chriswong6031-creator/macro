@@ -1640,6 +1640,7 @@ def accumulation_rows() -> list[dict]:
             "raw_change": s["raw_change"], "active_change": s["active_change"],
             "active_pct": s["active_pct"],
             "flow_str": _fmt_money_mn(s["est_flow_mn"]) if s.get("est_flow_mn") is not None else "—",
+            "flow_mn": s["est_flow_mn"] if s.get("est_flow_mn") is not None else None,
             "direction": s["direction"], "confirmed": s["confirmed"],
             "ladder": s["ladder"], "window": f"{s['t0']}..{s['t1']}"})
     return rows

@@ -1275,6 +1275,14 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             "skipped_no_price": sorted(skipped_no_price)[:15],
         }
 
+    # Compute full-set metrics BEFORE sort/cap (win_rate, avg_pct over all rows)
+    _all_nr = sum(1 for r in rows_out if r["status"] == "running")
+    _all_ns = sum(1 for r in rows_out if r["status"] == "stopped")
+    _all_denom = _all_nr + _all_ns
+    win_rate = round(_all_nr / _all_denom, 3) if _all_denom > 0 else None
+    _all_pcts = [r["pct_since"] for r in rows_out]
+    avg_pct = round(sum(_all_pcts) / len(_all_pcts), 1) if _all_pcts else None
+
     # Sort by |pct_since| desc, cap at 15
     rows_out.sort(key=lambda r: abs(r["pct_since"]), reverse=True)
     rows_out = rows_out[:15]
@@ -1296,6 +1304,9 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
             # header so the mix never silently reads as survivor-complete.
             "n_skipped_no_price": len(skipped_no_price),
             "skipped_no_price": sorted(skipped_no_price)[:15],
+            # full-set metrics (over all exited rows before the cap-15 display cut)
+            "win_rate": win_rate,
+            "avg_pct": avg_pct,
         },
     }
 

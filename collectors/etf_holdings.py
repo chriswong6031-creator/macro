@@ -92,7 +92,24 @@ class EtfHoldingsAdapter(Adapter):
         d = self.dir / ticker
         d.mkdir(parents=True, exist_ok=True)
         asof = str(snap["as_of"].iloc[0]) if "as_of" in snap.columns else str(date.today())
-        snap.to_parquet(d / f"{asof}.parquet")
+        target = d / f"{asof}.parquet"
+        if target.exists():
+            try:
+                existing = pd.read_parquet(target)
+                # Align dtypes/index before comparison so trivial cast differences
+                # don't trigger a false-positive overwrite.
+                existing_cmp = existing.reset_index(drop=True).astype(str)
+                new_cmp = snap.reset_index(drop=True).astype(str)
+                if existing_cmp.equals(new_cmp):
+                    log.warning(
+                        "etf_holdings: %s as_of %s unchanged upstream — "
+                        "skipping rewrite (stale sponsor data)",
+                        ticker, asof,
+                    )
+                    return
+            except Exception:  # noqa: BLE001 — on any error fall through to overwrite
+                pass
+        snap.to_parquet(target)
 
     def _fetch_one(self, ticker: str, spec: dict) -> pd.DataFrame | None:
         sponsor = spec["sponsor"]

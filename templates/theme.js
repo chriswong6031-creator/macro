@@ -1467,6 +1467,24 @@
   }
   window.initShowMore = initShowMore;             // exposed so client-rendered grids can re-trigger after populating
 
+  // US-stocks board: relocate the pinned "Track record" toggle (rendered in-template so it
+  // exists even when nothing overflows) into the board's show-more bar as its left-most
+  // element, so it shares the row with "Showing X of Y" + the show-more controls. When the
+  // board doesn't overflow, no .sm-bar is injected and the button simply stays where the
+  // template put it (just above the collapsed panel). Idempotent.
+  function pinBoardTrackToggle() {
+    var toggle = document.getElementById('board-track-toggle');
+    if (!toggle || toggle.dataset.pinned) return;
+    var grid = document.querySelector('.nbgrid[data-showmore-rows]');
+    if (!grid) return;
+    var bar = grid.nextElementSibling;
+    if (bar && bar.classList.contains('sm-bar')) {
+      bar.insertBefore(toggle, bar.firstChild);   // left-most; CSS order:-1 keeps it pinned left
+      toggle.dataset.pinned = '1';
+    }
+  }
+  window.pinBoardTrackToggle = pinBoardTrackToggle;
+
   // Wrap wide data tables in a horizontal-scroll container so they scroll WITHIN their
   // card on narrow screens instead of bleeding past the viewport (mobile fix). Runs before
   // tablesort (theme.js loads first) so the filter box lands above the wrapper, and again on
@@ -1548,6 +1566,7 @@
     initActiveNav();
     initMobileNav();
     initShowMore();
+    pinBoardTrackToggle();
     initListCollapse();
     themeCharts();
   });
