@@ -132,7 +132,7 @@ def test_unique_paths(reg):
 _VALID_TIERS = {"display", "shadow", "confirmer", "scored", "infrastructure"}
 _VALID_CADENCES = {
     "daily-engine", "collect", "asia-close", "intraday", "weekly", "on-demand",
-    "nightly-cortex",
+    "nightly-cortex", "nightly-factor-panel",
 }
 _VALID_STORAGES = {"git", "r2", "gitignored-local", "git+r2"}
 _VALID_FORMATS = {"json", "parquet", "jsonl", "js", "other"}

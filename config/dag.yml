@@ -251,6 +251,44 @@ lanes:
           $mod; done') which the conformance parser cannot extract (variable expansion).
           They are intentionally omitted from declared steps.
 
+  # ── daily.yml / factor_panel ───────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: factor_panel
+    steps:
+      - id: build_factor_panel
+        module: scripts.build_factor_panel
+        note: >
+          Incremental nightly factor panel build (bounded 10-day window).
+          Writes data/factordata/panel/ which is gitignored. Fail-soft.
+      - id: factor_contradictions_detector
+        module: engine.neuralweb.factor_contradictions
+        note: >
+          P1-D — Pair G borrowed_strength detector. Runs after factor_panel.
+          Writes data/neuralweb/factor_contradictions.jsonl and
+          data/reflexes/factor_attention/firings.jsonl (single-writer).
+          Non-fatal (always exits 0).
+          inputs: [data/factordata/panel/, site/factordata/us_standouts.json]
+          outputs: [data/neuralweb/factor_contradictions.jsonl,
+                    data/reflexes/factor_attention/firings.jsonl]
+      - id: build_factor_intelligence_state
+        module: scripts.build_factor_intelligence_state
+        note: >
+          RUL-NW1/NW10/NW11 — Builds committed factor intelligence state
+          artifact + long-term factor pool artifacts. Fail-open (always
+          exits 0). Single job advance per RUL-NW1 ruling.
+          inputs: [data/factordata/panel/, site/factordata/factor_series.json,
+                   data/edgar/ic_scorecard.json,
+                   data/neuralweb/factor_contradictions.jsonl,
+                   data/reflexes/factor_attention/firings.jsonl,
+                   data/reflexes/factor_attention/grades.jsonl,
+                   data/reflexes/factor_attention/probation.json,
+                   data/neuralweb/machine_registry.jsonl,
+                   site/factordata/us_standouts.json]
+          outputs: [data/neuralweb/factor_intelligence_state.json,
+                    site/neuralwebdata/factor_intelligence_state.json,
+                    data/factordata/factor_state_history.jsonl,
+                    data/factordata/fire_coordinates.jsonl]
+
   # ── daily.yml / factor_series ───────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
     job: factor_series

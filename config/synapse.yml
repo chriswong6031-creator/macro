@@ -4445,3 +4445,126 @@ artifacts:
       scripts/check_research_factory_authority.py is the read-only authority guard
       and must NOT be listed as a ledger writer.
       See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.4.
+
+  # ============================================================
+  # FACTOR INTELLIGENCE × NEURAL WEB INTEGRATION (RUL-NW1/NW10/NW11)
+  # §D PR-1: state artifact + long-term factor pool + narrow advancer
+  # ============================================================
+
+  factor-intelligence-state:
+    path: data/neuralweb/factor_intelligence_state.json
+    format: json
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_intelligence_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW1 — factor_panel job is sole advancer. Context-only committed
+      digest of factor intelligence state (panel health, factor weather,
+      Pair G, hypotheses h1..h5, scorecard). is_context_only=true,
+      display_only=true. allowed_actions block is a mirror, never a switch
+      (RUL-NW9). No scored-path surfaces — display and admin rendering only.
+      Written by scripts/build_factor_intelligence_state.py after the
+      factor_contradictions step in the factor_panel job.
+
+  site-factor-intelligence-state:
+    path: site/neuralwebdata/factor_intelligence_state.json
+    format: json
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_intelligence_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Byte-identical site mirror of data/neuralweb/factor_intelligence_state.json.
+      Written atomically with the data copy by scripts/build_factor_intelligence_state.py
+      in the factor_panel job (RUL-NW1).
+
+  factor-state-history:
+    path: data/factordata/factor_state_history.jsonl
+    format: jsonl
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_state_history.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW10 — append-only daily digest (one row per trading day, keyed as_of).
+      Idempotent: same-day reruns skip if as_of already present. Fields: as_of,
+      style_regime (+pending/hold_days), factor_leader (+IC), ETF ratios, panel
+      health (n_dates, n_tickers, latest_date), pair_g_n_today, cross-sectional
+      alibi stats (median, Q80), dna_distribution dict, gaps_count. Display/analysis
+      only until kernel-FDR 2026-10 sweep. No behavioral conditioning on pooled
+      history before that verdict.
+
+  fire-coordinates:
+    path: data/factordata/fire_coordinates.jsonl
+    format: jsonl
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.fire_coordinates.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW10 — append-only per-fire panel coordinates, keyed (as_of, ticker).
+      PIT by construction: panel row at exactly the standouts as_of date. Fields:
+      as_of, ticker, tier, dna_class, style_regime, alibi_share_20d, twin_bleed_flag,
+      twin_rel_20d, alpha_z_house, top_contrib_streams (top-3 Block-A |contrib_20d|
+      stream names), factor_model=v1. Standalone artifact — JOINs to replay/board-ledger
+      outcomes at study time. Display/analysis only (no rank/score surfaces).
+
+  factor-contradictions-ledger:
+    path: data/neuralweb/factor_contradictions.jsonl
+    format: jsonl
+    producer: engine/neuralweb/factor_contradictions.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_contradictions.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW1 — un-gitignored by this ruling; committed via the factor_panel job's
+      narrow commit step. Pair G borrowed_strength contradiction ledger: append-only,
+      keyed (date, ticker). Severity hardcoded to 'note' until H2 GATE-PASSED.
+      display_only=true unconditionally. Single-writer: engine/neuralweb/factor_contradictions.py.
+      0-20 rows/day; dormant until panel has >= 60 distinct dates.
