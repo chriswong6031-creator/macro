@@ -3864,6 +3864,50 @@ artifacts:
       FDR family: long_hold (isolated per LH-R5). No scored_path_surfaces.
       G1 ratification: PENDING FABLE RULING (see research/long_hold/W1_KILLTEST_RESULTS.md).
 
+  # --- Long-Hold W2 PR-I: compounder feature panel (embedded in per-stock panels) ---
+  # NOTE: compounder features are NOT a standalone parquet — they are a sub-key
+  # ("compounder") inside the existing financials.multiyear block that _multiyear()
+  # already produces and build_stock_library.py already bakes into
+  # site/stockdata/<TICKER>.json.  A dedicated top-level parquet would duplicate
+  # data already in the per-stock JSON pipeline; the registration here is
+  # documentary so the firewall CI can verify the horizon_role stamp.
+  long-hold-compounder-features:
+    path: "embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/stock_fundamentals.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: compounder_features.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-I (Long-Hold Thesis Layer). Compounder feature columns added
+      ADDITIVELY to engine/stock_fundamentals._multiyear() as a sub-dict
+      under key "compounder".  All fields are DISPLAY-ONLY annotation
+      (LH-R1 firewall; G1-DEFERRED ruling 2026-07-06).
+      Features: roic_series, roic_5y_median, roic_5y_stability,
+      gross_margin_5y_stability, fcf_conversion, reinvestment_rate,
+      incremental_rev_per_reinvestment, asset_light_scaling.
+      Tax assumption: 21% US statutory (TCJA 2018), applied uniformly.
+      Per-feature _cov coverage stamps (0–1) ship alongside each value.
+      Depreciation-dependent features blocked with depreciation_gated_blocked=True
+      until PR-H (edgar_facts.py FLOW additions) backfills the D&A series.
+      Firewall annotations embedded in every output dict:
+        _horizon_role = "hold_thesis"
+        _display_only = True
+      FIREWALL: horizon_role=hold_thesis. These fields MUST NOT feed
+      entry-stack z-scores, board ordering, top-setups gates, alert triage,
+      or push floor.  LH-R2 (no fused admission) respected by construction.
+
   # --- Long-Hold W2 PR-J: two display clocks (entry_clock + thesis_clock) ---
   # Both clocks are embedded fields in per-stock panel JSON
   # (site/stockdata/<TICKER>.json) — no standalone parquet.

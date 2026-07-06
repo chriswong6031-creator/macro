@@ -610,6 +610,209 @@ def test_leverage_ratios_output_is_json_safe():
     assert "NaN" not in s and "Infinity" not in s
 
 
+# ---------------------------------------------------------------------------
+# W2 PR-I — _compounders() tests
+# ---------------------------------------------------------------------------
+
+# Fixture: 6 years of clean data covering all computable features.
+# Values chosen to be simple round numbers so expected outputs can be
+# verified by hand.
+_COMP_ROWS = [
+    # fy, revenue, ni, gross_profit, cfo, capex, op_income,
+    #     equity, debt_lt, debt_cur, cash, assets, depreciation
+    {"fy": 2019, "revenue": 1000.0, "ni": 100.0, "gross_profit": 400.0,
+     "cfo": 150.0, "capex": 50.0, "op_income": 130.0,
+     "equity": 500.0, "debt_lt": 200.0, "debt_cur": 50.0, "cash": 100.0,
+     "assets": 900.0, "depreciation": None},
+    {"fy": 2020, "revenue": 1100.0, "ni": 110.0, "gross_profit": 450.0,
+     "cfo": 160.0, "capex": 55.0, "op_income": 140.0,
+     "equity": 520.0, "debt_lt": 200.0, "debt_cur": 50.0, "cash": 110.0,
+     "assets": 950.0, "depreciation": None},
+    {"fy": 2021, "revenue": 1250.0, "ni": 130.0, "gross_profit": 520.0,
+     "cfo": 180.0, "capex": 60.0, "op_income": 160.0,
+     "equity": 560.0, "debt_lt": 200.0, "debt_cur": 50.0, "cash": 120.0,
+     "assets": 1000.0, "depreciation": None},
+    {"fy": 2022, "revenue": 1400.0, "ni": 150.0, "gross_profit": 590.0,
+     "cfo": 200.0, "capex": 65.0, "op_income": 180.0,
+     "equity": 600.0, "debt_lt": 200.0, "debt_cur": 50.0, "cash": 130.0,
+     "assets": 1050.0, "depreciation": None},
+    {"fy": 2023, "revenue": 1600.0, "ni": 170.0, "gross_profit": 680.0,
+     "cfo": 220.0, "capex": 70.0, "op_income": 200.0,
+     "equity": 650.0, "debt_lt": 200.0, "debt_cur": 50.0, "cash": 140.0,
+     "assets": 1100.0, "depreciation": None},
+    {"fy": 2024, "revenue": 1800.0, "ni": 190.0, "gross_profit": 780.0,
+     "cfo": 240.0, "capex": 75.0, "op_income": 225.0,
+     "equity": 700.0, "debt_lt": 200.0, "debt_cur": 50.0, "cash": 150.0,
+     "assets": 1150.0, "depreciation": None},
+]
+
+
+def test_compounders_keys_present():
+    """All expected computable feature keys appear for a full fixture."""
+    c = SF._compounders(_COMP_ROWS)
+    # Core keys
+    assert "roic_series"       in c, c.keys()
+    assert "roic_5y_median"    in c, c.keys()
+    assert "roic_5y_stability" in c, c.keys()
+    assert "gross_margin_5y_stability" in c, c.keys()
+    assert "fcf_conversion"    in c, c.keys()
+    assert "reinvestment_rate" in c, c.keys()
+    assert "incremental_rev_per_reinvestment" in c, c.keys()
+    assert "asset_light_scaling" in c, c.keys()
+    # Firewall annotations
+    assert c["_horizon_role"] == "hold_thesis"
+    assert c["_display_only"] is True
+    assert "21%" in c["_tax_assumption"]
+
+
+def test_compounders_roic_value():
+    """ROIC proxy is computed correctly for a single row.
+
+    Row 0: op_income=130, tax=21%, equity=500, debt_lt=200, debt_cur=50, cash=100
+    invested_capital = 500 + 200 + 50 - 100 = 650
+    ROIC = 130 * (1 - 0.21) / 650 * 100 = 102.7 / 650 * 100 ≈ 15.8%
+    """
+    rows = [_COMP_ROWS[0]]
+    c = SF._compounders(rows)
+    assert c.get("roic_series") is not None
+    assert abs(c["roic_series"][0] - 130 * 0.79 / 650 * 100) < 0.1, c["roic_series"]
+
+
+def test_compounders_fcf_conversion():
+    """FCF conversion = (CFO - capex) / NI for the latest row.
+
+    Latest row: cfo=240, capex=75, ni=190
+    FCF = 165, FCF/NI = 165/190 ≈ 0.868
+    """
+    c = SF._compounders(_COMP_ROWS)
+    assert c["fcf_conversion"] is not None
+    assert abs(c["fcf_conversion"] - (240 - 75) / 190) < 0.01, c["fcf_conversion"]
+
+
+def test_compounders_reinvestment_rate():
+    """Reinvestment rate = capex / CFO for latest row.
+
+    Latest row: capex=75, cfo=240 → 75/240 = 0.3125
+    """
+    c = SF._compounders(_COMP_ROWS)
+    assert c["reinvestment_rate"] is not None
+    assert abs(c["reinvestment_rate"] - 75 / 240) < 0.01, c["reinvestment_rate"]
+
+
+def test_compounders_incremental_rev():
+    """Incremental revenue per reinvestment dollar (sum Δrev / sum capex).
+
+    Δrev: 100+150+150+200+200 = 800
+    capex years 1..5: 55+60+65+70+75 = 325
+    800 / 325 ≈ 2.462
+    """
+    c = SF._compounders(_COMP_ROWS)
+    assert c.get("incremental_rev_per_reinvestment") is not None
+    delta_rev   = 1100 - 1000 + (1250 - 1100) + (1400 - 1250) + (1600 - 1400) + (1800 - 1600)
+    total_capex = 55 + 60 + 65 + 70 + 75
+    expected = delta_rev / total_capex
+    assert abs(c["incremental_rev_per_reinvestment"] - expected) < 0.01, c
+
+
+def test_compounders_asset_light_scaling():
+    """asset_light_scaling spread = rev_cagr - asset_cagr."""
+    c = SF._compounders(_COMP_ROWS)
+    s = c.get("asset_light_scaling")
+    assert s is not None, "asset_light_scaling missing"
+    assert "rev_cagr_pct"   in s
+    assert "asset_cagr_pct" in s
+    assert "spread_pct"     in s
+    assert abs(s["spread_pct"] - (s["rev_cagr_pct"] - s["asset_cagr_pct"])) < 0.01, s
+
+
+def test_compounders_cov_stamps():
+    """Every feature has a paired _cov stamp that is in [0, 1]."""
+    c = SF._compounders(_COMP_ROWS)
+    cov_keys = [k for k in c if k.endswith("_cov")]
+    assert len(cov_keys) > 0, "no _cov stamps found"
+    for k in cov_keys:
+        v = c[k]
+        assert isinstance(v, (int, float)), f"{k}={v} not numeric"
+        assert 0.0 <= v <= 1.0, f"{k}={v} out of range [0,1]"
+
+
+def test_compounders_empty_rows():
+    """Empty rows → empty dict (not None, not crash)."""
+    c = SF._compounders([])
+    assert isinstance(c, dict)
+    assert len(c) == 0
+
+
+def test_compounders_all_none_inputs():
+    """All None inputs → no feature keys computed; no crash."""
+    rows = [{"fy": 2024, "revenue": None, "ni": None, "gross_profit": None,
+             "cfo": None, "capex": None, "op_income": None, "equity": None,
+             "debt_lt": None, "debt_cur": None, "cash": None, "assets": None,
+             "depreciation": None}]
+    c = SF._compounders(rows)
+    assert isinstance(c, dict)
+    # firewall annotations should still be present
+    assert c.get("_horizon_role") == "hold_thesis"
+    # no numeric feature keys should be computable
+    numeric_keys = {"roic_series", "roic_5y_median", "roic_5y_stability",
+                    "gross_margin_5y_stability", "fcf_conversion", "reinvestment_rate",
+                    "incremental_rev_per_reinvestment", "asset_light_scaling"}
+    for k in numeric_keys:
+        assert k not in c, f"unexpected key {k} in all-None rows"
+
+
+def test_compounders_depreciation_blocked():
+    """When all depreciation values are None, blocked_pending_backfill is stamped."""
+    c = SF._compounders(_COMP_ROWS)   # fixture has depreciation=None in all rows
+    assert c.get("depreciation_gated_blocked") is True
+    assert "blocked_pending_backfill" in c.get("depreciation_gated_note", "")
+
+
+def test_compounders_depreciation_present():
+    """When depreciation is present (>=5% cov), blocked_pending_backfill absent."""
+    rows_with_dep = [dict(r, depreciation=20.0) for r in _COMP_ROWS]
+    c = SF._compounders(rows_with_dep)
+    assert "depreciation_gated_blocked" not in c, \
+        "should NOT be blocked when depreciation data present"
+
+
+def test_compounders_ni_zero_no_fcf_conv():
+    """NI=0 rows are skipped for FCF conversion; latest non-zero NI row is used."""
+    rows = [
+        {"fy": 2022, "revenue": 1000.0, "ni": 0.0, "gross_profit": 400.0,
+         "cfo": 150.0, "capex": 50.0, "op_income": 0.0,
+         "equity": 500.0, "debt_lt": 200.0, "debt_cur": 0.0, "cash": 100.0,
+         "assets": 900.0, "depreciation": None},
+        {"fy": 2023, "revenue": 1100.0, "ni": 0.0, "gross_profit": 440.0,
+         "cfo": 160.0, "capex": 60.0, "op_income": 0.0,
+         "equity": 520.0, "debt_lt": 200.0, "debt_cur": 0.0, "cash": 110.0,
+         "assets": 950.0, "depreciation": None},
+    ]
+    c = SF._compounders(rows)
+    # Both NI=0 so fcf_conversion should be absent
+    assert "fcf_conversion" not in c, c
+
+
+def test_compounders_json_safe():
+    """Output must be JSON-serializable with no NaN/Infinity tokens."""
+    c = SF._compounders(_COMP_ROWS)
+    cleaned = SF._clean(c)
+    s = json.dumps(cleaned)
+    assert "NaN" not in s and "Infinity" not in s
+
+
+def test_multiyear_includes_compounder():
+    """_multiyear() must embed a non-empty compounder sub-dict."""
+    my = SF._multiyear(_COMP_ROWS, mktcap=5000.0)
+    assert my is not None
+    comp = my.get("compounder")
+    assert isinstance(comp, dict), "compounder key missing or wrong type"
+    assert comp.get("_horizon_role") == "hold_thesis"
+    # Ensure the enclosing structure stays JSON-safe
+    s = json.dumps(SF._clean(my))
+    assert "NaN" not in s and "Infinity" not in s
+
+
 def test_net_debt_helper():
     """Shared _net_debt: total debt − cash&equiv, computed only when at least one
     component is present (0 is a valid value; all-missing → None, never zero)."""
