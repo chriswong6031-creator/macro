@@ -37,6 +37,21 @@
 } -%}
 {%- if _n in _abbr -%}{{ _abbr[_n] }}{%- else -%}{{ _n | replace(' (Equal-Weight)','') | replace('（等权）','') }}{%- endif -%}
 {%- endmacro %}
+{# Companion to secshort() for the "What to act on now" board: shortens long EN
+   labels on the nb-pulse-heat theme chip and the actiongrid .actitem theme/sector
+   labels so they stop bleeding out of their flex cells. Unlike secshort() this
+   KEEPS the "(Equal-Weight)" tag (compressed to "(EW)") rather than stripping it.
+   EN display only — ZH labels are already short. DISPLAY-ONLY. #}
+{% macro dispshort(name) -%}
+{%- set _n = name | string -%}
+{%- set _abbr = {
+  'Consumer Staples':'Cons Staples','Consumer Discretionary':'Cons Disc',
+  'Communication Services':'Comm Services','Reshoring & Industrial Capex':'Industrial Capex',
+} -%}
+{%- set _base = _n | replace(' (Equal-Weight)','') -%}
+{%- set _ew = ' (EW)' if ' (Equal-Weight)' in _n else '' -%}
+{%- if _base in _abbr -%}{{ _abbr[_base] }}{{ _ew }}{%- else -%}{{ _base }}{{ _ew }}{%- endif -%}
+{%- endmacro %}
 {# Risk-Radar scare-chip hover explainer (Market State board, .msr-scare): says
    what the alert MEASURES + what its CURRENT band/score means. scare = key
    credit|rates|bubble|growth|vol; band = calm|watch|caution|elevated|risk-off
@@ -125,6 +140,8 @@
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line);
            border-radius: 10px; padding: 14px 16px; }
+  .sb-section-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;border-top:1px solid var(--line);padding-top:10px}
+  .sb-section-lbl:first-child{border-top:none;margin-top:0;padding-top:0}
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
   .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
   @media (max-width: 900px) { .span8, .span6, .span4 { grid-column: span 12; } }
@@ -288,7 +305,7 @@
   .ew-chip.ew-gate { border-color: var(--up); color: var(--up); font-weight: 700; }
   .acth { font-size: 11.5px; font-weight: 700; letter-spacing: .03em; margin-bottom: 7px; }
   .actitem { display: flex; align-items: center; gap: 6px; padding: 5px 0;
-             border-bottom: 1px solid var(--line); font-size: 13px; }
+             border-bottom: 1px solid var(--line); font-size: 13px; min-width: 0; }
   .actitem:last-child { border-bottom: none; }
   .actitem b { color: var(--text); }
   .acttag { margin-left: auto; font-size: 10.5px; color: var(--muted); }
@@ -539,7 +556,7 @@
   /* head-link: the anchor inside the div card; wraps nb-top so Terminal interceptor still fires */
   .nb-head-link { display: block; text-decoration: none; color: inherit; }
   .nb-head-link:hover { text-decoration: none; }
-  /* lane sub-heading separators (additive — lane_counts pill row stays above) */
+  /* lane sub-heading separators (additive) */
   .nb-lane-hd { grid-column: 1 / -1; margin: 6px 0 2px; font-size: 10px; font-weight: 800;
                 letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
                 padding: 3px 6px; border-bottom: 1px solid var(--line); }
@@ -859,13 +876,12 @@
   .nb-dmnd.dmnd-rk { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line));
              background: color-mix(in srgb, var(--down) 11%, var(--panel)); }
   /* G6a donor-sector context chip (display-only, US standouts header area) */
-  .nb-donor{display:flex;align-items:center;gap:7px;padding:5px 11px;margin:6px 0 4px;border-radius:8px;font-size:11px;border:1px solid var(--line);background:var(--panel2)}
+  .nb-donor{display:inline-flex;width:fit-content;align-items:center;gap:7px;padding:5px 11px;margin:6px 0 4px;border-radius:8px;font-size:11px;border:1px solid var(--line);background:var(--panel2)}
   .nb-donor.donor-cracking{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel2))}
   .nb-donor.donor-intact{border-color:color-mix(in srgb,var(--up) 35%,var(--line));background:color-mix(in srgb,var(--up) 6%,var(--panel2))}
   .nb-donor .donor-ic{font-size:12px;flex:none}
   .nb-donor.donor-cracking .donor-ic{color:var(--warn)}
   .nb-donor.donor-intact .donor-ic{color:var(--up)}
-  .nb-donor .donor-meta{font-size:9.5px;margin-left:auto}
   /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only, US standouts) */
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
   .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
@@ -874,7 +890,16 @@
   .nb-hold{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
   .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
   .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
-  /* W2 outcomes strip — recently surfaced → outcome */
+  /* W2 outcomes strip — recently surfaced → outcome (pinned toggle) */
+  .board-track-toggle{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11px;font-weight:600;
+    padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);
+    cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;
+    transition:border-color .15s ease,color .15s ease}
+  .board-track-toggle:hover{border-color:var(--link);color:var(--link)}
+  .board-track-toggle.is-open{border-color:var(--link);color:var(--link)}
+  /* when relocated into the show-more bar, pin it to the left edge and keep the
+     "Showing X of Y" / show-more controls in their centered positions */
+  .sm-bar>.board-track-toggle{order:-1;margin-right:auto}
   .board-outcomes{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
   .board-outcomes-hdr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:5px}
   .board-outcomes-title{font-weight:700;font-size:12px}
@@ -908,9 +933,6 @@
   .nb-extz.extz-warn{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
   /* P2.1a Anti-Chase Watch chip (shadow gate, R7 additive-lanes law) */
   .nb-antichase{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 40%,transparent)}
-  /* P2.4 lane_counts pill row (monitoring display) */
-  .lane-counts-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px;align-items:center}
-  .lc-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;border:1px solid var(--line);color:var(--muted)}
   /* α laggard chip (alpha_entry=laggard, honest copy) */
   .ent-lag{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent);font-size:8px;font-weight:700;padding:1px 5px;border-radius:6px;white-space:nowrap}
   /* W8-B postcross lifecycle chip (SHAKEN; ARMED display removed per W8-A-OOS FAIL) */
@@ -920,9 +942,8 @@
   .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
   /* W1.5 earnings-blackout chip (display-only; no rank power; hygiene context) */
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
-  /* W1.5 board-level suppressed-today note + stale-store warning */
+  /* W1.5 board-level suppressed-today note */
   .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
-  .nb-eb-stale{color:var(--muted);border-color:var(--line);background:transparent}
   /* W5b liquidity chip (display-only; no rank/gate power) */
   .nb-liq{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help}
   .nb-liq.liq-deep{color:var(--up);background:color-mix(in srgb,var(--up) 9%,transparent);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
@@ -2761,37 +2782,37 @@
        and basket reduces a backtested marker (✓, the absolute-trend drawdown gate); ★ = in the
        narrative-rotation model book. #}
     {% macro themeitem(x) -%}
-    <a class="actitem ai-theme" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">{{ x.name }}</span><span class="l-zh">{{ x.name_zh or x.name }}</span></b>{% if x.book_wt %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">★{{ '%.0f'|format(x.book_wt*100) }}%</span>{% endif %}{% if x.validated %}<span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span>{% else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span>{% endif %}</a>
+    <a class="actitem ai-theme" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ x.name_zh or x.name }}</span></b>{% if x.book_wt %}<span class="ai-book" data-tip-en="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过经回测的绝对趋势门槛">★{{ '%.0f'|format(x.book_wt*100) }}%</span>{% endif %}{% if x.validated %}<span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span>{% else %}<span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span>{% endif %}</a>
     {%- endmacro %}
     {# themeitem_run: on_the_run basket row with optional reason tooltip #}
     {% macro themeitem_run(x) -%}
-    <a class="actitem ai-theme" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="Narrative basket — in favour but no clean-entry setup" data-tip-zh="叙事篮子 — 顺势但无干净入场机会">🧩</span><b><span class="l-en">{{ x.name }}</span><span class="l-zh">{{ x.name_zh or x.name }}</span></b>{% if x.get('run_reason_en') %}<span class="ai-lens" data-tip-en="{{ x.run_reason_en }}" data-tip-zh="{{ x.get('run_reason_zh') or x.run_reason_en }}">⟳</span>{% endif %}</a>
+    <a class="actitem ai-theme" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="Narrative basket — in favour but no clean-entry setup" data-tip-zh="叙事篮子 — 顺势但无干净入场机会">🧩</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ x.name_zh or x.name }}</span></b>{% if x.get('run_reason_en') %}<span class="ai-lens" data-tip-en="{{ x.run_reason_en }}" data-tip-zh="{{ x.get('run_reason_zh') or x.run_reason_en }}">⟳</span>{% endif %}</a>
     {%- endmacro %}
     {# ew_chip is inlined below each sector row for Jinja2 lexer compatibility. #}
     <div class="actiongrid">
       <div class="actcol act-buy">
         <div class="acth">🟢 {{ t('BUY ZONE — confirmed now', '买入区 — 已确认') }}</div>
         {% for x in action_board.buy_now %}
-          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" data-tip-en="{{ x.eq_tip }}" data-tip-zh="{{ x.get('eq_tip_zh') or x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') != 'buy_now' %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" data-tip-en="{{ x.eq_tip }}" data-tip-zh="{{ x.get('eq_tip_zh') or x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') != 'buy_now' %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
         {% else %}<p class="muted sm">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-soon">
         <div class="acth">🔵 {{ t('SETTING UP — buy soon', '构筑中 — 即将买入') }}</div>
         {% for x in action_board.buy_soon %}
-          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.get('days') is not none %}<span class="acteta">~{{ x.days }}d</span>{% endif %}</a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') != 'buy_soon' %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ x.ticker }}</span>{% if x.get('days') is not none %}<span class="acteta">~{{ x.days }}d</span>{% endif %}</a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') != 'buy_soon' %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
         {% else %}<p class="muted sm">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-run">
         <div class="acth">🏃 {{ t('ON THE RUN — do not chase', '顺势运行 — 勿追高') }}</div>
         {# Basket rows: extended/in-favour but no clean entry; sector rows: caution+DON'T CHASE. #}
         {% for x in action_board.get('on_the_run', []) %}
-          {% if x.kind == 'theme' %}{{ themeitem_run(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — in uptrend but extended, no clean entry" data-tip-zh="GICS板块 — 上升趋势中但已延伸，无干净入场">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" data-tip-en="{{ x.eq_tip }}" data-tip-zh="{{ x.get('eq_tip_zh') or x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') != 'on_the_run' %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
+          {% if x.kind == 'theme' %}{{ themeitem_run(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — in uptrend but extended, no clean entry" data-tip-zh="GICS板块 — 上升趋势中但已延伸，无干净入场">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" data-tip-en="{{ x.eq_tip }}" data-tip-zh="{{ x.get('eq_tip_zh') or x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') != 'on_the_run' %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
         {% else %}<p class="muted sm">{{ t('Nothing extended right now.', '当前无过度延伸的标的。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-trim">
         <div class="acth">🟠 {{ t('TAKE PROFITS / topping', '止盈／做顶') }}</div>
         {% for x in action_board.take_profits %}
-          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" data-tip-en="{{ x.eq_tip }}" data-tip-zh="{{ x.get('eq_tip_zh') or x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') != 'take_profits' %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" data-tip-en="{{ x.eq_tip }}" data-tip-zh="{{ x.get('eq_tip_zh') or x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') != 'take_profits' %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
         {% else %}<p class="muted sm">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-hold lst-wrap">
@@ -2800,10 +2821,10 @@
            and fold the rest behind a Show more toggle (shared .lst-collapse primitive). #}
         <div class="lst-collapse lst-cap6 is-collapsed">
         {% for x in action_board.hold %}
-          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ t("hold — don't chase", '持有 — 勿追高') }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') not in ('hold', 'avoid') %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ t("hold — don't chase", '持有 — 勿追高') }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') not in ('hold', 'avoid') %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
         {% endfor %}
         {% for x in action_board.avoid %}
-          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ t('wait', '等待') if x.tag == 'WAIT' else t('avoid', '回避') }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') not in ('hold', 'avoid') %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="{{ x.name|e }}"><span class="l-en">{{ dispshort(x.name)|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></b> <span class="muted">{{ t('wait', '等待') if x.tag == 'WAIT' else t('avoid', '回避') }}</span></a>{% if x.get('gate_override') and x.get('ew') %}<span class="ew-chip ew-gate" data-tip-en="Moved by the backtested drawdown-control gate. EW basket: {{ x.ew.get('label') or '' }}" data-tip-zh="由经回测的回撤控制门槛移至此处。等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}"><span class="l-en">&#10003; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#10003; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% elif x.get('ew') and x.ew.get('ew_lane') not in ('hold', 'avoid') %}<span class="ew-chip" data-tip-en="EW basket: {{ x.ew.get('label') or '' }} — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: {{ x.ew.get('label_zh') or x.ew.get('label') or '' }} — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; {{ x.ew.get('label') or '' }}</span><span class="l-zh">&#x1F9E9; {{ x.ew.get('label_zh') or x.ew.get('label') or '' }}</span></span>{% endif %}{% endif %}
         {% endfor %}
         </div>
         {% if (action_board.hold | length) + (action_board.avoid | length) > 6 %}
@@ -2832,23 +2853,6 @@
         <span class="gn-cav">{{ t('market-wide context, not a per-stock signal · est., as of', '全市场情境，非个股信号 · 估算，截至') }} {{ market_gamma.asof }}</span>
       </div>
       {% endif %}
-      {% if _su and _su.dispersion_regime %}{% set _dr = _su.dispersion_regime %}
-      <div class="nb-disp disp-{{ _dr.state }}" data-tip-en="Cross-sectional dispersion regime — the read for WHEN stock-selection tends to pay. When names fan out (high dispersion / low pairwise correlation) selection historically earns more; a macro-driven tape (low dispersion / high correlation) mutes it. DISPLAY-ONLY: the state does NOT move the book's gross (live ×1.0). The suggested tilt (shadow ×{{ _dr.shadow_gross_mult }}) is a hand-picked prior with no measured edge on this universe and would gross UP into high-VIX stress — clamped off until a survivorship-clean selection-IR edge is measured (US_BOARD_MEASUREMENT §Study 3). Dispersion percentile {{ _dr.dispersion_pctile }} · avg pairwise corr {{ _dr.avg_corr }}." data-tip-zh="横截面离散度状态 — 仅供参考，不影响仓位。">
-        <span class="disp-ic">{{ '🎯' if _dr.state == 'lean_in' else ('🌫️' if _dr.state == 'lean_out' else '⚖️') }}</span>
-        <b><span class="l-en">{{ _dr.label }}</span><span class="l-zh">{{ _dr.label_zh }}</span></b>
-        <span class="disp-meta">{{ t('context', '参考') }}{% if _dr.avg_corr is not none %} · {{ t('avg corr', '平均相关') }} {{ _dr.avg_corr }}{% endif %} · <span class="disp-shadow" title="shadow prior — not applied to sizing">{{ t('suggested', '建议倾向') }} ×{{ _dr.shadow_gross_mult }}</span></span>
-      </div>
-      {% endif %}
-      {# W6-US fix 6: concentration banner — surfaces the effective-bets count so users
-         don't mistake 34 names for 34 independent ideas when the board is 2-sector concentrated.
-         A soft per-sector cap (5) is applied at build time; overflow goes to the watch strip.
-         Top-2-sector share and N sectors are emitted in concentration JSON. #}
-      {% if _su and _su.concentration is defined %}{% set _conc = _su.concentration %}
-      {% if _conc.top2_sector_share is not none and _conc.top2_sector_share >= 0.4 %}
-      <div class="nb-conc muted" data-tip-en="Concentration note — a soft per-sector cap (5 names) is applied to prevent bottoming-alignment from flooding the board with one washed-out sector. Overflow names appear in the watch strip. Effective bets ≈ the number of distinct sectors." data-tip-zh="集中度说明——应用软性单板块上限（5个标的），防止筑底共振选出同一行业大量名称。超出上限的标的出现在观察名单中。有效押注 ≈ 不同行业数量。">
-        {{ t('Board', '榜单') }}: {{ _conc.n_names }} {{ t('names across', '个标的分布在') }} {{ _conc.n_sectors }} {{ t('sectors', '个行业') }} — {{ t('effective bets ≈', '有效押注 ≈') }} {{ _conc.n_sectors }}. {{ t('Top-2 sectors:', '前两大行业：') }} {{ '%d'|format((100 * _conc.top2_sector_share)|round|int) }}% {{ t('of board.', '的榜单。') }}{% if _conc.overflow_count %} {{ _conc.overflow_count }} {{ t('overflow names → watch strip.', '个溢出标的 → 观察名单。') }}{% endif %}
-      </div>
-      {% endif %}{% endif %}
       {# G6a donor-sector context chip — market-wide rotation state, US only (display-only).
          Rendered only when the donor object exists in us_standouts (set by build_stock_library).
          'cracking' = fresh weekly RSI-MACD bearish cross on the top-126d-EW-return GICS sector
@@ -2857,22 +2861,7 @@
       {% if _su and _su.donor and _su.donor.donor_sector %}{% set _don = _su.donor %}
       <div class="nb-donor donor-{{ _don.state }}" data-tip-en="{{ 'Rotation: the leading GICS sector (' + _don.donor_sector + ', top-126d equal-weight return across ' + (_don.n_sectors | string) + ' sectors) shows signs of cracking — a fresh weekly RSI-MACD bearish cross on its composite within the last 4 completed weeks, or its 20-day EW return has gone negative. Historically, stock entries during donor cracking have higher clean-exit rates (G6a, +5.96 pp deep / +5.81 pp baskets, episode LB +2.66 pp). DISPLAY-ONLY: does not change rankings, gates, or sizing. Context for your own entry-timing discipline.' if _don.state == 'cracking' else 'Rotation: the leading GICS sector (' + _don.donor_sector + ', top-126d equal-weight return across ' + (_don.n_sectors | string) + ' sectors) is intact — no fresh weekly RSI-MACD bearish cross in the last 4 completed weeks and its 20-day EW return is positive. The rotation leader is still running. DISPLAY-ONLY: context only, not a signal.' }} · {{ _don.state }} · {{ _don.donor_sector }} · as of {{ _don.asof }}" data-tip-zh="{{ '轮动：领涨GICS板块（' + _don.donor_sector + '，全市场126日等权收益最高，共' + (_don.n_sectors | string) + '个板块）显现趋弱迹象——过去4个已完结周内出现周线RSI-MACD看跌交叉，或其20日等权收益已转负。历史数据显示，领涨板块趋弱期间入场的胜率更高（G6a，深度+5.96pp / 篮子+5.81pp）。仅供参考：不影响排名、门控或仓位。' if _don.state == 'cracking' else '轮动：领涨GICS板块（' + _don.donor_sector + '，全市场126日等权收益最高，共' + (_don.n_sectors | string) + '个板块）运行稳健——过去4个已完结周内无周线RSI-MACD看跌交叉，且20日等权收益为正。轮动领涨板块仍在运行。仅供参考：非交易信号。' }} · {{ _don.state }} · {{ _don.donor_sector }} · as of {{ _don.asof }}">
         <span class="donor-ic">{{ '⚠' if _don.state == 'cracking' else '✓' }}</span>
-        <b><span class="l-en">Rotation: leader {% if _don.state == 'cracking' %}cracking{% else %}intact{% endif %} ({{ _don.donor_sector }})</span><span class="l-zh">轮动：领先板块{% if _don.state == 'cracking' %}趋弱{% else %}稳健{% endif %}（{{ _don.donor_sector }}）</span></b>
-        <span class="donor-meta muted"><span class="l-en">display-only · G6a context</span><span class="l-zh">仅供参考 · G6a 情境</span></span>
-      </div>
-      {% endif %}
-      {# P2.4 lane_counts pill row — monitoring display for lane distribution (R7 transparency).
-         Shows counts per lane (bottoming/continuation/watch/recovery) emitted by the builder.
-         Uses data-tip-en/data-tip-zh; no title= attribute per t-macro law. #}
-      {% if _su and _su.get('lane_counts') %}
-      <div class="lane-counts-row">
-        {% for _ln, _lct in _su.lane_counts.items() %}
-        <span class="lc-pill lc-{{ _ln }}"
-              data-tip-en="P2.4 board count: {{ _lct }} {{ _ln }} row{% if _lct != 1 %}s{% endif %} (buy+watch combined)"
-              data-tip-zh="P2.4 看板数量：{{ _lct }} 个{{ {'bottoming':'筑底','continuation':'延续','watch':'观察','recovery':'复苏','trend':'趋势'}.get(_ln, _ln) }}行（买入+观察合计）">
-          <span class="l-en">{{ _ln.capitalize() }}: {{ _lct }}</span><span class="l-zh">{{ {'bottoming':'筑底','continuation':'延续','watch':'观察','recovery':'复苏','trend':'趋势'}.get(_ln, _ln) }}: {{ _lct }}</span>
-        </span>
-        {% endfor %}
+        <b>{% if _don.state == 'cracking' %}<span class="l-en">Sector leader: {{ _don.donor_sector }} — starting to crack (historically better entry odds)</span><span class="l-zh">领涨板块：{{ _don.donor_sector }} — 开始趋弱（历史上此时入场胜率更高）</span>{% else %}<span class="l-en">Sector leader: {{ _don.donor_sector }} — still going strong</span><span class="l-zh">领涨板块：{{ _don.donor_sector }} — 依然强势</span>{% endif %}</b>
       </div>
       {% endif %}
       {# W1.5 earnings-blackout: suppressed-today compact note.
@@ -2881,12 +2870,7 @@
          Bilingual via l-en/l-zh spans; no translated text in attributes (check_title_i18n). #}
       {% if _su and _su.get('earnings_blackout_note') %}
       {% set _ebn = _su.earnings_blackout_note %}
-      {% if _ebn.store_stale %}
-      <div class="nb-eb-note nb-eb-stale"
-        data-tip-en="W1.5 earnings calendar is stale (last updated >10 trading days ago). Earnings-blackout hygiene gate is inactive — no setups are suppressed."
-        data-tip-zh="W1.5 财报日历数据陈旧（超过10个交易日未更新）。财报屏蔽门控未激活——未屏蔽任何形态。"
-      ><span class="l-en">📅 Earnings calendar stale — blackout gate inactive</span><span class="l-zh">📅 财报日历陈旧——屏蔽门控未激活</span></div>
-      {% elif _ebn.count %}
+      {% if _ebn.count %}
       <div class="nb-eb-note"
         data-tip-en="W1.5 earnings-blackout hygiene (adjudicated 2026-07-05): fresh entries within 3 trading days of an earnings date are suppressed from this board. The setup signal itself is unchanged — you can review these names on their stock detail pages."
         data-tip-zh="W1.5 财报屏蔽规则（2026-07-05裁定）：财报前3个交易日内的新鲜入场信号不出现在本榜单。形态信号本身未变——可在各股票详情页查看这些标的。"
@@ -2901,7 +2885,7 @@
          Order is set by the JSON producer (build_stock_library.py rank_by="bottoming-alignment"
          + entry_open_first); the template renders as-is — no re-sort here. #}
       {% set _board = _su.buy %}
-      {# --- TRUE STABLE LANE PARTITION (additive to lane_counts pill row above; P2.4 §4.2).
+      {# --- TRUE STABLE LANE PARTITION (P2.4 §4.2).
            Canonical group order: bottoming, continuation, trend, recovery, watch (skip empty).
            Cards with lane missing/None render FIRST, ungrouped, with NO heading (honest
            degradation — dev VM with lane=None exercises this path).
@@ -3259,10 +3243,28 @@
          W3 survivorship disclosure: n_skipped_no_price = names with no price / delisted
          that were silently excluded from graded outcomes (the win/loss mix is survivor-tilted). #}
       {% if us_board_outcomes and us_board_outcomes.get('rows') %}{% set _oc = us_board_outcomes %}
-      <div class="board-outcomes">
+      {% set _sm = _oc.get('summary') or {} %}
+      {# Track-record stats for the pinned toggle button. Prefer the builder-emitted
+         summary.win_rate (0..1) / summary.avg_pct (%); fall back to computing from the
+         displayed rows when an older JSON omits them. #}
+      {% set _tr_ns = namespace(wr=none, avg=none) %}
+      {% if _sm.get('win_rate') is defined and _sm.get('win_rate') is not none %}
+        {% set _tr_ns.wr = (_sm.win_rate * 100)|round|int %}
+      {% else %}
+        {% set _wins = _oc.get('rows', []) | selectattr('status', 'equalto', 'running') | list | length %}
+        {% set _losses = _oc.get('rows', []) | selectattr('status', 'equalto', 'stopped') | list | length %}
+        {% if (_wins + _losses) > 0 %}{% set _tr_ns.wr = (100 * _wins / (_wins + _losses))|round|int %}{% endif %}
+      {% endif %}
+      {% if _sm.get('avg_pct') is defined and _sm.get('avg_pct') is not none %}
+        {% set _tr_ns.avg = _sm.avg_pct %}
+      {% else %}
+        {% set _pcts = _oc.get('rows', []) | map(attribute='pct_since') | list %}
+        {% if _pcts | length > 0 %}{% set _tr_ns.avg = ((_pcts | sum) / (_pcts | length))|round(1) %}{% endif %}
+      {% endif %}
+      <button type="button" id="board-track-toggle" class="board-track-toggle" aria-controls="board-track-record" aria-expanded="false" onclick="var _p=document.getElementById('board-track-record'); if(_p){var _h=_p.hasAttribute('hidden'); if(_h){_p.removeAttribute('hidden');}else{_p.setAttribute('hidden','');} this.setAttribute('aria-expanded', _h?'true':'false'); this.classList.toggle('is-open', _h);}">{% if _tr_ns.wr is not none and _tr_ns.avg is not none %}<span class="l-en">📊 Track record: {{ _tr_ns.wr }}% win · {{ '%+g'|format(_tr_ns.avg) }}% avg</span><span class="l-zh">📊 往绩：胜率 {{ _tr_ns.wr }}% · 平均 {{ '%+g'|format(_tr_ns.avg) }}%</span>{% else %}<span class="l-en">📊 Track record</span><span class="l-zh">📊 往绩</span>{% endif %}</button>
+      <div class="board-outcomes" id="board-track-record" hidden>
         <div class="board-outcomes-hdr">
-          <span class="board-outcomes-title">{{ t('Recently surfaced → outcome', '近期上榜 → 结果') }}</span>
-          {% set _sm = _oc.get('summary') or {} %}
+          <span class="board-outcomes-title">{{ t('Track record — names that recently left the buy board', '往绩 — 近期离开买入榜的标的') }}</span>
           <span class="board-outcomes-sub">{{ t('names that left the buy board in the last 21 sessions', '21个交易日内离开买入榜的标的') }} · {{ t('as of', '截至') }} {{ _oc.get('as_of','') }}{% if _sm.get('n_running') is not none %} · <span class="az-up">{{ _sm.get('n_running') }} {{ t('running', '上涨') }}</span> · <span class="az-dn">{{ _sm.get('n_stopped') }} {{ t('stopped', '止损') }}</span>{% endif %}{% if _sm.get('n_skipped_no_price') %} · ({{ _sm.get('n_skipped_no_price') }} {{ t('names excluded: no price / delisted', '个标的被排除：无价格/已退市') }}){% endif %}</span>
         </div>
         <table class="outcomes-tbl">
@@ -3335,11 +3337,14 @@
 
 
   {% if mode != 'macro' %}
-  <!-- ===================== US EQUITY SIZE & STYLE ===================== -->
-  <div class="panel span6" id="size-style">
-    <h2>{{ t('US equity — size &amp; style', '美股 — 规模与风格') }}
-      {{ help("Is the advance broad or narrow? Small caps (Russell 2000) and mid caps measured against the large-cap S&P 500: rising = participation broadening (risk-on); falling = a narrow, mega-cap-led tape. Growth vs value is the style rotation — growth tends to lead in disinflation and slowdowns, value in reflation. Direction over the last 20 trading days; size ratios are coloured by risk-on direction, growth/value is left neutral (no inherently good side).", "上涨是广泛还是狭窄？小盘（罗素2000）与中盘对大盘标普500衡量：上行 = 参与度扩散（风险偏好）；下行 = 狭窄、由超大盘主导的盘面。成长对价值是风格轮动 — 成长在去通胀与放缓中领先，价值在再通胀中领先。看过去20个交易日的方向；规模比率按风险偏好方向着色，成长／价值保持中性（无天然的好坏方向）。") }}
+  <!-- ===================== US EQUITY SCOREBOARD (size + breadth + internals) ===================== -->
+  <div class="panel span12" id="equity-scoreboard">
+    <span id="size-style"></span><span id="breadth"></span><span id="advanced-breadth"></span>
+    <h2>{{ t('US equity scoreboard — size, breadth &amp; internals', '美股计分板 — 规模、广度与内部结构') }}
+      {{ help("Three reads of how broad the US equity advance is, in one board. (1) SIZE & STYLE — small caps (Russell 2000) and mid caps measured against the large-cap S&P 500 (rising = participation broadening/risk-on, falling = a narrow mega-cap-led tape) plus the growth-vs-value style rotation; direction over the last 20 trading days, size ratios coloured by risk-on direction, growth/value left neutral. (2) MARKET BREADTH — across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs; the % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible. (3) MARKET INTERNALS — the classic desk internals beyond the %-above-MA snapshot: the McClellan Oscillator & Summation Index (breadth momentum), the Zweig Breadth Thrust gauge, the High-Low Index, whether the advance/decline line confirms price, and where participation sits in its own multi-decade history; computed on the DEEP S&P 500 breadth series (1962-). Internals are SECOND-DERIVATIVE, display-only reads — coincident with price by construction, they explain the tape, they do not forecast it (survivorship caveat: the deep series is rebuilt from today's members, so percentile context is over the mature-universe window only).", "把美股上涨的广度用三种读数汇于一板。(1) 规模与风格 —— 小盘（罗素2000）与中盘对大盘标普500衡量（上行 = 参与度扩散／风险偏好，下行 = 狭窄、由超大盘主导的盘面），并含成长对价值的风格轮动；看过去20个交易日的方向，规模比率按风险偏好方向着色，成长／价值保持中性。(2) 市场广度 —— 覆盖整个标普综合1500（大盘=标普500、中盘=标普400、小盘=标普600）：多少股票上涨、多少守在其50日与200日均线之上，以及净创52周新高；高于50日线的占比也进入周期模型的增长轴，与模型读取的是同一广度，只是更直观。(3) 市场内部结构 —— 超越「高于均线占比」快照的经典桌面内部指标：麦克莱伦振荡指标与累积指标（广度动量）、兹威格广度脉冲、新高—新低指数、腾落线是否确认价格，以及当前参与度在其数十年历史中的分位；基于标普500深度广度序列（1962年起）计算。内部结构是二阶、仅作展示的读数 —— 与价格同步，用于解释盘面而非预测（幸存者偏差提示：深度序列以当前成分股重建，故分位背景仅取成熟样本区间）。") }}
     </h2>
+
+    <div class="sb-section-lbl">{{ t('Size &amp; style', '规模与风格') }}</div>
     <table>
       <tr><th class="l">{{ t('lens', '维度') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
       {% for r in size_style %}
@@ -3350,23 +3355,9 @@
       </tr>
       {% endfor %}
     </table>
-    {% if breadth_div %}
-    <p class="muted" style="margin:10px 2px 0; font-size:13px; line-height:1.45">
-      {{ t('Small-cap participation', '小盘参与度') }}:
-      <b>{{ "%.0f" | format(breadth_div.sc) }}%</b>
-      {{ t('of S&P 600 small caps are above their 50-day line, vs', '的标普600小盘股高于其50日均线，对比') }}
-      <b>{{ "%.0f" | format(breadth_div.lc) }}%</b>
-      {{ t('for the S&P 500', '的标普500') }} — {{ breadth_div.verdict }}.
-    </p>
-    {% endif %}
-  </div>
 
-  <!-- ===================== MARKET BREADTH ===================== -->
-  {% if breadth_panel %}
-  <div class="panel span6" id="breadth">
-    <h2>{{ t('Market breadth — who is participating', '市场广度 — 谁在参与') }}
-      {{ help("Breadth across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs. A strong index riding on a shrinking number of stocks is fragile — broad participation confirms a move, thinning breadth is an early warning. The % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible.", "覆盖整个标普综合 1500（大盘 = 标普500、中盘 = 标普400、小盘 = 标普600）的广度：多少股票上涨、多少守在其 50 日与 200 日均线之上，以及净创 52 周新高。指数走强却只靠越来越少的股票支撑则脆弱 — 广泛参与确认走势，广度变薄是早期预警。高于 50 日线的占比也进入周期模型的增长轴，因此这与模型读取的是同一广度，只是更直观。") }}
-    </h2>
+    {% if breadth_panel %}
+    <div class="sb-section-lbl">{{ t('Market breadth', '市场广度') }}</div>
     <p class="{{ breadth_panel.comp.tone }}" style="margin:0 2px 10px; font-size:12.5px; line-height:1.5">
       {{ t('Participation looks', '参与度看起来') }} <b>{{ breadth_panel.comp.label }}</b> —
       <b>{{ "%.0f" | format(breadth_panel.comp.pa50) }}%</b> {{ t('of the 1,500 above their 50-day', '的 1500 只高于 50 日均线') }},
@@ -3397,16 +3388,11 @@
       {% endfor %}
     </table>
     <p class="muted" style="margin:8px 2px 0; font-size:11px">{{ breadth_panel.comp.verdict }} · {{ t('as of', '截至') }} {{ breadth_panel.asof }}</p>
-  </div>
-  {% endif %}
+    {% endif %}
 
-  <!-- ===================== ADVANCED BREADTH TRACKER ===================== -->
-  {% if adv_breadth %}
-  {% set tc = {'pos':'var(--up)','neg':'var(--down)','muted':'var(--link)'} %}
-  <div class="panel span12" id="advanced-breadth">
-    <h2>{{ t('Advanced breadth — the market internals under the tape', '高级广度 — 盘面之下的市场内部结构') }}
-      {{ help("The classic 'market internals' a desk watches beyond today's %-above-MA snapshot: the McClellan Oscillator & Summation Index (breadth momentum), the Zweig Breadth Thrust gauge, the High-Low Index, whether the advance/decline line confirms price, and where participation sits in its own multi-decade history. Computed on the DEEP S&P 500 breadth series (1962-). These are SECOND-DERIVATIVE reads of the same breadth — they describe the QUALITY of the move (broad vs narrow, accelerating vs rolling over). Display-only: breadth internals are a function of price, so they're coincident with it by construction — this explains the tape, it does not forecast it. Survivorship caveat: the deep series is rebuilt from today's members, so the percentile context is taken over the mature-universe window only.", "盘面之下、超越「高于均线占比」快照的经典「市场内部结构」：麦克莱伦振荡指标与累积指标（广度动量）、兹威格广度脉冲、新高—新低指数、腾落线是否确认价格，以及当前参与度在其数十年历史中的分位。基于标普500深度广度序列（1962年起）计算。这些是同一广度的二阶读数 — 描述走势的「质量」（广泛或狭窄、加速或回落）。仅作展示：内部结构是价格的函数、与价格同步，用于解释盘面而非预测。幸存者偏差提示：深度序列以当前成分股重建，故分位背景仅取成熟样本区间。") }}
-    </h2>
+    {% if adv_breadth %}
+    {% set tc = {'pos':'var(--up)','neg':'var(--down)','muted':'var(--link)'} %}
+    <div class="sb-section-lbl">{{ t('Market internals', '市场内部结构') }}</div>
     <details class="jarg" style="margin-top:0">
     <summary>{{ t('Show market internals — McClellan, breadth thrust, highs/lows, divergence','展开市场内部 — 麦克莱伦、广度推力、新高新低、背离') }}</summary>
     <p class="{{ adv_breadth.headline.tone }}" style="margin:10px 2px 14px; font-size:14px; line-height:1.5">
@@ -3503,29 +3489,11 @@
       </div>
       {% endif %}
 
-      <!-- Cross-tier participation gap -->
-      {% if adv_breadth.gap %}
-      <div style="border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--panel2)">
-        <div class="muted" style="font-size:11px; letter-spacing:.02em">{{ t('Large / mid / small gap', '大／中／小盘差') }}
-          {{ help("The % > 50-day line for each S&P size tier (500 / 400 / 600), and the small-minus-large gap. Small caps participating MORE than large = a healthy, broad-based tape; small lagging = a narrow, mega-cap-led advance that's more fragile.", "标普各规模层级（500／400／600）高于50日均线的占比，以及「小盘减大盘」之差。小盘参与度高于大盘 = 健康、广泛的盘面；小盘落后 = 狭窄、由超大盘主导、更脆弱的上涨。") }}</div>
-        <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px">
-          <b class="{{ adv_breadth.gap.tone }}" style="font-size:22px">{{ adv_breadth.gap.gap }}</b>
-          <span class="pill {{ adv_breadth.gap.tone }}" style="background:var(--panel)">{{ adv_breadth.gap.label }}</span>
-        </div>
-        <div style="display:flex; gap:10px; margin:8px 0 4px; font-size:12px">
-          <span>{{ t('L', '大') }} <b>{{ adv_breadth.gap.large }}%</b></span>
-          {% if adv_breadth.gap.mid %}<span class="muted">{{ t('M', '中') }} <b>{{ adv_breadth.gap.mid }}%</b></span>{% endif %}
-          <span>{{ t('S', '小') }} <b>{{ adv_breadth.gap.small }}%</b></span>
-        </div>
-        <div class="muted" style="font-size:11px; margin-top:3px">{{ adv_breadth.gap.verdict }}.</div>
-      </div>
-      {% endif %}
-
     </div>
     <p class="muted" style="margin:10px 2px 0; font-size:11px">{{ t('As of', '截至') }} {{ adv_breadth.asof }} · {{ t('computed on the deep S&P 500 breadth series', '基于标普500深度广度序列计算') }} ({{ adv_breadth.deep_from }}–) · {{ t('display-only market internals, never scored', '仅作展示的市场内部结构，不计入评分') }}</p>
     </details>
+    {% endif %}
   </div>
-  {% endif %}
 
   <!-- ============ SECTOR BUY/SELL SETUPS — confluence engine ============ -->
   {% if sector_setups %}
@@ -3638,7 +3606,7 @@
           <td class="l"><a href="stock.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="muted">{{ a.name }}</span></td>
           <td class="{{ 'pos' if a.raw_change >= 0 else 'neg' }}">{{ "%+.2f" | format(a.raw_change) }}pp</td>
           <td class="{{ 'pos' if a.active_change >= 0 else 'neg' }}"><b>{{ "%+.2f" | format(a.active_change) }}pp</b></td>
-          <td class="muted">{{ a.flow_str }}</td>
+          <td class="muted"{% if a.get('flow_mn') is not none %} data-sort="{{ a.flow_mn }}"{% endif %}>{{ a.flow_str }}</td>
           <td class="l">
             {% if a.ladder %}<span class="pill st-{{ a.ladder.state | replace(' ', '_') }}">{{ td(a.ladder.label) }}</span>{% if a.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}{% if a.vol and a.vol.surging %} <span title="volume {{ a.vol.ratio }}× its recent average">📊</span>{% endif %}
           </td>
@@ -3672,6 +3640,7 @@
     {% else %}
       <p class="muted">{{ t('No significant manager moves in the current window (needs a few trading days of snapshots).', '当前窗口内无显著的经理人动作（需要数个交易日的快照）。') }}</p>
     {% endif %}
+    {% if holdings_changes %}<p class="muted" style="font-size:11px;margin:6px 0 0">{{ t('Data window ending','数据窗口截至') }} {{ holdings_changes[0].window.split('..')[1] if holdings_changes[0].get('window') else '' }}</p>{% endif %}
 
     <p class="muted" style="font-size:12px;margin-top:10px">{{ t('Looking for where sector-ETF money is rotating (1D / 3D / 1W / 2W / 1M creation-redemption flow)? It now lives on', '想看板块 ETF 资金的轮动去向（1D / 3D / 1W / 2W / 1M 申购赎回资金流）？已移至') }} <a href="sector_central.html#sc-flows">{{ t('Sector Central', '行业中枢') }} →</a></p>
   </div>
