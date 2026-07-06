@@ -40,7 +40,7 @@ R5 macro lobes (PR-B — display_only=True; all fail-open):
 * commodity_context  — data/commodity/latest.json
 * intelligence       — site/intelligence/briefing.json
 * macro_deltas       — data/macro_snapshots/transitions.jsonl (may be absent; gap OK)
-factor_weather is enriched in place with rotation block from factor_series.json.
+factor_weather is composed by _compose_factor_weather() — see §5.4 notes below.
 
 BORDER LAW (§9)
 ---------------
@@ -1243,8 +1243,8 @@ def _compose_macro_deltas(root: "Path | str | None" = None) -> dict:
                         "asof": _clean(asof),
                         "domain": _clean(rec.get("domain")),
                         "field": _clean(rec.get("field")),
-                        "from": _clean(rec.get("from")),
-                        "to": _clean(rec.get("to")),
+                        "from": _clean(rec.get("from_value")),
+                        "to": _clean(rec.get("to_value")),
                     })
 
         # Cap at 20 most-recent entries (already ordered by file append order)

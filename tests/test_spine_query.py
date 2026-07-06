@@ -589,12 +589,17 @@ def test_query_scope_type_filter(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_query_regime_matches_any_column(tmp_path):
-    """regime filter matches quad_hard_label OR fused_risk_label OR vol_regime OR risk_radar_state."""
+    """regime filter matches quad_hard_label OR fused_risk_label OR vol_regime OR risk_radar_state.
+
+    Uses stamp_basis='any' to opt out of the R5 pit_live default so the test
+    exercises all basis values (track_record fixture rows have basis=None).
+    """
     _make_track_record(tmp_path)
     Q.write_index(root=tmp_path)
     df = Q.load_index(root=tmp_path)
-    # track_record fixture has us_quad_hard_label="quad1" → mapped to quad_hard_label
-    result = Q.query(df, regime="quad1")
+    # track_record fixture has us_quad_hard_label="quad1" → mapped to quad_hard_label.
+    # stamp_basis='any' opts out of the pit_live default restriction.
+    result = Q.query(df, regime="quad1", stamp_basis="any")
     assert not result.empty, "regime='quad1' should match rows with quad_hard_label='quad1'"
     # Every row must have the regime label in at least one of the four columns
     combined_mask = (

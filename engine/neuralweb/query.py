@@ -180,6 +180,10 @@ COLUMNS: list[str] = [
     "market",                 # US | CN | HK | CA | None (derived from ledger+symbol routing)
     "own_market_quad",        # national market quad for CN/HK/CA rows; None for US / macro
     "regime_stamp_basis",     # pit_live | recomputed_history | None
+    # basis describes REGIME-stamp provenance (the regime= filter axis);
+    # macro_context_id provenance is guaranteed separately by the max-asof
+    # join-key law.  A row with a live macro_context_id whose quad was filled
+    # from history is correctly 'recomputed_history'.
 ]
 
 # Conservative defaults for role flag columns in _ensure_columns / load_index.
@@ -201,6 +205,11 @@ _R5_NEW_COLS: tuple[str, ...] = (
     "own_market_quad",
     "regime_stamp_basis",
 )
+
+# Ledgers whose rows are reconstructed from history, not registered at live time.
+# Census 2026-07-06 — track_record date==first_seen_asof match rate 0.0002;
+# a per-row first_seen_asof column is docketed.
+_RECONSTRUCTED_LEDGERS: frozenset[str] = frozenset({"track_record"})
 
 # Valid ledger values — used to name-space signal_id prefixes
 LEDGER_ENUM: tuple[str, ...] = (
@@ -1072,10 +1081,13 @@ def build_index(
         ]
 
     # R5 PR-C — adapter-carried regime stamps are live-registration stamps (qledger
-    # claims stamped at registration via regime_vector; board/track_record rows stamped
-    # during live nightly builds).  Label them pit_live BEFORE the historical helper
-    # runs, so the stamp_basis='pit_live' default filter keeps the genuinely-live
-    # population.  Rows with no stamps keep basis None (nothing to label).
+    # claims stamped at registration via regime_vector; board rows stamped during
+    # live nightly builds).  Label them pit_live BEFORE the historical helper runs,
+    # so the default regime= filter keeps the genuinely-live population.  Rows with
+    # no stamps keep basis None (nothing to label).
+    # NOTE: track_record rows are in _RECONSTRUCTED_LEDGERS and must NOT be labeled
+    # pit_live here; _stamp_macro_context will assign 'recomputed_history' when it
+    # stamps them.  The clobber gate below guards against double-labeling.
     if "regime_stamp_basis" in combined.columns:
         _stamp_cols = [
             "rate_pressure", "quad_hard_label", "fused_risk_label",
@@ -1083,7 +1095,8 @@ def build_index(
         ]
         _has_stamp = combined[_stamp_cols].notna().any(axis=1)
         _no_basis = combined["regime_stamp_basis"].isna()
-        combined.loc[_has_stamp & _no_basis, "regime_stamp_basis"] = "pit_live"
+        _not_reconstructed = ~combined["ledger"].astype(str).isin(_RECONSTRUCTED_LEDGERS)
+        combined.loc[_has_stamp & _no_basis & _not_reconstructed, "regime_stamp_basis"] = "pit_live"
 
     # R5 PR-C — macro context stamp-join: backward merge_asof from macro snapshot ledger.
     # Stamps macro_context_id + macro_context_asof onto all rows (PIT-correct, fail-open).
@@ -1173,11 +1186,13 @@ def _stamp_macro_context(combined: pd.DataFrame, root: Path | str | None = None)
       3. merge_asof(direction='backward')
       4. restore string as_of
 
-    Source: data/macro_snapshots/latest.json — provides the active snapshot with
-    macro_context_id.  If latest.json absent → gap note, no-op.
+    Source: data/macro_snapshots/ledger.parquet — one row per (asof, domain,
+    field); the backward merge_asof uses the unique asof index.
+    If ledger.parquet absent → gap note, no-op.
 
     Only stamps rows where macro_context_id is currently None (non-destructive).
-    Sets regime_stamp_basis='pit_live' for rows that receive a stamp.
+    Sets regime_stamp_basis='pit_live' for rows that receive a stamp, EXCEPT
+    rows from _RECONSTRUCTED_LEDGERS which receive 'recomputed_history'.
     """
     if combined.empty:
         return combined
@@ -1242,11 +1257,15 @@ def _stamp_macro_context(combined: pd.DataFrame, root: Path | str | None = None)
         notnull_ctx = ctx_id_vals.notna()
         combined.loc[stamp_mask & notnull_ctx, "macro_context_id"] = ctx_id_vals[stamp_mask & notnull_ctx]
         combined.loc[stamp_mask & notnull_ctx, "macro_context_asof"] = ctx_asof_vals[stamp_mask & notnull_ctx]
-        # Set pit_live basis for rows that just received a stamp and don't have a basis yet
+        # Set basis for rows that just received a stamp and don't have a basis yet.
+        # Rows from reconstructed ledgers receive 'recomputed_history'; all others
+        # receive 'pit_live' (they were registered at live time).
         no_basis = combined["regime_stamp_basis"].isna() | (
             combined["regime_stamp_basis"].astype(str).isin({"None", "nan", ""})
         )
-        combined.loc[stamp_mask & notnull_ctx & no_basis, "regime_stamp_basis"] = "pit_live"
+        is_reconstructed = combined["ledger"].astype(str).isin(_RECONSTRUCTED_LEDGERS)
+        combined.loc[stamp_mask & notnull_ctx & no_basis & ~is_reconstructed, "regime_stamp_basis"] = "pit_live"
+        combined.loc[stamp_mask & notnull_ctx & no_basis & is_reconstructed, "regime_stamp_basis"] = "recomputed_history"
 
     except Exception as e:  # noqa: BLE001
         log.warning("_stamp_macro_context: merge_asof failed (%s) — no-op", e)
@@ -1360,8 +1379,9 @@ def query(
         Filter by regime label.  Matches against quad_hard_label OR
         fused_risk_label OR vol_regime OR risk_radar_state (any match
         qualifies the row).  Default (None) returns all rows (no filter).
-        Pass ``regime='pit_live'`` to restrict to rows stamped from the
-        current-day macro snapshot (regime_stamp_basis='pit_live').
+        Note: ``regime='pit_live'`` is NOT a valid label — pit_live is a
+        stamp BASIS, not a regime label; use ``stamp_basis='pit_live'``
+        for that filter.
     horizon:
         Filter by horizon (int, exact).
     symbol:
@@ -1372,8 +1392,19 @@ def query(
         R5 — filter by macro_context_id (sha256[:16] of macro label composite).
         Returns only rows stamped with this specific snapshot id.
     stamp_basis:
-        R5 — filter by regime_stamp_basis ('pit_live' | 'recomputed_history').
-        Default None returns all rows regardless of basis.
+        R5 — filter by regime_stamp_basis.
+
+        Interaction with ``regime``::
+
+            regime=X, stamp_basis=None     → restrict regime match to pit_live rows
+                                             (callers opt out via stamp_basis='any')
+            regime=X, stamp_basis='any'    → no basis restriction (all rows)
+            regime=X, stamp_basis='pit_live'            → pit_live rows only
+            regime=X, stamp_basis='recomputed_history'  → reconstructed rows only
+            regime=None, stamp_basis='pit_live'         → pit_live rows (any regime)
+            regime=None, stamp_basis=None  → no basis filter
+
+        When regime is None, stamp_basis=None applies no basis filter.
     as_of_before:
         PIT guard — retain rows where as_of < cutoff (ISO date str).
         These rows EXISTED before the cutoff; their outcomes were graded AFTER.
@@ -1425,6 +1456,10 @@ def query(
             (df["risk_radar_state"].astype(str) == regime)
         )
         mask &= reg_mask
+        # Default pit_live restriction when regime is set and no explicit basis given.
+        # Callers opt out via stamp_basis='any' (no restriction) or pass an explicit value.
+        if stamp_basis is None and "regime_stamp_basis" in df.columns:
+            mask &= df["regime_stamp_basis"].astype(str) == "pit_live"
     if horizon is not None:
         mask &= pd.to_numeric(df["horizon"], errors="coerce") == int(horizon)
     if symbol is not None:
@@ -1469,7 +1504,7 @@ def query(
         else:
             # Column absent (pre-R5 index) — filter returns zero rows for safety
             mask &= pd.Series([False] * len(df), index=df.index)
-    if stamp_basis is not None:
+    if stamp_basis is not None and stamp_basis != "any":
         if "regime_stamp_basis" in df.columns:
             mask &= df["regime_stamp_basis"].astype(str) == stamp_basis
         else:

@@ -427,15 +427,26 @@ def backfill_regime_stamps(root: Path | str | None = None) -> dict:
     if not claims:
         return {"n_claims": 0, "n_backfilled": 0, "n_unstamped": 0}
 
+    # Guard: A-share and HK symbols must not receive US regime_vector rich stamps.
+    _SKIP_SUFFIXES = (".SS", ".SZ", ".HK")
+    n_skipped = 0
+
     n_backfilled = 0
     for c in claims:
         if c.get("vector_asof") is None:
+            scope_key = str((c.get("scope") or {}).get("key") or "")
+            if any(scope_key.endswith(sfx) for sfx in _SKIP_SUFFIXES):
+                n_skipped += 1
+                continue
             stamp = _regime_stamp_for_asof(str(c.get("asof") or ""))
             if stamp.get("vector_asof") is not None:
                 for k, v in stamp.items():
                     if c.get(k) is None:
                         c[k] = v
                 n_backfilled += 1
+
+    if n_skipped:
+        log.info("backfill_regime_stamps: skipped %d A-share/HK claim(s) (.SS/.SZ/.HK)", n_skipped)
 
     n_unstamped = sum(1 for c in claims if c.get("vector_asof") is None)
     if n_backfilled:

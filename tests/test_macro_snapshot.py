@@ -18,6 +18,10 @@ Coverage:
   (13) _stamp_macro_context — backward merge_asof stamps macro_context_id on spine rows
   (14) query — macro_context_id filter
   (15) query — stamp_basis filter
+  (16) query — regime= default restricts to pit_live; stamp_basis='any' includes all
+  (17) Max-asof join-key law: spine row dated D2 does NOT receive snapshot asof=D3
+  (18) track_record rows via _stamp_macro_context get basis 'recomputed_history'
+  (19) End-to-end transitions keys: from_value/to_value → _compose_macro_deltas emits from/to
 """
 from __future__ import annotations
 
@@ -518,3 +522,181 @@ def test_query_stamp_basis_filter(tmp_path: Path) -> None:
     result_hist = query(df=df, stamp_basis="recomputed_history")
     assert len(result_hist) == 1
     assert result_hist.iloc[0]["signal_id"] == "r2"
+
+
+# ---------------------------------------------------------------------------
+# (16) query — regime= default restricts to pit_live; stamp_basis='any' includes all
+# ---------------------------------------------------------------------------
+
+def test_query_regime_default_pit_live() -> None:
+    """regime=X with no stamp_basis → only pit_live rows returned.
+    stamp_basis='any' → all rows regardless of basis.
+    stamp_basis='recomputed_history' → only recomputed_history rows.
+    """
+    from engine.neuralweb.query import query, COLUMNS
+
+    rows = [
+        {"signal_id": "live", "quad_hard_label": "Q1", "regime_stamp_basis": "pit_live"},
+        {"signal_id": "hist", "quad_hard_label": "Q1", "regime_stamp_basis": "recomputed_history"},
+        {"signal_id": "none", "quad_hard_label": "Q1", "regime_stamp_basis": None},
+    ]
+    df = pd.DataFrame(rows)
+    for col in COLUMNS:
+        if col not in df.columns:
+            df[col] = None
+
+    # Default (stamp_basis=None) + regime= → only pit_live
+    result_default = query(df=df, regime="Q1")
+    assert set(result_default["signal_id"]) == {"live"}, (
+        f"regime= default must restrict to pit_live, got: {list(result_default['signal_id'])}"
+    )
+
+    # stamp_basis='any' + regime= → all rows matching regime label
+    result_any = query(df=df, regime="Q1", stamp_basis="any")
+    assert set(result_any["signal_id"]) == {"live", "hist", "none"}, (
+        f"stamp_basis='any' must include all basis values, got: {list(result_any['signal_id'])}"
+    )
+
+    # Explicit stamp_basis='recomputed_history' + regime= → only recomputed_history
+    result_hist = query(df=df, regime="Q1", stamp_basis="recomputed_history")
+    assert set(result_hist["signal_id"]) == {"hist"}, (
+        f"stamp_basis='recomputed_history' must restrict to that basis, got: {list(result_hist['signal_id'])}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# (17) Max-asof join-key law: spine row dated D2 must not receive snapshot asof=D3
+# ---------------------------------------------------------------------------
+
+def test_stamp_macro_context_max_asof_law(tmp_path: Path) -> None:
+    """A spine row at D2 must NOT receive a macro snapshot whose asof is D3 > D2.
+
+    Max-asof join-key law: the backward merge_asof only binds a snapshot to a
+    spine row when snapshot_asof <= spine_row_as_of.  Source A at D1 and source B
+    at D3 produce snapshot_asof=D3.  A spine row at D2 must receive the D1
+    snapshot (or nothing if D1 is the only prior snapshot), not the D3 snapshot.
+    """
+    from engine.neuralweb.query import _stamp_macro_context, COLUMNS
+
+    # Write two snapshots: one at D1, one at D3
+    _write_all_sources(tmp_path)
+    snap_d1 = BMS.build_snapshot(root=tmp_path)
+    snap_d1 = dict(snap_d1)
+    snap_d1["asof"] = "2026-07-01"
+    snap_d1["macro_context_id"] = "aaaa0000aaaa0000"
+
+    snap_d3 = dict(snap_d1)
+    snap_d3["asof"] = "2026-07-03"
+    snap_d3["macro_context_id"] = "bbbb1111bbbb1111"
+
+    out_dir = tmp_path / "data" / "macro_snapshots"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    BMS.write_ledger(snap_d1, out_dir)
+    BMS.write_ledger(snap_d3, out_dir)
+
+    # Spine row at D2 (between D1 and D3)
+    rows = [
+        {"signal_id": "at_d1", "as_of": "2026-07-01", "macro_context_id": None, "macro_context_asof": None, "regime_stamp_basis": None},
+        {"signal_id": "at_d2", "as_of": "2026-07-02", "macro_context_id": None, "macro_context_asof": None, "regime_stamp_basis": None},
+        {"signal_id": "at_d3", "as_of": "2026-07-03", "macro_context_id": None, "macro_context_asof": None, "regime_stamp_basis": None},
+    ]
+    combined = pd.DataFrame(rows)
+    for col in COLUMNS:
+        if col not in combined.columns:
+            combined[col] = None
+
+    result = _stamp_macro_context(combined, root=tmp_path)
+
+    r_d1 = result[result["signal_id"] == "at_d1"].iloc[0]
+    r_d2 = result[result["signal_id"] == "at_d2"].iloc[0]
+    r_d3 = result[result["signal_id"] == "at_d3"].iloc[0]
+
+    assert r_d1["macro_context_id"] == "aaaa0000aaaa0000", "D1 row must get D1 snapshot"
+    assert r_d2["macro_context_id"] == "aaaa0000aaaa0000", (
+        "D2 row must get D1 snapshot, NOT the D3 snapshot (max-asof join-key law)"
+    )
+    assert r_d3["macro_context_id"] == "bbbb1111bbbb1111", "D3 row must get D3 snapshot"
+
+
+# ---------------------------------------------------------------------------
+# (18) track_record rows via _stamp_macro_context → basis 'recomputed_history'
+# ---------------------------------------------------------------------------
+
+def test_stamp_macro_context_track_record_basis(tmp_path: Path) -> None:
+    """Rows from the track_record ledger must receive 'recomputed_history' basis,
+    not 'pit_live', when stamped via _stamp_macro_context.
+    """
+    from engine.neuralweb.query import _stamp_macro_context, COLUMNS
+
+    _write_all_sources(tmp_path)
+    snap = BMS.build_snapshot(root=tmp_path)
+    snap = dict(snap)
+    snap["asof"] = "2026-07-01"
+
+    out_dir = tmp_path / "data" / "macro_snapshots"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    BMS.write_ledger(snap, out_dir)
+
+    rows = [
+        {"signal_id": "tr1", "ledger": "track_record", "as_of": "2026-07-05",
+         "macro_context_id": None, "macro_context_asof": None, "regime_stamp_basis": None},
+        {"signal_id": "ql1", "ledger": "qledger", "as_of": "2026-07-05",
+         "macro_context_id": None, "macro_context_asof": None, "regime_stamp_basis": None},
+    ]
+    combined = pd.DataFrame(rows)
+    for col in COLUMNS:
+        if col not in combined.columns:
+            combined[col] = None
+
+    result = _stamp_macro_context(combined, root=tmp_path)
+
+    tr_row = result[result["signal_id"] == "tr1"].iloc[0]
+    ql_row = result[result["signal_id"] == "ql1"].iloc[0]
+
+    assert tr_row["regime_stamp_basis"] == "recomputed_history", (
+        f"track_record row must get 'recomputed_history', got: {tr_row['regime_stamp_basis']!r}"
+    )
+    assert ql_row["regime_stamp_basis"] == "pit_live", (
+        f"qledger row must get 'pit_live', got: {ql_row['regime_stamp_basis']!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# (19) End-to-end transitions keys: from_value/to_value → _compose_macro_deltas from/to
+# ---------------------------------------------------------------------------
+
+def test_compose_macro_deltas_key_mapping(tmp_path: Path) -> None:
+    """write_transitions writes from_value/to_value; _compose_macro_deltas must
+    map these to consumer-facing 'from'/'to' keys in the lobe records.
+    """
+    import json as _json
+    from engine.neuralweb.world_state import _compose_macro_deltas
+
+    # Write a transitions.jsonl with from_value/to_value keys (producer format)
+    trans_dir = tmp_path / "data" / "macro_snapshots"
+    trans_dir.mkdir(parents=True, exist_ok=True)
+    trans_path = trans_dir / "transitions.jsonl"
+
+    # Use today's date so it falls within the 14-day window
+    import datetime as _dt
+    today = _dt.date.today().isoformat()
+    record = {
+        "asof": today,
+        "domain": "us",
+        "field": "us_quad",
+        "from_value": "Q1",
+        "to_value": "Q2",
+        "macro_context_id": "test1234test1234",
+    }
+    trans_path.write_text(_json.dumps(record) + "\n", encoding="utf-8")
+
+    lobe = _compose_macro_deltas(root=tmp_path)
+    transitions = lobe.get("transitions") or []
+    assert len(transitions) >= 1, f"Expected at least one transition record, got: {transitions}"
+    tr = transitions[0]
+    assert tr.get("from") == "Q1", (
+        f"Consumer key 'from' must be populated from 'from_value'; got: {tr!r}"
+    )
+    assert tr.get("to") == "Q2", (
+        f"Consumer key 'to' must be populated from 'to_value'; got: {tr!r}"
+    )

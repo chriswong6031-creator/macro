@@ -130,6 +130,9 @@ on:
       - "tests/test_ask_brain.py"
       - "tests/test_world_state.py"
       - "tests/test_admin_neural_web.py"
+      - "tests/test_macro_snapshot.py"
+      - "tests/test_macro_context_authority.py"
+      - "tests/test_law_dates.py"
       # NW Rails PR-7 R4 contract governance: schema drift check + test suite.
       - "scripts/check_contract_drift.py"
       - "scripts/export_signal_contracts.py"
@@ -499,8 +502,8 @@ jobs:
           python-version: "3.12"
       - name: install deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2
-      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py -q
+      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context)
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py -q
 
   dag-conformance:
     # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;

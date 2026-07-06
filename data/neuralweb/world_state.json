@@ -4748,7 +4748,7 @@
   },
   "alerts": {
     "asof": "2026-07-02",
-    "generated_utc": "2026-07-06 07:25",
+    "generated_utc": "2026-07-06 09:06",
     "total": 60,
     "critical": 2,
     "major": 58,
@@ -5138,10 +5138,10 @@
   },
   "intelligence": {
     "as_of": "2026-07-06",
-    "n_universe": 5102,
+    "n_universe": 4861,
     "n_priority": 25,
     "n_actionable": 7,
-    "n_divergences": 35,
+    "n_divergences": 32,
     "macro_context": {
       "regime": "Goldilocks",
       "posture": "Goldilocks — growth improving while inflation cools. Posture: CAREFUL — reduce size, tighten stops, let cash build.",
@@ -5150,19 +5150,7 @@
     "top_actionable": [
       {
         "ticker": "MU",
-        "priority": 0.49,
-        "lean": -1,
-        "read": "fading"
-      },
-      {
-        "ticker": "AMD",
-        "priority": 0.455,
-        "lean": -1,
-        "read": "fading"
-      },
-      {
-        "ticker": "HON",
-        "priority": 0.438,
+        "priority": 0.42,
         "lean": -1,
         "read": "fading"
       },
@@ -5173,10 +5161,22 @@
         "read": "fading"
       },
       {
+        "ticker": "AMD",
+        "priority": 0.39,
+        "lean": -1,
+        "read": "fading"
+      },
+      {
         "ticker": "UCTT",
         "priority": 0.39,
         "lean": 1,
         "read": "accumulation"
+      },
+      {
+        "ticker": "HON",
+        "priority": 0.375,
+        "lean": -1,
+        "read": "fading"
       }
     ],
     "display_only": true
@@ -5188,14 +5188,14 @@
         "domain": "us",
         "field": "us_rate_pressure",
         "from": null,
-        "to": null
+        "to": "pressure"
       },
       {
         "asof": "2026-07-06",
         "domain": "us",
         "field": "cross_asset_verdict",
-        "from": null,
-        "to": null
+        "from": "diverge",
+        "to": "mixed"
       }
     ],
     "n_transitions_14d": 2,
@@ -5245,7 +5245,7 @@
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-07-06T09:47:25Z",
-  "inputs_hash": "sha256:08c849d44166bdbaa2664daaf1772873eb09e8985e518b9b16b575aa8fdbe31a",
+  "produced_at": "2026-07-06T10:12:19Z",
+  "inputs_hash": "sha256:5f563d43346a52d0d2d2996cda5791e0bb12885c64930eed3947bcfc7aeee501",
   "tier": "infrastructure"
 }

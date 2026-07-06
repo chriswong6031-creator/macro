@@ -20,9 +20,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 16 |
-| macro-context-rail | 11 |
+| macro-context-rail | 14 |
 | neural-web | 28 |
-| nw-macro-context-rail | 3 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
 | options-alpha | 7 |
@@ -176,6 +175,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | canada-regime-latest | `data/canada_regime/latest.json` | json | daily-engine | display | 1 | 0 |
 | china-regime-latest | `data/china_regime/latest.json` | json | asia-close | display | 1 | 0 |
 | hk-regime-latest | `data/hk_regime/latest.json` | json | asia-close | display | 1 | 0 |
+| macro-snapshots-latest | `data/macro_snapshots/latest.json` | json | daily-engine | display | 1 | 0 |
+| macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| macro-transitions | `data/macro_snapshots/transitions.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | site-alerts-triage | `site/factordata/alerts_triage.json` | json | daily-engine | display | 1 | 0 |
 | site-factor-series | `site/factordata/factor_series.json` | json | daily-engine | display | 1 | 0 |
 | site-intelligence-briefing | `site/intelligence/briefing.json` | json | daily-engine | display | 1 | 0 |
@@ -213,14 +215,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
 | rule-experiment-summaries | `data/rule_experiments/results/<EXP_ID>_summary.json` | json | on-demand | display | 0 | 0 |
-
-### nw-macro-context-rail
-
-| id | path | format | cadence | tier | consumers | external consumers |
-|---|---|---|---|---|---|---|
-| macro-snapshots-latest | `data/macro_snapshots/latest.json` | json | daily-engine | display | 1 | 0 |
-| macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
-| macro-transitions | `data/macro_snapshots/transitions.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 
 ### nw-mastermind-bridge
 

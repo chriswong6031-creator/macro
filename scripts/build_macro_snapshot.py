@@ -555,7 +555,9 @@ def write_ledger(snapshot: dict, out_dir: Path) -> pd.DataFrame:
     else:
         combined = new_rows
 
-    combined.to_parquet(ledger_path, index=False)
+    ledger_tmp = ledger_path.with_name(ledger_path.name + ".tmp")
+    combined.to_parquet(ledger_tmp, index=False)
+    os.replace(ledger_tmp, ledger_path)
     return combined
 
 
@@ -601,11 +603,13 @@ def write_transitions(snapshot: dict, full_ledger: pd.DataFrame, out_dir: Path) 
     prior_asof = _prior_ledger_asof(full_ledger, today_asof)
     if prior_asof is None:
         print("transitions: no prior ledger asof found — first run, no transitions emitted")
-        # Write back (unchanged) existing lines
-        transitions_path.write_text(
+        # Write back (unchanged) existing lines (atomic)
+        transitions_tmp = transitions_path.with_name(transitions_path.name + ".tmp")
+        transitions_tmp.write_text(
             "\n".join(existing_lines) + ("\n" if existing_lines else ""),
             encoding="utf-8",
         )
+        os.replace(transitions_tmp, transitions_path)
         return
 
     # Build domain.field → value maps for prior and today
@@ -644,10 +648,12 @@ def write_transitions(snapshot: dict, full_ledger: pd.DataFrame, out_dir: Path) 
             new_transitions.append(json.dumps(flip, ensure_ascii=True))
 
     all_lines = existing_lines + new_transitions
-    transitions_path.write_text(
+    transitions_tmp = transitions_path.with_name(transitions_path.name + ".tmp")
+    transitions_tmp.write_text(
         "\n".join(all_lines) + ("\n" if all_lines else ""),
         encoding="utf-8",
     )
+    os.replace(transitions_tmp, transitions_path)
     if new_transitions:
         print(f"transitions: {len(new_transitions)} flip(s) detected vs {prior_asof}")
     else:
@@ -686,13 +692,15 @@ def main(root: Path | None = None) -> int:
 
     out = _out_dir(root)
 
-    # Write latest.json
+    # Write latest.json (atomic: write .tmp then os.replace)
     latest_path = out / "latest.json"
     try:
-        latest_path.write_text(
+        latest_tmp = latest_path.with_name(latest_path.name + ".tmp")
+        latest_tmp.write_text(
             json.dumps(snapshot, indent=2, ensure_ascii=True),
             encoding="utf-8",
         )
+        os.replace(latest_tmp, latest_path)
         print(f"build_macro_snapshot: wrote {latest_path}")
     except Exception as e:  # noqa: BLE001
         log.error("write latest.json failed: %s", e)

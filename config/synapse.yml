@@ -5244,7 +5244,7 @@ artifacts:
     format: json
     producer: scripts/build_macro_snapshot.py
     known_extra_writers: []
-    owner_program: nw-macro-context-rail
+    owner_program: macro-context-rail
     cadence: daily-engine
     storage: git
     asof_field: asof
@@ -5268,7 +5268,7 @@ artifacts:
     format: parquet
     producer: scripts/build_macro_snapshot.py
     known_extra_writers: []
-    owner_program: nw-macro-context-rail
+    owner_program: macro-context-rail
     cadence: daily-engine
     storage: git
     asof_field: asof
@@ -5291,7 +5291,7 @@ artifacts:
     format: jsonl
     producer: scripts/build_macro_snapshot.py
     known_extra_writers: []
-    owner_program: nw-macro-context-rail
+    owner_program: macro-context-rail
     cadence: daily-engine
     storage: git
     asof_field: asof
