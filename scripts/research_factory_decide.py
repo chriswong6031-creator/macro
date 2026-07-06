@@ -66,8 +66,6 @@ from engine.research_factory import ledger as rf_ledger
 from engine.research_factory.state import (
     transition as state_transition,
     IllegalTransition,
-    HUMAN_ACTORS,
-    SCRIPT_ACTORS,
 )
 from engine.research_factory.schema import validate_transition
 
@@ -746,29 +744,23 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
     print(f"Current status: {current_status}")
 
     # --- Refuse double-decisions ---
-    if current_status in _TERMINAL_STATES:
-        print(
-            f"[ERROR] Candidate {candidate_id} is already in terminal state "
-            f"{current_status!r} — cannot re-decide.",
-            file=sys.stderr,
-        )
-        return 1
-
-    # paper-on-paper: refuse if already paper and trying to re-paper from human_review
-    # (paper is not terminal but a fresh 'paper' decision from human_review is only valid once)
-    if current_status == "paper" and decision == "paper":
-        # Only refuse if the transition would be human_review->paper AND candidate
-        # is currently 'paper' (not coming from paper->human_review decay path).
-        # We check the actual from_state to decide.
-        # For a paper candidate that's been re-surfaced for decay review via
-        # paper->human_review, current_status is actually 'human_review'.
-        # If current_status is 'paper', we refuse.
-        print(
-            f"[ERROR] Candidate {candidate_id} is already in state 'paper' — "
-            f"cannot decide 'paper' again. If decay review triggered human_review, "
-            f"the current status should be 'human_review'.",
-            file=sys.stderr,
-        )
+    # _ALREADY_DECIDED_STATES = _TERMINAL_STATES | {"paper"}; use as the single guard.
+    # 'paper' is not terminal in the state machine (can decay back to human_review) but
+    # a fresh 'paper' decision while the candidate is still in 'paper' state is refused.
+    # If decay review re-surfaced the candidate, its current_status will be 'human_review'.
+    if current_status in _ALREADY_DECIDED_STATES:
+        if current_status in _TERMINAL_STATES:
+            msg = (
+                f"[ERROR] Candidate {candidate_id} is already in terminal state "
+                f"{current_status!r} — cannot re-decide."
+            )
+        else:
+            msg = (
+                f"[ERROR] Candidate {candidate_id} is already in state 'paper' — "
+                f"cannot decide 'paper' again. If decay review triggered human_review, "
+                f"the current status should be 'human_review'."
+            )
+        print(msg, file=sys.stderr)
         return 1
 
     if current_status != "human_review":

@@ -249,7 +249,8 @@ data/oracle/memory_active_analogues.json
 !data/oracle/hypothesis_state.json
 
 # Research Factory W1 (RF-8): broad exclude for bulk/replay artifacts; explicit
-# negations for the six durable git-tracked ledgers and the allowlist.
+# negations for the eight durable git-tracked ledgers, directories, and the allowlist.
+# W5 additions: track/ (RF-9 per-candidate clock skeletons) and requeue.jsonl (RF-10 audit trail).
 data/research_factory/*
 !data/research_factory/candidates.jsonl
 !data/research_factory/transitions.jsonl
@@ -258,6 +259,8 @@ data/research_factory/*
 !data/research_factory/health.jsonl
 !data/research_factory/paper_monitor.jsonl
 !data/research_factory/authority_allowlist.json
+!data/research_factory/track/
+!data/research_factory/requeue.jsonl
 
 # Live options-flow poller runtime artifacts (regenerated each session)
 # live_flow_baselines/baselines.json is git-TRACKED (small, ~50 roots × 4 fields)

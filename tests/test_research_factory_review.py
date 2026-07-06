@@ -1329,3 +1329,42 @@ def test_real_governance_event_article_null(tmp_path):
     assert row.get("article") is None, (
         f"article must be None (RF-12), got {row.get('article')!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# W5 fix: RF-8 .gitignore negation regression guard
+# ---------------------------------------------------------------------------
+
+
+def test_track_and_requeue_not_gitignored():
+    """Assert that data/research_factory/track/ and requeue.jsonl are NOT git-ignored.
+
+    RF-8 law: every durable ledger is git-tracked from its first row via explicit
+    .gitignore negation.  This test guards against the regression where W5 write
+    paths were added to the code but omitted from the negation list, silently
+    dropping them from the repo.
+
+    Uses `git check-ignore --no-index` which reports ignored paths without
+    requiring the file to exist on disk.
+    """
+    import subprocess
+
+    repo_root = ROOT
+
+    def is_ignored(rel_path: str) -> bool:
+        result = subprocess.run(
+            ["git", "check-ignore", "--no-index", "-q", rel_path],
+            cwd=str(repo_root),
+            capture_output=True,
+        )
+        # exit 0 = ignored, exit 1 = not ignored, exit 128 = error (treat as not ignored)
+        return result.returncode == 0
+
+    assert not is_ignored("data/research_factory/track/some-candidate.json"), (
+        "data/research_factory/track/ must NOT be git-ignored (RF-8 requires "
+        "!data/research_factory/track/ negation in .gitignore)"
+    )
+    assert not is_ignored("data/research_factory/requeue.jsonl"), (
+        "data/research_factory/requeue.jsonl must NOT be git-ignored (RF-8 requires "
+        "!data/research_factory/requeue.jsonl negation in .gitignore)"
+    )
