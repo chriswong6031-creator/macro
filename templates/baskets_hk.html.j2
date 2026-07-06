@@ -302,7 +302,7 @@ function renderCards(){
   const el=document.getElementById('cards');
   el.innerHTML=(BASKETS.categories||[]).map(cat=>{
     const since = LANG()==='zh'?'自':'since';
-    const memberW = LANG()==='zh'?'只 · 等权 · ':' members · equal-weighted · ';
+    const memberW = LANG()==='zh'?'只 · ':' members · ';
     const cards=(BASKETS.baskets||[]).filter(b=>b.category===cat)
       .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
       .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));

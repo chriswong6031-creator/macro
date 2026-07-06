@@ -139,6 +139,11 @@ def main() -> int:
                    "entry_rule": rule, "universe": {"tier": "s"},
                    "horizons": [21, 63], "status": "exploratory",
                    "lineage": spec.get("lineage", "ingest")}
+            # Carry cooldown_sessions through so get_entry_dates honours it.
+            # Without this, a spec with cooldown_sessions in the source JSON
+            # would be evaluated cooldown-free — silently producing wrong entry sets.
+            if spec.get("cooldown_sessions") is not None:
+                row["cooldown_sessions"] = int(spec["cooldown_sessions"])
             kept.append(row)
             if cols & RECENT_ONLY:
                 recent_only.append(cid)

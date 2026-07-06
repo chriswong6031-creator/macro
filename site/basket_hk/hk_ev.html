@@ -54,6 +54,11 @@
   .ts { overflow-x:auto; }
   .tk { font-weight:680; } .tk:hover { color:var(--link); }
   .cv { font-weight:700; border-radius:6px; padding:1px 7px; font-size:12px; }
+  /* confluence cascade tier badge (T1 master -> T4 earliest), ported from subsectors_china */
+  .tier { display:inline-block; font-weight:800; font-size:10px; padding:1px 5px; border-radius:5px; letter-spacing:.02em; color:#fff; vertical-align:middle; }
+  .tier.T1 { background:var(--up); } .tier.T2 { background:#3da564; }
+  .tier.T3 { background:var(--info); } .tier.T4 { background:#6b7cc4; }
+  .tier .prov { font-weight:700; opacity:.8; margin-left:1px; }
   .why { color:var(--muted); font-size:11.5px; white-space:normal; max-width:42ch; }
   #hold { table-layout:fixed; }
   #hold th,#hold td { vertical-align:top; }
@@ -171,6 +176,8 @@
         <a href="../news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="../alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="../gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="../flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="../options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
         <a href="../darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
     </div>
@@ -393,7 +400,7 @@
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-05 08:48 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-06 08:28 UTC</span>.
 </footer>
 
 <script>
@@ -741,8 +748,27 @@ function render(){
   const recommendScore=(m)=>{const c=m.conviction||{}, entry=c.entry||{};
     return verdictScore(c)*100 + ((c.score==null?-25:+c.score)||0) + ((entry.act_level||0)*8) + (m.on_board?12:0);
   };
+  // confluence cascade tier (T1 master -> T4 earliest): weight for the sort, badge for the row.
+  const TIER_W={T1:1.0,T2:0.8,T3:0.6,T4:0.4};
+  const tierW=(c)=>{const s=c&&c.signal; return (s&&s.tier&&TIER_W[s.tier])||0;};
+  const tierBadge=(c)=>{const s=c&&c.signal; if(!s||!s.tier) return '';
+    const tip={T1:'T1 — 3D MACD-RSI × 3D StochRSI confluence, buy-filter endorsed (master confirmation).',
+      T2:'T2 — 2D MACD-RSI crossed + 3D StochRSI crossed (an early tier, fires before the 3D master).',
+      T3:'T3 — 3D StochRSI crossed, 2D MACD-RSI cross projected ~1-2 days (provisional, may repaint).',
+      T4:'T4 — 2D MACD-RSI projected + 2D StochRSI crossed, above the 200-day MA (earliest tier).'}[s.tier]||'';
+    return ` <span class="tier ${s.tier}" title="${tip}">${s.tier}${s.provisional?'<span class="prov">*</span>':''}</span>`;};
   const sortMembers=(items)=>{
-    const key=m=>_sort.col==='recommend'?recommendScore(m):_sort.col==='conv'?((m.conviction||{}).score):_sort.col==='r20'?m.ret_20d:m.ret_ytd;
+    // default 'recommend' order: fresh-confluence names first (T1>T2>T3>T4), then the
+    // conviction blend; other columns keep the plain numeric sort. Mirrors subsectors_china
+    // (class -> tier weight). Unrated names (tierW 0) all sit below any eligible tier.
+    if(_sort.col==='recommend'){
+      return items.slice().sort((a,b)=>{
+        const ta=tierW(a.conviction), tb=tierW(b.conviction);
+        if(ta!==tb) return (tb-ta)*(-_sort.dir);
+        return (recommendScore(a)-recommendScore(b))*_sort.dir;
+      });
+    }
+    const key=m=>_sort.col==='conv'?((m.conviction||{}).score):_sort.col==='r20'?m.ret_20d:m.ret_ytd;
     return items.slice().sort((a,b)=>{const x=key(a),y=key(b); if(x==null)return 1; if(y==null)return -1; return (x-y)*_sort.dir;});
   };
   const shortVerdict=(c)=>{const v=String((c&&c.verdict)||'').toLowerCase();
@@ -766,7 +792,7 @@ function render(){
   const rows=sortMembers(mem).map(m=>{const c=m.conviction;
     const star=m.on_board?` <a class="sb-star" href="${SB?'../us_stocks.html':'#'}" title="On the US standout buy board right now">★</a>`:'';
     return `<tr>
-      <td class="hold-stock">${stk(m.symbol)}${star} <span class="hold-company">${esc(m.name||'')}</span></td>
+      <td class="hold-stock">${stk(m.symbol)}${star}${tierBadge(c)} <span class="hold-company">${esc(m.name||'')}</span></td>
       <td class="num hold-potential">${convCell(c)}</td>
       <td class="hold-verdict">${c&&c.verdict?`<span class="v-full">${L(esc(c.verdict),esc(c.verdict_zh||c.verdict))}</span><span class="v-short">${shortVerdict(c)}</span>`:'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
       <td class="hold-entry">${entryCell(c)}</td>
@@ -776,9 +802,9 @@ function render(){
   h+=`<h2><span class="idx">04</span>${L('Holdings — own-it conviction + entry timing','成分股 — 持有信念 + 入场择时')} <span class="chip">${mem.length} ${L('names','只')}</span>${nBoard?` <span class="chip sb-chip" title="Members currently on the US standout buy board">★ ${nBoard} ${L('on standout board','在精选榜')}</span>`:''}</h2>
   <div class="panel"><div class="ts"><table id="hold">
     <colgroup><col class="hold-stock"><col class="hold-potential"><col class="hold-verdict"><col class="hold-entry"><col class="hold-20d"></colgroup>
-    <thead><tr><th>${L('Stock','个股')}</th><th class="num hold-potential" data-s="recommend" title="Default sort blends verdict quality, Potential, entry timing, and cycle blocks.">${L('Potential','潜力')}</th><th>${L('Verdict','结论')}</th><th class="hold-entry">${L('Entry now','入场时机')}</th><th class="num hold-20d" data-s="r20">20d</th></tr></thead>
+    <thead><tr><th>${L('Stock','个股')}</th><th class="num hold-potential" data-s="recommend" title="Default sort surfaces fresh T1–T4 confluence names first, then blends verdict quality, Potential, entry timing, and cycle blocks.">${L('Potential','潜力')}</th><th>${L('Verdict','结论')}</th><th class="hold-entry">${L('Entry now','入场时机')}</th><th class="num hold-20d" data-s="r20">20d</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <div class="disc">${L('Potential ranks buy readiness: room to run, turning up now, and enough quality to survive. The default order blends Potential with the Verdict and entry timing, while pushing cycle-blocked names down. ⚠ means the cycle blocks a buy.','潜力衡量买入就绪度：仍有空间、当前转强、且质量足以支撑。默认排序会把潜力、结论与入场时机结合，并把周期阻断的个股下调。⚠ 表示周期阻止买入。')}</div>
+    <div class="disc">${L('Potential ranks buy readiness: room to run, turning up now, and enough quality to survive. The default order blends Potential with the Verdict and entry timing, while pushing cycle-blocked names down. Names with a fresh T1–T4 confluence cross (MACD-2D × StochRSI-3D — the same gate the standout board ranks by) carry a tier badge and are surfaced to the top, strongest tier first (T3* is provisional and may repaint). ⚠ means the cycle blocks a buy.','潜力衡量买入就绪度：仍有空间、当前转强、且质量足以支撑。默认排序会把潜力、结论与入场时机结合，并把周期阻断的个股下调。出现新的 T1–T4 共振交叉（2日MACD × 3日StochRSI，与精选榜相同的门槛）的个股会带有层级标签并被置顶，层级越强越靠前（T3* 为暂定、可能重绘）。⚠ 表示周期阻止买入。')}</div>
   </div>`;
 
   // ---- changelog + flags ----
@@ -808,5 +834,6 @@ function boot(){
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 </script>
 <script src="../theme.js"></script>
+<script defer data-whb data-root="../" src="../wh_banner.js"></script>
 </body>
 </html>

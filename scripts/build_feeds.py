@@ -215,6 +215,14 @@ def build() -> dict:
     ws = data / "neuralweb" / "world_state.json"
     copy(ws, "world_state.json", _asof_of(_read_json(ws)), "data/neuralweb/world_state.json")
 
+    # 10. nw_mastermind_context — Neural Web → Mastermind bridge artifact.
+    #     Canonical lives at data/neuralweb/mastermind_context.json (git).
+    #     Site copy at site/neuralwebdata/mastermind_context.json (git, zero-touch transport).
+    #     This feeds copy lands in site/feeds/ for the R2 machine plane.
+    #     Byte-verbatim copy preserves the envelope contract.
+    mc = data / "neuralweb" / "mastermind_context.json"
+    copy(mc, "nw_mastermind_context.json", _asof_of(_read_json(mc)), "data/neuralweb/mastermind_context.json")
+
     _write_json(out, "feeds_meta.json", {
         "schema_version": SCHEMA_VERSION,
         "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),

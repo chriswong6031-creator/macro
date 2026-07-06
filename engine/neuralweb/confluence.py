@@ -555,6 +555,113 @@ def _build_confirms_edges(
 # Public API
 # ---------------------------------------------------------------------------
 
+
+def _build_options_edges(
+    repo: Path,
+    gaps: list[str],
+) -> list[dict]:
+    """Options→NW W-B (RO-6): display-only aggregate edges between the options
+    entry state and current US-board lanes.  Four adopted edges; the AMPLIFIES
+    verb was REJECTED (unsanctioned) and the oracle_rotation edge is DEFERRED
+    to Oracle-program review.  All counts are computed from the latest
+    display-tier state table + latest board as_of; every edge display_only=True.
+    """
+    edges: list[dict] = []
+    state_path = repo / "data" / "options_entry" / "state.parquet"
+    ledger_path = repo / "data" / "us_board_ledger" / "retro_grades.parquet"
+
+    state = None
+    board = None
+    try:
+        import pandas as pd  # noqa: PLC0415
+        if state_path.exists():
+            state = pd.read_parquet(state_path)
+        else:
+            gaps.append("options_edges: state.parquet absent — options edges omitted")
+        if ledger_path.exists():
+            board = pd.read_parquet(ledger_path)
+        else:
+            gaps.append("options_edges: retro_grades.parquet absent — options edges omitted")
+    except Exception as exc:  # noqa: BLE001
+        gaps.append(f"options_edges: read failed ({exc}) — options edges omitted")
+        return edges
+    if state is None or board is None or state.empty or board.empty:
+        return edges
+
+    try:
+        latest = board["as_of"].max()
+        cur = board[board["as_of"] == latest]
+        buy_names = set(cur.loc[cur["lane"] == "buy", "ticker"].dropna())
+        watch_names = set(cur.loc[cur["lane"] == "watch", "ticker"].dropna())
+        st = state.set_index("ticker")
+
+        def _count(names: set, cond) -> tuple[int, list[str]]:
+            hits = []
+            for t in names:
+                if t not in st.index:
+                    continue
+                try:
+                    if cond(st.loc[t]):
+                        hits.append(t)
+                except Exception:  # noqa: BLE001 — nulls
+                    continue
+            return len(hits), sorted(hits)[:8]
+
+        # Edge 1 (adopted): bottom candidates CONTRADICTED_BY rising skew
+        n1, ex1 = _count(buy_names, lambda r: r.get("skew_5d_chg") is not None
+                         and float(r["skew_5d_chg"]) > 0)
+        edges.append(_edge(
+            src="options.skew_rising", dst="us_board.buy_lane",
+            edge_type="contradicts", n=n1,
+            note=(f"buy-lane names with 5d-rising OTM-put skew (as_of {latest}); "
+                  f"e.g. {', '.join(ex1) or 'none'}. Display-only de-escalation context; "
+                  "W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."),
+        ))
+        # Edge 2 (adopted): bottom candidates CONFIRMED_BY skew deceleration
+        thr = None
+        try:
+            skews = state["skew"].dropna().astype(float)
+            thr = float(skews.quantile(2.0 / 3.0)) if len(skews) >= 30 else None
+        except Exception:  # noqa: BLE001
+            thr = None
+        if thr is not None:
+            n2, ex2 = _count(buy_names, lambda r: r.get("skew") is not None
+                             and r.get("skew_5d_chg") is not None
+                             and float(r["skew"]) >= thr and float(r["skew_5d_chg"]) < 0)
+            edges.append(_edge(
+                src="options.skew_decel", dst="us_board.buy_lane",
+                edge_type="confirms", n=n2,
+                note=(f"buy-lane names with top-tercile skew now falling (as_of {latest}); "
+                      f"e.g. {', '.join(ex2) or 'none'}. Display-only; S-SKEW_DECEL gate "
+                      "building_history, W-E1 sector-history prior is SKEPTICAL."),
+            ))
+        # Edge 3 (adopted): watch lane CONFIRMED_BY positive ivspread + call DOI
+        n3, ex3 = _count(watch_names, lambda r: r.get("ivspread_rel") is not None
+                         and r.get("net_doi") is not None
+                         and float(r["ivspread_rel"]) > 0 and float(r["net_doi"]) > 0)
+        edges.append(_edge(
+            src="options.ivspread_positive_call_doi", dst="us_board.watch_lane",
+            edge_type="confirms", n=n3,
+            note=(f"watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of {latest}); "
+                  f"e.g. {', '.join(ex3) or 'none'}. Display-only; S-IVSPREAD-F gate "
+                  "building_history; W-E1: CWIV Era3 5d IC survives on sector history."),
+        ))
+        # Edge 4 (adopted): extension signal CONFIRMED_BY skew_rising / call-wall pin.
+        # No extension detector is wired on the board ledger yet — counts pending,
+        # edge declared with n=None (honest; no fabricated membership).
+        edges.append(_edge(
+            src="options.skew_rising_or_call_wall_pin", dst="us_board.extended_names",
+            edge_type="confirms", n=None,
+            note=("extension detector not wired on the board ledger — counts pending; "
+                  "display-only declaration per RO-6. Pin context available per-name via "
+                  "options_entry state (pin_risk, wall distances)."),
+        ))
+    except Exception as exc:  # noqa: BLE001
+        gaps.append(f"options_edges: build failed ({exc}) — partial/no options edges")
+
+    return edges
+
+
 def build_graph(
     root: Path | str | None = None,
     now: datetime | None = None,
@@ -649,6 +756,7 @@ def build_graph(
     edges.extend(_build_leads_edges(graph_m, gaps))
     edges.extend(_build_contradicts_edges(contra_records, gaps))
     edges.extend(_build_confirms_edges(spine_df, gaps))
+    edges.extend(_build_options_edges(repo, gaps))   # Options→NW W-B (RO-6)
 
     # ── Contradiction summary ─────────────────────────────────────────────────
     by_severity: dict[str, int] = {}

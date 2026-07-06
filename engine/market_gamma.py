@@ -20,6 +20,59 @@ import pandas as pd
 
 from lib import store
 
+# Reconstructed index dealer-gamma history (scripts/build_index_gex_history.py). SPY is
+# the S&P index proxy comparable to the SPX-based cboe/gex current-day source used by
+# view(); the reconstructed series supplies LEVELS/VOL CONTEXT ONLY (net-GEX percentile
+# vs own multi-year history, standing-regime persistence) — DISPLAY-ONLY, no score path.
+_HISTORY_ROOT = "SPY"
+_HISTORY_GROUP = "index_gex_history"
+
+
+def _history_context(current_net_gex_bn: "float | None",
+                     current_regime: "str | None") -> dict | None:
+    """Multi-year vol CONTEXT from the reconstructed SPY history: where the reconstructed
+    net-GEX sits in its OWN 2017-> distribution, and how long the standing regime has held.
+
+    SCALE NOTE (why we percentile the reconstructed series against ITSELF, not the
+    current-day SPX value against it): the current-day source is the SPX-based cboe/gex
+    store, whose net-GEX $ level is on a different scale than the reconstructed SPY-ETF
+    series — a raw percentile of the SPX level against SPY history would be a category
+    error. So `net_gex_pctile` is the reconstruction's own latest value vs its own history
+    (apples-to-apples); `current_regime` (SPX) is only cross-checked against the
+    reconstructed regime for AGREEMENT. Returns None (graceful fallback) when the history
+    store is absent/empty so snapshot() degrades to the pre-upgrade current-day-only verdict."""
+    hist = store.read(_HISTORY_GROUP, _HISTORY_ROOT)
+    if hist is None or not len(hist) or "net_gex_bn" not in hist.columns:
+        return None
+    ng = pd.to_numeric(hist["net_gex_bn"], errors="coerce").dropna()
+    ctx: dict = {
+        "source": f"{_HISTORY_GROUP}/{_HISTORY_ROOT}",
+        "reconstructed": True,
+        "n_days": int(len(ng)),
+        "hist_start": str(hist.index.min().date()),
+        "hist_end": str(hist.index.max().date()),
+    }
+    # Own-history percentile of the RECONSTRUCTED latest net-GEX (not the SPX current-day).
+    if len(ng):
+        latest = float(ng.iloc[-1])
+        ctx["net_gex_latest_bn"] = round(latest, 3)
+        ctx["net_gex_pctile"] = round(float((ng <= latest).mean() * 100.0), 1)
+    # Standing-regime persistence in the reconstructed series + agreement with current-day.
+    if "gamma_regime" in hist.columns:
+        reg = hist["gamma_regime"].astype("object")
+        recon_regime = None if reg.empty else str(reg.iloc[-1])
+        ctx["recon_regime_last"] = recon_regime
+        run = 0
+        for v in reversed(list(reg.values)):
+            if recon_regime is not None and v == recon_regime:
+                run += 1
+            else:
+                break
+        ctx["regime_persistence_days"] = int(run)
+        if current_regime is not None and recon_regime is not None:
+            ctx["regime_agrees_current"] = bool(recon_regime == current_regime)
+    return ctx
+
 
 def view(gex: "pd.DataFrame | None") -> dict | None:
     """Pure deriver over the cboe/gex frame -> structured dealer-gamma verdict.
@@ -47,5 +100,15 @@ def view(gex: "pd.DataFrame | None") -> dict | None:
 def snapshot() -> dict | None:
     """Read the cboe/gex store and derive the verdict — the entry point for the
     machine-readable contract (engine/run.py writes this into latest['market_gamma']).
-    None when the store is absent/empty so the leaf degrades to a null contract field."""
-    return view(store.read("cboe", "gex"))
+    None when the store is absent/empty so the leaf degrades to a null contract field.
+
+    P1.1b upgrade: the CBOE/polygon current-day path stays the source of today's regime,
+    flip and net-GEX (view() is unchanged); we ADD a `context` block derived from the
+    reconstructed multi-year SPY history — net-GEX percentile vs own history + standing-
+    regime persistence. DISPLAY-ONLY vol context, never a score input. When the history
+    store is absent, `context` is None and the verdict is byte-identical to pre-upgrade."""
+    verdict = view(store.read("cboe", "gex"))
+    if verdict is None:
+        return None
+    verdict["context"] = _history_context(verdict.get("net_gex_bn"), verdict.get("regime"))
+    return verdict

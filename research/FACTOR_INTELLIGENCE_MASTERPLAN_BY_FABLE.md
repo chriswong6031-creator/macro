@@ -215,7 +215,7 @@ Threshold values are set here and frozen for v1. The drafter (Sonnet) must imple
 | Input | Source |
 |---|---|
 | Factor L/S 20d + 60d returns | `site/factordata/factor_series.json` — per-factor compounded returns for the trailing windows |
-| ETF pulse ratios | `site/themedata/etf_pulse.json` — IWF/IWD 20d ratio, QQQ/SPY 20d ratio, IWM/SPY 20d ratio |
+| ETF pulse ratios | computed from ETF close caches (`data/yahoo/`) per RULING-D — `etf_pulse.json` artifact does not exist (citation corrected 2026-07-05) |
 | Confirmed factor series leader | `engine/factor_series._rotation()` — `leader` field (3-session debounce) |
 
 **Classification thresholds:**
@@ -244,7 +244,7 @@ Threshold values are set here and frozen for v1. The drafter (Sonnet) must imple
 
 **Outputs per (ticker, date):**
 - `twin_rel_20d` — the name's 20d realized return minus the twin basket's 20d realized return (signed; positive = outperformed twin)
-- `twin_bleed_flag` — boolean: True if the twin 20d return is negative AND the twin is below its own 20d high by more than its trailing median pullback (median of all 20d max-drawdown observations in the prior 252d). The drafter must implement the trailing-median-pullback computation deterministically and include a unit test.
+- `twin_bleed_flag` — boolean: True if the twin 20d return is negative AND the twin is below its own 20d high by more than its trailing median pullback (computed from the prior 60d of twin basket daily returns, using the rolling 20d drawdown from 20d high distribution). The drafter must implement the trailing-median-pullback computation deterministically and include a unit test. *(corrected 2026-07-05 to match locked PREREG H4; drift caught in P1-B — original text said "prior 252d")*
 
 **Purpose:** `twin_bleed_flag` is H4's feature (de-escalation validity when the twin basket is bleeding at entry). `twin_rel_20d` is a display/context output and an input to H5's decay context.
 
@@ -318,6 +318,40 @@ P4 may propose `board_ordering` influence only after the relevant hypothesis has
 
 No LLM-authored confidence numbers appear in any Factor Intelligence output. Claims carry calibrated Wilson lower bounds from graded history (z=1.645, 90% one-sided) or carry no number. The style_regime classifier emits a state label, not a probability. The DNA class emits a class string, not a score. Attribution shares are arithmetic decompositions of realized returns — they are not predictions.
 
+### 4.4a Calibration degeneracy ruling (FIX-7, 2026-07-05)
+
+**FABLE RULING:** Calibration degeneracies (DNA mixed 52%, style mixed 89%) are PRINTED, not patched. §3.3/§3.4 thresholds remain frozen v1. A v2 recalibration is deferred to the pre-H3 clean window: after real fire-population distributions exist and before any H3 outcome data is analyzed. mixed is the honest default, not a failure (§3.3).
+
+Calibration re-run outputs (verbatim, run 2026-07-05 against snapshot date 2026-07-02 + trailing 3y):
+
+**DNA class distribution (snapshot 2026-07-02, n_total=1503, n_evaluable=982):**
+```
+nan                           :  521  ( 53.1% of evaluable)
+mixed                         :  511  ( 52.0% of evaluable)
+rate_duration_sensitive       :  162  ( 16.5% of evaluable)
+quality_growth                :   92  (  9.4% of evaluable)
+cyclical_value                :   77  (  7.8% of evaluable)
+high_beta_liquidity           :   55  (  5.6% of evaluable)
+defensive_quality             :   47  (  4.8% of evaluable)
+small_spec                    :   22  (  2.2% of evaluable)
+china_crypto_proxy            :   16  (  1.6% of evaluable)
+CALIBRATION DEGENERACY — dna_class 'mixed' is 52.0% of evaluable (target: no class >50%).
+CALIBRATION DEGENERACY — 'mixed' is 52.0% of evaluable (target: mixed <40%).
+Thresholds FROZEN. Degeneracy reported verbatim.
+```
+
+**style_regime timeline (n_days=784, 2023-07-03 to 2026-07-02, trailing 3y):**
+```
+mixed               :  703 days ( 89.7%)
+quality_defense     :   23 days (  2.9%)
+junk_rally          :   23 days (  2.9%)
+value_cyclical      :   21 days (  2.7%)
+growth_momentum     :   14 days (  1.8%)
+CALIBRATION DEGENERACY — style_regime 'mixed' is 89.7% of days (target: no state >70%).
+Thresholds FROZEN. Degeneracy reported verbatim.
+total state flips: 52
+```
+
 ### 4.5 Two-lane rendering rule
 
 Committee surfaces (committee.html factor panel, per-name DNA card) display two lanes:
@@ -381,7 +415,7 @@ Sub-block contents:
 - `style_regime_hold_days`: how many consecutive days the current state has been confirmed
 - `factor_leader`: confirmed leader from `factor_series._rotation()` with held days
 - `factor_leader_ic`: the leader's mean_IC from ic_scorecard.json (calibrated prior; printed even if negative)
-- `etf_pulse_summary`: 20d IWF/IWD, QQQ/SPY, IWM/SPY ratios (from etf_pulse.json)
+- `etf_pulse_summary`: 20d IWF/IWD, QQQ/SPY, IWM/SPY ratios (computed from ETF close caches in `data/yahoo/` per RULING-D — `etf_pulse.json` artifact does not exist, citation corrected 2026-07-05)
 - `display_only`: True — this lobe is A1/display; no behavioral consumer reads it before the kernel-FDR sweep
 
 The `qi` slot in world_state.json is currently null and flagged as pending the W7 joint border ruling (world_state.py line 29). The `factor_weather` lobe does NOT occupy the `qi` slot — it is a separate named key. The `qi` ruling is out of scope for this program.

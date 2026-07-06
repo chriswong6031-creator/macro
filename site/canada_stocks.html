@@ -196,6 +196,7 @@
   .nbe-pct { color:var(--muted); font-size:9px; font-variant-numeric:tabular-nums; }
   .ab { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .abcol h3 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
+  .abcol.ab-on_the_run h3 { color:#8b5cf6; }  /* neutral violet — NOT green/buy */
   .abcol .it { font-size:12.5px; padding:3px 0; border-bottom:1px solid var(--line); }
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:right; padding:4px 8px; border-bottom:1px solid var(--line); }
@@ -715,9 +716,21 @@
   .cmd-hero .ms-cell2.bad,  .cmd-hero .ms-conf.bad  { color: var(--down); }
   .cmd-hero .ms-cell2.flat, .cmd-hero .ms-conf.warn, .cmd-hero .ms-conf.flat { color: var(--warn); }
   .cmd-hero .ms-conf { font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .cmd-hero .ms-confstrip { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cmd-hero .ms-confchip { display: inline-flex; align-items: baseline; gap: 9px; min-width: 0; padding: 7px 10px;
+    border: var(--rule) solid var(--hair); border-radius: 8px; background: var(--tile); }
+  .cmd-hero .ms-confchip.good { border-color: color-mix(in srgb, var(--up) 32%, var(--hair)); }
+  .cmd-hero .ms-confchip.bad { border-color: color-mix(in srgb, var(--down) 32%, var(--hair)); }
+  .cmd-hero .ms-confchip.warn { border-color: color-mix(in srgb, var(--warn) 32%, var(--hair)); }
+  .cmd-hero .ms-tech { margin-top: 12px; padding-top: 12px; border-top: var(--rule) solid var(--hair); }
+  .cmd-hero .ms-tech-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 9px; font-weight: 700; }
+  .cmd-hero .ms-tech-head .note { font-weight: 400; text-transform: none; }
+  .cmd-hero .ms-tech-stat { font-family: var(--num); font-size: 17px; font-weight: 800; color: var(--ink-1); }
+  .cmd-hero .ms-tech .mtf-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   @media (max-width: 560px) {
     .cmd-hero table.ms-tapetbl th, .cmd-hero table.ms-tapetbl td { padding-left: 3px; padding-right: 3px; }
     .cmd-hero .ms-cell2 .rsi { display: none; }
+    .cmd-hero .ms-confchip { width: 100%; justify-content: space-between; }
   }
   .cmd-hero .ms-caveat { margin: 9px 0 0; font-size: 10.5px; line-height: 1.45; color: var(--ink-3); }
 
@@ -781,6 +794,8 @@
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
         <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
     </div>
@@ -1015,7 +1030,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-03 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-05 08:00 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-03 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-06 08:27 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
@@ -2267,7 +2282,7 @@
         
         <span class="nb-vchip ev-accrue" data-tip-en="Useful screen, still unproven as an edge." data-tip-zh="有用筛选，但尚未证明为优势。"><span class="l-en">momentum screen · unproven</span><span class="l-zh">动量筛选 · 未验证</span></span>
         
-        
+        <span class="nb-vchip ev-insider" data-tip-en="Insiders have been net buyers. Context only." data-tip-zh="内部人近期净买入。仅作背景。">👤 <span class="l-en">insider buying</span><span class="l-zh">内部人买入</span> 2/0</span>
         
         
       </div>
@@ -2504,7 +2519,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-05 08:00 UTC</p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-06 08:27 UTC</p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>

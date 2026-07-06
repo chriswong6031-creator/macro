@@ -1,6 +1,6 @@
 {
- "schema": "options_entry.gate.v1",
- "generated_at": "2026-07-05 08:12 UTC",
+ "schema": "options_entry.gate.v2",
+ "generated_at": "2026-07-06 08:36 UTC",
  "scored": false,
  "status": "building_history",
  "weight": 0.0,
@@ -11,7 +11,23 @@
  ],
  "min_per_bucket": 30,
  "n_ledger_rows": 950,
- "n_stamped_rows": 47,
+ "n_stamped_rows": 950,
+ "fdr_family": {
+  "alpha": 0.1,
+  "method": "Benjamini-Hochberg",
+  "family_size": 22,
+  "description": "All fire-conditioned bucket tests \u00d7 A10 primitives \u00d7 live-accrual era (2026\u2192). 22 tests total (S-IVR\u00d73, S-DOI\u00d73, S-VOI\u00d73, S-IVSPREAD-F\u00d73, S-SKEW_DECEL\u00d73, S-TOP_RISK\u00d72, S-PIN_RISK\u00d72, S-VOI2\u00d73). BH-FDR threshold for k-th ranked p-value: p_k <= (k/22) * 0.10. No verdict claims significance without clearing BH-FDR at alpha=0.10 over this full family. See OPTIONS_ALPHA_MASTERPLAN.md \u00a74 FDR statement for full arithmetic."
+ },
+ "per_family_status": {
+  "S-IVR": "building_history",
+  "S-DOI": "building_history",
+  "S-VOI": "building_history",
+  "S-IVSPREAD-F": "building_history",
+  "S-SKEW_DECEL": "building_history",
+  "S-TOP_RISK": "building_history",
+  "S-PIN_RISK": "building_history",
+  "S-VOI2": "building_history"
+ },
  "tests": {
   "S-DOI": {
    "bucket": "S-DOI",
@@ -87,19 +103,71 @@
    "wall_before_fixed": 0,
    "price_store_available": false,
    "limitation": "close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3."
+  },
+  "S-IVSPREAD-F": {
+   "bucket": "S-IVSPREAD-F",
+   "n_cond": 0,
+   "n_base": 0,
+   "ready": false,
+   "note": "opt_ivspread_rel not yet stamped \u2014 W-C harness extension pending full backfill"
+  },
+  "S-SKEW_DECEL": {
+   "bucket": "S-SKEW_DECEL",
+   "n_cond": 0,
+   "n_base": 0,
+   "ready": false,
+   "note": "opt_skew not yet stamped \u2014 W-C harness extension pending"
+  },
+  "S-TOP_RISK": {
+   "bucket": "S-TOP_RISK",
+   "n_cond": 0,
+   "n_base": 0,
+   "ready": false,
+   "note": "neither opt_skew_5d_chg nor opt_ivspread_rel stamped yet"
+  },
+  "S-PIN_RISK": {
+   "bucket": "S-PIN_RISK",
+   "n_cond": 0,
+   "n_base": 0,
+   "ready": false,
+   "note": "opt_pin_risk not yet stamped \u2014 W-C harness extension pending"
+  },
+  "S-VOI2": {
+   "bucket": "S-VOI2",
+   "n_cond": 0,
+   "n_base": 0,
+   "ready": false,
+   "note": "opt_voi2_flag not yet stamped \u2014 awaits W-C harness extension that adds the stricter z-threshold + contract-count-floor to the stamp (future PR). S-VOI original registration stands; this is a distinct, stricter bucket registered after S-VOI was documented as degenerate (n_cond=42/n_base=4)."
   }
  },
  "verdicts": {
   "S-DOI": "building_history",
   "S-IVR": "building_history",
-  "S-VOI": "building_history"
+  "S-VOI": "building_history",
+  "S-IVSPREAD-F": "building_history",
+  "S-SKEW_DECEL": "building_history",
+  "S-VOI2": "building_history",
+  "S-TOP_RISK": "building_history",
+  "S-PIN_RISK": "building_history"
  },
  "evidence": [
   "S-IVR: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_iv_rank_252 is null until the post-W1.1 IV-backfill PR (ruling A9)",
   "S-DOI: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 no stamped opt_doi_slope_5d yet (needs \u22655 prior chain days per name)",
   "S-VOI: building history (n_cond=42, n_base=4; need 30/bucket)",
   "S-VOI-fast (5d): building history (n_cond=42, n_base=4; need 30/bucket)",
-  "S-WALL: 0/45 eligible fires priced (price_store_available=False); wall_touches=0, fixed\u22125%_touches=0, wall_before_fixed=0. LIMITATION: close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3."
+  "S-WALL: 0/45 eligible fires priced (price_store_available=False); wall_touches=0, fixed\u22125%_touches=0, wall_before_fixed=0. LIMITATION: close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3.",
+  "S-IVSPREAD-F: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_ivspread_rel not yet stamped \u2014 W-C harness extension pending full backfill",
+  "S-SKEW_DECEL: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_skew not yet stamped \u2014 W-C harness extension pending",
+  "S-TOP_RISK: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 neither opt_skew_5d_chg nor opt_ivspread_rel stamped yet",
+  "S-PIN_RISK: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_pin_risk not yet stamped \u2014 W-C harness extension pending",
+  "S-VOI2: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_voi2_flag not yet stamped \u2014 awaits W-C harness extension that adds the stricter z-threshold + contract-count-floor to the stamp (future PR). S-VOI original registration stands; this is a distinct, stricter bucket registered after S-VOI was documented as degenerate (n_cond=42/n_base=4).",
+  "W-C stamp coverage [opt_ivspread_rel]: 0/950 rows (0.0%)",
+  "W-C stamp coverage [opt_skew]: 0/950 rows (0.0%)",
+  "W-C stamp coverage [opt_skew_5d_chg]: 0/950 rows (0.0%)",
+  "W-C stamp coverage [opt_opex_days]: 903/950 rows (95.1%)",
+  "W-C stamp coverage [opt_pin_risk]: 0/950 rows (0.0%)",
+  "W-C stamp coverage [opt_wall_dist_up_pct]: 0/950 rows (0.0%)",
+  "W-C stamp coverage [opt_wall_dist_down_pct]: 0/950 rows (0.0%)"
  ],
- "note": "Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI). Display/ledger-seed only until a bucket clears n\u226530 AND a primitive delta's bootstrap CI excludes 0 (doctrine \u00a72.3). Ledger primitives only (ruling A10). Never scored in W1.3."
+ "note": "Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI + W-C: S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2). Display/ledger-seed only until a bucket clears n\u226530 AND a primitive delta's bootstrap CI excludes 0 (doctrine \u00a72.3). Ledger primitives only (ruling A10). FDR family=22 tests, BH \u03b1=0.10. Never scored until a gate passes. S-TOP_RISK/S-PIN_RISK are caution-only: beneficial direction = flagged fires worse (correctly de-escalates entries). Never initiates a negative position (RO-3)."
 }

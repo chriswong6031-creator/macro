@@ -9,7 +9,7 @@
      `null` for a local-only build). A page that sets window.SUPABASE_CFG inline
      (e.g. watchlist.html) wins, so the value is identical either way. The
      publishable key is PUBLIC by design; per-user isolation is enforced by RLS. */
-  window.SUPABASE_CFG = window.SUPABASE_CFG || /*__SUPABASE_CFG__*/null;
+  window.SUPABASE_CFG = window.SUPABASE_CFG || {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"};
 
   /* ---- Google Analytics 4 (gtag.js) ---------------------------------------
      Injected once on EVERY page via this one shared script (every page loads
@@ -110,18 +110,55 @@
   // new-tab / modified clicks alone.
   // null-prototype map so an href-derived key can't hit Object.prototype ('constructor', etc.)
   var TERMINAL_PAGES = Object.assign(Object.create(null), { 'stock.html': 1, 'china_lookup.html': 1, 'hk_lookup.html': 1, 'canada_stock.html': 1, 'intl_stock.html': 1 });
+  // The ticker a Terminal-covered analyzer link points at (else null). Shared by the
+  // hover-prefetch and the click-reroute below so the two can never drift.
+  function terminalTicker(a) {
+    if (!a || a.target === '_blank') return null;
+    var href = a.getAttribute('href') || '', h = href.indexOf('#');
+    if (h < 0) return null;
+    var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
+    if (!TERMINAL_PAGES[page]) return null;       // only Terminal-covered analyzers
+    var t = href.slice(h + 1);
+    return t ? decodeURIComponent(t) : null;
+  }
+  // Warm the SPECIFIC destination on hover / touch intent so the click navigation lands
+  // on an already-fetched document (the origin is pre-connected above; this adds the
+  // ?sym= page itself). Deduped per ticker; a failed/uncacheable prefetch is a silent no-op.
+  var _mmPrefetched = Object.create(null);
+  function prefetchTerminal(t) {
+    if (!t || _mmPrefetched[t] || !document.head) return;
+    _mmPrefetched[t] = 1;
+    var l = document.createElement('link');
+    l.rel = 'prefetch'; l.as = 'document'; l.href = terminalUrl(t);
+    document.head.appendChild(l);
+  }
+  ['pointerover', 'touchstart'].forEach(function (evt) {
+    document.addEventListener(evt, function (e) {
+      if (!mmTerminalOn()) return;
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      prefetchTerminal(terminalTicker(a));
+    }, { capture: true, passive: true });
+  });
   document.addEventListener('click', function (e) {
     if (!mmTerminalOn() || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-    if (!a || a.target === '_blank') return;
-    var href = a.getAttribute('href') || '', h = href.indexOf('#');
-    if (h < 0) return;
-    var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
-    if (!TERMINAL_PAGES[page]) return;            // only Terminal-covered analyzers
-    var t = href.slice(h + 1);
+    var t = terminalTicker(a);
     if (!t) return;
     e.preventDefault();
-    location.href = terminalUrl(decodeURIComponent(t));
+    location.href = terminalUrl(t);
+  }, true);
+
+  /* ---- nb-spot data-href handler -------------------------------------------
+     The .nb-spot[data-href] spotlight chip carries a basket URL in data-href.
+     Post div-restructure the outer anchor no longer wraps the chip, so we need
+     an explicit delegated handler. stopPropagation prevents the card-body handler
+     (dashboard.html.j2) from double-navigating. Mirrors the nb-cau pattern. */
+  document.addEventListener('click', function (e) {
+    var chip = e.target && e.target.closest ? e.target.closest('.nb-spot[data-href]') : null;
+    if (!chip) return;
+    e.preventDefault(); e.stopPropagation();
+    var href = chip.getAttribute('data-href');
+    if (href) { location.href = href; }
   }, true);
 
   /* ---- account / profile panel loader -------------------------------------
@@ -645,9 +682,15 @@
   }
   function _isAuthReturn() {
     var h = location.hash || '', q = location.search || '';
-    // PKCE returns ?code=...; keep the legacy hash checks for robustness.
-    return /[?&]code=/.test(q) || /[?&]error=/.test(q) ||
-           h.indexOf('access_token=') >= 0 || /[#&]error=/.test(h);
+    // PKCE returns the auth code in the query (?code=), never in the hash. Errors
+    // can arrive in either the query (?error=) or the fragment (#error=), e.g. a
+    // provider-side denial. We deliberately do NOT treat a bare #access_token=
+    // hash as an auth return: under flowType:'pkce' (getSupabaseClient) the
+    // vendored gotrue-js _getSessionFromURL throws "Not a valid PKCE flow url."
+    // on any non-?code= URL, so hash tokens are never consumed and a pasted
+    // #access_token= link cannot seed/fixate a session. (Verified against the
+    // gotrue-js in supabase.js.) The old access_token= clause was dead legacy.
+    return /[?&]code=/.test(q) || /[?&]error=/.test(q) || /[#&]error=/.test(h);
   }
   function _emitAuth(detail) {
     try { window.dispatchEvent(new CustomEvent('mdx-auth', { detail: detail })); }

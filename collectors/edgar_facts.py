@@ -13,12 +13,33 @@ KEYLESS but PAYLOAD-bound (3.5-7.5 MB/filer) — so this is a WEEKLY, resumable,
 capped drip (skip filers fetched within refresh_days), never a per-build fetch.
 Honest caveats (shown on the page): values are lagged to the filing date; some
 concepts are sparse on smaller filers (custom tags) — those years simply omit them.
+
+Each row carries `period_end` (the winning filing's TRUE fiscal period-end date)
+so consumers can gate not-yet-filed fiscal rows point-in-time (availability ≈
+period_end + reporting-lag). Rows written before this column existed have
+period_end=NaN until their next drip re-fetch re-stamps it (consumers keep
+un-stamped rows ungated — display-only, self-heals within the ~monthly refresh).
+
+BUG FIX NOTES (LT-1a, 2026-07-06):
+  shares: us-gaap:CommonStockSharesOutstanding lives in the "shares" XBRL unit, NOT
+    "USD". The BALANCE loop previously called _concept() with the default unit="USD",
+    returning an empty dict → all shares values were None. Fixed by extracting shares
+    separately with unit="shares", instant=True.  dei:EntityCommonStockSharesOutstanding
+    was considered as fallback but is only in the dei namespace (not us-gaap) and
+    contains cover-page counts (post-period-end), so it was NOT added.
+    WeightedAverageNumberOfDilutedSharesOutstanding is a FLOW concept (per-period
+    average) and should not mix with the point-in-time balance sheet count.
+  future-FY guard: rows whose period_end is in the future relative to run date are
+    dropped at the end of _statements_for(). This is the canonical PIT gate — the fy
+    XBRL field alone is unreliable (e.g. STX encodes their fiscal year count as fy=2027
+    when the actual period ends in June 2025). period_end (the 'end' date from the
+    winning filing entry) is the correct signal.
 """
 from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import pandas as pd
 
@@ -41,7 +62,35 @@ FLOW = {
     "cfo": ["NetCashProvidedByUsedInOperatingActivities",
             "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
     "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"],
+    # Coverage note: large-cap filers (AAPL, MSFT) stopped tagging standalone InterestExpense
+    # in recent filings; InterestAndDebtExpense fallback is also empty for them. This means
+    # interest_exp is NaN on the LATEST fiscal-year row for ~73% of tickers in the universe
+    # (statements.parquet latest-FY coverage ≈27%). The PANEL path (collectors/edgar.py,
+    # PIT-lagged fundamentals_panel.parquet) has broader multi-year coverage; interest_coverage
+    # via the statements consumer (_leverage latest-FY path) stays None for most large caps.
     "interest_exp": ["InterestExpense", "InterestAndDebtExpense"],
+    # Primary two are cash-flow-statement D&A add-backs (depletion + amortization included).
+    # Third fallback "Depreciation" is P&L depreciation only (no amortization, no depletion);
+    # a filer that tags DD&A in some years and only "Depreciation" in others will have a
+    # mixed D&A basis year-to-year (EBITDA denominator understated in fallback years).
+    # Coverage note: AAPL/MSFT/NVDA all use DepreciationDepletionAndAmortization; the third
+    # fallback is exercised only by non-standard filers and carries a basis caveat.
+    "depreciation": ["DepreciationDepletionAndAmortization", "DepreciationAndAmortization",
+                     "Depreciation"],
+    # --- W2 PR-H additions (Long-Hold Thesis Layer, 2026-07-06) ---
+    # SBC: share-based compensation (non-cash; needed for EBITDA proxy and FCF conversion).
+    # Only two fallbacks: ShareBasedCompensation (IS/CF SBC expense) and
+    # AllocatedShareBasedCompensationExpense (alternative label for the same P&L line).
+    # NOTE: ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstruments
+    # OtherThanOptionsVestedInPeriodTotalFairValue was intentionally excluded — that
+    # concept reports total fair-value-of-awards-VESTED (a footnote disclosure quantity),
+    # NOT the SBC expense charged to the income statement; merging them would silently
+    # corrupt the EBITDA proxy and FCF add-back for any filer that tags it without the
+    # primary concepts.
+    "sbc": ["ShareBasedCompensation", "AllocatedShareBasedCompensationExpense"],
+    # R&D: research and development expense (capital-allocation and moat-falsifier work)
+    "research_dev": ["ResearchAndDevelopmentExpense",
+                     "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost"],
 }
 BALANCE = {
     "assets": ["Assets"],
@@ -57,6 +106,16 @@ BALANCE = {
     "debt_lt": ["LongTermDebtNoncurrent", "LongTermDebt"],
     "debt_cur": ["LongTermDebtCurrent", "DebtCurrent"],
     "retained_earnings": ["RetainedEarningsAccumulatedDeficit"],
+    # NOTE: 'shares' is intentionally absent — shares live in the "shares" XBRL unit,
+    # not "USD". They are extracted separately in _statements_for() via BALANCE_SHARES.
+}
+# Concepts reported in the "shares" XBRL unit (not USD). Extracted with unit="shares".
+# Primary: us-gaap:CommonStockSharesOutstanding — the fiscal-year-end balance-sheet
+# share count, reported as an instant (point-in-time) concept.
+# dei:EntityCommonStockSharesOutstanding is NOT used: it is cover-page count (slightly
+# post-period-end), lives in the dei namespace (not us-gaap), and would require a
+# separate namespace lookup path.
+BALANCE_SHARES = {
     "shares": ["CommonStockSharesOutstanding"],
 }
 EPS = ["EarningsPerShareDiluted", "EarningsPerShareBasicAndDiluted"]
@@ -87,13 +146,18 @@ def _get_json(url: str, retries: int = 3):
     return None
 
 
-def _annual(entries: list, instant: bool = False) -> dict[int, float]:
-    """{fiscal_year: value} from a concept's unit list. Apple (and others) tag
-    quarterly figures with fp="FY" too, so for FLOW concepts we keep only the
-    FULL-YEAR period (start→end ≈ 365 days); for INSTANT balances we take the
-    fiscal year-end value. Keyed by the period's own fiscal year (the `fy` field
-    is correct on the full-year/year-end entry), latest-filed wins on restatement."""
-    best: dict[int, tuple[tuple, float]] = {}
+def _annual(entries: list, instant: bool = False) -> dict[int, tuple[float, str]]:
+    """{fiscal_year: (value, period_end)} from a concept's unit list. Apple (and
+    others) tag quarterly figures with fp="FY" too, so for FLOW concepts we keep
+    only the FULL-YEAR period (start→end ≈ 365 days); for INSTANT balances we take
+    the fiscal year-end value. Keyed by the period's own fiscal year (the `fy` field
+    is correct on the full-year/year-end entry), latest-filed wins on restatement.
+
+    `period_end` (the winning entry's `end` date) is carried out so consumers can
+    gate not-yet-filed fiscal rows: statements.parquet previously kept no filing/
+    period column, so a row for a fiscal year whose 10-K is not yet filed was
+    indistinguishable from a filed one (point-in-time leak — engine/moat_falsifiers)."""
+    best: dict[int, tuple[tuple, float, str]] = {}
     for e in entries or []:
         if e.get("fp") != "FY" or e.get("form") not in ANNUAL_FORMS:
             continue
@@ -112,17 +176,21 @@ def _annual(entries: list, instant: bool = False) -> dict[int, float]:
                 continue
         rank = (e.get("filed", ""), end)       # latest filing, then latest period-end
         if fy not in best or rank > best[fy][0]:
-            best[fy] = (rank, float(val))
-    return {fy: v for fy, (_r, v) in best.items()}
+            best[fy] = (rank, float(val), end)
+    return {fy: (v, end) for fy, (_r, v, end) in best.items()}
 
 
 def _concept(usgaap: dict, names: list[str], unit: str = "USD",
-             instant: bool = False) -> dict[int, float]:
+             instant: bool = False) -> tuple[dict[int, float], dict[int, str]]:
     """Merge a fallback chain ACROSS fiscal years — a filer often migrates tags
     over time (e.g. AAPL: Revenues pre-2019, RevenueFromContractWithCustomer after),
     so taking the first non-empty concept would only cover one era. Earlier names
-    in the chain win on a year both report."""
+    in the chain win on a year both report.
+
+    Returns ``({fy: value}, {fy: period_end})``. The fiscal-year-end is identical
+    across a filing's annual concepts, so the latest (max) `end` seen per fy is kept."""
     combined: dict[int, float] = {}
+    ends: dict[int, str] = {}
     for nm in names:
         node = usgaap.get(nm)
         if not node:
@@ -130,9 +198,11 @@ def _concept(usgaap: dict, names: list[str], unit: str = "USD",
         entries = node.get("units", {}).get(unit)
         if not entries:
             continue
-        for fy, val in _annual(entries, instant=instant).items():
+        for fy, (val, end) in _annual(entries, instant=instant).items():
             combined.setdefault(fy, val)
-    return combined
+            if end and (fy not in ends or end > ends[fy]):
+                ends[fy] = end
+    return combined, ends
 
 
 def _statements_for(cik: int) -> list[dict]:
@@ -145,18 +215,48 @@ def _statements_for(cik: int) -> list[dict]:
     if not usgaap:
         return []
     series: dict[str, dict[int, float]] = {}
+    period_ends: dict[int, str] = {}
+
+    def _absorb(ends: dict[int, str]) -> None:
+        for fy, end in ends.items():
+            if end and (fy not in period_ends or end > period_ends[fy]):
+                period_ends[fy] = end
+
     for key, names in FLOW.items():
-        series[key] = _concept(usgaap, names, instant=False)
+        series[key], _ends = _concept(usgaap, names, instant=False)
+        _absorb(_ends)
     for key, names in BALANCE.items():
-        series[key] = _concept(usgaap, names, instant=True)
-    series["eps_diluted"] = _concept(usgaap, EPS, unit="USD/shares", instant=False)
+        series[key], _ends = _concept(usgaap, names, instant=True)
+        _absorb(_ends)
+    # Shares are in the "shares" XBRL unit (not USD) — must be extracted separately.
+    # us-gaap:CommonStockSharesOutstanding is the fiscal-year-end balance-sheet share
+    # count (instant concept). The BALANCE loop above uses unit="USD" (default) so
+    # it returns an empty dict for shares → was always None before this fix.
+    for key, names in BALANCE_SHARES.items():
+        series[key], _ends = _concept(usgaap, names, unit="shares", instant=True)
+        _absorb(_ends)
+    series["eps_diluted"], _ends = _concept(usgaap, EPS, unit="USD/shares", instant=False)
+    _absorb(_ends)
 
     years = sorted({fy for s in series.values() for fy in s}, reverse=True)[:KEEP_YEARS]
+    today_iso = date.today().isoformat()
     rows = []
     for fy in sorted(years):
         rec = {"fy": fy}
         for key, s in series.items():
             rec[key] = s.get(fy)
+        # PIT: fiscal period-end of this FY (the winning filing's `end`), so consumers
+        # can drop rows whose 10-K was not yet filed at a given as-of date.
+        rec["period_end"] = period_ends.get(fy)
+        # Future-FY guard: drop rows whose fiscal period has not yet closed.
+        # The XBRL fy field is unreliable (e.g. STX tags their FY ending June 2025 as
+        # fy=2027). period_end (the winning entry's 'end' date) is the canonical signal.
+        # A row is only dropped when period_end IS set and is strictly in the future;
+        # rows with period_end=None are kept (display-only — they self-heal on next drip).
+        pe = rec.get("period_end")
+        if pe and pe > today_iso:
+            log.debug("edgar_facts: dropping future-period row fy=%s period_end=%s", fy, pe)
+            continue
         # derive revenue from gross profit + COGS when the revenue tag is absent
         # for that year (common when a filer only tags GrossProfit + COGS)
         if rec.get("revenue") is None and rec.get("gross_profit") is not None and rec.get("cogs") is not None:
@@ -232,12 +332,22 @@ def fetch_statements(force: bool = False, max_new: int = 200,
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     import sys
-    ts = sys.argv[1:] or ["AAPL"]
-    df = fetch_statements(force=True, max_new=len(ts), tickers=ts)
+    # Usage: python -m collectors.edgar_facts [TICKER ...] [--limit N]
+    # --limit N: cap max_new to N (smoke-test path; default = len(tickers))
+    args = sys.argv[1:]
+    limit: int | None = None
+    if "--limit" in args:
+        idx = args.index("--limit")
+        limit = int(args[idx + 1])
+        args = args[:idx] + args[idx + 2:]
+    ts = args or ["AAPL"]
+    max_new = limit if limit is not None else len(ts)
+    df = fetch_statements(force=True, max_new=max_new, tickers=ts)
     for t in ts:
         sub = df[df["ticker"] == t].sort_values("fy") if "ticker" in df else df
         print(f"\n=== {t} ===")
-        cols = [c for c in ("fy", "revenue", "gross_profit", "op_income", "ni",
-                            "eps_diluted", "cfo", "capex", "assets", "equity",
+        cols = [c for c in ("fy", "period_end", "revenue", "gross_profit", "op_income", "ni",
+                            "eps_diluted", "cfo", "capex", "interest_exp", "depreciation",
+                            "sbc", "research_dev", "assets", "equity", "shares",
                             "cur_assets", "cur_liab", "debt_lt", "cash") if c in sub.columns]
         print(sub[cols].to_string(index=False))

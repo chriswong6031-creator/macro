@@ -44,10 +44,15 @@ Project: `https://fsldfzlxyavsuwqbceod.supabase.co` (dashboard → that project)
      Client Secret → enable → Save.
 
 3. **Allow the site's origins** (Authentication → **URL Configuration**):
-   - **Site URL:** `https://chriswong6031-creator.github.io/macro/`
+   - **Site URL:** `https://mastermind-x.com` — the apex, **not** `www.`
+     (www has broken TLS at the Tencent EdgeOne edge as of 2026-07-05; a www
+     Site URL would strand every fallback redirect on a host that can't
+     complete a handshake).
    - **Redirect URLs (add each):**
-     - `https://chriswong6031-creator.github.io/macro/**`
-     - any custom domain you later attach, e.g. `https://your-domain.com/**`
+     - `https://mastermind-x.com/**`
+     - `https://app.mastermind-x.com/**` (Terminal — shared SSO session)
+     - `https://chriswong6031-creator.github.io/macro/**` (Pages mirror)
+     - any other subdomain where sign-in is *initiated*
      - for local testing: `http://localhost:*/**`
    - OAuth + the implicit flow return to the page the user started on, so the page's
      exact origin must be allow-listed here.
@@ -72,7 +77,21 @@ After this, email/password and Google sign-in work end-to-end on the live site.
 - **PKCE flow**, not implicit: the OAuth return carries a one-time `?code=` (not
   tokens). It's useless without the `code_verifier` stored locally before redirect,
   so tokens never land in the URL/history and a pasted `#access_token=` link can't
-  seed a session (no login-CSRF / fixation).
+  seed a session (no login-CSRF / fixation). This is the client in `theme.js`
+  (`getSupabaseClient`), baked into every dashboard page.
+- **Exception — the standalone-app account panel (`templates/account.js`) uses the
+  *implicit* flow, deliberately.** That client is created **only** on
+  `app.mastermind-x.com` (mode `standalone`); on the macro dashboard it runs in
+  `_macro` mode and never loads the SDK at all. The only auth it *initiates* is a
+  **magic-link OTP** (`signInWithOtp`) — it never calls `signInWithOAuth`. Implicit
+  is required there because PKCE stores the `code_verifier` in the requesting
+  browser, so a magic link opened on **another device** (typical for email) can't
+  complete the `?code=` exchange — PKCE would break cross-device sign-in. Trade-off:
+  on that property a pasted `#access_token=` hash *is* consumed
+  (`detectSessionInUrl`), so it lacks the anti-fixation guarantee the dashboard's
+  PKCE client has. The macro dashboard is unaffected. The proper fix (PKCE + a
+  6-digit OTP-code fallback for cross-device) belongs in — and must be verified
+  against — the standalone **app** (Terminal) repo, not this one.
 - **Cookie session is JS-readable** (no `HttpOnly` is possible for a client SDK).
   That's standard for Supabase on a static site; isolation is via RLS. Keep strict
   `textContent`/no-`innerHTML`-of-user-data discipline so any future XSS can't lift

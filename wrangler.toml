@@ -1,14 +1,27 @@
 # Cloudflare Workers Builds runs `npx wrangler deploy` from the REPOSITORY ROOT.
 # With no config here, wrangler auto-detects the repo as a static site
 # (Framework: Static, `npx cecil build` -> `_site`) and the build FAILS because
-# `_site` is never produced. That misdetection is the persistent
-# "Workers Builds: macro" red X (the worker/ lockfile fix never applied, because
-# the build never runs inside worker/).
+# `_site` is never produced. This root config pins the build to the real, tiny
+# live-quotes Worker (dormant — its URL is not wired into the site, see
+# worker/DEPLOY.md; site/live_config.js ships LIVE_QUOTES_URL=""). Local/manual
+# deploys still use worker/wrangler.toml.
 #
-# This root config pins the build to the real, tiny live-quotes Worker so CI
-# deploys the "macro" service deterministically. The Worker is dormant (its URL
-# is not wired into the site — see worker/DEPLOY.md), so this just keeps the
-# build green. Local/manual deploys still use worker/wrangler.toml.
+# STATUS 2026-07-05: the pin (#737) kept the check green 2026-06-30 → 2026-07-04.
+# It went red with NO repo-side change — `npx wrangler@latest deploy --dry-run`
+# from the root still passes locally (wrangler 4.107.0). Builds queue serially
+# HOURS behind commits (every push, main + PR branches, queues a build of this
+# ~1.45GB-tree repo); the flip happened mid-queue at a precise wall-clock moment
+# (build success 2026-07-04 05:34:43Z, next build failure 05:42:09Z — commits 3h
+# apart, builds 8min apart), i.e. an account-side tripwire, not a commit. PRIME
+# SUSPECT: monthly build-minutes quota exhausted — #737 turned cheap fast-fails
+# into real multi-minute builds, and the July cycle (from 07-01) burned at agent
+# -fleet push velocity until it died 07-04 ~05:40Z. Runner-up: build token rolled
+# during the R2 token work of 07-01/07-04. Build log is dashboard-only
+# (dash.cloudflare.com → Workers & Pages → macro → Builds). Dashboard fixes:
+# disconnect the repo from Workers Builds (the deploy is ceremonial), or set
+# build-watch-paths to worker/** + wrangler.toml so pushes stop queueing builds.
+# Nothing in this repo can cure it. The check is NOT required (main is
+# unprotected): red X pollutes, never blocks merges.
 name = "macro"
 main = "worker/quotes.worker.js"
 compatibility_date = "2024-11-01"

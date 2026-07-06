@@ -1,0 +1,438 @@
+{
+  "study_id": "P1_2B",
+  "timestamp": "2026-07-05T17:59:05.602186Z",
+  "spec": "research/entry_intel/P1_2B_TAXONOMY_EXTENSION_SPEC.md",
+  "era_memo": "P0_MEASUREMENT_MEMO.md v1.0 + \u00a76 v1.1 amendments (2026-07-05)",
+  "era_start": "2022-06-30",
+  "era_end": "2026-07-02",
+  "bh_family": "ei_gate_pnl_p12b",
+  "bh_m": 16,
+  "bh_q_threshold": 0.1,
+  "original_md5": "906175f9eb8caa351ed6d7d5c56265d3",
+  "retagged_md5": "b8b24c4c8e87d763f984a80564a8a9c5",
+  "validation_gates": {
+    "V1_fire_identity": true,
+    "V2_near_miss_identity": true,
+    "V2b_verdict_type_identity": true
+  },
+  "v3_counts": {
+    "freshness_expired_verdict_grade": 7319,
+    "tier_cutoff_verdict_grade": 131,
+    "V3_freshness_expired_pass": true,
+    "V3_tier_cutoff_pass": true
+  },
+  "n_tier_cutoff_tagged": 158,
+  "n_freshness_expired_tagged": 8789,
+  "primary_rows": 834267,
+  "n_clusters": 44,
+  "stamped_rows_excluded": 0,
+  "n_board_fire_total": 11069,
+  "n_board_fire_matchable": 2471,
+  "n_significant_bh": 0,
+  "results": {
+    "freshness_expired": {
+      "n_total": 7319,
+      "n_matchable": 1972,
+      "n_survived": 872,
+      "n_board_fire_matched": 1097,
+      "prune_rate_pct": 55.8,
+      "trials": {
+        "B01": {
+          "horizon": 21,
+          "axis": "stop_out",
+          "delta": -0.01594945788383484,
+          "raw_p": 0.5413,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B02": {
+          "horizon": 21,
+          "axis": "dead_money",
+          "delta": 0.0012001097202301025,
+          "raw_p": 0.9501,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B03": {
+          "horizon": 21,
+          "axis": "cushion",
+          "delta": -0.009384438395500183,
+          "raw_p": 0.6205,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B04": {
+          "horizon": 21,
+          "axis": "clean_lift",
+          "delta": 0.024133801460266113,
+          "raw_p": 0.5025,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B05": {
+          "horizon": 63,
+          "axis": "stop_out",
+          "delta": -0.007604122161865234,
+          "raw_p": 0.7808,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B06": {
+          "horizon": 63,
+          "axis": "dead_money",
+          "delta": 0.004204544238746166,
+          "raw_p": 0.7125,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B07": {
+          "horizon": 63,
+          "axis": "cushion",
+          "delta": -0.030203305184841156,
+          "raw_p": 0.5145,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B08": {
+          "horizon": 63,
+          "axis": "clean_lift",
+          "delta": 0.03360290825366974,
+          "raw_p": 0.506,
+          "bh_q": 1.0,
+          "bh_reject": false
+        }
+      },
+      "delta_by_horizon": {
+        "21": {
+          "stop_out": -0.01594945788383484,
+          "dead_money": 0.0012001097202301025,
+          "cushion": -0.009384438395500183,
+          "clean_lift": 0.024133801460266113
+        },
+        "63": {
+          "stop_out": -0.007604122161865234,
+          "dead_money": 0.004204544238746166,
+          "cushion": -0.030203305184841156,
+          "clean_lift": 0.03360290825366974
+        }
+      },
+      "pval_by_horizon": {
+        "21": {
+          "stop_out": 0.5413,
+          "dead_money": 0.9501,
+          "cushion": 0.6205,
+          "clean_lift": 0.5025
+        },
+        "63": {
+          "stop_out": 0.7808,
+          "dead_money": 0.7125,
+          "cushion": 0.5145,
+          "clean_lift": 0.506
+        }
+      },
+      "rates_by_horizon": {
+        "21": {
+          "rej": {
+            "n": 872,
+            "n_stopped": 343,
+            "n_dead": 164,
+            "n_cushion": 119,
+            "n_lift": 246,
+            "stop_out_rate": 0.393348623853211,
+            "dead_money_rate": 0.18807339449541285,
+            "cushion_rate": 0.13646788990825687,
+            "clean_lift_rate": 0.28211009174311924,
+            "wilson_lb_stop": 0.36650633528776577,
+            "wilson_lb_dead": 0.16728210839575397,
+            "wilson_lb_cushion": 0.1184657684126556,
+            "wilson_lb_lift": 0.2577443850445132
+          },
+          "fire": {
+            "n": 1097,
+            "n_stopped": 449,
+            "n_dead": 205,
+            "n_cushion": 160,
+            "n_lift": 283,
+            "stop_out_rate": 0.40929808568824066,
+            "dead_money_rate": 0.18687329079307202,
+            "cushion_rate": 0.14585232452142205,
+            "clean_lift_rate": 0.25797629899726526,
+            "wilson_lb_stop": 0.385129138439844,
+            "wilson_lb_dead": 0.16829184084060947,
+            "wilson_lb_cushion": 0.1291935218892863,
+            "wilson_lb_lift": 0.23686034166231504
+          }
+        },
+        "63": {
+          "rej": {
+            "n": 872,
+            "n_stopped": 518,
+            "n_dead": 14,
+            "n_cushion": 108,
+            "n_lift": 232,
+            "stop_out_rate": 0.5940366972477065,
+            "dead_money_rate": 0.016055045871559634,
+            "cushion_rate": 0.12385321100917432,
+            "clean_lift_rate": 0.26605504587155965,
+            "wilson_lb_stop": 0.5664302598302672,
+            "wilson_lb_dead": 0.010402892645524594,
+            "wilson_lb_cushion": 0.10665778763311948,
+            "wilson_lb_lift": 0.24218980561921044
+          },
+          "fire": {
+            "n": 1097,
+            "n_stopped": 660,
+            "n_dead": 13,
+            "n_cushion": 169,
+            "n_lift": 255,
+            "stop_out_rate": 0.601640838650866,
+            "dead_money_rate": 0.011850501367365542,
+            "cushion_rate": 0.15405651777575205,
+            "clean_lift_rate": 0.2324521422060164,
+            "wilson_lb_stop": 0.5771046939507418,
+            "wilson_lb_dead": 0.007550993581851683,
+            "wilson_lb_cushion": 0.13697991462715026,
+            "wilson_lb_lift": 0.21214710855416968
+          }
+        }
+      },
+      "sign_stable": false,
+      "sign_details": {
+        "h1": {
+          "n_rej": 254,
+          "n_fire": 395,
+          "delta_stop_21": 0.019,
+          "delta_cushion_21": -0.0248
+        },
+        "h2": {
+          "n_rej": 618,
+          "n_fire": 702,
+          "delta_stop_21": -0.0356,
+          "delta_cushion_21": -0.0029
+        },
+        "sign_stop_agrees": false,
+        "sign_cush_agrees": true
+      },
+      "is_thin": false,
+      "verdict": "KEEP",
+      "verdict_notes": "No significant axis at q\u22640.10 (KEEP by default)",
+      "bh_q_21": {
+        "stop_out": 1.0,
+        "dead_money": 1.0,
+        "cushion": 1.0,
+        "clean_lift": 1.0
+      },
+      "bh_q_63": {
+        "stop_out": 1.0,
+        "dead_money": 1.0,
+        "cushion": 1.0,
+        "clean_lift": 1.0
+      },
+      "n_clusters_rej": 0
+    },
+    "tier_cutoff": {
+      "n_total": 131,
+      "n_matchable": 38,
+      "n_survived": 10,
+      "n_board_fire_matched": 28,
+      "prune_rate_pct": 73.7,
+      "trials": {
+        "B09": {
+          "horizon": 21,
+          "axis": "stop_out",
+          "delta": 0.12857142090797424,
+          "raw_p": 0.5676,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B10": {
+          "horizon": 21,
+          "axis": "dead_money",
+          "delta": 0.02142857015132904,
+          "raw_p": 0.8361,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B11": {
+          "horizon": 21,
+          "axis": "cushion",
+          "delta": 0.08571429550647736,
+          "raw_p": 0.6128,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B12": {
+          "horizon": 21,
+          "axis": "clean_lift",
+          "delta": -0.23571425676345825,
+          "raw_p": 0.5717,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B13": {
+          "horizon": 63,
+          "axis": "stop_out",
+          "delta": -0.021428555250167847,
+          "raw_p": 0.8344,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B14": {
+          "horizon": 63,
+          "axis": "dead_money",
+          "delta": 0.0,
+          "raw_p": 1.0,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B15": {
+          "horizon": 63,
+          "axis": "cushion",
+          "delta": -0.00714285671710968,
+          "raw_p": 0.9523,
+          "bh_q": 1.0,
+          "bh_reject": false
+        },
+        "B16": {
+          "horizon": 63,
+          "axis": "clean_lift",
+          "delta": 0.02857142686843872,
+          "raw_p": 0.7501,
+          "bh_q": 1.0,
+          "bh_reject": false
+        }
+      },
+      "delta_by_horizon": {
+        "21": {
+          "stop_out": 0.12857142090797424,
+          "dead_money": 0.02142857015132904,
+          "cushion": 0.08571429550647736,
+          "clean_lift": -0.23571425676345825
+        },
+        "63": {
+          "stop_out": -0.021428555250167847,
+          "dead_money": 0.0,
+          "cushion": -0.00714285671710968,
+          "clean_lift": 0.02857142686843872
+        }
+      },
+      "pval_by_horizon": {
+        "21": {
+          "stop_out": 0.5676,
+          "dead_money": 0.8361,
+          "cushion": 0.6128,
+          "clean_lift": 0.5717
+        },
+        "63": {
+          "stop_out": 0.8344,
+          "dead_money": 1.0,
+          "cushion": 0.9523,
+          "clean_lift": 0.7501
+        }
+      },
+      "rates_by_horizon": {
+        "21": {
+          "rej": {
+            "n": 10,
+            "n_stopped": 2,
+            "n_dead": 2,
+            "n_cushion": 3,
+            "n_lift": 3,
+            "stop_out_rate": 0.2,
+            "dead_money_rate": 0.2,
+            "cushion_rate": 0.3,
+            "clean_lift_rate": 0.3,
+            "wilson_lb_stop": 0.06855179292535483,
+            "wilson_lb_dead": 0.06855179292535483,
+            "wilson_lb_cushion": 0.12686685286055388,
+            "wilson_lb_lift": 0.12686685286055388
+          },
+          "fire": {
+            "n": 28,
+            "n_stopped": 2,
+            "n_dead": 5,
+            "n_cushion": 6,
+            "n_lift": 15,
+            "stop_out_rate": 0.07142857142857142,
+            "dead_money_rate": 0.17857142857142858,
+            "cushion_rate": 0.21428571428571427,
+            "clean_lift_rate": 0.5357142857142857,
+            "wilson_lb_stop": 0.023923433422617924,
+            "wilson_lb_dead": 0.089726421128832,
+            "wilson_lb_cushion": 0.1150796461087611,
+            "wilson_lb_lift": 0.38448175493417713
+          }
+        },
+        "63": {
+          "rej": {
+            "n": 10,
+            "n_stopped": 3,
+            "n_dead": 0,
+            "n_cushion": 1,
+            "n_lift": 6,
+            "stop_out_rate": 0.3,
+            "dead_money_rate": 0.0,
+            "cushion_rate": 0.1,
+            "clean_lift_rate": 0.6,
+            "wilson_lb_stop": 0.12686685286055388,
+            "wilson_lb_dead": 0.0,
+            "wilson_lb_cushion": 0.02263232984000629,
+            "wilson_lb_lift": 0.35161957197890165
+          },
+          "fire": {
+            "n": 28,
+            "n_stopped": 9,
+            "n_dead": 0,
+            "n_cushion": 3,
+            "n_lift": 16,
+            "stop_out_rate": 0.32142857142857145,
+            "dead_money_rate": 0.0,
+            "cushion_rate": 0.10714285714285714,
+            "clean_lift_rate": 0.5714285714285714,
+            "wilson_lb_stop": 0.19763345231499405,
+            "wilson_lb_dead": 0.0,
+            "wilson_lb_cushion": 0.04363597045612956,
+            "wilson_lb_lift": 0.41809057946910355
+          }
+        }
+      },
+      "sign_stable": null,
+      "sign_details": {},
+      "is_thin": true,
+      "verdict": "INSUFFICIENT-POWER",
+      "verdict_notes": "Verdict of record under registered no-overwrite rule (spec \u00a72.1): n=37 (null-only rows) < 50 V3 floor. Post-hoc exploratory variant (n=131, overwrote 121 board_rank_cutoff rows contrary to spec \u00a72.1): INCONCLUSIVE-THIN (n_survived=10 < 25; \u00a73.4 POWER NOTE governs over AC-3 n<10 floor per REVIEW_P1_2B.md ADVISORY-2).",
+      "bh_q_21": {
+        "stop_out": 1.0,
+        "dead_money": 1.0,
+        "cushion": 1.0,
+        "clean_lift": 1.0
+      },
+      "bh_q_63": {
+        "stop_out": 1.0,
+        "dead_money": 1.0,
+        "cushion": 1.0,
+        "clean_lift": 1.0
+      },
+      "n_clusters_rej": 0,
+      "n_registered_null_only": 37,
+      "exploratory_variant": {
+        "label": "post-hoc exploratory trial (recorded per species \u00a78; overwrote 121 board_rank_cutoff rows contrary to spec \u00a72.1)",
+        "n_total": 131,
+        "n_overwritten_board_rank_cutoff": 121,
+        "verdict": "INCONCLUSIVE-THIN",
+        "verdict_basis": "n_survived=10 < 25 per \u00a73.4 POWER NOTE; spec contradiction (n<10 AC-3 vs n<25 \u00a73.4) resolved in \u00a73.4's favor per REVIEW_P1_2B.md ADVISORY-2"
+      }
+    }
+  },
+  "adjudication": {
+    "date": "2026-07-05",
+    "authority": "Fable",
+    "source": "REVIEW_P1_2B.md",
+    "changes": [
+      "tier_cutoff verdict-of-record changed to INSUFFICIENT-POWER (registered rule n=37 < 50 V3 floor)",
+      "n=131 override variant re-labeled post-hoc exploratory (overwrote 121 board_rank_cutoff rows contrary to spec \u00a72.1)",
+      "exploratory variant verdict label changed KEEP-THIN -> INCONCLUSIVE-THIN (\u00a73.4 n<25 floor governs over AC-3 n<10; spec contradiction resolved in \u00a73.4's favor)",
+      "freshness_expired KEEP unchanged (n=872, registered rule, no overwrite)"
+    ]
+  }
+}

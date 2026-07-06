@@ -1,0 +1,189 @@
+{
+  "pull_timestamp_utc": "2026-07-05T08:47:37.219409+00:00",
+  "universe": [
+    "XLK",
+    "XLV",
+    "XLF",
+    "XLY",
+    "XLC",
+    "XLI",
+    "XLP",
+    "XLE",
+    "XLU",
+    "XLRE",
+    "XLB",
+    "SPY"
+  ],
+  "ohlc_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc",
+  "note": "Unadjusted OHLC (auto_adjust=False); dividend drag unmodeled per W0_2_SPEC \u00a72. Store is gitignored and reproducible from this collector + manifest.",
+  "tickers": {
+    "XLK": {
+      "rows": 6923,
+      "date_start": "1998-12-22",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLK.parquet"
+    },
+    "XLV": {
+      "rows": 6923,
+      "date_start": "1998-12-22",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLV.parquet"
+    },
+    "XLF": {
+      "rows": 6923,
+      "date_start": "1998-12-22",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLF.parquet"
+    },
+    "XLY": {
+      "rows": 6923,
+      "date_start": "1998-12-22",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLY.parquet"
+    },
+    "XLC": {
+      "rows": 2020,
+      "date_start": "2018-06-19",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLC.parquet"
+    },
+    "XLI": {
+      "rows": 6923,
+      "date_start": "1998-12-22",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLI.parquet"
+    },
+    "XLP": {
+      "rows": 6923,
+      "date_start": "1998-12-22",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLP.parquet"
+    },
+    "XLE": {
+      "rows": 6923,
+      "date_start": "1998-12-22",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLE.parquet"
+    },
+    "XLU": {
+      "rows": 6923,
+      "date_start": "1998-12-22",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLU.parquet"
+    },
+    "XLRE": {
+      "rows": 2698,
+      "date_start": "2015-10-08",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLRE.parquet"
+    },
+    "XLB": {
+      "rows": 6923,
+      "date_start": "1998-12-22",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/XLB.parquet"
+    },
+    "SPY": {
+      "rows": 8413,
+      "date_start": "1993-01-29",
+      "date_end": "2026-07-02",
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume"
+      ],
+      "path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-solomon-5c282d/data/yahoo_ohlc/SPY.parquet"
+    }
+  }
+}

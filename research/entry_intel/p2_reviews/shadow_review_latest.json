@@ -1,0 +1,6 @@
+{
+  "generated_at": "2026-07-05",
+  "ledger_status": "absent_or_empty",
+  "flip_eligible": false,
+  "flip_verdict": "NOT FLIP ELIGIBLE \u2014 ledger absent or empty; accrual not started"
+}

@@ -913,16 +913,25 @@
     { k:'trailing_pe', en:'P/E (trailing)', zh:'市盈率（历史）', kind:'x' },
     { k:'price_to_book', en:'Price / book', zh:'市净率', kind:'x' },
     { k:'price_to_sales', en:'Price / sales', zh:'市销率', kind:'x' },
+    { k:'ev_to_sales', en:'EV / sales', zh:'企业价值/销售额', kind:'x' },
+    { k:'ev_to_ebit', en:'EV / EBIT', zh:'企业价值/息税前利润', kind:'x' },
+    { k:'ev_to_ebitda', en:'EV / EBITDA', zh:'企业价值/EBITDA', kind:'x' },
     { k:'earnings_yield', en:'Earnings yield', zh:'盈利收益率', kind:'pct' },
     { k:'fcf_proxy_yield', en:'FCF yield (pre-capex)', zh:'自由现金流收益率', kind:'pct' },
+    { k:'fcf_yield_true', en:'FCF yield (true)', zh:'自由现金流收益率(真实)', kind:'pct' },
+    { k:'price_to_fcf', en:'Price / FCF', zh:'价格/自由现金流', kind:'x' },
     { k:'shareholder_yield', en:'Shareholder yield', zh:'股东回报率', kind:'pct' } ];
   var FROWS = [
     { en:'Revenue', zh:'营收', get:function(f){return f.raw && f.raw.revenue;}, fmt:'num', chg:function(f){return f.rev_growth;} },
     { en:'Gross margin', zh:'毛利率', get:function(f){return f.gross_margin;}, fmt:'pct' },
+    { en:'Operating margin', zh:'营业利润率', get:function(f){return f.op_margin;}, fmt:'pct' },
     { en:'Net margin', zh:'净利率', get:function(f){return f.net_margin;}, fmt:'pct' },
     { en:'Net income', zh:'净利润', get:function(f){return f.raw && f.raw.ni;}, fmt:'num', chg:function(f){return f.ni_growth;}, spark:function(f){return f.spark && f.spark.ni;} },
     { en:'FCF margin', zh:'自由现金流利润率', get:function(f){return f.fcf_margin;}, fmt:'pct' },
-    { en:'Return on equity', zh:'净资产收益率', get:function(f){return f.roe;}, fmt:'pct' } ];
+    { en:'Return on equity', zh:'净资产收益率', get:function(f){return f.roe;}, fmt:'pct' },
+    { en:'ROCE', zh:'资本回报率', get:function(f){return f.roce;}, fmt:'pct' },
+    { en:'Gross profit / assets', zh:'毛利润/资产', get:function(f){return f.gp_assets != null ? f.gp_assets * 100 : null;}, fmt:'pct' },
+    { en:'R&D / sales', zh:'研发费用/营收', get:function(f){return f.rd_sales;}, fmt:'pct' } ];
   var ZL = { value:['Value','价值'], profitability:['Profitability','盈利能力'], quality:['Quality','质量'],
              investment:['Investment','投资'], payout:['Payout','股东回报'], low_vol:['Low volatility','低波动'],
              low_beta:['Low beta','低贝塔'], accruals:['Low accruals','低应计'], short_interest:['Low short int.','低做空'] };
@@ -1233,6 +1242,10 @@
       more.push(finrow(lz('Debt / assets','负债／资产'), fin.debt_to_assets, 'pct'));
       more.push(finrow(lz('Asset growth (YoY)','资产增长（同比）'), fin.asset_growth, 'pct'));
       more.push(finrow(lz('Accruals (lower = better)','应计（越低越好）'), fin.accruals == null ? null : fin.accruals * 100, 'pct'));
+      // Leverage health: current ratio + quick ratio from statements layer (Financials-suppressed)
+      var lev = d.leverage_ratios || {};
+      if (lev.current_ratio != null) more.push(finrow(lz('Current ratio','流动比率'), lev.current_ratio, 'num'));
+      if (lev.quick_ratio   != null) more.push(finrow(lz('Quick ratio','速动比率'),   lev.quick_ratio,   'num'));
       // Piotroski F + Altman Z health chips (real when companyfacts present, else stub)
       var hz = [];
       if (my && my.piotroski) {

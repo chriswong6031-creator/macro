@@ -1,0 +1,298 @@
+{
+ "batch": "ota-w3-round1",
+ "created": "2026-07-06",
+ "grammar_required": "1.2.0",
+ "specs": [
+  {
+   "id": "SEQ_WASHOUT_THEN_KXD",
+   "family": "F-SEQ",
+   "name": "Washout then K-over-D turn",
+   "mechanism_en": "Weekly washout first, THEN the StochRSI K-over-D upcross from oversold within 15 sessions: the operator's basing ladder ordered causally instead of simultaneously.",
+   "entry_rule": {
+    "sequence": {
+     "first": {
+      "col": "washout_w",
+      "op": "gt",
+      "value": 0
+     },
+     "then": {
+      "all": [
+       {
+        "col": "stochrsi_w_k",
+        "op": "gt",
+        "value_col": "stochrsi_w_d"
+       },
+       {
+        "col": "stochrsi_w_k",
+        "op": "lt",
+        "value": 40
+       }
+      ]
+     },
+     "within_sessions": 15
+    }
+   },
+   "cooldown_sessions": 10
+  },
+  {
+   "id": "SEQ_VBOTTOM_ACCEL",
+   "family": "F-SEQ",
+   "name": "V-bottom acceleration flip",
+   "mechanism_en": "Sharp weekly downdraft (vel_1w < -1.5%/wk) followed within 10 sessions by the acceleration z-score crossing above zero: the V-bottom shape.",
+   "entry_rule": {
+    "sequence": {
+     "first": {
+      "col": "vel_1w",
+      "op": "lt",
+      "value": -0.015
+     },
+     "then": {
+      "col": "accel_z",
+      "op": "crossed_above",
+      "value": 0
+     },
+     "within_sessions": 10
+    }
+   },
+   "cooldown_sessions": 10
+  },
+  {
+   "id": "SEQ_CAPITULATION_PERSIST",
+   "family": "F-SEQ",
+   "name": "Capitulation then persistence resumes",
+   "mechanism_en": "A one-day capitulation print (ret < -3%) followed within 10 sessions by RS persistence recovering above 0.55: forced selling absorbed, trend participation resuming.",
+   "entry_rule": {
+    "sequence": {
+     "first": {
+      "col": "ret",
+      "op": "lt",
+      "value": -0.03
+     },
+     "then": {
+      "col": "persistence",
+      "op": "gt",
+      "value": 0.55
+     },
+     "within_sessions": 10
+    }
+   },
+   "cooldown_sessions": 15
+  },
+  {
+   "id": "SEQ_MTF_CONFLUENCE",
+   "family": "F-SEQ",
+   "name": "Weekly oversold then daily velocity flip",
+   "mechanism_en": "Weekly StochRSI K below 20 first, THEN the daily velocity spread (vel_1w - vel_3m) crossing positive within 8 sessions: the multi-timeframe confluence engine the operator trades.",
+   "entry_rule": {
+    "sequence": {
+     "first": {
+      "col": "stochrsi_w_k",
+      "op": "lt",
+      "value": 20
+     },
+     "then": {
+      "col": "accel",
+      "op": "crossed_above",
+      "value": 0
+     },
+     "within_sessions": 8
+    }
+   },
+   "cooldown_sessions": 10
+  },
+  {
+   "id": "SEQ_RELIEF_THEN_TURN",
+   "family": "F-SEQ",
+   "name": "Credit relief then washout turn",
+   "mechanism_en": "High-yield spread widening stops FIRST (hy_oas_chg_10d crosses below 0), THEN a washout K-over-D turn within 10 sessions: macro pressure release ordered before the technical turn.",
+   "entry_rule": {
+    "sequence": {
+     "first": {
+      "col": "hy_oas_chg_10d",
+      "op": "crossed_below",
+      "value": 0
+     },
+     "then": {
+      "all": [
+       {
+        "col": "washout_w",
+        "op": "gt",
+        "value": 0
+       },
+       {
+        "col": "stochrsi_w_k",
+        "op": "gt",
+        "value_col": "stochrsi_w_d"
+       }
+      ]
+     },
+     "within_sessions": 10
+    }
+   },
+   "cooldown_sessions": 10
+  },
+  {
+   "id": "SEQ_TLT_RELIEF_WASHOUT",
+   "family": "F-SEQ",
+   "name": "Rate relief then sector washout",
+   "mechanism_en": "Rates rally first (tlt_ret_10d crosses above 0), THEN a sector weekly washout within 10 sessions: buys rate-sensitive capitulations after the rate headwind relents.",
+   "entry_rule": {
+    "sequence": {
+     "first": {
+      "col": "tlt_ret_10d",
+      "op": "crossed_above",
+      "value": 0
+     },
+     "then": {
+      "col": "washout_w",
+      "op": "gt",
+      "value": 0
+     },
+     "within_sessions": 10
+    }
+   },
+   "cooldown_sessions": 10
+  },
+  {
+   "id": "SEQ_DIP_RESUME",
+   "family": "F-DIP",
+   "name": "Dip inside rotation then re-ignition",
+   "mechanism_en": "A down day inside an active same-node IN rotation, THEN acceleration flips positive within 8 sessions: buys the first pullback's resolution, not the pullback itself.",
+   "entry_rule": {
+    "sequence": {
+     "first": {
+      "all": [
+       {
+        "episode_event": {
+         "direction": "in",
+         "tier": "onset",
+         "complex_scope": "same",
+         "within_sessions": 15,
+         "min_count": 1
+        }
+       },
+       {
+        "col": "ret",
+        "op": "lt",
+        "value": -0.01
+       }
+      ]
+     },
+     "then": {
+      "col": "accel_z",
+      "op": "crossed_above",
+      "value": 0
+     },
+     "within_sessions": 8
+    }
+   },
+   "cooldown_sessions": 10
+  },
+  {
+   "id": "DIP_IN_EPISODE_K40",
+   "family": "F-DIP",
+   "name": "Oversold pullback inside active rotation",
+   "mechanism_en": "Weekly StochRSI K crossing below 40 while the node's own IN rotation is active: a pullback trigger inside an armed condition (condition and trigger separated).",
+   "entry_rule": {
+    "all": [
+     {
+      "episode_event": {
+       "direction": "in",
+       "tier": "onset",
+       "complex_scope": "same",
+       "within_sessions": 15,
+       "min_count": 1
+      }
+     },
+     {
+      "col": "stochrsi_w_k",
+      "op": "crossed_below",
+      "value": 40
+     }
+    ]
+   },
+   "cooldown_sessions": 10
+  },
+  {
+   "id": "DIP_IN_CONFIRMED_RET",
+   "family": "F-DIP",
+   "name": "Down day inside confirmed rotation",
+   "mechanism_en": "A -1.5% down day while the node's IN rotation is at confirmed tier: dip-buying inside confirmed episodes \u2014 the family the OTA assessment flagged as unmeasured, now measured at the reversion ruler.",
+   "entry_rule": {
+    "all": [
+     {
+      "episode_event": {
+       "direction": "in",
+       "tier": "confirmed",
+       "complex_scope": "same",
+       "within_sessions": 20,
+       "min_count": 1
+      }
+     },
+     {
+      "col": "ret",
+      "op": "lt",
+      "value": -0.015
+     }
+    ]
+   },
+   "cooldown_sessions": 5
+  },
+  {
+   "id": "DEST_OPP_OUT_LEADER",
+   "family": "F-DEST",
+   "name": "Displacement destination leader",
+   "mechanism_en": "At least two opposite-complex nodes in outflow onset while THIS node already leads (rs>0) and is not overbought (K<60): buys the destination of displaced money rather than the washed-out source.",
+   "entry_rule": {
+    "all": [
+     {
+      "episode_event": {
+       "direction": "out",
+       "tier": "onset",
+       "complex_scope": "opposite",
+       "within_sessions": 10,
+       "min_count": 2
+      }
+     },
+     {
+      "col": "rs",
+      "op": "gt",
+      "value": 0
+     },
+     {
+      "col": "stochrsi_w_k",
+      "op": "lt",
+      "value": 60
+     }
+    ]
+   },
+   "cooldown_sessions": 10
+  },
+  {
+   "id": "DEST_OPP_OUT_TURN",
+   "family": "F-DEST",
+   "name": "Displacement then acceleration",
+   "mechanism_en": "Opposite-complex outflow onset FIRST, then this node's acceleration crossing above +0.5 within 10 sessions: routed-inflow proxy ordered causally.",
+   "entry_rule": {
+    "sequence": {
+     "first": {
+      "episode_event": {
+       "direction": "out",
+       "tier": "onset",
+       "complex_scope": "opposite",
+       "within_sessions": 10,
+       "min_count": 2
+      }
+     },
+     "then": {
+      "col": "accel_z",
+      "op": "crossed_above",
+      "value": 0.5
+     },
+     "within_sessions": 10
+    }
+   },
+   "cooldown_sessions": 10
+  }
+ ]
+}

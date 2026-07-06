@@ -1,0 +1,235 @@
+"""tests/test_build_dispersion_regime.py — L3 dispersion regime builder tests.
+
+Tests
+-----
+1. degraded_path_on_none  — when dispersion.assess() returns None (sparse universe),
+   build() writes a valid degraded JSON with state=null and gross_mult_live=1.0.
+   Never crashes.
+
+2. field_name_parity       — on a healthy assess() return, the emitted JSON contains
+   every field name from assess() output verbatim (state, dispersion_pctile, avg_corr,
+   shadow_gross_mult, gross_mult, passport) plus the spec-mandated additions
+   (as_of, gross_mult_live, history).
+
+3. passport_carry_through  — assess()'s full passport block (basis, verdict, validation,
+   note) is carried through verbatim to the emitted JSON.
+
+4. gross_mult_live_always_1 — gross_mult_live is 1.0 regardless of assess()'s
+   gross_mult value (hard constraint §5 / §10).
+
+5. history_maintenance      — calling build() twice populates the history list and
+   does not grow beyond _HISTORY_LEN entries.
+
+6. degraded_path_no_crash_on_empty_closes — the builder returns a degraded dict and
+   does not raise when no close caches exist.
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from unittest import mock
+
+import pandas as pd
+import numpy as np
+import pytest
+
+# Ensure repo root is on path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from scripts.build_dispersion_regime import build, _HISTORY_LEN
+from engine import dispersion
+
+
+# ---------------------------------------------------------------------------
+#  Synthetic assess() return fixtures
+# ---------------------------------------------------------------------------
+
+def _fake_assess_result(state: str = "lean_in") -> dict:
+    """A synthetic return matching the real assess() output schema."""
+    shadow = {"lean_in": 1.20, "neutral": 1.0, "lean_out": 0.75}[state]
+    en_lbl = {"lean_in": "Selection pays — high dispersion",
+               "neutral": "Mixed selection backdrop",
+               "lean_out": "Macro tape — selection muted"}[state]
+    zh_lbl = {"lean_in": "选股有效 — 高离散度",
+               "neutral": "选股环境中性",
+               "lean_out": "宏观主导 — 选股弱化"}[state]
+    return {
+        "dispersion_pct_pts": 1.23,
+        "dispersion_pctile": 0.72,
+        "avg_corr": 0.18,
+        "state": state,
+        "gross_mult": 1.0,          # always 1.0 in assess() due to _LIVE_CLAMP
+        "shadow_gross_mult": shadow,
+        "passport": {
+            "basis": "prior",
+            "verdict": "display-only per US_BOARD_MEASUREMENT",
+            "validation": {
+                "artifact": "research/US_BOARD_MEASUREMENT.md#study-3",
+                "n": None,
+                "survives": False,
+            },
+            "note": "hand-picked terciles, no measured edge on this universe; "
+                    "shadow_gross_mult would gross UP into high-VIX stress — clamped "
+                    "to 1.0 until a survivorship-clean selection-IR edge is measured",
+        },
+        "label": en_lbl,
+        "label_zh": zh_lbl,
+    }
+
+
+# ---------------------------------------------------------------------------
+#  Test 1: degraded path when assess() returns None
+# ---------------------------------------------------------------------------
+
+def test_degraded_path_on_none(tmp_path):
+    """assess() returning None must produce a valid degraded JSON, never crash."""
+    with (
+        mock.patch("scripts.build_dispersion_regime._load_closes",
+                   return_value=pd.DataFrame()),
+        mock.patch("lib.config.data_dir", return_value=tmp_path),
+    ):
+        (tmp_path / "dispersion").mkdir(parents=True, exist_ok=True)
+        result = build()
+
+    assert result["state"] is None, "degraded state must be null"
+    assert result["gross_mult_live"] == 1.0
+    assert "passport" in result
+    out_path = tmp_path / "dispersion" / "regime.json"
+    assert out_path.exists()
+    parsed = json.loads(out_path.read_text())
+    assert parsed["state"] is None
+    assert parsed["gross_mult_live"] == 1.0
+
+
+# ---------------------------------------------------------------------------
+#  Test 2: field-name parity with assess() output
+# ---------------------------------------------------------------------------
+
+def test_field_name_parity(tmp_path):
+    """Emitted JSON must contain every key from assess() output verbatim."""
+    fake = _fake_assess_result("lean_in")
+    # Fields that assess() returns (the contract we must mirror)
+    assess_keys = {"state", "dispersion_pctile", "avg_corr",
+                   "shadow_gross_mult", "gross_mult", "passport"}
+    # Spec-mandated additions
+    spec_extra_keys = {"as_of", "gross_mult_live", "history"}
+
+    with (
+        mock.patch("scripts.build_dispersion_regime._load_closes",
+                   return_value=pd.DataFrame({"A": [1.0, 1.01]})),
+        mock.patch("engine.dispersion.assess", return_value=fake),
+        mock.patch("lib.config.data_dir", return_value=tmp_path),
+    ):
+        (tmp_path / "dispersion").mkdir(parents=True, exist_ok=True)
+        result = build()
+
+    emitted_keys = set(result.keys())
+    # All assess() keys present (note: gross_mult is represented as gross_mult_live=1.0)
+    for key in (assess_keys - {"gross_mult"}):  # gross_mult -> gross_mult_live in spec
+        assert key in emitted_keys, f"missing assess() key: {key}"
+    for key in spec_extra_keys:
+        assert key in emitted_keys, f"missing spec-mandated key: {key}"
+    # gross_mult_live must be present (renamed per spec §5)
+    assert "gross_mult_live" in emitted_keys
+
+
+# ---------------------------------------------------------------------------
+#  Test 3: passport carry-through
+# ---------------------------------------------------------------------------
+
+def test_passport_carry_through(tmp_path):
+    """assess()'s full passport block must be carried through verbatim."""
+    fake = _fake_assess_result("neutral")
+    with (
+        mock.patch("scripts.build_dispersion_regime._load_closes",
+                   return_value=pd.DataFrame({"A": [1.0, 1.01]})),
+        mock.patch("engine.dispersion.assess", return_value=fake),
+        mock.patch("lib.config.data_dir", return_value=tmp_path),
+    ):
+        (tmp_path / "dispersion").mkdir(parents=True, exist_ok=True)
+        result = build()
+
+    pp = result.get("passport", {})
+    assert pp.get("basis") == "prior"
+    assert pp.get("verdict") == "display-only per US_BOARD_MEASUREMENT"
+    assert "validation" in pp
+    assert pp["validation"].get("survives") is False
+
+
+# ---------------------------------------------------------------------------
+#  Test 4: gross_mult_live always 1.0 (hard constraint §5 / §10)
+# ---------------------------------------------------------------------------
+
+def test_gross_mult_live_always_1(tmp_path):
+    """gross_mult_live must be 1.0 regardless of any assess() output."""
+    for state in ("lean_in", "neutral", "lean_out"):
+        fake = _fake_assess_result(state)
+        # Even if assess() hypothetically returned a non-1.0 gross_mult, the
+        # builder must clamp gross_mult_live to 1.0.
+        fake["gross_mult"] = 99.0  # tamper — must be ignored
+        with (
+            mock.patch("scripts.build_dispersion_regime._load_closes",
+                       return_value=pd.DataFrame({"A": [1.0, 1.01]})),
+            mock.patch("engine.dispersion.assess", return_value=fake),
+            mock.patch("lib.config.data_dir", return_value=tmp_path),
+        ):
+            (tmp_path / "dispersion").mkdir(parents=True, exist_ok=True)
+            result = build()
+
+        assert result["gross_mult_live"] == 1.0, (
+            f"gross_mult_live must always be 1.0 (state={state})"
+        )
+
+
+# ---------------------------------------------------------------------------
+#  Test 5: history maintenance
+# ---------------------------------------------------------------------------
+
+def test_history_maintenance(tmp_path):
+    """Calling build() multiple times populates history without growing beyond limit."""
+    (tmp_path / "dispersion").mkdir(parents=True, exist_ok=True)
+    fake = _fake_assess_result("lean_in")
+
+    call_count = 0
+    def _fake_assess(_returns, **_kw):
+        nonlocal call_count
+        call_count += 1
+        return fake
+
+    n_calls = 5
+    with (
+        mock.patch("scripts.build_dispersion_regime._load_closes",
+                   return_value=pd.DataFrame({"A": [1.0, 1.01]})),
+        mock.patch("engine.dispersion.assess", side_effect=_fake_assess),
+        mock.patch("lib.config.data_dir", return_value=tmp_path),
+    ):
+        for _ in range(n_calls):
+            result = build()
+
+    # history should have at most 1 entry (all calls have same as_of = today)
+    assert isinstance(result["history"], list)
+    assert len(result["history"]) >= 1
+    assert len(result["history"]) <= _HISTORY_LEN
+
+    # Load from disk and verify history is there
+    parsed = json.loads((tmp_path / "dispersion" / "regime.json").read_text())
+    assert "history" in parsed
+    assert len(parsed["history"]) <= _HISTORY_LEN
+
+
+# ---------------------------------------------------------------------------
+#  Test 6: degraded path with no crash on empty closes
+# ---------------------------------------------------------------------------
+
+def test_no_crash_empty_closes(tmp_path):
+    """Build must not raise even with empty closes panel (graceful degradation)."""
+    (tmp_path / "dispersion").mkdir(parents=True, exist_ok=True)
+    with mock.patch("lib.config.data_dir", return_value=tmp_path):
+        # _load_closes will find no parquet files in tmp_path — returns empty
+        result = build()
+
+    assert result is not None
+    assert result["gross_mult_live"] == 1.0
+    out = json.loads((tmp_path / "dispersion" / "regime.json").read_text())
+    assert out["gross_mult_live"] == 1.0

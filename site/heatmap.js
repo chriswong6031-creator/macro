@@ -82,6 +82,11 @@
   // tile display ticker: strip the exchange suffix so CN/HK/CA tiles read
   // "601398" / "0700" / "RY" not "601398.SS" (no-op for US tickers).
   function dispT(t) { return String(t).replace(/\.(SS|SZ|SH|HK|TO|V|TSX|NE|CN)$/i, ''); }
+  function fitTextFont(width, text, avgEm, minPx, maxPx) {
+    var n = String(text || '').length || 1;
+    var fit = (Math.max(0, width) - 6) / (n * (avgEm || 0.7));
+    return Math.max(minPx, Math.min(maxPx, fit));
+  }
   function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function hexToRgb(h) {
     h = (h || '').trim(); if (h[0] === '#') h = h.slice(1);
@@ -640,10 +645,11 @@
       var cjk = false; for (var _i = 0; _i < sym.length; _i++) { var _cc = sym.charCodeAt(_i); if (_cc >= 0x3400 && _cc <= 0x9fff) { cjk = true; break; } }
       var nch = sym.length || 1;
       var fitF = (tw - 5) / (nch * (cjk ? 1.06 : 0.80));
-      var symF = Math.max(6, Math.min(tw / 3.7, th * 0.52, fitF, 22));
-      var pcF = Math.max(8, Math.min(tw / 5.4, th * 0.34, 13));
+      var symF = Math.max(4.4, Math.min(tw / 3.7, th * 0.52, fitF, 22));
+      var pcText = fmtPc(pc);
+      var pcF = Math.max(5, Math.min(tw / 5.4, th * 0.34, fitTextFont(tw, pcText, 0.62, 5, 13), 13));
       var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(sym) + '</span>';
-      if (showPc) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + fmtPc(pc) + '</span>';
+      if (showPc) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + pcText + '</span>';
       return s;
     }
     function layoutTree() {
@@ -1057,11 +1063,12 @@
       // tighter divisor + lower floor so the small/narrow tiles render their ticker
       // smaller (fitF already caps to width); larger tiles compute above the floor
       // and keep their size.
-      var symF = clamp(Math.min(tw / 4.2, th * 0.5, fitF), 5, 18);
+      var symF = clamp(Math.min(tw / 4.2, th * 0.5, fitF), 4.2, 18);
       var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
       if (tw >= 40 && th >= 29) {
-        var pcF = clamp(Math.min(tw / 5.6, th * 0.32), 7.5, 12);
-        s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + fmtPc(t.perf[TF]) + '</span>';
+        var pcText = fmtPc(t.perf[TF]);
+        var pcF = clamp(Math.min(tw / 5.6, th * 0.32, fitTextFont(tw, pcText, 0.62, 4.8, 12)), 4.8, 12);
+        s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + pcText + '</span>';
       }
       return s;
     }
@@ -1087,9 +1094,17 @@
         html.push('<div class="hm-sec" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px">');
         if (hd) {
           var agg = sectorAgg(data, s.tiles, TF);
+          var aggText = fmtPc(agg);
+          var showAgg = w > 96;
+          var aggBudget = showAgg ? Math.max(36, Math.min(58, aggText.length * 7.2 + 7)) : 0;
+          var nmBudget = Math.max(24, w - 18 - aggBudget);
+          var nmText = (isZh() && lab.zh) ? lab.zh : lab.en;
+          var nmCjk = false; for (var _j = 0; _j < nmText.length; _j++) { var _jc = nmText.charCodeAt(_j); if (_jc >= 0x3400 && _jc <= 0x9fff) { nmCjk = true; break; } }
+          var nmF = clamp(Math.min(10.5, fitTextFont(nmBudget, nmText, nmCjk ? 1.02 : 0.65, 4.1, 10.5)), 4.1, 10.5);
+          var aggF = showAgg ? clamp(Math.min(10.5, fitTextFont(aggBudget, aggText, 0.62, 7.8, 10.5)), 7.8, 10.5) : 10.5;
           html.push('<div class="hm-sec-hd hm-sc-sechd" data-sec-name="' + esc(s.name) + '" style="height:' + hd + 'px;line-height:' + hd + 'px">'
-            + '<span class="nm">' + L(esc(lab.en), esc(lab.zh)) + '</span>'
-            + (w > 96 ? '<span class="pc ' + (agg == null ? '' : agg >= 0 ? 'up' : 'dn') + '">' + fmtPc(agg) + '</span>' : '')
+            + '<span class="nm" style="font-size:' + nmF.toFixed(1) + 'px">' + L(esc(lab.en), esc(lab.zh)) + '</span>'
+            + (showAgg ? '<span class="pc ' + (agg == null ? '' : agg >= 0 ? 'up' : 'dn') + '" style="font-size:' + aggF.toFixed(1) + 'px">' + aggText + '</span>' : '')
             + '</div>');
         }
         var innerY = hd, innerH = h - hd;
@@ -1250,6 +1265,7 @@
       + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;transition:filter .1s,box-shadow .1s;}'
       + '.hm-tile.big{border-radius:3px;} .hm-tile.huge{border-radius:4px;}'
       + '.hm-tile:hover{z-index:8;filter:brightness(1.06);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text) 78%,transparent);}'
+      + '.hm-tile .sym,.hm-tile .pc{display:block;max-width:calc(100% - 3px);white-space:nowrap;overflow:hidden;text-overflow:clip;}'
       + '.hm-tile .sym{font-weight:800;letter-spacing:.2px;}'
       + '.hm-tile .pc{font-weight:600;font-variant-numeric:tabular-nums;opacity:.95;margin-top:1px;}'
       // map-type switcher (multi-map host: S&P 500 ⇄ Themes …)
@@ -1327,7 +1343,7 @@
       + '.hm-scope.hm-sc.panel{border:0;}'
       + '.hm-sc-map{position:relative;width:100%;border-radius:12px;overflow:hidden;background:var(--hm-frame);}'
       + '.hm-sc-tm{position:relative;width:100%;}'
-      + '.hm-sc-sechd{box-sizing:border-box;padding:0 7px;font-size:11px;} .hm-sc-sechd .nm{font-size:10.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;} .hm-sc-sechd .pc{margin-left:auto;padding-left:5px;flex:none;}'
+      + '.hm-sc-sechd{box-sizing:border-box;padding:0 7px;font-size:11px;} .hm-sc-sechd .nm{font-size:10.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;text-transform:none;letter-spacing:0;} .hm-sc-sechd .pc{margin-left:auto;padding-left:5px;flex:none;}'
       + '.hm-sc-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:11px;font-size:11px;}'
       + '.hm-sc-legend{display:flex;align-items:center;gap:7px;color:var(--muted);}'
       + '.hm-sc-breadth{display:flex;align-items:center;gap:8px;color:var(--muted);}'

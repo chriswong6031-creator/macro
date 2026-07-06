@@ -3985,7 +3985,7 @@
         "reason": "version-matched + fresh",
         "calibration_version": "w2.7-loro-v1",
         "calibration_generated_at": "2026-07-02T12:32:51Z",
-        "calibration_age_days": 2
+        "calibration_age_days": 3
       },
       "lag_passport": {
         "basis": "per_leg_schedule",
@@ -4566,11 +4566,11 @@
     ],
     "freshness": {
       "asof": "2026-07-02",
-      "built_at": "2026-07-05T06:59:34Z",
-      "age_days": 3,
-      "age_sessions": 1,
+      "built_at": "2026-07-06T07:24:53Z",
+      "age_days": 4,
+      "age_sessions": 2,
       "max_age_sessions": 1,
-      "stale": false,
+      "stale": true,
       "note": "contract asof vs build time; the daily build lands post-close (22:40 UTC) so a consumer reading intraday should expect asof = prior session — recompute age against built_at at read time."
     },
     "asof": "2026-07-02",
@@ -4578,18 +4578,16 @@
   },
   "vol": {
     "regime": "normalizing",
-    "risk_score": 0.115,
+    "risk_score": 0.237,
     "scored_score": null,
     "scored_active": false,
-    "vix": 16.45,
-    "vrp_state": "collapsing (de-risk)",
+    "vix": 16.15,
+    "vrp_state": "normal",
     "vvix_state": "normal",
     "vol_target_scalar": 0.66,
-    "fragility_confluence": 1,
-    "flags": [
-      "vrp_collapse"
-    ],
-    "asof": "2026-06-30"
+    "fragility_confluence": 0,
+    "flags": [],
+    "asof": "2026-07-02"
   },
   "breadth": {
     "n_members": 501,
@@ -4605,7 +4603,7 @@
     "date": "2026-07-02"
   },
   "rotation": {
-    "asof": "2026-07-05",
+    "asof": "2026-07-06",
     "regime": {
       "n_active_complexes": 0,
       "breadth": null,
@@ -4714,12 +4712,13 @@
     "liquidity_overlay": "neutral"
   },
   "data_health": {
-    "last_run": "2026-07-05T06:44:23.193774+00:00",
+    "last_run": "2026-07-05T11:06:14.896278+00:00",
     "counts": {
       "ok": 126,
       "failed": 4,
       "stale": 4,
       "blocked": 4,
+      "no_key": 1,
       "no_creds": 1
     },
     "n_cb_failed": 4,
@@ -4733,7 +4732,7 @@
       {
         "source": "china_official_corpora",
         "error": "DateParseError: Unknown datetime string format, unable to parse: state_council",
-        "checked_at": "2026-07-04T11:04:44.441823+00:00"
+        "checked_at": "2026-07-05T11:06:14.896424+00:00"
       },
       {
         "source": "massive_stock_day",
@@ -4749,7 +4748,7 @@
   },
   "alerts": {
     "asof": "2026-07-02",
-    "generated_utc": "2026-07-05 06:59",
+    "generated_utc": "2026-07-06 07:25",
     "total": 60,
     "critical": 2,
     "major": 58,
@@ -4757,27 +4756,51 @@
     "actionable": 2,
     "backtested": 1
   },
+  "factor_weather": {
+    "style_regime": null,
+    "style_regime_pending": null,
+    "style_regime_hold_days": null,
+    "factor_leader": "profitability",
+    "factor_leader_ic": 0.0141,
+    "etf_pulse_summary": "IWF/IWD_20d=-0.0770; QQQ/SPY_20d=-0.0314; IWM/SPY_20d=+0.0469",
+    "ratio_iwf_iwd_20d": -0.07698902203786362,
+    "ratio_qqq_spy_20d": -0.03142390693527464,
+    "ratio_iwm_spy_20d": 0.04690760725468124,
+    "display_only": true
+  },
+  "options_weather": {
+    "as_of": "2026-07-05",
+    "n_roots": 19,
+    "median_iv30": null,
+    "median_skew": null,
+    "median_skew_5d_chg": null,
+    "share_skew_rising": null,
+    "median_ivspread_rel": null,
+    "share_pin_risk": null,
+    "opex_days": 11,
+    "note": "sector-ETF/index options weather (raw aggregates; no composite — RO-2). Gamma-regime evidence is vol-conditioning with era-dependent sign (W-E1); never directional.",
+    "display_only": true
+  },
   "qi": null,
   "qi_note": "pending joint QI border ruling (masterplan W1) — QI produces the aggregate, Neural Web consumes; do not aggregate raw qbus here (border law §9)",
   "live_overlay": {
     "source": "data/regime/latest.json:freshness",
     "asof": "2026-07-02",
-    "built_at": "2026-07-05T06:59:34Z",
-    "age_days": 3,
-    "stale": false
+    "built_at": "2026-07-06T07:24:53Z",
+    "age_days": 4,
+    "stale": true
   },
   "contradictions": {
-    "n": 5,
+    "n": 4,
     "by_severity": {
       "note": 2,
-      "tension": 3
+      "tension": 2
     },
     "top_pair_ids": [
       "regime-vs-market_state",
       "regime_vector-vs-risk_radar",
       "vol_regime-vs-market_state",
-      "briefing-divergences",
-      "cross_asset_confirm-diverge"
+      "briefing-divergences"
     ],
     "gaps": [],
     "display_only": true,
@@ -4788,13 +4811,13 @@
     "data/market_state/latest.json": "2026-07-02",
     "data/regime/latest.json": "2026-07-02",
     "data/breadth/breadth.parquet": "2026-07-02",
-    "site/basketdata/oracle_state.json": "2026-07-05",
-    "data/run_status.json": "2026-07-05T06:44:23.193774+00:00",
+    "site/basketdata/oracle_state.json": "2026-07-06",
+    "data/run_status.json": "2026-07-05T11:06:14.896278+00:00",
     "site/factordata/alerts_triage.json": "2026-07-02"
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-07-05T08:15:38Z",
-  "inputs_hash": "sha256:42d666e2671e109f9ee066c9fa72336c8854f989b6e99cf479c8fa77e7f499dd",
+  "produced_at": "2026-07-06T08:39:30Z",
+  "inputs_hash": "sha256:e1de4b930964deed7ee303877e3440959dd4fea5ffbf3ff796c2a5c7ee15de5a",
   "tier": "infrastructure"
 }

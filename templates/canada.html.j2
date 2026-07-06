@@ -185,6 +185,7 @@
   .nbe-pct { color:var(--muted); font-size:9px; font-variant-numeric:tabular-nums; }
   .ab { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .abcol h3 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
+  .abcol.ab-on_the_run h3 { color:#8b5cf6; }  /* neutral violet — NOT green/buy */
   .abcol .it { font-size:12.5px; padding:3px 0; border-bottom:1px solid var(--line); }
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:right; padding:4px 8px; border-bottom:1px solid var(--line); }
@@ -469,10 +470,10 @@
 <div class="panel">
   <h2>{{ t('What to act on — sector entry timing', '可执行 — 板块入场时机') }}</h2>
   <div class="ab">
-    {% set abmap = [('buy_now','✅ '+('立即买入' if False else 'Buy now'),'立即买入'), ('buy_soon','⏳ Buy soon','即将买入'), ('take_profits','💰 Take profits','止盈'), ('hold','✋ Hold','持有'), ('avoid','🚫 Avoid','回避')] %}
+    {% set abmap = [('buy_now','✅ '+('立即买入' if False else 'Buy now'),'立即买入'), ('buy_soon','⏳ Buy soon','即将买入'), ("on_the_run", "🏃 ON THE RUN — don't chase", '顺势运行 — 勿追高'), ('take_profits','💰 Take profits','止盈'), ('hold','✋ Hold','持有'), ('avoid','🚫 Avoid','回避')] %}
     {% for key, en, zh in abmap %}
-    {% set items = actions[key] %}
-    <div class="abcol">
+    {% set items = actions.get(key, []) %}
+    <div class="abcol ab-{{ key }}">
       <h3>{{ t(en, zh) }} <span class="muted">({{ items|length }})</span></h3>
       {% for it in items %}<div class="it">{{ td(it.name) }} <span class="muted small">{{ it.ticker }}</span></div>{% endfor %}
       {% if not items %}<div class="it muted">—</div>{% endif %}

@@ -138,6 +138,106 @@ FAMILY_BUDGETS: dict[str, dict[str, Any]] = {
         "budget": 24,
         "reason": "capped; unlocked only after F-tier verdicts filed",
     },
+    # --- Amendment 2 RUL-26 additions: program ceiling 115 → 165 ---
+    "esx_sponsorship": {
+        "budget": 8,
+        "reason": (
+            "RUL-16 (Amendment 1 §C3): 1 frozen def (vel sign × accel sign) "
+            "× 2 contrasts × {sector arm 2 panels + subsector arm 2 panels}"
+        ),
+    },
+    "esx_insider_sponsor": {
+        "budget": 12,
+        "reason": (
+            "A2 RUL-26: 3 frozen forms (I1 cluster_after_washout, "
+            "I2 cluster_near_fire, I3 net_usd_mcap_sn≥p80) × 2 panels × 2 contrasts"
+        ),
+    },
+    "esx_fund_repair": {
+        "budget": 12,
+        "reason": (
+            "A2 RUL-26: 3 forms (SUE z≥+1 ≤63td pre-fire; SUE decile→median repair; "
+            "revision_turn [Tier-C blocked on vintage accrual]) × 2 panels × 2 contrasts"
+        ),
+    },
+    "esx_macro_release": {
+        "budget": 8,
+        "reason": (
+            "A2 RUL-26: 2 turn-defs (FSI pctile≥80 & 15d mom down; "
+            "HY-OAS 21d ROC turn from ≥p80) × 2 panels × 2 contrasts; "
+            "R1-M estimator (RUL-24)"
+        ),
+    },
+    "esx_pos_reset": {
+        "budget": 8,
+        "reason": (
+            "A2 RUL-26: 2 ingredients (NAAIM / COT ES+NDX, ≤p20-then-rising, "
+            "3y pctile lookback, 2-week rising lag, publish-lagged) × 2 panels × 2 contrasts; "
+            "R1-M"
+        ),
+    },
+    "esx_support_dose": {
+        "budget": 2,
+        "reason": (
+            "A2 RUL-25: ordinal n_support_legs monotonicity × 2 panels; "
+            "unlocked after ≥2 leg verdicts"
+        ),
+    },
+    # --- Amendment 3 RUL-32 additions: program ceiling 165 → 201 ---
+    "esx_htf_turn": {
+        "budget": 12,
+        "reason": (
+            "A3 RUL-32: 3 rungs (A1 weekly RSI-MACD hist-rising; A2 2W stoch turn "
+            "K>D & K-rising; A3m monthly stoch turn) x 2 panels x 2 reads "
+            "(pooled-FE, not-wbull subset per RUL-29)"
+        ),
+    },
+    "esx_htf_turn_dose": {
+        "budget": 2,
+        "reason": (
+            "A3 RUL-32: ordinal n_turn_legs {0..3} x 2 panels; verdict LOCKED until "
+            ">=1 esx_htf_turn rung shows CI-excluding-0 in its operative read; "
+            "legs pre-declared collinear (weekly-dominant expectation)"
+        ),
+    },
+    "esx_washout_x_turn": {
+        "budget": 8,
+        "reason": (
+            "A3 RUL-32: 2 interaction forms (H1-frozen 2W-D-min<25 x {A1, A2}) "
+            "x 2 panels x 2 contrasts (deep&turn vs deep&not-turn; deep&turn vs rest); "
+            "no age/calm ingredient (H2 firewall)"
+        ),
+    },
+    "esx_sub_x_turn": {
+        "budget": 2,
+        "reason": (
+            "A3 RUL-32: tape sub x A1 weekly-turn interaction coefficient x 2 panels; "
+            "LOCKED behind esx_htf_turn; expect-null"
+        ),
+    },
+    "esx_decline_geometry": {
+        "budget": 4,
+        "reason": (
+            "A3 RUL-32: Herfindahl of |neg daily log-returns| trailing 63 bars "
+            "(min 8 down-days), fixed trailing cross-sectional terciles x 2 panels "
+            "x 2 contrasts (flush-vs-grind; flush-vs-rest); two-sided"
+        ),
+    },
+    "esx_underwater": {
+        "budget": 4,
+        "reason": (
+            "A3 RUL-32: time_underwater_series(close,252) terciles x 2 panels "
+            "x 2 contrasts; window=126 named kill-only diagnostic; two-sided"
+        ),
+    },
+    "esx_vol_transition": {
+        "budget": 4,
+        "reason": (
+            "A3 RUL-32: vol_ts=rv(5)/rv(63), vol_falling=(vol_ts<1)&(vol_ts<vol_ts[-5]) "
+            "x 2 panels x 2 contrasts (falling-vs-rest; falling-vs-elevated); "
+            "pre-registered EXPECT-NULL; realized-vol-LEVEL FE control binding (RUL-30)"
+        ),
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -276,7 +376,10 @@ def grade_fires(
         mae63, mfe63 (max adverse / favorable excursion at 63d),
         days_to_10 (first bar where fwd_ret ≥ 10%, or NaN),
         cushion_rot, cushion_pos (bool: cushion hit in rotational/positional window),
-        gradable   (bool: fill bar exists and matured for both horizons).
+        gradable   (bool: fill bar exists and matured for both horizons),
+        vol_band   (float: sigma20*sqrt(20) clamped to [0.05, 0.15]; NaN if <21 trailing bars),
+        zone_held_21  (co-primary RUL-14: 1 if min fwd close over fill+1..fill+21 > fill*(1-band)),
+        stop_vol_21   (co-primary RUL-14: 1 - zone_held_21; NaN when zone_held_21 is NaN).
     """
     from engine.grading import forward_metrics, terminal_state
 
@@ -298,7 +401,10 @@ def grade_fires(
             "fill_date": None, "entry_price": None,
             "state_rot": None, "state_pos": None,
             "stop5": None, "mae63": None, "mfe63": None,
+            "mae21": None,
             "days_to_10": None, "cushion_rot": None, "cushion_pos": None,
+            # RUL-14 co-primaries
+            "vol_band": None, "zone_held_21": None, "stop_vol_21": None,
         })
 
         if close is None or close.empty:
@@ -325,6 +431,9 @@ def grade_fires(
         # mae63 / mfe63
         rec["mae63"] = fm["fwd_mdd_63"]
         rec["mfe63"] = fm["fwd_mfe_63"]
+
+        # mae21: RUL-13 co-primary (max adverse excursion at 21d)
+        rec["mae21"] = fm["fwd_mdd_21"]
 
         # days_to_10: first bar where cumulative fwd_ret >= 10%
         entry = fm["entry_price"]
@@ -355,6 +464,38 @@ def grade_fires(
 
         # gradable iff both horizons matured
         rec["gradable"] = (ts_rot["state"] is not None and ts_pos["state"] is not None)
+
+        # --- RUL-14 co-primary: vol-scaled entry zone ---
+        # vol_band = sigma20 * sqrt(20), clamped to [0.05, 0.15]
+        # sigma20  = trailing 20d close-to-close daily return std at the FILL bar
+        #            (strictly prior bars only — no look-ahead)
+        # zone_held_21 = 1 iff min(close[fill+1..fill+21]) > fill_price * (1 - band)
+        # stop_vol_21  = 1 - zone_held_21
+        # NaN when fewer than 21 trailing bars for sigma OR fewer than 21 matured
+        # forward bars (not-yet-matured semantics identical to existing outcomes).
+        from engine.grading import fill_index
+        fi_vol = fill_index(close, sig_date)
+        if fi_vol is not None and fi_vol >= 21:
+            # trailing 20d daily returns — strictly prior to fill bar
+            trailing = close.iloc[fi_vol - 20: fi_vol]  # 20 bars, indices [fi-20, fi)
+            daily_rets = trailing.pct_change().dropna()
+            # 20 price bars → 19 valid returns after pct_change().dropna()
+            if len(daily_rets) >= 19:
+                sigma20 = float(daily_rets.std(ddof=1))
+                raw_band = sigma20 * np.sqrt(20.0)
+                band = float(np.clip(raw_band, 0.05, 0.15))
+                rec["vol_band"] = round(band, 6)
+
+                # forward 21 closes: fill+1..fill+21 (strictly forward, same as stop5)
+                fwd_21 = close.iloc[fi_vol + 1: fi_vol + 22]  # up to 21 bars
+                if len(fwd_21) >= 21:
+                    entry_p = float(close.iloc[fi_vol])
+                    if entry_p > 0:
+                        zone_floor = entry_p * (1.0 - band)
+                        zone_held = int(float(fwd_21.min()) > zone_floor)
+                        rec["zone_held_21"] = zone_held
+                        rec["stop_vol_21"]  = 1 - zone_held
+
         results.append(rec)
 
     out = pd.DataFrame(results)
@@ -365,6 +506,106 @@ def grade_fires(
             out[col] = series.reindex(out.index).values
 
     return out
+
+
+# ---------------------------------------------------------------------------
+# NC-2 proximity proxy (shared helper — A3 RUL-32.b)
+#
+# Extracted verbatim from run_w1_nc.py at Amendment-3 registration so every
+# runner calls ONE audited implementation (the arm that nullified S-UR's only
+# positive form). run_w1_nc.py re-exports these names for back-compat
+# (run_w2_sur.py imports them from there).
+#
+# PROXY-INPUT LIMITATION stands: the engine (engine/cycles.py:1705-1706) uses
+# cand_price/dcl_price as the proximity pivot; this uses a naive 63-bar
+# close-minimum. NC-2 remains descriptive-only / kill-arm-only — it must NOT
+# be used as a promotion bar (A3 RUL-28: CHIP promotion is BLOCKED until the
+# true eq_band lands).
+# ---------------------------------------------------------------------------
+
+def _eq_proximity_long(pct: float) -> float:
+    """Entry-quality PROXIMITY component (long/buy-setup), from cycles.py:1625.
+    Exact copy of _eq_proximity(pct, up=True) — frozen, no discretion.
+    Uses fractional distance above (positive) or below (negative) the rolling low.
+    """
+    p = pct
+    if p < -0.06:
+        return 0.15
+    if p < -0.03:
+        return 0.15 + (0.5 - 0.15) * (p - (-0.06)) / (-0.03 - (-0.06))
+    if p < 0.0:
+        return 0.5 + (0.9 - 0.5) * (p - (-0.03)) / (0.0 - (-0.03))
+    if p < 0.03:
+        return 0.9 + (1.0 - 0.9) * (p - 0.0) / (0.03 - 0.0)
+    if p < 0.06:
+        return 1.0 + (0.85 - 1.0) * (p - 0.03) / (0.06 - 0.03)
+    t = min(1.0, (p - 0.06) / (0.18 - 0.06))
+    return 0.85 + (0.2 - 0.85) * t
+
+
+def compute_nc2_proximity_proxy(
+    fires: pd.DataFrame,
+    closes: dict[str, pd.Series],
+    *,
+    rolling_window: int = 63,
+) -> pd.Series:
+    """Proximity component of entry_quality for each fire row.
+
+    NC-2 PARTIAL IMPLEMENTATION — proximity component only (EQ_W_PROX=0.52).
+    See module comment above: proxy-INPUT, descriptive/kill-arm only.
+
+    Proxy: pct_from_low = close_at_fire / rolling_63d_close_min - 1 (strictly
+    prior bars, no lookahead), fed through _eq_proximity_long().
+    Returns pd.Series of float in [0, 1], NaN where not computable.
+    """
+    prox_scores: list[float | None] = []
+    for _, row in fires.iterrows():
+        ticker = str(row["ticker"])
+        sig_date = pd.Timestamp(row["date"])
+        close = closes.get(ticker)
+        if close is None or close.empty:
+            prox_scores.append(None)
+            continue
+        c = close.dropna().sort_index()
+        locs = c.index.searchsorted(sig_date)
+        # Reject loc==len(c): fire date after last bar would silently pair the
+        # final bar's close with a prior-window low (undisclosed approximation).
+        if locs <= 0 or locs >= len(c):
+            prox_scores.append(None)
+            continue
+        loc = locs  # first bar on/after sig_date
+        if loc < rolling_window:
+            prox_scores.append(None)
+            continue
+        prior_window = c.iloc[loc - rolling_window:loc]
+        if len(prior_window) == 0:
+            prox_scores.append(None)
+            continue
+        rolling_low = float(prior_window.min())
+        price = float(c.iloc[loc])
+        if rolling_low <= 0:
+            prox_scores.append(None)
+            continue
+        pct_from_low = price / rolling_low - 1.0
+        prox_scores.append(_eq_proximity_long(pct_from_low))
+    return pd.Series(prox_scores, index=fires.index, name="nc2_prox")
+
+
+def assign_nc2_bands(prox: pd.Series) -> pd.Series:
+    """Cross-sectional proximity bands by tercile.
+    Bands 0/1/2 = bottom/mid/top tercile (fixed, not fitted).
+    """
+    valid = prox.dropna()
+    if len(valid) < 30:
+        return pd.Series(np.nan, index=prox.index, name="nc2_band")
+    q33 = float(valid.quantile(1 / 3))
+    q67 = float(valid.quantile(2 / 3))
+    bands = np.where(
+        prox.isna(), np.nan,
+        np.where(prox <= q33, 0.0,
+                 np.where(prox <= q67, 1.0, 2.0))
+    )
+    return pd.Series(bands, index=prox.index, name="nc2_band")
 
 
 # ---------------------------------------------------------------------------
@@ -486,6 +727,8 @@ def r1_estimate(
     n_bootstrap: int = N_BOOTSTRAP,
     rng_seed: int = RNG_SEED,
     entry_quality_bands: bool = False,
+    computable_mask: "pd.Series | None" = None,
+    extra_fe_cols: "list[str] | None" = None,
 ) -> dict[str, Any]:
     """R1 estimator: date-FE stratified difference with block-bootstrap CIs.
 
@@ -516,6 +759,22 @@ def r1_estimate(
         Number of block-bootstrap resamples for 95% CI.
     rng_seed:
         Random seed for reproducibility.
+    computable_mask:
+        Optional boolean Series aligned on the graded-fires index (A2 §C2).
+        Rows where mask is False or NaN are DROPPED from both arms before FE
+        demeaning. Semantics: treatment = sensor fired within mask; control =
+        computable-but-silent; out-of-mask fires dropped, not zero-coded.
+        This is the S7 same-computable-subset discipline made mechanical: without
+        it, every sparse family's FE contrast conflates "absent" with "not
+        applicable". Mask definition per family in feature_meta.json.
+        When None, no rows are dropped (identical to prior behaviour).
+    extra_fe_cols:
+        A3 RUL-30 kill-arm mechanics. When provided, the FE cell key is extended
+        by the values of each listed column: a row with date=D, nc2_band=1 gets
+        cell key "D|nc2_1" (or "D|date_...|nc2_1" etc.).  Rows with NaN in ANY
+        extra col are dropped BEFORE demeaning; the dropped count is reported in
+        the result as 'n_dropped_extra_fe'.  Default None = byte-identical legacy
+        behaviour (key not read, no drop, n_dropped_extra_fe=0).
 
     Returns
     -------
@@ -532,10 +791,15 @@ def r1_estimate(
         p_value      — bootstrap p-value (fraction of bootstrap coefs ≤ 0, two-sided)
         outcome      — outcome_col
         stratum      — stratum_col
+        mask_n_dropped — int: rows dropped by computable_mask (0 when mask is None)
+        mask_coverage  — float: fraction of rows retained (1.0 when mask is None)
+        n_dropped_extra_fe — int: rows dropped due to NaN in extra_fe_cols (0 when None)
     """
     required = {"date", outcome_col, stratum_col}
     if entry_quality_bands:
         required.add("eq_band")
+    if extra_fe_cols:
+        required.update(extra_fe_cols)
     missing = required - set(graded.columns)
     if missing:
         raise ValueError(f"r1_estimate: missing columns {missing}")
@@ -544,6 +808,21 @@ def r1_estimate(
         raise ValueError(
             "entry_quality_bands=True but 'eq_band' column not in graded. "
             "NC-2 marginality is DEFERRED in W0 — see W0_BASELINES.md DEFERRALS."
+        )
+
+    # --- computable_mask: A2 §C2 — drop out-of-mask rows from both arms ------
+    mask_n_dropped = 0
+    mask_coverage = 1.0
+    if computable_mask is not None:
+        # Align mask on graded index; treat missing as False (not computable)
+        aligned_mask = computable_mask.reindex(graded.index).fillna(False).astype(bool)
+        n_before = len(graded)
+        graded = graded[aligned_mask].copy()
+        mask_n_dropped = n_before - len(graded)
+        mask_coverage = len(graded) / max(n_before, 1)
+        log.debug(
+            "r1_estimate: computable_mask dropped %d rows (%.1f%% retained)",
+            mask_n_dropped, mask_coverage * 100,
         )
 
     # --- subset to gradable rows with valid outcome + stratum -----------------
@@ -555,8 +834,11 @@ def r1_estimate(
     df = df.reset_index(drop=True)
 
     if len(df) < 10:
-        return _empty_r1_result(outcome_col, stratum_col, fe_granularity,
-                                 "insufficient rows after filtering")
+        return _empty_r1_result(
+            outcome_col, stratum_col, fe_granularity,
+            "insufficient rows after filtering",
+            mask_n_dropped=mask_n_dropped, mask_coverage=mask_coverage,
+        )
 
     # --- era column -----------------------------------------------------------
     if era_col and era_col in df.columns:
@@ -596,13 +878,29 @@ def r1_estimate(
     if entry_quality_bands:
         df["_fe"] = df["_fe"] + "|eq" + df["eq_band"].astype(str)
 
+    # --- A3 RUL-30: extra FE cols extend cell key; NaN rows dropped first ----
+    n_dropped_extra_fe = 0
+    if extra_fe_cols:
+        any_nan = pd.concat(
+            [df[c].isna() for c in extra_fe_cols], axis=1
+        ).any(axis=1)
+        n_dropped_extra_fe = int(any_nan.sum())
+        if n_dropped_extra_fe:
+            df = df[~any_nan].copy()
+        for c in extra_fe_cols:
+            df["_fe"] = df["_fe"] + "|" + c + "_" + df[c].astype(str)
+
     # --- drop singleton FE cells (no variation within cell) -------------------
     cell_counts = df["_fe"].value_counts()
     multi_cells = cell_counts[cell_counts > 1].index
     df_fe = df[df["_fe"].isin(multi_cells)].copy()
     if len(df_fe) < 10:
-        return _empty_r1_result(outcome_col, stratum_col, fe_granularity,
-                                 f"too few rows after dropping singleton FE cells ({len(df_fe)})")
+        return _empty_r1_result(
+            outcome_col, stratum_col, fe_granularity,
+            f"too few rows after dropping singleton FE cells ({len(df_fe)})",
+            mask_n_dropped=mask_n_dropped, mask_coverage=mask_coverage,
+            n_dropped_extra_fe=n_dropped_extra_fe,
+        )
 
     # --- within-FE demeaning --------------------------------------------------
     y_dm, x_dm = _within_date_demean(df_fe, outcome_col, stratum_col, "_fe")
@@ -637,13 +935,24 @@ def r1_estimate(
         boot_x = x_arr[boot_idx]
         boot_fe = fe_vals[boot_idx]
 
-        # fast demeaning in bootstrap
-        boot_y_dm = np.empty_like(boot_y)
-        boot_x_dm = np.empty_like(boot_x)
-        for cell in np.unique(boot_fe):
-            m = boot_fe == cell
-            boot_y_dm[m] = boot_y[m] - boot_y[m].mean()
-            boot_x_dm[m] = boot_x[m] - boot_x[m].mean()
+        # Vectorised within-FE demeaning — avoids a Python loop over all unique
+        # FE cells (O(n_cells) Python overhead → O(1) via factorize + np.add.at).
+        # Mathematically identical to the per-cell for-loop above.
+        codes, _ = pd.factorize(boot_fe)
+        _n_cells = codes.max() + 1 if len(codes) else 0
+        if _n_cells == 0:
+            boot_coefs.append(0.0)
+            continue
+        _counts = np.zeros(_n_cells)
+        _ysum   = np.zeros(_n_cells)
+        _xsum   = np.zeros(_n_cells)
+        np.add.at(_counts, codes, 1.0)
+        np.add.at(_ysum,   codes, boot_y)
+        np.add.at(_xsum,   codes, boot_x)
+        _ymean = _ysum / np.maximum(_counts, 1)
+        _xmean = _xsum / np.maximum(_counts, 1)
+        boot_y_dm = boot_y - _ymean[codes]
+        boot_x_dm = boot_x - _xmean[codes]
 
         boot_coefs.append(_ols_coef(boot_y_dm, boot_x_dm))
 
@@ -664,23 +973,35 @@ def r1_estimate(
     n_control   = int((df[stratum_col] == 0).sum())
 
     return {
-        "coef":             round(coef, 6),
-        "ci_lo":            round(ci_lo, 6),
-        "ci_hi":            round(ci_hi, 6),
-        "n_total":          len(df),
-        "n_treatment":      n_treatment,
-        "n_control":        n_control,
-        "n_blocks":         n_blocks,
-        "fe_granularity":   fe_granularity,
-        "sector_fallback":  sector_fallback,
-        "naive_diff":       round(naive_diff, 6) if np.isfinite(naive_diff) else None,
-        "p_value":          round(p_value, 6),
-        "outcome":          outcome_col,
-        "stratum":          stratum_col,
+        "coef":                 round(coef, 6),
+        "ci_lo":                round(ci_lo, 6),
+        "ci_hi":                round(ci_hi, 6),
+        "n_total":              len(df),
+        "n_treatment":          n_treatment,
+        "n_control":            n_control,
+        "n_blocks":             n_blocks,
+        "fe_granularity":       fe_granularity,
+        "sector_fallback":      sector_fallback,
+        "naive_diff":           round(naive_diff, 6) if np.isfinite(naive_diff) else None,
+        "p_value":              round(p_value, 6),
+        "outcome":              outcome_col,
+        "stratum":              stratum_col,
+        "mask_n_dropped":       mask_n_dropped,
+        "mask_coverage":        round(mask_coverage, 6),
+        "n_dropped_extra_fe":   n_dropped_extra_fe,
     }
 
 
-def _empty_r1_result(outcome: str, stratum: str, fe_gran: str, reason: str) -> dict[str, Any]:
+def _empty_r1_result(
+    outcome: str,
+    stratum: str,
+    fe_gran: str,
+    reason: str,
+    *,
+    mask_n_dropped: int = 0,
+    mask_coverage: float = 1.0,
+    n_dropped_extra_fe: int = 0,
+) -> dict[str, Any]:
     return {
         "coef": None, "ci_lo": None, "ci_hi": None,
         "n_total": 0, "n_treatment": 0, "n_control": 0,
@@ -688,7 +1009,467 @@ def _empty_r1_result(outcome: str, stratum: str, fe_gran: str, reason: str) -> d
         "sector_fallback": False,
         "naive_diff": None, "p_value": None,
         "outcome": outcome, "stratum": stratum,
+        "mask_n_dropped": mask_n_dropped, "mask_coverage": round(mask_coverage, 6),
+        "n_dropped_extra_fe": n_dropped_extra_fe,
         "note": reason,
+    }
+
+
+# ---------------------------------------------------------------------------
+# R1-interaction estimator — Frisch-Waugh two-flag interaction (A3 RUL-30)
+# ---------------------------------------------------------------------------
+
+def r1_interaction_estimate(
+    graded: pd.DataFrame,
+    outcome_col: str,
+    flag_a_col: str,
+    flag_b_col: str,
+    *,
+    fe_granularity: str = "date",
+    sector_col: str | None = None,
+    era_col: str | None = None,
+    n_bootstrap: int = N_BOOTSTRAP,
+    rng_seed: int = RNG_SEED,
+    computable_mask: "pd.Series | None" = None,
+) -> dict[str, Any]:
+    """R1 interaction estimator: marginal interaction effect via Frisch-Waugh.
+
+    Encodes A3 RUL-30 marginality-vs-A law for families B/C/D.  The coefficient
+    is the effect of flag_a × flag_b above and beyond both main effects,
+    estimated within FE cells (same cell key logic as r1_estimate).
+
+    Estimation steps
+    ----------------
+    1. Drop rows where flag_a or flag_b is NaN (and computable_mask if given).
+    2. Build FE cell key identically to r1_estimate (date or era×sector-week).
+    3. Drop singleton FE cells.
+    4. Within-cell demean: outcome, flag_a, flag_b, and their product (interaction).
+    5. Frisch-Waugh partial out: regress demeaned_interaction on [demeaned_a,
+       demeaned_b] and take residuals; do the same for demeaned_outcome.
+    6. OLS of residualized outcome on residualized interaction → interaction coef.
+    7. Episode-block bootstrap (same BLOCK_RADIUS law) for 95% CI and p-value.
+
+    Parameters
+    ----------
+    graded:
+        Graded fire DataFrame.  Must contain outcome_col, flag_a_col, flag_b_col,
+        and 'date'.
+    outcome_col:
+        Outcome variable (e.g. 'stop5').
+    flag_a_col:
+        First binary flag (e.g. 'w2_deep').
+    flag_b_col:
+        Second binary flag (e.g. 'wbull_turn').
+    fe_granularity, sector_col, era_col, n_bootstrap, rng_seed, computable_mask:
+        Same semantics as r1_estimate.
+
+    Returns
+    -------
+    dict with keys matching r1_estimate shape (for effect_table-style consumption):
+        coef         — interaction coefficient (Frisch-Waugh)
+        ci_lo, ci_hi — block-bootstrap 95% CI
+        p_value      — two-sided bootstrap p-value
+        n_total      — rows after all filtering
+        n_treat      — count(flag_a==1 & flag_b==1)
+        n_ctrl       — count(flag_a==0 | flag_b==0)
+        n_treatment  — alias for n_treat (effect_table compat)
+        n_control    — alias for n_ctrl  (effect_table compat)
+        n_est        — rows entering the FE estimation (post singleton-drop)
+        n_blocks     — number of episode blocks
+        fe_granularity, sector_fallback, naive_diff
+        outcome      — outcome_col
+        stratum      — "{flag_a_col}×{flag_b_col}" (interaction label)
+        mask_n_dropped, mask_coverage
+    """
+    required = {"date", outcome_col, flag_a_col, flag_b_col}
+    missing = required - set(graded.columns)
+    if missing:
+        raise ValueError(f"r1_interaction_estimate: missing columns {missing}")
+
+    # --- computable_mask -------------------------------------------------------
+    mask_n_dropped = 0
+    mask_coverage = 1.0
+    if computable_mask is not None:
+        aligned_mask = computable_mask.reindex(graded.index).fillna(False).astype(bool)
+        n_before = len(graded)
+        graded = graded[aligned_mask].copy()
+        mask_n_dropped = n_before - len(graded)
+        mask_coverage = len(graded) / max(n_before, 1)
+
+    interaction_label = f"{flag_a_col}×{flag_b_col}"
+
+    # --- subset to rows where both flags are non-NaN --------------------------
+    df = graded.copy()
+    df["date"] = pd.to_datetime(df["date"])
+    df[outcome_col] = pd.to_numeric(df[outcome_col], errors="coerce")
+    df[flag_a_col]  = pd.to_numeric(df[flag_a_col],  errors="coerce")
+    df[flag_b_col]  = pd.to_numeric(df[flag_b_col],  errors="coerce")
+    df = df[
+        df[outcome_col].notna() & df[flag_a_col].notna() & df[flag_b_col].notna()
+    ].copy()
+    df["_interaction"] = df[flag_a_col] * df[flag_b_col]
+    df = df.reset_index(drop=True)
+
+    if len(df) < 10:
+        return {
+            "coef": None, "ci_lo": None, "ci_hi": None,
+            "n_total": len(df), "n_treat": 0, "n_ctrl": 0,
+            "n_treatment": 0, "n_control": 0, "n_est": 0,
+            "n_blocks": 0, "fe_granularity": fe_granularity,
+            "sector_fallback": False, "naive_diff": None,
+            "p_value": None, "outcome": outcome_col, "stratum": interaction_label,
+            "mask_n_dropped": mask_n_dropped, "mask_coverage": round(mask_coverage, 6),
+            "note": "insufficient rows after filtering",
+        }
+
+    # --- era column -----------------------------------------------------------
+    if era_col and era_col in df.columns:
+        df["_era"] = df[era_col]
+    else:
+        df["_era"] = df["date"].apply(_assign_era)
+
+    # --- sector coverage check ------------------------------------------------
+    sector_fallback = False
+    if sector_col and sector_col in df.columns:
+        covered = df[sector_col].notna().mean()
+        if covered < 0.50:
+            sector_fallback = True
+        _eff_sector = None if sector_fallback else sector_col
+    else:
+        sector_fallback = (sector_col is not None)
+        _eff_sector = None
+
+    # --- build FE column (same logic as r1_estimate) --------------------------
+    if fe_granularity == "date":
+        df["_fe"] = df["date"].astype(str)
+    elif fe_granularity == "era_sector_wk":
+        df["_week"] = df["date"].dt.isocalendar().week.astype(str)
+        df["_sector_fe"] = df[sector_col].fillna("none") if sector_col and sector_col in df.columns else "none"
+        df["_fe"] = df["_era"] + "|" + df["_sector_fe"] + "|" + df["_week"]
+    else:
+        raise ValueError(f"Unknown fe_granularity: {fe_granularity!r}. Use 'date' or 'era_sector_wk'.")
+
+    # --- drop singleton FE cells ----------------------------------------------
+    cell_counts = df["_fe"].value_counts()
+    multi_cells = cell_counts[cell_counts > 1].index
+    df_fe = df[df["_fe"].isin(multi_cells)].copy()
+    n_est = len(df_fe)
+    if n_est < 10:
+        return {
+            "coef": None, "ci_lo": None, "ci_hi": None,
+            "n_total": len(df), "n_treat": int((df[flag_a_col] == 1).sum() if len(df) else 0),
+            "n_ctrl": 0, "n_treatment": 0, "n_control": 0, "n_est": n_est,
+            "n_blocks": 0, "fe_granularity": fe_granularity,
+            "sector_fallback": sector_fallback, "naive_diff": None,
+            "p_value": None, "outcome": outcome_col, "stratum": interaction_label,
+            "mask_n_dropped": mask_n_dropped, "mask_coverage": round(mask_coverage, 6),
+            "note": f"too few rows after dropping singleton FE cells ({n_est})",
+        }
+
+    # --- within-FE demean: outcome, a, b, interaction -------------------------
+    fe_vals = df_fe["_fe"].to_numpy()
+    y_arr  = df_fe[outcome_col].to_numpy(dtype=float)
+    a_arr  = df_fe[flag_a_col].to_numpy(dtype=float)
+    b_arr  = df_fe[flag_b_col].to_numpy(dtype=float)
+    ab_arr = df_fe["_interaction"].to_numpy(dtype=float)
+
+    y_dm  = np.empty_like(y_arr)
+    a_dm  = np.empty_like(a_arr)
+    b_dm  = np.empty_like(b_arr)
+    ab_dm = np.empty_like(ab_arr)
+    for cell in np.unique(fe_vals):
+        m = fe_vals == cell
+        y_dm[m]  = y_arr[m]  - y_arr[m].mean()
+        a_dm[m]  = a_arr[m]  - a_arr[m].mean()
+        b_dm[m]  = b_arr[m]  - b_arr[m].mean()
+        ab_dm[m] = ab_arr[m] - ab_arr[m].mean()
+
+    # --- Frisch-Waugh: partial a and b out of both demeaned_ab and demeaned_y -
+    def _partial_out_ab(y: np.ndarray) -> np.ndarray:
+        Z = np.column_stack([a_dm, b_dm])
+        try:
+            coefs, _, _, _ = np.linalg.lstsq(Z, y, rcond=None)
+            return y - Z @ coefs
+        except np.linalg.LinAlgError:
+            return y - y.mean()
+
+    ab_res = _partial_out_ab(ab_dm)
+    y_res  = _partial_out_ab(y_dm)
+
+    coef = _ols_coef(y_res, ab_res)
+
+    # --- naive interaction difference -----------------------------------------
+    treat_mask = (df[flag_a_col] == 1) & (df[flag_b_col] == 1)
+    ctrl_mask  = ~treat_mask
+    t_out = df.loc[treat_mask, outcome_col].dropna()
+    c_out = df.loc[ctrl_mask,  outcome_col].dropna()
+    naive_diff = (float(t_out.mean()) - float(c_out.mean())) if (len(t_out) > 0 and len(c_out) > 0) else np.nan
+
+    # --- episode blocks -------------------------------------------------------
+    blocks = _make_blocks(df_fe, _eff_sector or "__none__", "date")
+    if len(blocks) == 0:
+        blocks = [df_fe.index.to_numpy()]
+    n_blocks = len(blocks)
+
+    # --- block-bootstrap 95% CI -----------------------------------------------
+    rng = np.random.default_rng(rng_seed)
+    boot_coefs: list[float] = []
+
+    for _ in range(n_bootstrap):
+        chosen = rng.integers(0, n_blocks, size=n_blocks)
+        boot_idx = np.concatenate([blocks[i] for i in chosen])
+        by  = y_arr[boot_idx]
+        ba  = a_arr[boot_idx]
+        bb  = b_arr[boot_idx]
+        bab = ab_arr[boot_idx]
+        bfe = fe_vals[boot_idx]
+
+        by_dm  = np.empty_like(by)
+        ba_dm  = np.empty_like(ba)
+        bb_dm  = np.empty_like(bb)
+        bab_dm = np.empty_like(bab)
+        for cell in np.unique(bfe):
+            m = bfe == cell
+            by_dm[m]  = by[m]  - by[m].mean()
+            ba_dm[m]  = ba[m]  - ba[m].mean()
+            bb_dm[m]  = bb[m]  - bb[m].mean()
+            bab_dm[m] = bab[m] - bab[m].mean()
+
+        bZ = np.column_stack([ba_dm, bb_dm])
+        try:
+            bc, _, _, _ = np.linalg.lstsq(bZ, bab_dm, rcond=None)
+            bab_res = bab_dm - bZ @ bc
+            bc2, _, _, _ = np.linalg.lstsq(bZ, by_dm, rcond=None)
+            by_res = by_dm - bZ @ bc2
+        except np.linalg.LinAlgError:
+            bab_res = bab_dm - bab_dm.mean()
+            by_res  = by_dm  - by_dm.mean()
+
+        boot_coefs.append(_ols_coef(by_res, bab_res))
+
+    boot_arr = np.array(boot_coefs)
+    ci_lo = float(np.percentile(boot_arr, 2.5))
+    ci_hi = float(np.percentile(boot_arr, 97.5))
+    p_value = float(min(1.0, 2.0 * min(
+        (boot_arr <= 0).mean(),
+        (boot_arr >= 0).mean(),
+    )))
+
+    n_treat = int(((df[flag_a_col] == 1) & (df[flag_b_col] == 1)).sum())
+    n_ctrl  = int(len(df) - n_treat)
+
+    return {
+        "coef":             round(coef, 6),
+        "ci_lo":            round(ci_lo, 6),
+        "ci_hi":            round(ci_hi, 6),
+        "n_total":          len(df),
+        "n_treat":          n_treat,
+        "n_ctrl":           n_ctrl,
+        "n_treatment":      n_treat,
+        "n_control":        n_ctrl,
+        "n_est":            n_est,
+        "n_blocks":         n_blocks,
+        "fe_granularity":   fe_granularity,
+        "sector_fallback":  sector_fallback,
+        "naive_diff":       round(naive_diff, 6) if np.isfinite(naive_diff) else None,
+        "p_value":          round(p_value, 6),
+        "outcome":          outcome_col,
+        "stratum":          interaction_label,
+        "mask_n_dropped":   mask_n_dropped,
+        "mask_coverage":    round(mask_coverage, 6),
+    }
+
+
+# ---------------------------------------------------------------------------
+# R1-M estimator — market-level variant (A2 RUL-24)
+# ---------------------------------------------------------------------------
+
+def r1m_estimate(
+    graded: pd.DataFrame,
+    outcome_col: str,
+    stratum_col: str,
+    controls: list[str],
+    *,
+    n_bootstrap: int = N_BOOTSTRAP,
+    rng_seed: int = RNG_SEED,
+    computable_mask: "pd.Series | None" = None,
+) -> dict[str, Any]:
+    """R1-M estimator: market-level variant with no date fixed effects (A2 RUL-24).
+
+    A2 RUL-24 rationale (verbatim):
+        "A market-level regressor is constant within a date, so the R1 date-FE
+        estimator absorbs it completely — Tier-B families cannot legally use R1
+        as-is. R1-M is pre-registered here: unit = fire; no date FE; mandatory
+        controls in the regression = VIX level, SPY 126d drawdown,
+        market_state/risk_regime state; SEs episode-clustered (fire-date ±10
+        bars); block-bootstrap CIs; era table mandatory."
+
+    FE-granularity law (RUL-12): R1-M is fixed at registration for a family;
+    it is NEVER switched to R1 post-hoc. R1-M families ceiling at
+    regime-conditioning context — never a ticker-level chip (RUL-24).
+
+    Shared-source control exclusion (RUL-24 ⟦RV⟧): when a mandatory control
+    shares its underlying source series with the family's treatment definition,
+    that control must be DROPPED for that family and the drop pre-registered.
+    The caller is responsible for passing only the appropriate controls; this
+    function enforces non-empty controls with a clear error.
+
+    Parameters
+    ----------
+    graded:
+        Graded fire DataFrame. Must contain outcome_col, stratum_col,
+        'date', and every column listed in controls.
+    outcome_col:
+        Outcome variable name (e.g. 'stop5', 'mae21').
+    stratum_col:
+        Binary treatment indicator (1 = treatment, 0 = control).
+    controls:
+        REQUIRED non-empty list of column names to include as OLS controls
+        (RUL-24: shared-source exclusion pre-registered per family). Raises
+        ValueError if empty — conditioning ceiling requires at least the
+        shared-source-reduced set of controls (see RUL-24).
+    n_bootstrap:
+        Number of block-bootstrap resamples for 95% CI.
+    rng_seed:
+        Random seed for reproducibility.
+    computable_mask:
+        Optional boolean Series (A2 §C2); same semantics as r1_estimate.
+
+    Returns
+    -------
+    dict with keys:
+        coef         — OLS coefficient on stratum_col after partialling controls
+        ci_lo, ci_hi — block-bootstrap 95% CI
+        n_total      — total rows after filtering
+        n_treatment  — treatment arm count
+        n_control    — control arm count
+        n_blocks     — number of episode blocks
+        p_value      — bootstrap p-value (two-sided)
+        outcome      — outcome_col
+        stratum      — stratum_col
+        controls_used — list of control columns actually used
+        mask_n_dropped — int: rows dropped by computable_mask (0 when None)
+        mask_coverage  — float: fraction retained (1.0 when None)
+    """
+    # --- RUL-24: enforce non-empty controls -----------------------------------
+    if not controls:
+        raise ValueError(
+            "r1m_estimate: controls must be non-empty (RUL-24). "
+            "R1-M is a market-level estimator; at minimum the shared-source-reduced "
+            "mandatory controls (VIX level, SPY drawdown, market_state/risk_regime) "
+            "must be passed. Pre-register any shared-source exclusion per RUL-24 ⟦RV⟧."
+        )
+
+    required = {"date", outcome_col, stratum_col} | set(controls)
+    missing = required - set(graded.columns)
+    if missing:
+        raise ValueError(f"r1m_estimate: missing columns {missing}")
+
+    # --- computable_mask: A2 §C2 -------------------------------------------
+    mask_n_dropped = 0
+    mask_coverage = 1.0
+    if computable_mask is not None:
+        aligned_mask = computable_mask.reindex(graded.index).fillna(False).astype(bool)
+        n_before = len(graded)
+        graded = graded[aligned_mask].copy()
+        mask_n_dropped = n_before - len(graded)
+        mask_coverage = len(graded) / max(n_before, 1)
+        log.debug(
+            "r1m_estimate: computable_mask dropped %d rows (%.1f%% retained)",
+            mask_n_dropped, mask_coverage * 100,
+        )
+
+    # --- subset to valid rows -------------------------------------------------
+    df = graded.copy()
+    df["date"] = pd.to_datetime(df["date"])
+
+    keep_cols = [outcome_col, stratum_col, "date"] + controls
+    df = df[keep_cols].copy()
+    df[outcome_col] = pd.to_numeric(df[outcome_col], errors="coerce")
+    df[stratum_col] = pd.to_numeric(df[stratum_col], errors="coerce")
+    for c in controls:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    df = df.dropna().reset_index(drop=True)
+
+    if len(df) < 10:
+        return {
+            "coef": None, "ci_lo": None, "ci_hi": None,
+            "n_total": len(df), "n_treatment": 0, "n_control": 0,
+            "n_blocks": 0, "p_value": None,
+            "outcome": outcome_col, "stratum": stratum_col,
+            "controls_used": controls,
+            "mask_n_dropped": mask_n_dropped, "mask_coverage": round(mask_coverage, 6),
+            "note": "insufficient rows after filtering",
+        }
+
+    # --- OLS: partial out controls using Frisch-Waugh -------------------------
+    # Partial out controls from both y and x (stratum), then regress residuals.
+    # This is equivalent to OLS of y on [stratum, controls] but avoids building
+    # the full design matrix.
+    def _partial_out(y: np.ndarray, Z: np.ndarray) -> np.ndarray:
+        """Regress y on Z (with intercept) and return residuals."""
+        Z_aug = np.column_stack([np.ones(len(Z)), Z])
+        try:
+            coefs, _, _, _ = np.linalg.lstsq(Z_aug, y, rcond=None)
+            return y - Z_aug @ coefs
+        except np.linalg.LinAlgError:
+            return y - y.mean()
+
+    y_arr = df[outcome_col].to_numpy(dtype=float)
+    x_arr = df[stratum_col].to_numpy(dtype=float)
+    Z_arr = df[controls].to_numpy(dtype=float)
+
+    y_res = _partial_out(y_arr, Z_arr)
+    x_res = _partial_out(x_arr, Z_arr)
+
+    coef = _ols_coef(y_res, x_res)
+
+    # --- episode blocks (date-only; no sector FE in R1-M) -------------------
+    blocks = _make_blocks(df, "__none__", "date")
+    if len(blocks) == 0:
+        blocks = [df.index.to_numpy()]
+
+    # --- block-bootstrap 95% CI ---------------------------------------------
+    rng = np.random.default_rng(rng_seed)
+    boot_coefs: list[float] = []
+    n_blocks = len(blocks)
+
+    for _ in range(n_bootstrap):
+        chosen = rng.integers(0, n_blocks, size=n_blocks)
+        boot_idx = np.concatenate([blocks[i] for i in chosen])
+        by = y_arr[boot_idx]
+        bx = x_arr[boot_idx]
+        bZ = Z_arr[boot_idx]
+        by_res = _partial_out(by, bZ)
+        bx_res = _partial_out(bx, bZ)
+        boot_coefs.append(_ols_coef(by_res, bx_res))
+
+    boot_arr = np.array(boot_coefs)
+    ci_lo = float(np.percentile(boot_arr, 2.5))
+    ci_hi = float(np.percentile(boot_arr, 97.5))
+    p_value = float(min(1.0, 2.0 * min(
+        (boot_arr <= 0).mean(),
+        (boot_arr >= 0).mean(),
+    )))
+
+    n_treatment = int((df[stratum_col] == 1).sum())
+    n_control   = int((df[stratum_col] == 0).sum())
+
+    return {
+        "coef":           round(coef, 6),
+        "ci_lo":          round(ci_lo, 6),
+        "ci_hi":          round(ci_hi, 6),
+        "n_total":        len(df),
+        "n_treatment":    n_treatment,
+        "n_control":      n_control,
+        "n_blocks":       n_blocks,
+        "p_value":        round(p_value, 6),
+        "outcome":        outcome_col,
+        "stratum":        stratum_col,
+        "controls_used":  controls,
+        "mask_n_dropped": mask_n_dropped,
+        "mask_coverage":  round(mask_coverage, 6),
     }
 
 
@@ -747,14 +1528,18 @@ def bh_correction(
 # ---------------------------------------------------------------------------
 
 EFFECT_OUTCOMES = [
-    ("stop5",       "stop5 rate",          "treatment stopped within 5d (bool)"),
-    ("state_rot",   "rotational liftoff",  "state_rot == CLEAN_LIFTOFF (clean8_21)"),
-    ("state_pos",   "positional liftoff",  "state_pos == CLEAN_LIFTOFF (clean15_126)"),
-    ("dead_money",  "dead_money rate",     "state_pos == DEAD_MONEY (positional)"),
-    ("cushion_rot", "cushion rate (rot)",  "cushion hit in 21d window"),
-    ("mae63",       "MAE 63d",             "max adverse excursion at 63d"),
-    ("mfe63",       "MFE 63d",             "max favorable excursion at 63d"),
-    ("days_to_10",  "days to 10% gain",    "first bar at ≥10% from entry"),
+    ("stop5",         "stop5 rate",             "treatment stopped within 5d (bool)"),
+    ("mae21",         "MAE 21d",                "max adverse excursion at 21d (RUL-13 co-primary)"),
+    ("state_rot",     "rotational liftoff",      "state_rot == CLEAN_LIFTOFF (clean8_21)"),
+    ("state_pos",     "positional liftoff",      "state_pos == CLEAN_LIFTOFF (clean15_126)"),
+    ("dead_money",    "dead_money rate",         "state_pos == DEAD_MONEY (positional)"),
+    ("cushion_rot",   "cushion rate (rot)",      "cushion hit in 21d window"),
+    ("mae63",         "MAE 63d",                 "max adverse excursion at 63d"),
+    ("mfe63",         "MFE 63d",                 "max favorable excursion at 63d"),
+    ("days_to_10",    "days to 10% gain",        "first bar at ≥10% from entry"),
+    # RUL-14 co-primaries: vol-scaled entry zone (Amendment 1 §C1)
+    ("zone_held_21",  "vol-zone held 21d",       "min fwd close over fill+1..+21 > fill*(1-vol_band)"),
+    ("stop_vol_21",   "vol-stop 21d",            "1 - zone_held_21 (stopped out of vol-scaled band)"),
 ]
 
 
@@ -803,14 +1588,21 @@ def effect_table(
     # days_to_10 coefficient.  It is computed descriptively in the era_table
     # (days_to_10_median) where the conditioning is clearly labelled.
     # See W0_BASELINES.md § days_to_10 note.
+    #
+    # RUL-14 co-primaries zone_held_21 / stop_vol_21 ARE included in the BH panel
+    # exactly like stop5 (Amendment 1 §C1, entry_strata_phase0.py B1 PR).
     outcomes_to_run = [
         ("stop5",             "stop5"),
+        ("mae21",             "mae21"),
         ("rotational_liftoff","rotational_liftoff"),
         ("positional_liftoff","positional_liftoff"),
         ("dead_money",        "dead_money"),
         ("cushion_rot",       "cushion_rot"),
         ("mae63",             "mae63"),
         ("mfe63",             "mfe63"),
+        # RUL-14 co-primaries
+        ("zone_held_21",      "zone_held_21"),
+        ("stop_vol_21",       "stop_vol_21"),
     ]
 
     effects = []
@@ -900,9 +1692,19 @@ def era_table(
         rec["pos_liftoff_rate"] = round(g["positional_liftoff"].mean(), 4) if "positional_liftoff" in g else None
         rec["dead_money_rate"]  = round(g["dead_money"].mean(), 4) if "dead_money" in g else None
         rec["mae63_mean"]       = round(g["mae63"].mean(), 4) if "mae63" in g and g["mae63"].notna().any() else None
+        rec["mae21_mean"]       = round(g["mae21"].mean(), 4) if "mae21" in g and g["mae21"].notna().any() else None
         rec["mfe63_mean"]       = round(g["mfe63"].mean(), 4) if "mfe63" in g and g["mfe63"].notna().any() else None
         days = g["days_to_10"].dropna()
         rec["days_to_10_median"] = round(float(days.median()), 1) if len(days) > 0 else None
+        # RUL-14 co-primaries: vol-scaled entry zone (Amendment 1 §C1)
+        if "zone_held_21" in g.columns and g["zone_held_21"].notna().any():
+            rec["zone_held_21_rate"] = round(float(g["zone_held_21"].mean()), 4)
+            rec["stop_vol_21_rate"]  = round(float(g["stop_vol_21"].mean()), 4) if "stop_vol_21" in g.columns and g["stop_vol_21"].notna().any() else None
+            rec["vol_band_mean"]     = round(float(g["vol_band"].mean()), 4) if "vol_band" in g.columns and g["vol_band"].notna().any() else None
+        else:
+            rec["zone_held_21_rate"] = None
+            rec["stop_vol_21_rate"]  = None
+            rec["vol_band_mean"]     = None
         rows.append(rec)
 
     result = pd.DataFrame(rows)
@@ -1034,6 +1836,7 @@ def run_baselines(
                 "pos_liftoff_rate": round(float(g["positional_liftoff"].mean()), 4),
                 "dead_money_rate":  round(float(g["dead_money"].mean()), 4),
                 "mae63_mean":       round(float(g["mae63"].mean()), 4) if g["mae63"].notna().any() else None,
+                "mae21_mean":       round(float(g["mae21"].mean()), 4) if "mae21" in g.columns and g["mae21"].notna().any() else None,
                 "mfe63_mean":       round(float(g["mfe63"].mean()), 4) if g["mfe63"].notna().any() else None,
             }
 

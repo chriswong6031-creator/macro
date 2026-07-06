@@ -42,6 +42,16 @@ def _conviction(ticker: str, stockdata_dir: str, cache: dict) -> dict | None:
         try:
             rec = json.loads(p.read_text())
             c = rec.get("conviction") or {}
+            # the THIRD gauge: the owner's T1->T4 confluence cascade verdict (MACD-2D x
+            # StochRSI-3D), persisted per name by the {us,china} library builders. The
+            # Holdings table renders it as a tier badge and surfaces a fresh cross to the
+            # top — the same gate the standout board ranks by. Only carried when a fresh,
+            # eligible tier fired; unrated names -> None (no badge, sorts below rated).
+            sg = rec.get("signal") or {}
+            signal = ({"tier": sg.get("tier_cascade"), "tier_sub": sg.get("tier_sub"),
+                       "ticks": sg.get("ticks"), "bars_to_cross": sg.get("bars_to_cross"),
+                       "provisional": bool(sg.get("provisional"))}
+                      if sg.get("eligible") and sg.get("tier_cascade") else None)
             if c:
                 # the SECOND gauge: a compact entry-timing read (US has it; ex-US
                 # gracefully omits until those builders wire entry_signal) so a member
@@ -63,10 +73,15 @@ def _conviction(ticker: str, stockdata_dir: str, cache: dict) -> dict | None:
                        "valuation_band": c.get("valuation_band"),
                        "validation_status": c.get("validation_status"),
                        "entry": entry,
+                       "signal": signal,
                        "trust": (c.get("trust_tier") or {}).get("tier"),
                        # the same theme/sector spotlight tilt the standout board ranks by,
                        # so the theme page and the board can never disagree on a name.
                        "spotlight": sp.get("dir") if sp else None}
+            elif signal:
+                # a rated name whose conviction profile is thin/absent: still carry the
+                # tier so it renders a badge and surfaces to the top (score None -> "thin").
+                val = {"score": None, "signal": signal}
         except Exception:  # noqa: BLE001
             val = None
     cache[ticker] = val

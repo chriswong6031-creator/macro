@@ -53,6 +53,7 @@ from engine import demand_chain as dchain  # noqa: E402
 from engine import coiled  # noqa: E402  — wave-2-validated COILED ranking bonus (display/ranking only)
 from engine import donor  # noqa: E402  — G6a donor-sector context chip (display-only)
 from engine import hold as hold_engine  # noqa: E402  — W6-C HOLD tracker (basing state / invalidation)
+from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-blackout hygiene veto
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -1078,7 +1079,10 @@ def main() -> int:
     # build (resumable, never fatal), then read the latest readings into a cross-sectional z.
     try:
         from collectors.equity_revisions import fetch_revisions
-        fetch_revisions(max_new=int(config.load().get("equity_profile", {}).get("per_build", 200)))
+        if _no_drip():
+            log.info("revision drip skipped (render lane — data/ write discarded)")
+        else:
+            fetch_revisions(max_new=int(config.load().get("equity_profile", {}).get("per_build", 200)))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("revision drip skipped (%s)", e)
     revision_z: dict[str, float] = {}
@@ -1127,7 +1131,9 @@ def main() -> int:
     try:
         from engine import composite_score
         _legrows = {}
-        for _t in set(_factor_legs) | set(alpha_pt) | set(revision_z):
+        # sorted: set iteration is hash-seed-dependent per run; row order feeds
+        # float summation in the sector z-scores, so pin it for reproducibility
+        for _t in sorted(set(_factor_legs) | set(alpha_pt) | set(revision_z)):
             _fl = _factor_legs.get(_t) or {}
             _legrows[_t] = {"momentum": (alpha_pt.get(_t) or {}).get("alpha"),
                             "value": _fl.get("value"), "quality": _fl.get("quality"),
@@ -1414,27 +1420,36 @@ def main() -> int:
                 rec["vol_squeeze"] = sq
         except Exception as e:  # noqa: BLE001 — additive; the thin snapshot is already on rec
             log.warning("tech/squeeze enrich for %s failed (%s)", ticker, e)
-        # ---- P0.3 liquidity/capacity hygiene (DISPLAY-ONLY, R10 — zero rank/gate power) ---
-        # adv_dollar_21d: 21-session average dollar volume (close × volume) from data/stocks/.
-        # days_to_exit_at_10pct_adv: how many days a $100k position takes to exit at 10% of
-        # ADV ($100k assumption is a display heuristic — not a position-size recommendation).
-        # Available only when _ohlcv has a volume column (data/stocks names); breadth-cache-only
-        # names (close-only) silently skip — field absent is the honest answer.
+        # ---- W5b liquidity chip (DISPLAY-ONLY, zero rank/gate power) ---------------
+        # engine.liquidity_chip: 20-session MEDIAN dollar volume (close x volume),
+        # liquidity tier (deep/ok/thin/illiquid), and days-to-build at $100k and $1M
+        # clips assuming the investor consumes at most 10 % of ADV per day.
+        # Also retains the legacy adv_dollar_21d MEAN + days_to_exit for backward compat
+        # (stock.html and the detail page may still read these fields).
+        # Available only when _ohlcv has a volume column (data/stocks names); breadth-
+        # cache-only names (close-only) silently skip — field absent is the honest answer.
         try:
             if _ohlcv is not None and "volume" in _ohlcv.columns:
-                _vol21 = _ohlcv["volume"].tail(21).dropna()
-                _close21 = _ohlcv["close"].tail(21).dropna()
-                _n = min(len(_vol21), len(_close21))
-                if _n >= 5:
-                    _adv_dv = float((_vol21.iloc[-_n:].values * _close21.iloc[-_n:].values).mean())
-                    _adv_10pct = _adv_dv * 0.10
-                    _dte = (100_000 / _adv_10pct) if _adv_10pct > 0 else None
-                    _liq_map[ticker] = {
-                        "adv_dollar_21d": round(_adv_dv, 0),
-                        "days_to_exit_at_10pct_adv": round(_dte, 1) if _dte is not None else None,
-                    }
+                from engine import liquidity_chip as _lc
+                _lchip = _lc.compute(_ohlcv["close"], _ohlcv["volume"])
+                if _lchip is not None:
+                    # W5b primary fields
+                    _liq_map[ticker] = _lchip
+                    # Legacy mean-based fields (backward compat — kept alongside the new median)
+                    _vol21 = _ohlcv["volume"].tail(21).dropna()
+                    _close21 = _ohlcv["close"].tail(21).dropna()
+                    _n21 = min(len(_vol21), len(_close21))
+                    if _n21 >= 5:
+                        _adv_dv21 = float(
+                            (_vol21.iloc[-_n21:].values * _close21.iloc[-_n21:].values).mean()
+                        )
+                        _adv_10pct21 = _adv_dv21 * 0.10
+                        _dte21 = (100_000 / _adv_10pct21) if _adv_10pct21 > 0 else None
+                        _liq_map[ticker]["adv_dollar_21d"] = round(_adv_dv21, 0)
+                        if _dte21 is not None:
+                            _liq_map[ticker]["days_to_exit_at_10pct_adv"] = round(_dte21, 1)
         except Exception as _liqe:  # noqa: BLE001 — hygiene fields; never fatal
-            log.debug("liquidity hygiene for %s skipped (%s)", ticker, _liqe)
+            log.debug("liquidity chip for %s skipped (%s)", ticker, _liqe)
         # ---- dealer-gamma join (RICH board payload) + the GEX verifier/confirmer -------
         # Prefer the pre-built site/gex payload (call/put walls + vol_hole + correct units);
         # fall back to the live compute_gex summary. _flat_gex_from_board keeps stock.html's
@@ -1559,6 +1574,12 @@ def main() -> int:
                 rec["entry_signal"] = es
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("entry-signal for %s failed (%s)", ticker, e)
+        # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
+        # The owner's MACD-2D x StochRSI-3D gate (already computed above as sig_verdict),
+        # persisted per name so the theme/basket-detail Holdings table can surface a fresh
+        # confluence cross to the top — the same tier the standout board ranks by. Slim,
+        # allow_nan-safe subset (buy_signal); mirrors rec["entry_signal"]. None-tolerant.
+        rec["signal"] = signal_gate.buy_signal(sig_verdict.get(ticker))
         # ---- Pullback buy-zone (display-only) ---------------------------------
         # turn an "Extended — don't chase" verdict into a concrete level: the rising 50d /
         # the out-of-chase line for a timeable leader, or a "this is a chase, the reset is X%
@@ -1643,6 +1664,16 @@ def main() -> int:
         # W6-C HOLD: attach per-name basing state to the stockdata JSON (BLOCKED names get it too)
         if _hold_state.get(ticker):
             rec["hold"] = _hold_state[ticker]
+        # W2 PR-J — Long-Hold Thesis Layer: entry_clock annotation (display-only).
+        # Days since the most recent tactical buy/rebuy marker fire (signal_gate).
+        # horizon_role=hold_thesis; must NOT feed entry-stack scored surfaces (LH-R1).
+        try:
+            from engine.long_hold_clocks import entry_clock as _ec  # noqa: PLC0415
+            _eck = _ec(sig_verdict.get(ticker))
+            if _eck is not None:
+                rec["entry_clock"] = _eck
+        except Exception:  # noqa: BLE001 — additive display chip; never fatal
+            pass
         # Sector Pulse — top-level block in each stockdata JSON (DISPLAY-ONLY, never scored).
         # Null/absent when the ticker maps to no live theme. Never fatal.
         try:
@@ -1949,7 +1980,9 @@ def main() -> int:
         row_by_t = {r.get("ticker"): r for _, r in cand}
         scored = [(t, p) for t, p in profiles.items()
                   if p.get("composite_z") is not None and t in row_by_t]
-        scored.sort(key=lambda kv: -(kv[1]["composite_z"]))
+        # ticker tiebreaker: identical composite_z must never leave board order to
+        # dict insertion order (reproducibility — same inputs, same board)
+        scored.sort(key=lambda kv: (-(kv[1]["composite_z"]), kv[0]))
         # ENTRY-QUALITY GATE (China's discipline, T4-validated: poor-entry top-momentum names
         # realize -0.7pp/mo and a -58% vs -41% worst drawdown) AND the new BOTTOMING-ALIGNMENT
         # gate. A name is BUYABLE only if its cycle/extension does NOT block (downtrend /
@@ -1971,13 +2004,13 @@ def main() -> int:
             return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
 
         def _asort(tp):
-            _t, p, _tier = tp
+            t, p, _tier = tp
             a = p.get("alignment") or {}
-            return ((a.get("score") or 0.0), (p.get("composite_z") or 0.0))
+            return (-(a.get("score") or 0.0), -(p.get("composite_z") or 0.0), t)
 
         elig = [(t, p, _atier(p)) for t, p in scored if _entry_ok(p) and _atier(p)]
-        aligned = sorted([x for x in elig if x[2] == "aligned"], key=_asort, reverse=True)
-        near = sorted([x for x in elig if x[2] == "near"], key=_asort, reverse=True)
+        aligned = sorted([x for x in elig if x[2] == "aligned"], key=_asort)
+        near = sorted([x for x in elig if x[2] == "near"], key=_asort)
         buyable = (aligned if len(aligned) >= ALIGN_MIN_KEEP
                    else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])
 
@@ -2049,7 +2082,8 @@ def main() -> int:
 
         # Order recovery candidates by alpha desc (W8 verdict: no rank power; alpha is
         # the only validated sort leg; forward ledger will stratify by lane)
-        _recovery_cands.sort(key=lambda tp: -(tp[1].get("alpha") or tp[1].get("composite_z") or 0.0))
+        _recovery_cands.sort(
+            key=lambda tp: (-(tp[1].get("alpha") or tp[1].get("composite_z") or 0.0), tp[0]))
         _recovery_cands = _recovery_cands[:_RECOVERY_CAP]
         _recovery_tickers = {t for t, _ in _recovery_cands}
 
@@ -2069,7 +2103,7 @@ def main() -> int:
             w = (sig_verdict.get(t) or {}).get("weight") or 0.0
             pct = bisect.bisect_right(_czs, p.get("composite_z") or 0.0) / _bn
             return (0 if tier == "aligned" else 1,
-                    -(pct + 0.5 * w + ((coiled_by.get(t) or {}).get("bonus") or 0.0)))
+                    -(pct + 0.5 * w + ((coiled_by.get(t) or {}).get("bonus") or 0.0)), t)
         buyable = sorted(buyable, key=_combine_key)
 
         # W6-US fix 6: soft per-sector cap + dual-class dedup on the wide board.
@@ -2122,6 +2156,105 @@ def main() -> int:
                  "top-2 share %.0f%%, %d overflow to watch",
                  len(buyable), _n_sectors6, 100 * _top2_share6, len(_buyable_overflow))
 
+        # ── W1.5 Earnings-blackout hygiene veto (adjudicated 2026-07-05) ──────
+        # HYGIENE GATE — fresh-entry suppression only (RUL-4-legal).
+        # HOLD/LAUNCHED names are never touched; only fresh-fire buy candidates.
+        # Fail-open law: missing store / stale store => never suppresses.
+        #
+        # Injection: pass the already-built close-series index as the trading-day
+        # calendar so earnings_blackout skips the redundant data/stocks/*.parquet
+        # re-read (_build_td_calendar cold cost ~5s on 224+ files).
+        try:
+            _td_dates: "pd.DatetimeIndex | None" = None
+            try:
+                import pandas as _pd_eb
+                _td_dates = _pd_eb.DatetimeIndex(sorted(set(
+                    idx
+                    for (_, cl, *_) in uni
+                    for idx in cl.index
+                )))
+                _eb.set_td_calendar(_td_dates)
+            except Exception:  # noqa: BLE001 — graceful: fall through to internal glob
+                pass
+            _eb_store_info = _eb.store_staleness()
+            _eb_store_stale = _eb_store_info.get("stale", True)
+            _eb_suppressed: list[tuple] = []   # (t, p, tier) suppressed from buy
+            _eb_suppressed_r: list[tuple] = [] # (t, p) suppressed from Lane R
+            _eb_blackout_map: dict[str, dict] = {}  # t -> assess() result
+            if _eb_store_stale:
+                log.warning(
+                    "W1.5 earnings_blackout: store stale (as_of_age_td=%s) — "
+                    "suppressing NOTHING (fail-open)",
+                    _eb_store_info.get("as_of_age_td"))
+            else:
+                # Assess trend-lane buyable candidates
+                _buyable_after_eb: list[tuple] = []
+                for _item_eb in buyable:
+                    _t_eb, _p_eb, _tier_eb = _item_eb
+                    # Skip HOLD (any active state) — launched/intact/broken are all
+                    # treated as open position; earnings gate does not re-suppress them.
+                    # NOTE: hold state lives on row_by_t (rec["hold"]), NOT on prof (_p_eb).
+                    _hd_eb = (row_by_t[_t_eb].get("hold") or {}) if _t_eb in row_by_t else {}
+                    if _hd_eb.get("state") in {"launched", "intact", "broken"}:
+                        _buyable_after_eb.append(_item_eb)
+                        continue
+                    _ev = _eb.assess(_t_eb)
+                    _eb_blackout_map[_t_eb] = _ev
+                    if _ev.get("in_blackout"):
+                        _eb_suppressed.append(_item_eb)
+                        # Attach rejection tag to the row (REJECTION_TAXONOMY slot)
+                        row_by_t[_t_eb]["primary_rejection_reason"] = "event_blackout"
+                    else:
+                        _buyable_after_eb.append(_item_eb)
+                buyable = _buyable_after_eb
+
+                # Assess Lane-R recovery candidates
+                _recovery_after_eb: list[tuple] = []
+                for _t_eb, _p_eb in _recovery_cands:
+                    # NOTE: hold state lives on row_by_t (rec["hold"]), NOT on prof (_p_eb).
+                    _hd_eb = (row_by_t[_t_eb].get("hold") or {}) if _t_eb in row_by_t else {}
+                    if _hd_eb.get("state") in {"launched", "intact", "broken"}:
+                        _recovery_after_eb.append((_t_eb, _p_eb))
+                        continue
+                    _ev = _eb_blackout_map.get(_t_eb) or _eb.assess(_t_eb)
+                    _eb_blackout_map[_t_eb] = _ev
+                    if _ev.get("in_blackout"):
+                        _eb_suppressed_r.append((_t_eb, _p_eb))
+                        row_by_t[_t_eb]["primary_rejection_reason"] = "event_blackout"
+                    else:
+                        _recovery_after_eb.append((_t_eb, _p_eb))
+                _recovery_cands = _recovery_after_eb
+                _recovery_tickers = {t for t, _ in _recovery_cands}
+
+                _n_eb_suppressed = len(_eb_suppressed) + len(_eb_suppressed_r)
+                if _n_eb_suppressed:
+                    log.info(
+                        "W1.5 earnings_blackout: suppressed %d fresh-buy candidate(s) "
+                        "— %s (event_blackout; HOLD/LAUNCHED untouched)",
+                        _n_eb_suppressed,
+                        ", ".join(t for t, _, _ti in _eb_suppressed)
+                        + (", " + ", ".join(t for t, _ in _eb_suppressed_r)
+                           if _eb_suppressed_r else ""),
+                    )
+                else:
+                    log.info("W1.5 earnings_blackout: no fresh-buy candidates in blackout today")
+
+            # Build suppressed-today summary for the board surface
+            _eb_suppressed_count = len(_eb_suppressed) + len(_eb_suppressed_r)
+            _eb_suppressed_note: dict | None = (
+                {"count": _eb_suppressed_count,
+                 "tickers": [t for t, _, _ti in _eb_suppressed]
+                             + [t for t, _ in _eb_suppressed_r],
+                 "store_stale": _eb_store_stale}
+                if _eb_suppressed_count or _eb_store_stale else None
+            )
+        except Exception as _eb_exc:  # noqa: BLE001 — hygiene gate must never crash a build
+            log.warning("W1.5 earnings_blackout: gate error (%s) — fail-open", _eb_exc)
+            _eb_suppressed_count = 0
+            _eb_suppressed_note = None
+            _eb_blackout_map = {}
+            _eb_store_stale = True
+
         buy_ids = {t for t, _, _ in buyable} | _recovery_tickers
         # overflow names join watch (only if positive conviction, no duplication)
         _overflow_tickers = {t for t, _, _ in _buyable_overflow}
@@ -2133,10 +2266,131 @@ def main() -> int:
                            if (profiles.get(t) or {}).get("composite_z", 0) > 0]
         watch = _overflow_watch + watch
 
-        def _tag(t, tier, lane="trend"):
+        # ── P2.4 Board Contract v2: lane taxonomy + weekly_phase capture ─────
+        # Spec: research/entry_intel/P2_4_BOARD_CONTRACT_V2_DESIGN.md
+        # Step A: populate weekly_phase on every cand row from
+        #         profiles[t]["alignment"]["weekly"] BEFORE _tag() is called.
+        # Step B: _lane_for() derives the lane from align_tier + weekly_phase,
+        #         handling both live vocab (aligned/near) and replay vocab
+        #         (PRIME/ARMED/APPROACHING) with an UNKNOWN guard.
+        # Vocabulary sets — verified 2026-07-05 against live us_standouts.json.
+        # Live board: align_tier in {"aligned", "near", None}.
+        # Replay/conviction layer: alignment.tier in {"PRIME", "ARMED", ...}.
+        # Both vocabularies are handled explicitly; unknown values log a warning.
+        _PRIME_EQUIV   = {"PRIME", "aligned"}         # bottoming-type tiers
+        _ARMED_EQUIV   = {"ARMED"}                    # continuation-type (requires rising weekly)
+        _NEAR_EQUIV    = {"APPROACHING", "near", "bear_recovering", "turning"}  # near-aligned
+
+        def _lane_for(align_tier_val, weekly_phase_val):
+            """Derive the v2 lane label from align_tier + weekly_phase.
+
+            Handles both the live production vocabulary (aligned/near/None) and
+            the replay/conviction vocabulary (PRIME/ARMED/APPROACHING).
+            Logs a warning on any unknown tier and defaults to 'bottoming'.
+            """
+            tier = None if align_tier_val in (None, "None", "") else align_tier_val
+            if tier in _PRIME_EQUIV:
+                return "bottoming"
+            if tier in _ARMED_EQUIV and weekly_phase_val == "rising":
+                return "continuation"
+            if tier in _NEAR_EQUIV and weekly_phase_val == "rising":
+                return "continuation"  # near/APPROACHING with rising phase → continuation
+            if tier in _ARMED_EQUIV or tier in _NEAR_EQUIV:
+                return "bottoming"     # non-rising ARMED or near → bottoming group
+            if tier is None:
+                return "bottoming"     # null align_tier → structural default
+            # UNKNOWN vocabulary: log loudly, default gracefully
+            log.warning(
+                "P2.4 _lane_for: UNKNOWN align_tier value %r (weekly_phase=%r) — "
+                "defaulting to 'bottoming'. Update _PRIME_EQUIV/_ARMED_EQUIV/_NEAR_EQUIV "
+                "if the builder vocabulary has changed.", align_tier_val, weekly_phase_val
+            )
+            return "bottoming"
+
+        # Step A: capture weekly_phase + above_trend from profiles onto cand rows.
+        # weekly_phase comes from profiles[t]["alignment"]["weekly"] (the _tf_phase()
+        # value: "rising"/"rolling"/"falling"/"turning"/"unknown"). This is the primary
+        # discriminator for ARMED-continuation vs PRIME-bottoming lane detection.
+        # above_trend: sourced from sig_verdict[t].get("above200") — the signal_gate
+        # already computes this boolean (price > 200d SMA) in gate() and emits it as a
+        # top-level verdict key.  Board rows in row_by_t do NOT carry a "tech" sub-dict
+        # at Step A time (tech snapshot is absent from the buy-loop dict), so the
+        # previous primary path (r_dict.get("tech").get("above200")) always returned
+        # None — hence 0% fill in the P2.4 real-build (VERIFY_P2_4_REALBUILD.md F1).
+        # Fix (AC-5): use sig_verdict[ticker].get("above200") as the primary source.
+        # sig_verdict is built at L1344 (same closure scope) from signal_gate.gate()
+        # which populates above200 for every analysed name.
+        def _get_above_trend(ticker_str):
+            """Extract above_trend bool; primary = sig_verdict[t].above200."""
+            # Primary: signal_gate verdict (above200 populated for all analysed names)
+            _sv_ab = (sig_verdict.get(ticker_str) or {}).get("above200")
+            if _sv_ab is not None:
+                return bool(_sv_ab)
+            # Fallback: already set on the row (e.g. from a prior propagation pass)
+            _r_fb = row_by_t.get(ticker_str)
+            if _r_fb is not None:
+                _existing = _r_fb.get("above_trend")
+                if _existing is not None:
+                    return bool(_existing)
+            return None
+
+        # buyable = (t, p, tier) triples; _recovery_cands = (t, p) pairs — iterate separately
+        for _t_a, _p_a, _tier_a in buyable:
+            _r_a = row_by_t.get(_t_a)
+            if _r_a is None:
+                continue
+            _align_a = (_p_a.get("alignment") or {})
+            _wph_a = _align_a.get("weekly")
+            if _wph_a is not None:
+                _r_a["weekly_phase"] = _wph_a
+            _atrd_a = _get_above_trend(_t_a)
+            if _atrd_a is not None:
+                _r_a["above_trend"] = _atrd_a
+        for _t_a, _p_a in _recovery_cands:
+            _r_a = row_by_t.get(_t_a)
+            if _r_a is None:
+                continue
+            _prof_a = profiles.get(_t_a) or {}
+            _align_a = (_prof_a.get("alignment") or {})
+            _wph_a = _align_a.get("weekly")
+            if _wph_a is not None:
+                _r_a["weekly_phase"] = _wph_a
+            _atrd_a = _get_above_trend(_t_a)
+            if _atrd_a is not None:
+                _r_a["above_trend"] = _atrd_a
+        # Also propagate weekly_phase + above_trend for watch rows.
+        # watch is a mixed list [(t, p_or_row)]; ignore the second element and always
+        # look up from profiles for alignment (consistent source for both list variants).
+        for _t_a, _ in watch:
+            _r_a = row_by_t.get(_t_a)
+            if _r_a is None:
+                continue
+            _prof_a = profiles.get(_t_a) or {}
+            _align_a = (_prof_a.get("alignment") or {})
+            _wph_a = _align_a.get("weekly")
+            if _wph_a is not None:
+                _r_a["weekly_phase"] = _wph_a
+            _atrd_a = _get_above_trend(_t_a)
+            if _atrd_a is not None:
+                _r_a["above_trend"] = _atrd_a
+
+        def _tag(t, tier, lane=None):
+            """Tag a board row with align_tier and derive the v2 lane label.
+
+            tier: the alignment tier string (from conviction.alignment.tier:
+                  PRIME/ARMED/APPROACHING, or from _atier(): aligned/near).
+                  Stored as r["align_tier"] for display/downstream consumers.
+            lane: if explicitly supplied (e.g. "recovery") the lane is set
+                  directly; otherwise derived by _lane_for(tier, weekly_phase).
+            """
             r = row_by_t[t]
-            r["align_tier"] = tier
-            r["lane"] = lane
+            # Use the richer conviction.alignment.tier (PRIME/ARMED) when available,
+            # falling back to the _atier() board-level tier (aligned/near).
+            _conv_tier = (profiles.get(t) or {}).get("alignment", {}).get("tier")
+            _eff_tier = _conv_tier if _conv_tier else tier
+            r["align_tier"] = _eff_tier
+            weekly_ph = r.get("weekly_phase")
+            r["lane"] = lane if lane is not None else _lane_for(_eff_tier, weekly_ph)
             return r
 
         # ── W8 alpha-within-lane ordering ─────────────────────────────────────
@@ -2146,7 +2400,7 @@ def main() -> int:
         # ordered by alpha desc. The entry status BADGE is kept (not removed).
         def _alpha_key(r_tuple):
             t, p, _tier = r_tuple
-            return -(p.get("alpha") or 0.0)
+            return (-(p.get("alpha") or 0.0), t)
 
         buyable_trend = sorted(buyable, key=_alpha_key)    # alpha desc within trend
         # Recovery rows: tag and order by alpha desc
@@ -2155,22 +2409,73 @@ def main() -> int:
             for t, p in _recovery_cands
         ]
 
-        # Trend rows (tag them last so _tag mutation runs after recovery tagging)
-        _trend_rows_ordered = [_tag(t, tier, lane="trend") for t, _, tier in buyable_trend[:120]]
+        # Trend rows: P2.4 v2 — lane is derived by _lane_for(tier, weekly_phase)
+        # (no explicit lane= override so the continuation branch fires).
+        _trend_rows_ordered = [_tag(t, tier) for t, _, tier in buyable_trend[:120]]
 
         _all_buy_rows = _trend_rows_ordered + _recovery_rows_ordered
 
+        # P2.4 spec §3.1: watch rows must carry lane="watch" so lane_counts has a
+        # "watch" key (not None).  Previously _tag() was only called for buy rows;
+        # watch rows were assembled raw from row_by_t with lane=None — producing the
+        # "null:24" key in lane_counts (VERIFY_P2_4_REALBUILD.md AC-2 gap / F2).
+        def _tag_watch(t):
+            r = row_by_t[t]
+            r.setdefault("lane", "watch")   # don't overwrite if already set
+            if r.get("lane") != "watch":
+                r["lane"] = "watch"
+            return r
+
         wide = {"as_of": alpha_asof, "rank_by": "bottoming-alignment", "gate_go": gate_go,
                 "buy": _all_buy_rows,
-                "watch": [row_by_t[t] for t, _ in watch[:24]],
+                "watch": [_tag_watch(t) for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
                 "concentration": _concentration_stat,
                 # G6a donor-sector: page-level context chip (not per-row; None when insufficient data)
-                "donor": _donor_ctx}
+                "donor": _donor_ctx,
+                # W1.5 earnings-blackout: compact suppressed-today note (None when nothing suppressed
+                # and store is fresh). Rendered as a board-level notice by the template.
+                "earnings_blackout_note": _eb_suppressed_note}
         eligible = len(aligned)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
+            # P2.4 Step D: ext_z top-level field — extension z-score for the anti-chase
+            # context chip (display-only per R10; F3 gate promotion is P3's jurisdiction).
+            # Source: ext_map[t]["ext_z"] — the pre-computed per-name extension z-score
+            # built at L1238 via extension_signals(_ext_closes).  The previous path read
+            # profiles[t]["axes"]["extension"]["z"] which is NOT populated at profiles
+            # level — hence 0% fill in the P2.4 real-build (VERIFY_P2_4_REALBUILD.md F3).
+            # Fix: source directly from ext_map which is available in the same scope.
+            _extz_v = (ext_map.get(t) or {}).get("ext_z")
+            if _extz_v is not None:
+                try:
+                    r["ext_z"] = round(float(_extz_v), 2)
+                except (TypeError, ValueError):
+                    pass
+            # P2.1a Step G: antichase_shadow_blocked — F3 anti-chase shadow gate field.
+            # Reads ext_z from the same ext_map source used in Step D above.
+            # Threshold = PARABOLIC_Z = 2.0 (engine/extension.py L36; pre-registered in
+            # P2_1A_ANTICHASE_GATE_PREREG.md §1.3). SHADOW period: label only, ZERO
+            # enforcement — name stays on board at same rank. The blocked field drives:
+            #   (1) Anti-Chase Watch chip in the template (display only),
+            #   (2) the shadow ledger writer below (forward-grading accrual),
+            #   (3) species registry chip rung (F3_ANTICHASE, deployment_status=chip).
+            # It is intentionally present on ALL rows (buy + watch + laggards) so the
+            # shadow ledger can grade non-blocked rows as the control group.
+            _ANTICHASE_Z_THRESH = 2.0   # mirrors PARABOLIC_Z — do not tune here
+            _extz_float = r.get("ext_z")
+            if _extz_float is not None:
+                r["antichase_shadow_blocked"] = bool(_extz_float > _ANTICHASE_Z_THRESH)
+            else:
+                r["antichase_shadow_blocked"] = False
+            # P2.4 Step C: above_trend propagation — final catch-all for rows that
+            # weren't captured in Step A (e.g. laggard rows not in buy/watch lists).
+            # Source: sig_verdict[t].above200 (consistent with Step A fix above).
+            if r.get("above_trend") is None:
+                _atrd_e = (sig_verdict.get(t) or {}).get("above200")
+                if _atrd_e is not None:
+                    r["above_trend"] = bool(_atrd_e)
             r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
             if entry_sig.get(t):
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
@@ -2193,6 +2498,37 @@ def main() -> int:
             _hd = _hold_state.get(t)
             if _hd is not None:
                 r["hold"] = _hd
+            # W1.5 earnings-blackout chip — display-only context on ALL board rows.
+            # For rows that are still on the board (HOLD/LAUNCHED or outside blackout),
+            # attach the upcoming earnings date chip when days_to_earnings <= 7 (context).
+            # For suppressed names: they are not on the board, so no chip needed here.
+            # The chip shows "Earnings <=3d" when in_blackout (should not appear on board
+            # because suppressed) and upcoming-earnings context when 4-7d away.
+            _eb_row = _eb_blackout_map.get(t)
+            if _eb_row is None and not _eb_store_stale:
+                # Name was not assessed yet (e.g. watch/laggard rows not in the buy pipeline)
+                try:
+                    _eb_row = _eb.assess(t)
+                    _eb_blackout_map[t] = _eb_row
+                except Exception:  # noqa: BLE001
+                    _eb_row = None
+            if _eb_row and not _eb_row.get("stale") and _eb_row.get("days_to_earnings") is not None:
+                _eb_days = _eb_row["days_to_earnings"]
+                if _eb_days is not None and _eb_days <= 7:
+                    # Map Nasdaq raw time tokens to display-friendly labels.
+                    _raw_nt = _eb_row.get("next_time")
+                    _nt_labels = {
+                        "time-after-hours": "after close",
+                        "time-pre-market": "pre-market",
+                        "time-not-supplied": None,
+                    }
+                    _disp_nt = _nt_labels.get(_raw_nt, _raw_nt) if _raw_nt else None
+                    r["earnings_soon"] = {
+                        "days_to": _eb_days,
+                        "next_date": _eb_row.get("next_date"),
+                        "next_time": _disp_nt,
+                        "in_blackout": bool(_eb_row.get("in_blackout")),
+                    }
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
             # it is a first-class field available for the US-2 ledger study (depth vs
             # forward returns for FRESH-BUY rows). NOT a gate — we do NOT filter on it
@@ -2201,13 +2537,26 @@ def main() -> int:
             _cdp8 = _lad8.get("cand_depth_pct")
             if _cdp8 is not None:
                 r["cand_depth_pct"] = _cdp8
-            # P0.3 liquidity/capacity hygiene fields — DISPLAY-ONLY, R10 (zero rank/gate power).
-            # adv_dollar_21d: 21-session avg dollar volume; absent when volume data unavailable.
-            # days_to_exit_at_10pct_adv: $100k-position exit days at 10% ADV (display heuristic).
+            # W5b liquidity chip fields — DISPLAY-ONLY (zero rank/gate power).
+            # adv_dollar_20d_median: 20-session median dollar volume (W5b primary).
+            # tier: deep/ok/thin/illiquid.
+            # days_to_build_100k / days_to_build_1m: buildability at 10 % ADV.
+            # Also the legacy adv_dollar_21d/days_to_exit_at_10pct_adv (backward compat).
             _lhyg = _liq_map.get(t)
             if _lhyg:
-                r["adv_dollar_21d"] = _lhyg["adv_dollar_21d"]
-                if _lhyg["days_to_exit_at_10pct_adv"] is not None:
+                # W5b new fields
+                if _lhyg.get("adv_dollar_20d_median") is not None:
+                    r["adv_dollar_20d_median"] = _lhyg["adv_dollar_20d_median"]
+                if _lhyg.get("tier") is not None:
+                    r["liquidity_tier"] = _lhyg["tier"]
+                if _lhyg.get("days_to_build_100k") is not None:
+                    r["days_to_build_100k"] = _lhyg["days_to_build_100k"]
+                if _lhyg.get("days_to_build_1m") is not None:
+                    r["days_to_build_1m"] = _lhyg["days_to_build_1m"]
+                # Legacy fields (backward compat)
+                if _lhyg.get("adv_dollar_21d") is not None:
+                    r["adv_dollar_21d"] = _lhyg["adv_dollar_21d"]
+                if _lhyg.get("days_to_exit_at_10pct_adv") is not None:
                     r["days_to_exit_at_10pct_adv"] = _lhyg["days_to_exit_at_10pct_adv"]
             # W8-B postcross lifecycle chip (BASED/ARMED/SHAKEN) — DISPLAY-ONLY.
             # W8-A verdict: NO rank power; ships as eligibility+display only; safety:
@@ -2339,6 +2688,301 @@ def main() -> int:
         wide["universe"] = len(cand)
         if disp_regime:                            # selection-regime gross dial (board + bot)
             wide["dispersion_regime"] = disp_regime
+
+        # P2.4 Step E: lane_counts top-level field — nightly monitoring primitive.
+        # Counts rows per lane (bottoming/continuation/watch/recovery) across buy+watch.
+        # Logged so the build log carries the distribution for AC-2 verification.
+        from collections import Counter as _Counter
+        _lane_ct = _Counter(r.get("lane") for r in wide["buy"] + wide["watch"])
+        wide["lane_counts"] = dict(_lane_ct)
+        log.info("P2.4 lane_counts: %s", wide["lane_counts"])
+
+        # P2.1a Step H: anti-chase shadow ledger writer.
+        # Appends per-ticker rows to data/signal_archive/antichase_shadow_ledger.parquet.
+        # The ledger records EVERY board row (blocked and unblocked) so the control group
+        # (antichase_shadow_blocked=False) is tracked for the Wilson-bound comparison in
+        # the flip criterion C2 (P2_1A_ANTICHASE_GATE_PREREG.md §2.2).
+        # Pattern: append-only parquet; keep-FIRST per (asof, ticker); never fatal.
+        # Rollback fields per R-P2.1: flip_eligible=False + flip_criteria_met={'C1':False,
+        #   'C2':False,'C3':False} mark this as a shadow row (no flip authority yet).
+        # These fields are set to False throughout the shadow period; only a Fable ruling
+        # + criteria check can set them to True (that logic is in the monthly review, not here).
+        try:
+            import pandas as _pd
+            _shadow_path = config.data_dir() / "signal_archive" / "antichase_shadow_ledger.parquet"
+            _shadow_path.parent.mkdir(parents=True, exist_ok=True)
+            _asof_s = wide.get("as_of")
+            if _asof_s:
+                _asof_str = str(_pd.Timestamp(_asof_s).date())
+                # Load existing to deduplicate by (asof, ticker)
+                _old_shadow = _pd.read_parquet(_shadow_path) if _shadow_path.exists() else None
+                _seen_shadow = set()
+                if _old_shadow is not None and "asof" in _old_shadow.columns and "ticker" in _old_shadow.columns:
+                    _seen_shadow = set(zip(_old_shadow["asof"].astype(str), _old_shadow["ticker"].astype(str)))
+                _new_rows = []
+                for _sr_h in wide["buy"] + wide["watch"]:
+                    _t_h = _sr_h.get("ticker")
+                    if _t_h is None or (_asof_str, _t_h) in _seen_shadow:
+                        continue
+                    _new_rows.append({
+                        "asof": _asof_str,
+                        "ticker": _t_h,
+                        "lane": _sr_h.get("lane"),
+                        "ext_z": _sr_h.get("ext_z"),
+                        "antichase_shadow_blocked": bool(_sr_h.get("antichase_shadow_blocked")),
+                        # Rollback/flip fields (R-P2.1): always False during shadow period.
+                        # Set to True only after Fable ruling + C1+C2+C3 criteria confirmed.
+                        "flip_eligible": False,
+                        "flip_criteria_met": False,   # simplified bool; C1+C2+C3 detail in monthly review
+                        "gate_state": "shadow",        # shadow | enforcing | rolledback
+                        "logged_at": str(_pd.Timestamp.now(tz="UTC").isoformat()),
+                    })
+                if _new_rows:
+                    _new_df = _pd.DataFrame(_new_rows)
+                    _merged_shadow = _pd.concat([_old_shadow, _new_df], ignore_index=True) \
+                        if _old_shadow is not None else _new_df
+                    _merged_shadow.to_parquet(_shadow_path, index=False)
+                    _n_blocked = sum(r["antichase_shadow_blocked"] for r in _new_rows)
+                    log.info("P2.1a antichase shadow ledger: %d rows appended (%d blocked, %d unblocked) for %s",
+                             len(_new_rows), _n_blocked, len(_new_rows) - _n_blocked, _asof_str)
+                else:
+                    log.debug("P2.1a antichase shadow ledger: no new rows for %s (all already logged)", _asof_str)
+        except Exception as _ac_e:  # noqa: BLE001 — shadow ledger is never fatal
+            log.debug("P2.1a antichase shadow ledger write skipped: %s", _ac_e)
+
+        # P2.5 Step I: EI-F1D-RW shadow ledger writer.
+        # Appends per-ticker rows to data/signal_archive/f1d_shadow_ledger.parquet.
+        # Records EVERY board row (qualified and not-qualified) so the control group
+        # (f1d_shadow_bonus=0) is tracked for the forward flip criterion.
+        #
+        # Spec: research/entry_intel/P2_5_INTERACTION_PREREG.md
+        # Study: research/entry_intel/p1_runs/P2_5_STUDY/RESULTS.md
+        # Registry: data/species/registry.json (entry: EI-F1D-RW)
+        #
+        # SIX ship configs (from study): C1, C3, C5, C6, C7, C8.
+        # Primary = C6 (deep_trio: dd_pct>25% AND ac_pass AND rs_fav).
+        # Dead configs C2/C4 are NOT tracked — they are listed for reference only.
+        #
+        # dd_pct computation: byte-faithful to washout_depth_pit in run_P2_5_study.py.
+        #   _WASH_CTX_B=91, _WASH_CTX_A=217; window=close[-91:]; capit_pos=argmin(window);
+        #   prior_max=nanmax(close[capit_pos-126:capit_pos]); dd_pos=-dd (positive fraction).
+        # PIT discipline: only price index <= as_of is used.
+        #
+        # rs_sector_quartile: within-sector ext_z rank; Q1 (lowest ext_z) = most washed-out
+        #   relative to peers = RS-favorable for a reversal context. Quartiles 1,2 = rs_fav.
+        #   Computed from ext_map (same source as Step D/G) and _coil_sector (sector map).
+        #
+        # blend_sorted: min-max normalized composite_z across all board rows this day.
+        # f1d_shadow_bonus: +0.10 if C6 qualifies, else 0.0.
+        # f1d_shadow_rank: percentile of (blend_sorted + bonus) within-day (0..1).
+        #
+        # Pattern: append-only parquet; keep-FIRST per (asof, ticker); never fatal.
+        try:
+            import pandas as _f1d_pd
+            import numpy as _f1d_np
+            _F1D_LEDGER_PATH = config.data_dir() / "signal_archive" / "f1d_shadow_ledger.parquet"
+            _F1D_LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
+            _f1d_asof_s = wide.get("as_of")
+            if _f1d_asof_s:
+                _f1d_asof_str = str(_f1d_pd.Timestamp(_f1d_asof_s).date())
+                _f1d_asof_ts = _f1d_pd.Timestamp(_f1d_asof_s)
+
+                # ── 1. Compute per-ticker dd_pct (byte-faithful to washout_depth_pit) ──
+                # _WASH_CTX_B / _WASH_CTX_A match run_P2_5_study.py constants exactly.
+                _F1D_WASH_B = 91
+                _F1D_WASH_A = 217
+
+                def _f1d_dd_pct(ticker_close: "_f1d_pd.Series") -> "float | None":
+                    """PIT depth computation — mirrors washout_depth_pit in study script."""
+                    try:
+                        _c = ticker_close.dropna()
+                        if not isinstance(_c.index, _f1d_pd.DatetimeIndex):
+                            _c = _c.copy()
+                            _c.index = _f1d_pd.to_datetime(_c.index)
+                        _arr = _c.to_numpy()
+                        _n = len(_arr)
+                        if _n < _F1D_WASH_A + _F1D_WASH_B:
+                            return None
+                        _window = _arr[_n - _F1D_WASH_B:]
+                        _local_min = int(_f1d_np.argmin(_window))
+                        _capit_pos = (_n - _F1D_WASH_B) + _local_min
+                        if _capit_pos < 126:
+                            return None
+                        _prior_max = float(_f1d_np.nanmax(_arr[_capit_pos - 126: _capit_pos]))
+                        if _prior_max <= 0:
+                            return None
+                        _dd = _arr[_capit_pos] / _prior_max - 1.0
+                        return float(-_dd)   # positive fraction (e.g. 0.31 = 31% down)
+                    except Exception:
+                        return None
+
+                # ── 2. Compute sector-level rs_sector_quartile from ext_map ──
+                # Group tickers by sector (from _coil_sector); rank each ticker's ext_z
+                # within sector; quartile 1 = bottom ext_z (most washed-out = rs_fav).
+                # Mirrors replay_standout_pipeline.py lines 573-586 (F5 fix).
+                _f1d_sector_ext: "dict[str, list[float]]" = {}
+                for _f1d_t, _f1d_sec in (_coil_sector or {}).items():
+                    if _f1d_sec is None:
+                        continue
+                    _f1d_ez = (ext_map.get(_f1d_t) or {}).get("ext_z")
+                    if _f1d_ez is not None:
+                        _f1d_sector_ext.setdefault(str(_f1d_sec), []).append(float(_f1d_ez))
+
+                def _f1d_rs_quartile(ticker: "str") -> "int | None":
+                    """Return sector-relative ext_z quartile (1=lowest=rs_fav, 4=highest)."""
+                    _sec = (_coil_sector or {}).get(ticker)
+                    if _sec is None:
+                        return None
+                    _my_ez = (ext_map.get(ticker) or {}).get("ext_z")
+                    if _my_ez is None:
+                        return None
+                    _peers = _f1d_sector_ext.get(str(_sec), [])
+                    if len(_peers) < 4:
+                        return None
+                    _below = sum(1 for _v in _peers if _v < _my_ez)
+                    _pctile = _below / len(_peers)
+                    return int(min(4, max(1, _f1d_np.floor(_pctile * 4) + 1)))
+
+                # ── 3. Compute blend_sorted (min-max normalized composite_z) for all rows ──
+                _f1d_all_rows = wide["buy"] + wide["watch"]
+                _f1d_czs = [
+                    float((profiles.get(_r.get("ticker")) or {}).get("composite_z") or 0.0)
+                    for _r in _f1d_all_rows
+                ]
+                _f1d_cz_min = min(_f1d_czs) if _f1d_czs else 0.0
+                _f1d_cz_max = max(_f1d_czs) if _f1d_czs else 1.0
+                _f1d_cz_range = _f1d_cz_max - _f1d_cz_min if _f1d_cz_max != _f1d_cz_min else 1.0
+
+                def _f1d_blend_sorted(ticker: "str") -> "float":
+                    _cz = float((profiles.get(ticker) or {}).get("composite_z") or 0.0)
+                    return (_cz - _f1d_cz_min) / _f1d_cz_range
+
+                # ── 4. Deduplicate against existing ledger ──
+                _f1d_old = _f1d_pd.read_parquet(_F1D_LEDGER_PATH) if _F1D_LEDGER_PATH.exists() else None
+                _f1d_seen: "set[tuple[str, str]]" = set()
+                if _f1d_old is not None and "asof" in _f1d_old.columns and "ticker" in _f1d_old.columns:
+                    _f1d_seen = set(zip(_f1d_old["asof"].astype(str), _f1d_old["ticker"].astype(str)))
+
+                # ── 5. Build shadow rows with per-config booleans ──
+                _f1d_new_rows = []
+                for _f1d_bname, _f1d_section_rows in [("us_buy", wide["buy"]), ("us_watch", wide["watch"])]:
+                    for _f1d_r in _f1d_section_rows:
+                        _f1d_t = _f1d_r.get("ticker")
+                        if _f1d_t is None or (_f1d_asof_str, _f1d_t) in _f1d_seen:
+                            continue
+                        # washout state (from _coil_wash, already computed in per-ticker loop)
+                        _f1d_wash_active = bool(_coil_wash.get(_f1d_t) is True)
+                        # dd_pct: PIT-sliced computation on massive_stock_day close
+                        _f1d_dd: "float | None" = None
+                        try:
+                            _f1d_close_raw = _f1d_pd.read_parquet(
+                                config.data_dir() / "massive_stock_day" / f"{_f1d_t}.parquet"
+                            )["close"]
+                            _f1d_pit_close = _f1d_close_raw[_f1d_close_raw.index <= _f1d_asof_ts]
+                            _f1d_dd = _f1d_dd_pct(_f1d_pit_close)
+                        except Exception:
+                            pass
+                        # above_200 from signal verdict (same source as Step D above)
+                        _f1d_above200 = bool((sig_verdict.get(_f1d_t) or {}).get("above200"))
+                        # ext_z from ext_map (same source as Step D/G)
+                        _f1d_extz = _f1d_r.get("ext_z")  # already populated by Step D
+                        _f1d_ac_pass = (_f1d_extz is not None) and (float(_f1d_extz) <= 2.0)
+                        # rs_sector_quartile
+                        _f1d_rs_q = _f1d_rs_quartile(_f1d_t)
+                        _f1d_rs_fav = (_f1d_rs_q is not None) and (_f1d_rs_q in (1, 2))
+                        # blend_sorted
+                        _f1d_bs = _f1d_blend_sorted(_f1d_t)
+                        # Per-config booleans (six ship-qualifying configs only; C2/C4 DEAD)
+                        _f1d_c1 = _f1d_wash_active and (_f1d_dd is not None) and (_f1d_dd > 0.25)
+                        _f1d_c3 = _f1d_wash_active and (not _f1d_above200)
+                        _f1d_c5 = _f1d_wash_active and _f1d_ac_pass and _f1d_rs_fav
+                        _f1d_c6 = _f1d_c1 and _f1d_ac_pass and _f1d_rs_fav   # deep_trio (primary)
+                        _f1d_c7 = _f1d_wash_active and (_f1d_dd is not None) and (_f1d_dd > 0.40) and _f1d_ac_pass and _f1d_rs_fav
+                        _f1d_c8 = _f1d_wash_active and (not _f1d_above200) and (_f1d_dd is not None) and (_f1d_dd > 0.25)
+                        # Bonus: +0.10 if primary C6 qualifies
+                        _f1d_bonus = 0.10 if _f1d_c6 else 0.0
+                        _f1d_new_rows.append({
+                            "asof": _f1d_asof_str,
+                            "ticker": _f1d_t,
+                            "board_name": _f1d_bname,
+                            "washout_active": _f1d_wash_active,
+                            "dd_pct": _f1d_dd,
+                            "ext_z": _f1d_extz,
+                            "rs_sector_quartile": float(_f1d_rs_q) if _f1d_rs_q is not None else None,
+                            "above_200": _f1d_above200,
+                            "blend_sorted": round(_f1d_bs, 6),
+                            "f1d_shadow_bonus": _f1d_bonus,
+                            # f1d_shadow_rank filled below after all rows assembled
+                            "c1_qual": _f1d_c1,
+                            "c3_qual": _f1d_c3,
+                            "c5_qual": _f1d_c5,
+                            "c6_qual": _f1d_c6,
+                            "c7_qual": _f1d_c7,
+                            "c8_qual": _f1d_c8,
+                            "gate_state": "shadow",
+                            "logged_at": str(_f1d_pd.Timestamp.now(tz="UTC").isoformat()),
+                        })
+
+                # ── 6. Compute f1d_shadow_rank (within-day re-percentile) ──
+                if _f1d_new_rows:
+                    _f1d_scores = [r["blend_sorted"] + r["f1d_shadow_bonus"] for r in _f1d_new_rows]
+                    _f1d_n = len(_f1d_scores)
+                    for _f1d_i, _f1d_row in enumerate(_f1d_new_rows):
+                        _below_n = sum(1 for _s in _f1d_scores if _s < _f1d_scores[_f1d_i])
+                        _f1d_row["f1d_shadow_rank"] = round(_below_n / _f1d_n, 6) if _f1d_n > 1 else 0.5
+
+                    # ── 7. Write ledger (append-only; keep-first dedup) ──
+                    _f1d_new_df = _f1d_pd.DataFrame(_f1d_new_rows)
+                    _f1d_merged = _f1d_pd.concat([_f1d_old, _f1d_new_df], ignore_index=True) \
+                        if _f1d_old is not None else _f1d_new_df
+                    _f1d_merged.to_parquet(_F1D_LEDGER_PATH, index=False)
+                    _f1d_n_c6 = sum(1 for _r in _f1d_new_rows if _r["c6_qual"])
+                    _f1d_n_c1 = sum(1 for _r in _f1d_new_rows if _r["c1_qual"])
+                    log.info(
+                        "P2.5 F1D shadow ledger: %d rows appended (C6=%d C1=%d C3=%d C5=%d C7=%d C8=%d) for %s",
+                        len(_f1d_new_rows), _f1d_n_c6, _f1d_n_c1,
+                        sum(1 for _r in _f1d_new_rows if _r["c3_qual"]),
+                        sum(1 for _r in _f1d_new_rows if _r["c5_qual"]),
+                        sum(1 for _r in _f1d_new_rows if _r["c7_qual"]),
+                        sum(1 for _r in _f1d_new_rows if _r["c8_qual"]),
+                        _f1d_asof_str,
+                    )
+                    # ── 8. Attach shadow fields to board rows (ADDITIVE; production order UNTOUCHED) ──
+                    # Per spec: shadow columns on JSON rows only; no template ordering change.
+                    # Display chip: f1d_shadow_c6=True row gets data-tip chip in template.
+                    _f1d_row_by_t = {_r["ticker"]: _r for _r in _f1d_new_rows}
+                    for _f1d_brd in wide["buy"] + wide["watch"]:
+                        _f1d_lr = _f1d_row_by_t.get(_f1d_brd.get("ticker"))
+                        if _f1d_lr is not None:
+                            _f1d_brd["washout_active"] = _f1d_lr["washout_active"]
+                            _f1d_brd["dd_pct"] = _f1d_lr["dd_pct"]
+                            _f1d_brd["f1d_shadow_bonus"] = _f1d_lr["f1d_shadow_bonus"]
+                            _f1d_brd["f1d_shadow_rank"] = _f1d_lr["f1d_shadow_rank"]
+                            _f1d_brd["f1d_shadow_c6"] = _f1d_lr["c6_qual"]
+                else:
+                    log.debug("P2.5 F1D shadow ledger: no new rows for %s (all already logged)", _f1d_asof_str)
+        except Exception as _f1d_e:  # noqa: BLE001 — shadow ledger is never fatal
+            log.debug("P2.5 F1D shadow ledger write skipped: %s", _f1d_e)
+
+        # P2.4 Step F: setups.json lane backfill — same taxonomy, shared lane labels.
+        # The setups object is still in memory (written initially at L1948). Update it
+        # with lane values from the standout board and re-write to ensure shared taxonomy.
+        # rank_by backfill: AC-6 requires non-null "alpha" value.
+        _standout_lane_map = {r["ticker"]: r.get("lane") for r in wide.get("buy", [])}
+        _setups_updated = False
+        for _sr in setups.get("buy", []):
+            _st = _sr.get("ticker")
+            _sl = _standout_lane_map.get(_st, "bottoming")  # default: bottoming if not on board
+            _sr["lane"] = _sl
+            _setups_updated = True
+        if "rank_by" not in setups or setups.get("rank_by") is None:
+            setups["rank_by"] = "alpha"
+            _setups_updated = True
+        if _setups_updated:
+            (site / "factordata" / "setups.json").write_text(
+                json.dumps(setups, separators=(",", ":"), default=str))
+            log.info("P2.4 setups.json lane backfill: %d buy rows updated, rank_by=%s",
+                     len(setups.get("buy", [])), setups.get("rank_by"))
 
         # --- W6-US fix 7: urgency must respect the gated entry status ---
         # Row-level urgency="now" is derived from the cycle-state dict, but the

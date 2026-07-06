@@ -18,7 +18,10 @@ def test_extract_outcomes_list_and_json():
         {"question": "junk", "outcomePrices": None},                                # skipped
     ]}
     out = pmc.extract_outcomes(ev)
-    assert out == [{"outcome": "No change", "prob": 0.92}, {"outcome": "25 bps cut", "prob": 0.06}]
+    assert out == [
+        {"outcome": "No change", "prob": 0.92, "mkt_volume24hr": None},
+        {"outcome": "25 bps cut", "prob": 0.06, "mkt_volume24hr": None},
+    ]
 
 
 def test_match_event_nearest_end_and_volume():

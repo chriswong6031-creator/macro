@@ -1,0 +1,368 @@
+{
+  "schema": "breakdown_events_summary.v2",
+  "vintage": {
+    "price_plane_id": "massive_stock_day_v2",
+    "adjustment_mode": "split_adjust_price_only",
+    "universe_as_of": "2026-07-06",
+    "frame": "era_law_2021-07-06_plus",
+    "survivorship_biased": true,
+    "survivorship_note": "Universe = replay_boarded fire tickers UNION board universe. Names delisted before ever firing are absent; ERA-LAW window (2021+, massive plane) bounds the bias for within-window events.",
+    "coverage_frac": 1.0,
+    "dead_name_coverage_pct": 1.39,
+    "era_law_cohort": "2021-07-06_to_present",
+    "n_universe": 1007,
+    "stamp_degraded": false,
+    "generated_utc": "2026-07-06T05:16:25.725304+00:00"
+  },
+  "trial_family": "short_side",
+  "declared_budget": 3,
+  "per_definition": {
+    "BD-1": {
+      "n_episodes": 1330,
+      "per_year": {
+        "2022": 61,
+        "2023": 338,
+        "2024": 408,
+        "2025": 295,
+        "2026": 228
+      },
+      "long_states": {
+        "clean15_126": {
+          "stop_rate_pct": 69.85,
+          "liftoff_rate_pct": 25.09,
+          "cushion_rate_pct": 4.96,
+          "dead_rate_pct": 0.09,
+          "n_matured": 1088
+        },
+        "clean8_21": {
+          "stop_rate_pct": 42.38,
+          "liftoff_rate_pct": 19.13,
+          "cushion_rate_pct": 14.05,
+          "dead_rate_pct": 24.44,
+          "n_matured": 1260
+        }
+      },
+      "short_states": {
+        "short21": {
+          "adverse_rate_pct": 37.86,
+          "favorable_rate_pct": 21.51,
+          "unremarkable_rate_pct": 40.63,
+          "n_matured": 1260
+        },
+        "short126": {
+          "adverse_rate_pct": 72.89,
+          "favorable_rate_pct": 21.05,
+          "unremarkable_rate_pct": 6.07,
+          "n_matured": 1088
+        }
+      },
+      "control_baseline_long": {
+        "clean15_126": {
+          "stop_rate_pct": 65.38,
+          "liftoff_rate_pct": 31.21,
+          "n": 69563
+        },
+        "clean8_21": {
+          "stop_rate_pct": 41.8,
+          "liftoff_rate_pct": 29.2,
+          "n": 78423
+        }
+      },
+      "paired_within_event": {
+        "clean8_21_x_short21": {
+          "mean_paired_diff_pp": -20.87,
+          "n_matured_both_sides": 1260,
+          "long_stopped_rate_pct": 42.38,
+          "short_favorable_rate_pct": 21.51,
+          "ci95": [
+            -23.19,
+            -18.56
+          ],
+          "cluster_var": "ticker_x_year",
+          "boot_n_iter": 5000,
+          "interpretation": "positive = short-favorable dominates long-stopped at this horizon; negative = long-stopped dominates"
+        },
+        "clean15_126_x_short126": {
+          "mean_paired_diff_pp": -48.81,
+          "n_matured_both_sides": 1088,
+          "long_stopped_rate_pct": 69.85,
+          "short_favorable_rate_pct": 21.05,
+          "ci95": [
+            -51.85,
+            -45.86
+          ],
+          "cluster_var": "ticker_x_year",
+          "boot_n_iter": 5000,
+          "interpretation": "positive = short-favorable dominates long-stopped at this horizon; negative = long-stopped dominates"
+        }
+      },
+      "vs_control": {
+        "clean15_126": {
+          "event_stop_rate_pct": 69.85,
+          "control_stop_rate_pct": 65.38,
+          "long_stop_vs_control_pp": 4.47,
+          "n_events_matured": 1088,
+          "n_controls_matured": 69563,
+          "ci95_event_stop_pct": [
+            67.07,
+            72.63
+          ],
+          "cluster_var": "ticker_x_year"
+        },
+        "clean8_21": {
+          "event_stop_rate_pct": 42.38,
+          "control_stop_rate_pct": 41.8,
+          "long_stop_vs_control_pp": 0.58,
+          "n_events_matured": 1260,
+          "n_controls_matured": 78423,
+          "ci95_event_stop_pct": [
+            39.59,
+            45.22
+          ],
+          "cluster_var": "ticker_x_year"
+        }
+      },
+      "control_sampling_note": "year-stratified: each event's controls drawn from same calendar year, same ticker, non-event bars passing same liquidity floor (prereg \u00a74 matched)",
+      "powering_note": ""
+    },
+    "BD-2": {
+      "n_episodes": 19891,
+      "per_year": {
+        "2022": 2540,
+        "2023": 4726,
+        "2024": 4910,
+        "2025": 5141,
+        "2026": 2574
+      },
+      "long_states": {
+        "clean15_126": {
+          "stop_rate_pct": 70.68,
+          "liftoff_rate_pct": 26.34,
+          "cushion_rate_pct": 2.97,
+          "dead_rate_pct": 0.02,
+          "n_matured": 17204
+        },
+        "clean8_21": {
+          "stop_rate_pct": 51.46,
+          "liftoff_rate_pct": 21.78,
+          "cushion_rate_pct": 10.1,
+          "dead_rate_pct": 16.65,
+          "n_matured": 19557
+        }
+      },
+      "short_states": {
+        "short21": {
+          "adverse_rate_pct": 38.33,
+          "favorable_rate_pct": 31.31,
+          "unremarkable_rate_pct": 30.35,
+          "n_matured": 19557
+        },
+        "short126": {
+          "adverse_rate_pct": 70.59,
+          "favorable_rate_pct": 25.95,
+          "unremarkable_rate_pct": 3.45,
+          "n_matured": 17204
+        }
+      },
+      "control_baseline_long": {
+        "clean15_126": {
+          "stop_rate_pct": 65.38,
+          "liftoff_rate_pct": 31.21,
+          "n": 69563
+        },
+        "clean8_21": {
+          "stop_rate_pct": 41.8,
+          "liftoff_rate_pct": 29.2,
+          "n": 78423
+        }
+      },
+      "paired_within_event": {
+        "clean8_21_x_short21": {
+          "mean_paired_diff_pp": -20.15,
+          "n_matured_both_sides": 19557,
+          "long_stopped_rate_pct": 51.46,
+          "short_favorable_rate_pct": 31.31,
+          "ci95": [
+            -20.74,
+            -19.59
+          ],
+          "cluster_var": "ticker_x_year",
+          "boot_n_iter": 5000,
+          "interpretation": "positive = short-favorable dominates long-stopped at this horizon; negative = long-stopped dominates"
+        },
+        "clean15_126_x_short126": {
+          "mean_paired_diff_pp": -44.72,
+          "n_matured_both_sides": 17204,
+          "long_stopped_rate_pct": 70.68,
+          "short_favorable_rate_pct": 25.95,
+          "ci95": [
+            -45.51,
+            -43.96
+          ],
+          "cluster_var": "ticker_x_year",
+          "boot_n_iter": 5000,
+          "interpretation": "positive = short-favorable dominates long-stopped at this horizon; negative = long-stopped dominates"
+        }
+      },
+      "vs_control": {
+        "clean15_126": {
+          "event_stop_rate_pct": 70.68,
+          "control_stop_rate_pct": 65.38,
+          "long_stop_vs_control_pp": 5.3,
+          "n_events_matured": 17204,
+          "n_controls_matured": 69563,
+          "ci95_event_stop_pct": [
+            69.89,
+            71.42
+          ],
+          "cluster_var": "ticker_x_year"
+        },
+        "clean8_21": {
+          "event_stop_rate_pct": 51.46,
+          "control_stop_rate_pct": 41.8,
+          "long_stop_vs_control_pp": 9.66,
+          "n_events_matured": 19557,
+          "n_controls_matured": 78423,
+          "ci95_event_stop_pct": [
+            50.72,
+            52.22
+          ],
+          "cluster_var": "ticker_x_year"
+        }
+      },
+      "control_sampling_note": "year-stratified: each event's controls drawn from same calendar year, same ticker, non-event bars passing same liquidity floor (prereg \u00a74 matched)",
+      "powering_note": ""
+    },
+    "BD-3": {
+      "n_episodes": 5553,
+      "per_year": {
+        "2022": 1021,
+        "2023": 980,
+        "2024": 1428,
+        "2025": 1110,
+        "2026": 1014
+      },
+      "long_states": {
+        "clean15_126": {
+          "stop_rate_pct": 74.07,
+          "liftoff_rate_pct": 22.93,
+          "cushion_rate_pct": 2.99,
+          "dead_rate_pct": 0.02,
+          "n_matured": 4519
+        },
+        "clean8_21": {
+          "stop_rate_pct": 58.61,
+          "liftoff_rate_pct": 18.81,
+          "cushion_rate_pct": 8.58,
+          "dead_rate_pct": 14.0,
+          "n_matured": 5327
+        }
+      },
+      "short_states": {
+        "short21": {
+          "adverse_rate_pct": 34.67,
+          "favorable_rate_pct": 37.53,
+          "unremarkable_rate_pct": 27.8,
+          "n_matured": 5327
+        },
+        "short126": {
+          "adverse_rate_pct": 70.52,
+          "favorable_rate_pct": 26.11,
+          "unremarkable_rate_pct": 3.36,
+          "n_matured": 4519
+        }
+      },
+      "control_baseline_long": {
+        "clean15_126": {
+          "stop_rate_pct": 65.38,
+          "liftoff_rate_pct": 31.21,
+          "n": 69563
+        },
+        "clean8_21": {
+          "stop_rate_pct": 41.8,
+          "liftoff_rate_pct": 29.2,
+          "n": 78423
+        }
+      },
+      "paired_within_event": {
+        "clean8_21_x_short21": {
+          "mean_paired_diff_pp": -21.08,
+          "n_matured_both_sides": 5327,
+          "long_stopped_rate_pct": 58.61,
+          "short_favorable_rate_pct": 37.53,
+          "ci95": [
+            -22.19,
+            -20.01
+          ],
+          "cluster_var": "ticker_x_year",
+          "boot_n_iter": 5000,
+          "interpretation": "positive = short-favorable dominates long-stopped at this horizon; negative = long-stopped dominates"
+        },
+        "clean15_126_x_short126": {
+          "mean_paired_diff_pp": -47.95,
+          "n_matured_both_sides": 4519,
+          "long_stopped_rate_pct": 74.07,
+          "short_favorable_rate_pct": 26.11,
+          "ci95": [
+            -49.39,
+            -46.5
+          ],
+          "cluster_var": "ticker_x_year",
+          "boot_n_iter": 5000,
+          "interpretation": "positive = short-favorable dominates long-stopped at this horizon; negative = long-stopped dominates"
+        }
+      },
+      "vs_control": {
+        "clean15_126": {
+          "event_stop_rate_pct": 74.07,
+          "control_stop_rate_pct": 65.38,
+          "long_stop_vs_control_pp": 8.69,
+          "n_events_matured": 4519,
+          "n_controls_matured": 69563,
+          "ci95_event_stop_pct": [
+            72.72,
+            75.36
+          ],
+          "cluster_var": "ticker_x_year"
+        },
+        "clean8_21": {
+          "event_stop_rate_pct": 58.61,
+          "control_stop_rate_pct": 41.8,
+          "long_stop_vs_control_pp": 16.81,
+          "n_events_matured": 5327,
+          "n_controls_matured": 78423,
+          "ci95_event_stop_pct": [
+            57.25,
+            59.97
+          ],
+          "cluster_var": "ticker_x_year"
+        }
+      },
+      "control_sampling_note": "year-stratified: each event's controls drawn from same calendar year, same ticker, non-event bars passing same liquidity floor (prereg \u00a74 matched)",
+      "powering_note": ""
+    }
+  },
+  "overlap_matrix": {
+    "BD-1": {
+      "BD-1": 1330,
+      "BD-2": 27,
+      "BD-3": 13
+    },
+    "BD-2": {
+      "BD-1": 27,
+      "BD-2": 19891,
+      "BD-3": 238
+    },
+    "BD-3": {
+      "BD-1": 13,
+      "BD-2": 238,
+      "BD-3": 5553
+    }
+  },
+  "total_events": 26774,
+  "total_controls": 80322,
+  "phase": "phase0_descriptive_only",
+  "note": "Phase-0 is DESCRIPTIVE. No chip, no synapse consumer, no site surface, no promotion criteria applied. Nulls printed, not hidden. Survivorship_biased=True: names delisted before ERA window may be absent.",
+  "runtime_seconds": 238.5,
+  "n_tickers_processed": 1007
+}

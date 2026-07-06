@@ -18,44 +18,44 @@
   "contradicting": [
     "growth_global_growth"
   ],
-  "global_score": -0.269,
-  "risk_state": "Neutral",
+  "global_score": -0.423,
+  "risk_state": "Risk-off",
   "peg_state": "weak-side (outflow)",
   "peg_distance": 0.928,
   "global_snapshot": {
-    "score": -0.269,
-    "state": "Neutral",
+    "score": -0.423,
+    "state": "Risk-off",
     "factors": [
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 1.03,
+        "z": 0.63,
         "sign": -1,
         "risk": "off",
-        "level": 101.341
+        "level": 100.86
       },
       {
         "key": "vix",
         "label": "Volatility (VIX)",
-        "z": 0.1,
+        "z": 0.15,
         "sign": -1,
         "risk": "neutral",
-        "level": 16.59
+        "level": 16.15
       },
       {
         "key": "spy",
         "label": "S&P 500",
-        "z": -0.4,
+        "z": -0.25,
         "sign": 1.0,
         "risk": "neutral",
-        "level": 745.76
+        "level": 744.78
       },
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 0.55,
+        "z": 0.08,
         "sign": 1.0,
-        "risk": "on",
+        "risk": "neutral",
         "level": 0.0015
       },
       {
@@ -351,8 +351,8 @@
         "label": "Commodity / energy",
         "label_zh": "\u5927\u5b97/\u80fd\u6e90",
         "family": "inflation",
-        "projection": -0.87,
-        "strength": 0.87,
+        "projection": -0.92,
+        "strength": 0.92,
         "direction": "upstream disinflation \u2014 energy/materials basket & copper lead down"
       },
       {
@@ -360,27 +360,27 @@
         "label": "Global risk-on / risk-off",
         "label_zh": "\u5168\u7403\u98ce\u9669\u504f\u597d",
         "family": "risk",
-        "projection": 0.37,
-        "strength": 0.37,
+        "projection": 0.44,
+        "strength": 0.44,
         "direction": "global risk-ON \u2014 S&P up, VIX & dollar down, EM/copper bid (HK's dominant force)"
-      },
-      {
-        "driver": "china_spillover",
-        "label": "China stimulus spillover",
-        "label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
-        "family": "growth",
-        "projection": 0.36,
-        "strength": 0.36,
-        "direction": "China bid spilling into HK \u2014 H-shares & southbound lead up"
       },
       {
         "driver": "us_rate_repricing",
         "label": "US-rate repricing (via the peg)",
         "label_zh": "\u7f8e\u606f\u91cd\u5b9a\u4ef7\uff08\u7ecf\u8054\u6c47\uff09",
         "family": "rates",
-        "projection": -0.13,
-        "strength": 0.13,
+        "projection": -0.43,
+        "strength": 0.43,
         "direction": "US rates repricing lower \u2014 dollar & HIBOR down, the peg imports easing"
+      },
+      {
+        "driver": "china_spillover",
+        "label": "China stimulus spillover",
+        "label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
+        "family": "growth",
+        "projection": 0.34,
+        "strength": 0.34,
+        "direction": "China bid spilling into HK \u2014 H-shares & southbound lead up"
       },
       {
         "driver": "peg_funding_stress",
@@ -396,13 +396,13 @@
   },
   "conditions": {
     "roro": {
-      "roro": -0.257,
-      "roro_raw": -0.263,
+      "roro": -0.234,
+      "roro_raw": -0.239,
       "roro_state": "neutral",
-      "hk_roro_copper_gold": 1.714,
-      "hk_roro_spy": -0.066,
-      "hk_roro_vix": 0.458,
-      "hk_roro_dxy": -0.769,
+      "hk_roro_copper_gold": 1.555,
+      "hk_roro_spy": -0.107,
+      "hk_roro_vix": 0.589,
+      "hk_roro_dxy": -0.411,
       "hk_roro_eem": -0.149,
       "hk_roro_usdcny": -1.422,
       "hk_roro_southbound": 0.088,
@@ -416,28 +416,28 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.714,
+          "value": 1.555,
           "lean": "risk-on"
         },
         {
           "key": "spy",
           "name_en": "S&P 500 (20d)",
           "name_zh": "\u6807\u666e500\uff0820\u65e5\uff09",
-          "value": -0.066,
+          "value": -0.107,
           "lean": "risk-off"
         },
         {
           "key": "vix",
           "name_en": "Volatility (VIX)",
           "name_zh": "\u6ce2\u52a8\u7387\uff08VIX\uff09",
-          "value": 0.458,
+          "value": 0.589,
           "lean": "risk-on"
         },
         {
           "key": "dxy",
           "name_en": "US Dollar (20d)",
           "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-          "value": -0.769,
+          "value": -0.411,
           "lean": "risk-off"
         },
         {
@@ -2158,8 +2158,8 @@
           -0.679,
           -0.581,
           -0.637,
-          -0.565,
-          -0.257
+          -0.548,
+          -0.234
         ]
       },
       "recession": {
@@ -6898,8 +6898,8 @@
           8.0,
           12.3,
           9.4,
-          13.1,
-          32.2
+          14.0,
+          33.6
         ]
       }
     },
@@ -6907,42 +6907,42 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated slowdown/drawdown gauges; never feeds hk_axes / hk_regime / hk_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 32,
+    "fe_score": 34,
     "band": "Fear",
     "band_zh": "\u6050\u60e7",
-    "roro": -0.257,
+    "roro": -0.234,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.714,
-        "pct": 99,
+        "value": 1.555,
+        "pct": 97,
         "lean": "risk-on"
       },
       {
         "key": "spy",
         "name_en": "S&P 500 (20d)",
         "name_zh": "\u6807\u666e500\uff0820\u65e5\uff09",
-        "value": -0.066,
-        "pct": 45,
+        "value": -0.107,
+        "pct": 44,
         "lean": "risk-off"
       },
       {
         "key": "vix",
         "name_en": "Volatility (VIX)",
         "name_zh": "\u6ce2\u52a8\u7387\uff08VIX\uff09",
-        "value": 0.458,
-        "pct": 58,
+        "value": 0.589,
+        "pct": 64,
         "lean": "risk-on"
       },
       {
         "key": "dxy",
         "name_en": "US Dollar (20d)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-        "value": -0.769,
-        "pct": 28,
+        "value": -0.411,
+        "pct": 40,
         "lean": "risk-off"
       },
       {
@@ -7086,5 +7086,21 @@
     "warming_up": false,
     "history_days": 10226
   },
-  "alerts": []
+  "alerts": [
+    {
+      "rule": "hk_growth_confidence_floor",
+      "severity": "warn",
+      "message": "Growth axis confidence dropped below 30%: 50% -> 17% \u2014 trust the label less, size down",
+      "message_zh": "\u589e\u957f\u8f74\u4e00\u81f4\u5ea6\u8dcc\u7834 30%\uff1a50% -> 17% \u2014 \u964d\u4f4e\u5bf9\u6807\u7b7e\u7684\u4fe1\u4efb\uff0c\u7f29\u5c0f\u4ed3\u4f4d",
+      "icon": "\ud83c\udf9a\ufe0f",
+      "plain_en": "Growth read got muddy \u2014 trust the quad less",
+      "plain_zh": "\u589e\u957f\u4fe1\u53f7\u53d8\u6d51\u6d4a \u2014 \u964d\u4f4e\u5bf9\u8c61\u9650\u7684\u4fe1\u4efb",
+      "what_en": "The growth dial's indicators stopped agreeing. The growth half of the quad is now mixed \u2014 size down.",
+      "what_zh": "\u589e\u957f\u523b\u5ea6\u76d8\u7684\u6307\u6807\u505c\u6b62\u4e00\u81f4\u3002\u8c61\u9650\u7684\u589e\u957f\u4e00\u4fa7\u73b0\u5df2\u6df7\u6742 \u2014 \u7f29\u5c0f\u4ed3\u4f4d\u3002",
+      "anchor": "regime-radar",
+      "tier": "watch",
+      "edge_en": "",
+      "edge_zh": ""
+    }
+  ]
 }

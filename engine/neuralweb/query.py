@@ -117,6 +117,7 @@ __all__ = [
     "LEDGER_ENUM",
     "adapt_reflexes",
     "adapt_cortex_attention",
+    "adapt_options_entry",
     "build_index",
     "write_index",
     "load_index",
@@ -165,7 +166,25 @@ COLUMNS: list[str] = [
     # species
     "species_id",
     "archetype",
+    # W1 Spine v2 — descriptive role flags (additive; no behavioral reader; spine-ledger only)
+    "is_sizing",    # True iff this row sized real money
+    "is_veto",      # True iff short/avoid lane
+    "is_alpha",     # True iff directional long conviction that was sized
+    "is_timing",    # Always False this wave (no mechanical source)
+    "is_context",   # Catch-all default; True for non-sizing/non-veto/non-alpha rows
+    "falsifier",    # Human-facing falsifier text (nullable str); spine-ledger rows only
+    "half_life",    # Decay half-life in trading days (nullable float); filled by W2
 ]
+
+# Conservative defaults for role flag columns in _ensure_columns / load_index.
+# is_context=True for old rows; other flags default False; non-flag new cols get NaN.
+_FLAG_DEFAULTS: dict[str, object] = {
+    "is_sizing":  False,
+    "is_veto":    False,
+    "is_alpha":   False,
+    "is_timing":  False,
+    "is_context": True,
+}
 
 # Valid ledger values — used to name-space signal_id prefixes
 LEDGER_ENUM: tuple[str, ...] = (
@@ -180,6 +199,7 @@ LEDGER_ENUM: tuple[str, ...] = (
     "cycles_country",
     "reflexes",             # Neural Web W6a: per-reflex firings ledgers
     "cortex_attention",     # Neural Web W7b PR2: graded cortex attention claims
+    "options_entry",        # Options→NW W-B (RO-5): ungraded-honest options state context
 )
 
 # ---------------------------------------------------------------------------
@@ -240,11 +260,23 @@ def _empty_df() -> pd.DataFrame:
 
 
 def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Add any missing canonical columns as NaN and reorder to COLUMNS."""
+    """Add any missing canonical columns as NaN/conservative-default and reorder to COLUMNS.
+
+    W1: role flag columns default to conservative values (is_context=True, others=False)
+    rather than NaN so old rows honour R8's 'is_context=true for pre-W1 rows' requirement.
+    falsifier defaults None, half_life defaults NaN.
+    """
     for c in COLUMNS:
         if c not in df.columns:
-            df[c] = np.nan
-    return df[COLUMNS].copy()
+            # Use conservative default for flag cols; NaN for everything else
+            default = _FLAG_DEFAULTS.get(c, np.nan)
+            df[c] = default
+    df = df[COLUMNS].copy()
+    # Backfill any NaN in flag columns with conservative defaults (handles mixed old/new rows)
+    for flag, default_val in _FLAG_DEFAULTS.items():
+        if flag in df.columns:
+            df[flag] = df[flag].fillna(default_val)
+    return df
 
 
 def _safe_float(val: Any) -> float | None:
@@ -380,6 +412,31 @@ def adapt_spine(
                 except (ValueError, TypeError, OverflowError):
                     pass  # leave null; query filter will exclude graded+timestampless rows
         row["graded_at"] = raw_graded_at
+
+        # W1 Spine v2 — map role flags and falsifier from spine parquet.
+        # If columns are absent (pre-W1 parquet), apply conservative defaults per R8.
+        for flag, default_val in _FLAG_DEFAULTS.items():
+            raw_val = r.get(flag)
+            if raw_val is None or (isinstance(raw_val, float) and raw_val != raw_val):
+                row[flag] = default_val
+            else:
+                row[flag] = bool(raw_val)
+        # falsifier: nullable str
+        raw_falsifier = r.get("falsifier")
+        if raw_falsifier is None or (isinstance(raw_falsifier, float) and raw_falsifier != raw_falsifier):
+            row["falsifier"] = None
+        else:
+            row["falsifier"] = str(raw_falsifier)
+        # half_life: nullable float
+        raw_hl = r.get("half_life")
+        if raw_hl is None or (isinstance(raw_hl, float) and raw_hl != raw_hl):
+            row["half_life"] = None
+        else:
+            try:
+                row["half_life"] = float(raw_hl)
+            except (TypeError, ValueError):
+                row["half_life"] = None
+
         rows.append(row)
 
     if twin_keys is not None and (excluded_twin or orphan_kept):
@@ -950,6 +1007,7 @@ def build_index(
         ("forward_logs",   lambda: adapt_forward_logs(root)),
         ("reflexes",       lambda: adapt_reflexes(root)),            # W6a — reflex firings ledgers
         ("cortex_attention", lambda: adapt_cortex_attention(root)),  # W7b PR2 — graded cortex attention
+        ("options_entry",  lambda: adapt_options_entry(root)),       # Options→NW W-B — ungraded-honest context
     ]
 
     for name, fn in adapters:
@@ -981,7 +1039,72 @@ def build_index(
         na_position="last",
     ).reset_index(drop=True)
 
+    # W2 — stamp family_half_life from half_life.json (family-level constant broadcast).
+    # This is a cheap map-merge: reads the artifact once and joins on engine.
+    # CRITICAL: the stamped value is a FAMILY-level constant broadcast to rows,
+    # NOT a per-row measurement (flagged as open question in W2 pre-reg).
+    # Behavioral consumers (allocation, alert_triage, board ordering) must NOT
+    # branch on this column — it is display-only (R7/R8 compliance).
+    # If the artifact is absent or unreadable, half_life stays NaN (fail-open).
+    # NOTE: daily.yml writes half_life.json AFTER build_spine_index, so the stamped
+    # column carries the PRIOR night's artifact (fail-open NaN on first run).
+    # This is display-only family metadata, not PIT-sensitive.
+    combined = _stamp_family_half_life(combined, root)
+
     return combined, gaps
+
+
+def _stamp_family_half_life(df: pd.DataFrame, root: Path | str | None) -> pd.DataFrame:
+    """Stamp the family-level half_life from half_life.json onto each row.
+
+    Reads data/neuralweb/half_life.json (produced by W2 scripts/build_kernel_half_lives.py).
+    Maps (engine → half_life float | None) and broadcasts to all rows with that engine.
+    Rows for engines not in the artifact, or engines with null half_life, get NaN.
+
+    Fail-open: if the artifact is absent, unreadable, or invalid, returns df unchanged.
+    This makes W2 entirely additive with no risk of breaking the index build.
+    """
+    if df.empty or "half_life" not in df.columns:
+        return df
+    try:
+        import json  # noqa: PLC0415
+        hl_path = _data_dir(root) / "neuralweb" / "half_life.json"
+        if not hl_path.exists():
+            return df  # artifact absent — no-op, half_life stays NaN
+        hl_data = json.loads(hl_path.read_text(encoding="utf-8"))
+        families = hl_data.get("families", {})
+        if not families:
+            return df
+
+        # Build engine → half_life float|None map
+        hl_map: dict[str, float | None] = {}
+        for engine_key, entry in families.items():
+            if not isinstance(entry, dict):
+                continue
+            hl_val = entry.get("half_life")
+            if hl_val is None or not isinstance(hl_val, (int, float)):
+                hl_map[engine_key] = None
+            else:
+                try:
+                    fv = float(hl_val)
+                    hl_map[engine_key] = fv if not (fv != fv) else None  # NaN guard
+                except (TypeError, ValueError):
+                    hl_map[engine_key] = None
+
+        # Broadcast: only overwrite rows where half_life is currently NaN/None
+        # (adapters may have already set half_life from source data; respect those)
+        engine_col = df["engine"].astype(str)
+        for eng, hl_val in hl_map.items():
+            if hl_val is None:
+                continue  # null half_life → leave as NaN (already the default)
+            mask_engine = engine_col == eng
+            mask_null_hl = df["half_life"].isna()
+            df.loc[mask_engine & mask_null_hl, "half_life"] = hl_val
+
+    except Exception as e:  # noqa: BLE001
+        log.warning("_stamp_family_half_life: failed (half_life stays NaN): %s", e)
+
+    return df
 
 
 # ---------------------------------------------------------------------------
@@ -1037,16 +1160,17 @@ def write_index(root: Path | str | None = None) -> dict:
 
 
 def load_index(root: Path | str | None = None) -> pd.DataFrame:
-    """Read data/neuralweb/spine_index.parquet. Returns empty frame if absent."""
+    """Read data/neuralweb/spine_index.parquet. Returns empty frame if absent.
+
+    W1 R8 backfill: old spine_index.parquet (pre-W1) loads with conservative flag
+    defaults: is_context=True, others=False (not NaN) so consumers see correct defaults.
+    """
     p = _index_path(root)
     if not p.exists():
         return _empty_df()
     try:
         df = pd.read_parquet(p)
-        for c in COLUMNS:
-            if c not in df.columns:
-                df[c] = np.nan
-        return df[COLUMNS].copy()
+        return _ensure_columns(df)
     except Exception as e:  # noqa: BLE001
         log.warning("load_index: read failed: %s", e)
         return _empty_df()
@@ -1303,6 +1427,83 @@ def adapt_reflexes(
 
     df = pd.DataFrame(rows)
     return _ensure_columns(df), gaps
+
+
+# ---------------------------------------------------------------------------
+# adapt_options_entry — Options→NW Entry Intelligence W-B (RO-5)
+# ---------------------------------------------------------------------------
+
+def adapt_options_entry(
+    root: Path | str | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt ``data/options_entry/state.parquet`` → ledger='options_entry'.
+
+    GRADING DESIGN — UNGRADED-HONEST (RO-5, OPTIONS_NW masterplan §2)
+    -----------------------------------------------------------------
+    The options entry state table is a display-tier per-ticker LATEST snapshot
+    of raw options fields (no composites — those are REJECTED under Signal
+    Commons R3 / RO-2).  Every row folds as ``outcome_graded=False`` and
+    ``direction=0``: these are CONTEXT records, not directional claims.  Future
+    grading joins the us_board retro_grades fwd_mfe_* columns READ-ONLY (A9
+    single-writer preserved) via the harness in the options-alpha program —
+    never here, and never via qledger writes (blocked until the QI co-sign).
+
+    Fail-open: missing/unreadable state.parquet → gap note + zero rows.
+    """
+    gaps: list[str] = []
+
+    path = _data_dir(root) / "options_entry" / "state.parquet"
+    if not path.exists():
+        gaps.append("options_entry: state.parquet absent — zero rows")
+        return _empty_df(), gaps
+
+    try:
+        state = pd.read_parquet(path)
+    except Exception as e:  # noqa: BLE001 — fail-open
+        gaps.append(f"options_entry: state.parquet unreadable ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if state.empty:
+        gaps.append("options_entry: state.parquet empty — zero rows")
+        return _empty_df(), gaps
+
+    rows: list[dict] = []
+    skipped = 0
+    for rec in state.to_dict("records"):
+        asof = _str_date(rec.get("as_of"))
+        ticker = _safe_str(rec.get("ticker"))
+        if not asof or not ticker:
+            skipped += 1
+            continue
+        row: dict[str, Any] = {c: None for c in COLUMNS}
+        row["signal_id"]      = f"options_entry:{asof}:{ticker}"
+        row["engine"]         = "options_entry"
+        row["family"]         = "options.entry_state"
+        row["ledger"]         = "options_entry"
+        row["as_of"]          = asof
+        row["symbol"]         = ticker
+        row["scope_type"]     = "entity"
+        row["universe"]       = "options_entry.state"
+        row["horizon"]        = None
+        # CONTEXT record: direction=0 always (RO-9: no signed-flow direction).
+        row["direction"]      = 0
+        row["size_binding"]   = False
+        row["fill_basis"]     = "options_state"
+        row["score"]          = None
+        row["outcome_excess"] = None
+        # UNGRADED-HONEST: outcome_graded=False for all options state rows.
+        row["outcome_graded"] = False
+        row["graded_at"]      = None
+        row["is_context"]     = True
+        rows.append(row)
+
+    if skipped:
+        gaps.append(f"options_entry: {skipped} rows skipped (no as_of/ticker)")
+    gaps.append(f"options_entry: {len(rows)} context rows emitted (ungraded-honest)")
+
+    if not rows:
+        return _empty_df(), gaps
+    return _ensure_columns(pd.DataFrame(rows)), gaps
 
 
 # ---------------------------------------------------------------------------
