@@ -534,8 +534,23 @@ def _total_return(
     close: pd.Series,
     fire_date: pd.Timestamp,
     horizon: int,
+    max_intra_window_gap_days: int = 10,
 ) -> float | None:
-    """Total return from fill bar to fill+horizon bar."""
+    """Total return from fill bar to fill+horizon bar.
+
+    Returns None if the forward window is shorter than `horizon` bars OR if any
+    consecutive date pair inside the window is separated by more than
+    `max_intra_window_gap_days` calendar days.  The latter guard catches
+    per-ticker data gaps (e.g., a ticker missing 2021-10-25 → 2025-01-02 data):
+    without it, `fwd.iloc[horizon-1]` resolves to a bar that is nominally bar N
+    but is separated from bar N-1 by years, corrupting the 'N-bar return' label.
+
+    Per ruling LH-W1-3: callers must verify that the forward leg is calendar-
+    contiguous.  A gap > 10 calendar days between any two consecutive bars in
+    the horizon window is treated as a disqualifying discontinuity; the return
+    is returned as None and the fire is stamped `gap_leg_crossed=True` by the
+    caller.
+    """
     from engine.grading import fill_index  # noqa: PLC0415
     fi = fill_index(close, fire_date)
     if fi is None:
@@ -546,12 +561,51 @@ def _total_return(
     fwd = close.iloc[fi + 1:]
     if len(fwd) < horizon:
         return None
-    return float(fwd.iloc[horizon - 1]) / entry - 1.0
+    window = fwd.iloc[:horizon]
+    # Calendar-continuity guard: reject if any intra-window gap exceeds threshold.
+    # Use pd.Series.diff() which handles DatetimeIndex correctly.
+    window_dates = pd.Series(window.index)
+    day_diffs = window_dates.diff().dt.days.dropna()
+    if len(day_diffs) > 0 and day_diffs.max() > max_intra_window_gap_days:
+        return None
+    return float(window.iloc[horizon - 1]) / entry - 1.0
 
 
 # ---------------------------------------------------------------------------
 # Sector-relative return
 # ---------------------------------------------------------------------------
+
+def _forward_leg_has_gap(
+    close: pd.Series,
+    fire_date: pd.Timestamp,
+    horizon: int,
+    max_intra_window_gap_days: int = 10,
+) -> bool:
+    """Return True if the horizon-bar forward window from fill_index contains any
+    intra-bar gap exceeding max_intra_window_gap_days calendar days.
+
+    This is the forward-leg integrity check required by ruling LH-W1-3.  It is
+    distinct from `gap_period` (which gates only the fire_date itself) and from
+    `survivorship_biased` (which tracks dead-name presence).  A fire can be
+    survivorship-clean yet have a gap-corrupted forward leg.
+
+    Returns False if the window is too short to evaluate (caller should treat as
+    insufficient bars, not as a gap crossing).
+    """
+    from engine.grading import fill_index  # noqa: PLC0415
+    fi = fill_index(close, fire_date)
+    if fi is None:
+        return False
+    fwd = close.iloc[fi + 1:]
+    if len(fwd) < horizon:
+        return False  # too short — not a gap crossing, just not matured
+    window = fwd.iloc[:horizon]
+    window_dates = pd.Series(window.index)
+    day_diffs = window_dates.diff().dt.days.dropna()
+    if len(day_diffs) == 0:
+        return False
+    return bool(day_diffs.max() > max_intra_window_gap_days)
+
 
 def _sector_return(
     sector_close: pd.Series | None,
@@ -760,6 +814,13 @@ def compute_labels(
             "coverage_frac": None,
             "cohort_fundamentals_coverage_frac": None,
             "gap_period": _is_gap_period(fire_date),
+            # Forward-leg integrity stamp (per ruling LH-W1-3):
+            # True when any consecutive bar pair in the 252d forward window is
+            # separated by > 10 calendar days (a data gap inside the horizon window).
+            # Distinct from gap_period (which marks fire_date only) and from
+            # survivorship_biased.  A gap_leg_crossed=True fire has total_return_252d=None
+            # because _total_return returns None for such windows.
+            "gap_leg_crossed": False,
             # Horizon status stamps
             "horizon_status_126": "primary_126d",
             "horizon_status_252": "primary_252d",
@@ -819,6 +880,15 @@ def compute_labels(
         if fwd_bars_252 < HORIZON_252:
             rec["label"] = "unlabeled"
             rec["label_reason"] = "unmatured_252"
+            rows_out.append(rec)
+            continue
+
+        # Check forward-leg integrity (ruling LH-W1-3): stamp gap_leg_crossed before
+        # calling _total_return so the reason for None is recorded in the output.
+        if _forward_leg_has_gap(close, fire_date, HORIZON_252):
+            rec["gap_leg_crossed"] = True
+            rec["label"] = "unlabeled"
+            rec["label_reason"] = "gap_leg_crossed_252"
             rows_out.append(rec)
             continue
 
@@ -1176,9 +1246,14 @@ def build_manifest(
     n_g_no_sector = int(g_df["sector_rel_252d"].isna().sum()) if not g_df.empty else 0
     g_no_sector_pct = round(100.0 * n_g_no_sector / n_g_total, 1) if n_g_total > 0 else 0.0
 
+    # -----------------------------------------------------------------------
+    # gap_leg_crossed counts (ruling LH-W1-3 mandatory stamp)
+    # -----------------------------------------------------------------------
+    n_gap_leg_crossed = int(labeled["gap_leg_crossed"].fillna(False).sum())
+
     manifest = {
         "artifact": "long_hold_labels",
-        "version": "W1-PR-E-r2",  # r2 = dead-name Polygon prices integrated (Phase-1)
+        "version": "W1-PR-E-r3",  # r3 = gap-leg-crossed guard + gap_leg_crossed stamp
         "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),
         "runtime_seconds": round(runtime_seconds, 1),
         "population": {
@@ -1202,6 +1277,7 @@ def build_manifest(
             "n_tactical_only_fail": tactical_fail_n,
             "n_unlabeled": unlabeled_n,
             "n_gap_period": gap_period_n,
+            "n_gap_leg_crossed": n_gap_leg_crossed,
         },
         "cohort_label_counts": cohort_label_counts,
         "coverage_frac_by_cohort": coverage_by_cohort,
@@ -1235,10 +1311,14 @@ def build_manifest(
                 "The G1 kill criterion (§8) requires running on the OOS split (2020-2023) "
                 "within honest cohorts (massive-only, non-gap, 252d matured). The practical "
                 "honest-OOS window is only 2021-07-06 → 2021-10-25 (~3.5 months), because "
-                "the massive store gap (2021-10-25 → 2025-01-02) swallows all subsequent "
-                "OOS fires. The full-tape honest-252d count (episode_cluster_counts) "
-                "includes non-OOS and 2025+ fires; the OOS-honest number above (702 clusters) "
-                "is the correct decision denominator for G1 runnability."
+                "the massive store gap (2021-10-25 → 2025-01-02) means many tickers have "
+                "per-ticker internal gaps in their forward paths; fires where the 252-bar "
+                "forward window crosses such a gap are stamped gap_leg_crossed=True and "
+                "excluded from the honest-OOS count (total_return_252d=None). The full-tape "
+                "honest-252d count (episode_cluster_counts) includes non-OOS and 2025+ fires; "
+                "the OOS-honest number above is the correct decision denominator for G1 "
+                "runnability. Forward-leg continuity is verified by the calendar-gap guard "
+                "in _total_return (max_intra_window_gap_days=10) per ruling LH-W1-3."
             ),
         },
         "label_g_coverage_warning": {
@@ -1265,6 +1345,16 @@ def build_manifest(
                 "(2021-10-25 → 2025-01-02). False ONLY for massive-store fires post-2021-07-06 "
                 "outside the gap period."
             ),
+            "gap_leg_crossed": (
+                "bool per fire — True when the 252-bar forward window starting at fill_index "
+                "contains any consecutive bar pair separated by > 10 calendar days. Distinct "
+                "from gap_period (which gates fire_date only) and survivorship_biased (dead-name "
+                "presence). A fire can be survivorship-clean yet have gap_leg_crossed=True. "
+                "gap_leg_crossed=True fires have total_return_252d=None and label_reason="
+                "'gap_leg_crossed_252'. They are excluded from all honest-cohort inference. "
+                "This field satisfies ruling LH-W1-3: 'a separate forward-leg-integrity field "
+                "that the study must carry'."
+            ),
             "coverage_frac": "resolvable fires / total fires in cohort-year",
             "cohort_description": "post-2021-07 massive (honest) | post-2021-07 dead_name Polygon (honest) | survivor-only (UPPER BOUND) | no_price",
             "horizon_status": "primary_126d | primary_252d | caveat_504d | refused_756d",
@@ -1273,6 +1363,9 @@ def build_manifest(
             "UPPER BOUND — survivor-only cohort applies to all yahoo/stocks-sourced fires and "
             "pre-2021-07 massive fires. Post-2021-07 massive-store fires (outside the gap "
             "2021-10-25 → 2025-01-02) are survivorship-correct per day. "
+            "Per-ticker parquets in the massive store may have internal gaps within the "
+            f"gap window; {n_gap_leg_crossed} fires have gap_leg_crossed=True (forward window "
+            "contains a >10 calendar-day bar gap) and are excluded from honest-cohort labels. "
             "Post-2021-07 dead_name (Polygon-sourced) fires are also honest for dead names "
             "explicitly present in the data (acquisition skew residual exists; see "
             "DEAD_NAME_SPIKE.md §Deviations). "
