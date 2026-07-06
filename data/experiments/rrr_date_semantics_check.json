@@ -1,0 +1,15 @@
+{
+  "column": "REPORT_DATE",
+  "source_table": "RPT_ECONOMY_DEPOSIT_RESERVE",
+  "semantics": "announce_date",
+  "verification_method": "cross-reference with known PBoC announcements and trading calendar",
+  "evidence": {
+    "2008-10-08": "PBoC announced cut on 2008-10-08 (trading day post-holiday), effective 2008-10-15",
+    "2020-01-01": "Non-trading day (New Year holiday), consistent with announce semantics",
+    "2018-10-07": "Sunday non-trading day, consistent with announce semantics",
+    "2012-02-18": "Saturday non-trading day, consistent with announce semantics"
+  },
+  "bias_note": "Announcement precedes effective date by ~1-10 business days. Entry at first close AFTER announce date captures reaction to announcement, not the effective date, so measured CAR reflects market response to the policy signal rather than the policy implementation.",
+  "conclusion": "Use REPORT_DATE as-is (announce date). This is the appropriate anchor for event studies \u2014 the announcement is the information event.",
+  "verified_on": "2026-07-06"
+}
