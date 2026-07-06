@@ -766,6 +766,18 @@ def scan() -> dict:
     }
 
 
+# Cutoff for legacy UTC-basis sidecar keys.
+# The legacy collector (collectors/china_inquiry.py) was retired in this PR; its nightly
+# dispatch is removed. Sidecar keys written on or before this date may carry UTC-basis
+# dates that lag CST by one day. After this date, only canonical CST keys are written.
+# The ±1 day variant checks in register_claims are scoped to rows whose canonical event
+# date is <= this cutoff (transition-era rows only) — applying them to post-cutoff dates
+# would cause over-suppression for genuinely distinct letters from the same company on
+# consecutive days (e.g., letter A on date D already registered; distinct letter B with
+# canonical date D+1 would check {D+1, D, D+2}, hit A's key D, and be wrongly suppressed).
+_LEGACY_UTC_KEY_CUTOFF = "2026-07-06"
+
+
 def _cst_claim_keys(sec_code: str, date_str: str) -> tuple[str, str, str]:
     """Return (canonical_key, utc_variant_key, cst_plus1_key) for an inquiry claim.
 
@@ -789,8 +801,10 @@ def _cst_claim_keys(sec_code: str, date_str: str) -> tuple[str, str, str]:
         lead; so checking date+1 as an additional sidecar lookup covers that direction.
         Document: "legacy UTC date can lag CST by one day, never lead."
 
-    Dedup contract: register_claims checks ALL THREE keys. Registration always writes
-    the canonical key (the date_str as provided by the snap — already CST for filings).
+    Dedup contract: register_claims checks ALL THREE keys only for transition-era rows
+    (canonical date <= _LEGACY_UTC_KEY_CUTOFF). Post-cutoff rows use canonical key only.
+    Registration always writes the canonical key (the date_str as provided by the snap —
+    already CST for filings).
     """
     from datetime import date as _date, timedelta as _td
     canonical_key = f"inq_{sec_code}_{date_str}"
@@ -904,8 +918,18 @@ def register_claims(snap: dict, root: Any = None) -> int:
         # legacy-first blocking filings re-registration). Legacy UTC date can lag
         # CST by one day, never lead. See _cst_claim_keys() for full derivation.
         event_key, utc_variant_key, cst_plus1_key = _cst_claim_keys(sec_code, announce_date)
-        if event_key in registered_keys or utc_variant_key in registered_keys or cst_plus1_key in registered_keys:
-            continue  # already registered on a previous run (either source)
+        # Scope ±1 variant checks to transition-era rows only.
+        # Legacy UTC-basis sidecar keys can only reference event dates <= _LEGACY_UTC_KEY_CUTOFF
+        # (the legacy collector was retired in the PR that introduced that cutoff). Applying
+        # the variant checks beyond the cutoff date would cause over-suppression: a distinct
+        # letter B with canonical date D+1 would check {D+1, D, D+2} and wrongly hit letter
+        # A's key D, silently under-counting the cn_special_sits qledger family.
+        if event_key in registered_keys:
+            continue  # already registered (canonical key match)
+        if announce_date <= _LEGACY_UTC_KEY_CUTOFF:
+            # Transition-era row: check ±1 day variants to catch UTC/CST skew
+            if utc_variant_key in registered_keys or cst_plus1_key in registered_keys:
+                continue  # already registered via the other-source date variant
         scope_type, scope_key = _entity_claim("", sec_code)
         try:
             claim_asof = announce_date  # stamp from the event's own date

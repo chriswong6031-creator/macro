@@ -724,9 +724,10 @@ def test_cst_skew_legacy_first_filings_no_reregister(tmp_path, monkeypatch):
     import datetime
     # Letter at 07:30 CST = 23:30 UTC on D-1.
     # CST date = D, UTC date = D-1.
-    today = pd.Timestamp.today()
-    cst_date = today.strftime("%Y-%m-%d")          # D (canonical CST date)
-    utc_date = (today - pd.Timedelta(days=1)).strftime("%Y-%m-%d")  # D-1 (legacy UTC date)
+    # Dates pinned to the transition era (<= _LEGACY_UTC_KEY_CUTOFF = 2026-07-06) so that
+    # the three-key check (canonical, utc_variant, cst_plus1) is exercised by this test.
+    cst_date = "2026-07-06"   # D — at cutoff boundary, triggers transition-era logic
+    utc_date = "2026-07-05"   # D-1 — legacy UTC date for 07:30 CST event
 
     sec_code = "000333"
 
@@ -788,9 +789,10 @@ def test_cst_skew_filings_first_legacy_no_reregister(tmp_path, monkeypatch):
     monkeypatch.setattr(ql_mod, "make_claim", fake_make)
     monkeypatch.setattr(ql_mod, "register_batch", fake_batch)
 
-    today = pd.Timestamp.today()
-    cst_date = today.strftime("%Y-%m-%d")          # D
-    utc_date = (today - pd.Timedelta(days=1)).strftime("%Y-%m-%d")  # D-1
+    # Dates pinned to the transition era (<= _LEGACY_UTC_KEY_CUTOFF = 2026-07-06) so that
+    # the three-key check (canonical, utc_variant, cst_plus1) is exercised by this test.
+    cst_date = "2026-07-06"   # D — at cutoff boundary, triggers transition-era logic
+    utc_date = "2026-07-05"   # D-1 — legacy UTC date for 07:30 CST event
 
     sec_code = "000444"
 
@@ -844,4 +846,148 @@ def test_cst_skew_filings_first_legacy_no_reregister(tmp_path, monkeypatch):
         f"CST-skew fixture (filings-first): legacy path (date=D-1={utc_date}) must NOT "
         f"re-register when filings already registered canonical key (D={cst_date}). "
         f"Got n={n}. Check that register_claims tests date+1 variant for legacy rows."
+    )
+
+
+# ── 10. Post-cutoff: consecutive-day letters from same company both register ──────
+
+def test_post_cutoff_consecutive_days_both_register(tmp_path, monkeypatch):
+    """Post-cutoff: two DISTINCT letters from the same company on consecutive dates BOTH register.
+
+    Letter A: sec_code=000777, date=2026-08-10
+    Letter B: sec_code=000777, date=2026-08-11 (the next day)
+
+    Both are after _LEGACY_UTC_KEY_CUTOFF (2026-07-06), so only the canonical key is checked.
+    Without the fix (applying ±1 variants to all dates), letter B's check for date−1=2026-08-10
+    would hit letter A's key and be wrongly suppressed.
+    Expected: register_claims returns n=2 (both letters registered).
+    """
+    monkeypatch.setenv("CN_LANE", "asia")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr(cfg, "load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+
+    import engine.china_special_situations as css
+    import engine.qledger as ql_mod
+    css._REGIME_HISTORY_CACHE.clear()
+
+    all_registered: list = []
+
+    def fake_make(**kw):
+        return {"_claim": True, **kw}
+
+    def fake_batch(claims, **kw):
+        all_registered.extend(claims)
+        return [{"status": "new"} for _ in claims]
+
+    monkeypatch.setattr(ql_mod, "make_claim", fake_make)
+    monkeypatch.setattr(ql_mod, "register_batch", fake_batch)
+
+    sec_code = "000777"
+    date_a = "2026-08-10"   # post-cutoff day 1
+    date_b = "2026-08-11"   # post-cutoff day 2 (consecutive)
+
+    snap = {
+        "inquiry": {
+            "letters": [
+                {
+                    "secCode": sec_code,
+                    "secName": "测试A公司",
+                    "title": "关于第一封问询函的说明",
+                    "date": date_a,
+                    "pdf_url": "/x/A.pdf",
+                    "has_reply": False,
+                    "type_name": "问询函",
+                },
+                {
+                    "secCode": sec_code,
+                    "secName": "测试A公司",
+                    "title": "关于第二封问询函的说明",
+                    "date": date_b,
+                    "pdf_url": "/x/B.pdf",
+                    "has_reply": False,
+                    "type_name": "问询函",
+                },
+            ],
+            "n_letters": 2,
+            "n_replies": 0,
+        },
+        "unlocks": None,
+    }
+
+    n = css.register_claims(snap)
+    assert n == 2, (
+        f"Post-cutoff: two distinct letters on consecutive days must BOTH register. "
+        f"Got n={n} (expected 2). Over-suppression via ±1 variants may still be active "
+        f"for post-cutoff dates. Check _LEGACY_UTC_KEY_CUTOFF guard in register_claims."
+    )
+    # Verify both event keys are distinct and both are in the sidecar
+    registered_salts = [c.get("extra", {}).get("salt") for c in all_registered]
+    assert f"inq_{sec_code}_{date_a}" in registered_salts, \
+        f"Letter A key not found in registered claims: {registered_salts}"
+    assert f"inq_{sec_code}_{date_b}" in registered_salts, \
+        f"Letter B key not found in registered claims: {registered_salts}"
+
+
+def test_post_cutoff_idempotent_same_letter(tmp_path, monkeypatch):
+    """Post-cutoff: re-processing the same letter is still deduped by canonical key (n stays 1).
+
+    Ensures that removing ±1 variant checks for post-cutoff dates does not break
+    canonical-key idempotency. The sidecar's canonical key must still prevent
+    double-registration when the exact same event is processed twice.
+    """
+    monkeypatch.setenv("CN_LANE", "asia")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr(cfg, "load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+
+    import engine.china_special_situations as css
+    import engine.qledger as ql_mod
+    css._REGIME_HISTORY_CACHE.clear()
+
+    registered_counts: list[int] = []
+
+    def fake_make(**kw):
+        return {"_claim": True, **kw}
+
+    def fake_batch(claims, **kw):
+        registered_counts.append(len(claims))
+        return [{"status": "new"} for _ in claims]
+
+    monkeypatch.setattr(ql_mod, "make_claim", fake_make)
+    monkeypatch.setattr(ql_mod, "register_batch", fake_batch)
+
+    sec_code = "000888"
+    event_date = "2026-08-15"   # post-cutoff
+
+    snap = {
+        "inquiry": {
+            "letters": [
+                {
+                    "secCode": sec_code,
+                    "secName": "幂等测试公司",
+                    "title": "关注函",
+                    "date": event_date,
+                    "pdf_url": "/x/C.pdf",
+                    "has_reply": False,
+                    "type_name": "问询函",
+                },
+            ],
+            "n_letters": 1,
+            "n_replies": 0,
+        },
+        "unlocks": None,
+    }
+
+    # First run: registers 1 claim
+    n1 = css.register_claims(snap)
+    assert n1 == 1, f"First run must register exactly 1 claim; got {n1}"
+
+    # Second run: same snap, sidecar already has the canonical key → 0 new claims
+    n2 = css.register_claims(snap)
+    assert n2 == 0, (
+        f"Post-cutoff idempotency: second run of same letter must return 0 (canonical dedup). "
+        f"Got n2={n2}. The sidecar must prevent re-registration via canonical key alone."
     )
