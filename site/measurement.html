@@ -190,6 +190,49 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   .sg-families{grid-template-columns:1fr}
 }
 
+/* ── Evidence-Gap panel (PR-A1) ─────────────────────────────────────────── */
+.eg-subpanel{margin-bottom:36px;padding:20px;border-radius:10px;
+  border:1px solid var(--border,rgba(255,255,255,.08));
+  background:var(--card,rgba(255,255,255,.03))}
+.eg-subhd{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.eg-subhd h3{font-size:.98rem;font-weight:700;margin:0;color:var(--text,#e2e8f0)}
+.eg-subhd-meta{font-size:.75rem;color:var(--muted,#8899aa)}
+.eg-note{font-size:.82rem;color:var(--muted,#8899aa);max-width:820px;margin:0 0 14px;line-height:1.6}
+.eg-note strong{color:var(--text,#e2e8f0)}
+.eg-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.eg-table{width:100%;min-width:600px;border-collapse:collapse;font-size:.8rem}
+.eg-table th{text-align:left;padding:8px 10px;font-size:.7rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.07em}
+.eg-table td{padding:8px 10px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:top;line-height:1.45}
+.eg-table tr:last-child td{border-bottom:none}
+.eg-mono{font-family:monospace;font-size:.78rem;color:var(--text,#e2e8f0)}
+.eg-num{font-family:monospace;font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0);white-space:nowrap}
+.eg-ts{font-size:.72rem;color:var(--muted,#8899aa)}
+.eg-question{font-size:.75rem;color:var(--muted,#8899aa);max-width:380px;line-height:1.4}
+.eg-starvation{font-size:.78rem;line-height:1.45}
+.eg-stv-closed{color:var(--up,#22c55e)}
+.eg-stv-time{color:var(--blue,#3b82f6)}
+.eg-stv-build{color:var(--warn,#f59e0b)}
+.eg-footnote{font-size:.7rem;color:var(--muted,#8899aa);margin-top:10px;line-height:1.5}
+.eg-footnote code{font-family:monospace;font-size:.7rem}
+.eg-accrual-banner{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,var(--surface,#0f1629));
+  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
+  border-radius:8px;padding:12px 16px;margin-bottom:12px;
+  font-size:.82rem;line-height:1.55;color:var(--text,#e2e8f0)}
+.eg-accrual-banner strong{color:var(--warn,#f59e0b)}
+.eg-ci-caveat{font-size:.78rem;color:var(--muted,#8899aa);
+  background:color-mix(in srgb,var(--blue,#3b82f6) 6%,transparent);
+  border:1px solid color-mix(in srgb,var(--blue,#3b82f6) 18%,transparent);
+  border-radius:6px;padding:10px 14px;margin-bottom:12px;max-width:820px;line-height:1.55}
+.eg-dates-note{font-size:.68rem;color:var(--muted,#8899aa);margin-left:4px}
+@media(max-width:600px){
+  .eg-table{font-size:.72rem}
+  .eg-table td{padding:6px 8px}
+  .eg-question{max-width:200px}
+}
+
 /* ── Provenance footer ───────────────────────────────────────────────────── */
 .mh-provenance{margin-top:48px;padding:20px;border-radius:10px;
   border:1px solid var(--border,rgba(255,255,255,.07));
@@ -3951,6 +3994,1240 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   
 
   
+  
+  <section class="mh-section" id="eg-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Evidence-Gap Panel</span><span class="l-zh">证据缺口面板</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Grading closure · trial budgets · experiment registry · reliability accrual (PR-A1)</span><span class="l-zh">评分闭环 · 试验预算 · 实验注册表 · 可靠性积累</span></span>
+    </div>
+
+    
+    
+    <div class="eg-subpanel" id="eg-grading-closure">
+      <div class="eg-subhd">
+        <h3><span class="l-en">Grading Closure</span><span class="l-zh">评分闭环</span></h3>
+        <span class="eg-subhd-meta">
+          <span class="l-en">26 ledgers — 7 closed · 16 grader-starved · 3 log-only</span>
+          <span class="l-zh">26 个账本 — 7 已关闭 · 16 评分器缺失 · 3 仅记录</span>
+        </span>
+      </div>
+      <p class="eg-note">
+        <span class="l-en"><strong>TIME vs BUILD:</strong> "accruing (time-starved)" means the grader is wired and correct — rows are simply too recent to have matured outcomes. These ledgers need clocks, not engineers. "needs grader (build)" means no grader exists yet. Do not conflate the two.</span>
+        <span class="l-zh"><strong>时间 vs 构建：</strong>"积累中（时间不足）"表示评分器已接入且正确——行数据只是太新，尚未到期。这些账本需要的是时钟，而非工程师。"需要评分器（待构建）"表示尚无评分器。请勿混淆二者。</span>
+      </p>
+      <div class="eg-table-wrap">
+      <table class="eg-table">
+        <thead>
+          <tr>
+            <th><span class="l-en">Ledger key</span><span class="l-zh">账本键</span></th>
+            <th><span class="l-en">n_logged</span><span class="l-zh">已记录</span></th>
+            <th><span class="l-en">n_graded</span><span class="l-zh">已评分</span></th>
+            <th><span class="l-en">Verdict</span><span class="l-zh">裁定</span></th>
+            <th><span class="l-en">Starvation (TIME vs BUILD)</span><span class="l-zh">缺失类型（时间 vs 构建）</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="eg-mono">qledger_claims</td>
+            <td class="eg-num">9069</td>
+            <td class="eg-num">2815</td>
+            <td>
+              
+              <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-closed">closed / partial</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">qledger_grades</td>
+            <td class="eg-num">2815</td>
+            <td class="eg-num">2815</td>
+            <td>
+              
+              <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-closed">closed / partial</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">board_ledger_hk</td>
+            <td class="eg-num">9</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-08 (n=9, weekly cadence)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">board_ledger_ca</td>
+            <td class="eg-num">40</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-08 (n=40)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">us_board_ledger</td>
+            <td class="eg-num">950</td>
+            <td class="eg-num">950</td>
+            <td>
+              
+              <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-closed">closed / partial</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">signal_archive_track_record</td>
+            <td class="eg-num">55414</td>
+            <td class="eg-num">55289</td>
+            <td>
+              
+              <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-closed">closed / partial</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">china_standout_track</td>
+            <td class="eg-num">240</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-08 (n=240)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">sector_cycles_forward_log</td>
+            <td class="eg-num">114</td>
+            <td class="eg-num">1937</td>
+            <td>
+              
+              <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-closed">closed / partial</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">china_sector_cycles_forward_log</td>
+            <td class="eg-num">265</td>
+            <td class="eg-num">5081</td>
+            <td>
+              
+              <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-closed">closed / partial</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">country_cycles_forward_log</td>
+            <td class="eg-num">62</td>
+            <td class="eg-num">5769</td>
+            <td>
+              
+              <span class="verdict verdict-pass"><span class="l-en">CLOSED</span><span class="l-zh">已关闭</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-closed">closed / partial</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">breadth_divergence_forward_log</td>
+            <td class="eg-num">26</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-none"><span class="l-en">LOG-ONLY</span><span class="l-zh">仅记录</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-build">needs grader (build)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">risk_radar_forward_log</td>
+            <td class="eg-num">8</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-none"><span class="l-en">LOG-ONLY</span><span class="l-zh">仅记录</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-build">needs grader (build)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">risk_radar_intl_cn</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-07-10 (n=5 at ~weekly cadence)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">risk_radar_intl_hk</td>
+            <td class="eg-num">4</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-07-10 (n=4)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">risk_radar_intl_ca</td>
+            <td class="eg-num">4</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-07-10 (n=4)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">market_state_forward_log</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-07-10 (n=5)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">oracle_forward_ledger</td>
+            <td class="eg-num">173</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-07-30 (n=173, quarterly grading window)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">oracle_compounds_live_ledger</td>
+            <td class="eg-num">53</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-07-30 (n=53)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">oracle_reversion_forward</td>
+            <td class="eg-num">0</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — seeded only after first reversion compound passes gauntlet</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">btc_override_ledger</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-08-25 (n=5, monthly cadence)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">foresight_log</td>
+            <td class="eg-num">34</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-08-25 (n=34)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">foresight_policy_calendar_ledger</td>
+            <td class="eg-num">29</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-none"><span class="l-en">LOG-ONLY</span><span class="l-zh">仅记录</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-build">needs grader (build)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">froth_fragility_log</td>
+            <td class="eg-num">5</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-08-25 (n=5)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">species_registry</td>
+            <td class="eg-num">21</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — earliest maturity ~2026-09 (n=21, accruing)</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">species_antichase_shadow_ledger</td>
+            <td class="eg-num">0</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — seeded when F3_ANTICHASE accrues first row</span>
+              
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">species_f1d_shadow_ledger</td>
+            <td class="eg-num">0</td>
+            <td class="eg-num">0</td>
+            <td>
+              
+              <span class="verdict verdict-accruing"><span class="l-en">GRADER-STARVED</span><span class="l-zh">GRADER-STARVED</span></span>
+              
+            </td>
+            <td class="eg-starvation">
+              
+              <span class="eg-stv-time">accruing (time-starved) — seeded when EI-F1D-RW accrues first row</span>
+              
+            </td>
+          </tr>
+          
+        </tbody>
+      </table>
+      </div>
+      <div class="eg-footnote">
+        <span class="l-en">Generated: 2026-07-06T04:38:22.703385+00:00. Source: <code>data/governance/grading_closure.json</code>.</span>
+        <span class="l-zh">生成时间：2026-07-06T04:38:22.703385+00:00。来源：<code>data/governance/grading_closure.json</code>。</span>
+      </div>
+    </div>
+    
+
+    
+    
+    <div class="eg-subpanel" id="eg-trial-budgets">
+      <div class="eg-subhd">
+        <h3><span class="l-en">Trial Budgets by Family</span><span class="l-zh">按族分类的试验预算</span></h3>
+        <span class="eg-subhd-meta">
+          <span class="l-en">827 rows · 81 families</span>
+          <span class="l-zh">827 行 · 81 个族</span>
+        </span>
+      </div>
+      <div class="eg-table-wrap">
+      <table class="eg-table">
+        <thead>
+          <tr>
+            <th><span class="l-en">Family</span><span class="l-zh">族</span></th>
+            <th><span class="l-en">n rows</span><span class="l-zh">行数</span></th>
+            <th><span class="l-en">Latest timestamp</span><span class="l-zh">最新时间戳</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="eg-mono">active_commodity_lev_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">alpha_grammar_confluence_v1</td>
+            <td class="eg-num">565</td>
+            <td class="eg-mono eg-ts">2026-07-05T13:53:25</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">anticipation_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">baskets_abs_escape</td>
+            <td class="eg-num">4</td>
+            <td class="eg-mono eg-ts">2026-07-03T11:25:25</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">baskets_breadth_divergence</td>
+            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-07-02T05:07:21</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">baskets_conviction_demotion</td>
+            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-07-03T11:25:27</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">baskets_rank_dd_mod</td>
+            <td class="eg-num">4</td>
+            <td class="eg-mono eg-ts">2026-07-03T11:25:28</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">btc_onchain_dd_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">btc_vector_optimal_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">business_cycle_recession_signal</td>
+            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-07-02T12:25:07</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">c1b_commodity_flip_protective_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-03T17:48:13</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">capitulation_overlay_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">china_validation</td>
+            <td class="eg-num">3</td>
+            <td class="eg-mono eg-ts">2026-06-22T02:36:20</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">coiled_ca_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-03T19:37:01</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">commodity_carry_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">commodity_tsmom_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">commodity_xsec_carry_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">commodity_xsec_mom_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">credit_duration_verify_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">cross_asset_confirmation_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">cross_asset_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">crypto_voltarget_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_appendix</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-05T07:36:12</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_decline_geometry</td>
+            <td class="eg-num">5</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:48:08</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_ev_blackout</td>
+            <td class="eg-num">10</td>
+            <td class="eg-mono eg-ts">2026-07-05T11:40:59</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_fund_repair</td>
+            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:15:43</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_htf_turn</td>
+            <td class="eg-num">13</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:44:15</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_htf_turn_dose</td>
+            <td class="eg-num">3</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:44:15</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_insider_sponsor</td>
+            <td class="eg-num">12</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:15:43</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_lq_bands</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-05T07:36:12</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_macro_release</td>
+            <td class="eg-num">10</td>
+            <td class="eg-mono eg-ts">2026-07-06T08:15:24</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_null_competitors</td>
+            <td class="eg-num">7</td>
+            <td class="eg-mono eg-ts">2026-07-05T10:16:03</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_pos_reset</td>
+            <td class="eg-num">6</td>
+            <td class="eg-mono eg-ts">2026-07-06T08:15:24</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_ql_overlay</td>
+            <td class="eg-num">11</td>
+            <td class="eg-mono eg-ts">2026-07-05T12:48:18</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_sponsorship</td>
+            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:15:43</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_sq_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-05T07:36:12</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_sub_x_turn</td>
+            <td class="eg-num">3</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:44:15</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_support_dose</td>
+            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:15:43</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_ts_adx</td>
+            <td class="eg-num">5</td>
+            <td class="eg-mono eg-ts">2026-07-05T11:40:03</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_underwater</td>
+            <td class="eg-num">5</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:48:08</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_ur_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-05T07:36:12</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_vol_transition</td>
+            <td class="eg-num">5</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:48:08</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">esx_washout_x_turn</td>
+            <td class="eg-num">9</td>
+            <td class="eg-mono eg-ts">2026-07-06T07:44:15</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">eth_vector_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">hk_southbound_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">hyoas_z_timer_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">incremental_ic:fip_continuity</td>
+            <td class="eg-num">4</td>
+            <td class="eg-mono eg-ts">2026-06-21T10:36:19</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">incremental_ic:mom_12_1</td>
+            <td class="eg-num">4</td>
+            <td class="eg-mono eg-ts">2026-06-21T10:36:16</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">incremental_ic:near_52w_high</td>
+            <td class="eg-num">4</td>
+            <td class="eg-mono eg-ts">2026-06-21T10:36:18</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">index_direction_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">insider_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">insider_phase1</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">intl_bridge</td>
+            <td class="eg-num">18</td>
+            <td class="eg-mono eg-ts">2026-07-02T11:28:17</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">intl_macro_sleeve_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">intl_tr_trend_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">intl_trend_overlay_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">long_hold.expect_drift</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-06T09:13:16</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">long_hold.insider_sponsor_lh</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-06T08:45:01</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">mastermind_moderate_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">naaim_overlay_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">okx_retail_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">provisional_cn_blend</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T05:23:29</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">provisional_fresh_ticks_cn</td>
+            <td class="eg-num">5</td>
+            <td class="eg-mono eg-ts">2026-07-02T05:26:40</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">provisional_fresh_ticks_us</td>
+            <td class="eg-num">5</td>
+            <td class="eg-mono eg-ts">2026-07-02T05:17:32</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">quad_nfci_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">regime</td>
+            <td class="eg-num">23</td>
+            <td class="eg-mono eg-ts">2026-07-02T05:09:29</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">replay</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-06T13:17:24</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">residual_alpha_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">rf.cycle_pattern.ft_v0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-06T12:13:06</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">s13_reversal_sleeve</td>
+            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-07-04T01:55:21</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">s6_failed_fire_fuel</td>
+            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-07-04T07:20:46</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">sector_pulse_heat</td>
+            <td class="eg-num">13</td>
+            <td class="eg-mono eg-ts">2026-07-04T00:50:42</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">short_side</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-06T04:43:31</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">signal_factory</td>
+            <td class="eg-num">5</td>
+            <td class="eg-mono eg-ts">2026-06-21T15:04:20</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">stock_conviction_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">sue_insider_deep_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">thematic_rotation_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">top_picks_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">turn_of_month_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">value_growth_phase0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">vector</td>
+            <td class="eg-num">5</td>
+            <td class="eg-mono eg-ts">2026-07-02T03:43:12</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      </div>
+      <div class="eg-footnote">
+        <span class="l-en">Source: <code>data/trial_ledger.jsonl</code> (827 rows total).</span>
+        <span class="l-zh">来源：<code>data/trial_ledger.jsonl</code>（共 827 行）。</span>
+      </div>
+    </div>
+    
+
+    
+    
+    <div class="eg-subpanel" id="eg-rule-experiments">
+      <div class="eg-subhd">
+        <h3><span class="l-en">Rule-Experiment Registry</span><span class="l-zh">规则实验注册表</span></h3>
+        <span class="eg-subhd-meta">
+          <span class="l-en">2 experiments · cumulative pooled replay SUM = 25</span>
+          <span class="l-zh">2 个实验 · 累计合并回放 SUM = 25</span>
+        </span>
+      </div>
+      <p class="eg-note">
+        <span class="l-en">Pooled SUM is the declared_budget total across all registered experiments (SUM semantic). The TrialLedger uses a per-family max() basis — the two diverge by design. See RUL-5.</span>
+        <span class="l-zh">合并SUM为所有已注册实验的declared_budget总和（SUM语义）。TrialLedger使用每族max()基准——两者按设计存在差异。见RUL-5。</span>
+      </p>
+      <div class="eg-table-wrap">
+      <table class="eg-table">
+        <thead>
+          <tr>
+            <th><span class="l-en">Exp ID</span><span class="l-zh">实验ID</span></th>
+            <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+            <th><span class="l-en">Budget</span><span class="l-zh">预算</span></th>
+            <th><span class="l-en">Registered</span><span class="l-zh">注册时间</span></th>
+            <th><span class="l-en">Question (truncated)</span><span class="l-zh">问题（截断）</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="eg-mono">exit_grid_v1</td>
+            <td>
+              
+              <span class="verdict verdict-pass"><span class="l-en">reported</span><span class="l-zh">已报告</span></span>
+              
+            </td>
+            <td class="eg-num">15</td>
+            <td class="eg-mono eg-ts">2026-07-06</td>
+            <td class="eg-question">For the production fire cohort (verdict_type=fire AND verdict_grade=True, n~49939), what did each frozen exit policy cost in foregone MFE versus save in avoided MAE relative to hold(126), and why did …</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">wait_grid_v1</td>
+            <td>
+              
+              <span class="verdict verdict-pass"><span class="l-en">reported</span><span class="l-zh">已报告</span></span>
+              
+            </td>
+            <td class="eg-num">10</td>
+            <td class="eg-mono eg-ts">2026-07-06</td>
+            <td class="eg-question">For the production fire cohort, what does waiting cost or save — how do entry outcomes change as fill delay rises 1→10 bars, at the ratified hold(21) anchor and hold(63)? Grid granularity: the 5-step …</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      </div>
+      <div class="eg-footnote">
+        <span class="l-en">Source: <code>data/rule_experiments/registry.jsonl</code>. Pooled declared budget SUM = 25 (SUM across registrations; TrialLedger max()-basis is a separate number — see RUL-5).</span>
+        <span class="l-zh">来源：<code>data/rule_experiments/registry.jsonl</code>。合并声明预算SUM = 25（各注册之和；TrialLedger max()基准为另一数字——见RUL-5）。</span>
+      </div>
+    </div>
+    
+
+    
+    
+    <div class="eg-subpanel" id="eg-qledger-reliability">
+      <div class="eg-subhd">
+        <h3><span class="l-en">qledger Reliability Accrual</span><span class="l-zh">qledger 可靠性积累</span></h3>
+        <span class="eg-subhd-meta">
+          <span class="l-en">8 families · max n_dates=9 of 25 floor · horizon 5d only today</span>
+          <span class="l-zh">8 个族 · max n_dates=9，floor为25 · 当前仅5d周期</span>
+        </span>
+      </div>
+
+      
+      <div class="eg-accrual-banner">
+        <strong><span class="l-en">NOT YET CALIBRATED — trust/accrual surface, not authority.</span><span class="l-zh">尚未校准——信任/积累面板，非权威。</span></strong>
+        <span class="l-en">All families are ACCRUING today (max n_dates=9 of the 25-date floor needed for GRADED status). Do not use these numbers to de-escalate signals or make allocation decisions.</span>
+        <span class="l-zh">当前所有族均处于积累状态（max n_dates=9，GRADED状态需25日期）。请勿使用这些数字降级信号或做出配置决策。</span>
+      </div>
+
+      
+      <p class="eg-ci-caveat">
+        <span class="l-en">Wilson CI is computed on overlapping n_obs (all graded observations), not on independent date clusters. n_dates is shown beside every CI. Max n_dates across all families is currently 9 of the 25-date floor.</span>
+        <span class="l-zh">威尔逊置信区间基于重叠的n_obs（所有已评分观测值）计算，而非独立的日期簇。每个置信区间旁均显示n_dates。当前所有族中n_dates最大值为9，floor为25。</span>
+      </p>
+
+      <div class="eg-table-wrap">
+      <table class="eg-table">
+        <thead>
+          <tr>
+            <th><span class="l-en">Family</span><span class="l-zh">族</span></th>
+            <th><span class="l-en">Horizon</span><span class="l-zh">周期</span></th>
+            <th><span class="l-en">n_obs</span><span class="l-zh">观测数</span></th>
+            <th><span class="l-en">n_dates (of 25 floor)</span><span class="l-zh">n_dates（floor=25）</span></th>
+            <th><span class="l-en">Hit rate</span><span class="l-zh">命中率</span></th>
+            <th><span class="l-en">Wilson CI low (overlapping obs)</span><span class="l-zh">威尔逊下界（重叠观测）</span></th>
+            <th><span class="l-en">State</span><span class="l-zh">状态</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="eg-mono">altdata</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">94</td>
+            <td class="eg-num">
+              5
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">56.4%</td>
+            <td class="eg-num">
+              0.4630
+              <span class="eg-dates-note">(n_dates=5)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">china_news</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">504</td>
+            <td class="eg-num">
+              8
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">—</td>
+            <td class="eg-num">
+              —
+              <span class="eg-dates-note">(n_dates=8)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">cn_importance_v0</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">450</td>
+            <td class="eg-num">
+              9
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">—</td>
+            <td class="eg-num">
+              —
+              <span class="eg-dates-note">(n_dates=9)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">cn_importance_v0_pit</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">450</td>
+            <td class="eg-num">
+              9
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">—</td>
+            <td class="eg-num">
+              —
+              <span class="eg-dates-note">(n_dates=9)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">policy</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">7</td>
+            <td class="eg-num">
+              2
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">28.6%</td>
+            <td class="eg-num">
+              0.0822
+              <span class="eg-dates-note">(n_dates=2)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">radar</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">1014</td>
+            <td class="eg-num">
+              7
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">54.0%</td>
+            <td class="eg-num">
+              0.5097
+              <span class="eg-dates-note">(n_dates=7)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">us_importance_v0</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">8</td>
+            <td class="eg-num">
+              1
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">—</td>
+            <td class="eg-num">
+              —
+              <span class="eg-dates-note">(n_dates=1)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">us_importance_v0_pit</td>
+            <td class="eg-num">5d</td>
+            <td class="eg-num">8</td>
+            <td class="eg-num">
+              1
+              <span class="eg-dates-note">/ 25</span>
+            </td>
+            <td class="eg-num">—</td>
+            <td class="eg-num">
+              —
+              <span class="eg-dates-note">(n_dates=1)</span>
+            </td>
+            <td>
+              <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            </td>
+          </tr>
+          
+        </tbody>
+      </table>
+      </div>
+      <div class="eg-footnote">
+        <span class="l-en">Source: <code>site/qledger/track_record.json</code> (generated 2026-07-05T11:12:30.618479+00:00). RUL-6: only trust/accrual fields exposed; no composite, no escalation-eligible score. The 21d and 63d horizons have zero grades today.</span>
+        <span class="l-zh">来源：<code>site/qledger/track_record.json</code>（生成时间：2026-07-05T11:12:30.618479+00:00）。RUL-6：仅展示信任/积累字段；无复合分数，无可升级评分。当前21d和63d周期零评分。</span>
+      </div>
+    </div>
+    
+
+  </section>
+
+  
   <div class="mh-provenance">
     <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
     <div class="mh-prov-grid">
@@ -3960,7 +5237,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-07-06T12:11:21.263497Z</dd>
+        <dd>2026-07-06T13:20:41.372642Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">

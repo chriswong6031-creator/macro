@@ -560,6 +560,173 @@ def test_pooled_trial_count_accumulates(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # 12. No adhoc flag on runner (structural check)
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# B1 wait_grid_v1 tests (new)
+# ---------------------------------------------------------------------------
+
+def test_wait_grid_v1_10_cells() -> None:
+    """_build_wait_grid_v1_specs produces exactly 10 cells per §6.1 frozen spec."""
+    from scripts.run_rule_replay import _build_wait_grid_v1_specs
+
+    cohort = cohort_filter(
+        ("eq", "verdict_type", "fire"),
+        ("eq", "verdict_grade", True),
+    )
+    specs = _build_wait_grid_v1_specs(cohort)
+    assert len(specs) == 10, f"Expected 10 cells, got {len(specs)}"
+
+    # All cells must be HOLD type
+    non_hold = [s for s in specs if s.exit.kind.name != "HOLD"]
+    assert len(non_hold) == 0, f"All wait_grid_v1 cells must be HOLD, got {non_hold}"
+
+    # Delay values must match the frozen grid {1, 2, 3, 5, 10}
+    delay_values = sorted({s.delay_n for s in specs})
+    assert delay_values == [1, 2, 3, 5, 10], f"delay_n values must be {{1,2,3,5,10}}, got {delay_values}"
+
+    # Hold values must match the frozen grid {21, 63}
+    hold_values = sorted({s.exit.hold_bars for s in specs})
+    assert hold_values == [21, 63], f"hold_bars values must be {{21, 63}}, got {hold_values}"
+
+    # Exactly 5 × 2 = 10 combinations
+    combos = {(s.delay_n, s.exit.hold_bars) for s in specs}
+    expected_combos = {(d, h) for d in [1, 2, 3, 5, 10] for h in [21, 63]}
+    assert combos == expected_combos, f"Combinations mismatch: {combos}"
+
+    # All cells use full weight
+    for s in specs:
+        assert s.weight == "full", f"Cell {s.spec_id} has weight={s.weight!r}, expected 'full'"
+
+    # All cells reference horizon 126
+    for s in specs:
+        assert s.horizons_ref == (126,), f"Cell {s.spec_id} horizons_ref={s.horizons_ref}, expected (126,)"
+
+
+def test_wait_grid_v1_delay1_is_production_fill() -> None:
+    """delay_n=1 in wait_grid_v1 equals the production fill used in EXIT-GRID-1 hold(21) and hold(63)."""
+    from scripts.run_rule_replay import _build_wait_grid_v1_specs, _build_exit_grid_v1_specs
+
+    cohort = cohort_filter(
+        ("eq", "verdict_type", "fire"),
+        ("eq", "verdict_grade", True),
+    )
+    wait_specs = _build_wait_grid_v1_specs(cohort)
+    exit_specs = _build_exit_grid_v1_specs(cohort)
+
+    # delay_n=1, hold(21) in wait_grid must match exit_grid hold_21 hash
+    wait_d1_h21 = next(s for s in wait_specs if s.delay_n == 1 and s.exit.hold_bars == 21)
+    exit_h21 = next(s for s in exit_specs if s.exit.hold_bars == 21 and s.exit.kind.name == "HOLD")
+    assert wait_d1_h21.content_hash() == exit_h21.content_hash(), (
+        "wait_grid_v1/delay1_hold21 must share the same content hash as exit_grid_v1/hold_21 "
+        "(same parameters — spec_id is excluded from hash). "
+        f"wait_hash={wait_d1_h21.content_hash()[:16]}, exit_hash={exit_h21.content_hash()[:16]}"
+    )
+
+    # delay_n=1, hold(63) in wait_grid must match exit_grid hold_63 hash
+    wait_d1_h63 = next(s for s in wait_specs if s.delay_n == 1 and s.exit.hold_bars == 63)
+    exit_h63 = next(s for s in exit_specs if s.exit.hold_bars == 63 and s.exit.kind.name == "HOLD")
+    assert wait_d1_h63.content_hash() == exit_h63.content_hash(), (
+        "wait_grid_v1/delay1_hold63 must share the same content hash as exit_grid_v1/hold_63. "
+        f"wait_hash={wait_d1_h63.content_hash()[:16]}, exit_hash={exit_h63.content_hash()[:16]}"
+    )
+
+
+def test_wait_grid_v1_hash_determinism() -> None:
+    """wait_grid_v1 specs produce the same hashes on repeated construction."""
+    from scripts.run_rule_replay import _build_wait_grid_v1_specs
+
+    cohort = cohort_filter(
+        ("eq", "verdict_type", "fire"),
+        ("eq", "verdict_grade", True),
+    )
+    specs_a = _build_wait_grid_v1_specs(cohort)
+    specs_b = _build_wait_grid_v1_specs(cohort)
+
+    hashes_a = sorted(s.content_hash() for s in specs_a)
+    hashes_b = sorted(s.content_hash() for s in specs_b)
+    assert hashes_a == hashes_b, "Hash set must be identical across repeated calls"
+
+    # Each unique (delay_n, hold_bars) combination must produce a unique hash
+    all_hashes = [s.content_hash() for s in specs_a]
+    assert len(set(all_hashes)) == 10, (
+        f"All 10 cells must have distinct hashes; got {len(set(all_hashes))} unique. "
+        f"Duplicates indicate parameter collision."
+    )
+
+
+def test_wait_grid_v1_in_grid_builders() -> None:
+    """wait_grid_v1 key must be registered in _GRID_BUILDERS."""
+    from scripts.run_rule_replay import _GRID_BUILDERS
+    assert "wait_grid_v1" in _GRID_BUILDERS, (
+        f"'wait_grid_v1' not in _GRID_BUILDERS. Found: {sorted(_GRID_BUILDERS.keys())}"
+    )
+
+
+def test_wait_grid_v1_run_lifecycle(tmp_path: Path) -> None:
+    """wait_grid_v1 grid passes governor verification and produces a 10-cell summary."""
+    from scripts.run_rule_replay import run_experiment, _build_wait_grid_v1_specs
+
+    registry_path = tmp_path / "registry.jsonl"
+    ledger_path = tmp_path / "ledger.jsonl"
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+
+    # Synthetic fire tape
+    fires_df = _make_fires_df(n=8, start_date="2022-06-01")
+    boarded_path = tmp_path / "replay_boarded.parquet"
+    fires_df.to_parquet(boarded_path, index=False)
+
+    # Close data for each ticker
+    massive_dir = tmp_path / "massive_stock_day"
+    massive_dir.mkdir()
+    for i in range(8):
+        ticker = f"T{i:03d}"
+        c = _make_close(n=350, seed=i + 20)
+        pd.DataFrame({"close": c.values}, index=c.index).to_parquet(
+            massive_dir / f"{ticker}.parquet"
+        )
+
+    # Register the wait_grid_v1 experiment
+    cohort = _make_simple_cohort()
+    specs = _build_wait_grid_v1_specs(cohort)
+    assert len(specs) == 10
+
+    register_experiment(
+        exp_id="wait_grid_v1",
+        question="Test wait_grid lifecycle.",
+        spec_hashes=[s.content_hash() for s in specs],
+        declared_budget=len(specs),
+        verdict_criteria="descriptive-only",
+        registry_path=registry_path,
+        ledger_path=ledger_path,
+    )
+
+    summary = run_experiment(
+        "wait_grid_v1",
+        boarded_path=boarded_path,
+        massive_dir=massive_dir,
+        registry_path=registry_path,
+        results_dir=results_dir,
+    )
+
+    # Must produce exactly 10 cells
+    assert len(summary["cells"]) == 10, (
+        f"Expected 10 cells, got {len(summary['cells'])}: {list(summary['cells'].keys())}"
+    )
+    # Every cell must appear
+    for delay_n in [1, 2, 3, 5, 10]:
+        for hold_bars in [21, 63]:
+            key = f"wait_grid_v1/delay{delay_n}_hold{hold_bars}"
+            assert key in summary["cells"], f"Missing cell {key}"
+
+    # Cumulative pooled trial count must be 10 (only this experiment registered)
+    assert summary["cumulative_pooled_replay_trial_count"] == 10
+
+    # Lifecycle updated to reported
+    from engine.rule_experiments import load_experiment
+    entry = load_experiment("wait_grid_v1", registry_path)
+    assert entry["status"] == "reported"
+
+
 def test_no_adhoc_flag_exists() -> None:
     """run_rule_replay.py must not register --adhoc as an argparse argument (house-law RUL-P3)."""
     import scripts.run_rule_replay as rr_module

@@ -1115,6 +1115,297 @@ def build_provenance(engines: list[dict]) -> dict:
     }
 
 
+# ── Evidence-Gap panel paths (PR-A1) ──────────────────────────────────────────
+GRADING_CLOSURE_PATH = DATA / "governance" / "grading_closure.json"
+TRIAL_LEDGER_PATH = DATA / "trial_ledger.jsonl"
+RULE_EXPERIMENTS_PATH = DATA / "rule_experiments" / "registry.jsonl"
+QLEDGER_TRACK_RECORD_PATH = SITE / "qledger" / "track_record.json"
+
+# Earliest-maturity notes for TIME-starved ledgers (drawn from §0, programmatically
+# readable from grading_closure.json data; the notes below follow program doc §1/§3).
+# Keyed by ledger key; value is a human-readable come-back date where known.
+_MATURITY_NOTES: dict[str, str] = {
+    "risk_radar_intl_cn":       "earliest maturity ~2026-07-10 (n=5 at ~weekly cadence)",
+    "risk_radar_intl_hk":       "earliest maturity ~2026-07-10 (n=4)",
+    "risk_radar_intl_ca":       "earliest maturity ~2026-07-10 (n=4)",
+    "market_state_forward_log": "earliest maturity ~2026-07-10 (n=5)",
+    "oracle_forward_ledger":    "earliest maturity ~2026-07-30 (n=173, quarterly grading window)",
+    "oracle_compounds_live_ledger": "earliest maturity ~2026-07-30 (n=53)",
+    "oracle_reversion_forward": "seeded only after first reversion compound passes gauntlet",
+    "btc_override_ledger":      "earliest maturity ~2026-08-25 (n=5, monthly cadence)",
+    "foresight_log":            "earliest maturity ~2026-08-25 (n=34)",
+    "froth_fragility_log":      "earliest maturity ~2026-08-25 (n=5)",
+    "species_registry":         "earliest maturity ~2026-09 (n=21, accruing)",
+    "species_antichase_shadow_ledger": "seeded when F3_ANTICHASE accrues first row",
+    "species_f1d_shadow_ledger":       "seeded when EI-F1D-RW accrues first row",
+    "china_standout_track":     "earliest maturity ~2026-08 (n=240)",
+    "board_ledger_hk":          "earliest maturity ~2026-08 (n=9, weekly cadence)",
+    "board_ledger_ca":          "earliest maturity ~2026-08 (n=40)",
+}
+
+
+def build_grading_closure() -> dict:
+    """Load grading_closure.json and derive STARVATION column per RUL-4.
+
+    STARVATION logic:
+      grader_wired starts with 'Y' AND n_graded == 0  => 'accruing (time-starved)'
+      grader_wired == 'N'                              => 'needs grader (build)'
+      n_graded > 0 (any grader status)                => 'closed / partial'
+
+    The distinction makes TIME-vs-BUILD unmistakable (RUL-4).
+    Absent-safe: returns {available: False} if file is missing.
+    """
+    if not GRADING_CLOSURE_PATH.exists():
+        log.warning("grading_closure.json not found: %s", GRADING_CLOSURE_PATH)
+        return {"available": False}
+
+    try:
+        raw = load_json(GRADING_CLOSURE_PATH)
+    except Exception as exc:
+        log.warning("Failed to load grading_closure.json: %s", exc)
+        return {"available": False}
+
+    ledgers_raw = raw.get("ledgers", [])
+    rows: list[dict] = []
+    for ledger in ledgers_raw:
+        key = ledger.get("key", "")
+        grader_wired = ledger.get("grader_wired", "N") or "N"
+        n_logged = ledger.get("n_logged", 0) or 0
+        n_graded = ledger.get("n_graded", 0) or 0
+        verdict = ledger.get("verdict", "")
+
+        # Derive STARVATION column — the central point of RUL-4
+        if n_graded > 0:
+            starvation = "closed / partial"
+            starvation_type = "closed"
+        elif str(grader_wired).upper().startswith("Y"):
+            maturity = _MATURITY_NOTES.get(key, "")
+            if maturity:
+                starvation = f"accruing (time-starved) — {maturity}"
+            else:
+                starvation = "accruing (time-starved)"
+            starvation_type = "time"
+        else:
+            starvation = "needs grader (build)"
+            starvation_type = "build"
+
+        rows.append({
+            "key": key,
+            "path": ledger.get("path", ""),
+            "n_logged": n_logged,
+            "n_graded": n_graded,
+            "grader_wired": str(grader_wired),
+            "verdict": verdict,
+            "starvation": starvation,
+            "starvation_type": starvation_type,   # 'closed' | 'time' | 'build'
+            "last_graded_at": ledger.get("last_graded_at"),
+        })
+
+    return {
+        "available": True,
+        "generated_at": raw.get("generated_at", ""),
+        "n_ledgers": raw.get("n_ledgers", len(rows)),
+        "n_closed": raw.get("n_closed", 0),
+        "n_grader_starved": raw.get("n_grader_starved", 0),
+        "n_log_only": raw.get("n_log_only", 0),
+        "rows": rows,
+    }
+
+
+def build_trial_budgets() -> dict:
+    """Summarise trial_ledger.jsonl by family: row count + latest ts.
+
+    Absent-safe: returns {available: False} if file is missing.
+    """
+    if not TRIAL_LEDGER_PATH.exists():
+        log.warning("trial_ledger.jsonl not found: %s", TRIAL_LEDGER_PATH)
+        return {"available": False}
+
+    try:
+        families: dict[str, dict] = {}
+        with open(TRIAL_LEDGER_PATH, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                family = row.get("family", "unknown")
+                ts = row.get("ts", "")
+                if family not in families:
+                    families[family] = {"n": 0, "latest_ts": ""}
+                families[family]["n"] += 1
+                if ts > families[family]["latest_ts"]:
+                    families[family]["latest_ts"] = ts
+
+        rows = sorted(
+            [{"family": k, "n_rows": v["n"], "latest_ts": v["latest_ts"]} for k, v in families.items()],
+            key=lambda r: r["family"],
+        )
+        return {
+            "available": True,
+            "n_total": sum(r["n_rows"] for r in rows),
+            "n_families": len(rows),
+            "rows": rows,
+        }
+    except Exception as exc:
+        log.warning("Failed to read trial_ledger.jsonl: %s", exc)
+        return {"available": False}
+
+
+def build_rule_experiments() -> dict:
+    """Read rule_experiments/registry.jsonl and build the experiment registry panel.
+
+    Each exp_id may have multiple lines (registered → executed → reported lifecycle).
+    Collapse to one row per exp_id showing: exp_id, status (latest), declared_budget,
+    question (truncated to 200 chars).
+
+    Also compute cumulative pooled SUM of declared_budget over all registered experiments
+    (per §0.5.6 / RUL-5: this is the SUM semantic, distinct from TrialLedger max()-basis).
+
+    Absent-safe: returns {available: False} if file is missing.
+    """
+    if not RULE_EXPERIMENTS_PATH.exists():
+        log.warning("rule_experiments/registry.jsonl not found: %s", RULE_EXPERIMENTS_PATH)
+        return {"available": False}
+
+    try:
+        # Collect lines by exp_id — keep latest status, first registration fields
+        by_exp: dict[str, dict] = {}
+        with open(RULE_EXPERIMENTS_PATH, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                exp_id = row.get("exp_id", "")
+                if not exp_id:
+                    continue
+                if exp_id not in by_exp:
+                    by_exp[exp_id] = row.copy()
+                else:
+                    # Update mutable fields (status, run_at, etc.) from later rows
+                    for k in ("status", "status_updated_at", "run_at", "runtime_s"):
+                        if k in row:
+                            by_exp[exp_id][k] = row[k]
+
+        rows = []
+        pooled_sum = 0
+        for exp_id, rec in by_exp.items():
+            budget = rec.get("declared_budget") or 0
+            try:
+                budget = int(budget)
+            except (TypeError, ValueError):
+                budget = 0
+            pooled_sum += budget
+            question_raw = rec.get("question", "")
+            question_trunc = question_raw[:200] + "…" if len(question_raw) > 200 else question_raw
+            rows.append({
+                "exp_id": exp_id,
+                "status": rec.get("status", ""),
+                "declared_budget": budget,
+                "question": question_trunc,
+                "registered_at": rec.get("registered_at", ""),
+                "run_at": rec.get("run_at", ""),
+            })
+
+        rows.sort(key=lambda r: r["registered_at"])
+
+        return {
+            "available": True,
+            "n_experiments": len(rows),
+            "pooled_declared_budget_sum": pooled_sum,
+            "rows": rows,
+        }
+    except Exception as exc:
+        log.warning("Failed to read rule_experiments/registry.jsonl: %s", exc)
+        return {"available": False}
+
+
+def build_qledger_reliability() -> dict:
+    """Read site/qledger/track_record.json and build the per-family × horizon
+    reliability accrual table per §0.5.8 / RUL-6.
+
+    RUL-6: expose only trust/accrual fields:
+      family, horizon, n_obs, n_dates, hit_rate, wilson_ci_low, state
+    No composite, no escalation-eligible score.
+
+    §0.5.8 MANDATORY: print n_dates beside every CI; add caveat that CI is
+    computed on overlapping n_obs, not independent date clusters.
+    All families are ACCRUING today (max n_dates=9 of the 25 floor).
+    Panel must say "not yet calibrated — trust/accrual surface, not authority."
+
+    Absent-safe: returns {available: False} if file is missing.
+    """
+    if not QLEDGER_TRACK_RECORD_PATH.exists():
+        log.warning("qledger track_record.json not found: %s", QLEDGER_TRACK_RECORD_PATH)
+        return {"available": False}
+
+    try:
+        raw = load_json(QLEDGER_TRACK_RECORD_PATH)
+    except Exception as exc:
+        log.warning("Failed to load qledger track_record.json: %s", exc)
+        return {"available": False}
+
+    graded_min_dates = raw.get("graded_min_dates", 25)
+    by_family = raw.get("by_family", {})
+
+    rows: list[dict] = []
+    max_n_dates = 0
+    for family, horizons in by_family.items():
+        if not isinstance(horizons, dict):
+            continue
+        for horizon_str, cell in horizons.items():
+            if not isinstance(cell, dict):
+                continue
+            n_dates = cell.get("n_dates") or 0
+            max_n_dates = max(max_n_dates, n_dates)
+            hit_rate = cell.get("hit_rate")
+            wilson_ci_low = cell.get("wilson_ci_low")
+            rows.append({
+                "family": family,
+                "horizon": horizon_str,
+                "n_obs": cell.get("n_obs") or 0,
+                "n_dates": n_dates,
+                "hit_rate": round(hit_rate, 4) if hit_rate is not None else None,
+                "hit_rate_pct": f"{hit_rate*100:.1f}%" if hit_rate is not None else "—",
+                "wilson_ci_low": round(wilson_ci_low, 4) if wilson_ci_low is not None else None,
+                "wilson_ci_low_str": f"{wilson_ci_low:.4f}" if wilson_ci_low is not None else "—",
+                "state": cell.get("state", "ACCRUING"),
+                # n_dates beside every CI per §0.5.8
+                "n_dates_note": f"n_dates={n_dates} of {graded_min_dates} floor",
+            })
+
+    # Sort: family then horizon
+    rows.sort(key=lambda r: (r["family"], r["horizon"]))
+
+    return {
+        "available": True,
+        "generated_at": raw.get("generated_at", ""),
+        "graded_min_dates": graded_min_dates,
+        "max_n_dates": max_n_dates,
+        "n_families": len(by_family),
+        "rows": rows,
+        # §0.5.8 mandatory caveat
+        "ci_caveat_en": (
+            "Wilson CI is computed on overlapping n_obs (all graded observations), "
+            "not on independent date clusters. n_dates is shown beside every CI. "
+            "Max n_dates across all families is currently "
+            f"{max_n_dates} of the {graded_min_dates}-date floor."
+        ),
+        "ci_caveat_zh": (
+            "威尔逊置信区间基于重叠的n_obs（所有已评分观测值）计算，"
+            "而非独立的日期簇。每个置信区间旁均显示n_dates。"
+            f"当前所有族中n_dates最大值为{max_n_dates}，floor为{graded_min_dates}。"
+        ),
+    }
+
+
 def emit_js(payload: dict) -> str:
     """Emit the window.MEASUREMENT = {...} script-tag data."""
     json_str = json.dumps(payload, ensure_ascii=False, indent=None, separators=(",", ":"))
@@ -1209,6 +1500,50 @@ def run() -> None:
     coverage_matrix = build_coverage_matrix()
     log.info("Coverage matrix: %d page rows", len(coverage_matrix.get("rows", [])))
 
+    # 6g. Evidence-Gap panel (PR-A1)
+    grading_closure = build_grading_closure()
+    if grading_closure.get("available"):
+        log.info(
+            "Grading closure: %d ledgers (%d closed, %d grader-starved, %d log-only)",
+            grading_closure.get("n_ledgers", 0),
+            grading_closure.get("n_closed", 0),
+            grading_closure.get("n_grader_starved", 0),
+            grading_closure.get("n_log_only", 0),
+        )
+    else:
+        log.warning("Grading closure unavailable — data/governance/grading_closure.json missing")
+
+    trial_budgets = build_trial_budgets()
+    if trial_budgets.get("available"):
+        log.info(
+            "Trial budgets: %d rows across %d families",
+            trial_budgets.get("n_total", 0),
+            trial_budgets.get("n_families", 0),
+        )
+    else:
+        log.warning("Trial budgets unavailable — data/trial_ledger.jsonl missing")
+
+    rule_experiments = build_rule_experiments()
+    if rule_experiments.get("available"):
+        log.info(
+            "Rule experiments: %d experiments, pooled declared budget SUM=%d",
+            rule_experiments.get("n_experiments", 0),
+            rule_experiments.get("pooled_declared_budget_sum", 0),
+        )
+    else:
+        log.warning("Rule experiments unavailable — data/rule_experiments/registry.jsonl missing")
+
+    qledger_reliability = build_qledger_reliability()
+    if qledger_reliability.get("available"):
+        log.info(
+            "qledger reliability: %d rows, max n_dates=%d of %d floor",
+            len(qledger_reliability.get("rows", [])),
+            qledger_reliability.get("max_n_dates", 0),
+            qledger_reliability.get("graded_min_dates", 25),
+        )
+    else:
+        log.warning("qledger reliability unavailable — site/qledger/track_record.json missing")
+
     # 7. Provenance
     provenance = build_provenance(engines)
 
@@ -1230,6 +1565,11 @@ def run() -> None:
         # Hub v2 completion (P2)
         "prediction_layer": prediction_layer,
         "coverage_matrix": coverage_matrix,
+        # Evidence-Gap panel (PR-A1)
+        "grading_closure": grading_closure,
+        "trial_budgets": trial_budgets,
+        "rule_experiments": rule_experiments,
+        "qledger_reliability": qledger_reliability,
         "consolidated_verdict": {
             "en": (
                 "Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance. "
@@ -1278,6 +1618,11 @@ def run() -> None:
         # Hub v2 completion (P2)
         prediction_layer=prediction_layer,
         coverage_matrix=coverage_matrix,
+        # Evidence-Gap panel (PR-A1)
+        grading_closure=grading_closure,
+        trial_budgets=trial_budgets,
+        rule_experiments=rule_experiments,
+        qledger_reliability=qledger_reliability,
     )
     write_page(OUT_HTML, html, encoding="utf-8")
     log.info("Wrote %s (%d bytes)", OUT_HTML.relative_to(ROOT), len(html))

@@ -95,6 +95,31 @@ from engine.vintage_stamp import vintage_stamp  # noqa: E402
 # ---------------------------------------------------------------------------
 # Grid reconstruction from experiment definition
 # ---------------------------------------------------------------------------
+def _build_wait_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
+    """Reconstruct the WAIT-GRID-1 grid from its frozen definition (§6.1).
+
+    10 cells:
+      delay_n ∈ {1, 2, 3, 5, 10} × hold ∈ {hold(21), hold(63)}
+
+    delay_n=1 is the production fill (next-bar-after-signal), matching the
+    existing Oracle convention.  delay_n > 1 offsets the fill by that many
+    additional bars to simulate waiting.
+    """
+    specs: list[RuleSpec] = []
+    for delay_n in [1, 2, 3, 5, 10]:
+        for hold_bars in [21, 63]:
+            specs.append(RuleSpec(
+                spec_id=f"wait_grid_v1/delay{delay_n}_hold{hold_bars}",
+                cohort=cohort,
+                delay_n=delay_n,
+                exit=ExitPolicy.hold(hold_bars),
+                horizons_ref=(126,),
+            ))
+
+    assert len(specs) == 10, f"WAIT-GRID-1 must be 10 cells, got {len(specs)}"
+    return specs
+
+
 def _build_exit_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
     """Reconstruct the EXIT-GRID-1 grid from its frozen definition (§4).
 
@@ -154,6 +179,7 @@ def _build_exit_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
 # Grid builders registry — keyed by exp_id prefix
 _GRID_BUILDERS: dict[str, Any] = {
     "exit_grid_v1": _build_exit_grid_v1_specs,
+    "wait_grid_v1": _build_wait_grid_v1_specs,
 }
 
 
