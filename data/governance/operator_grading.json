@@ -1,0 +1,63 @@
+{
+  "schema": "operator_grading.v1",
+  "harness_version": "v1",
+  "generated_at": "2026-07-06T13:11:50.758896+00:00",
+  "state": "accruing",
+  "fdr_family": "operator",
+  "fdr_budget": 3,
+  "fdr_q": 0.1,
+  "wilson_floor": 25,
+  "fdr_newly_registered": true,
+  "bh_imported_from": "engine.btc_override_ledger._bh",
+  "bootstrap_imported_from": "engine.btc_override_ledger._bootstrap_null",
+  "ledger_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/operator/action_ledger.jsonl",
+  "ledger_present": false,
+  "n_actions_total": 0,
+  "n_unmatched_actions": 0,
+  "n_matched_actions": 0,
+  "n_claims_loaded": 7937,
+  "n_grades_loaded": 2780,
+  "contrasts": {
+    "C1_overrode_accuracy": {
+      "state": "accruing",
+      "description": "operator direction vs machine-claim graded outcome at horizon",
+      "n_actions": 0,
+      "n_matched": 0,
+      "n_graded": 0,
+      "floor": 25
+    },
+    "C2_dismissed_then_worked": {
+      "state": "accruing",
+      "description": "hit rate for dismissed actions vs acted base rate",
+      "n_actions": 0,
+      "n_matched": 0,
+      "n_graded": 0,
+      "n_base_actions": 0,
+      "n_base_matched": 0,
+      "n_base_graded": 0,
+      "floor": 25
+    },
+    "C3_acted_then_failed": {
+      "state": "accruing",
+      "description": "failure rate for acted actions vs dismissed base rate",
+      "n_actions": 0,
+      "n_matched": 0,
+      "n_graded": 0,
+      "n_base_actions": 0,
+      "n_base_matched": 0,
+      "n_base_graded": 0,
+      "floor": 25
+    }
+  },
+  "authority": "MONITORING ONLY \u2014 display-only until Wilson/bootstrap floor (n>=25 graded operator actions per contrast) is reached. Zero allocation authority. Nothing in sizing/allocation reads this file.",
+  "vintage_stamp": {
+    "price_plane_id": "operator_action_ledger_v1",
+    "adjustment_mode": "none",
+    "universe_as_of": "2026-07-06",
+    "frame": "server_stamped_utc",
+    "survivorship_biased": false,
+    "coverage_frac": 0.0,
+    "dead_name_coverage_pct": 38.32,
+    "era_law_cohort": "all_time"
+  }
+}
