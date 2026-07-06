@@ -235,3 +235,45 @@ registration).
 
 No action recommended this batch. This report is the descriptive surface that a future
 verdict batch must cite as `derived_from_surface: disp_gate_1`.
+
+---
+
+## 9. Addendum (2026-07-06, PR-F3.2b hardening): independent replication + caveats
+
+A second, independently-built DISP-GATE-1 harness (superseded PR #1705, Final-3 program
+lane — closed to avoid double-registering the 6 cells) ran the same frozen prereg design
+on a DIFFERENT panel (the survivor-backfilled deep-closes store, history to 1962, vs this
+report's massive_stock_day panel). It reproduced the headline conclusion independently:
+
+| Metric | This report (massive panel) | Replication (deep-closes panel) |
+|---|---|---|
+| Basis flip rate | 34.8% | 31.4% |
+| lean_out − lean_in stop5 gap (expanding) | positive | +13.5pp |
+| lean_out − lean_in stop5 gap (trailing-252) | positive | +6.1pp |
+| Overall outcome | DEFER (non-stationarity) | DEFER (non-stationarity) |
+
+The DEFER conclusion is therefore robust to panel construction: on both panels the
+lean_out>lean_in stop5 gap has a stable SIGN on both bases, but the regime assignments
+themselves are basis-unstable well beyond the frozen 15% flag. Note the two harnesses
+disagreed materially on cohort composition per state (e.g. expanding lean_out n=289 here
+vs a much larger lean_out cohort on the deep panel) — further evidence that the expanding
+percentile is panel- and inception-sensitive, which is the non-stationarity finding itself.
+
+**Panel survivorship caveat (applies to this report's panel too).** The massive_stock_day
+panel carries the massive-era delisted-name recall floor (dead-name price coverage
+≈38.3% per `data/edgar/_dead_name_coverage.json`), so the CSD percentile denominator is
+partially survivor-tilted; the replication panel was fully survivor-backfilled (zero
+inactive tickers) and showed the same DEFER. Neither panel is a delisted-complete
+universe. Any future verdict batch should state its panel's dead-name coverage explicitly.
+
+**Episode-clustering sensitivity.** This report clusters on the `episode_id` column
+(granular; thousands of clusters). The frozen prereg's Standing Notes describe clustering
+as "contiguous blocks within ±30d" — under a strict tape-time block reading, the
+2022–2025 fire tape collapses to ~41 global clusters and the per-arm counts fall BELOW
+the 25-cluster floor (replication measured expanding lean_in=17, lean_out=20 blocks).
+Consequence: bootstrap CIs computed on granular episode_id clustering are NARROWER than
+the prereg's block reading would produce, and under the strict reading no arm currently
+clears the CI floor at all. A future verdict batch must resolve this clustering-definition
+ambiguity in its registration BEFORE computing CIs, and disclose both counts.
+
+*This addendum changes no numbers in §1–§8 and evaluates no gate. Display-only.*

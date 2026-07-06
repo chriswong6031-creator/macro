@@ -86,6 +86,15 @@ All PRs branch off fresh `origin/main`, same-day squash-merge. Sonnet builds, Op
 This document; the imported Codex source doc; the ExitPolicy `scaled` amendment (RUL-F3.5) which formally amends `research/rule_replay/R1_CHARTER.md`'s frozen vocabulary (cross-referenced there in PR-F3.3 when the enum lands).
 
 ### PR-F3.2 — DISP-GATE-1 harness, registration, run, report
+
+> **Outcome log (2026-07-06):** SUPERSEDED mid-flight by #1696 — the gap-map PR-B2 lane
+> shipped a canonical DISP-GATE-1 concurrently (run_rule_replay governor integration,
+> massive_stock_day panel, exp_id `disp_gate_1`, pooled replay 25→31). This program's
+> independent build (PR #1705, closed) REPLICATED the DEFER-on-non-stationarity verdict
+> on a different panel (flip 31.4% vs 34.8%; gap sign preserved on both bases). Deltas
+> ported via PR-F3.2b hardening: RUL-F3.7 invariant tests, survivorship caveat,
+> ±30d-block clustering sensitivity, replication addendum in DISP_GATE_1_REPORT.md §9.
+
 - `scripts/research/run_disp_gate_1.py` per RUL-F3.6 (feasibility gate first; fixed universe construction; per-date N printed; expanding + trailing-252 bases; SPY-21d drawdown terciles + realized-vol terciles; episode-clustered bootstrap where ≥25 clusters/arm; flip-rate continuous; DEFER honest).
 - Registration via `scripts/register_rule_experiment.py` (6 cells → pooled 31, `derived_from_surface=None`).
 - `data/dispersion/disp_gate_1_summary.json` (git) + `research/dispersion/DISP_GATE_1_REPORT.md`.
