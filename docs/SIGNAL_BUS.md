@@ -20,7 +20,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 16 |
+| long-hold | 17 |
 | neural-web | 33 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
@@ -38,7 +38,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 93 |
+| display | 94 |
 | infrastructure | 42 |
 | scored | 4 |
 | shadow | 37 |
@@ -47,7 +47,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 170 |
+| git | 171 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -168,6 +168,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
 | moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 1 | 0 |
 
 ### neural-web
 
