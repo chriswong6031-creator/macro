@@ -76,6 +76,16 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: restore attention store from R2 (wiki chip reads it at render)
+        # data/attention/*.parquet are git-ignored (R2 data plane; deep history 2015-07→,
+        # kept current by daily.yml's collect job). Non-fatal: absent store = the
+        # attention chip is silently absent this render (build_attention_data -> None).
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs attention || echo "::warning::attention restore failed (non-fatal — attention chip absent/stale this render)"
       # Restore the gitignored breadth close caches (the stock-search libraries +
       # build_site's per-name analyze read constituent closes) and the intraday cache
       # (chart data). Restore-only — the nightly `collect` job produces/saves them; we

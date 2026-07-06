@@ -18,6 +18,15 @@ lanes:
   - workflow: .github/workflows/daily.yml
     job: collect
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — data/attention/*.parquet are
+          gitignored (R2 data plane, deep history 2015-07→). Runs BEFORE the
+          collectors so wiki_pageviews' ~120d upsert extends deep history instead
+          of rebuilding a shallow window. continue-on-error; the publish-back step
+          at the end of this lane is gated on this step's outcome.
       - id: collect_us
         module: scripts.collect
         args: [--exclude-group, asia]
@@ -48,11 +57,28 @@ lanes:
         note: >
           T2a ETF-history backfill (#1441) — 20 ETF anchors, full history 2017→.
           Hard-stop at 20 min; runs last of the three tape-flow steps. Non-fatal.
+      - id: publish_r2_attention
+        module: scripts.publish_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention publish-back (#1677) — the day's upserted increments
+          ride back to R2 so tomorrow's restore + the render-side restores read a
+          CURRENT deep store. Gated on fetch_r2_attention's outcome (a shallow
+          rebuild after a failed restore must never clobber 11y of history; the
+          append-only guard + bytes floor in publish_r2 are the second fence).
+          Runs AFTER "commit data" so the data commit is never delayed. Non-fatal.
 
   # ── daily.yml / engine ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
     job: engine
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — build_site.build_attention_data
+          reads data/attention/*.parquet (gitignored, R2-hosted). Non-fatal: absent
+          store = attention chip silently absent this render.
       # serial spine (pre-band)
       - id: build_signal_quality
         module: scripts.build_signal_quality
@@ -511,6 +537,12 @@ lanes:
   - workflow: .github/workflows/engine-render.yml
     job: engine-render
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — pre-render, non-fatal
+          (absent store = attention chip silently absent this render).
       # regime recompute (serial, pre-render)
       - id: build_signal_quality
         module: scripts.build_signal_quality
@@ -613,6 +645,12 @@ lanes:
   - workflow: .github/workflows/render.yml
     job: render
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — pre-render, non-fatal
+          (absent store = attention chip silently absent this render).
       # spine (serial)
       - id: build_spvector
         module: scripts.build_spvector
@@ -721,6 +759,12 @@ lanes:
   - workflow: .github/workflows/weekly.yml
     job: weekly-report
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — pre-render, non-fatal
+          (absent store = attention chip silently absent this render).
       - id: collect_weekly
         module: scripts.collect
         args: [--only, cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals]
