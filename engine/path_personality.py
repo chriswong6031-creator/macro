@@ -43,7 +43,6 @@ Lineage: research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md §3.1 Lane B,
 """
 from __future__ import annotations
 
-import warnings
 from typing import Any
 
 import numpy as np
@@ -244,7 +243,7 @@ def _breakout_rates_series(close: pd.Series) -> pd.DataFrame:
 
     breakout_ft_rate_63: fraction where close[b+10] > close[b].
     failed_breakout_rate_63: fraction where close falls back below close[b]
-        (the 63d high level at the breakout) within 10 bars.
+        (the breakout-day close) within 10 bars.
 
     NaN if < 5 resolved breakouts within the 504-bar trailing window.
     """
@@ -307,6 +306,10 @@ def _breakout_rates_series(close: pd.Series) -> pd.DataFrame:
 def _gap_share_series(open_: pd.Series, close: pd.Series) -> pd.Series:
     """gap_share_252: sum(|open_t - close_{t-1}|) / sum(|close_t - close_{t-1}|)
     over trailing 252 bars.  Zero denominator returns NaN.
+
+    Note: this ratio can exceed 1.0 when large gap days are followed by intraday
+    reversals (gap is large but net close-to-close move is small or opposite).
+    Downstream classifier thresholds must not assume values are in [0, 1].
     """
     win = _WIN_GAP
     prev_close = close.shift(1)
@@ -322,28 +325,15 @@ def _gap_share_series(open_: pd.Series, close: pd.Series) -> pd.Series:
 def _event_gap_contrib_series(open_: pd.Series, close: pd.Series) -> pd.Series:
     """event_gap_contrib_252: fraction of total |close_t - close_{t-1}| contributed
     by the 5 largest |gap| days in trailing 252 bars.
+
+    Note: this ratio can exceed 1.0 on days where a large gap reverses intraday
+    (gap contributes to numerator but net close-to-close move is small).
+    Downstream classifier thresholds must not assume values are in [0, 1].
     """
     win = _WIN_GAP
     prev_close = close.shift(1)
     gap_abs = (open_ - prev_close).abs()
     move_abs = close.diff().abs()
-
-    def _contrib(gap_arr: np.ndarray, move_arr: np.ndarray) -> float:
-        if np.isnan(gap_arr).any() or np.isnan(move_arr).any():
-            return np.nan
-        total_move = move_arr.sum()
-        if total_move == 0:
-            return np.nan
-        top5_gap = np.sort(gap_arr)[-5:].sum()
-        return float(top5_gap / total_move)
-
-    # Rolling apply on combined array
-    combined = pd.concat([gap_abs, move_abs], axis=1)
-    combined.columns = ["gap", "move"]
-
-    result = combined.apply(
-        lambda _: np.nan, axis=1  # placeholder; compute below
-    )
 
     gap_vals = gap_abs.values.astype(float)
     move_vals = move_abs.values.astype(float)
@@ -426,7 +416,7 @@ def _reversal_half_life_series(close: pd.Series) -> pd.Series:
     trailing_std = np.full(n, np.nan)
     for t in range(win_std, n):
         seg = lr[t - win_std: t]
-        trailing_std[t] = float(np.std(seg, ddof=1)) if len(seg) >= win_std // 2 else np.nan
+        trailing_std[t] = float(np.std(seg, ddof=1))
 
     for t in range(win_lookback + fwd, n):
         window_start = t - win_lookback
@@ -687,9 +677,15 @@ def features(
     # Minimum required length per feature; truncate to avoid computing full
     # history (expensive features like breakout_rates loop over 504 bars).
     # We only need the trailing window for a snapshot.
+    #
+    # Derivation: the earliest breakout candidate is at bar t-_WIN_BREAKOUT_LOOKBACK.
+    # To classify it as a new 63d high we need its prior-high window of _WIN_BREAKOUT
+    # bars (rolling_63_prior looks back _WIN_BREAKOUT bars before the candidate).
+    # Resolved candidates also need _WIN_BREAKOUT_FWD forward bars.
+    # An extra margin of 10 bars guards against off-by-one edge cases.
     max_window = (
-        _WIN_BREAKOUT_LOOKBACK + _WIN_BREAKOUT_FWD + 10
-    )  # 504+10+buffer
+        _WIN_BREAKOUT_LOOKBACK + _WIN_BREAKOUT + _WIN_BREAKOUT_FWD + 10
+    )  # 504 + 63 + 10 + 10 = 587
     df_tail = df.iloc[-max_window:] if len(df) > max_window else df
 
     series = feature_series(df_tail)

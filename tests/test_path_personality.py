@@ -94,22 +94,23 @@ class TestUptrendSeries:
             assert val > 0, f"{key}={val} should be positive for a monotone uptrend"
 
     def test_pullbacks_shallow(self):
-        """In a nearly monotone uptrend, median pullback depth should be small."""
+        """In a nearly monotone uptrend, median pullback depth should be small when computable."""
         med = self.snap["pullback_median_252"]
+        # The monotone uptrend rarely dips below the -1% trough threshold; None is valid.
         if med is not None:
             assert med < 0.15, f"pullback_median_252={med} unexpectedly deep in uptrend"
 
     def test_breakout_ft_rate_high(self):
         """Most breakouts in an uptrend should follow through."""
         rate = self.snap["breakout_ft_rate_63"]
-        if rate is not None:
-            assert rate > 0.5, f"breakout_ft_rate_63={rate} should be > 0.5 in uptrend"
+        assert rate is not None, "breakout_ft_rate_63 is None on n=800 uptrend fixture"
+        assert rate > 0.5, f"breakout_ft_rate_63={rate} should be > 0.5 in uptrend"
 
     def test_failed_breakout_rate_low(self):
         """Few breakouts should fail in a strong uptrend."""
         rate = self.snap["failed_breakout_rate_63"]
-        if rate is not None:
-            assert rate < 0.6, f"failed_breakout_rate_63={rate} should be relatively low in uptrend"
+        assert rate is not None, "failed_breakout_rate_63 is None on n=800 uptrend fixture"
+        assert rate < 0.6, f"failed_breakout_rate_63={rate} should be relatively low in uptrend"
 
     def test_keys_present(self):
         """Snapshot must have all required feature keys."""
@@ -148,15 +149,14 @@ class TestMeanReverterSeries:
     def test_trend_persist_negative(self):
         """AR(1) phi=-0.4 should produce negative sign-autocorrelation at short windows."""
         val = self.snap["trend_persist_20"]
-        if val is not None:
-            assert val < 0, f"trend_persist_20={val} should be negative for mean-reverter"
+        assert val is not None, "trend_persist_20 is None on n=800 mean-reverter fixture"
+        assert val < 0, f"trend_persist_20={val} should be negative for mean-reverter"
 
     def test_pullbacks_not_shallower_than_uptrend(self):
         """Mean-reverter pullbacks should generally be at least somewhat present."""
         med = self.snap["pullback_median_252"]
-        # We just check it's computable (no NaN) and >= 0
-        if med is not None:
-            assert med >= 0
+        assert med is not None, "pullback_median_252 is None on n=800 mean-reverter fixture"
+        assert med >= 0
 
 
 # ---------------------------------------------------------------------------
@@ -206,19 +206,21 @@ class TestGappySeries:
         """Gappy series should have higher gap_share_252 than smooth series."""
         gap_gappy = self.snap_gappy["gap_share_252"]
         gap_smooth = self.snap_smooth["gap_share_252"]
-        if gap_gappy is not None and gap_smooth is not None:
-            assert gap_gappy > gap_smooth, (
-                f"gap_share_252 gappy={gap_gappy:.4f} should exceed smooth={gap_smooth:.4f}"
-            )
+        assert gap_gappy is not None, "gap_share_252 is None on n=600 gappy fixture"
+        assert gap_smooth is not None, "gap_share_252 is None on n=600 smooth fixture"
+        assert gap_gappy > gap_smooth, (
+            f"gap_share_252 gappy={gap_gappy:.4f} should exceed smooth={gap_smooth:.4f}"
+        )
 
     def test_event_gap_contrib_elevated(self):
         """Gappy series should have higher event_gap_contrib_252 than smooth."""
         eg_gappy = self.snap_gappy["event_gap_contrib_252"]
         eg_smooth = self.snap_smooth["event_gap_contrib_252"]
-        if eg_gappy is not None and eg_smooth is not None:
-            assert eg_gappy > eg_smooth, (
-                f"event_gap_contrib_252 gappy={eg_gappy:.4f} should exceed smooth={eg_smooth:.4f}"
-            )
+        assert eg_gappy is not None, "event_gap_contrib_252 is None on n=600 gappy fixture"
+        assert eg_smooth is not None, "event_gap_contrib_252 is None on n=600 smooth fixture"
+        assert eg_gappy > eg_smooth, (
+            f"event_gap_contrib_252 gappy={eg_gappy:.4f} should exceed smooth={eg_smooth:.4f}"
+        )
 
     def test_gap_features_not_none(self):
         """With open column present, gap features should not be None."""
@@ -490,8 +492,8 @@ class TestFeatureSemantics:
         df = _make_ohlcv(close, open_offset=0.5)
         snap = features(df)
         gs = snap["gap_share_252"]
-        if gs is not None:
-            assert gs > 0
+        assert gs is not None, "gap_share_252 is None on n=300 OHLCV fixture with open column"
+        assert gs > 0
 
     def test_dollar_adv_none_without_volume(self):
         n = 300
@@ -507,8 +509,8 @@ class TestFeatureSemantics:
         df = _make_ohlcv(close)
         snap = features(df)
         adv = snap["dollar_adv_21d"]
-        if adv is not None:
-            assert adv > 0
+        assert adv is not None, "dollar_adv_21d is None on n=300 OHLCV fixture with volume"
+        assert adv > 0
 
     def test_range_compression_pct_nonnull(self):
         """range_compression_pct delegates to bbwp_series — should give a value for n=600."""
@@ -586,3 +588,167 @@ class TestFeatureSemantics:
         col = series["extreme_bar_freq_252"].dropna()
         if len(col) > 0:
             assert (col >= 0.0).all() and (col <= 1.0 + 1e-9).all()
+
+
+# ---------------------------------------------------------------------------
+# (h) reversal_half_life coverage — shock fixture
+# ---------------------------------------------------------------------------
+
+
+def _make_shock_fixture(n: int = 800, seed: int = 200) -> pd.DataFrame:
+    """Build an OHLCV fixture with a quiet low-vol baseline and ~10 injected
+    large shock days (±6% single-bar return) each followed by a decaying
+    counter-move over ~5 bars.
+
+    The quiet baseline (daily vol ~0.3%) ensures trailing_std is small enough
+    that 6% shocks clear the 2.5x threshold reliably.  Shocks are spaced >=20
+    bars apart so their forward windows don't overlap.
+    """
+    rng = np.random.default_rng(seed)
+    close = np.ones(n, dtype=float)
+    base_vol = 0.003  # quiet baseline vol
+    shock_indices = list(range(100, 750, 55))[:10]  # 10 shocks, spaced 55 bars
+
+    # Build daily log-returns
+    lr = rng.normal(0.0, base_vol, n)
+
+    # Inject shocks: alternating up/down, each +/-6%
+    for i, si in enumerate(shock_indices):
+        shock_mag = 0.06
+        shock_sign = 1 if i % 2 == 0 else -1
+        lr[si] = shock_sign * shock_mag
+        # Decaying counter-move over next 5 bars (exponential decay, sum ~0.4*shock)
+        decay = np.array([0.03, 0.025, 0.015, 0.008, 0.004])
+        for k, d in enumerate(decay):
+            if si + k + 1 < n:
+                lr[si + k + 1] = -shock_sign * d + rng.normal(0, base_vol)
+
+    # Reconstruct close from log-returns
+    close[0] = 100.0
+    for i in range(1, n):
+        close[i] = close[i - 1] * np.exp(lr[i])
+
+    return _make_ohlcv(close)
+
+
+class TestReversalHalfLifeCoverage:
+    """Finding 2: reversal_half_life must be non-NaN on a shock fixture."""
+
+    @classmethod
+    def setup_class(cls):
+        cls.df = _make_shock_fixture(n=800, seed=200)
+        cls.snap = features(cls.df)
+        cls.series = feature_series(cls.df)
+
+    def test_reversal_half_life_not_none_snapshot(self):
+        """Snapshot must produce a non-None reversal_half_life on the shock fixture."""
+        hl = self.snap["reversal_half_life"]
+        assert hl is not None, (
+            "reversal_half_life is None on shock fixture — insufficient shocks detected"
+        )
+        assert 1.0 <= hl <= 10.0, f"reversal_half_life={hl} out of expected [1, 10] range"
+
+    def test_reversal_half_life_series_has_values(self):
+        """feature_series must have at least one non-NaN reversal_half_life."""
+        col = self.series["reversal_half_life"].dropna()
+        assert len(col) > 0, (
+            "reversal_half_life series is all-NaN on shock fixture"
+        )
+        assert (col >= 1.0).all() and (col <= 10.0).all(), (
+            f"reversal_half_life values out of [1, 10] range: {col.describe()}"
+        )
+
+    def test_reversal_half_life_in_leak_test(self):
+        """reversal_half_life must pass the prefix-stability (no-lookahead) test
+        on the shock fixture."""
+        rtol = 1e-9
+        # Use a bar well after burn-in where we expect non-NaN
+        # The first non-NaN row is after win_lookback + fwd = 514 bars
+        series_full = self.series
+        failures = []
+        # Test at bars where the full series is non-NaN
+        non_nan_indices = series_full["reversal_half_life"].dropna().index.tolist()
+        # Sample up to 3 positions
+        test_positions = non_nan_indices[:3] if len(non_nan_indices) >= 3 else non_nan_indices
+        for ts in test_positions:
+            t = self.df.index.get_loc(ts)
+            df_trunc = self.df.iloc[: t + 1]
+            series_trunc = feature_series(df_trunc)
+            full_val = series_full["reversal_half_life"].iloc[t]
+            trunc_val = series_trunc["reversal_half_life"].iloc[t]
+            if pd.isna(full_val) and pd.isna(trunc_val):
+                continue
+            if not pd.isna(full_val) and not pd.isna(trunc_val):
+                diff = abs(full_val - trunc_val)
+                if diff > rtol * max(abs(full_val), 1e-30):
+                    failures.append(
+                        f"t={t} reversal_half_life: full={full_val:.10f} "
+                        f"trunc={trunc_val:.10f} diff={diff:.2e}"
+                    )
+            elif not pd.isna(trunc_val) and pd.isna(full_val):
+                failures.append(
+                    f"t={t} reversal_half_life: trunc gave {trunc_val:.6f} "
+                    f"but full gave NaN — suggests LOOKAHEAD"
+                )
+        assert not failures, "reversal_half_life lookahead violations:\n" + "\n".join(failures)
+
+
+# ---------------------------------------------------------------------------
+# (i) Snapshot ≡ feature_series.iloc[-1] equivalence test  (Finding 1)
+# ---------------------------------------------------------------------------
+
+
+class TestSnapshotEqualsSeriesLastRow:
+    """Every key in features(df) must equal feature_series(df).iloc[-1].
+
+    Uses an ~800-bar OHLCV fixture.  The fixed max_window in features() must
+    be large enough that the snapshot truncation window does not drop context
+    needed for computing the last-row values (pre-Fix 1 regression guard).
+    """
+
+    @classmethod
+    def setup_class(cls):
+        rng = np.random.default_rng(SEED + 99)
+        n = 800
+        rets = rng.normal(0.001, 0.012, n)
+        close = 100.0 * np.exp(np.cumsum(rets))
+        cls.df = _make_ohlcv(close)
+        cls.snap = features(cls.df)
+        cls.series = feature_series(cls.df)
+
+    def test_snapshot_matches_series_last_row(self):
+        """features(df) must equal feature_series(df).iloc[-1] for every key (rtol 1e-9)."""
+        rtol = 1e-9
+        last_row = self.series.iloc[-1]
+        failures = []
+
+        for k in _FEATURE_KEYS:
+            snap_val = self.snap[k]
+            series_val = last_row.get(k, np.nan)
+
+            # Normalize: None and NaN are treated as equivalent
+            snap_is_none = snap_val is None or (
+                isinstance(snap_val, float) and np.isnan(snap_val)
+            )
+            series_is_nan = pd.isna(series_val)
+
+            if snap_is_none and series_is_nan:
+                continue  # both missing — OK
+            if snap_is_none != series_is_nan:
+                failures.append(
+                    f"{k}: snapshot={'None/NaN' if snap_is_none else snap_val!r} "
+                    f"series={'NaN' if series_is_nan else series_val!r} — one is null, other is not"
+                )
+                continue
+            # Both numeric
+            diff = abs(float(snap_val) - float(series_val))
+            tol = rtol * max(abs(float(snap_val)), 1e-30)
+            if diff > tol:
+                failures.append(
+                    f"{k}: snapshot={snap_val!r} series={series_val!r} diff={diff:.2e} tol={tol:.2e}"
+                )
+
+        assert not failures, (
+            "features() snapshot differs from feature_series().iloc[-1]:\n"
+            + "\n".join(failures)
+        )
