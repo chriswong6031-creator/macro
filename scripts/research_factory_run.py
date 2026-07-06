@@ -544,6 +544,14 @@ def run(
             to_state = "screened"
             _human_gate_advance = True
             route_entry["human_gate_required"] = True
+            routing = dict(routing)
+            routing["action"] = "human_gate_advance"
+            routing["reason"] = (
+                f"domain projection {projected_state!r} requires a human actor "
+                "(RF-5); advanced mechanically to 'screened' with evidence attached"
+            )
+            route_entry["action"] = routing["action"]
+            route_entry["reason"] = routing["reason"]
             log.info(
                 "  [%s] human_gate_required for projected=%r — will advance to 'screened', "
                 "then stop (human actor required for %r transition, RF-5)",
