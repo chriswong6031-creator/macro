@@ -908,3 +908,31 @@ class TestSponsorshipState:
         assert "sponsorship_state" in df.columns
         # With no sector mapping files in tmp_path, all states are "unavailable"
         assert df["sponsorship_state"].iloc[0] == "unavailable"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 7. Wiring conformance: daily.yml + dag.yml presence assertions
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestWiringConformance:
+    """Plain text-presence assertions: build_bottom_sensors is wired into
+    daily.yml and has a dag.yml entry consistent with neighbouring NW producers.
+    """
+
+    ROOT = Path(__file__).resolve().parents[1]
+    DAILY_YML = ROOT / ".github" / "workflows" / "daily.yml"
+    DAG_YML = ROOT / "config" / "dag.yml"
+
+    def test_daily_yml_contains_build_bottom_sensors(self):
+        text = self.DAILY_YML.read_text()
+        assert "scripts.build_bottom_sensors" in text, (
+            "scripts.build_bottom_sensors must be invoked in daily.yml "
+            "(feat/nw-bottom-sensors-wiring wiring assertion)"
+        )
+
+    def test_dag_yml_contains_build_bottom_sensors(self):
+        text = self.DAG_YML.read_text()
+        assert "build_bottom_sensors" in text, (
+            "build_bottom_sensors must have a dag.yml entry "
+            "(feat/nw-bottom-sensors-wiring wiring assertion)"
+        )

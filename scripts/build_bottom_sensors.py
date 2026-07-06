@@ -12,10 +12,10 @@ directories (data/neuralweb/ is tracked — see git ls-files data/neuralweb/;
 site/neuralwebdata/ is tracked — see git ls-files site/neuralwebdata/).
 No new explicit git-add line in daily.yml is required.
 
-Render-budget benchmark: measured on the full US universe (~1700 names) and
-printed at the end of this script.  If > +30s the build remains STANDALONE
-(invoked manually or as a separate step) and is NOT wired into daily.yml.
-If <= +30s, add it after the 'build_world_state' call in daily.yml.
+Render-budget benchmark: 2.29s on the full US universe (~1722 names, 2026-07-06).
+Wired into daily.yml (feat/nw-bottom-sensors-wiring, 2026-07-06) between the
+'build world state (neural-web W1)' and 'build mastermind context (NW bridge)'
+steps.  Fail-soft — missing optional inputs degrade gracefully.
 
 Usage:
     python -m scripts.build_bottom_sensors [--root /path/to/repo] [--benchmark]
