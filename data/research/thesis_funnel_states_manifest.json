@@ -1,0 +1,15 @@
+{
+  "schema": "thesis_funnel_states.v1",
+  "as_of": "2026-07-06",
+  "n_tickers": 1503,
+  "state_counts": {
+    "not_eligible": 1002,
+    "watch_for_thesis": 255,
+    "thesis_candidate_shadow": 246
+  },
+  "elapsed_seconds": 15.45,
+  "_display_only": true,
+  "_horizon_role": "hold_thesis",
+  "_version": "v1",
+  "notes": "LT-4 thesis funnel shadow snapshot. Display-only; no behavioral authority. Gate = survival conjunction only (s1 dilution, s2 moat falsifiers, s3 solvency, s4 coverage). Study context: ED-7 descriptive pass RBC=0.041 is TINY; SUE wrong-sign at the trap ruler (see EXPECT_DRIFT_RULER_P_RESULTS.md) \u2014 explicitly NOT a gate input. Ceiling = thesis_candidate_shadow (W3-locked; no active_thesis)."
+}
