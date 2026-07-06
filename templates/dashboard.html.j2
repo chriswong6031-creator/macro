@@ -2161,6 +2161,21 @@
   </div>
   {% endif %}
 
+  {# ===================== SELECTION REGIME CHIP — L3 dispersion lens (macro mode only, NW Rails W2 PR-4) =====================
+     Display-only, display-only, display-only: gross_mult_live is permanently 1.0 per §5 hard constraint.
+     Reads from the standalone data/dispersion/regime.json artifact (build_dispersion_regime).
+     EN/ZH bilingual; no translated text in title= attributes (CI law). #}
+  {% if mode != 'stocks' and dispersion_regime and dispersion_regime.state %}
+  {% set _dr_mac = dispersion_regime %}
+  <div class="nb-disp disp-{{ _dr_mac.state }}" id="selection-regime-chip"
+       data-tip-en="Selection regime — cross-sectional dispersion lens (L3, NW Rails). When names fan out (high dispersion / low pairwise correlation) stock-selection historically earns more; a macro-driven tape (low dispersion / high correlation) mutes it. DISPLAY-ONLY: gross_mult_live=1.0 — this chip does NOT move any score, gate, or sizing. Shadow tilt ×{{ _dr_mac.shadow_gross_mult }} is a hand-picked prior with no measured edge (US_BOARD_MEASUREMENT §Study 3). Dispersion pctile {{ _dr_mac.dispersion_pctile }} · avg pairwise corr {{ _dr_mac.avg_corr }}. DISP-GATE-1 shadow study pre-registered in research/dispersion/L3_PREREG.md."
+       data-tip-zh="选股环境 — 横截面离散度镜头（L3，NW Rails）。仅供展示：gross_mult_live=1.0，不影响任何评分、门槛或仓位。">
+    <span class="disp-ic">{{ '🎯' if _dr_mac.state == 'lean_in' else ('🌫️' if _dr_mac.state == 'lean_out' else '⚖️') }}</span>
+    <b><span class="l-en">{{ t('Selection regime', '选股环境') }}: {{ _dr_mac.label }}</span><span class="l-zh">选股环境: {{ _dr_mac.label_zh }}</span></b>
+    <span class="disp-meta">{{ _dr_mac.dispersion_pctile }}th {{ t('pctile', '百分位') }}{% if _dr_mac.avg_corr is not none %} · {{ t('avg corr', '平均相关') }} {{ _dr_mac.avg_corr }}{% endif %} · <span class="disp-shadow" data-tip-en="shadow prior — not applied to sizing" data-tip-zh="先验倾向 — 未应用于仓位">{{ t('suggested', '建议倾向') }} ×{{ _dr_mac.shadow_gross_mult }}</span></span>
+  </div>
+  {% endif %}
+
   <!-- ===================== SENTIMENT REGIME — Froth & Fragility + Fear↔Euphoria + Fear/Greed composite (context-only lenses; collapsed by default) ===================== -->
   {% if mode != 'stocks' and (froth_fragility or fear_euphoria or fear_greed) %}
   {% set ff = froth_fragility %}
