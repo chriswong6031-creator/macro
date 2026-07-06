@@ -892,6 +892,7 @@ body { padding-bottom:56px; }
 
     // Tool census
     var tc = memo.tool_call_census || {};
+    var rs = memo.run_status || null;
     if (Object.keys(tc).length) {
       html += '<h3 style="margin-top:12px">Tool call census</h3>'
         + '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px">';
@@ -900,6 +901,15 @@ body { padding-bottom:56px; }
           + esc(k) + ': ' + esc(tc[k]) + '</span>';
       });
       html += '</div>';
+    } else {
+      // No tool calls — show honest degraded notice
+      var rsStatus = rs ? rs.status : 'degraded';
+      var noticeColor = rsStatus === 'degraded' ? 'var(--down)' : rsStatus === 'warn' ? 'var(--warn)' : 'var(--muted)';
+      html += '<div style="margin-top:10px;padding:6px 10px;border-radius:6px;font-size:12px;'
+        + 'border:1px solid ' + noticeColor + ';color:' + noticeColor + '">'
+        + '<span class="l-en">Cortex ran in degraded mode — no tool calls recorded.</span>'
+        + '<span class="l-zh">Cortex 以降级模式运行——未记录工具调用。</span>'
+        + '</div>';
     }
 
     el.innerHTML = html;

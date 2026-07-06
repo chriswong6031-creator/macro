@@ -402,6 +402,25 @@ def _section_governance() -> dict:
             "min_events": 8,
             "lapses_at": prob.get("lapses_at"),
         }
+        raw_rs = memo.get("run_status")
+        if raw_rs:
+            run_status = raw_rs
+        else:
+            # Legacy memo without run_status — derive from tool_call_census
+            tcc = memo.get("tool_call_census") or {}
+            has_tools = bool(tcc) and not (len(tcc) == 1 and "fallback_call" in tcc)
+            run_status = {
+                "status": "warn" if has_tools else "degraded",
+                "degraded": not has_tools,
+                "degradation_reason": "zero_tool_calls" if not has_tools else None,
+                "provider_attempts": [],
+                "tool_call_batches": 0,
+                "individual_tool_calls": sum(tcc.values()) if tcc else 0,
+                "expected_min_tool_calls": 1,
+                "context_stale": False,
+                "context_as_of": None,
+                "_legacy_memo": True,
+            }
         out["cortex_memo"] = {
             "as_of": memo.get("as_of"),
             "summary": memo.get("summary", ""),
@@ -410,6 +429,7 @@ def _section_governance() -> dict:
             "deserves_operator": memo.get("deserves_operator", []),
             "tool_call_census": memo.get("tool_call_census", {}),
             "is_context_only": memo.get("is_context_only", True),
+            "run_status": run_status,
         }
     else:
         out["probation"] = {"missing": True, "note": "data/neuralweb/cortex/memo.json not yet written"}
