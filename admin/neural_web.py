@@ -14,10 +14,19 @@ Sections returned by panel():
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Plain-English lobe descriptions (curated + fingerprinted). Optional import:
+# a fresh clone before the module is generated falls back to auto-summaries.
+try:
+    from .nw_lobe_descriptions import LOBE_DESCRIPTIONS
+except Exception:  # noqa: BLE001
+    LOBE_DESCRIPTIONS = {}
 
 # ---- repo paths (mirrors admin/paths.py convention) -------------------------
 _ROOT = Path(__file__).resolve().parent.parent
@@ -734,6 +743,78 @@ def _short_desc(notes_text: str | None) -> str:
     return text[:160]
 
 
+# ---- Plain-English descriptions + staleness guard ---------------------------
+# The lobe registry (list/producer/consumers/freshness) is derived live from
+# synapse.yml on every request, so structural changes are ALWAYS reflected. The
+# one hand-curated layer — the plain-English prose — is guarded here so it can
+# never SILENTLY go stale: each curated entry stores a fingerprint of the synapse
+# note it was written from. If the note later changes, the fingerprint no longer
+# matches → the description is flagged 'stale' (UI badge + a CI drift test).
+# A lobe with no curated entry renders an auto-cleaned summary flagged 'auto'.
+
+# strip file paths / code identifiers for the auto-fallback summary
+_PATH_RE = re.compile(r"\b[\w./-]+\.(?:py|json|jsonl|parquet|yml|yaml|md)\b(?::\d+)?")
+_LINEREF_RE = re.compile(r"\b\w+\.\w+:\d+\b")
+
+
+def _note_fingerprint(raw_notes: str | None) -> str:
+    """Stable 16-hex fingerprint of a synapse note (whitespace-collapsed)."""
+    text = " ".join((raw_notes or "").split())
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def _auto_plain(raw_notes: str | None) -> tuple[str, str]:
+    """Best-effort readable fallback for lobes without a curated description.
+    Strips file paths / code identifiers; returns (short, full)."""
+    text = " ".join((raw_notes or "").split())
+    if not text:
+        return ("", "")
+    cleaned = _LINEREF_RE.sub("", _PATH_RE.sub("", text))
+    cleaned = re.sub(r"\(\s*\)", "", cleaned)          # empty parens left behind
+    cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
+    return (_short_desc(cleaned), cleaned[:460].strip())
+
+
+def _plain_desc(lobe_id: str, raw_notes: str | None) -> tuple[str, str, str]:
+    """Return (short, full, desc_status) for a lobe.
+
+    desc_status ∈ {'curated', 'stale', 'auto'}:
+      curated — hand-written prose whose fingerprint matches the current note
+      stale   — hand-written prose written for an OLDER version of the note
+      auto    — no curated entry; an auto-cleaned summary from the registry
+    """
+    entry = LOBE_DESCRIPTIONS.get(lobe_id) if isinstance(LOBE_DESCRIPTIONS, dict) else None
+    if entry and entry.get("short"):
+        status = "curated" if entry.get("src_fp") == _note_fingerprint(raw_notes) else "stale"
+        return entry.get("short", ""), entry.get("full", ""), status
+    short, full = _auto_plain(raw_notes)
+    return short, full, "auto"
+
+
+def _is_nw_lobe(lobe_id: str, art: dict) -> bool:
+    """The NW-scope rule: is this synapse artifact a Neural Web lobe?"""
+    if art.get("owner_program") == "neural-web":
+        return True
+    p = art.get("path", "")
+    if p.startswith("data/neuralweb/") or p.startswith("site/neuralwebdata/"):
+        return True
+    if "mastermind:context" in (art.get("external_consumers") or []):
+        return True
+    return False
+
+
+def nw_scoped_lobes() -> dict:
+    """{lobe_id: artifact_dict} for every NW-scoped synapse artifact.
+
+    Shared by lobes_panel/lobe_detail and the description audit/tests so the
+    scope rule lives in exactly one place. Returns {} if synapse is unreadable.
+    """
+    synapse = _parse_yaml_synapse(_SYNAPSE_YML)
+    if not synapse or not isinstance(synapse.get("artifacts"), dict):
+        return {}
+    return {k: v for k, v in synapse["artifacts"].items() if _is_nw_lobe(k, v)}
+
+
 def _derive_lobe_status(
     art_path: str,
     storage: str | None,
@@ -813,6 +894,7 @@ def _build_lobe_summary(
     byte_size = health_lobe.get("byte_size") if health_lobe else None
 
     n_recent = _count_recent_actions(lobe_id, owner)
+    p_short, _p_full, desc_status = _plain_desc(lobe_id, art.get("notes"))
 
     return {
         "id": lobe_id,
@@ -832,7 +914,8 @@ def _build_lobe_summary(
         "byte_size": byte_size,
         "n_consumers": len(consumers) + len(external),
         "n_recent_actions": n_recent,
-        "short_desc": _short_desc(art.get("notes")),
+        "short_desc": p_short or _short_desc(art.get("notes")),
+        "desc_status": desc_status,
     }
 
 
@@ -857,18 +940,7 @@ def lobes_panel() -> dict:
         }
 
     all_arts = synapse["artifacts"]
-
-    def _is_lobe(k: str, v: dict) -> bool:
-        if v.get("owner_program") == "neural-web":
-            return True
-        p = v.get("path", "")
-        if p.startswith("data/neuralweb/") or p.startswith("site/neuralwebdata/"):
-            return True
-        if "mastermind:context" in (v.get("external_consumers") or []):
-            return True
-        return False
-
-    lobe_arts = {k: v for k, v in all_arts.items() if _is_lobe(k, v)}
+    lobe_arts = {k: v for k, v in all_arts.items() if _is_nw_lobe(k, v)}
 
     # --- Health.json enrichment ---
     nw_health = _read_json(_NW_HEALTH_JSON)
@@ -952,12 +1024,19 @@ def lobes_panel() -> dict:
             "lobes": sorted(group_map[key], key=lambda x: x["id"]),
         })
 
+    # --- Description health (staleness of the curated prose layer) ---
+    desc_health = {"curated": 0, "stale": 0, "auto": 0}
+    for ls in lobes_flat:
+        ds = ls.get("desc_status", "auto")
+        desc_health[ds] = desc_health.get(ds, 0) + 1
+
     return {
         "ok": True,
         "source": source,
         "as_of": as_of,
         "overall_status": overall_status,
         "summary_counts": status_counts,
+        "desc_health": desc_health,
         "graph": graph_info,
         "groups": groups,
         "lobes": lobes_flat,
@@ -976,18 +1055,7 @@ def lobe_detail(lobe_id: str) -> dict:
         return {"ok": False, "error": "synapse.yml unreadable (pyyaml required)", "known_ids": []}
 
     all_arts = synapse["artifacts"]
-
-    def _is_lobe(k: str, v: dict) -> bool:
-        if v.get("owner_program") == "neural-web":
-            return True
-        p = v.get("path", "")
-        if p.startswith("data/neuralweb/") or p.startswith("site/neuralwebdata/"):
-            return True
-        if "mastermind:context" in (v.get("external_consumers") or []):
-            return True
-        return False
-
-    lobe_arts = {k: v for k, v in all_arts.items() if _is_lobe(k, v)}
+    lobe_arts = {k: v for k, v in all_arts.items() if _is_nw_lobe(k, v)}
 
     if not lobe_id or lobe_id not in lobe_arts:
         return {
@@ -1141,9 +1209,11 @@ def lobe_detail(lobe_id: str) -> dict:
     recent_actions.sort(key=lambda x: x.get("ts", ""), reverse=True)
     recent_actions = recent_actions[:15]
 
-    # --- Description (full notes, whitespace-collapsed) ---
+    # --- Description: plain-English prose + raw technical note (staleness guard) ---
     raw_notes = art.get("notes") or ""
-    description = " ".join(raw_notes.split())
+    description_technical = " ".join(raw_notes.split())
+    p_short, p_full, desc_status = _plain_desc(lobe_id, raw_notes)
+    description = p_full or description_technical
 
     return {
         "ok": True,
@@ -1161,6 +1231,9 @@ def lobe_detail(lobe_id: str) -> dict:
         "path": art_path,
         "format": art.get("format", ""),
         "description": description,
+        "description_technical": description_technical,
+        "desc_status": desc_status,
+        "short_desc": p_short,
         "purpose_source": "config/synapse.yml",
         "metrics": metrics,
         "transmission": transmission,
