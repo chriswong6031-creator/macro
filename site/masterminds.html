@@ -157,10 +157,11 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
    palette inherited from the host page's inline nav-dd-menu. Loaded after the
    page <style>, so these position overrides win. */
 .nav-dd-menu .nav-sub{display:block;position:relative;}
-.nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:center;}
+.nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:flex-start;}
 .nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;padding-left:12px;font-size:10px;
-  opacity:.55;flex:none;transition:transform .2s;}
+  opacity:.55;flex:none;align-self:center;transition:transform .2s;}
 .nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{opacity:.9;transform:translateX(2px);}
+.nav-dd-menu .nav-sub>a.nav-sub-trig .nav-sub-text{display:block;flex:1;min-width:0;white-space:normal;}
 .nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
 .nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
 
@@ -413,7 +414,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
             <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
@@ -421,7 +422,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           </div>
         </div>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
             <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
@@ -625,7 +626,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   </div>
 
   <div class="foot">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-06 09:55 UTC<br>
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-06 09:58 UTC<br>
     <span class="made">© 2026 MastermindX Inc</span>
   </div>
 </div>
