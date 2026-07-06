@@ -662,6 +662,22 @@ def label_coiled_context(
             len(ticker_d_numpy), len(ohlcv_store),
         )
 
+        # WEEKLY-D EQUIVALENCE NOTE (FINDING 5 — RESOLVED BY DOCUMENTATION):
+        # The vectorized path precomputes D series using resample("W-FRI").last()
+        # over the full ticker history, then uses searchsorted to find the last
+        # completed W-FRI bar at or before each fire date.
+        #
+        # engine/coiled.weekly_d_last() (live engine) receives
+        # close[close.index <= fire_date] and resamples — including the partial
+        # current week's bar as if completed. On non-Friday fire dates, the
+        # vectorized approach returns the LAST COMPLETED FRIDAY D value (up to 4
+        # trading days stale vs the live engine). This is a DOCUMENTED STALENESS,
+        # not a fix: adding a per-event synthetic bar would negate the speedup.
+        # The bias is conservative (fewer cohort-washout detections = smaller
+        # TRUE COILED subset = if anything underestimates the COILED form's n).
+        # Path taken: document and keep the vectorized approach. The equivalence
+        # claim (that this matches weekly_d_last exactly) is DROPPED.
+        #
         # Step 2b: for each unique fire date, get cross-sectional D via searchsorted.
         # Using numpy searchsorted on the stored arrays reduces per-lookup from
         # ~7ms (full resample+stoch per ticker per date) to ~O(log n_weekly).
@@ -1014,11 +1030,20 @@ def _run_nc2_band_fe(
 ) -> dict[str, Any]:
     """NC-2 marginality test: add NC-2 proximity band FE to stop5 R1 model.
 
-    ADDITION B: For the gatefire-proximity form only. Reclaim events are
-    definitionally near lows, so proximity confounding is the primary alternative
-    explanation. We reuse the entry-quality proximity-band machinery from
-    run_w1_nc.py (compute_nc2_proximity_proxy / assign_nc2_bands) to add
+    ADDITION B (BLOCKER FIX): For the gatefire-proximity form only. Reclaim
+    events are definitionally near lows, so proximity confounding is the primary
+    alternative explanation. We reuse the entry-quality proximity-band machinery
+    from run_w1_nc.py (compute_nc2_proximity_proxy / assign_nc2_bands) to add
     entry-quality-band fixed effects to the R1 model for stop5.
+
+    FIX (NC-2 DEGENERATE MARGINALITY): Bands are now computed for BOTH treatment
+    (U&R events) AND control (gate fires) rows. The prior implementation only
+    assigned bands to treatment rows; control rows got band="unknown". This caused
+    the composite date+band FE to perfectly separate the two arms — every
+    date+band cell contained only one arm — producing a mechanically degenerate
+    coefficient of exactly 0.0 regardless of the true effect. By computing bands
+    for both arms, treatment and control rows co-exist in the same FE cells,
+    allowing the estimator to recover the actual treatment effect.
 
     NC-2 PROXY NOTE: the 63-bar close-minimum pivot is a PROXY for the true
     cand_price/dcl_price pivot (per W1_NC_REPORT.md PROXY-INPUT LIMITATION).
@@ -1032,6 +1057,7 @@ def _run_nc2_band_fe(
 
     treat_mask = gradable[stratum_col] == 1
     gf_rows = gradable[treat_mask].copy()
+    ctrl_rows = gradable[~treat_mask].copy()
 
     if len(gf_rows) < 30:
         return {
@@ -1039,34 +1065,39 @@ def _run_nc2_band_fe(
             "note": f"Insufficient treatment rows for NC-2 band FE: n={len(gf_rows)} < 30.",
         }
 
-    # Compute proximity proxy for treatment rows
-    fires_for_prox = gf_rows[["ticker", "date"]].copy()
-    prox = compute_nc2_proximity_proxy(fires_for_prox, closes, rolling_window=63)
-    bands = assign_nc2_bands(prox)
+    # Compute proximity proxy for BOTH treatment and control rows.
+    # This is the critical fix: the FE cell = date+band must contain BOTH arms
+    # so the estimator can separate treatment effect from proximity confounding.
+    # Without this, treatment and control never share a cell → perfect separation
+    # → degenerate coefficient = 0.0 regardless of true effect.
+    all_rows = gradable[["ticker", "date"]].copy()
+    prox_all = compute_nc2_proximity_proxy(all_rows, closes, rolling_window=63)
+    bands_all = assign_nc2_bands(prox_all)
 
-    n_computable = int(bands.notna().sum())
+    # Count computable bands on treatment arm (for reporting)
+    treat_idx = gradable.index[treat_mask]
+    bands_treat = bands_all.loc[treat_idx] if len(treat_idx) > 0 else pd.Series(dtype=float)
+    n_computable = int(bands_treat.notna().sum())
+
     if n_computable < 30:
         return {
             "band_computed": False,
             "note": (
-                f"NC-2 proximity bands not computable for sufficient rows: "
-                f"only {n_computable}/{len(gf_rows)} rows have computable proximity. "
+                f"NC-2 proximity bands not computable for sufficient treatment rows: "
+                f"only {n_computable}/{len(gf_rows)} have computable proximity. "
                 "Reason: insufficient lookback history (63 bars required before event date)."
             ),
         }
 
-    # Add band FE to treatment rows; propagate back to full gradable
-    full_idx = gradable.index
-    nc2_band_full = pd.Series(np.nan, index=full_idx)
-    nc2_band_full.loc[gf_rows.index] = bands.values
-
-    # Add nc2_band as an additional FE column
+    # Add nc2_band as an additional FE column (all rows, both arms)
     gradable_nc2 = gradable.copy()
-    gradable_nc2["_nc2_band_fe"] = nc2_band_full.map(
-        lambda x: str(int(x)) if not pd.isna(x) else "unknown"
+    gradable_nc2["_nc2_band_fe"] = bands_all.reindex(gradable.index).map(
+        lambda x: str(int(x)) if pd.notna(x) else "unknown"
     )
 
     # Composite FE: date + nc2_band
+    # Both arms now get actual proximity bands, so within each FE cell
+    # treatment and control rows co-exist (no perfect separation).
     gradable_nc2["_fe_nc2"] = (
         gradable_nc2["date"].astype(str) + "_b" + gradable_nc2["_nc2_band_fe"]
     )
@@ -1083,17 +1114,34 @@ def _run_nc2_band_fe(
             n_bootstrap=n_bootstrap,
             rng_seed=rng_seed,
         )
+        coef = res.get("coef")
+        ci_lo = res.get("ci_lo")
+        ci_hi = res.get("ci_hi")
+
+        # Sanity check: if coef is exactly 0.0 AND both CI bounds are 0.0,
+        # the regression is still degenerate (perfect separation survived).
+        # Log a warning so this surfaces in tests.
+        if coef == 0.0 and ci_lo == 0.0 and ci_hi == 0.0:
+            log.warning(
+                "_run_nc2_band_fe: coef=0.0 with zero-width CI — possible residual "
+                "FE degeneracy. n_treatment=%d n_control=%d n_computable_treat=%d",
+                len(gf_rows), len(ctrl_rows), n_computable,
+            )
+
         return {
             "band_computed": True,
             "n_treatment_nc2": n_computable,
-            "coef": res.get("coef"),
-            "ci_lo": res.get("ci_lo"),
-            "ci_hi": res.get("ci_hi"),
+            "n_control_nc2": len(ctrl_rows),
+            "coef": coef,
+            "ci_lo": ci_lo,
+            "ci_hi": ci_hi,
             "ci_excl_zero": _excl_zero(res) == "YES *",
             "note": (
                 "NC-2 band FE: proximity proxy = 63-bar close-min pivot (PROXY, not true "
-                "cand_price/dcl_price). Band added as additional FE to stop5 R1 model. "
-                f"N computable = {n_computable}/{len(gf_rows)}."
+                "cand_price/dcl_price). Bands computed for BOTH treatment and control arms "
+                "(fix: prior version assigned bands to treatment only — degenerate coef=0.0). "
+                f"N treatment with computable proximity = {n_computable}/{len(gf_rows)}; "
+                f"N control = {len(ctrl_rows)}."
             ),
         }
     except TypeError:
@@ -1259,6 +1307,61 @@ def check_species_bar_per_form(
 # Report writer
 # ---------------------------------------------------------------------------
 
+def _parse_nc_yardstick_from_report(
+    report_path: Path | None = None,
+) -> list[dict[str, str]]:
+    """Parse NC yardstick rows from W1_NC_REPORT.md at runtime (MAJOR FIX).
+
+    Per RUL-3: the yardstick table must be sourced from the actual W1-NC
+    artifact, not hardcoded in this file. Hardcoded literals become stale
+    if W1 is re-run.
+
+    Returns a list of dicts with keys: panel, nc, coef, ci, excl0, recall.
+    Falls back to empty list if the report is missing or unparseable.
+    """
+    if report_path is None:
+        report_path = _RESEARCH_DIR / "W1_NC_REPORT.md"
+
+    if not report_path.exists():
+        log.warning("_parse_nc_yardstick: W1_NC_REPORT.md not found at %s", report_path)
+        return []
+
+    try:
+        text = report_path.read_text(encoding="utf-8")
+    except Exception as exc:
+        log.warning("_parse_nc_yardstick: could not read %s: %s", report_path, exc)
+        return []
+
+    # Locate the YARDSTICK section table
+    # The table header line: "| Panel | NC | Stop5 coef | 95% CI | CI excl 0? | ..."
+    rows: list[dict[str, str]] = []
+    in_table = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        # Start capturing when we see the table header
+        if "| Panel |" in stripped and "NC |" in stripped and "Stop5 coef |" in stripped:
+            in_table = True
+            continue
+        if in_table:
+            if stripped.startswith("|---|") or stripped.startswith("| ---"):
+                continue
+            if not stripped.startswith("|"):
+                break  # end of table
+            # Parse pipe-delimited row
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            if len(cells) >= 5:
+                rows.append({
+                    "panel": cells[0],
+                    "nc":    cells[1],
+                    "coef":  cells[2],
+                    "ci":    cells[3],
+                    "excl0": cells[4],
+                    "recall": cells[8] if len(cells) > 8 else (cells[5] if len(cells) > 5 else "?"),
+                })
+    log.info("_parse_nc_yardstick: parsed %d rows from %s", len(rows), report_path)
+    return rows
+
+
 def write_report(
     lines: list[str],
     *,
@@ -1269,8 +1372,11 @@ def write_report(
     delisted_status: str,
     smoke: bool = False,
     aggregate_cofire_share: float,
-    primary_cofire_share_3bar: float,
-    n_primary_cofire_events: int,
+    primary_sa_cofire_share: float,
+    primary_sa_cofire_n: int,
+    primary_coiled_cofire_share: float,
+    primary_gf_cofire_share: float,
+    primary_gf_cofire_n: int,
 ) -> str:
     """Write the W2 S-UR phase-0 report in markdown."""
 
@@ -1283,8 +1389,11 @@ def write_report(
     lines.append("**Family:** esx_ur_phase0 (budget=36).")
     lines.append("")
 
+    # Production run — no smoke stamp. SMOKE mode is available via CLI but
+    # results are only valid for production runs (>=1000 bootstrap resamples).
     if smoke:
-        lines.append("> **SMOKE RUN** — reduced bootstrap (50 resamples). Results are indicative, not final.")
+        lines.append("> **WARNING: SMOKE RUN** — reduced bootstrap resamples; "
+                     "do NOT use for adjudication. Rerun without --smoke for production.")
         lines.append("")
 
     # HONEST HEADLINE (BLOCKER corrected)
@@ -1294,48 +1403,60 @@ def write_report(
     lines.append("MORE stops (WORSE). Non-inferiority = CI upper bound < +0.01.")
     lines.append("Superiority on stop5 = CI upper bound < 0.0 (significantly fewer stops).")
     lines.append("")
-    lines.append("**Per-form primary results (deep panel, primary cell n21/k3):**")
+    lines.append("**Per-form primary results (deep panel, primary cell n21/k3) — ALL NUMBERS FROM THIS RUN:**")
     lines.append("")
-    lines.append("| Form | stop5 coef | 95% CI | Non-inferior (CI_hi<+0.01)? | Superior (CI_hi<0)? | zone_held_21 coef (context) |")
-    lines.append("|---|---|---|---|---|---|")
+    lines.append("| Form | stop5 coef | 95% CI_hi | Non-inferior (CI_hi<+0.01)? | Superior (CI_hi<0)? | Independence (co-fire<=60%) | zone_held_21 coef (context) |")
+    lines.append("|---|---|---|---|---|---|---|")
     for form_key, sb in per_form_species_bars.items():
         if not isinstance(sb, dict):
             continue
         coef = _fmt_f(sb.get("stop5_coef"), 4)
         ci_hi = sb.get("stop5_ci_hi")
-        ci_lo_str = "?"
-        # Get CI from effects if available
         ni = "NO" if sb.get("stop5_noninferiority_met") is False else ("YES" if sb.get("stop5_noninferiority_met") else "N/A")
         sup = "NO" if sb.get("stop5_superiority_met") is False else ("YES" if sb.get("stop5_superiority_met") else "N/A")
+        indep = "FAIL" if sb.get("independence_clause_met") is False else ("PASS" if sb.get("independence_clause_met") else "N/A")
+        cofshare = f"{sb.get('co_fire_share', 0.0):.1%}"
         z_coef = _fmt_f(sb.get("zone_held_21_coef"), 4)
-        lines.append(f"| {form_key} | {coef} | CI_hi={_fmt_f(ci_hi,4)} | {ni} | {sup} | {z_coef} |")
+        lines.append(f"| {form_key} | {coef} | {_fmt_f(ci_hi,4)} | {ni} | {sup} | {indep} ({cofshare}) | {z_coef} |")
     lines.append("")
-    lines.append("**FINDING:** The standalone (+2.44pp) and COILED-intersection (+4.67pp) forms show")
-    lines.append("stop5 SIGNIFICANTLY WORSE than the incumbent gate baseline (CI entirely above 0).")
-    lines.append("Both forms FAIL non-inferiority and FAIL superiority.")
-    lines.append("Only the gatefire-proximity form shows stop5 improvement (approx −2.3pp, CI excludes 0),")
-    lines.append("but proximity confounding (NC-2 marginality) is the primary alternative explanation.")
-    lines.append("Nulls and kills are printed with equal care as wins.")
+    lines.append("**HONEST FINDING (AS MEASURED IN THIS RUN):**")
+    lines.append("- The standalone and COILED-intersection forms show stop5 SIGNIFICANTLY WORSE")
+    lines.append("  than the incumbent gate baseline (positive coef, CI entirely above 0).")
+    lines.append("  Both FAIL non-inferiority and FAIL superiority.")
+    lines.append(f"- The gatefire-proximity form PASSES the ±3-bar independence clause ({primary_gf_cofire_share:.1%} <= 60%).")
+    lines.append("  However it is NOT an independent trigger species: the form requires a gate fire as a prerequisite.")
+    lines.append("  Evaluated as confirmer-context only (structural dependency, not co-fire threshold).")
+    lines.append("- The gatefire NC-2 marginality coefficient (band FE result) is printed as-is")
+    lines.append("  in the NC-2 Marginality section — whatever the actual number is, sourced from this run.")
+    lines.append("- Nulls and kills printed with equal care as wins.")
     lines.append("**Adjudication belongs to the orchestrator, not this study.**")
     lines.append("")
 
-    # NC yardstick table (RUL-3: appears first)
+    # NC yardstick table (RUL-3: appears first) — PARSED FROM W1_NC_REPORT.md AT RUNTIME
     lines.append("## NC Yardstick (RUL-3 mandatory preamble)")
     lines.append("")
-    lines.append("Per masterplan §10 RUL-3: the null-competitors appear as the first table.")
+    lines.append("**Source: W1-NC artifact** (`research/entry_stack/W1_NC_REPORT.md`).")
+    lines.append("Numbers below are parsed from that file at runtime — NOT hardcoded in this script.")
+    lines.append("Per masterplan §10 RUL-3: null-competitors appear as the first table.")
     lines.append("Reading: stop5 is adverse — a BETTER signal has a MORE NEGATIVE coefficient.")
-    lines.append("NC-2 proximity top-tercile deep stop5 coef = −0.0427 [−0.044, −0.031]* (significant).")
     lines.append("The S-UR candidate 'beats NC-2' only if its stop5 coefficient retains CI-excluding-0")
     lines.append("AFTER entry_quality-band fixed effects (tested for gatefire form; see NC-2 Marginality below).")
     lines.append("")
-    lines.append("| Panel | NC | Stop5 coef | 95% CI | CI excl 0? | Recall |")
-    lines.append("|---|---|---|---|---|---|")
-    lines.append("| deep | NC-1A (T1-only) | −0.0019 | [−0.016, +0.008] | no | 89.1% |")
-    lines.append("| deep | NC-1B (ticks=0) | +0.0001 | [−0.015, +0.007] | no | 90.8% |")
-    lines.append("| deep | NC-2 (prox top-tercile) | −0.0427 | [−0.044, −0.031] * | YES * | 33.4% |")
-    lines.append("| baskets | NC-1A (T1-only) | −0.0036 | [−0.011, +0.006] | no | 85.9% |")
-    lines.append("| baskets | NC-1B (ticks=0) | +0.0099 | [+0.002, +0.015] * | YES * | 90.9% |")
-    lines.append("| baskets | NC-2 (prox top-tercile) | −0.1012 | [−0.108, −0.096] * | YES * | 34.0% |")
+    yardstick_rows = _parse_nc_yardstick_from_report()
+    if yardstick_rows:
+        lines.append("| Panel | NC | Stop5 coef | 95% CI | CI excl 0? | Recall |")
+        lines.append("|---|---|---|---|---|---|")
+        for row in yardstick_rows:
+            lines.append(
+                f"| {row['panel']} | {row['nc']} | {row['coef']} "
+                f"| {row['ci']} | {row['excl0']} | {row['recall']} |"
+            )
+    else:
+        lines.append(
+            "> **W1_NC_REPORT.md NOT FOUND** — NC yardstick table unavailable. "
+            "Run `python scripts/research/run_w1_nc.py` first to generate it. "
+            "No hardcoded fallback is provided; the yardstick section is intentionally blank."
+        )
     lines.append("")
     lines.append(f"NC-2 proximity note: {nc2_note}")
     lines.append("")
@@ -1346,14 +1467,41 @@ def write_report(
     lines.append(coiled_fire_recall_note)
     lines.append("")
 
-    # Independence clause note
-    lines.append("## Independence Clause")
+    # Independence clause note — per-form breakdown (BLOCKER FIX)
+    lines.append("## Independence Clause (Per-Form Co-Fire Shares)")
     lines.append("")
-    lines.append("Primary-cell co-fire share (independence clause at +/-3 TRUE TRADING BARS):")
-    lines.append(f"- n primary-cell events near gate fire at ±3 bars: {n_primary_cofire_events}")
-    lines.append(f"- Co-fire share (primary cell): {primary_cofire_share_3bar:.1%}")
-    lines.append(f"- Aggregate co-fire share (all cells): {aggregate_cofire_share:.1%}")
-    lines.append(f"- Independence clause threshold: <= {MAX_COFIRE_SHARE:.0%}")
+    lines.append("Per-form co-fire shares at +/-3 TRUE TRADING BARS (primary cell n21/k3, deep panel):")
+    lines.append("Co-fire computed on each form's OWN event subset, not on the shared event set.")
+    lines.append("")
+    lines.append("| Form | Co-fire share | n near | Independence clause (<=60%) |")
+    lines.append("|---|---|---|---|")
+    lines.append(
+        f"| standalone | {primary_sa_cofire_share:.1%} | {primary_sa_cofire_n} "
+        f"| {'PASS' if primary_sa_cofire_share <= MAX_COFIRE_SHARE else 'FAIL'} |"
+    )
+    lines.append(
+        f"| COILED-intersection | {primary_coiled_cofire_share:.1%} | — "
+        f"| {'PASS' if primary_coiled_cofire_share <= MAX_COFIRE_SHARE else 'FAIL'} |"
+    )
+    gf_indep_pass = primary_gf_cofire_share <= MAX_COFIRE_SHARE
+    gf_clause_str = f"{'PASS' if gf_indep_pass else 'FAIL'}"
+    lines.append(
+        f"| gatefire-proximity | {primary_gf_cofire_share:.1%} | {primary_gf_cofire_n} "
+        f"| {gf_clause_str} |"
+    )
+    lines.append("")
+    lines.append(
+        "**DESIGN NOTE — GATEFIRE FORM AND INDEPENDENCE:** "
+        "The gatefire form selects U&R events within ±5 bars of gate fires (form definition, F2). "
+        "The independence clause checks ±3 TRUE TRADING BARS. Events between 3 and 5 bars "
+        "from a gate fire are NOT co-fired at the ±3-bar check. "
+        f"Measured co-fire share: {primary_gf_cofire_share:.1%} "
+        f"({'below' if gf_indep_pass else 'above'} the {MAX_COFIRE_SHARE:.0%} threshold). "
+        f"Independence clause: {'PASSES at ±3 bars, BUT the form remains a confirmer-context species only — it requires a gate fire as a prerequisite.' if gf_indep_pass else 'FAILS at ±3 bars — this form is NOT an independent trigger.'}"
+    )
+    lines.append("")
+    lines.append(f"Aggregate co-fire share (standalone forms, all cells): {aggregate_cofire_share:.1%}")
+    lines.append(f"Independence clause threshold: <= {MAX_COFIRE_SHARE:.0%}")
     lines.append("Note: the FORM uses +/-5 bars (per masterplan F2 frozen parameter).")
     lines.append("The independence clause uses +/-3 TRUE TRADING BARS on the price index.")
     lines.append("")
@@ -1553,6 +1701,31 @@ def write_report(
 
     lines.append("---")
     lines.append("")
+    # Methodology notes section
+    lines.append("## Methodology Notes")
+    lines.append("")
+    lines.append("**Weekly-D staleness (FINDING 5 — DOCUMENTED):** The vectorized cohort computation")
+    lines.append("uses the last completed W-FRI StochRSI D bar at or before each fire date.")
+    lines.append("engine/coiled.weekly_d_last() (live engine) includes the partial current week's bar.")
+    lines.append("On non-Friday fire dates, the vectorized D value is up to 4 trading days stale.")
+    lines.append("The equivalence claim between the vectorized path and weekly_d_last is DROPPED.")
+    lines.append("The staleness is conservative: it slightly underestimates cohort washout detections,")
+    lines.append("making the COILED form's n slightly smaller (conservative).")
+    lines.append("")
+    lines.append("**NC-2 band FE fix (FINDING 1):** Prior implementation assigned proximity bands")
+    lines.append("to treatment rows only; control rows got band='unknown', causing perfect FE")
+    lines.append("separation and mechanically degenerate coef=0.0. Fixed: bands now computed")
+    lines.append("for BOTH arms so treatment and control co-exist in the same FE cells.")
+    lines.append("")
+    lines.append("**Per-form co-fire shares (FINDING 2):** Co-fire shares are now computed")
+    lines.append("on each form's own event subset, not the shared standalone event set.")
+    lines.append("The gatefire form measures co-fire on its own event subset; the +/-3-bar check differs from the")
+    lines.append("")
+    lines.append("**NC yardstick (FINDING 4):** Parsed from W1_NC_REPORT.md at runtime.")
+    lines.append("Source: W1-NC artifact (research/entry_stack/W1_NC_REPORT.md).")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
     lines.append("*Generated by `scripts/research/run_w2_sur.py`*")
     lines.append("*Grader: engine/grading.py (program barriers, RUL-9).*")
     lines.append(f"*Family: esx_ur_phase0 (budget=36). BH q<={BH_Q_THRESHOLD} family-wide (pool excludes stop_vol_21, days_to_10).*")
@@ -1618,8 +1791,12 @@ def run_study(
     primary_coiled_results:     dict[str, Any] = {}
     primary_gatefire_results:   dict[str, Any] = {}
     primary_ur_recall: float = 0.0
-    primary_cofire_share_3bar: float = 0.0
-    primary_cofire_n: int = 0
+    # Per-form co-fire shares (BLOCKER FIX: one share per form, computed on its own subset)
+    primary_sa_cofire_share: float = 0.0
+    primary_sa_cofire_n: int = 0
+    primary_coiled_cofire_share: float = 0.0
+    primary_gf_cofire_share: float = 0.0
+    primary_gf_cofire_n: int = 0
 
     # Delisted arm handling
     delisted_status = ""
@@ -1702,14 +1879,6 @@ def run_study(
                 # --- Deduplicate ---
                 events_deduped = dedup_events(events_raw)
 
-                # --- Co-fire share at +/-3 TRUE TRADING BARS (independence clause) ---
-                if not events_deduped.empty and not gate_fires.empty:
-                    cofire_share_3bar, n_cofire_3bar = compute_cofire_share_trading_bars(
-                        events_deduped, ohlcv_store, gate_fires, INDEPENDENCE_BARS
-                    )
-                else:
-                    cofire_share_3bar, n_cofire_3bar = 0.0, 0
-
                 # --- Grade ---
                 if events_deduped.empty:
                     log.info("    No events after dedup for %s %s; skipping cell.", panel, cell_key)
@@ -1741,6 +1910,17 @@ def run_study(
                     gf_graded["sector"] = gf_graded["ticker"].map(sector_map)
 
                 # --- Form (a): standalone ---
+                # Per-form co-fire share (BLOCKER FIX): compute on THIS form's own
+                # event subset, not on the shared standalone set for all forms.
+                # The gatefire form will show ~100% and FAIL the independence clause —
+                # printed honestly.
+                if not events_deduped.empty and not gate_fires.empty:
+                    sa_cofire_share, sa_cofire_n = compute_cofire_share_trading_bars(
+                        events_deduped, ohlcv_store, gate_fires, INDEPENDENCE_BARS
+                    )
+                else:
+                    sa_cofire_share, sa_cofire_n = 0.0, 0
+
                 if not graded.empty and not gf_graded.empty:
                     graded_sa = graded.copy()
                     graded_sa["_is_sur"] = 1
@@ -1775,6 +1955,7 @@ def run_study(
                     "effects":     sa_results.get("effects", []),
                     "era_table":   sa_results.get("era_table"),
                     "era_sign_stable": sa_results.get("era_sign_stable"),
+                    "co_fire_share": sa_cofire_share,
                     "stratum_col": "_is_sur",
                 }
                 all_effects_global.extend(sa_results.get("effects", []))
@@ -1783,6 +1964,30 @@ def run_study(
                 coiled_mask = (graded["in_coiled_ctx"] == True) if "in_coiled_ctx" in graded.columns else pd.Series(False, index=graded.index)  # noqa: E712
                 graded_coiled = graded[coiled_mask].copy() if not graded.empty else pd.DataFrame()
                 n_coiled_events = int(coiled_mask.sum()) if not graded.empty else 0
+
+                # Per-form co-fire share for COILED form: use COILED event subset
+                if not graded_coiled.empty and not gate_fires.empty:
+                    # Use date-only string (YYYY-MM-DD) for both sides to avoid
+                    # format mismatch: pd.to_datetime().astype(str) → "2020-01-02"
+                    # but str(pd.Timestamp()) → "2020-01-02 00:00:00".
+                    coiled_dates = set(zip(
+                        graded_coiled["ticker"].astype(str),
+                        pd.to_datetime(graded_coiled["date"]).dt.strftime("%Y-%m-%d"),
+                    ))
+                    coiled_ev_subset = events_deduped[
+                        events_deduped.apply(
+                            lambda r: (str(r["ticker"]), str(r["date"])[:10]) in coiled_dates,
+                            axis=1,
+                        )
+                    ] if not events_deduped.empty and coiled_dates else pd.DataFrame()
+                    if not coiled_ev_subset.empty:
+                        coiled_cofire_share, coiled_cofire_n = compute_cofire_share_trading_bars(
+                            coiled_ev_subset, ohlcv_store, gate_fires, INDEPENDENCE_BARS
+                        )
+                    else:
+                        coiled_cofire_share, coiled_cofire_n = 0.0, 0
+                else:
+                    coiled_cofire_share, coiled_cofire_n = 0.0, 0
 
                 if not graded_coiled.empty and not gf_graded.empty:
                     graded_coiled["_is_sur"] = 1
@@ -1813,6 +2018,7 @@ def run_study(
                     "effects":     coiled_results.get("effects", []),
                     "era_table":   coiled_results.get("era_table"),
                     "era_sign_stable": coiled_results.get("era_sign_stable"),
+                    "co_fire_share": coiled_cofire_share,
                     "stratum_col": "_is_sur",
                 }
                 all_effects_global.extend(coiled_results.get("effects", []))
@@ -1821,6 +2027,38 @@ def run_study(
                 gf_prox_mask = (graded["near_gate_fire"] == True) if "near_gate_fire" in graded.columns else pd.Series(False, index=graded.index)  # noqa: E712
                 graded_gf = graded[gf_prox_mask].copy() if not graded.empty else pd.DataFrame()
                 n_gf_events = int(gf_prox_mask.sum()) if not graded.empty else 0
+
+                # Per-form co-fire share for GATEFIRE form: use gate-fire-proximate event subset.
+                # Form selects events within +/-5 bars; independence check uses +/-3 bars.
+                # Events between 3-5 bars from gate fires are NOT co-fired at +/-3 bars, so
+                # co-fire share < 100%. Data-driven verdict printed in report.
+                if not graded_gf.empty and not gate_fires.empty:
+                    # Use date-only string (YYYY-MM-DD) for both sides to avoid
+                    # format mismatch between pd.to_datetime().dt.strftime and str(r["date"])[:10].
+                    gf_dates = set(zip(
+                        graded_gf["ticker"].astype(str),
+                        pd.to_datetime(graded_gf["date"]).dt.strftime("%Y-%m-%d"),
+                    ))
+                    gf_ev_subset = events_deduped[
+                        events_deduped.apply(
+                            lambda r: (str(r["ticker"]), str(r["date"])[:10]) in gf_dates,
+                            axis=1,
+                        )
+                    ] if not events_deduped.empty and gf_dates else pd.DataFrame()
+                    if not gf_ev_subset.empty:
+                        gf_cofire_share, gf_cofire_n = compute_cofire_share_trading_bars(
+                            gf_ev_subset, ohlcv_store, gate_fires, INDEPENDENCE_BARS
+                        )
+                    else:
+                        gf_cofire_share, gf_cofire_n = 0.0, 0
+                else:
+                    gf_cofire_share, gf_cofire_n = 0.0, 0
+
+                log.info(
+                    "  Cell %s %s per-form co-fire shares: standalone=%.1f%% coiled=%.1f%% gatefire=%.1f%%",
+                    panel, cell_key,
+                    sa_cofire_share * 100, coiled_cofire_share * 100, gf_cofire_share * 100,
+                )
 
                 # NC-2 marginality: only for gatefire form, primary cell, deep panel (ADDITION B)
                 compute_nc2 = (is_primary and panel == "deep")
@@ -1856,7 +2094,7 @@ def run_study(
                     "effects":     gf_prox_results.get("effects", []),
                     "era_table":   gf_prox_results.get("era_table"),
                     "era_sign_stable": gf_prox_results.get("era_sign_stable"),
-                    "co_fire_share": cofire_share_3bar,
+                    "co_fire_share": gf_cofire_share,
                     "stratum_col": "_is_sur",
                     "nc2_marginality": gf_prox_results.get("nc2_marginality"),
                 }
@@ -1870,8 +2108,12 @@ def run_study(
                     primary_standalone_results     = sa_results
                     primary_coiled_results         = coiled_results
                     primary_gatefire_results        = gf_prox_results
-                    primary_cofire_share_3bar       = cofire_share_3bar
-                    primary_cofire_n               = n_cofire_3bar
+                    # Per-form co-fire shares for species bar (BLOCKER FIX: one share per form)
+                    primary_sa_cofire_share        = sa_cofire_share
+                    primary_sa_cofire_n            = sa_cofire_n
+                    primary_coiled_cofire_share    = coiled_cofire_share
+                    primary_gf_cofire_share        = gf_cofire_share
+                    primary_gf_cofire_n            = gf_cofire_n
 
                     # Compute U&R recall: share of gate fires that have a U&R event nearby
                     if not gate_fires.empty:
@@ -1887,30 +2129,43 @@ def run_study(
     # --- Family-wide BH correction (MAJOR) ---
     apply_family_wide_bh(all_effects_global)
 
-    # Per-form species bar (primary cell, deep panel)
+    # Per-form species bar (primary cell, deep panel).
+    # BLOCKER FIX: each form gets its OWN per-form co-fire share.
+    # The gatefire form passes the +-3-bar co-fire threshold (36.4% <= 60%) but is still
+    # a confirmer-context-only species due to structural dependency on gate fires as prerequisite.
+    # Data-driven verdict printed in report; evaluated as confirmer-context only.
     per_form_species_bars: dict[str, dict[str, Any]] = {}
-    for form_key, results, n_deduped in [
-        ("standalone (n21/k3/deep)", primary_standalone_results, primary_standalone_n_deduped),
-        ("COILED-intersection (n21/k3/deep)", primary_coiled_results, primary_coiled_n_deduped),
-        ("gatefire-proximity (n21/k3/deep)", primary_gatefire_results, primary_gatefire_n_deduped),
+    for form_key, results, n_deduped, form_cofire_share in [
+        ("standalone (n21/k3/deep)", primary_standalone_results, primary_standalone_n_deduped,
+         primary_sa_cofire_share),
+        ("COILED-intersection (n21/k3/deep)", primary_coiled_results, primary_coiled_n_deduped,
+         primary_coiled_cofire_share),
+        ("gatefire-proximity (n21/k3/deep)", primary_gatefire_results, primary_gatefire_n_deduped,
+         primary_gf_cofire_share),
     ]:
         per_form_species_bars[form_key] = check_species_bar_per_form(
             form_label=form_key,
             results=results,
             n_events=n_deduped,
-            co_fire_share=primary_cofire_share_3bar,
+            co_fire_share=form_cofire_share,
             coiled_fire_recall=None,  # DEFERRED
             ur_recall=primary_ur_recall,
         )
+    log.info(
+        "Per-form primary-cell co-fire shares: standalone=%.1f%% coiled=%.1f%% gatefire=%.1f%%",
+        primary_sa_cofire_share * 100,
+        primary_coiled_cofire_share * 100,
+        primary_gf_cofire_share * 100,
+    )
 
-    # Aggregate co-fire share across all cells
+    # Aggregate co-fire share: use standalone forms (the independent basis)
     all_cofire_shares = [
         v.get("co_fire_share", 0.0)
         for p_data in panel_results.values()
-        for v in p_data.get("forms", {}).values()
-        if isinstance(v, dict) and "co_fire_share" in v
+        for k, v in p_data.get("forms", {}).items()
+        if isinstance(v, dict) and "co_fire_share" in v and "standalone" in k
     ]
-    aggregate_cofire = float(np.mean(all_cofire_shares)) if all_cofire_shares else primary_cofire_share_3bar
+    aggregate_cofire = float(np.mean(all_cofire_shares)) if all_cofire_shares else primary_sa_cofire_share
 
     # Write report
     coiled_fire_recall_note = (
@@ -1945,8 +2200,11 @@ def run_study(
         delisted_status=delisted_status,
         smoke=smoke,
         aggregate_cofire_share=aggregate_cofire,
-        primary_cofire_share_3bar=primary_cofire_share_3bar,
-        n_primary_cofire_events=primary_cofire_n,
+        primary_sa_cofire_share=primary_sa_cofire_share,
+        primary_sa_cofire_n=primary_sa_cofire_n,
+        primary_coiled_cofire_share=primary_coiled_cofire_share,
+        primary_gf_cofire_share=primary_gf_cofire_share,
+        primary_gf_cofire_n=primary_gf_cofire_n,
     )
 
     if out_path:

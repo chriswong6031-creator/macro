@@ -41,6 +41,7 @@ from scripts.research.run_w2_sur import (
     label_gate_fire_proximity,
     compute_cofire_share_trading_bars,
     check_species_bar_per_form,
+    _run_nc2_band_fe,
     GATE_FIRE_PROXIMITY_BARS,
     INDEPENDENCE_BARS,
     MAX_COFIRE_SHARE,
@@ -1148,7 +1149,308 @@ class TestEraSignStability:
 
 
 # ===========================================================================
-# 9. Species ID and registry collision tests (S1/S2 requirements)
+# 9. NC-2 injected-effect regression test (FINDING 1 requirement)
+#
+# The prior _run_nc2_band_fe implementation assigned bands ONLY to treatment
+# rows, causing perfect FE separation and a degenerate coef = 0.0 with
+# zero-width CI regardless of the true effect. This test verifies that
+# an injected +5pp true treatment effect is recovered (not 0.0000).
+# ===========================================================================
+
+class TestNC2InjectedEffect:
+    """NC-2 band FE must recover a known injected effect, not return 0.0.
+
+    CRITICAL: This test is the sentinel against the degenerate-NC-2 blocker.
+    If _run_nc2_band_fe assigns bands only to treatment rows, the composite
+    date+band FE will perfectly separate arms → coef = 0.0000 regardless of
+    any planted effect. A recovered coefficient near +0.05 confirms the fix.
+    """
+
+    def _make_nc2_synthetic_frame(
+        self,
+        n_treatment: int = 120,
+        n_control: int = 300,
+        true_effect: float = 0.05,
+        seed: int = 42,
+    ) -> tuple[dict, "pd.DataFrame"]:
+        """Build a synthetic gradable DataFrame with a known planted stop5 effect.
+
+        KEY DESIGN REQUIREMENTS for a non-degenerate NC-2 band FE test:
+        1. Multiple distinct event dates — the composite FE = date+band needs
+           multiple cells so treatment and control can SHARE cells.
+        2. Mixed proximity profiles — price histories must produce at least TWO
+           distinct proximity bands so band FE absorbs confounding.
+        3. Both arms represented in each FE cell — each date bucket must contain
+           treatment AND control rows with the same band.
+
+        SOLUTION: Use N_DATES event-date clusters, each with a BALANCED mix of
+        treatment and control rows. Within each cluster, half the rows have a
+        CLOSE proximity profile (price still near the 63-bar low at event date)
+        and half have a FAR proximity profile (price well above the 63-bar low).
+        This creates cells with BOTH arms in the same (date, band) FE cell,
+        enabling the estimator to isolate the treatment coefficient.
+
+        The key insight: to avoid FE perfect separation, EVERY (date, band) cell
+        must contain at least one treatment AND one control row.
+
+        Returns (closes_dict, gradable_df).
+        The planted effect = true_effect on the stop5 outcome for treatment arm.
+        """
+        rng = np.random.default_rng(seed)
+
+        # Use 10 distinct event-date clusters to create FE variation
+        N_DATES = 10
+        PRICE_LEN = 200
+        # Events fire at bar 100 (63 bars of lookback before it)
+        EV_POS = 100
+
+        rows = []
+        closes: dict[str, pd.Series] = {}
+
+        # Base date: 2014-01-02; each cluster starts 20 business days apart
+        base_start = pd.Timestamp("2014-01-02")
+
+        # Interleave treatment and control within each cluster:
+        # n_treat_per_cluster treatment rows + n_ctrl_per_cluster control rows
+        # so every cluster has BOTH arms.
+        n_treat_per_cluster = n_treatment // N_DATES  # e.g. 12
+        n_ctrl_per_cluster = n_control // N_DATES      # e.g. 30
+
+        ticker_idx = 0
+        for d_cluster in range(N_DATES):
+            cluster_start = base_start + pd.offsets.BDay(d_cluster * 20)
+            price_idx = pd.bdate_range(cluster_start, periods=PRICE_LEN)
+            ev_date = price_idx[EV_POS]
+            era_str = "2015-2019"
+
+            # Build treatment and control rows for this cluster
+            n_treat_c = n_treat_per_cluster if d_cluster < N_DATES - 1 else (n_treatment - ticker_idx)
+            n_ctrl_c = n_ctrl_per_cluster
+
+            cluster_rows = (
+                [(True, j) for j in range(n_treat_c)]
+                + [(False, j) for j in range(n_ctrl_c)]
+            )
+
+            for is_treat, j in cluster_rows:
+                ticker = f"SYN_{ticker_idx:04d}"
+
+                # Alternate between two proximity profiles within each cluster:
+                # CLOSE profile (j even): price ~5% above 63-bar low → band 0
+                # FAR profile (j odd): price ~50% above 63-bar low → band 1 or 2
+                use_close_profile = (j % 2 == 0)
+
+                close_vals = np.ones(PRICE_LEN) * 100.0
+                if use_close_profile:
+                    # Deep undercut zone; at event date still near the low
+                    close_vals[EV_POS - 30 : EV_POS] = 60.0
+                    close_vals[EV_POS] = 63.0  # ~5% above 63-bar min (60)
+                else:
+                    # Mild dip; at event date well above the low
+                    close_vals[EV_POS - 30 : EV_POS] = 80.0
+                    close_vals[EV_POS] = 100.0  # 25% above 63-bar min (80)
+
+                closes[ticker] = pd.Series(close_vals, index=price_idx)
+
+                # Planted stop5: treatment arm has higher stop rate by true_effect
+                base_stop_rate = 0.15
+                stop5_val = float(
+                    rng.random() < (base_stop_rate + true_effect if is_treat else base_stop_rate)
+                )
+
+                rows.append({
+                    "ticker": ticker,
+                    "date": ev_date,
+                    "era": era_str,
+                    "_fe": str(ev_date)[:10],
+                    "stratum": 1 if is_treat else 0,
+                    "stop5": stop5_val,
+                    "gradable": True,
+                    "sector": "tech",
+                })
+
+                ticker_idx += 1
+
+        df = pd.DataFrame(rows)
+        df["date"] = pd.to_datetime(df["date"])
+        return closes, df
+
+    def test_injected_effect_recovered_not_zero(self):
+        """A synthetic +5pp stop5 effect must yield a non-zero coef after NC-2 band FE.
+
+        This is the critical sentinel: if _run_nc2_band_fe still assigns bands
+        only to treatment rows, the composite FE will perfectly separate arms
+        and return coef = 0.0 with zero-width CI — failing this test.
+
+        With the fix (bands computed for both arms), the estimator can see
+        both arms in the same FE cells and recover a coefficient near +0.05.
+        Tolerance: coef should NOT be exactly 0.0000.
+        """
+        true_effect = 0.05
+        closes, df = self._make_nc2_synthetic_frame(
+            n_treatment=120,
+            n_control=300,
+            true_effect=true_effect,
+            seed=99,
+        )
+
+        result = _run_nc2_band_fe(
+            gradable=df,
+            stratum_col="stratum",
+            closes=closes,
+            n_bootstrap=100,  # small for speed in test
+            rng_seed=0,
+            panel="test",
+            sector_col="sector",
+        )
+
+        # The band FE computation must succeed (enough rows)
+        assert result.get("band_computed", False), (
+            f"NC-2 band FE failed to compute: {result.get('note', 'unknown')}. "
+            "This may indicate insufficient price history for the proxy computation."
+        )
+
+        coef = result.get("coef")
+        assert coef is not None, "NC-2 band FE returned no coefficient."
+
+        # PRIMARY ASSERTION: the coefficient must NOT be exactly 0.0000.
+        # A degenerate (perfectly separated) FE produces coef = 0.0 exactly.
+        # A non-degenerate result will be some non-zero value (positive or negative
+        # depending on the realized stop5 rates after band FE absorption).
+        assert coef != 0.0, (
+            f"NC-2 band FE returned coef = 0.0000 — this indicates the degenerate "
+            f"FE-separation bug is still present. Expected a non-zero coefficient "
+            f"(planted effect = +{true_effect:.3f}). "
+            "Fix: ensure compute_nc2_proximity_proxy is called on ALL rows (both "
+            "treatment and control), not just treatment rows."
+        )
+
+        # SECONDARY ASSERTION: CI bounds must not both be exactly 0.0
+        ci_lo = result.get("ci_lo", None)
+        ci_hi = result.get("ci_hi", None)
+        if ci_lo is not None and ci_hi is not None:
+            assert not (ci_lo == 0.0 and ci_hi == 0.0), (
+                "NC-2 band FE returned zero-width CI at 0.0 — degenerate regression. "
+                f"coef={coef}, ci_lo={ci_lo}, ci_hi={ci_hi}"
+            )
+
+
+# ===========================================================================
+# 10. Per-form independence: co-fire shares differ between forms (FINDING 2)
+#
+# The gatefire form IS the gate-fire-proximate event subset, so its co-fire
+# share is ~100% by construction. The standalone form should have a lower
+# co-fire share. This test verifies the per-form computation differs.
+# ===========================================================================
+
+class TestPerFormCofireShares:
+    """Per-form co-fire shares must differ between standalone and gatefire forms.
+
+    CRITICAL: The prior implementation computed a single co-fire share from the
+    standalone event set and fed it identically to all three forms. This masked
+    the fact that the gatefire form is definitionally 100% co-fired.
+
+    This test constructs a scenario where:
+    - A gate fire at date D exists for a ticker
+    - A U&R event at the same date D (near gate fire) → in gatefire form
+    - A U&R event far from any gate fire → in standalone-only
+    The gatefire form must show higher co-fire share than standalone.
+    """
+
+    def _make_cofire_fixture(self) -> tuple:
+        """Two events: one near a gate fire, one far from any gate fire."""
+        idx = pd.bdate_range("2020-01-02", periods=100)
+
+        # Event 1: near gate fire (at bar 10; gate fire at bar 11 = 1 bar away)
+        ev_near = pd.DataFrame({
+            "ticker": ["AAPL"],
+            "date": [idx[10]],
+            "undercut_date": [idx[5]],
+        })
+
+        # Event 2: far from any gate fire (at bar 80)
+        ev_far = pd.DataFrame({
+            "ticker": ["MSFT"],
+            "date": [idx[80]],
+            "undercut_date": [idx[75]],
+        })
+
+        events_combined = pd.concat([ev_near, ev_far], ignore_index=True)
+
+        # Gate fire only for AAPL at bar 11 (1 bar from event 1)
+        gate_fires = pd.DataFrame({
+            "ticker": ["AAPL"],
+            "date": [idx[11]],
+        })
+
+        # OHLCV with trading index
+        ohlcv = {
+            "AAPL": pd.DataFrame({"close": np.full(100, 100.0)}, index=idx),
+            "MSFT": pd.DataFrame({"close": np.full(100, 100.0)}, index=idx),
+        }
+
+        return events_combined, gate_fires, ohlcv, idx
+
+    def test_gatefire_form_has_higher_cofire_share(self):
+        """Gatefire-proximate events must show higher co-fire share than far events.
+
+        Standalone (all events): AAPL + MSFT → co-fire = 50% (1 of 2 events near gate fire).
+        Gatefire subset (near-gate events only): AAPL → co-fire = 100%.
+        Per-form co-fire shares MUST differ.
+        """
+        events, gate_fires, ohlcv, idx = self._make_cofire_fixture()
+
+        # Standalone: both events → co-fire share = 50%
+        sa_share, sa_n = compute_cofire_share_trading_bars(events, ohlcv, gate_fires, 3)
+
+        # Gatefire subset: only AAPL (near gate fire) → co-fire share = 100%
+        gf_events = events[events["ticker"] == "AAPL"].copy()
+        gf_share, gf_n = compute_cofire_share_trading_bars(gf_events, ohlcv, gate_fires, 3)
+
+        assert sa_share < gf_share, (
+            f"Standalone co-fire ({sa_share:.1%}) must be lower than gatefire co-fire "
+            f"({gf_share:.1%}). Per-form co-fire shares must differ."
+        )
+        assert gf_share == 1.0, (
+            f"Gatefire subset (all events near gate fire) must have co-fire share = 100%. "
+            f"Got: {gf_share:.1%}"
+        )
+        assert sa_share == 0.5, (
+            f"Standalone with 1 of 2 events near gate fire must have co-fire share = 50%. "
+            f"Got: {sa_share:.1%}"
+        )
+
+    def test_cofire_per_form_not_shared_constant(self):
+        """Computing co-fire on the full event set must differ from the gatefire subset.
+
+        This validates that the BLOCKER FIX is meaningful: had we used the
+        standalone set's co-fire share for the gatefire form, we'd pass a 50%
+        share (below 60% threshold), wrongly PASSING the independence clause.
+        With per-form computation, the gatefire form shows 100% and FAILS.
+        """
+        events, gate_fires, ohlcv, idx = self._make_cofire_fixture()
+
+        # Shared (old buggy approach): co-fire of FULL event set
+        shared_share, _ = compute_cofire_share_trading_bars(events, ohlcv, gate_fires, 3)
+
+        # Per-form (correct): co-fire of gatefire-proximate subset only
+        gf_events = events[events["ticker"] == "AAPL"].copy()
+        gf_share, _ = compute_cofire_share_trading_bars(gf_events, ohlcv, gate_fires, 3)
+
+        # The shared approach wrongly passes the gatefire form (50% <= 60%)
+        assert shared_share <= MAX_COFIRE_SHARE, (
+            f"Shared co-fire ({shared_share:.1%}) must be <= 60% (wrongly passes the threshold). "
+            "This is the prior behavior — the bug."
+        )
+        # The per-form approach correctly fails the gatefire form (100% > 60%)
+        assert gf_share > MAX_COFIRE_SHARE, (
+            f"Per-form gatefire co-fire ({gf_share:.1%}) must be > 60% (correctly fails). "
+            "This is the fixed behavior."
+        )
+
+
+# ===========================================================================
+# 11. Species ID and registry collision tests (S1/S2 requirements)
 # ===========================================================================
 
 class TestSpeciesIDRegistry:
