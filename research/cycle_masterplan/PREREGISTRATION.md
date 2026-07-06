@@ -397,3 +397,21 @@ All series sampled at the last available observation ≤ t (weekly/daily publica
 pre-p-value. No other features, transformations, lags, or horizons may be evaluated under this
 registration. Outcome handling as §12: fail → `promoted_null` scoped to this block; pass → adoption
 is a separate follow-on wave; no page/UI change this wave regardless.
+
+### FT-2 results (2026-07-06 — criteria above UNCHANGED; two-commit discipline observed)
+
+| id | result | date |
+|---|---|---|
+| **FT2-up-{1m,3m,6m}** | **FAIL (harmful)** — ΔBrier −0.0118 / −0.0113 / −0.0098, ALL CI₉₀ entirely below 0; years+ 4/14 each. The block significantly degrades every peak-hazard cell. | 2026-07-06 |
+| **FT2-dn-1m** | **FAIL (harmful)** — ΔBrier −0.0043, CI₉₀ [−0.0074, −0.0013]. | 2026-07-06 |
+| **FT2-dn-{3m,6m}** | **FAIL** — ΔBrier −0.0020 / −0.0003, CIs straddle 0. | 2026-07-06 |
+
+**Verdict: 0 of 6 pass; 4 of 6 significantly harmful.** Truth CPI-018 (`promoted_null`, block-scoped)
+appended. **Program-level synthesis after 2 batches (18 cells, 0 passes, 5 harmful):** additive
+feature blocks on the pooled hazard logistic reliably reduce OOS skill under this harness — the
+shipped model's parsimony is load-bearing (events-per-variable + regime nonstationarity). Steer
+(recorded here as adjudication, NOT a criteria change): no further additive-feature FT registrations
+on the pooled hazard until a structurally different result motivates one; the docket advances to the
+lattice (no model fitting), TR-1 (new target), IX-1 (new unit of analysis), and the regime-v2 PIT
+spine. Artifacts: `data/cycle_pattern/ft_trials/ft2_credit.json`; budget `rf.cycle_pattern.ft_v1`
+n=6 declared pre-p-value. Full adjudication: `research/cycle_masterplan/CPI_FT2_VERDICT.md`.
