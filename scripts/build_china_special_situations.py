@@ -35,7 +35,9 @@ def build() -> dict | None:
     if os.environ.get("CN_LANE", "") == "asia":
         for mod_name, fn_name in (
             ("collectors.china_unlocks",     "refresh"),
-            ("collectors.china_inquiry",     "refresh"),
+            # china_inquiry retired (W4): inquiry letters now read from
+            # collectors/china_filings.py → data/china_filings/filings.parquet
+            # (category=='inquiry_letter'). china_inquiry.py is kept for history.
             ("collectors.china_preannounce", "refresh"),
             ("collectors.china_st",          "refresh"),
         ):

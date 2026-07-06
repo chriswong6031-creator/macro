@@ -265,62 +265,153 @@ def _unlock_block() -> dict | None:
 def _inquiry_block() -> dict | None:
     """Last-14d exchange-issued letters (kind=letter), newest first + reply status.
 
+    Source: data/china_filings/filings.parquet (category=='inquiry_letter').
+    The `kind` column distinguishes letter/reply/attachment within this family
+    (same semantics as the legacy china_inquiry collector).
+
     Returns a list of letter dicts WITHOUT a 'kind' key — the list is
     already letters-only by construction (kind='letter' filtered here).
+
+    Claim-key contract (register_claims): event_key = f"inq_{secCode}_{date[:10]}".
+    The output dict exposes `secCode` and `date` (YYYY-MM-DD) so that contract
+    is preserved identically across the source switch.
+
+    Fallback: when filings.parquet is absent but the legacy china_inquiry/inquiry.parquet
+    still exists, reads from the legacy store. Logs a debug note.
     """
-    path = _data_dir() / "china_inquiry" / "inquiry.parquet"
-    asof, status = _asof_status(path)
+    filings_path = _data_dir() / "china_filings" / "filings.parquet"
+    legacy_path  = _data_dir() / "china_inquiry"  / "inquiry.parquet"
+
+    # Prefer filings.parquet; fall back to legacy on missing filings
+    if filings_path.exists():
+        path = filings_path
+        source = "filings"
+    else:
+        path = legacy_path
+        source = "legacy"
+        log.debug("china_special_sits: filings.parquet absent; falling back to legacy inquiry.parquet")
+
+    # --- asof derivation ---
+    # filings.parquet has no 'asof' column; derive from publish_ts or _collected_at.
+    # legacy inquiry.parquet has an 'asof' column — _asof_status() handles it directly.
+    if not path.exists():
+        return {"asof": None, "status": "missing", "letters": [], "n_letters": 0, "n_replies": 0}
+
+    if source == "filings":
+        try:
+            _peek = pd.read_parquet(path, columns=["_collected_at"])
+            _asof_raw = str(_peek["_collected_at"].max())[:10]
+            today = date.today().isoformat()
+            _age = (date.fromisoformat(today) - date.fromisoformat(_asof_raw)).days
+            asof = _asof_raw
+            status = "ok" if _age <= 2 else "stale"
+        except Exception:  # noqa: BLE001
+            asof, status = None, "missing"
+    else:
+        asof, status = _asof_status(path)
+
     try:
-        if not path.exists():
-            return {"asof": None, "status": "missing", "letters": [], "n_letters": 0, "n_replies": 0}
-        df = pd.read_parquet(path)
-        if df.empty:
-            return {"asof": asof, "status": status, "letters": [], "n_letters": 0, "n_replies": 0}
+        if source == "filings":
+            df_raw = pd.read_parquet(path)
+            # Narrow to inquiry_letter family only
+            if "category" in df_raw.columns:
+                df_raw = df_raw[df_raw["category"] == "inquiry_letter"].copy()
+            else:
+                df_raw = df_raw.copy()
 
-        # Filter to last 14 days
-        cutoff = (date.today() - timedelta(days=14)).isoformat()
-        if "announcementTime" in df.columns:
-            df_filt = df[df["announcementTime"].fillna("") >= cutoff].copy()
-        else:
-            df_filt = df.copy()
+            if df_raw.empty:
+                return {"asof": asof, "status": status, "letters": [], "n_letters": 0, "n_replies": 0}
 
-        # Build reply lookup: secCode → True if there's a reply in the window
-        replies = set(df_filt[df_filt["kind"] == "reply"]["secCode"].dropna().tolist())
+            # Normalise: translate filings column names → legacy field names
+            # publish_ts (ISO8601 string with tz) → date string YYYY-MM-DD
+            df_raw["_date_str"] = df_raw["publish_ts"].fillna("").apply(
+                lambda v: str(v)[:10] if v else ""
+            )
+            # cutoff: last 14 days
+            cutoff = (date.today() - timedelta(days=14)).isoformat()
+            df_filt = df_raw[df_raw["_date_str"].fillna("") >= cutoff].copy()
 
-        # Exclude attachments (kind='attachment') and replies — letters only
-        letters = df_filt[df_filt["kind"] == "letter"].sort_values(
-            "announcementTime", ascending=False, na_position="last"
-        )
+            # Build reply lookup: sec_code → True if there's a reply in the window
+            replies = set(df_filt[df_filt["kind"] == "reply"]["sec_code"].dropna().tolist())
 
-        rows = []
-        for _, r in letters.head(_MAX_ROWS).iterrows():
-            letter_date = str(r.get("announcementTime") or "")
-            letter: dict = {
-                "secCode":    str(r.get("secCode") or ""),
-                "secName":    str(r.get("secName") or ""),
-                "title":      str(r.get("announcementTitle") or ""),
-                "date":       letter_date,
-                "pdf_url":    str(r.get("adjunctUrl") or ""),
-                "has_reply":  str(r.get("secCode") or "") in replies,
-                "type_name":  str(r.get("announcementTypeName") or ""),
-                # Note: no 'kind' key — list is letters-only; register_claims must not filter on kind
+            # Letters only
+            letters = df_filt[df_filt["kind"] == "letter"].sort_values(
+                "_date_str", ascending=False, na_position="last"
+            )
+
+            rows = []
+            for _, r in letters.head(_MAX_ROWS).iterrows():
+                letter_date = str(r.get("_date_str") or "")
+                # secCode for claim-key: filings uses sec_code
+                sec_code_val = str(r.get("sec_code") or "")
+                letter: dict = {
+                    "secCode":   sec_code_val,
+                    "secName":   str(r.get("sec_name") or ""),
+                    "title":     str(r.get("title") or ""),
+                    "date":      letter_date,
+                    "pdf_url":   str(r.get("adjunct_url") or ""),
+                    "has_reply": sec_code_val in replies,
+                    "type_name": str(r.get("announcement_type_raw") or ""),
+                    # Note: no 'kind' key — list is letters-only; register_claims must not filter on kind
+                }
+                if letter_date:
+                    chip = _regime_chip_for_date(letter_date[:10])
+                    if chip:
+                        letter["regime_chip"] = chip
+                rows.append(letter)
+
+            n_replies = int(len(df_filt[df_filt["kind"] == "reply"]))
+            return {
+                "asof": asof, "status": status,
+                "letters": rows,
+                "n_letters": int(len(letters)),
+                "n_replies": n_replies,
             }
-            # Cycle-context chip (W5): stamp regime quad/liquidity/cycle at letter date.
-            # Muted/descriptive only — no directional language.
-            if letter_date:
-                chip = _regime_chip_for_date(letter_date[:10])
-                if chip:
-                    letter["regime_chip"] = chip
-            rows.append(letter)
 
-        return {
-            "asof": asof, "status": status,
-            "letters": rows,
-            "n_letters": len(letters),
-            "n_replies": len(df_filt[df_filt["kind"] == "reply"]),
-        }
+        else:
+            # Legacy path (inquiry.parquet)
+            df = pd.read_parquet(path)
+            if df.empty:
+                return {"asof": asof, "status": status, "letters": [], "n_letters": 0, "n_replies": 0}
+
+            cutoff = (date.today() - timedelta(days=14)).isoformat()
+            if "announcementTime" in df.columns:
+                df_filt = df[df["announcementTime"].fillna("") >= cutoff].copy()
+            else:
+                df_filt = df.copy()
+
+            replies = set(df_filt[df_filt["kind"] == "reply"]["secCode"].dropna().tolist())
+            letters = df_filt[df_filt["kind"] == "letter"].sort_values(
+                "announcementTime", ascending=False, na_position="last"
+            )
+
+            rows = []
+            for _, r in letters.head(_MAX_ROWS).iterrows():
+                letter_date = str(r.get("announcementTime") or "")
+                letter: dict = {
+                    "secCode":   str(r.get("secCode") or ""),
+                    "secName":   str(r.get("secName") or ""),
+                    "title":     str(r.get("announcementTitle") or ""),
+                    "date":      letter_date,
+                    "pdf_url":   str(r.get("adjunctUrl") or ""),
+                    "has_reply": str(r.get("secCode") or "") in replies,
+                    "type_name": str(r.get("announcementTypeName") or ""),
+                    # Note: no 'kind' key — list is letters-only
+                }
+                if letter_date:
+                    chip = _regime_chip_for_date(letter_date[:10])
+                    if chip:
+                        letter["regime_chip"] = chip
+                rows.append(letter)
+
+            return {
+                "asof": asof, "status": status,
+                "letters": rows,
+                "n_letters": len(letters),
+                "n_replies": len(df_filt[df_filt["kind"] == "reply"]),
+            }
     except Exception as e:  # noqa: BLE001
-        log.warning("china_special_sits: inquiry block failed (%s)", e)
+        log.warning("china_special_sits: inquiry block failed (source=%s, %s)", source, e)
         return None
 
 

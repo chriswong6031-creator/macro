@@ -1,5 +1,15 @@
 """Exchange inquiry-letter collector for A-share names (CNInfo public endpoint).
 
+DEPRECATED (W4, 2026-07-06):
+    Inquiry letter data is now sourced from collectors/china_filings.py
+    (data/china_filings/filings.parquet, category='inquiry_letter').
+    This file and data/china_inquiry/ are kept for historical reference only.
+    The engine (engine/china_special_situations._inquiry_block) reads filings.parquet
+    and falls back to this store only when filings.parquet is absent.
+    Do NOT add this collector to scripts/collect.py all_adapters() going forward.
+
+
+
 Exchange inquiry letters (问询函/关注函) are regulatory enquiries from SZSE/SSE asking
 companies to explain material disclosures, unusual financial moves, or news-price
 divergences. Both the original letters and company replies are significant events:
