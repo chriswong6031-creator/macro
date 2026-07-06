@@ -313,6 +313,23 @@ lanes:
   - workflow: .github/workflows/daily.yml
     job: cortex
     steps:
+      - id: register_factor_hypotheses
+        module: scripts.register_factor_hypotheses
+        note: >
+          Factor Intelligence P2 — registers operator hypotheses H1-H5 in the
+          machine registry IN THE CORTEX JOB's tree (persistence fix: the
+          factor_ops.yml dispatch actions wrote to another workflow's checkout
+          and were wiped by the next fresh checkout before any commit step
+          could see them; the W27 h1-h3 and W28 h4-h5 dispatch registrations
+          were both lost this way). Idempotent by hypothesis text; batch-atomic
+          weekly-budget pre-flight (3/ISO-week shared with cortex) with
+          --defer-on-budget nightly retry. Runs BEFORE cortex_deliberation so
+          operator batches claim budget ahead of cortex-proposed hypotheses.
+          Non-fatal (always exits 0 in the workflow step).
+          inputs: [data/neuralweb/machine_registry.jsonl]
+          outputs: [data/neuralweb/machine_registry.jsonl,
+                    data/neuralweb/governance.jsonl,
+                    data/trial_ledger.jsonl]
       - id: cortex_deliberation
         module: engine.neuralweb.cortex
         note: >
