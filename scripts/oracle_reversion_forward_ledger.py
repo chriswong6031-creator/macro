@@ -5,12 +5,21 @@ on the latest panel date and appends new fires to per-compound JSONL ledgers
 at ``data/oracle/reversion_forward/<compound_id>.jsonl``.
 
 On each run the grading pass fills ``ret_exit``, ``mfe``, ``mae`` and sets
-``matured=true`` for rows whose ``exit_date <= latest panel date``.  Rows whose
+``matured=true`` for rows whose full grading horizon has closed — i.e. the
+MFE/MAE window ``exec_date + max(window, exit_sessions)`` sessions is <= the
+latest panel date.  With ``window=25 > exit_sessions=21`` the 25-session window
+is the binding constraint (``exit_date <= latest`` alone is NOT sufficient;
+grading reuses ``_per_entry_rows``, which needs the full window).  Rows whose
 horizon has not yet closed carry nulls and ``matured=false``.
 
 PIT law (frozen in ORACLE_REVERSION_PROMOTION_PREREG.md)
 ---------------------------------------------------------
-- A row is graded only once ``exit_date <= today`` (latest panel date).
+- A row is graded no earlier than ``exit_date <= today`` (the frozen prereg
+  upper bound).  Because grading reuses ``_per_entry_rows`` VERBATIM — which
+  needs the full MFE/MAE window — the row actually grades once
+  ``exec_date + max(window, exit_sessions) <= today``: the 25-session window,
+  not the 21-session exit, is the binding constraint.  This is >= the prereg
+  bound, so it stays PIT-safe (never grades before exit_date closes).
 - ``exec_date`` = next panel session after ``fire_date``.
 - ``exit_date`` = ``exec_date + 21 sessions`` (``exit_sessions`` from the
   reversion block; default 21 per the prereg).
@@ -273,8 +282,11 @@ def _grade_rows(
     panel: pd.DataFrame,
     latest_date: pd.Timestamp,
 ) -> list[dict]:
-    """Grade unmatured rows whose exit_date <= latest_date.
+    """Grade unmatured rows whose full grading horizon has closed.
 
+    A row is graded once BOTH its ``exit_date`` (exec + exit_sessions) and its
+    MFE/MAE window (exec + max(window, exit_sessions)) are <= ``latest_date``.
+    The window (25) dominates the exit (21), so it is the binding constraint.
     Uses _per_entry_rows from oracle_reversion_screen VERBATIM so live grading
     equals backtest grading (PIT law from PREREG.md).
     """
@@ -289,34 +301,50 @@ def _grade_rows(
 
     panel_aug = augment_panel_with_derived(panel.copy())
     all_panel_dates = panel_aug.index.get_level_values("date").unique().sort_values()
+    n_dates = len(all_panel_dates)
+
+    # Grading reuses _per_entry_rows VERBATIM, which computes MFE/MAE over
+    # ``window`` sessions and only returns a row once exec_pos + window fits the
+    # panel.  Because window (25) > exit_sessions (21), a row whose exit_date has
+    # closed is NOT yet gradable until its MFE/MAE window closes too — otherwise
+    # _per_entry_rows silently drops it and ``matured`` lags by (window - exit)
+    # sessions.  Gate on the binding horizon so live grading == backtest grading.
+    grade_span = max(window, exit_sessions)
 
     # Separate mature-candidates from already-graded
     to_grade: list[int] = []
     for i, row in enumerate(rows):
         if row.get("matured") is True:
             continue
-        exit_date_str = row.get("exit_date")
-        if exit_date_str is None:
-            # exec_date or exit_date not yet known — try to fill them now
-            fire_date = pd.Timestamp(row["fire_date"])
-            future = all_panel_dates[all_panel_dates > fire_date]
-            if len(future) == 0:
-                continue
-            exec_date = future[0]
-            exec_pos = all_panel_dates.searchsorted(exec_date, side="left")
-            exit_pos = exec_pos + exit_sessions
-            if exit_pos >= len(all_panel_dates):
-                continue
-            exit_date = all_panel_dates[exit_pos]
-            # Update row
-            rows[i]["exec_date"] = exec_date.isoformat()
-            rows[i]["exit_date"] = exit_date.isoformat()
-            exit_date_str = exit_date.isoformat()
 
-        exit_ts = pd.Timestamp(exit_date_str)
-        if exit_ts > latest_date:
-            # PIT law: not yet mature
+        # exec_pos is derived from fire_date exactly as _per_entry_rows does, so
+        # the window-fit check below predicts whether it will return a row.
+        fire_date = pd.Timestamp(row["fire_date"])
+        future = all_panel_dates[all_panel_dates > fire_date]
+        if len(future) == 0:
+            continue  # exec (next session after fire) not reached yet
+        exec_date = future[0]
+        exec_pos = all_panel_dates.searchsorted(exec_date, side="left")
+
+        exit_pos = exec_pos + exit_sessions
+        if exit_pos >= n_dates:
+            continue  # time-exit session not reached
+
+        # Fill exec_date/exit_date on first sight (rows are appended with None).
+        if row.get("exit_date") is None:
+            rows[i]["exec_date"] = exec_date.isoformat()
+            rows[i]["exit_date"] = all_panel_dates[exit_pos].isoformat()
+        exit_date_str = rows[i]["exit_date"]
+
+        # Guard 1 — PIT upper bound (frozen prereg): stored exit_date must close.
+        if pd.Timestamp(exit_date_str) > latest_date:
             continue
+
+        # Guard 2 — binding horizon: the MFE/MAE window must have closed too,
+        # else _per_entry_rows drops the entry and matured would silently lag.
+        if exec_pos + grade_span >= n_dates:
+            continue
+
         to_grade.append(i)
 
     if not to_grade:

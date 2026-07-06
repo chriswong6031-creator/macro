@@ -728,6 +728,101 @@ def test_pit_matured_grading_value_matches_per_entry_rows():
 
 
 # ---------------------------------------------------------------------------
+# Test N — maturity gate matches _per_entry_rows' window: a fire whose exit_date
+#          (exec+21) has closed but whose MFE/MAE window (exec+25) has NOT must
+#          neither be sent to _per_entry_rows nor marked matured.
+#
+# Discriminating: fails on the pre-fix gate (which queued the row on exit_date
+# alone, then _per_entry_rows silently dropped it, leaving matured lagging by
+# window-exit=4 sessions). A window-closed positive control proves the gate
+# still grades what it should.
+# ---------------------------------------------------------------------------
+
+def test_grade_gate_requires_mfe_mae_window_not_just_exit(monkeypatch):
+    """Gate on exec_pos + max(window, exit_sessions), not exit_date alone.
+
+    Seeds two node_A fires into a single _grade_rows call on a 60-session panel:
+
+      * DOOMED row  — fire@idx37 → exec@idx38 → exit(exec+21)=idx59==latest
+        (exit_date has closed) but window(exec+25)=idx63 > 59 (NOT closed).
+        _per_entry_rows would drop it, so the gate must NOT send it and it must
+        stay matured=False.
+      * READY row   — fire@idx10 → exec@idx11, window(exec+25)=idx36 <= 59.
+        Positive control: must be sent and graded (matured=True).
+
+    A spy on _per_entry_rows records which fire_dates reach it.  The pre-fix gate
+    sends BOTH fires (exit_date<=latest for both) → assertion on the doomed fire
+    fails.  The fixed gate sends only the READY fire.
+    """
+    from scripts import oracle_reversion_screen as screen_mod
+    from scripts.oracle_reversion_forward_ledger import _grade_rows
+    from engine.oracle.compounds import augment_panel_with_derived
+
+    real_per_entry_rows = screen_mod._per_entry_rows
+    seen_triggers: list[pd.Timestamp] = []
+
+    def _spy(entry_dates, panel, window, exit_sessions, exit_mode="time"):
+        for _node, dts in entry_dates.items():
+            seen_triggers.extend(pd.Timestamp(d) for d in dts)
+        return real_per_entry_rows(entry_dates, panel, window, exit_sessions, exit_mode)
+
+    monkeypatch.setattr(screen_mod, "_per_entry_rows", _spy)
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp = Path(tmp_str)
+        panel = _setup_data_dir(tmp, n_days=60, washout_last_day=False)
+        all_dates = panel.index.get_level_values("date").unique().sort_values()
+        latest_date = all_dates[-1]  # idx 59
+
+        # DOOMED: exit closes exactly at latest, window is 4 sessions short.
+        doomed_fire = all_dates[37]
+        assert all_dates[38 + 21] == latest_date        # exec+21 == latest (exit closed)
+        assert 38 + 25 >= len(all_dates)                # exec+25 not in panel (window open)
+        doomed_row = {
+            "compound_id": "TEST_WASHOUT", "node": "node_A", "tier": "s",
+            "fire_date": doomed_fire.isoformat()[:10],
+            "exec_date": all_dates[38].isoformat()[:10],
+            "exit_date": latest_date.isoformat()[:10],
+            "regime": "risk_on",
+            "ret_exit": None, "mfe": None, "mae": None, "matured": False,
+        }
+
+        # READY positive control: window fully inside the panel.
+        ready_fire = all_dates[10]
+        ready_row = {
+            "compound_id": "TEST_WASHOUT", "node": "node_A", "tier": "s",
+            "fire_date": ready_fire.isoformat()[:10],
+            "exec_date": all_dates[11].isoformat()[:10],
+            "exit_date": all_dates[32].isoformat()[:10],   # exec(11)+21
+            "regime": "risk_on",
+            "ret_exit": None, "mfe": None, "mae": None, "matured": False,
+        }
+
+        compound = _make_registry_compound()
+        panel_aug = augment_panel_with_derived(panel.copy())
+
+        graded = _grade_rows([doomed_row, ready_row], compound, panel_aug, latest_date)
+
+        by_fire = {r["fire_date"]: r for r in graded}
+        d = by_fire[doomed_fire.isoformat()[:10]]
+        r = by_fire[ready_fire.isoformat()[:10]]
+
+        # The doomed fire must never reach _per_entry_rows (its window is open).
+        assert doomed_fire not in seen_triggers, (
+            "Gate sent a fire to _per_entry_rows whose MFE/MAE window (exec+25) "
+            "has not closed; _per_entry_rows drops it and matured lags. The gate "
+            "must require exec_pos + max(window, exit_sessions) to fit (option a)."
+        )
+        assert d["matured"] is False, "Doomed row must stay matured=False (window open)"
+        assert d["ret_exit"] is None, "Doomed row ret_exit must remain None"
+
+        # Positive control: the window-closed fire IS graded.
+        assert ready_fire in seen_triggers, "Ready fire should reach _per_entry_rows"
+        assert r["matured"] is True, "Window-closed row must be graded (matured=True)"
+        assert isinstance(r["ret_exit"], float), "Graded row must have float ret_exit"
+
+
+# ---------------------------------------------------------------------------
 # Test M — PIT base_rate: differs from full-panel base_rate when panel has a
 #          regime break after the grading date.
 #
