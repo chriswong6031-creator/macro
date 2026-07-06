@@ -2907,6 +2907,16 @@
           {%- set _render_list.items = _render_list.items + [{'_heading': true, 'lane': _lk, 'count': _grp|length}] + _grp -%}
         {%- endif -%}
       {%- endfor -%}
+      {# 3. CATCH-ALL: cards whose lane is truthy but not in the canonical list (e.g. a future
+            lane value shipped by the engine before the template is updated). Rendered ungrouped
+            (no heading) at the end so no card is ever silently dropped. Guarantees that a new
+            engine-emitted lane value degrades gracefully to "visible but unlabelled" rather than
+            disappearing entirely. None-lane cards are already handled in step 1 above. #}
+      {%- for _n in _board -%}
+        {%- if _n.get('lane') and _n.get('lane') not in _lane_order -%}
+          {%- set _render_list.items = _render_list.items + [_n] -%}
+        {%- endif -%}
+      {%- endfor -%}
       {% for n in _render_list.items %}
         {# heading sentinel: emit featherweight lane sub-heading and skip card rendering #}
         {% if n.get('_heading') %}
@@ -3018,8 +3028,11 @@
             {% if c.score_edge is defined and c.score_edge is not none %}{% set _et = 'hi' if c.score_edge >= 80 else ('mid' if c.score_edge >= 55 else 'lo') %}<span class="nb-edge-pct edge-{{ _et }}" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k">{{ t('Edge', '优势') }}</span><span class="ep-v">{{ c.score_edge }}<span class="ep-u">%ile</span></span></span>{% endif %}
             <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
           </div>
+          {% endif %}{# end if c — edge/verdict line only; entry, caution, expander render regardless #}
           {# --- ENTRY line (at rest): status dot + headline + buy zone. Per spec §4.
-             Alignment row demoted to expander; one-clause reason kept via tooltip on .nb-entry. #}
+             Alignment row demoted to expander; one-clause reason kept via tooltip on .nb-entry.
+             HOISTED out of {% if c %}: a card with entry_signal but no conviction still renders
+             its entry line (round-3 review fix). #}
           {% if es %}
           <div class="nb-entry nbe-{{ es.status }}" title="ENTRY timing — when &amp; at what price to buy. {{ es.action }}">
             <div class="nbe-head">
@@ -3037,14 +3050,16 @@
           {% endif %}
           {# --- Caution popover at rest (disclosure-class element, stays visible per spec §4 +
              risk.md finding #11). Placement here (before expander) ensures it is always rendered
-             and the .nbcard:has(.nb-cau...) overflow rule fires correctly post div-restructure. #}
+             and the .nbcard:has(.nb-cau...) overflow rule fires correctly post div-restructure.
+             HOISTED out of {% if c %}. Vars that need c are guarded inline. #}
           {% set _gr0 = (_gc.reasons[0] if (_gc_unval_caution and _gc.reasons) else None) %}
           {% set _ir0 = (_iv.reasons[0] if (_iv_unval_caution and _iv.reasons) else None) %}
-          {% set _has_aw = 'accounting watch' in (c.cautions or []) %}
-          {% set _cau_n = (c.cautions or [])|length - (1 if _has_aw else 0) + (1 if _gc_unval_caution else 0) + (1 if _iv_unval_caution else 0) %}
-          {% if _cau_n > 0 %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ _cau_n }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ _cau_n }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in (c.cautions or []) %}{% if cau != 'accounting watch' %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endif %}{% endfor %}{% if _gc_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options positioning{% if _gr0 %} — {{ _gr0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权仓位{% if _gr0 %} — {{ _gr0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}{% if _iv_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options IV lean{% if _ir0 %} — {{ _ir0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向{% if _ir0 %} — {{ _ir0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}</div></div>{% endif %}
+          {% set _has_aw = c and 'accounting watch' in (c.cautions or []) %}
+          {% set _cau_n = ((c.cautions or [])|length if c else 0) - (1 if _has_aw else 0) + (1 if _gc_unval_caution else 0) + (1 if _iv_unval_caution else 0) %}
+          {% if _cau_n > 0 %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ _cau_n }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ _cau_n }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in (c.cautions if c else []) %}{% if cau != 'accounting watch' %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endif %}{% endfor %}{% if _gc_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options positioning{% if _gr0 %} — {{ _gr0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权仓位{% if _gr0 %} — {{ _gr0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}{% if _iv_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options IV lean{% if _ir0 %} — {{ _ir0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向{% if _ir0 %} — {{ _ir0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}</div></div>{% endif %}
           {# --- Expander toggle button (≥32px tall per spec, delegated handler below).
-             role="button" + aria-expanded per spec §6. l-en/l-zh spans, no CJK in title=. #}
+             role="button" + aria-expanded per spec §6. l-en/l-zh spans, no CJK in title=.
+             HOISTED out of {% if c %}: button always present so layout is consistent. #}
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
                   aria-label="Show details">
             <span class="l-en">▾ details</span><span class="l-zh">▾ 详情</span>
@@ -3054,8 +3069,10 @@
              row (GEX/IV/squeeze), hold detail, 200DMA±, neutral ext_z, α, sector rank, ⚖size,
              momentum/laggard chips, pulse-heat, liquidity tier, demand-desk, notes.
              Contract ruling (P2.4 §4.2, adjudicated): "server-rendered-but-collapsed" DOM-present
-             satisfies contract for ext_z and 200DMA± chips (contracts.md finding #3). #}
+             satisfies contract for ext_z and 200DMA± chips (contracts.md finding #3).
+             HOISTED out of {% if c %}. Inner sections that need c are wrapped in {% if c %}. #}
           <div class="nb-more">
+          {% if c %}
           {% set al = c.alignment %}
           {% if al and al.line %}
           <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" data-tip-en="{{ al.line }}" data-tip-zh="{{ al.line_zh }}">
@@ -3064,6 +3081,7 @@
             {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
           </div>
           {% endif %}
+          {% endif %}{# end if c — alignment block #}
           {# cycle-day bar (detail for ENTRY line — in expander per spec §4) #}
           {% if es and es.cycle_pos and es.cycle_pos.dc_day is not none %}
           <div class="nbe-cyc">
@@ -3072,7 +3090,8 @@
             {% if es.timing and es.timing.opens_in_days_lo is not none and es.status not in ['buy_now','partial'] %}<span>· {{ t('window', '窗口') }} ~{{ es.timing.opens_in_days_lo }}{% if es.timing.opens_in_days_hi and es.timing.opens_in_days_hi != es.timing.opens_in_days_lo %}–{{ es.timing.opens_in_days_hi }}{% endif %}d</span>{% endif %}
           </div>
           {% endif %}
-          {# conviction axes + basis chips (expander per spec §4) #}
+          {# conviction axes + basis chips (expander per spec §4) — needs c #}
+          {% if c %}
           <div class="nb-axes">
             {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
             {% set a = c.axes[ax] %}
@@ -3086,6 +3105,7 @@
           {% if _basis %}<div class="nb-basis">{% for b in _basis %}<span class="nbb nbb-{{ b.tier }}">{{ b.label }} {{ '%+.1f'|format(b.z) }}</span>{% endfor %}</div>{% endif %}
           {# valuation band (expander per spec §4) #}
           {% if c.valuation_band %}<span class="nb-val val-{{ c.valuation_band }}" data-tip-en="{{ c.valuation_note }}" data-tip-zh="{{ c.valuation_note_zh }}">{{ t(c.valuation_band, {'cheap':'便宜','fair':'合理','stretched':'偏贵','extreme':'昂贵'}[c.valuation_band] if c.valuation_band in ['cheap','fair','stretched','extreme'] else c.valuation_band) }}</span>{% endif %}
+          {% endif %}{# end if c — axes/basis/valuation block #}
           {# verifier row keeps ONLY scored (gate_scored=True) content now; the unvalidated
              Options/IV positioning cautions were folded into the one Caution popover below
              (declutter). #}
@@ -3148,10 +3168,9 @@
           {% set _heat_arrow = '▲' if _sph.heat in ('heating','hot') else '▽' %}
           <span class="nb-pulse-heat {{ _heat_cls }}" data-tip-en="Sector theme heat: {{ _sph.heat }} — {{ _sph.get('theme_name','') }}. Rank {{ _sph.get('rank','?') }}/{{ _sph.get('n_themes','?') }}{% if _sph.get('rank_delta_5d') is not none %} ({{ '%+d'|format(_sph.rank_delta_5d) }} vs 5d ago){% endif %}. Display-only — no ranking power." data-tip-zh="板块主题热度：{{ _sph.heat }} — {{ _sph.get('theme_name_zh') or _sph.get('theme_name','') }}。排名 {{ _sph.get('rank','?') }}/{{ _sph.get('n_themes','?') }}。仅供展示，不影响排名。"><span class="l-en">{{ _heat_arrow }} {{ _sph.heat }}</span><span class="l-zh">{{ _heat_arrow }} {{ _sph.heat }}</span></span>
           {% endif %}
-          {# name-specific notes (expander per spec §4) #}
-          {% if c.notes %}{% for nt in c.notes if nt.kind != 'rank' %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
+          {# name-specific notes (expander per spec §4) — needs c #}
+          {% if c and c.notes %}{% for nt in c.notes if nt.kind != 'rank' %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
           </div>{# end .nb-more #}
-          {% endif %}{# end if c #}
         </div>{# end .nbcard div #}
         {% endif %}{# end if not heading #}
       {% endfor %}{# end for n in _render_list.items #}
