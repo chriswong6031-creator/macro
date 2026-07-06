@@ -18,6 +18,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
+| long-hold | 2 |
 | neural-web | 25 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
@@ -32,7 +33,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 60 |
+| display | 62 |
 | infrastructure | 31 |
 | scored | 4 |
 | shadow | 35 |
@@ -41,7 +42,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 125 |
+| git | 127 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -125,6 +126,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | intl-bridge-ledger | `data/intl_bridge/ledger.json` | json | on-demand | shadow | 6 | 0 |
+
+### long-hold
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
+| long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
 
 ### neural-web
 
