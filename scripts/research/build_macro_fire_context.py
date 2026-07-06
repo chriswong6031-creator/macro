@@ -532,7 +532,12 @@ def _build_meta(panel: pd.DataFrame, stlfsi4_coverage_note: str) -> dict:
                     "before pctile / rising-flag / daily forward-fill. "
                     "Frozen combination (RUL-26 P2 spec registration): simple average of ES and "
                     "NDX net_spec_pct_oi (normalized by OI; ES OI ~7x NDX so raw contract sum "
-                    "is effectively ES-only). Precedent: capitulation_overlay_phase0.py:93."
+                    "is effectively ES-only). Precedent: capitulation_overlay_phase0.py:93. "
+                    "Caveats: (1) ~22 holiday-shifted non-Tuesday as-of rows use the same "
+                    "constant +3cd and may be ~1-2d optimistic in those weeks (1 P2-active "
+                    "week affected in-panel, 2006-07); (2) the ES/NDX average degrades to "
+                    "ES-alone before NDX inception 1999-12 (pre-dates the 2002 panel start "
+                    "except the pctile warm-up window)."
                 ),
                 "definition": (
                     "trailing_156wk_pctile(avg(es_net_spec_pct_oi, ndx_net_spec_pct_oi)) <= 0.20 "

@@ -11,7 +11,7 @@
       "initial release"
     ]
   },
-  "generated_at": "2026-07-05T17:11:02",
+  "generated_at": "2026-07-05T17:18:08",
   "date_span": {
     "start": "2002-01-02",
     "end": "2026-07-03",
@@ -97,7 +97,7 @@
       "source_event_date": "COT Tuesday as-of (report_date_as_yyyy_mm_dd \u2014 store index is Tuesday)",
       "known_date": "Friday publish (+3 calendar days from Tuesday as-of; CFTC publishes Friday ~15:30 ET)",
       "pit_basis": "friday_publish_date (+3cd from Tuesday as-of)",
-      "note": "COT store index = Tuesday as-of date (see collectors/cot.py:3-4). Builder shifts +3 calendar days (Tue->Fri) to obtain Friday publish date before pctile / rising-flag / daily forward-fill. Frozen combination (RUL-26 P2 spec registration): simple average of ES and NDX net_spec_pct_oi (normalized by OI; ES OI ~7x NDX so raw contract sum is effectively ES-only). Precedent: capitulation_overlay_phase0.py:93.",
+      "note": "COT store index = Tuesday as-of date (see collectors/cot.py:3-4). Builder shifts +3 calendar days (Tue->Fri) to obtain Friday publish date before pctile / rising-flag / daily forward-fill. Frozen combination (RUL-26 P2 spec registration): simple average of ES and NDX net_spec_pct_oi (normalized by OI; ES OI ~7x NDX so raw contract sum is effectively ES-only). Precedent: capitulation_overlay_phase0.py:93. Caveats: (1) ~22 holiday-shifted non-Tuesday as-of rows use the same constant +3cd and may be ~1-2d optimistic in those weeks (1 P2-active week affected in-panel, 2006-07); (2) the ES/NDX average degrades to ES-alone before NDX inception 1999-12 (pre-dates the 2002 panel start except the pctile warm-up window).",
       "definition": "trailing_156wk_pctile(avg(es_net_spec_pct_oi, ndx_net_spec_pct_oi)) <= 0.20 AND cot_combined > cot_combined.shift(2)"
     }
   },
