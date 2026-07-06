@@ -626,3 +626,116 @@ class TestPeadDrift:
         close = _make_close(pre_dates + post_dates, prices)
         pead = _pead_drift_feature(close, None, event_dt, fire_date)
         assert pead is None
+
+
+# ---------------------------------------------------------------------------
+# 8. PIT cap correctness — ED-4 and ED-5 must not read bars on/after fire_date
+# ---------------------------------------------------------------------------
+
+class TestPitCap:
+    """Verify that ED-4 (bad_news_absorption) and ED-5 (good_news_hold) are
+    capped at fire_date-1, matching how ED-3 (pead_drift) already behaves.
+
+    Regression guard for the look-ahead leak reported in the Opus review.
+    """
+
+    def _build_close_with_post_entry_move(
+        self,
+        n_pre: int = 15,
+        n_between: int = 3,
+        n_post_entry: int = 15,
+        pre_price: float = 100.0,
+        post_entry_price: float = 120.0,
+    ) -> tuple[pd.Series, pd.Timestamp, pd.Timestamp]:
+        """Build a close series where the price is stable before fire_date and
+        then jumps sharply on/after fire_date.
+
+        Layout:
+          pre_dates[0..n_pre-1]        — event sits at pre_dates[-1]
+          between_dates[0..n_between-1] — at 100.0; fire_date = between_dates[-1]
+          post_dates                    — at post_entry_price (must NOT be seen by PIT features)
+
+        Returns (close, event_date, fire_date).
+        """
+        pre_dates = _trading_days("2024-01-01", n_pre)
+        event_dt = pd.Timestamp(pre_dates[-1])
+
+        # between_dates: from the session after event_dt
+        between_start = str((event_dt + pd.Timedelta(days=1)).date())
+        between_dates = _trading_days(between_start, n_between)
+        fire_date = pd.Timestamp(between_dates[-1])
+
+        # post-entry dates: start the day after fire_date
+        post_start = str((fire_date + pd.Timedelta(days=1)).date())
+        post_dates = _trading_days(post_start, n_post_entry)
+
+        all_dates = pre_dates + between_dates + post_dates
+        all_prices = (
+            [pre_price] * n_pre
+            + [pre_price] * n_between
+            + [post_entry_price] * n_post_entry
+        )
+        return _make_close(all_dates, all_prices), event_dt, fire_date
+
+    # --- ED-5 (good_news_hold) ---
+
+    def test_gnh_pit_cap_returns_none_when_ef_plus10_after_fire(self):
+        """ED-5: when E(f)+10 falls after fire_date, feature must return None.
+
+        Without the PIT cap, close(E(f)+10) would be read from a bar after
+        fire_date (look-ahead leak).  With the cap, the function must return None.
+        """
+        # event at bar -1, fire_date at bar +3 (only 3 between bars).
+        # E(f)+10 = 10 bars after event, which is 7 bars PAST fire_date.
+        close, event_dt, fire_date = self._build_close_with_post_entry_move(
+            n_between=3, n_post_entry=15,
+        )
+        result = _good_news_hold_feature(close, event_dt, d_q_at_event=1.0, fire_date=fire_date)
+        assert result is None, (
+            "ED-5 must return None when E(f)+10 is beyond fire_date-1 (PIT cap). "
+            f"Got: {result}"
+        )
+
+    def test_gnh_pit_cap_not_triggered_when_ef_plus10_before_fire(self):
+        """ED-5: when 10+ bars exist between E(f) and fire_date, cap does not truncate."""
+        # event at bar -1, fire_date at bar +20 (>= 10 bars between).
+        # initial reaction = 0% (pre_price same throughout) -> reaction < 2% -> False.
+        close, event_dt, fire_date = self._build_close_with_post_entry_move(
+            n_between=20, n_post_entry=5, pre_price=100.0, post_entry_price=100.0,
+        )
+        # All prices are flat (100.0) so reaction = 0% < 2% -> False (not None)
+        result = _good_news_hold_feature(close, event_dt, d_q_at_event=1.0, fire_date=fire_date)
+        assert result is False, (
+            "ED-5 should return False (not None) when 10 bars are available before "
+            f"fire_date but reaction < 2%.  Got: {result}"
+        )
+
+    # --- ED-4 (bad_news_absorption) ---
+
+    def test_bna_pit_cap_applied_to_post_window(self):
+        """ED-4: post-event scan (E(f)+1..E(f)+10) must be capped at fire_date-1.
+
+        If a price breach only occurs in bars on/after fire_date, the feature
+        must NOT see it (PIT constraint).  Without the cap, a breach in the
+        post-entry bars would cause the feature to return False incorrectly.
+        """
+        # Layout:
+        #   pre (70 bars at 100.0), event at pre[-1]
+        #   between (3 bars at 100.0)  — all within the non-breach zone
+        #   fire_date = between[-1]
+        #   post_entry (15 bars at 50.0) — breach below pre_min, but AFTER fire_date
+        close, event_dt, fire_date = self._build_close_with_post_entry_move(
+            n_pre=70, n_between=3, n_post_entry=15,
+            pre_price=100.0, post_entry_price=50.0,  # breach, but only post-entry
+        )
+        result = _bad_news_absorption_feature(
+            close, None, event_dt, d_q_at_event=-1.0, fire_date=fire_date
+        )
+        # With PIT cap: post_end is capped before the breach bars -> result is None
+        # (insufficient post bars within PIT window, since only 3 are between event and fire).
+        # The key assertion: it must NOT return False (which would indicate it read the breach).
+        assert result is not False, (
+            "ED-4 must not read post-entry price bars when fire_date is provided. "
+            f"Got: {result} — expected None (insufficient bars) or True, not False "
+            "(False would imply the breach in post-entry bars was read)."
+        )

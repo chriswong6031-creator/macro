@@ -309,10 +309,17 @@ def _bad_news_absorption_feature(
     sector_close: pd.Series | None,
     event_date: pd.Timestamp,
     d_q_at_event: float | None,
+    fire_date: pd.Timestamp | None = None,
 ) -> bool | None:
     """Binary: most recent visible d_q < 0 at E(f) AND no close in the 10 sessions
     after E(f) below the minimum close of the 63 sessions before E(f) AND
     stock-minus-benchmark return over E(f)+1..E(f)+5 >= 0.
+
+    PIT constraint: post-event windows (E(f)+10 and E(f)+5) are capped at
+    fire_date-1 (exclusive) so no post-entry price bar is read.  fire_date is
+    required for PIT correctness; if omitted the window is uncapped (legacy
+    behaviour retained for unit tests that don't supply it, but production
+    callers must always pass fire_date).
 
     Returns True/False or None if insufficient data.
     """
@@ -331,6 +338,13 @@ def _bad_news_absorption_feature(
         # event_date before price history starts
         return None
 
+    # PIT cap: the last bar we may use is strictly before fire_date
+    if fire_date is not None:
+        # exclusive upper bound: bars with index < fire_date
+        pit_end = int(np.searchsorted(idx.values, np.datetime64(fire_date), side="left"))
+    else:
+        pit_end = len(idx)
+
     # 63 sessions before E(f) (inclusive of event_pos if it exists in index)
     pre_start = max(0, event_pos - _BNA_PRE_SESSIONS + 1)
     pre_window = close.iloc[pre_start:event_pos + 1]
@@ -338,9 +352,9 @@ def _bad_news_absorption_feature(
         return None
     pre_min = float(pre_window.min())
 
-    # 10 sessions after E(f)
+    # 10 sessions after E(f), capped at fire_date-1
     post_start = event_pos + 1
-    post_end = min(post_start + _BNA_POST_SESSIONS, len(idx))
+    post_end = min(post_start + _BNA_POST_SESSIONS, pit_end)
     if post_end - post_start < 1:
         return None
     post_window = close.iloc[post_start:post_end]
@@ -349,8 +363,9 @@ def _bad_news_absorption_feature(
     if float(post_window.min()) < pre_min:
         return False
 
-    # Condition 3: stock-minus-benchmark return over E(f)+1..E(f)+5 >= 0
-    momentum_end = min(post_start + _BNA_MOMENTUM, len(idx))
+    # Condition 3: stock-minus-benchmark return over E(f)+1..E(f)+5 >= 0,
+    # capped at fire_date-1
+    momentum_end = min(post_start + _BNA_MOMENTUM, pit_end)
     if momentum_end - post_start < 1:
         return None
     stock_momentum_window = close.iloc[post_start:momentum_end]
@@ -382,9 +397,17 @@ def _good_news_hold_feature(
     close: pd.Series,
     event_date: pd.Timestamp,
     d_q_at_event: float | None,
+    fire_date: pd.Timestamp | None = None,
 ) -> bool | None:
     """Binary: most recent visible d_q > 0 AND close(E(f)+1)/close(E(f)) - 1 >= +2%
     AND close(E(f)+10) >= close(E(f)+1).
+
+    PIT constraint: the E(f)+10 session is capped at fire_date-1 (exclusive) so
+    no post-entry price bar is read.  When the cap prevents reaching E(f)+10, the
+    feature is set to None (insufficient data).  fire_date is required for PIT
+    correctness; if omitted the window is uncapped (legacy behaviour retained for
+    unit tests that don't supply it, but production callers must always pass
+    fire_date).
 
     Returns True/False or None if insufficient data.
     """
@@ -398,18 +421,26 @@ def _good_news_hold_feature(
         return False
 
     idx = close.index
+
+    # PIT cap: the last bar we may use is strictly before fire_date
+    if fire_date is not None:
+        pit_end = int(np.searchsorted(idx.values, np.datetime64(fire_date), side="left"))
+    else:
+        pit_end = len(idx)
+
     event_pos = int(np.searchsorted(idx.values, np.datetime64(event_date), side="right")) - 1
     if event_pos < 0:
         return None
 
     # E(f)+1 session
     pos_plus1 = event_pos + 1
-    if pos_plus1 >= len(idx):
+    if pos_plus1 >= pit_end:
         return None
 
-    # E(f)+10 session
+    # E(f)+10 session — must be within PIT window
     pos_plus10 = event_pos + _GNH_HOLD_SESSIONS
-    if pos_plus10 >= len(idx):
+    if pos_plus10 >= pit_end:
+        # E(f)+10 extends past fire_date — insufficient PIT data
         return None
 
     close_ef = float(close.iloc[event_pos])
@@ -513,12 +544,12 @@ def _compute_features_for_fire(
         pead = _pead_drift_feature(close, sector_close, event_date, fire_date)
         rec["pead_drift"] = pead
 
-        # ED-4: bad_news_absorption
-        bna = _bad_news_absorption_feature(close, sector_close, event_date, dq)
+        # ED-4: bad_news_absorption (PIT-capped at fire_date)
+        bna = _bad_news_absorption_feature(close, sector_close, event_date, dq, fire_date)
         rec["bad_news_absorption"] = bna
 
-        # ED-5: good_news_hold
-        gnh = _good_news_hold_feature(close, event_date, dq)
+        # ED-5: good_news_hold (PIT-capped at fire_date)
+        gnh = _good_news_hold_feature(close, event_date, dq, fire_date)
         rec["good_news_hold"] = gnh
 
         # ED-7: confirmed_absorption = (ED-4 OR ED-5) AND ED-3 > 0
@@ -558,6 +589,19 @@ def build_panel(
     n_total = len(labels)
     log.info("Building expect_drift panel for %d fires...", n_total)
 
+    # SPY fallback for tickers not covered by the sector map (prereg §1 §SPY remedy).
+    # Per the pre-registration: 'where a sector benchmark is unavailable, SPY with
+    # benchmark="market" stamp'.  Load once from yahoo_closes so the stamp is
+    # truthfully backed by a real SPY series when available.
+    spy_close: pd.Series | None = yahoo_closes.get("SPY")
+    if spy_close is None:
+        log.warning(
+            "SPY not found in yahoo_closes — event-anchored features for tickers "
+            "without a sector map will use raw absolute returns (no benchmark "
+            "adjustment). benchmark='market' stamp will still be set but will not "
+            "be SPY-relative for those rows."
+        )
+
     rows_out: list[dict[str, Any]] = []
     t0 = time.time()
 
@@ -573,10 +617,16 @@ def build_panel(
             dead_name_closes=dead_name_closes,
         )
 
-        # Resolve sector benchmark
+        # Resolve sector benchmark; fall back to SPY for tickers without a sector map.
+        # When SPY is used, benchmark is still stamped 'market' per prereg §1.
         sector_key = ticker_sector_map.get(ticker)
-        sector_close = sector_closes.get(sector_key) if sector_key else None
-        benchmark = sector_key if sector_key else "market"
+        if sector_key:
+            sector_close = sector_closes.get(sector_key)
+            benchmark = sector_key
+        else:
+            # No sector map: use SPY as the market benchmark per prereg §1 remedy
+            sector_close = spy_close  # may still be None if SPY absent from store
+            benchmark = "market"
 
         # EPS data
         ticker_eps = eps_by_ticker.get(ticker)  # may be None
