@@ -2380,6 +2380,24 @@
       "state": "active",
       "next_step": "Accrue 25 sessions, then run IC check vs 20d forward RS vs CSI300.",
       "phase_hint": "display_only"
+    },
+    {
+      "id": "opex-vanna-charm-wovc",
+      "name": "OPEX/Vanna/Charm adjudication — W-OVC build + S-VANNA-RELIEF/S-FRONT-CHARM gates",
+      "kind": "signal_research",
+      "priority": "medium",
+      "cadence": "one_shot",
+      "what": "Codex OPEX/vanna/charm study adjudicated 2026-07-06 (research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md): S-VANNA-RELIEF (vanna-relief compression, STRENGTHENED under residualization: partial IC > raw all eras) + S-FRONT-CHARM (front-week charm concentration survives vol/size control: partial IC 0.06-0.13, sign-stable) pre-registered in OPTIONS_ALPHA_MASTERPLAN §4 (family 22→28 tests). Killed: signed_charm_pressure (vol proxy, partial ≈0), charm-intensity 'depth cushions' narrative (sign FLIPS under control), S-INDEX-PIN (ETF pin real 3/3 eras but non-OPEX placebo ≥ pin — not an expiry mechanism), air-pocket, quad + post-OPEX buckets. W-OVC build docket (adjudication §5): options_entry_state raw columns (front7 shares, signed vanna, vanna_hedge_5d, root_class), opt_vanna_relief + opt_front7_charm_share + opt_root_class stamps via single-writer, gate cells scored=false.",
+      "source": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+      "storage": "data/options_entry/gate.json",
+      "started": "2026-07-06",
+      "come_back_on": "2026-07-20",
+      "come_back_note": "Check W-OVC build wave dispatched/shipped (opt_vanna_relief + opt_front7_charm_share stamps flowing). If shipped, gate verdict clocks = fires n>=30/bucket (~Q1-27). If not dispatched, decide: dispatch Sonnet wave per adjudication §5 docket, or park with reason.",
+      "maturation": "stamps ship (W-OVC) -> n>=30 fires/bucket -> BH-FDR over 28-test family",
+      "status": "registered_awaiting_build",
+      "state": "active",
+      "next_step": "Dispatch W-OVC Sonnet build wave per adjudication §5 docket.",
+      "phase_hint": "display_only"
     }
   ]
 }
