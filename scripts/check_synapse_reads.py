@@ -1,5 +1,5 @@
 """
-scripts/check_synapse_reads.py — Synapse read-gate: literal-path scan v1.
+scripts/check_synapse_reads.py — Synapse read-gate: literal-path scan v1 + horizon firewall.
 
 For every artifact registered in config/synapse.yml, scans engine/*.py,
 scripts/*.py, and collectors/*.py for string literals that contain the
@@ -45,6 +45,33 @@ IMPORTANT HONESTY RULE: this is a LITERAL-PATH scan (string literals in source).
 It does NOT trace runtime file-access paths, AST data-flow, or dynamic open()
 calls. A module that builds a path via os.path.join() without a matching literal
 will NOT be detected by v1. AST data-flow tracing is deferred to a later wave.
+
+---
+
+Horizon firewall (LH-R1, Long-Hold Thesis Masterplan W0)
+---------------------------------------------------------
+Every registered artifact carries horizon_role ∈ {tactical_entry, hold_thesis, dual, context}.
+The firewall enforces bidirectional isolation between entry and hold horizons:
+
+  Direction A — hold bleeds into entry:
+    A hold_thesis artifact's scored_path_surfaces or consumers lists an entry
+    Article-2 surface/module → HARD FAIL.
+
+  Direction B — entry bleeds into hold:
+    A tactical_entry artifact's scored_path_surfaces or consumers lists a
+    hold-thesis surface/module (when hold surfaces are registered) → HARD FAIL.
+
+  dual  → passes both directions (it has separate per-horizon calibrations; a
+           notes field justifying dual use is required by the registry schema).
+  context → passes both directions (horizon-agnostic descriptive/diagnostic).
+
+The check operates on the registry declarations (scored_path_surfaces and
+consumers fields), not on source-file literals, so it catches violations at
+registration time before any code is written.
+
+The hold-surface map mirrors the article2 map pattern but for hold-thesis
+surfaces. It is empty now (first hold_thesis artifacts arrive in W1); entries
+are added here when hold-thesis Article-2-equivalent surfaces are chartered.
 """
 from __future__ import annotations
 
@@ -79,6 +106,30 @@ _ARTICLE2_MAP: dict[str, list[str]] = {
     "attention_queue": [],   # future cortex/reflex module — not yet created
     "push_floor": [],        # future push-notification floor — not yet created
 }
+
+# ---------------------------------------------------------------------------
+# Horizon firewall maps (LH-R1)
+# ---------------------------------------------------------------------------
+# Entry Article-2 surface names (the "entry surface" side of the firewall).
+# Derived from synapse.yml meta.article2_surfaces; held here as a set for
+# fast membership tests in the horizon firewall check.
+_ENTRY_ARTICLE2_SURFACES: frozenset[str] = frozenset(_ARTICLE2_MAP.keys())
+
+# Entry Article-2 module paths — used when checking consumers lists.
+_ENTRY_ARTICLE2_MODULES: frozenset[str] = frozenset(
+    mod for mods in _ARTICLE2_MAP.values() for mod in mods
+)
+
+# Hold-thesis surface map (mirrors _ARTICLE2_MAP for the hold horizon).
+# Empty now — first hold_thesis surfaces are chartered in W3 (PR-L/M).
+# When a hold-thesis Article-2-equivalent surface is registered, add it here:
+#   "long_hold_committee": ["scripts/build_site.py:long_thesis_section"]
+_HOLD_SURFACE_MAP: dict[str, list[str]] = {}
+
+_HOLD_SURFACE_NAMES: frozenset[str] = frozenset(_HOLD_SURFACE_MAP.keys())
+_HOLD_SURFACE_MODULES: frozenset[str] = frozenset(
+    mod for mods in _HOLD_SURFACE_MAP.values() for mod in mods
+)
 
 # ---------------------------------------------------------------------------
 # Baseline path
@@ -116,6 +167,53 @@ class Finding(NamedTuple):
             artifact_id=d["artifact_id"],
             line_no=d.get("line_no", 0),
             severity=d["severity"],
+        )
+
+
+# ---------------------------------------------------------------------------
+# Horizon firewall violation data structure (LH-R1)
+# ---------------------------------------------------------------------------
+
+
+class HorizonViolation(NamedTuple):
+    """
+    A registry-level horizon firewall violation.
+
+    Unlike Finding (which is a source-scan finding), HorizonViolation is
+    detected purely from the synapse.yml declarations — scored_path_surfaces
+    and consumers — without reading any source files.
+
+    direction:
+      "hold_into_entry"  — a hold_thesis artifact routes to an entry surface
+      "entry_into_hold"  — a tactical_entry artifact routes to a hold surface
+    channel:
+      "scored_path_surfaces"  — the artifact's scored_path_surfaces field
+      "consumers"             — the artifact's consumers field
+    surface_or_module:
+      The offending surface name (for scored_path_surfaces) or module path
+      (for consumers).
+    """
+
+    artifact_id: str
+    artifact_role: str         # "hold_thesis" or "tactical_entry"
+    direction: str             # "hold_into_entry" or "entry_into_hold"
+    channel: str               # "scored_path_surfaces" or "consumers"
+    surface_or_module: str     # the offending surface name or module path
+
+    def as_dict(self) -> dict:
+        return {
+            "artifact_id": self.artifact_id,
+            "artifact_role": self.artifact_role,
+            "direction": self.direction,
+            "channel": self.channel,
+            "surface_or_module": self.surface_or_module,
+        }
+
+    def label(self) -> str:
+        return (
+            f"[HORIZON FIREWALL HARD FAIL] artifact={self.artifact_id!r} "
+            f"role={self.artifact_role!r} direction={self.direction!r} "
+            f"channel={self.channel!r} offender={self.surface_or_module!r}"
         )
 
 
@@ -566,6 +664,116 @@ def _run_selftest(root: Path) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Horizon firewall checker (LH-R1)
+# ---------------------------------------------------------------------------
+
+
+def check_horizon_firewall(reg: dict) -> list[HorizonViolation]:
+    """
+    Inspect the registry and return all horizon firewall violations.
+
+    The check is registry-declaration-level (scored_path_surfaces + consumers
+    fields), not a source-file scan. It detects violations at the point of
+    registration — before any code is written to implement the dependency.
+
+    Rules (per LH-R1):
+      - hold_thesis artifact → entry Article-2 surface or entry module: VIOLATION
+      - tactical_entry artifact → hold-thesis surface or hold module: VIOLATION
+      - dual artifact: PASSES both directions (bidirectional by design)
+      - context artifact: PASSES both directions (horizon-agnostic)
+
+    Returns sorted list of HorizonViolation (deterministic order).
+    """
+    artifacts = reg.get("artifacts") or {}
+    violations: list[HorizonViolation] = []
+
+    for art_id, entry in artifacts.items():
+        if not isinstance(entry, dict):
+            continue
+
+        role = entry.get("horizon_role", "")
+
+        # dual and context are exempt — they may appear in any surface.
+        if role in ("dual", "context"):
+            continue
+
+        scored_surfaces: list[str] = list(entry.get("scored_path_surfaces") or [])
+        consumers: list[str] = list(entry.get("consumers") or [])
+
+        if role == "hold_thesis":
+            # Direction A: hold bleeding into entry surfaces.
+            for surface in scored_surfaces:
+                if surface in _ENTRY_ARTICLE2_SURFACES:
+                    violations.append(
+                        HorizonViolation(
+                            artifact_id=art_id,
+                            artifact_role=role,
+                            direction="hold_into_entry",
+                            channel="scored_path_surfaces",
+                            surface_or_module=surface,
+                        )
+                    )
+            for consumer_mod in consumers:
+                # Normalize: strip line references (e.g. "engine/foo.py:123")
+                mod = consumer_mod.split(":")[0].strip()
+                if mod in _ENTRY_ARTICLE2_MODULES:
+                    violations.append(
+                        HorizonViolation(
+                            artifact_id=art_id,
+                            artifact_role=role,
+                            direction="hold_into_entry",
+                            channel="consumers",
+                            surface_or_module=mod,
+                        )
+                    )
+
+        elif role == "tactical_entry":
+            # Direction B: entry bleeding into hold surfaces.
+            for surface in scored_surfaces:
+                if surface in _HOLD_SURFACE_NAMES:
+                    violations.append(
+                        HorizonViolation(
+                            artifact_id=art_id,
+                            artifact_role=role,
+                            direction="entry_into_hold",
+                            channel="scored_path_surfaces",
+                            surface_or_module=surface,
+                        )
+                    )
+            for consumer_mod in consumers:
+                mod = consumer_mod.split(":")[0].strip()
+                if mod in _HOLD_SURFACE_MODULES:
+                    violations.append(
+                        HorizonViolation(
+                            artifact_id=art_id,
+                            artifact_role=role,
+                            direction="entry_into_hold",
+                            channel="consumers",
+                            surface_or_module=mod,
+                        )
+                    )
+
+    violations.sort(key=lambda v: (v.artifact_id, v.direction, v.channel, v.surface_or_module))
+    return violations
+
+
+def _report_horizon_violations(violations: list[HorizonViolation]) -> int:
+    """
+    Print horizon firewall violations and GitHub annotations; return count.
+    All violations are HARD FAIL — there is no warn tier for the firewall.
+    """
+    for v in violations:
+        print(v.label())
+        annotation_msg = (
+            f"horizon firewall: {v.artifact_role!r} artifact {v.artifact_id!r} "
+            f"routes to {v.direction.replace('_', '-')} surface {v.surface_or_module!r} "
+            f"via {v.channel!r}"
+        )
+        print(f"::error ::{annotation_msg}")
+    return len(violations)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -604,6 +812,30 @@ def main() -> int:
     except FileNotFoundError as exc:
         print(f"[ERROR] {exc}")
         return 1
+
+    # --- Horizon firewall check (LH-R1) always runs before the literal scan ---
+    fw_violations = check_horizon_firewall(reg)
+    n_fw_violations = _report_horizon_violations(fw_violations)
+    if n_fw_violations > 0:
+        print(
+            f"\nhorizon-firewall HARD FAIL: {n_fw_violations} cross-horizon registry "
+            f"violation(s). Fix horizon_role stamps or remove the offending surface/"
+            f"consumer entries in config/synapse.yml."
+        )
+        return 1
+    else:
+        n_hold = sum(
+            1 for v in (reg.get("artifacts") or {}).values()
+            if isinstance(v, dict) and v.get("horizon_role") == "hold_thesis"
+        )
+        n_entry = sum(
+            1 for v in (reg.get("artifacts") or {}).values()
+            if isinstance(v, dict) and v.get("horizon_role") == "tactical_entry"
+        )
+        print(
+            f"horizon-firewall CLEAN — {n_hold} hold_thesis artifact(s), "
+            f"{n_entry} tactical_entry artifact(s); no cross-horizon violations"
+        )
 
     # Scan
     findings = scan_findings(root, reg=reg)

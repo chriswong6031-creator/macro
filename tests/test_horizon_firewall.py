@@ -1,0 +1,419 @@
+"""
+tests/test_horizon_firewall.py — Unit tests for the horizon firewall (LH-R1).
+
+Three test groups:
+
+  A. Gate catches synthetic violations in both directions.
+     Feeds a doctored registry fixture to check_horizon_firewall(); does NOT
+     mutate the real registry.
+
+  B. Entry-stack research harnesses contain no read of data/research/long_hold_*
+     paths (static grep-style assertion over source files on disk).
+
+  C. Current real registry state passes the firewall with zero violations.
+
+All tests are deterministic and self-contained; group A uses synthetic dicts
+injected directly into check_horizon_firewall(), group B and C use the real
+filesystem but only for read-only assertions.
+"""
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from scripts.check_synapse_reads import (  # noqa: E402
+    HorizonViolation,
+    _ENTRY_ARTICLE2_SURFACES,
+    _HOLD_SURFACE_MAP,
+    _HOLD_SURFACE_MODULES,
+    _HOLD_SURFACE_NAMES,
+    check_horizon_firewall,
+)
+from engine.neuralweb.synapse import load_registry  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# Helpers — synthetic registry builders
+# ---------------------------------------------------------------------------
+
+
+def _make_firewall_reg(
+    artifact_id: str,
+    horizon_role: str,
+    scored_path_surfaces: list[str] | None = None,
+    consumers: list[str] | None = None,
+    extra_artifacts: dict | None = None,
+    article2_surfaces: list[str] | None = None,
+) -> dict:
+    """Build a minimal registry dict for firewall testing."""
+    base_surfaces = article2_surfaces if article2_surfaces is not None else list(_ENTRY_ARTICLE2_SURFACES)
+    artifacts: dict = {
+        artifact_id: {
+            "path": f"data/fake/{artifact_id}.json",
+            "format": "json",
+            "producer": "engine/producer.py",
+            "known_extra_writers": [],
+            "owner_program": "test",
+            "cadence": "daily-engine",
+            "storage": "git",
+            "asof_field": "asof",
+            "freshness_sla_hours": 30,
+            "schema": "none",
+            "tier": "infrastructure",
+            "horizon_role": horizon_role,
+            "weights": "none",
+            "scored_path_surfaces": scored_path_surfaces or [],
+            "consumers": consumers or [],
+            "external_consumers": [],
+        }
+    }
+    if extra_artifacts:
+        artifacts.update(extra_artifacts)
+    return {
+        "meta": {
+            "schema_version": 1,
+            "description": "synthetic firewall test registry",
+            "tier_vocabulary": ["display", "infrastructure"],
+            "article2_surfaces": base_surfaces,
+            "horizon_role_vocabulary": ["tactical_entry", "hold_thesis", "dual", "context"],
+        },
+        "artifacts": artifacts,
+    }
+
+
+# ===========================================================================
+# Group A — Synthetic violation detection
+# ===========================================================================
+
+
+class TestSyntheticViolations:
+    """Firewall catches synthetic violations; legitimate roles pass clean."""
+
+    # --- Direction A: hold_thesis bleeding into entry surfaces ---
+
+    def test_hold_thesis_scored_surface_fires_violation(self) -> None:
+        """hold_thesis artifact with an entry surface in scored_path_surfaces → violation."""
+        # alert_triage is a real Article-2 entry surface
+        reg = _make_firewall_reg(
+            artifact_id="test-hold-artifact",
+            horizon_role="hold_thesis",
+            scored_path_surfaces=["alert_triage"],
+        )
+        violations = check_horizon_firewall(reg)
+        assert len(violations) == 1, f"Expected 1 violation, got: {violations}"
+        v = violations[0]
+        assert v.artifact_id == "test-hold-artifact"
+        assert v.artifact_role == "hold_thesis"
+        assert v.direction == "hold_into_entry"
+        assert v.channel == "scored_path_surfaces"
+        assert v.surface_or_module == "alert_triage"
+
+    def test_hold_thesis_consumer_entry_module_fires_violation(self) -> None:
+        """hold_thesis artifact with an entry Article-2 module in consumers → violation."""
+        # engine/alert_triage.py is the canonical Article-2 entry module
+        reg = _make_firewall_reg(
+            artifact_id="test-hold-artifact",
+            horizon_role="hold_thesis",
+            consumers=["engine/alert_triage.py"],
+        )
+        violations = check_horizon_firewall(reg)
+        assert any(
+            v.direction == "hold_into_entry"
+            and v.channel == "consumers"
+            and v.surface_or_module == "engine/alert_triage.py"
+            for v in violations
+        ), f"Expected hold_into_entry/consumers violation, got: {violations}"
+
+    def test_hold_thesis_consumer_board_ordering_module_fires_violation(self) -> None:
+        """hold_thesis artifact in board_ordering consumer (scripts/build_stock_library.py) → violation."""
+        reg = _make_firewall_reg(
+            artifact_id="test-hold-artifact",
+            horizon_role="hold_thesis",
+            consumers=["scripts/build_stock_library.py"],
+        )
+        violations = check_horizon_firewall(reg)
+        assert len(violations) == 1, f"Expected 1 violation, got: {violations}"
+        assert violations[0].direction == "hold_into_entry"
+
+    def test_hold_thesis_consumer_top_setups_module_fires_violation(self) -> None:
+        """hold_thesis artifact in top_setups consumer (scripts/build_site.py) → violation."""
+        reg = _make_firewall_reg(
+            artifact_id="test-hold-artifact",
+            horizon_role="hold_thesis",
+            consumers=["scripts/build_site.py"],
+        )
+        violations = check_horizon_firewall(reg)
+        assert len(violations) == 1, f"Expected 1 violation, got: {violations}"
+        assert violations[0].direction == "hold_into_entry"
+
+    # --- Direction B: tactical_entry bleeding into hold surfaces ---
+
+    def test_entry_into_hold_scored_surface_fires_when_hold_surface_registered(self) -> None:
+        """
+        tactical_entry artifact with a hold surface in scored_path_surfaces → violation.
+        This uses a synthetic hold-surface map injected via monkeypatching.
+        """
+        # Temporarily inject a synthetic hold surface into the module-level sets
+        # (the real map is empty in W0; this simulates a future W3 hold surface).
+        import scripts.check_synapse_reads as csr
+
+        original_names = csr._HOLD_SURFACE_NAMES
+        original_modules = csr._HOLD_SURFACE_MODULES
+
+        try:
+            csr._HOLD_SURFACE_NAMES = frozenset({"long_hold_committee"})
+            csr._HOLD_SURFACE_MODULES = frozenset({"scripts/build_long_hold.py"})
+
+            reg = _make_firewall_reg(
+                artifact_id="test-entry-artifact",
+                horizon_role="tactical_entry",
+                scored_path_surfaces=["long_hold_committee"],
+            )
+            violations = check_horizon_firewall(reg)
+            assert len(violations) == 1, f"Expected 1 violation, got: {violations}"
+            v = violations[0]
+            assert v.artifact_id == "test-entry-artifact"
+            assert v.artifact_role == "tactical_entry"
+            assert v.direction == "entry_into_hold"
+            assert v.channel == "scored_path_surfaces"
+            assert v.surface_or_module == "long_hold_committee"
+        finally:
+            csr._HOLD_SURFACE_NAMES = original_names
+            csr._HOLD_SURFACE_MODULES = original_modules
+
+    def test_entry_into_hold_consumer_fires_when_hold_module_registered(self) -> None:
+        """
+        tactical_entry artifact with a hold module in consumers → violation.
+        Synthetic hold-surface monkeypatch.
+        """
+        import scripts.check_synapse_reads as csr
+
+        original_names = csr._HOLD_SURFACE_NAMES
+        original_modules = csr._HOLD_SURFACE_MODULES
+
+        try:
+            csr._HOLD_SURFACE_NAMES = frozenset({"long_hold_committee"})
+            csr._HOLD_SURFACE_MODULES = frozenset({"scripts/build_long_hold.py"})
+
+            reg = _make_firewall_reg(
+                artifact_id="test-entry-artifact",
+                horizon_role="tactical_entry",
+                consumers=["scripts/build_long_hold.py"],
+            )
+            violations = check_horizon_firewall(reg)
+            assert len(violations) == 1, f"Expected 1 violation, got: {violations}"
+            v = violations[0]
+            assert v.artifact_role == "tactical_entry"
+            assert v.direction == "entry_into_hold"
+            assert v.channel == "consumers"
+            assert v.surface_or_module == "scripts/build_long_hold.py"
+        finally:
+            csr._HOLD_SURFACE_NAMES = original_names
+            csr._HOLD_SURFACE_MODULES = original_modules
+
+    # --- Exempt roles: dual and context must pass both directions ---
+
+    def test_dual_artifact_passes_entry_surface(self) -> None:
+        """dual artifact in an entry surface scored_path_surfaces → no violation."""
+        reg = _make_firewall_reg(
+            artifact_id="test-dual-artifact",
+            horizon_role="dual",
+            scored_path_surfaces=["alert_triage", "board_ordering"],
+            consumers=["engine/alert_triage.py", "scripts/build_site.py"],
+        )
+        violations = check_horizon_firewall(reg)
+        assert violations == [], f"dual artifact must not trigger firewall, got: {violations}"
+
+    def test_context_artifact_passes_entry_surface(self) -> None:
+        """context artifact in an entry surface scored_path_surfaces → no violation."""
+        reg = _make_firewall_reg(
+            artifact_id="test-context-artifact",
+            horizon_role="context",
+            scored_path_surfaces=["alert_triage", "board_ordering", "top_setups"],
+            consumers=["engine/alert_triage.py"],
+        )
+        violations = check_horizon_firewall(reg)
+        assert violations == [], f"context artifact must not trigger firewall, got: {violations}"
+
+    def test_tactical_entry_in_entry_surfaces_is_clean(self) -> None:
+        """tactical_entry in entry scored_path_surfaces is normal and clean."""
+        reg = _make_firewall_reg(
+            artifact_id="test-entry-artifact",
+            horizon_role="tactical_entry",
+            scored_path_surfaces=["alert_triage", "board_ordering"],
+            consumers=["engine/alert_triage.py", "scripts/build_stock_library.py"],
+        )
+        violations = check_horizon_firewall(reg)
+        assert violations == [], f"tactical_entry in entry surfaces must be clean, got: {violations}"
+
+    def test_hold_thesis_with_non_entry_consumers_is_clean(self) -> None:
+        """hold_thesis artifact with only non-entry consumers → no violation."""
+        reg = _make_firewall_reg(
+            artifact_id="test-hold-artifact",
+            horizon_role="hold_thesis",
+            scored_path_surfaces=[],
+            consumers=["engine/fundamentals.py", "scripts/build_long_hold_report.py"],
+        )
+        violations = check_horizon_firewall(reg)
+        assert violations == [], f"hold_thesis with non-entry consumers must be clean, got: {violations}"
+
+    def test_multiple_violations_reported(self) -> None:
+        """Multiple violations in a single artifact are all returned."""
+        reg = _make_firewall_reg(
+            artifact_id="test-hold-multi",
+            horizon_role="hold_thesis",
+            scored_path_surfaces=["alert_triage", "board_ordering"],
+            consumers=["engine/alert_triage.py", "scripts/build_stock_library.py"],
+        )
+        violations = check_horizon_firewall(reg)
+        # Expect 4: 2 from scored_path_surfaces + 2 from consumers
+        assert len(violations) == 4, f"Expected 4 violations, got: {violations}"
+        directions = {v.direction for v in violations}
+        assert directions == {"hold_into_entry"}
+
+    def test_violation_label_contains_key_fields(self) -> None:
+        """HorizonViolation.label() must include artifact_id, direction, and channel."""
+        v = HorizonViolation(
+            artifact_id="my-hold-art",
+            artifact_role="hold_thesis",
+            direction="hold_into_entry",
+            channel="scored_path_surfaces",
+            surface_or_module="alert_triage",
+        )
+        label = v.label()
+        assert "my-hold-art" in label
+        assert "hold_thesis" in label
+        assert "hold_into_entry" in label
+        assert "scored_path_surfaces" in label
+        assert "alert_triage" in label
+
+    def test_as_dict_roundtrip(self) -> None:
+        """HorizonViolation.as_dict() must be JSON-serialisable and cover all fields."""
+        v = HorizonViolation(
+            artifact_id="x",
+            artifact_role="tactical_entry",
+            direction="entry_into_hold",
+            channel="consumers",
+            surface_or_module="scripts/build_long_hold.py",
+        )
+        d = v.as_dict()
+        assert d["artifact_id"] == "x"
+        assert d["artifact_role"] == "tactical_entry"
+        assert d["direction"] == "entry_into_hold"
+        assert d["channel"] == "consumers"
+        assert d["surface_or_module"] == "scripts/build_long_hold.py"
+
+
+# ===========================================================================
+# Group B — Static grep: entry harnesses must not read long_hold_* paths
+# ===========================================================================
+
+# The paths the task explicitly names as entry harnesses.
+_ENTRY_HARNESS_FILES = [
+    REPO_ROOT / "scripts" / "research" / "entry_strata_phase0.py",
+]
+
+# Keystone backfill scripts: any scripts/research/run_w*.py (the keystone
+# harness pattern used by the entry-stack program).  If none exist yet,
+# the test is vacuous-pass — fine, as no violation can occur.
+_KEYSTONE_PATTERN = re.compile(r"run_w\d+.*\.py$")
+_KEYSTONE_FILES = sorted(
+    f
+    for f in (REPO_ROOT / "scripts" / "research").glob("run_w*.py")
+    if _KEYSTONE_PATTERN.search(f.name)
+)
+
+# Pattern that would indicate reading a long_hold data path.
+_LONG_HOLD_PATH_RE = re.compile(r"""['"](data/research/long_hold[^\'"]*)['""]""")
+
+
+class TestEntryHarnessNoLongHoldReads:
+    """Entry-stack research harnesses must contain no literal read of long_hold paths."""
+
+    @pytest.mark.parametrize(
+        "script_path",
+        [REPO_ROOT / "scripts" / "research" / "entry_strata_phase0.py"],
+        ids=["entry_strata_phase0"],
+    )
+    def test_entry_strata_no_long_hold_path(self, script_path: Path) -> None:
+        """entry_strata_phase0.py must not contain any data/research/long_hold_* literal."""
+        assert script_path.exists(), f"Entry harness missing: {script_path}"
+        source = script_path.read_text(encoding="utf-8", errors="replace")
+        matches = _LONG_HOLD_PATH_RE.findall(source)
+        assert matches == [], (
+            f"{script_path.name} contains literal long_hold path(s): {matches!r}. "
+            "Entry harnesses must not read hold-thesis data paths (LH-R1)."
+        )
+
+    @pytest.mark.parametrize(
+        "script_path",
+        _KEYSTONE_FILES if _KEYSTONE_FILES else [None],
+        ids=[f.name for f in _KEYSTONE_FILES] if _KEYSTONE_FILES else ["no_keystone_scripts"],
+    )
+    def test_keystone_no_long_hold_path(self, script_path: Path | None) -> None:
+        """Keystone backfill scripts must not contain any data/research/long_hold_* literal."""
+        if script_path is None:
+            pytest.skip("No keystone backfill scripts found (W1 not yet built)")
+        source = script_path.read_text(encoding="utf-8", errors="replace")
+        matches = _LONG_HOLD_PATH_RE.findall(source)
+        assert matches == [], (
+            f"{script_path.name} contains literal long_hold path(s): {matches!r}. "
+            "Entry harnesses must not read hold-thesis data paths (LH-R1)."
+        )
+
+
+# ===========================================================================
+# Group C — Real registry passes the firewall clean
+# ===========================================================================
+
+
+class TestRealRegistryFirewallClean:
+    """The production synapse.yml must pass the horizon firewall with zero violations."""
+
+    def test_real_registry_horizon_firewall_clean(self) -> None:
+        """check_horizon_firewall() against the real registry must return no violations."""
+        reg = load_registry(REPO_ROOT)
+        violations = check_horizon_firewall(reg)
+        if violations:
+            msgs = [v.label() for v in violations]
+            pytest.fail(
+                f"Real registry has {len(violations)} horizon firewall violation(s):\n"
+                + "\n".join(msgs)
+            )
+
+    def test_real_registry_has_no_hold_thesis_artifacts_yet(self) -> None:
+        """
+        No hold_thesis artifacts should exist yet (W0 milestone).
+        The first hold_thesis artifacts arrive in W1 after the missed-hold study.
+        This test acts as a reminder to re-evaluate the firewall once hold artifacts
+        are registered — it should be REMOVED or updated when W1 lands hold_thesis stamps.
+        """
+        reg = load_registry(REPO_ROOT)
+        hold_arts = [
+            art_id
+            for art_id, v in (reg.get("artifacts") or {}).items()
+            if isinstance(v, dict) and v.get("horizon_role") == "hold_thesis"
+        ]
+        assert hold_arts == [], (
+            f"Unexpected hold_thesis artifacts in W0 registry: {hold_arts}. "
+            "If W1 has landed, remove this assertion and verify firewall config."
+        )
+
+    def test_real_registry_tactical_entry_artifacts_present(self) -> None:
+        """Sanity: at least some tactical_entry artifacts must be stamped."""
+        reg = load_registry(REPO_ROOT)
+        entry_arts = [
+            art_id
+            for art_id, v in (reg.get("artifacts") or {}).items()
+            if isinstance(v, dict) and v.get("horizon_role") == "tactical_entry"
+        ]
+        assert len(entry_arts) >= 1, (
+            "No tactical_entry artifacts found in registry — PR-C stamps may not be present."
+        )
